@@ -56,7 +56,13 @@ def verify_schema(cursor, db_name):
     has_breed_slug = cursor.fetchone()[0]
 
     # Check for removed columns
-    removed_columns = ["last_session_id", "enriched_description", "source_last_updated", "llm_processed_at", "llm_model_used"]
+    removed_columns = [
+        "last_session_id",
+        "enriched_description",
+        "source_last_updated",
+        "llm_processed_at",
+        "llm_model_used",
+    ]
     removed_found = []
     for col in removed_columns:
         cursor.execute(
@@ -71,7 +77,11 @@ def verify_schema(cursor, db_name):
         if cursor.fetchone()[0]:
             removed_found.append(col)
 
-    return {"column_count": column_count, "has_breed_slug": has_breed_slug, "removed_columns_found": removed_found}
+    return {
+        "column_count": column_count,
+        "has_breed_slug": has_breed_slug,
+        "removed_columns_found": removed_found,
+    }
 
 
 def main():
@@ -90,10 +100,14 @@ def main():
             with conn.cursor() as cursor:
                 local_schema = verify_schema(cursor, "Local")
                 print(f"✓ Column count: {local_schema['column_count']}")
-                print(f"✓ Has breed_slug: {'YES' if local_schema['has_breed_slug'] else 'NO'}")
+                print(
+                    f"✓ Has breed_slug: {'YES' if local_schema['has_breed_slug'] else 'NO'}"
+                )
 
                 if local_schema["removed_columns_found"]:
-                    print(f"✗ Still has removed columns: {', '.join(local_schema['removed_columns_found'])}")
+                    print(
+                        f"✗ Still has removed columns: {', '.join(local_schema['removed_columns_found'])}"
+                    )
                     success = False
                 else:
                     print("✓ All obsolete columns removed")
@@ -111,10 +125,14 @@ def main():
             with conn.cursor() as cursor:
                 railway_schema = verify_schema(cursor, "Railway")
                 print(f"✓ Column count: {railway_schema['column_count']}")
-                print(f"✓ Has breed_slug: {'YES' if railway_schema['has_breed_slug'] else 'NO'}")
+                print(
+                    f"✓ Has breed_slug: {'YES' if railway_schema['has_breed_slug'] else 'NO'}"
+                )
 
                 if railway_schema["removed_columns_found"]:
-                    print(f"✗ Still has removed columns: {', '.join(railway_schema['removed_columns_found'])}")
+                    print(
+                        f"✗ Still has removed columns: {', '.join(railway_schema['removed_columns_found'])}"
+                    )
                     success = False
                 else:
                     print("✓ All obsolete columns removed")
@@ -131,7 +149,9 @@ def main():
         if local_schema["column_count"] == railway_schema["column_count"]:
             print(f"✓ Both databases have {local_schema['column_count']} columns")
         else:
-            print(f"✗ Column count mismatch: Local={local_schema['column_count']}, Railway={railway_schema['column_count']}")
+            print(
+                f"✗ Column count mismatch: Local={local_schema['column_count']}, Railway={railway_schema['column_count']}"
+            )
             success = False
 
         if local_schema["has_breed_slug"] and railway_schema["has_breed_slug"]:
@@ -148,7 +168,9 @@ def main():
         print("✅ MIGRATION SUCCESSFUL - Ready for sync!")
         print("\nNext steps:")
         print("1. Run sync with: python management/railway_commands.py sync")
-        print("2. Or dry run first: python management/railway_commands.py sync --dry-run")
+        print(
+            "2. Or dry run first: python management/railway_commands.py sync --dry-run"
+        )
     else:
         print("❌ MIGRATION VERIFICATION FAILED")
         print("\nPlease check the errors above and re-run the migration if needed.")

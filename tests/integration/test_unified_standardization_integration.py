@@ -1,6 +1,6 @@
 """Integration test for unified standardization with base scraper."""
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -19,7 +19,12 @@ class TestScraper(BaseScraper):
         mock_metrics = Mock()
 
         # Initialize with config_id instead of base_url/org_name
-        super().__init__(config_id="test_org", database_service=mock_db, session_manager=mock_session_manager, metrics_collector=mock_metrics)
+        super().__init__(
+            config_id="test_org",
+            database_service=mock_db,
+            session_manager=mock_session_manager,
+            metrics_collector=mock_metrics,
+        )
 
         # Override the use_unified_standardization flag after init
         self.use_unified_standardization = use_unified_standardization
@@ -61,7 +66,9 @@ class TestUnifiedStandardizationIntegration:
 
     @patch("scrapers.base_scraper.ConfigLoader")
     @patch("scrapers.base_scraper.create_default_sync_service")
-    def test_base_scraper_applies_standardization(self, mock_sync_service, mock_config_loader):
+    def test_base_scraper_applies_standardization(
+        self, mock_sync_service, mock_config_loader
+    ):
         """Test that base scraper correctly applies unified standardization."""
         # Setup config mock
         mock_config = Mock()
@@ -158,7 +165,9 @@ class TestUnifiedStandardizationIntegration:
         standardizer = UnifiedStandardizer()
 
         # Test None values - standardizer accepts individual params not dicts
-        result = standardizer.apply_full_standardization(breed=None, age=None, size=None)
+        result = standardizer.apply_full_standardization(
+            breed=None, age=None, size=None
+        )
         assert result is not None
         assert result["breed_category"] == "Unknown"
         assert result["standardization_confidence"] == 0.0
@@ -172,7 +181,9 @@ class TestUnifiedStandardizationIntegration:
         result = standardizer.apply_full_standardization(breed="Unknown")
         assert result["breed"] == "Unknown"
         assert result["breed_category"] == "Unknown"
-        assert result["standardization_confidence"] == 0.3  # "Unknown" has 0.3 confidence
+        assert (
+            result["standardization_confidence"] == 0.3
+        )  # "Unknown" has 0.3 confidence
 
         # Test empty string breed
         result = standardizer.apply_full_standardization(breed="")

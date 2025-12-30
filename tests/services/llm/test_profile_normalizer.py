@@ -7,8 +7,6 @@ Following CLAUDE.md principles:
 - Comprehensive edge cases
 """
 
-from typing import Any, Dict
-
 import pytest
 
 from services.llm.profile_normalizer import ProfileNormalizer
@@ -33,10 +31,19 @@ class TestProfileNormalizer:
             "trainability": "easily_trainable",  # Needs mapping
             "good_with_children": "selective",  # Needs mapping
             "personality_traits": ["friendly", "calm"],  # Needs padding
-            "favorite_activities": ["walks", "fetch", "swimming", "running", "playing"],  # Too many
+            "favorite_activities": [
+                "walks",
+                "fetch",
+                "swimming",
+                "running",
+                "playing",
+            ],  # Too many
             "adoption_fee_euros": "null",  # String null
             "vaccinated": "true",  # String boolean
-            "confidence_scores": {"description": None, "energy_level": 0.9},  # Should be 0.0
+            "confidence_scores": {
+                "description": None,
+                "energy_level": 0.9,
+            },  # Should be 0.0
         }
 
     def test_normalize_energy_level(self, normalizer):
@@ -57,7 +64,10 @@ class TestProfileNormalizer:
 
     def test_normalize_compatibility(self, normalizer):
         """Test compatibility field normalization."""
-        assert normalizer.normalize_compatibility("selective", "children") == "older_children"
+        assert (
+            normalizer.normalize_compatibility("selective", "children")
+            == "older_children"
+        )
         assert normalizer.normalize_compatibility("selective", "cats") == "maybe"
         assert normalizer.normalize_compatibility("yes", "dogs") == "yes"
         assert normalizer.normalize_compatibility("no", "children") == "no"
@@ -66,18 +76,24 @@ class TestProfileNormalizer:
     def test_normalize_list_field(self, normalizer):
         """Test list field normalization."""
         # Too few items - should pad
-        result = normalizer.normalize_list_field(["friendly"], min_items=3, max_items=5, default_item="gentle")
+        result = normalizer.normalize_list_field(
+            ["friendly"], min_items=3, max_items=5, default_item="gentle"
+        )
         assert len(result) == 3
         assert "friendly" in result
         assert "gentle" in result
 
         # Too many items - should truncate
-        result = normalizer.normalize_list_field(["a", "b", "c", "d", "e", "f"], min_items=3, max_items=5)
+        result = normalizer.normalize_list_field(
+            ["a", "b", "c", "d", "e", "f"], min_items=3, max_items=5
+        )
         assert len(result) == 5
         assert result == ["a", "b", "c", "d", "e"]
 
         # Just right
-        result = normalizer.normalize_list_field(["a", "b", "c", "d"], min_items=3, max_items=5)
+        result = normalizer.normalize_list_field(
+            ["a", "b", "c", "d"], min_items=3, max_items=5
+        )
         assert len(result) == 4
 
     def test_normalize_boolean(self, normalizer):
@@ -174,7 +190,11 @@ class TestNormalizationRules:
         """Test custom normalization rules."""
         from services.llm.profile_normalizer import NormalizationRules
 
-        rules = NormalizationRules(energy_mappings={"custom": "high"}, trainability_mappings={"custom": "easy"}, default_values={"energy_level": "low"})
+        rules = NormalizationRules(
+            energy_mappings={"custom": "high"},
+            trainability_mappings={"custom": "easy"},
+            default_values={"energy_level": "low"},
+        )
 
         normalizer = ProfileNormalizer(rules=rules)
         assert normalizer.normalize_energy_level("custom") == "high"

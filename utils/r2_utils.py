@@ -29,7 +29,9 @@ class OrganizationLogoUploader:
     }
 
     @classmethod
-    def upload_organization_logo(cls, org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]:
+    def upload_organization_logo(
+        cls, org_id: str, logo_url: str, force_upload: bool = False
+    ) -> Dict[str, str]:
         """
         Upload organization logo to R2 with Cloudflare Images transformation URLs.
 
@@ -60,20 +62,28 @@ class OrganizationLogoUploader:
             r2_service = R2Service()
 
             # Upload logo to R2
-            r2_url, success = r2_service.upload_image_from_url(logo_url, f"org-logo-{org_id}", "organizations")
+            r2_url, success = r2_service.upload_image_from_url(
+                logo_url, f"org-logo-{org_id}", "organizations"
+            )
 
             if not success or not r2_url:
-                raise OrganizationLogoUploadError(f"Failed to upload logo for organization {org_id}")
+                raise OrganizationLogoUploadError(
+                    f"Failed to upload logo for organization {org_id}"
+                )
 
             # Generate URLs for different sizes using Cloudflare Images
             preset_urls = {}
             for preset_name, transformations in cls.PRESETS.items():
                 if preset_name == "original":
                     # Original size - just add basic optimizations
-                    preset_urls[preset_name] = cls._build_cloudflare_images_url(r2_url, transformations)
+                    preset_urls[preset_name] = cls._build_cloudflare_images_url(
+                        r2_url, transformations
+                    )
                 else:
                     # Specific size transformations
-                    preset_urls[preset_name] = cls._build_cloudflare_images_url(r2_url, transformations)
+                    preset_urls[preset_name] = cls._build_cloudflare_images_url(
+                        r2_url, transformations
+                    )
 
             logger.info(f"Successfully uploaded organization logo for {org_id}")
             return preset_urls
@@ -169,7 +179,9 @@ class OrganizationLogoUploader:
             return False
 
 
-def upload_organization_logo(org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]:
+def upload_organization_logo(
+    org_id: str, logo_url: str, force_upload: bool = False
+) -> Dict[str, str]:
     """
     Convenience function to upload organization logo.
 
@@ -184,7 +196,9 @@ def upload_organization_logo(org_id: str, logo_url: str, force_upload: bool = Fa
     Raises:
         OrganizationLogoUploadError: If upload fails
     """
-    return OrganizationLogoUploader.upload_organization_logo(org_id, logo_url, force_upload)
+    return OrganizationLogoUploader.upload_organization_logo(
+        org_id, logo_url, force_upload
+    )
 
 
 def validate_logo_url(logo_url: str) -> bool:

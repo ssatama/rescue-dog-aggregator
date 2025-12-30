@@ -5,13 +5,12 @@ This test verifies that the SQL logic bug in update_stale_data_detection()
 has been fixed and animals maintain correct confidence levels.
 """
 
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from datetime import datetime
+from unittest.mock import Mock
 
 import pytest
 
 from services.session_manager import SessionManager
-from tests.fixtures.database_fixtures import mock_session_manager_db
 
 
 @pytest.mark.database
@@ -22,7 +21,12 @@ class TestAvailabilityConfidenceFix:
 
     def test_availability_confidence_progression_correct(self):
         """Test that availability confidence progresses correctly through missing scrapes."""
-        db_config = {"host": "localhost", "user": "test", "database": "test", "password": ""}
+        db_config = {
+            "host": "localhost",
+            "user": "test",
+            "database": "test",
+            "password": "",
+        }
         session_manager = SessionManager(db_config, organization_id=1)
 
         # Mock database connection and cursor
@@ -49,7 +53,12 @@ class TestAvailabilityConfidenceFix:
 
     def test_animal_confidence_scenarios(self):
         """Test specific scenarios for availability confidence logic."""
-        db_config = {"host": "localhost", "user": "test", "database": "test", "password": ""}
+        db_config = {
+            "host": "localhost",
+            "user": "test",
+            "database": "test",
+            "password": "",
+        }
         session_manager = SessionManager(db_config, organization_id=1)
 
         # Mock database connection
@@ -71,10 +80,16 @@ class TestAvailabilityConfidenceFix:
         # consecutive_scrapes_missing >= 3 → unavailable (status change)
 
         lines = executed_query.split("\n")
-        case_lines = [line.strip() for line in lines if "WHEN consecutive_scrapes_missing" in line]
+        case_lines = [
+            line.strip() for line in lines if "WHEN consecutive_scrapes_missing" in line
+        ]
 
         # Should have exactly 3 WHEN clauses for availability_confidence
-        availability_case_lines = [line for line in case_lines if "THEN" in line and ("medium" in line or "low" in line)]
+        availability_case_lines = [
+            line
+            for line in case_lines
+            if "THEN" in line and ("medium" in line or "low" in line)
+        ]
         assert len(availability_case_lines) == 3
 
         # Verify the specific logic
@@ -84,7 +99,12 @@ class TestAvailabilityConfidenceFix:
 
     def test_mark_animal_as_seen_sets_high_confidence(self):
         """Test that marking an animal as seen correctly sets high confidence."""
-        db_config = {"host": "localhost", "user": "test", "database": "test", "password": ""}
+        db_config = {
+            "host": "localhost",
+            "user": "test",
+            "database": "test",
+            "password": "",
+        }
         session_manager = SessionManager(db_config, organization_id=1)
 
         # Mock database connection

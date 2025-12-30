@@ -1,13 +1,10 @@
 """Tests for the check_adoptions management command."""
 
-import argparse
-import json
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
-import psycopg2
 import pytest
 
 # Add parent directory to path for imports
@@ -40,7 +37,9 @@ def mock_config_loader():
 @pytest.fixture
 def mock_adoption_service():
     """Mock adoption detection service."""
-    with patch("management.check_adoptions.AdoptionDetectionService") as mock_service_class:
+    with patch(
+        "management.check_adoptions.AdoptionDetectionService"
+    ) as mock_service_class:
         mock_service = MagicMock()
         mock_service_class.return_value = mock_service
         yield mock_service
@@ -55,7 +54,10 @@ def sample_organization_config():
     config.slug = "dogstrust"
     config.check_adoption_status = True
     config.adoption_check_threshold = 3
-    config.adoption_check_config = {"max_checks_per_run": 50, "check_interval_hours": 24}
+    config.adoption_check_config = {
+        "max_checks_per_run": 50,
+        "check_interval_hours": 24,
+    }
     return config
 
 
@@ -63,7 +65,15 @@ def sample_organization_config():
 def sample_eligible_dogs():
     """Sample eligible dogs for testing."""
     return [
-        {"id": 1, "name": "Max", "url": "https://dogstrust.org.uk/dogs/max", "status": "unknown", "consecutive_scrapes_missing": 5, "adoption_checked_at": None, "adoption_check_data": None},
+        {
+            "id": 1,
+            "name": "Max",
+            "url": "https://dogstrust.org.uk/dogs/max",
+            "status": "unknown",
+            "consecutive_scrapes_missing": 5,
+            "adoption_checked_at": None,
+            "adoption_check_data": None,
+        },
         {
             "id": 2,
             "name": "Bella",
@@ -93,16 +103,22 @@ class TestCheckAdoptionsCommand:
         command = CheckAdoptionsCommand(verbose=True)
 
         with patch("management.check_adoptions.os.getenv") as mock_getenv:
-            mock_getenv.side_effect = lambda key, default=None: {"DB_NAME": "rescue_dogs", "DB_USER": "postgres", "DB_PASSWORD": "password", "DB_HOST": "localhost", "DB_PORT": "5432"}.get(
-                key, default
-            )
+            mock_getenv.side_effect = lambda key, default=None: {
+                "DB_NAME": "rescue_dogs",
+                "DB_USER": "postgres",
+                "DB_PASSWORD": "password",
+                "DB_HOST": "localhost",
+                "DB_PORT": "5432",
+            }.get(key, default)
 
             command.connect()
 
             assert command.conn is not None
             assert command.cursor is not None
 
-    def test_get_organizations_specific(self, mock_config_loader, sample_organization_config):
+    def test_get_organizations_specific(
+        self, mock_config_loader, sample_organization_config
+    ):
         """Test getting a specific organization."""
         command = CheckAdoptionsCommand()
         command.config_loader = mock_config_loader
@@ -119,7 +135,9 @@ class TestCheckAdoptionsCommand:
         assert orgs[0].slug == "dogstrust"
         mock_config_loader.load_config.assert_called_once_with("dogstrust")
 
-    def test_get_organizations_all_enabled(self, mock_config_loader, sample_organization_config):
+    def test_get_organizations_all_enabled(
+        self, mock_config_loader, sample_organization_config
+    ):
         """Test getting all organizations with adoption checking enabled."""
         command = CheckAdoptionsCommand()
         command.config_loader = mock_config_loader
@@ -134,7 +152,10 @@ class TestCheckAdoptionsCommand:
         mock_config_disabled.check_adoption_status = False
 
         # load_all_configs returns a dict, not a list
-        mock_config_loader.load_all_configs.return_value = {"dogstrust": mock_config_enabled, "other-org": mock_config_disabled}
+        mock_config_loader.load_all_configs.return_value = {
+            "dogstrust": mock_config_enabled,
+            "other-org": mock_config_disabled,
+        }
 
         orgs = command.get_organizations(all_orgs=True)
 
@@ -151,7 +172,9 @@ class TestCheckAdoptionsCommand:
 
         mock_cursor.fetchall.return_value = sample_eligible_dogs
 
-        dogs = command.get_eligible_dogs(org_id=1, threshold=3, limit=50, check_interval_hours=24)
+        dogs = command.get_eligible_dogs(
+            org_id=1, threshold=3, limit=50, check_interval_hours=24
+        )
 
         assert len(dogs) == 2
         assert dogs[0]["name"] == "Max"
@@ -164,7 +187,14 @@ class TestCheckAdoptionsCommand:
         assert call_args[1][1] == 3  # threshold
         assert call_args[1][3] == 50  # limit
 
-    def test_check_organization_dry_run(self, mock_db_connection, mock_adoption_service, sample_organization_config, sample_eligible_dogs, capsys):
+    def test_check_organization_dry_run(
+        self,
+        mock_db_connection,
+        mock_adoption_service,
+        sample_organization_config,
+        sample_eligible_dogs,
+        capsys,
+    ):
         """Test checking organization in dry-run mode."""
         mock_conn, mock_cursor = mock_db_connection
         command = CheckAdoptionsCommand(dry_run=True, verbose=False)
@@ -185,7 +215,13 @@ class TestCheckAdoptionsCommand:
         assert "Max" in captured.out
         assert "Bella" in captured.out
 
-    def test_check_organization_real_run(self, mock_db_connection, mock_adoption_service, sample_organization_config, sample_eligible_dogs):
+    def test_check_organization_real_run(
+        self,
+        mock_db_connection,
+        mock_adoption_service,
+        sample_organization_config,
+        sample_eligible_dogs,
+    ):
         """Test checking organization with real API calls."""
         mock_conn, mock_cursor = mock_db_connection
         command = CheckAdoptionsCommand(dry_run=False, verbose=True)
@@ -229,7 +265,9 @@ class TestCheckAdoptionsCommand:
         assert mock_adoption_service.check_adoption_status.call_count == 2
 
         # Verify database updates
-        assert mock_cursor.execute.call_count >= 3  # 1 for eligible dogs + 2 for updates
+        assert (
+            mock_cursor.execute.call_count >= 3
+        )  # 1 for eligible dogs + 2 for updates
         assert mock_conn.commit.call_count == 2
 
     def test_update_dog_status(self, mock_db_connection):
@@ -295,7 +333,15 @@ class TestCheckAdoptionsCommand:
 
         results = [
             AdoptionCheckResult(
-                animal_id=1, animal_name="Max", previous_status="unknown", detected_status="adopted", evidence="", confidence=0.95, checked_at=datetime.now(timezone.utc), raw_response=None, error=None
+                animal_id=1,
+                animal_name="Max",
+                previous_status="unknown",
+                detected_status="adopted",
+                evidence="",
+                confidence=0.95,
+                checked_at=datetime.now(timezone.utc),
+                raw_response=None,
+                error=None,
             ),
             AdoptionCheckResult(
                 animal_id=2,
@@ -363,7 +409,9 @@ class TestMainFunction:
     def test_main_with_org_flag(self):
         """Test main function with --org flag."""
         with patch("sys.argv", ["check_adoptions.py", "--org", "dogstrust"]):
-            with patch("management.check_adoptions.CheckAdoptionsCommand") as mock_command_class:
+            with patch(
+                "management.check_adoptions.CheckAdoptionsCommand"
+            ) as mock_command_class:
                 mock_command = MagicMock()
                 mock_command_class.return_value = mock_command
 
@@ -377,12 +425,16 @@ class TestMainFunction:
                         raise
 
                 mock_command.connect.assert_called_once()
-                mock_command.get_organizations.assert_called_once_with(org_slug="dogstrust", all_orgs=False)
+                mock_command.get_organizations.assert_called_once_with(
+                    org_slug="dogstrust", all_orgs=False
+                )
 
     def test_main_with_all_flag(self):
         """Test main function with --all flag."""
         with patch("sys.argv", ["check_adoptions.py", "--all"]):
-            with patch("management.check_adoptions.CheckAdoptionsCommand") as mock_command_class:
+            with patch(
+                "management.check_adoptions.CheckAdoptionsCommand"
+            ) as mock_command_class:
                 mock_command = MagicMock()
                 mock_command_class.return_value = mock_command
                 mock_command.get_organizations.return_value = []
@@ -395,7 +447,9 @@ class TestMainFunction:
                     if e.code != 0:
                         raise
 
-                mock_command.get_organizations.assert_called_once_with(org_slug=None, all_orgs=True)
+                mock_command.get_organizations.assert_called_once_with(
+                    org_slug=None, all_orgs=True
+                )
 
     def test_main_missing_required_args(self):
         """Test main function without required arguments."""
@@ -409,8 +463,13 @@ class TestMainFunction:
 
     def test_main_with_dry_run_and_verbose(self):
         """Test main function with --dry-run and --verbose flags."""
-        with patch("sys.argv", ["check_adoptions.py", "--org", "dogstrust", "--dry-run", "--verbose"]):
-            with patch("management.check_adoptions.CheckAdoptionsCommand") as mock_command_class:
+        with patch(
+            "sys.argv",
+            ["check_adoptions.py", "--org", "dogstrust", "--dry-run", "--verbose"],
+        ):
+            with patch(
+                "management.check_adoptions.CheckAdoptionsCommand"
+            ) as mock_command_class:
                 mock_command = MagicMock()
                 mock_command_class.return_value = mock_command
                 mock_command.get_organizations.return_value = [{"slug": "dogstrust"}]
@@ -427,8 +486,12 @@ class TestMainFunction:
 
     def test_main_with_limit(self):
         """Test main function with --limit flag."""
-        with patch("sys.argv", ["check_adoptions.py", "--org", "dogstrust", "--limit", "10"]):
-            with patch("management.check_adoptions.CheckAdoptionsCommand") as mock_command_class:
+        with patch(
+            "sys.argv", ["check_adoptions.py", "--org", "dogstrust", "--limit", "10"]
+        ):
+            with patch(
+                "management.check_adoptions.CheckAdoptionsCommand"
+            ) as mock_command_class:
                 mock_command = MagicMock()
                 mock_command_class.return_value = mock_command
                 mock_command.get_organizations.return_value = [{"slug": "dogstrust"}]
@@ -441,4 +504,6 @@ class TestMainFunction:
                     if e.code != 0:
                         raise
 
-                mock_command.check_organization.assert_called_with({"slug": "dogstrust"}, 10)
+                mock_command.check_organization.assert_called_with(
+                    {"slug": "dogstrust"}, 10
+                )

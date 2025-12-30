@@ -3,7 +3,6 @@
 from unittest.mock import Mock, patch
 
 import pytest
-import requests.exceptions
 
 from scrapers.furryrescueitaly.furryrescueitaly_scraper import FurryRescueItalyScraper
 from tests.scrapers.test_scraper_base import ScraperTestBase

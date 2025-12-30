@@ -9,7 +9,6 @@ The bug caused ~3,300 stale dogs to incorrectly show as available on the site.
 
 import pytest
 from unittest.mock import MagicMock, patch
-from datetime import datetime
 
 from services.session_manager import SessionManager
 
@@ -149,7 +148,9 @@ class TestUpdateStaleDataDetection:
     """Tests for the active=false fix in update_stale_data_detection()."""
 
     @patch("services.session_manager.psycopg2")
-    def test_sets_active_false_when_status_becomes_unknown(self, mock_psycopg2, session_manager):
+    def test_sets_active_false_when_status_becomes_unknown(
+        self, mock_psycopg2, session_manager
+    ):
         """SQL should set active=false when consecutive_scrapes_missing >= 3."""
         # Setup mock connection
         mock_conn = MagicMock()

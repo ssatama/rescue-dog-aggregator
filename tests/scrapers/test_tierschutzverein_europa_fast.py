@@ -18,8 +18,10 @@ class TestTierschutzvereinEuropaScraperFast:
     @pytest.fixture
     def scraper(self):
         """Create a Tierschutzverein Europa scraper instance for testing."""
-        with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
-
+        with (
+            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
+            patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
+        ):
             mock_config = MagicMock()
             mock_config.name = "Tierschutzverein Europa Test"
             mock_config.get_scraper_config_dict.return_value = {
@@ -32,7 +34,9 @@ class TestTierschutzvereinEuropaScraperFast:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=True)
+            mock_sync_service.sync_single_organization.return_value = Mock(
+                organization_id=1, was_created=True
+            )
             mock_sync.return_value = mock_sync_service
 
             scraper = TierschutzvereinEuropaScraper()
@@ -53,7 +57,9 @@ class TestTierschutzvereinEuropaScraperFast:
 
         for text, expected in test_cases:
             result = normalize_name(text)
-            assert result == expected, f"Expected {expected}, got {result} for text: {text}"
+            assert result == expected, (
+                f"Expected {expected}, got {result} for text: {text}"
+            )
 
     @pytest.mark.unit
     def test_translations_translate_age(self):
@@ -71,7 +77,9 @@ class TestTierschutzvereinEuropaScraperFast:
 
         for text, expected in test_cases:
             result = translate_age(text)
-            assert result == expected, f"Expected {expected}, got {result} for text: {text}"
+            assert result == expected, (
+                f"Expected {expected}, got {result} for text: {text}"
+            )
 
     @pytest.mark.unit
     def test_translations_translate_gender(self):
@@ -89,7 +97,9 @@ class TestTierschutzvereinEuropaScraperFast:
 
         for text, expected in test_cases:
             result = translate_gender(text)
-            assert result == expected, f"Expected {expected}, got {result} for text: {text}"
+            assert result == expected, (
+                f"Expected {expected}, got {result} for text: {text}"
+            )
 
     @pytest.mark.unit
     def test_translations_translate_breed(self):
@@ -106,20 +116,33 @@ class TestTierschutzvereinEuropaScraperFast:
 
         for text, expected in test_cases:
             result = translate_breed(text)
-            assert result == expected, f"Expected {expected}, got {result} for text: {text}"
+            assert result == expected, (
+                f"Expected {expected}, got {result} for text: {text}"
+            )
 
     @pytest.mark.unit
     def test_extract_external_id_from_url(self, scraper):
         """Test external ID extraction from URLs."""
         test_cases = [
-            ("/tiervermittlung/abel-in-spanien-huellas-con-esperanza/", "abel-in-spanien-huellas-con-esperanza"),
-            ("/tiervermittlung/abril-in-spanien-tierheim-ada-canals/", "abril-in-spanien-tierheim-ada-canals"),
-            ("/tiervermittlung/akeno-in-rumaenien-tierheim-odai/", "akeno-in-rumaenien-tierheim-odai"),
+            (
+                "/tiervermittlung/abel-in-spanien-huellas-con-esperanza/",
+                "abel-in-spanien-huellas-con-esperanza",
+            ),
+            (
+                "/tiervermittlung/abril-in-spanien-tierheim-ada-canals/",
+                "abril-in-spanien-tierheim-ada-canals",
+            ),
+            (
+                "/tiervermittlung/akeno-in-rumaenien-tierheim-odai/",
+                "akeno-in-rumaenien-tierheim-odai",
+            ),
         ]
 
         for url, expected in test_cases:
             result = scraper._extract_external_id_from_url(url)
-            assert result == expected, f"Expected {expected}, got {result} for URL {url}"
+            assert result == expected, (
+                f"Expected {expected}, got {result} for URL {url}"
+            )
 
     @pytest.mark.unit
     def test_pagination_url_generation(self, scraper):
@@ -150,7 +173,15 @@ class TestTierschutzvereinEuropaScraperFast:
         }
 
         # Validate required fields are present
-        required_fields = ["name", "external_id", "age_text", "sex", "breed", "primary_image_url", "adoption_url"]
+        required_fields = [
+            "name",
+            "external_id",
+            "age_text",
+            "sex",
+            "breed",
+            "primary_image_url",
+            "adoption_url",
+        ]
         for field in required_fields:
             assert field in sample_data, f"Required field {field} missing"
             assert sample_data[field], f"Required field {field} is empty"

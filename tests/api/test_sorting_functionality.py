@@ -9,9 +9,6 @@ This module tests the new sorting parameters to ensure proper backend implementa
 from unittest.mock import patch
 
 import pytest
-from fastapi.testclient import TestClient
-
-from api.main import app
 
 
 @pytest.mark.api
@@ -23,7 +20,9 @@ class TestSortingFunctionality:
 
     def test_animals_default_sort_newest(self, client):
         """Test that animals default to newest sort when no sort parameter provided."""
-        with patch("api.services.animal_service.AnimalService.get_animals") as mock_get_animals:
+        with patch(
+            "api.services.animal_service.AnimalService.get_animals"
+        ) as mock_get_animals:
             mock_get_animals.return_value = []
 
             response = client.get("/api/animals/")
@@ -35,7 +34,9 @@ class TestSortingFunctionality:
 
     def test_animals_sort_name_asc(self, client):
         """Test that animals can be sorted by name ascending."""
-        with patch("api.services.animal_service.AnimalService.get_animals") as mock_get_animals:
+        with patch(
+            "api.services.animal_service.AnimalService.get_animals"
+        ) as mock_get_animals:
             mock_get_animals.return_value = []
 
             response = client.get("/api/animals/?sort=name-asc")
@@ -47,7 +48,9 @@ class TestSortingFunctionality:
 
     def test_animals_sort_name_desc(self, client):
         """Test that animals can be sorted by name descending."""
-        with patch("api.services.animal_service.AnimalService.get_animals") as mock_get_animals:
+        with patch(
+            "api.services.animal_service.AnimalService.get_animals"
+        ) as mock_get_animals:
             mock_get_animals.return_value = []
 
             response = client.get("/api/animals/?sort=name-desc")
@@ -59,7 +62,9 @@ class TestSortingFunctionality:
 
     def test_animals_sort_newest_explicit(self, client):
         """Test that animals can be explicitly sorted by newest."""
-        with patch("api.services.animal_service.AnimalService.get_animals") as mock_get_animals:
+        with patch(
+            "api.services.animal_service.AnimalService.get_animals"
+        ) as mock_get_animals:
             mock_get_animals.return_value = []
 
             response = client.get("/api/animals/?sort=newest")
@@ -71,7 +76,9 @@ class TestSortingFunctionality:
 
     def test_animals_sort_oldest(self, client):
         """Test that animals can be sorted by oldest first."""
-        with patch("api.services.animal_service.AnimalService.get_animals") as mock_get_animals:
+        with patch(
+            "api.services.animal_service.AnimalService.get_animals"
+        ) as mock_get_animals:
             mock_get_animals.return_value = []
 
             response = client.get("/api/animals/?sort=oldest")
@@ -86,10 +93,14 @@ class TestSortingFunctionality:
 
     def test_animals_sort_with_other_filters(self, client):
         """Test that sort parameter works correctly with other filters."""
-        with patch("api.services.animal_service.AnimalService.get_animals") as mock_get_animals:
+        with patch(
+            "api.services.animal_service.AnimalService.get_animals"
+        ) as mock_get_animals:
             mock_get_animals.return_value = []
 
-            response = client.get("/api/animals/?sort=name-asc&breed=Labrador&age_category=Adult")
+            response = client.get(
+                "/api/animals/?sort=name-asc&breed=Labrador&age_category=Adult"
+            )
 
             assert response.status_code == 200
             # Verify that all parameters are passed correctly

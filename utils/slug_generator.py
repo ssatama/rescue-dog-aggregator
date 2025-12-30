@@ -36,7 +36,12 @@ def sanitize_for_slug(text: str) -> str:
     return sanitized
 
 
-def generate_animal_slug(name: str, breed: Optional[str] = None, standardized_breed: Optional[str] = None, animal_id: Optional[int] = None) -> str:
+def generate_animal_slug(
+    name: str,
+    breed: Optional[str] = None,
+    standardized_breed: Optional[str] = None,
+    animal_id: Optional[int] = None,
+) -> str:
     """
     Generate SEO-friendly slug for animal.
     Format: name-breed-id (e.g., "fluffy-mixed-breed-123")
@@ -85,7 +90,9 @@ def generate_animal_slug(name: str, breed: Optional[str] = None, standardized_br
     return slug
 
 
-def ensure_unique_slug(base_slug: str, connection, exclude_id: Optional[int] = None) -> str:
+def ensure_unique_slug(
+    base_slug: str, connection, exclude_id: Optional[int] = None
+) -> str:
     """
     Ensure slug is unique by checking database and adding suffix if needed.
 
@@ -127,7 +134,9 @@ def ensure_unique_slug(base_slug: str, connection, exclude_id: Optional[int] = N
 
             # Check if candidate is unique
             cursor = connection.cursor()
-            cursor.execute(query.replace(" = %s", " = %s"), [candidate_slug] + params[1:])
+            cursor.execute(
+                query.replace(" = %s", " = %s"), [candidate_slug] + params[1:]
+            )
             count = cursor.fetchone()[0]
             cursor.close()
 
@@ -147,7 +156,12 @@ def ensure_unique_slug(base_slug: str, connection, exclude_id: Optional[int] = N
 
 
 def generate_unique_animal_slug(
-    name: str, breed: Optional[str] = None, standardized_breed: Optional[str] = None, animal_id: Optional[int] = None, connection=None, exclude_id: Optional[int] = None
+    name: str,
+    breed: Optional[str] = None,
+    standardized_breed: Optional[str] = None,
+    animal_id: Optional[int] = None,
+    connection=None,
+    exclude_id: Optional[int] = None,
 ) -> str:
     """
     Generate a unique animal slug by combining generation and uniqueness check.
@@ -204,7 +218,9 @@ def generate_organization_slug(name: str, config_id: str) -> str:
     return "organization"
 
 
-def ensure_unique_organization_slug(base_slug: str, connection, exclude_id: Optional[int] = None) -> str:
+def ensure_unique_organization_slug(
+    base_slug: str, connection, exclude_id: Optional[int] = None
+) -> str:
     """
     Ensure organization slug is unique by checking database and adding suffix if needed.
 
@@ -217,7 +233,9 @@ def ensure_unique_organization_slug(base_slug: str, connection, exclude_id: Opti
         Unique slug string
     """
     if not connection:
-        logger.warning("No database connection provided for organization slug uniqueness check")
+        logger.warning(
+            "No database connection provided for organization slug uniqueness check"
+        )
         return base_slug
 
     try:
@@ -246,7 +264,9 @@ def ensure_unique_organization_slug(base_slug: str, connection, exclude_id: Opti
 
             # Check if candidate is unique
             cursor = connection.cursor()
-            cursor.execute(query.replace(" = %s", " = %s"), [candidate_slug] + params[1:])
+            cursor.execute(
+                query.replace(" = %s", " = %s"), [candidate_slug] + params[1:]
+            )
             count = cursor.fetchone()[0]
             cursor.close()
 
@@ -265,7 +285,9 @@ def ensure_unique_organization_slug(base_slug: str, connection, exclude_id: Opti
         return base_slug
 
 
-def generate_unique_organization_slug(name: str, config_id: str, connection=None, exclude_id: Optional[int] = None) -> str:
+def generate_unique_organization_slug(
+    name: str, config_id: str, connection=None, exclude_id: Optional[int] = None
+) -> str:
     """
     Generate a unique organization slug by combining generation and uniqueness check.
 
@@ -305,7 +327,10 @@ def validate_slug(slug: str) -> Tuple[bool, str]:
         return False, "Slug too long (max 255 characters)"
 
     if not re.match(r"^[a-z0-9-]+$", slug):
-        return False, "Slug contains invalid characters (only lowercase letters, numbers, and hyphens allowed)"
+        return (
+            False,
+            "Slug contains invalid characters (only lowercase letters, numbers, and hyphens allowed)",
+        )
 
     if slug.startswith("-") or slug.endswith("-"):
         return False, "Slug cannot start or end with hyphen"

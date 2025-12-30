@@ -109,7 +109,14 @@ class TestTierschutzvereinEuropaUnifiedStandardization:
     def test_scraper_integration_with_german_breeds(self, scraper):
         """Test that the scraper properly processes German breeds through translation and standardization."""
         # Create a mock dog with German breed
-        mock_dog = {"name": "Max", "breed": "Schäferhund-Mischling", "age": "2 Jahre", "gender": "Rüde", "language": "de", "original_language": "de"}
+        mock_dog = {
+            "name": "Max",
+            "breed": "Schäferhund-Mischling",
+            "age": "2 Jahre",
+            "gender": "Rüde",
+            "language": "de",
+            "original_language": "de",
+        }
 
         # The scraper should translate and then standardize
         # After translation: "German Shepherd Mix"

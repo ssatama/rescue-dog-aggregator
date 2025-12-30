@@ -24,7 +24,9 @@ def extract_qa_data(properties: Dict[str, Any]) -> Dict[str, str]:
     return {}
 
 
-def extract_size_and_weight_from_qa(qa_data: Dict[str, str]) -> Tuple[Optional[str], Optional[float]]:
+def extract_size_and_weight_from_qa(
+    qa_data: Dict[str, str],
+) -> Tuple[Optional[str], Optional[float]]:
     """Extract size and weight from TheUnderdog's Q&A 'How big?' field.
 
     This handles TheUnderdog-specific patterns like:
@@ -49,7 +51,15 @@ def extract_size_and_weight_from_qa(qa_data: Dict[str, str]) -> Tuple[Optional[s
     text_lower = how_big.lower().strip()
 
     # Size mappings for TheUnderdog-specific phrases
-    size_mappings = {"tiny": "Tiny", "small": "Small", "medium": "Medium", "large": "Large", "xlarge": "XLarge", "x-large": "XLarge", "extra large": "XLarge"}
+    size_mappings = {
+        "tiny": "Tiny",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "xlarge": "XLarge",
+        "x-large": "XLarge",
+        "extra large": "XLarge",
+    }
 
     # Special cases for relative sizes
     if "smaller side of medium" in text_lower:

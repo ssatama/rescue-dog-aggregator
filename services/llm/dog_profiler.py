@@ -14,12 +14,9 @@ Following CLAUDE.md principles:
 """
 
 import asyncio
-import json
 import logging
-import os
 import time
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
@@ -31,7 +28,6 @@ from services.llm.prompt_builder import PromptBuilder
 from services.llm.retry_handler import RetryConfig, RetryHandler
 from services.llm.schemas.dog_profiler import DogProfilerData
 from services.llm.statistics_tracker import StatisticsTracker
-from services.llm.text_utilities import TextUtilities
 from services.llm_data_service import OpenRouterLLMDataService
 
 # Load environment variables
@@ -73,7 +69,15 @@ class DogProfilerPipeline:
 
         # Setup retry handler with fallback models
         if retry_config is None:
-            retry_config = RetryConfig(max_attempts=3, initial_delay=2.0, backoff_factor=2.0, fallback_models=["google/gemini-3-flash-preview", "openai/gpt-4-turbo-preview"])
+            retry_config = RetryConfig(
+                max_attempts=3,
+                initial_delay=2.0,
+                backoff_factor=2.0,
+                fallback_models=[
+                    "google/gemini-3-flash-preview",
+                    "openai/gpt-4-turbo-preview",
+                ],
+            )
         self.retry_handler = RetryHandler(retry_config)
 
     def _normalize_profile_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -119,7 +123,13 @@ class DogProfilerPipeline:
         messages = self.prompt_builder.build_messages(dog_data, prompt_adjustment)
 
         # Use LLMClient to make the API call and parse response
-        return await self.llm_client.call_api_and_parse(messages=messages, model=model, temperature=0.7, max_tokens=4000, timeout=timeout)
+        return await self.llm_client.call_api_and_parse(
+            messages=messages,
+            model=model,
+            temperature=0.7,
+            max_tokens=4000,
+            timeout=timeout,
+        )
 
     async def process_dog(self, dog_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
@@ -167,7 +177,9 @@ class DogProfilerPipeline:
             # Add/update metadata fields
             profile_data["profiled_at"] = datetime.utcnow().isoformat()
             profile_data["prompt_version"] = self.prompt_builder.get_prompt_version()
-            profile_data["model_used"] = profiler_result.get("model_used", "google/gemini-3-flash-preview")
+            profile_data["model_used"] = profiler_result.get(
+                "model_used", "google/gemini-3-flash-preview"
+            )
 
             # Add confidence scores if not present (using defaults)
             if "confidence_scores" not in profile_data:
@@ -180,7 +192,9 @@ class DogProfilerPipeline:
             # Add source references if not present
             if "source_references" not in profile_data:
                 profile_data["source_references"] = {
-                    "description": str(dog_data.get("properties", {}).get("description", "")),
+                    "description": str(
+                        dog_data.get("properties", {}).get("description", "")
+                    ),
                     "personality_traits": "inferred from description",
                 }
 
@@ -209,7 +223,10 @@ class DogProfilerPipeline:
                 if not hasattr(self, "_rubric_instance"):
                     self._rubric_instance = DogProfileQualityRubric()
                 # Score returns 0-1, multiply by 100 for percentage
-                result["quality_score"] = self._rubric_instance.calculate_quality_score(result, dog_data) * 100
+                result["quality_score"] = (
+                    self._rubric_instance.calculate_quality_score(result, dog_data)
+                    * 100
+                )
             else:
                 # Default quality score for basic validation (80%)
                 result["quality_score"] = 80
@@ -223,7 +240,9 @@ class DogProfilerPipeline:
             logger.error(error_msg)
             return None
 
-    async def process_batch(self, dogs: List[Dict[str, Any]], batch_size: int = 5) -> List[Dict[str, Any]]:
+    async def process_batch(
+        self, dogs: List[Dict[str, Any]], batch_size: int = 5
+    ) -> List[Dict[str, Any]]:
         """
         Process multiple dogs in batches.
 
@@ -238,7 +257,7 @@ class DogProfilerPipeline:
 
         for i in range(0, len(dogs), batch_size):
             batch = dogs[i : i + batch_size]
-            logger.info(f"Processing batch {i//batch_size + 1} ({len(batch)} dogs)")
+            logger.info(f"Processing batch {i // batch_size + 1} ({len(batch)} dogs)")
 
             # Process batch concurrently
             tasks = [self.process_dog(dog) for dog in batch]

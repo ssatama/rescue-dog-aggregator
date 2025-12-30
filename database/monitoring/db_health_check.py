@@ -18,11 +18,10 @@ Usage:
 import argparse
 import json
 import os
-import smtplib
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from email.mime.text import MIMEText
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -56,7 +55,12 @@ class DatabaseHealthChecker:
     def connect(self) -> psycopg2.extensions.connection:
         """Create database connection with error handling."""
         try:
-            conn_params = {"host": self.db_config["host"], "user": self.db_config["user"], "database": self.db_config["database"], "cursor_factory": RealDictCursor}
+            conn_params = {
+                "host": self.db_config["host"],
+                "user": self.db_config["user"],
+                "database": self.db_config["database"],
+                "cursor_factory": RealDictCursor,
+            }
             if self.db_config["password"]:
                 conn_params["password"] = self.db_config["password"]
 
@@ -72,15 +76,24 @@ class DatabaseHealthChecker:
 
         try:
             with conn.cursor() as cursor:
-                cursor.execute("SELECT 1 as test, NOW() as server_time, version() as version")
+                cursor.execute(
+                    "SELECT 1 as test, NOW() as server_time, version() as version"
+                )
                 result = cursor.fetchone()
 
             response_time = (datetime.now() - start_time).total_seconds() * 1000
 
-            metrics = {"connected": True, "response_time_ms": response_time, "server_time": result["server_time"], "version": result["version"]}
+            metrics = {
+                "connected": True,
+                "response_time_ms": response_time,
+                "server_time": result["server_time"],
+                "version": result["version"],
+            }
 
             if response_time > 100:
-                self.warnings.append(f"Database response time is {response_time:.1f}ms (>100ms)")
+                self.warnings.append(
+                    f"Database response time is {response_time:.1f}ms (>100ms)"
+                )
 
             return metrics
 
@@ -108,7 +121,9 @@ class DatabaseHealthChecker:
 
                 stats = cursor.fetchone()
 
-                connection_percent = (stats["active_connections"] / stats["max_connections"]) * 100
+                connection_percent = (
+                    stats["active_connections"] / stats["max_connections"]
+                ) * 100
 
                 metrics = {
                     "active_connections": stats["active_connections"],
@@ -120,9 +135,14 @@ class DatabaseHealthChecker:
                 }
 
                 if connection_percent > self.THRESHOLDS["max_connections_percent"]:
-                    self.alerts.append(f"HIGH: Connection usage at {connection_percent:.1f}% " f"({stats['active_connections']}/{stats['max_connections']})")
+                    self.alerts.append(
+                        f"HIGH: Connection usage at {connection_percent:.1f}% "
+                        f"({stats['active_connections']}/{stats['max_connections']})"
+                    )
                 elif connection_percent > 60:
-                    self.warnings.append(f"Connection usage at {connection_percent:.1f}% - monitor closely")
+                    self.warnings.append(
+                        f"Connection usage at {connection_percent:.1f}% - monitor closely"
+                    )
 
                 return metrics
 
@@ -174,10 +194,14 @@ class DatabaseHealthChecker:
                 }
 
                 if missing_indexes:
-                    self.alerts.append(f"CRITICAL: Missing performance indexes: {missing_indexes}")
+                    self.alerts.append(
+                        f"CRITICAL: Missing performance indexes: {missing_indexes}"
+                    )
 
                 if unused_indexes:
-                    self.warnings.append(f"Performance indexes not being used: {unused_indexes}")
+                    self.warnings.append(
+                        f"Performance indexes not being used: {unused_indexes}"
+                    )
 
                 return metrics
 
@@ -221,15 +245,26 @@ class DatabaseHealthChecker:
                 search_count = cursor.fetchone()[0]
                 search_time = (datetime.now() - start_time).total_seconds() * 1000
 
-                metrics = {"homepage_query_time_ms": round(homepage_time, 2), "search_query_time_ms": round(search_time, 2), "homepage_query_plan": query_plan, "search_results_found": search_count}
+                metrics = {
+                    "homepage_query_time_ms": round(homepage_time, 2),
+                    "search_query_time_ms": round(search_time, 2),
+                    "homepage_query_plan": query_plan,
+                    "search_results_found": search_count,
+                }
 
                 if homepage_time > 200:
-                    self.alerts.append(f"SLOW: Homepage query took {homepage_time:.1f}ms (>200ms)")
+                    self.alerts.append(
+                        f"SLOW: Homepage query took {homepage_time:.1f}ms (>200ms)"
+                    )
                 elif homepage_time > 100:
-                    self.warnings.append(f"Homepage query took {homepage_time:.1f}ms (>100ms)")
+                    self.warnings.append(
+                        f"Homepage query took {homepage_time:.1f}ms (>100ms)"
+                    )
 
                 if search_time > self.THRESHOLDS["slow_query_ms"]:
-                    self.alerts.append(f"SLOW: Search query took {search_time:.1f}ms (>1000ms)")
+                    self.alerts.append(
+                        f"SLOW: Search query took {search_time:.1f}ms (>1000ms)"
+                    )
 
                 return metrics
 
@@ -284,21 +319,39 @@ class DatabaseHealthChecker:
                 }
 
                 # Check for data issues
-                if data_stats["available_animals"] < self.THRESHOLDS["available_animals_min"]:
-                    self.alerts.append(f"LOW: Only {data_stats['available_animals']} available animals " f"(<{self.THRESHOLDS['available_animals_min']})")
+                if (
+                    data_stats["available_animals"]
+                    < self.THRESHOLDS["available_animals_min"]
+                ):
+                    self.alerts.append(
+                        f"LOW: Only {data_stats['available_animals']} available animals "
+                        f"(<{self.THRESHOLDS['available_animals_min']})"
+                    )
 
                 # Check scraping health
                 if scrape_stats["last_scrape_time"]:
-                    hours_since_scrape = (datetime.now() - scrape_stats["last_scrape_time"]).total_seconds() / 3600
+                    hours_since_scrape = (
+                        datetime.now() - scrape_stats["last_scrape_time"]
+                    ).total_seconds() / 3600
                     if hours_since_scrape > self.THRESHOLDS["scrape_failure_hours"]:
-                        self.alerts.append(f"STALE: Last scrape was {hours_since_scrape:.1f} hours ago " f"(>{self.THRESHOLDS['scrape_failure_hours']} hours)")
+                        self.alerts.append(
+                            f"STALE: Last scrape was {hours_since_scrape:.1f} hours ago "
+                            f"(>{self.THRESHOLDS['scrape_failure_hours']} hours)"
+                        )
 
                 if scrape_stats["scrapes_last_24h"] > 0:
-                    failure_rate = (scrape_stats["failed_scrapes"] / scrape_stats["scrapes_last_24h"]) * 100
+                    failure_rate = (
+                        scrape_stats["failed_scrapes"]
+                        / scrape_stats["scrapes_last_24h"]
+                    ) * 100
                     if failure_rate > 50:
-                        self.alerts.append(f"HIGH: Scrape failure rate is {failure_rate:.1f}%")
+                        self.alerts.append(
+                            f"HIGH: Scrape failure rate is {failure_rate:.1f}%"
+                        )
                     elif failure_rate > 25:
-                        self.warnings.append(f"Scrape failure rate is {failure_rate:.1f}%")
+                        self.warnings.append(
+                            f"Scrape failure rate is {failure_rate:.1f}%"
+                        )
 
                 return metrics
 
@@ -352,7 +405,9 @@ class DatabaseHealthChecker:
                 # Size-based warnings (assuming production starts getting large at 1GB)
                 size_gb = size_stats["database_size_bytes"] / (1024**3)
                 if size_gb > 5:  # 5GB threshold
-                    self.warnings.append(f"Database size is {size_stats['database_size']} - plan capacity")
+                    self.warnings.append(
+                        f"Database size is {size_stats['database_size']} - plan capacity"
+                    )
 
                 return metrics
 
@@ -406,7 +461,9 @@ class DatabaseHealthChecker:
             results = {
                 "timestamp": datetime.now().isoformat(),
                 "check_duration_seconds": round(check_duration, 2),
-                "overall_status": "CRITICAL" if self.alerts else ("WARNING" if self.warnings else "OK"),
+                "overall_status": "CRITICAL"
+                if self.alerts
+                else ("WARNING" if self.warnings else "OK"),
                 "alerts": self.alerts,
                 "warnings": self.warnings,
                 "metrics": checks,
@@ -422,10 +479,10 @@ Time: {datetime.now()}
 Duration: {check_duration:.2s} seconds
 
 ALERTS:
-{chr(10).join(f'- {alert}' for alert in self.alerts)}
+{chr(10).join(f"- {alert}" for alert in self.alerts)}
 
 WARNINGS:
-{chr(10).join(f'- {warning}' for warning in self.warnings)}
+{chr(10).join(f"- {warning}" for warning in self.warnings)}
 
 Full report available in monitoring logs.
 """
@@ -435,7 +492,12 @@ Full report available in monitoring logs.
 
         except Exception as e:
             self.alerts.append(f"CRITICAL: Health check failed: {e}")
-            return {"timestamp": datetime.now().isoformat(), "overall_status": "CRITICAL", "alerts": self.alerts, "error": str(e)}
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "overall_status": "CRITICAL",
+                "alerts": self.alerts,
+                "error": str(e),
+            }
 
 
 def main():
@@ -470,11 +532,14 @@ def main():
                 print(f"  - {warning}")
 
         if args.verbose and "metrics" in results:
-            print(f"\n📊 METRICS:")
+            print("\n📊 METRICS:")
             for check_name, metrics in results["metrics"].items():
                 print(f"\n  {check_name.upper()}:")
                 for key, value in metrics.items():
-                    if key not in ["homepage_query_plan", "index_usage_stats"]:  # Skip verbose data
+                    if key not in [
+                        "homepage_query_plan",
+                        "index_usage_stats",
+                    ]:  # Skip verbose data
                         print(f"    {key}: {value}")
 
     # Exit with appropriate code

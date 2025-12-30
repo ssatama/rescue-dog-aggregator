@@ -84,7 +84,11 @@ class CheckAdoptionsCommand:
         elif all_orgs:
             # Check all organizations with adoption checking enabled
             all_configs = self.config_loader.load_all_configs()
-            enabled_configs = [config for config in all_configs.values() if getattr(config, "check_adoption_status", False)]
+            enabled_configs = [
+                config
+                for config in all_configs.values()
+                if getattr(config, "check_adoption_status", False)
+            ]
             if not enabled_configs:
                 print("⚠️ No organizations have adoption checking enabled")
                 return []
@@ -93,7 +97,9 @@ class CheckAdoptionsCommand:
             print("❌ Must specify --org or --all")
             sys.exit(1)
 
-    def get_eligible_dogs(self, org_id: int, threshold: int, limit: int, check_interval_hours: int) -> List[dict]:
+    def get_eligible_dogs(
+        self, org_id: int, threshold: int, limit: int, check_interval_hours: int
+    ) -> List[dict]:
         """Get dogs eligible for adoption checking.
 
         Args:
@@ -106,7 +112,9 @@ class CheckAdoptionsCommand:
             List of eligible dogs
         """
         # Calculate cutoff time for rechecks
-        recheck_cutoff = datetime.now(timezone.utc) - timedelta(hours=check_interval_hours)
+        recheck_cutoff = datetime.now(timezone.utc) - timedelta(
+            hours=check_interval_hours
+        )
 
         query = """
             SELECT 
@@ -170,18 +178,22 @@ class CheckAdoptionsCommand:
         print(f"\n🔍 Checking {org_name}...")
 
         # Get eligible dogs
-        eligible_dogs = self.get_eligible_dogs(org_id, threshold, max_checks, check_interval)
+        eligible_dogs = self.get_eligible_dogs(
+            org_id, threshold, max_checks, check_interval
+        )
 
         if not eligible_dogs:
-            print(f"  No eligible dogs to check")
+            print("  No eligible dogs to check")
             return
 
         print(f"  Found {len(eligible_dogs)} eligible dogs")
 
         if self.dry_run:
-            print(f"\n  🔍 DRY RUN - Would check:")
+            print("\n  🔍 DRY RUN - Would check:")
             for dog in eligible_dogs[:5]:  # Show first 5
-                print(f"    - {dog['name']} (ID: {dog['id']}, missing: {dog['consecutive_scrapes_missing']} scrapes)")
+                print(
+                    f"    - {dog['name']} (ID: {dog['id']}, missing: {dog['consecutive_scrapes_missing']} scrapes)"
+                )
             if len(eligible_dogs) > 5:
                 print(f"    ... and {len(eligible_dogs) - 5} more")
             return
@@ -202,7 +214,9 @@ class CheckAdoptionsCommand:
                         self.url = url
                         self.status = status
 
-                animal = AnimalStub(id=dog["id"], name=dog["name"], url=dog["url"], status=dog["status"])
+                animal = AnimalStub(
+                    id=dog["id"], name=dog["name"], url=dog["url"], status=dog["status"]
+                )
 
                 # Check adoption status using Firecrawl
                 result = self.adoption_service.check_adoption_status(animal)
@@ -213,9 +227,16 @@ class CheckAdoptionsCommand:
                 self.update_dog_status(dog["id"], result)
 
                 if self.verbose:
-                    status_emoji = {"adopted": "🎉", "reserved": "📝", "available": "✅", "unknown": "❓"}.get(result.detected_status, "❓")
+                    status_emoji = {
+                        "adopted": "🎉",
+                        "reserved": "📝",
+                        "available": "✅",
+                        "unknown": "❓",
+                    }.get(result.detected_status, "❓")
 
-                    print(f"    {status_emoji} Status: {result.detected_status} (confidence: {result.confidence:.2f})")
+                    print(
+                        f"    {status_emoji} Status: {result.detected_status} (confidence: {result.confidence:.2f})"
+                    )
                     if result.evidence:
                         print(f"       Evidence: {result.evidence[:100]}...")
 
@@ -258,7 +279,10 @@ class CheckAdoptionsCommand:
         if result.raw_response and len(json.dumps(result.raw_response)) < 10000:
             check_data["raw_response"] = result.raw_response
 
-        self.cursor.execute(update_query, (result.detected_status, json.dumps(check_data), result.checked_at, dog_id))
+        self.cursor.execute(
+            update_query,
+            (result.detected_status, json.dumps(check_data), result.checked_at, dog_id),
+        )
         self.conn.commit()
 
     def print_summary(self, org_name: str, results: List[AdoptionCheckResult]):
@@ -284,7 +308,12 @@ class CheckAdoptionsCommand:
 
         for status, count in sorted(status_counts.items()):
             percentage = (count / total) * 100
-            emoji = {"adopted": "🎉", "reserved": "📝", "available": "✅", "unknown": "❓"}.get(status, "❓")
+            emoji = {
+                "adopted": "🎉",
+                "reserved": "📝",
+                "available": "✅",
+                "unknown": "❓",
+            }.get(status, "❓")
             print(f"  {emoji} {status}: {count} ({percentage:.1f}%)")
 
         # Count errors
@@ -304,12 +333,27 @@ class CheckAdoptionsCommand:
 
 def main():
     """Main entry point for the command."""
-    parser = argparse.ArgumentParser(description="Check dog adoption status using Firecrawl API")
+    parser = argparse.ArgumentParser(
+        description="Check dog adoption status using Firecrawl API"
+    )
     parser.add_argument("--org", help="Organization slug to check (e.g., dogstrust)")
-    parser.add_argument("--all", action="store_true", help="Check all organizations with adoption checking enabled")
-    parser.add_argument("--dry-run", action="store_true", help="Preview what would be checked without making API calls")
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Check all organizations with adoption checking enabled",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview what would be checked without making API calls",
+    )
     parser.add_argument("--verbose", action="store_true", help="Show detailed output")
-    parser.add_argument("--limit", type=int, default=50, help="Maximum number of dogs to check per organization (default: 50)")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=50,
+        help="Maximum number of dogs to check per organization (default: 50)",
+    )
 
     args = parser.parse_args()
 
@@ -340,7 +384,9 @@ def main():
         print("\n✅ Adoption checking complete!")
 
         if args.dry_run:
-            print("\n📝 This was a DRY RUN - no API calls or database updates were made")
+            print(
+                "\n📝 This was a DRY RUN - no API calls or database updates were made"
+            )
 
     except KeyboardInterrupt:
         print("\n⚠️ Interrupted by user")

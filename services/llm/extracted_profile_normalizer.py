@@ -8,7 +8,7 @@ Following CLAUDE.md principles:
 """
 
 import copy
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from services.llm.field_normalizers import FieldNormalizers
 
@@ -41,31 +41,49 @@ class ExtractedProfileNormalizer:
         result = copy.deepcopy(data)
 
         if "energy_level" in result:
-            result["energy_level"] = self.normalizers.normalize_energy_level(result["energy_level"])
+            result["energy_level"] = self.normalizers.normalize_energy_level(
+                result["energy_level"]
+            )
 
         if "trainability" in result:
-            result["trainability"] = self.normalizers.normalize_trainability(result["trainability"])
+            result["trainability"] = self.normalizers.normalize_trainability(
+                result["trainability"]
+            )
 
         if "sociability" in result:
-            result["sociability"] = self.normalizers.normalize_sociability(result["sociability"])
+            result["sociability"] = self.normalizers.normalize_sociability(
+                result["sociability"]
+            )
 
         if "confidence" in result:
-            result["confidence"] = self.normalizers.normalize_confidence(result["confidence"])
+            result["confidence"] = self.normalizers.normalize_confidence(
+                result["confidence"]
+            )
 
         if "home_type" in result:
-            result["home_type"] = self.normalizers.normalize_home_type(result["home_type"])
+            result["home_type"] = self.normalizers.normalize_home_type(
+                result["home_type"]
+            )
 
         if "experience_level" in result:
-            result["experience_level"] = self.normalizers.normalize_experience_level(result["experience_level"])
+            result["experience_level"] = self.normalizers.normalize_experience_level(
+                result["experience_level"]
+            )
 
         if "exercise_needs" in result:
-            result["exercise_needs"] = self.normalizers.normalize_exercise_needs(result["exercise_needs"])
+            result["exercise_needs"] = self.normalizers.normalize_exercise_needs(
+                result["exercise_needs"]
+            )
 
         if "grooming_needs" in result:
-            result["grooming_needs"] = self.normalizers.normalize_grooming_needs(result["grooming_needs"])
+            result["grooming_needs"] = self.normalizers.normalize_grooming_needs(
+                result["grooming_needs"]
+            )
 
         if "adoption_fee_euros" in result:
-            result["adoption_fee_euros"] = self.normalizers.normalize_adoption_fee(result["adoption_fee_euros"])
+            result["adoption_fee_euros"] = self.normalizers.normalize_adoption_fee(
+                result["adoption_fee_euros"]
+            )
 
         return result
 
@@ -85,7 +103,11 @@ class ExtractedProfileNormalizer:
         """Normalize compatibility fields."""
         result = copy.deepcopy(data)
 
-        compatibility_fields = ["good_with_dogs", "good_with_cats", "good_with_children"]
+        compatibility_fields = [
+            "good_with_dogs",
+            "good_with_cats",
+            "good_with_children",
+        ]
 
         for field in compatibility_fields:
             if field in result:
@@ -97,12 +119,20 @@ class ExtractedProfileNormalizer:
         """Normalize and truncate text fields."""
         result = copy.deepcopy(data)
 
-        text_limits = {"tagline": 50, "description": 400, "unique_quirk": 150, "medical_needs": 200, "special_needs": 200}
+        text_limits = {
+            "tagline": 50,
+            "description": 400,
+            "unique_quirk": 150,
+            "medical_needs": 200,
+            "special_needs": 200,
+        }
 
         for field, limit in text_limits.items():
             if field in result and result[field]:
                 if isinstance(result[field], str):
-                    result[field] = self.normalizers.smart_truncate(result[field], limit)
+                    result[field] = self.normalizers.smart_truncate(
+                        result[field], limit
+                    )
 
         return result
 
@@ -124,7 +154,13 @@ class ExtractedProfileNormalizer:
                 original_len = len(traits)
                 # Pad with default traits to reach 3, without duplicates
                 if len(traits) < 3:
-                    default_traits = ["gentle", "loyal", "friendly", "calm", "affectionate"]
+                    default_traits = [
+                        "gentle",
+                        "loyal",
+                        "friendly",
+                        "calm",
+                        "affectionate",
+                    ]
                     for trait in default_traits:
                         if trait not in traits:
                             traits.append(trait)
@@ -179,13 +215,19 @@ class ExtractedProfileNormalizer:
 
             # Add required default references if missing
             if "description" not in result["source_references"]:
-                result["source_references"]["description"] = "generated from available data"
+                result["source_references"]["description"] = (
+                    "generated from available data"
+                )
             if "personality_traits" not in result["source_references"]:
                 has_breed = "breed" in str(result)
-                result["source_references"]["personality_traits"] = "inferred from breed" if has_breed else "default values"
+                result["source_references"]["personality_traits"] = (
+                    "inferred from breed" if has_breed else "default values"
+                )
 
         # Confidence scores
-        if "confidence_scores" in result and isinstance(result["confidence_scores"], dict):
+        if "confidence_scores" in result and isinstance(
+            result["confidence_scores"], dict
+        ):
             for key in result["confidence_scores"]:
                 if result["confidence_scores"][key] is None:
                     result["confidence_scores"][key] = 0.0
@@ -199,13 +241,23 @@ class ExtractedProfileNormalizer:
         # Fix good_with_children
         if "good_with_children" in result:
             value = result["good_with_children"]
-            if value == "selective" or value not in ["yes", "no", "older_children", "unknown"]:
+            if value == "selective" or value not in [
+                "yes",
+                "no",
+                "older_children",
+                "unknown",
+            ]:
                 result["good_with_children"] = "older_children"
 
         # Fix good_with_cats
         if "good_with_cats" in result:
             value = result["good_with_cats"]
-            if value == "selective" or value not in ["yes", "no", "with_training", "unknown"]:
+            if value == "selective" or value not in [
+                "yes",
+                "no",
+                "with_training",
+                "unknown",
+            ]:
                 result["good_with_cats"] = "with_training"
 
         return result
@@ -234,7 +286,11 @@ class ExtractedProfileNormalizer:
             "personality_traits": ["friendly", "loyal", "gentle"],
             "favorite_activities": ["walks", "play"],
             "source_references": {},
-            "confidence_scores": {"description": 0.2, "energy_level": 0.2, "trainability": 0.2},
+            "confidence_scores": {
+                "description": 0.2,
+                "energy_level": 0.2,
+                "trainability": 0.2,
+            },
         }
 
         for field, default_value in defaults.items():

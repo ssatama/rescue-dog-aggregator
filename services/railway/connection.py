@@ -28,7 +28,9 @@ def get_railway_database_url() -> str:
 def _is_valid_postgresql_url(url: str) -> bool:
     try:
         parsed = urlparse(url)
-        return parsed.scheme in ("postgresql", "postgres") and parsed.hostname is not None
+        return (
+            parsed.scheme in ("postgresql", "postgres") and parsed.hostname is not None
+        )
     except Exception:
         return False
 
@@ -54,7 +56,13 @@ def get_railway_engine() -> Engine:
     timeout = int(os.getenv("RAILWAY_CONNECTION_TIMEOUT", "30"))
 
     _railway_engine_cache = create_engine(
-        database_url, pool_size=5, max_overflow=10, pool_timeout=30, pool_recycle=3600, connect_args={"connect_timeout": timeout, "options": "-c timezone=UTC"}, echo=False
+        database_url,
+        pool_size=5,
+        max_overflow=10,
+        pool_timeout=30,
+        pool_recycle=3600,
+        connect_args={"connect_timeout": timeout, "options": "-c timezone=UTC"},
+        echo=False,
     )
 
     return _railway_engine_cache

@@ -12,7 +12,9 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 logger = logging.getLogger(__name__)
 
 
-def scrub_sensitive_data(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def scrub_sensitive_data(
+    event: Dict[str, Any], hint: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
     if "request" in event and "headers" in event["request"]:
         sensitive_headers = ["authorization", "cookie", "x-api-key"]
         for header in sensitive_headers:
@@ -24,13 +26,18 @@ def scrub_sensitive_data(event: Dict[str, Any], hint: Dict[str, Any]) -> Optiona
 
     if "extra" in event:
         for key in list(event["extra"].keys()):
-            if any(sensitive in key.lower() for sensitive in ["password", "token", "secret", "key"]):
+            if any(
+                sensitive in key.lower()
+                for sensitive in ["password", "token", "secret", "key"]
+            ):
                 event["extra"][key] = "[REDACTED]"
 
     return event
 
 
-def filter_transactions(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def filter_transactions(
+    event: Dict[str, Any], hint: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
     """Filter out noisy transactions from performance monitoring."""
     transaction_name = event.get("transaction", "")
 
@@ -53,7 +60,9 @@ def init_sentry(app_environment: str) -> None:
 
     # ONLY initialize Sentry in production
     if app_environment != "production":
-        logger.info(f"Sentry disabled for {app_environment} environment - only enabled in production")
+        logger.info(
+            f"Sentry disabled for {app_environment} environment - only enabled in production"
+        )
         return
 
     if not dsn:
@@ -99,7 +108,9 @@ def init_sentry(app_environment: str) -> None:
 def handle_database_error(error: Exception, operation: str) -> None:
     with sentry_sdk.push_scope() as scope:
         scope.set_tag("database.operation", operation)
-        scope.set_context("database", {"operation": operation, "error_type": type(error).__name__})
+        scope.set_context(
+            "database", {"operation": operation, "error_type": type(error).__name__}
+        )
         sentry_sdk.capture_exception(error)
 
 
@@ -107,20 +118,38 @@ def handle_api_error(error: Exception, endpoint: str, method: str) -> None:
     with sentry_sdk.push_scope() as scope:
         scope.set_tag("api.endpoint", endpoint)
         scope.set_tag("api.method", method)
-        scope.set_context("api", {"endpoint": endpoint, "method": method, "error_type": type(error).__name__})
+        scope.set_context(
+            "api",
+            {
+                "endpoint": endpoint,
+                "method": method,
+                "error_type": type(error).__name__,
+            },
+        )
         sentry_sdk.capture_exception(error)
 
 
-def track_slow_query(query: str, duration_ms: float, threshold_ms: float = 3000) -> None:
+def track_slow_query(
+    query: str, duration_ms: float, threshold_ms: float = 3000
+) -> None:
     if duration_ms > threshold_ms:
         sentry_sdk.add_breadcrumb(
-            category="database", message=f"Slow query detected: {duration_ms:.0f}ms", level="warning", data={"query": query[:500], "duration_ms": duration_ms, "threshold_ms": threshold_ms}
+            category="database",
+            message=f"Slow query detected: {duration_ms:.0f}ms",
+            level="warning",
+            data={
+                "query": query[:500],
+                "duration_ms": duration_ms,
+                "threshold_ms": threshold_ms,
+            },
         )
 
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("slow_query", "true")
             scope.set_extra("query_duration_ms", duration_ms)
-            sentry_sdk.capture_message(f"Slow database query: {duration_ms:.0f}ms", level="warning")
+            sentry_sdk.capture_message(
+                f"Slow database query: {duration_ms:.0f}ms", level="warning"
+            )
 
 
 @contextmanager
@@ -131,12 +160,14 @@ def create_transaction_span(name: str, op: str):
 
 @contextmanager
 def monitor_endpoint(endpoint: str, method: str = "GET"):
-    with sentry_sdk.start_transaction(name=f"{method} {endpoint}", op="http.server") as transaction:
+    with sentry_sdk.start_transaction(
+        name=f"{method} {endpoint}", op="http.server"
+    ) as transaction:
         transaction.set_tag("http.method", method)
         transaction.set_tag("http.route", endpoint)
         try:
             yield transaction
-        except Exception as e:
+        except Exception:
             transaction.set_status("internal_error")
             raise
         else:

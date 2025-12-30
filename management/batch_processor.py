@@ -160,7 +160,13 @@ class DatabaseBatchProcessor:
         self.config = config
         self.cursor = connection.cursor()
 
-    def process_batch(self, items: List[Any], processor_func: Callable[[Any], Tuple[str, Tuple]], progress: Optional[Progress] = None, task_id: Optional[int] = None) -> BatchResult:
+    def process_batch(
+        self,
+        items: List[Any],
+        processor_func: Callable[[Any], Tuple[str, Tuple]],
+        progress: Optional[Progress] = None,
+        task_id: Optional[int] = None,
+    ) -> BatchResult:
         """
         Process items in batches with optimized database operations achieving 47.5x performance improvement.
 
@@ -220,7 +226,9 @@ class DatabaseBatchProcessor:
             batch_end = min(batch_start + self.config.batch_size, total_items)
             batch_items = items[batch_start:batch_end]
 
-            batch_success = self._process_single_batch(batch_items, processor_func, batch_start, errors)
+            batch_success = self._process_single_batch(
+                batch_items, processor_func, batch_start, errors
+            )
 
             if batch_success:
                 successful_batches += 1
@@ -231,17 +239,29 @@ class DatabaseBatchProcessor:
                     try:
                         self.connection.commit()
                     except Exception as e:
-                        logger.error(f"Failed to commit batch {successful_batches}: {e}")
+                        logger.error(
+                            f"Failed to commit batch {successful_batches}: {e}"
+                        )
                         self.connection.rollback()
                         failed_batches += 1
-                        errors.append({"type": "commit_error", "batch_start": batch_start, "error": str(e)})
+                        errors.append(
+                            {
+                                "type": "commit_error",
+                                "batch_start": batch_start,
+                                "error": str(e),
+                            }
+                        )
                         continue
             else:
                 failed_batches += 1
 
             # Update progress
             if progress and task_id is not None:
-                progress.update(task_id, completed=batch_end, description=f"Processed {processed_count}/{total_items} items")
+                progress.update(
+                    task_id,
+                    completed=batch_end,
+                    description=f"Processed {processed_count}/{total_items} items",
+                )
 
         # Final commit for remaining batches
         if successful_batches % self.config.commit_frequency != 0:
@@ -253,9 +273,21 @@ class DatabaseBatchProcessor:
 
         processing_time = time.time() - start_time
 
-        return BatchResult(total_processed=processed_count, successful_batches=successful_batches, failed_batches=failed_batches, errors=errors, processing_time=processing_time)
+        return BatchResult(
+            total_processed=processed_count,
+            successful_batches=successful_batches,
+            failed_batches=failed_batches,
+            errors=errors,
+            processing_time=processing_time,
+        )
 
-    def _process_single_batch(self, batch_items: List[Any], processor_func: Callable[[Any], Tuple[str, Tuple]], batch_start: int, errors: List[Dict[str, Any]]) -> bool:
+    def _process_single_batch(
+        self,
+        batch_items: List[Any],
+        processor_func: Callable[[Any], Tuple[str, Tuple]],
+        batch_start: int,
+        errors: List[Dict[str, Any]],
+    ) -> bool:
         """
         Process a single batch with retry logic and error handling.
 
@@ -274,8 +306,17 @@ class DatabaseBatchProcessor:
                     except Exception as e:
                         # Error from processor_func - log but continue with batch
                         item_position = batch_start + item_index
-                        logger.warning(f"Failed to process item at position {item_position}: {e}")
-                        errors.append({"type": "item_processing_error", "position": item_position, "item": str(item)[:100], "error": str(e)})  # Truncate for logging
+                        logger.warning(
+                            f"Failed to process item at position {item_position}: {e}"
+                        )
+                        errors.append(
+                            {
+                                "type": "item_processing_error",
+                                "position": item_position,
+                                "item": str(item)[:100],
+                                "error": str(e),
+                            }
+                        )  # Truncate for logging
                         continue
 
                     # Execute the query - psycopg2.Error will bubble up to outer except
@@ -289,26 +330,53 @@ class DatabaseBatchProcessor:
                 self.connection.rollback()
 
                 if retry_attempt < self.config.max_retries:
-                    logger.warning(f"Database error on batch starting at {batch_start}, " f"attempt {retry_attempt + 1}/{self.config.max_retries + 1}: {e}")
+                    logger.warning(
+                        f"Database error on batch starting at {batch_start}, "
+                        f"attempt {retry_attempt + 1}/{self.config.max_retries + 1}: {e}"
+                    )
                     time.sleep(self.config.retry_delay * (retry_attempt + 1))
                     continue
                 else:
                     # Max retries exceeded
-                    logger.error(f"Failed to process batch after {self.config.max_retries} retries: {e}")
-                    errors.append({"type": "batch_database_error", "batch_start": batch_start, "batch_size": len(batch_items), "error": str(e), "retries": retry_attempt})
+                    logger.error(
+                        f"Failed to process batch after {self.config.max_retries} retries: {e}"
+                    )
+                    errors.append(
+                        {
+                            "type": "batch_database_error",
+                            "batch_start": batch_start,
+                            "batch_size": len(batch_items),
+                            "error": str(e),
+                            "retries": retry_attempt,
+                        }
+                    )
                     return False
 
             except Exception as e:
                 # Non-database error at cursor level - rollback and don't retry
                 self.connection.rollback()
-                logger.error(f"Unexpected cursor-level error processing batch starting at {batch_start}: {e}")
-                errors.append({"type": "unexpected_error", "batch_start": batch_start, "error": str(e)})
+                logger.error(
+                    f"Unexpected cursor-level error processing batch starting at {batch_start}: {e}"
+                )
+                errors.append(
+                    {
+                        "type": "unexpected_error",
+                        "batch_start": batch_start,
+                        "error": str(e),
+                    }
+                )
                 return False
 
         return False
 
 
-def create_batch_processor(connection: psycopg2.extensions.connection, batch_size: int = 25, max_retries: int = 3, retry_delay: float = 1.0, commit_frequency: int = 1) -> DatabaseBatchProcessor:
+def create_batch_processor(
+    connection: psycopg2.extensions.connection,
+    batch_size: int = 25,
+    max_retries: int = 3,
+    retry_delay: float = 1.0,
+    commit_frequency: int = 1,
+) -> DatabaseBatchProcessor:
     """
     Factory function to create a configured batch processor.
 
@@ -322,6 +390,11 @@ def create_batch_processor(connection: psycopg2.extensions.connection, batch_siz
     Returns:
         Configured DatabaseBatchProcessor instance
     """
-    config = BatchConfig(batch_size=batch_size, max_retries=max_retries, retry_delay=retry_delay, commit_frequency=commit_frequency)
+    config = BatchConfig(
+        batch_size=batch_size,
+        max_retries=max_retries,
+        retry_delay=retry_delay,
+        commit_frequency=commit_frequency,
+    )
 
     return DatabaseBatchProcessor(connection, config)

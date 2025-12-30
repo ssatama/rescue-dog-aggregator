@@ -10,11 +10,12 @@ from typing import Any, Dict, List, Optional, Tuple
 from psycopg2.extras import RealDictCursor
 
 # Add the project root to Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from contextlib import contextmanager
 
-import psycopg2
 
 from api.dependencies import get_database_connection
 from monitoring.quality.metrics import DataQualityMetrics, QualityAssessment
@@ -59,7 +60,9 @@ class DataQualityAnalyzer:
             except StopIteration:
                 pass
 
-    def get_organization_animals(self, cursor, org_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    def get_organization_animals(
+        self, cursor, org_id: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """Fetch animals from database for analysis."""
         try:
             if org_id:
@@ -122,7 +125,9 @@ class DataQualityAnalyzer:
         """Analyze a single animal's data quality."""
         return self.metrics.assess_animal_overall(animal)
 
-    def analyze_organization_quality(self, animals: List[Dict[str, Any]]) -> OrganizationQuality:
+    def analyze_organization_quality(
+        self, animals: List[Dict[str, Any]]
+    ) -> OrganizationQuality:
         """Analyze overall quality for an organization."""
         if not animals:
             return None
@@ -141,7 +146,12 @@ class DataQualityAnalyzer:
             assessments.append(assessment)
 
             # Count issues
-            for issue in assessment.completeness.issues + assessment.standardization.issues + assessment.rich_content.issues + assessment.visual_appeal.issues:
+            for issue in (
+                assessment.completeness.issues
+                + assessment.standardization.issues
+                + assessment.rich_content.issues
+                + assessment.visual_appeal.issues
+            ):
                 issue_counts[issue] += 1
 
             critical_issues_count += len(assessment.critical_issues)
@@ -158,7 +168,9 @@ class DataQualityAnalyzer:
         animals_below_70 = sum(1 for score in overall_scores if score < 70)
 
         # Get top 5 common issues
-        common_issues = dict(sorted(issue_counts.items(), key=lambda x: x[1], reverse=True)[:5])
+        common_issues = dict(
+            sorted(issue_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        )
 
         return OrganizationQuality(
             org_id=org_id,
@@ -168,10 +180,19 @@ class DataQualityAnalyzer:
             overall_score=overall_avg,
             animals_at_100=animals_at_100,
             animals_below_70=animals_below_70,
-            completeness_avg=sum(completeness_scores) / len(completeness_scores) if completeness_scores else 0,
-            standardization_avg=sum(standardization_scores) / len(standardization_scores) if standardization_scores else 0,
-            rich_content_avg=sum(rich_content_scores) / len(rich_content_scores) if rich_content_scores else 0,
-            visual_appeal_avg=sum(visual_appeal_scores) / len(visual_appeal_scores) if visual_appeal_scores else 0,
+            completeness_avg=sum(completeness_scores) / len(completeness_scores)
+            if completeness_scores
+            else 0,
+            standardization_avg=sum(standardization_scores)
+            / len(standardization_scores)
+            if standardization_scores
+            else 0,
+            rich_content_avg=sum(rich_content_scores) / len(rich_content_scores)
+            if rich_content_scores
+            else 0,
+            visual_appeal_avg=sum(visual_appeal_scores) / len(visual_appeal_scores)
+            if visual_appeal_scores
+            else 0,
             critical_issues_count=critical_issues_count,
             common_issues=common_issues,
         )
@@ -213,7 +234,9 @@ class DataQualityAnalyzer:
 
         return results
 
-    def analyze_single_organization(self, org_id: int) -> Tuple[OrganizationQuality, List[Tuple[Dict[str, Any], QualityAssessment]]]:
+    def analyze_single_organization(
+        self, org_id: int
+    ) -> Tuple[OrganizationQuality, List[Tuple[Dict[str, Any], QualityAssessment]]]:
         """Analyze data quality for a single organization with detailed animal data."""
 
         with self.get_connection() as connection:

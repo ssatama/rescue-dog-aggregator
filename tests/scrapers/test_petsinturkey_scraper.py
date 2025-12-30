@@ -1,6 +1,6 @@
 """Tests for the modernized Pets in Turkey scraper."""
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from bs4 import BeautifulSoup
@@ -18,7 +18,9 @@ class TestPetsInTurkeyScraper:
         """Create scraper instance with mocked dependencies."""
         from scrapers.base_scraper import BaseScraper
 
-        with patch("scrapers.pets_in_turkey.petsinturkey_scraper.BaseScraper.__init__") as mock_init:
+        with patch(
+            "scrapers.pets_in_turkey.petsinturkey_scraper.BaseScraper.__init__"
+        ) as mock_init:
             mock_init.return_value = None
             scraper = PetsInTurkeyScraper.__new__(PetsInTurkeyScraper)
             scraper.logger = MagicMock()
@@ -32,7 +34,9 @@ class TestPetsInTurkeyScraper:
             scraper.use_unified_standardization = False
             scraper.standardizer = None
             # Add the process_animal method from BaseScraper
-            scraper.process_animal = BaseScraper.process_animal.__get__(scraper, PetsInTurkeyScraper)
+            scraper.process_animal = BaseScraper.process_animal.__get__(
+                scraper, PetsInTurkeyScraper
+            )
             # Now call __init__ with mocked attributes already set
             scraper.__init__(config_id="pets-in-turkey")
             return scraper
@@ -114,7 +118,10 @@ class TestPetsInTurkeyScraper:
 
         assert nico is not None, "Nico not found in results"
         # The breed standardization happens in process_animal, not in the scraper
-        assert nico["breed"] in ["Jack Russell", "Jack Russell Terrier"]  # Could be either
+        assert nico["breed"] in [
+            "Jack Russell",
+            "Jack Russell Terrier",
+        ]  # Could be either
         assert nico["sex"] == "Male"
         assert nico["properties"]["description"] == "Ready to fly on 12/09/2025"
         assert nico["properties"]["weight"] == "8 kg"
@@ -153,10 +160,16 @@ class TestPetsInTurkeyScraper:
         dog_data = scraper._extract_dog_data(section)
 
         assert dog_data["name"] == "Arthur"
-        assert dog_data["breed"] in ["Terrier mix", "Terrier Mix"]  # Capitalization may vary
+        assert dog_data["breed"] in [
+            "Terrier mix",
+            "Terrier Mix",
+        ]  # Capitalization may vary
         assert dog_data["sex"] == "Male"
         assert dog_data["size"] == "Medium"  # 15kg = Medium
-        assert dog_data["properties"]["description"] == "Currently in Germany (64686 Lantertal) in his foster home"
+        assert (
+            dog_data["properties"]["description"]
+            == "Currently in Germany (64686 Lantertal) in his foster home"
+        )
         assert dog_data["properties"]["neutered_spayed"] == "Yes"
         assert dog_data["properties"]["height"] == "height: 40cm"
 
@@ -181,7 +194,10 @@ class TestPetsInTurkeyScraper:
 
         # Test relative URL
         relative_url = "/images/dog.jpg"
-        assert scraper._clean_image_url(relative_url) == "https://www.petsinturkey.org/images/dog.jpg"
+        assert (
+            scraper._clean_image_url(relative_url)
+            == "https://www.petsinturkey.org/images/dog.jpg"
+        )
 
     def test_apply_standardization(self, scraper):
         """Test data standardization."""

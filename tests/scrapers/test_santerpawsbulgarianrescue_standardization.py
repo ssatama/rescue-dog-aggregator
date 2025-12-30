@@ -20,7 +20,9 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
+        self.scraper = SanterPawsBulgarianRescueScraper(
+            config_id="santerpawsbulgarianrescue"
+        )
 
     @patch("requests.get")
     def test_age_standardization_with_standardize_age(self, mock_get):
@@ -46,10 +48,18 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         mock_get.return_value = mock_response
 
         # Mock standardize_age to verify it's called with correct parameters
-        with patch("scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper.standardize_age") as mock_standardize:
-            mock_standardize.return_value = {"age_min_months": 21, "age_max_months": 21, "age_category": "Young Adult"}
+        with patch(
+            "scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper.standardize_age"
+        ) as mock_standardize:
+            mock_standardize.return_value = {
+                "age_min_months": 21,
+                "age_max_months": 21,
+                "age_category": "Young Adult",
+            }
 
-            result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+            result = self.scraper._scrape_animal_details(
+                "https://santerpawsbulgarianrescue.com/dog/test/"
+            )
 
             # Verify standardize_age was called with the raw age text
             mock_standardize.assert_called_once_with("20/04/2023")
@@ -85,7 +95,9 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         mock_get.return_value = mock_response
 
         # The breed normalization now happens via unified standardization in process_animal
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+        result = self.scraper._scrape_animal_details(
+            "https://santerpawsbulgarianrescue.com/dog/test/"
+        )
 
         # Verify breed is properly normalized (exact value may vary based on unified standardizer)
         self.assertIn("breed", result)
@@ -113,10 +125,14 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+        result = self.scraper._scrape_animal_details(
+            "https://santerpawsbulgarianrescue.com/dog/test/"
+        )
 
         # Verify description is extracted
-        expected_description = "This is a lovely dog looking for a home. She is friendly and loves walks."
+        expected_description = (
+            "This is a lovely dog looking for a home. She is friendly and loves walks."
+        )
         self.assertEqual(result["description"], expected_description)
 
         # Verify description is ALSO included in properties dictionary (Session 4 compliance)
@@ -144,7 +160,9 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+        result = self.scraper._scrape_animal_details(
+            "https://santerpawsbulgarianrescue.com/dog/test/"
+        )
 
         # Verify description is extracted from DIV tags
         expected_description = "This is a description in DIV tags instead of P tags. She needs a loving home with experienced owners."
@@ -176,7 +194,9 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+        result = self.scraper._scrape_animal_details(
+            "https://santerpawsbulgarianrescue.com/dog/test/"
+        )
 
         # Verify description combines both P and DIV content
         expected_description = "This paragraph is in P tags. This content is in DIV tags. Another paragraph in P tags."
@@ -201,15 +221,23 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+        result = self.scraper._scrape_animal_details(
+            "https://santerpawsbulgarianrescue.com/dog/test/"
+        )
 
         # Verify image_urls array is provided for R2 integration
         self.assertIn("image_urls", result)
         self.assertEqual(len(result["image_urls"]), 1)
-        self.assertEqual(result["image_urls"][0], "https://santerpawsbulgarianrescue.com/wp-content/uploads/2024/test-dog.jpg")
+        self.assertEqual(
+            result["image_urls"][0],
+            "https://santerpawsbulgarianrescue.com/wp-content/uploads/2024/test-dog.jpg",
+        )
 
         # Verify primary_image_url is also set
-        self.assertEqual(result["primary_image_url"], "https://santerpawsbulgarianrescue.com/wp-content/uploads/2024/test-dog.jpg")
+        self.assertEqual(
+            result["primary_image_url"],
+            "https://santerpawsbulgarianrescue.com/wp-content/uploads/2024/test-dog.jpg",
+        )
 
     @patch("requests.get")
     def test_image_urls_empty_array_when_no_image(self, mock_get):
@@ -231,7 +259,9 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+        result = self.scraper._scrape_animal_details(
+            "https://santerpawsbulgarianrescue.com/dog/test/"
+        )
 
         # Verify image_urls is empty array (not None)
         self.assertIn("image_urls", result)
@@ -258,12 +288,18 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+        result = self.scraper._scrape_animal_details(
+            "https://santerpawsbulgarianrescue.com/dog/test/"
+        )
 
         # Verify zero NULLs compliance - critical fields have sensible defaults
-        self.assertEqual(result["breed"], "Unknown")  # Default breed from unified standardizer
+        self.assertEqual(
+            result["breed"], "Unknown"
+        )  # Default breed from unified standardizer
         self.assertEqual(result["standardized_size"], "Medium")  # Default size
-        self.assertEqual(result["description"], "Basic description only.")  # Empty string when found
+        self.assertEqual(
+            result["description"], "Basic description only."
+        )  # Empty string when found
 
         # Some fields can be None when missing for test compatibility
         # When no age is provided, scraper doesn't set the field
@@ -292,13 +328,17 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         mock_get.return_value = mock_response
 
         # Test URL with hyphenated name
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/summer-breeze/")
+        result = self.scraper._scrape_animal_details(
+            "https://santerpawsbulgarianrescue.com/dog/summer-breeze/"
+        )
 
         # Verify dog name is properly capitalized from URL
         self.assertEqual(result["name"], "Summer Breeze")
 
         # Test single word name
-        result2 = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/pepper/")
+        result2 = self.scraper._scrape_animal_details(
+            "https://santerpawsbulgarianrescue.com/dog/pepper/"
+        )
         self.assertEqual(result2["name"], "Pepper")
 
     def test_clean_dog_name_handles_various_formats(self):
@@ -316,13 +356,28 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
     def test_extract_dog_name_from_url_formats(self):
         """Test URL name extraction handles various URL formats."""
         # Test hyphenated names
-        self.assertEqual(self.scraper._extract_dog_name_from_url("https://santerpawsbulgarianrescue.com/dog/summer-breeze/"), "Summer Breeze")
+        self.assertEqual(
+            self.scraper._extract_dog_name_from_url(
+                "https://santerpawsbulgarianrescue.com/dog/summer-breeze/"
+            ),
+            "Summer Breeze",
+        )
 
         # Test single word names
-        self.assertEqual(self.scraper._extract_dog_name_from_url("https://santerpawsbulgarianrescue.com/dog/pepper/"), "Pepper")
+        self.assertEqual(
+            self.scraper._extract_dog_name_from_url(
+                "https://santerpawsbulgarianrescue.com/dog/pepper/"
+            ),
+            "Pepper",
+        )
 
         # Test multiple hyphens
-        self.assertEqual(self.scraper._extract_dog_name_from_url("https://santerpawsbulgarianrescue.com/dog/mary-jane-watson/"), "Mary Jane Watson")
+        self.assertEqual(
+            self.scraper._extract_dog_name_from_url(
+                "https://santerpawsbulgarianrescue.com/dog/mary-jane-watson/"
+            ),
+            "Mary Jane Watson",
+        )
 
     @patch("requests.get")
     def test_information_section_handles_missing_field_values(self, mock_get):
@@ -354,7 +409,9 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+        result = self.scraper._scrape_animal_details(
+            "https://santerpawsbulgarianrescue.com/dog/test/"
+        )
 
         # Verify fields with values are extracted correctly
         self.assertEqual(result["standardized_size"], "Small")
@@ -362,7 +419,9 @@ class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
         self.assertEqual(result["status"], "available")
 
         # Verify missing Breed field gets default value
-        self.assertEqual(result["breed"], "Mixed Breed")  # Default when no breed value provided
+        self.assertEqual(
+            result["breed"], "Mixed Breed"
+        )  # Default when no breed value provided
 
         # Verify properties include the extracted fields
         self.assertIn("properties", result)

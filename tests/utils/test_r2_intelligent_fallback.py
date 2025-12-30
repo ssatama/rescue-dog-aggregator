@@ -37,7 +37,9 @@ class TestR2IntelligentFallback(unittest.TestCase):
         self.assertTrue(R2Service.is_circuit_breaker_open())
 
         # Uploads should be skipped
-        url, success = R2Service.upload_image_with_circuit_breaker("http://test.com/image.jpg", "test_dog", "test_org")
+        url, success = R2Service.upload_image_with_circuit_breaker(
+            "http://test.com/image.jpg", "test_dog", "test_org"
+        )
 
         # Should return original URL with failure
         self.assertEqual(url, "http://test.com/image.jpg")
@@ -105,7 +107,12 @@ class TestR2IntelligentFallback(unittest.TestCase):
         with patch.object(R2Service, "upload_image_from_url") as mock_upload:
             mock_upload.return_value = ("https://r2.com/image.jpg", True)
 
-            url, success = R2Service.upload_image_with_fallback("http://test.com/image.jpg", "test_dog", "test_org", failure_threshold=70.0)
+            url, success = R2Service.upload_image_with_fallback(
+                "http://test.com/image.jpg",
+                "test_dog",
+                "test_org",
+                failure_threshold=70.0,
+            )
 
             # Should not attempt upload due to high failure rate
             mock_upload.assert_not_called()
@@ -181,8 +188,12 @@ class TestR2IntelligentFallback(unittest.TestCase):
 
             # Simulate rate limit errors
             error_response = {"Error": {"Code": "SlowDown", "Message": "Rate limited"}}
-            mock_s3_client.head_object.side_effect = ClientError(error_response, "HeadObject")
-            mock_s3_client.upload_fileobj.side_effect = ClientError(error_response, "PutObject")
+            mock_s3_client.head_object.side_effect = ClientError(
+                error_response, "HeadObject"
+            )
+            mock_s3_client.upload_fileobj.side_effect = ClientError(
+                error_response, "PutObject"
+            )
 
             with patch("requests.get") as mock_get:
                 mock_response = MagicMock()
@@ -195,7 +206,9 @@ class TestR2IntelligentFallback(unittest.TestCase):
                 # Try multiple uploads - should start failing fast
                 results = []
                 for i in range(10):
-                    url, success = R2Service.upload_image_with_fallback(f"http://test.com/dog{i}.jpg", f"Dog {i}", "test_org")
+                    url, success = R2Service.upload_image_with_fallback(
+                        f"http://test.com/dog{i}.jpg", f"Dog {i}", "test_org"
+                    )
                     results.append((url, success))
 
                 # Early uploads might try, later ones should skip
@@ -242,7 +255,9 @@ class TestR2FailureRecovery(unittest.TestCase):
                 mock_upload.return_value = ("https://r2.com/image.jpg", True)
 
                 # First attempt should be allowed (testing)
-                url, success = R2Service.upload_image_with_circuit_breaker("http://test.com/image.jpg", "test_dog", "test_org")
+                url, success = R2Service.upload_image_with_circuit_breaker(
+                    "http://test.com/image.jpg", "test_dog", "test_org"
+                )
 
                 # Should succeed since circuit breaker is closed
                 self.assertTrue(success)
@@ -279,7 +294,9 @@ class TestR2FailureRecovery(unittest.TestCase):
         for i, base_delay in enumerate(base_delays):
             # Allow for jitter (50% to 150% of base delay)
             self.assertGreaterEqual(retry_delays[i], base_delay * 0.5)
-            self.assertLessEqual(retry_delays[i], min(base_delay * 1.5, 16 * 1.5))  # Cap at max
+            self.assertLessEqual(
+                retry_delays[i], min(base_delay * 1.5, 16 * 1.5)
+            )  # Cap at max
 
         # Overall trend should be increasing (compare first and last)
         self.assertGreater(retry_delays[-1], retry_delays[0])

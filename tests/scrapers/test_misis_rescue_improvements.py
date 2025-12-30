@@ -7,20 +7,21 @@ Focus on fixing:
 4. Name normalization with special characters
 """
 
-from datetime import datetime
-from unittest.mock import patch
-
 import pytest
 
 from scrapers.misis_rescue.normalizer import (
     calculate_age_years,
 )
-from scrapers.misis_rescue.normalizer import extract_age_from_text_legacy as extract_age_from_text
+from scrapers.misis_rescue.normalizer import (
+    extract_age_from_text_legacy as extract_age_from_text,
+)
 from scrapers.misis_rescue.normalizer import (
     extract_birth_date,
     extract_breed,
 )
-from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy as extract_weight_kg
+from scrapers.misis_rescue.normalizer import (
+    extract_weight_kg_legacy as extract_weight_kg,
+)
 from scrapers.misis_rescue.normalizer import (
     normalize_name,
     normalize_size,

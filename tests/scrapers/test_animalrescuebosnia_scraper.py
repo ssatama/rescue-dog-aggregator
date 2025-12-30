@@ -4,7 +4,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueBosniaScraper
+from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import (
+    AnimalRescueBosniaScraper,
+)
 from tests.scrapers.test_scraper_base import ScraperTestBase
 
 
@@ -61,7 +63,9 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/findus/")
+        result = scraper.scrape_animal_details(
+            "https://www.animal-rescue-bosnia.org/findus/"
+        )
 
         # Should return None for dogs in Germany
         assert result is None
@@ -84,7 +88,9 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/ksenon/")
+        result = scraper.scrape_animal_details(
+            "https://www.animal-rescue-bosnia.org/ksenon/"
+        )
 
         # Check core fields unique to this scraper
         assert result["name"] == "Ksenon"
@@ -108,7 +114,9 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/ksenon/")
+        result = scraper.scrape_animal_details(
+            "https://www.animal-rescue-bosnia.org/ksenon/"
+        )
 
         assert result["external_id"] == "arb-ksenon-dog"
 

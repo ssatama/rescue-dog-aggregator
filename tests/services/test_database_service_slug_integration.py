@@ -25,19 +25,29 @@ class TestDatabaseServiceSlugIntegration:
         mock_cursor.fetchone.return_value = (123,)
         mock_conn.cursor.return_value = mock_cursor
 
-        db_service = DatabaseService({"host": "test", "user": "test", "database": "test"})
+        db_service = DatabaseService(
+            {"host": "test", "user": "test", "database": "test"}
+        )
 
-        animal_data = {"name": "Fluffy", "organization_id": 1, "external_id": "test-123"}
+        animal_data = {
+            "name": "Fluffy",
+            "organization_id": 1,
+            "external_id": "test-123",
+        }
 
         # Mock standardize_breed to return known defaults
         with patch("services.database_service.standardize_breed") as mock_standardize:
             mock_standardize.return_value = ("Unknown", "Unknown", None)
 
-            with patch("services.database_service.generate_unique_animal_slug") as mock_slug_gen:
+            with patch(
+                "services.database_service.generate_unique_animal_slug"
+            ) as mock_slug_gen:
                 # Return different values for temp vs final slug
                 mock_slug_gen.side_effect = ["fluffy", "fluffy-123"]
 
-                animal_id, action = db_service._create_animal_with_connection(mock_conn, animal_data)
+                animal_id, action = db_service._create_animal_with_connection(
+                    mock_conn, animal_data
+                )
 
                 # Verify two-phase slug generation: temp slug (no ID) then final slug (with ID)
                 assert mock_slug_gen.call_count == 2
@@ -59,7 +69,9 @@ class TestDatabaseServiceSlugIntegration:
                 assert final_call[1]["connection"] == mock_conn
 
                 # Verify INSERT was called with temp slug and UPDATE with final slug
-                assert mock_cursor.execute.call_count == 2  # INSERT + UPDATE (slug gen is mocked)
+                assert (
+                    mock_cursor.execute.call_count == 2
+                )  # INSERT + UPDATE (slug gen is mocked)
 
                 # Check INSERT uses temp slug
                 insert_call = mock_cursor.execute.call_args_list[0]
@@ -80,18 +92,32 @@ class TestDatabaseServiceSlugIntegration:
         mock_cursor.fetchone.return_value = (123,)
         mock_conn.cursor.return_value = mock_cursor
 
-        db_service = DatabaseService({"host": "test", "user": "test", "database": "test"})
+        db_service = DatabaseService(
+            {"host": "test", "user": "test", "database": "test"}
+        )
 
-        animal_data = {"name": "Max", "breed": "German Shepherd", "organization_id": 1, "external_id": "test-456"}
+        animal_data = {
+            "name": "Max",
+            "breed": "German Shepherd",
+            "organization_id": 1,
+            "external_id": "test-456",
+        }
 
         # Mock standardize_breed to return specific standardized breed
         with patch("services.database_service.standardize_breed") as mock_standardize:
             mock_standardize.return_value = ("German Shepherd Dog", "Herding", "Large")
 
-            with patch("services.database_service.generate_unique_animal_slug") as mock_slug_gen:
-                mock_slug_gen.side_effect = ["max-german-shepherd-dog", "max-german-shepherd-dog-123"]
+            with patch(
+                "services.database_service.generate_unique_animal_slug"
+            ) as mock_slug_gen:
+                mock_slug_gen.side_effect = [
+                    "max-german-shepherd-dog",
+                    "max-german-shepherd-dog-123",
+                ]
 
-                animal_id, action = db_service._create_animal_with_connection(mock_conn, animal_data)
+                animal_id, action = db_service._create_animal_with_connection(
+                    mock_conn, animal_data
+                )
 
                 # Verify two-phase slug generation
                 assert mock_slug_gen.call_count == 2
@@ -120,18 +146,32 @@ class TestDatabaseServiceSlugIntegration:
         mock_cursor.fetchone.return_value = (123,)
         mock_conn.cursor.return_value = mock_cursor
 
-        db_service = DatabaseService({"host": "test", "user": "test", "database": "test"})
+        db_service = DatabaseService(
+            {"host": "test", "user": "test", "database": "test"}
+        )
 
         # Mock standardize_breed to return standardized info
         with patch("services.database_service.standardize_breed") as mock_standardize:
             mock_standardize.return_value = ("Labrador Retriever", "Sporting", "Large")
 
-            animal_data = {"name": "Bella", "breed": "Lab Mix", "organization_id": 1, "external_id": "test-789"}
+            animal_data = {
+                "name": "Bella",
+                "breed": "Lab Mix",
+                "organization_id": 1,
+                "external_id": "test-789",
+            }
 
-            with patch("services.database_service.generate_unique_animal_slug") as mock_slug_gen:
-                mock_slug_gen.side_effect = ["bella-labrador-retriever", "bella-labrador-retriever-123"]
+            with patch(
+                "services.database_service.generate_unique_animal_slug"
+            ) as mock_slug_gen:
+                mock_slug_gen.side_effect = [
+                    "bella-labrador-retriever",
+                    "bella-labrador-retriever-123",
+                ]
 
-                animal_id, action = db_service._create_animal_with_connection(mock_conn, animal_data)
+                animal_id, action = db_service._create_animal_with_connection(
+                    mock_conn, animal_data
+                )
 
                 # Verify two-phase slug generation uses standardized breed
                 assert mock_slug_gen.call_count == 2
@@ -154,16 +194,26 @@ class TestDatabaseServiceSlugIntegration:
         mock_cursor.fetchone.return_value = [123]
         mock_conn.cursor.return_value = mock_cursor
 
-        db_service = DatabaseService({"host": "test", "user": "test", "database": "test"})
+        db_service = DatabaseService(
+            {"host": "test", "user": "test", "database": "test"}
+        )
 
-        animal_data = {"name": "Charlie", "organization_id": 1, "external_id": "test-999"}
+        animal_data = {
+            "name": "Charlie",
+            "organization_id": 1,
+            "external_id": "test-999",
+        }
 
-        with patch("services.database_service.generate_unique_animal_slug") as mock_slug_gen:
+        with patch(
+            "services.database_service.generate_unique_animal_slug"
+        ) as mock_slug_gen:
             # Simulate temp and final slug generation failure
             mock_slug_gen.side_effect = Exception("Database connection failed")
 
             # Should use fallback slug and still create animal
-            animal_id, action = db_service._create_animal_with_connection(mock_conn, animal_data)
+            animal_id, action = db_service._create_animal_with_connection(
+                mock_conn, animal_data
+            )
 
             # Verify animal was created with fallback slug
             assert animal_id == 123
@@ -190,16 +240,29 @@ class TestDatabaseServiceSlugIntegration:
         mock_pool.get_connection_context.return_value.__enter__.return_value = mock_conn
         mock_pool.get_connection_context.return_value.__exit__.return_value = None
 
-        db_service = DatabaseService({"host": "test", "user": "test", "database": "test"}, connection_pool=mock_pool)
+        db_service = DatabaseService(
+            {"host": "test", "user": "test", "database": "test"},
+            connection_pool=mock_pool,
+        )
 
-        animal_data = {"name": "Luna", "breed": "Golden Retriever", "organization_id": 1, "external_id": "test-pool-123"}
+        animal_data = {
+            "name": "Luna",
+            "breed": "Golden Retriever",
+            "organization_id": 1,
+            "external_id": "test-pool-123",
+        }
 
         # Mock standardize_breed for connection pool test
         with patch("services.database_service.standardize_breed") as mock_standardize:
             mock_standardize.return_value = ("Golden Retriever", "Sporting", "Large")
 
-            with patch("services.database_service.generate_unique_animal_slug") as mock_slug_gen:
-                mock_slug_gen.side_effect = ["luna-golden-retriever", "luna-golden-retriever-123"]
+            with patch(
+                "services.database_service.generate_unique_animal_slug"
+            ) as mock_slug_gen:
+                mock_slug_gen.side_effect = [
+                    "luna-golden-retriever",
+                    "luna-golden-retriever-123",
+                ]
 
                 animal_id, action = db_service.create_animal(animal_data)
 
@@ -250,14 +313,25 @@ class TestDatabaseServiceSlugIntegration:
         ]
         mock_conn.cursor.return_value = mock_cursor
 
-        db_service = DatabaseService({"host": "test", "user": "test", "database": "test"})
+        db_service = DatabaseService(
+            {"host": "test", "user": "test", "database": "test"}
+        )
         db_service.conn = mock_conn
 
-        animal_data = {"name": "New Name", "breed": "New Breed", "organization_id": 1, "external_id": "test-update-123"}
+        animal_data = {
+            "name": "New Name",
+            "breed": "New Breed",
+            "organization_id": 1,
+            "external_id": "test-update-123",
+        }
 
         # Mock standardize_breed for update
         with patch("services.database_service.standardize_breed") as mock_standardize:
-            mock_standardize.return_value = ("New Standardized Breed", "Working", "Large")
+            mock_standardize.return_value = (
+                "New Standardized Breed",
+                "Working",
+                "Large",
+            )
 
             with patch("services.database_service.parse_age_text") as mock_parse_age:
                 # Create a mock object with min_months and max_months attributes
@@ -269,7 +343,11 @@ class TestDatabaseServiceSlugIntegration:
                 animal_id, action = db_service.update_animal(123, animal_data)
 
                 # Verify UPDATE query was called
-                update_calls = [call for call in mock_cursor.execute.call_args_list if call[0][0].strip().upper().startswith("UPDATE")]
+                update_calls = [
+                    call
+                    for call in mock_cursor.execute.call_args_list
+                    if call[0][0].strip().upper().startswith("UPDATE")
+                ]
 
                 assert len(update_calls) > 0
                 update_sql = update_calls[0][0][0]
@@ -278,7 +356,11 @@ class TestDatabaseServiceSlugIntegration:
                 # Note: breed_slug is OK to update, we're checking the main slug field isn't modified
                 # Split by commas and check that 'slug =' is not present (but 'breed_slug =' is OK)
                 update_fields = update_sql.lower().split(",")
-                slug_updates = [field for field in update_fields if "slug =" in field and "breed_slug =" not in field]
+                slug_updates = [
+                    field
+                    for field in update_fields
+                    if "slug =" in field and "breed_slug =" not in field
+                ]
                 assert len(slug_updates) == 0, "Main slug field should not be updated"
 
     def test_create_animal_slug_with_empty_name_fallback(self):
@@ -289,18 +371,32 @@ class TestDatabaseServiceSlugIntegration:
         mock_cursor.fetchone.return_value = (123,)
         mock_conn.cursor.return_value = mock_cursor
 
-        db_service = DatabaseService({"host": "test", "user": "test", "database": "test"})
+        db_service = DatabaseService(
+            {"host": "test", "user": "test", "database": "test"}
+        )
 
-        animal_data = {"name": "", "breed": "Mixed Breed", "organization_id": 1, "external_id": "test-empty-name"}  # Empty name
+        animal_data = {
+            "name": "",
+            "breed": "Mixed Breed",
+            "organization_id": 1,
+            "external_id": "test-empty-name",
+        }  # Empty name
 
         # Mock standardize_breed for empty name test
         with patch("services.database_service.standardize_breed") as mock_standardize:
             mock_standardize.return_value = ("Mixed Breed", "Unknown", None)
 
-            with patch("services.database_service.generate_unique_animal_slug") as mock_slug_gen:
-                mock_slug_gen.side_effect = ["animal-mixed-breed", "animal-mixed-breed-123"]
+            with patch(
+                "services.database_service.generate_unique_animal_slug"
+            ) as mock_slug_gen:
+                mock_slug_gen.side_effect = [
+                    "animal-mixed-breed",
+                    "animal-mixed-breed-123",
+                ]
 
-                animal_id, action = db_service._create_animal_with_connection(mock_conn, animal_data)
+                animal_id, action = db_service._create_animal_with_connection(
+                    mock_conn, animal_data
+                )
 
                 # Verify two-phase slug generation with empty name
                 assert mock_slug_gen.call_count == 2

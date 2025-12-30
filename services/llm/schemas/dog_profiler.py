@@ -27,50 +27,103 @@ class DogProfilerData(BaseModel):
     """
 
     # ===== CORE DESCRIPTION =====
-    description: str = Field(..., min_length=150, max_length=500, description="Engaging English description of the dog")
-    tagline: str = Field(..., max_length=150, description="Catchy hook for the dog's profile")
+    description: str = Field(
+        ...,
+        min_length=150,
+        max_length=500,
+        description="Engaging English description of the dog",
+    )
+    tagline: str = Field(
+        ..., max_length=150, description="Catchy hook for the dog's profile"
+    )
 
     # ===== BEHAVIORAL TRAITS =====
-    energy_level: Literal["low", "medium", "high", "very_high"] = Field(..., description="Dog's typical energy level")
-    trainability: Literal["easy", "moderate", "challenging", "very_challenging"] = Field(..., description="How easily the dog can be trained")
-    sociability: Literal["very_social", "social", "selective", "independent", "needs_work"] = Field(..., description="Dog's social tendencies")
-    confidence: Literal["very_confident", "confident", "moderate", "shy", "very_shy"] = Field(..., description="Dog's confidence level")
+    energy_level: Literal["low", "medium", "high", "very_high"] = Field(
+        ..., description="Dog's typical energy level"
+    )
+    trainability: Literal["easy", "moderate", "challenging", "very_challenging"] = (
+        Field(..., description="How easily the dog can be trained")
+    )
+    sociability: Literal[
+        "very_social", "social", "selective", "independent", "needs_work"
+    ] = Field(..., description="Dog's social tendencies")
+    confidence: Literal[
+        "very_confident", "confident", "moderate", "shy", "very_shy"
+    ] = Field(..., description="Dog's confidence level")
 
     # ===== COMPATIBILITY =====
-    good_with_dogs: Optional[Literal["yes", "no", "selective", "unknown"]] = Field(None, description="Compatibility with other dogs")
-    good_with_cats: Optional[Literal["yes", "no", "with_training", "unknown"]] = Field(None, description="Compatibility with cats")
-    good_with_children: Optional[Literal["yes", "older_children", "no", "unknown"]] = Field(None, description="Compatibility with children")
+    good_with_dogs: Optional[Literal["yes", "no", "selective", "unknown"]] = Field(
+        None, description="Compatibility with other dogs"
+    )
+    good_with_cats: Optional[Literal["yes", "no", "with_training", "unknown"]] = Field(
+        None, description="Compatibility with cats"
+    )
+    good_with_children: Optional[Literal["yes", "older_children", "no", "unknown"]] = (
+        Field(None, description="Compatibility with children")
+    )
 
     # ===== LIVING REQUIREMENTS =====
-    home_type: Literal["apartment_ok", "house_preferred", "house_required", "farm_only"] = Field(..., description="Suitable home environment")
+    home_type: Literal[
+        "apartment_ok", "house_preferred", "house_required", "farm_only"
+    ] = Field(..., description="Suitable home environment")
     yard_required: bool = Field(..., description="Whether a yard is necessary")
-    experience_level: Literal["first_time_ok", "some_experience", "experienced_only"] = Field(..., description="Required owner experience level")
-    exercise_needs: Literal["minimal", "moderate", "high", "very_high"] = Field(..., description="Daily exercise requirements")
+    experience_level: Literal[
+        "first_time_ok", "some_experience", "experienced_only"
+    ] = Field(..., description="Required owner experience level")
+    exercise_needs: Literal["minimal", "moderate", "high", "very_high"] = Field(
+        ..., description="Daily exercise requirements"
+    )
 
     # ===== CARE NEEDS =====
-    grooming_needs: Literal["minimal", "weekly", "frequent", "professional"] = Field(..., description="Grooming requirements")
-    medical_needs: Optional[str] = Field(None, max_length=250, description="Any ongoing medical conditions or needs")
-    special_needs: Optional[str] = Field(None, max_length=250, description="Any special requirements or considerations")
+    grooming_needs: Literal["minimal", "weekly", "frequent", "professional"] = Field(
+        ..., description="Grooming requirements"
+    )
+    medical_needs: Optional[str] = Field(
+        None, max_length=250, description="Any ongoing medical conditions or needs"
+    )
+    special_needs: Optional[str] = Field(
+        None, max_length=250, description="Any special requirements or considerations"
+    )
 
     # ===== PERSONALITY =====
-    personality_traits: List[str] = Field(..., min_items=3, max_items=5, description="Key personality characteristics")
-    favorite_activities: List[str] = Field(..., min_items=2, max_items=4, description="Things the dog enjoys doing")
-    unique_quirk: Optional[str] = Field(None, max_length=200, description="A unique or endearing trait")
+    personality_traits: List[str] = Field(
+        ..., min_items=3, max_items=5, description="Key personality characteristics"
+    )
+    favorite_activities: List[str] = Field(
+        ..., min_items=2, max_items=4, description="Things the dog enjoys doing"
+    )
+    unique_quirk: Optional[str] = Field(
+        None, max_length=200, description="A unique or endearing trait"
+    )
 
     # ===== ADOPTION INFO =====
-    adoption_fee_euros: Optional[int] = Field(None, ge=0, le=2000, description="Adoption fee in euros")
-    ready_to_travel: bool = Field(..., description="Whether dog can be transported internationally")
+    adoption_fee_euros: Optional[int] = Field(
+        None, ge=0, le=2000, description="Adoption fee in euros"
+    )
+    ready_to_travel: bool = Field(
+        ..., description="Whether dog can be transported internationally"
+    )
     vaccinated: bool = Field(..., description="Current vaccination status")
     neutered: bool = Field(..., description="Spay/neuter status")
 
     # ===== METADATA (Critical for transparency) =====
-    profiler_version: str = Field(default="1.0.0", description="Version of the profiler system")
-    profiled_at: datetime = Field(default_factory=datetime.utcnow, description="When the profile was generated")
+    profiler_version: str = Field(
+        default="1.0.0", description="Version of the profiler system"
+    )
+    profiled_at: datetime = Field(
+        default_factory=datetime.utcnow, description="When the profile was generated"
+    )
     processing_time_ms: int = Field(..., description="Time taken to generate profile")
-    confidence_scores: Dict[str, float] = Field(..., description="Field-level confidence scores (0.0-1.0)")
-    source_references: Dict[str, str] = Field(..., description="Which German text mapped to which field")
+    confidence_scores: Dict[str, float] = Field(
+        ..., description="Field-level confidence scores (0.0-1.0)"
+    )
+    source_references: Dict[str, str] = Field(
+        ..., description="Which German text mapped to which field"
+    )
     prompt_version: str = Field(..., description="Version of the prompt used")
-    model_used: Optional[str] = Field(None, description="Which LLM model was selected by Auto Router")
+    model_used: Optional[str] = Field(
+        None, description="Which LLM model was selected by Auto Router"
+    )
 
     # ===== VALIDATORS =====
 
@@ -90,7 +143,9 @@ class DogProfilerData(BaseModel):
             raise ValueError("Description is required")
 
         # Check for placeholder text
-        if any(placeholder in v.lower() for placeholder in ["lorem ipsum", "todo", "tbd"]):
+        if any(
+            placeholder in v.lower() for placeholder in ["lorem ipsum", "todo", "tbd"]
+        ):
             raise ValueError("Description contains placeholder text")
 
         # Check for minimum word count (roughly 25-60 words for 150-400 chars)
@@ -115,7 +170,9 @@ class DogProfilerData(BaseModel):
         required_fields = ["description", "energy_level", "trainability"]
         for field in required_fields:
             if field not in v:
-                raise ValueError(f"Missing confidence score for required field: {field}")
+                raise ValueError(
+                    f"Missing confidence score for required field: {field}"
+                )
 
         return v
 

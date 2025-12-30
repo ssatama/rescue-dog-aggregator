@@ -17,7 +17,7 @@ import logging
 # Add the project root to the path so we can import from utils
 import os
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -100,11 +100,15 @@ def get_unknown_purebreds(cursor, limit: int = None) -> List[Dict]:
     return cursor.fetchall()
 
 
-def repair_animal_classification(animal: Dict, standardizer: UnifiedStandardizer) -> Dict:
+def repair_animal_classification(
+    animal: Dict, standardizer: UnifiedStandardizer
+) -> Dict:
     """Apply correct standardization to a misclassified animal record."""
 
     # Apply the now-fixed unified standardization
-    result = standardizer.apply_full_standardization(breed=animal["breed"], age=animal["age_text"], size=animal["standardized_size"])
+    result = standardizer.apply_full_standardization(
+        breed=animal["breed"], age=animal["age_text"], size=animal["standardized_size"]
+    )
 
     return {
         "id": animal["id"],
@@ -130,16 +134,41 @@ def update_animal_classification(cursor, repair_data: Dict) -> None:
     WHERE id = %s
     """
 
-    cursor.execute(update_query, (repair_data["new_breed_type"], repair_data["new_primary_breed"], repair_data["new_secondary_breed"], repair_data["new_confidence"], repair_data["id"]))
+    cursor.execute(
+        update_query,
+        (
+            repair_data["new_breed_type"],
+            repair_data["new_primary_breed"],
+            repair_data["new_secondary_breed"],
+            repair_data["new_confidence"],
+            repair_data["id"],
+        ),
+    )
 
 
 def main():
     """Main repair function."""
-    parser = argparse.ArgumentParser(description="Repair misclassified crossbreed records")
-    parser.add_argument("--limit", type=int, help="Limit number of records to repair (for testing)")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be changed without making changes")
-    parser.add_argument("--allow-prod", action="store_true", help="Allow running against production database")
-    parser.add_argument("--crossbreeds-only", action="store_true", help="Only repair crossbreeds, skip potential purebreds")
+    parser = argparse.ArgumentParser(
+        description="Repair misclassified crossbreed records"
+    )
+    parser.add_argument(
+        "--limit", type=int, help="Limit number of records to repair (for testing)"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be changed without making changes",
+    )
+    parser.add_argument(
+        "--allow-prod",
+        action="store_true",
+        help="Allow running against production database",
+    )
+    parser.add_argument(
+        "--crossbreeds-only",
+        action="store_true",
+        help="Only repair crossbreeds, skip potential purebreds",
+    )
 
     args = parser.parse_args()
     logger = setup_logging()
@@ -147,7 +176,9 @@ def main():
     # Safety check for production
     db_config = DB_CONFIG
     if db_config["database"] == "rescue_dogs" and not args.allow_prod:
-        logger.error("SAFETY: Refusing to run against production database without --allow-prod")
+        logger.error(
+            "SAFETY: Refusing to run against production database without --allow-prod"
+        )
         return 1
 
     logger.info(f"Connecting to database: {db_config['database']}")
@@ -162,7 +193,9 @@ def main():
 
         # Get misclassified crossbreeds
         logger.info("Finding misclassified crossbreeds...")
-        misclassified_crossbreeds = get_misclassified_crossbreeds(cursor, limit=args.limit)
+        misclassified_crossbreeds = get_misclassified_crossbreeds(
+            cursor, limit=args.limit
+        )
         logger.info(f"Found {len(misclassified_crossbreeds)} misclassified crossbreeds")
 
         # Get potential misclassified purebreds (unless crossbreeds-only)
@@ -170,7 +203,9 @@ def main():
         if not args.crossbreeds_only:
             logger.info("Finding potential misclassified purebreds...")
             potential_purebreds = get_unknown_purebreds(cursor, limit=args.limit)
-            logger.info(f"Found {len(potential_purebreds)} potential misclassified purebreds")
+            logger.info(
+                f"Found {len(potential_purebreds)} potential misclassified purebreds"
+            )
 
         all_animals = misclassified_crossbreeds + potential_purebreds
 
@@ -188,7 +223,7 @@ def main():
                 repairs.append(repair_data)
 
         # Show repair summary
-        logger.info(f"\nRepair Summary:")
+        logger.info("\nRepair Summary:")
         logger.info("=" * 80)
 
         changes_by_type = {}
@@ -208,7 +243,9 @@ def main():
             total_changes += len(breeds)
 
         if total_changes == 0:
-            logger.info("No classification changes needed. All records are correctly classified.")
+            logger.info(
+                "No classification changes needed. All records are correctly classified."
+            )
             return 0
 
         if args.dry_run:

@@ -65,7 +65,10 @@ class TestAgeExtraction:
     def test_extract_age_veterinary_estimates(self):
         """Test veterinary age estimates from misis_rescue patterns."""
         assert extract_age_from_text("vet estimated her 4 y old") == 4.0
-        assert extract_age_from_text("veterinary assessment approximately 2.5 years") == 2.5
+        assert (
+            extract_age_from_text("veterinary assessment approximately 2.5 years")
+            == 2.5
+        )
         assert extract_age_from_text("roughly 3 y old") == 3.0
 
     def test_extract_age_complex_patterns(self):
@@ -75,7 +78,9 @@ class TestAgeExtraction:
         assert extract_age_from_text("Adolescent (around eighteen months)") == 1.5
 
         # REAN patterns
-        assert extract_age_from_text("around 5 months old") == pytest.approx(0.42, abs=0.1)
+        assert extract_age_from_text("around 5 months old") == pytest.approx(
+            0.42, abs=0.1
+        )
 
     def test_extract_age_none_cases(self):
         """Test cases that should return None."""
@@ -92,19 +97,28 @@ class TestBreedExtraction:
         """Test mixed breed identification."""
         assert extract_breed_from_text("She's a mixed breed") == "Mixed Breed"
         assert extract_breed_from_text("crossbreed dog") == "Mixed Breed"
-        assert extract_breed_from_text("cross breed with unknown heritage") == "Mixed Breed"
+        assert (
+            extract_breed_from_text("cross breed with unknown heritage")
+            == "Mixed Breed"
+        )
 
     def test_extract_breed_specific_mixes(self):
         """Test specific breed mix extraction."""
-        assert extract_breed_from_text("labrador mix from the shelter") == "Labrador Mix"
+        assert (
+            extract_breed_from_text("labrador mix from the shelter") == "Labrador Mix"
+        )
         assert extract_breed_from_text("german shepherd cross") == "German Shepherd Mix"
         assert extract_breed_from_text("golden retriever mix") == "Golden Retriever Mix"
         assert extract_breed_from_text("terrier mix") == "Terrier Mix"
 
     def test_extract_breed_pure_breeds(self):
         """Test pure breed extraction."""
-        assert extract_breed_from_text("Beautiful golden retriever") == "Golden Retriever"
-        assert extract_breed_from_text("German shepherd from Germany") == "German Shepherd"
+        assert (
+            extract_breed_from_text("Beautiful golden retriever") == "Golden Retriever"
+        )
+        assert (
+            extract_breed_from_text("German shepherd from Germany") == "German Shepherd"
+        )
         assert extract_breed_from_text("Siberian husky") == "Siberian Husky"
 
     def test_extract_breed_pattern_matching(self):
@@ -204,7 +218,9 @@ class TestWeightExtraction:
         """Test weight patterns from actual scraper data."""
         # TheUnderdog patterns
         assert extract_weight_from_text("Big dog (25-30 kilos)") == 27.5
-        assert extract_weight_from_text("Smaller side of medium") is None  # No weight info
+        assert (
+            extract_weight_from_text("Smaller side of medium") is None
+        )  # No weight info
 
         # MisisRescue patterns
         assert extract_weight_from_text("✔️weighs around 22-25kg") == 23.5
@@ -267,5 +283,7 @@ class TestIntegrationWithScrapers:
     def test_rean_compatibility(self):
         """Test compatibility with rean scraper patterns."""
         # Test patterns from rean scraper
-        assert extract_age_from_text("around 5 months old") == pytest.approx(0.42, abs=0.1)
+        assert extract_age_from_text("around 5 months old") == pytest.approx(
+            0.42, abs=0.1
+        )
         assert extract_weight_from_text("15 kg") == 15.0

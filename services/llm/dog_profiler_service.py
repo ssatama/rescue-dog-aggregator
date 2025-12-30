@@ -66,7 +66,13 @@ class DogProfilerService:
     """Service layer for dog profiling."""
 
     def __init__(
-        self, pool: AsyncDatabasePool, llm_client: Any, normalizer: Optional[ProfileNormalizer] = None, config_loader: Optional[Any] = None, max_concurrent: int = 5, enable_retry: bool = False
+        self,
+        pool: AsyncDatabasePool,
+        llm_client: Any,
+        normalizer: Optional[ProfileNormalizer] = None,
+        config_loader: Optional[Any] = None,
+        max_concurrent: int = 5,
+        enable_retry: bool = False,
     ):
         """
         Initialize the profiler service.
@@ -102,12 +108,20 @@ class DogProfilerService:
             # Load organization config
             config = self.config_loader.load_config(request.organization_id)
             if not config:
-                return ProfileResult(dog_id=request.dog_id, success=False, error=f"No configuration for organization {request.organization_id}")
+                return ProfileResult(
+                    dog_id=request.dog_id,
+                    success=False,
+                    error=f"No configuration for organization {request.organization_id}",
+                )
 
             # Load prompt template
             template = self.config_loader.load_prompt_template(config.prompt_file)
             if not template:
-                return ProfileResult(dog_id=request.dog_id, success=False, error=f"No prompt template found: {config.prompt_file}")
+                return ProfileResult(
+                    dog_id=request.dog_id,
+                    success=False,
+                    error=f"No prompt template found: {config.prompt_file}",
+                )
 
             # Generate profile with retry
             profile = None
@@ -117,10 +131,16 @@ class DogProfilerService:
             for attempt in range(max_attempts):
                 try:
                     # Format prompt
-                    user_prompt = template.user_prompt.format(dog_data=json.dumps(request.dog_data))
+                    user_prompt = template.user_prompt.format(
+                        dog_data=json.dumps(request.dog_data)
+                    )
 
                     # Generate with LLM
-                    profile = await self.llm_client.generate(system_prompt=template.system_prompt, user_prompt=user_prompt, model=config.model_preference)
+                    profile = await self.llm_client.generate(
+                        system_prompt=template.system_prompt,
+                        user_prompt=user_prompt,
+                        model=config.model_preference,
+                    )
                     break
                 except Exception as e:
                     last_error = str(e)
@@ -128,27 +148,52 @@ class DogProfilerService:
                         await asyncio.sleep(1)  # Brief delay before retry
 
             if profile is None:
-                return ProfileResult(dog_id=request.dog_id, success=False, error=last_error or "Failed to generate profile")
+                return ProfileResult(
+                    dog_id=request.dog_id,
+                    success=False,
+                    error=last_error or "Failed to generate profile",
+                )
 
             # Normalize profile
             normalized = self.normalizer.normalize(profile)
 
             # Validate profile
             if not self._validate_profile(normalized):
-                return ProfileResult(dog_id=request.dog_id, success=False, error="Profile validation failed")
+                return ProfileResult(
+                    dog_id=request.dog_id,
+                    success=False,
+                    error="Profile validation failed",
+                )
 
             # Calculate processing time
-            processing_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+            processing_time_ms = int(
+                (datetime.now() - start_time).total_seconds() * 1000
+            )
 
-            return ProfileResult(dog_id=request.dog_id, success=True, profile=normalized, processing_time_ms=processing_time_ms, model_used=config.model_preference)
+            return ProfileResult(
+                dog_id=request.dog_id,
+                success=True,
+                profile=normalized,
+                processing_time_ms=processing_time_ms,
+                model_used=config.model_preference,
+            )
 
         except Exception as e:
             logger.error(f"Error profiling dog {request.dog_id}: {e}")
-            processing_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+            processing_time_ms = int(
+                (datetime.now() - start_time).total_seconds() * 1000
+            )
 
-            return ProfileResult(dog_id=request.dog_id, success=False, error=str(e), processing_time_ms=processing_time_ms)
+            return ProfileResult(
+                dog_id=request.dog_id,
+                success=False,
+                error=str(e),
+                processing_time_ms=processing_time_ms,
+            )
 
-    async def profile_batch(self, dogs: List[Dict[str, Any]], organization_id: int) -> Dict[str, Any]:
+    async def profile_batch(
+        self, dogs: List[Dict[str, Any]], organization_id: int
+    ) -> Dict[str, Any]:
         """
         Profile multiple dogs in batch.
 
@@ -169,9 +214,16 @@ class DogProfilerService:
 
         async def profile_with_semaphore(dog):
             async with semaphore:
-                request = ProfileRequest(dog_id=dog["id"], dog_data=dog, organization_id=organization_id)
+                request = ProfileRequest(
+                    dog_id=dog["id"], dog_data=dog, organization_id=organization_id
+                )
                 result = await self.profile_dog(request)
-                return {"dog_id": result.dog_id, "status": "success" if result.success else "error", "error": result.error, "profile": result.profile}
+                return {
+                    "dog_id": result.dog_id,
+                    "status": "success" if result.success else "error",
+                    "error": result.error,
+                    "profile": result.profile,
+                }
 
         # Profile all dogs concurrently (limited by semaphore)
         tasks = [profile_with_semaphore(dog) for dog in dogs]
@@ -187,7 +239,14 @@ class DogProfilerService:
 
         processing_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
 
-        return {"organization_id": organization_id, "success": success_count, "failed": failed_count, "total": len(dogs), "results": results, "processing_time_ms": processing_time_ms}
+        return {
+            "organization_id": organization_id,
+            "success": success_count,
+            "failed": failed_count,
+            "total": len(dogs),
+            "results": results,
+            "processing_time_ms": processing_time_ms,
+        }
 
     async def save_profile(self, dog_id: int, profile: Dict[str, Any]) -> None:
         """
@@ -207,7 +266,9 @@ class DogProfilerService:
         profile_json = json.dumps(profile)
         await self.pool.execute(query, profile_json, dog_id)
 
-    async def get_unprofiled_dogs(self, organization_id: int, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_unprofiled_dogs(
+        self, organization_id: int, limit: int = 100
+    ) -> List[Dict[str, Any]]:
         """
         Get dogs without profiles (only high confidence available dogs).
 

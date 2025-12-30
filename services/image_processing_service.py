@@ -22,7 +22,11 @@ from utils.r2_service import R2Service
 class ImageProcessingService:
     """Service for all image processing operations extracted from BaseScraper."""
 
-    def __init__(self, r2_service: Optional[R2Service] = None, logger: Optional[logging.Logger] = None):
+    def __init__(
+        self,
+        r2_service: Optional[R2Service] = None,
+        logger: Optional[logging.Logger] = None,
+    ):
         """Initialize ImageProcessingService with dependencies.
 
         Args:
@@ -32,7 +36,13 @@ class ImageProcessingService:
         self.r2_service = r2_service or R2Service()
         self.logger = logger or logging.getLogger(__name__)
 
-    def process_primary_image(self, animal_data: Dict[str, Any], existing_animal: Optional[Tuple] = None, database_connection=None, organization_name: str = "unknown") -> Dict[str, Any]:
+    def process_primary_image(
+        self,
+        animal_data: Dict[str, Any],
+        existing_animal: Optional[Tuple] = None,
+        database_connection=None,
+        organization_name: str = "unknown",
+    ) -> Dict[str, Any]:
         """Process primary image for an animal, handling uploads and URL management.
 
         Args:
@@ -55,15 +65,21 @@ class ImageProcessingService:
 
         # Check existing animal for image URL changes
         if existing_animal and database_connection:
-            should_upload_image = self._should_upload_primary_image(existing_animal, original_url, database_connection, processed_data)
+            should_upload_image = self._should_upload_primary_image(
+                existing_animal, original_url, database_connection, processed_data
+            )
 
         # Upload image if needed
         if should_upload_image:
-            processed_data = self._upload_primary_image(processed_data, original_url, organization_name)
+            processed_data = self._upload_primary_image(
+                processed_data, original_url, organization_name
+            )
 
         return processed_data
 
-    def upload_image_to_r2(self, image_url: str, animal_name: str, organization_name: str = "unknown") -> Tuple[Optional[str], bool]:
+    def upload_image_to_r2(
+        self, image_url: str, animal_name: str, organization_name: str = "unknown"
+    ) -> Tuple[Optional[str], bool]:
         """Upload image to R2 service.
 
         Args:
@@ -74,7 +90,9 @@ class ImageProcessingService:
         Returns:
             Tuple of (r2_url, success_boolean)
         """
-        return self.r2_service.upload_image_from_url(image_url, animal_name, organization_name)
+        return self.r2_service.upload_image_from_url(
+            image_url, animal_name, organization_name
+        )
 
     def validate_image_url(self, image_url: str) -> bool:
         """Validate image URL format and accessibility.
@@ -100,7 +118,13 @@ class ImageProcessingService:
         # or with image extensions
         return True  # Basic validation passed
 
-    def _should_upload_primary_image(self, existing_animal: Tuple, original_url: str, database_connection, processed_data: Dict[str, Any]) -> bool:
+    def _should_upload_primary_image(
+        self,
+        existing_animal: Tuple,
+        original_url: str,
+        database_connection,
+        processed_data: Dict[str, Any],
+    ) -> bool:
         """Determine if primary image should be uploaded (pure function).
 
         Args:
@@ -129,19 +153,25 @@ class ImageProcessingService:
         if current_original_url == original_url:
             processed_data["primary_image_url"] = current_primary_url
             processed_data["original_image_url"] = current_original_url
-            self.logger.info(f"🔄 Image unchanged for {processed_data.get('name')}, using existing R2 URL")
+            self.logger.info(
+                f"🔄 Image unchanged for {processed_data.get('name')}, using existing R2 URL"
+            )
             return False
 
         # Handle legacy case where original_image_url is a R2 URL
         if current_original_url and "images.rescuedogs.me" in current_original_url:
             processed_data["primary_image_url"] = current_primary_url
             processed_data["original_image_url"] = original_url
-            self.logger.info(f"🔄 Updated original_image_url to source URL for {processed_data.get('name')}, keeping existing R2 URL")
+            self.logger.info(
+                f"🔄 Updated original_image_url to source URL for {processed_data.get('name')}, keeping existing R2 URL"
+            )
             return False
 
         return True
 
-    def _upload_primary_image(self, processed_data: Dict[str, Any], original_url: str, organization_name: str) -> Dict[str, Any]:
+    def _upload_primary_image(
+        self, processed_data: Dict[str, Any], original_url: str, organization_name: str
+    ) -> Dict[str, Any]:
         """Upload primary image and update processed data (pure function).
 
         Args:
@@ -152,7 +182,9 @@ class ImageProcessingService:
         Returns:
             Updated processed data dictionary
         """
-        self.logger.info(f"📤 Uploading primary image to R2 for {processed_data.get('name', 'unknown')}")
+        self.logger.info(
+            f"📤 Uploading primary image to R2 for {processed_data.get('name', 'unknown')}"
+        )
 
         # Use circuit breaker upload to prevent excessive failures
         r2_url, success = self.r2_service.upload_image_with_circuit_breaker(
@@ -164,9 +196,13 @@ class ImageProcessingService:
         if success and r2_url:
             processed_data["primary_image_url"] = r2_url
             processed_data["original_image_url"] = original_url
-            self.logger.info(f"✅ Successfully uploaded primary image to R2 for {processed_data.get('name')}")
+            self.logger.info(
+                f"✅ Successfully uploaded primary image to R2 for {processed_data.get('name')}"
+            )
         else:
-            self.logger.warning(f"❌ Failed to upload primary image for {processed_data.get('name')}, keeping original URL")
+            self.logger.warning(
+                f"❌ Failed to upload primary image for {processed_data.get('name')}, keeping original URL"
+            )
             processed_data["original_image_url"] = original_url
 
         return processed_data
@@ -205,7 +241,9 @@ class ImageProcessingService:
 
         return has_valid_extension or has_valid_service
 
-    def _get_existing_image_mappings(self, original_urls: List[str], database_connection) -> Dict[str, str]:
+    def _get_existing_image_mappings(
+        self, original_urls: List[str], database_connection
+    ) -> Dict[str, str]:
         """Query database for existing original_url to primary_image_url mappings.
 
         Args:
@@ -220,7 +258,9 @@ class ImageProcessingService:
 
         # Validate database connection
         if not database_connection or not hasattr(database_connection, "cursor"):
-            self.logger.warning("Invalid database connection provided for deduplication")
+            self.logger.warning(
+                "Invalid database connection provided for deduplication"
+            )
             return {}
 
         cursor = None
@@ -275,7 +315,14 @@ class ImageProcessingService:
             if cursor:
                 cursor.close()
 
-    def batch_process_images(self, animals_data: List[Dict[str, Any]], organization_name: str, batch_size: int = 5, use_concurrent: bool = True, database_connection=None) -> List[Dict[str, Any]]:
+    def batch_process_images(
+        self,
+        animals_data: List[Dict[str, Any]],
+        organization_name: str,
+        batch_size: int = 5,
+        use_concurrent: bool = True,
+        database_connection=None,
+    ) -> List[Dict[str, Any]]:
         """Process multiple animal images in batches with deduplication for better performance.
 
         Args:
@@ -308,15 +355,21 @@ class ImageProcessingService:
         # Query database for existing image mappings (deduplication)
         existing_mappings = {}
         if database_connection:
-            existing_mappings = self._get_existing_image_mappings(all_original_urls, database_connection)
+            existing_mappings = self._get_existing_image_mappings(
+                all_original_urls, database_connection
+            )
             if existing_mappings:
-                self.logger.info(f"♻️ Found {len(existing_mappings)} existing R2 images to reuse")
+                self.logger.info(
+                    f"♻️ Found {len(existing_mappings)} existing R2 images to reuse"
+                )
 
         # Separate images into reusable and new uploads
         images_to_upload = []
         reused_count = 0
 
-        for original_url in set(all_original_urls):  # Use set to avoid duplicate processing
+        for original_url in set(
+            all_original_urls
+        ):  # Use set to avoid duplicate processing
             if original_url in existing_mappings:
                 # Reuse existing R2 URL for all animals with this original URL
                 r2_url = existing_mappings[original_url]
@@ -324,7 +377,9 @@ class ImageProcessingService:
                     animals_data[animal_idx]["primary_image_url"] = r2_url
                     animals_data[animal_idx]["original_image_url"] = original_url
                     reused_count += 1
-                    self.logger.debug(f"♻️ Reusing R2 image for {animals_data[animal_idx].get('name', 'unknown')}")
+                    self.logger.debug(
+                        f"♻️ Reusing R2 image for {animals_data[animal_idx].get('name', 'unknown')}"
+                    )
             else:
                 # Need to upload this image (only once even if multiple animals use it)
                 first_animal_idx = animal_url_indices[original_url][0]
@@ -334,19 +389,34 @@ class ImageProcessingService:
         # Log deduplication stats
         total_images = len(all_original_urls)
         unique_images = len(set(all_original_urls))
-        self.logger.info(f"📦 Batch processing {total_images} images: {unique_images} unique, {reused_count} reused, {len(images_to_upload)} to upload")
+        self.logger.info(
+            f"📦 Batch processing {total_images} images: {unique_images} unique, {reused_count} reused, {len(images_to_upload)} to upload"
+        )
 
         # Only upload if there are new images
         if images_to_upload:
             # Choose upload strategy based on configuration
             if use_concurrent and len(images_to_upload) > 3:
                 # Use concurrent upload for better performance
-                results, stats = self.r2_service.concurrent_upload_images_with_stats(images_to_upload, max_workers=3, throttle_ms=200, adaptive_throttle=True)
-                self.logger.info(f"✅ Concurrent upload complete: {stats['successful']}/{stats['total']} " f"successful ({stats['success_rate']:.1f}%) in {stats['total_time']:.1f}s")
+                results, stats = self.r2_service.concurrent_upload_images_with_stats(
+                    images_to_upload,
+                    max_workers=3,
+                    throttle_ms=200,
+                    adaptive_throttle=True,
+                )
+                self.logger.info(
+                    f"✅ Concurrent upload complete: {stats['successful']}/{stats['total']} "
+                    f"successful ({stats['success_rate']:.1f}%) in {stats['total_time']:.1f}s"
+                )
             else:
                 # Use batch upload with adaptive delays
-                results, stats = self.r2_service.batch_upload_images_with_stats(images_to_upload, batch_size=batch_size, adaptive_delay=True)
-                self.logger.info(f"✅ Batch upload complete: {stats['successful']}/{stats['total']} " f"successful ({stats['success_rate']:.1f}%) in {stats['total_time']:.1f}s")
+                results, stats = self.r2_service.batch_upload_images_with_stats(
+                    images_to_upload, batch_size=batch_size, adaptive_delay=True
+                )
+                self.logger.info(
+                    f"✅ Batch upload complete: {stats['successful']}/{stats['total']} "
+                    f"successful ({stats['success_rate']:.1f}%) in {stats['total_time']:.1f}s"
+                )
 
             # Update animal data with newly uploaded URLs
             for i, (uploaded_url, success) in enumerate(results):
@@ -357,11 +427,17 @@ class ImageProcessingService:
                     if original_url in animal_url_indices:
                         for animal_idx in animal_url_indices[original_url]:
                             if success and uploaded_url:
-                                animals_data[animal_idx]["primary_image_url"] = uploaded_url
-                                animals_data[animal_idx]["original_image_url"] = original_url
+                                animals_data[animal_idx]["primary_image_url"] = (
+                                    uploaded_url
+                                )
+                                animals_data[animal_idx]["original_image_url"] = (
+                                    original_url
+                                )
                             else:
                                 # Keep original URL on failure
-                                animals_data[animal_idx]["original_image_url"] = original_url
+                                animals_data[animal_idx]["original_image_url"] = (
+                                    original_url
+                                )
         else:
             self.logger.info("✨ All images already exist in R2, no uploads needed!")
 

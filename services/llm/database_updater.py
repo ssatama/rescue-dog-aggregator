@@ -21,7 +21,11 @@ logger = logging.getLogger(__name__)
 class DatabaseUpdater:
     """Handles database operations for dog profiler results."""
 
-    def __init__(self, connection_pool: Optional["ConnectionPoolService"] = None, dry_run: bool = False):
+    def __init__(
+        self,
+        connection_pool: Optional["ConnectionPoolService"] = None,
+        dry_run: bool = False,
+    ):
         """
         Initialize database updater.
 

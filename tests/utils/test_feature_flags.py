@@ -3,7 +3,6 @@
 import os
 from unittest.mock import patch
 
-import pytest
 
 from utils.feature_flags import (
     FeatureFlags,
@@ -69,8 +68,12 @@ class TestFeatureFlags:
         # Test with environment override for specific scraper
         with patch.dict(os.environ, {"SCRAPER_SANTERPAWS_UNIFIED_ENABLED": "true"}):
             reset_flags_cache()
-            assert is_scraper_standardization_enabled("santerpaws") is True  # Override enables it
-            assert is_scraper_standardization_enabled("dogstrust") is True  # Still enabled by default
+            assert (
+                is_scraper_standardization_enabled("santerpaws") is True
+            )  # Override enables it
+            assert (
+                is_scraper_standardization_enabled("dogstrust") is True
+            )  # Still enabled by default
 
         # Test global override affects all scrapers
         with patch.dict(os.environ, {"UNIFIED_STANDARDIZATION_ENABLED": "true"}):

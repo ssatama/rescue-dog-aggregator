@@ -3,7 +3,7 @@ Tests for BaseScraper integration with UnifiedStandardizer
 Tests the feature flag system and standardization flow
 """
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -52,15 +52,26 @@ class TestBasScraperUnifiedStandardization:
         """process_animal() should apply standardization when flag is True"""
         scraper.use_unified_standardization = True
 
-        raw_data = {"name": "Buddy", "breed": "Staffordshire Bull Terrier Cross", "external_id": "dog-123", "organization_id": 1}
+        raw_data = {
+            "name": "Buddy",
+            "breed": "Staffordshire Bull Terrier Cross",
+            "external_id": "dog-123",
+            "organization_id": 1,
+        }
 
         processed = scraper.process_animal(raw_data)
 
         # Should standardize the breed (Cross becomes Mix)
         assert processed["breed"] == "Staffordshire Bull Terrier Mix"
-        assert processed["primary_breed"] == "Staffordshire Bull Terrier Mix"  # Primary is the full name
-        assert processed["secondary_breed"] == "Mixed Breed"  # Secondary indicates it's a mix
-        assert processed["breed_category"] == "Mixed"  # Mixed breed category for crosses
+        assert (
+            processed["primary_breed"] == "Staffordshire Bull Terrier Mix"
+        )  # Primary is the full name
+        assert (
+            processed["secondary_breed"] == "Mixed Breed"
+        )  # Secondary indicates it's a mix
+        assert (
+            processed["breed_category"] == "Mixed"
+        )  # Mixed breed category for crosses
         assert "standardization_confidence" in processed
         assert processed["name"] == "Buddy"
         assert processed["external_id"] == "dog-123"
@@ -69,7 +80,12 @@ class TestBasScraperUnifiedStandardization:
         """process_animal() should return raw data when flag is False"""
         scraper.use_unified_standardization = False
 
-        raw_data = {"name": "Max", "breed": "Lurcher", "external_id": "dog-456", "organization_id": 1}
+        raw_data = {
+            "name": "Max",
+            "breed": "Lurcher",
+            "external_id": "dog-456",
+            "organization_id": 1,
+        }
 
         processed = scraper.process_animal(raw_data)
 
@@ -82,12 +98,20 @@ class TestBasScraperUnifiedStandardization:
         """save_animal() should call process_animal() before saving"""
         scraper.database_service.get_existing_animal.return_value = None
         scraper.database_service.create_animal.return_value = (789, "create")
-        scraper.image_processing_service.save_processed_image.return_value = "https://cdn.example.com/image.jpg"
+        scraper.image_processing_service.save_processed_image.return_value = (
+            "https://cdn.example.com/image.jpg"
+        )
 
         # Mock process_animal to verify it's called
         scraper.process_animal = Mock(side_effect=lambda x: x)
 
-        animal_data = {"name": "Charlie", "breed": "Labradoodle", "external_id": "dog-789", "organization_id": 1, "image_url": "https://example.com/dog.jpg"}
+        animal_data = {
+            "name": "Charlie",
+            "breed": "Labradoodle",
+            "external_id": "dog-789",
+            "organization_id": 1,
+            "image_url": "https://example.com/dog.jpg",
+        }
 
         result = scraper.save_animal(animal_data)
 
@@ -101,7 +125,12 @@ class TestBasScraperUnifiedStandardization:
         scraper.database_service.get_existing_animal.return_value = None
         scraper.database_service.create_animal.return_value = (999, "create")
 
-        animal_data = {"name": "Luna", "breed": "Staffordshire Bull Terrier", "external_id": "dog-999", "organization_id": 1}
+        animal_data = {
+            "name": "Luna",
+            "breed": "Staffordshire Bull Terrier",
+            "external_id": "dog-999",
+            "organization_id": 1,
+        }
 
         scraper.save_animal(animal_data)
 
@@ -142,7 +171,9 @@ class TestBasScraperUnifiedStandardization:
         assert call_args["breed"] == "Cockapoo"
         assert call_args["primary_breed"] == "Cocker Spaniel"
         assert call_args["secondary_breed"] == "Poodle"
-        assert call_args["breed_category"] == "Designer/Hybrid"  # Designer breeds now have their own category
+        assert (
+            call_args["breed_category"] == "Designer/Hybrid"
+        )  # Designer breeds now have their own category
 
     def test_standardization_logs_events(self, scraper):
         """Standardization should log breed changes"""
@@ -150,7 +181,12 @@ class TestBasScraperUnifiedStandardization:
         scraper.database_service.get_existing_animal.return_value = None
         scraper.database_service.create_animal.return_value = (222, "create")
 
-        animal_data = {"name": "Rex", "breed": "Staff X", "external_id": "dog-222", "organization_id": 1}  # Common abbreviation
+        animal_data = {
+            "name": "Rex",
+            "breed": "Staff X",
+            "external_id": "dog-222",
+            "organization_id": 1,
+        }  # Common abbreviation
 
         # Just verify it doesn't crash when logging
         result = scraper.save_animal(animal_data)
@@ -169,7 +205,12 @@ class TestBasScraperUnifiedStandardization:
         scraper.database_service.get_existing_animal.return_value = existing_animal
         scraper.database_service.update_animal.return_value = (333, "update")
 
-        animal_data = {"name": "Duke", "breed": "Lurcher", "external_id": "dog-333", "organization_id": 1}
+        animal_data = {
+            "name": "Duke",
+            "breed": "Lurcher",
+            "external_id": "dog-333",
+            "organization_id": 1,
+        }
 
         result = scraper.save_animal(animal_data)
 
@@ -197,7 +238,12 @@ class TestBasScraperUnifiedStandardization:
         """process_animal() should handle None breed values"""
         scraper.use_unified_standardization = True
 
-        raw_data = {"name": "Unknown", "breed": None, "external_id": "dog-444", "organization_id": 1}
+        raw_data = {
+            "name": "Unknown",
+            "breed": None,
+            "external_id": "dog-444",
+            "organization_id": 1,
+        }
 
         processed = scraper.process_animal(raw_data)
 

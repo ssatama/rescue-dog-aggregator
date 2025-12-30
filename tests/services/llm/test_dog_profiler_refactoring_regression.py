@@ -7,14 +7,16 @@ to ensure no functionality is lost during refactoring.
 """
 
 import os
-from typing import Any, Dict
 
 import pytest
 
 from services.llm.dog_profiler import DogProfilerPipeline
 
 # Skip all tests in this module if OPENROUTER_API_KEY is not set
-pytestmark = pytest.mark.skipif(not os.environ.get("OPENROUTER_API_KEY"), reason="OPENROUTER_API_KEY not set - skipping LLM tests")
+pytestmark = pytest.mark.skipif(
+    not os.environ.get("OPENROUTER_API_KEY"),
+    reason="OPENROUTER_API_KEY not set - skipping LLM tests",
+)
 
 
 @pytest.mark.api
@@ -81,7 +83,9 @@ class TestNormalizationRegression:
 
         for input_data, expected in test_cases:
             result = pipeline._normalize_profile_data(input_data.copy())
-            assert result["yard_required"] == expected, f"Failed for input: {input_data}"
+            assert result["yard_required"] == expected, (
+                f"Failed for input: {input_data}"
+            )
 
         # Test ready_to_travel
         test_cases = [
@@ -93,7 +97,9 @@ class TestNormalizationRegression:
 
         for input_data, expected in test_cases:
             result = pipeline._normalize_profile_data(input_data.copy())
-            assert result["ready_to_travel"] == expected, f"Failed for input: {input_data}"
+            assert result["ready_to_travel"] == expected, (
+                f"Failed for input: {input_data}"
+            )
 
     def test_compatibility_field_normalization(self, pipeline):
         """Test good_with_* field normalization."""
@@ -116,9 +122,13 @@ class TestNormalizationRegression:
         for input_data, expected in test_cases:
             result = pipeline._normalize_profile_data(input_data.copy())
             if expected is None:
-                assert "good_with_dogs" not in result, f"Field should not exist for input: {input_data}"
+                assert "good_with_dogs" not in result, (
+                    f"Field should not exist for input: {input_data}"
+                )
             else:
-                assert result.get("good_with_dogs") == expected, f"Failed for input: {input_data}"
+                assert result.get("good_with_dogs") == expected, (
+                    f"Failed for input: {input_data}"
+                )
 
         # Test good_with_children special handling - selective becomes older_children
         test_cases = [
@@ -127,7 +137,10 @@ class TestNormalizationRegression:
             ({"good_with_children": "older_children"}, "older_children"),
             ({"good_with_children": "no"}, "no"),
             ({"good_with_children": "unknown"}, "unknown"),
-            ({"good_with_children": "invalid"}, "unknown"),  # Invalid->unknown (first pass)
+            (
+                {"good_with_children": "invalid"},
+                "unknown",
+            ),  # Invalid->unknown (first pass)
             ({"good_with_children": True}, "yes"),  # True->yes
             ({"good_with_children": False}, "no"),  # False->no
             ({}, None),  # Field not present
@@ -136,9 +149,13 @@ class TestNormalizationRegression:
         for input_data, expected in test_cases:
             result = pipeline._normalize_profile_data(input_data.copy())
             if expected is None:
-                assert "good_with_children" not in result, f"Field should not exist for input: {input_data}"
+                assert "good_with_children" not in result, (
+                    f"Field should not exist for input: {input_data}"
+                )
             else:
-                assert result.get("good_with_children") == expected, f"Failed for input: {input_data}"
+                assert result.get("good_with_children") == expected, (
+                    f"Failed for input: {input_data}"
+                )
 
         # Test good_with_cats special handling - selective becomes with_training
         test_cases = [
@@ -147,7 +164,10 @@ class TestNormalizationRegression:
             ({"good_with_cats": "no"}, "no"),
             ({"good_with_cats": "with_training"}, "with_training"),
             ({"good_with_cats": "unknown"}, "unknown"),
-            ({"good_with_cats": "invalid"}, "unknown"),  # Invalid->unknown (stays unknown)
+            (
+                {"good_with_cats": "invalid"},
+                "unknown",
+            ),  # Invalid->unknown (stays unknown)
             ({"good_with_cats": True}, "yes"),  # True->yes
             ({"good_with_cats": False}, "no"),  # False->no
             ({}, None),  # Field not present
@@ -156,9 +176,13 @@ class TestNormalizationRegression:
         for input_data, expected in test_cases:
             result = pipeline._normalize_profile_data(input_data.copy())
             if expected is None:
-                assert "good_with_cats" not in result, f"Field should not exist for input: {input_data}"
+                assert "good_with_cats" not in result, (
+                    f"Field should not exist for input: {input_data}"
+                )
             else:
-                assert result.get("good_with_cats") == expected, f"Failed for input: {input_data}"
+                assert result.get("good_with_cats") == expected, (
+                    f"Failed for input: {input_data}"
+                )
 
     def test_experience_level_normalization(self, pipeline):
         """Test experience_level field normalization."""
@@ -177,7 +201,9 @@ class TestNormalizationRegression:
 
         for input_data, expected in test_cases:
             result = pipeline._normalize_profile_data(input_data.copy())
-            assert result["experience_level"] == expected, f"Failed for input: {input_data}"
+            assert result["experience_level"] == expected, (
+                f"Failed for input: {input_data}"
+            )
 
     def test_exercise_needs_normalization(self, pipeline):
         """Test exercise_needs field normalization."""
@@ -196,7 +222,9 @@ class TestNormalizationRegression:
         for input_data, expected in test_cases:
             result = pipeline._normalize_profile_data(input_data.copy())
             if "exercise_needs" in input_data:
-                assert result.get("exercise_needs") == expected, f"Failed for input: {input_data}"
+                assert result.get("exercise_needs") == expected, (
+                    f"Failed for input: {input_data}"
+                )
 
     def test_grooming_needs_normalization(self, pipeline):
         """Test grooming_needs field normalization."""
@@ -214,7 +242,9 @@ class TestNormalizationRegression:
         for input_data, expected in test_cases:
             result = pipeline._normalize_profile_data(input_data.copy())
             if "grooming_needs" in input_data:
-                assert result.get("grooming_needs") == expected, f"Failed for input: {input_data}"
+                assert result.get("grooming_needs") == expected, (
+                    f"Failed for input: {input_data}"
+                )
 
     def test_text_truncation(self, pipeline):
         """Test text field truncation."""
@@ -250,7 +280,9 @@ class TestNormalizationRegression:
 
         for input_data, expected in test_cases:
             result = pipeline._normalize_profile_data(input_data.copy())
-            assert result.get("adoption_fee_euros") == expected, f"Failed for input: {input_data}"
+            assert result.get("adoption_fee_euros") == expected, (
+                f"Failed for input: {input_data}"
+            )
 
     def test_personality_traits_normalization(self, pipeline):
         """Test personality_traits list normalization."""
@@ -264,15 +296,21 @@ class TestNormalizationRegression:
         assert len(result["personality_traits"]) == 3
         assert result["personality_traits"][0] == "friendly"
         assert result["personality_traits"][1] == "gentle"
-        assert result["personality_traits"][2] == "loyal"  # Fixed: no duplicate "gentle"
+        assert (
+            result["personality_traits"][2] == "loyal"
+        )  # Fixed: no duplicate "gentle"
 
         # Test too many traits
-        result = pipeline._normalize_profile_data({"personality_traits": ["a", "b", "c", "d", "e", "f", "g"]})
+        result = pipeline._normalize_profile_data(
+            {"personality_traits": ["a", "b", "c", "d", "e", "f", "g"]}
+        )
         assert len(result["personality_traits"]) == 5
         assert result["personality_traits"] == ["a", "b", "c", "d", "e"]
 
         # Test normal case
-        result = pipeline._normalize_profile_data({"personality_traits": ["friendly", "loyal", "playful"]})
+        result = pipeline._normalize_profile_data(
+            {"personality_traits": ["friendly", "loyal", "playful"]}
+        )
         assert result["personality_traits"] == ["friendly", "loyal", "playful"]
 
     def test_favorite_activities_normalization(self, pipeline):
@@ -283,7 +321,9 @@ class TestNormalizationRegression:
         assert result["confidence_scores"]["favorite_activities"] == 0.1
 
         # Test too many activities
-        result = pipeline._normalize_profile_data({"favorite_activities": ["a", "b", "c", "d", "e"]})
+        result = pipeline._normalize_profile_data(
+            {"favorite_activities": ["a", "b", "c", "d", "e"]}
+        )
         assert len(result["favorite_activities"]) == 4
         assert result["favorite_activities"] == ["a", "b", "c", "d"]
 
@@ -309,11 +349,22 @@ class TestNormalizationRegression:
         # Test missing source_references
         result = pipeline._normalize_profile_data({})
         assert "source_references" in result
-        assert result["source_references"]["description"] == "generated from available data"
+        assert (
+            result["source_references"]["description"]
+            == "generated from available data"
+        )
         assert result["source_references"]["personality_traits"] == "default values"
 
         # Test None values conversion
-        result = pipeline._normalize_profile_data({"source_references": {"test_field": None, "list_field": ["item1", "item2"], "int_field": 123}})
+        result = pipeline._normalize_profile_data(
+            {
+                "source_references": {
+                    "test_field": None,
+                    "list_field": ["item1", "item2"],
+                    "int_field": 123,
+                }
+            }
+        )
         assert result["source_references"]["test_field"] == "not specified"
         assert result["source_references"]["list_field"] == "item1; item2"
         assert result["source_references"]["int_field"] == "123"
@@ -328,7 +379,9 @@ class TestNormalizationRegression:
         assert result["confidence_scores"]["trainability"] == 0.2
 
         # Test None values conversion
-        result = pipeline._normalize_profile_data({"confidence_scores": {"test_field": None, "valid_field": 0.8}})
+        result = pipeline._normalize_profile_data(
+            {"confidence_scores": {"test_field": None, "valid_field": 0.8}}
+        )
         assert result["confidence_scores"]["test_field"] == 0.0
         assert result["confidence_scores"]["valid_field"] == 0.8
 
@@ -391,11 +444,19 @@ class TestFullPipelineRegression:
             "grooming_needs": "moderate",
             "home_type": "invalid_value",
             "personality_traits": ["friendly"],  # Too few
-            "favorite_activities": ["walk", "play", "fetch", "swim", "run", "jump"],  # Too many
+            "favorite_activities": [
+                "walk",
+                "play",
+                "fetch",
+                "swim",
+                "run",
+                "jump",
+            ],  # Too many
             "adoption_fee_euros": "350",
             "vaccinated": "yes",
             "neutered": None,
-            "unique_quirk": "He loves to play with toys and enjoys long walks in the park " * 5,
+            "unique_quirk": "He loves to play with toys and enjoys long walks in the park "
+            * 5,
             "medical_needs": "Regular checkups needed " * 20,
             "source_references": {"test": None, "list": ["a", "b"]},
             "confidence_scores": {"test": None, "valid": 0.9},
@@ -409,8 +470,12 @@ class TestFullPipelineRegression:
         assert result["yard_required"] == True
         assert result["ready_to_travel"] == True
         assert result["good_with_dogs"] == "yes"
-        assert result["good_with_cats"] == "with_training"  # selective → with_training in second pass
-        assert result["good_with_children"] == "older_children"  # selective → older_children in second pass
+        assert (
+            result["good_with_cats"] == "with_training"
+        )  # selective → with_training in second pass
+        assert (
+            result["good_with_children"] == "older_children"
+        )  # selective → older_children in second pass
         assert result["experience_level"] == "first_time_ok"
         assert result["exercise_needs"] == "high"
         assert result["grooming_needs"] == "weekly"
@@ -420,7 +485,9 @@ class TestFullPipelineRegression:
         assert result["adoption_fee_euros"] == 350
         assert result["vaccinated"] == True
         assert result["neutered"] == False
-        assert len(result["tagline"]) <= 53  # Smart truncate adds "..." so could be up to 53
+        assert (
+            len(result["tagline"]) <= 53
+        )  # Smart truncate adds "..." so could be up to 53
         assert len(result["description"]) <= 403  # Updated limit + "..."
         assert len(result["unique_quirk"]) <= 153  # Updated limit + "..."
         assert len(result["medical_needs"]) <= 203  # 200 + "..."

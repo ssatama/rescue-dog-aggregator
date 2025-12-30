@@ -46,11 +46,24 @@ def extract_age_from_text(text: Optional[str]) -> Optional[float]:
     text = text.lower().strip()
 
     # Pattern 1: "around X years", "around 2 years", "around two years"
-    match = re.search(r"around\s+(two|three|four|five|six|seven|eight|nine|ten|\d+(?:\.\d+)?)\s+years?", text)
+    match = re.search(
+        r"around\s+(two|three|four|five|six|seven|eight|nine|ten|\d+(?:\.\d+)?)\s+years?",
+        text,
+    )
     if match:
         age_text = match.group(1)
         # Convert word to number
-        word_to_num = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
+        word_to_num = {
+            "two": 2,
+            "three": 3,
+            "four": 4,
+            "five": 5,
+            "six": 6,
+            "seven": 7,
+            "eight": 8,
+            "nine": 9,
+            "ten": 10,
+        }
         if age_text in word_to_num:
             return float(word_to_num[age_text])
         try:
@@ -72,7 +85,10 @@ def extract_age_from_text(text: Optional[str]) -> Optional[float]:
         return (year1 + year2) / 2.0
 
     # Pattern 4: "3 years old", "approximately 3 years", "nearly 2 years old"
-    match = re.search(r"(?:nearly|approximately|roughly|about|exactly)?\s*(\d+(?:\.\d+)?)\s+years?\s*(?:old)?", text)
+    match = re.search(
+        r"(?:nearly|approximately|roughly|about|exactly)?\s*(\d+(?:\.\d+)?)\s+years?\s*(?:old)?",
+        text,
+    )
     if match:
         return float(match.group(1))
 
@@ -117,7 +133,10 @@ def extract_age_from_text(text: Optional[str]) -> Optional[float]:
             return round(num / 12.0, 2)
 
     # Pattern 8: Veterinary estimates (from misis_rescue)
-    match = re.search(r"(?:vet|veterinary).*?(?:estimates?|assessment).*?(\d+(?:\.\d+)?)\s*(?:years?|y)", text)
+    match = re.search(
+        r"(?:vet|veterinary).*?(?:estimates?|assessment).*?(\d+(?:\.\d+)?)\s*(?:years?|y)",
+        text,
+    )
     if match:
         return float(match.group(1))
 
@@ -127,7 +146,9 @@ def extract_age_from_text(text: Optional[str]) -> Optional[float]:
         return float(match.group(1))
 
     # Pattern 10: "4 y old", "roughly 3 y old"
-    match = re.search(r"(?:roughly|approximately|about)?\s*(\d+(?:\.\d+)?)\s*y\s+old", text)
+    match = re.search(
+        r"(?:roughly|approximately|about)?\s*(\d+(?:\.\d+)?)\s*y\s+old", text
+    )
     if match:
         return float(match.group(1))
 
@@ -167,13 +188,19 @@ def extract_breed_from_text(text: Optional[str]) -> str:
     # Pattern 1: Explicit mixed breed mentions (but not when specific breed is mentioned)
     if re.search(r"\bmixed breed\b|\bcross[\s-]?breed\b", text_lower):
         # Check if there's a specific breed mentioned with the mixed breed
-        if not re.search(r"\b(labrador|lab|german shepherd|husky|terrier|retriever|spaniel|pointer|collie|shepherd)\b", text_lower):
+        if not re.search(
+            r"\b(labrador|lab|german shepherd|husky|terrier|retriever|spaniel|pointer|collie|shepherd)\b",
+            text_lower,
+        ):
             return "Mixed Breed"
 
     # Handle standalone "crossbreed" with specific breeds mentioned
     if re.search(r"\bcrossbreed\b", text_lower):
         # Look for specific breed before crossbreed
-        crossbreed_match = re.search(r"\b(labrador|lab|german shepherd|husky|terrier|retriever|spaniel|pointer|collie|shepherd)\s+crossbreed\b", text_lower)
+        crossbreed_match = re.search(
+            r"\b(labrador|lab|german shepherd|husky|terrier|retriever|spaniel|pointer|collie|shepherd)\s+crossbreed\b",
+            text_lower,
+        )
         if crossbreed_match:
             breed = crossbreed_match.group(1)
             if breed == "lab":
@@ -181,7 +208,8 @@ def extract_breed_from_text(text: Optional[str]) -> str:
             return f"{breed.title()} Mix"
         # Check for qualifiers before breed + crossbreed
         qualified_crossbreed = re.search(
-            r"(?:possibly|might be|looks like|appears to be)\s+(labrador|lab|german shepherd|husky|terrier|retriever|spaniel|pointer|collie|shepherd)\s+crossbreed\b", text_lower
+            r"(?:possibly|might be|looks like|appears to be)\s+(labrador|lab|german shepherd|husky|terrier|retriever|spaniel|pointer|collie|shepherd)\s+crossbreed\b",
+            text_lower,
         )
         if qualified_crossbreed:
             breed = qualified_crossbreed.group(1)
@@ -319,20 +347,32 @@ def extract_sex_from_text(text: Optional[str]) -> Optional[str]:
     boy_count = len(re.findall(r"\bboy\b", text_lower))
 
     # Calculate confidence scores
-    female_score = (spayed_count * 3) + (she_count + her_count) + ((female_count + girl_count) * 2)
-    male_score = ((neutered_count + castrated_count) * 3) + (he_count + his_count) + ((male_count + boy_count) * 2)
+    female_score = (
+        (spayed_count * 3) + (she_count + her_count) + ((female_count + girl_count) * 2)
+    )
+    male_score = (
+        ((neutered_count + castrated_count) * 3)
+        + (he_count + his_count)
+        + ((male_count + boy_count) * 2)
+    )
 
     # Check for conflicting signals (mixed pronouns might indicate multiple dogs)
-    pronoun_conflict = (she_count > 0 and he_count > 0) and abs(she_count - he_count) <= 1
+    pronoun_conflict = (she_count > 0 and he_count > 0) and abs(
+        she_count - he_count
+    ) <= 1
 
     # Also check for explicit gender conflicts (e.g., "she is a good boy")
     gender_conflict = (female_count + girl_count) > 0 and (male_count + boy_count) > 0
 
     # Additional check for contradictory gender language
-    contradictory_language = (she_count > 0 and boy_count > 0) or (he_count > 0 and girl_count > 0)
+    contradictory_language = (she_count > 0 and boy_count > 0) or (
+        he_count > 0 and girl_count > 0
+    )
 
     # If there are conflicts without strong medical indicators, return None
-    if (pronoun_conflict or gender_conflict or contradictory_language) and (spayed_count == 0 and neutered_count == 0 and castrated_count == 0):
+    if (pronoun_conflict or gender_conflict or contradictory_language) and (
+        spayed_count == 0 and neutered_count == 0 and castrated_count == 0
+    ):
         return None  # Likely multiple dogs or conflicting info
 
     # Return result based on confidence scores
@@ -367,13 +407,17 @@ def extract_weight_from_text(text: Optional[str]) -> Optional[float]:
     text_lower = text.lower()
 
     # Pattern 1: Multiple weights - "was 35kg, now 30kg" (take the last/current one)
-    multiple_weights = re.findall(r"(\d+\.?\d*)\s*k(?:g|ilos?)", text_lower, re.IGNORECASE)
+    multiple_weights = re.findall(
+        r"(\d+\.?\d*)\s*k(?:g|ilos?)", text_lower, re.IGNORECASE
+    )
     if len(multiple_weights) > 1:
         # Take the last weight mentioned (most current)
         return float(multiple_weights[-1])
 
     # Pattern 2: Ranges with "around" - "✔️weighs around 22-25kg"
-    match = re.search(r"weighs\s+around\s+(\d+\.?\d*)-(\d+\.?\d*)\s*k(?:g|ilos?)", text_lower)
+    match = re.search(
+        r"weighs\s+around\s+(\d+\.?\d*)-(\d+\.?\d*)\s*k(?:g|ilos?)", text_lower
+    )
     if match:
         weight1 = float(match.group(1))
         weight2 = float(match.group(2))
@@ -442,7 +486,9 @@ def normalize_age_text(age_years: Optional[float]) -> Optional[str]:
         return f"{age_years:.1f} years"
 
 
-def calculate_age_range_months(age_years: Optional[float]) -> Tuple[Optional[int], Optional[int]]:
+def calculate_age_range_months(
+    age_years: Optional[float],
+) -> Tuple[Optional[int], Optional[int]]:
     """
     Calculate age range in months from decimal years.
 

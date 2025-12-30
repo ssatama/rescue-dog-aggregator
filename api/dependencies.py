@@ -44,24 +44,36 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
         # Changed level to debug
         logger.debug(f"Cursor Connection opened: {id(conn)}")
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        logger.debug(f"Cursor created: {id(cursor)} for connection {id(conn)}")  # Changed level to debug
+        logger.debug(
+            f"Cursor created: {id(cursor)} for connection {id(conn)}"
+        )  # Changed level to debug
         yield cursor
 
-        logger.debug(f"Committing transaction for connection {id(conn)}")  # Changed level to debug
+        logger.debug(
+            f"Committing transaction for connection {id(conn)}"
+        )  # Changed level to debug
         conn.commit()
 
     except HTTPException as http_exc:  # Keep the specific HTTPException handling
-        logger.warning(f"[dependencies.py get_db_cursor] HTTPException caught, rolling back: {http_exc.detail}")
+        logger.warning(
+            f"[dependencies.py get_db_cursor] HTTPException caught, rolling back: {http_exc.detail}"
+        )
         if conn:
             conn.rollback()
         raise http_exc
     except psycopg2.Error as db_err:
-        logger.error(f"[dependencies.py get_db_cursor] Database error, rolling back: {db_err}")
+        logger.error(
+            f"[dependencies.py get_db_cursor] Database error, rolling back: {db_err}"
+        )
         if conn:
             conn.rollback()
-        raise HTTPException(status_code=500, detail=f"Database dependency error: {db_err}")
+        raise HTTPException(
+            status_code=500, detail=f"Database dependency error: {db_err}"
+        )
     except Exception as e:
-        logger.exception(f"[dependencies.py get_db_cursor] Unexpected error, rolling back: {e}")
+        logger.exception(
+            f"[dependencies.py get_db_cursor] Unexpected error, rolling back: {e}"
+        )
         if conn:
             conn.rollback()
         raise HTTPException(
@@ -74,7 +86,9 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
             logger.debug(f"Cursor closing: {id(cursor)}")
             cursor.close()
         if conn:
-            logger.debug(f"Cursor Connection closing: {id(conn)}")  # Changed level to debug
+            logger.debug(
+                f"Cursor Connection closing: {id(conn)}"
+            )  # Changed level to debug
             conn.close()
 
 
@@ -103,17 +117,25 @@ def get_database_connection() -> Generator[psycopg2.extensions.connection, None,
         conn.commit()
 
     except HTTPException as http_exc:
-        logger.warning(f"[dependencies.py get_database_connection] HTTPException caught, rolling back: {http_exc.detail}")
+        logger.warning(
+            f"[dependencies.py get_database_connection] HTTPException caught, rolling back: {http_exc.detail}"
+        )
         if conn:
             conn.rollback()
         raise http_exc
     except psycopg2.Error as db_err:
-        logger.error(f"[dependencies.py get_database_connection] Database error, rolling back: {db_err}")
+        logger.error(
+            f"[dependencies.py get_database_connection] Database error, rolling back: {db_err}"
+        )
         if conn:
             conn.rollback()
-        raise HTTPException(status_code=500, detail=f"Database dependency error: {db_err}")
+        raise HTTPException(
+            status_code=500, detail=f"Database dependency error: {db_err}"
+        )
     except Exception as e:
-        logger.exception(f"[dependencies.py get_database_connection] Unexpected error, rolling back: {e}")
+        logger.exception(
+            f"[dependencies.py get_database_connection] Unexpected error, rolling back: {e}"
+        )
         if conn:
             conn.rollback()
         raise HTTPException(
@@ -133,7 +155,10 @@ def get_pooled_db_cursor() -> Generator[RealDictCursor, None, None]:
     This is an optimized version of get_db_cursor that uses connection pooling
     for better performance under high load.
     """
-    from api.models.errors import create_connection_error, create_pool_not_initialized_error
+    from api.models.errors import (
+        create_connection_error,
+        create_pool_not_initialized_error,
+    )
 
     try:
         with get_pooled_cursor() as cursor:
@@ -148,18 +173,34 @@ def get_pooled_db_cursor() -> Generator[RealDictCursor, None, None]:
         # Handle specific pool errors with structured responses
         if "not initialized" in error_msg.lower():
             error_response = create_pool_not_initialized_error()
-            raise HTTPException(status_code=503, detail=error_response.error.model_dump())
+            raise HTTPException(
+                status_code=503, detail=error_response.error.model_dump()
+            )
         elif "pool may be exhausted" in error_msg.lower():
             from api.models.errors import ErrorCode
 
-            error_response = create_connection_error(detail="Connection pool exhausted - too many concurrent requests", code=ErrorCode.POOL_EXHAUSTED)
-            raise HTTPException(status_code=503, detail=error_response.error.model_dump())
+            error_response = create_connection_error(
+                detail="Connection pool exhausted - too many concurrent requests",
+                code=ErrorCode.POOL_EXHAUSTED,
+            )
+            raise HTTPException(
+                status_code=503, detail=error_response.error.model_dump()
+            )
         else:
             error_response = create_connection_error(detail=error_msg)
-            raise HTTPException(status_code=500, detail=error_response.error.model_dump())
+            raise HTTPException(
+                status_code=500, detail=error_response.error.model_dump()
+            )
     except Exception as e:
         logger.error(f"Unexpected error with pooled cursor: {e}")
         from api.models.errors import ErrorCode, ErrorDetail, ErrorResponse, ErrorType
 
-        error_response = ErrorResponse(error=ErrorDetail(type=ErrorType.INTERNAL_ERROR, code=ErrorCode.UNKNOWN_ERROR, message="An unexpected error occurred", detail=str(e)))
+        error_response = ErrorResponse(
+            error=ErrorDetail(
+                type=ErrorType.INTERNAL_ERROR,
+                code=ErrorCode.UNKNOWN_ERROR,
+                message="An unexpected error occurred",
+                detail=str(e),
+            )
+        )
         raise HTTPException(status_code=500, detail=error_response.error.model_dump())

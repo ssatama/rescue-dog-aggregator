@@ -43,7 +43,13 @@ class InstagramPhotoAnalyzer:
     Estimated time: ~16-33 minutes for 3,306 dogs.
     """
 
-    def __init__(self, connection: psycopg2.extensions.connection, dry_run: bool = False, batch_size: int = 10, cost_per_request: float = 0.0015):
+    def __init__(
+        self,
+        connection: psycopg2.extensions.connection,
+        dry_run: bool = False,
+        batch_size: int = 10,
+        cost_per_request: float = 0.0015,
+    ):
         """
         Initialize the photo analyzer.
 
@@ -75,7 +81,12 @@ class InstagramPhotoAnalyzer:
 
     def _load_prompt(self) -> str:
         """Load the final photo analysis prompt from file."""
-        prompt_path = Path(__file__).parent.parent / "prompts" / "instagram" / "photo_quality_analysis_final.txt"
+        prompt_path = (
+            Path(__file__).parent.parent
+            / "prompts"
+            / "instagram"
+            / "photo_quality_analysis_final.txt"
+        )
 
         if not prompt_path.exists():
             raise FileNotFoundError(f"Prompt file not found: {prompt_path}")
@@ -83,7 +94,9 @@ class InstagramPhotoAnalyzer:
         with open(prompt_path, "r", encoding="utf-8") as f:
             return f.read()
 
-    async def get_unanalyzed_dogs(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    async def get_unanalyzed_dogs(
+        self, limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """
         Query dogs without existing photo analysis.
 
@@ -111,9 +124,13 @@ class InstagramPhotoAnalyzer:
 
         rows = self.cursor.fetchall()
 
-        return [{"id": row[0], "name": row[1], "primary_image_url": row[2]} for row in rows]
+        return [
+            {"id": row[0], "name": row[1], "primary_image_url": row[2]} for row in rows
+        ]
 
-    async def analyze_single_dog(self, dog: Dict[str, Any]) -> Optional[PhotoAnalysisResponse]:
+    async def analyze_single_dog(
+        self, dog: Dict[str, Any]
+    ) -> Optional[PhotoAnalysisResponse]:
         """
         Analyze a single dog's photo using vision API.
 
@@ -125,7 +142,13 @@ class InstagramPhotoAnalyzer:
         """
         try:
             # Call vision API
-            response = await self.llm_client.call_vision_api(image_url=dog["primary_image_url"], prompt=self.prompt, model=self.model, temperature=self.temperature, max_tokens=self.max_tokens)
+            response = await self.llm_client.call_vision_api(
+                image_url=dog["primary_image_url"],
+                prompt=self.prompt,
+                model=self.model,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+            )
 
             # Validate with Pydantic
             analysis = PhotoAnalysisResponse(**response)
@@ -138,7 +161,9 @@ class InstagramPhotoAnalyzer:
             print(f"❌ Error analyzing {dog['name']} (ID: {dog['id']}): {e}")
             return None
 
-    async def insert_analysis_result(self, dog_id: int, image_url: str, analysis: PhotoAnalysisResponse, cost: float) -> bool:
+    async def insert_analysis_result(
+        self, dog_id: int, image_url: str, analysis: PhotoAnalysisResponse, cost: float
+    ) -> bool:
         """
         Insert analysis result into database with UPSERT logic.
 
@@ -159,7 +184,12 @@ class InstagramPhotoAnalyzer:
             # The constraint checks: overall_score = (q + v + a + b) / 4.0
             # We must provide the EXACT unrounded value for the constraint check
             # The NUMERIC(3,1) column will round it after the constraint passes
-            calculated_overall = (analysis.quality_score + analysis.visibility_score + analysis.appeal_score + analysis.background_score) / 4.0
+            calculated_overall = (
+                analysis.quality_score
+                + analysis.visibility_score
+                + analysis.appeal_score
+                + analysis.background_score
+            ) / 4.0
 
             query = """
                 INSERT INTO dog_photo_analysis (
@@ -254,7 +284,9 @@ class InstagramPhotoAnalyzer:
             batch_end = min(batch_start + self.batch_size, total)
             batch = dogs[batch_start:batch_end]
 
-            print(f"\n📦 Batch {batch_start // self.batch_size + 1}: Processing dogs {batch_start + 1}-{batch_end}...")
+            print(
+                f"\n📦 Batch {batch_start // self.batch_size + 1}: Processing dogs {batch_start + 1}-{batch_end}..."
+            )
 
             # Process batch concurrently using asyncio.gather()
             tasks = [self.analyze_single_dog(dog) for dog in batch]
@@ -264,15 +296,24 @@ class InstagramPhotoAnalyzer:
             for dog, analysis in zip(batch, results):
                 if analysis:
                     # Successful analysis
-                    success = await self.insert_analysis_result(dog_id=dog["id"], image_url=dog["primary_image_url"], analysis=analysis, cost=self.cost_per_request)
+                    success = await self.insert_analysis_result(
+                        dog_id=dog["id"],
+                        image_url=dog["primary_image_url"],
+                        analysis=analysis,
+                        cost=self.cost_per_request,
+                    )
 
                     if success:
                         processed += 1
                         total_cost += self.cost_per_request
 
                         # Log result
-                        ig_status = "✅ IG-ready" if analysis.ig_ready else "⚠️  Not ready"
-                        print(f"  {ig_status} - {dog['name']}: Overall {analysis.overall_score}/10")
+                        ig_status = (
+                            "✅ IG-ready" if analysis.ig_ready else "⚠️  Not ready"
+                        )
+                        print(
+                            f"  {ig_status} - {dog['name']}: Overall {analysis.overall_score}/10"
+                        )
                     else:
                         errors += 1
                 else:
@@ -280,9 +321,16 @@ class InstagramPhotoAnalyzer:
                     errors += 1
 
             # Progress update
-            print(f"  ✓ Processed {batch_end}/{total} dogs ({processed} successful, {errors} errors)")
+            print(
+                f"  ✓ Processed {batch_end}/{total} dogs ({processed} successful, {errors} errors)"
+            )
 
-        return {"total": total, "processed": processed, "errors": errors, "total_cost": round(total_cost, 4)}
+        return {
+            "total": total,
+            "processed": processed,
+            "errors": errors,
+            "total_cost": round(total_cost, 4),
+        }
 
     async def run(self, limit: Optional[int] = None) -> Dict[str, Any]:
         """
@@ -302,7 +350,7 @@ class InstagramPhotoAnalyzer:
             print("⚠️  DRY RUN MODE - No database writes")
 
         # Get unanalyzed dogs
-        print(f"\n📊 Querying unanalyzed dogs...")
+        print("\n📊 Querying unanalyzed dogs...")
         dogs = await self.get_unanalyzed_dogs(limit=limit)
 
         if not dogs:
@@ -350,8 +398,12 @@ Examples:
     group.add_argument("--all", action="store_true", help="Process all unanalyzed dogs")
     group.add_argument("--limit", type=int, help="Process N dogs")
 
-    parser.add_argument("--dry-run", action="store_true", help="Don't write to database")
-    parser.add_argument("--batch-size", type=int, default=10, help="Concurrent batch size (default: 10)")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Don't write to database"
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=10, help="Concurrent batch size (default: 10)"
+    )
 
     return parser.parse_args(args)
 
@@ -371,7 +423,9 @@ async def main():
 
     try:
         # Create analyzer
-        analyzer = InstagramPhotoAnalyzer(connection=conn, dry_run=args.dry_run, batch_size=args.batch_size)
+        analyzer = InstagramPhotoAnalyzer(
+            connection=conn, dry_run=args.dry_run, batch_size=args.batch_size
+        )
 
         # Run analysis
         limit = None if args.all else args.limit

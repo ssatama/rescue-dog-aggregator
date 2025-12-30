@@ -19,7 +19,15 @@ class NormalizationRules:
     """Configuration for normalization rules."""
 
     energy_mappings: Dict[str, str] = field(
-        default_factory=lambda: {"moderate": "medium", "very_energetic": "very_high", "energetic": "high", "calm": "low", "lazy": "low", "active": "high", "very_active": "very_high"}
+        default_factory=lambda: {
+            "moderate": "medium",
+            "very_energetic": "very_high",
+            "energetic": "high",
+            "calm": "low",
+            "lazy": "low",
+            "active": "high",
+            "very_active": "very_high",
+        }
     )
 
     trainability_mappings: Dict[str, str] = field(
@@ -36,9 +44,27 @@ class NormalizationRules:
 
     compatibility_mappings: Dict[str, Dict[str, str]] = field(
         default_factory=lambda: {
-            "children": {"selective": "older_children", "yes": "yes", "no": "no", "maybe": "older_children", "unknown": "unknown"},
-            "cats": {"selective": "maybe", "yes": "yes", "no": "no", "maybe": "maybe", "unknown": "unknown"},
-            "dogs": {"selective": "selective", "yes": "yes", "no": "no", "maybe": "selective", "unknown": "unknown"},
+            "children": {
+                "selective": "older_children",
+                "yes": "yes",
+                "no": "no",
+                "maybe": "older_children",
+                "unknown": "unknown",
+            },
+            "cats": {
+                "selective": "maybe",
+                "yes": "yes",
+                "no": "no",
+                "maybe": "maybe",
+                "unknown": "unknown",
+            },
+            "dogs": {
+                "selective": "selective",
+                "yes": "yes",
+                "no": "no",
+                "maybe": "selective",
+                "unknown": "unknown",
+            },
         }
     )
 
@@ -57,7 +83,14 @@ class NormalizationRules:
     )
 
     list_constraints: Dict[str, Dict[str, Any]] = field(
-        default_factory=lambda: {"personality_traits": {"min": 3, "max": 5, "defaults": ["friendly", "gentle", "loyal"]}, "favorite_activities": {"min": 2, "max": 4, "defaults": ["walks", "play"]}}
+        default_factory=lambda: {
+            "personality_traits": {
+                "min": 3,
+                "max": 5,
+                "defaults": ["friendly", "gentle", "loyal"],
+            },
+            "favorite_activities": {"min": 2, "max": 4, "defaults": ["walks", "play"]},
+        }
     )
 
     @classmethod
@@ -93,12 +126,16 @@ class ProfileNormalizer:
 
         # Normalize enum fields
         if "energy_level" in normalized:
-            normalized["energy_level"] = self.normalize_energy_level(normalized["energy_level"])
+            normalized["energy_level"] = self.normalize_energy_level(
+                normalized["energy_level"]
+            )
         elif "energy_level" not in normalized:
             normalized["energy_level"] = self.rules.default_values["energy_level"]
 
         if "trainability" in normalized:
-            normalized["trainability"] = self.normalize_trainability(normalized["trainability"])
+            normalized["trainability"] = self.normalize_trainability(
+                normalized["trainability"]
+            )
         elif "trainability" not in normalized:
             normalized["trainability"] = self.rules.default_values["trainability"]
 
@@ -106,13 +143,20 @@ class ProfileNormalizer:
         for field in ["good_with_children", "good_with_cats", "good_with_dogs"]:
             if field in normalized:
                 field_type = field.replace("good_with_", "")
-                normalized[field] = self.normalize_compatibility(normalized[field], field_type)
+                normalized[field] = self.normalize_compatibility(
+                    normalized[field], field_type
+                )
 
         # Normalize list fields
         for field, constraints in self.rules.list_constraints.items():
             if field in normalized:
                 normalized[field] = self.normalize_list_field(
-                    normalized[field], min_items=constraints["min"], max_items=constraints["max"], default_item=constraints["defaults"][0] if constraints["defaults"] else None
+                    normalized[field],
+                    min_items=constraints["min"],
+                    max_items=constraints["max"],
+                    default_item=constraints["defaults"][0]
+                    if constraints["defaults"]
+                    else None,
                 )
             elif field not in normalized and constraints["min"] > 0:
                 # Add default list if required
@@ -126,11 +170,15 @@ class ProfileNormalizer:
 
         # Normalize numeric fields
         if "adoption_fee_euros" in normalized:
-            normalized["adoption_fee_euros"] = self.normalize_numeric(normalized["adoption_fee_euros"])
+            normalized["adoption_fee_euros"] = self.normalize_numeric(
+                normalized["adoption_fee_euros"]
+            )
 
         # Normalize confidence scores
         if "confidence_scores" in normalized:
-            normalized["confidence_scores"] = self.normalize_confidence_scores(normalized["confidence_scores"])
+            normalized["confidence_scores"] = self.normalize_confidence_scores(
+                normalized["confidence_scores"]
+            )
 
         # Apply defaults for missing required fields
         for field, default_value in self.rules.default_values.items():
@@ -190,14 +238,31 @@ class ProfileNormalizer:
             return mappings[value_lower]
 
         # Direct match for valid values
-        if field_type == "children" and value_lower in ["yes", "no", "older_children", "unknown"]:
+        if field_type == "children" and value_lower in [
+            "yes",
+            "no",
+            "older_children",
+            "unknown",
+        ]:
             return value_lower
-        elif field_type in ["cats", "dogs"] and value_lower in ["yes", "no", "maybe", "selective", "unknown"]:
+        elif field_type in ["cats", "dogs"] and value_lower in [
+            "yes",
+            "no",
+            "maybe",
+            "selective",
+            "unknown",
+        ]:
             return value_lower
 
         return "unknown"
 
-    def normalize_list_field(self, values: List[str], min_items: int, max_items: int, default_item: Optional[str] = None) -> List[str]:
+    def normalize_list_field(
+        self,
+        values: List[str],
+        min_items: int,
+        max_items: int,
+        default_item: Optional[str] = None,
+    ) -> List[str]:
         """Normalize list fields to meet constraints."""
         if not values:
             values = []

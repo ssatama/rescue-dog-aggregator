@@ -49,7 +49,9 @@ class ScraperControlService:
             self.logger.error(f"Error during emergency stop: {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now()}
 
-    def emergency_disable_organization(self, organization_id: int, reason: str) -> Dict[str, Any]:
+    def emergency_disable_organization(
+        self, organization_id: int, reason: str
+    ) -> Dict[str, Any]:
         """Emergency disable scraping for a specific organization.
 
         Args:
@@ -60,7 +62,9 @@ class ScraperControlService:
             Dictionary containing disable operation results
         """
         try:
-            self.logger.warning(f"EMERGENCY DISABLE: Organization {organization_id} - {reason}")
+            self.logger.warning(
+                f"EMERGENCY DISABLE: Organization {organization_id} - {reason}"
+            )
 
             success = self.disable_organization_scrapers(organization_id, reason)
 
@@ -196,7 +200,9 @@ class ScraperControlService:
             # 4. Sending SIGKILL if needed
 
             # For now, we'll simulate this with a simple approach
-            self.logger.info(f"Terminating scraper process for org {organization_id}, session {session_id}")
+            self.logger.info(
+                f"Terminating scraper process for org {organization_id}, session {session_id}"
+            )
 
         except Exception as e:
             self.logger.error(f"Error terminating scraper process: {e}")

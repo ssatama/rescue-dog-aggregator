@@ -17,7 +17,9 @@ import psycopg2
 from config import DB_CONFIG
 from utils.slug_generator import generate_unique_animal_slug
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -107,14 +109,24 @@ class SlugBackfillService:
         for animal_id, name, breed, standardized_breed, external_id in animals:
             try:
                 # Generate slug for this animal
-                slug = generate_unique_animal_slug(name=name or "", breed=breed, standardized_breed=standardized_breed, animal_id=animal_id, connection=self.conn)  # Use actual ID for uniqueness
+                slug = generate_unique_animal_slug(
+                    name=name or "",
+                    breed=breed,
+                    standardized_breed=standardized_breed,
+                    animal_id=animal_id,
+                    connection=self.conn,
+                )  # Use actual ID for uniqueness
 
                 if dry_run:
-                    logger.info(f"Would update animal {animal_id} ({name}) with slug: {slug}")
+                    logger.info(
+                        f"Would update animal {animal_id} ({name}) with slug: {slug}"
+                    )
                 else:
                     # Update the animal's slug
                     if self.update_animal_slug(animal_id, slug):
-                        logger.info(f"Updated animal {animal_id} ({name}) with slug: {slug}")
+                        logger.info(
+                            f"Updated animal {animal_id} ({name}) with slug: {slug}"
+                        )
                         success_count += 1
                     else:
                         logger.error(f"Failed to update animal {animal_id} ({name})")
@@ -128,7 +140,9 @@ class SlugBackfillService:
             # Commit all changes
             try:
                 self.conn.commit()
-                logger.info(f"Backfill completed successfully: {success_count} updated, {error_count} errors")
+                logger.info(
+                    f"Backfill completed successfully: {success_count} updated, {error_count} errors"
+                )
             except Exception as e:
                 logger.error(f"Error committing changes: {e}")
                 self.conn.rollback()
@@ -144,7 +158,11 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Backfill slugs for existing animals")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be done without making changes")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be done without making changes",
+    )
     args = parser.parse_args()
 
     service = SlugBackfillService()

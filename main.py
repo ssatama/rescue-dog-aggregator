@@ -91,12 +91,16 @@ def update_chromedriver():
 
 def parse_arguments():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description="Rescue Dog Aggregator - Data Collection")
+    parser = argparse.ArgumentParser(
+        description="Rescue Dog Aggregator - Data Collection"
+    )
 
     parser.add_argument("--setup", action="store_true", help="Set up the database")
     parser.add_argument("--all", action="store_true", help="Run all scrapers")
     parser.add_argument("--pit", action="store_true", help="Run Pets in Turkey scraper")
-    parser.add_argument("--update-driver", action="store_true", help="Update chromedriver")
+    parser.add_argument(
+        "--update-driver", action="store_true", help="Update chromedriver"
+    )
 
     return parser.parse_args()
 

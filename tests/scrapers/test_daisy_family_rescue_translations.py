@@ -93,7 +93,9 @@ class TestAgeTranslation:
 
         for german, english in daisy_ages.items():
             result = translate_age(german)
-            assert result == english, f"Failed for: {german} -> expected {english}, got {result}"
+            assert result == english, (
+                f"Failed for: {german} -> expected {english}, got {result}"
+            )
 
     def test_translate_age_handles_none(self):
         """Test that None/empty values are handled gracefully."""
@@ -170,7 +172,9 @@ class TestCharacterTranslation:
 
         for german, expected in daisy_characters.items():
             result = translate_character_traits(german)
-            assert expected in result or result in expected, f"Failed for: {german} -> {result}"
+            assert expected in result or result in expected, (
+                f"Failed for: {german} -> {result}"
+            )
 
     def test_translate_character_traits_handles_none(self):
         """Test that None values are handled gracefully."""
@@ -220,7 +224,9 @@ class TestIdealHomeTranslation:
 
         for german, key_words in daisy_homes.items():
             result = translate_ideal_home(german)
-            assert key_words in result, f"Expected '{key_words}' in result for '{german}': {result}"
+            assert key_words in result, (
+                f"Expected '{key_words}' in result for '{german}': {result}"
+            )
 
     def test_translate_ideal_home_handles_none(self):
         """Test that None values are handled gracefully."""
@@ -359,11 +365,17 @@ class TestCompatibilityWithStandardization:
         translated_breed = translate_breed(german_breed)
 
         # Test that standardization works on translated breed
-        standardized_breed, breed_group, size_estimate = standardize_breed(translated_breed)
+        standardized_breed, breed_group, size_estimate = standardize_breed(
+            translated_breed
+        )
 
         assert standardized_breed is not None
         # Standardization now returns "Mixed Breed" for mixed breeds
-        assert standardized_breed in ["German Shepherd Mix", "Mixed Breed", "German Shepherd Dog"]
+        assert standardized_breed in [
+            "German Shepherd Mix",
+            "Mixed Breed",
+            "German Shepherd Dog",
+        ]
 
     def test_age_translation_with_standardization(self):
         """Test that translated ages work with standardization."""

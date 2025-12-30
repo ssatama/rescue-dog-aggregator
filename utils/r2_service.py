@@ -79,7 +79,9 @@ class R2Service:
 
             if time_since_last < required_delay:
                 sleep_time = required_delay - time_since_last
-                logger.debug(f"Rate limiting: sleeping {sleep_time:.2f}s before upload (failures: {consecutive_failures})")
+                logger.debug(
+                    f"Rate limiting: sleeping {sleep_time:.2f}s before upload (failures: {consecutive_failures})"
+                )
                 time.sleep(sleep_time)
             cls._last_upload_time = time.time()
 
@@ -91,11 +93,19 @@ class R2Service:
 
         cls._config_checked = True
 
-        required_vars = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME", "R2_ENDPOINT"]
+        required_vars = [
+            "R2_ACCOUNT_ID",
+            "R2_ACCESS_KEY_ID",
+            "R2_SECRET_ACCESS_KEY",
+            "R2_BUCKET_NAME",
+            "R2_ENDPOINT",
+        ]
         missing_vars = [var for var in required_vars if not os.getenv(var)]
 
         if missing_vars:
-            logger.info(f"R2 not configured (missing: {', '.join(missing_vars)}). Using original image URLs.")
+            logger.info(
+                f"R2 not configured (missing: {', '.join(missing_vars)}). Using original image URLs."
+            )
             cls._config_valid = False
             return False
 
@@ -114,7 +124,10 @@ class R2Service:
                 connect_timeout=10,  # 10 seconds to establish connection
                 read_timeout=30,  # 30 seconds to read response
                 max_pool_connections=5,  # Limit concurrent connections
-                retries={"max_attempts": 3, "mode": "adaptive"},  # Retry up to 3 times  # Use adaptive retry mode for better handling
+                retries={
+                    "max_attempts": 3,
+                    "mode": "adaptive",
+                },  # Retry up to 3 times  # Use adaptive retry mode for better handling
             )
 
             cls._s3_client = boto3.client(
@@ -133,7 +146,9 @@ class R2Service:
         return cls._check_configuration()
 
     @staticmethod
-    def _generate_image_key(image_url: str, animal_name: str, organization_name: str = "unknown") -> str:
+    def _generate_image_key(
+        image_url: str, animal_name: str, organization_name: str = "unknown"
+    ) -> str:
         """
         Generate unique image key for R2 storage using SHA-256.
 
@@ -149,7 +164,9 @@ class R2Service:
         return f"rescue_dogs/{safe_org_name}/{safe_animal_name}_{url_hash}.jpg"
 
     @staticmethod
-    def _generate_legacy_image_key(image_url: str, animal_name: str, organization_name: str = "unknown") -> str:
+    def _generate_legacy_image_key(
+        image_url: str, animal_name: str, organization_name: str = "unknown"
+    ) -> str:
         """
         Generate legacy MD5-based image key for backward compatibility.
 
@@ -219,7 +236,9 @@ class R2Service:
         # Check configuration
         if not R2Service._check_configuration():
             if raise_on_missing_config:
-                raise R2ConfigurationError("R2 not properly configured. Missing environment variables.")
+                raise R2ConfigurationError(
+                    "R2 not properly configured. Missing environment variables."
+                )
 
             # Fallback: return original URL with success=False
             logger.debug(f"R2 not configured, using original URL: {image_url}")
@@ -227,8 +246,12 @@ class R2Service:
 
         try:
             # Generate new SHA-256 image key
-            image_key = R2Service._generate_image_key(image_url, animal_name, organization_name)
-            legacy_key = R2Service._generate_legacy_image_key(image_url, animal_name, organization_name)
+            image_key = R2Service._generate_image_key(
+                image_url, animal_name, organization_name
+            )
+            legacy_key = R2Service._generate_legacy_image_key(
+                image_url, animal_name, organization_name
+            )
             bucket_name = os.getenv("R2_BUCKET_NAME")
 
             # Get S3 client
@@ -256,18 +279,29 @@ class R2Service:
             pass
 
             # Download the image with shorter timeout to prevent hanging
-            headers = {"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}
-            response = requests.get(image_url, timeout=(10, 20), headers=headers)  # (connect, read) timeouts
+            headers = {
+                "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"
+            }
+            response = requests.get(
+                image_url, timeout=(10, 20), headers=headers
+            )  # (connect, read) timeouts
             response.raise_for_status()
 
             if response.status_code != 200:
-                logger.warning(f"Failed to download image {image_url}: HTTP {response.status_code}")
+                logger.warning(
+                    f"Failed to download image {image_url}: HTTP {response.status_code}"
+                )
                 return image_url, False
 
             # Check content type
             content_type = response.headers.get("content-type", "").lower()
-            if not any(img_type in content_type for img_type in ["image/jpeg", "image/jpg", "image/png", "image/webp"]):
-                logger.warning(f"Invalid content type for image {image_url}: {content_type}")
+            if not any(
+                img_type in content_type
+                for img_type in ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+            ):
+                logger.warning(
+                    f"Invalid content type for image {image_url}: {content_type}"
+                )
                 return image_url, False
 
             # Enforce global rate limiting before upload
@@ -277,12 +311,30 @@ class R2Service:
             import unicodedata
 
             # Remove accents and non-ASCII characters from metadata
-            safe_animal_name = unicodedata.normalize("NFKD", animal_name).encode("ascii", "ignore").decode("ascii")
-            safe_org_name = unicodedata.normalize("NFKD", organization_name).encode("ascii", "ignore").decode("ascii")
+            safe_animal_name = (
+                unicodedata.normalize("NFKD", animal_name)
+                .encode("ascii", "ignore")
+                .decode("ascii")
+            )
+            safe_org_name = (
+                unicodedata.normalize("NFKD", organization_name)
+                .encode("ascii", "ignore")
+                .decode("ascii")
+            )
 
             image_data = BytesIO(response.content)
             s3_client.upload_fileobj(
-                image_data, bucket_name, image_key, ExtraArgs={"ContentType": content_type, "Metadata": {"original_url": image_url, "animal_name": safe_animal_name, "organization": safe_org_name}}
+                image_data,
+                bucket_name,
+                image_key,
+                ExtraArgs={
+                    "ContentType": content_type,
+                    "Metadata": {
+                        "original_url": image_url,
+                        "animal_name": safe_animal_name,
+                        "organization": safe_org_name,
+                    },
+                },
             )
 
             logger.info(f"Successfully uploaded image to R2: {image_key}")
@@ -300,9 +352,13 @@ class R2Service:
             if error_code in ["SlowDown", "TooManyRequests", "RequestLimitExceeded"]:
                 # Increment failure counter for rate limiting errors
                 with R2Service._state_lock:
-                    R2Service._consecutive_failures = min(R2Service._consecutive_failures + 1, 5)  # Cap at 5
+                    R2Service._consecutive_failures = min(
+                        R2Service._consecutive_failures + 1, 5
+                    )  # Cap at 5
                     failures = R2Service._consecutive_failures
-                logger.warning(f"R2 rate limit error uploading image {image_url}: {error_code} (failures: {failures})")
+                logger.warning(
+                    f"R2 rate limit error uploading image {image_url}: {error_code} (failures: {failures})"
+                )
             else:
                 logger.warning(f"R2 error uploading image {image_url}: {e}")
             return image_url, False
@@ -312,7 +368,9 @@ class R2Service:
             return image_url, False
 
     @staticmethod
-    def get_optimized_url(r2_url: str, transformation_options: Optional[Dict] = None) -> str:
+    def get_optimized_url(
+        r2_url: str, transformation_options: Optional[Dict] = None
+    ) -> str:
         """
         Get optimized URL using Cloudflare Images transformations.
 
@@ -351,8 +409,16 @@ class R2Service:
                     params.append(f"h_{transformation_options['height']}")
                 if "fit" in transformation_options:
                     # Map fit options to Cloudflare Images format
-                    fit_mapping = {"fill": "c_fill", "fit": "c_fit", "crop": "c_crop", "scale": "c_scale", "cover": "c_cover"}
-                    cloudflare_fit = fit_mapping.get(transformation_options["fit"], "c_fill")
+                    fit_mapping = {
+                        "fill": "c_fill",
+                        "fit": "c_fit",
+                        "crop": "c_crop",
+                        "scale": "c_scale",
+                        "cover": "c_cover",
+                    }
+                    cloudflare_fit = fit_mapping.get(
+                        transformation_options["fit"], "c_fill"
+                    )
                     params.append(cloudflare_fit)
                 if "quality" in transformation_options:
                     params.append(f"q_{transformation_options['quality']}")
@@ -386,7 +452,14 @@ class R2Service:
         }
 
     @classmethod
-    def batch_upload_images(cls, images: list, batch_size: int = 5, batch_delay: float = 3.0, adaptive_delay: bool = True, progress_callback: Optional[Callable] = None) -> list:
+    def batch_upload_images(
+        cls,
+        images: list,
+        batch_size: int = 5,
+        batch_delay: float = 3.0,
+        adaptive_delay: bool = True,
+        progress_callback: Optional[Callable] = None,
+    ) -> list:
         """Upload multiple images in batches with delays to avoid rate limiting.
 
         Args:
@@ -407,11 +480,15 @@ class R2Service:
         failures_in_batch = 0
 
         # Log batch upload start
-        logger.info(f"📦 Starting BATCH upload of {total_images} images (batch size: {batch_size})")
+        logger.info(
+            f"📦 Starting BATCH upload of {total_images} images (batch size: {batch_size})"
+        )
 
         for i, (image_url, animal_name, org_name) in enumerate(images):
             # Upload single image as part of batch
-            uploaded_url, success = cls.upload_image_from_url(image_url, animal_name, org_name)
+            uploaded_url, success = cls.upload_image_from_url(
+                image_url, animal_name, org_name
+            )
             results.append((uploaded_url, success))
 
             # Track failures for adaptive delays
@@ -431,16 +508,26 @@ class R2Service:
                     failure_rate = failures_in_batch / batch_size
                     # Increase delay based on failure rate (up to 3x base delay)
                     delay = batch_delay * (1 + min(failure_rate * 2, 2))
-                    logger.info(f"Batch completed with {failures_in_batch}/{batch_size} failures, using {delay:.1f}s delay")
+                    logger.info(
+                        f"Batch completed with {failures_in_batch}/{batch_size} failures, using {delay:.1f}s delay"
+                    )
 
-                logger.info(f"Batch of {batch_size} uploads completed, pausing {delay:.1f}s before next batch")
+                logger.info(
+                    f"Batch of {batch_size} uploads completed, pausing {delay:.1f}s before next batch"
+                )
                 time.sleep(delay)
                 failures_in_batch = 0  # Reset for next batch
 
         return results
 
     @classmethod
-    def batch_upload_images_with_stats(cls, images: list, batch_size: int = 5, batch_delay: float = 3.0, adaptive_delay: bool = True) -> Tuple[list, Dict]:
+    def batch_upload_images_with_stats(
+        cls,
+        images: list,
+        batch_size: int = 5,
+        batch_delay: float = 3.0,
+        adaptive_delay: bool = True,
+    ) -> Tuple[list, Dict]:
         """Upload multiple images and return statistics.
 
         Args:
@@ -454,7 +541,12 @@ class R2Service:
         """
         start_time = time.time()
 
-        results = cls.batch_upload_images(images, batch_size=batch_size, batch_delay=batch_delay, adaptive_delay=adaptive_delay)
+        results = cls.batch_upload_images(
+            images,
+            batch_size=batch_size,
+            batch_delay=batch_delay,
+            adaptive_delay=adaptive_delay,
+        )
 
         total_time = time.time() - start_time
         successful = sum(1 for _, success in results if success)
@@ -469,7 +561,11 @@ class R2Service:
             "average_time": total_time / len(results) if results else 0,
         }
 
-        logger.info(f"Batch upload completed: {successful}/{len(results)} successful " f"({stats['success_rate']:.1f}%), took {total_time:.1f}s total, " f"{stats['average_time']:.2f}s per image")
+        logger.info(
+            f"Batch upload completed: {successful}/{len(results)} successful "
+            f"({stats['success_rate']:.1f}%), took {total_time:.1f}s total, "
+            f"{stats['average_time']:.2f}s per image"
+        )
 
         return results, stats
 
@@ -508,7 +604,9 @@ class R2Service:
         if max_concurrent_uploads:
             semaphore = threading.Semaphore(max_concurrent_uploads)
 
-        def upload_with_index(index: int, image_data: Tuple[str, str, str]) -> Tuple[int, str, bool]:
+        def upload_with_index(
+            index: int, image_data: Tuple[str, str, str]
+        ) -> Tuple[int, str, bool]:
             """Upload single image and return index with result."""
             nonlocal current_throttle
             image_url, animal_name, org_name = image_data
@@ -521,7 +619,9 @@ class R2Service:
                 if index > 0 and current_throttle > 0:
                     time.sleep(current_throttle)
 
-                uploaded_url, success = cls.upload_image_from_url(image_url, animal_name, org_name)
+                uploaded_url, success = cls.upload_image_from_url(
+                    image_url, animal_name, org_name
+                )
                 return index, uploaded_url, success
             except Exception as e:
                 logger.error(f"Exception in concurrent upload for {image_url}: {e}")
@@ -532,7 +632,10 @@ class R2Service:
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks
-            futures = {executor.submit(upload_with_index, i, img_data): i for i, img_data in enumerate(images)}
+            futures = {
+                executor.submit(upload_with_index, i, img_data): i
+                for i, img_data in enumerate(images)
+            }
 
             # Process completed uploads
             for future in as_completed(futures):
@@ -548,11 +651,15 @@ class R2Service:
                             current_throttle = min(current_throttle * 1.5, 2.0)
                         elif current_throttle > throttle_delay:
                             # Slowly decrease throttle on success
-                            current_throttle = max(current_throttle * 0.9, throttle_delay)
+                            current_throttle = max(
+                                current_throttle * 0.9, throttle_delay
+                            )
 
                     # Progress callback
                     if progress_callback:
-                        progress_callback(completed_count, len(images), uploaded_url, success)
+                        progress_callback(
+                            completed_count, len(images), uploaded_url, success
+                        )
 
                 except Exception as e:
                     index = futures[future]
@@ -563,7 +670,11 @@ class R2Service:
 
     @classmethod
     def concurrent_upload_images_with_stats(
-        cls, images: List[Tuple[str, str, str]], max_workers: int = 3, throttle_ms: int = 200, adaptive_throttle: bool = False
+        cls,
+        images: List[Tuple[str, str, str]],
+        max_workers: int = 3,
+        throttle_ms: int = 200,
+        adaptive_throttle: bool = False,
     ) -> Tuple[List[Tuple[str, bool]], Dict]:
         """Upload images concurrently and return statistics.
 
@@ -578,7 +689,12 @@ class R2Service:
         """
         start_time = time.time()
 
-        results = cls.concurrent_upload_images(images, max_workers=max_workers, throttle_ms=throttle_ms, adaptive_throttle=adaptive_throttle)
+        results = cls.concurrent_upload_images(
+            images,
+            max_workers=max_workers,
+            throttle_ms=throttle_ms,
+            adaptive_throttle=adaptive_throttle,
+        )
 
         total_time = time.time() - start_time
         successful = sum(1 for _, success in results if success)
@@ -624,14 +740,20 @@ class R2Service:
             cls._failure_history.append((time.time(), error_type))
             # Clean old entries (keep last 5 minutes)
             cutoff_time = time.time() - 300
-            cls._failure_history = [(t, e) for t, e in cls._failure_history if t > cutoff_time]
+            cls._failure_history = [
+                (t, e) for t, e in cls._failure_history if t > cutoff_time
+            ]
 
             # Check if circuit breaker should open
-            recent_failures = len([f for f in cls._failure_history if f[0] > time.time() - 60])
+            recent_failures = len(
+                [f for f in cls._failure_history if f[0] > time.time() - 60]
+            )
             if recent_failures >= cls._circuit_breaker_threshold:
                 cls._circuit_breaker_open = True
                 cls._circuit_breaker_until = time.time() + cls._circuit_breaker_timeout
-                logger.warning(f"Circuit breaker opened due to {recent_failures} failures in 60s")
+                logger.warning(
+                    f"Circuit breaker opened due to {recent_failures} failures in 60s"
+                )
 
     @classmethod
     def is_circuit_breaker_open(cls) -> bool:
@@ -651,7 +773,9 @@ class R2Service:
         """Calculate failure rate over specified window."""
         with cls._state_lock:
             cutoff_time = time.time() - (window_minutes * 60)
-            recent_failures = len([f for f in cls._failure_history if f[0] > cutoff_time])
+            recent_failures = len(
+                [f for f in cls._failure_history if f[0] > cutoff_time]
+            )
             recent_successes = len([t for t in cls._success_history if t > cutoff_time])
 
             total_attempts = recent_failures + recent_successes
@@ -702,7 +826,9 @@ class R2Service:
         return max(0.1, delay + jitter)
 
     @classmethod
-    def upload_image_with_circuit_breaker(cls, image_url: str, animal_name: str, organization_name: str = "unknown") -> Tuple[Optional[str], bool]:
+    def upload_image_with_circuit_breaker(
+        cls, image_url: str, animal_name: str, organization_name: str = "unknown"
+    ) -> Tuple[Optional[str], bool]:
         """Upload image with circuit breaker protection."""
         # Check circuit breaker
         if cls.is_circuit_breaker_open():
@@ -710,7 +836,9 @@ class R2Service:
             return image_url, False
 
         # Attempt upload
-        uploaded_url, success = cls.upload_image_from_url(image_url, animal_name, organization_name)
+        uploaded_url, success = cls.upload_image_from_url(
+            image_url, animal_name, organization_name
+        )
 
         # Track result
         if success:
@@ -721,17 +849,27 @@ class R2Service:
         return uploaded_url, success
 
     @classmethod
-    def upload_image_with_fallback(cls, image_url: str, animal_name: str, organization_name: str = "unknown", failure_threshold: float = 50.0) -> Tuple[Optional[str], bool]:
+    def upload_image_with_fallback(
+        cls,
+        image_url: str,
+        animal_name: str,
+        organization_name: str = "unknown",
+        failure_threshold: float = 50.0,
+    ) -> Tuple[Optional[str], bool]:
         """Upload image with intelligent fallback based on failure rate."""
         # Check failure rate
         failure_rate = cls.get_failure_rate()
 
         if failure_rate > failure_threshold:
-            logger.warning(f"Failure rate {failure_rate:.1f}% exceeds threshold, using fallback")
+            logger.warning(
+                f"Failure rate {failure_rate:.1f}% exceeds threshold, using fallback"
+            )
             return image_url, False
 
         # Use circuit breaker upload
-        return cls.upload_image_with_circuit_breaker(image_url, animal_name, organization_name)
+        return cls.upload_image_with_circuit_breaker(
+            image_url, animal_name, organization_name
+        )
 
     @classmethod
     def get_health_status(cls) -> Dict:

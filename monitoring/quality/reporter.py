@@ -1,7 +1,5 @@
 # monitoring/quality/reporter.py
 
-import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -14,7 +12,9 @@ class DataQualityReporter:
     """Generates markdown reports for data quality analysis."""
 
     def __init__(self):
-        self.reports_dir = Path(__file__).parent.parent.parent / "reports" / "data-quality"
+        self.reports_dir = (
+            Path(__file__).parent.parent.parent / "reports" / "data-quality"
+        )
         self.timestamp = datetime.now()
         self.date_str = self.timestamp.strftime("%Y-%m-%d")
         self.time_str = self.timestamp.strftime("%H-%M-%S")
@@ -66,7 +66,7 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
             report += f"| {i} | {org.org_name} | {org.org_id} | {org.total_animals} | {org.overall_score:.1f}% | {org.critical_issues_count} | {issues_str} |\n"
 
         # Quality categories breakdown
-        report += f"""
+        report += """
 ## Quality Categories Analysis
 
 ### Top Performing Organizations (90%+ overall)
@@ -78,13 +78,17 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
         else:
             report += "- No organizations currently at 90%+ quality level\n"
 
-        report += f"""
+        report += """
 ### Organizations Needing Improvement (<70% overall)
 """
         poor_orgs = [org for org in sorted_orgs if org.overall_score < 70]
         if poor_orgs:
             for org in poor_orgs:
-                top_issue = list(org.common_issues.keys())[0] if org.common_issues else "Unknown"
+                top_issue = (
+                    list(org.common_issues.keys())[0]
+                    if org.common_issues
+                    else "Unknown"
+                )
                 report += f"- **{org.org_name}** ({org.overall_score:.1f}%): Primary issue - {top_issue}\n"
         else:
             report += "- All organizations meet minimum 70% quality threshold\n"
@@ -97,17 +101,19 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
 
         common_issues = sorted(all_issues.items(), key=lambda x: x[1], reverse=True)[:5]
 
-        report += f"""
+        report += """
 ## Most Common Data Quality Issues
 
 | Issue | Organizations Affected | Total Animals Affected |
 |-------|------------------------|------------------------|
 """
         for issue, count in common_issues:
-            orgs_affected = sum(1 for org in org_qualities if issue in org.common_issues)
+            orgs_affected = sum(
+                1 for org in org_qualities if issue in org.common_issues
+            )
             report += f"| {issue} | {orgs_affected} | {count} |\n"
 
-        report += f"""
+        report += """
 ## Recommended Actions
 
 ### Immediate Priority (Critical Issues)
@@ -116,12 +122,14 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
             if org.critical_issues_count > 0:
                 report += f"- **{org.org_name}**: Fix {org.critical_issues_count} critical issues (missing required fields)\n"
 
-        report += f"""
+        report += """
 ### Quality Improvement Opportunities
 """
         # Find organizations with specific improvement areas
         low_completeness = [org for org in org_qualities if org.completeness_avg < 80]
-        low_standardization = [org for org in org_qualities if org.standardization_avg < 70]
+        low_standardization = [
+            org for org in org_qualities if org.standardization_avg < 70
+        ]
         low_content = [org for org in org_qualities if org.rich_content_avg < 50]
 
         if low_completeness:
@@ -150,7 +158,11 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
 
         return report
 
-    def generate_detailed_organization_report(self, org_quality: OrganizationQuality, animal_details: List[Tuple[Dict[str, Any], QualityAssessment]]) -> str:
+    def generate_detailed_organization_report(
+        self,
+        org_quality: OrganizationQuality,
+        animal_details: List[Tuple[Dict[str, Any], QualityAssessment]],
+    ) -> str:
         """Generate detailed report for a single organization."""
 
         org = org_quality
@@ -184,12 +196,16 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
 """
 
         for issue, count in org.common_issues.items():
-            percentage = (count / org.total_animals * 100) if org.total_animals > 0 else 0
-            impact = "High" if percentage > 50 else "Medium" if percentage > 25 else "Low"
+            percentage = (
+                (count / org.total_animals * 100) if org.total_animals > 0 else 0
+            )
+            impact = (
+                "High" if percentage > 50 else "Medium" if percentage > 25 else "Low"
+            )
             report += f"| {issue} | {count} ({percentage:.1f}%) | {impact} |\n"
 
         # Quality recommendations based on scores
-        report += f"""
+        report += """
 ## Improvement Recommendations
 
 """
@@ -223,10 +239,14 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
 """
 
         # Sample problematic animals
-        problematic_animals = [(animal, assessment) for animal, assessment in animal_details if assessment.overall_score < 70]
+        problematic_animals = [
+            (animal, assessment)
+            for animal, assessment in animal_details
+            if assessment.overall_score < 70
+        ]
 
         if problematic_animals:
-            report += f"""
+            report += """
 ## Sample Issues by Animal
 
 ### Animals Needing Immediate Attention (<70% Quality)
@@ -235,7 +255,9 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
 |-----------|------|-------|----------------|
 """
 
-            for animal, assessment in problematic_animals[:10]:  # Show up to 10 examples
+            for animal, assessment in problematic_animals[
+                :10
+            ]:  # Show up to 10 examples
                 primary_issues = []
                 if assessment.critical_issues:
                     primary_issues.extend(assessment.critical_issues[:2])
@@ -246,14 +268,22 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
                     if assessment.standardization.issues and len(primary_issues) < 2:
                         primary_issues.append(assessment.standardization.issues[0])
 
-                issues_str = ", ".join(primary_issues[:2]) if primary_issues else "Various minor issues"
+                issues_str = (
+                    ", ".join(primary_issues[:2])
+                    if primary_issues
+                    else "Various minor issues"
+                )
                 report += f"| {animal['id']} | {animal['name']} | {assessment.overall_score:.1f}% | {issues_str} |\n"
 
         # High quality examples for reference
-        excellent_animals = [(animal, assessment) for animal, assessment in animal_details if assessment.overall_score >= 90]
+        excellent_animals = [
+            (animal, assessment)
+            for animal, assessment in animal_details
+            if assessment.overall_score >= 90
+        ]
 
         if excellent_animals:
-            report += f"""
+            report += """
 ## Quality Reference Examples
 
 ### High-Quality Animals (90%+ Score) - Use as Templates
@@ -273,10 +303,14 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
                 if assessment.visual_appeal.percentage >= 90:
                     strong_points.append("Good images")
 
-                points_str = ", ".join(strong_points) if strong_points else "Well-rounded quality"
+                points_str = (
+                    ", ".join(strong_points)
+                    if strong_points
+                    else "Well-rounded quality"
+                )
                 report += f"| {animal['id']} | {animal['name']} | {assessment.overall_score:.1f}% | {points_str} |\n"
 
-        report += f"""
+        report += """
 ## Data Quality Standards Reference
 
 ### Frontend Filtering Requirements
@@ -299,13 +333,13 @@ For maximum search visibility:
 """
 
         if org.overall_score < 90:
-            report += f"""- Review scraper implementation against best practices
+            report += """- Review scraper implementation against best practices
 - Compare with high-performing organizations (90%+ quality)
 - Implement missing standardization utilities
 - Add error handling for missing data extraction
 """
         else:
-            report += f"""- Scraper implementation is performing well
+            report += """- Scraper implementation is performing well
 - Minor optimizations may be possible
 - Consider this as a reference implementation for other organizations
 """
@@ -333,12 +367,20 @@ For maximum search visibility:
 
         return str(file_path)
 
-    def save_detailed_report(self, org_quality: OrganizationQuality, animal_details: List[Tuple[Dict[str, Any], QualityAssessment]]) -> str:
+    def save_detailed_report(
+        self,
+        org_quality: OrganizationQuality,
+        animal_details: List[Tuple[Dict[str, Any], QualityAssessment]],
+    ) -> str:
         """Save detailed organization report and return file path."""
-        report_content = self.generate_detailed_organization_report(org_quality, animal_details)
+        report_content = self.generate_detailed_organization_report(
+            org_quality, animal_details
+        )
 
         # Create safe filename from organization name
-        safe_name = "".join(c for c in org_quality.org_name if c.isalnum() or c in (" ", "-", "_")).rstrip()
+        safe_name = "".join(
+            c for c in org_quality.org_name if c.isalnum() or c in (" ", "-", "_")
+        ).rstrip()
         safe_name = safe_name.replace(" ", "-").lower()
         filename = f"org-{org_quality.org_id}-{safe_name}.md"
 

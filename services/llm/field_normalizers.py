@@ -9,7 +9,11 @@ Following CLAUDE.md principles:
 
 from typing import Any, Optional
 
-from .normalizers import BehavioralNormalizers, CompatibilityNormalizers, UtilityNormalizers
+from .normalizers import (
+    BehavioralNormalizers,
+    CompatibilityNormalizers,
+    UtilityNormalizers,
+)
 
 
 class FieldNormalizers:

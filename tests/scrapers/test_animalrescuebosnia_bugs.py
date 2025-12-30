@@ -5,7 +5,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueBosniaScraper
+from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import (
+    AnimalRescueBosniaScraper,
+)
 
 
 @pytest.mark.computation
@@ -155,7 +157,13 @@ class TestAnimalRescueBosniaFixes(unittest.TestCase):
     def test_size_standardization_all_categories(self):
         """Test standardization mapping for all size categories."""
         # Note: UnifiedStandardizer maps XLarge to Large
-        test_cases = [("3 kg", "Tiny", "Tiny"), ("10 kg", "Small", "Small"), ("25 kg", "Medium", "Medium"), ("40 kg", "Large", "Large"), ("50 kg", "XLarge", "Large")]  # XLarge maps to Large
+        test_cases = [
+            ("3 kg", "Tiny", "Tiny"),
+            ("10 kg", "Small", "Small"),
+            ("25 kg", "Medium", "Medium"),
+            ("40 kg", "Large", "Large"),
+            ("50 kg", "XLarge", "Large"),
+        ]  # XLarge maps to Large
 
         for weight, expected_size, expected_standardized in test_cases:
             with self.subTest(weight=weight):
@@ -164,24 +172,36 @@ class TestAnimalRescueBosniaFixes(unittest.TestCase):
                 self.assertEqual(calculated_size, expected_size)
 
                 # Test standardization mapping through process_animal
-                result = self.scraper.process_animal({"size": calculated_size, "breed": "Mix", "age": "2 years"})
+                result = self.scraper.process_animal(
+                    {"size": calculated_size, "breed": "Mix", "age": "2 years"}
+                )
                 self.assertEqual(result["standardized_size"], expected_standardized)
 
     def test_empty_size_standardization(self):
         """Test that empty sizes are handled correctly."""
         # Test None input - unified standardizer should provide default
-        result = self.scraper.process_animal({"size": None, "breed": "Mix", "age": "2 years"})
+        result = self.scraper.process_animal(
+            {"size": None, "breed": "Mix", "age": "2 years"}
+        )
         self.assertIn("standardized_size", result)
         # The standardizer may return different defaults based on scraper configuration
-        self.assertIn(result["standardized_size"], ["Medium", "Large"])  # Accept either default
+        self.assertIn(
+            result["standardized_size"], ["Medium", "Large"]
+        )  # Accept either default
 
         # Test empty string input
-        result = self.scraper.process_animal({"size": "", "breed": "Mix", "age": "2 years"})
+        result = self.scraper.process_animal(
+            {"size": "", "breed": "Mix", "age": "2 years"}
+        )
         self.assertIn("standardized_size", result)
-        self.assertIn(result["standardized_size"], ["Medium", "Large"])  # Accept either default
+        self.assertIn(
+            result["standardized_size"], ["Medium", "Large"]
+        )  # Accept either default
 
         # Test unknown size - should use default
-        result = self.scraper.process_animal({"size": "Unknown", "breed": "Mix", "age": "2 years"})
+        result = self.scraper.process_animal(
+            {"size": "Unknown", "breed": "Mix", "age": "2 years"}
+        )
         self.assertIn("standardized_size", result)
         # 'Unknown' as input might become either Medium or Large depending on scraper defaults
         self.assertIn(result["standardized_size"], ["Medium", "Large"])
@@ -214,7 +234,18 @@ class TestAnimalRescueBosniaFixes(unittest.TestCase):
             result = self.scraper.scrape_animal_details("https://test.com/integration/")
 
             # Check complete data structure for BaseScraper
-            required_fields = ["name", "external_id", "adoption_url", "primary_image_url", "breed", "age_text", "sex", "size", "standardized_size", "properties"]
+            required_fields = [
+                "name",
+                "external_id",
+                "adoption_url",
+                "primary_image_url",
+                "breed",
+                "age_text",
+                "sex",
+                "size",
+                "standardized_size",
+                "properties",
+            ]
 
             for field in required_fields:
                 self.assertIn(field, result, f"Missing field: {field}")

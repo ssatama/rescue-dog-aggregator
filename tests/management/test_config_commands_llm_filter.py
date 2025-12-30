@@ -23,7 +23,9 @@ class TestLLMAvailabilityFiltering(unittest.TestCase):
     @patch("psycopg2.connect")
     @patch("services.llm.organization_config_loader.get_config_loader")
     @patch("pathlib.Path")
-    def test_profile_dogs_only_high_confidence(self, mock_path, mock_loader, mock_connect):
+    def test_profile_dogs_only_high_confidence(
+        self, mock_path, mock_loader, mock_connect
+    ):
         """Test profile_dogs method only fetches high confidence dogs."""
         # Setup mocks
         mock_conn = MagicMock()
@@ -59,7 +61,9 @@ class TestLLMAvailabilityFiltering(unittest.TestCase):
         query = call_args[0][0]
 
         # Check that the query includes the availability filter
-        assert "availability_confidence = 'high'" in query, f"Query missing availability_confidence filter: {query}"
+        assert "availability_confidence = 'high'" in query, (
+            f"Query missing availability_confidence filter: {query}"
+        )
 
         # Verify it's checking for unprofiled dogs
         assert "dog_profiler_data IS NULL" in query

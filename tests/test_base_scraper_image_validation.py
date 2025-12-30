@@ -1,8 +1,7 @@
 """Test BaseScraper's protection against dogs without images."""
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
-import pytest
 
 from scrapers.base_scraper import BaseScraper
 
@@ -25,7 +24,13 @@ class TestBaseScraperImageValidation:
     def test_process_animals_data_skips_dogs_without_images(self):
         """Test that _process_animals_data skips animals with empty image URLs."""
         # Create scraper instance with mocked services
-        scraper = TestableBaseScraper(organization_id=1, database_service=Mock(), image_processing_service=None, session_manager=Mock(), metrics_collector=Mock())
+        scraper = TestableBaseScraper(
+            organization_id=1,
+            database_service=Mock(),
+            image_processing_service=None,
+            session_manager=Mock(),
+            metrics_collector=Mock(),
+        )
 
         # Mock the save_animal method to track calls
         save_animal_mock = Mock(return_value=(1, "added"))
@@ -39,7 +44,13 @@ class TestBaseScraperImageValidation:
 
         # Create test data with mix of valid and invalid animals
         animals_data = [
-            {"name": "Valid Dog 1", "external_id": "test-1", "primary_image_url": "https://example.com/dog1.jpg", "adoption_url": "https://example.com/adopt/dog1", "description": "A good dog"},
+            {
+                "name": "Valid Dog 1",
+                "external_id": "test-1",
+                "primary_image_url": "https://example.com/dog1.jpg",
+                "adoption_url": "https://example.com/adopt/dog1",
+                "description": "A good dog",
+            },
             {
                 "name": "Invalid Dog - Empty String",
                 "external_id": "test-2",
@@ -47,7 +58,13 @@ class TestBaseScraperImageValidation:
                 "adoption_url": "https://example.com/adopt/dog2",
                 "description": "No image",
             },
-            {"name": "Valid Dog 2", "external_id": "test-3", "primary_image_url": "https://example.com/dog2.jpg", "adoption_url": "https://example.com/adopt/dog3", "description": "Another good dog"},
+            {
+                "name": "Valid Dog 2",
+                "external_id": "test-3",
+                "primary_image_url": "https://example.com/dog2.jpg",
+                "adoption_url": "https://example.com/adopt/dog3",
+                "description": "Another good dog",
+            },
             {
                 "name": "Invalid Dog - None",
                 "external_id": "test-4",
@@ -65,15 +82,33 @@ class TestBaseScraperImageValidation:
         assert save_animal_mock.call_count == 2  # Valid Dog 1 and Valid Dog 2 only
 
         # Verify warning was logged for invalid animal
-        warning_calls = [call for call in scraper.logger.warning.call_args_list if "Invalid Dog - Empty String" in str(call)]
-        assert len(warning_calls) == 1, "Should have logged warning for dog with empty image URL"
+        warning_calls = [
+            call
+            for call in scraper.logger.warning.call_args_list
+            if "Invalid Dog - Empty String" in str(call)
+        ]
+        assert len(warning_calls) == 1, (
+            "Should have logged warning for dog with empty image URL"
+        )
 
     def test_validate_animal_data_rejects_empty_image_urls(self):
         """Test that _validate_animal_data correctly rejects empty image URLs."""
-        scraper = TestableBaseScraper(organization_id=1, database_service=Mock(), image_processing_service=None, session_manager=Mock(), metrics_collector=Mock())
+        scraper = TestableBaseScraper(
+            organization_id=1,
+            database_service=Mock(),
+            image_processing_service=None,
+            session_manager=Mock(),
+            metrics_collector=Mock(),
+        )
 
         # Test with empty string image URL
-        invalid_animal = {"name": "Test Dog", "external_id": "test-1", "primary_image_url": "", "adoption_url": "https://example.com/adopt/test1", "description": "Test description"}
+        invalid_animal = {
+            "name": "Test Dog",
+            "external_id": "test-1",
+            "primary_image_url": "",
+            "adoption_url": "https://example.com/adopt/test1",
+            "description": "Test description",
+        }
 
         # Should reject empty string
         assert scraper._validate_animal_data(invalid_animal) == False
@@ -91,7 +126,13 @@ class TestBaseScraperImageValidation:
         assert scraper._validate_animal_data(valid_animal) == True
 
         # Test with None (no valid image)
-        none_animal = {"name": "Test Dog", "external_id": "test-3", "primary_image_url": None, "adoption_url": "https://example.com/adopt/test3", "description": "Test description"}
+        none_animal = {
+            "name": "Test Dog",
+            "external_id": "test-3",
+            "primary_image_url": None,
+            "adoption_url": "https://example.com/adopt/test3",
+            "description": "Test description",
+        }
 
         # Should reject None (no valid image URL)
         assert scraper._validate_animal_data(none_animal) == False
@@ -103,7 +144,13 @@ class TestBaseScraperImageValidation:
         mock_db.create_scrape_log = Mock(return_value=1)
         mock_db.complete_scrape_log = Mock(return_value=True)
 
-        scraper = TestableBaseScraper(organization_id=1, database_service=mock_db, image_processing_service=None, session_manager=Mock(), metrics_collector=Mock())
+        scraper = TestableBaseScraper(
+            organization_id=1,
+            database_service=mock_db,
+            image_processing_service=None,
+            session_manager=Mock(),
+            metrics_collector=Mock(),
+        )
 
         # Mock methods needed for save_animal
         scraper.get_existing_animal = Mock(return_value=None)
@@ -133,7 +180,13 @@ class TestBaseScraperImageValidation:
 
     def test_missing_adoption_url_rejected(self):
         """Test that animals without adoption_url are rejected."""
-        scraper = TestableBaseScraper(organization_id=1, database_service=Mock(), image_processing_service=None, session_manager=Mock(), metrics_collector=Mock())
+        scraper = TestableBaseScraper(
+            organization_id=1,
+            database_service=Mock(),
+            image_processing_service=None,
+            session_manager=Mock(),
+            metrics_collector=Mock(),
+        )
 
         # Test data missing adoption_url
         invalid_animal = {

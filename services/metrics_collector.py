@@ -63,9 +63,17 @@ class MetricsCollector:
             before_filter: Total animals found before filtering
             skipped: Number of animals skipped due to filtering
         """
-        self._animal_counts = {"total_before_filter": before_filter, "total_skipped": skipped, "processing_efficiency": self._calculate_processing_efficiency(before_filter, skipped)}
+        self._animal_counts = {
+            "total_before_filter": before_filter,
+            "total_skipped": skipped,
+            "processing_efficiency": self._calculate_processing_efficiency(
+                before_filter, skipped
+            ),
+        }
 
-    def calculate_scrape_duration(self, start_time: datetime, end_time: datetime) -> float:
+    def calculate_scrape_duration(
+        self, start_time: datetime, end_time: datetime
+    ) -> float:
         """Calculate scrape duration in seconds.
 
         Args:
@@ -92,7 +100,12 @@ class MetricsCollector:
 
         total_score = 0.0
         # Fixed: Check for normalized fields instead of raw scraped fields
-        required_fields = ["name", "breed", "age_years", "external_id"]  # was "age_text"
+        required_fields = [
+            "name",
+            "breed",
+            "age_years",
+            "external_id",
+        ]  # was "age_text"
         optional_fields = ["sex", "size", "primary_image_url", "adoption_url"]
 
         for animal in animals_data:
@@ -103,7 +116,9 @@ class MetricsCollector:
             for field in required_fields:
                 if field == "age_years":
                     # Check for either age_years (normalized) or age_text (raw) for age data
-                    if (animal.get("age_years") is not None) or (animal.get("age_text") and str(animal["age_text"]).strip()):
+                    if (animal.get("age_years") is not None) or (
+                        animal.get("age_text") and str(animal["age_text"]).strip()
+                    ):
                         required_present += 1
                 elif animal.get(field) and str(animal[field]).strip():
                     required_present += 1
@@ -134,25 +149,33 @@ class MetricsCollector:
             self.logger.info(f"Animals Found: {metrics.get('animals_found', 0)}")
             self.logger.info(f"Animals Added: {metrics.get('animals_added', 0)}")
             self.logger.info(f"Animals Updated: {metrics.get('animals_updated', 0)}")
-            self.logger.info(f"Animals Unchanged: {metrics.get('animals_unchanged', 0)}")
+            self.logger.info(
+                f"Animals Unchanged: {metrics.get('animals_unchanged', 0)}"
+            )
 
             # Image metrics
             if "images_uploaded" in metrics or "images_failed" in metrics:
-                self.logger.info(f"Images Uploaded: {metrics.get('images_uploaded', 0)}")
+                self.logger.info(
+                    f"Images Uploaded: {metrics.get('images_uploaded', 0)}"
+                )
                 self.logger.info(f"Images Failed: {metrics.get('images_failed', 0)}")
 
             # Performance metrics
             if "duration_seconds" in metrics:
                 self.logger.info(f"Duration: {metrics['duration_seconds']:.1f}s")
             if "data_quality_score" in metrics:
-                self.logger.info(f"Data Quality Score: {metrics['data_quality_score']:.3f}")
+                self.logger.info(
+                    f"Data Quality Score: {metrics['data_quality_score']:.3f}"
+                )
 
             # Retry metrics
             retry_metrics = self.get_retry_metrics()
             if retry_metrics["retry_attempts"] > 0:
                 self.logger.info(f"Retry Attempts: {retry_metrics['retry_attempts']}")
                 self.logger.info(f"Retry Successes: {retry_metrics['retry_successes']}")
-                self.logger.info(f"Retry Failure Rate: {retry_metrics['retry_failure_rate']:.3f}")
+                self.logger.info(
+                    f"Retry Failure Rate: {retry_metrics['retry_failure_rate']:.3f}"
+                )
 
             # Phase timings
             phase_timings = self.get_phase_timings()
@@ -163,7 +186,9 @@ class MetricsCollector:
 
             # Operational metrics
             if "skip_existing_animals" in metrics:
-                self.logger.info(f"Skip Existing Animals: {metrics['skip_existing_animals']}")
+                self.logger.info(
+                    f"Skip Existing Animals: {metrics['skip_existing_animals']}"
+                )
             if "batch_size" in metrics:
                 self.logger.info(f"Batch Size: {metrics['batch_size']}")
             if "rate_limit_delay" in metrics:
@@ -180,7 +205,11 @@ class MetricsCollector:
         Returns:
             Dictionary with retry statistics
         """
-        return {"retry_attempts": self._retry_attempts, "retry_successes": self._retry_successes, "retry_failure_rate": self._calculate_retry_failure_rate()}
+        return {
+            "retry_attempts": self._retry_attempts,
+            "retry_successes": self._retry_successes,
+            "retry_failure_rate": self._calculate_retry_failure_rate(),
+        }
 
     def get_phase_timings(self) -> Dict[str, float]:
         """Get phase timing metrics.
@@ -217,7 +246,9 @@ class MetricsCollector:
         failures = self._retry_attempts - self._retry_successes
         return failures / self._retry_attempts
 
-    def _calculate_processing_efficiency(self, before_filter: int, skipped: int) -> float:
+    def _calculate_processing_efficiency(
+        self, before_filter: int, skipped: int
+    ) -> float:
         """Calculate processing efficiency (pure function).
 
         Args:

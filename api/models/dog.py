@@ -2,9 +2,16 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    field_validator,
+    model_validator,
+)
 
 from api.models.organization import Organization
 
@@ -97,7 +104,9 @@ class Animal(AnimalBase):
     created_at: datetime
     updated_at: datetime
     last_scraped_at: Optional[datetime] = None
-    availability_confidence: Optional[AvailabilityConfidence] = AvailabilityConfidence.HIGH
+    availability_confidence: Optional[AvailabilityConfidence] = (
+        AvailabilityConfidence.HIGH
+    )
     last_seen_at: Optional[datetime] = None
     consecutive_scrapes_missing: Optional[int] = 0
     dog_profiler_data: Optional[Dict[str, Any]] = Field(default_factory=dict)

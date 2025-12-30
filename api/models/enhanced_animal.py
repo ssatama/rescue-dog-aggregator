@@ -30,7 +30,13 @@ class EnhancedAttributes(BaseModel):
     special_needs: Optional[List[str]] = Field(default_factory=list)
     ideal_home: Optional[str] = None
 
-    @field_validator("energy_level", "trainability", "experience_level", "grooming_needs", "exercise_needs")
+    @field_validator(
+        "energy_level",
+        "trainability",
+        "experience_level",
+        "grooming_needs",
+        "exercise_needs",
+    )
     @classmethod
     def validate_enum_fields(cls, v):
         """Validate enum-like fields are from expected values."""
@@ -59,15 +65,26 @@ class EnhancedAnimalResponse(BaseModel):
     slug: str
     enhanced_data_available: bool
     enhanced_attributes: Optional[EnhancedAttributes] = None
-    data_completeness_score: float = Field(..., ge=0, le=100, description="Percentage of enhanced fields populated (0-100)")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata about the enhanced data")
+    data_completeness_score: float = Field(
+        ..., ge=0, le=100, description="Percentage of enhanced fields populated (0-100)"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata about the enhanced data"
+    )
 
 
 class BulkEnhancedRequest(BaseModel):
     """Request model for bulk enhanced data retrieval."""
 
-    animal_ids: List[int] = Field(..., min_items=1, max_items=100, description="List of animal IDs to fetch (max 100)")
-    include_fields: Optional[List[str]] = Field(None, description="Optional list of specific fields to include")
+    animal_ids: List[int] = Field(
+        ...,
+        min_items=1,
+        max_items=100,
+        description="List of animal IDs to fetch (max 100)",
+    )
+    include_fields: Optional[List[str]] = Field(
+        None, description="Optional list of specific fields to include"
+    )
 
     @field_validator("animal_ids")
     @classmethod
@@ -90,8 +107,12 @@ class DetailContentResponse(BaseModel):
 class AttributesRequest(BaseModel):
     """Request for specific attributes."""
 
-    animal_ids: List[int] = Field(..., min_items=1, max_items=1000, description="Animal IDs to query")
-    attributes: List[str] = Field(..., min_items=1, max_items=20, description="Attribute names to fetch")
+    animal_ids: List[int] = Field(
+        ..., min_items=1, max_items=1000, description="Animal IDs to query"
+    )
+    attributes: List[str] = Field(
+        ..., min_items=1, max_items=20, description="Attribute names to fetch"
+    )
 
     @field_validator("animal_ids")
     @classmethod
@@ -132,6 +153,8 @@ class AttributesRequest(BaseModel):
 class AttributesResponse(BaseModel):
     """Response for attributes query."""
 
-    data: Dict[int, Dict[str, Any]] = Field(..., description="Map of animal ID to requested attributes")
+    data: Dict[int, Dict[str, Any]] = Field(
+        ..., description="Map of animal ID to requested attributes"
+    )
     requested_attributes: List[str]
     animals_found: int

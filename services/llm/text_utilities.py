@@ -37,7 +37,9 @@ class TextUtilities:
             if pos > best_pos:
                 best_pos = pos + 1  # Include the punctuation
 
-        if best_pos > max_length * 0.5:  # Accept if we keep at least 50% of target length
+        if (
+            best_pos > max_length * 0.5
+        ):  # Accept if we keep at least 50% of target length
             return text[:best_pos].strip()
 
         # Fall back to word boundary
@@ -45,7 +47,9 @@ class TextUtilities:
         search_text = text[:max_length]
         last_space = search_text.rfind(" ")
 
-        if last_space > max_length * 0.7:  # Accept if we keep at least 70% of target length
+        if (
+            last_space > max_length * 0.7
+        ):  # Accept if we keep at least 70% of target length
             return text[:last_space].strip() + "..."
 
         # Last resort: hard truncate but try to avoid mid-word

@@ -57,7 +57,9 @@ class DatabaseConnectionPool:
         if self.config.password:
             conn_params["password"] = self.config.password
 
-        return pool.ThreadedConnectionPool(minconn=self._min_conn, maxconn=self._max_conn, **conn_params)
+        return pool.ThreadedConnectionPool(
+            minconn=self._min_conn, maxconn=self._max_conn, **conn_params
+        )
 
     def get_pool(self) -> pool.ThreadedConnectionPool:
         """Get connection pool (thread-safe singleton)."""
@@ -65,7 +67,9 @@ class DatabaseConnectionPool:
             with self._lock:
                 if self._pool is None:
                     self._pool = self._create_pool()
-                    logger.info(f"Created database connection pool: {self._min_conn}-{self._max_conn} connections")
+                    logger.info(
+                        f"Created database connection pool: {self._min_conn}-{self._max_conn} connections"
+                    )
         return self._pool
 
     @contextmanager
@@ -116,7 +120,9 @@ def initialize_database_pool(config: DatabaseConfig) -> DatabaseConnectionPool:
 def get_database_pool() -> DatabaseConnectionPool:
     """Get global database connection pool."""
     if _connection_pool is None:
-        raise RuntimeError("Database pool not initialized. Call initialize_database_pool first.")
+        raise RuntimeError(
+            "Database pool not initialized. Call initialize_database_pool first."
+        )
     return _connection_pool
 
 
@@ -124,7 +130,13 @@ def create_database_config_from_env() -> DatabaseConfig:
     """Create database configuration from environment variables."""
     from config import DB_CONFIG
 
-    return DatabaseConfig(host=DB_CONFIG["host"], user=DB_CONFIG["user"], database=DB_CONFIG["database"], password=DB_CONFIG.get("password"), port=int(DB_CONFIG.get("port", 5432)))
+    return DatabaseConfig(
+        host=DB_CONFIG["host"],
+        user=DB_CONFIG["user"],
+        database=DB_CONFIG["database"],
+        password=DB_CONFIG.get("password"),
+        port=int(DB_CONFIG.get("port", 5432)),
+    )
 
 
 @contextmanager
@@ -178,7 +190,10 @@ def execute_transaction(commands: list) -> list:
                     # Only try to fetch results for commands that return data
                     # DELETE/UPDATE operations don't return results unless they use RETURNING clause
                     command_upper = command.strip().upper()
-                    if command_upper.startswith("SELECT") or "RETURNING" in command_upper:
+                    if (
+                        command_upper.startswith("SELECT")
+                        or "RETURNING" in command_upper
+                    ):
                         result = cursor.fetchone()
                         results.append(result)
                     else:

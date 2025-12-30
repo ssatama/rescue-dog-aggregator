@@ -1,8 +1,7 @@
 """Test Woof Project scraper integration with unified standardization."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-import pytest
 
 from scrapers.base_scraper import BaseScraper
 from scrapers.woof_project.dogs_scraper import WoofProjectScraper
@@ -116,5 +115,7 @@ class TestWoofProjectUnifiedStandardization:
         assert "primary_breed" in result
         assert "breed_category" in result
         assert result["primary_breed"] == "Lurcher"
-        assert result["breed_category"] == "Hound"  # Critical: Lurcher should be Hound, not Unknown
+        assert (
+            result["breed_category"] == "Hound"
+        )  # Critical: Lurcher should be Hound, not Unknown
         assert result["standardization_confidence"] > 0.9

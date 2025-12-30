@@ -23,14 +23,12 @@ import gzip
 import json
 import os
 import shutil
-import smtplib
 import subprocess
 import sys
-import tempfile
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 # Add parent directory to path for config import
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -77,13 +75,33 @@ class BackupManager:
             print(f"Creating daily backup: {backup_filename}")
 
             # Build pg_dump command
-            pg_dump_cmd = ["pg_dump", "-h", self.db_config["host"], "-U", self.db_config["user"], "-d", self.db_name, "--verbose", "--no-password"]
+            pg_dump_cmd = [
+                "pg_dump",
+                "-h",
+                self.db_config["host"],
+                "-U",
+                self.db_config["user"],
+                "-d",
+                self.db_name,
+                "--verbose",
+                "--no-password",
+            ]
 
             # Run pg_dump and compress output
             with open(backup_path, "wb") as backup_file:
-                dump_process = subprocess.Popen(pg_dump_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.get_pg_command_env())
+                dump_process = subprocess.Popen(
+                    pg_dump_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env=self.get_pg_command_env(),
+                )
 
-                gzip_process = subprocess.Popen(["gzip"], stdin=dump_process.stdout, stdout=backup_file, stderr=subprocess.PIPE)
+                gzip_process = subprocess.Popen(
+                    ["gzip"],
+                    stdin=dump_process.stdout,
+                    stdout=backup_file,
+                    stderr=subprocess.PIPE,
+                )
 
                 dump_process.stdout.close()
                 gzip_process.communicate()
@@ -102,7 +120,7 @@ class BackupManager:
                 raise Exception("Backup file is empty or was not created")
 
             print(f"Backup created successfully: {backup_path}")
-            print(f"Backup size: {backup_path.stat().st_size / (1024*1024):.2f} MB")
+            print(f"Backup size: {backup_path.stat().st_size / (1024 * 1024):.2f} MB")
 
             return True, f"Daily backup completed: {backup_filename}", backup_path
 
@@ -143,7 +161,12 @@ class BackupManager:
                 "--no-password",
             ]
 
-            result = subprocess.run(pg_basebackup_cmd, env=self.get_pg_command_env(), capture_output=True, text=True)
+            result = subprocess.run(
+                pg_basebackup_cmd,
+                env=self.get_pg_command_env(),
+                capture_output=True,
+                text=True,
+            )
 
             if result.returncode != 0:
                 raise Exception(f"pg_basebackup failed: {result.stderr}")
@@ -158,7 +181,7 @@ class BackupManager:
 
             total_size = sum(f.stat().st_size for f in backup_files)
             print(f"Weekly backup completed: {backup_dir}")
-            print(f"Total backup size: {total_size / (1024*1024):.2f} MB")
+            print(f"Total backup size: {total_size / (1024 * 1024):.2f} MB")
 
             return True, f"Weekly backup completed: {timestamp}"
 
@@ -178,10 +201,15 @@ class BackupManager:
             print(f"Verifying backup integrity: {backup_path.name}")
 
             # Test gzip integrity
-            result = subprocess.run(["gzip", "-t", str(backup_path)], capture_output=True, text=True)
+            result = subprocess.run(
+                ["gzip", "-t", str(backup_path)], capture_output=True, text=True
+            )
 
             if result.returncode != 0:
-                return False, f"Backup file is corrupted (gzip test failed): {result.stderr}"
+                return (
+                    False,
+                    f"Backup file is corrupted (gzip test failed): {result.stderr}",
+                )
 
             # Test SQL content by attempting to parse first few lines
             with gzip.open(backup_path, "rt") as f:
@@ -190,14 +218,19 @@ class BackupManager:
             # Check for expected PostgreSQL dump headers
             content = "".join(first_lines)
             if "PostgreSQL database dump" not in content:
-                return False, "Backup file does not contain expected PostgreSQL dump header"
+                return (
+                    False,
+                    "Backup file does not contain expected PostgreSQL dump header",
+                )
 
             return True, "Backup integrity verified"
 
         except Exception as e:
             return False, f"Backup integrity check failed: {e}"
 
-    def test_backup_restore(self, backup_path: Optional[Path] = None) -> tuple[bool, str]:
+    def test_backup_restore(
+        self, backup_path: Optional[Path] = None
+    ) -> tuple[bool, str]:
         """Test backup restoration to a temporary database."""
         if backup_path is None:
             # Use latest daily backup
@@ -213,26 +246,70 @@ class BackupManager:
             print(f"Test database: {test_db_name}")
 
             # Create test database
-            createdb_cmd = ["createdb", "-h", self.db_config["host"], "-U", self.db_config["user"], test_db_name]
+            createdb_cmd = [
+                "createdb",
+                "-h",
+                self.db_config["host"],
+                "-U",
+                self.db_config["user"],
+                test_db_name,
+            ]
 
-            result = subprocess.run(createdb_cmd, env=self.get_pg_command_env(), capture_output=True, text=True)
+            result = subprocess.run(
+                createdb_cmd,
+                env=self.get_pg_command_env(),
+                capture_output=True,
+                text=True,
+            )
 
             if result.returncode != 0:
                 raise Exception(f"Failed to create test database: {result.stderr}")
 
             # Restore backup to test database
             with gzip.open(backup_path, "rb") as backup_file:
-                psql_cmd = ["psql", "-h", self.db_config["host"], "-U", self.db_config["user"], "-d", test_db_name, "--quiet"]
+                psql_cmd = [
+                    "psql",
+                    "-h",
+                    self.db_config["host"],
+                    "-U",
+                    self.db_config["user"],
+                    "-d",
+                    test_db_name,
+                    "--quiet",
+                ]
 
-                result = subprocess.run(psql_cmd, input=backup_file.read(), env=self.get_pg_command_env(), capture_output=True)
+                result = subprocess.run(
+                    psql_cmd,
+                    input=backup_file.read(),
+                    env=self.get_pg_command_env(),
+                    capture_output=True,
+                )
 
                 if result.returncode != 0:
-                    raise Exception(f"Failed to restore backup: {result.stderr.decode()}")
+                    raise Exception(
+                        f"Failed to restore backup: {result.stderr.decode()}"
+                    )
 
             # Verify restored data
-            psql_check_cmd = ["psql", "-h", self.db_config["host"], "-U", self.db_config["user"], "-d", test_db_name, "-t", "-c", "SELECT COUNT(*) FROM animals;"]  # tuples only
+            psql_check_cmd = [
+                "psql",
+                "-h",
+                self.db_config["host"],
+                "-U",
+                self.db_config["user"],
+                "-d",
+                test_db_name,
+                "-t",
+                "-c",
+                "SELECT COUNT(*) FROM animals;",
+            ]  # tuples only
 
-            result = subprocess.run(psql_check_cmd, env=self.get_pg_command_env(), capture_output=True, text=True)
+            result = subprocess.run(
+                psql_check_cmd,
+                env=self.get_pg_command_env(),
+                capture_output=True,
+                text=True,
+            )
 
             if result.returncode != 0:
                 raise Exception(f"Failed to verify restored data: {result.stderr}")
@@ -252,9 +329,21 @@ class BackupManager:
         finally:
             # Clean up test database
             try:
-                dropdb_cmd = ["dropdb", "-h", self.db_config["host"], "-U", self.db_config["user"], test_db_name]
+                dropdb_cmd = [
+                    "dropdb",
+                    "-h",
+                    self.db_config["host"],
+                    "-U",
+                    self.db_config["user"],
+                    test_db_name,
+                ]
 
-                subprocess.run(dropdb_cmd, env=self.get_pg_command_env(), capture_output=True, check=True)
+                subprocess.run(
+                    dropdb_cmd,
+                    env=self.get_pg_command_env(),
+                    capture_output=True,
+                    check=True,
+                )
                 print(f"Test database {test_db_name} cleaned up")
 
             except Exception as e:
@@ -280,7 +369,10 @@ class BackupManager:
         # Clean up weekly backups (with different retention period)
         weekly_cutoff = datetime.now() - timedelta(days=self.weekly_retention_days)
         for backup_dir in self.weekly_dir.iterdir():
-            if backup_dir.is_dir() and datetime.fromtimestamp(backup_dir.stat().st_mtime) < weekly_cutoff:
+            if (
+                backup_dir.is_dir()
+                and datetime.fromtimestamp(backup_dir.stat().st_mtime) < weekly_cutoff
+            ):
                 print(f"Removing old weekly backup: {backup_dir.name}")
                 shutil.rmtree(backup_dir)
                 weekly_removed += 1
@@ -294,7 +386,9 @@ class BackupManager:
 
         try:
             msg = MIMEText(message)
-            msg["Subject"] = f"[Backup {'Success' if is_success else 'FAILURE'}] {subject}"
+            msg["Subject"] = (
+                f"[Backup {'Success' if is_success else 'FAILURE'}] {subject}"
+            )
             msg["From"] = "backup@rescuedogs.app"
             msg["To"] = self.notification_email
 
@@ -327,15 +421,23 @@ class BackupManager:
             latest_weekly = None
             latest_weekly_time = None
 
-        total_size = sum(f.stat().st_size for f in daily_backups) + sum(sum(f.stat().st_size for f in backup_dir.rglob("*") if f.is_file()) for backup_dir in weekly_backups if backup_dir.is_dir())
+        total_size = sum(f.stat().st_size for f in daily_backups) + sum(
+            sum(f.stat().st_size for f in backup_dir.rglob("*") if f.is_file())
+            for backup_dir in weekly_backups
+            if backup_dir.is_dir()
+        )
 
         return {
             "daily_backup_count": len(daily_backups),
             "weekly_backup_count": len([b for b in weekly_backups if b.is_dir()]),
             "latest_daily_backup": latest_daily.name if latest_daily else None,
-            "latest_daily_time": latest_daily_time.isoformat() if latest_daily_time else None,
+            "latest_daily_time": latest_daily_time.isoformat()
+            if latest_daily_time
+            else None,
             "latest_weekly_backup": latest_weekly.name if latest_weekly else None,
-            "latest_weekly_time": latest_weekly_time.isoformat() if latest_weekly_time else None,
+            "latest_weekly_time": latest_weekly_time.isoformat()
+            if latest_weekly_time
+            else None,
             "total_backup_size_mb": round(total_size / (1024 * 1024), 2),
             "backup_directory": str(self.backup_base_dir),
         }
@@ -344,8 +446,14 @@ class BackupManager:
 def main():
     """Main script entry point."""
     parser = argparse.ArgumentParser(description="PostgreSQL Backup Automation")
-    parser.add_argument("command", choices=["daily", "weekly", "test-restore", "cleanup", "status"], help="Backup command to run")
-    parser.add_argument("--backup-dir", default="/var/backups/postgresql", help="Base backup directory")
+    parser.add_argument(
+        "command",
+        choices=["daily", "weekly", "test-restore", "cleanup", "status"],
+        help="Backup command to run",
+    )
+    parser.add_argument(
+        "--backup-dir", default="/var/backups/postgresql", help="Base backup directory"
+    )
     parser.add_argument("--days", type=int, help="Retention days for cleanup")
     parser.add_argument("--email", help="Notification email address")
     parser.add_argument("--test-backup", help="Specific backup file to test restore")
@@ -364,7 +472,9 @@ def main():
 
             if success and backup_path:
                 # Verify backup integrity
-                integrity_ok, integrity_msg = backup_manager.verify_backup_integrity(backup_path)
+                integrity_ok, integrity_msg = backup_manager.verify_backup_integrity(
+                    backup_path
+                )
                 message += f"\n{integrity_msg}"
 
                 if not integrity_ok:
@@ -375,7 +485,9 @@ def main():
             # Clean up old backups
             daily_removed, weekly_removed = backup_manager.cleanup_old_backups()
             if daily_removed > 0 or weekly_removed > 0:
-                print(f"Cleaned up {daily_removed} daily and {weekly_removed} weekly old backups")
+                print(
+                    f"Cleaned up {daily_removed} daily and {weekly_removed} weekly old backups"
+                )
 
             sys.exit(0 if success else 1)
 
@@ -417,7 +529,9 @@ def main():
         error_msg = f"Backup operation failed: {e}"
         print(f"ERROR: {error_msg}")
         if args.email:
-            backup_manager.send_notification(f"{args.command.title()} Backup Error", error_msg, False)
+            backup_manager.send_notification(
+                f"{args.command.title()} Backup Error", error_msg, False
+            )
         sys.exit(1)
 
 

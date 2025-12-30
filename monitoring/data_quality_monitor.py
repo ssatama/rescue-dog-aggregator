@@ -21,16 +21,15 @@ Key Features:
 
 import argparse
 import logging
-import os
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-from monitoring.quality.analyzer import DataQualityAnalyzer, OrganizationQuality
+from monitoring.quality.analyzer import DataQualityAnalyzer
 from monitoring.quality.metrics import DataQualityMetrics
 from monitoring.quality.reporter import DataQualityReporter
 
@@ -64,10 +63,18 @@ def print_banner():
 def print_quality_metrics_info():
     """Print information about quality scoring criteria."""
     print("📊 Quality Scoring Criteria:")
-    print(f"   • Completeness ({DataQualityMetrics.WEIGHTS['completeness']}%): Essential fields (name, breed, age, sex, size)")
-    print(f"   • Standardization ({DataQualityMetrics.WEIGHTS['standardization']}%): Normalized breed and size data")
-    print(f"   • Rich Content ({DataQualityMetrics.WEIGHTS['rich_content']}%): Detailed descriptions for SEO")
-    print(f"   • Visual Appeal ({DataQualityMetrics.WEIGHTS['visual_appeal']}%): Primary images available")
+    print(
+        f"   • Completeness ({DataQualityMetrics.WEIGHTS['completeness']}%): Essential fields (name, breed, age, sex, size)"
+    )
+    print(
+        f"   • Standardization ({DataQualityMetrics.WEIGHTS['standardization']}%): Normalized breed and size data"
+    )
+    print(
+        f"   • Rich Content ({DataQualityMetrics.WEIGHTS['rich_content']}%): Detailed descriptions for SEO"
+    )
+    print(
+        f"   • Visual Appeal ({DataQualityMetrics.WEIGHTS['visual_appeal']}%): Primary images available"
+    )
     print("")
 
 
@@ -104,8 +111,12 @@ def run_overall_analysis() -> None:
     print(f"   Average Quality Score: {avg_quality:.1f}%")
     print(f"   Highest Quality: {top_org.org_name} ({top_org.overall_score:.1f}%)")
     print(f"   Lowest Quality: {bottom_org.org_name} ({bottom_org.overall_score:.1f}%)")
-    print(f"   Organizations ≥90%: {sum(1 for org in org_qualities if org.overall_score >= 90)}")
-    print(f"   Organizations <70%: {sum(1 for org in org_qualities if org.overall_score < 70)}")
+    print(
+        f"   Organizations ≥90%: {sum(1 for org in org_qualities if org.overall_score >= 90)}"
+    )
+    print(
+        f"   Organizations <70%: {sum(1 for org in org_qualities if org.overall_score < 70)}"
+    )
     print("")
 
     print(f"📄 Report saved: {summary_path}")
@@ -164,8 +175,12 @@ def run_detailed_analysis(org_id: Optional[int] = None, all_orgs: bool = False) 
 
             # Print quick insights
             print("🎯 Quick Insights:")
-            excellent_animals = sum(1 for _, assessment in animal_details if assessment.overall_score >= 90)
-            poor_animals = sum(1 for _, assessment in animal_details if assessment.overall_score < 70)
+            excellent_animals = sum(
+                1 for _, assessment in animal_details if assessment.overall_score >= 90
+            )
+            poor_animals = sum(
+                1 for _, assessment in animal_details if assessment.overall_score < 70
+            )
 
             print(f"   Excellent animals (≥90%): {excellent_animals}")
             print(f"   Animals needing improvement (<70%): {poor_animals}")
@@ -219,11 +234,22 @@ Report Output:
         """,
     )
 
-    parser.add_argument("--mode", choices=["overall", "detailed"], required=True, help="Analysis mode: overall summary or detailed organization analysis")
+    parser.add_argument(
+        "--mode",
+        choices=["overall", "detailed"],
+        required=True,
+        help="Analysis mode: overall summary or detailed organization analysis",
+    )
 
-    parser.add_argument("--org-id", type=int, help="Organization ID for detailed analysis (required unless --all specified)")
+    parser.add_argument(
+        "--org-id",
+        type=int,
+        help="Organization ID for detailed analysis (required unless --all specified)",
+    )
 
-    parser.add_argument("--all", action="store_true", help="Run detailed analysis for all organizations")
+    parser.add_argument(
+        "--all", action="store_true", help="Run detailed analysis for all organizations"
+    )
 
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
@@ -258,7 +284,9 @@ Report Output:
 
         print("")
         print("🎉 Data quality analysis complete!")
-        print("   Use reports to guide scraper improvements and data quality initiatives")
+        print(
+            "   Use reports to guide scraper improvements and data quality initiatives"
+        )
 
     except KeyboardInterrupt:
         print("\n⚠️  Analysis interrupted by user")

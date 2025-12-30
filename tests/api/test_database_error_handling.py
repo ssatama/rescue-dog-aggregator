@@ -2,9 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import psycopg2
 import pytest
-from fastapi.testclient import TestClient
 
-from api.dependencies import get_db_cursor, get_pooled_db_cursor
+from api.dependencies import get_pooled_db_cursor
 from api.main import app
 
 
@@ -158,7 +157,9 @@ class TestDatabaseQueryErrors:
 
         def mock_db_cursor_query_error():
             mock_cursor = MagicMock()
-            mock_cursor.execute.side_effect = psycopg2.Error("Breed groups query failed")
+            mock_cursor.execute.side_effect = psycopg2.Error(
+                "Breed groups query failed"
+            )
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):

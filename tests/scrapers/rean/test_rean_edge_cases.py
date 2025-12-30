@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import requests
-from selenium.common.exceptions import TimeoutException, WebDriverException
 
 from scrapers.rean.dogs_scraper import REANScraper
 
@@ -20,7 +19,10 @@ class TestREANEdgeCases:
     @pytest.fixture
     def scraper(self):
         """Create a REAN scraper instance for testing."""
-        with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
+        with (
+            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
+            patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
+        ):
             mock_config = MagicMock()
             mock_config.name = "REAN Test"
             mock_config.get_scraper_config_dict.return_value = {
@@ -32,7 +34,9 @@ class TestREANEdgeCases:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=False)
+            mock_sync_service.sync_single_organization.return_value = Mock(
+                organization_id=1, was_created=False
+            )
             mock_sync.return_value = mock_sync_service
 
             scraper = REANScraper()
@@ -180,7 +184,9 @@ class TestREANEdgeCases:
 
         for code in error_codes:
             mock_response = Mock()
-            mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(f"{code} Error")
+            mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+                f"{code} Error"
+            )
             mock_get.return_value = mock_response
 
             result = scraper.scrape_page("https://rean.org.uk/test")
@@ -204,8 +210,14 @@ class TestREANEdgeCases:
             (None, None),
             ("", ""),
             ("not-a-wsimg-url.com/image.jpg", "not-a-wsimg-url.com/image.jpg"),
-            ("https://img1.wsimg.com/image.jpg/::/transform", "https://img1.wsimg.com/image.jpg"),
-            ("https://img1.wsimg.com/image.jpg/://transform", "https://img1.wsimg.com/image.jpg"),
+            (
+                "https://img1.wsimg.com/image.jpg/::/transform",
+                "https://img1.wsimg.com/image.jpg",
+            ),
+            (
+                "https://img1.wsimg.com/image.jpg/://transform",
+                "https://img1.wsimg.com/image.jpg",
+            ),
         ]
 
         for input_url, expected in test_cases:
@@ -243,7 +255,9 @@ class TestREANEdgeCases:
         mock_driver.find_elements.return_value = []
         scraper._find_dog_containers = Mock(return_value=[])
 
-        result = scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs", "romania")
+        result = scraper.extract_dogs_with_images_unified(
+            "https://rean.org.uk/dogs", "romania"
+        )
 
         # Should fallback gracefully
         assert isinstance(result, list)
@@ -269,7 +283,9 @@ class TestREANEdgeCases:
         entries = scraper.split_dog_entries(page_text, "romania")
 
         # Should extract valid entries
-        valid_count = sum(1 for entry in entries if "years old" in entry or "months old" in entry)
+        valid_count = sum(
+            1 for entry in entries if "years old" in entry or "months old" in entry
+        )
         # The scraper combines "Luna is 1 year old puppy" with the following entry
         # So we get 2 valid entries instead of 3
         assert valid_count >= 2

@@ -26,7 +26,11 @@ class SentryPerformanceMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # Start transaction for EVERY endpoint in production
-        with sentry_sdk.start_transaction(op="http.server", name=f"{request.method} {request.url.path}", source="route") as transaction:
+        with sentry_sdk.start_transaction(
+            op="http.server",
+            name=f"{request.method} {request.url.path}",
+            source="route",
+        ) as transaction:
             transaction.set_tag("http.method", request.method)
             transaction.set_tag("http.route", request.url.path)
             transaction.set_tag("http.host", request.url.hostname)
@@ -46,7 +50,12 @@ class SentryPerformanceMiddleware(BaseHTTPMiddleware):
 
                     # Add breadcrumb for 404s to make them easier to track
                     if response.status_code == 404:
-                        sentry_sdk.add_breadcrumb(category="http", message=f"404 Not Found: {request.url.path}", level="warning", data={"url": str(request.url), "method": request.method})
+                        sentry_sdk.add_breadcrumb(
+                            category="http",
+                            message=f"404 Not Found: {request.url.path}",
+                            level="warning",
+                            data={"url": str(request.url), "method": request.method},
+                        )
                 else:
                     transaction.set_status("ok")
 
@@ -61,16 +70,28 @@ class SentryPerformanceMiddleware(BaseHTTPMiddleware):
             finally:
                 # Track request duration
                 duration = (time.time() - start_time) * 1000
-                transaction.set_measurement("http.request.duration", duration, "millisecond")
+                transaction.set_measurement(
+                    "http.request.duration", duration, "millisecond"
+                )
 
                 # Alert on slow requests
                 if duration > 3000:  # 3 seconds
                     sentry_sdk.add_breadcrumb(
-                        category="performance", message=f"Slow request: {request.url.path}", level="warning", data={"duration_ms": duration, "method": request.method, "path": request.url.path}
+                        category="performance",
+                        message=f"Slow request: {request.url.path}",
+                        level="warning",
+                        data={
+                            "duration_ms": duration,
+                            "method": request.method,
+                            "path": request.url.path,
+                        },
                     )
 
                     if duration > 10000:  # 10 seconds is critical
-                        sentry_sdk.capture_message(f"Critical slow request: {request.method} {request.url.path} took {duration:.0f}ms", level="error")
+                        sentry_sdk.capture_message(
+                            f"Critical slow request: {request.method} {request.url.path} took {duration:.0f}ms",
+                            level="error",
+                        )
 
 
 class SentryTimeoutMiddleware(BaseHTTPMiddleware):
@@ -93,7 +114,9 @@ class SentryTimeoutMiddleware(BaseHTTPMiddleware):
 
         try:
             # Set a timeout for the request
-            response = await asyncio.wait_for(call_next(request), timeout=self.timeout_seconds)
+            response = await asyncio.wait_for(
+                call_next(request), timeout=self.timeout_seconds
+            )
             return response
 
         except asyncio.TimeoutError:
@@ -103,7 +126,14 @@ class SentryTimeoutMiddleware(BaseHTTPMiddleware):
             with sentry_sdk.push_scope() as scope:
                 scope.set_tag("error.type", "timeout")
                 scope.set_tag("timeout.seconds", self.timeout_seconds)
-                scope.set_context("request", {"method": request.method, "url": str(request.url), "headers": dict(request.headers)})
+                scope.set_context(
+                    "request",
+                    {
+                        "method": request.method,
+                        "url": str(request.url),
+                        "headers": dict(request.headers),
+                    },
+                )
                 sentry_sdk.capture_message(error_msg, level="error")
 
             # Re-raise to let FastAPI handle it

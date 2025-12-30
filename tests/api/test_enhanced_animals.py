@@ -10,8 +10,7 @@ Tests cover:
 - Performance benchmarks
 """
 
-import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -19,7 +18,6 @@ from psycopg2.extras import RealDictCursor
 
 from api.dependencies import get_pooled_db_cursor
 from api.main import app
-from api.models.enhanced_animal import BulkEnhancedRequest, DetailContentResponse, EnhancedAnimalResponse
 from api.services.enhanced_animal_service import EnhancedAnimalService
 
 
@@ -59,7 +57,13 @@ class TestEnhancedAnimalsAPI:
     def test_get_enhanced_animal_success(self, mock_cursor, sample_enhanced_data):
         """Test successful retrieval of enhanced data for single animal."""
         # Mock database response
-        mock_cursor.fetchone.return_value = {"id": 123, "name": "Max", "slug": "max-123", "dog_profiler_data": sample_enhanced_data, "has_data": True}
+        mock_cursor.fetchone.return_value = {
+            "id": 123,
+            "name": "Max",
+            "slug": "max-123",
+            "dog_profiler_data": sample_enhanced_data,
+            "has_data": True,
+        }
 
         # Override dependency
         app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
@@ -75,7 +79,10 @@ class TestEnhancedAnimalsAPI:
         assert data["id"] == 123
         assert data["name"] == "Max"
         assert data["enhanced_data_available"] is True
-        assert data["enhanced_attributes"]["description"] == sample_enhanced_data["description"]
+        assert (
+            data["enhanced_attributes"]["description"]
+            == sample_enhanced_data["description"]
+        )
         assert data["enhanced_attributes"]["tagline"] == sample_enhanced_data["tagline"]
         assert data["data_completeness_score"] > 0
 
@@ -97,7 +104,13 @@ class TestEnhancedAnimalsAPI:
     @pytest.mark.fast
     def test_get_enhanced_animal_no_data(self, mock_cursor):
         """Test graceful degradation when animal has no enhanced data."""
-        mock_cursor.fetchone.return_value = {"id": 124, "name": "Bella", "slug": "bella-124", "dog_profiler_data": None, "has_data": False}
+        mock_cursor.fetchone.return_value = {
+            "id": 124,
+            "name": "Bella",
+            "slug": "bella-124",
+            "dog_profiler_data": None,
+            "has_data": False,
+        }
 
         app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
         client = TestClient(app)
@@ -116,14 +129,26 @@ class TestEnhancedAnimalsAPI:
     def test_get_detail_content_optimized(self, mock_cursor):
         """Test optimized endpoint for description + tagline."""
         mock_cursor.fetchall.return_value = [
-            {"id": 123, "description": "Friendly dog", "tagline": "Perfect companion", "has_enhanced_data": True},
-            {"id": 124, "description": None, "tagline": None, "has_enhanced_data": False},
+            {
+                "id": 123,
+                "description": "Friendly dog",
+                "tagline": "Perfect companion",
+                "has_enhanced_data": True,
+            },
+            {
+                "id": 124,
+                "description": None,
+                "tagline": None,
+                "has_enhanced_data": False,
+            },
         ]
 
         app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
         client = TestClient(app)
 
-        response = client.post("/api/animals/enhanced/detail-content", params={"animal_ids": [123, 124]})
+        response = client.post(
+            "/api/animals/enhanced/detail-content", params={"animal_ids": [123, 124]}
+        )
 
         app.dependency_overrides.clear()
 
@@ -139,14 +164,28 @@ class TestEnhancedAnimalsAPI:
     def test_bulk_enhanced_request(self, mock_cursor, sample_enhanced_data):
         """Test bulk retrieval of enhanced data."""
         mock_cursor.fetchall.return_value = [
-            {"id": 123, "name": "Max", "slug": "max-123", "dog_profiler_data": sample_enhanced_data, "has_data": True},
-            {"id": 124, "name": "Bella", "slug": "bella-124", "dog_profiler_data": {}, "has_data": False},
+            {
+                "id": 123,
+                "name": "Max",
+                "slug": "max-123",
+                "dog_profiler_data": sample_enhanced_data,
+                "has_data": True,
+            },
+            {
+                "id": 124,
+                "name": "Bella",
+                "slug": "bella-124",
+                "dog_profiler_data": {},
+                "has_data": False,
+            },
         ]
 
         app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
         client = TestClient(app)
 
-        response = client.post("/api/animals/enhanced/bulk", json={"animal_ids": [123, 124]})
+        response = client.post(
+            "/api/animals/enhanced/bulk", json={"animal_ids": [123, 124]}
+        )
 
         app.dependency_overrides.clear()
 
@@ -166,7 +205,9 @@ class TestEnhancedAnimalsAPI:
         app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
         client = TestClient(app)
 
-        response = client.post("/api/animals/enhanced/bulk", json={"animal_ids": too_many_ids})
+        response = client.post(
+            "/api/animals/enhanced/bulk", json={"animal_ids": too_many_ids}
+        )
 
         app.dependency_overrides.clear()
 
@@ -175,12 +216,21 @@ class TestEnhancedAnimalsAPI:
     @pytest.mark.fast
     def test_get_attributes_specific_fields(self, mock_cursor):
         """Test fetching specific attributes only."""
-        mock_cursor.fetchall.return_value = [{"id": 123, "energy_level": "high", "trainability": "moderate"}, {"id": 124, "energy_level": "low", "trainability": "high"}]
+        mock_cursor.fetchall.return_value = [
+            {"id": 123, "energy_level": "high", "trainability": "moderate"},
+            {"id": 124, "energy_level": "low", "trainability": "high"},
+        ]
 
         app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
         client = TestClient(app)
 
-        response = client.post("/api/animals/enhanced/attributes", json={"animal_ids": [123, 124], "attributes": ["energy_level", "trainability"]})
+        response = client.post(
+            "/api/animals/enhanced/attributes",
+            json={
+                "animal_ids": [123, 124],
+                "attributes": ["energy_level", "trainability"],
+            },
+        )
 
         app.dependency_overrides.clear()
 
@@ -193,7 +243,13 @@ class TestEnhancedAnimalsAPI:
     @pytest.mark.fast
     def test_enhanced_stats_endpoint(self, mock_cursor):
         """Test statistics endpoint for coverage metrics."""
-        mock_cursor.fetchone.return_value = {"total_animals": 2000, "enhanced_count": 400, "with_description": 380, "with_tagline": 350, "avg_quality_score": 82.5}
+        mock_cursor.fetchone.return_value = {
+            "total_animals": 2000,
+            "enhanced_count": 400,
+            "with_description": 380,
+            "with_tagline": 350,
+            "avg_quality_score": 82.5,
+        }
 
         app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
         client = TestClient(app)
@@ -259,7 +315,13 @@ class TestEnhancedAnimalService:
     @pytest.mark.fast
     def test_caching_behavior(self, service, mock_cursor):
         """Test that caching reduces database calls."""
-        mock_cursor.fetchone.return_value = {"id": 123, "name": "Max", "slug": "max-123", "dog_profiler_data": {"description": "Test"}, "has_data": True}
+        mock_cursor.fetchone.return_value = {
+            "id": 123,
+            "name": "Max",
+            "slug": "max-123",
+            "dog_profiler_data": {"description": "Test"},
+            "has_data": True,
+        }
 
         # First call should hit database
         result1 = service.get_enhanced_detail(123)
@@ -290,7 +352,14 @@ class TestEnhancedAnimalsPerformance:
     def test_single_dog_detail_performance(self, benchmark, mock_cursor):
         """Test description + tagline fetch meets <50ms target."""
         service = EnhancedAnimalService(mock_cursor)
-        mock_cursor.fetchall.return_value = [{"id": 123, "description": "Test description", "tagline": "Test tagline", "has_enhanced_data": True}]
+        mock_cursor.fetchall.return_value = [
+            {
+                "id": 123,
+                "description": "Test description",
+                "tagline": "Test tagline",
+                "has_enhanced_data": True,
+            }
+        ]
 
         # result = benchmark(service.get_detail_content, [123])
         # assert result is not None
@@ -300,7 +369,16 @@ class TestEnhancedAnimalsPerformance:
     def test_bulk_100_dogs_performance(self, benchmark, mock_cursor):
         """Test bulk fetch meets <500ms target."""
         service = EnhancedAnimalService(mock_cursor)
-        mock_cursor.fetchall.return_value = [{"id": i, "name": f"Dog{i}", "slug": f"dog-{i}", "dog_profiler_data": {"description": f"Desc {i}"}, "has_data": True} for i in range(1, 101)]
+        mock_cursor.fetchall.return_value = [
+            {
+                "id": i,
+                "name": f"Dog{i}",
+                "slug": f"dog-{i}",
+                "dog_profiler_data": {"description": f"Desc {i}"},
+                "has_data": True,
+            }
+            for i in range(1, 101)
+        ]
 
         # result = benchmark(service.get_bulk_enhanced, list(range(1, 101)))
         # assert result is not None
@@ -315,9 +393,25 @@ class TestEnhancedAnimalsPerformance:
         test_data = []
         for i in range(100):
             if i < 20:
-                test_data.append({"id": i, "name": f"Dog{i}", "slug": f"dog-{i}", "dog_profiler_data": {"description": f"Desc {i}"}, "has_data": True})
+                test_data.append(
+                    {
+                        "id": i,
+                        "name": f"Dog{i}",
+                        "slug": f"dog-{i}",
+                        "dog_profiler_data": {"description": f"Desc {i}"},
+                        "has_data": True,
+                    }
+                )
             else:
-                test_data.append({"id": i, "name": f"Dog{i}", "slug": f"dog-{i}", "dog_profiler_data": None, "has_data": False})
+                test_data.append(
+                    {
+                        "id": i,
+                        "name": f"Dog{i}",
+                        "slug": f"dog-{i}",
+                        "dog_profiler_data": None,
+                        "has_data": False,
+                    }
+                )
 
         mock_cursor.fetchall.return_value = test_data
 

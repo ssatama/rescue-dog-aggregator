@@ -46,7 +46,9 @@ def fix_availability_confidence():
 
         cutoff_date = datetime.now() - timedelta(days=7)
 
-        print(f"\n🔍 Looking for animals to fix (last seen since {cutoff_date.date()})...")
+        print(
+            f"\n🔍 Looking for animals to fix (last seen since {cutoff_date.date()})..."
+        )
 
         # Find animals that should be high confidence
         cursor.execute(
@@ -67,14 +69,25 @@ def fix_availability_confidence():
 
         if candidates:
             print("\nSample of animals to fix:")
-            for i, (animal_id, name, org_id, missing, confidence, last_seen) in enumerate(candidates[:10]):
-                print(f"  {animal_id}: {name} (Org {org_id}) - missing: {missing}, last seen: {last_seen.date() if last_seen else 'None'}")
+            for i, (
+                animal_id,
+                name,
+                org_id,
+                missing,
+                confidence,
+                last_seen,
+            ) in enumerate(candidates[:10]):
+                print(
+                    f"  {animal_id}: {name} (Org {org_id}) - missing: {missing}, last seen: {last_seen.date() if last_seen else 'None'}"
+                )
 
             if len(candidates) > 10:
                 print(f"  ... and {len(candidates) - 10} more")
 
         # Auto-confirm for this critical fix
-        print(f"\n✅ Auto-confirming fix for {len(candidates)} animals (critical bug fix)")
+        print(
+            f"\n✅ Auto-confirming fix for {len(candidates)} animals (critical bug fix)"
+        )
 
         # Perform the fix
         print("\n🔄 Applying fixes...")

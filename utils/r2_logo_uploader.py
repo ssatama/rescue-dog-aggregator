@@ -31,7 +31,9 @@ class R2OrganizationLogoUploader:
     }
 
     @classmethod
-    def upload_organization_logo(cls, org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]:
+    def upload_organization_logo(
+        cls, org_id: str, logo_url: str, force_upload: bool = False
+    ) -> Dict[str, str]:
         """
         Upload organization logo to R2 with multiple size presets.
 
@@ -52,7 +54,9 @@ class R2OrganizationLogoUploader:
 
         # Skip GIF files - they can be large and cause timeouts
         if logo_url.lower().endswith(".gif"):
-            logger.info(f"Skipping R2 upload for GIF logo for {org_id}, using original URL")
+            logger.info(
+                f"Skipping R2 upload for GIF logo for {org_id}, using original URL"
+            )
             return {"original": logo_url}
 
         # Skip R2 URLs - they are already uploaded and accessible
@@ -63,7 +67,9 @@ class R2OrganizationLogoUploader:
         # Check R2 configuration
         if not R2Service.is_configured():
             if force_upload:
-                raise OrganizationLogoUploadError(f"R2 not configured but force_upload=True for {org_id}")
+                raise OrganizationLogoUploadError(
+                    f"R2 not configured but force_upload=True for {org_id}"
+                )
             else:
                 logger.info(f"R2 not configured, skipping logo upload for {org_id}")
                 return {"original": logo_url}
@@ -74,17 +80,23 @@ class R2OrganizationLogoUploader:
                 logger.info(f"Detected local file path for {org_id}: {logo_url}")
                 upload_result = cls._upload_local_file(org_id, logo_url)
                 if not upload_result:
-                    raise OrganizationLogoUploadError(f"Failed to upload local file for {org_id}")
+                    raise OrganizationLogoUploadError(
+                        f"Failed to upload local file for {org_id}"
+                    )
             else:
                 # Handle remote URL
                 parsed_url = urlparse(logo_url)
                 if not parsed_url.scheme or not parsed_url.netloc:
-                    raise OrganizationLogoUploadError(f"Invalid logo URL for {org_id}: {logo_url}")
+                    raise OrganizationLogoUploadError(
+                        f"Invalid logo URL for {org_id}: {logo_url}"
+                    )
 
                 # Test if URL is accessible
                 response = requests.head(logo_url, timeout=10, allow_redirects=True)
                 if response.status_code >= 400:
-                    raise OrganizationLogoUploadError(f"Logo URL not accessible for {org_id}: {response.status_code}")
+                    raise OrganizationLogoUploadError(
+                        f"Logo URL not accessible for {org_id}: {response.status_code}"
+                    )
 
                 # Upload to R2 using the existing service method
                 upload_result, success = R2Service.upload_image_from_url(
@@ -95,7 +107,9 @@ class R2OrganizationLogoUploader:
                 )
 
                 if not success or not upload_result:
-                    raise OrganizationLogoUploadError(f"Failed to upload logo for {org_id}")
+                    raise OrganizationLogoUploadError(
+                        f"Failed to upload logo for {org_id}"
+                    )
 
             # Generate URLs for different sizes using Cloudflare Images transformations
             urls = {}
@@ -104,15 +118,21 @@ class R2OrganizationLogoUploader:
                     urls[preset_name] = upload_result
                 else:
                     # Use R2Service's get_optimized_url for transformations
-                    urls[preset_name] = R2Service.get_optimized_url(upload_result, transformations)
+                    urls[preset_name] = R2Service.get_optimized_url(
+                        upload_result, transformations
+                    )
 
             logger.info(f"Successfully uploaded logo for organization {org_id}")
             return urls
 
         except requests.RequestException as e:
-            raise OrganizationLogoUploadError(f"Failed to access logo URL for {org_id}: {str(e)}")
+            raise OrganizationLogoUploadError(
+                f"Failed to access logo URL for {org_id}: {str(e)}"
+            )
         except Exception as e:
-            raise OrganizationLogoUploadError(f"Failed to upload logo for {org_id}: {str(e)}")
+            raise OrganizationLogoUploadError(
+                f"Failed to upload logo for {org_id}: {str(e)}"
+            )
 
     @classmethod
     def _is_local_file_path(cls, path: str) -> bool:
@@ -167,10 +187,23 @@ class R2OrganizationLogoUploader:
             bucket_name = os.getenv("R2_BUCKET_NAME")
 
             # Determine content type
-            content_type_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".gif": "image/gif", ".bmp": "image/bmp", ".webp": "image/webp"}
+            content_type_map = {
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".png": "image/png",
+                ".gif": "image/gif",
+                ".bmp": "image/bmp",
+                ".webp": "image/webp",
+            }
             content_type = content_type_map.get(file_ext, "image/jpeg")
 
-            s3_client.put_object(Bucket=bucket_name, Key=r2_key, Body=file_content, ContentType=content_type, Metadata={"type": "organization_logo", "organization_id": org_id})
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=r2_key,
+                Body=file_content,
+                ContentType=content_type,
+                Metadata={"type": "organization_logo", "organization_id": org_id},
+            )
 
             # Build the public URL
             r2_url = R2Service._build_custom_domain_url(r2_key)
@@ -225,7 +258,9 @@ class R2OrganizationLogoUploader:
 
         try:
             # For now, just log that we would clean up
-            logger.info(f"Logo cleanup requested for organization {org_id} (cleanup not implemented)")
+            logger.info(
+                f"Logo cleanup requested for organization {org_id} (cleanup not implemented)"
+            )
             return True
 
         except Exception as e:

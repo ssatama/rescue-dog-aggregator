@@ -120,7 +120,13 @@ class TestMonitoringAuthentication:
         """Test that all monitoring endpoints now require authentication."""
         # NOTE: As of recent security enhancements, ALL monitoring endpoints
         # now require admin API key authentication for security.
-        protected_endpoints = ["/api/monitoring/scrapers", "/api/monitoring/failures", "/api/monitoring/performance", "/api/monitoring/alerts/config", "/api/monitoring/alerts/active"]
+        protected_endpoints = [
+            "/api/monitoring/scrapers",
+            "/api/monitoring/failures",
+            "/api/monitoring/performance",
+            "/api/monitoring/alerts/config",
+            "/api/monitoring/alerts/active",
+        ]
 
         for endpoint in protected_endpoints:
             response = api_client_no_auth.get(endpoint)

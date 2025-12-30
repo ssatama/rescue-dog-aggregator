@@ -116,7 +116,9 @@ class TestGalgosDelSolUnifiedStandardization:
             }
 
             result = galgosdelsol_scraper.process_animal(animal)
-            assert result.get("age_category") == expected_category, f"Failed for age: {age_text}"
+            assert result.get("age_category") == expected_category, (
+                f"Failed for age: {age_text}"
+            )
 
     def test_size_standardization(self, galgosdelsol_scraper):
         """Test that sizes are properly standardized."""
@@ -145,7 +147,11 @@ class TestGalgosDelSolUnifiedStandardization:
             ("Podenco", "Podenco", "Hound"),
             ("galgo español", "Galgo Español", "Hound"),
             ("GALGO", "Galgo", "Hound"),
-            ("podenco mix", "Podenco Mix", "Mixed"),  # Mixed breeds preserve specific breed names
+            (
+                "podenco mix",
+                "Podenco Mix",
+                "Mixed",
+            ),  # Mixed breeds preserve specific breed names
         ]
 
         for raw_breed, expected_breed, expected_category in test_breeds:

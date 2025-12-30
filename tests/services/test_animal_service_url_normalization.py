@@ -1,7 +1,5 @@
 """Unit tests for URL normalization in AnimalService."""
 
-import pytest
-
 from api.services.animal_service import _normalize_url
 
 

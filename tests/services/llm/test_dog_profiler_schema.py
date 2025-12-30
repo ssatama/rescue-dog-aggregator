@@ -44,8 +44,16 @@ class TestDogProfilerDataSchema:
             "vaccinated": True,
             "neutered": True,
             "processing_time_ms": 1250,
-            "confidence_scores": {"description": 0.95, "energy_level": 0.88, "trainability": 0.92, "personality_traits": 0.90},
-            "source_references": {"description": "ruhiger Schäferhund-Mix, sehr lieb", "personality_traits": "intelligent, gelehrig"},
+            "confidence_scores": {
+                "description": 0.95,
+                "energy_level": 0.88,
+                "trainability": 0.92,
+                "personality_traits": 0.90,
+            },
+            "source_references": {
+                "description": "ruhiger Schäferhund-Mix, sehr lieb",
+                "personality_traits": "intelligent, gelehrig",
+            },
             "prompt_version": "1.0.0",
         }
 
@@ -67,17 +75,27 @@ class TestDogProfilerDataSchema:
         valid_profile_data["description"] = "Too short"
         with pytest.raises(ValidationError) as exc_info:
             DogProfilerData(**valid_profile_data)
-        assert "at least 150 characters" in str(exc_info.value).lower() or "description" in str(exc_info.value).lower()
+        assert (
+            "at least 150 characters" in str(exc_info.value).lower()
+            or "description" in str(exc_info.value).lower()
+        )
 
         # Too long
         valid_profile_data["description"] = "x" * 300
         with pytest.raises(ValidationError) as exc_info:
             DogProfilerData(**valid_profile_data)
-        assert "at most 250 characters" in str(exc_info.value).lower() or "description" in str(exc_info.value).lower()
+        assert (
+            "at most 250 characters" in str(exc_info.value).lower()
+            or "description" in str(exc_info.value).lower()
+        )
 
         # Just right
-        valid_profile_data["description"] = "This is a perfect description that meets all the requirements. " * 3
-        valid_profile_data["description"] = valid_profile_data["description"][:200]  # Trim to valid length
+        valid_profile_data["description"] = (
+            "This is a perfect description that meets all the requirements. " * 3
+        )
+        valid_profile_data["description"] = valid_profile_data["description"][
+            :200
+        ]  # Trim to valid length
         profile = DogProfilerData(**valid_profile_data)
         assert len(profile.description) >= 150
         assert len(profile.description) <= 250
@@ -85,8 +103,12 @@ class TestDogProfilerDataSchema:
     def test_description_quality_validation(self, valid_profile_data):
         """Test description quality checks."""
         # Placeholder text - should fail
-        valid_profile_data["description"] = "Lorem ipsum dolor sit amet " * 6  # About 168 chars
-        valid_profile_data["description"] = valid_profile_data["description"][:200]  # Ensure proper length
+        valid_profile_data["description"] = (
+            "Lorem ipsum dolor sit amet " * 6
+        )  # About 168 chars
+        valid_profile_data["description"] = valid_profile_data["description"][
+            :200
+        ]  # Ensure proper length
         with pytest.raises(ValidationError) as exc_info:
             DogProfilerData(**valid_profile_data)
         assert "placeholder" in str(exc_info.value).lower()
@@ -96,18 +118,27 @@ class TestDogProfilerDataSchema:
             "Dog is nice. Very good. Likes play. Need home. Please adopt. Good boy. Sweet dog. Friendly pet. Happy animal. Loving companion. Great friend. Wonderful dog. Nice pet. Good friend. Best dog."
         )
         # This has exactly 30 words but let's make it shorter
-        valid_profile_data["description"] = "Dog is nice. Good boy. Needs home now please." * 2  # ~18 words
+        valid_profile_data["description"] = (
+            "Dog is nice. Good boy. Needs home now please." * 2
+        )  # ~18 words
         # Pad to meet minimum length requirement
-        valid_profile_data["description"] = valid_profile_data["description"].ljust(150, ".")
+        valid_profile_data["description"] = valid_profile_data["description"].ljust(
+            150, "."
+        )
         with pytest.raises(ValidationError) as exc_info:
             DogProfilerData(**valid_profile_data)
-        assert "too short" in str(exc_info.value).lower() or "minimum 20" in str(exc_info.value).lower()
+        assert (
+            "too short" in str(exc_info.value).lower()
+            or "minimum 20" in str(exc_info.value).lower()
+        )
 
         # Valid description with enough words and proper length
         valid_profile_data["description"] = (
             "This wonderful dog is looking for a loving home. He is very friendly and loves to play with children. He enjoys long walks in the park and is well trained. Perfect family companion who will bring joy."
         )
-        valid_profile_data["description"] = valid_profile_data["description"][:200]  # Ensure it's within bounds
+        valid_profile_data["description"] = valid_profile_data["description"][
+            :200
+        ]  # Ensure it's within bounds
         profile = DogProfilerData(**valid_profile_data)
         assert profile.description
 
@@ -145,13 +176,26 @@ class TestDogProfilerDataSchema:
         assert "at least 3" in str(exc_info.value).lower()
 
         # Too many traits
-        valid_profile_data["personality_traits"] = ["gentle", "smart", "loyal", "calm", "friendly", "playful"]
+        valid_profile_data["personality_traits"] = [
+            "gentle",
+            "smart",
+            "loyal",
+            "calm",
+            "friendly",
+            "playful",
+        ]
         with pytest.raises(ValidationError) as exc_info:
             DogProfilerData(**valid_profile_data)
         assert "at most 5" in str(exc_info.value).lower()
 
         # Empty strings filtered out
-        valid_profile_data["personality_traits"] = ["gentle", "", "smart", "  ", "loyal"]
+        valid_profile_data["personality_traits"] = [
+            "gentle",
+            "",
+            "smart",
+            "  ",
+            "loyal",
+        ]
         profile = DogProfilerData(**valid_profile_data)
         assert len(profile.personality_traits) == 3
         assert "" not in profile.personality_traits
@@ -165,13 +209,21 @@ class TestDogProfilerDataSchema:
         assert "description" in str(exc_info.value)
 
         # Invalid score range
-        valid_profile_data["confidence_scores"] = {"description": 1.5, "energy_level": 0.88, "trainability": 0.92}  # Invalid: > 1.0
+        valid_profile_data["confidence_scores"] = {
+            "description": 1.5,
+            "energy_level": 0.88,
+            "trainability": 0.92,
+        }  # Invalid: > 1.0
         with pytest.raises(ValidationError) as exc_info:
             DogProfilerData(**valid_profile_data)
         assert "confidence score" in str(exc_info.value).lower()
 
         # Valid scores
-        valid_profile_data["confidence_scores"] = {"description": 0.95, "energy_level": 0.0, "trainability": 1.0}  # Valid: edge case  # Valid: edge case
+        valid_profile_data["confidence_scores"] = {
+            "description": 0.95,
+            "energy_level": 0.0,
+            "trainability": 1.0,
+        }  # Valid: edge case  # Valid: edge case
         profile = DogProfilerData(**valid_profile_data)
         assert profile.confidence_scores["energy_level"] == 0.0
         assert profile.confidence_scores["trainability"] == 1.0
@@ -249,7 +301,9 @@ class TestDogProfilerDataSchema:
 
         parsed = json.loads(profile_json)
         assert parsed["description"] == valid_profile_data["description"]
-        assert isinstance(parsed["profiled_at"], str)  # DateTime serialized to ISO string
+        assert isinstance(
+            parsed["profiled_at"], str
+        )  # DateTime serialized to ISO string
 
     def test_complete_profile_with_all_fields(self, valid_profile_data):
         """Test a complete profile with all optional fields filled."""
@@ -271,7 +325,8 @@ class TestDogProfilerDataSchema:
     def test_minimal_required_profile(self):
         """Test creating profile with only required fields."""
         minimal_data = {
-            "description": "A wonderful dog looking for a loving home. " * 5,  # Make it long enough
+            "description": "A wonderful dog looking for a loving home. "
+            * 5,  # Make it long enough
             "tagline": "Your new best friend",
             "energy_level": "medium",
             "trainability": "moderate",
@@ -288,8 +343,15 @@ class TestDogProfilerDataSchema:
             "vaccinated": True,
             "neutered": False,
             "processing_time_ms": 1000,
-            "confidence_scores": {"description": 0.9, "energy_level": 0.8, "trainability": 0.85},
-            "source_references": {"description": "German text here", "personality_traits": "German traits"},
+            "confidence_scores": {
+                "description": 0.9,
+                "energy_level": 0.8,
+                "trainability": 0.85,
+            },
+            "source_references": {
+                "description": "German text here",
+                "personality_traits": "German traits",
+            },
             "prompt_version": "1.0.0",
         }
 

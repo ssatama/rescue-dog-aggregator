@@ -123,7 +123,16 @@ class TestGetDbCursor:
         mock_conn.rollback.assert_called_once()
 
     @patch("api.dependencies.psycopg2.connect")
-    @patch("api.dependencies.DB_CONFIG", {"host": "localhost", "user": "test", "database": "test_db", "port": 5432, "password": ""})
+    @patch(
+        "api.dependencies.DB_CONFIG",
+        {
+            "host": "localhost",
+            "user": "test",
+            "database": "test_db",
+            "port": 5432,
+            "password": "",
+        },
+    )
     def test_get_db_cursor_no_password(self, mock_connect):
         """Test connection without password parameter."""
         mock_conn = MagicMock()
@@ -135,11 +144,22 @@ class TestGetDbCursor:
         cursor = next(generator)
 
         # Verify password is not included in connection params when empty
-        mock_connect.assert_called_once_with(host="localhost", user="test", database="test_db", port=5432)
+        mock_connect.assert_called_once_with(
+            host="localhost", user="test", database="test_db", port=5432
+        )
         assert cursor == mock_cursor
 
     @patch("api.dependencies.psycopg2.connect")
-    @patch("api.dependencies.DB_CONFIG", {"host": "localhost", "user": "test", "database": "test_db", "port": 5432, "password": "secret"})
+    @patch(
+        "api.dependencies.DB_CONFIG",
+        {
+            "host": "localhost",
+            "user": "test",
+            "database": "test_db",
+            "port": 5432,
+            "password": "secret",
+        },
+    )
     def test_get_db_cursor_with_password(self, mock_connect):
         """Test connection with password parameter."""
         mock_conn = MagicMock()
@@ -151,7 +171,13 @@ class TestGetDbCursor:
         cursor = next(generator)
 
         # Verify password is included in connection params
-        mock_connect.assert_called_once_with(host="localhost", user="test", database="test_db", port=5432, password="secret")
+        mock_connect.assert_called_once_with(
+            host="localhost",
+            user="test",
+            database="test_db",
+            port=5432,
+            password="secret",
+        )
         assert cursor == mock_cursor
 
     @patch("api.dependencies.psycopg2.connect")

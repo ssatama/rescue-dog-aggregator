@@ -20,7 +20,12 @@ class TestSentryEndpoints:
         os.environ["TESTING"] = "true"
 
         # Clear modules to force reimport
-        modules_to_clear = ["config", "api.main", "api.monitoring", "api.routes.sentry_test"]
+        modules_to_clear = [
+            "config",
+            "api.main",
+            "api.monitoring",
+            "api.routes.sentry_test",
+        ]
         for module in modules_to_clear:
             if module in sys.modules:
                 del sys.modules[module]
@@ -80,7 +85,10 @@ class TestSentryEndpoints:
         with patch.object(sentry_sdk, "capture_exception") as mock_capture:
             response = client.get("/api/sentry-test/test-error?error_type=exception")
             assert response.status_code == 500
-            assert "Test error from Sentry verification endpoint" in response.json()["detail"]
+            assert (
+                "Test error from Sentry verification endpoint"
+                in response.json()["detail"]
+            )
 
     def test_sentry_test_error_endpoint_404(self):
         """Test the error endpoint triggers a 404."""
@@ -157,17 +165,25 @@ class TestSentryEndpoints:
             # Test info event
             response = client.get("/api/sentry-test/test-custom-event?event_type=info")
             assert response.status_code == 200
-            mock_capture.assert_called_with("Test info message from Sentry test endpoint", level="info")
+            mock_capture.assert_called_with(
+                "Test info message from Sentry test endpoint", level="info"
+            )
 
             # Test warning event
-            response = client.get("/api/sentry-test/test-custom-event?event_type=warning")
+            response = client.get(
+                "/api/sentry-test/test-custom-event?event_type=warning"
+            )
             assert response.status_code == 200
-            mock_capture.assert_called_with("Test warning message from Sentry test endpoint", level="warning")
+            mock_capture.assert_called_with(
+                "Test warning message from Sentry test endpoint", level="warning"
+            )
 
             # Test error event
             response = client.get("/api/sentry-test/test-custom-event?event_type=error")
             assert response.status_code == 200
-            mock_capture.assert_called_with("Test error message from Sentry test endpoint", level="error")
+            mock_capture.assert_called_with(
+                "Test error message from Sentry test endpoint", level="error"
+            )
 
     def test_sentry_user_context_endpoint(self):
         """Test the user context setting endpoint."""
@@ -179,7 +195,9 @@ class TestSentryEndpoints:
             mock_scope = MagicMock()
             mock_push_scope.return_value.__enter__.return_value = mock_scope
 
-            response = client.get("/api/sentry-test/test-user-context?user_id=test-123&email=test@example.com")
+            response = client.get(
+                "/api/sentry-test/test-user-context?user_id=test-123&email=test@example.com"
+            )
             assert response.status_code == 200
 
             data = response.json()
@@ -187,7 +205,13 @@ class TestSentryEndpoints:
             assert data["details"]["email"] == "test@example.com"
 
             # Verify user context was set
-            mock_scope.set_user.assert_called_once_with({"id": "test-123", "email": "test@example.com", "username": "user_test-123"})
+            mock_scope.set_user.assert_called_once_with(
+                {
+                    "id": "test-123",
+                    "email": "test@example.com",
+                    "username": "user_test-123",
+                }
+            )
 
     def test_sentry_tags_endpoint(self):
         """Test the tag setting endpoint."""

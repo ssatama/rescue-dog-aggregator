@@ -24,16 +24,23 @@ class AnimalFilterRequest(BaseModel):
     """
 
     # Pagination
-    limit: int = Field(default=20, ge=1, le=10000, description="Number of results to return")
+    limit: int = Field(
+        default=20, ge=1, le=10000, description="Number of results to return"
+    )
     offset: int = Field(default=0, ge=0, description="Number of results to skip")
 
     # Internal flags (not exposed to external API)
     internal_bypass_limit: bool = Field(default=False, exclude=True)
 
     # Search and basic filters
-    search: Optional[str] = Field(default=None, description="Search in animal names and descriptions")
+    search: Optional[str] = Field(
+        default=None, description="Search in animal names and descriptions"
+    )
     animal_type: str = Field(default="dog", description="Type of animal to filter by")
-    status: Union[AnimalStatus, str] = Field(default=AnimalStatus.AVAILABLE, description="Animal availability status or 'all'")
+    status: Union[AnimalStatus, str] = Field(
+        default=AnimalStatus.AVAILABLE,
+        description="Animal availability status or 'all'",
+    )
 
     @field_validator("status")
     @classmethod
@@ -48,40 +55,75 @@ class AnimalFilterRequest(BaseModel):
         try:
             return AnimalStatus(v)
         except ValueError:
-            raise ValueError(f"Invalid status value: {v}. Must be one of: {', '.join([s.value for s in AnimalStatus])} or 'all'")
+            raise ValueError(
+                f"Invalid status value: {v}. Must be one of: {', '.join([s.value for s in AnimalStatus])} or 'all'"
+            )
 
     # Breed filters
     breed: Optional[str] = Field(default=None, description="Filter by exact breed name")
-    standardized_breed: Optional[str] = Field(default=None, description="Filter by standardized breed")
-    breed_group: Optional[str] = Field(default=None, description="Filter by breed group")
-    primary_breed: Optional[str] = Field(default=None, description="Filter by primary breed")
-    breed_type: Optional[str] = Field(default=None, description="Filter by breed type (purebred, mixed, crossbreed, unknown, sighthound)")
+    standardized_breed: Optional[str] = Field(
+        default=None, description="Filter by standardized breed"
+    )
+    breed_group: Optional[str] = Field(
+        default=None, description="Filter by breed group"
+    )
+    primary_breed: Optional[str] = Field(
+        default=None, description="Filter by primary breed"
+    )
+    breed_type: Optional[str] = Field(
+        default=None,
+        description="Filter by breed type (purebred, mixed, crossbreed, unknown, sighthound)",
+    )
 
     # Physical characteristics
     sex: Optional[str] = Field(default=None, description="Filter by sex (male, female)")
     size: Optional[str] = Field(default=None, description="Filter by size")
-    standardized_size: Optional[StandardizedSize] = Field(default=None, description="Filter by standardized size")
-    age_category: Optional[str] = Field(default=None, description="Filter by age category")
+    standardized_size: Optional[StandardizedSize] = Field(
+        default=None, description="Filter by standardized size"
+    )
+    age_category: Optional[str] = Field(
+        default=None, description="Filter by age category"
+    )
 
     # Location filters
-    location_country: Optional[str] = Field(default=None, description="Filter by country where animal is located")
-    available_to_country: Optional[str] = Field(default=None, description="Filter by adoption destination country")
-    available_to_region: Optional[str] = Field(default=None, description="Filter by adoption destination region")
+    location_country: Optional[str] = Field(
+        default=None, description="Filter by country where animal is located"
+    )
+    available_to_country: Optional[str] = Field(
+        default=None, description="Filter by adoption destination country"
+    )
+    available_to_region: Optional[str] = Field(
+        default=None, description="Filter by adoption destination region"
+    )
 
     # Organization filter
-    organization_id: Optional[int] = Field(default=None, description="Filter by specific organization")
+    organization_id: Optional[int] = Field(
+        default=None, description="Filter by specific organization"
+    )
 
     # Availability and confidence
-    availability_confidence: str = Field(default="high,medium", description="Filter by availability confidence: 'high', 'medium', 'low', or 'all'")
+    availability_confidence: str = Field(
+        default="high,medium",
+        description="Filter by availability confidence: 'high', 'medium', 'low', or 'all'",
+    )
 
     # Curation
-    curation_type: str = Field(default="random", description="Curation type: 'recent' (last 7 days), 'recent_with_fallback' (recent or latest), 'diverse' (one per org), or 'random' (default)")
+    curation_type: str = Field(
+        default="random",
+        description="Curation type: 'recent' (last 7 days), 'recent_with_fallback' (recent or latest), 'diverse' (one per org), or 'random' (default)",
+    )
 
     # Sorting
-    sort: Optional[str] = Field(default="newest", description="Sort order: 'newest', 'oldest', 'name-asc', 'name-desc'")
+    sort: Optional[str] = Field(
+        default="newest",
+        description="Sort order: 'newest', 'oldest', 'name-asc', 'name-desc'",
+    )
 
     # SEO/Sitemap filtering
-    sitemap_quality_filter: bool = Field(default=False, description="Filter for sitemap generation: only include animals with meaningful descriptions")
+    sitemap_quality_filter: bool = Field(
+        default=False,
+        description="Filter for sitemap generation: only include animals with meaningful descriptions",
+    )
 
     @field_validator("curation_type")
     @classmethod
@@ -89,7 +131,9 @@ class AnimalFilterRequest(BaseModel):
         """Validate curation_type field."""
         valid_types = ["recent", "recent_with_fallback", "diverse", "random"]
         if v not in valid_types:
-            raise ValueError(f"Invalid curation_type: {v}. Must be one of: {', '.join(valid_types)}")
+            raise ValueError(
+                f"Invalid curation_type: {v}. Must be one of: {', '.join(valid_types)}"
+            )
         return v
 
     @field_validator("sort")
@@ -100,7 +144,9 @@ class AnimalFilterRequest(BaseModel):
             return "newest"
         valid_sorts = ["newest", "oldest", "name-asc", "name-desc"]
         if v not in valid_sorts:
-            raise ValueError(f"Invalid sort value: {v}. Must be one of: {', '.join(valid_sorts)}")
+            raise ValueError(
+                f"Invalid sort value: {v}. Must be one of: {', '.join(valid_sorts)}"
+            )
         return v
 
     @field_validator("breed_type")
@@ -108,7 +154,9 @@ class AnimalFilterRequest(BaseModel):
     def validate_breed_type_field(cls, v):
         """Validate breed_type field."""
         if not validate_breed_type(v):
-            raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound")
+            raise ValueError(
+                f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound"
+            )
         return v
 
     def get_confidence_levels(self) -> list[str]:
@@ -125,11 +173,17 @@ class AnimalFilterRequest(BaseModel):
 class OrganizationFilterRequest(BaseModel):
     """Request model for organization filtering parameters."""
 
-    limit: int = Field(default=20, ge=1, le=10000, description="Number of results to return")
+    limit: int = Field(
+        default=20, ge=1, le=10000, description="Number of results to return"
+    )
     offset: int = Field(default=0, ge=0, description="Number of results to skip")
-    search: Optional[str] = Field(default=None, description="Search in organization names")
+    search: Optional[str] = Field(
+        default=None, description="Search in organization names"
+    )
     country: Optional[str] = Field(default=None, description="Filter by country")
-    active_only: bool = Field(default=True, description="Only return active organizations")
+    active_only: bool = Field(
+        default=True, description="Only return active organizations"
+    )
 
 
 class AnimalFilterCountRequest(BaseModel):
@@ -141,9 +195,13 @@ class AnimalFilterCountRequest(BaseModel):
     """
 
     # Search and basic filters (context for counting)
-    search: Optional[str] = Field(default=None, description="Search context for counting")
+    search: Optional[str] = Field(
+        default=None, description="Search context for counting"
+    )
     animal_type: str = Field(default="dog", description="Type of animal for counting")
-    status: Union[AnimalStatus, str] = Field(default=AnimalStatus.AVAILABLE, description="Status context for counting")
+    status: Union[AnimalStatus, str] = Field(
+        default=AnimalStatus.AVAILABLE, description="Status context for counting"
+    )
 
     @field_validator("status")
     @classmethod
@@ -156,38 +214,65 @@ class AnimalFilterCountRequest(BaseModel):
         try:
             return AnimalStatus(v)
         except ValueError:
-            raise ValueError(f"Invalid status value: {v}. Must be one of: {', '.join([s.value for s in AnimalStatus])} or 'all'")
+            raise ValueError(
+                f"Invalid status value: {v}. Must be one of: {', '.join([s.value for s in AnimalStatus])} or 'all'"
+            )
 
     # Breed filters (context for counting)
     breed: Optional[str] = Field(default=None, description="Breed context for counting")
-    standardized_breed: Optional[str] = Field(default=None, description="Standardized breed context for counting")
-    breed_group: Optional[str] = Field(default=None, description="Breed group context for counting")
-    primary_breed: Optional[str] = Field(default=None, description="Primary breed context for counting")
-    breed_type: Optional[str] = Field(default=None, description="Breed type context for counting")
+    standardized_breed: Optional[str] = Field(
+        default=None, description="Standardized breed context for counting"
+    )
+    breed_group: Optional[str] = Field(
+        default=None, description="Breed group context for counting"
+    )
+    primary_breed: Optional[str] = Field(
+        default=None, description="Primary breed context for counting"
+    )
+    breed_type: Optional[str] = Field(
+        default=None, description="Breed type context for counting"
+    )
 
     # Physical characteristics (context for counting)
     sex: Optional[str] = Field(default=None, description="Sex context for counting")
     size: Optional[str] = Field(default=None, description="Size context for counting")
-    standardized_size: Optional[StandardizedSize] = Field(default=None, description="Standardized size context for counting")
-    age_category: Optional[str] = Field(default=None, description="Age category context for counting")
+    standardized_size: Optional[StandardizedSize] = Field(
+        default=None, description="Standardized size context for counting"
+    )
+    age_category: Optional[str] = Field(
+        default=None, description="Age category context for counting"
+    )
 
     # Location filters (context for counting)
-    location_country: Optional[str] = Field(default=None, description="Location country context for counting")
-    available_to_country: Optional[str] = Field(default=None, description="Available to country context for counting")
-    available_to_region: Optional[str] = Field(default=None, description="Available to region context for counting")
+    location_country: Optional[str] = Field(
+        default=None, description="Location country context for counting"
+    )
+    available_to_country: Optional[str] = Field(
+        default=None, description="Available to country context for counting"
+    )
+    available_to_region: Optional[str] = Field(
+        default=None, description="Available to region context for counting"
+    )
 
     # Organization filter (context for counting)
-    organization_id: Optional[int] = Field(default=None, description="Organization context for counting")
+    organization_id: Optional[int] = Field(
+        default=None, description="Organization context for counting"
+    )
 
     # Availability and confidence (context for counting)
-    availability_confidence: str = Field(default="high,medium", description="Availability confidence context for counting")
+    availability_confidence: str = Field(
+        default="high,medium",
+        description="Availability confidence context for counting",
+    )
 
     @field_validator("breed_type")
     @classmethod
     def validate_breed_type_field(cls, v):
         """Validate breed_type field."""
         if not validate_breed_type(v):
-            raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound")
+            raise ValueError(
+                f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound"
+            )
         return v
 
     def get_confidence_levels(self) -> list[str]:
@@ -204,7 +289,11 @@ class AnimalFilterCountRequest(BaseModel):
 class MonitoringFilterRequest(BaseModel):
     """Request model for monitoring endpoint parameters."""
 
-    organization_id: Optional[int] = Field(default=None, description="Filter by specific organization")
-    time_range_hours: int = Field(default=24, ge=1, le=168, description="Time range in hours")
+    organization_id: Optional[int] = Field(
+        default=None, description="Filter by specific organization"
+    )
+    time_range_hours: int = Field(
+        default=24, ge=1, le=168, description="Time range in hours"
+    )
     status_filter: Optional[str] = Field(default=None, description="Filter by status")
     include_details: bool = Field(default=False, description="Include detailed metrics")

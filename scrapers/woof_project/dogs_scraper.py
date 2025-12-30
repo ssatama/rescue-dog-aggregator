@@ -15,7 +15,10 @@ from scrapers.base_scraper import BaseScraper
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
 if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+    from services.playwright_browser_service import (
+        PlaywrightOptions,
+        get_playwright_service,
+    )
 
 
 class WoofProjectScraper(BaseScraper):
@@ -59,12 +62,16 @@ class WoofProjectScraper(BaseScraper):
         # Apply skip_existing_animals filtering
         dogs_to_process = available_dogs
         if self.skip_existing_animals and available_dogs:
-            all_urls = [dog.get("url") for dog in available_dogs if dog.get("url") is not None]
+            all_urls = [
+                dog.get("url") for dog in available_dogs if dog.get("url") is not None
+            ]
             filtered_urls = self._filter_existing_urls(all_urls)
             filtered_urls_set = set(filtered_urls)
 
             original_count = len(available_dogs)
-            dogs_to_process = [dog for dog in available_dogs if dog.get("url") in filtered_urls_set]
+            dogs_to_process = [
+                dog for dog in available_dogs if dog.get("url") in filtered_urls_set
+            ]
             skipped_count = original_count - len(dogs_to_process)
 
             # Track filtering stats for failure detection
@@ -91,7 +98,9 @@ class WoofProjectScraper(BaseScraper):
                     self.logger.debug(f"Collected data for {dog_data['name']}")
 
             except Exception as e:
-                self.logger.error(f"Error collecting data for {dog_info.get('url', 'unknown')}: {e}")
+                self.logger.error(
+                    f"Error collecting data for {dog_info.get('url', 'unknown')}: {e}"
+                )
                 continue
 
         # World-class logging: Collection results handled by centralized system
@@ -324,7 +333,9 @@ class WoofProjectScraper(BaseScraper):
                 # World-class logging: Pagination discovery handled by centralized system
 
         except Exception as e:
-            self.logger.warning(f"Could not auto-discover pagination, using fallback: {e}")
+            self.logger.warning(
+                f"Could not auto-discover pagination, using fallback: {e}"
+            )
             # Fallback to at least check a few pages manually
             for page_num in range(2, 6):  # Check pages 2-5
                 test_url = f"{self.listing_url}page/{page_num}/"
@@ -360,17 +371,24 @@ class WoofProjectScraper(BaseScraper):
                     result = asyncio.run(self._fetch_with_browser_playwright(url))
                     if result is not None:
                         return result
-                    self.logger.warning("Playwright returned None, falling back to requests")
+                    self.logger.warning(
+                        "Playwright returned None, falling back to requests"
+                    )
                 else:
                     result = self._fetch_with_browser(url)
                     if result is not None:
                         return result
             except Exception as browser_error:
-                self.logger.warning(f"Browser automation failed: {browser_error}, falling back to requests")
+                self.logger.warning(
+                    f"Browser automation failed: {browser_error}, falling back to requests"
+                )
 
             # Fallback to requests with better headers
             headers = {
-                "User-Agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"),
+                "User-Agent": (
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                ),
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.5",
                 "Accept-Encoding": "gzip, deflate",
@@ -403,7 +421,10 @@ class WoofProjectScraper(BaseScraper):
             browser_options = BrowserOptions(
                 headless=True,
                 window_size=(1920, 1080),
-                extra_arguments=["--disable-web-security", "--disable-features=VizDisplayCompositor"],
+                extra_arguments=[
+                    "--disable-web-security",
+                    "--disable-features=VizDisplayCompositor",
+                ],
             )
             browser_result = browser_service.create_driver(browser_options)
 
@@ -422,7 +443,9 @@ class WoofProjectScraper(BaseScraper):
 
                 # Get page source and parse
                 page_source = driver.page_source
-                self.logger.debug(f"Retrieved page source ({len(page_source)} characters)")
+                self.logger.debug(
+                    f"Retrieved page source ({len(page_source)} characters)"
+                )
                 return BeautifulSoup(page_source, "html.parser")
 
             finally:
@@ -502,8 +525,14 @@ class WoofProjectScraper(BaseScraper):
             # Wait for adoption links to be present
             try:
                 self.logger.debug("Waiting for adoption links")
-                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href*="/adoption/"]')))
-                link_count = len(driver.find_elements(By.CSS_SELECTOR, 'a[href*="/adoption/"]'))
+                wait.until(
+                    EC.presence_of_element_located(
+                        (By.CSS_SELECTOR, 'a[href*="/adoption/"]')
+                    )
+                )
+                link_count = len(
+                    driver.find_elements(By.CSS_SELECTOR, 'a[href*="/adoption/"]')
+                )
                 self.logger.debug(f"Found {link_count} adoption links")
             except Exception:
                 self.logger.debug("No adoption links found within timeout")
@@ -532,7 +561,10 @@ class WoofProjectScraper(BaseScraper):
 
             async with playwright_service.get_browser(options) as browser_result:
                 page = browser_result.page
-                self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} " f"for Woof Project scraping")
+                self.logger.info(
+                    f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} "
+                    f"for Woof Project scraping"
+                )
 
                 self.logger.debug(f"Starting Playwright browser automation for {url}")
                 await page.goto(url, wait_until="domcontentloaded")
@@ -542,7 +574,9 @@ class WoofProjectScraper(BaseScraper):
                 await self._wait_for_essential_elements_playwright(page)
 
                 page_source = await page.content()
-                self.logger.debug(f"Retrieved page source ({len(page_source)} characters)")
+                self.logger.debug(
+                    f"Retrieved page source ({len(page_source)} characters)"
+                )
                 return BeautifulSoup(page_source, "html.parser")
 
         except Exception as e:
@@ -623,10 +657,14 @@ class WoofProjectScraper(BaseScraper):
         try:
             return self._extract_dogs_from_page_new_method(soup)
         except Exception as e:
-            self.logger.warning(f"New extraction method failed, falling back to old method: {e}")
+            self.logger.warning(
+                f"New extraction method failed, falling back to old method: {e}"
+            )
             return self._extract_dogs_from_page_old_method(soup)
 
-    def _extract_dogs_from_page_new_method(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_dogs_from_page_new_method(
+        self, soup: BeautifulSoup
+    ) -> List[Dict[str, str]]:
         """Extract dogs using robust container-first approach.
 
         Instead of processing H2 tags linearly, this method finds containers
@@ -654,12 +692,16 @@ class WoofProjectScraper(BaseScraper):
         # World-class logging: Extraction results handled by centralized system
         return dogs
 
-    def _extract_dogs_by_widget_containers(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_dogs_by_widget_containers(
+        self, soup: BeautifulSoup
+    ) -> List[Dict[str, str]]:
         """Extract dogs by finding elementor widget containers."""
         dogs = []
 
         # Look for elementor widgets that contain dog information
-        widget_containers = soup.find_all("div", class_=lambda x: x and any("elementor-widget" in cls for cls in x))
+        widget_containers = soup.find_all(
+            "div", class_=lambda x: x and any("elementor-widget" in cls for cls in x)
+        )
 
         self.logger.debug(f"Found {len(widget_containers)} widget containers")
 
@@ -669,7 +711,10 @@ class WoofProjectScraper(BaseScraper):
                 continue
 
             # Check if this widget contains adoption links and dog names
-            adoption_links = widget.find_all("a", href=lambda x: x and "/adoption/" in x and self._is_valid_dog_url(x))
+            adoption_links = widget.find_all(
+                "a",
+                href=lambda x: x and "/adoption/" in x and self._is_valid_dog_url(x),
+            )
             h2_tags = widget.find_all("h2")
 
             if not adoption_links or not h2_tags:
@@ -703,14 +748,18 @@ class WoofProjectScraper(BaseScraper):
 
         return dogs
 
-    def _extract_dogs_by_content_sections(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_dogs_by_content_sections(
+        self, soup: BeautifulSoup
+    ) -> List[Dict[str, str]]:
         """Fallback method: extract dogs by analyzing content sections."""
         dogs = []
 
         self.logger.debug("Using fallback content section extraction")
 
         # Find all adoption links first
-        adoption_links = soup.find_all("a", href=lambda x: x and "/adoption/" in x and self._is_valid_dog_url(x))
+        adoption_links = soup.find_all(
+            "a", href=lambda x: x and "/adoption/" in x and self._is_valid_dog_url(x)
+        )
 
         for link in adoption_links:
             href = link.get("href", "")
@@ -808,7 +857,9 @@ class WoofProjectScraper(BaseScraper):
         for dog_pos in dog_name_positions:
             for status_pos, status_text in status_tags:
                 if status_pos == dog_pos - 1:  # Status immediately before name
-                    self.logger.debug(f"Found {status_text} immediately before {dog_name}")
+                    self.logger.debug(
+                        f"Found {status_text} immediately before {dog_name}"
+                    )
                     return False
 
         # Additional check: if there are many status tags in this container,
@@ -817,12 +868,16 @@ class WoofProjectScraper(BaseScraper):
             for dog_pos in dog_name_positions:
                 for status_pos, status_text in status_tags:
                     if abs(status_pos - dog_pos) <= 2:  # Status within 2 positions
-                        self.logger.debug(f"Found {status_text} near {dog_name} (positions {status_pos}, {dog_pos})")
+                        self.logger.debug(
+                            f"Found {status_text} near {dog_name} (positions {status_pos}, {dog_pos})"
+                        )
                         return False
 
         return True
 
-    def _extract_dogs_from_page_old_method(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_dogs_from_page_old_method(
+        self, soup: BeautifulSoup
+    ) -> List[Dict[str, str]]:
         """Original extraction method as fallback.
 
         Args:
@@ -847,7 +902,9 @@ class WoofProjectScraper(BaseScraper):
                     dogs.append(dog_info)
                     self.logger.debug(f"Found available dog: {dog_info['name']}")
                 else:
-                    self.logger.debug("Could not extract info from available dog element")
+                    self.logger.debug(
+                        "Could not extract info from available dog element"
+                    )
             else:
                 # Log skipped dogs for debugging
                 h4_tag = element.find("h4")
@@ -896,7 +953,8 @@ class WoofProjectScraper(BaseScraper):
                 "external_id": external_id,
                 "adoption_url": url,
                 "primary_image_url": primary_image_url,
-                "description": description or "Rescue dog from Woof Project available for adoption",
+                "description": description
+                or "Rescue dog from Woof Project available for adoption",
                 "breed": breed or "Mixed Breed",
                 "age": age or "Unknown age",  # Using age for standardizer
                 "size": size or "Medium",
@@ -926,7 +984,10 @@ class WoofProjectScraper(BaseScraper):
 
             result["properties"] = properties
 
-            self.logger.debug(f"Extracted data for {result['name']}: breed={result['breed']}, " f"age={result.get('age', 'Unknown')}, size={result['size']}")
+            self.logger.debug(
+                f"Extracted data for {result['name']}: breed={result['breed']}, "
+                f"age={result.get('age', 'Unknown')}, size={result['size']}"
+            )
 
             # Apply unified standardization
             return self.process_animal(result)
@@ -957,8 +1018,12 @@ class WoofProjectScraper(BaseScraper):
         # Male indicators
         male_patterns = [r"\bhe\b", r"\bhis\b", r"\bhim\b", r"\bmale\b", r"\bboy\b"]
 
-        female_count = sum(1 for pattern in female_patterns if re.search(pattern, desc_lower))
-        male_count = sum(1 for pattern in male_patterns if re.search(pattern, desc_lower))
+        female_count = sum(
+            1 for pattern in female_patterns if re.search(pattern, desc_lower)
+        )
+        male_count = sum(
+            1 for pattern in male_patterns if re.search(pattern, desc_lower)
+        )
 
         if female_count > male_count:
             return "Female"
@@ -977,7 +1042,13 @@ class WoofProjectScraper(BaseScraper):
             BeautifulSoup object or None if error
         """
         try:
-            response = requests.get(url, timeout=self.timeout, headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"})
+            response = requests.get(
+                url,
+                timeout=self.timeout,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"
+                },
+            )
             response.raise_for_status()
 
             return BeautifulSoup(response.text, "html.parser")
@@ -1143,8 +1214,14 @@ class WoofProjectScraper(BaseScraper):
             (r"(\d+)\s+years?\s+old", lambda m: f"{m.group(1)} years"),
             (r"(\d+)\s+months?\s+old", lambda m: f"{m.group(1)} months"),
             (r"around\s+(\d+)\s+years?", lambda m: f"around {m.group(1)} years"),
-            (r"approximately\s+(\d+)\s+years?", lambda m: f"approximately {m.group(1)} years"),
-            (r"(\d+)\s*-\s*(\d+)\s+years?", lambda m: f"{m.group(1)}-{m.group(2)} years"),
+            (
+                r"approximately\s+(\d+)\s+years?",
+                lambda m: f"approximately {m.group(1)} years",
+            ),
+            (
+                r"(\d+)\s*-\s*(\d+)\s+years?",
+                lambda m: f"{m.group(1)}-{m.group(2)} years",
+            ),
             # Pattern for "♡ DOGNAME, 2 years (Estimated DOB...)"
             (r"♡\s+[A-Z]+,\s+(\d+)\s+years?", lambda m: f"{m.group(1)} years"),
             # Pattern for just "2 years" after commas
@@ -1273,7 +1350,9 @@ class WoofProjectScraper(BaseScraper):
 
         # Get all text content
         content_area = soup.find("div", class_="post-content") or soup
-        full_text = content_area.get_text(separator=" ", strip=True) if content_area else ""
+        full_text = (
+            content_area.get_text(separator=" ", strip=True) if content_area else ""
+        )
 
         if not full_text:
             return None
@@ -1308,8 +1387,12 @@ class WoofProjectScraper(BaseScraper):
             description = full_text
             for nav_pattern in navigation_removal_patterns:
                 description = re.sub(nav_pattern, "", description, flags=re.IGNORECASE)
-                if len(description) < len(full_text):  # If pattern matched and removed content
-                    self.logger.debug(f"Removed navigation with pattern: {nav_pattern[:50]}...")
+                if len(description) < len(
+                    full_text
+                ):  # If pattern matched and removed content
+                    self.logger.debug(
+                        f"Removed navigation with pattern: {nav_pattern[:50]}..."
+                    )
                     break
 
         # STAGE 2: Truncate at end markers
@@ -1360,11 +1443,15 @@ class WoofProjectScraper(BaseScraper):
 
         # Quality check - must have substantial content
         if len(description) < 50:
-            self.logger.debug(f"Description too short ({len(description)} chars), using fallback")
+            self.logger.debug(
+                f"Description too short ({len(description)} chars), using fallback"
+            )
             fallback_text = re.sub(r"\s+", " ", full_text).strip()
             return fallback_text if fallback_text else None
 
-        self.logger.debug(f"Extracted {len(description)} chars using multi-stage pipeline")
+        self.logger.debug(
+            f"Extracted {len(description)} chars using multi-stage pipeline"
+        )
         return description
 
     def _extract_primary_image_from_detail(self, soup: BeautifulSoup) -> Optional[str]:
@@ -1399,7 +1486,10 @@ class WoofProjectScraper(BaseScraper):
 
             # Skip obvious non-dog images
             src_lower = src.lower()
-            if any(skip in src_lower for skip in ["icon", "logo", "favicon", "button", "header", "footer"]):
+            if any(
+                skip in src_lower
+                for skip in ["icon", "logo", "favicon", "button", "header", "footer"]
+            ):
                 continue
 
             # Add to candidates with priority scoring
@@ -1427,7 +1517,10 @@ class WoofProjectScraper(BaseScraper):
         src_lower = src.lower()
 
         # Skip obvious site/UI images first
-        if any(skip in src_lower for skip in ["icon", "logo", "login", "video_icon", "thumb"]):
+        if any(
+            skip in src_lower
+            for skip in ["icon", "logo", "login", "video_icon", "thumb"]
+        ):
             return 0
 
         # HIGHEST PRIORITY: wp-content/uploads images from current year (actual dog photos)
@@ -1469,7 +1562,10 @@ class WoofProjectScraper(BaseScraper):
         img_class = img_tag.get("class", []) or []
         img_class_str = " ".join(img_class).lower() if img_class else ""
 
-        if any(size_class in img_class_str for size_class in ["large", "full", "hero", "main", "featured"]):
+        if any(
+            size_class in img_class_str
+            for size_class in ["large", "full", "hero", "main", "featured"]
+        ):
             return 60
 
         if width and height:
@@ -1585,7 +1681,12 @@ class WoofProjectScraper(BaseScraper):
                             href = link.get("href")
                             if href and "/adoption/" in href:
                                 # Check if this link contains the dog name
-                                dog_name_lower = dog_name.lower().replace(" ", "-").replace("(", "").replace(")", "")
+                                dog_name_lower = (
+                                    dog_name.lower()
+                                    .replace(" ", "-")
+                                    .replace("(", "")
+                                    .replace(")", "")
+                                )
                                 if dog_name_lower in href.lower():
                                     # Convert to absolute URL
                                     if href.startswith("/"):
@@ -1600,7 +1701,12 @@ class WoofProjectScraper(BaseScraper):
                 for link in links:
                     href = link.get("href")
                     if href and "/adoption/" in href:
-                        dog_name_lower = dog_name.lower().replace(" ", "-").replace("(", "").replace(")", "")
+                        dog_name_lower = (
+                            dog_name.lower()
+                            .replace(" ", "-")
+                            .replace("(", "")
+                            .replace(")", "")
+                        )
                         if dog_name_lower in href.lower():
                             if href.startswith("/"):
                                 return self.base_url + href

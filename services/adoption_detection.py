@@ -40,11 +40,30 @@ class AdoptionDetectionService:
     """Service for detecting dog adoption status using Firecrawl API."""
 
     # Status mapping patterns to look for in pages
-    ADOPTION_PATTERNS = ["adopted", "rehomed", "found their forever home", "found a home", "has been adopted", "gone home"]
+    ADOPTION_PATTERNS = [
+        "adopted",
+        "rehomed",
+        "found their forever home",
+        "found a home",
+        "has been adopted",
+        "gone home",
+    ]
 
-    RESERVED_PATTERNS = ["reserved", "on hold", "adoption pending", "application approved", "pending adoption"]
+    RESERVED_PATTERNS = [
+        "reserved",
+        "on hold",
+        "adoption pending",
+        "application approved",
+        "pending adoption",
+    ]
 
-    AVAILABLE_PATTERNS = ["available", "looking for a home", "ready for adoption", "waiting for their forever home", "could you give"]
+    AVAILABLE_PATTERNS = [
+        "available",
+        "looking for a home",
+        "ready for adoption",
+        "waiting for their forever home",
+        "could you give",
+    ]
 
     def __init__(self, api_key: Optional[str] = None):
         """Initialize with Firecrawl API key.
@@ -56,7 +75,9 @@ class AdoptionDetectionService:
         self.logger = logging.getLogger(__name__)
 
         if not self.api_key:
-            self.logger.warning("FIRECRAWL_API_KEY not set - adoption detection service disabled")
+            self.logger.warning(
+                "FIRECRAWL_API_KEY not set - adoption detection service disabled"
+            )
             self.client = None
         else:
             try:
@@ -66,7 +87,9 @@ class AdoptionDetectionService:
                 self.logger.error(f"Failed to initialize FirecrawlApp: {e}")
                 self.client = None
 
-    def check_adoption_status(self, animal, timeout: int = 10000) -> AdoptionCheckResult:
+    def check_adoption_status(
+        self, animal, timeout: int = 10000
+    ) -> AdoptionCheckResult:
         """Check a single dog's adoption status.
 
         Args:
@@ -101,7 +124,9 @@ class AdoptionDetectionService:
             )
 
         try:
-            self.logger.info(f"Checking adoption status for {animal.name} (ID: {animal.id}) at {animal.url}")
+            self.logger.info(
+                f"Checking adoption status for {animal.name} (ID: {animal.id}) at {animal.url}"
+            )
 
             # Use Firecrawl's extract API with correct parameters
             extraction_result = self.client.extract(
@@ -130,9 +155,21 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
                 schema={
                     "type": "object",
                     "properties": {
-                        "status": {"type": "string", "enum": ["adopted", "reserved", "unknown"], "description": "The current adoption status of the dog"},
-                        "evidence": {"type": "string", "description": "The text that indicates the status"},
-                        "confidence": {"type": "number", "minimum": 0, "maximum": 1, "description": "Confidence score for the detection"},
+                        "status": {
+                            "type": "string",
+                            "enum": ["adopted", "reserved", "unknown"],
+                            "description": "The current adoption status of the dog",
+                        },
+                        "evidence": {
+                            "type": "string",
+                            "description": "The text that indicates the status",
+                        },
+                        "confidence": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Confidence score for the detection",
+                        },
                     },
                     "required": ["status", "evidence", "confidence"],
                 },
@@ -145,7 +182,9 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
                 if hasattr(extraction_result, "data") and extraction_result.data:
                     # FirecrawlResponse object with data attribute
                     data = extraction_result.data
-                elif isinstance(extraction_result, dict) and "data" in extraction_result:
+                elif (
+                    isinstance(extraction_result, dict) and "data" in extraction_result
+                ):
                     # Dict with 'data' key
                     data = extraction_result["data"]
                 elif isinstance(extraction_result, dict):
@@ -165,7 +204,9 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
                     evidence=data.get("evidence", "")[:200],  # Limit evidence length
                     confidence=data.get("confidence", 0.0),
                     checked_at=datetime.now(timezone.utc),
-                    raw_response=extraction_result if isinstance(extraction_result, dict) else str(extraction_result),
+                    raw_response=extraction_result
+                    if isinstance(extraction_result, dict)
+                    else str(extraction_result),
                 )
             else:
                 return AdoptionCheckResult(
@@ -180,7 +221,9 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
                 )
 
         except Exception as e:
-            self.logger.error(f"Error checking adoption status for {animal.name}: {str(e)}")
+            self.logger.error(
+                f"Error checking adoption status for {animal.name}: {str(e)}"
+            )
             return AdoptionCheckResult(
                 animal_id=animal.id,
                 animal_name=animal.name,
@@ -192,7 +235,9 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
                 error=str(e),
             )
 
-    def _extract_with_retry(self, url: str, timeout: int, max_retries: int = 2) -> Optional[Dict[str, Any]]:
+    def _extract_with_retry(
+        self, url: str, timeout: int, max_retries: int = 2
+    ) -> Optional[Dict[str, Any]]:
         """Extract data from URL with retry logic.
 
         Args:
@@ -207,7 +252,15 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
         # Keeping for backwards compatibility but will be deprecated
         return None
 
-    def batch_check_adoptions(self, db_connection, organization_id: int, threshold: int = 3, limit: int = 50, check_interval_hours: int = 24, dry_run: bool = False) -> List[AdoptionCheckResult]:
+    def batch_check_adoptions(
+        self,
+        db_connection,
+        organization_id: int,
+        threshold: int = 3,
+        limit: int = 50,
+        check_interval_hours: int = 24,
+        dry_run: bool = False,
+    ) -> List[AdoptionCheckResult]:
         """Check adoption status for eligible dogs in batch.
 
         Args:
@@ -222,7 +275,9 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
             List of AdoptionCheckResult for processed dogs
         """
         # Calculate cutoff time for rechecking
-        recheck_cutoff = datetime.now(timezone.utc) - timedelta(hours=check_interval_hours)
+        recheck_cutoff = datetime.now(timezone.utc) - timedelta(
+            hours=check_interval_hours
+        )
 
         # Query eligible dogs using raw SQL
         query = """
@@ -236,11 +291,17 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
             LIMIT %s
         """
 
-        cursor = db_connection.cursor() if hasattr(db_connection, "cursor") else db_connection
+        cursor = (
+            db_connection.cursor()
+            if hasattr(db_connection, "cursor")
+            else db_connection
+        )
         cursor.execute(query, (organization_id, threshold, recheck_cutoff, limit))
         eligible_dogs = cursor.fetchall()
 
-        self.logger.info(f"Found {len(eligible_dogs)} eligible dogs for organization {organization_id}")
+        self.logger.info(
+            f"Found {len(eligible_dogs)} eligible dogs for organization {organization_id}"
+        )
 
         results = []
 
@@ -281,16 +342,33 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
                     "error": result.error if result.error else None,
                 }
 
-                cursor.execute(update_query, (result.detected_status, result.checked_at, json.dumps(adoption_data), dog.id))
+                cursor.execute(
+                    update_query,
+                    (
+                        result.detected_status,
+                        result.checked_at,
+                        json.dumps(adoption_data),
+                        dog.id,
+                    ),
+                )
 
-                self.logger.info(f"Updated {dog.name}: {result.previous_status} → {result.detected_status} " f"(confidence: {result.confidence:.2f})")
+                self.logger.info(
+                    f"Updated {dog.name}: {result.previous_status} → {result.detected_status} "
+                    f"(confidence: {result.confidence:.2f})"
+                )
 
         if not dry_run and hasattr(db_connection, "commit"):
             db_connection.commit()
 
         return results
 
-    def get_eligible_dogs_count(self, db_connection, organization_id: int, threshold: int = 3, check_interval_hours: int = 24) -> int:
+    def get_eligible_dogs_count(
+        self,
+        db_connection,
+        organization_id: int,
+        threshold: int = 3,
+        check_interval_hours: int = 24,
+    ) -> int:
         """Get count of dogs eligible for adoption checking.
 
         Args:
@@ -302,7 +380,9 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
         Returns:
             Count of eligible dogs
         """
-        recheck_cutoff = datetime.now(timezone.utc) - timedelta(hours=check_interval_hours)
+        recheck_cutoff = datetime.now(timezone.utc) - timedelta(
+            hours=check_interval_hours
+        )
 
         query = """
             SELECT COUNT(*) 
@@ -313,7 +393,11 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
             AND (adoption_checked_at IS NULL OR adoption_checked_at < %s)
         """
 
-        cursor = db_connection.cursor() if hasattr(db_connection, "cursor") else db_connection
+        cursor = (
+            db_connection.cursor()
+            if hasattr(db_connection, "cursor")
+            else db_connection
+        )
         cursor.execute(query, (organization_id, threshold, recheck_cutoff))
         count = cursor.fetchone()[0]
 

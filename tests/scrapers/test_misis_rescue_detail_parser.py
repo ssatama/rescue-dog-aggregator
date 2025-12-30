@@ -114,7 +114,9 @@ class TestMisisRescueDetailParser:
         assert result["properties"]["weight"] == "2.5kg"  # Average of 2-3kg
         assert result["size"] == "Tiny"  # 2.5kg is < 5kg threshold for Tiny
         assert result["age_text"] is not None
-        assert "month" in result["age_text"] or "year" in result["age_text"]  # Should be young based on March 2023
+        assert (
+            "month" in result["age_text"] or "year" in result["age_text"]
+        )  # Should be young based on March 2023
 
         # Check bullet points
         assert "bullet_points" in result
@@ -240,8 +242,16 @@ class TestMisisRescueDetailParser:
         result = parser.parse_detail_page(soup)
 
         # Verify normalizer integration
-        from scrapers.misis_rescue.normalizer import calculate_age_years, extract_birth_date, extract_breed, extract_sex, normalize_size
-        from utils.shared_extraction_patterns import extract_weight_from_text as extract_weight_kg
+        from scrapers.misis_rescue.normalizer import (
+            calculate_age_years,
+            extract_birth_date,
+            extract_breed,
+            extract_sex,
+            normalize_size,
+        )
+        from utils.shared_extraction_patterns import (
+            extract_weight_from_text as extract_weight_kg,
+        )
 
         bullets = result["bullet_points"]
 

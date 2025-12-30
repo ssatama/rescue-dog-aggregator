@@ -14,7 +14,6 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
 
 from api.dependencies import get_pooled_db_cursor
 from api.main import app
@@ -42,7 +41,9 @@ class TestOrganizationCardData:
         yield
         app.dependency_overrides.clear()
 
-    def test_get_animal_by_slug_returns_complete_organization_data(self, client, mock_db_cursor):
+    def test_get_animal_by_slug_returns_complete_organization_data(
+        self, client, mock_db_cursor
+    ):
         """Test that animal detail endpoint returns all organization card fields."""
 
         # Create comprehensive mock data with all organization fields
@@ -95,7 +96,10 @@ class TestOrganizationCardData:
                 "instagram": "https://www.instagram.com/santerpaws_bulgarian_rescue/",
             },
             "org_ships_to": ["UK", "IE"],
-            "org_service_regions": ["BG", "RO"],  # This is critical for "Dogs in:" display
+            "org_service_regions": [
+                "BG",
+                "RO",
+            ],  # This is critical for "Dogs in:" display
             "org_total_dogs": 103,  # Total available dogs
             "org_new_this_week": 3,  # For "NEW" badge
             # Recent dogs array - should be parsed as JSON
@@ -176,12 +180,17 @@ class TestOrganizationCardData:
         assert first_dog["id"] == 5305
         assert first_dog["name"] == "Juniper"
         assert first_dog["slug"] == "juniper-unknown-5305"
-        assert first_dog["primary_image_url"] == "https://images.rescuedogs.me/juniper.jpg"
+        assert (
+            first_dog["primary_image_url"] == "https://images.rescuedogs.me/juniper.jpg"
+        )
         assert first_dog["standardized_breed"] == "Unknown"
 
         # Verify social media
         assert "social_media" in org
-        assert org["social_media"]["facebook"] == "https://www.facebook.com/SanterpawsBulgarianRescue"
+        assert (
+            org["social_media"]["facebook"]
+            == "https://www.facebook.com/SanterpawsBulgarianRescue"
+        )
 
     def test_organization_recent_dogs_empty_list(self, client, mock_db_cursor):
         """Test that organization handles empty recent_dogs gracefully."""
@@ -251,7 +260,9 @@ class TestOrganizationCardData:
         assert data["organization"]["recent_dogs"] == []
         assert isinstance(data["organization"]["recent_dogs"], list)
 
-    def test_organization_service_regions_multiple_countries(self, client, mock_db_cursor):
+    def test_organization_service_regions_multiple_countries(
+        self, client, mock_db_cursor
+    ):
         """Test that service_regions correctly handles multiple countries."""
 
         animal_data = {
@@ -396,7 +407,15 @@ class TestOrganizationCardData:
             "org_total_dogs": 45,
             "org_new_this_week": 8,  # 8 dogs added this week
             "org_recent_dogs": [
-                {"id": 3, "slug": "new-arrival", "name": "New Arrival", "primary_image_url": "https://example.com/puppy.jpg", "standardized_breed": "Beagle", "age_min_months": 3, "age_max_months": 6},
+                {
+                    "id": 3,
+                    "slug": "new-arrival",
+                    "name": "New Arrival",
+                    "primary_image_url": "https://example.com/puppy.jpg",
+                    "standardized_breed": "Beagle",
+                    "age_min_months": 3,
+                    "age_max_months": 6,
+                },
                 {
                     "id": 4,
                     "slug": "another-new",

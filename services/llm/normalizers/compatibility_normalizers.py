@@ -46,7 +46,14 @@ class CompatibilityNormalizers:
                 return "no"
             elif value_lower in ["on_request", "untested", "unclear"]:
                 return "unknown"
-            elif value_lower in ["yes", "no", "selective", "unknown", "with_training", "older_children"]:
+            elif value_lower in [
+                "yes",
+                "no",
+                "selective",
+                "unknown",
+                "with_training",
+                "older_children",
+            ]:
                 return value_lower
 
         return "unknown"
@@ -57,14 +64,26 @@ class CompatibilityNormalizers:
         if not value:
             return "house_preferred"
 
-        mappings = {"apartment": "apartment_ok", "house": "house_preferred", "house_only": "house_required", "farm": "farm_only", "rural": "farm_only", "any": "apartment_ok"}
+        mappings = {
+            "apartment": "apartment_ok",
+            "house": "house_preferred",
+            "house_only": "house_required",
+            "farm": "farm_only",
+            "rural": "farm_only",
+            "any": "apartment_ok",
+        }
 
         if isinstance(value, str):
             value_lower = value.lower().strip()
             normalized = mappings.get(value_lower, value_lower)
 
             # Validate against allowed values
-            if normalized not in ["apartment_ok", "house_preferred", "house_required", "farm_only"]:
+            if normalized not in [
+                "apartment_ok",
+                "house_preferred",
+                "house_required",
+                "farm_only",
+            ]:
                 return "house_preferred"
             return normalized
 
@@ -94,7 +113,11 @@ class CompatibilityNormalizers:
             normalized = mappings.get(value_lower, value_lower)
 
             # Validate against allowed values
-            if normalized not in ["first_time_ok", "some_experience", "experienced_only"]:
+            if normalized not in [
+                "first_time_ok",
+                "some_experience",
+                "experienced_only",
+            ]:
                 return "some_experience"
             return normalized
 

@@ -228,7 +228,15 @@ class LLMClient:
             json.JSONDecodeError: If response is not valid JSON
         """
         # Format messages for vision API
-        messages = [{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": image_url}}]}]
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": image_url}},
+                ],
+            }
+        ]
 
         # Delegate to existing call_api_and_parse for consistency
         return await self.call_api_and_parse(

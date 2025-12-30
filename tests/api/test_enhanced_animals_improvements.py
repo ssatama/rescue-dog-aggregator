@@ -10,15 +10,13 @@ Specifically tests:
 - Observability logging
 """
 
-import hashlib
-import time
 from unittest.mock import MagicMock, call, patch
 
 import pytest
-from psycopg2 import InterfaceError, OperationalError
+from psycopg2 import OperationalError
 from psycopg2.extras import RealDictCursor
 
-from api.exceptions import DatabaseRetryExhaustedError, DataNormalizationError
+from api.exceptions import DatabaseRetryExhaustedError
 from api.services.enhanced_animal_service import EnhancedAnimalService
 
 
@@ -95,7 +93,11 @@ class TestRetryLogic:
     def test_retry_on_operational_error(self, service):
         """Test retry logic for operational errors."""
         # Make execute fail twice, then succeed
-        service.cursor.execute.side_effect = [OperationalError("Connection lost"), OperationalError("Connection lost"), None]  # Success on third try
+        service.cursor.execute.side_effect = [
+            OperationalError("Connection lost"),
+            OperationalError("Connection lost"),
+            None,
+        ]  # Success on third try
 
         with patch("time.sleep") as mock_sleep:
             service._execute_with_retry("SELECT 1")
@@ -178,7 +180,13 @@ class TestMetricsCollection:
     def service(self):
         """Create service with mock cursor."""
         cursor = MagicMock(spec=RealDictCursor)
-        cursor.fetchone.return_value = {"id": 123, "name": "Test Dog", "slug": "test-dog", "dog_profiler_data": {"description": "Test"}, "has_data": True}
+        cursor.fetchone.return_value = {
+            "id": 123,
+            "name": "Test Dog",
+            "slug": "test-dog",
+            "dog_profiler_data": {"description": "Test"},
+            "has_data": True,
+        }
         cursor.fetchall.return_value = []
         return EnhancedAnimalService(cursor)
 
@@ -259,7 +267,9 @@ class TestErrorHandling:
 
         with patch("time.sleep"):
             with pytest.raises(DatabaseRetryExhaustedError) as exc_info:
-                service._execute_with_retry("SELECT * FROM animals WHERE id = %s", (123,))
+                service._execute_with_retry(
+                    "SELECT * FROM animals WHERE id = %s", (123,)
+                )
 
         error = exc_info.value
         assert error.operation == "execute_query"

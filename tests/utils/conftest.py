@@ -9,7 +9,9 @@ import sys
 import pytest
 
 # Add project root to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from utils.db_connection import DatabaseConfig
 
@@ -28,10 +30,18 @@ def initialize_database_pool():
     the database pool is initialized before any tests that might use the new
     secure database modules.
     """
-    print("\n[utils conftest] Initializing database connection pool for test session...")
+    print(
+        "\n[utils conftest] Initializing database connection pool for test session..."
+    )
 
     # Create test database configuration
-    test_db_config = DatabaseConfig(host=TEST_DB_HOST, user=TEST_DB_USER, database=TEST_DB_NAME, password=TEST_DB_PASSWORD, port=5432)
+    test_db_config = DatabaseConfig(
+        host=TEST_DB_HOST,
+        user=TEST_DB_USER,
+        database=TEST_DB_NAME,
+        password=TEST_DB_PASSWORD,
+        port=5432,
+    )
 
     # Initialize the pool
     try:

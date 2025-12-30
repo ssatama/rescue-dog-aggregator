@@ -9,7 +9,12 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
-from scrapers.tierschutzverein_europa.translations import normalize_name, translate_age, translate_breed, translate_gender
+from scrapers.tierschutzverein_europa.translations import (
+    normalize_name,
+    translate_age,
+    translate_breed,
+    translate_gender,
+)
 
 
 class TierschutzvereinEuropaScraper(BaseScraper):
@@ -44,7 +49,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             if self.skip_existing_animals:
                 existing_urls = self._get_existing_animal_urls()
                 animals = [a for a in animals if a["adoption_url"] not in existing_urls]
-                self.logger.info(f"After filtering existing: {len(animals)} new animals to process")
+                self.logger.info(
+                    f"After filtering existing: {len(animals)} new animals to process"
+                )
 
             if not animals:
                 self.logger.info("All animals already exist - skipping detail scraping")
@@ -76,7 +83,13 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 page_url = self.get_page_url(page)
                 self.logger.debug(f"Fetching page {page}: {page_url}")
 
-                response = requests.get(page_url, headers={"User-Agent": "Mozilla/5.0 (compatible; rescue-dog-aggregator)"}, timeout=30)
+                response = requests.get(
+                    page_url,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (compatible; rescue-dog-aggregator)"
+                    },
+                    timeout=30,
+                )
                 response.raise_for_status()
 
                 # Parse HTML and extract animals
@@ -85,7 +98,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
                 # If no articles found, we've reached the end
                 if not articles:
-                    self.logger.debug(f"No more articles found on page {page}, stopping pagination")
+                    self.logger.debug(
+                        f"No more articles found on page {page}, stopping pagination"
+                    )
                     break
 
                 for article in articles:
@@ -94,10 +109,16 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                         all_animals.append(animal_data)
 
                 # Check if there's a next page link
-                next_link = soup.find("a", {"class": "next", "href": True}) or soup.find("a", {"rel": "next", "href": True}) or soup.find("a", text="→")
+                next_link = (
+                    soup.find("a", {"class": "next", "href": True})
+                    or soup.find("a", {"rel": "next", "href": True})
+                    or soup.find("a", text="→")
+                )
 
                 if not next_link:
-                    self.logger.debug(f"No next page link found on page {page}, stopping pagination")
+                    self.logger.debug(
+                        f"No next page link found on page {page}, stopping pagination"
+                    )
                     break
 
                 # Rate limiting
@@ -110,10 +131,14 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 page += 1
                 if page > 3 and not all_animals:
                     # If we've tried 3 pages and found nothing, stop
-                    self.logger.error("Failed to extract animals from first 3 pages, stopping")
+                    self.logger.error(
+                        "Failed to extract animals from first 3 pages, stopping"
+                    )
                     break
 
-        self.logger.info(f"Extracted {len(all_animals)} animals from {page - 1} listing pages")
+        self.logger.info(
+            f"Extracted {len(all_animals)} animals from {page - 1} listing pages"
+        )
         return all_animals
 
     def _extract_animal_from_article(self, article) -> Optional[Dict[str, Any]]:
@@ -149,7 +174,13 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             if not name:
                 return None
 
-            return {"name": name, "external_id": external_id, "adoption_url": adoption_url, "animal_type": "dog", "status": "available"}
+            return {
+                "name": name,
+                "external_id": external_id,
+                "adoption_url": adoption_url,
+                "animal_type": "dog",
+                "status": "available",
+            }
 
         except Exception as e:
             self.logger.warning(f"Error extracting animal from article: {e}")
@@ -160,7 +191,13 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         try:
             self.logger.debug(f"Scraping details from: {adoption_url}")
 
-            response = requests.get(adoption_url, headers={"User-Agent": "Mozilla/5.0 (compatible; rescue-dog-aggregator)"}, timeout=45)  # Longer timeout for slow site
+            response = requests.get(
+                adoption_url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (compatible; rescue-dog-aggregator)"
+                },
+                timeout=45,
+            )  # Longer timeout for slow site
             response.raise_for_status()
 
             soup = BeautifulSoup(response.text, "html.parser")
@@ -172,7 +209,12 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             hero_image_url = self._extract_hero_image(soup)
 
             # Build result
-            result = {"properties": properties, "primary_image_url": hero_image_url, "original_image_url": hero_image_url, "image_urls": [hero_image_url] if hero_image_url else []}
+            result = {
+                "properties": properties,
+                "primary_image_url": hero_image_url,
+                "original_image_url": hero_image_url,
+                "image_urls": [hero_image_url] if hero_image_url else [],
+            }
 
             # Extract key fields for BaseScraper standardization
             if "Rasse" in properties:
@@ -181,7 +223,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 result["sex"] = properties["Geschlecht"]
             if "Geburtstag" in properties:
                 result["age_text"] = properties["Geburtstag"]
-                result["age"] = properties["Geburtstag"]  # Unified standardization expects 'age' field
+                result["age"] = properties[
+                    "Geburtstag"
+                ]  # Unified standardization expects 'age' field
 
             # Add description as separate field for BaseScraper
             if "Beschreibung" in properties:
@@ -240,7 +284,12 @@ class TierschutzvereinEuropaScraper(BaseScraper):
     def _extract_hero_image(self, soup: BeautifulSoup) -> Optional[str]:
         """Extract the main/hero image from detail page."""
         # Try multiple patterns for hero image
-        patterns = [{"class": "wp-post-image"}, {"class": "hero-image"}, {"class": "main-image"}, {"alt": re.compile("Titelbild|Profilbild|Hero", re.I)}]
+        patterns = [
+            {"class": "wp-post-image"},
+            {"class": "hero-image"},
+            {"class": "main-image"},
+            {"alt": re.compile("Titelbild|Profilbild|Hero", re.I)},
+        ]
 
         for pattern in patterns:
             img = soup.find("img", pattern)
@@ -262,14 +311,18 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         return None
 
-    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_parallel(
+        self, animals: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Process animals in parallel batches for efficient detail scraping."""
         all_dogs_data = []
         seen_urls = set()
 
         # Single-threaded for small batches
         if len(animals) <= self.batch_size or self.batch_size == 1:
-            self.logger.info(f"Using single-threaded processing for {len(animals)} animals")
+            self.logger.info(
+                f"Using single-threaded processing for {len(animals)} animals"
+            )
 
             for animal in animals:
                 adoption_url = animal["adoption_url"]
@@ -285,14 +338,18 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                     if detail_data:
                         animal.update(detail_data)
                 except Exception as e:
-                    self.logger.error(f"Error scraping details for {animal['name']}: {e}")
+                    self.logger.error(
+                        f"Error scraping details for {animal['name']}: {e}"
+                    )
 
                 all_dogs_data.append(animal)
 
             return all_dogs_data
 
         # Parallel processing for larger batches
-        self.logger.info(f"Starting parallel detail scraping for {len(animals)} animals")
+        self.logger.info(
+            f"Starting parallel detail scraping for {len(animals)} animals"
+        )
 
         results_lock = Lock()
 
@@ -315,7 +372,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                     if detail_data:
                         animal.update(detail_data)
                 except Exception as e:
-                    self.logger.error(f"Error scraping details for {animal.get('name', 'unknown')}: {e}")
+                    self.logger.error(
+                        f"Error scraping details for {animal.get('name', 'unknown')}: {e}"
+                    )
 
                 batch_results.append(animal)
 
@@ -333,20 +392,27 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         max_workers = min(3, len(batches))  # Max 3 concurrent workers
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_batch = {executor.submit(process_animal_batch, batch): i for i, batch in enumerate(batches)}
+            future_to_batch = {
+                executor.submit(process_animal_batch, batch): i
+                for i, batch in enumerate(batches)
+            }
 
             for future in concurrent.futures.as_completed(future_to_batch):
                 batch_index = future_to_batch[future]
                 try:
                     batch_results = future.result(timeout=300)
                     all_dogs_data.extend(batch_results)
-                    self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}")
+                    self.logger.info(
+                        f"Completed batch {batch_index + 1}/{len(batches)}"
+                    )
                 except Exception as e:
                     self.logger.error(f"Batch {batch_index + 1} failed: {e}")
 
         return all_dogs_data
 
-    def _translate_and_normalize_dogs(self, dogs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _translate_and_normalize_dogs(
+        self, dogs: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Translate German data to English for BaseScraper processing."""
         translated_dogs = []
 
@@ -383,7 +449,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 translated_dogs.append(translated_dog)
 
             except Exception as e:
-                self.logger.error(f"Translation failed for {dog.get('name', 'unknown')}: {e}")
+                self.logger.error(
+                    f"Translation failed for {dog.get('name', 'unknown')}: {e}"
+                )
                 # Return original with error flag
                 dog_with_error = dog.copy()
                 if "properties" not in dog_with_error:

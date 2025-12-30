@@ -14,8 +14,12 @@ class TestIndexSyncSecurity:
     def test_index_name_validation_prevents_sql_injection(self):
         """Test that malicious index names are rejected."""
         with patch("services.railway.index_sync.get_local_indexes") as mock_local:
-            with patch("services.railway.index_sync.get_railway_indexes") as mock_railway:
-                with patch("services.railway.index_sync.railway_session") as mock_session:
+            with patch(
+                "services.railway.index_sync.get_railway_indexes"
+            ) as mock_railway:
+                with patch(
+                    "services.railway.index_sync.railway_session"
+                ) as mock_session:
                     # Setup mocks
                     mock_local.return_value = [
                         {
@@ -39,7 +43,12 @@ class TestIndexSyncSecurity:
                     result = sync_indexes_to_railway("animals", dry_run=False)
 
                     # Check that only valid index was executed
-                    executed_queries = [call[0][0]._text if hasattr(call[0][0], "_text") else str(call[0][0]) for call in session_mock.execute.call_args_list]
+                    executed_queries = [
+                        call[0][0]._text
+                        if hasattr(call[0][0], "_text")
+                        else str(call[0][0])
+                        for call in session_mock.execute.call_args_list
+                    ]
 
                     # Should have attempted to create valid index
                     assert any("idx_valid_name" in query for query in executed_queries)
@@ -51,8 +60,12 @@ class TestIndexSyncSecurity:
     def test_table_name_validation(self):
         """Test that table names are validated to prevent SQL injection."""
         with patch("services.railway.index_sync.get_local_indexes") as mock_local:
-            with patch("services.railway.index_sync.get_railway_indexes") as mock_railway:
-                with patch("services.railway.index_sync.railway_session") as mock_session:
+            with patch(
+                "services.railway.index_sync.get_railway_indexes"
+            ) as mock_railway:
+                with patch(
+                    "services.railway.index_sync.railway_session"
+                ) as mock_session:
                     # Setup mocks
                     mock_local.return_value = []
                     mock_railway.return_value = []
@@ -66,7 +79,12 @@ class TestIndexSyncSecurity:
                     result = sync_indexes_to_railway(malicious_table, dry_run=False)
 
                     # Check that ANALYZE was not executed for malicious table
-                    executed_queries = [call[0][0]._text if hasattr(call[0][0], "_text") else str(call[0][0]) for call in session_mock.execute.call_args_list]
+                    executed_queries = [
+                        call[0][0]._text
+                        if hasattr(call[0][0], "_text")
+                        else str(call[0][0])
+                        for call in session_mock.execute.call_args_list
+                    ]
 
                     # Should not have DROP TABLE in any query
                     assert not any("DROP TABLE" in query for query in executed_queries)
@@ -75,8 +93,12 @@ class TestIndexSyncSecurity:
     def test_dry_run_mode_prevents_execution(self):
         """Test that dry_run mode doesn't execute any changes."""
         with patch("services.railway.index_sync.get_local_indexes") as mock_local:
-            with patch("services.railway.index_sync.get_railway_indexes") as mock_railway:
-                with patch("services.railway.index_sync.railway_session") as mock_session:
+            with patch(
+                "services.railway.index_sync.get_railway_indexes"
+            ) as mock_railway:
+                with patch(
+                    "services.railway.index_sync.railway_session"
+                ) as mock_session:
                     # Setup mocks
                     mock_local.return_value = [
                         {

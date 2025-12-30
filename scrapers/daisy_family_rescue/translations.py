@@ -18,7 +18,9 @@ def _get_cache_key(text: str, translation_type: str) -> str:
     return f"{translation_type}:{hashlib.md5(text.encode()).hexdigest()[:8]}"
 
 
-def _cached_translate(text: str, translation_type: str, translator_func) -> Optional[str]:
+def _cached_translate(
+    text: str, translation_type: str, translator_func
+) -> Optional[str]:
     """Generic cached translation wrapper."""
     if not text or not text.strip():
         return None
@@ -353,7 +355,9 @@ def translate_compatibility(compatibility: Optional[str]) -> Optional[str]:
 
         return result
 
-    return _cached_translate(compatibility, "compatibility", _translate_compatibility_impl)
+    return _cached_translate(
+        compatibility, "compatibility", _translate_compatibility_impl
+    )
 
 
 def translate_ideal_home(home_description: Optional[str]) -> Optional[str]:

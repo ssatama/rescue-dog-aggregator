@@ -37,9 +37,15 @@ class TestEnhancedFailureDetection:
         scraper._log_service_unavailable = Mock()
 
         # Bind the actual methods to the mock
-        scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(scraper)
-        scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
-        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(scraper)
+        scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(
+            scraper
+        )
+        scraper.detect_catastrophic_failure = (
+            BaseScraper.detect_catastrophic_failure.__get__(scraper)
+        )
+        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(
+            scraper
+        )
 
         return scraper
 
@@ -76,7 +82,9 @@ class TestEnhancedFailureDetection:
         assert result is True
 
         # Verify SessionManager was called
-        mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(0, 0.5, 3, 3, 0, 0)
+        mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(
+            0, 0.5, 3, 3, 0, 0
+        )
 
     def test_enhanced_partial_failure_with_absolute_minimum(self, mock_scraper):
         """Test enhanced partial failure uses absolute minimum thresholds."""
@@ -89,7 +97,9 @@ class TestEnhancedFailureDetection:
         assert result is True
 
         # Verify SessionManager was called with correct parameters
-        mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(3, 0.5, 5, 3, 0, 0)
+        mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(
+            3, 0.5, 5, 3, 0, 0
+        )
 
     def test_new_organization_with_no_historical_data(self, mock_scraper):
         """Test behavior for new organizations with no historical scrape data."""
@@ -114,12 +124,16 @@ class TestEnhancedFailureDetection:
         assert result is True
 
         # Verify SessionManager was called
-        mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(2, 0.5, 3, 5, 0, 0)
+        mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(
+            2, 0.5, 3, 5, 0, 0
+        )
 
     def test_database_error_during_failure_detection(self, mock_scraper):
         """Test graceful handling of database errors during failure detection."""
         # Configure SessionManager to raise an exception
-        mock_scraper.session_manager.detect_partial_failure.side_effect = Exception("Database error")
+        mock_scraper.session_manager.detect_partial_failure.side_effect = Exception(
+            "Database error"
+        )
 
         # Current implementation doesn't handle exceptions, so they will be raised
         with pytest.raises(Exception):
@@ -134,16 +148,25 @@ class TestEnhancedFailureDetection:
     def test_combined_catastrophic_and_partial_failure_check(self, mock_scraper):
         """Test that both catastrophic and partial failure checks work together."""
         # Configure SessionManager for different scenarios
-        mock_scraper.session_manager.detect_partial_failure.side_effect = [True, True, True, False]
+        mock_scraper.session_manager.detect_partial_failure.side_effect = [
+            True,
+            True,
+            True,
+            False,
+        ]
 
         # Test the combined method (to be implemented)
         result = mock_scraper.detect_scraper_failure(0)  # Zero animals
         assert result is True
 
-        result = mock_scraper.detect_scraper_failure(2, absolute_minimum=5)  # Below absolute minimum
+        result = mock_scraper.detect_scraper_failure(
+            2, absolute_minimum=5
+        )  # Below absolute minimum
         assert result is True
 
-        result = mock_scraper.detect_scraper_failure(20, absolute_minimum=5)  # Below 50% threshold
+        result = mock_scraper.detect_scraper_failure(
+            20, absolute_minimum=5
+        )  # Below 50% threshold
         assert result is True
 
         result = mock_scraper.detect_scraper_failure(30, absolute_minimum=5)  # Normal
@@ -174,9 +197,15 @@ class TestFailureDetectionEdgeCases:
         scraper._log_service_unavailable = Mock()
 
         # Bind the actual methods to the mock
-        scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
-        scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(scraper)
-        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(scraper)
+        scraper.detect_catastrophic_failure = (
+            BaseScraper.detect_catastrophic_failure.__get__(scraper)
+        )
+        scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(
+            scraper
+        )
+        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(
+            scraper
+        )
 
         return scraper
 
@@ -195,7 +224,9 @@ class TestFailureDetectionEdgeCases:
         assert result is True
 
         # Verify SessionManager was called with correct parameters
-        mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(0, 2.0, 3, 3, 0, 0)
+        mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(
+            0, 2.0, 3, 3, 0, 0
+        )
 
     def test_first_scrape_for_organization(self, mock_scraper):
         """Test behavior for the very first scrape of an organization."""
@@ -234,16 +265,26 @@ class TestFailureDetectionConfiguration:
         scraper._log_service_unavailable = Mock()
 
         # Bind the actual methods to the mock
-        scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
-        scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(scraper)
-        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(scraper)
+        scraper.detect_catastrophic_failure = (
+            BaseScraper.detect_catastrophic_failure.__get__(scraper)
+        )
+        scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(
+            scraper
+        )
+        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(
+            scraper
+        )
 
         return scraper
 
     def test_configurable_absolute_minimum(self, mock_scraper):
         """Test that absolute minimum threshold is configurable."""
         # Configure SessionManager for different scenarios
-        mock_scraper.session_manager.detect_partial_failure.side_effect = [True, True, False]
+        mock_scraper.session_manager.detect_partial_failure.side_effect = [
+            True,
+            True,
+            False,
+        ]
 
         # Different absolute minimums should yield different results
         result = mock_scraper.detect_partial_failure(8, absolute_minimum=10)
@@ -270,7 +311,9 @@ class TestFailureDetectionConfiguration:
         mock_scraper.detect_partial_failure(10, minimum_historical_scrapes=15)
 
         # Verify SessionManager was called with correct parameters
-        mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(10, 0.5, 3, 15, 0, 0)
+        mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(
+            10, 0.5, 3, 15, 0, 0
+        )
 
 
 @pytest.mark.slow
@@ -296,9 +339,15 @@ class TestFailureLoggingAndReporting:
         scraper._log_service_unavailable = Mock()
 
         # Bind the actual methods to the mock
-        scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
-        scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(scraper)
-        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(scraper)
+        scraper.detect_catastrophic_failure = (
+            BaseScraper.detect_catastrophic_failure.__get__(scraper)
+        )
+        scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(
+            scraper
+        )
+        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(
+            scraper
+        )
 
         return scraper
 

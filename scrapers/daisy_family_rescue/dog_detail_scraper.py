@@ -12,7 +12,10 @@ if TYPE_CHECKING:
     from selenium.webdriver.remote.webdriver import WebDriver
 
 if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+    from services.playwright_browser_service import (
+        PlaywrightOptions,
+        get_playwright_service,
+    )
 else:
     from selenium.common.exceptions import NoSuchElementException, TimeoutException
     from selenium.webdriver.common.by import By
@@ -63,7 +66,11 @@ class DaisyFamilyRescueDogDetailScraper:
         }
 
         # Size categories based on height (cm)
-        self.size_categories = {"small": (0, 40), "medium": (40, 60), "large": (60, 100)}
+        self.size_categories = {
+            "small": (0, 40),
+            "medium": (40, 60),
+            "large": (60, 100),
+        }
 
     def setup_driver(self, headless: bool = True) -> "WebDriver":
         """Setup WebDriver for scraping.
@@ -80,13 +87,17 @@ class DaisyFamilyRescueDogDetailScraper:
         browser_result = browser_service.create_driver(browser_options)
         return browser_result.driver
 
-    def extract_dog_details(self, dog_url: str, logger=None) -> Optional[Dict[str, Any]]:
+    def extract_dog_details(
+        self, dog_url: str, logger=None
+    ) -> Optional[Dict[str, Any]]:
         """Extract detailed information from a single dog's detail page."""
         if USE_PLAYWRIGHT:
             return asyncio.run(self._extract_dog_details_playwright(dog_url, logger))
         return self._extract_dog_details_selenium(dog_url, logger)
 
-    def _extract_dog_details_selenium(self, dog_url: str, logger=None) -> Optional[Dict[str, Any]]:
+    def _extract_dog_details_selenium(
+        self, dog_url: str, logger=None
+    ) -> Optional[Dict[str, Any]]:
         """Extract detailed information using Selenium."""
         driver = None
 
@@ -99,7 +110,9 @@ class DaisyFamilyRescueDogDetailScraper:
             driver.get(dog_url)
 
             # Wait for page to load
-            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+            WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
 
             # Extract all the data
             dog_data = {
@@ -139,7 +152,9 @@ class DaisyFamilyRescueDogDetailScraper:
                 dog_data["name"] = name
 
             if logger:
-                logger.debug(f"Extracted details for dog: {dog_data.get('name', 'Unknown')}")
+                logger.debug(
+                    f"Extracted details for dog: {dog_data.get('name', 'Unknown')}"
+                )
 
             return dog_data
 
@@ -152,7 +167,9 @@ class DaisyFamilyRescueDogDetailScraper:
             if driver:
                 driver.quit()
 
-    async def _extract_dog_details_playwright(self, dog_url: str, logger=None) -> Optional[Dict[str, Any]]:
+    async def _extract_dog_details_playwright(
+        self, dog_url: str, logger=None
+    ) -> Optional[Dict[str, Any]]:
         """Extract detailed information using Playwright."""
         playwright_service = get_playwright_service()
         options = PlaywrightOptions(
@@ -188,7 +205,9 @@ class DaisyFamilyRescueDogDetailScraper:
                 # Extract Steckbrief data using BeautifulSoup
                 steckbrief_data = self._extract_steckbrief_data_soup(soup, logger)
                 if steckbrief_data:
-                    processed_data = self._process_steckbrief_data(steckbrief_data, logger)
+                    processed_data = self._process_steckbrief_data(
+                        steckbrief_data, logger
+                    )
                     dog_data.update(processed_data)
 
                 # Extract main dog image
@@ -210,7 +229,9 @@ class DaisyFamilyRescueDogDetailScraper:
                     dog_data["name"] = name
 
                 if logger:
-                    logger.debug(f"Extracted details for dog: {dog_data.get('name', 'Unknown')}")
+                    logger.debug(
+                        f"Extracted details for dog: {dog_data.get('name', 'Unknown')}"
+                    )
 
                 return dog_data
 
@@ -219,12 +240,16 @@ class DaisyFamilyRescueDogDetailScraper:
                     logger.error(f"Error extracting details from {dog_url}: {e}")
                 return None
 
-    def _extract_steckbrief_data_soup(self, soup: BeautifulSoup, logger=None) -> Dict[str, str]:
+    def _extract_steckbrief_data_soup(
+        self, soup: BeautifulSoup, logger=None
+    ) -> Dict[str, str]:
         """Extract structured data from the Steckbrief section using BeautifulSoup."""
         steckbrief_data = {}
 
         try:
-            steckbrief_header = soup.find("h4", string=lambda t: t and "Steckbrief" in t)
+            steckbrief_header = soup.find(
+                "h4", string=lambda t: t and "Steckbrief" in t
+            )
 
             if not steckbrief_header:
                 if logger:
@@ -237,12 +262,16 @@ class DaisyFamilyRescueDogDetailScraper:
             # Get the parent container
             steckbrief_container = steckbrief_header.find_parent("section")
             if not steckbrief_container:
-                steckbrief_container = steckbrief_header.find_parent("div", class_=lambda x: x and "elementor" in x)
+                steckbrief_container = steckbrief_header.find_parent(
+                    "div", class_=lambda x: x and "elementor" in x
+                )
             if not steckbrief_container:
                 steckbrief_container = steckbrief_header.parent.parent.parent
 
             if steckbrief_container:
-                container_text = steckbrief_container.get_text(separator="\n", strip=True)
+                container_text = steckbrief_container.get_text(
+                    separator="\n", strip=True
+                )
 
                 for pattern in self.steckbrief_patterns:
                     value = self._extract_field_value(container_text, pattern)
@@ -257,7 +286,9 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return steckbrief_data
 
-    def _extract_main_image_soup(self, soup: BeautifulSoup, logger=None) -> Optional[str]:
+    def _extract_main_image_soup(
+        self, soup: BeautifulSoup, logger=None
+    ) -> Optional[str]:
         """Extract main dog image using BeautifulSoup."""
         try:
             image_selectors = [
@@ -274,8 +305,13 @@ class DaisyFamilyRescueDogDetailScraper:
                     src = img.get("src", "")
                     alt = img.get("alt", "").lower()
 
-                    if src and not any(skip in alt for skip in ["logo", "icon", "banner"]):
-                        if any(ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".gif", ".webp"]):
+                    if src and not any(
+                        skip in alt for skip in ["logo", "icon", "banner"]
+                    ):
+                        if any(
+                            ext in src.lower()
+                            for ext in [".jpg", ".jpeg", ".png", ".gif", ".webp"]
+                        ):
                             if logger:
                                 logger.debug(f"Found main image: {src}")
                             return src
@@ -285,7 +321,9 @@ class DaisyFamilyRescueDogDetailScraper:
                 logger.error(f"Error extracting main image: {e}")
         return None
 
-    def _extract_description_soup(self, soup: BeautifulSoup, logger=None) -> Optional[str]:
+    def _extract_description_soup(
+        self, soup: BeautifulSoup, logger=None
+    ) -> Optional[str]:
         """Extract dog description using BeautifulSoup."""
         try:
             description_selectors = [
@@ -297,12 +335,18 @@ class DaisyFamilyRescueDogDetailScraper:
             for selector in description_selectors:
                 elements = soup.select(selector)
                 if elements:
-                    texts = [el.get_text(strip=True) for el in elements if el.get_text(strip=True)]
+                    texts = [
+                        el.get_text(strip=True)
+                        for el in elements
+                        if el.get_text(strip=True)
+                    ]
                     if texts:
                         description = " ".join(texts[:5])
                         if len(description) > 50:
                             if logger:
-                                logger.debug(f"Found description ({len(description)} chars)")
+                                logger.debug(
+                                    f"Found description ({len(description)} chars)"
+                                )
                             return description
 
         except Exception as e:
@@ -325,7 +369,9 @@ class DaisyFamilyRescueDogDetailScraper:
                 if heading:
                     name = heading.get_text(strip=True)
                     if name and len(name) < 100:
-                        clean_name = re.sub(r"^(hund[-\s]*)", "", name, flags=re.IGNORECASE).strip()
+                        clean_name = re.sub(
+                            r"^(hund[-\s]*)", "", name, flags=re.IGNORECASE
+                        ).strip()
                         if clean_name:
                             if logger:
                                 logger.debug(f"Found dog name: {clean_name}")
@@ -342,7 +388,11 @@ class DaisyFamilyRescueDogDetailScraper:
 
         try:
             # Find the Steckbrief section header
-            steckbrief_header = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//h4[contains(text(), 'Steckbrief')]")))
+            steckbrief_header = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, "//h4[contains(text(), 'Steckbrief')]")
+                )
+            )
 
             if logger:
                 logger.debug("Found Steckbrief section")
@@ -350,13 +400,19 @@ class DaisyFamilyRescueDogDetailScraper:
             # Get the container that contains all the data
             # Try different container approaches - the data is in the great-grandparent or ancestor section
             try:
-                steckbrief_container = steckbrief_header.find_element(By.XPATH, "../../..")
+                steckbrief_container = steckbrief_header.find_element(
+                    By.XPATH, "../../.."
+                )
             except NoSuchElementException:
                 try:
-                    steckbrief_container = steckbrief_header.find_element(By.XPATH, "ancestor::section[1]")
+                    steckbrief_container = steckbrief_header.find_element(
+                        By.XPATH, "ancestor::section[1]"
+                    )
                 except NoSuchElementException:
                     # Fallback to grandparent
-                    steckbrief_container = steckbrief_header.find_element(By.XPATH, "../..")
+                    steckbrief_container = steckbrief_header.find_element(
+                        By.XPATH, "../.."
+                    )
 
             # Extract all text from the container
             container_text = steckbrief_container.text
@@ -393,14 +449,18 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return None
 
-    def _process_steckbrief_data(self, steckbrief_data: Dict[str, str], logger=None) -> Dict[str, Any]:
+    def _process_steckbrief_data(
+        self, steckbrief_data: Dict[str, str], logger=None
+    ) -> Dict[str, Any]:
         """Process and standardize the raw Steckbrief data."""
         processed_data = {}
 
         # Process age/birth date - just extract the age text for unified parsing
         if "Alter:" in steckbrief_data:
             processed_data["age_text"] = steckbrief_data["Alter:"]
-            processed_data["age"] = steckbrief_data["Alter:"]  # Unified standardization expects 'age' field
+            processed_data["age"] = steckbrief_data[
+                "Alter:"
+            ]  # Unified standardization expects 'age' field
 
         # Process gender/sex
         if "Geschlecht:" in steckbrief_data:
@@ -445,12 +505,16 @@ class DaisyFamilyRescueDogDetailScraper:
         # Store character description
         if "Charakter:" in steckbrief_data:
             processed_data["properties"] = processed_data.get("properties", {})
-            processed_data["properties"]["character_german"] = steckbrief_data["Charakter:"]
+            processed_data["properties"]["character_german"] = steckbrief_data[
+                "Charakter:"
+            ]
 
         # Store compatibility info
         if "Verträgt sich mit" in steckbrief_data:
             processed_data["properties"] = processed_data.get("properties", {})
-            processed_data["properties"]["compatibility_german"] = steckbrief_data["Verträgt sich mit"]
+            processed_data["properties"]["compatibility_german"] = steckbrief_data[
+                "Verträgt sich mit"
+            ]
 
         # Store adoption fee
         if "Schutzgebühr:" in steckbrief_data:
@@ -687,7 +751,9 @@ class DaisyFamilyRescueDogDetailScraper:
             if description_parts:
                 full_description = "\n\n".join(description_parts)
                 if logger:
-                    logger.debug(f"Extracted description: {len(full_description)} characters")
+                    logger.debug(
+                        f"Extracted description: {len(full_description)} characters"
+                    )
                 return full_description
 
         except Exception as e:
@@ -717,7 +783,9 @@ class DaisyFamilyRescueDogDetailScraper:
                 try:
                     heading = driver.find_element(By.CSS_SELECTOR, selector)
                     heading_text = heading.text.strip()
-                    if heading_text and len(heading_text) < 50:  # Reasonable name length
+                    if (
+                        heading_text and len(heading_text) < 50
+                    ):  # Reasonable name length
                         # Extract just the name part
                         name_match = re.search(r"^([^-]+)", heading_text)
                         if name_match:

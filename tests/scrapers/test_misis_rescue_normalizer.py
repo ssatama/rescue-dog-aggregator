@@ -6,17 +6,25 @@ import pytest
 from scrapers.misis_rescue.normalizer import (
     calculate_age_years,
 )
-from scrapers.misis_rescue.normalizer import extract_age_from_text_legacy as extract_age_from_text
+from scrapers.misis_rescue.normalizer import (
+    extract_age_from_text_legacy as extract_age_from_text,
+)
 from scrapers.misis_rescue.normalizer import (
     extract_birth_date,
     extract_breed,
 )
-from scrapers.misis_rescue.normalizer import extract_breed_from_text_legacy as extract_breed_from_text
+from scrapers.misis_rescue.normalizer import (
+    extract_breed_from_text_legacy as extract_breed_from_text,
+)
 from scrapers.misis_rescue.normalizer import (
     extract_sex,
 )
-from scrapers.misis_rescue.normalizer import extract_sex_from_text_legacy as extract_sex_from_text
-from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy as extract_weight_kg
+from scrapers.misis_rescue.normalizer import (
+    extract_sex_from_text_legacy as extract_sex_from_text,
+)
+from scrapers.misis_rescue.normalizer import (
+    extract_weight_kg_legacy as extract_weight_kg,
+)
 from scrapers.misis_rescue.normalizer import (
     normalize_name,
     normalize_size,
@@ -74,7 +82,11 @@ class TestMisisRescueNormalizer:
     def test_extract_breed(self):
         """Test breed extraction from bullet points seen in screenshots."""
         # AMENA example
-        bullets = ["rough estimate DOB 2021", "10kg, height 35 cm, length 55cm", "mixed breed"]
+        bullets = [
+            "rough estimate DOB 2021",
+            "10kg, height 35 cm, length 55cm",
+            "mixed breed",
+        ]
         assert extract_breed(bullets) == "Mixed Breed"
 
         # LEO example
@@ -251,7 +263,12 @@ class TestMisisRescueNormalizer:
         assert normalize_size(amena_bullets[1]) == "Small"
 
         # LEO example from screenshot
-        leo_bullets = ["DOB: March 2023", "Mixed breed", "Currently weighs 2-3kg", "not tested on kids, chilling, is active and would probably enjoy walks and outdoor environments"]
+        leo_bullets = [
+            "DOB: March 2023",
+            "Mixed breed",
+            "Currently weighs 2-3kg",
+            "not tested on kids, chilling, is active and would probably enjoy walks and outdoor environments",
+        ]
 
         assert extract_birth_date(leo_bullets[0]) == "March 2023"
         assert extract_breed(leo_bullets) == "Mixed Breed"
@@ -259,7 +276,11 @@ class TestMisisRescueNormalizer:
         assert normalize_size(leo_bullets[2]) == "Tiny"
 
         # Test edge case with multiple weight mentions
-        multi_weight_bullets = ["DOB: 2022", "weighs 18kg, previously 15kg", "Golden Retriever mix"]
+        multi_weight_bullets = [
+            "DOB: 2022",
+            "weighs 18kg, previously 15kg",
+            "Golden Retriever mix",
+        ]
 
         # Should pick up first weight mentioned
         assert extract_weight_kg(multi_weight_bullets[1]) == 18.0
@@ -540,10 +561,18 @@ class TestIntegratedNormalization:
 
     def test_comprehensive_normalization_pipeline(self):
         """Test that all normalization functions work together."""
-        from scrapers.misis_rescue.normalizer import extract_age_from_text_legacy as extract_age_from_text
-        from scrapers.misis_rescue.normalizer import extract_breed_from_text_legacy as extract_breed_from_text
-        from scrapers.misis_rescue.normalizer import extract_sex_from_text_legacy as extract_sex_from_text
-        from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy as extract_weight_kg
+        from scrapers.misis_rescue.normalizer import (
+            extract_age_from_text_legacy as extract_age_from_text,
+        )
+        from scrapers.misis_rescue.normalizer import (
+            extract_breed_from_text_legacy as extract_breed_from_text,
+        )
+        from scrapers.misis_rescue.normalizer import (
+            extract_sex_from_text_legacy as extract_sex_from_text,
+        )
+        from scrapers.misis_rescue.normalizer import (
+            extract_weight_kg_legacy as extract_weight_kg,
+        )
         from scrapers.misis_rescue.normalizer import (
             normalize_name,
             normalize_size,
@@ -555,26 +584,49 @@ class TestIntegratedNormalization:
                 "raw_name": "🌸🍀 Lucinda 🍀🌸",
                 "bullet_points": ["DOB 2022", "Crossbreed", "18-19kg"],
                 "page_text": "roughly 3 y old (at least that's how the vet estimated her) she is spayed",
-                "expected": {"name": "Lucinda", "age": 3.0, "sex": "Female", "breed": "Mixed Breed", "weight": 18.5, "size": "Medium"},
+                "expected": {
+                    "name": "Lucinda",
+                    "age": 3.0,
+                    "sex": "Female",
+                    "breed": "Mixed Breed",
+                    "weight": 18.5,
+                    "size": "Medium",
+                },
             },
             {
                 "raw_name": "Beky He'S A Boy",
                 "bullet_points": ["1 year old", "Mixed breed", "15kg"],
                 "page_text": "he is castrated and friendly with other dogs",
-                "expected": {"name": "Beky", "age": 1.0, "sex": "Male", "breed": "Mixed Breed", "weight": 15.0, "size": "Medium"},
+                "expected": {
+                    "name": "Beky",
+                    "age": 1.0,
+                    "sex": "Male",
+                    "breed": "Mixed Breed",
+                    "weight": 15.0,
+                    "size": "Medium",
+                },
             },
             {
                 "raw_name": "X in UK",
                 "bullet_points": [],
                 "page_text": "roughly 2 y old, possibly husky cross, weighs around 22kg, spayed female",
-                "expected": {"name": "X", "age": 2.0, "sex": "Female", "breed": "Husky Mix", "weight": 22.0, "size": "Medium"},
+                "expected": {
+                    "name": "X",
+                    "age": 2.0,
+                    "sex": "Female",
+                    "breed": "Husky Mix",
+                    "weight": 22.0,
+                    "size": "Medium",
+                },
             },
         ]
 
         for case in test_cases:
             # Test name normalization
             name_result = normalize_name(case["raw_name"])
-            assert name_result == case["expected"]["name"], f"Name failed for {case['raw_name']}"
+            assert name_result == case["expected"]["name"], (
+                f"Name failed for {case['raw_name']}"
+            )
 
             # Test age extraction from text (with fallback logic like the parser does)
             age_result = extract_age_from_text(case["page_text"])
@@ -589,11 +641,15 @@ class TestIntegratedNormalization:
                         if match:
                             age_result = float(match.group(1))
                             break
-            assert age_result == case["expected"]["age"], f"Age failed for {case['page_text']} and bullets {case['bullet_points']}"
+            assert age_result == case["expected"]["age"], (
+                f"Age failed for {case['page_text']} and bullets {case['bullet_points']}"
+            )
 
             # Test sex extraction from text
             sex_result = extract_sex_from_text(case["page_text"])
-            assert sex_result == case["expected"]["sex"], f"Sex failed for {case['page_text']}"
+            assert sex_result == case["expected"]["sex"], (
+                f"Sex failed for {case['page_text']}"
+            )
 
             # Test breed extraction from text (with fallback logic)
             breed_result = extract_breed_from_text(case["page_text"])
@@ -602,7 +658,9 @@ class TestIntegratedNormalization:
                 from scrapers.misis_rescue.normalizer import extract_breed
 
                 breed_result = extract_breed(case["bullet_points"])
-            assert breed_result == case["expected"]["breed"], f"Breed failed for {case['page_text']} and bullets {case['bullet_points']}"
+            assert breed_result == case["expected"]["breed"], (
+                f"Breed failed for {case['page_text']} and bullets {case['bullet_points']}"
+            )
 
             # Test weight and size calculation (with fallback logic)
             weight_result = extract_weight_kg(case["page_text"])
@@ -612,10 +670,14 @@ class TestIntegratedNormalization:
                     weight_result = extract_weight_kg(bullet)
                     if weight_result:
                         break
-            assert weight_result == case["expected"]["weight"], f"Weight failed for {case['page_text']} and bullets {case['bullet_points']}"
+            assert weight_result == case["expected"]["weight"], (
+                f"Weight failed for {case['page_text']} and bullets {case['bullet_points']}"
+            )
 
             size_result = normalize_size(f"{weight_result}kg" if weight_result else "")
-            assert size_result == case["expected"]["size"], f"Size failed for weight {weight_result}"
+            assert size_result == case["expected"]["size"], (
+                f"Size failed for weight {weight_result}"
+            )
 
     def test_size_calculation_from_breed_fallback(self):
         """Test size calculation using breed when weight unavailable."""
@@ -660,27 +722,41 @@ class TestIntegratedNormalization:
         for case in test_cases:
             # Weight-based size should be used
             weight_size = normalize_size(case["weight_text"])
-            assert weight_size == case["expected_size"], f"Weight size failed for {case['weight_text']}"
+            assert weight_size == case["expected_size"], (
+                f"Weight size failed for {case['weight_text']}"
+            )
 
             # Breed-based size would be different (except for Mixed Breed where they agree)
             breed_size = get_size_from_breed(case["breed"])
             if case["breed"] != "Mixed Breed":
                 # For non-mixed breeds, weight should override breed estimate
-                assert breed_size != case["expected_size"], f"Test case invalid - breed and weight give same size for {case['breed']}"
+                assert breed_size != case["expected_size"], (
+                    f"Test case invalid - breed and weight give same size for {case['breed']}"
+                )
             else:
                 # For Mixed Breed, weight and breed estimates can agree
-                assert breed_size == case["expected_size"], f"Mixed Breed should have Medium size from both weight and breed"
+                assert breed_size == case["expected_size"], (
+                    "Mixed Breed should have Medium size from both weight and breed"
+                )
 
     def test_data_quality_improvements_real_cases(self):
         """Test with actual problematic cases from database."""
-        from scrapers.misis_rescue.normalizer import extract_age_from_text, extract_sex_from_text, normalize_name
+        from scrapers.misis_rescue.normalizer import (
+            extract_age_from_text_legacy as extract_age_from_text,
+            extract_sex_from_text_legacy as extract_sex_from_text,
+            normalize_name,
+        )
 
         # Real problematic cases from database analysis
         real_cases = [
             {"name": "🐾🍭RASHA🍭🐾", "expected_name": "Rasha"},
             {"text": "nearly 2 years old", "expected_age": 2.0},
             {"text": "4 y old", "expected_age": 4.0},
-            {"text": "roughly 3 y old (at least that's how the vet estimated her)", "expected_age": 3.0, "expected_sex": "Female"},
+            {
+                "text": "roughly 3 y old (at least that's how the vet estimated her)",
+                "expected_age": 3.0,
+                "expected_sex": "Female",
+            },
             {"text": "he is castrated and ready for adoption", "expected_sex": "Male"},
         ]
 

@@ -10,9 +10,7 @@ Following TDD principles:
 This test specifies that animals should get slugs with ID suffix (name-breed-id format).
 """
 
-import json
-from datetime import datetime
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -86,7 +84,9 @@ class TestDatabaseServiceTwoPhaseSlugGeneration:
         assert "INSERT INTO animals" in insert_sql
         # The temp slug should be in the INSERT (position 19 based on current schema)
         temp_slug = insert_params[19]  # slug parameter position
-        assert temp_slug == "bella-labrador-retriever-mix-temp"  # Matches actual breed standardization
+        assert (
+            temp_slug == "bella-labrador-retriever-mix-temp"
+        )  # Matches actual breed standardization
 
         # Verify UPDATE was called with final slug containing ID
         update_call = mock_cursor.execute.call_args_list[3]
@@ -94,7 +94,9 @@ class TestDatabaseServiceTwoPhaseSlugGeneration:
         update_params = update_call[0][1]
 
         assert "UPDATE animals SET slug" in update_sql
-        assert update_params[0] == "bella-labrador-retriever-mix-1234"  # final slug with ID
+        assert (
+            update_params[0] == "bella-labrador-retriever-mix-1234"
+        )  # final slug with ID
         assert update_params[1] == 1234  # WHERE id = animal_id
 
         # Verify transaction was committed
@@ -217,7 +219,10 @@ class TestDatabaseServiceTwoPhaseSlugGeneration:
         db_service.conn = mock_conn
 
         # Mock slug generator to return different values for temp vs final
-        mock_slug_generator.side_effect = ["temp-slug-placeholder", "final-slug-with-id-1234"]  # temp slug generation  # final slug generation
+        mock_slug_generator.side_effect = [
+            "temp-slug-placeholder",
+            "final-slug-with-id-1234",
+        ]  # temp slug generation  # final slug generation
 
         animal_data = {
             "name": "Rover",

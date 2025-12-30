@@ -70,7 +70,9 @@ class BaseScraper(ABC):
             self.org_config = self.config_loader.load_config(config_id)
 
             # Skip organization sync during most tests, but allow specific tests to validate sync behavior
-            if sys.modules.get("pytest") is not None and not os.environ.get("TESTING_VALIDATE_SYNC"):
+            if sys.modules.get("pytest") is not None and not os.environ.get(
+                "TESTING_VALIDATE_SYNC"
+            ):
                 # Test environment - use mock values (most tests)
                 self.organization_id = 1  # Default test organization ID
                 logger.info(f"Test mode: Skipping organization sync for {config_id}")
@@ -80,11 +82,17 @@ class BaseScraper(ABC):
                 try:
                     sync_result = sync_manager.sync_single_organization(self.org_config)
                     if not sync_result or not sync_result.success:
-                        raise ValueError(f"Organization sync failed for {self.org_config.id}. Halting scraper.")
+                        raise ValueError(
+                            f"Organization sync failed for {self.org_config.id}. Halting scraper."
+                        )
                     self.organization_id = sync_result.organization_id
                 except Exception as e:
-                    logger.error(f"Failed to sync organization {self.org_config.id}: {e}")
-                    raise ValueError(f"Could not initialize scraper due to organization sync failure for {self.org_config.id}") from e
+                    logger.error(
+                        f"Failed to sync organization {self.org_config.id}: {e}"
+                    )
+                    raise ValueError(
+                        f"Could not initialize scraper due to organization sync failure for {self.org_config.id}"
+                    ) from e
 
             # Use config for scraper settings
             scraper_config = self.org_config.get_scraper_config_dict()
@@ -95,7 +103,9 @@ class BaseScraper(ABC):
             # New retry and batch processing settings
             self.retry_backoff_factor = scraper_config.get("retry_backoff_factor", 2.0)
             self.batch_size = scraper_config.get("batch_size", 6)
-            self.skip_existing_animals = scraper_config.get("skip_existing_animals", False)
+            self.skip_existing_animals = scraper_config.get(
+                "skip_existing_animals", False
+            )
 
             # Set organization name from config
             self.organization_name = self.org_config.name
@@ -136,7 +146,6 @@ class BaseScraper(ABC):
         self.metrics_collector = metrics_collector or NullMetricsCollector()
 
         # Import here to avoid circular dependency
-        from services.image_processing_service import ImageProcessingService
 
         self.image_processing_service = image_processing_service
 
@@ -165,7 +174,9 @@ class BaseScraper(ABC):
 
         # Create a silent logger for this individual scraper
         # All progress will be handled by ProgressTracker
-        logger = logging.getLogger(f"scraper.{self.get_organization_name()}.{self.animal_type}")
+        logger = logging.getLogger(
+            f"scraper.{self.get_organization_name()}.{self.animal_type}"
+        )
         logger.setLevel(logging.WARNING)  # Only show warnings and errors
 
         # Check if handler already exists to prevent duplication
@@ -174,7 +185,9 @@ class BaseScraper(ABC):
             c_handler = logging.StreamHandler()
 
             # Create formatters
-            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+            formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
             c_handler.setFormatter(formatter)
 
             # Add handlers to logger
@@ -234,7 +247,9 @@ class BaseScraper(ABC):
         """Create a new entry in the scrape_logs table."""
         # Use injected DatabaseService if available
         if self.database_service:
-            self.scrape_log_id = self.database_service.create_scrape_log(self.organization_id)
+            self.scrape_log_id = self.database_service.create_scrape_log(
+                self.organization_id
+            )
             return self.scrape_log_id is not None
 
         self._log_service_unavailable("DatabaseService", "scrape logging disabled")
@@ -251,7 +266,9 @@ class BaseScraper(ABC):
         """Update the scrape log with completion information."""
         # Prevent duplicate completions
         if self._completion_logged:
-            self.logger.debug(f"Scrape completion already logged, skipping duplicate call (status: {status})")
+            self.logger.debug(
+                f"Scrape completion already logged, skipping duplicate call (status: {status})"
+            )
             return True
 
         self._completion_logged = True
@@ -267,7 +284,9 @@ class BaseScraper(ABC):
                 error_message,
             )
 
-        self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
+        self.logger.info(
+            f"Scrape completed with status: {status}, animals: {animals_found}"
+        )
         return True
 
     def complete_scrape_log_with_metrics(
@@ -284,7 +303,9 @@ class BaseScraper(ABC):
         """Update the scrape log with completion information and detailed metrics."""
         # Prevent duplicate completions
         if self._completion_logged:
-            self.logger.debug(f"Scrape completion already logged, skipping duplicate call (status: {status})")
+            self.logger.debug(
+                f"Scrape completion already logged, skipping duplicate call (status: {status})"
+            )
             return True
 
         self._completion_logged = True
@@ -303,7 +324,9 @@ class BaseScraper(ABC):
                 data_quality_score,
             )
 
-        self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
+        self.logger.info(
+            f"Scrape completed with status: {status}, animals: {animals_found}"
+        )
         return True
 
     def detect_language(self, text):
@@ -321,7 +344,9 @@ class BaseScraper(ABC):
 
             return detect(text)
         except Exception as e:
-            self.logger.warning(f"Language detection error: {e}. Defaulting to English.")
+            self.logger.warning(
+                f"Language detection error: {e}. Defaulting to English."
+            )
             return "en"
 
     def validate_external_id(self, external_id):
@@ -360,7 +385,11 @@ class BaseScraper(ABC):
         # Special case: Tierschutzverein Europa uses slug format like "yara-in-rumaenien-tierheim"
         # This is their established pattern and is acceptable
         is_tierschutzverein_pattern = (
-            self.org_config and self.org_config.id == "tierschutzverein-europa" and "-" in external_id and len(external_id) > 10  # Their IDs are typically longer descriptive slugs
+            self.org_config
+            and self.org_config.id == "tierschutzverein-europa"
+            and "-" in external_id
+            and len(external_id)
+            > 10  # Their IDs are typically longer descriptive slugs
         )
 
         if not has_prefix and not is_numeric and not is_tierschutzverein_pattern:
@@ -397,7 +426,11 @@ class BaseScraper(ABC):
                 self.logger.info(f"Standardizing breed: {original_breed}")
 
             # Apply full standardization (handles breed, age, size)
-            standardized = self.standardizer.apply_full_standardization(breed=processed_data.get("breed"), age=processed_data.get("age"), size=processed_data.get("size"))
+            standardized = self.standardizer.apply_full_standardization(
+                breed=processed_data.get("breed"),
+                age=processed_data.get("age"),
+                size=processed_data.get("size"),
+            )
 
             # Update processed_data with standardized fields (now returned flattened)
             processed_data.update(standardized)
@@ -406,7 +439,10 @@ class BaseScraper(ABC):
             new_breed = processed_data.get("breed")
             if original_breed and new_breed != original_breed:
                 confidence = processed_data.get("standardization_confidence", 0)
-                self.logger.info(f"Breed standardized: '{original_breed}' -> '{new_breed}' " f"(confidence: {confidence:.2f})")
+                self.logger.info(
+                    f"Breed standardized: '{original_breed}' -> '{new_breed}' "
+                    f"(confidence: {confidence:.2f})"
+                )
 
         except Exception as e:
             # If standardization fails, log the error and return the original data
@@ -427,15 +463,23 @@ class BaseScraper(ABC):
                 self.validate_external_id(animal_data["external_id"])
 
             # Check if animal already exists by external_id and organization FIRST
-            existing_animal = self.get_existing_animal(animal_data.get("external_id"), animal_data.get("organization_id"))
+            existing_animal = self.get_existing_animal(
+                animal_data.get("external_id"), animal_data.get("organization_id")
+            )
 
             # Process primary image using ImageProcessingService if available
             # Skip if already processed (has original_image_url set from batch processing)
-            if animal_data.get("primary_image_url") and not animal_data.get("original_image_url"):
+            if animal_data.get("primary_image_url") and not animal_data.get(
+                "original_image_url"
+            ):
                 if self.image_processing_service:
-                    animal_data = self.image_processing_service.process_primary_image(animal_data, existing_animal, self.conn, self.organization_name)
+                    animal_data = self.image_processing_service.process_primary_image(
+                        animal_data, existing_animal, self.conn, self.organization_name
+                    )
                 else:
-                    self._log_service_unavailable("ImageProcessingService", "using original image URL")
+                    self._log_service_unavailable(
+                        "ImageProcessingService", "using original image URL"
+                    )
                     animal_data["original_image_url"] = animal_data["primary_image_url"]
 
             if existing_animal:
@@ -447,15 +491,21 @@ class BaseScraper(ABC):
                 animal_id, action = self.create_animal(animal_data)
                 # New animals always get profiled
                 if animal_id:
-                    self.animals_for_llm_enrichment.append({"id": animal_id, "data": animal_data, "action": "create"})
+                    self.animals_for_llm_enrichment.append(
+                        {"id": animal_id, "data": animal_data, "action": "create"}
+                    )
                 return animal_id, action
         except AttributeError as e:
             # Handle missing methods in test environment
             if "get_existing_animal" in str(e):
-                self.logger.warning(f"get_existing_animal method not implemented in test environment")
+                self.logger.warning(
+                    "get_existing_animal method not implemented in test environment"
+                )
                 return 1, "test"
             elif "create_animal" in str(e):
-                self.logger.warning(f"create_animal method not implemented in test environment")
+                self.logger.warning(
+                    "create_animal method not implemented in test environment"
+                )
                 return 1, "test"
             else:
                 raise e
@@ -479,13 +529,18 @@ class BaseScraper(ABC):
     def _run_with_connection(self):
         """Template method orchestrating the scrape lifecycle with world-class logging."""
         # Wrap entire scrape in Sentry transaction for performance monitoring
-        with scrape_transaction(self.get_organization_name(), self.organization_id) as transaction:
+        with scrape_transaction(
+            self.get_organization_name(), self.organization_id
+        ) as transaction:
             try:
                 # Initialize comprehensive progress tracker for entire scrape lifecycle
                 self.progress_tracker = None
 
                 # Phase 1: Setup
-                add_scrape_breadcrumb("Starting setup phase", data={"org_name": self.get_organization_name()})
+                add_scrape_breadcrumb(
+                    "Starting setup phase",
+                    data={"org_name": self.get_organization_name()},
+                )
                 if not self._setup_scrape():
                     return False
 
@@ -519,8 +574,14 @@ class BaseScraper(ABC):
 
                 # Track discovery phase stats
                 # Use correct animals found count to show actual discovery metrics
-                correct_animals_found = self._get_correct_animals_found_count(animals_data)
-                self.progress_tracker.track_discovery_stats(dogs_found=correct_animals_found, pages_processed=1, extraction_failures=0)  # Single page scrape
+                correct_animals_found = self._get_correct_animals_found_count(
+                    animals_data
+                )
+                self.progress_tracker.track_discovery_stats(
+                    dogs_found=correct_animals_found,
+                    pages_processed=1,
+                    extraction_failures=0,
+                )  # Single page scrape
 
                 # Track filtering phase stats
                 # Note: animals_data already contains only NEW dogs (after filtering in collect_data)
@@ -530,10 +591,15 @@ class BaseScraper(ABC):
                 )
 
                 # Log discovery completion
-                self.progress_tracker.log_phase_complete("Discovery", 0.0, f"{correct_animals_found} dogs found")  # Will be updated with actual timing
+                self.progress_tracker.log_phase_complete(
+                    "Discovery", 0.0, f"{correct_animals_found} dogs found"
+                )  # Will be updated with actual timing
 
                 # Phase 3: Database Operations
-                add_scrape_breadcrumb("Starting database operations phase", data={"animals_count": len(animals_data)})
+                add_scrape_breadcrumb(
+                    "Starting database operations phase",
+                    data={"animals_count": len(animals_data)},
+                )
                 processing_stats = self._process_animals_data(animals_data)
 
                 # Phase 4: Stale Data Detection
@@ -548,15 +614,21 @@ class BaseScraper(ABC):
                 self._log_completion_metrics(animals_data, processing_stats)
 
                 # Set final transaction data
-                transaction.set_data("dogs_added", processing_stats.get("animals_added", 0))
-                transaction.set_data("dogs_updated", processing_stats.get("animals_updated", 0))
+                transaction.set_data(
+                    "dogs_added", processing_stats.get("animals_added", 0)
+                )
+                transaction.set_data(
+                    "dogs_updated", processing_stats.get("animals_updated", 0)
+                )
 
                 return True
 
             except Exception as e:
                 # Use centralized logger for errors
                 central_logger = logging.getLogger("scraper")
-                central_logger.error(f"🚨 Scrape failed for {self.get_organization_name()}: {e}")
+                central_logger.error(
+                    f"🚨 Scrape failed for {self.get_organization_name()}: {e}"
+                )
 
                 # Capture exception to Sentry with context
                 capture_scraper_error(
@@ -601,7 +673,9 @@ class BaseScraper(ABC):
         """Data collection phase: Collect animal data with timing and world-class logging."""
         phase_start = datetime.now()
         central_logger = logging.getLogger("scraper")
-        central_logger.info(f"🔍 Discovering {self.animal_type}s on {self.get_organization_name()} website...")
+        central_logger.info(
+            f"🔍 Discovering {self.animal_type}s on {self.get_organization_name()} website..."
+        )
 
         animals_data = self.collect_data()
 
@@ -617,9 +691,13 @@ class BaseScraper(ABC):
         # when skip_existing_animals causes filtering
         actual_animals_found = self._get_correct_animals_found_count(animals_data)
         if actual_animals_found > 0:
-            central_logger.info(f"✅ Discovery complete: {actual_animals_found} {self.animal_type}s found ({phase_duration:.1f}s)")
+            central_logger.info(
+                f"✅ Discovery complete: {actual_animals_found} {self.animal_type}s found ({phase_duration:.1f}s)"
+            )
         else:
-            central_logger.warning(f"⚠️  No {self.animal_type}s found - check website status")
+            central_logger.warning(
+                f"⚠️  No {self.animal_type}s found - check website status"
+            )
 
         return animals_data
 
@@ -630,7 +708,9 @@ class BaseScraper(ABC):
             Dictionary with logging configuration settings
         """
         if self.org_config:
-            logging_config = self.org_config.get_scraper_config_dict().get("logging", {})
+            logging_config = self.org_config.get_scraper_config_dict().get(
+                "logging", {}
+            )
         else:
             logging_config = {}
 
@@ -640,7 +720,9 @@ class BaseScraper(ABC):
             "show_progress_bar": logging_config.get("show_progress_bar", True),
             "show_throughput": logging_config.get("show_throughput", True),
             "eta_enabled": logging_config.get("eta_enabled", True),
-            "verbosity_level": logging_config.get("verbosity_level", "comprehensive"),  # Force comprehensive for consistent terminal output
+            "verbosity_level": logging_config.get(
+                "verbosity_level", "comprehensive"
+            ),  # Force comprehensive for consistent terminal output
         }
 
     def _process_animals_data(self, animals_data):
@@ -656,29 +738,50 @@ class BaseScraper(ABC):
         }
 
         # Initialize progress tracker for world-class logging
-        progress_tracker = ProgressTracker(total_items=len(animals_data), logger=self.logger, config=self._get_logging_config())
+        progress_tracker = ProgressTracker(
+            total_items=len(animals_data),
+            logger=self.logger,
+            config=self._get_logging_config(),
+        )
 
         # ALWAYS use batch image processing for ALL scrapers when ImageProcessingService is available
         # This ensures consistent batch uploading behavior across all organizations
         if self.image_processing_service and len(animals_data) > 0:
             # Check R2 health before batch processing
             health = self.r2_service.get_health_status()
-            if health.get("failure_rate", 0) < self.MAX_R2_FAILURE_RATE:  # Only batch process if failure rate is reasonable
-                self.logger.info(f"🚀 Using batch image processing for {len(animals_data)} animals")
+            if (
+                health.get("failure_rate", 0) < self.MAX_R2_FAILURE_RATE
+            ):  # Only batch process if failure rate is reasonable
+                self.logger.info(
+                    f"🚀 Using batch image processing for {len(animals_data)} animals"
+                )
                 try:
                     # Always use batch processing for better performance and consistency
                     # Use smaller batch size for small datasets, adaptive for larger ones
-                    batch_size = min(self.SMALL_BATCH_THRESHOLD, len(animals_data)) if len(animals_data) <= self.SMALL_BATCH_THRESHOLD else self.r2_service.get_adaptive_batch_size()
+                    batch_size = (
+                        min(self.SMALL_BATCH_THRESHOLD, len(animals_data))
+                        if len(animals_data) <= self.SMALL_BATCH_THRESHOLD
+                        else self.r2_service.get_adaptive_batch_size()
+                    )
                     animals_data = self.image_processing_service.batch_process_images(
-                        animals_data, self.organization_name, batch_size=batch_size, use_concurrent=len(animals_data) > self.CONCURRENT_UPLOAD_THRESHOLD, database_connection=self.conn
+                        animals_data,
+                        self.organization_name,
+                        batch_size=batch_size,
+                        use_concurrent=len(animals_data)
+                        > self.CONCURRENT_UPLOAD_THRESHOLD,
+                        database_connection=self.conn,
                     )
                     # Count images uploaded
                     for animal in animals_data:
-                        if animal.get("original_image_url") and animal.get("primary_image_url"):
+                        if animal.get("original_image_url") and animal.get(
+                            "primary_image_url"
+                        ):
                             if "images.rescuedogs.me" in animal["primary_image_url"]:
                                 processing_stats["images_uploaded"] += 1
                 except Exception as e:
-                    self.logger.warning(f"Batch image processing failed, falling back to individual: {e}")
+                    self.logger.warning(
+                        f"Batch image processing failed, falling back to individual: {e}"
+                    )
 
         for i, animal_data in enumerate(animals_data):
             # Add organization_id and animal_type to the animal data
@@ -688,7 +791,9 @@ class BaseScraper(ABC):
 
             # CRITICAL: Validate animal data before saving to prevent invalid data in database
             if not self._validate_animal_data(animal_data):
-                self.logger.warning(f"Skipping invalid animal: {animal_data.get('name', 'Unknown')} - validation failed")
+                self.logger.warning(
+                    f"Skipping invalid animal: {animal_data.get('name', 'Unknown')} - validation failed"
+                )
                 continue
 
             # Save animal
@@ -762,11 +867,15 @@ class BaseScraper(ABC):
         phase_start = datetime.now()
 
         # Check for potential partial failure before updating stale data
-        potential_failure = self.detect_partial_failure(self._get_correct_animals_found_count(animals_data))
+        potential_failure = self.detect_partial_failure(
+            self._get_correct_animals_found_count(animals_data)
+        )
         processing_stats["potential_failure_detected"] = potential_failure
 
         if potential_failure:
-            self.logger.warning("Potential partial failure detected - skipping stale data update")
+            self.logger.warning(
+                "Potential partial failure detected - skipping stale data update"
+            )
             # Complete scrape log with warning status
             self.complete_scrape_log(
                 status="warning",
@@ -791,13 +900,17 @@ class BaseScraper(ABC):
             # Note: Scrape log completion with detailed metrics happens in _log_completion_metrics phase
 
         phase_duration = (datetime.now() - phase_start).total_seconds()
-        self.metrics_collector.track_phase_timing("stale_data_detection", phase_duration)
+        self.metrics_collector.track_phase_timing(
+            "stale_data_detection", phase_duration
+        )
 
     def _log_completion_metrics(self, animals_data, processing_stats):
         """Metrics & logging phase: Calculate and log comprehensive metrics with world-class summary."""
         # Calculate metrics for detailed logging
         scrape_end_time = datetime.now()
-        duration = self.metrics_collector.calculate_scrape_duration(self.scrape_start_time, scrape_end_time)
+        duration = self.metrics_collector.calculate_scrape_duration(
+            self.scrape_start_time, scrape_end_time
+        )
         quality_score = self.metrics_collector.assess_data_quality(animals_data)
 
         # Log detailed metrics
@@ -846,7 +959,9 @@ class BaseScraper(ABC):
                 images_failed=processing_stats["images_failed"],
             )
 
-            self.progress_tracker.track_quality_stats(data_quality_score=quality_score, completion_rate=100.0)
+            self.progress_tracker.track_quality_stats(
+                data_quality_score=quality_score, completion_rate=100.0
+            )
 
             self.progress_tracker.track_performance_stats(total_duration=duration)
 
@@ -856,7 +971,9 @@ class BaseScraper(ABC):
             # Fallback to basic logging if no ProgressTracker
             central_logger = logging.getLogger("scraper")
             central_logger.info(
-                f"✅ Scrape completed: {processing_stats['animals_added']} added, " f"{processing_stats['animals_updated']} updated, Quality: {quality_score:.2f}, " f"Duration: {duration:.1f}s"
+                f"✅ Scrape completed: {processing_stats['animals_added']} added, "
+                f"{processing_stats['animals_updated']} updated, Quality: {quality_score:.2f}, "
+                f"Duration: {duration:.1f}s"
             )
 
     @abstractmethod
@@ -900,7 +1017,9 @@ class BaseScraper(ABC):
                 if result and isinstance(result, dict):
                     name = result.get("name", "")
                     if self._is_invalid_name(name):
-                        self.logger.warning(f"Invalid name detected: {name}, treating as failure")
+                        self.logger.warning(
+                            f"Invalid name detected: {name}, treating as failure"
+                        )
                         raise ValueError(f"Invalid animal name: {name}")
 
                 # Track successful retry if this wasn't the first attempt
@@ -911,7 +1030,9 @@ class BaseScraper(ABC):
 
             except browser_exceptions as e:
                 self.metrics_collector.track_retry(success=False)
-                self.logger.warning(f"Scraping attempt {attempt + 1}/{self.max_retries} failed: {e}")
+                self.logger.warning(
+                    f"Scraping attempt {attempt + 1}/{self.max_retries} failed: {e}"
+                )
 
                 if attempt < self.max_retries - 1:  # Not the last attempt
                     # Exponential backoff
@@ -919,7 +1040,9 @@ class BaseScraper(ABC):
                     self.logger.info(f"Retrying in {delay}s...")
                     time.sleep(delay)
                 else:
-                    self.logger.error(f"All {self.max_retries} attempts failed for {args}")
+                    self.logger.error(
+                        f"All {self.max_retries} attempts failed for {args}"
+                    )
 
         return None
 
@@ -957,7 +1080,9 @@ class BaseScraper(ABC):
         # Normalize the name for checking - remove apostrophes and special chars
         name_normalized = name.lower().strip()
         # Replace various apostrophe types with empty string
-        name_normalized = name_normalized.replace("'", "").replace("'", "").replace("`", "")
+        name_normalized = (
+            name_normalized.replace("'", "").replace("'", "").replace("`", "")
+        )
 
         # Common error patterns (normalized without apostrophes)
         error_patterns = [
@@ -994,7 +1119,11 @@ class BaseScraper(ABC):
             return True
 
         # URL patterns (extraction error - got URL instead of name)
-        if "http://" in name_normalized or "https://" in name_normalized or "www." in name_normalized:
+        if (
+            "http://" in name_normalized
+            or "https://" in name_normalized
+            or "www." in name_normalized
+        ):
             return True
 
         # Price patterns (e.g., "$50", "€100", "£25", "50€")
@@ -1076,12 +1205,16 @@ class BaseScraper(ABC):
         # Check for invalid image URLs (empty strings are not valid URLs)
         primary_image_url = animal_data.get("primary_image_url")
         if primary_image_url == "":
-            self.logger.error(f"Rejecting animal '{normalized_name}' (ID: {animal_data.get('external_id')}) with empty image URL")
+            self.logger.error(
+                f"Rejecting animal '{normalized_name}' (ID: {animal_data.get('external_id')}) with empty image URL"
+            )
             return False
 
         # Check for missing image URLs (None is not valid)
         if primary_image_url is None:
-            self.logger.warning(f"Skipping animal '{normalized_name}' (ID: {animal_data.get('external_id')}) - no valid image URL found")
+            self.logger.warning(
+                f"Skipping animal '{normalized_name}' (ID: {animal_data.get('external_id')}) - no valid image URL found"
+            )
             return False
 
         return True
@@ -1091,20 +1224,26 @@ class BaseScraper(ABC):
         if self.database_service:
             return self.database_service.get_existing_animal_urls(self.organization_id)
 
-        self._log_service_unavailable("DatabaseService", "cannot check existing animals")
+        self._log_service_unavailable(
+            "DatabaseService", "cannot check existing animals"
+        )
         return set()
 
     def _filter_existing_urls(self, all_urls: List[str]) -> List[str]:
         """Filter out existing URLs if skip_existing_animals is enabled."""
         if not self.skip_existing_animals:
-            self.logger.debug(f"skip_existing_animals is False, returning all {len(all_urls)} URLs")
+            self.logger.debug(
+                f"skip_existing_animals is False, returning all {len(all_urls)} URLs"
+            )
             return all_urls
 
-        self.logger.info(f"🔎 Checking database for existing animals...")
+        self.logger.info("🔎 Checking database for existing animals...")
         existing_urls = self._get_existing_animal_urls()
 
         if not existing_urls:
-            self.logger.info(f"📊 No existing animals found in database, processing all {len(all_urls)} URLs")
+            self.logger.info(
+                f"📊 No existing animals found in database, processing all {len(all_urls)} URLs"
+            )
             return all_urls
 
         # Filter out existing URLs
@@ -1112,11 +1251,15 @@ class BaseScraper(ABC):
 
         skipped_count = len(all_urls) - len(filtered_urls)
         self.logger.info(f"🚫 Found {len(existing_urls)} existing animals in database")
-        self.logger.info(f"✅ Filtered results: Skipped {skipped_count} existing, will process {len(filtered_urls)} new animals")
+        self.logger.info(
+            f"✅ Filtered results: Skipped {skipped_count} existing, will process {len(filtered_urls)} new animals"
+        )
 
         # Debug logging for URL matching issues
         if skipped_count == 0 and len(existing_urls) > 0:
-            self.logger.warning("⚠️ No URLs were filtered despite having existing animals - possible URL mismatch!")
+            self.logger.warning(
+                "⚠️ No URLs were filtered despite having existing animals - possible URL mismatch!"
+            )
 
         return filtered_urls
 
@@ -1124,7 +1267,9 @@ class BaseScraper(ABC):
         """Set statistics about skip_existing_animals filtering."""
         self.total_animals_before_filter = total_before_filter
         self.total_animals_skipped = total_skipped
-        self.logger.info(f"📊 Filtering stats: {total_before_filter} found, {total_skipped} skipped, {total_before_filter - total_skipped} to process")
+        self.logger.info(
+            f"📊 Filtering stats: {total_before_filter} found, {total_skipped} skipped, {total_before_filter - total_skipped} to process"
+        )
 
     def _get_correct_animals_found_count(self, animals_data: list) -> int:
         """Get correct animals_found count for logging.
@@ -1135,7 +1280,11 @@ class BaseScraper(ABC):
         This ensures dogs_found shows total animals found on website (e.g., 35),
         not the filtered count (e.g., 0) when skip_existing_animals=true.
         """
-        if self.skip_existing_animals and hasattr(self, "total_animals_before_filter") and self.total_animals_before_filter > 0:
+        if (
+            self.skip_existing_animals
+            and hasattr(self, "total_animals_before_filter")
+            and self.total_animals_before_filter > 0
+        ):
             return self.total_animals_before_filter
         return len(animals_data)
 
@@ -1161,9 +1310,13 @@ class BaseScraper(ABC):
         """Check if an animal already exists in the database."""
         # Use injected DatabaseService if available
         if self.database_service:
-            return self.database_service.get_existing_animal(external_id, organization_id)
+            return self.database_service.get_existing_animal(
+                external_id, organization_id
+            )
 
-        self._log_service_unavailable("DatabaseService", "cannot check existing animals")
+        self._log_service_unavailable(
+            "DatabaseService", "cannot check existing animals"
+        )
         return None
 
     def create_animal(self, animal_data):
@@ -1219,7 +1372,9 @@ class BaseScraper(ABC):
         if self.session_manager:
             return self.session_manager.mark_animals_unavailable(threshold)
 
-        self._log_service_unavailable("SessionManager", "mark animals unavailable disabled")
+        self._log_service_unavailable(
+            "SessionManager", "mark animals unavailable disabled"
+        )
         return 0
 
     def restore_available_animal(self, animal_id):
@@ -1236,7 +1391,9 @@ class BaseScraper(ABC):
         if self.session_manager:
             return self.session_manager.mark_skipped_animals_as_seen()
 
-        self._log_service_unavailable("SessionManager", "skipped animals marking disabled")
+        self._log_service_unavailable(
+            "SessionManager", "skipped animals marking disabled"
+        )
         return 0
 
     def _record_all_found_external_ids(self, animals_data):
@@ -1261,14 +1418,18 @@ class BaseScraper(ABC):
                 recorded_count += 1
 
         if recorded_count > 0:
-            self.logger.debug(f"Recorded {recorded_count} external IDs as found for stale detection")
+            self.logger.debug(
+                f"Recorded {recorded_count} external IDs as found for stale detection"
+            )
 
     def get_stale_animals_summary(self):
         """Get summary of animals by availability confidence and status."""
         if self.session_manager:
             return self.session_manager.get_stale_animals_summary()
 
-        self._log_service_unavailable("SessionManager", "stale animals summary disabled")
+        self._log_service_unavailable(
+            "SessionManager", "stale animals summary disabled"
+        )
         return {}
 
     def detect_catastrophic_failure(self, animals_found, absolute_minimum=3):
@@ -1318,10 +1479,14 @@ class BaseScraper(ABC):
                 self.total_animals_skipped,
             )
 
-        self._log_service_unavailable("SessionManager", "partial failure detection disabled")
+        self._log_service_unavailable(
+            "SessionManager", "partial failure detection disabled"
+        )
         return animals_found < absolute_minimum  # Basic check only
 
-    def detect_scraper_failure(self, animals_found, threshold_percentage=0.5, absolute_minimum=3):
+    def detect_scraper_failure(
+        self, animals_found, threshold_percentage=0.5, absolute_minimum=3
+    ):
         """Combined failure detection method that checks both catastrophic and partial failures.
 
         Args:
@@ -1332,7 +1497,9 @@ class BaseScraper(ABC):
         Returns:
             True if any type of failure detected, False otherwise
         """
-        return self.detect_partial_failure(animals_found, threshold_percentage, absolute_minimum)
+        return self.detect_partial_failure(
+            animals_found, threshold_percentage, absolute_minimum
+        )
 
     def handle_scraper_failure(self, error_message):
         """Handle scraper failure without affecting animal availability.
@@ -1441,7 +1608,9 @@ class BaseScraper(ABC):
             org_config = loader.load_config(llm_org_id)
 
             if not org_config:
-                self.logger.warning(f"No LLM configuration found for organization {llm_org_id}")
+                self.logger.warning(
+                    f"No LLM configuration found for organization {llm_org_id}"
+                )
                 return
 
             # Check if prompt template exists
@@ -1449,10 +1618,14 @@ class BaseScraper(ABC):
 
             template_path = Path("prompts/organizations") / org_config.prompt_file
             if not template_path.exists():
-                self.logger.warning(f"Prompt template not found for organization {llm_org_id}: {org_config.prompt_file}")
+                self.logger.warning(
+                    f"Prompt template not found for organization {llm_org_id}: {org_config.prompt_file}"
+                )
                 return
 
-            self.logger.info(f"Starting LLM enrichment for {len(self.animals_for_llm_enrichment)} animals")
+            self.logger.info(
+                f"Starting LLM enrichment for {len(self.animals_for_llm_enrichment)} animals"
+            )
 
             # Prepare data for pipeline
             dogs_to_profile = []
@@ -1479,14 +1652,18 @@ class BaseScraper(ABC):
             pipeline = DogProfilerPipeline(organization_id=llm_org_id, dry_run=False)
 
             # Process batch
-            self.logger.info(f"Processing {len(dogs_to_profile)} dogs with LLM profiler...")
+            self.logger.info(
+                f"Processing {len(dogs_to_profile)} dogs with LLM profiler..."
+            )
             results = asyncio.run(pipeline.process_batch(dogs_to_profile, batch_size=5))
 
             if results:
                 # Save results
                 success = asyncio.run(pipeline.save_results(results))
                 if success:
-                    self.logger.info(f"Successfully enriched {len(results)} animals with LLM profiles")
+                    self.logger.info(
+                        f"Successfully enriched {len(results)} animals with LLM profiles"
+                    )
                 else:
                     self.logger.warning("Failed to save some LLM enrichment results")
 
@@ -1494,7 +1671,9 @@ class BaseScraper(ABC):
             stats = pipeline.get_statistics()
             if stats:
                 self.logger.info(
-                    f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, " f"Processed: {stats.get('total_processed', 0)}, " f"Failed: {stats.get('total_failed', 0)}"
+                    f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, "
+                    f"Processed: {stats.get('total_processed', 0)}, "
+                    f"Failed: {stats.get('total_failed', 0)}"
                 )
                 failed_count = stats.get("total_failed", 0)
                 if failed_count > 0:
@@ -1542,25 +1721,46 @@ class BaseScraper(ABC):
             max_checks = adoption_config.get("max_checks_per_run", 50)
             check_interval_hours = adoption_config.get("check_interval_hours", 24)
 
-            self.logger.info(f"🔍 Checking for adoptions (threshold: {threshold} missed scrapes)")
+            self.logger.info(
+                f"🔍 Checking for adoptions (threshold: {threshold} missed scrapes)"
+            )
 
             # Initialize service
             service = AdoptionDetectionService()
 
             # Check adoptions for this organization
-            results = service.batch_check_adoptions(self.conn, self.organization_id, threshold=threshold, limit=max_checks, dry_run=False)
+            results = service.batch_check_adoptions(
+                self.conn,
+                self.organization_id,
+                threshold=threshold,
+                limit=max_checks,
+                dry_run=False,
+            )
 
             if results:
                 # Log results
-                adopted_count = sum(1 for r in results if r.detected_status == "adopted")
-                reserved_count = sum(1 for r in results if r.detected_status == "reserved")
+                adopted_count = sum(
+                    1 for r in results if r.detected_status == "adopted"
+                )
+                reserved_count = sum(
+                    1 for r in results if r.detected_status == "reserved"
+                )
 
-                self.logger.info(f"✅ Adoption check complete: {len(results)} dogs checked, " f"{adopted_count} adopted, {reserved_count} reserved")
+                self.logger.info(
+                    f"✅ Adoption check complete: {len(results)} dogs checked, "
+                    f"{adopted_count} adopted, {reserved_count} reserved"
+                )
 
                 # Track metrics
-                self.metrics_collector.track_custom_metric("adoptions_checked", len(results))
-                self.metrics_collector.track_custom_metric("adoptions_detected", adopted_count)
-                self.metrics_collector.track_custom_metric("reservations_detected", reserved_count)
+                self.metrics_collector.track_custom_metric(
+                    "adoptions_checked", len(results)
+                )
+                self.metrics_collector.track_custom_metric(
+                    "adoptions_detected", adopted_count
+                )
+                self.metrics_collector.track_custom_metric(
+                    "reservations_detected", reserved_count
+                )
             else:
                 self.logger.info("No dogs eligible for adoption checking")
 

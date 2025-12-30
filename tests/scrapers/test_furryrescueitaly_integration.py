@@ -108,7 +108,11 @@ class TestFurryRescueItalyIntegration(unittest.TestCase):
                 # Should have standardized fields
                 if "born" in props:
                     # Should have age fields from standardization
-                    self.assertTrue("age_min_months" in props or "age_max_months" in props or "birth_date" in props)
+                    self.assertTrue(
+                        "age_min_months" in props
+                        or "age_max_months" in props
+                        or "birth_date" in props
+                    )
 
                 # Print for verification
                 print(f"\nEnriched animal: {animal['name']}")
@@ -141,7 +145,9 @@ class TestFurryRescueItalyIntegration(unittest.TestCase):
             </html>
             """
 
-            details = self.scraper.scrape_animal_details("https://furryrescueitaly.com/adoption/test/")
+            details = self.scraper.scrape_animal_details(
+                "https://furryrescueitaly.com/adoption/test/"
+            )
 
             # Check structure matches what BaseScraper expects
             self.assertIsInstance(details, dict)
@@ -163,11 +169,17 @@ class TestFurryRescueItalyIntegration(unittest.TestCase):
             # Empty HTML
             ("", {}),
             # No properties but has name and description
-            ("<h4>DOG</h4><p>Description</p>", {"name": "DOG", "description": "Description"}),
+            (
+                "<h4>DOG</h4><p>Description</p>",
+                {"name": "DOG", "description": "Description"},
+            ),
             # Properties without colons - should return empty properties dict
             ("<ul><li>Born 2024</li></ul>", {}),
             # Mixed case property keys - only lowercase 'sex' works
-            ("<ul><li>BORN: 2024</li><li>Sex: Male</li></ul>", {"properties": {"sex": "Male"}}),
+            (
+                "<ul><li>BORN: 2024</li><li>Sex: Male</li></ul>",
+                {"properties": {"sex": "Male"}},
+            ),
         ]
 
         for html, expected_content in test_cases:
@@ -185,6 +197,8 @@ class TestFurryRescueItalyIntegration(unittest.TestCase):
                             # Properties should exist and contain expected values
                             self.assertIn("properties", details)
                             for prop_key, prop_value in value.items():
-                                self.assertEqual(details["properties"].get(prop_key), prop_value)
+                                self.assertEqual(
+                                    details["properties"].get(prop_key), prop_value
+                                )
                         else:
                             self.assertEqual(details.get(key), value)

@@ -12,7 +12,7 @@ Following CLAUDE.md principles:
 import os
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -58,9 +58,19 @@ class LLMModelConfig(BaseModel):
     Complexity: O(1) for all operations - simple configuration data structure
     """
 
-    default_model: str = Field(default="openrouter/auto", description="Default model to use")
-    temperature_ranges: Dict[str, tuple] = Field(default_factory=lambda: {"description_cleaning": (0.2, 0.4), "dog_profiler": (0.7, 0.9), "translation": (0.1, 0.3)})
-    max_tokens: Optional[int] = Field(default=None, description="Maximum tokens per request")
+    default_model: str = Field(
+        default="openrouter/auto", description="Default model to use"
+    )
+    temperature_ranges: Dict[str, tuple] = Field(
+        default_factory=lambda: {
+            "description_cleaning": (0.2, 0.4),
+            "dog_profiler": (0.7, 0.9),
+            "translation": (0.1, 0.3),
+        }
+    )
+    max_tokens: Optional[int] = Field(
+        default=None, description="Maximum tokens per request"
+    )
 
 
 class CacheConfig(BaseModel):
@@ -139,8 +149,12 @@ class RetryConfig(BaseModel):
     Complexity: O(n) where n is max_attempts for full retry sequence
     """
 
-    max_attempts: int = Field(default=3, ge=1, le=10, description="Maximum retry attempts")
-    strategy: RetryStrategy = Field(default=RetryStrategy.EXPONENTIAL, description="Backoff strategy")
+    max_attempts: int = Field(
+        default=3, ge=1, le=10, description="Maximum retry attempts"
+    )
+    strategy: RetryStrategy = Field(
+        default=RetryStrategy.EXPONENTIAL, description="Backoff strategy"
+    )
     base_delay: float = Field(default=1.0, gt=0, description="Base delay in seconds")
     max_delay: float = Field(default=60.0, gt=0, description="Maximum delay in seconds")
 
@@ -165,7 +179,11 @@ class RetryConfig(BaseModel):
 
         Complexity: O(1) - simple comparison
         """
-        if hasattr(info, "data") and "base_delay" in info.data and v < info.data["base_delay"]:
+        if (
+            hasattr(info, "data")
+            and "base_delay" in info.data
+            and v < info.data["base_delay"]
+        ):
             raise ValueError("max_delay must be >= base_delay")
         return v
 
@@ -195,7 +213,9 @@ class BatchConfig(BaseModel):
 
     default_size: int = Field(default=5, ge=1, le=50, description="Default batch size")
     max_size: int = Field(default=25, ge=1, le=100, description="Maximum batch size")
-    concurrent_requests: int = Field(default=10, ge=1, le=50, description="Max concurrent API requests")
+    concurrent_requests: int = Field(
+        default=10, ge=1, le=50, description="Max concurrent API requests"
+    )
 
     @field_validator("max_size")
     @classmethod
@@ -218,7 +238,11 @@ class BatchConfig(BaseModel):
 
         Complexity: O(1) - simple comparison
         """
-        if hasattr(info, "data") and "default_size" in info.data and v < info.data["default_size"]:
+        if (
+            hasattr(info, "data")
+            and "default_size" in info.data
+            and v < info.data["default_size"]
+        ):
             raise ValueError("max_size must be >= default_size")
         return v
 
@@ -265,7 +289,9 @@ class LLMConfig(BaseModel):
 
     # API Configuration
     api_key: Optional[str] = Field(default=None, description="OpenRouter API key")
-    base_url: str = Field(default="https://openrouter.ai/api/v1", description="API base URL")
+    base_url: str = Field(
+        default="https://openrouter.ai/api/v1", description="API base URL"
+    )
     timeout_seconds: float = Field(default=30.0, gt=0, description="Request timeout")
 
     # Model Configuration
@@ -281,7 +307,14 @@ class LLMConfig(BaseModel):
     batch: BatchConfig = Field(default_factory=BatchConfig)
 
     # Feature Flags
-    features: Dict[str, bool] = Field(default_factory=lambda: {"description_cleaning_enabled": True, "dog_profiler_enabled": True, "translation_enabled": True, "metrics_collection_enabled": True})
+    features: Dict[str, bool] = Field(
+        default_factory=lambda: {
+            "description_cleaning_enabled": True,
+            "dog_profiler_enabled": True,
+            "translation_enabled": True,
+            "metrics_collection_enabled": True,
+        }
+    )
 
 
 class LLMConfigLoader:
@@ -344,7 +377,10 @@ class LLMConfigLoader:
 
         Complexity: O(1) - simple environment variable reads and construction
         """
-        return LLMModelConfig(default_model=os.getenv("LLM_DEFAULT_MODEL", "openrouter/auto"), max_tokens=int(os.getenv("LLM_MAX_TOKENS", "0")) or None)
+        return LLMModelConfig(
+            default_model=os.getenv("LLM_DEFAULT_MODEL", "openrouter/auto"),
+            max_tokens=int(os.getenv("LLM_MAX_TOKENS", "0")) or None,
+        )
 
     @staticmethod
     def _load_cache_config(environment: Environment) -> CacheConfig:
@@ -376,18 +412,39 @@ class LLMConfigLoader:
         """
         # Environment-specific defaults
         defaults = {
-            Environment.DEVELOPMENT: {"enabled": True, "max_size": 500, "ttl_seconds": 1800},
-            Environment.STAGING: {"enabled": True, "max_size": 1000, "ttl_seconds": 3600},
-            Environment.PRODUCTION: {"enabled": True, "max_size": 2000, "ttl_seconds": 7200},
-            Environment.TESTING: {"enabled": False, "max_size": 100, "ttl_seconds": 300},
+            Environment.DEVELOPMENT: {
+                "enabled": True,
+                "max_size": 500,
+                "ttl_seconds": 1800,
+            },
+            Environment.STAGING: {
+                "enabled": True,
+                "max_size": 1000,
+                "ttl_seconds": 3600,
+            },
+            Environment.PRODUCTION: {
+                "enabled": True,
+                "max_size": 2000,
+                "ttl_seconds": 7200,
+            },
+            Environment.TESTING: {
+                "enabled": False,
+                "max_size": 100,
+                "ttl_seconds": 300,
+            },
         }
 
         env_defaults = defaults.get(environment, defaults[Environment.DEVELOPMENT])
 
         return CacheConfig(
-            enabled=os.getenv("LLM_CACHE_ENABLED", str(env_defaults["enabled"])).lower() == "true",
-            max_size=int(os.getenv("LLM_CACHE_MAX_SIZE", str(env_defaults["max_size"]))),
-            ttl_seconds=int(os.getenv("LLM_CACHE_TTL_SECONDS", str(env_defaults["ttl_seconds"]))),
+            enabled=os.getenv("LLM_CACHE_ENABLED", str(env_defaults["enabled"])).lower()
+            == "true",
+            max_size=int(
+                os.getenv("LLM_CACHE_MAX_SIZE", str(env_defaults["max_size"]))
+            ),
+            ttl_seconds=int(
+                os.getenv("LLM_CACHE_TTL_SECONDS", str(env_defaults["ttl_seconds"]))
+            ),
         )
 
     @staticmethod
@@ -457,18 +514,32 @@ class LLMConfigLoader:
         """
         # Smaller batches in development for faster feedback
         defaults = {
-            Environment.DEVELOPMENT: {"default_size": 3, "max_size": 10, "concurrent": 5},
+            Environment.DEVELOPMENT: {
+                "default_size": 3,
+                "max_size": 10,
+                "concurrent": 5,
+            },
             Environment.STAGING: {"default_size": 5, "max_size": 20, "concurrent": 8},
-            Environment.PRODUCTION: {"default_size": 10, "max_size": 25, "concurrent": 15},
+            Environment.PRODUCTION: {
+                "default_size": 10,
+                "max_size": 25,
+                "concurrent": 15,
+            },
             Environment.TESTING: {"default_size": 2, "max_size": 5, "concurrent": 3},
         }
 
         env_defaults = defaults.get(environment, defaults[Environment.DEVELOPMENT])
 
         return BatchConfig(
-            default_size=int(os.getenv("LLM_BATCH_DEFAULT_SIZE", str(env_defaults["default_size"]))),
-            max_size=int(os.getenv("LLM_BATCH_MAX_SIZE", str(env_defaults["max_size"]))),
-            concurrent_requests=int(os.getenv("LLM_BATCH_CONCURRENT", str(env_defaults["concurrent"]))),
+            default_size=int(
+                os.getenv("LLM_BATCH_DEFAULT_SIZE", str(env_defaults["default_size"]))
+            ),
+            max_size=int(
+                os.getenv("LLM_BATCH_MAX_SIZE", str(env_defaults["max_size"]))
+            ),
+            concurrent_requests=int(
+                os.getenv("LLM_BATCH_CONCURRENT", str(env_defaults["concurrent"]))
+            ),
         )
 
     @staticmethod
@@ -501,10 +572,20 @@ class LLMConfigLoader:
         Complexity: O(1) - simple environment variable reads and dictionary construction
         """
         return {
-            "description_cleaning_enabled": os.getenv("LLM_FEATURE_DESCRIPTION_CLEANING", "true").lower() == "true",
-            "dog_profiler_enabled": os.getenv("LLM_FEATURE_DOG_PROFILER", "true").lower() == "true",
-            "translation_enabled": os.getenv("LLM_FEATURE_TRANSLATION", "true").lower() == "true",
-            "metrics_collection_enabled": os.getenv("LLM_FEATURE_METRICS", "true").lower() == "true",
+            "description_cleaning_enabled": os.getenv(
+                "LLM_FEATURE_DESCRIPTION_CLEANING", "true"
+            ).lower()
+            == "true",
+            "dog_profiler_enabled": os.getenv(
+                "LLM_FEATURE_DOG_PROFILER", "true"
+            ).lower()
+            == "true",
+            "translation_enabled": os.getenv("LLM_FEATURE_TRANSLATION", "true").lower()
+            == "true",
+            "metrics_collection_enabled": os.getenv(
+                "LLM_FEATURE_METRICS", "true"
+            ).lower()
+            == "true",
         }
 
     @classmethod

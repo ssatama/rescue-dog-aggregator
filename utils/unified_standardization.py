@@ -6,8 +6,7 @@ Combines the best features from standardization.py, optimized_standardization.py
 import re
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import date, datetime
-from difflib import SequenceMatcher
+from datetime import datetime
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -38,7 +37,12 @@ MAX_DOG_AGE_MONTHS = 360
 class UnifiedStandardizer:
     """Unified standardizer that handles breed, age, and size standardization in a single pass."""
 
-    def __init__(self, enable_breed_standardization: bool = True, enable_age_standardization: bool = True, enable_size_standardization: bool = True):
+    def __init__(
+        self,
+        enable_breed_standardization: bool = True,
+        enable_age_standardization: bool = True,
+        enable_size_standardization: bool = True,
+    ):
         """
         Initialize the unified standardizer with optional feature flags.
 
@@ -54,7 +58,9 @@ class UnifiedStandardizer:
         self.breed_data = self._initialize_breed_data()
         self.designer_breeds = self._initialize_designer_breeds()
         self.staffordshire_variations = self._initialize_staffordshire_variations()
-        self.american_staffordshire_variations = self._initialize_american_staffordshire_variations()
+        self.american_staffordshire_variations = (
+            self._initialize_american_staffordshire_variations()
+        )
 
         # Pre-compile regex patterns for performance
         self.age_patterns = self._compile_age_patterns()
@@ -71,29 +77,51 @@ class UnifiedStandardizer:
             "basset hound": BreedInfo("Basset Hound", "Hound", "Medium"),
             "bloodhound": BreedInfo("Bloodhound", "Hound", "Large"),
             "dachshund": BreedInfo("Dachshund", "Hound", "Small"),
-            "dackel (kurzhaar)": BreedInfo("Dachshund", "Hound", "Small"),  # German name for Dachshund
+            "dackel (kurzhaar)": BreedInfo(
+                "Dachshund", "Hound", "Small"
+            ),  # German name for Dachshund
             "irish wolfhound": BreedInfo("Irish Wolfhound", "Hound", "XLarge"),
             "afghan hound": BreedInfo("Afghan Hound", "Hound", "Large"),
             "hound": BreedInfo("Hound", "Hound", "Medium"),  # Generic hound
             "hound dog": BreedInfo("Hound", "Hound", "Medium"),  # Generic hound dog
             "foxhound": BreedInfo("Foxhound", "Hound", "Large"),
             "harrier": BreedInfo("Harrier", "Hound", "Medium"),
-            "hound dog (segugio)": BreedInfo("Segugio Italiano", "Hound", "Medium"),  # Italian hound
-            "black and tan coonhound": BreedInfo("Black and Tan Coonhound", "Hound", "Large"),
-            "gonche (bulgarian scenthound)": BreedInfo("Bulgarian Scenthound", "Hound", "Medium"),
-            "gonche bulgarian scenthound": BreedInfo("Bulgarian Scenthound", "Hound", "Medium"),
-            "podengo portugues pequeno": BreedInfo("Portuguese Podengo", "Hound", "Small"),
+            "hound dog (segugio)": BreedInfo(
+                "Segugio Italiano", "Hound", "Medium"
+            ),  # Italian hound
+            "black and tan coonhound": BreedInfo(
+                "Black and Tan Coonhound", "Hound", "Large"
+            ),
+            "gonche (bulgarian scenthound)": BreedInfo(
+                "Bulgarian Scenthound", "Hound", "Medium"
+            ),
+            "gonche bulgarian scenthound": BreedInfo(
+                "Bulgarian Scenthound", "Hound", "Medium"
+            ),
+            "podengo portugues pequeno": BreedInfo(
+                "Portuguese Podengo", "Hound", "Small"
+            ),
             # Terrier Group - Including Staffordshire Bull Terrier
-            "staffordshire bull terrier": BreedInfo("Staffordshire Bull Terrier", "Terrier", "Medium"),
-            "american staffordshire terrier": BreedInfo("American Staffordshire Terrier", "Terrier", "Medium"),
-            "jack russell terrier": BreedInfo("Jack Russell Terrier", "Terrier", "Small"),
-            "jack russell": BreedInfo("Jack Russell Terrier", "Terrier", "Small"),  # Alias without "Terrier"
+            "staffordshire bull terrier": BreedInfo(
+                "Staffordshire Bull Terrier", "Terrier", "Medium"
+            ),
+            "american staffordshire terrier": BreedInfo(
+                "American Staffordshire Terrier", "Terrier", "Medium"
+            ),
+            "jack russell terrier": BreedInfo(
+                "Jack Russell Terrier", "Terrier", "Small"
+            ),
+            "jack russell": BreedInfo(
+                "Jack Russell Terrier", "Terrier", "Small"
+            ),  # Alias without "Terrier"
             "yorkshire terrier": BreedInfo("Yorkshire Terrier", "Terrier", "Tiny"),
             "terrier (yorkshire)": BreedInfo("Yorkshire Terrier", "Terrier", "Tiny"),
             "bull terrier": BreedInfo("Bull Terrier", "Terrier", "Medium"),
             "terrier (bull)": BreedInfo("Bull Terrier", "Terrier", "Medium"),
             "scottish terrier": BreedInfo("Scottish Terrier", "Terrier", "Small"),
-            "west highland white terrier": BreedInfo("West Highland White Terrier", "Terrier", "Small"),
+            "west highland white terrier": BreedInfo(
+                "West Highland White Terrier", "Terrier", "Small"
+            ),
             "terrier": BreedInfo("Terrier", "Terrier", "Medium"),  # Generic terrier
             "terrier (patterdale)": BreedInfo("Patterdale Terrier", "Terrier", "Small"),
             "patterdale terrier": BreedInfo("Patterdale Terrier", "Terrier", "Small"),
@@ -101,26 +129,54 @@ class UnifiedStandardizer:
             "lakeland terrier": BreedInfo("Lakeland Terrier", "Terrier", "Small"),
             "terrier (fox wire)": BreedInfo("Wire Fox Terrier", "Terrier", "Small"),
             "wire fox terrier": BreedInfo("Wire Fox Terrier", "Terrier", "Small"),
-            "terrier (soft coated wheaten)": BreedInfo("Soft Coated Wheaten Terrier", "Terrier", "Medium"),
-            "soft coated wheaten terrier": BreedInfo("Soft Coated Wheaten Terrier", "Terrier", "Medium"),
-            "terrier (miniature bull)": BreedInfo("Miniature Bull Terrier", "Terrier", "Small"),
-            "miniature bull terrier": BreedInfo("Miniature Bull Terrier", "Terrier", "Small"),
+            "terrier (soft coated wheaten)": BreedInfo(
+                "Soft Coated Wheaten Terrier", "Terrier", "Medium"
+            ),
+            "soft coated wheaten terrier": BreedInfo(
+                "Soft Coated Wheaten Terrier", "Terrier", "Medium"
+            ),
+            "terrier (miniature bull)": BreedInfo(
+                "Miniature Bull Terrier", "Terrier", "Small"
+            ),
+            "miniature bull terrier": BreedInfo(
+                "Miniature Bull Terrier", "Terrier", "Small"
+            ),
             "terrier (bedlington)": BreedInfo("Bedlington Terrier", "Terrier", "Small"),
             "bedlington terrier": BreedInfo("Bedlington Terrier", "Terrier", "Small"),
-            "terrier (parson russell)": BreedInfo("Parson Russell Terrier", "Terrier", "Small"),
-            "parson russell terrier": BreedInfo("Parson Russell Terrier", "Terrier", "Small"),
+            "terrier (parson russell)": BreedInfo(
+                "Parson Russell Terrier", "Terrier", "Small"
+            ),
+            "parson russell terrier": BreedInfo(
+                "Parson Russell Terrier", "Terrier", "Small"
+            ),
             "terrier (border)": BreedInfo("Border Terrier", "Terrier", "Small"),
             "border terrier": BreedInfo("Border Terrier", "Terrier", "Small"),
-            "deutscher jagdterrier": BreedInfo("German Hunting Terrier", "Terrier", "Small"),
-            "german hunting terrier": BreedInfo("German Hunting Terrier", "Terrier", "Small"),
-            "bodeguero andaluz": BreedInfo("Bodeguero Andaluz", "Terrier", "Small"),  # Spanish terrier
+            "deutscher jagdterrier": BreedInfo(
+                "German Hunting Terrier", "Terrier", "Small"
+            ),
+            "german hunting terrier": BreedInfo(
+                "German Hunting Terrier", "Terrier", "Small"
+            ),
+            "bodeguero andaluz": BreedInfo(
+                "Bodeguero Andaluz", "Terrier", "Small"
+            ),  # Spanish terrier
             "miniature schnauzer": BreedInfo("Miniature Schnauzer", "Terrier", "Small"),
-            "schnauzer (miniature)": BreedInfo("Miniature Schnauzer", "Terrier", "Small"),
+            "schnauzer (miniature)": BreedInfo(
+                "Miniature Schnauzer", "Terrier", "Small"
+            ),
             # Additional missing breeds from Dogs Trust patterns
-            "cavalier king charles spaniel": BreedInfo("Cavalier King Charles Spaniel", "Toy", "Small"),
-            "flat-coated retriever": BreedInfo("Flat-Coated Retriever", "Sporting", "Large"),
-            "german shorthaired pointer": BreedInfo("German Shorthaired Pointer", "Sporting", "Large"),
-            "german wirehaired pointer": BreedInfo("German Wirehaired Pointer", "Sporting", "Large"),
+            "cavalier king charles spaniel": BreedInfo(
+                "Cavalier King Charles Spaniel", "Toy", "Small"
+            ),
+            "flat-coated retriever": BreedInfo(
+                "Flat-Coated Retriever", "Sporting", "Large"
+            ),
+            "german shorthaired pointer": BreedInfo(
+                "German Shorthaired Pointer", "Sporting", "Large"
+            ),
+            "german wirehaired pointer": BreedInfo(
+                "German Wirehaired Pointer", "Sporting", "Large"
+            ),
             "standard schnauzer": BreedInfo("Standard Schnauzer", "Working", "Medium"),
             "giant schnauzer": BreedInfo("Giant Schnauzer", "Working", "Large"),
             "standard poodle": BreedInfo("Standard Poodle", "Non-Sporting", "Large"),
@@ -128,33 +184,49 @@ class UnifiedStandardizer:
             "toy poodle": BreedInfo("Toy Poodle", "Toy", "Tiny"),
             "miniature dachshund": BreedInfo("Miniature Dachshund", "Hound", "Small"),
             "miniature pinscher": BreedInfo("Miniature Pinscher", "Toy", "Small"),
-            "belgian shepherd dog": BreedInfo("Belgian Shepherd Dog", "Herding", "Large"),
+            "belgian shepherd dog": BreedInfo(
+                "Belgian Shepherd Dog", "Herding", "Large"
+            ),
             "boston terrier": BreedInfo("Boston Terrier", "Non-Sporting", "Small"),
             # Sporting Group
             "labrador retriever": BreedInfo("Labrador Retriever", "Sporting", "Large"),
             "golden retriever": BreedInfo("Golden Retriever", "Sporting", "Large"),
             "cocker spaniel": BreedInfo("Cocker Spaniel", "Sporting", "Medium"),
-            "english springer spaniel": BreedInfo("English Springer Spaniel", "Sporting", "Medium"),
-            "english springer": BreedInfo("English Springer Spaniel", "Sporting", "Medium"),  # Alias without "Spaniel"
+            "english springer spaniel": BreedInfo(
+                "English Springer Spaniel", "Sporting", "Medium"
+            ),
+            "english springer": BreedInfo(
+                "English Springer Spaniel", "Sporting", "Medium"
+            ),  # Alias without "Spaniel"
             "pointer": BreedInfo("Pointer", "Sporting", "Large"),
             "setter": BreedInfo("Setter", "Sporting", "Large"),
             # Working Group
             "siberian husky": BreedInfo("Siberian Husky", "Working", "Large"),
             "alaskan malamute": BreedInfo("Alaskan Malamute", "Working", "Large"),
             "rottweiler": BreedInfo("Rottweiler", "Working", "Large"),
-            "rottweiller": BreedInfo("Rottweiler", "Working", "Large"),  # Common misspelling
+            "rottweiller": BreedInfo(
+                "Rottweiler", "Working", "Large"
+            ),  # Common misspelling
             "doberman pinscher": BreedInfo("Doberman Pinscher", "Working", "Large"),
             "great dane": BreedInfo("Great Dane", "Working", "XLarge"),
-            "bernese mountain dog": BreedInfo("Bernese Mountain Dog", "Working", "Large"),
+            "bernese mountain dog": BreedInfo(
+                "Bernese Mountain Dog", "Working", "Large"
+            ),
             "boxer": BreedInfo("Boxer", "Working", "Large"),
             "cane corso": BreedInfo("Cane Corso", "Working", "Large"),  # Italian breed
-            "italian corso dog": BreedInfo("Cane Corso", "Working", "Large"),  # Alias for Cane Corso
+            "italian corso dog": BreedInfo(
+                "Cane Corso", "Working", "Large"
+            ),  # Alias for Cane Corso
             "samoyed": BreedInfo("Samoyed", "Working", "Large"),
             "dogue de bordeaux": BreedInfo("Dogue de Bordeaux", "Working", "XLarge"),
             "saint bernard": BreedInfo("Saint Bernard", "Working", "XLarge"),
             "st bernard": BreedInfo("Saint Bernard", "Working", "XLarge"),
-            "czechoslovakian wolfdog": BreedInfo("Czechoslovakian Wolfdog", "Working", "Large"),
-            "tschechoslowakischer wolfshund": BreedInfo("Czechoslovakian Wolfdog", "Working", "Large"),  # German name
+            "czechoslovakian wolfdog": BreedInfo(
+                "Czechoslovakian Wolfdog", "Working", "Large"
+            ),
+            "tschechoslowakischer wolfshund": BreedInfo(
+                "Czechoslovakian Wolfdog", "Working", "Large"
+            ),  # German name
             # Herding Group
             "german shepherd": BreedInfo("German Shepherd Dog", "Herding", "Large"),
             "german shepherd dog": BreedInfo("German Shepherd Dog", "Herding", "Large"),
@@ -185,8 +257,12 @@ class UnifiedStandardizer:
             "shar pei": BreedInfo("Shar Pei", "Non-Sporting", "Medium"),
             "spitz": BreedInfo("Spitz", "Non-Sporting", "Medium"),
             "american bully": BreedInfo("American Bully", "Non-Sporting", "Medium"),
-            "american bully pocket": BreedInfo("American Bully", "Non-Sporting", "Medium"),
-            "boston terrier": BreedInfo("Boston Terrier", "Non-Sporting", "Small"),  # Boston Terrier is Non-Sporting, not Terrier group!
+            "american bully pocket": BreedInfo(
+                "American Bully", "Non-Sporting", "Medium"
+            ),
+            "boston terrier": BreedInfo(
+                "Boston Terrier", "Non-Sporting", "Small"
+            ),  # Boston Terrier is Non-Sporting, not Terrier group!
             "terrier (boston)": BreedInfo("Boston Terrier", "Non-Sporting", "Small"),
             # Additional breeds for European scrapers
             "spanish mastiff": BreedInfo("Spanish Mastiff", "Working", "XLarge"),
@@ -196,15 +272,21 @@ class UnifiedStandardizer:
             "podenco": BreedInfo("Podenco", "Hound", "Medium"),
             "galgo": BreedInfo("Galgo", "Hound", "Large"),
             "galgo español": BreedInfo("Galgo Español", "Hound", "Large"),
-            "livestock guardian dog": BreedInfo("Livestock Guardian Dog", "Working", "Large"),
+            "livestock guardian dog": BreedInfo(
+                "Livestock Guardian Dog", "Working", "Large"
+            ),
             # Guardian breeds
             "kangal": BreedInfo("Kangal", "Guardian", "XLarge"),
             "turkish kangal dog": BreedInfo("Kangal", "Guardian", "XLarge"),
             "anatolian shepherd": BreedInfo("Anatolian Shepherd", "Guardian", "XLarge"),
-            "anatolian shepherd dog": BreedInfo("Anatolian Shepherd", "Guardian", "XLarge"),
+            "anatolian shepherd dog": BreedInfo(
+                "Anatolian Shepherd", "Guardian", "XLarge"
+            ),
             "akbash": BreedInfo("Akbash", "Guardian", "XLarge"),
             "maremma sheepdog": BreedInfo("Maremma Sheepdog", "Guardian", "Large"),
-            "brindle maremma hound": BreedInfo("Maremma Sheepdog", "Guardian", "Large"),  # Maremma is actually a guardian breed
+            "brindle maremma hound": BreedInfo(
+                "Maremma Sheepdog", "Guardian", "Large"
+            ),  # Maremma is actually a guardian breed
         }
 
         return breed_data
@@ -212,17 +294,83 @@ class UnifiedStandardizer:
     def _initialize_designer_breeds(self) -> Dict[str, Dict[str, str]]:
         """Initialize designer breed mappings with parent breeds."""
         return {
-            "cockapoo": {"name": "Cockapoo", "primary": "Cocker Spaniel", "secondary": "Poodle", "group": "Designer/Hybrid", "size": "Small"},
-            "cockerpoo": {"name": "Cockapoo", "primary": "Cocker Spaniel", "secondary": "Poodle", "group": "Designer/Hybrid", "size": "Small"},  # Variant spelling
-            "labradoodle": {"name": "Labradoodle", "primary": "Labrador Retriever", "secondary": "Poodle", "group": "Designer/Hybrid", "size": "Large"},
-            "puggle": {"name": "Puggle", "primary": "Pug", "secondary": "Beagle", "group": "Hound", "size": "Small"},  # Takes from Beagle
-            "schnoodle": {"name": "Schnoodle", "primary": "Schnauzer", "secondary": "Poodle", "group": "Non-Sporting", "size": "Medium"},
-            "yorkipoo": {"name": "Yorkipoo", "primary": "Yorkshire Terrier", "secondary": "Poodle", "group": "Toy", "size": "Tiny"},
-            "maltipoo": {"name": "Maltipoo", "primary": "Maltese", "secondary": "Poodle", "group": "Toy", "size": "Small"},
-            "goldendoodle": {"name": "Goldendoodle", "primary": "Golden Retriever", "secondary": "Poodle", "group": "Sporting", "size": "Large"},
-            "cavapoo": {"name": "Cavapoo", "primary": "Cavalier King Charles Spaniel", "secondary": "Poodle", "group": "Toy", "size": "Small"},
-            "cavachon": {"name": "Cavachon", "primary": "Cavalier King Charles Spaniel", "secondary": "Bichon Frise", "group": "Designer", "size": "Small"},
-            "pomsky": {"name": "Pomsky", "primary": "Pomeranian", "secondary": "Siberian Husky", "group": "Designer/Hybrid", "size": "Small"},
+            "cockapoo": {
+                "name": "Cockapoo",
+                "primary": "Cocker Spaniel",
+                "secondary": "Poodle",
+                "group": "Designer/Hybrid",
+                "size": "Small",
+            },
+            "cockerpoo": {
+                "name": "Cockapoo",
+                "primary": "Cocker Spaniel",
+                "secondary": "Poodle",
+                "group": "Designer/Hybrid",
+                "size": "Small",
+            },  # Variant spelling
+            "labradoodle": {
+                "name": "Labradoodle",
+                "primary": "Labrador Retriever",
+                "secondary": "Poodle",
+                "group": "Designer/Hybrid",
+                "size": "Large",
+            },
+            "puggle": {
+                "name": "Puggle",
+                "primary": "Pug",
+                "secondary": "Beagle",
+                "group": "Hound",
+                "size": "Small",
+            },  # Takes from Beagle
+            "schnoodle": {
+                "name": "Schnoodle",
+                "primary": "Schnauzer",
+                "secondary": "Poodle",
+                "group": "Non-Sporting",
+                "size": "Medium",
+            },
+            "yorkipoo": {
+                "name": "Yorkipoo",
+                "primary": "Yorkshire Terrier",
+                "secondary": "Poodle",
+                "group": "Toy",
+                "size": "Tiny",
+            },
+            "maltipoo": {
+                "name": "Maltipoo",
+                "primary": "Maltese",
+                "secondary": "Poodle",
+                "group": "Toy",
+                "size": "Small",
+            },
+            "goldendoodle": {
+                "name": "Goldendoodle",
+                "primary": "Golden Retriever",
+                "secondary": "Poodle",
+                "group": "Sporting",
+                "size": "Large",
+            },
+            "cavapoo": {
+                "name": "Cavapoo",
+                "primary": "Cavalier King Charles Spaniel",
+                "secondary": "Poodle",
+                "group": "Toy",
+                "size": "Small",
+            },
+            "cavachon": {
+                "name": "Cavachon",
+                "primary": "Cavalier King Charles Spaniel",
+                "secondary": "Bichon Frise",
+                "group": "Designer",
+                "size": "Small",
+            },
+            "pomsky": {
+                "name": "Pomsky",
+                "primary": "Pomeranian",
+                "secondary": "Siberian Husky",
+                "group": "Designer/Hybrid",
+                "size": "Small",
+            },
         }
 
     def _initialize_staffordshire_variations(self) -> List[str]:
@@ -243,17 +391,30 @@ class UnifiedStandardizer:
 
     def _initialize_american_staffordshire_variations(self) -> List[str]:
         """Initialize American Staffordshire Terrier name variations."""
-        return ["am staff", "amstaff", "american stafford", "american staffy", "american staffie"]
+        return [
+            "am staff",
+            "amstaff",
+            "american stafford",
+            "american staffy",
+            "american staffie",
+        ]
 
     def _compile_age_patterns(self) -> Dict[str, re.Pattern]:
         """Compile regex patterns for age parsing."""
         return {
-            "birth_date": re.compile(r"born\s+on\s+(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})", re.IGNORECASE),
-            "years_months": re.compile(r"(\d+)\s*(?:year|yr)s?\s*(?:and\s*)?(\d+)?\s*(?:month|mo)s?", re.IGNORECASE),
+            "birth_date": re.compile(
+                r"born\s+on\s+(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})", re.IGNORECASE
+            ),
+            "years_months": re.compile(
+                r"(\d+)\s*(?:year|yr)s?\s*(?:and\s*)?(\d+)?\s*(?:month|mo)s?",
+                re.IGNORECASE,
+            ),
             "months_only": re.compile(r"(\d+)\s*(?:month|mo)s?", re.IGNORECASE),
             "weeks_only": re.compile(r"(\d+)\s*(?:week|wk)s?", re.IGNORECASE),
             "decimal_years": re.compile(r"(\d+[.,]\d+)\s*(?:year|yr)s?", re.IGNORECASE),
-            "range": re.compile(r"(\d+)\s*(?:-|to)\s*(\d+)\s*(?:year|yr|month|mo)s?", re.IGNORECASE),
+            "range": re.compile(
+                r"(\d+)\s*(?:-|to)\s*(\d+)\s*(?:year|yr|month|mo)s?", re.IGNORECASE
+            ),
         }
 
     def _compile_breed_patterns(self) -> Dict[str, re.Pattern]:
@@ -275,17 +436,50 @@ class UnifiedStandardizer:
 
         # Pattern: Main breed type (specific variant)
         patterns = [
-            (r"terrier\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Terrier"),
-            (r"retriever\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Retriever"),
-            (r"collie\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Collie"),
-            (r"spaniel\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Spaniel"),
-            (r"schnauzer\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Schnauzer"),
-            (r"poodle\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Poodle"),
-            (r"pointer\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Pointer"),
-            (r"shepherd dog\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Shepherd"),
-            (r"dachshund\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Dachshund"),
-            (r"chihuahua\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Chihuahua"),
-            (r"pinscher\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Pinscher"),
+            (
+                r"terrier\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Terrier",
+            ),
+            (
+                r"retriever\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Retriever",
+            ),
+            (
+                r"collie\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Collie",
+            ),
+            (
+                r"spaniel\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Spaniel",
+            ),
+            (
+                r"schnauzer\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Schnauzer",
+            ),
+            (
+                r"poodle\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Poodle",
+            ),
+            (
+                r"pointer\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Pointer",
+            ),
+            (
+                r"shepherd dog\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Shepherd",
+            ),
+            (
+                r"dachshund\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Dachshund",
+            ),
+            (
+                r"chihuahua\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Chihuahua",
+            ),
+            (
+                r"pinscher\s*\(([\w\s]+)\)",
+                lambda m: f"{self._capitalize_breed_name(m.group(1))} Pinscher",
+            ),
         ]
 
         for pattern, transformer in patterns:
@@ -341,7 +535,12 @@ class UnifiedStandardizer:
         return None
 
     @lru_cache(maxsize=1000)
-    def apply_full_standardization(self, breed: Optional[str] = None, age: Optional[str] = None, size: Optional[str] = None) -> Dict[str, Any]:
+    def apply_full_standardization(
+        self,
+        breed: Optional[str] = None,
+        age: Optional[str] = None,
+        size: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         Apply full standardization to all three fields in a single pass.
 
@@ -354,26 +553,53 @@ class UnifiedStandardizer:
             Dictionary with standardized breed, age, and size information
         """
         # Standardize breed
-        breed_result = self._standardize_breed(breed) if self.enable_breed_standardization else {"name": breed, "group": "Unknown", "confidence": 0.0, "is_mixed": False}
+        breed_result = (
+            self._standardize_breed(breed)
+            if self.enable_breed_standardization
+            else {
+                "name": breed,
+                "group": "Unknown",
+                "confidence": 0.0,
+                "is_mixed": False,
+            }
+        )
 
         # Standardize age
-        age_result = self._standardize_age(age) if self.enable_age_standardization else {"age_category": None, "age_min_months": None, "age_max_months": None}
+        age_result = (
+            self._standardize_age(age)
+            if self.enable_age_standardization
+            else {"age_category": None, "age_min_months": None, "age_max_months": None}
+        )
 
         # Standardize size
-        size_result = self._standardize_size(size, breed) if self.enable_size_standardization else {"category": size}
+        size_result = (
+            self._standardize_size(size, breed)
+            if self.enable_size_standardization
+            else {"category": size}
+        )
 
         # Build result in the format expected by BaseScraper and tests
-        primary_breed = breed_result.get("primary_breed", breed_result.get("name", "Unknown"))
+        primary_breed = breed_result.get(
+            "primary_breed", breed_result.get("name", "Unknown")
+        )
         result = {
             # Breed fields
             "breed": breed_result.get("name", "Unknown"),
-            "standardized_breed": breed_result.get("name", "Unknown"),  # Add standardized_breed for tests
+            "standardized_breed": breed_result.get(
+                "name", "Unknown"
+            ),  # Add standardized_breed for tests
             "breed_category": breed_result.get("group", "Unknown"),
-            "breed_type": breed_result.get("breed_type", "purebred"),  # Add breed_type field
-            "breed_confidence": breed_result.get("confidence", 0.0),  # Add breed_confidence field
+            "breed_type": breed_result.get(
+                "breed_type", "purebred"
+            ),  # Add breed_type field
+            "breed_confidence": breed_result.get(
+                "confidence", 0.0
+            ),  # Add breed_confidence field
             "primary_breed": primary_breed,
             "secondary_breed": breed_result.get("secondary_breed"),
-            "breed_slug": generate_breed_slug(primary_breed),  # Generate breed_slug for breed pages
+            "breed_slug": generate_breed_slug(
+                primary_breed
+            ),  # Generate breed_slug for breed pages
             "standardization_confidence": breed_result.get("confidence", 0.0),
             # Age fields - preserve original and add ranges
             "age": age,  # Preserve original age field
@@ -408,7 +634,18 @@ class UnifiedStandardizer:
         result = animal_data.copy()
 
         # String field trimming and cleaning
-        string_fields = ["name", "breed", "age", "size", "sex", "gender", "location", "description", "external_url", "external_id"]
+        string_fields = [
+            "name",
+            "breed",
+            "age",
+            "size",
+            "sex",
+            "gender",
+            "location",
+            "description",
+            "external_url",
+            "external_id",
+        ]
         for field in string_fields:
             if field in result and isinstance(result[field], str):
                 result[field] = result[field].strip()
@@ -461,7 +698,9 @@ class UnifiedStandardizer:
             # This is a simplified conversion - in practice you'd need the full Wix media URL
             if image_url.startswith("wix:image://"):
                 # For now, just remove the wix:image:// prefix as it's not a valid URL
-                return image_url.replace("wix:image://", "https://static.wixstatic.com/")
+                return image_url.replace(
+                    "wix:image://", "https://static.wixstatic.com/"
+                )
 
         return image_url
 
@@ -481,14 +720,31 @@ class UnifiedStandardizer:
     def _standardize_breed(self, breed: Optional[str]) -> Dict[str, Any]:
         """Standardize breed with all fixes including Lurcher, designer breeds, and Staffordshire."""
         if not breed:
-            return {"name": "Unknown", "group": "Unknown", "size": None, "confidence": 0.0, "breed_type": "unknown", "is_mixed": False}
+            return {
+                "name": "Unknown",
+                "group": "Unknown",
+                "size": None,
+                "confidence": 0.0,
+                "breed_type": "unknown",
+                "is_mixed": False,
+            }
 
         # Handle non-string inputs
         if not isinstance(breed, str):
-            return {"name": "Unknown", "group": "Unknown", "size": None, "confidence": 0.0, "breed_type": "unknown", "is_mixed": False}
+            return {
+                "name": "Unknown",
+                "group": "Unknown",
+                "size": None,
+                "confidence": 0.0,
+                "breed_type": "unknown",
+                "is_mixed": False,
+            }
 
         breed_lower = breed.strip().lower()
-        is_mixed = bool(self.breed_patterns["cross"].search(breed_lower) or self.breed_patterns["mixed"].search(breed_lower))
+        is_mixed = bool(
+            self.breed_patterns["cross"].search(breed_lower)
+            or self.breed_patterns["mixed"].search(breed_lower)
+        )
 
         # Try parenthetical pattern first (Dogs Trust style)
         parsed_breed = self._parse_parenthetical_breed(breed)
@@ -522,13 +778,23 @@ class UnifiedStandardizer:
 
         # Check for Lurcher first (high priority fix)
         if "lurcher" in breed_lower:
-            return {"name": "Lurcher" + (" Cross" if is_mixed else ""), "group": "Hound", "size": "Large", "confidence": 0.95, "breed_type": "sighthound", "is_mixed": is_mixed}
+            return {
+                "name": "Lurcher" + (" Cross" if is_mixed else ""),
+                "group": "Hound",
+                "size": "Large",
+                "confidence": 0.95,
+                "breed_type": "sighthound",
+                "is_mixed": is_mixed,
+            }
 
         # Check for American Staffordshire variations first (more specific)
         for variation in self.american_staffordshire_variations:
-            if variation in breed_lower or ("american" in breed_lower and "staff" in breed_lower):
+            if variation in breed_lower or (
+                "american" in breed_lower and "staff" in breed_lower
+            ):
                 return {
-                    "name": "American Staffordshire Terrier" + (" Mix" if is_mixed else ""),
+                    "name": "American Staffordshire Terrier"
+                    + (" Mix" if is_mixed else ""),
                     "group": "Mixed" if is_mixed else "Terrier",
                     "size": "Medium",
                     "confidence": 0.9 if not is_mixed else 0.8,
@@ -628,15 +894,36 @@ class UnifiedStandardizer:
             # This is a cross with an identifiable breed component
             # Properly capitalize breed names like "Terrier Mix", "Labrador Cross", "German Shepherd Mix"
             breed_name = self._capitalize_breed_name(breed.strip())
-            return {"name": breed_name, "group": "Mixed", "size": None, "confidence": 0.7, "breed_type": "crossbreed", "is_mixed": True}  # Medium confidence for identifiable crosses
+            return {
+                "name": breed_name,
+                "group": "Mixed",
+                "size": None,
+                "confidence": 0.7,
+                "breed_type": "crossbreed",
+                "is_mixed": True,
+            }  # Medium confidence for identifiable crosses
 
         # Check for generic mixed breed (only if no specific breed identified)
         if self.breed_patterns["mixed"].search(breed_lower):
-            return {"name": "Mixed Breed", "group": "Mixed", "size": None, "confidence": 0.5, "breed_type": "mixed", "is_mixed": True}
+            return {
+                "name": "Mixed Breed",
+                "group": "Mixed",
+                "size": None,
+                "confidence": 0.5,
+                "breed_type": "mixed",
+                "is_mixed": True,
+            }
 
         # Unknown breed - if it's mixed, put in Mixed group, otherwise Unknown
         breed_name = self._capitalize_breed_name(breed.strip())
-        return {"name": breed_name, "group": "Mixed" if is_mixed else "Unknown", "size": None, "confidence": 0.3, "breed_type": "unknown", "is_mixed": is_mixed}
+        return {
+            "name": breed_name,
+            "group": "Mixed" if is_mixed else "Unknown",
+            "size": None,
+            "confidence": 0.3,
+            "breed_type": "unknown",
+            "is_mixed": is_mixed,
+        }
 
     def _capitalize_breed_name(self, breed: str) -> str:
         """
@@ -673,7 +960,9 @@ class UnifiedStandardizer:
 
         return " ".join(result)
 
-    def _parse_age_text(self, age_text: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:
+    def _parse_age_text(
+        self, age_text: str
+    ) -> Tuple[Optional[str], Optional[int], Optional[int]]:
         """
         Parse age text into a standardized age category and month range.
         Ported from legacy standardization.py for full compatibility.
@@ -706,7 +995,11 @@ class UnifiedStandardizer:
             min_months = min_years * 12
             # Determine category based on minimum age
             if min_months >= 96:  # 8+ years
-                return "Senior", min_months, MAX_DOG_AGE_MONTHS  # Capped max instead of open-ended
+                return (
+                    "Senior",
+                    min_months,
+                    MAX_DOG_AGE_MONTHS,
+                )  # Capped max instead of open-ended
             elif min_months >= 60:  # 5+ years
                 return "Adult", min_months, MAX_DOG_AGE_MONTHS
             else:
@@ -738,7 +1031,10 @@ class UnifiedStandardizer:
                 return "Senior", min_months, max_months
 
         # Check for years pattern (e.g., "2 years", "2.5 y/o") - no negative numbers
-        years_match = re.search(r"(?<!-)\b(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)", age_text)
+        years_match = re.search(
+            r"(?<!-)\b(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)",
+            age_text,
+        )
         if years_match:
             try:
                 years = float(years_match.group(1).replace(",", "."))
@@ -764,7 +1060,9 @@ class UnifiedStandardizer:
         if months_match:
             try:
                 months = int(months_match.group(1))
-                if months < 0 or months > 300:  # Reasonable bounds for dog age in months
+                if (
+                    months < 0 or months > 300
+                ):  # Reasonable bounds for dog age in months
                     return None, None, None
                 if months < 12:
                     return "Puppy", months, min(months + 2, 12)
@@ -793,7 +1091,10 @@ class UnifiedStandardizer:
 
                 # Validate birth date reasonableness (dogs live max ~15-20 years)
                 earliest_reasonable_year = current_date.year - 20
-                if birth_year < earliest_reasonable_year or birth_year > current_date.year + 1:
+                if (
+                    birth_year < earliest_reasonable_year
+                    or birth_year > current_date.year + 1
+                ):
                     # Dogs don't live 20+ years, future dates are errors
                     return None, None, None
 
@@ -827,13 +1128,18 @@ class UnifiedStandardizer:
 
         # Pattern 2: Born YYYY (just year)
         birth_year_match = re.search(r"(?:born\s*)?(\d{4})(?:\s|$)", age_text)
-        if birth_year_match and not re.search(r"\d+\s*(?:years?|months?)", age_text):  # Avoid matching "2 years"
+        if birth_year_match and not re.search(
+            r"\d+\s*(?:years?|months?)", age_text
+        ):  # Avoid matching "2 years"
             try:
                 birth_year = int(birth_year_match.group(1))
 
                 # Validate birth year reasonableness (dogs live max ~15-20 years)
                 earliest_reasonable_year = current_date.year - 20
-                if birth_year < earliest_reasonable_year or birth_year > current_date.year + 1:
+                if (
+                    birth_year < earliest_reasonable_year
+                    or birth_year > current_date.year + 1
+                ):
                     return None, None, None
 
                 # Assume born in middle of year (June)
@@ -869,7 +1175,10 @@ class UnifiedStandardizer:
         # Check for descriptive terms (includes exact matches from above)
         if any(term in age_text for term in ["puppy", "pup", "baby", "young puppy"]):
             return "Puppy", 2, 10
-        elif any(term in age_text for term in ["young adult", "adolescent", "juvenile", "teen"]):
+        elif any(
+            term in age_text
+            for term in ["young adult", "adolescent", "juvenile", "teen"]
+        ):
             return "Young", 12, 36
         elif any(term in age_text for term in ["adult", "grown", "mature"]):
             return "Adult", 36, 96
@@ -877,7 +1186,9 @@ class UnifiedStandardizer:
             return "Senior", 96, 240
 
         # Handle ranges (duplicate pattern for different order)
-        range_match = re.search(r"(\d+)\s*(?:-|to)\s*(\d+)\s*(?:year|yr|month|mo)s?", age_text)
+        range_match = re.search(
+            r"(\d+)\s*(?:-|to)\s*(\d+)\s*(?:year|yr|month|mo)s?", age_text
+        )
         if range_match:
             start, end, unit = range_match.groups()
             start, end = int(start), int(end)
@@ -905,7 +1216,10 @@ class UnifiedStandardizer:
             return None, None, None
 
         # Check for corrupted data (gender info in age field)
-        if any(gender_term in age_text for gender_term in ["geschlecht:", "gender:", "sex:"]):
+        if any(
+            gender_term in age_text
+            for gender_term in ["geschlecht:", "gender:", "sex:"]
+        ):
             return None, None, None
 
         # If we can't determine, return None
@@ -914,10 +1228,20 @@ class UnifiedStandardizer:
     def _standardize_age(self, age: Optional[str]) -> Dict[str, Any]:
         """Standardize age string into structured format."""
         if not age:
-            return {"original": age, "age_category": None, "age_min_months": None, "age_max_months": None}
+            return {
+                "original": age,
+                "age_category": None,
+                "age_min_months": None,
+                "age_max_months": None,
+            }
 
         if not isinstance(age, str):
-            return {"original": str(age), "age_category": None, "age_min_months": None, "age_max_months": None}
+            return {
+                "original": str(age),
+                "age_category": None,
+                "age_min_months": None,
+                "age_max_months": None,
+            }
 
         # Use the comprehensive age parsing logic
         category, min_months, max_months = self._parse_age_text(age)
@@ -980,7 +1304,9 @@ class UnifiedStandardizer:
 
         return None
 
-    def _standardize_size(self, size: Optional[str], breed: Optional[str] = None) -> Dict[str, Any]:
+    def _standardize_size(
+        self, size: Optional[str], breed: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Standardize size with comprehensive fallback chain: explicit → breed → weight → default."""
         canonical_sizes = ["Tiny", "Small", "Medium", "Large", "XLarge"]
 
@@ -1005,7 +1331,11 @@ class UnifiedStandardizer:
             }
 
             if size_lower in size_map:
-                return {"category": size_map[size_lower], "weight_range": self._get_weight_range(size_map[size_lower]), "source": "explicit"}
+                return {
+                    "category": size_map[size_lower],
+                    "weight_range": self._get_weight_range(size_map[size_lower]),
+                    "source": "explicit",
+                }
 
         # Step 2: Fall back to breed-based estimation
         if breed and self.enable_breed_standardization:
@@ -1014,22 +1344,42 @@ class UnifiedStandardizer:
                 # Map XLarge to Large for canonical sizes unless it's a guardian breed
                 if breed_size == "XLarge":
                     breed_size = "Large"
-                return {"category": breed_size, "weight_range": self._get_weight_range(breed_size), "source": "breed_estimated"}
+                return {
+                    "category": breed_size,
+                    "weight_range": self._get_weight_range(breed_size),
+                    "source": "breed_estimated",
+                }
 
         # Step 3: TODO - Weight-based estimation would go here
         # Step 4: Default fallback
-        return {"category": "Medium", "weight_range": self._get_weight_range("Medium"), "source": "default"}
+        return {
+            "category": "Medium",
+            "weight_range": self._get_weight_range("Medium"),
+            "source": "default",
+        }
 
     def _get_weight_range(self, size_category: str) -> Dict[str, int]:
         """Get weight range for a size category."""
-        weight_ranges = {"Tiny": {"min": 0, "max": 10}, "Small": {"min": 10, "max": 25}, "Medium": {"min": 25, "max": 60}, "Large": {"min": 60, "max": 90}, "XLarge": {"min": 90, "max": 200}}
+        weight_ranges = {
+            "Tiny": {"min": 0, "max": 10},
+            "Small": {"min": 10, "max": 25},
+            "Medium": {"min": 25, "max": 60},
+            "Large": {"min": 60, "max": 90},
+            "XLarge": {"min": 90, "max": 200},
+        }
         return weight_ranges.get(size_category, {"min": 25, "max": 60})
 
-    def apply_batch_standardization(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def apply_batch_standardization(
+        self, animals: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Process multiple animals efficiently in batch."""
         results = []
         for animal in animals:
-            result = self.apply_full_standardization(breed=animal.get("breed"), age=animal.get("age"), size=animal.get("size"))
+            result = self.apply_full_standardization(
+                breed=animal.get("breed"),
+                age=animal.get("age"),
+                size=animal.get("size"),
+            )
             results.append(result)
         return results
 
@@ -1039,4 +1389,6 @@ class UnifiedStandardizer:
 
     def get_cache_info(self) -> Dict[str, Any]:
         """Get cache statistics."""
-        return {"full_standardization": self.apply_full_standardization.cache_info()._asdict()}
+        return {
+            "full_standardization": self.apply_full_standardization.cache_info()._asdict()
+        }

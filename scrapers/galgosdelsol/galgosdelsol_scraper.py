@@ -41,8 +41,12 @@ class GalgosDelSolScraper(BaseScraper):
         )
 
         # Use config-driven base URL and organization name
-        website_url = getattr(self.org_config.metadata, "website_url", "https://galgosdelsol.org")
-        self.base_url = str(website_url).rstrip("/") if website_url else "https://galgosdelsol.org"
+        website_url = getattr(
+            self.org_config.metadata, "website_url", "https://galgosdelsol.org"
+        )
+        self.base_url = (
+            str(website_url).rstrip("/") if website_url else "https://galgosdelsol.org"
+        )
 
         # These are the specific scraping endpoints - keep as hardcoded scraping targets
         self.listing_urls = [
@@ -55,7 +59,9 @@ class GalgosDelSolScraper(BaseScraper):
 
         # Initialize persistent session for efficiency
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"})
+        self.session.headers.update(
+            {"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}
+        )
 
     def _get_filtered_animals(self) -> List[Dict[str, Any]]:
         """Get list of animals and apply skip_existing_animals filtering.
@@ -80,13 +86,17 @@ class GalgosDelSolScraper(BaseScraper):
 
                     # Skip duplicates - some dogs appear on multiple pages
                     if adoption_url in seen_urls:
-                        self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
+                        self.logger.debug(
+                            f"Skipping duplicate dog: {animal['name']} ({adoption_url})"
+                        )
                         continue
 
                     seen_urls.add(adoption_url)
                     all_dogs_data.append(animal)
 
-                self.logger.debug(f"Collected {len(animals)} animals from {listing_url}")
+                self.logger.debug(
+                    f"Collected {len(animals)} animals from {listing_url}"
+                )
 
             except Exception as e:
                 self.logger.error(f"Error collecting data from {listing_url}: {e}")
@@ -112,15 +122,21 @@ class GalgosDelSolScraper(BaseScraper):
 
             # Create filtered animals list
             url_to_animal = {animal["adoption_url"]: animal for animal in all_dogs_data}
-            filtered_animals = [url_to_animal[url] for url in filtered_urls if url in url_to_animal]
+            filtered_animals = [
+                url_to_animal[url] for url in filtered_urls if url in url_to_animal
+            ]
 
-            self.logger.info(f"Skip existing animals enabled: {skipped_count} skipped, {len(filtered_animals)} to process")
+            self.logger.info(
+                f"Skip existing animals enabled: {skipped_count} skipped, {len(filtered_animals)} to process"
+            )
             return filtered_animals
         else:
             self.logger.info(f"Processing all {len(all_dogs_data)} animals")
             return all_dogs_data
 
-    def _process_animals_in_batches(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_in_batches(
+        self, animals: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Process animals in batches respecting the configured batch_size.
 
         Args:
@@ -131,7 +147,9 @@ class GalgosDelSolScraper(BaseScraper):
         """
         all_processed_data = []
 
-        self.logger.info(f"Starting detail scraping for {len(animals)} animals using batch_size={self.batch_size}")
+        self.logger.info(
+            f"Starting detail scraping for {len(animals)} animals using batch_size={self.batch_size}"
+        )
 
         # Split animals into batches based on batch_size
         batches = []
@@ -139,12 +157,16 @@ class GalgosDelSolScraper(BaseScraper):
             batch = animals[i : i + self.batch_size]
             batches.append(batch)
 
-        self.logger.info(f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}")
+        self.logger.info(
+            f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}"
+        )
 
         # Process each batch
         for batch_index, batch in enumerate(batches):
             try:
-                self.logger.info(f"Processing batch {batch_index + 1}/{len(batches)}: {len(batch)} animals")
+                self.logger.info(
+                    f"Processing batch {batch_index + 1}/{len(batches)}: {len(batch)} animals"
+                )
 
                 for animal in batch:
                     try:
@@ -153,19 +175,25 @@ class GalgosDelSolScraper(BaseScraper):
 
                         # Scrape detail page if method exists
                         if hasattr(self, "_scrape_detail_page"):
-                            detail_data = self._scrape_detail_page(animal["adoption_url"])
+                            detail_data = self._scrape_detail_page(
+                                animal["adoption_url"]
+                            )
                             if detail_data:
                                 animal.update(detail_data)
 
                         all_processed_data.append(animal)
 
                     except Exception as e:
-                        self.logger.error(f"Error processing {animal.get('name', 'unknown')}: {e}")
+                        self.logger.error(
+                            f"Error processing {animal.get('name', 'unknown')}: {e}"
+                        )
                         # Continue with basic data even if detail scraping fails
                         all_processed_data.append(animal)
                         continue
 
-                self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch)} animals processed")
+                self.logger.info(
+                    f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch)} animals processed"
+                )
 
             except Exception as e:
                 self.logger.error(f"Error in batch {batch_index + 1}: {e}")
@@ -413,7 +441,14 @@ class GalgosDelSolScraper(BaseScraper):
         ]
 
         # Convert generic/unknown categories to Mixed Breed
-        generic_categories = ["other dog", "other", "mixed", "unknown dog", "dog", "mutt"]
+        generic_categories = [
+            "other dog",
+            "other",
+            "mixed",
+            "unknown dog",
+            "dog",
+            "mutt",
+        ]
 
         breed_lower = breed.lower()
 
@@ -547,7 +582,9 @@ class GalgosDelSolScraper(BaseScraper):
                     if key_clean == "gender":
                         properties["sex"] = value or "Unknown"
                     elif key_clean == "breed":
-                        cleaned_breed = self._clean_breed(value) if value else "Mixed Breed"
+                        cleaned_breed = (
+                            self._clean_breed(value) if value else "Mixed Breed"
+                        )
                         properties["breed"] = cleaned_breed
                     elif key_clean == "date of birth":
                         properties["date_of_birth"] = value
@@ -559,8 +596,12 @@ class GalgosDelSolScraper(BaseScraper):
                             age_info = standardize_age(age_text)
                             if age_info.get("age_category"):
                                 properties["age_category"] = age_info["age_category"]
-                                properties["age_min_months"] = age_info["age_min_months"]
-                                properties["age_max_months"] = age_info["age_max_months"]
+                                properties["age_min_months"] = age_info[
+                                    "age_min_months"
+                                ]
+                                properties["age_max_months"] = age_info[
+                                    "age_max_months"
+                                ]
                     elif key_clean == "date of arrival":
                         properties["date_of_arrival"] = value
                     else:
@@ -604,12 +645,23 @@ class GalgosDelSolScraper(BaseScraper):
                 continue
 
             # Skip paragraphs that contain structured data (breed, gender, etc.)
-            if any(keyword in text.lower() for keyword in ["gender:", "breed:", "date of birth:", "date of arrival:"]):
+            if any(
+                keyword in text.lower()
+                for keyword in [
+                    "gender:",
+                    "breed:",
+                    "date of birth:",
+                    "date of arrival:",
+                ]
+            ):
                 continue
 
             # Skip paragraphs that start with status updates or announcements
             text_lower = text.lower()
-            if any(text_lower.startswith(prefix) for prefix in ["update:", "urgent:", "reserved:", "adopted:"]):
+            if any(
+                text_lower.startswith(prefix)
+                for prefix in ["update:", "urgent:", "reserved:", "adopted:"]
+            ):
                 continue
 
             # This looks like a valid description paragraph
@@ -688,7 +740,9 @@ class GalgosDelSolScraper(BaseScraper):
         dangerous_protocols = ["javascript:", "data:", "file:", "ftp:"]
         for protocol in dangerous_protocols:
             if url_lower.startswith(protocol):
-                self.logger.warning(f"Blocked potentially dangerous URL protocol: {protocol}")
+                self.logger.warning(
+                    f"Blocked potentially dangerous URL protocol: {protocol}"
+                )
                 return ""
 
         # Handle protocol-relative URLs
@@ -794,7 +848,9 @@ class GalgosDelSolScraper(BaseScraper):
                         # Simple validation - year should be reasonable
                         current_year = datetime.now().year
                         if year <= current_year and year >= 1900:
-                            birth_date = datetime(year, 1, 1)  # Use January 1st as fallback
+                            birth_date = datetime(
+                                year, 1, 1
+                            )  # Use January 1st as fallback
 
                 # If still no valid date, return None
                 if not birth_date:
@@ -816,7 +872,9 @@ class GalgosDelSolScraper(BaseScraper):
                 return f"{age_years} years"
 
         except Exception as e:
-            self.logger.debug(f"Error calculating age from birth date '{birth_date_str}': {e}")
+            self.logger.debug(
+                f"Error calculating age from birth date '{birth_date_str}': {e}"
+            )
             return None
 
     def _scrape_listing_page(self, url: str) -> List[Dict[str, Any]]:
@@ -844,9 +902,13 @@ class GalgosDelSolScraper(BaseScraper):
             # Find all adoptable dog links using regular <a> tags
             # Check if main_content has find_all method (is a Tag or BeautifulSoup object)
             if hasattr(main_content, "find_all"):
-                dog_links = main_content.find_all("a", href=lambda x: x and "/adoptable-dogs/" in x)
+                dog_links = main_content.find_all(
+                    "a", href=lambda x: x and "/adoptable-dogs/" in x
+                )
             else:
-                dog_links = soup.find_all("a", href=lambda x: x and "/adoptable-dogs/" in x)
+                dog_links = soup.find_all(
+                    "a", href=lambda x: x and "/adoptable-dogs/" in x
+                )
 
             self.logger.debug(f"Found {len(dog_links)} dog links")
 

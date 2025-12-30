@@ -29,7 +29,9 @@ class TestAnimalDescriptionFiltering:
     def test_filter_animals_with_meaningful_descriptions(self):
         """Should include animals with descriptions longer than 200 characters."""
         # Arrange: Create mock animal with long description
-        long_description = "This is a wonderful dog with an amazing personality. " * 5  # >200 chars
+        long_description = (
+            "This is a wonderful dog with an amazing personality. " * 5
+        )  # >200 chars
         mock_animal = Animal(
             id=1,
             name="Test Dog",
@@ -144,9 +146,7 @@ class TestAnimalDescriptionFiltering:
     def test_exclude_animals_with_fallback_content_patterns(self):
         """Should exclude animals with generic fallback content."""
         # Arrange: Create mock animal with fallback content
-        fallback_description = (
-            "This dog is looking for a loving forever home. Contact the rescue organization to learn more about this wonderful dog's personality, needs, and how you can provide the perfect home."
-        )
+        fallback_description = "This dog is looking for a loving forever home. Contact the rescue organization to learn more about this wonderful dog's personality, needs, and how you can provide the perfect home."
         mock_animal = Animal(
             id=1,
             name="Test Dog",
@@ -235,8 +235,16 @@ class TestAnimalDescriptionFiltering:
         """Should not affect regular get_animals calls without sitemap filter."""
         # Arrange: Mock database response with mixed quality descriptions
         mock_animals = [
-            {"id": 1, "name": "Good Dog", "properties": {"description": "A" * 300}},  # Long description
-            {"id": 2, "name": "Short Description Dog", "properties": {"description": "Ready to fly"}},
+            {
+                "id": 1,
+                "name": "Good Dog",
+                "properties": {"description": "A" * 300},
+            },  # Long description
+            {
+                "id": 2,
+                "name": "Short Description Dog",
+                "properties": {"description": "Ready to fly"},
+            },
         ]
         self.mock_cursor.fetchall.return_value = mock_animals
 
@@ -244,7 +252,9 @@ class TestAnimalDescriptionFiltering:
         filters = AnimalFilterRequest()
         with patch.object(self.animal_service, "_build_animals_query") as mock_query:
             mock_query.return_value = ("SELECT * FROM animals", [])
-            with patch.object(self.animal_service, "_build_animals_response") as mock_response:
+            with patch.object(
+                self.animal_service, "_build_animals_response"
+            ) as mock_response:
                 mock_response.return_value = mock_animals
                 result = self.animal_service.get_animals(filters)
 

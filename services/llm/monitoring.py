@@ -13,7 +13,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import psycopg2
 from dotenv import load_dotenv
@@ -50,7 +50,9 @@ class DogProfilerMonitor:
         self.alerts = []
         self.metrics = {}
 
-    def get_recent_runs(self, hours: int = 24, organization_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    def get_recent_runs(
+        self, hours: int = 24, organization_id: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """
         Get recent profiler runs from database.
 
@@ -61,7 +63,12 @@ class DogProfilerMonitor:
         Returns:
             List of recent runs with metrics
         """
-        conn = psycopg2.connect(host="localhost", database="rescue_dogs", user=os.environ.get("USER"), password="")
+        conn = psycopg2.connect(
+            host="localhost",
+            database="rescue_dogs",
+            user=os.environ.get("USER"),
+            password="",
+        )
         cursor = conn.cursor()
 
         query = """
@@ -109,7 +116,9 @@ class DogProfilerMonitor:
 
         return runs
 
-    def get_quality_distribution(self, organization_id: Optional[int] = None) -> Dict[str, int]:
+    def get_quality_distribution(
+        self, organization_id: Optional[int] = None
+    ) -> Dict[str, int]:
         """
         Get distribution of quality scores.
 
@@ -119,7 +128,12 @@ class DogProfilerMonitor:
         Returns:
             Distribution of quality scores
         """
-        conn = psycopg2.connect(host="localhost", database="rescue_dogs", user=os.environ.get("USER"), password="")
+        conn = psycopg2.connect(
+            host="localhost",
+            database="rescue_dogs",
+            user=os.environ.get("USER"),
+            password="",
+        )
         cursor = conn.cursor()
 
         # Get all quality scores
@@ -159,7 +173,12 @@ class DogProfilerMonitor:
         Returns:
             Model usage statistics
         """
-        conn = psycopg2.connect(host="localhost", database="rescue_dogs", user=os.environ.get("USER"), password="")
+        conn = psycopg2.connect(
+            host="localhost",
+            database="rescue_dogs",
+            user=os.environ.get("USER"),
+            password="",
+        )
         cursor = conn.cursor()
 
         # Get model usage counts
@@ -180,7 +199,11 @@ class DogProfilerMonitor:
         model_stats = {}
         for row in rows:
             model_name = row[0] or "unknown"
-            model_stats[model_name] = {"count": row[1], "avg_time_ms": row[2], "percentage": 0}  # Will calculate below
+            model_stats[model_name] = {
+                "count": row[1],
+                "avg_time_ms": row[2],
+                "percentage": 0,
+            }  # Will calculate below
 
         # Calculate percentages
         total = sum(stats["count"] for stats in model_stats.values())
@@ -192,7 +215,9 @@ class DogProfilerMonitor:
 
         return model_stats
 
-    def check_alerts(self, batch_stats: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def check_alerts(
+        self, batch_stats: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """
         Check for alert conditions.
 
@@ -248,12 +273,20 @@ class DogProfilerMonitor:
             # Check for declining success rates
             success_rates = [run["success_rate"] for run in recent_runs]
             if len(success_rates) > 1 and success_rates[-1] < success_rates[0] * 0.9:
-                alerts.append({"level": "warning", "metric": "success_rate_trend", "message": "Success rate declining over past 24 hours"})
+                alerts.append(
+                    {
+                        "level": "warning",
+                        "metric": "success_rate_trend",
+                        "message": "Success rate declining over past 24 hours",
+                    }
+                )
 
         self.alerts = alerts
         return alerts
 
-    def generate_report(self, hours: int = 24, organization_id: Optional[int] = None) -> Dict[str, Any]:
+    def generate_report(
+        self, hours: int = 24, organization_id: Optional[int] = None
+    ) -> Dict[str, Any]:
         """
         Generate comprehensive monitoring report.
 
@@ -264,7 +297,11 @@ class DogProfilerMonitor:
         Returns:
             Monitoring report
         """
-        report = {"timestamp": datetime.now().isoformat(), "period_hours": hours, "organization_id": organization_id}
+        report = {
+            "timestamp": datetime.now().isoformat(),
+            "period_hours": hours,
+            "organization_id": organization_id,
+        }
 
         # Get recent runs
         recent_runs = self.get_recent_runs(hours, organization_id)
@@ -275,8 +312,12 @@ class DogProfilerMonitor:
             report["summary"] = {
                 "total_organizations": len(recent_runs),
                 "total_dogs_profiled": sum(run["profiled"] for run in recent_runs),
-                "average_success_rate": sum(run["success_rate"] for run in recent_runs) / len(recent_runs),
-                "average_processing_time_ms": sum(run["avg_time_ms"] for run in recent_runs if run["avg_time_ms"]) / len([r for r in recent_runs if r["avg_time_ms"]]),
+                "average_success_rate": sum(run["success_rate"] for run in recent_runs)
+                / len(recent_runs),
+                "average_processing_time_ms": sum(
+                    run["avg_time_ms"] for run in recent_runs if run["avg_time_ms"]
+                )
+                / len([r for r in recent_runs if r["avg_time_ms"]]),
             }
 
         # Get quality distribution
@@ -291,11 +332,16 @@ class DogProfilerMonitor:
         # Estimate costs
         if report.get("summary"):
             # Assuming Gemini 2.5 Flash at $0.0015 per dog
-            report["estimated_cost"] = {"total_usd": report["summary"]["total_dogs_profiled"] * 0.0015, "per_dog_usd": 0.0015}
+            report["estimated_cost"] = {
+                "total_usd": report["summary"]["total_dogs_profiled"] * 0.0015,
+                "per_dog_usd": 0.0015,
+            }
 
         return report
 
-    def save_report(self, report: Dict[str, Any], output_dir: Optional[Path] = None) -> Path:
+    def save_report(
+        self, report: Dict[str, Any], output_dir: Optional[Path] = None
+    ) -> Path:
         """
         Save monitoring report to file.
 
@@ -335,15 +381,21 @@ class DogProfilerMonitor:
 
         # Summary
         if report.get("summary"):
-            print(f"\nSUMMARY:")
-            print(f"  Organizations processed: {report['summary']['total_organizations']}")
+            print("\nSUMMARY:")
+            print(
+                f"  Organizations processed: {report['summary']['total_organizations']}"
+            )
             print(f"  Dogs profiled: {report['summary']['total_dogs_profiled']}")
-            print(f"  Average success rate: {report['summary']['average_success_rate']:.1%}")
-            print(f"  Average processing time: {report['summary']['average_processing_time_ms']:.0f}ms")
+            print(
+                f"  Average success rate: {report['summary']['average_success_rate']:.1%}"
+            )
+            print(
+                f"  Average processing time: {report['summary']['average_processing_time_ms']:.0f}ms"
+            )
 
         # Quality distribution
         if report.get("quality_distribution"):
-            print(f"\nQUALITY DISTRIBUTION:")
+            print("\nQUALITY DISTRIBUTION:")
             total = sum(report["quality_distribution"].values())
             for level, count in report["quality_distribution"].items():
                 pct = (count / total * 100) if total > 0 else 0
@@ -351,7 +403,7 @@ class DogProfilerMonitor:
 
         # Model usage
         if report.get("model_usage"):
-            print(f"\nMODEL USAGE:")
+            print("\nMODEL USAGE:")
             for model, stats in report["model_usage"].items():
                 print(f"  {model}:")
                 print(f"    Count: {stats['count']} ({stats['percentage']:.1f}%)")
@@ -359,18 +411,18 @@ class DogProfilerMonitor:
 
         # Costs
         if report.get("estimated_cost"):
-            print(f"\nESTIMATED COSTS:")
+            print("\nESTIMATED COSTS:")
             print(f"  Total: ${report['estimated_cost']['total_usd']:.2f}")
             print(f"  Per dog: ${report['estimated_cost']['per_dog_usd']:.4f}")
 
         # Alerts
         if report.get("alerts"):
-            print(f"\n⚠️  ALERTS:")
+            print("\n⚠️  ALERTS:")
             for alert in report["alerts"]:
                 icon = "🔴" if alert["level"] == "error" else "🟡"
                 print(f"  {icon} {alert['message']}")
         else:
-            print(f"\n✅ No alerts - all metrics within thresholds")
+            print("\n✅ No alerts - all metrics within thresholds")
 
 
 def main():
@@ -396,6 +448,9 @@ def main():
 
 if __name__ == "__main__":
     # Setup logging
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 
     main()

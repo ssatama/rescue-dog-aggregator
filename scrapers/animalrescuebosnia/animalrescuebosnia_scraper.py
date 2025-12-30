@@ -1,6 +1,5 @@
 """Animal Rescue Bosnia scraper implementation."""
 
-import re
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -12,7 +11,9 @@ from scrapers.base_scraper import BaseScraper
 class AnimalRescueBosniaScraper(BaseScraper):
     """Scraper for Animal Rescue Bosnia website."""
 
-    def __init__(self, organization_id: Optional[int] = None, config_id: Optional[str] = None):
+    def __init__(
+        self, organization_id: Optional[int] = None, config_id: Optional[str] = None
+    ):
         """Initialize the scraper with config."""
         super().__init__(organization_id=organization_id, config_id=config_id)
 
@@ -63,18 +64,33 @@ class AnimalRescueBosniaScraper(BaseScraper):
                     # If we're in Bosnia section and this looks like a dog name
                     if in_bosnia_section and heading_text and len(heading_text) < 50:
                         # Check if it's not another section header
-                        if not any(keyword in heading_text.lower() for keyword in ["waiting", "dogs", "our", "find"]):
+                        if not any(
+                            keyword in heading_text.lower()
+                            for keyword in ["waiting", "dogs", "our", "find"]
+                        ):
                             # If we have a previous dog with required info, save it
-                            if current_dog and current_dog["url"] and current_dog["name"]:
+                            if (
+                                current_dog
+                                and current_dog["url"]
+                                and current_dog["name"]
+                            ):
                                 animals.append(current_dog)
 
                             # Start collecting new dog info
-                            current_dog = {"name": heading_text, "url": None, "thumbnail": None}
+                            current_dog = {
+                                "name": heading_text,
+                                "url": None,
+                                "thumbnail": None,
+                            }
 
                 # If we have a current dog in Bosnia section, look for its details
                 if current_dog and in_bosnia_section:
                     # Look for thumbnail image
-                    if hasattr(element, "name") and element.name == "img" and not current_dog["thumbnail"]:
+                    if (
+                        hasattr(element, "name")
+                        and element.name == "img"
+                        and not current_dog["thumbnail"]
+                    ):
                         src = element.get("src", "") if hasattr(element, "get") else ""
                         if src and not src.startswith("data:"):
                             # Make absolute URL
@@ -86,11 +102,17 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
                     # Look for "More info" link
                     if hasattr(element, "name") and element.name == "a":
-                        href = element.get("href", "") if hasattr(element, "get") else ""
+                        href = (
+                            element.get("href", "") if hasattr(element, "get") else ""
+                        )
                         link_text = element.get_text().strip().lower()
 
                         # Check if this is a detail page link
-                        if href and ("more info" in link_text or "i am interested" in link_text or href.endswith(f"/{current_dog['name'].lower()}/")):
+                        if href and (
+                            "more info" in link_text
+                            or "i am interested" in link_text
+                            or href.endswith(f"/{current_dog['name'].lower()}/")
+                        ):
                             # Make absolute URL
                             if href.startswith("/"):
                                 href = self.base_url + href
@@ -143,7 +165,10 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
             # Check if dog is in Germany - look for Germany indicators
             page_text = soup.get_text()
-            if "We are already in Germany" in page_text or "Location: Germany" in page_text:
+            if (
+                "We are already in Germany" in page_text
+                or "Location: Germany" in page_text
+            ):
                 # World-class logging: Location filtering handled by centralized system
                 return None
 
@@ -160,7 +185,13 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 # Skip if image is inside a gallery div
                 parent = img.parent
                 while parent:
-                    if hasattr(parent, "name") and parent.name == "div" and hasattr(parent, "get") and parent.get("class") and "gallery" in " ".join(parent.get("class") or []):
+                    if (
+                        hasattr(parent, "name")
+                        and parent.name == "div"
+                        and hasattr(parent, "get")
+                        and parent.get("class")
+                        and "gallery" in " ".join(parent.get("class") or [])
+                    ):
                         break
                     parent = parent.parent
                 else:
@@ -243,7 +274,11 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 # Get all text after the About heading until next heading
                 desc_parts = []
                 next_elem = about_heading.find_next_sibling()
-                while next_elem and hasattr(next_elem, "name") and next_elem.name not in ["h1", "h2", "h3"]:
+                while (
+                    next_elem
+                    and hasattr(next_elem, "name")
+                    and next_elem.name not in ["h1", "h2", "h3"]
+                ):
                     if hasattr(next_elem, "name") and next_elem.name == "p":
                         text = next_elem.get_text().strip()
                         if text:
@@ -301,7 +336,20 @@ class AnimalRescueBosniaScraper(BaseScraper):
             year = int(year)
 
             # Map month names
-            month_map = {"january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6, "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12}
+            month_map = {
+                "january": 1,
+                "february": 2,
+                "march": 3,
+                "april": 4,
+                "may": 5,
+                "june": 6,
+                "july": 7,
+                "august": 8,
+                "september": 9,
+                "october": 10,
+                "november": 11,
+                "december": 12,
+            }
 
             month = month_map.get(month_name.lower())
             if not month:
@@ -325,7 +373,9 @@ class AnimalRescueBosniaScraper(BaseScraper):
             elif total_months < 24:
                 return f"1 year {months} months" if months > 0 else "1 year"
             else:
-                return f"{years} years {months} months" if months > 0 else f"{years} years"
+                return (
+                    f"{years} years {months} months" if months > 0 else f"{years} years"
+                )
 
         except Exception as e:
             self.logger.warning(f"Could not calculate age from '{date_of_birth}': {e}")
@@ -445,7 +495,9 @@ class AnimalRescueBosniaScraper(BaseScraper):
             return []
 
         # Split URLs into batches
-        batches = [urls[i : i + self.batch_size] for i in range(0, len(urls), self.batch_size)]
+        batches = [
+            urls[i : i + self.batch_size] for i in range(0, len(urls), self.batch_size)
+        ]
         all_results = []
 
         # World-class logging: Batch processing handled by centralized system
@@ -458,7 +510,9 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
             # Rate limiting between batches
             if batch_num < len(batches):
-                self.logger.debug(f"Rate limiting for {self.rate_limit_delay}s between batches")
+                self.logger.debug(
+                    f"Rate limiting for {self.rate_limit_delay}s between batches"
+                )
                 self.respect_rate_limit()
 
         # World-class logging: Batch completion handled by centralized system
@@ -479,7 +533,12 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
         with ThreadPoolExecutor(max_workers=self.batch_size) as executor:
             # Submit all tasks
-            future_to_url = {executor.submit(self._scrape_with_retry, self.scrape_animal_details, url): url for url in urls}
+            future_to_url = {
+                executor.submit(
+                    self._scrape_with_retry, self.scrape_animal_details, url
+                ): url
+                for url in urls
+            }
 
             # Collect results as they complete
             for future in as_completed(future_to_url):
@@ -490,7 +549,9 @@ class AnimalRescueBosniaScraper(BaseScraper):
                         # Add organization_id for BaseScraper
                         result["organization_id"] = self.organization_id
                         results.append(result)
-                        self.logger.debug(f"Successfully processed {result.get('name', 'unknown')} from {url}")
+                        self.logger.debug(
+                            f"Successfully processed {result.get('name', 'unknown')} from {url}"
+                        )
                     else:
                         self.logger.warning(f"Invalid or empty data for URL: {url}")
                 except Exception as e:
@@ -539,7 +600,17 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
         # Check for organization-related keywords
         name_lower = name.lower()
-        org_keywords = ["animal rescue", "organisation", "organization", "rescue centre", "rescue center", "shelter", "charity", "foundation", "society"]
+        org_keywords = [
+            "animal rescue",
+            "organisation",
+            "organization",
+            "rescue centre",
+            "rescue center",
+            "shelter",
+            "charity",
+            "foundation",
+            "society",
+        ]
 
         for keyword in org_keywords:
             if keyword in name_lower:

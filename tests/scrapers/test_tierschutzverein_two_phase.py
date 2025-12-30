@@ -5,7 +5,6 @@ These tests focus ONLY on the specific extraction logic unique to this scraper,
 without invoking BaseScraper or database operations.
 """
 
-import json
 from unittest.mock import Mock, patch
 
 import pytest
@@ -21,7 +20,9 @@ class TestTierschutzvereinTwoPhase:
     def scraper(self):
         """Create a minimal scraper instance without database/pool initialization."""
         with patch("scrapers.base_scraper.BaseScraper.__init__", return_value=None):
-            scraper = TierschutzvereinEuropaScraper.__new__(TierschutzvereinEuropaScraper)
+            scraper = TierschutzvereinEuropaScraper.__new__(
+                TierschutzvereinEuropaScraper
+            )
             scraper.base_url = "https://tierschutzverein-europa.de"
             scraper.listing_url = "https://tierschutzverein-europa.de/tiervermittlung/"
             scraper.logger = Mock()
@@ -113,7 +114,10 @@ class TestTierschutzvereinTwoPhase:
         # Check first dog
         assert animals[0]["name"] == "Bonsai"
         assert animals[0]["external_id"] == "bonsai-in-spanien-perros-con-alma-zaragoza"
-        assert animals[0]["adoption_url"] == "https://tierschutzverein-europa.de/tiervermittlung/bonsai-in-spanien-perros-con-alma-zaragoza/"
+        assert (
+            animals[0]["adoption_url"]
+            == "https://tierschutzverein-europa.de/tiervermittlung/bonsai-in-spanien-perros-con-alma-zaragoza/"
+        )
 
         # Check second dog
         assert animals[1]["name"] == "Nano"
@@ -125,18 +129,27 @@ class TestTierschutzvereinTwoPhase:
 
     @pytest.mark.unit
     @pytest.mark.fast
-    def test_scrape_animal_details_extracts_german_properties(self, scraper, detail_html):
+    def test_scrape_animal_details_extracts_german_properties(
+        self, scraper, detail_html
+    ):
         """Test Phase 2: Extract German properties and hero image from detail page."""
         mock_response = Mock()
         mock_response.text = detail_html
         mock_response.raise_for_status = Mock()
 
         with patch("requests.get", return_value=mock_response):
-            details = scraper._scrape_animal_details("https://tierschutzverein-europa.de/tiervermittlung/bonsai/")
+            details = scraper._scrape_animal_details(
+                "https://tierschutzverein-europa.de/tiervermittlung/bonsai/"
+            )
 
         # Check hero image extraction
-        assert details["primary_image_url"] == "https://tierschutzverein-europa.de/wp-content/uploads/2025/08/bonsai-hero-600x400.jpg"
-        assert details["image_urls"] == ["https://tierschutzverein-europa.de/wp-content/uploads/2025/08/bonsai-hero-600x400.jpg"]
+        assert (
+            details["primary_image_url"]
+            == "https://tierschutzverein-europa.de/wp-content/uploads/2025/08/bonsai-hero-600x400.jpg"
+        )
+        assert details["image_urls"] == [
+            "https://tierschutzverein-europa.de/wp-content/uploads/2025/08/bonsai-hero-600x400.jpg"
+        ]
 
         # Check German properties extraction
         properties = details["properties"]
@@ -162,9 +175,18 @@ class TestTierschutzvereinTwoPhase:
         """Test that external_id format is preserved exactly as before."""
         # Test various URL patterns to ensure external_id extraction remains unchanged
         test_cases = [
-            ("/tiervermittlung/bonsai-in-spanien-perros-con-alma-zaragoza/", "bonsai-in-spanien-perros-con-alma-zaragoza"),
-            ("/tiervermittlung/nano-in-spanien-protectora-villena/", "nano-in-spanien-protectora-villena"),
-            ("/tiervermittlung/bacon-in-deutschland-vermittlungshilfe/", "bacon-in-deutschland-vermittlungshilfe"),
+            (
+                "/tiervermittlung/bonsai-in-spanien-perros-con-alma-zaragoza/",
+                "bonsai-in-spanien-perros-con-alma-zaragoza",
+            ),
+            (
+                "/tiervermittlung/nano-in-spanien-protectora-villena/",
+                "nano-in-spanien-protectora-villena",
+            ),
+            (
+                "/tiervermittlung/bacon-in-deutschland-vermittlungshilfe/",
+                "bacon-in-deutschland-vermittlungshilfe",
+            ),
             ("/tiervermittlung/luna-rumaenien/", "luna-rumaenien"),
         ]
 
@@ -207,9 +229,18 @@ class TestTierschutzvereinTwoPhase:
     @pytest.mark.fast
     def test_pagination_url_generation(self, scraper):
         """Test that pagination URLs are generated correctly."""
-        assert scraper.get_page_url(1) == "https://tierschutzverein-europa.de/tiervermittlung/"
-        assert scraper.get_page_url(2) == "https://tierschutzverein-europa.de/tiervermittlung/page/2/"
-        assert scraper.get_page_url(12) == "https://tierschutzverein-europa.de/tiervermittlung/page/12/"
+        assert (
+            scraper.get_page_url(1)
+            == "https://tierschutzverein-europa.de/tiervermittlung/"
+        )
+        assert (
+            scraper.get_page_url(2)
+            == "https://tierschutzverein-europa.de/tiervermittlung/page/2/"
+        )
+        assert (
+            scraper.get_page_url(12)
+            == "https://tierschutzverein-europa.de/tiervermittlung/page/12/"
+        )
 
     @pytest.mark.unit
     @pytest.mark.fast
@@ -233,7 +264,10 @@ class TestTierschutzvereinTwoPhase:
         soup = BeautifulSoup(html_with_images, "html.parser")
         hero_image = scraper._extract_hero_image(soup)
 
-        assert hero_image == "https://tierschutzverein-europa.de/wp-content/uploads/2025/08/bonsai-hero.jpg"
+        assert (
+            hero_image
+            == "https://tierschutzverein-europa.de/wp-content/uploads/2025/08/bonsai-hero.jpg"
+        )
 
     @pytest.mark.unit
     @pytest.mark.fast

@@ -20,7 +20,13 @@ logger = logging.getLogger(__name__)
 class APIException(HTTPException):
     """Base exception class for API errors."""
 
-    def __init__(self, status_code: int, detail: str, error_code: Optional[str] = None, headers: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        status_code: int,
+        detail: str,
+        error_code: Optional[str] = None,
+        headers: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(status_code=status_code, detail=detail, headers=headers)
         self.error_code = error_code
 
@@ -29,7 +35,11 @@ class DatabaseError(APIException):
     """Database-related errors."""
 
     def __init__(self, detail: str, original_error: Optional[Exception] = None):
-        super().__init__(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {detail}", error_code="DATABASE_ERROR")
+        super().__init__(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {detail}",
+            error_code="DATABASE_ERROR",
+        )
         self.original_error = original_error
 
 
@@ -37,7 +47,11 @@ class ValidationError(APIException):
     """Validation-related errors."""
 
     def __init__(self, detail: str, field: Optional[str] = None):
-        super().__init__(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Validation error: {detail}", error_code="VALIDATION_ERROR")
+        super().__init__(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Validation error: {detail}",
+            error_code="VALIDATION_ERROR",
+        )
         self.field = field
 
 
@@ -45,21 +59,37 @@ class NotFoundError(APIException):
     """Resource not found errors."""
 
     def __init__(self, resource: str, identifier: Any):
-        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=f"{resource} not found: {identifier}", error_code="NOT_FOUND")
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{resource} not found: {identifier}",
+            error_code="NOT_FOUND",
+        )
 
 
 class AuthenticationError(APIException):
     """Authentication-related errors."""
 
     def __init__(self, detail: str = "Authentication required"):
-        super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail, error_code="AUTHENTICATION_ERROR")
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+            error_code="AUTHENTICATION_ERROR",
+        )
 
 
 class LLMServiceError(APIException):
     """LLM service-related errors."""
 
-    def __init__(self, detail: str = "LLM service error", original_error: Optional[Exception] = None):
-        super().__init__(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail, error_code="LLM_SERVICE_ERROR")
+    def __init__(
+        self,
+        detail: str = "LLM service error",
+        original_error: Optional[Exception] = None,
+    ):
+        super().__init__(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=detail,
+            error_code="LLM_SERVICE_ERROR",
+        )
         self.original_error = original_error
 
 
@@ -67,14 +97,22 @@ class RateLimitError(APIException):
     """Rate limiting errors."""
 
     def __init__(self, detail: str = "Rate limit exceeded"):
-        super().__init__(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=detail, error_code="RATE_LIMIT_ERROR")
+        super().__init__(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=detail,
+            error_code="RATE_LIMIT_ERROR",
+        )
 
 
 class InvalidInputError(APIException):
     """Invalid input errors."""
 
     def __init__(self, detail: str, field: Optional[str] = None):
-        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail, error_code="INVALID_INPUT")
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail,
+            error_code="INVALID_INPUT",
+        )
         self.field = field
 
 
@@ -96,7 +134,14 @@ def handle_database_error(error: Exception, operation: str) -> None:
     with sentry_sdk.push_scope() as scope:
         scope.set_tag("error.type", "database")
         scope.set_tag("operation", operation)
-        scope.set_context("database", {"operation": operation, "error_type": type(error).__name__, "error_message": str(error)})
+        scope.set_context(
+            "database",
+            {
+                "operation": operation,
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+            },
+        )
         sentry_sdk.capture_exception(error)
 
     if isinstance(error, psycopg2.Error):
@@ -104,7 +149,9 @@ def handle_database_error(error: Exception, operation: str) -> None:
         raise DatabaseError(f"Failed to {operation}", original_error=error)
     else:
         logger.exception(f"Unexpected error during {operation}: {error}")
-        raise DatabaseError(f"Unexpected error during {operation}", original_error=error)
+        raise DatabaseError(
+            f"Unexpected error during {operation}", original_error=error
+        )
 
 
 def handle_validation_error(error: Exception, context: str) -> None:
@@ -121,7 +168,14 @@ def handle_validation_error(error: Exception, context: str) -> None:
     with sentry_sdk.push_scope() as scope:
         scope.set_tag("error.type", "validation")
         scope.set_tag("context", context)
-        scope.set_context("validation", {"context": context, "error_type": type(error).__name__, "error_message": str(error)})
+        scope.set_context(
+            "validation",
+            {
+                "context": context,
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+            },
+        )
         sentry_sdk.capture_exception(error)
 
     if isinstance(error, ValidationError):
@@ -144,7 +198,9 @@ def handle_llm_error(error: Exception, operation: str) -> None:
         operation: Description of the operation that failed
     """
     # Log full error details for debugging (server-side only)
-    logger.error(f"LLM service error during {operation}: {type(error).__name__}: {error}")
+    logger.error(
+        f"LLM service error during {operation}: {type(error).__name__}: {error}"
+    )
 
     # Capture to Sentry with rich context
     import sentry_sdk
@@ -152,7 +208,14 @@ def handle_llm_error(error: Exception, operation: str) -> None:
     with sentry_sdk.push_scope() as scope:
         scope.set_tag("error.type", "llm_service")
         scope.set_tag("operation", operation)
-        scope.set_context("llm", {"operation": operation, "error_type": type(error).__name__, "error_message": str(error)})
+        scope.set_context(
+            "llm",
+            {
+                "operation": operation,
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+            },
+        )
         sentry_sdk.capture_exception(error)
 
     # Categorize errors and provide safe client responses
@@ -162,14 +225,20 @@ def handle_llm_error(error: Exception, operation: str) -> None:
             raise LLMServiceError("LLM service authentication failed")
         elif error.response.status_code == 429:
             logger.warning(f"LLM API rate limit exceeded for {operation}")
-            raise RateLimitError("LLM service rate limit exceeded, please try again later")
+            raise RateLimitError(
+                "LLM service rate limit exceeded, please try again later"
+            )
         elif error.response.status_code == 413:
             raise InvalidInputError("Input text is too long for processing")
         elif 400 <= error.response.status_code < 500:
-            logger.error(f"LLM API client error {error.response.status_code} for {operation}")
+            logger.error(
+                f"LLM API client error {error.response.status_code} for {operation}"
+            )
             raise InvalidInputError("Invalid request for LLM processing")
         else:
-            logger.error(f"LLM API server error {error.response.status_code} for {operation}")
+            logger.error(
+                f"LLM API server error {error.response.status_code} for {operation}"
+            )
             raise LLMServiceError("LLM service temporarily unavailable")
 
     elif isinstance(error, httpx.TimeoutException):
@@ -180,11 +249,16 @@ def handle_llm_error(error: Exception, operation: str) -> None:
         logger.error(f"LLM API connection error for {operation}")
         raise LLMServiceError("LLM service temporarily unavailable")
 
-    elif isinstance(error, (ValueError, KeyError, TypeError)) and "json" in str(error).lower():
+    elif (
+        isinstance(error, (ValueError, KeyError, TypeError))
+        and "json" in str(error).lower()
+    ):
         logger.error(f"LLM API response parsing error for {operation}: {error}")
         raise LLMServiceError("LLM service response format error")
 
-    elif isinstance(error, ValueError) and any(keyword in str(error).lower() for keyword in ["empty", "invalid", "missing"]):
+    elif isinstance(error, ValueError) and any(
+        keyword in str(error).lower() for keyword in ["empty", "invalid", "missing"]
+    ):
         logger.warning(f"Invalid input for LLM {operation}: {error}")
         raise InvalidInputError(f"Invalid input for {operation}")
 
@@ -212,7 +286,11 @@ def safe_execute(operation_name: str):
                 handle_validation_error(ve, operation_name)
             except Exception as e:
                 logger.exception(f"Unexpected error in {operation_name}: {e}")
-                raise APIException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error during {operation_name}", error_code="INTERNAL_ERROR")
+                raise APIException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Internal server error during {operation_name}",
+                    error_code="INTERNAL_ERROR",
+                )
 
         return wrapper
 
@@ -235,7 +313,13 @@ STANDARD_RESPONSES = {
 class EnhancedAnimalError(Exception):
     """Base exception for enhanced animal operations."""
 
-    def __init__(self, message: str, animal_id: Optional[int] = None, operation: Optional[str] = None, details: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        message: str,
+        animal_id: Optional[int] = None,
+        operation: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
         self.message = message
         self.animal_id = animal_id
         self.operation = operation
@@ -244,7 +328,13 @@ class EnhancedAnimalError(Exception):
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert exception to dictionary for API responses."""
-        return {"error": self.__class__.__name__, "message": self.message, "animal_id": self.animal_id, "operation": self.operation, "details": self.details}
+        return {
+            "error": self.__class__.__name__,
+            "message": self.message,
+            "animal_id": self.animal_id,
+            "operation": self.operation,
+            "details": self.details,
+        }
 
 
 class CacheError(EnhancedAnimalError):

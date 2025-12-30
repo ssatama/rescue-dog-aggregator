@@ -40,7 +40,9 @@ class TestFurryRescueItalyProblematicDogs:
             scraper.batch_size = 4
             scraper.skip_existing_animals = False
             scraper.logger = Mock()
-            scraper.use_unified_standardization = True  # Add missing attribute for unified standardization
+            scraper.use_unified_standardization = (
+                True  # Add missing attribute for unified standardization
+            )
 
             return scraper
 
@@ -71,9 +73,21 @@ class TestFurryRescueItalyProblematicDogs:
 
     def test_merge_animal_details_proper_age_text(self, scraper):
         """Test that age_text only contains age information, not all properties."""
-        animal = {"name": "Berry", "animal_type": "dog", "status": "available", "organization_id": "furryrescueitaly"}
+        animal = {
+            "name": "Berry",
+            "animal_type": "dog",
+            "status": "available",
+            "organization_id": "furryrescueitaly",
+        }
 
-        details = {"properties": {"born": "February 2023", "sex": "Male", "size": "Medium (approx 17 kgs)", "breed": "mix"}}
+        details = {
+            "properties": {
+                "born": "February 2023",
+                "sex": "Male",
+                "size": "Medium (approx 17 kgs)",
+                "breed": "mix",
+            }
+        }
 
         scraper._merge_animal_details(animal, details)
 
@@ -93,7 +107,13 @@ class TestFurryRescueItalyProblematicDogs:
 
         scraper.standardizer = UnifiedStandardizer()
 
-        animal = {"name": "Berry", "animal_type": "dog", "status": "available", "organization_id": "furryrescueitaly", "properties": {}}
+        animal = {
+            "name": "Berry",
+            "animal_type": "dog",
+            "status": "available",
+            "organization_id": "furryrescueitaly",
+            "properties": {},
+        }
 
         details = {"properties": {"size": "Medium (approx 17 kgs)"}}
 
@@ -108,7 +128,9 @@ class TestFurryRescueItalyProblematicDogs:
         if standardized is None:
             # Apply standardization manually to test
             result = scraper.standardizer.apply_full_standardization(size="Medium")
-            assert result["standardized_size"] == "Medium", f"Expected 'Medium', got '{result['standardized_size']}'"
+            assert result["standardized_size"] == "Medium", (
+                f"Expected 'Medium', got '{result['standardized_size']}'"
+            )
 
     def test_clean_description_removes_footer(self, scraper):
         """Test that description cleaning removes footer text."""
@@ -171,7 +193,11 @@ class TestFurryRescueItalyProblematicDogs:
         # Use the unified standardizer from BaseScraper
         scraper.standardizer = UnifiedStandardizer()
         # Process through standardization - pass all three params
-        result = scraper.standardizer.apply_full_standardization(breed=properties.get("breed"), age=properties.get("born"), size="Large (approx 28 kgs)")
+        result = scraper.standardizer.apply_full_standardization(
+            breed=properties.get("breed"),
+            age=properties.get("born"),
+            size="Large (approx 28 kgs)",
+        )
 
         # Should detect Large size
         assert result["standardized_size"] == "Large"
@@ -182,7 +208,13 @@ class TestFurryRescueItalyProblematicDogs:
 
         scraper.standardizer = UnifiedStandardizer()
 
-        animal = {"name": "BERRY", "animal_type": "dog", "status": "available", "organization_id": "furryrescueitaly", "adoption_url": "https://furryrescueitaly.com/adoption/berry/"}
+        animal = {
+            "name": "BERRY",
+            "animal_type": "dog",
+            "status": "available",
+            "organization_id": "furryrescueitaly",
+            "adoption_url": "https://furryrescueitaly.com/adoption/berry/",
+        }
 
         # Simulate scrape_animal_details result
         details = {
@@ -207,7 +239,10 @@ class TestFurryRescueItalyProblematicDogs:
         # Verify all fields are properly set
         assert animal["name"] == "Berry"  # Should be Title Case
         # The unified standardizer will turn "mix" into "Mixed Breed"
-        assert animal.get("breed") in ["Mix", "Mixed Breed"]  # Could be either depending on processing
+        assert animal.get("breed") in [
+            "Mix",
+            "Mixed Breed",
+        ]  # Could be either depending on processing
         assert animal.get("sex") == "Male"
         # Size might not be set by _merge_animal_details but standardized_size will be
         if animal.get("size"):

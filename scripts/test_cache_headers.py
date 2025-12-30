@@ -21,14 +21,46 @@ def test_cache_headers():
 
     # Test configurations
     test_cases = [
-        {"name": "Health Check (No Cache)", "url": "/health", "expected_cache": "no-cache, no-store, must-revalidate"},
-        {"name": "Recent Animals (5 min cache)", "url": "/api/animals?curation=recent", "expected_cache": "public, max-age=300, stale-while-revalidate=60"},
-        {"name": "Diverse Animals (1 hour cache)", "url": "/api/animals?curation=diverse", "expected_cache": "public, max-age=3600, stale-while-revalidate=300"},
-        {"name": "Default Animals (15 min cache)", "url": "/api/animals", "expected_cache": "public, max-age=900, stale-while-revalidate=120"},
-        {"name": "Meta Breeds (24 hour cache)", "url": "/api/animals/meta/breeds", "expected_cache": "public, max-age=86400, stale-while-revalidate=3600"},
-        {"name": "Statistics (1 hour cache)", "url": "/api/statistics", "expected_cache": "public, max-age=3600, stale-while-revalidate=600"},
-        {"name": "Organizations (1 hour cache)", "url": "/api/organizations", "expected_cache": "public, max-age=3600, stale-while-revalidate=600"},
-        {"name": "Individual Animal (30 min cache)", "url": "/api/animals/test-dog-123", "expected_cache": "public, max-age=1800, stale-while-revalidate=300"},
+        {
+            "name": "Health Check (No Cache)",
+            "url": "/health",
+            "expected_cache": "no-cache, no-store, must-revalidate",
+        },
+        {
+            "name": "Recent Animals (5 min cache)",
+            "url": "/api/animals?curation=recent",
+            "expected_cache": "public, max-age=300, stale-while-revalidate=60",
+        },
+        {
+            "name": "Diverse Animals (1 hour cache)",
+            "url": "/api/animals?curation=diverse",
+            "expected_cache": "public, max-age=3600, stale-while-revalidate=300",
+        },
+        {
+            "name": "Default Animals (15 min cache)",
+            "url": "/api/animals",
+            "expected_cache": "public, max-age=900, stale-while-revalidate=120",
+        },
+        {
+            "name": "Meta Breeds (24 hour cache)",
+            "url": "/api/animals/meta/breeds",
+            "expected_cache": "public, max-age=86400, stale-while-revalidate=3600",
+        },
+        {
+            "name": "Statistics (1 hour cache)",
+            "url": "/api/statistics",
+            "expected_cache": "public, max-age=3600, stale-while-revalidate=600",
+        },
+        {
+            "name": "Organizations (1 hour cache)",
+            "url": "/api/organizations",
+            "expected_cache": "public, max-age=3600, stale-while-revalidate=600",
+        },
+        {
+            "name": "Individual Animal (30 min cache)",
+            "url": "/api/animals/test-dog-123",
+            "expected_cache": "public, max-age=1800, stale-while-revalidate=300",
+        },
     ]
 
     for test in test_cases:

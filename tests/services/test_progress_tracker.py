@@ -6,7 +6,6 @@ provides no feedback during long-running operations (10-20 minutes of silence
 for large sites).
 """
 
-import time
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 
@@ -29,9 +28,17 @@ class TestProgressTracker:
     @pytest.fixture
     def default_config(self):
         """Default configuration for testing."""
-        return {"batch_size": 10, "show_progress_bar": True, "show_throughput": True, "eta_enabled": True, "verbosity_level": "auto"}
+        return {
+            "batch_size": 10,
+            "show_progress_bar": True,
+            "show_throughput": True,
+            "eta_enabled": True,
+            "verbosity_level": "auto",
+        }
 
-    def test_should_select_minimal_level_for_small_sites(self, mock_logger, default_config):
+    def test_should_select_minimal_level_for_small_sites(
+        self, mock_logger, default_config
+    ):
         """Test that small sites (1-25 animals) use MINIMAL logging level.
 
         EXPECTED BEHAVIOR:
@@ -50,7 +57,9 @@ class TestProgressTracker:
         assert not progress_5.should_log_progress()
         assert not progress_25.should_log_progress()
 
-    def test_should_select_standard_level_for_medium_sites(self, mock_logger, default_config):
+    def test_should_select_standard_level_for_medium_sites(
+        self, mock_logger, default_config
+    ):
         """Test that medium sites (26-75 animals) use STANDARD logging level."""
         progress_26 = ProgressTracker(26, mock_logger, default_config)
         progress_50 = ProgressTracker(50, mock_logger, default_config)
@@ -60,7 +69,9 @@ class TestProgressTracker:
         assert progress_50.verbosity_level == LoggingLevel.STANDARD
         assert progress_75.verbosity_level == LoggingLevel.STANDARD
 
-    def test_should_select_detailed_level_for_large_sites(self, mock_logger, default_config):
+    def test_should_select_detailed_level_for_large_sites(
+        self, mock_logger, default_config
+    ):
         """Test that large sites (76-150 animals) use DETAILED logging level."""
         progress_76 = ProgressTracker(76, mock_logger, default_config)
         progress_100 = ProgressTracker(100, mock_logger, default_config)
@@ -70,7 +81,9 @@ class TestProgressTracker:
         assert progress_100.verbosity_level == LoggingLevel.DETAILED
         assert progress_150.verbosity_level == LoggingLevel.DETAILED
 
-    def test_should_select_comprehensive_level_for_massive_sites(self, mock_logger, default_config):
+    def test_should_select_comprehensive_level_for_massive_sites(
+        self, mock_logger, default_config
+    ):
         """Test that massive sites (150+ animals) use COMPREHENSIVE logging level."""
         progress_151 = ProgressTracker(151, mock_logger, default_config)
         progress_500 = ProgressTracker(500, mock_logger, default_config)
@@ -80,7 +93,9 @@ class TestProgressTracker:
         assert progress_500.verbosity_level == LoggingLevel.COMPREHENSIVE
         assert progress_1000.verbosity_level == LoggingLevel.COMPREHENSIVE
 
-    def test_should_update_progress_and_track_completion(self, mock_logger, default_config):
+    def test_should_update_progress_and_track_completion(
+        self, mock_logger, default_config
+    ):
         """Test basic progress update functionality."""
         progress = ProgressTracker(100, mock_logger, default_config)
 
@@ -128,7 +143,9 @@ class TestProgressTracker:
         eta_diff = abs((eta - expected_eta).total_seconds())
         assert eta_diff < 10, f"ETA calculation off by {eta_diff} seconds"
 
-    def test_should_determine_when_to_log_progress_based_on_batch_size(self, mock_logger, default_config):
+    def test_should_determine_when_to_log_progress_based_on_batch_size(
+        self, mock_logger, default_config
+    ):
         """Test progress logging decision based on batch size and verbosity level."""
         default_config["batch_size"] = 20
         progress = ProgressTracker(100, mock_logger, default_config)  # DETAILED level
@@ -148,7 +165,9 @@ class TestProgressTracker:
         progress.log_batch_progress()
         assert not progress.should_log_progress()
 
-    def test_should_generate_comprehensive_progress_message(self, mock_logger, default_config):
+    def test_should_generate_comprehensive_progress_message(
+        self, mock_logger, default_config
+    ):
         """Test generation of world-class progress messages."""
         progress = ProgressTracker(200, mock_logger, default_config)
         progress.start_time = datetime.now() - timedelta(seconds=16)
@@ -163,7 +182,9 @@ class TestProgressTracker:
         assert "items/sec" in message or "/sec" in message  # Throughput
         assert "ETA:" in message  # ETA
 
-    def test_should_handle_zero_throughput_gracefully(self, mock_logger, default_config):
+    def test_should_handle_zero_throughput_gracefully(
+        self, mock_logger, default_config
+    ):
         """Test handling of zero throughput (no items processed yet)."""
         progress = ProgressTracker(100, mock_logger, default_config)
 

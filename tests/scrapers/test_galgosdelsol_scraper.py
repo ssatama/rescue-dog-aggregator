@@ -1,7 +1,5 @@
 """Tests for Galgos del Sol scraper functionality."""
 
-from unittest.mock import Mock, patch
-
 import pytest
 
 from scrapers.galgosdelsol.galgosdelsol_scraper import GalgosDelSolScraper

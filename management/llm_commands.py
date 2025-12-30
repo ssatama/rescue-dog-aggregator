@@ -43,11 +43,29 @@ def llm():
 
 @llm.command()
 @click.option("--organization", "-o", help="Process only specific organization")
-@click.option("--limit", "-l", default=None, type=int, help="Limit number of animals to process")
-@click.option("--dry-run", is_flag=True, help="Show what would be processed without making changes")
+@click.option(
+    "--limit", "-l", default=None, type=int, help="Limit number of animals to process"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be processed without making changes",
+)
 @click.option("--force", is_flag=True, help="Process even if already enriched")
-@click.option("--batch-size", "-b", default=25, type=int, help="Number of items to process per batch (default: 25)")
-def enrich_descriptions(organization: Optional[str], limit: Optional[int], dry_run: bool, force: bool, batch_size: Optional[int]):
+@click.option(
+    "--batch-size",
+    "-b",
+    default=25,
+    type=int,
+    help="Number of items to process per batch (default: 25)",
+)
+def enrich_descriptions(
+    organization: Optional[str],
+    limit: Optional[int],
+    dry_run: bool,
+    force: bool,
+    batch_size: Optional[int],
+):
     """Enrich animal descriptions using LLM."""
 
     console.print("[bold cyan]Starting description enrichment...[/bold cyan]")
@@ -102,7 +120,12 @@ def enrich_descriptions(organization: Optional[str], limit: Optional[int], dry_r
         table.add_column("Description", style="white", overflow="fold", max_width=50)
 
         for animal_id, name, description, org_name in animals[:10]:
-            table.add_row(str(animal_id), name, org_name, description[:100] + "..." if description else "")
+            table.add_row(
+                str(animal_id),
+                name,
+                org_name,
+                description[:100] + "..." if description else "",
+            )
 
         console.print(table)
 
@@ -118,22 +141,33 @@ def enrich_descriptions(organization: Optional[str], limit: Optional[int], dry_r
     effective_batch_size = batch_size or llm_config.batch.default_size
 
     # Initialize batch processor
-    batch_processor = create_batch_processor(connection=conn, batch_size=effective_batch_size, max_retries=llm_config.retry.max_attempts, retry_delay=llm_config.retry.base_delay, commit_frequency=1)
+    batch_processor = create_batch_processor(
+        connection=conn,
+        batch_size=effective_batch_size,
+        max_retries=llm_config.retry.max_attempts,
+        retry_delay=llm_config.retry.base_delay,
+        commit_frequency=1,
+    )
 
     # Run async operations synchronously for Click compatibility
-    asyncio.run(_enrich_descriptions_async(animals, effective_batch_size, batch_processor, llm_config))
+    asyncio.run(
+        _enrich_descriptions_async(
+            animals, effective_batch_size, batch_processor, llm_config
+        )
+    )
 
     cursor.close()
     conn.close()
 
-    console.print(f"\n[bold green]✓[/bold green] Processing complete")
+    console.print("\n[bold green]✓[/bold green] Processing complete")
 
 
-async def _enrich_descriptions_async(animals, effective_batch_size, batch_processor, llm_config):
+async def _enrich_descriptions_async(
+    animals, effective_batch_size, batch_processor, llm_config
+):
     """Async helper for description enrichment."""
     # Initialize LLM service
     async with OpenRouterLLMDataService() as llm_service:
-
         # Pre-process all animals to enrich descriptions
         enriched_animals = []
 
@@ -142,7 +176,6 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-
             # Step 1: LLM Processing
             llm_task = progress.add_task("Processing with LLM...", total=len(animals))
 
@@ -155,7 +188,9 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
                         continue
 
                     # Clean description
-                    enriched = await llm_service.clean_description(description, organization_config={"organization_name": org_name})
+                    enriched = await llm_service.clean_description(
+                        description, organization_config={"organization_name": org_name}
+                    )
 
                     if enriched and enriched != description:
                         enriched_animals.append((animal_id, enriched))
@@ -167,7 +202,9 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
 
             # Step 2: Batch Database Updates
             if enriched_animals:
-                console.print(f"[bold green]✓[/bold green] LLM processing complete. Updating {len(enriched_animals)} records in database...")
+                console.print(
+                    f"[bold green]✓[/bold green] LLM processing complete. Updating {len(enriched_animals)} records in database..."
+                )
 
                 def create_update_query(item: Tuple[int, str]) -> Tuple[str, Tuple]:
                     animal_id, enriched_description = item
@@ -179,39 +216,69 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
                     """
                     return query, (enriched_description, animal_id)
 
-                db_task = progress.add_task("Updating database...", total=len(enriched_animals))
+                db_task = progress.add_task(
+                    "Updating database...", total=len(enriched_animals)
+                )
 
-                batch_result = batch_processor.process_batch(enriched_animals, create_update_query, progress, db_task)
+                batch_result = batch_processor.process_batch(
+                    enriched_animals, create_update_query, progress, db_task
+                )
 
                 success_count = batch_result.total_processed
                 error_count = len(batch_result.errors)
 
                 # Log batch processing results
-                console.print(f"[bold blue]Batch Processing Results:[/bold blue]")
-                console.print(f"  • Processing time: {batch_result.processing_time:.2f}s")
+                console.print("[bold blue]Batch Processing Results:[/bold blue]")
+                console.print(
+                    f"  • Processing time: {batch_result.processing_time:.2f}s"
+                )
                 console.print(f"  • Success rate: {batch_result.success_rate:.1f}%")
-                console.print(f"  • Successful batches: {batch_result.successful_batches}")
+                console.print(
+                    f"  • Successful batches: {batch_result.successful_batches}"
+                )
                 console.print(f"  • Failed batches: {batch_result.failed_batches}")
 
             else:
                 success_count = 0
                 error_count = 0
 
-        console.print(f"\n[bold green]✓[/bold green] Processed {success_count} animals successfully")
+        console.print(
+            f"\n[bold green]✓[/bold green] Processed {success_count} animals successfully"
+        )
         if error_count > 0:
-            console.print(f"[bold red]✗[/bold red] Failed to process {error_count} animals")
+            console.print(
+                f"[bold red]✗[/bold red] Failed to process {error_count} animals"
+            )
 
 
 @llm.command()
-@click.option("--organization", "-o", type=int, help="Process only specific organization ID")
-@click.option("--limit", "-l", default=None, type=int, help="Limit number of animals to process per organization")
-@click.option("--batch-size", "-b", default=10, type=int, help="Number of items to process per batch (default: 10)")
-def generate_profiles(organization: Optional[int], limit: Optional[int], batch_size: int):
+@click.option(
+    "--organization", "-o", type=int, help="Process only specific organization ID"
+)
+@click.option(
+    "--limit",
+    "-l",
+    default=None,
+    type=int,
+    help="Limit number of animals to process per organization",
+)
+@click.option(
+    "--batch-size",
+    "-b",
+    default=10,
+    type=int,
+    help="Number of items to process per batch (default: 10)",
+)
+def generate_profiles(
+    organization: Optional[int], limit: Optional[int], batch_size: int
+):
     """Generate dog profiler data using org-specific prompts."""
     from services.llm.dog_profiler import DogProfilerPipeline
     from services.llm.organization_config_loader import get_config_loader
 
-    console.print("[bold cyan]Starting dog profiler generation with org-specific prompts...[/bold cyan]")
+    console.print(
+        "[bold cyan]Starting dog profiler generation with org-specific prompts...[/bold cyan]"
+    )
 
     conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()
@@ -222,7 +289,9 @@ def generate_profiles(organization: Optional[int], limit: Optional[int], batch_s
     if organization:
         org_ids = [organization] if organization in supported_orgs else []
         if not org_ids:
-            console.print(f"[red]Organization {organization} not configured for LLM profiling[/red]")
+            console.print(
+                f"[red]Organization {organization} not configured for LLM profiling[/red]"
+            )
             console.print(f"Available: {supported_orgs}")
             return
     else:
@@ -236,7 +305,9 @@ def generate_profiles(organization: Optional[int], limit: Optional[int], batch_s
         if not org_config or not org_config.enabled:
             continue
 
-        console.print(f"\n[bold blue]Processing {org_config.organization_name} (ID: {org_id})[/bold blue]")
+        console.print(
+            f"\n[bold blue]Processing {org_config.organization_name} (ID: {org_id})[/bold blue]"
+        )
         console.print(f"  Model: {org_config.model_preference}")
 
         query = """
@@ -252,10 +323,19 @@ def generate_profiles(organization: Optional[int], limit: Optional[int], batch_s
             query += f" LIMIT {limit}"
 
         cursor.execute(query, (org_id,))
-        dogs = [{"id": r[0], "name": r[1], "breed": r[2], "age_text": r[3], "properties": r[4]} for r in cursor.fetchall()]
+        dogs = [
+            {
+                "id": r[0],
+                "name": r[1],
+                "breed": r[2],
+                "age_text": r[3],
+                "properties": r[4],
+            }
+            for r in cursor.fetchall()
+        ]
 
         if not dogs:
-            console.print(f"  [yellow]No dogs need profiling[/yellow]")
+            console.print("  [yellow]No dogs need profiling[/yellow]")
             continue
 
         console.print(f"  Found [green]{len(dogs)}[/green] dogs to profile")
@@ -267,7 +347,9 @@ def generate_profiles(organization: Optional[int], limit: Optional[int], batch_s
             asyncio.run(pipeline.save_results(results))
 
         stats = pipeline.get_statistics()
-        console.print(f"  ✓ Processed: {stats['processed']}, Successful: {stats['successful']} ({stats['success_rate']:.1f}%)")
+        console.print(
+            f"  ✓ Processed: {stats['processed']}, Successful: {stats['successful']} ({stats['success_rate']:.1f}%)"
+        )
 
         total_processed += stats["processed"]
         total_successful += stats["successful"]
@@ -275,18 +357,40 @@ def generate_profiles(organization: Optional[int], limit: Optional[int], batch_s
     cursor.close()
     conn.close()
 
-    console.print(f"\n[bold green]✓ Total: {total_successful}/{total_processed} profiles generated[/bold green]")
+    console.print(
+        f"\n[bold green]✓ Total: {total_successful}/{total_processed} profiles generated[/bold green]"
+    )
 
 
 @llm.command()
-@click.option("--target-language", "-t", required=True, help="Target language code (es, fr, de, etc)")
+@click.option(
+    "--target-language",
+    "-t",
+    required=True,
+    help="Target language code (es, fr, de, etc)",
+)
 @click.option("--organization", "-o", help="Process only specific organization")
-@click.option("--limit", "-l", default=None, type=int, help="Limit number of animals to process")
-@click.option("--batch-size", "-b", default=25, type=int, help="Number of items to process per batch (default: 25)")
-def translate(target_language: str, organization: Optional[str], limit: Optional[int], batch_size: Optional[int]):
+@click.option(
+    "--limit", "-l", default=None, type=int, help="Limit number of animals to process"
+)
+@click.option(
+    "--batch-size",
+    "-b",
+    default=25,
+    type=int,
+    help="Number of items to process per batch (default: 25)",
+)
+def translate(
+    target_language: str,
+    organization: Optional[str],
+    limit: Optional[int],
+    batch_size: Optional[int],
+):
     """Translate animal descriptions to target language."""
 
-    console.print(f"[bold cyan]Starting translation to {target_language}...[/bold cyan]")
+    console.print(
+        f"[bold cyan]Starting translation to {target_language}...[/bold cyan]"
+    )
 
     # Connect to database
     conn = psycopg2.connect(**DB_CONFIG)
@@ -330,23 +434,39 @@ def translate(target_language: str, organization: Optional[str], limit: Optional
     effective_batch_size = batch_size or llm_config.batch.default_size
 
     # Initialize batch processor
-    batch_processor = create_batch_processor(connection=conn, batch_size=effective_batch_size, max_retries=llm_config.retry.max_attempts, retry_delay=llm_config.retry.base_delay, commit_frequency=1)
+    batch_processor = create_batch_processor(
+        connection=conn,
+        batch_size=effective_batch_size,
+        max_retries=llm_config.retry.max_attempts,
+        retry_delay=llm_config.retry.base_delay,
+        commit_frequency=1,
+    )
 
     # Run async operations synchronously for Click compatibility
-    asyncio.run(_translate_async(animals, target_language, effective_batch_size, batch_processor, llm_config, conn))
+    asyncio.run(
+        _translate_async(
+            animals,
+            target_language,
+            effective_batch_size,
+            batch_processor,
+            llm_config,
+            conn,
+        )
+    )
 
     cursor.close()
     conn.close()
 
-    console.print(f"\n[bold green]✓[/bold green] Translation complete")
+    console.print("\n[bold green]✓[/bold green] Translation complete")
 
 
-async def _translate_async(animals, target_language, effective_batch_size, batch_processor, llm_config, conn):
+async def _translate_async(
+    animals, target_language, effective_batch_size, batch_processor, llm_config, conn
+):
     """Async helper for translation."""
     cursor = conn.cursor()
     # Initialize LLM service
     async with OpenRouterLLMDataService() as llm_service:
-
         # Pre-process all animals to translate descriptions
         translated_animals = []
 
@@ -355,7 +475,6 @@ async def _translate_async(animals, target_language, effective_batch_size, batch
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-
             # Step 1: LLM Processing
             llm_task = progress.add_task("Translating with LLM...", total=len(animals))
 
@@ -364,11 +483,16 @@ async def _translate_async(animals, target_language, effective_batch_size, batch
 
                 try:
                     # Translate description
-                    translated = await llm_service.translate_text(description, target_language=target_language)
+                    translated = await llm_service.translate_text(
+                        description, target_language=target_language
+                    )
 
                     if translated:
                         # Get existing translations
-                        cursor.execute("SELECT translations FROM animals WHERE id = %s", (animal_id,))
+                        cursor.execute(
+                            "SELECT translations FROM animals WHERE id = %s",
+                            (animal_id,),
+                        )
                         result = cursor.fetchone()
                         translations = result[0] if result and result[0] else {}
 
@@ -383,7 +507,9 @@ async def _translate_async(animals, target_language, effective_batch_size, batch
 
             # Step 2: Batch Database Updates
             if translated_animals:
-                console.print(f"[bold green]✓[/bold green] Translation complete. Updating {len(translated_animals)} records in database...")
+                console.print(
+                    f"[bold green]✓[/bold green] Translation complete. Updating {len(translated_animals)} records in database..."
+                )
 
                 def create_update_query(item: Tuple[int, str]) -> Tuple[str, Tuple]:
                     animal_id, translations_json = item
@@ -395,27 +521,39 @@ async def _translate_async(animals, target_language, effective_batch_size, batch
                     """
                     return query, (translations_json, animal_id)
 
-                db_task = progress.add_task("Updating database...", total=len(translated_animals))
+                db_task = progress.add_task(
+                    "Updating database...", total=len(translated_animals)
+                )
 
-                batch_result = batch_processor.process_batch(translated_animals, create_update_query, progress, db_task)
+                batch_result = batch_processor.process_batch(
+                    translated_animals, create_update_query, progress, db_task
+                )
 
                 success_count = batch_result.total_processed
                 error_count = len(batch_result.errors)
 
                 # Log batch processing results
-                console.print(f"[bold blue]Batch Processing Results:[/bold blue]")
-                console.print(f"  • Processing time: {batch_result.processing_time:.2f}s")
+                console.print("[bold blue]Batch Processing Results:[/bold blue]")
+                console.print(
+                    f"  • Processing time: {batch_result.processing_time:.2f}s"
+                )
                 console.print(f"  • Success rate: {batch_result.success_rate:.1f}%")
-                console.print(f"  • Successful batches: {batch_result.successful_batches}")
+                console.print(
+                    f"  • Successful batches: {batch_result.successful_batches}"
+                )
                 console.print(f"  • Failed batches: {batch_result.failed_batches}")
 
             else:
                 success_count = 0
                 error_count = 0
 
-        console.print(f"\n[bold green]✓[/bold green] Translated {success_count} animals successfully")
+        console.print(
+            f"\n[bold green]✓[/bold green] Translated {success_count} animals successfully"
+        )
         if error_count > 0:
-            console.print(f"[bold red]✗[/bold red] Failed to translate {error_count} animals")
+            console.print(
+                f"[bold red]✗[/bold red] Failed to translate {error_count} animals"
+            )
 
 
 @llm.command()
@@ -448,9 +586,17 @@ def stats():
     table.add_column("Percentage", style="green")
 
     table.add_row("Total High Confidence Dogs", str(total), "100%")
-    table.add_row("Enriched Descriptions", str(enriched), f"{enriched/total*100:.1f}%")
-    table.add_row("Dog Profiles", str(with_profiles), f"{with_profiles/total*100:.1f}%")
-    table.add_row("With Translations", str(with_translations), f"{with_translations/total*100:.1f}%")
+    table.add_row(
+        "Enriched Descriptions", str(enriched), f"{enriched / total * 100:.1f}%"
+    )
+    table.add_row(
+        "Dog Profiles", str(with_profiles), f"{with_profiles / total * 100:.1f}%"
+    )
+    table.add_row(
+        "With Translations",
+        str(with_translations),
+        f"{with_translations / total * 100:.1f}%",
+    )
 
     console.print(table)
 
@@ -478,7 +624,7 @@ def stats():
 
     for org_name, total, enriched in cursor.fetchall():
         if total > 0:
-            coverage = f"{enriched/total*100:.1f}%"
+            coverage = f"{enriched / total * 100:.1f}%"
         else:
             coverage = "N/A"
         org_table.add_row(org_name, str(total), str(enriched), coverage)

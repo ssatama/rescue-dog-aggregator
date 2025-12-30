@@ -18,7 +18,10 @@ class TestREANParsing:
     @pytest.fixture
     def scraper(self):
         """Create a REAN scraper instance for testing."""
-        with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
+        with (
+            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
+            patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
+        ):
             mock_config = MagicMock()
             mock_config.name = "REAN Test"
             mock_config.get_scraper_config_dict.return_value = {
@@ -30,7 +33,9 @@ class TestREANParsing:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=True)
+            mock_sync_service.sync_single_organization.return_value = Mock(
+                organization_id=1, was_created=True
+            )
             mock_sync.return_value = mock_sync_service
 
             return REANScraper()
@@ -96,7 +101,10 @@ class TestREANParsing:
         test_cases = [
             ("He is vaccinated and chipped", "vaccinated and chipped"),
             ("She is spayed, vaccinated and chipped", "spayed, vaccinated and chipped"),
-            ("He is neutered, vaccinated and chipped", "neutered, vaccinated and chipped"),
+            (
+                "He is neutered, vaccinated and chipped",
+                "neutered, vaccinated and chipped",
+            ),
             ("no medical info", None),
         ]
 
@@ -106,7 +114,13 @@ class TestREANParsing:
     @pytest.mark.unit
     def test_urgency_assessment(self, scraper):
         """Test urgency level assessment."""
-        urgent_keywords = ["desperately", "urgent", "emergency", "stuck", "ready to travel"]
+        urgent_keywords = [
+            "desperately",
+            "urgent",
+            "emergency",
+            "stuck",
+            "ready to travel",
+        ]
 
         for keyword in urgent_keywords:
             assert scraper.assess_urgency(f"Dog {keyword} needs home") == "urgent"
@@ -154,7 +168,11 @@ class TestREANParsing:
     @pytest.mark.unit
     def test_description_no_truncation(self, scraper):
         """Test that descriptions are not truncated at 300 chars."""
-        long_text = "Lucky is 7 months old. " + ("He loves to play. " * 50) + "(Updated 22/4/25)"
+        long_text = (
+            "Lucky is 7 months old. "
+            + ("He loves to play. " * 50)
+            + "(Updated 22/4/25)"
+        )
 
         description = scraper.extract_description_for_about_section(long_text)
 
@@ -196,7 +214,10 @@ class TestREANParsing:
         assert uk_data["age_text"] == "1.5 years"
         assert uk_data["properties"]["current_location"] == "Norfolk"
         assert uk_data["properties"]["transport_required"] is False
-        assert uk_data["properties"]["medical_status"] == "neutered, vaccinated and chipped"
+        assert (
+            uk_data["properties"]["medical_status"]
+            == "neutered, vaccinated and chipped"
+        )
         assert uk_data["properties"]["size_prediction"] == "Medium"
 
     @pytest.mark.unit
@@ -252,7 +273,9 @@ class TestREANParsing:
     def test_image_url_validation(self, scraper):
         """Test REAN-specific image URL validation."""
         # Valid REAN images
-        assert scraper._is_valid_rean_image("https://img1.wsimg.com/isteam/ip/abc/dog.jpg")
+        assert scraper._is_valid_rean_image(
+            "https://img1.wsimg.com/isteam/ip/abc/dog.jpg"
+        )
         assert scraper._is_valid_rean_image("//img1.wsimg.com/isteam/ip/def/puppy.jpg")
 
         # Invalid images
@@ -317,7 +340,9 @@ class TestREANParsing:
         assert standardized["name"] == "Lucky"
         assert standardized["animal_type"] == "dog"
         assert standardized["age_min_months"] == 7
-        assert standardized["age_max_months"] == 9  # Unified standardization expands range to 7-9 months
+        assert (
+            standardized["age_max_months"] == 9
+        )  # Unified standardization expands range to 7-9 months
         assert standardized["size"] == "Small"
         assert standardized["language"] == "en"
         assert "external_id" in standardized

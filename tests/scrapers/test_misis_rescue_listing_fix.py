@@ -16,14 +16,23 @@ class TestMisisRescueListingFix:
     @pytest.fixture
     def scraper(self):
         """Create scraper with mocked dependencies."""
-        with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_loader, patch("scrapers.base_scraper.R2Service"):
-
+        with (
+            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
+            patch("scrapers.base_scraper.ConfigLoader") as mock_loader,
+            patch("scrapers.base_scraper.R2Service"),
+        ):
             mock_sync_instance = Mock()
-            mock_sync_instance.sync_single_organization.return_value = Mock(organization_id=13, was_created=True)
+            mock_sync_instance.sync_single_organization.return_value = Mock(
+                organization_id=13, was_created=True
+            )
             mock_sync.return_value = mock_sync_instance
 
             mock_config = Mock()
-            mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 0.1, "max_retries": 1, "timeout": 10}
+            mock_config.get_scraper_config_dict.return_value = {
+                "rate_limit_delay": 0.1,
+                "max_retries": 1,
+                "timeout": 10,
+            }
             mock_config.name = "MisisRescue"
             mock_loader.return_value.load_config.return_value = mock_config
 
@@ -75,7 +84,18 @@ class TestMisisRescueListingFix:
         """Test that pagination doesn't create duplicates."""
         with patch.object(scraper, "_extract_dog_urls_from_page") as mock_extract:
             # Return 7 dogs only on page 1, empty on page 2
-            mock_extract.side_effect = [["/post/dog1", "/post/dog2", "/post/dog3", "/post/dog4", "/post/dog5", "/post/dog6", "/post/dog7"], []]  # Empty on page 2 - should stop
+            mock_extract.side_effect = [
+                [
+                    "/post/dog1",
+                    "/post/dog2",
+                    "/post/dog3",
+                    "/post/dog4",
+                    "/post/dog5",
+                    "/post/dog6",
+                    "/post/dog7",
+                ],
+                [],
+            ]  # Empty on page 2 - should stop
 
             all_urls = scraper._get_all_dog_urls()
 
@@ -90,8 +110,16 @@ class TestMisisRescueListingFix:
         """Test that collect_data returns dogs with all fields including images."""
         # Mock the listing page extraction with images
         mock_dogs_with_images = [
-            {"name": "Leila", "url": "/post/leila", "image_url": "https://example.com/leila.jpg"},
-            {"name": "LEO", "url": "/post/__leo-2", "image_url": "https://example.com/leo.jpg"},
+            {
+                "name": "Leila",
+                "url": "/post/leila",
+                "image_url": "https://example.com/leila.jpg",
+            },
+            {
+                "name": "LEO",
+                "url": "/post/__leo-2",
+                "image_url": "https://example.com/leo.jpg",
+            },
         ]
 
         # Mock detail page data
@@ -114,7 +142,6 @@ class TestMisisRescueListingFix:
             patch.object(scraper, "_scrape_dog_detail_fast") as mock_detail_fast,
             patch.object(scraper, "_scrape_dog_detail") as mock_detail,
         ):
-
             mock_listing.return_value = mock_dogs_with_images
             mock_detail_fast.return_value = mock_detail_data
             mock_detail.return_value = mock_detail_data

@@ -66,13 +66,19 @@ class MisisRescueDetailParser:
 
         # Save all raw extracted data in properties for debugging and future processing
         result["properties"]["raw_bullet_points"] = bullet_points
-        result["properties"]["raw_page_title"] = soup.find("title").get_text(strip=True) if soup.find("title") else None
-        result["properties"]["raw_name"] = name  # Store original name before normalization
+        result["properties"]["raw_page_title"] = (
+            soup.find("title").get_text(strip=True) if soup.find("title") else None
+        )
+        result["properties"]["raw_name"] = (
+            name  # Store original name before normalization
+        )
 
         # Extract and store full page text for debugging
         page_text = soup.get_text()
         # Store a relevant excerpt (first 2000 chars) to avoid huge JSON
-        result["properties"]["page_text_excerpt"] = page_text[:2000] if page_text else None
+        result["properties"]["page_text_excerpt"] = (
+            page_text[:2000] if page_text else None
+        )
 
         # Use normalizer functions to extract structured data
         if bullet_points:
@@ -289,7 +295,11 @@ class MisisRescueDetailParser:
                 # Try next sibling
                 next_sibling = heading.find_next_sibling()
                 while next_sibling:
-                    if isinstance(next_sibling, Tag) and next_sibling.name in ["ul", "ol", "div"]:
+                    if isinstance(next_sibling, Tag) and next_sibling.name in [
+                        "ul",
+                        "ol",
+                        "div",
+                    ]:
                         return next_sibling
                     next_sibling = next_sibling.find_next_sibling()
 
@@ -306,7 +316,10 @@ class MisisRescueDetailParser:
                             if elem.name in ["ul", "ol"]:
                                 return elem
                             # If we hit another major heading, stop searching
-                            if elem.name in ["h1", "h2", "h3"] and "reserved" not in elem.get_text().lower():
+                            if (
+                                elem.name in ["h1", "h2", "h3"]
+                                and "reserved" not in elem.get_text().lower()
+                            ):
                                 break
                 except (ValueError, IndexError):
                     pass
@@ -318,7 +331,10 @@ class MisisRescueDetailParser:
             if isinstance(div, Tag) and (div.find("ul") or div.find("ol")):
                 # Check if it contains dog-related content
                 text = div.get_text().lower()
-                if any(keyword in text for keyword in ["dob", "breed", "weighs", "mixed", "kg"]):
+                if any(
+                    keyword in text
+                    for keyword in ["dob", "breed", "weighs", "mixed", "kg"]
+                ):
                     return div
 
         return None

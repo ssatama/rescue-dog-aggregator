@@ -124,5 +124,7 @@ class TestConfigErrorHandling:
 
             loader = ConfigLoader(config_dir=config_dir)
 
-            with pytest.raises(ValueError, match="Config ID 'different-id' does not match filename"):
+            with pytest.raises(
+                ValueError, match="Config ID 'different-id' does not match filename"
+            ):
                 loader.load_config("test-org")

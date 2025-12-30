@@ -2,7 +2,7 @@
 
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from urllib.parse import urljoin
 
 import requests
@@ -46,7 +46,10 @@ class PetsInTurkeyScraper(BaseScraper):
         self.organization_name = "Pets in Turkey"
 
         # Log configuration values
-        self.logger.info(f"Initialized with config: rate_limit_delay={self.rate_limit_delay}, " f"batch_size={self.batch_size}, skip_existing_animals={self.skip_existing_animals}")
+        self.logger.info(
+            f"Initialized with config: rate_limit_delay={self.rate_limit_delay}, "
+            f"batch_size={self.batch_size}, skip_existing_animals={self.skip_existing_animals}"
+        )
 
     def collect_data(self) -> List[Dict[str, Any]]:
         """Collect dog data from the Pets in Turkey website.
@@ -84,7 +87,17 @@ class PetsInTurkeyScraper(BaseScraper):
                             # Verify this container has dog data
                             text = container.get_text()
                             # Check for ANY data indicator (more flexible)
-                            if any(marker in text for marker in ["Breed", "Weight", "kg", "yo", "Male", "Female"]):
+                            if any(
+                                marker in text
+                                for marker in [
+                                    "Breed",
+                                    "Weight",
+                                    "kg",
+                                    "yo",
+                                    "Male",
+                                    "Female",
+                                ]
+                            ):
                                 # Also check it's not too large (full page)
                                 if len(text) < 1500:
                                     dog_sections.append(container)
@@ -103,16 +116,20 @@ class PetsInTurkeyScraper(BaseScraper):
                         # Apply standardization
                         dog_data = self._apply_standardization(dog_data)
                         dogs_data.append(dog_data)
-                        self.logger.debug(f"Extracted dog {idx+1}: {dog_data.get('name')}")
+                        self.logger.debug(
+                            f"Extracted dog {idx + 1}: {dog_data.get('name')}"
+                        )
 
                 except Exception as e:
-                    self.logger.error(f"Error processing dog {idx+1}: {e}")
+                    self.logger.error(f"Error processing dog {idx + 1}: {e}")
                     continue
 
             self.logger.info(f"Successfully extracted {len(dogs_data)} dogs")
 
             # Set filtering stats
-            self.set_filtering_stats(len(dog_sections), len(dog_sections) - len(dogs_data))
+            self.set_filtering_stats(
+                len(dog_sections), len(dog_sections) - len(dogs_data)
+            )
 
         except Exception as e:
             self.logger.error(f"Error collecting dog data: {e}")
@@ -192,42 +209,69 @@ class PetsInTurkeyScraper(BaseScraper):
                 # The order is: Breed, Weight, Age, Sex, Neutered
                 if value_start < len(all_texts):
                     # Breed is first value after Adopt Me
-                    breed_text = all_texts[value_start] if value_start < len(all_texts) else ""
-                    if breed_text and not breed_text.lower() in ["yes", "no", "male", "female"]:
+                    breed_text = (
+                        all_texts[value_start] if value_start < len(all_texts) else ""
+                    )
+                    if breed_text and breed_text.lower() not in [
+                        "yes",
+                        "no",
+                        "male",
+                        "female",
+                    ]:
                         dog_data["breed"] = breed_text
 
                     # Weight is next (look for kg pattern)
-                    for i in range(value_start + 1, min(value_start + 5, len(all_texts))):
+                    for i in range(
+                        value_start + 1, min(value_start + 5, len(all_texts))
+                    ):
                         if "kg" in all_texts[i]:
                             # Handle complex formats like "8 kg height:30cm" or "15kg"
-                            weight_match = re.search(r"(\d+(?:\.\d+)?)\s*kg", all_texts[i])
+                            weight_match = re.search(
+                                r"(\d+(?:\.\d+)?)\s*kg", all_texts[i]
+                            )
                             if weight_match:
                                 weight_text = f"{weight_match.group(1)} kg"
                                 dog_data["properties"]["weight"] = weight_text
                                 weight_kg = float(weight_match.group(1))
-                                dog_data["size"] = self._calculate_size_from_weight(weight_kg)
+                                dog_data["size"] = self._calculate_size_from_weight(
+                                    weight_kg
+                                )
 
                                 # Extract height if present in same text
-                                height_match = re.search(r"height:\s*(\d+)\s*cm", all_texts[i])
+                                height_match = re.search(
+                                    r"height:\s*(\d+)\s*cm", all_texts[i]
+                                )
                                 if height_match:
-                                    dog_data["properties"]["height"] = f"{height_match.group(1)} cm"
+                                    dog_data["properties"]["height"] = (
+                                        f"{height_match.group(1)} cm"
+                                    )
                             break
 
                     # Height might be with weight
-                    for i in range(value_start + 1, min(value_start + 5, len(all_texts))):
+                    for i in range(
+                        value_start + 1, min(value_start + 5, len(all_texts))
+                    ):
                         if "height:" in all_texts[i].lower():
                             dog_data["properties"]["height"] = all_texts[i]
                             break
 
                     # Age (look for yo/years pattern)
                     age_found = False
-                    for i in range(value_start + 1, min(value_start + 10, len(all_texts))):
+                    for i in range(
+                        value_start + 1, min(value_start + 10, len(all_texts))
+                    ):
                         text = all_texts[i]
 
                         # Comprehensive age pattern matching
                         age_patterns = [
-                            (r"(\d+(?:[,\.]\d+)?)\s*yo?(?:\s|$)", "years"),  # "2 yo", "3,5 y"
-                            (r"(\d+(?:[,\.]\d+)?)\s*y/o(?:\s|$)", "years"),  # "1 y/o", "3,5 y/o"
+                            (
+                                r"(\d+(?:[,\.]\d+)?)\s*yo?(?:\s|$)",
+                                "years",
+                            ),  # "2 yo", "3,5 y"
+                            (
+                                r"(\d+(?:[,\.]\d+)?)\s*y/o(?:\s|$)",
+                                "years",
+                            ),  # "1 y/o", "3,5 y/o"
                             (r"(\d+)\s*mnths?\s*old", "months"),  # "8 mnths old"
                             (r"(\d+)\s*months?\s*old", "months"),  # "9 months old"
                             (r"(\d+)\s*years?\s*old", "years"),  # "2 years old"
@@ -236,7 +280,9 @@ class PetsInTurkeyScraper(BaseScraper):
                         for pattern, unit in age_patterns:
                             match = re.search(pattern, text, re.IGNORECASE)
                             if match:
-                                age_value = match.group(1).replace(",", ".")  # Handle "3,5" format
+                                age_value = match.group(1).replace(
+                                    ",", "."
+                                )  # Handle "3,5" format
                                 if unit == "years":
                                     age_text = f"{age_value} years"
                                 else:
@@ -272,7 +318,9 @@ class PetsInTurkeyScraper(BaseScraper):
                     # Look for date pattern in current text or next few elements
                     birth_match = None
                     for j in range(i, min(i + 5, len(all_texts))):
-                        birth_match = re.search(r"(\d{1,2}/\d{1,2}/\d{4})", all_texts[j])
+                        birth_match = re.search(
+                            r"(\d{1,2}/\d{1,2}/\d{4})", all_texts[j]
+                        )
                         if birth_match:
                             break
 
@@ -295,7 +343,9 @@ class PetsInTurkeyScraper(BaseScraper):
                 if "Expected weight" in text:
                     exp_weight_match = re.search(r"(\d+\s*kg)", text)
                     if exp_weight_match:
-                        dog_data["properties"]["expected_weight"] = exp_weight_match.group(1)
+                        dog_data["properties"]["expected_weight"] = (
+                            exp_weight_match.group(1)
+                        )
 
         except Exception as e:
             self.logger.error(f"Error extracting dog data: {e}")
@@ -387,8 +437,15 @@ class PetsInTurkeyScraper(BaseScraper):
             pass
         else:
             standardized["breed"] = standardized.get("breed") or "Mixed Breed"
-        standardized.setdefault("standardized_size", standardized.get("size") or "Medium")
-        standardized.setdefault("gender", standardized.get("sex", "Unknown").lower() if standardized.get("sex") else "unknown")
+        standardized.setdefault(
+            "standardized_size", standardized.get("size") or "Medium"
+        )
+        standardized.setdefault(
+            "gender",
+            standardized.get("sex", "Unknown").lower()
+            if standardized.get("sex")
+            else "unknown",
+        )
         # Don't override age_text if it was processed from age data
         if not standardized.get("age_text") and standardized.get("age"):
             standardized["age_text"] = standardized["age"]

@@ -17,7 +17,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ValidationError
 
 from api.async_dependencies import get_async_db_connection, get_async_db_transaction
-from api.exceptions import STANDARD_RESPONSES, InvalidInputError, NotFoundError, handle_database_error, handle_llm_error, handle_validation_error
+from api.exceptions import (
+    STANDARD_RESPONSES,
+    InvalidInputError,
+    NotFoundError,
+    handle_database_error,
+    handle_llm_error,
+    handle_validation_error,
+)
 from services.llm.models import ProcessingType, TranslationRequest
 from services.llm_data_service import OpenRouterLLMDataService
 
@@ -51,7 +58,9 @@ class EnrichmentResponse(BaseModel):
 
 
 @router.post("/enrich", response_model=EnrichmentResponse)
-async def enrich_animal(request: EnrichmentRequest, conn=Depends(get_async_db_transaction)) -> EnrichmentResponse:
+async def enrich_animal(
+    request: EnrichmentRequest, conn=Depends(get_async_db_transaction)
+) -> EnrichmentResponse:
     """Enrich a single animal's data using LLM."""
 
     try:
@@ -78,12 +87,16 @@ async def enrich_animal(request: EnrichmentRequest, conn=Depends(get_async_db_tr
 
         # Process based on type
         async with OpenRouterLLMDataService() as llm_service:
-
             if request.processing_type == ProcessingType.DESCRIPTION_CLEANING:
                 if not animal_data.get("description"):
-                    return EnrichmentResponse(success=False, message="No description to clean")
+                    return EnrichmentResponse(
+                        success=False, message="No description to clean"
+                    )
 
-                enriched = await llm_service.clean_description(animal_data["description"], organization_config={"organization_name": animal_data["org_name"]})
+                enriched = await llm_service.clean_description(
+                    animal_data["description"],
+                    organization_config={"organization_name": animal_data["org_name"]},
+                )
 
                 # Update database using async execute
                 await conn.execute(
@@ -120,7 +133,9 @@ async def enrich_animal(request: EnrichmentRequest, conn=Depends(get_async_db_tr
                 raise InvalidInputError("Unsupported processing type")
 
         # Transaction is automatically committed by dependency
-        return EnrichmentResponse(success=True, message="Animal enriched successfully", processed_count=1)
+        return EnrichmentResponse(
+            success=True, message="Animal enriched successfully", processed_count=1
+        )
 
     except asyncpg.PostgresError as db_err:
         handle_database_error(db_err, "animal enrichment")
@@ -134,7 +149,9 @@ async def enrich_animal(request: EnrichmentRequest, conn=Depends(get_async_db_tr
 
 
 @router.post("/batch-enrich", response_model=EnrichmentResponse)
-async def batch_enrich_animals(request: BatchEnrichmentRequest, conn=Depends(get_async_db_transaction)) -> EnrichmentResponse:
+async def batch_enrich_animals(
+    request: BatchEnrichmentRequest, conn=Depends(get_async_db_transaction)
+) -> EnrichmentResponse:
     """Enrich multiple animals in batch."""
 
     try:
@@ -167,7 +184,9 @@ async def batch_enrich_animals(request: BatchEnrichmentRequest, conn=Depends(get
 
         # Process in batch
         async with OpenRouterLLMDataService() as llm_service:
-            results = await llm_service.batch_process(animals_data, processing_type=request.processing_type)
+            results = await llm_service.batch_process(
+                animals_data, processing_type=request.processing_type
+            )
 
         processed_count = 0
         failed_count = 0
@@ -191,12 +210,19 @@ async def batch_enrich_animals(request: BatchEnrichmentRequest, conn=Depends(get
                     processed_count += 1
 
             except asyncpg.PostgresError as db_err:
-                logger.warning(f"Failed to update animal {result.get('id', 'unknown')}: {type(db_err).__name__}")
+                logger.warning(
+                    f"Failed to update animal {result.get('id', 'unknown')}: {type(db_err).__name__}"
+                )
                 failed_count += 1
                 continue
 
         # Transaction is automatically committed by dependency
-        return EnrichmentResponse(success=True, message=f"Batch processing completed", processed_count=processed_count, failed_count=failed_count)
+        return EnrichmentResponse(
+            success=True,
+            message="Batch processing completed",
+            processed_count=processed_count,
+            failed_count=failed_count,
+        )
 
     except asyncpg.PostgresError as db_err:
         handle_database_error(db_err, "batch animal enrichment")
@@ -218,14 +244,24 @@ async def translate_text(request: TranslationRequest) -> Dict[str, str]:
         if not request.text.strip():
             raise InvalidInputError("Text cannot be empty")
         if len(request.text) > 10000:  # Reasonable limit
-            raise InvalidInputError("Text is too long for translation (max 10000 characters)")
+            raise InvalidInputError(
+                "Text is too long for translation (max 10000 characters)"
+            )
         if not request.target_language:
             raise InvalidInputError("Target language is required")
 
         async with OpenRouterLLMDataService() as llm_service:
-            translated = await llm_service.translate_text(request.text, target_language=request.target_language, source_language=request.source_language)
+            translated = await llm_service.translate_text(
+                request.text,
+                target_language=request.target_language,
+                source_language=request.source_language,
+            )
 
-        return {"original": request.text, "translated": translated, "target_language": request.target_language}
+        return {
+            "original": request.text,
+            "translated": translated,
+            "target_language": request.target_language,
+        }
 
     except ValidationError as ve:
         handle_validation_error(ve, "translation request")
@@ -237,7 +273,9 @@ async def translate_text(request: TranslationRequest) -> Dict[str, str]:
 
 
 @router.get("/stats")
-async def get_llm_stats(organization_id: Optional[int] = Query(None), conn=Depends(get_async_db_connection)) -> Dict:
+async def get_llm_stats(
+    organization_id: Optional[int] = Query(None), conn=Depends(get_async_db_connection)
+) -> Dict:
     """Get LLM processing statistics."""
 
     try:
@@ -279,13 +317,15 @@ async def get_llm_stats(organization_id: Optional[int] = Query(None), conn=Depen
     except InvalidInputError:
         # Re-raise our custom exceptions
         raise
-    except Exception as e:
+    except Exception:
         logger.exception("Unexpected error retrieving LLM statistics")
         raise HTTPException(status_code=500, detail="Failed to retrieve LLM statistics")
 
 
 @router.post("/clean-description")
-async def clean_description_direct(text: str, organization_name: Optional[str] = None) -> Dict[str, str]:
+async def clean_description_direct(
+    text: str, organization_name: Optional[str] = None
+) -> Dict[str, str]:
     """Clean a description directly without database interaction."""
 
     try:
@@ -293,10 +333,14 @@ async def clean_description_direct(text: str, organization_name: Optional[str] =
         if not text.strip():
             raise InvalidInputError("Text cannot be empty")
         if len(text) > 10000:  # Reasonable limit
-            raise InvalidInputError("Text is too long for processing (max 10000 characters)")
+            raise InvalidInputError(
+                "Text is too long for processing (max 10000 characters)"
+            )
 
         async with OpenRouterLLMDataService() as llm_service:
-            org_config = {"organization_name": organization_name} if organization_name else None
+            org_config = (
+                {"organization_name": organization_name} if organization_name else None
+            )
             cleaned = await llm_service.clean_description(text, org_config)
 
         return {"original": text, "cleaned": cleaned}

@@ -2,7 +2,7 @@
 Test PetsInTurkey scraper with unified standardization.
 """
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -22,7 +22,12 @@ class TestPetsInTurkeyUnifiedStandardization:
 
     def test_jack_russell_standardization(self, scraper):
         """Test that Jack Russell variations are standardized."""
-        test_data = {"breed": "Jack Russell", "age": "2 years", "size": "Small", "location": "Turkey"}
+        test_data = {
+            "breed": "Jack Russell",
+            "age": "2 years",
+            "size": "Small",
+            "location": "Turkey",
+        }
 
         result = scraper.process_animal(test_data)
 
@@ -53,10 +58,16 @@ class TestPetsInTurkeyUnifiedStandardization:
         assert result["breed"] == "Kangal"
         assert result["breed_category"] == "Guardian"
         assert result["standardized_size"] == "Large"  # XLarge maps to Large
-        assert result["standardization_confidence"] >= 0.9  # Changed to >= for exact 0.9
+        assert (
+            result["standardization_confidence"] >= 0.9
+        )  # Changed to >= for exact 0.9
 
         # Test Anatolian Shepherd
-        test_data = {"breed": "Anatolian Shepherd Dog", "age": "3 years", "size": "XLarge"}
+        test_data = {
+            "breed": "Anatolian Shepherd Dog",
+            "age": "3 years",
+            "size": "XLarge",
+        }
 
         result = scraper.process_animal(test_data)
 
@@ -67,7 +78,13 @@ class TestPetsInTurkeyUnifiedStandardization:
     def test_size_calculation_from_weight(self, scraper):
         """Test size calculation based on weight."""
         # Test all size categories
-        test_cases = [(3, "Tiny"), (8, "Small"), (20, "Medium"), (35, "Large"), (45, "XLarge")]
+        test_cases = [
+            (3, "Tiny"),
+            (8, "Small"),
+            (20, "Medium"),
+            (35, "Large"),
+            (45, "XLarge"),
+        ]
 
         for weight_kg, expected_size in test_cases:
             test_data = {"breed": "Mixed Breed", "weight": weight_kg, "age": "2 years"}
@@ -97,15 +114,31 @@ class TestPetsInTurkeyUnifiedStandardization:
             result = scraper.process_animal(test_data)
 
             # Now that we've restored full age parsing functionality:
-            assert result["age_min_months"] == expected_min, f"Failed for age '{age_text}': expected min {expected_min}, got {result.get('age_min_months')}"
-            assert result["age_max_months"] == expected_max, f"Failed for age '{age_text}': expected max {expected_max}, got {result.get('age_max_months')}"
+            assert result["age_min_months"] == expected_min, (
+                f"Failed for age '{age_text}': expected min {expected_min}, got {result.get('age_min_months')}"
+            )
+            assert result["age_max_months"] == expected_max, (
+                f"Failed for age '{age_text}': expected max {expected_max}, got {result.get('age_max_months')}"
+            )
 
     def test_gender_standardization(self, scraper):
         """Test gender field standardization."""
-        test_cases = [("Male", "male"), ("Female", "female"), ("MALE", "male"), ("female", "female"), ("M", "male"), ("F", "female")]
+        test_cases = [
+            ("Male", "male"),
+            ("Female", "female"),
+            ("MALE", "male"),
+            ("female", "female"),
+            ("M", "male"),
+            ("F", "female"),
+        ]
 
         for input_gender, expected_gender in test_cases:
-            test_data = {"breed": "Mixed Breed", "sex": input_gender, "age": "2 years", "size": "Medium"}
+            test_data = {
+                "breed": "Mixed Breed",
+                "sex": input_gender,
+                "age": "2 years",
+                "size": "Medium",
+            }
 
             result = scraper.process_animal(test_data)
 
@@ -146,7 +179,12 @@ class TestPetsInTurkeyUnifiedStandardization:
 
     def test_external_url_preserved(self, scraper):
         """Test that external URLs are preserved during standardization."""
-        test_data = {"breed": "Mixed Breed", "external_url": "https://example.com/dog/123", "age": "2 years", "size": "Medium"}
+        test_data = {
+            "breed": "Mixed Breed",
+            "external_url": "https://example.com/dog/123",
+            "age": "2 years",
+            "size": "Medium",
+        }
 
         result = scraper.process_animal(test_data)
 
@@ -154,7 +192,12 @@ class TestPetsInTurkeyUnifiedStandardization:
 
     def test_image_cleaning(self, scraper):
         """Test image URL cleaning for Wix platform."""
-        test_data = {"breed": "Mixed Breed", "image": "wix:image://v1/abc123/test.jpg#originWidth=800&originHeight=600", "age": "2 years", "size": "Medium"}
+        test_data = {
+            "breed": "Mixed Breed",
+            "image": "wix:image://v1/abc123/test.jpg#originWidth=800&originHeight=600",
+            "age": "2 years",
+            "size": "Medium",
+        }
 
         result = scraper.process_animal(test_data)
 
@@ -165,7 +208,11 @@ class TestPetsInTurkeyUnifiedStandardization:
 
     def test_birth_date_processing(self, scraper):
         """Test birth date extraction and processing."""
-        test_data = {"breed": "Mixed Breed", "birth_date": "01/06/2022", "size": "Medium"}
+        test_data = {
+            "breed": "Mixed Breed",
+            "birth_date": "01/06/2022",
+            "size": "Medium",
+        }
 
         result = scraper.process_animal(test_data)
 
@@ -176,15 +223,30 @@ class TestPetsInTurkeyUnifiedStandardization:
 
     def test_neutered_spayed_standardization(self, scraper):
         """Test neutered/spayed field standardization."""
-        test_cases = [("Yes", True), ("No", False), ("yes", True), ("no", False), ("YES", True), ("NO", False), ("", None)]  # Empty string should be None (unknown), not False
+        test_cases = [
+            ("Yes", True),
+            ("No", False),
+            ("yes", True),
+            ("no", False),
+            ("YES", True),
+            ("NO", False),
+            ("", None),
+        ]  # Empty string should be None (unknown), not False
 
         for input_value, expected in test_cases:
-            test_data = {"breed": "Mixed Breed", "neutered": input_value, "age": "2 years", "size": "Medium"}
+            test_data = {
+                "breed": "Mixed Breed",
+                "neutered": input_value,
+                "age": "2 years",
+                "size": "Medium",
+            }
 
             result = scraper.process_animal(test_data)
 
             # Now that we've restored boolean conversion functionality:
-            assert result.get("neutered") == expected, f"Failed for input '{input_value}': expected {expected}, got {result.get('neutered')}"
+            assert result.get("neutered") == expected, (
+                f"Failed for input '{input_value}': expected {expected}, got {result.get('neutered')}"
+            )
 
     @pytest.mark.unit
     @pytest.mark.fast

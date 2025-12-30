@@ -1,6 +1,10 @@
 import pytest
 
-from api.services.slug_service import generate_animal_slug, generate_organization_slug, sanitize_for_url
+from api.services.slug_service import (
+    generate_animal_slug,
+    generate_organization_slug,
+    sanitize_for_url,
+)
 
 
 @pytest.mark.integration
@@ -59,7 +63,9 @@ class TestGenerateOrganizationSlug:
 
     def test_organization_with_numbers(self):
         """Test organization with numbers in name."""
-        result = generate_organization_slug("REAN (Rescuing European Animals in Need)", 5)
+        result = generate_organization_slug(
+            "REAN (Rescuing European Animals in Need)", 5
+        )
         assert result == "rean-rescuing-european-animals-in-need-5"
 
 
@@ -68,7 +74,9 @@ class TestGenerateAnimalSlug:
 
     def test_animal_with_standardized_breed(self):
         """Test animal slug with standardized breed."""
-        result = generate_animal_slug("Buddy", "Golden Retriever", "golden retriever", 1699)
+        result = generate_animal_slug(
+            "Buddy", "Golden Retriever", "golden retriever", 1699
+        )
         assert result == "buddy-golden-retriever-1699"
 
     def test_animal_with_breed_fallback(self):

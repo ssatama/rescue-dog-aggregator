@@ -71,11 +71,17 @@ def create_mock_image_processing_service(success_mode: bool = True) -> Mock:
 
     if success_mode:
         # Configure successful operations
-        mock_service.process_primary_image.return_value = {"primary_image_url": "https://cloudinary.com/processed.jpg", "original_image_url": "https://original.com/image.jpg"}
+        mock_service.process_primary_image.return_value = {
+            "primary_image_url": "https://cloudinary.com/processed.jpg",
+            "original_image_url": "https://original.com/image.jpg",
+        }
         # save_animal_images method removed in refactoring
     else:
         # Configure error scenarios
-        mock_service.process_primary_image.return_value = {"primary_image_url": "https://original.com/image.jpg", "original_image_url": "https://original.com/image.jpg"}
+        mock_service.process_primary_image.return_value = {
+            "primary_image_url": "https://original.com/image.jpg",
+            "original_image_url": "https://original.com/image.jpg",
+        }
         # save_animal_images method removed in refactoring
 
     return mock_service
@@ -103,7 +109,11 @@ def create_mock_session_manager(success_mode: bool = True) -> Mock:
         mock_service.mark_animals_unavailable.return_value = 2
         mock_service.restore_available_animal.return_value = True
         mock_service.mark_skipped_animals_as_seen.return_value = 5
-        mock_service.get_stale_animals_summary.return_value = {("high", "available"): 25, ("medium", "available"): 10, ("low", "unavailable"): 5}
+        mock_service.get_stale_animals_summary.return_value = {
+            ("high", "available"): 25,
+            ("medium", "available"): 10,
+            ("low", "unavailable"): 5,
+        }
         mock_service.detect_partial_failure.return_value = False
     else:
         # Configure error scenarios
@@ -139,7 +149,13 @@ def create_mock_metrics_collector(success_mode: bool = True) -> Mock:
         mock_service.track_retry.return_value = None
         mock_service.calculate_scrape_duration.return_value = 45.2
         mock_service.assess_data_quality.return_value = 0.85
-        mock_service.generate_comprehensive_metrics.return_value = {"animals_found": 25, "animals_added": 5, "animals_updated": 3, "duration_seconds": 45.2, "quality_score": 0.85}
+        mock_service.generate_comprehensive_metrics.return_value = {
+            "animals_found": 25,
+            "animals_added": 5,
+            "animals_updated": 3,
+            "duration_seconds": 45.2,
+            "quality_score": 0.85,
+        }
         mock_service.log_detailed_metrics.return_value = None
     else:
         # Configure error scenarios (metrics collection shouldn't fail catastrophically)
@@ -178,8 +194,18 @@ def create_test_scraper_with_services(
     class TestScraper(BaseScraper):
         def collect_data(self):
             return [
-                {"name": "Test Dog 1", "external_id": "test1", "organization_id": organization_id, "adoption_url": "https://example.com/adopt/test1"},
-                {"name": "Test Dog 2", "external_id": "test2", "organization_id": organization_id, "adoption_url": "https://example.com/adopt/test2"},
+                {
+                    "name": "Test Dog 1",
+                    "external_id": "test1",
+                    "organization_id": organization_id,
+                    "adoption_url": "https://example.com/adopt/test1",
+                },
+                {
+                    "name": "Test Dog 2",
+                    "external_id": "test2",
+                    "organization_id": organization_id,
+                    "adoption_url": "https://example.com/adopt/test2",
+                },
             ]
 
     # Create default services if not provided
@@ -196,11 +222,17 @@ def create_test_scraper_with_services(
     if config_id:
         # Mock config-based initialization
         with patch("scrapers.base_scraper.ConfigLoader") as mock_loader_class:
-            with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync_class:
+            with patch(
+                "scrapers.base_scraper.create_default_sync_service"
+            ) as mock_sync_class:
                 # Mock config
                 mock_config = Mock()
                 mock_config.name = "Mock Test Org"
-                mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 1.0, "max_retries": 3, "timeout": 30}
+                mock_config.get_scraper_config_dict.return_value = {
+                    "rate_limit_delay": 1.0,
+                    "max_retries": 3,
+                    "timeout": 30,
+                }
 
                 # Mock loader
                 mock_loader = Mock()
@@ -213,11 +245,19 @@ def create_test_scraper_with_services(
                 mock_sync_class.return_value = mock_sync
 
                 scraper = TestScraper(
-                    config_id=config_id, database_service=database_service, image_processing_service=image_processing_service, session_manager=session_manager, metrics_collector=metrics_collector
+                    config_id=config_id,
+                    database_service=database_service,
+                    image_processing_service=image_processing_service,
+                    session_manager=session_manager,
+                    metrics_collector=metrics_collector,
                 )
     else:
         scraper = TestScraper(
-            organization_id=organization_id, database_service=database_service, image_processing_service=image_processing_service, session_manager=session_manager, metrics_collector=metrics_collector
+            organization_id=organization_id,
+            database_service=database_service,
+            image_processing_service=image_processing_service,
+            session_manager=session_manager,
+            metrics_collector=metrics_collector,
         )
 
     return scraper
@@ -237,9 +277,22 @@ def create_minimal_test_scraper(organization_id: int = 1) -> BaseScraper:
 
     class TestScraper(BaseScraper):
         def collect_data(self):
-            return [{"name": "Test Dog", "external_id": "test1", "organization_id": organization_id, "adoption_url": "https://example.com/adopt/test1"}]
+            return [
+                {
+                    "name": "Test Dog",
+                    "external_id": "test1",
+                    "organization_id": organization_id,
+                    "adoption_url": "https://example.com/adopt/test1",
+                }
+            ]
 
-    return TestScraper(organization_id=organization_id, database_service=None, image_processing_service=None, session_manager=None, metrics_collector=None)
+    return TestScraper(
+        organization_id=organization_id,
+        database_service=None,
+        image_processing_service=None,
+        session_manager=None,
+        metrics_collector=None,
+    )
 
 
 @pytest.fixture
@@ -267,7 +320,12 @@ def mock_metrics_collector():
 
 
 @pytest.fixture
-def test_scraper_with_services(mock_database_service, mock_image_processing_service, mock_session_manager, mock_metrics_collector):
+def test_scraper_with_services(
+    mock_database_service,
+    mock_image_processing_service,
+    mock_session_manager,
+    mock_metrics_collector,
+):
     """Pytest fixture for BaseScraper with all services injected."""
     return create_test_scraper_with_services(
         organization_id=1,
@@ -285,7 +343,12 @@ def minimal_test_scraper():
 
 
 # Configuration helpers for common test scenarios
-def configure_database_service_for_existing_animal(mock_service: Mock, animal_id: int = 1, animal_name: str = "Existing Dog", updated_at: datetime = None) -> None:
+def configure_database_service_for_existing_animal(
+    mock_service: Mock,
+    animal_id: int = 1,
+    animal_name: str = "Existing Dog",
+    updated_at: datetime = None,
+) -> None:
     """Configure mock DatabaseService to return an existing animal.
 
     Args:
@@ -311,7 +374,9 @@ def configure_database_service_for_new_animal(mock_service: Mock) -> None:
     mock_service.create_animal.return_value = (1, "added")
 
 
-def configure_session_manager_for_partial_failure(mock_service: Mock, should_detect_failure: bool = True) -> None:
+def configure_session_manager_for_partial_failure(
+    mock_service: Mock, should_detect_failure: bool = True
+) -> None:
     """Configure mock SessionManager for partial failure detection.
 
     Args:
@@ -321,7 +386,9 @@ def configure_session_manager_for_partial_failure(mock_service: Mock, should_det
     mock_service.detect_partial_failure.return_value = should_detect_failure
 
 
-def configure_image_processing_service_for_success(mock_service: Mock, image_count: int = 3) -> None:
+def configure_image_processing_service_for_success(
+    mock_service: Mock, image_count: int = 3
+) -> None:
     """Configure mock ImageProcessingService for successful operations.
 
     Args:
@@ -329,10 +396,15 @@ def configure_image_processing_service_for_success(mock_service: Mock, image_cou
         image_count: Number of images to simulate as successfully processed
     """
     # save_animal_images method removed in refactoring
-    mock_service.process_primary_image.return_value = {"primary_image_url": "https://cloudinary.com/processed.jpg", "original_image_url": "https://original.com/image.jpg"}
+    mock_service.process_primary_image.return_value = {
+        "primary_image_url": "https://cloudinary.com/processed.jpg",
+        "original_image_url": "https://original.com/image.jpg",
+    }
 
 
-def configure_image_processing_service_for_failure(mock_service: Mock, image_count: int = 3) -> None:
+def configure_image_processing_service_for_failure(
+    mock_service: Mock, image_count: int = 3
+) -> None:
     """Configure mock ImageProcessingService for failed operations.
 
     Args:
@@ -340,4 +412,7 @@ def configure_image_processing_service_for_failure(mock_service: Mock, image_cou
         image_count: Number of images to simulate as failed
     """
     # save_animal_images method removed in refactoring
-    mock_service.process_primary_image.return_value = {"primary_image_url": "https://original.com/image.jpg", "original_image_url": "https://original.com/image.jpg"}
+    mock_service.process_primary_image.return_value = {
+        "primary_image_url": "https://original.com/image.jpg",
+        "original_image_url": "https://original.com/image.jpg",
+    }

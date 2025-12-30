@@ -12,7 +12,7 @@ import re
 from typing import List, Optional
 
 # Import shared extraction utilities
-from utils.shared_extraction_patterns import calculate_age_range_months, extract_age_from_text, extract_breed_from_text, extract_sex_from_text, extract_weight_from_text, normalize_age_text
+from utils.shared_extraction_patterns import extract_weight_from_text
 
 
 def extract_birth_date(text: Optional[str]) -> Optional[str]:
@@ -40,7 +40,9 @@ def extract_birth_date(text: Optional[str]) -> Optional[str]:
         return match.group(1)
 
     # Pattern 3: "DOB: April/May 2024" or "DOB -April /May 2024"
-    match = re.search(r"DOB[-:\s]*([A-Za-z]+\s*/\s*[A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
+    match = re.search(
+        r"DOB[-:\s]*([A-Za-z]+\s*/\s*[A-Za-z]+\s+\d{4})", text, re.IGNORECASE
+    )
     if match:
         return match.group(1)
 
@@ -181,12 +183,17 @@ def extract_age_from_text_legacy(text: Optional[str]) -> Optional[float]:
     text = text.lower()
 
     # Pattern 1: "4 y old", "roughly 3 y old"
-    match = re.search(r"(?:roughly|approximately|about)?\s*(\d+(?:\.\d+)?)\s*y\s+old", text)
+    match = re.search(
+        r"(?:roughly|approximately|about)?\s*(\d+(?:\.\d+)?)\s*y\s+old", text
+    )
     if match:
         return float(match.group(1))
 
     # Pattern 2: "nearly 2 years old", "approximately 3 years old"
-    match = re.search(r"(?:nearly|approximately|roughly|about|exactly)?\s*(\d+(?:\.\d+)?)\s*years?\s+old", text)
+    match = re.search(
+        r"(?:nearly|approximately|roughly|about|exactly)?\s*(\d+(?:\.\d+)?)\s*years?\s+old",
+        text,
+    )
     if match:
         return float(match.group(1))
 
@@ -197,7 +204,10 @@ def extract_age_from_text_legacy(text: Optional[str]) -> Optional[float]:
         return round(months / 12.0, 2)
 
     # Pattern 4: Veterinary estimates
-    match = re.search(r"(?:vet|veterinary).*?(?:estimates?|assessment).*?(\d+(?:\.\d+)?)\s*(?:years?|y)", text)
+    match = re.search(
+        r"(?:vet|veterinary).*?(?:estimates?|assessment).*?(\d+(?:\.\d+)?)\s*(?:years?|y)",
+        text,
+    )
     if match:
         return float(match.group(1))
 
@@ -241,16 +251,26 @@ def extract_sex_from_text_legacy(text: Optional[str]) -> Optional[str]:
     boy_count = len(re.findall(r"\bboy\b", text))
 
     # Calculate confidence scores
-    female_score = (spayed_count * 3) + (she_count + her_count) + ((female_count + girl_count) * 2)
-    male_score = ((neutered_count + castrated_count) * 3) + (he_count + his_count) + ((male_count + boy_count) * 2)
+    female_score = (
+        (spayed_count * 3) + (she_count + her_count) + ((female_count + girl_count) * 2)
+    )
+    male_score = (
+        ((neutered_count + castrated_count) * 3)
+        + (he_count + his_count)
+        + ((male_count + boy_count) * 2)
+    )
 
     # Check for conflicting signals (mixed pronouns might indicate multiple dogs)
-    pronoun_conflict = (she_count > 0 and he_count > 0) and abs(she_count - he_count) <= 1
+    pronoun_conflict = (she_count > 0 and he_count > 0) and abs(
+        she_count - he_count
+    ) <= 1
 
     # Also check for explicit gender conflicts (e.g., "she is a good boy")
     gender_conflict = (female_count + girl_count) > 0 and (male_count + boy_count) > 0
 
-    if (pronoun_conflict or gender_conflict) and (spayed_count == 0 and neutered_count == 0 and castrated_count == 0):
+    if (pronoun_conflict or gender_conflict) and (
+        spayed_count == 0 and neutered_count == 0 and castrated_count == 0
+    ):
         return None  # Likely multiple dogs or conflicting info
 
     # Return result based on confidence scores
@@ -432,7 +452,16 @@ def extract_breed(bullets: Optional[List[str]]) -> Optional[str]:
     text = " ".join(bullets).lower()
 
     # Look for mixed breed indicators - including checkmark patterns from database
-    if any(term in text for term in ["mixed breed", "mix", "crossbreed", "✔️mixed breed", "💕mixed breed"]):
+    if any(
+        term in text
+        for term in [
+            "mixed breed",
+            "mix",
+            "crossbreed",
+            "✔️mixed breed",
+            "💕mixed breed",
+        ]
+    ):
         # Check if specific breed mentioned with mix
         breed_patterns = [
             r"✔️([\w\s]+)\s+mix✔️",  # Pattern: ✔️posavac hound mix✔️
@@ -522,7 +551,13 @@ def extract_sex(bullets: Optional[List[str]]) -> Optional[str]:
     female_patterns = [r"\bshe\b", r"\bher\b", r"\bspayed\b", r"\bfemale\b"]
 
     # Male indicators
-    male_patterns = [r"\bhe\b", r"\bhis\b", r"\bneutered\b", r"\bcastration\b", r"\bmale\b"]
+    male_patterns = [
+        r"\bhe\b",
+        r"\bhis\b",
+        r"\bneutered\b",
+        r"\bcastration\b",
+        r"\bmale\b",
+    ]
 
     female_count = sum(1 for pattern in female_patterns if re.search(pattern, text))
     male_count = sum(1 for pattern in male_patterns if re.search(pattern, text))

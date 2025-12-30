@@ -13,7 +13,10 @@ from scrapers.base_scraper import BaseScraper
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
 if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+    from services.playwright_browser_service import (
+        PlaywrightOptions,
+        get_playwright_service,
+    )
 else:
     from selenium.common.exceptions import NoSuchElementException
     from selenium.webdriver.common.by import By
@@ -52,7 +55,10 @@ class DaisyFamilyRescueScraper(BaseScraper):
         ]
 
         # Sections to skip
-        self.skip_sections = ["In medizinischer Behandlung", "Wir sind bereits reserviert"]
+        self.skip_sections = [
+            "In medizinischer Behandlung",
+            "Wir sind bereits reserviert",
+        ]
 
         # Initialize detail scraper for enhanced data extraction
         self.detail_scraper = None
@@ -95,7 +101,9 @@ class DaisyFamilyRescueScraper(BaseScraper):
             # Return empty list to trigger partial failure detection in BaseScraper
             return []
 
-    def _translate_and_normalize_dogs(self, dogs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _translate_and_normalize_dogs(
+        self, dogs: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Translate German data to English using comprehensive translation service.
 
         This is the critical integration point where raw German data is translated
@@ -124,12 +132,16 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     translated_dog["properties"] = {}
                 translated_dog["properties"]["language"] = "en"
                 translated_dog["properties"]["original_language"] = "de"
-                translated_dog["properties"]["translation_service"] = "daisy_family_rescue"
+                translated_dog["properties"]["translation_service"] = (
+                    "daisy_family_rescue"
+                )
 
                 translated_dogs.append(translated_dog)
 
             except Exception as e:
-                self.logger.error(f"Translation failed for {dog.get('name', 'unknown')}: {e}")
+                self.logger.error(
+                    f"Translation failed for {dog.get('name', 'unknown')}: {e}"
+                )
                 translation_errors += 1
 
                 # Return original with error flag rather than lose the dog
@@ -137,11 +149,15 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 if "properties" not in dog_with_error:
                     dog_with_error["properties"] = {}
                 dog_with_error["properties"]["translation_error"] = str(e)
-                dog_with_error["properties"]["language"] = "de"  # Keep original language
+                dog_with_error["properties"]["language"] = (
+                    "de"  # Keep original language
+                )
                 translated_dogs.append(dog_with_error)
 
         if translation_errors > 0:
-            self.logger.warning(f"Translation errors occurred for {translation_errors} dogs")
+            self.logger.warning(
+                f"Translation errors occurred for {translation_errors} dogs"
+            )
 
         # World-class logging: Translation stats handled by centralized system
         return translated_dogs
@@ -171,7 +187,9 @@ class DaisyFamilyRescueScraper(BaseScraper):
             driver.get(self.listing_url)
 
             # Wait for page to load
-            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+            WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
 
             # Handle lazy loading if needed
             self._handle_lazy_loading(driver)
@@ -189,22 +207,32 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     if dog_data:
                         basic_dogs_data.append(dog_data)
                     else:
-                        self.logger.warning(f"Failed to extract data from container {i+1}")
+                        self.logger.warning(
+                            f"Failed to extract data from container {i + 1}"
+                        )
                 except Exception as e:
-                    self.logger.warning(f"Error processing dog container {i+1}: {e}")
+                    self.logger.warning(f"Error processing dog container {i + 1}: {e}")
                     continue
 
             # Apply skip_existing_animals filtering
             # World-class logging: Configuration handled by centralized system
             if self.skip_existing_animals and basic_dogs_data:
-                all_urls = [dog.get("adoption_url") for dog in basic_dogs_data if dog.get("adoption_url")]
+                all_urls = [
+                    dog.get("adoption_url")
+                    for dog in basic_dogs_data
+                    if dog.get("adoption_url")
+                ]
                 # World-class logging: URL filtering handled by centralized system
                 filtered_urls = self._filter_existing_urls(all_urls)
                 filtered_urls_set = set(filtered_urls)
 
                 # Filter dogs to only those with URLs we should process
                 original_count = len(basic_dogs_data)
-                basic_dogs_data = [dog for dog in basic_dogs_data if dog.get("adoption_url") in filtered_urls_set]
+                basic_dogs_data = [
+                    dog
+                    for dog in basic_dogs_data
+                    if dog.get("adoption_url") in filtered_urls_set
+                ]
                 skipped_count = original_count - len(basic_dogs_data)
 
                 # Track filtering stats for failure detection
@@ -225,15 +253,21 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     if enhanced_data:
                         all_dogs.append(enhanced_data)
                         processed_count += 1
-                        self.logger.debug(f"Processed {processed_count}/{len(basic_dogs_data)}: {enhanced_data.get('name')}")
+                        self.logger.debug(
+                            f"Processed {processed_count}/{len(basic_dogs_data)}: {enhanced_data.get('name')}"
+                        )
                     else:
                         # Fallback to basic data if detail extraction fails
                         all_dogs.append(dog_data)
                         processed_count += 1
-                        self.logger.warning(f"Used basic data for {dog_data.get('name')} (detail extraction failed)")
+                        self.logger.warning(
+                            f"Used basic data for {dog_data.get('name')} (detail extraction failed)"
+                        )
 
                 except Exception as e:
-                    self.logger.warning(f"Error processing dog {dog_data.get('name', 'unknown')}: {e}")
+                    self.logger.warning(
+                        f"Error processing dog {dog_data.get('name', 'unknown')}: {e}"
+                    )
                     continue
 
             # World-class logging: Processing results handled by centralized system
@@ -274,7 +308,9 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
         async with playwright_service.get_browser(options) as browser_result:
             page = browser_result.page
-            self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} for Daisy Family Rescue scraping")
+            self.logger.info(
+                f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} for Daisy Family Rescue scraping"
+            )
 
             try:
                 await page.goto(self.listing_url, wait_until="domcontentloaded")
@@ -296,21 +332,33 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
                 for i, container in enumerate(valid_dog_containers):
                     try:
-                        dog_data = self._extract_dog_from_container_soup(container, i + 1)
+                        dog_data = self._extract_dog_from_container_soup(
+                            container, i + 1
+                        )
                         if dog_data:
                             basic_dogs_data.append(dog_data)
                     except Exception as e:
-                        self.logger.warning(f"Error processing dog container {i+1}: {e}")
+                        self.logger.warning(
+                            f"Error processing dog container {i + 1}: {e}"
+                        )
                         continue
 
                 # Apply skip_existing_animals filtering
                 if self.skip_existing_animals and basic_dogs_data:
-                    all_urls = [dog.get("adoption_url") for dog in basic_dogs_data if dog.get("adoption_url")]
+                    all_urls = [
+                        dog.get("adoption_url")
+                        for dog in basic_dogs_data
+                        if dog.get("adoption_url")
+                    ]
                     filtered_urls = self._filter_existing_urls(all_urls)
                     filtered_urls_set = set(filtered_urls)
 
                     original_count = len(basic_dogs_data)
-                    basic_dogs_data = [dog for dog in basic_dogs_data if dog.get("adoption_url") in filtered_urls_set]
+                    basic_dogs_data = [
+                        dog
+                        for dog in basic_dogs_data
+                        if dog.get("adoption_url") in filtered_urls_set
+                    ]
                     skipped_count = original_count - len(basic_dogs_data)
 
                     self.set_filtering_stats(original_count, skipped_count)
@@ -325,12 +373,16 @@ class DaisyFamilyRescueScraper(BaseScraper):
                         if enhanced_data:
                             all_dogs.append(enhanced_data)
                             processed_count += 1
-                            self.logger.debug(f"Processed {processed_count}/{len(basic_dogs_data)}: {enhanced_data.get('name')}")
+                            self.logger.debug(
+                                f"Processed {processed_count}/{len(basic_dogs_data)}: {enhanced_data.get('name')}"
+                            )
                         else:
                             all_dogs.append(dog_data)
                             processed_count += 1
                     except Exception as e:
-                        self.logger.warning(f"Error processing dog {dog_data.get('name', 'unknown')}: {e}")
+                        self.logger.warning(
+                            f"Error processing dog {dog_data.get('name', 'unknown')}: {e}"
+                        )
                         continue
 
                 self.respect_rate_limit()
@@ -346,7 +398,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         last_height = await page.evaluate("document.body.scrollHeight")
 
         for i in range(3):
-            await page.evaluate(f"window.scrollTo(0, {(i+1) * last_height // 3})")
+            await page.evaluate(f"window.scrollTo(0, {(i + 1) * last_height // 3})")
             await asyncio.sleep(2)
 
         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -360,15 +412,22 @@ class DaisyFamilyRescueScraper(BaseScraper):
         valid_containers = []
 
         try:
-            section_headers = soup.select("h2.elementor-heading-title.elementor-size-default")
-            all_dog_containers = soup.select("article.elementor-post.elementor-grid-item.ecs-post-loop")
+            section_headers = soup.select(
+                "h2.elementor-heading-title.elementor-size-default"
+            )
+            all_dog_containers = soup.select(
+                "article.elementor-post.elementor-grid-item.ecs-post-loop"
+            )
 
             all_elements = list(soup.find_all(True))
 
             section_positions = {}
             for header in section_headers:
                 section_text = header.get_text(strip=True)
-                if section_text in self.target_sections or section_text in self.skip_sections:
+                if (
+                    section_text in self.target_sections
+                    or section_text in self.skip_sections
+                ):
                     try:
                         header_position = all_elements.index(header)
                         section_positions[section_text] = header_position
@@ -382,22 +441,30 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     valid_containers.append(container)
                     continue
 
-                container_section = self._find_container_section(container_position, section_positions)
+                container_section = self._find_container_section(
+                    container_position, section_positions
+                )
 
                 if container_section in self.target_sections:
                     valid_containers.append(container)
                 elif container_section in self.skip_sections:
-                    self.logger.debug(f"Skipping container in section: {container_section}")
+                    self.logger.debug(
+                        f"Skipping container in section: {container_section}"
+                    )
                 else:
                     valid_containers.append(container)
 
         except Exception as e:
             self.logger.warning(f"Section filtering failed, using all containers: {e}")
-            valid_containers = soup.select("article.elementor-post.elementor-grid-item.ecs-post-loop")
+            valid_containers = soup.select(
+                "article.elementor-post.elementor-grid-item.ecs-post-loop"
+            )
 
         return valid_containers
 
-    def _extract_dog_from_container_soup(self, container, container_num: int) -> Optional[Dict[str, Any]]:
+    def _extract_dog_from_container_soup(
+        self, container, container_num: int
+    ) -> Optional[Dict[str, Any]]:
         """Extract dog data from a single container element using BeautifulSoup."""
         try:
             dog_link = None
@@ -421,12 +488,16 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     break
 
             if not dog_link or not dog_url:
-                self.logger.warning(f"Could not find dog link in container {container_num}")
+                self.logger.warning(
+                    f"Could not find dog link in container {container_num}"
+                )
                 return None
 
             name, location = self._parse_name_and_location(link_text)
             if not name:
-                self.logger.warning(f"Could not extract name from container {container_num}")
+                self.logger.warning(
+                    f"Could not extract name from container {container_num}"
+                )
                 return None
 
             image_url = self._extract_image_from_container_soup(container)
@@ -456,11 +527,15 @@ class DaisyFamilyRescueScraper(BaseScraper):
             if self._validate_dog_data(dog_data):
                 return dog_data
             else:
-                self.logger.warning(f"Data validation failed for dog in container {container_num}")
+                self.logger.warning(
+                    f"Data validation failed for dog in container {container_num}"
+                )
                 return None
 
         except Exception as e:
-            self.logger.error(f"Error extracting dog from container {container_num}: {e}")
+            self.logger.error(
+                f"Error extracting dog from container {container_num}: {e}"
+            )
             return None
 
     def _extract_image_from_container_soup(self, container) -> Optional[str]:
@@ -475,7 +550,9 @@ class DaisyFamilyRescueScraper(BaseScraper):
             self.logger.warning(f"Error extracting image: {e}")
         return None
 
-    def _enhance_with_detail_page(self, basic_dog_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _enhance_with_detail_page(
+        self, basic_dog_data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """Enhance basic dog data with detailed information from the dog's detail page.
 
         Uses DaisyFamilyRescueDogDetailScraper to extract comprehensive information
@@ -492,7 +569,9 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 self.detail_scraper = DaisyFamilyRescueDogDetailScraper()
 
             # Extract detailed information with rate limiting
-            detailed_data = self.detail_scraper.extract_dog_details(adoption_url, self.logger)
+            detailed_data = self.detail_scraper.extract_dog_details(
+                adoption_url, self.logger
+            )
 
             # Apply rate limiting between detail page requests
             self.respect_rate_limit()
@@ -517,14 +596,20 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 if not merged_data.get("name") and basic_dog_data.get("name"):
                     merged_data["name"] = basic_dog_data["name"]
 
-                self.logger.debug(f"Successfully enhanced data for {merged_data.get('name')}")
+                self.logger.debug(
+                    f"Successfully enhanced data for {merged_data.get('name')}"
+                )
                 return merged_data
             else:
-                self.logger.warning(f"No detailed data extracted for {basic_dog_data.get('name')}, using basic data")
+                self.logger.warning(
+                    f"No detailed data extracted for {basic_dog_data.get('name')}, using basic data"
+                )
                 return basic_dog_data
 
         except Exception as e:
-            self.logger.error(f"Error enhancing dog data for {basic_dog_data.get('name')}: {e}")
+            self.logger.error(
+                f"Error enhancing dog data for {basic_dog_data.get('name')}: {e}"
+            )
             # Return basic data on error rather than losing the dog entirely
             return basic_dog_data
 
@@ -538,7 +623,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
         # Scroll down progressively
         for i in range(3):  # 3 scroll steps should be sufficient
-            driver.execute_script(f"window.scrollTo(0, {(i+1) * last_height // 3});")
+            driver.execute_script(f"window.scrollTo(0, {(i + 1) * last_height // 3});")
             time.sleep(2)  # Wait for content to load
 
         # Scroll to bottom
@@ -555,12 +640,17 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
         try:
             # Find all section headers
-            section_headers = driver.find_elements(By.CSS_SELECTOR, "h2.elementor-heading-title.elementor-size-default")
+            section_headers = driver.find_elements(
+                By.CSS_SELECTOR, "h2.elementor-heading-title.elementor-size-default"
+            )
 
             # World-class logging: Section discovery handled by centralized system
 
             # Find all dog containers
-            all_dog_containers = driver.find_elements(By.CSS_SELECTOR, "article.elementor-post.elementor-grid-item.ecs-post-loop")
+            all_dog_containers = driver.find_elements(
+                By.CSS_SELECTOR,
+                "article.elementor-post.elementor-grid-item.ecs-post-loop",
+            )
 
             # World-class logging: Container discovery handled by centralized system
 
@@ -568,7 +658,10 @@ class DaisyFamilyRescueScraper(BaseScraper):
             section_positions = {}
             for header in section_headers:
                 section_text = header.text.strip()
-                if section_text in self.target_sections or section_text in self.skip_sections:
+                if (
+                    section_text in self.target_sections
+                    or section_text in self.skip_sections
+                ):
                     # Get the DOM position of this header
                     header_position = driver.execute_script(
                         """
@@ -591,27 +684,40 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 )
 
                 # Find which section this container belongs to
-                container_section = self._find_container_section(container_position, section_positions)
+                container_section = self._find_container_section(
+                    container_position, section_positions
+                )
 
                 if container_section in self.target_sections:
                     valid_containers.append(container)
-                    self.logger.debug(f"Container at position {container_position} belongs to target section: {container_section}")
+                    self.logger.debug(
+                        f"Container at position {container_position} belongs to target section: {container_section}"
+                    )
                 elif container_section in self.skip_sections:
-                    self.logger.debug(f"Skipping container at position {container_position} in section: {container_section}")
+                    self.logger.debug(
+                        f"Skipping container at position {container_position} in section: {container_section}"
+                    )
                 else:
                     # If we can't determine section, include it to be safe
                     valid_containers.append(container)
-                    self.logger.debug(f"Container at position {container_position} in unknown section, including")
+                    self.logger.debug(
+                        f"Container at position {container_position} in unknown section, including"
+                    )
 
         except Exception as e:
             self.logger.warning(f"Section filtering failed, using all containers: {e}")
             # Fallback: use all dog containers
-            valid_containers = driver.find_elements(By.CSS_SELECTOR, "article.elementor-post.elementor-grid-item.ecs-post-loop")
+            valid_containers = driver.find_elements(
+                By.CSS_SELECTOR,
+                "article.elementor-post.elementor-grid-item.ecs-post-loop",
+            )
 
         # World-class logging: Container filtering handled by centralized system
         return valid_containers
 
-    def _find_container_section(self, container_position: int, section_positions: Dict[str, int]) -> Optional[str]:
+    def _find_container_section(
+        self, container_position: int, section_positions: Dict[str, int]
+    ) -> Optional[str]:
         """Find which section a container belongs to based on DOM positions."""
         # Find the section header that comes before this container
         closest_section = None
@@ -626,7 +732,9 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
         return closest_section
 
-    def _extract_dog_from_container(self, container, container_num: int) -> Optional[Dict[str, Any]]:
+    def _extract_dog_from_container(
+        self, container, container_num: int
+    ) -> Optional[Dict[str, Any]]:
         """Extract dog data from a single container element."""
         try:
             # Extract dog name and location from link text - try multiple selectors
@@ -648,7 +756,9 @@ class DaisyFamilyRescueScraper(BaseScraper):
                         href = link.get_attribute("href")
                         if href and ("hund-" in href or "/hund" in href):
                             link_text = link.text.strip()
-                            if link_text:  # Skip links with empty text (image-only links)
+                            if (
+                                link_text
+                            ):  # Skip links with empty text (image-only links)
                                 dog_link = link
                                 dog_url = href
                                 break
@@ -658,13 +768,17 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     continue
 
             if not dog_link or not dog_url:
-                self.logger.warning(f"Could not find dog link in container {container_num}")
+                self.logger.warning(
+                    f"Could not find dog link in container {container_num}"
+                )
                 return None
 
             # Parse name and location from text like "Brownie - in München"
             name, location = self._parse_name_and_location(link_text)
             if not name:
-                self.logger.warning(f"Could not extract name from container {container_num}")
+                self.logger.warning(
+                    f"Could not extract name from container {container_num}"
+                )
                 return None
 
             # Extract image URL
@@ -690,7 +804,9 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     "extraction_method": "selenium_listing",
                     "language": "de",
                     "location": location,
-                    "container_text": container_text[:200],  # First 200 chars for debugging
+                    "container_text": container_text[
+                        :200
+                    ],  # First 200 chars for debugging
                 },
             }
 
@@ -701,14 +817,20 @@ class DaisyFamilyRescueScraper(BaseScraper):
             if self._validate_dog_data(dog_data):
                 return dog_data
             else:
-                self.logger.warning(f"Data validation failed for dog in container {container_num}")
+                self.logger.warning(
+                    f"Data validation failed for dog in container {container_num}"
+                )
                 return None
 
         except Exception as e:
-            self.logger.error(f"Error extracting dog from container {container_num}: {e}")
+            self.logger.error(
+                f"Error extracting dog from container {container_num}: {e}"
+            )
             return None
 
-    def _parse_name_and_location(self, link_text: str) -> tuple[Optional[str], Optional[str]]:
+    def _parse_name_and_location(
+        self, link_text: str
+    ) -> tuple[Optional[str], Optional[str]]:
         """Parse dog name and location from link text like 'Brownie - in München'."""
         if not link_text:
             return None, None

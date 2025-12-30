@@ -24,7 +24,13 @@ class TestWorldClassLogging:
         mock_logger = Mock()
 
         # Configuration for comprehensive logging
-        config = {"batch_size": 10, "show_progress_bar": True, "show_throughput": True, "eta_enabled": True, "verbosity_level": "comprehensive"}
+        config = {
+            "batch_size": 10,
+            "show_progress_bar": True,
+            "show_throughput": True,
+            "eta_enabled": True,
+            "verbosity_level": "comprehensive",
+        }
 
         # Create progress tracker for large site (triggers comprehensive mode)
         tracker = ProgressTracker(total_items=200, logger=mock_logger, config=config)
@@ -39,11 +45,19 @@ class TestWorldClassLogging:
         tracker.update(items_processed=10)  # Update progress
 
         # Test comprehensive stats tracking
-        tracker.track_discovery_stats(dogs_found=200, pages_processed=5, extraction_failures=2)
+        tracker.track_discovery_stats(
+            dogs_found=200, pages_processed=5, extraction_failures=2
+        )
         tracker.track_filtering_stats(dogs_skipped=150, new_dogs=50)
-        tracker.track_processing_stats(dogs_added=10, dogs_updated=35, dogs_unchanged=5, processing_failures=0)
-        tracker.track_image_stats(images_uploaded=45, images_failed=5, image_optimizations=40)
-        tracker.track_performance_stats(phase_durations={"collection": 30.5, "processing": 45.2})
+        tracker.track_processing_stats(
+            dogs_added=10, dogs_updated=35, dogs_unchanged=5, processing_failures=0
+        )
+        tracker.track_image_stats(
+            images_uploaded=45, images_failed=5, image_optimizations=40
+        )
+        tracker.track_performance_stats(
+            phase_durations={"collection": 30.5, "processing": 45.2}
+        )
 
         # Verify all stats are tracked
         stats = tracker.get_comprehensive_stats()
@@ -60,7 +74,9 @@ class TestWorldClassLogging:
         assert stats["processing"]["dogs_updated"] == 35
         assert stats["processing"]["dogs_unchanged"] == 5
         assert stats["processing"]["processing_failures"] == 0
-        assert stats["processing"]["success_rate"] == 100.0  # 50/50 processed successfully
+        assert (
+            stats["processing"]["success_rate"] == 100.0
+        )  # 50/50 processed successfully
 
         assert stats["images"]["images_uploaded"] == 45
         assert stats["images"]["images_failed"] == 5
@@ -78,25 +94,38 @@ class TestWorldClassLogging:
         config = {"batch_size": 10}
 
         # Test minimal logging (small sites)
-        small_tracker = ProgressTracker(total_items=15, logger=mock_logger, config=config)
+        small_tracker = ProgressTracker(
+            total_items=15, logger=mock_logger, config=config
+        )
         assert small_tracker.verbosity_level == LoggingLevel.MINIMAL
 
         # Test standard logging (medium sites)
-        medium_tracker = ProgressTracker(total_items=50, logger=mock_logger, config=config)
+        medium_tracker = ProgressTracker(
+            total_items=50, logger=mock_logger, config=config
+        )
         assert medium_tracker.verbosity_level == LoggingLevel.STANDARD
 
         # Test detailed logging (large sites)
-        large_tracker = ProgressTracker(total_items=100, logger=mock_logger, config=config)
+        large_tracker = ProgressTracker(
+            total_items=100, logger=mock_logger, config=config
+        )
         assert large_tracker.verbosity_level == LoggingLevel.DETAILED
 
         # Test comprehensive logging (very large sites)
-        huge_tracker = ProgressTracker(total_items=200, logger=mock_logger, config=config)
+        huge_tracker = ProgressTracker(
+            total_items=200, logger=mock_logger, config=config
+        )
         assert huge_tracker.verbosity_level == LoggingLevel.COMPREHENSIVE
 
     def test_world_class_progress_messages(self):
         """Test that progress messages are professional and informative."""
         mock_logger = Mock()
-        config = {"batch_size": 10, "show_progress_bar": True, "show_throughput": True, "eta_enabled": True}
+        config = {
+            "batch_size": 10,
+            "show_progress_bar": True,
+            "show_throughput": True,
+            "eta_enabled": True,
+        }
 
         # Test comprehensive progress message
         tracker = ProgressTracker(total_items=200, logger=mock_logger, config=config)
@@ -124,7 +153,13 @@ class TestWorldClassLogging:
             suppress_service_logging()
 
             # Verify service loggers are configured to suppress operational logs
-            expected_calls = [("services.database_service",), ("services.image_processing_service",), ("services.session_manager",), ("services.connection_pool",), ("services.metrics_collector",)]
+            expected_calls = [
+                ("services.database_service",),
+                ("services.image_processing_service",),
+                ("services.session_manager",),
+                ("services.connection_pool",),
+                ("services.metrics_collector",),
+            ]
 
             for call in expected_calls:
                 mock_get_logger.assert_any_call(call[0])
@@ -137,10 +172,16 @@ class TestWorldClassLogging:
         tracker = ProgressTracker(total_items=100, logger=mock_logger, config=config)
 
         # Simulate complete scrape with stats
-        tracker.track_discovery_stats(dogs_found=100, pages_processed=3, extraction_failures=1)
+        tracker.track_discovery_stats(
+            dogs_found=100, pages_processed=3, extraction_failures=1
+        )
         tracker.track_filtering_stats(dogs_skipped=20, new_dogs=80)
-        tracker.track_processing_stats(dogs_added=15, dogs_updated=60, dogs_unchanged=5, processing_failures=2)
-        tracker.track_image_stats(images_uploaded=75, images_failed=3, image_optimizations=70)
+        tracker.track_processing_stats(
+            dogs_added=15, dogs_updated=60, dogs_unchanged=5, processing_failures=2
+        )
+        tracker.track_image_stats(
+            images_uploaded=75, images_failed=3, image_optimizations=70
+        )
 
         summary = tracker.get_completion_summary()
 

@@ -144,7 +144,9 @@ class BrowserService:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument(f"--window-size={opts.window_size[0]},{opts.window_size[1]}")
+        chrome_options.add_argument(
+            f"--window-size={opts.window_size[0]},{opts.window_size[1]}"
+        )
 
         user_agent = opts.user_agent
         if not user_agent and opts.random_user_agent:
@@ -154,7 +156,9 @@ class BrowserService:
 
         if opts.stealth_mode:
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option(
+                "excludeSwitches", ["enable-automation"]
+            )
             chrome_options.add_experimental_option("useAutomationExtension", False)
 
         if opts.disable_images:
@@ -178,7 +182,9 @@ class BrowserService:
         Only works with local Chrome (CDP commands required).
         """
         try:
-            driver.execute_cdp_cmd("Emulation.setScriptExecutionDisabled", {"value": False})
+            driver.execute_cdp_cmd(
+                "Emulation.setScriptExecutionDisabled", {"value": False}
+            )
 
             stealth_js = """
             Object.defineProperty(navigator, 'webdriver', {
@@ -209,7 +215,9 @@ class BrowserService:
             logger.warning(f"Failed to apply stealth mode: {e}")
 
     @contextmanager
-    def get_browser(self, options: Optional[BrowserOptions] = None) -> Iterator[BrowserResult]:
+    def get_browser(
+        self, options: Optional[BrowserOptions] = None
+    ) -> Iterator[BrowserResult]:
         """Context manager for browser lifecycle.
 
         Usage:

@@ -17,12 +17,16 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
+        self.scraper = SanterPawsBulgarianRescueScraper(
+            config_id="santerpawsbulgarianrescue"
+        )
 
     def test_scraper_initialization(self):
         """Test that scraper initializes correctly with config."""
         self.assertEqual(self.scraper.base_url, "https://santerpawsbulgarianrescue.com")
-        self.assertEqual(self.scraper.listing_url, "https://santerpawsbulgarianrescue.com/adopt/")
+        self.assertEqual(
+            self.scraper.listing_url, "https://santerpawsbulgarianrescue.com/adopt/"
+        )
         self.assertEqual(self.scraper.organization_name, "Santer Paws Bulgarian Rescue")
 
     def test_extract_dog_name_from_url(self):
@@ -30,7 +34,10 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         test_cases = [
             ("https://santerpawsbulgarianrescue.com/dog/pepper/", "Pepper"),
             ("https://santerpawsbulgarianrescue.com/dog/daisy/", "Daisy"),
-            ("https://santerpawsbulgarianrescue.com/dog/summer-breeze/", "Summer Breeze"),
+            (
+                "https://santerpawsbulgarianrescue.com/dog/summer-breeze/",
+                "Summer Breeze",
+            ),
             ("https://santerpawsbulgarianrescue.com/dog/ruby-red/", "Ruby Red"),
         ]
 
@@ -44,7 +51,10 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         test_cases = [
             ("https://santerpawsbulgarianrescue.com/dog/pepper/", "spbr-pepper"),
             ("https://santerpawsbulgarianrescue.com/dog/daisy/", "spbr-daisy"),
-            ("https://santerpawsbulgarianrescue.com/dog/summer-breeze/", "spbr-summer-breeze"),
+            (
+                "https://santerpawsbulgarianrescue.com/dog/summer-breeze/",
+                "spbr-summer-breeze",
+            ),
             ("https://santerpawsbulgarianrescue.com/dog/ruby-red/", "spbr-ruby-red"),
         ]
 
@@ -81,11 +91,16 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
         # Check first call (page 1)
         first_call_args = mock_get.call_args_list[0]
-        self.assertEqual(first_call_args[0][0], "https://santerpawsbulgarianrescue.com/adopt/")
+        self.assertEqual(
+            first_call_args[0][0], "https://santerpawsbulgarianrescue.com/adopt/"
+        )
 
         # Check second call (page 2)
         second_call_args = mock_get.call_args_list[1]
-        self.assertEqual(second_call_args[0][0], "https://santerpawsbulgarianrescue.com/adopt/page/2/")
+        self.assertEqual(
+            second_call_args[0][0],
+            "https://santerpawsbulgarianrescue.com/adopt/page/2/",
+        )
 
     @patch("requests.get")
     def test_get_animal_list_parses_dogs(self, mock_get):
@@ -142,19 +157,28 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         # Check first dog
         self.assertEqual(animals[0]["name"], "Pepper")
         self.assertEqual(animals[0]["external_id"], "spbr-pepper")
-        self.assertEqual(animals[0]["adoption_url"], "https://santerpawsbulgarianrescue.com/dog/pepper/")
+        self.assertEqual(
+            animals[0]["adoption_url"],
+            "https://santerpawsbulgarianrescue.com/dog/pepper/",
+        )
         self.assertEqual(animals[0]["animal_type"], "dog")
         self.assertEqual(animals[0]["status"], "available")
 
         # Check second dog
         self.assertEqual(animals[1]["name"], "Daisy")
         self.assertEqual(animals[1]["external_id"], "spbr-daisy")
-        self.assertEqual(animals[1]["adoption_url"], "https://santerpawsbulgarianrescue.com/dog/daisy/")
+        self.assertEqual(
+            animals[1]["adoption_url"],
+            "https://santerpawsbulgarianrescue.com/dog/daisy/",
+        )
 
         # Check third dog with hyphenated name
         self.assertEqual(animals[2]["name"], "Summer Breeze")
         self.assertEqual(animals[2]["external_id"], "spbr-summer-breeze")
-        self.assertEqual(animals[2]["adoption_url"], "https://santerpawsbulgarianrescue.com/dog/summer-breeze/")
+        self.assertEqual(
+            animals[2]["adoption_url"],
+            "https://santerpawsbulgarianrescue.com/dog/summer-breeze/",
+        )
 
     @patch("requests.get")
     def test_get_animal_list_handles_empty_response(self, mock_get):
@@ -235,8 +259,10 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
     def test_rate_limiting_uses_config_delay(self, mock_sleep):
         """Test that rate limiting uses config-defined delay, not hardcoded value."""
         # Mock the animal list to have one animal
-        with patch.object(self.scraper, "get_animal_list") as mock_get_list, patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
-
+        with (
+            patch.object(self.scraper, "get_animal_list") as mock_get_list,
+            patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details,
+        ):
             mock_get_list.return_value = [
                 {
                     "name": "Test Dog",
@@ -287,22 +313,42 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         with patch("utils.config_loader.ConfigLoader.load_config") as mock_load_config:
             # Mock config to have skip_existing_animals=True
             mock_config = Mock()
-            mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 2.5, "batch_size": 6, "skip_existing_animals": True, "max_retries": 3, "timeout": 240}
+            mock_config.get_scraper_config_dict.return_value = {
+                "rate_limit_delay": 2.5,
+                "batch_size": 6,
+                "skip_existing_animals": True,
+                "max_retries": 3,
+                "timeout": 240,
+            }
             mock_config.name = "Santer Paws Bulgarian Rescue"
             mock_load_config.return_value = mock_config
 
-            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
+            scraper = SanterPawsBulgarianRescueScraper(
+                config_id="santerpawsbulgarianrescue"
+            )
 
-            with patch.object(scraper, "get_animal_list") as mock_get_list, patch.object(scraper, "_filter_existing_urls") as mock_filter_urls:
-
+            with (
+                patch.object(scraper, "get_animal_list") as mock_get_list,
+                patch.object(scraper, "_filter_existing_urls") as mock_filter_urls,
+            ):
                 mock_animals = [
-                    {"name": "Existing Dog", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/existing/", "external_id": "existing"},
-                    {"name": "New Dog", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/new/", "external_id": "new"},
+                    {
+                        "name": "Existing Dog",
+                        "adoption_url": "https://santerpawsbulgarianrescue.com/dog/existing/",
+                        "external_id": "existing",
+                    },
+                    {
+                        "name": "New Dog",
+                        "adoption_url": "https://santerpawsbulgarianrescue.com/dog/new/",
+                        "external_id": "new",
+                    },
                 ]
                 mock_get_list.return_value = mock_animals
 
                 # Mock that only "new" URL should be processed (existing one filtered out)
-                mock_filter_urls.return_value = ["https://santerpawsbulgarianrescue.com/dog/new/"]
+                mock_filter_urls.return_value = [
+                    "https://santerpawsbulgarianrescue.com/dog/new/"
+                ]
 
                 result = scraper._get_filtered_animals()
 
@@ -311,7 +357,10 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 self.assertEqual(result[0]["name"], "New Dog")
 
                 # Verify _filter_existing_urls was called with correct URLs
-                expected_urls = ["https://santerpawsbulgarianrescue.com/dog/existing/", "https://santerpawsbulgarianrescue.com/dog/new/"]
+                expected_urls = [
+                    "https://santerpawsbulgarianrescue.com/dog/existing/",
+                    "https://santerpawsbulgarianrescue.com/dog/new/",
+                ]
                 mock_filter_urls.assert_called_once_with(expected_urls)
 
     def test_filtering_stats_tracked(self):
@@ -319,18 +368,25 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         # Create scraper instance with skip_existing_animals=True
         with patch("utils.config_loader.ConfigLoader.load_config") as mock_load_config:
             mock_config = Mock()
-            mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 2.5, "batch_size": 6, "skip_existing_animals": True, "max_retries": 3, "timeout": 240}
+            mock_config.get_scraper_config_dict.return_value = {
+                "rate_limit_delay": 2.5,
+                "batch_size": 6,
+                "skip_existing_animals": True,
+                "max_retries": 3,
+                "timeout": 240,
+            }
             mock_config.name = "Santer Paws Bulgarian Rescue"
             mock_load_config.return_value = mock_config
 
-            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
+            scraper = SanterPawsBulgarianRescueScraper(
+                config_id="santerpawsbulgarianrescue"
+            )
 
             with (
                 patch.object(scraper, "get_animal_list") as mock_get_list,
                 patch.object(scraper, "_filter_existing_urls") as mock_filter_urls,
                 patch.object(scraper, "set_filtering_stats") as mock_set_stats,
             ):
-
                 # Mock 3 animals total
                 mock_animals = [
                     {"adoption_url": "https://site.com/1/", "name": "Dog1"},
@@ -385,13 +441,26 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
     def test_process_animals_parallel_single_threaded_fallback(self):
         """Test that _process_animals_parallel uses single-threaded processing for small batches."""
         # Test with batch_size=6, animals=3 (should use single-threaded)
-        with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
+        with patch.object(
+            self.scraper, "_scrape_animal_details"
+        ) as mock_scrape_details:
             mock_animals = [
-                {"name": "Dog1", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/dog1/", "external_id": "dog1"},
-                {"name": "Dog2", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/dog2/", "external_id": "dog2"},
+                {
+                    "name": "Dog1",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/dog/dog1/",
+                    "external_id": "dog1",
+                },
+                {
+                    "name": "Dog2",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/dog/dog2/",
+                    "external_id": "dog2",
+                },
             ]
 
-            mock_scrape_details.return_value = {"breed": "Mixed Breed", "size": "Medium"}
+            mock_scrape_details.return_value = {
+                "breed": "Mixed Breed",
+                "size": "Medium",
+            }
 
             result = self.scraper._process_animals_parallel(mock_animals)
 
@@ -418,13 +487,25 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             mock_config.name = "Santer Paws Bulgarian Rescue"
             mock_load_config.return_value = mock_config
 
-            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
+            scraper = SanterPawsBulgarianRescueScraper(
+                config_id="santerpawsbulgarianrescue"
+            )
 
             with patch.object(scraper, "_scrape_animal_details") as mock_scrape_details:
                 # Create 5 animals to trigger parallel processing (more than batch_size=2)
-                mock_animals = [{"name": f"Dog{i}", "adoption_url": f"https://site.com/dog{i}/", "external_id": f"dog{i}"} for i in range(1, 6)]
+                mock_animals = [
+                    {
+                        "name": f"Dog{i}",
+                        "adoption_url": f"https://site.com/dog{i}/",
+                        "external_id": f"dog{i}",
+                    }
+                    for i in range(1, 6)
+                ]
 
-                mock_scrape_details.return_value = {"breed": "Mixed Breed", "size": "Medium"}
+                mock_scrape_details.return_value = {
+                    "breed": "Mixed Breed",
+                    "size": "Medium",
+                }
 
                 result = scraper._process_animals_parallel(mock_animals)
 
@@ -436,12 +517,19 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
     def test_process_animals_parallel_respects_rate_limiting(self):
         """Test that parallel processing respects rate limiting configuration."""
-        import time
 
         # Test with rate_limit_delay from config (2.5 seconds)
         with patch("time.sleep") as mock_sleep:
-            with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
-                mock_animals = [{"name": "Dog1", "adoption_url": "https://site.com/dog1/", "external_id": "dog1"}]
+            with patch.object(
+                self.scraper, "_scrape_animal_details"
+            ) as mock_scrape_details:
+                mock_animals = [
+                    {
+                        "name": "Dog1",
+                        "adoption_url": "https://site.com/dog1/",
+                        "external_id": "dog1",
+                    }
+                ]
 
                 mock_scrape_details.return_value = {"breed": "Mixed Breed"}
 
@@ -453,11 +541,27 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
     def test_process_animals_parallel_handles_errors(self):
         """Test that parallel processing handles errors gracefully and continues processing."""
-        with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
-            mock_animals = [{"name": "GoodDog", "adoption_url": "https://site.com/good/", "external_id": "good"}, {"name": "BadDog", "adoption_url": "https://site.com/bad/", "external_id": "bad"}]
+        with patch.object(
+            self.scraper, "_scrape_animal_details"
+        ) as mock_scrape_details:
+            mock_animals = [
+                {
+                    "name": "GoodDog",
+                    "adoption_url": "https://site.com/good/",
+                    "external_id": "good",
+                },
+                {
+                    "name": "BadDog",
+                    "adoption_url": "https://site.com/bad/",
+                    "external_id": "bad",
+                },
+            ]
 
             # Make second call raise exception
-            mock_scrape_details.side_effect = [{"breed": "Mixed Breed"}, Exception("Network error")]  # First call succeeds  # Second call fails
+            mock_scrape_details.side_effect = [
+                {"breed": "Mixed Breed"},
+                Exception("Network error"),
+            ]  # First call succeeds  # Second call fails
 
             result = self.scraper._process_animals_parallel(mock_animals)
 
@@ -481,23 +585,37 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             mock_config.name = "Santer Paws Bulgarian Rescue"
             mock_load_config.return_value = mock_config
 
-            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
+            scraper = SanterPawsBulgarianRescueScraper(
+                config_id="santerpawsbulgarianrescue"
+            )
 
             with (
                 patch.object(scraper, "get_animal_list") as mock_get_list,
                 patch.object(scraper, "_filter_existing_urls") as mock_filter_urls,
                 patch.object(scraper, "_scrape_animal_details") as mock_scrape_details,
             ):
-
                 # Mock 4 animals from listing
-                mock_animals = [{"name": f"Dog{i}", "adoption_url": f"https://site.com/dog{i}/", "external_id": f"dog{i}"} for i in range(1, 5)]  # 4 animals total
+                mock_animals = [
+                    {
+                        "name": f"Dog{i}",
+                        "adoption_url": f"https://site.com/dog{i}/",
+                        "external_id": f"dog{i}",
+                    }
+                    for i in range(1, 5)
+                ]  # 4 animals total
                 mock_get_list.return_value = mock_animals
 
                 # Mock that 2 are filtered out (skip existing), 2 remain
-                mock_filter_urls.return_value = ["https://site.com/dog3/", "https://site.com/dog4/"]
+                mock_filter_urls.return_value = [
+                    "https://site.com/dog3/",
+                    "https://site.com/dog4/",
+                ]
 
                 # Mock detail scraping
-                mock_scrape_details.return_value = {"breed": "Mixed Breed", "size": "Medium"}
+                mock_scrape_details.return_value = {
+                    "breed": "Mixed Breed",
+                    "size": "Medium",
+                }
 
                 result = scraper.collect_data()
 
@@ -513,12 +631,24 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
     def test_collect_data_integration_single_threaded_with_skip_disabled(self):
         """Test collect_data integration with skip_existing_animals=False and single-threaded processing."""
         # Use default scraper (batch_size=6, skip_existing_animals=False)
-        with patch.object(self.scraper, "get_animal_list") as mock_get_list, patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
-
+        with (
+            patch.object(self.scraper, "get_animal_list") as mock_get_list,
+            patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details,
+        ):
             # Mock 3 animals (less than batch_size=6, so single-threaded)
-            mock_animals = [{"name": f"Dog{i}", "adoption_url": f"https://site.com/dog{i}/", "external_id": f"dog{i}"} for i in range(1, 4)]
+            mock_animals = [
+                {
+                    "name": f"Dog{i}",
+                    "adoption_url": f"https://site.com/dog{i}/",
+                    "external_id": f"dog{i}",
+                }
+                for i in range(1, 4)
+            ]
             mock_get_list.return_value = mock_animals
-            mock_scrape_details.return_value = {"breed": "Mixed Breed", "size": "Medium"}
+            mock_scrape_details.return_value = {
+                "breed": "Mixed Breed",
+                "size": "Medium",
+            }
 
             result = self.scraper.collect_data()
 

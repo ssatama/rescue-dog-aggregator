@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for MisisRescue retry mechanism."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 from selenium.common.exceptions import TimeoutException, WebDriverException
@@ -27,9 +27,19 @@ class TestMisisRescueRetryMechanism:
         """Test retry logic on TimeoutException."""
         with patch.object(self.scraper, "_scrape_dog_detail") as mock_scrape:
             # Mock to fail twice, then succeed
-            mock_scrape.side_effect = [TimeoutException("Timeout"), TimeoutException("Timeout"), {"name": "Test Dog", "external_id": "test123", "adoption_url": "http://test.com"}]
+            mock_scrape.side_effect = [
+                TimeoutException("Timeout"),
+                TimeoutException("Timeout"),
+                {
+                    "name": "Test Dog",
+                    "external_id": "test123",
+                    "adoption_url": "http://test.com",
+                },
+            ]
 
-            result = self.scraper._scrape_with_retry(self.scraper._scrape_dog_detail, "http://test.com")
+            result = self.scraper._scrape_with_retry(
+                self.scraper._scrape_dog_detail, "http://test.com"
+            )
 
             # Should succeed after retries
             assert result is not None
@@ -43,10 +53,16 @@ class TestMisisRescueRetryMechanism:
             mock_scrape.side_effect = [
                 WebDriverException("Connection failed"),
                 WebDriverException("Connection failed"),
-                {"name": "Test Dog", "external_id": "test123", "adoption_url": "http://test.com"},
+                {
+                    "name": "Test Dog",
+                    "external_id": "test123",
+                    "adoption_url": "http://test.com",
+                },
             ]
 
-            result = self.scraper._scrape_with_retry(self.scraper._scrape_dog_detail, "http://test.com")
+            result = self.scraper._scrape_with_retry(
+                self.scraper._scrape_dog_detail, "http://test.com"
+            )
 
             # Should succeed after retries
             assert result is not None
@@ -59,7 +75,9 @@ class TestMisisRescueRetryMechanism:
             # Mock to always fail
             mock_scrape.side_effect = TimeoutException("Always timeout")
 
-            result = self.scraper._scrape_with_retry(self.scraper._scrape_dog_detail, "http://test.com")
+            result = self.scraper._scrape_with_retry(
+                self.scraper._scrape_dog_detail, "http://test.com"
+            )
 
             # Should return None after max retries
             assert result is None
@@ -83,11 +101,21 @@ class TestMisisRescueRetryMechanism:
     def test_data_validation_rejects_invalid_names(self):
         """Test that _validate_dog_data rejects invalid names."""
         # Valid dog data
-        valid_data = {"name": "Lilly", "external_id": "test123", "adoption_url": "http://test.com", "primary_image_url": "http://test.com/image.jpg"}
+        valid_data = {
+            "name": "Lilly",
+            "external_id": "test123",
+            "adoption_url": "http://test.com",
+            "primary_image_url": "http://test.com/image.jpg",
+        }
         assert self.scraper._validate_dog_data(valid_data)
 
         # Invalid name should be rejected
-        invalid_data = {"name": "This Site Cant Be Reached", "external_id": "test123", "adoption_url": "http://test.com", "primary_image_url": "http://test.com/image.jpg"}
+        invalid_data = {
+            "name": "This Site Cant Be Reached",
+            "external_id": "test123",
+            "adoption_url": "http://test.com",
+            "primary_image_url": "http://test.com/image.jpg",
+        }
         assert not self.scraper._validate_dog_data(invalid_data)
 
     @patch("time.sleep")  # Mock sleep to speed up tests
@@ -97,7 +125,9 @@ class TestMisisRescueRetryMechanism:
             # Mock to always fail
             mock_scrape.side_effect = TimeoutException("Always timeout")
 
-            self.scraper._scrape_with_retry(self.scraper._scrape_dog_detail, "http://test.com")
+            self.scraper._scrape_with_retry(
+                self.scraper._scrape_dog_detail, "http://test.com"
+            )
 
             # Should have called sleep with increasing delays
             expected_calls = [
@@ -114,7 +144,12 @@ class TestMisisRescueRetryMechanism:
                 mock_listing.return_value = [{"name": "Test Dog", "url": "/test"}]
 
                 # Mock retry to succeed
-                mock_retry.return_value = {"name": "Test Dog", "external_id": "test123", "adoption_url": "http://test.com", "primary_image_url": "http://test.com/image.jpg"}
+                mock_retry.return_value = {
+                    "name": "Test Dog",
+                    "external_id": "test123",
+                    "adoption_url": "http://test.com",
+                    "primary_image_url": "http://test.com/image.jpg",
+                }
 
                 result = self.scraper.collect_data()
 

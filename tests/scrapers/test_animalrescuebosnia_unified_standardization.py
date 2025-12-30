@@ -1,8 +1,8 @@
 """Test AnimalRescueBosnia scraper with unified standardization."""
 
-import pytest
-
-from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueBosniaScraper
+from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import (
+    AnimalRescueBosniaScraper,
+)
 
 
 class TestAnimalRescueBosniaUnifiedStandardization:
@@ -34,7 +34,13 @@ class TestAnimalRescueBosniaUnifiedStandardization:
         scraper.use_unified_standardization = True
 
         # Test data with size that should be standardized
-        test_data = {"name": "Test Dog", "breed": "Labrador", "size": "Small", "age_text": "2 years", "sex": "Male"}  # Will be standardized
+        test_data = {
+            "name": "Test Dog",
+            "breed": "Labrador",
+            "size": "Small",
+            "age_text": "2 years",
+            "sex": "Male",
+        }  # Will be standardized
 
         # Process through base scraper standardization (using real UnifiedStandardizer)
         result = scraper.process_animal(test_data)

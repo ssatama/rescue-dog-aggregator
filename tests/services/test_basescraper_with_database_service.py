@@ -37,7 +37,9 @@ class TestBaseScraperWithDatabaseService:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_basescraper_uses_injected_database_service(self, mock_scraper_with_service):
+    def test_basescraper_uses_injected_database_service(
+        self, mock_scraper_with_service
+    ):
         """Test that BaseScraper uses injected DatabaseService for database operations."""
         # Create mock database service
         mock_db_service = Mock(spec=DatabaseService)
@@ -45,7 +47,9 @@ class TestBaseScraperWithDatabaseService:
         mock_db_service.create_animal.return_value = (123, "added")
 
         # Create scraper with injected service
-        scraper = mock_scraper_with_service(organization_id=1, database_service=mock_db_service)
+        scraper = mock_scraper_with_service(
+            organization_id=1, database_service=mock_db_service
+        )
 
         # Test get_existing_animal uses service
         result = scraper.get_existing_animal("test-123", 1)
@@ -67,9 +71,15 @@ class TestBaseScraperWithDatabaseService:
         mock_db_service = Mock(spec=DatabaseService)
         mock_db_service.create_animal.return_value = (456, "added")
 
-        scraper = mock_scraper_with_service(organization_id=1, database_service=mock_db_service)
+        scraper = mock_scraper_with_service(
+            organization_id=1, database_service=mock_db_service
+        )
 
-        animal_data = {"name": "Test Dog", "external_id": "test-456", "organization_id": 1}
+        animal_data = {
+            "name": "Test Dog",
+            "external_id": "test-456",
+            "organization_id": 1,
+        }
 
         result = scraper.create_animal(animal_data)
 
@@ -85,7 +95,9 @@ class TestBaseScraperWithDatabaseService:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_basescraper_falls_back_to_legacy_without_service(self, mock_scraper_with_service):
+    def test_basescraper_falls_back_to_legacy_without_service(
+        self, mock_scraper_with_service
+    ):
         """Test that BaseScraper returns appropriate defaults without DatabaseService."""
         # Create scraper without service injection
         scraper = mock_scraper_with_service(organization_id=1)
@@ -110,14 +122,18 @@ class TestBaseScraperWithDatabaseService:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_basescraper_service_needs_connection_established(self, mock_scraper_with_service):
+    def test_basescraper_service_needs_connection_established(
+        self, mock_scraper_with_service
+    ):
         """Test that DatabaseService needs connection established for operations."""
         from config import DB_CONFIG
 
         # Create real DatabaseService (without connection)
         db_service = DatabaseService(DB_CONFIG)
 
-        scraper = mock_scraper_with_service(organization_id=1, database_service=db_service)
+        scraper = mock_scraper_with_service(
+            organization_id=1, database_service=db_service
+        )
 
         # Should handle no connection gracefully
         result = scraper.get_existing_animal("test-no-conn", 1)
@@ -171,7 +187,9 @@ class TestBaseScraperCompleteIntegration:
         mock_db_service.complete_scrape_log.return_value = True
 
         # Create scraper with injected service
-        scraper = mock_scraper_with_service(organization_id=1, database_service=mock_db_service)
+        scraper = mock_scraper_with_service(
+            organization_id=1, database_service=mock_db_service
+        )
 
         # Test get_existing_animal uses service
         result = scraper.get_existing_animal("test-123", 1)
@@ -179,7 +197,11 @@ class TestBaseScraperCompleteIntegration:
         assert result is None
 
         # Test create_animal uses service
-        animal_data = {"name": "Test Dog", "external_id": "test-456", "organization_id": 1}
+        animal_data = {
+            "name": "Test Dog",
+            "external_id": "test-456",
+            "organization_id": 1,
+        }
         result = scraper.create_animal(animal_data)
         mock_db_service.create_animal.assert_called_with(animal_data)
         assert result == (123, "added")
@@ -197,7 +219,9 @@ class TestBaseScraperCompleteIntegration:
 
         # Test complete_scrape_log uses service
         result = scraper.complete_scrape_log("completed", 10, 5, 3, None)
-        mock_db_service.complete_scrape_log.assert_called_with(456, "completed", 10, 5, 3, None)
+        mock_db_service.complete_scrape_log.assert_called_with(
+            456, "completed", 10, 5, 3, None
+        )
         assert result is True
 
     @patch.dict(
@@ -223,7 +247,11 @@ class TestBaseScraperCompleteIntegration:
         assert result is None
 
         # Test fallback behavior for create_animal - should return None, "error" and log service unavailable
-        animal_data = {"name": "Test Dog", "external_id": "test-456", "organization_id": 1}
+        animal_data = {
+            "name": "Test Dog",
+            "external_id": "test-456",
+            "organization_id": 1,
+        }
         result = scraper.create_animal(animal_data)
         assert result == (None, "error")
 

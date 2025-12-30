@@ -18,7 +18,9 @@ class ConfigCLI:
     def list_organizations(self, enabled_only: bool = False) -> bool:
         """List organizations command."""
         try:
-            organizations = self.config_service.get_organizations_list(enabled_only=enabled_only)
+            organizations = self.config_service.get_organizations_list(
+                enabled_only=enabled_only
+            )
             self.formatter.format_organizations_list(organizations)
             return True
         except Exception as e:
@@ -72,14 +74,20 @@ class ConfigCLI:
                     if scraper_result.get("success"):
                         animals_found = scraper_result.get("animals_found", 0)
                         total_animals_found += animals_found
-                        org_name = scraper_result.get("organization", "Unknown Organization")
+                        org_name = scraper_result.get(
+                            "organization", "Unknown Organization"
+                        )
                         print(f"✅ {org_name}: {animals_found} animals found")
                     else:
-                        print(f"❌ Error in {scraper_result.get('organization', config_id)}: {scraper_result.get('error')}")
+                        print(
+                            f"❌ Error in {scraper_result.get('organization', config_id)}: {scraper_result.get('error')}"
+                        )
 
                 print("=" * 50)
                 print(f"🐾 Total animals found: {total_animals_found}")
-                print(f"📊 Overall: {result.get('successful', 0)} succeeded, {result.get('failed', 0)} failed out of {result.get('total_orgs', 0)} orgs")
+                print(
+                    f"📊 Overall: {result.get('successful', 0)} succeeded, {result.get('failed', 0)} failed out of {result.get('total_orgs', 0)} orgs"
+                )
             else:
                 print("❌ Unexpected response format from scraper runner")
 

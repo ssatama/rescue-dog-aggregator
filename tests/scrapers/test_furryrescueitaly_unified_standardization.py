@@ -1,11 +1,10 @@
 """Test FurryRescueItaly scraper with unified standardization."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
 from scrapers.furryrescueitaly.furryrescueitaly_scraper import FurryRescueItalyScraper
-from utils.unified_standardization import UnifiedStandardizer
 
 
 @pytest.fixture
@@ -96,7 +95,10 @@ class TestFurryRescueItalyUnifiedStandardization:
         assert processed["breed"] == "Cavachon"  # Standardized breed name
         assert processed["breed_category"] == "Designer"
         # Parent breeds should be in primary/secondary breed fields
-        assert processed.get("primary_breed") in ["Cavachon", "Cavalier King Charles Spaniel"]
+        assert processed.get("primary_breed") in [
+            "Cavachon",
+            "Cavalier King Charles Spaniel",
+        ]
 
     def test_size_standardization_with_weight(self, scraper):
         """Test size standardization when weight info is included."""

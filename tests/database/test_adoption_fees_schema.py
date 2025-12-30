@@ -38,7 +38,10 @@ class TestAdoptionFeesSchema:
         column_info = result[0]
         assert column_info["column_name"] == "adoption_fees"
         assert "jsonb" in column_info["data_type"].lower()
-        assert "'{}'" in column_info["column_default"] or "{}" in column_info["column_default"]
+        assert (
+            "'{}'" in column_info["column_default"]
+            or "{}" in column_info["column_default"]
+        )
 
     def test_adoption_fees_column_accepts_json_data(self):
         """
@@ -49,7 +52,11 @@ class TestAdoptionFeesSchema:
         THEN data should be stored and retrievable as JSON
         """
         # Test data
-        test_adoption_fees = {"usual_fee": 450, "currency": "EUR", "special_rates": {"senior": 200, "puppy": 550}}
+        test_adoption_fees = {
+            "usual_fee": 450,
+            "currency": "EUR",
+            "special_rates": {"senior": 200, "puppy": 550},
+        }
 
         # Insert test organization
         insert_query = """
@@ -58,7 +65,15 @@ class TestAdoptionFeesSchema:
             RETURNING id, adoption_fees
         """
 
-        result = execute_command(insert_query, ("Test Schema Org", "test-schema-org", "https://example.com", json.dumps(test_adoption_fees)))
+        result = execute_command(
+            insert_query,
+            (
+                "Test Schema Org",
+                "test-schema-org",
+                "https://example.com",
+                json.dumps(test_adoption_fees),
+            ),
+        )
 
         assert result is not None
         org_id = result["id"]
@@ -88,7 +103,10 @@ class TestAdoptionFeesSchema:
             RETURNING id, adoption_fees
         """
 
-        result = execute_command(insert_query, ("Test Default Org", "test-default-org", "https://example.com"))
+        result = execute_command(
+            insert_query,
+            ("Test Default Org", "test-default-org", "https://example.com"),
+        )
 
         assert result is not None
         org_id = result["id"]
@@ -116,7 +134,10 @@ class TestAdoptionFeesSchema:
             RETURNING id, adoption_fees
         """
 
-        result = execute_command(insert_query, ("Test Null Org", "test-null-org", "https://example.com", None))
+        result = execute_command(
+            insert_query,
+            ("Test Null Org", "test-null-org", "https://example.com", None),
+        )
 
         assert result is not None
         org_id = result["id"]
@@ -137,7 +158,11 @@ class TestAdoptionFeesSchema:
         THEN should be able to query by JSON fields
         """
         # Insert test data with different fees
-        test_orgs = [("High Fee Org", "high-fee", {"usual_fee": 600, "currency": "EUR"}), ("Low Fee Org", "low-fee", {"usual_fee": 200, "currency": "USD"}), ("No Fee Org", "no-fee", {})]
+        test_orgs = [
+            ("High Fee Org", "high-fee", {"usual_fee": 600, "currency": "EUR"}),
+            ("Low Fee Org", "low-fee", {"usual_fee": 200, "currency": "USD"}),
+            ("No Fee Org", "no-fee", {}),
+        ]
 
         org_ids = []
 
@@ -149,7 +174,10 @@ class TestAdoptionFeesSchema:
                     VALUES (%s, %s, %s, %s::jsonb, NOW(), NOW())
                     RETURNING id
                 """
-                result = execute_command(insert_query, (name, config_id, "https://example.com", json.dumps(fees)))
+                result = execute_command(
+                    insert_query,
+                    (name, config_id, "https://example.com", json.dumps(fees)),
+                )
                 org_ids.append(result["id"])
 
             # Test JSON field query
@@ -193,7 +221,15 @@ class TestAdoptionFeesSchema:
             RETURNING id
         """
 
-        result = execute_command(insert_query, ("Update Test Org", "update-test-org", "https://example.com", json.dumps(initial_fees)))
+        result = execute_command(
+            insert_query,
+            (
+                "Update Test Org",
+                "update-test-org",
+                "https://example.com",
+                json.dumps(initial_fees),
+            ),
+        )
 
         org_id = result["id"]
 
@@ -239,11 +275,21 @@ class TestAdoptionFeesSchema:
 
         # Should raise exception for invalid JSON
         with pytest.raises(Exception) as exc_info:
-            execute_command(insert_query, ("Invalid JSON Org", "invalid-json-org", "https://example.com", invalid_json))
+            execute_command(
+                insert_query,
+                (
+                    "Invalid JSON Org",
+                    "invalid-json-org",
+                    "https://example.com",
+                    invalid_json,
+                ),
+            )
 
         # Error should be related to JSON parsing
         error_msg = str(exc_info.value).lower()
-        assert any(keyword in error_msg for keyword in ["json", "syntax", "invalid", "parse"])
+        assert any(
+            keyword in error_msg for keyword in ["json", "syntax", "invalid", "parse"]
+        )
 
     def test_adoption_fees_in_existing_organizations(self):
         """
@@ -277,7 +323,9 @@ class TestAdoptionFeesSchema:
                 if org["adoption_fees"]:
                     # If not empty, should have reasonable structure
                     if "usual_fee" in org["adoption_fees"]:
-                        assert isinstance(org["adoption_fees"]["usual_fee"], (int, float))
+                        assert isinstance(
+                            org["adoption_fees"]["usual_fee"], (int, float)
+                        )
                     if "currency" in org["adoption_fees"]:
                         assert isinstance(org["adoption_fees"]["currency"], str)
                         assert len(org["adoption_fees"]["currency"]) <= 5

@@ -18,8 +18,10 @@ class TestDaisyFamilyRescueScraperFast:
     @pytest.fixture
     def scraper(self):
         """Create a Daisy Family Rescue scraper instance for testing."""
-        with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
-
+        with (
+            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
+            patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
+        ):
             mock_config = MagicMock()
             mock_config.name = "Daisy Family Rescue e.V."
             mock_config.get_scraper_config_dict.return_value = {
@@ -32,7 +34,9 @@ class TestDaisyFamilyRescueScraperFast:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
+            mock_sync_service.sync_single_organization.return_value = Mock(
+                organization_id=12, was_created=True
+            )
             mock_sync.return_value = mock_sync_service
 
             scraper = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
@@ -99,7 +103,10 @@ class TestDaisyFamilyRescueScraperFast:
     def test_extract_additional_info_from_text(self, scraper):
         """Test extraction of additional info from container text."""
         test_cases = [
-            ("Dog info 03/2020 • 53cm • 19kg", {"birth_date": "03/2020", "height_cm": 53, "weight_kg": 19}),
+            (
+                "Dog info 03/2020 • 53cm • 19kg",
+                {"birth_date": "03/2020", "height_cm": 53, "weight_kg": 19},
+            ),
             ("Luna 45cm tall", {"height_cm": 45}),
             ("Max weighs 12kg", {"weight_kg": 12}),
             ("Born 05/2021", {"birth_date": "05/2021"}),
@@ -127,12 +134,19 @@ class TestDaisyFamilyRescueScraperFast:
                 # For name-based IDs, we expect the result to start with the name
                 # but for this scraper, it might return a different hash-based result
                 # Let's just check it's a valid ID
-                assert result is not None and len(result) >= 3, f"Should generate valid ID, got {result}"
+                assert result is not None and len(result) >= 3, (
+                    f"Should generate valid ID, got {result}"
+                )
 
     @pytest.mark.unit
     def test_validate_dog_data_valid(self, scraper):
         """Test data validation with valid data."""
-        valid_data = {"name": "Test Dog", "external_id": "test-123", "adoption_url": "https://example.com/dog", "properties": {}}
+        valid_data = {
+            "name": "Test Dog",
+            "external_id": "test-123",
+            "adoption_url": "https://example.com/dog",
+            "properties": {},
+        }
 
         assert scraper._validate_dog_data(valid_data) is True
 
@@ -141,19 +155,44 @@ class TestDaisyFamilyRescueScraperFast:
         """Test data validation with invalid data."""
         invalid_cases = [
             # Missing name
-            {"external_id": "test-123", "adoption_url": "https://example.com/dog", "properties": {}},
+            {
+                "external_id": "test-123",
+                "adoption_url": "https://example.com/dog",
+                "properties": {},
+            },
             # Missing external_id
-            {"name": "Test Dog", "adoption_url": "https://example.com/dog", "properties": {}},
+            {
+                "name": "Test Dog",
+                "adoption_url": "https://example.com/dog",
+                "properties": {},
+            },
             # Short name
-            {"name": "X", "external_id": "test-123", "adoption_url": "https://example.com/dog", "properties": {}},
+            {
+                "name": "X",
+                "external_id": "test-123",
+                "adoption_url": "https://example.com/dog",
+                "properties": {},
+            },
             # Short external_id
-            {"name": "Test Dog", "external_id": "xx", "adoption_url": "https://example.com/dog", "properties": {}},
+            {
+                "name": "Test Dog",
+                "external_id": "xx",
+                "adoption_url": "https://example.com/dog",
+                "properties": {},
+            },
             # Invalid URL
-            {"name": "Test Dog", "external_id": "test-123", "adoption_url": "not-a-url", "properties": {}},
+            {
+                "name": "Test Dog",
+                "external_id": "test-123",
+                "adoption_url": "not-a-url",
+                "properties": {},
+            },
         ]
 
         for invalid_data in invalid_cases:
-            assert scraper._validate_dog_data(invalid_data) is False, f"Should be invalid: {invalid_data}"
+            assert scraper._validate_dog_data(invalid_data) is False, (
+                f"Should be invalid: {invalid_data}"
+            )
 
     @pytest.mark.unit
     def test_find_container_section(self, scraper):
@@ -175,7 +214,9 @@ class TestDaisyFamilyRescueScraperFast:
 
         for container_pos, expected in test_cases:
             result = scraper._find_container_section(container_pos, section_positions)
-            assert result == expected, f"Container at {container_pos} should be in section: {expected}"
+            assert result == expected, (
+                f"Container at {container_pos} should be in section: {expected}"
+            )
 
     @pytest.mark.unit
     def test_scraper_initialization(self, scraper):
@@ -194,7 +235,9 @@ class TestDaisyFamilyRescueScraperFast:
     def test_target_sections_includes_males(self, scraper):
         """Test that target sections include male dogs section (TDD - this should fail initially)."""
         # This test should fail until we add "Rüden in Nordmazedonien" to target_sections
-        assert "Rüden in Nordmazedonien" in scraper.target_sections, "Missing 'Rüden in Nordmazedonien' section - male dogs won't be properly targeted"
+        assert "Rüden in Nordmazedonien" in scraper.target_sections, (
+            "Missing 'Rüden in Nordmazedonien' section - male dogs won't be properly targeted"
+        )
 
     @pytest.mark.unit
     def test_section_filtering_includes_male_containers(self, scraper):
@@ -217,7 +260,9 @@ class TestDaisyFamilyRescueScraperFast:
 
             # This should be True after fix, but will fail initially
             is_targeted = section in scraper.target_sections
-            assert is_targeted, f"Male container at position {container_pos} should be in target sections"
+            assert is_targeted, (
+                f"Male container at position {container_pos} should be in target sections"
+            )
 
     @pytest.mark.unit
     def test_link_extraction_skips_empty_text_links(self, scraper):
@@ -254,8 +299,12 @@ class TestDaisyFamilyRescueScraperFast:
         # This test will fail initially because scraper takes first link (image)
         # After fix, it should skip empty link and take text link
         assert result is not None, "Should extract dog data from text link"
-        assert result["name"] == "Brownie", "Should extract name from text link, not empty image link"
-        assert result["properties"]["location"] == "München", "Should extract location from text link"
+        assert result["name"] == "Brownie", (
+            "Should extract name from text link, not empty image link"
+        )
+        assert result["properties"]["location"] == "München", (
+            "Should extract location from text link"
+        )
 
     @pytest.mark.unit
     def test_link_text_extraction_germany_vs_macedonia_pattern(self, scraper):
@@ -302,5 +351,7 @@ class TestDaisyFamilyRescueScraperFast:
 
         # This will fail initially because scraper takes first (empty) link
         germany_result = scraper._extract_dog_from_container(germany_container, 1)
-        assert germany_result is not None, "Should skip empty image link and use text link"
+        assert germany_result is not None, (
+            "Should skip empty image link and use text link"
+        )
         assert germany_result["name"] == "Brownie", "Should extract name from text link"

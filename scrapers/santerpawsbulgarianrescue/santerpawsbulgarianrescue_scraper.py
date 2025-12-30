@@ -80,9 +80,13 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
             # Create filtered animals list
             url_to_animal = {animal["adoption_url"]: animal for animal in animals}
-            animals = [url_to_animal[url] for url in filtered_urls if url in url_to_animal]
+            animals = [
+                url_to_animal[url] for url in filtered_urls if url in url_to_animal
+            ]
 
-            self.logger.info(f"Skip existing animals enabled: {skipped_count} skipped, {len(animals)} to process")
+            self.logger.info(
+                f"Skip existing animals enabled: {skipped_count} skipped, {len(animals)} to process"
+            )
         else:
             # Set filtering stats for no filtering case
             self.set_filtering_stats(len(all_urls), 0)
@@ -93,7 +97,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
         return animals
 
-    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_parallel(
+        self, animals: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Process animals in parallel batches for efficient detail scraping.
 
         Uses ThreadPoolExecutor to process animals in batches based on batch_size config.
@@ -110,14 +116,18 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
         # Single-threaded fallback for small batches or when batch_size=1
         if len(animals) <= self.batch_size or self.batch_size == 1:
-            self.logger.info(f"Using single-threaded processing for {len(animals)} animals")
+            self.logger.info(
+                f"Using single-threaded processing for {len(animals)} animals"
+            )
 
             for animal in animals:
                 adoption_url = animal["adoption_url"]
 
                 # Skip duplicates (shouldn't happen but safety check)
                 if adoption_url in seen_urls:
-                    self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
+                    self.logger.debug(
+                        f"Skipping duplicate dog: {animal['name']} ({adoption_url})"
+                    )
                     continue
                 seen_urls.add(adoption_url)
 
@@ -130,7 +140,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                     if detail_data:
                         animal.update(detail_data)
                 except Exception as e:
-                    self.logger.error(f"Error scraping details for {animal['name']}: {e}")
+                    self.logger.error(
+                        f"Error scraping details for {animal['name']}: {e}"
+                    )
                     # Continue processing even if detail scraping fails
 
                 all_dogs_data.append(animal)
@@ -141,7 +153,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         import concurrent.futures
         from threading import Lock
 
-        self.logger.info(f"Starting parallel detail scraping for {len(animals)} animals using batch_size={self.batch_size}")
+        self.logger.info(
+            f"Starting parallel detail scraping for {len(animals)} animals using batch_size={self.batch_size}"
+        )
 
         # Thread-safe collections
         results_lock = Lock()
@@ -157,7 +171,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                     # Skip duplicates (thread-safe check)
                     with results_lock:
                         if adoption_url in seen_urls:
-                            self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
+                            self.logger.debug(
+                                f"Skipping duplicate dog: {animal['name']} ({adoption_url})"
+                            )
                             continue
                         seen_urls.add(adoption_url)
 
@@ -172,7 +188,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                             animal.update(detail_data)
                     except Exception as e:
                         # Log error but continue processing (animal will be added without detail data)
-                        self.logger.error(f"Error scraping details for {animal.get('name', 'unknown')}: {e}")
+                        self.logger.error(
+                            f"Error scraping details for {animal.get('name', 'unknown')}: {e}"
+                        )
                         # Continue processing - animal will be added with listing data only
 
                     batch_results.append(animal)
@@ -188,7 +206,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             batch = animals[i : i + self.batch_size]
             batches.append(batch)
 
-        self.logger.info(f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}")
+        self.logger.info(
+            f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}"
+        )
 
         # Process batches with controlled concurrency
         # Limit concurrent threads to prevent overwhelming the target server
@@ -196,15 +216,22 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all batches
-            future_to_batch = {executor.submit(process_animal_batch, batch): i for i, batch in enumerate(batches)}
+            future_to_batch = {
+                executor.submit(process_animal_batch, batch): i
+                for i, batch in enumerate(batches)
+            }
 
             # Collect results as they complete
             for future in concurrent.futures.as_completed(future_to_batch):
                 batch_index = future_to_batch[future]
                 try:
-                    batch_results = future.result(timeout=300)  # 5 minute timeout per batch
+                    batch_results = future.result(
+                        timeout=300
+                    )  # 5 minute timeout per batch
                     all_dogs_data.extend(batch_results)
-                    self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch_results)} animals processed")
+                    self.logger.info(
+                        f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch_results)} animals processed"
+                    )
                 except Exception as e:
                     self.logger.error(f"Batch {batch_index + 1} failed: {e}")
                     continue
@@ -278,11 +305,15 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
                 # Find all dog cards
                 dog_cards = soup.find_all("article", class_="bde-loop-item")
-                self.logger.debug(f"Found {len(dog_cards)} dog cards on page {page_num}")
+                self.logger.debug(
+                    f"Found {len(dog_cards)} dog cards on page {page_num}"
+                )
 
                 # Stop if no dogs found on this page
                 if not dog_cards:
-                    self.logger.info(f"No dogs found on page {page_num}, stopping pagination")
+                    self.logger.info(
+                        f"No dogs found on page {page_num}, stopping pagination"
+                    )
                     break
 
                 # Process dogs from this page
@@ -296,7 +327,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                         # Skip reserved/on-hold dogs (check for status badge text)
                         card_text = card.get_text().lower()
                         if "reserved" in card_text or "on hold" in card_text:
-                            self.logger.debug(f"Skipping reserved/on-hold dog from listing page")
+                            self.logger.debug(
+                                "Skipping reserved/on-hold dog from listing page"
+                            )
                             continue
 
                         # Find the link to the adoption page
@@ -316,7 +349,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                         # Extract name from URL
                         name = self._extract_dog_name_from_url(adoption_url)
                         if not name:
-                            self.logger.warning(f"Could not extract name from URL: {adoption_url}")
+                            self.logger.warning(
+                                f"Could not extract name from URL: {adoption_url}"
+                            )
                             continue
 
                         # Extract external ID from URL
@@ -342,7 +377,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
                 # Add this page's animals to the total
                 all_animals.extend(page_animals)
-                self.logger.info(f"Page {page_num}: extracted {len(page_animals)} dogs (total so far: {len(all_animals)})")
+                self.logger.info(
+                    f"Page {page_num}: extracted {len(page_animals)} dogs (total so far: {len(all_animals)})"
+                )
 
                 # Move to next page
                 page_num += 1
@@ -351,7 +388,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                 if page_num <= max_pages:
                     time.sleep(0.5)
 
-            self.logger.info(f"Successfully extracted {len(all_animals)} available dogs from {page_num - 1} pages")
+            self.logger.info(
+                f"Successfully extracted {len(all_animals)} available dogs from {page_num - 1} pages"
+            )
             return all_animals
 
         except requests.RequestException as e:
@@ -473,7 +512,14 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
                         # Check if next element looks like another label (contains colon or known field name)
                         known_labels = ["D.O.B", "Size", "Sex", "Breed", "Status"]
-                        is_next_label = potential_value.endswith(":") or potential_value in known_labels or any(potential_value.startswith(known_label) for known_label in known_labels)
+                        is_next_label = (
+                            potential_value.endswith(":")
+                            or potential_value in known_labels
+                            or any(
+                                potential_value.startswith(known_label)
+                                for known_label in known_labels
+                            )
+                        )
 
                         if not is_next_label:
                             value = potential_value
@@ -498,9 +544,15 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                             if raw_age_text and raw_age_text != "Unknown":
                                 age_info = standardize_age(raw_age_text)
                                 if age_info.get("age_min_months") is not None:
-                                    properties["age_min_months"] = age_info["age_min_months"]
-                                    properties["age_max_months"] = age_info["age_max_months"]
-                                    properties["age_category"] = age_info.get("age_category", "Unknown")
+                                    properties["age_min_months"] = age_info[
+                                        "age_min_months"
+                                    ]
+                                    properties["age_max_months"] = age_info[
+                                        "age_max_months"
+                                    ]
+                                    properties["age_category"] = age_info.get(
+                                        "age_category", "Unknown"
+                                    )
                         elif label == "Size":
                             properties["size"] = value or "Medium"
                         elif label == "Sex":
@@ -659,7 +711,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                 if "size" in properties:
                     result["size"] = properties["size"] or "Medium"
                 if "status" in properties:
-                    result["status"] = properties["status"]  # Override default with extracted status
+                    result["status"] = properties[
+                        "status"
+                    ]  # Override default with extracted status
 
             # Apply unified standardization via process_animal from BaseScraper
             # This handles breed standardization, age parsing, size normalization, etc.
@@ -675,7 +729,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             return result
 
         except requests.RequestException as e:
-            self.logger.error(f"Network error scraping details from {adoption_url}: {e}")
+            self.logger.error(
+                f"Network error scraping details from {adoption_url}: {e}"
+            )
             return {}
         except Exception as e:
             self.logger.error(f"Error scraping details from {adoption_url}: {e}")

@@ -73,5 +73,10 @@ class DatabaseService:
 
 def create_database_service_from_config(db_config: Dict[str, Any]) -> DatabaseService:
     """Factory function to create DatabaseService from config dictionary."""
-    config = DatabaseConfig(host=db_config["host"], user=db_config["user"], database=db_config["database"], password=db_config.get("password"))
+    config = DatabaseConfig(
+        host=db_config["host"],
+        user=db_config["user"],
+        database=db_config["database"],
+        password=db_config.get("password"),
+    )
     return DatabaseService(config)

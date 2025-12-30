@@ -6,7 +6,9 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 
-from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueBosniaScraper
+from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import (
+    AnimalRescueBosniaScraper,
+)
 
 
 @pytest.mark.integration
@@ -29,11 +31,18 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
         ]
 
         with (
-            patch.object(self.scraper, "get_animal_list", return_value=mock_animal_list),
-            patch.object(self.scraper, "_filter_existing_urls", return_value=["https://example.com/dog1/"]) as mock_filter,
-            patch.object(self.scraper, "_process_dogs_in_batches", return_value=[]) as mock_process,
+            patch.object(
+                self.scraper, "get_animal_list", return_value=mock_animal_list
+            ),
+            patch.object(
+                self.scraper,
+                "_filter_existing_urls",
+                return_value=["https://example.com/dog1/"],
+            ) as mock_filter,
+            patch.object(
+                self.scraper, "_process_dogs_in_batches", return_value=[]
+            ) as mock_process,
         ):
-
             self.scraper.collect_data()
 
             # Verify _filter_existing_urls was called with the URLs
@@ -53,11 +62,14 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
         ]
 
         with (
-            patch.object(self.scraper, "get_animal_list", return_value=mock_animal_list),
+            patch.object(
+                self.scraper, "get_animal_list", return_value=mock_animal_list
+            ),
             patch.object(self.scraper, "_filter_existing_urls") as mock_filter,
-            patch.object(self.scraper, "_process_dogs_in_batches", return_value=[]) as mock_process,
+            patch.object(
+                self.scraper, "_process_dogs_in_batches", return_value=[]
+            ) as mock_process,
         ):
-
             self.scraper.collect_data()
 
             # Verify _filter_existing_urls was NOT called
@@ -79,8 +91,12 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
             "https://example.com/dog5/",
         ]
 
-        with patch.object(self.scraper, "_process_single_batch", return_value=[]) as mock_single_batch, patch("time.sleep"):  # Mock sleep for rate limiting
-
+        with (
+            patch.object(
+                self.scraper, "_process_single_batch", return_value=[]
+            ) as mock_single_batch,
+            patch("time.sleep"),
+        ):  # Mock sleep for rate limiting
             self.scraper._process_dogs_in_batches(urls)
 
             # Should be called 3 times: [dog1,dog2], [dog3,dog4], [dog5]
@@ -88,7 +104,11 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
 
             # Check the batches
             call_args = [call.args[0] for call in mock_single_batch.call_args_list]
-            expected_batches = [["https://example.com/dog1/", "https://example.com/dog2/"], ["https://example.com/dog3/", "https://example.com/dog4/"], ["https://example.com/dog5/"]]
+            expected_batches = [
+                ["https://example.com/dog1/", "https://example.com/dog2/"],
+                ["https://example.com/dog3/", "https://example.com/dog4/"],
+                ["https://example.com/dog5/"],
+            ]
             self.assertEqual(call_args, expected_batches)
 
     def test_process_single_batch_uses_thread_pool(self):
@@ -111,11 +131,15 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
 
         with (
             patch("concurrent.futures.ThreadPoolExecutor") as mock_tpe_class,
-            patch("concurrent.futures.as_completed", return_value=[mock_future1, mock_future2]),
+            patch(
+                "concurrent.futures.as_completed",
+                return_value=[mock_future1, mock_future2],
+            ),
             patch.object(self.scraper, "_scrape_with_retry") as mock_scrape_retry,
-            patch.object(self.scraper, "_validate_dog_data", return_value=True) as mock_validate,
+            patch.object(
+                self.scraper, "_validate_dog_data", return_value=True
+            ) as mock_validate,
         ):
-
             mock_tpe_class.return_value = mock_executor
 
             results = self.scraper._process_single_batch(urls)
@@ -131,12 +155,18 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
 
     def test_batch_processing_respects_rate_limiting(self):
         """Test that batch processing includes rate limiting between batches."""
-        urls = ["https://example.com/dog1/", "https://example.com/dog2/", "https://example.com/dog3/"]
+        urls = [
+            "https://example.com/dog1/",
+            "https://example.com/dog2/",
+            "https://example.com/dog3/",
+        ]
         self.scraper.batch_size = 1  # Force 3 batches
         self.scraper.rate_limit_delay = 1.5
 
-        with patch.object(self.scraper, "_process_single_batch", return_value=[]), patch("time.sleep") as mock_sleep:
-
+        with (
+            patch.object(self.scraper, "_process_single_batch", return_value=[]),
+            patch("time.sleep") as mock_sleep,
+        ):
             self.scraper._process_dogs_in_batches(urls)
 
             # Should sleep between batch 1->2 and batch 2->3 (2 times)
@@ -154,7 +184,9 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
 
         mock_executor = Mock()
         mock_future = Mock(spec=Future)
-        mock_future.result.return_value = {"name": "Invalid Dog"}  # Missing required fields
+        mock_future.result.return_value = {
+            "name": "Invalid Dog"
+        }  # Missing required fields
 
         mock_executor.submit.return_value = mock_future
         # Configure context manager methods
@@ -167,7 +199,6 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
             patch.object(self.scraper, "_scrape_with_retry"),
             patch.object(self.scraper, "_validate_dog_data", return_value=False),
         ):  # Invalid data
-
             results = self.scraper._process_single_batch(urls)
 
             # Should filter out invalid result

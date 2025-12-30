@@ -44,8 +44,12 @@ class ScraperTestBase:
         """Test scraper follows config-driven architecture."""
         # Modern scrapers may have org_config instead of config
         has_config = hasattr(scraper, "config") and scraper.config is not None
-        has_org_config = hasattr(scraper, "org_config") and scraper.org_config is not None
-        assert has_config or has_org_config, "Scraper should have either config or org_config"
+        has_org_config = (
+            hasattr(scraper, "org_config") and scraper.org_config is not None
+        )
+        assert has_config or has_org_config, (
+            "Scraper should have either config or org_config"
+        )
 
     def test_rate_limiting_configured(self, scraper):
         """Test rate limiting is configured from config."""
@@ -62,7 +66,9 @@ class ScraperTestBase:
         # Modern scrapers use dependency injection, legacy ones have direct methods
         has_database_service = hasattr(scraper, "database_service")
         has_legacy_methods = hasattr(scraper, "connect_to_database")
-        assert has_database_service or has_legacy_methods, "Scraper should have database access"
+        assert has_database_service or has_legacy_methods, (
+            "Scraper should have database access"
+        )
 
     def test_error_handling_exists(self, scraper):
         """Test scraper has error handling mechanisms."""

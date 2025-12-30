@@ -2,7 +2,12 @@ from datetime import datetime
 
 import pytest
 
-from utils.standardization import apply_standardization, get_size_from_breed, standardize_age, standardize_breed
+from utils.standardization import (
+    apply_standardization,
+    get_size_from_breed,
+    standardize_age,
+    standardize_breed,
+)
 
 
 @pytest.mark.slow
@@ -33,7 +38,9 @@ class TestBreedStandardization:
         )
         # Change the expectation for "golden mix" to match your current
         # implementation
-        assert standardize_breed("golden mix")[1] == "Mixed"  # Just check that it's recognized as Mixed type
+        assert (
+            standardize_breed("golden mix")[1] == "Mixed"
+        )  # Just check that it's recognized as Mixed type
 
     # Fix for test_unknown_breed
     def test_unknown_breed(self):
@@ -123,9 +130,15 @@ class TestAgeStandardization:
 
         # This FAILS - parse_age_text doesn't handle standalone "Young"
         result = standardize_age("Young")
-        assert result["age_category"] == "Young", f"Expected 'Young', got {result['age_category']}"
-        assert result["age_min_months"] == 12, f"Expected 12, got {result['age_min_months']}"
-        assert result["age_max_months"] == 36, f"Expected 36, got {result['age_max_months']}"
+        assert result["age_category"] == "Young", (
+            f"Expected 'Young', got {result['age_category']}"
+        )
+        assert result["age_min_months"] == 12, (
+            f"Expected 12, got {result['age_min_months']}"
+        )
+        assert result["age_max_months"] == 36, (
+            f"Expected 36, got {result['age_max_months']}"
+        )
 
         # Test case insensitive versions
         assert standardize_age("young")["age_category"] == "Young"
@@ -197,7 +210,9 @@ class TestAgeStandardization:
         result = standardize_age("8 + years")
         assert result["age_category"] == "Senior"
         assert result["age_min_months"] == 96  # 8 years = 96 months
-        assert result["age_max_months"] == MAX_DOG_AGE_MONTHS  # Finite max for system compatibility
+        assert (
+            result["age_max_months"] == MAX_DOG_AGE_MONTHS
+        )  # Finite max for system compatibility
 
         # Test with different spacing
         result = standardize_age("8+ years")

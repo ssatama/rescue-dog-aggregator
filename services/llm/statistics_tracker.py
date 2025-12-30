@@ -47,7 +47,11 @@ class StatisticsTracker:
             "processed": self.processed_count,
             "successful": self.success_count,
             "failed": self.error_count,
-            "success_rate": (self.success_count / self.processed_count if self.processed_count > 0 else 0),
+            "success_rate": (
+                self.success_count / self.processed_count
+                if self.processed_count > 0
+                else 0
+            ),
             "errors": self.errors[:10],  # First 10 errors
         }
 

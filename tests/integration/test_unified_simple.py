@@ -24,7 +24,13 @@ class TestUnifiedStandardizationSimple:
         standardizer = UnifiedStandardizer()
 
         # Test various Staffy variations
-        variations = ["Staffy", "Staffie", "Staff", "Staffordshire", "Staffordshire Terrier"]
+        variations = [
+            "Staffy",
+            "Staffie",
+            "Staff",
+            "Staffordshire",
+            "Staffordshire Terrier",
+        ]
         for variant in variations:
             result = standardizer.apply_full_standardization(breed=variant)
             assert result["breed"] == "Staffordshire Bull Terrier"
@@ -57,7 +63,9 @@ class TestUnifiedStandardizationSimple:
         # Test various age formats
         result = standardizer.apply_full_standardization(age="2 years")
         assert result["age_min_months"] == 24
-        assert result["age_max_months"] == 36  # 2 years gets expanded to 2-3 years range
+        assert (
+            result["age_max_months"] == 36
+        )  # 2 years gets expanded to 2-3 years range
         assert result["age_category"] == "Young"  # 2 years is categorized as Young
 
         result = standardizer.apply_full_standardization(age="puppy")
@@ -88,11 +96,15 @@ class TestUnifiedStandardizationSimple:
         standardizer = UnifiedStandardizer()
 
         # Test complete animal data standardization
-        result = standardizer.apply_full_standardization(breed="Lurcher cross", age="3 years old", size="large")
+        result = standardizer.apply_full_standardization(
+            breed="Lurcher cross", age="3 years old", size="large"
+        )
 
         # Verify all fields are standardized
         assert result["breed"] == "Lurcher Cross"  # Cross is kept, not converted to Mix
-        assert result["breed_category"] == "Hound"  # Lurcher Cross still gets Hound category
+        assert (
+            result["breed_category"] == "Hound"
+        )  # Lurcher Cross still gets Hound category
         assert result["primary_breed"] == "Lurcher Cross"
         assert result["age_min_months"] == 36
         assert result["age_category"] == "Adult"

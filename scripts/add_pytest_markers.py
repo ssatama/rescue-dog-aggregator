@@ -4,10 +4,9 @@ Add appropriate pytest markers to unmarked test files.
 Based on comprehensive audit of rescue-dog-aggregator test suite.
 """
 
-import os
 import re
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Set
 
 
 def analyze_test_file(file_path: Path) -> Set[str]:
@@ -25,23 +24,69 @@ def analyze_test_file(file_path: Path) -> Set[str]:
         return markers
 
     # Check for external service dependencies
-    external_patterns = [r"requests\.(get|post|put|delete)", r"http[s]?://", r"\.com/", r"\.org/", r"BeautifulSoup", r"selenium", r"webdriver", r"playwright"]
+    external_patterns = [
+        r"requests\.(get|post|put|delete)",
+        r"http[s]?://",
+        r"\.com/",
+        r"\.org/",
+        r"BeautifulSoup",
+        r"selenium",
+        r"webdriver",
+        r"playwright",
+    ]
 
     # Check for database operations
-    db_patterns = [r"psycopg2", r"cursor\(", r"connection\(", r"\.connect\(", r"@patch.*connect", r"mock.*connect", r"fetchall", r"execute\(", r"commit\(\)"]
+    db_patterns = [
+        r"psycopg2",
+        r"cursor\(",
+        r"connection\(",
+        r"\.connect\(",
+        r"@patch.*connect",
+        r"mock.*connect",
+        r"fetchall",
+        r"execute\(",
+        r"commit\(\)",
+    ]
 
     # Check for slow operations
-    slow_patterns = [r"time\.sleep", r"@patch.*requests", r"TestClient", r"batch_upload", r"concurrent", r"class.*Integration", r"integration.*test", r"end.*to.*end"]
+    slow_patterns = [
+        r"time\.sleep",
+        r"@patch.*requests",
+        r"TestClient",
+        r"batch_upload",
+        r"concurrent",
+        r"class.*Integration",
+        r"integration.*test",
+        r"end.*to.*end",
+    ]
 
     # Check for I/O operations
-    io_patterns = [r"open\(", r"Path\(", r"pathlib", r"os\.path", r"file.*read", r"file.*write"]
+    io_patterns = [
+        r"open\(",
+        r"Path\(",
+        r"pathlib",
+        r"os\.path",
+        r"file.*read",
+        r"file.*write",
+    ]
 
     # Check for API tests
-    api_patterns = [r"TestClient", r"FastAPI", r"/api/", r"test.*api", r"endpoint", r"route"]
+    api_patterns = [
+        r"TestClient",
+        r"FastAPI",
+        r"/api/",
+        r"test.*api",
+        r"endpoint",
+        r"route",
+    ]
 
     # Determine markers based on patterns
     if any(re.search(pattern, content, re.IGNORECASE) for pattern in external_patterns):
-        if "selenium" in content.lower() or "webdriver" in content.lower() or "playwright" in content.lower():
+        if (
+            "selenium" in content.lower()
+            or "webdriver" in content.lower()
+            or "playwright" in content.lower()
+        ):
             markers.add("browser")
             markers.add("slow")
         else:
@@ -183,7 +228,7 @@ def main():
             results["errors"] += 1
             print(f"❌ Failed to add markers to {file_path}")
 
-    print(f"\n📊 SUMMARY:")
+    print("\n📊 SUMMARY:")
     print(f"Processed: {results['processed']} files")
     print(f"Skipped: {results['skipped']} files")
     print(f"Errors: {results['errors']} files")

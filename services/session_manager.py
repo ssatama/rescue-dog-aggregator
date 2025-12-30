@@ -24,7 +24,14 @@ import psycopg2
 class SessionManager:
     """Service for session management and stale data detection extracted from BaseScraper."""
 
-    def __init__(self, db_config: Dict[str, str], organization_id: int, skip_existing_animals: bool = False, logger: Optional[logging.Logger] = None, connection_pool=None):
+    def __init__(
+        self,
+        db_config: Dict[str, str],
+        organization_id: int,
+        skip_existing_animals: bool = False,
+        logger: Optional[logging.Logger] = None,
+        connection_pool=None,
+    ):
         """Initialize SessionManager with configuration.
 
         Args:
@@ -62,7 +69,9 @@ class SessionManager:
                 conn_params["password"] = self.db_config["password"]
 
             self.conn = psycopg2.connect(**conn_params)
-            self.logger.info(f"SessionManager connected to database: {self.db_config['database']}")
+            self.logger.info(
+                f"SessionManager connected to database: {self.db_config['database']}"
+            )
             return True
         except Exception as e:
             self.logger.error(f"SessionManager database connection error: {e}")
@@ -157,7 +166,9 @@ class SessionManager:
         if not self.conn:
             # Try to establish connection before failing
             if not self.connect():
-                self.logger.error("No database connection available for marking animal as seen")
+                self.logger.error(
+                    "No database connection available for marking animal as seen"
+                )
                 return False
 
         try:
@@ -228,7 +239,9 @@ class SessionManager:
                     conn.commit()
                     cursor.close()
 
-                    self.logger.info(f"Updated stale data detection for {rows_affected} animals")
+                    self.logger.info(
+                        f"Updated stale data detection for {rows_affected} animals"
+                    )
                     return True
             except Exception as e:
                 self.logger.error(f"Error updating stale data detection: {e}")
@@ -238,7 +251,9 @@ class SessionManager:
         if not self.conn:
             # Try to establish connection before failing
             if not self.connect():
-                self.logger.error("No database connection available for stale data detection")
+                self.logger.error(
+                    "No database connection available for stale data detection"
+                )
                 return False
 
         try:
@@ -275,7 +290,9 @@ class SessionManager:
             self.conn.commit()
             cursor.close()
 
-            self.logger.info(f"Updated stale data detection for {rows_affected} animals")
+            self.logger.info(
+                f"Updated stale data detection for {rows_affected} animals"
+            )
             return True
 
         except Exception as e:
@@ -296,7 +313,9 @@ class SessionManager:
         if not self.conn:
             # Try to establish connection before failing
             if not self.connect():
-                self.logger.error("No database connection available for marking animals unavailable")
+                self.logger.error(
+                    "No database connection available for marking animals unavailable"
+                )
                 return 0
 
         try:
@@ -320,7 +339,9 @@ class SessionManager:
             cursor.close()
 
             if rows_affected > 0:
-                self.logger.info(f"Marked {rows_affected} animals as unavailable after {threshold}+ missed scrapes")
+                self.logger.info(
+                    f"Marked {rows_affected} animals as unavailable after {threshold}+ missed scrapes"
+                )
 
             return rows_affected
 
@@ -391,7 +412,9 @@ class SessionManager:
             return 0
 
         if not self.found_external_ids:
-            self.logger.info("No external IDs recorded as found - skipping mark_skipped_animals_as_seen")
+            self.logger.info(
+                "No external IDs recorded as found - skipping mark_skipped_animals_as_seen"
+            )
             return 0
 
         found_ids_tuple = tuple(self.found_external_ids)
@@ -413,7 +436,11 @@ class SessionManager:
                         AND status = 'available'
                         AND external_id = ANY(%s)
                         """,
-                        (self.current_scrape_session, self.organization_id, list(found_ids_tuple)),
+                        (
+                            self.current_scrape_session,
+                            self.organization_id,
+                            list(found_ids_tuple),
+                        ),
                     )
 
                     rows_affected = cursor.rowcount
@@ -434,7 +461,9 @@ class SessionManager:
         # Fallback to direct connection
         if not self.conn:
             if not self.connect():
-                self.logger.error("No database connection available for marking skipped animals")
+                self.logger.error(
+                    "No database connection available for marking skipped animals"
+                )
                 return 0
 
         try:
@@ -451,7 +480,11 @@ class SessionManager:
                 AND status = 'available'
                 AND external_id = ANY(%s)
                 """,
-                (self.current_scrape_session, self.organization_id, list(found_ids_tuple)),
+                (
+                    self.current_scrape_session,
+                    self.organization_id,
+                    list(found_ids_tuple),
+                ),
             )
 
             rows_affected = cursor.rowcount
@@ -510,7 +543,9 @@ class SessionManager:
 
         # Fallback to direct connection
         if not self.conn:
-            self.logger.error("No database connection available for stale animals summary")
+            self.logger.error(
+                "No database connection available for stale animals summary"
+            )
             return {}
 
         try:
@@ -564,7 +599,12 @@ class SessionManager:
             True if potential partial failure detected, False otherwise
         """
         # First check for catastrophic failure
-        if self._detect_catastrophic_failure(animals_found, absolute_minimum, total_animals_before_filter, total_animals_skipped):
+        if self._detect_catastrophic_failure(
+            animals_found,
+            absolute_minimum,
+            total_animals_before_filter,
+            total_animals_skipped,
+        ):
             return True
 
         # Use connection pool if available
@@ -596,7 +636,15 @@ class SessionManager:
                     result = cursor.fetchone()
                     cursor.close()
 
-                    return self._evaluate_partial_failure(result, animals_found, threshold_percentage, absolute_minimum, minimum_historical_scrapes, total_animals_before_filter, total_animals_skipped)
+                    return self._evaluate_partial_failure(
+                        result,
+                        animals_found,
+                        threshold_percentage,
+                        absolute_minimum,
+                        minimum_historical_scrapes,
+                        total_animals_before_filter,
+                        total_animals_skipped,
+                    )
             except Exception as e:
                 self.logger.error(f"Error detecting partial failure: {e}")
                 # Default to safe mode - assume potential failure to prevent data loss
@@ -633,13 +681,30 @@ class SessionManager:
             result = cursor.fetchone()
             cursor.close()
 
-            return self._evaluate_partial_failure(result, animals_found, threshold_percentage, absolute_minimum, minimum_historical_scrapes, total_animals_before_filter, total_animals_skipped)
+            return self._evaluate_partial_failure(
+                result,
+                animals_found,
+                threshold_percentage,
+                absolute_minimum,
+                minimum_historical_scrapes,
+                total_animals_before_filter,
+                total_animals_skipped,
+            )
         except Exception as e:
             self.logger.error(f"Error detecting partial failure: {e}")
             # Default to safe mode - assume potential failure to prevent data loss
             return True
 
-    def _evaluate_partial_failure(self, result, animals_found, threshold_percentage, absolute_minimum, minimum_historical_scrapes, total_animals_before_filter, total_animals_skipped):
+    def _evaluate_partial_failure(
+        self,
+        result,
+        animals_found,
+        threshold_percentage,
+        absolute_minimum,
+        minimum_historical_scrapes,
+        total_animals_before_filter,
+        total_animals_skipped,
+    ):
         """Evaluate partial failure based on database query result (pure function).
 
         Args:
@@ -655,13 +720,24 @@ class SessionManager:
             True if partial failure detected, False otherwise
         """
         try:
-            if not result or not result[0] or (len(result) > 1 and result[1] < minimum_historical_scrapes):
+            if (
+                not result
+                or not result[0]
+                or (len(result) > 1 and result[1] < minimum_historical_scrapes)
+            ):
                 # No historical data or insufficient data - use absolute minimum
                 scrape_count = result[1] if (result and len(result) > 1) else 0
-                self.logger.info(f"Insufficient historical data for organization_id {self.organization_id} " f"({scrape_count} scrapes). Using absolute minimum threshold.")
+                self.logger.info(
+                    f"Insufficient historical data for organization_id {self.organization_id} "
+                    f"({scrape_count} scrapes). Using absolute minimum threshold."
+                )
 
                 # Check if low count is due to skip_existing_animals filtering (for new organizations)
-                if self.skip_existing_animals and animals_found == 0 and total_animals_before_filter > 0:
+                if (
+                    self.skip_existing_animals
+                    and animals_found == 0
+                    and total_animals_before_filter > 0
+                ):
                     self.logger.info(
                         f"Zero animals after skip_existing_animals filtering is normal behavior for new organization "
                         f"({total_animals_before_filter} found before filtering, {total_animals_skipped} skipped). "
@@ -671,14 +747,20 @@ class SessionManager:
 
                 if animals_found < absolute_minimum:
                     # Also check skip_existing_animals for counts below absolute minimum
-                    if self.skip_existing_animals and total_animals_before_filter >= absolute_minimum:
+                    if (
+                        self.skip_existing_animals
+                        and total_animals_before_filter >= absolute_minimum
+                    ):
                         self.logger.info(
                             f"Only {animals_found} animals to process after skip_existing_animals filtering for new organization, "
                             f"but {total_animals_before_filter} were found before filtering. This is normal behavior."
                         )
                         return False
 
-                    self.logger.warning(f"Potential failure detected: {animals_found} animals found " f"(below absolute minimum of {absolute_minimum}) for new organization")
+                    self.logger.warning(
+                        f"Potential failure detected: {animals_found} animals found "
+                        f"(below absolute minimum of {absolute_minimum}) for new organization"
+                    )
                     return True
                 return False
 
@@ -689,7 +771,11 @@ class SessionManager:
             effective_threshold = max(percentage_threshold, absolute_minimum)
 
             # Check if low count is due to skip_existing_animals filtering
-            if self.skip_existing_animals and animals_found == 0 and total_animals_before_filter > 0:
+            if (
+                self.skip_existing_animals
+                and animals_found == 0
+                and total_animals_before_filter > 0
+            ):
                 self.logger.info(
                     f"Zero animals after skip_existing_animals filtering is normal behavior "
                     f"({total_animals_before_filter} found before filtering, {total_animals_skipped} skipped). "
@@ -713,7 +799,13 @@ class SessionManager:
             # Default to safe mode - assume potential failure to prevent data loss
             return True
 
-    def _detect_catastrophic_failure(self, animals_found: int, absolute_minimum: int = 3, total_animals_before_filter: int = 0, total_animals_skipped: int = 0) -> bool:
+    def _detect_catastrophic_failure(
+        self,
+        animals_found: int,
+        absolute_minimum: int = 3,
+        total_animals_before_filter: int = 0,
+        total_animals_skipped: int = 0,
+    ) -> bool:
         """Detect catastrophic scraper failures (zero or extremely low animal counts).
 
         This method detects complete scraper failures or situations where the count
@@ -732,13 +824,21 @@ class SessionManager:
         """
         # Handle invalid inputs
         if animals_found < 0:
-            self.logger.error(f"Invalid negative animal count: {animals_found} for organization_id {self.organization_id}")
+            self.logger.error(
+                f"Invalid negative animal count: {animals_found} for organization_id {self.organization_id}"
+            )
             return True
 
         # If skip_existing_animals is enabled and we found animals before filtering,
         # then zero animals after filtering is normal behavior, not a failure
-        if animals_found == 0 and self.skip_existing_animals and total_animals_before_filter > 0:
-            self.logger.info(f"Zero animals to process after skip_existing_animals filtering ({total_animals_skipped} skipped). This is normal behavior, not a failure.")
+        if (
+            animals_found == 0
+            and self.skip_existing_animals
+            and total_animals_before_filter > 0
+        ):
+            self.logger.info(
+                f"Zero animals to process after skip_existing_animals filtering ({total_animals_skipped} skipped). This is normal behavior, not a failure."
+            )
             return False
 
         # Zero animals is catastrophic only if we didn't find any before filtering either
@@ -753,13 +853,19 @@ class SessionManager:
                 return False
 
             # Zero animals with no skip filtering or zero before filtering = catastrophic
-            self.logger.error(f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. " f"This indicates complete scraper failure or website unavailability.")
+            self.logger.error(
+                f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. "
+                f"This indicates complete scraper failure or website unavailability."
+            )
             return True
 
         # Check against absolute minimum threshold
         if animals_found < absolute_minimum:
             # If we have skip_existing_animals enabled, check before filtering count
-            if self.skip_existing_animals and total_animals_before_filter >= absolute_minimum:
+            if (
+                self.skip_existing_animals
+                and total_animals_before_filter >= absolute_minimum
+            ):
                 self.logger.info(
                     f"Only {animals_found} animals to process after skip_existing_animals filtering, but {total_animals_before_filter} were found before filtering. This is normal behavior."
                 )

@@ -75,10 +75,14 @@ class RollbackService:
                 return snapshots
 
         except Exception as e:
-            self.logger.error(f"Error querying snapshots for org {organization_id}: {e}")
+            self.logger.error(
+                f"Error querying snapshots for org {organization_id}: {e}"
+            )
             return []
 
-    def rollback_to_snapshot(self, organization_id: int, snapshot_id: str, require_confirmation: bool = True) -> Dict[str, Any]:
+    def rollback_to_snapshot(
+        self, organization_id: int, snapshot_id: str, require_confirmation: bool = True
+    ) -> Dict[str, Any]:
         """Rollback organization data to a specific snapshot.
 
         Args:
@@ -91,7 +95,9 @@ class RollbackService:
         """
         if require_confirmation:
             try:
-                confirmation = input(f"Are you sure you want to rollback organization {organization_id} to snapshot {snapshot_id}? (yes/no): ")
+                confirmation = input(
+                    f"Are you sure you want to rollback organization {organization_id} to snapshot {snapshot_id}? (yes/no): "
+                )
                 if confirmation.lower() != "yes":
                     return {"success": False, "reason": "Operation cancelled by user"}
             except EOFError:
@@ -114,7 +120,9 @@ class RollbackService:
         """
         try:
             # Create safety backup first
-            backup_result = self.create_data_backup(organization_id, "Before rollback of last scrape")
+            backup_result = self.create_data_backup(
+                organization_id, "Before rollback of last scrape"
+            )
 
             session_id = self._get_last_scrape_session(organization_id)
             if not session_id:
@@ -130,7 +138,9 @@ class RollbackService:
             return rollback_result
 
         except Exception as e:
-            self.logger.error(f"Error rolling back last scrape for org {organization_id}: {e}")
+            self.logger.error(
+                f"Error rolling back last scrape for org {organization_id}: {e}"
+            )
             return {"success": False, "error": str(e)}
 
     def create_data_backup(self, organization_id: int, reason: str) -> Dict[str, Any]:
@@ -145,7 +155,9 @@ class RollbackService:
         """
         return self._create_backup(organization_id, reason)
 
-    def _execute_rollback(self, organization_id: int, snapshot_id: str) -> Dict[str, Any]:
+    def _execute_rollback(
+        self, organization_id: int, snapshot_id: str
+    ) -> Dict[str, Any]:
         """Execute rollback to a specific snapshot.
 
         Args:
@@ -164,7 +176,9 @@ class RollbackService:
                 cursor = conn.cursor()
 
                 # Create backup before rollback
-                backup_result = self._create_backup(organization_id, f"Before rollback to {snapshot_id}")
+                backup_result = self._create_backup(
+                    organization_id, f"Before rollback to {snapshot_id}"
+                )
 
                 # Count animals before rollback
                 cursor.execute(
@@ -201,7 +215,9 @@ class RollbackService:
                 conn.commit()
                 cursor.close()
 
-                self.logger.warning(f"Rollback completed for org {organization_id}: removed {animals_removed}, restored {animals_restored}")
+                self.logger.warning(
+                    f"Rollback completed for org {organization_id}: removed {animals_removed}, restored {animals_restored}"
+                )
 
                 return {
                     "success": True,
@@ -212,7 +228,9 @@ class RollbackService:
                 }
 
         except Exception as e:
-            self.logger.error(f"Error executing rollback for org {organization_id}: {e}")
+            self.logger.error(
+                f"Error executing rollback for org {organization_id}: {e}"
+            )
             return {"success": False, "error": str(e)}
 
     def _get_last_scrape_session(self, organization_id: int) -> Optional[str]:
@@ -245,10 +263,14 @@ class RollbackService:
                 return session_id
 
         except Exception as e:
-            self.logger.error(f"Error getting last scrape session for org {organization_id}: {e}")
+            self.logger.error(
+                f"Error getting last scrape session for org {organization_id}: {e}"
+            )
             return None
 
-    def _rollback_scrape_session(self, organization_id: int, session_id: str) -> Dict[str, Any]:
+    def _rollback_scrape_session(
+        self, organization_id: int, session_id: str
+    ) -> Dict[str, Any]:
         """Rollback a specific scrape session.
 
         Args:
@@ -326,7 +348,9 @@ class RollbackService:
                 conn.commit()
                 cursor.close()
 
-                self.logger.warning(f"Rolled back session {session_id}: removed {animals_removed}, reset {animals_reset}")
+                self.logger.warning(
+                    f"Rolled back session {session_id}: removed {animals_removed}, reset {animals_reset}"
+                )
 
                 return {
                     "success": True,
@@ -351,7 +375,9 @@ class RollbackService:
             Dictionary containing backup information
         """
         try:
-            backup_id = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{organization_id}"
+            backup_id = (
+                f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{organization_id}"
+            )
 
             with self.database_service as conn:
                 cursor = conn.cursor()
@@ -370,7 +396,12 @@ class RollbackService:
                     (organization_id, started_at, status, dogs_found, error_message)
                     VALUES (%s, %s, 'backup', %s, %s)
                 """,
-                    (organization_id, datetime.now(), animals_count, f"Backup: {reason}"),
+                    (
+                        organization_id,
+                        datetime.now(),
+                        animals_count,
+                        f"Backup: {reason}",
+                    ),
                 )
 
                 conn.commit()
@@ -379,7 +410,9 @@ class RollbackService:
                 # Calculate approximate size (rough estimate)
                 size_mb = round(animals_count * 0.05, 2)  # ~50KB per animal
 
-                self.logger.info(f"Created backup {backup_id} for org {organization_id}: {animals_count} animals")
+                self.logger.info(
+                    f"Created backup {backup_id} for org {organization_id}: {animals_count} animals"
+                )
 
                 return {
                     "backup_id": backup_id,

@@ -5,9 +5,8 @@ Tests the updated API endpoints to ensure they properly handle
 the new status values (adopted, reserved, unknown) and adoption_check_data.
 """
 
-import json
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -63,7 +62,10 @@ class TestAnimalEndpointsWithAdoptionStatus:
             queries = [call[0][0] for call in calls if call[0]]
 
             # Should have queries that filter by status
-            status_filtered = any("status = %s" in query or "status = 'available'" in query.lower() for query in queries)
+            status_filtered = any(
+                "status = %s" in query or "status = 'available'" in query.lower()
+                for query in queries
+            )
             assert status_filtered, f"No status filter found in queries: {queries}"
 
         finally:
@@ -80,7 +82,10 @@ class TestAnimalEndpointsWithAdoptionStatus:
             "name": "Buddy",
             "animal_type": "dog",
             "status": "adopted",
-            "adoption_check_data": {"evidence": "Page shows REHOMED", "confidence": 0.95},
+            "adoption_check_data": {
+                "evidence": "Page shows REHOMED",
+                "confidence": 0.95,
+            },
             "adoption_checked_at": datetime.now(timezone.utc),
             "breed": "Labrador",
             "standardized_breed": "Labrador Retriever",
@@ -148,7 +153,10 @@ class TestAnimalEndpointsWithAdoptionStatus:
             "name": "Max",
             "animal_type": "dog",
             "status": "reserved",
-            "adoption_check_data": {"evidence": "Page shows RESERVED", "confidence": 0.90},
+            "adoption_check_data": {
+                "evidence": "Page shows RESERVED",
+                "confidence": 0.90,
+            },
             "adoption_checked_at": datetime.now(timezone.utc),
             "breed": "Beagle",
             "standardized_breed": "Beagle",
@@ -204,7 +212,9 @@ class TestAnimalEndpointsWithAdoptionStatus:
         finally:
             app.dependency_overrides.pop(get_pooled_db_cursor, None)
 
-    def test_get_animal_by_slug_returns_unknown_status_dog(self, client, mock_db_cursor):
+    def test_get_animal_by_slug_returns_unknown_status_dog(
+        self, client, mock_db_cursor
+    ):
         """Test that single dog endpoint returns dogs with unknown status."""
         from api.dependencies import get_pooled_db_cursor
 
@@ -266,7 +276,9 @@ class TestAnimalEndpointsWithAdoptionStatus:
             data = response.json()
             assert data["status"] == "unknown"
             # Should not have adoption_check_data if not checked yet
-            assert "adoption_check_data" not in data or data["adoption_check_data"] is None
+            assert (
+                "adoption_check_data" not in data or data["adoption_check_data"] is None
+            )
 
         finally:
             app.dependency_overrides.pop(get_pooled_db_cursor, None)
@@ -300,8 +312,13 @@ class TestSwipeEndpointWithConfidenceFilter:
             queries = [call[0][0] for call in calls if call[0]]
 
             # At least one query should have the availability_confidence filter
-            has_confidence_filter = any("availability_confidence IN ('high', 'medium')" in query for query in queries)
-            assert has_confidence_filter, f"No availability_confidence filter found in queries: {queries}"
+            has_confidence_filter = any(
+                "availability_confidence IN ('high', 'medium')" in query
+                for query in queries
+            )
+            assert has_confidence_filter, (
+                f"No availability_confidence filter found in queries: {queries}"
+            )
 
         finally:
             app.dependency_overrides.pop(get_pooled_db_cursor, None)
@@ -311,7 +328,12 @@ class TestSwipeEndpointWithConfidenceFilter:
         from api.dependencies import get_pooled_db_cursor
 
         # This dog should be excluded due to low confidence
-        low_confidence_dog = {"id": 1, "status": "available", "availability_confidence": "low", "dog_profiler_data": {"quality_score": 0.9}}
+        low_confidence_dog = {
+            "id": 1,
+            "status": "available",
+            "availability_confidence": "low",
+            "dog_profiler_data": {"quality_score": 0.9},
+        }
 
         def mock_get_cursor():
             yield mock_db_cursor

@@ -99,7 +99,9 @@ class LLMRequest(BaseModel):
     """
 
     messages: List[LLMMessage]
-    model: str = Field(default="openrouter/auto", description="Model to use for the request")
+    model: str = Field(
+        default="openrouter/auto", description="Model to use for the request"
+    )
     temperature: Optional[float] = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(default=None, gt=0)
     top_p: Optional[float] = Field(default=None, ge=0.0, le=1.0)
@@ -246,8 +248,12 @@ class DogProfilerData(BaseModel):
     bio: str = Field(..., description="Engaging biography")
     looking_for: str = Field(..., description="Ideal home description")
     personality_traits: List[str] = Field(..., description="Key personality traits")
-    interests: List[str] = Field(default_factory=list, description="Hobbies and interests")
-    deal_breakers: Optional[List[str]] = Field(default=None, description="Non-negotiable requirements")
+    interests: List[str] = Field(
+        default_factory=list, description="Hobbies and interests"
+    )
+    deal_breakers: Optional[List[str]] = Field(
+        default=None, description="Non-negotiable requirements"
+    )
     fun_fact: Optional[str] = Field(default=None, description="Unique or amusing fact")
 
 

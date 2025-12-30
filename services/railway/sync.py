@@ -4,7 +4,7 @@ import time
 from contextlib import contextmanager
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict
+from typing import Dict
 
 from sqlalchemy import text
 
@@ -121,7 +121,9 @@ def sync_organizations_to_railway(chunk_size: int = 1000) -> bool:
             logger.info("No organizations to sync")
             return True
 
-        logger.info(f"Successfully synced {organizations_processed} organizations to Railway")
+        logger.info(
+            f"Successfully synced {organizations_processed} organizations to Railway"
+        )
         return True
 
     except Exception as e:
@@ -150,7 +152,9 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
 
                 # Warn about potential memory issues with large datasets
                 if len(animals) > 10000:
-                    logger.warning(f"Large dataset detected ({len(animals)} animals). Consider implementing chunked processing for production use.")
+                    logger.warning(
+                        f"Large dataset detected ({len(animals)} animals). Consider implementing chunked processing for production use."
+                    )
 
         if not animals:
             logger.info("No animals to sync")
@@ -224,7 +228,9 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
                             "size": animal[14],
                             "standardized_size": animal[15],
                             "language": animal[16],
-                            "properties": json.dumps(animal[17]) if animal[17] is not None else None,
+                            "properties": json.dumps(animal[17])
+                            if animal[17] is not None
+                            else None,
                             "created_at": animal[18],
                             "updated_at": animal[19],
                             "last_scraped_at": animal[20],
@@ -239,7 +245,9 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
                             "availability_confidence": animal[29],
                             "active": animal[30],
                             "slug": animal[31],
-                            "dog_profiler_data": json.dumps(animal[32]) if animal[32] is not None else None,
+                            "dog_profiler_data": json.dumps(animal[32])
+                            if animal[32] is not None
+                            else None,
                             "breed_slug": animal[35] if len(animal) > 35 else None,
                         }
                     )
@@ -259,7 +267,12 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
 def _validate_table_schemas() -> bool:
     """Validate that local and Railway table schemas match exactly by column name and data type."""
     try:
-        tables_to_validate = ["organizations", "animals", "scrape_logs", "service_regions"]
+        tables_to_validate = [
+            "organizations",
+            "animals",
+            "scrape_logs",
+            "service_regions",
+        ]
 
         for table in tables_to_validate:
             # Get local schema
@@ -299,28 +312,40 @@ def _validate_table_schemas() -> bool:
             # Compare schemas by column name (ignore positional order)
             if len(local_schema) != len(railway_schema):
                 logger.error(f"Schema mismatch in {table}: different column counts")
-                logger.error(f"Local: {len(local_schema)} columns, Railway: {len(railway_schema)} columns")
+                logger.error(
+                    f"Local: {len(local_schema)} columns, Railway: {len(railway_schema)} columns"
+                )
                 return False
 
             # Check each column exists with correct data type
             for column_name, local_data_type in local_schema.items():
                 if column_name not in railway_schema:
-                    logger.error(f"Schema mismatch in {table}: column '{column_name}' missing in Railway")
+                    logger.error(
+                        f"Schema mismatch in {table}: column '{column_name}' missing in Railway"
+                    )
                     return False
 
                 railway_data_type = railway_schema[column_name]
                 if local_data_type != railway_data_type:
-                    logger.error(f"Schema mismatch in {table}: column '{column_name}' data type differs")
-                    logger.error(f"Local: {local_data_type}, Railway: {railway_data_type}")
+                    logger.error(
+                        f"Schema mismatch in {table}: column '{column_name}' data type differs"
+                    )
+                    logger.error(
+                        f"Local: {local_data_type}, Railway: {railway_data_type}"
+                    )
                     return False
 
             # Check for extra columns in Railway
             for column_name in railway_schema:
                 if column_name not in local_schema:
-                    logger.error(f"Schema mismatch in {table}: extra column '{column_name}' in Railway")
+                    logger.error(
+                        f"Schema mismatch in {table}: extra column '{column_name}' in Railway"
+                    )
                     return False
 
-            logger.info(f"Schema validation passed for {table}: {len(local_schema)} columns match")
+            logger.info(
+                f"Schema validation passed for {table}: {len(local_schema)} columns match"
+            )
 
         logger.info("All table schemas validated successfully")
         return True
@@ -340,7 +365,9 @@ def _build_organization_id_mapping(session) -> dict:
 
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
-                cursor.execute("SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL")
+                cursor.execute(
+                    "SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL"
+                )
                 for row in cursor.fetchall():
                     local_org_mapping[row[1]] = row[0]  # config_id -> local_id
 
@@ -354,7 +381,12 @@ def _build_organization_id_mapping(session) -> dict:
         placeholders = ", ".join([f":config_{i}" for i in range(len(config_ids))])
         params = {f"config_{i}": config_id for i, config_id in enumerate(config_ids)}
 
-        result = session.execute(text(f"SELECT id, config_id FROM organizations WHERE config_id IN ({placeholders})"), params)
+        result = session.execute(
+            text(
+                f"SELECT id, config_id FROM organizations WHERE config_id IN ({placeholders})"
+            ),
+            params,
+        )
 
         # Build final mapping: local_id -> railway_id
         org_id_mapping = {}
@@ -365,7 +397,9 @@ def _build_organization_id_mapping(session) -> dict:
             if local_id:
                 org_id_mapping[local_id] = railway_id
 
-        logger.info(f"Built organization ID mapping for {len(org_id_mapping)} organizations")
+        logger.info(
+            f"Built organization ID mapping for {len(org_id_mapping)} organizations"
+        )
         return org_id_mapping
 
     except Exception as e:
@@ -396,7 +430,9 @@ def sync_all_data_to_railway(sync_indexes: bool = True) -> bool:
             if sync_all_table_indexes(dry_run=False):
                 logger.info("✅ Database indexes synced successfully")
             else:
-                logger.warning("⚠️ Some indexes failed to sync, continuing with data sync")
+                logger.warning(
+                    "⚠️ Some indexes failed to sync, continuing with data sync"
+                )
 
         # Phase 2: Sync organizations (foundation table)
         logger.info("Syncing organizations...")
@@ -440,7 +476,9 @@ def sync_all_data_to_railway(sync_indexes: bool = True) -> bool:
         # Phase 5: Final validation
         logger.info("Validating final sync integrity...")
         if validate_sync_integrity():
-            logger.info(f"✅ Full data sync completed: {success_count + 1}/{total_tables + 1} tables successful")
+            logger.info(
+                f"✅ Full data sync completed: {success_count + 1}/{total_tables + 1} tables successful"
+            )
             return success_count == total_tables  # All dependent tables must succeed
         else:
             logger.error("❌ Final sync validation failed")
@@ -570,7 +608,9 @@ def _process_organizations_chunk(session, organizations_chunk):
         )
 
 
-def _sync_organizations_to_railway_in_transaction(session, chunk_size: int = 1000) -> bool:
+def _sync_organizations_to_railway_in_transaction(
+    session, chunk_size: int = 1000
+) -> bool:
     """Sync organizations to Railway within an existing transaction using chunked processing."""
     try:
         # Use chunked processing to prevent memory exhaustion
@@ -605,7 +645,9 @@ def _sync_organizations_to_railway_in_transaction(session, chunk_size: int = 100
             logger.info("No organizations to sync")
             return True
 
-        logger.info(f"Successfully processed {organizations_processed} organizations for Railway sync")
+        logger.info(
+            f"Successfully processed {organizations_processed} organizations for Railway sync"
+        )
         return True
 
     except Exception as e:
@@ -613,7 +655,9 @@ def _sync_organizations_to_railway_in_transaction(session, chunk_size: int = 100
         return False
 
 
-def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 100) -> bool:
+def _sync_animals_with_mapping(
+    session, org_id_mapping: dict, batch_size: int = 100
+) -> bool:
     """Sync animals to Railway using pre-built organization ID mapping."""
     try:
         # Ensure pool is initialized
@@ -634,7 +678,9 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
 
                 # Warn about potential memory issues with large datasets
                 if len(animals) > 10000:
-                    logger.warning(f"Large dataset detected ({len(animals)} animals). Consider implementing chunked processing for production use.")
+                    logger.warning(
+                        f"Large dataset detected ({len(animals)} animals). Consider implementing chunked processing for production use."
+                    )
 
         if not animals:
             logger.info("No animals to sync")
@@ -684,7 +730,9 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
                 railway_org_id = org_id_mapping.get(local_org_id)
 
                 if railway_org_id is None:
-                    logger.warning(f"Skipping animal {animal[1]} - no Railway organization found for local org ID {local_org_id}")
+                    logger.warning(
+                        f"Skipping animal {animal[1]} - no Railway organization found for local org ID {local_org_id}"
+                    )
                     continue
 
                 batch_params.append(
@@ -706,7 +754,9 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
                         "size": animal[14],
                         "standardized_size": animal[15],
                         "language": animal[16],
-                        "properties": json.dumps(animal[17]) if animal[17] is not None else None,
+                        "properties": json.dumps(animal[17])
+                        if animal[17] is not None
+                        else None,
                         "created_at": animal[18],
                         "updated_at": animal[19],
                         "last_scraped_at": animal[20],
@@ -721,18 +771,26 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
                         "availability_confidence": animal[29],
                         "active": animal[30],
                         "slug": animal[31],
-                        "dog_profiler_data": json.dumps(animal[32]) if animal[32] is not None else None,
+                        "dog_profiler_data": json.dumps(animal[32])
+                        if animal[32] is not None
+                        else None,
                         "breed_slug": animal[35] if len(animal) > 35 else None,
-                        "adoption_check_data": json.dumps(animal[36]) if len(animal) > 36 and animal[36] is not None else None,
+                        "adoption_check_data": json.dumps(animal[36])
+                        if len(animal) > 36 and animal[36] is not None
+                        else None,
                         "adoption_checked_at": animal[37] if len(animal) > 37 else None,
                     }
                 )
 
             if batch_params:  # Only execute if there are valid animals to sync
                 session.execute(insert_sql, batch_params)
-                total_synced += len(batch_params)  # Count actual synced animals, not batch size
+                total_synced += len(
+                    batch_params
+                )  # Count actual synced animals, not batch size
 
-            logger.info(f"Prepared batch: {total_synced}/{len(animals)} animals for Railway sync")
+            logger.info(
+                f"Prepared batch: {total_synced}/{len(animals)} animals for Railway sync"
+            )
 
         logger.info(f"Successfully prepared {total_synced} animals for Railway sync")
         return True
@@ -742,7 +800,9 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
         return False
 
 
-def _sync_scrape_logs_with_mapping(session, org_id_mapping: dict, batch_size: int = 100) -> bool:
+def _sync_scrape_logs_with_mapping(
+    session, org_id_mapping: dict, batch_size: int = 100
+) -> bool:
     """Sync scrape_logs to Railway using pre-built organization ID mapping."""
     try:
         # Get scrape_logs from local database
@@ -802,7 +862,9 @@ def _sync_scrape_logs_with_mapping(session, org_id_mapping: dict, batch_size: in
                 railway_org_id = org_id_mapping.get(local_org_id)
 
                 if railway_org_id is None:
-                    logger.warning(f"Skipping scrape_log - no Railway organization found for local org ID {local_org_id}")
+                    logger.warning(
+                        f"Skipping scrape_log - no Railway organization found for local org ID {local_org_id}"
+                    )
                     continue
 
                 batch_params.append(
@@ -817,7 +879,9 @@ def _sync_scrape_logs_with_mapping(session, org_id_mapping: dict, batch_size: in
                         "status": log[7],
                         "error_message": log[8],
                         "created_at": log[9],
-                        "detailed_metrics": json.dumps(log[10]) if log[10] is not None else None,
+                        "detailed_metrics": json.dumps(log[10])
+                        if log[10] is not None
+                        else None,
                         "duration_seconds": log[11],
                         "data_quality_score": log[12],
                     }
@@ -837,7 +901,9 @@ def _sync_scrape_logs_with_mapping(session, org_id_mapping: dict, batch_size: in
         return False
 
 
-def _sync_service_regions_with_mapping(session, org_id_mapping: dict, batch_size: int = 100) -> bool:
+def _sync_service_regions_with_mapping(
+    session, org_id_mapping: dict, batch_size: int = 100
+) -> bool:
     """Sync service_regions to Railway using pre-built organization ID mapping."""
     try:
         # Get service_regions from local database
@@ -884,7 +950,9 @@ def _sync_service_regions_with_mapping(session, org_id_mapping: dict, batch_size
                 railway_org_id = org_id_mapping.get(local_org_id)
 
                 if railway_org_id is None:
-                    logger.warning(f"Skipping service_region - no Railway organization found for local org ID {local_org_id}")
+                    logger.warning(
+                        f"Skipping service_region - no Railway organization found for local org ID {local_org_id}"
+                    )
                     continue
 
                 batch_params.append(
@@ -924,11 +992,18 @@ def _sync_scrape_logs_to_railway_in_transaction(session, batch_size: int = 100) 
 
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
-                cursor.execute("SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL")
+                cursor.execute(
+                    "SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL"
+                )
                 for row in cursor.fetchall():
                     local_id = row[0]
                     config_id = row[1]
-                    result = session.execute(text("SELECT id FROM organizations WHERE config_id = :config_id"), {"config_id": config_id})
+                    result = session.execute(
+                        text(
+                            "SELECT id FROM organizations WHERE config_id = :config_id"
+                        ),
+                        {"config_id": config_id},
+                    )
                     railway_row = result.fetchone()
                     if railway_row:
                         org_id_mapping[local_id] = railway_row[0]
@@ -978,7 +1053,9 @@ def _sync_scrape_logs_to_railway_in_transaction(session, batch_size: int = 100) 
                 railway_org_id = org_id_mapping.get(local_org_id)
 
                 if railway_org_id is None:
-                    logger.warning(f"Skipping scrape_log - no Railway organization found for local org ID {local_org_id}")
+                    logger.warning(
+                        f"Skipping scrape_log - no Railway organization found for local org ID {local_org_id}"
+                    )
                     continue
 
                 batch_params.append(
@@ -993,7 +1070,9 @@ def _sync_scrape_logs_to_railway_in_transaction(session, batch_size: int = 100) 
                         "status": log[7],
                         "error_message": log[8],
                         "created_at": log[9],
-                        "detailed_metrics": json.dumps(log[10]) if log[10] is not None else None,
+                        "detailed_metrics": json.dumps(log[10])
+                        if log[10] is not None
+                        else None,
                         "duration_seconds": log[11],
                         "data_quality_score": log[12],
                     }
@@ -1003,9 +1082,13 @@ def _sync_scrape_logs_to_railway_in_transaction(session, batch_size: int = 100) 
                 session.execute(insert_sql, batch_params)
                 total_synced += len(batch_params)
 
-            logger.info(f"Prepared batch: {total_synced}/{len(logs)} scrape_logs for Railway sync")
+            logger.info(
+                f"Prepared batch: {total_synced}/{len(logs)} scrape_logs for Railway sync"
+            )
 
-        logger.info(f"Successfully prepared {total_synced} scrape_logs for Railway sync")
+        logger.info(
+            f"Successfully prepared {total_synced} scrape_logs for Railway sync"
+        )
         return True
 
     except Exception as e:
@@ -1013,7 +1096,9 @@ def _sync_scrape_logs_to_railway_in_transaction(session, batch_size: int = 100) 
         return False
 
 
-def _sync_service_regions_to_railway_in_transaction(session, batch_size: int = 100) -> bool:
+def _sync_service_regions_to_railway_in_transaction(
+    session, batch_size: int = 100
+) -> bool:
     """Sync service_regions to Railway within an existing transaction."""
     try:
         # Create organization ID mapping
@@ -1023,11 +1108,18 @@ def _sync_service_regions_to_railway_in_transaction(session, batch_size: int = 1
 
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
-                cursor.execute("SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL")
+                cursor.execute(
+                    "SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL"
+                )
                 for row in cursor.fetchall():
                     local_id = row[0]
                     config_id = row[1]
-                    result = session.execute(text("SELECT id FROM organizations WHERE config_id = :config_id"), {"config_id": config_id})
+                    result = session.execute(
+                        text(
+                            "SELECT id FROM organizations WHERE config_id = :config_id"
+                        ),
+                        {"config_id": config_id},
+                    )
                     railway_row = result.fetchone()
                     if railway_row:
                         org_id_mapping[local_id] = railway_row[0]
@@ -1076,7 +1168,9 @@ def _sync_service_regions_to_railway_in_transaction(session, batch_size: int = 1
                 railway_org_id = org_id_mapping.get(local_org_id)
 
                 if railway_org_id is None:
-                    logger.warning(f"Skipping service_region - no Railway organization found for local org ID {local_org_id}")
+                    logger.warning(
+                        f"Skipping service_region - no Railway organization found for local org ID {local_org_id}"
+                    )
                     continue
 
                 batch_params.append(
@@ -1096,9 +1190,13 @@ def _sync_service_regions_to_railway_in_transaction(session, batch_size: int = 1
                 session.execute(insert_sql, batch_params)
                 total_synced += len(batch_params)
 
-            logger.info(f"Prepared batch: {total_synced}/{len(regions)} service_regions for Railway sync")
+            logger.info(
+                f"Prepared batch: {total_synced}/{len(regions)} service_regions for Railway sync"
+            )
 
-        logger.info(f"Successfully prepared {total_synced} service_regions for Railway sync")
+        logger.info(
+            f"Successfully prepared {total_synced} service_regions for Railway sync"
+        )
         return True
 
     except Exception as e:
@@ -1116,7 +1214,12 @@ def _validate_sync_integrity_in_transaction(session) -> bool:
 
             # Get Railway count using the existing session
             # Validate table name against whitelist to prevent SQL injection
-            valid_tables = ["organizations", "animals", "scrape_logs", "service_regions"]
+            valid_tables = [
+                "organizations",
+                "animals",
+                "scrape_logs",
+                "service_regions",
+            ]
 
             if table not in valid_tables:
                 logger.error(f"Invalid table name: {table}")
@@ -1133,7 +1236,10 @@ def _validate_sync_integrity_in_transaction(session) -> bool:
                 return False
 
             if local_count != railway_count:
-                logger.error(f"Sync validation failed for {table}: " f"local={local_count}, railway={railway_count}")
+                logger.error(
+                    f"Sync validation failed for {table}: "
+                    f"local={local_count}, railway={railway_count}"
+                )
                 return False
 
             logger.info(f"Sync validation passed for {table}: {local_count} records")
@@ -1145,7 +1251,9 @@ def _validate_sync_integrity_in_transaction(session) -> bool:
         return False
 
 
-def validate_sync_by_mode(mode: SyncMode, table: str, local_count: int, railway_count: int) -> bool:
+def validate_sync_by_mode(
+    mode: SyncMode, table: str, local_count: int, railway_count: int
+) -> bool:
     """Validate sync counts based on the specified mode."""
     # Validate table name first
     valid_tables = ["organizations", "animals", "scrape_logs", "service_regions"]
@@ -1178,7 +1286,10 @@ def validate_sync_integrity() -> bool:
             railway_count = get_railway_data_count(table)
 
             if local_count != railway_count:
-                logger.error(f"Sync validation failed for {table}: " f"local={local_count}, railway={railway_count}")
+                logger.error(
+                    f"Sync validation failed for {table}: "
+                    f"local={local_count}, railway={railway_count}"
+                )
                 return False
 
             logger.info(f"Sync validation passed for {table}: {local_count} records")
@@ -1196,7 +1307,14 @@ class RailwayDataSyncer:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    def perform_full_sync(self, dry_run: bool = False, validate_after: bool = True, max_retries: int = 3, sync_mode: str = "incremental", sync_indexes: bool = True) -> bool:
+    def perform_full_sync(
+        self,
+        dry_run: bool = False,
+        validate_after: bool = True,
+        max_retries: int = 3,
+        sync_mode: str = "incremental",
+        sync_indexes: bool = True,
+    ) -> bool:
         """Perform complete data synchronization to Railway with retry logic and transaction boundaries.
 
         Args:
@@ -1225,7 +1343,9 @@ class RailwayDataSyncer:
             # Perform sync mode validation (skip for force mode)
             if mode_enum != SyncMode.FORCE:
                 if not self._validate_sync_mode(mode_enum):
-                    self.logger.error(f"Sync mode validation failed for mode: {sync_mode}")
+                    self.logger.error(
+                        f"Sync mode validation failed for mode: {sync_mode}"
+                    )
                     return False
 
             # Clear Railway tables if in rebuild mode
@@ -1235,7 +1355,9 @@ class RailwayDataSyncer:
                     return False
 
             # Perform actual sync with retry mechanism
-            self.logger.info(f"Starting full data synchronization to Railway with sync mode: {sync_mode}")
+            self.logger.info(
+                f"Starting full data synchronization to Railway with sync mode: {sync_mode}"
+            )
 
             # Retry logic for transient failures
             for attempt in range(max_retries):
@@ -1243,11 +1365,15 @@ class RailwayDataSyncer:
                     if not sync_all_data_to_railway(sync_indexes=sync_indexes):
                         if attempt < max_retries - 1:
                             wait_time = 2**attempt  # Exponential backoff
-                            self.logger.warning(f"Data synchronization failed (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
+                            self.logger.warning(
+                                f"Data synchronization failed (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s..."
+                            )
                             time.sleep(wait_time)
                             continue
                         else:
-                            self.logger.error(f"Data synchronization failed after {max_retries} attempts")
+                            self.logger.error(
+                                f"Data synchronization failed after {max_retries} attempts"
+                            )
                             return False
 
                     # Sync succeeded, break out of retry loop
@@ -1256,20 +1382,30 @@ class RailwayDataSyncer:
                 except Exception as e:
                     if attempt < max_retries - 1:
                         wait_time = 2**attempt  # Exponential backoff
-                        self.logger.warning(f"Sync error (attempt {attempt + 1}/{max_retries}): {e}, retrying in {wait_time}s...")
+                        self.logger.warning(
+                            f"Sync error (attempt {attempt + 1}/{max_retries}): {e}, retrying in {wait_time}s..."
+                        )
                         time.sleep(wait_time)
                         continue
                     else:
-                        self.logger.error(f"Data synchronization failed after {max_retries} attempts with error: {e}")
+                        self.logger.error(
+                            f"Data synchronization failed after {max_retries} attempts with error: {e}"
+                        )
                         return False
 
             # Final validation (not retried as it should be deterministic)
             # Skip validation in force mode
-            if validate_after and mode_enum != SyncMode.FORCE and not validate_sync_integrity():
+            if (
+                validate_after
+                and mode_enum != SyncMode.FORCE
+                and not validate_sync_integrity()
+            ):
                 self.logger.error("Post-sync validation failed")
                 return False
 
-            self.logger.info("Full data synchronization completed successfully with transaction boundaries")
+            self.logger.info(
+                "Full data synchronization completed successfully with transaction boundaries"
+            )
             return True
 
         except Exception as e:
@@ -1289,15 +1425,21 @@ class RailwayDataSyncer:
             railway_orgs = get_railway_data_count("organizations")
             railway_animals = get_railway_data_count("animals")
 
-            self.logger.info(f"Local database: {local_orgs} organizations, {local_animals} animals")
-            self.logger.info(f"Railway database: {railway_orgs} organizations, {railway_animals} animals")
+            self.logger.info(
+                f"Local database: {local_orgs} organizations, {local_animals} animals"
+            )
+            self.logger.info(
+                f"Railway database: {railway_orgs} organizations, {railway_animals} animals"
+            )
 
             if local_orgs > railway_orgs or local_animals > railway_animals:
                 self.logger.info("Data sync would transfer new records to Railway")
             elif local_orgs == railway_orgs and local_animals == railway_animals:
                 self.logger.info("Databases appear to be in sync")
             else:
-                self.logger.warning("Railway database has more records than local - this is unexpected")
+                self.logger.warning(
+                    "Railway database has more records than local - this is unexpected"
+                )
 
             return True
 
@@ -1315,10 +1457,14 @@ class RailwayDataSyncer:
                 railway_count = get_railway_data_count(table)
 
                 if not validate_sync_by_mode(mode, table, local_count, railway_count):
-                    self.logger.error(f"Sync validation failed for table {table}: local={local_count}, railway={railway_count}, mode={mode.value}")
+                    self.logger.error(
+                        f"Sync validation failed for table {table}: local={local_count}, railway={railway_count}, mode={mode.value}"
+                    )
                     return False
 
-            self.logger.info(f"Sync mode validation passed for all tables: {mode.value}")
+            self.logger.info(
+                f"Sync mode validation passed for all tables: {mode.value}"
+            )
             return True
 
         except Exception as e:
@@ -1328,7 +1474,12 @@ class RailwayDataSyncer:
     def _clear_railway_tables(self) -> bool:
         """Clear all Railway tables for rebuild mode."""
         try:
-            tables = ["animals", "scrape_logs", "service_regions", "organizations"]  # Order matters for FK constraints
+            tables = [
+                "animals",
+                "scrape_logs",
+                "service_regions",
+                "organizations",
+            ]  # Order matters for FK constraints
 
             with railway_session() as session:
                 for table in tables:

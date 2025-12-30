@@ -11,7 +11,6 @@ This script:
 import logging
 import os
 import sys
-from datetime import datetime
 
 import psycopg2
 from dotenv import load_dotenv
@@ -20,11 +19,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # Columns to be removed
-COLUMNS_TO_REMOVE = ["last_session_id", "enriched_description", "source_last_updated", "llm_processed_at", "llm_model_used"]
+COLUMNS_TO_REMOVE = [
+    "last_session_id",
+    "enriched_description",
+    "source_last_updated",
+    "llm_processed_at",
+    "llm_model_used",
+]
 
 
 def get_local_connection():
@@ -98,7 +105,9 @@ def remove_unused_columns(cursor, table_name="animals"):
             # Double-check no data exists
             data_count = check_column_data(cursor, table_name, column)
             if data_count > 0:
-                logger.warning(f"Column {column} has {data_count} non-null values - skipping removal")
+                logger.warning(
+                    f"Column {column} has {data_count} non-null values - skipping removal"
+                )
                 continue
 
             logger.info(f"Removing column {column} from {table_name}")
@@ -164,7 +173,9 @@ def analyze_schema_differences():
 
         # Check for breed_slug
         if "breed_slug" in local_columns and "breed_slug" not in railway_columns:
-            logger.warning("\n⚠️  breed_slug exists in LOCAL but not in RAILWAY - needs to be added")
+            logger.warning(
+                "\n⚠️  breed_slug exists in LOCAL but not in RAILWAY - needs to be added"
+            )
 
         # Check for columns to remove
         for col in COLUMNS_TO_REMOVE:
@@ -212,11 +223,15 @@ def perform_migration(dry_run=False):
                     # Check columns to remove
                     for col in COLUMNS_TO_REMOVE:
                         if check_column_exists(railway_cursor, "animals", col):
-                            data_count = check_column_data(railway_cursor, "animals", col)
+                            data_count = check_column_data(
+                                railway_cursor, "animals", col
+                            )
                             if data_count == 0:
                                 logger.info(f"  - DROP COLUMN {col}")
                             else:
-                                logger.warning(f"  - SKIP {col} (has {data_count} non-null values)")
+                                logger.warning(
+                                    f"  - SKIP {col} (has {data_count} non-null values)"
+                                )
                 else:
                     # Add breed_slug column
                     added = add_breed_slug_column(railway_cursor, "animals")
@@ -225,7 +240,9 @@ def perform_migration(dry_run=False):
                     removed = remove_unused_columns(railway_cursor, "animals")
 
                     railway_conn.commit()
-                    logger.info(f"✅ Railway migration completed - Added: {added}, Removed: {len(removed)} columns")
+                    logger.info(
+                        f"✅ Railway migration completed - Added: {added}, Removed: {len(removed)} columns"
+                    )
 
     except Exception as e:
         logger.error(f"❌ Railway migration failed: {e}")
@@ -255,7 +272,9 @@ def perform_migration(dry_run=False):
                             if data_count == 0:
                                 logger.info(f"  - DROP COLUMN {col}")
                             else:
-                                logger.warning(f"  - SKIP {col} (has {data_count} non-null values)")
+                                logger.warning(
+                                    f"  - SKIP {col} (has {data_count} non-null values)"
+                                )
                 else:
                     # Add breed_slug column (in case it doesn't exist)
                     added = add_breed_slug_column(local_cursor, "animals")
@@ -264,7 +283,9 @@ def perform_migration(dry_run=False):
                     removed = remove_unused_columns(local_cursor, "animals")
 
                     local_conn.commit()
-                    logger.info(f"✅ Local migration completed - Added: {added}, Removed: {len(removed)} columns")
+                    logger.info(
+                        f"✅ Local migration completed - Added: {added}, Removed: {len(removed)} columns"
+                    )
 
     except Exception as e:
         logger.error(f"❌ Local migration failed: {e}")
@@ -285,8 +306,14 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Railway database schema migration")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be done without making changes")
-    parser.add_argument("--analyze-only", action="store_true", help="Only analyze schema differences")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be done without making changes",
+    )
+    parser.add_argument(
+        "--analyze-only", action="store_true", help="Only analyze schema differences"
+    )
 
     args = parser.parse_args()
 

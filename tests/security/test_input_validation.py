@@ -4,7 +4,9 @@ import sys
 import pytest
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 
 @pytest.mark.slow
@@ -91,7 +93,9 @@ class TestSecurity:
                 ]
 
                 for field in sensitive_fields:
-                    assert field not in animal, f"Should not expose {field} in API response"
+                    assert field not in animal, (
+                        f"Should not expose {field} in API response"
+                    )
 
     def test_input_length_limits(self, client):
         """Test that extremely long inputs are handled properly."""

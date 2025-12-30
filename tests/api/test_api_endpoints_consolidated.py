@@ -5,9 +5,6 @@ Combines repetitive endpoint validation tests into a single parametrized test su
 """
 
 import pytest
-from fastapi.testclient import TestClient
-
-from api.main import app
 
 
 @pytest.mark.slow
@@ -51,8 +48,16 @@ class TestAPIEndpointsConsolidated:
         [
             # Animals with filters
             ("/api/animals", {"limit": 10}, ["id", "name", "organization_id"]),
-            ("/api/animals", {"standardized_size": "Medium"}, ["id", "name", "standardized_size"]),
-            ("/api/animals", {"standardized_breed": "Labrador"}, ["id", "name", "standardized_breed"]),
+            (
+                "/api/animals",
+                {"standardized_size": "Medium"},
+                ["id", "name", "standardized_size"],
+            ),
+            (
+                "/api/animals",
+                {"standardized_breed": "Labrador"},
+                ["id", "name", "standardized_breed"],
+            ),
             # Organizations
             ("/api/organizations", {}, ["id", "name", "website_url"]),
             # Meta endpoints - adjusted to match actual response structure
@@ -78,7 +83,9 @@ class TestAPIEndpointsConsolidated:
                     # Some fields might be optional
                     if field in ["standardized_size", "standardized_breed"]:
                         continue  # Optional fields
-                    assert field in item, f"Missing field {field} in {endpoint} response"
+                    assert field in item, (
+                        f"Missing field {field} in {endpoint} response"
+                    )
 
     @pytest.mark.parametrize(
         "endpoint,invalid_params",
@@ -139,7 +146,10 @@ class TestAPIEndpointsConsolidated:
 
     def test_filter_combination(self, client):
         """Test that multiple filters can be combined."""
-        response = client.get("/api/animals", params={"standardized_size": "Medium", "sex": "Male", "limit": 10})
+        response = client.get(
+            "/api/animals",
+            params={"standardized_size": "Medium", "sex": "Male", "limit": 10},
+        )
 
         assert response.status_code == 200
         data = response.json()

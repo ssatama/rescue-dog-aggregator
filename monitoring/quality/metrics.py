@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 @dataclass
@@ -41,30 +41,61 @@ class DataQualityMetrics:
 
     # Completeness criteria (40 points total)
     COMPLETENESS_CRITERIA = {
-        "name": {"points": 20, "required": True, "description": "Animal name must be present"},
-        "age_data": {"points": 10, "required": False, "description": "At least one age field (age_text, age_min_months, or age_max_months)"},
-        "breed": {"points": 5, "required": True, "description": "Breed information must be present"},
-        "sex": {"points": 3, "required": False, "description": "Sex/gender information"},
+        "name": {
+            "points": 20,
+            "required": True,
+            "description": "Animal name must be present",
+        },
+        "age_data": {
+            "points": 10,
+            "required": False,
+            "description": "At least one age field (age_text, age_min_months, or age_max_months)",
+        },
+        "breed": {
+            "points": 5,
+            "required": True,
+            "description": "Breed information must be present",
+        },
+        "sex": {
+            "points": 3,
+            "required": False,
+            "description": "Sex/gender information",
+        },
         "size": {"points": 2, "required": False, "description": "Size information"},
     }
 
     # Standardization criteria (30 points total)
     STANDARDIZATION_CRITERIA = {
-        "standardized_breed": {"points": 15, "description": "Normalized breed classification"},
-        "standardized_size": {"points": 15, "description": "Standardized size category"},
+        "standardized_breed": {
+            "points": 15,
+            "description": "Normalized breed classification",
+        },
+        "standardized_size": {
+            "points": 15,
+            "description": "Standardized size category",
+        },
     }
 
     # Rich content criteria (20 points total)
-    RICH_CONTENT_CRITERIA = {"description": {"points": 20, "description": "Detailed description in properties field"}}
+    RICH_CONTENT_CRITERIA = {
+        "description": {
+            "points": 20,
+            "description": "Detailed description in properties field",
+        }
+    }
 
     # Visual appeal criteria (10 points total)
-    VISUAL_CRITERIA = {"primary_image": {"points": 10, "description": "Primary image URL present"}}
+    VISUAL_CRITERIA = {
+        "primary_image": {"points": 10, "description": "Primary image URL present"}
+    }
 
     @classmethod
     def assess_animal_completeness(cls, animal: Dict[str, Any]) -> QualityScore:
         """Assess completeness of animal data."""
         points_earned = 0
-        max_points = sum(criteria["points"] for criteria in cls.COMPLETENESS_CRITERIA.values())
+        max_points = sum(
+            criteria["points"] for criteria in cls.COMPLETENESS_CRITERIA.values()
+        )
         issues = []
 
         # Name check
@@ -74,7 +105,13 @@ class DataQualityMetrics:
             points_earned += cls.COMPLETENESS_CRITERIA["name"]["points"]
 
         # Age data check (any age field counts)
-        has_age = any([animal.get("age_text"), animal.get("age_min_months") is not None, animal.get("age_max_months") is not None])
+        has_age = any(
+            [
+                animal.get("age_text"),
+                animal.get("age_min_months") is not None,
+                animal.get("age_max_months") is not None,
+            ]
+        )
         if has_age:
             points_earned += cls.COMPLETENESS_CRITERIA["age_data"]["points"]
         else:
@@ -100,18 +137,30 @@ class DataQualityMetrics:
 
         percentage = (points_earned / max_points * 100) if max_points > 0 else 0
 
-        return QualityScore(points_earned=points_earned, max_points=max_points, percentage=percentage, issues=issues)
+        return QualityScore(
+            points_earned=points_earned,
+            max_points=max_points,
+            percentage=percentage,
+            issues=issues,
+        )
 
     @classmethod
     def assess_animal_standardization(cls, animal: Dict[str, Any]) -> QualityScore:
         """Assess standardization quality of animal data."""
         points_earned = 0
-        max_points = sum(criteria["points"] for criteria in cls.STANDARDIZATION_CRITERIA.values())
+        max_points = sum(
+            criteria["points"] for criteria in cls.STANDARDIZATION_CRITERIA.values()
+        )
         issues = []
 
         # Standardized breed check
-        if animal.get("standardized_breed") and animal.get("standardized_breed").strip():
-            points_earned += cls.STANDARDIZATION_CRITERIA["standardized_breed"]["points"]
+        if (
+            animal.get("standardized_breed")
+            and animal.get("standardized_breed").strip()
+        ):
+            points_earned += cls.STANDARDIZATION_CRITERIA["standardized_breed"][
+                "points"
+            ]
         else:
             issues.append("Missing standardized breed")
 
@@ -123,13 +172,20 @@ class DataQualityMetrics:
 
         percentage = (points_earned / max_points * 100) if max_points > 0 else 0
 
-        return QualityScore(points_earned=points_earned, max_points=max_points, percentage=percentage, issues=issues)
+        return QualityScore(
+            points_earned=points_earned,
+            max_points=max_points,
+            percentage=percentage,
+            issues=issues,
+        )
 
     @classmethod
     def assess_animal_rich_content(cls, animal: Dict[str, Any]) -> QualityScore:
         """Assess rich content quality of animal data."""
         points_earned = 0
-        max_points = sum(criteria["points"] for criteria in cls.RICH_CONTENT_CRITERIA.values())
+        max_points = sum(
+            criteria["points"] for criteria in cls.RICH_CONTENT_CRITERIA.values()
+        )
         issues = []
 
         # Description check (from properties JSON)
@@ -140,7 +196,9 @@ class DataQualityMetrics:
             except (json.JSONDecodeError, TypeError):
                 properties = {}
 
-        description = properties.get("description", "") if isinstance(properties, dict) else ""
+        description = (
+            properties.get("description", "") if isinstance(properties, dict) else ""
+        )
 
         if description and len(description.strip()) > 50:  # Meaningful description
             points_earned += cls.RICH_CONTENT_CRITERIA["description"]["points"]
@@ -149,13 +207,20 @@ class DataQualityMetrics:
 
         percentage = (points_earned / max_points * 100) if max_points > 0 else 0
 
-        return QualityScore(points_earned=points_earned, max_points=max_points, percentage=percentage, issues=issues)
+        return QualityScore(
+            points_earned=points_earned,
+            max_points=max_points,
+            percentage=percentage,
+            issues=issues,
+        )
 
     @classmethod
     def assess_animal_visual_appeal(cls, animal: Dict[str, Any]) -> QualityScore:
         """Assess visual appeal quality of animal data."""
         points_earned = 0
-        max_points = sum(criteria["points"] for criteria in cls.VISUAL_CRITERIA.values())
+        max_points = sum(
+            criteria["points"] for criteria in cls.VISUAL_CRITERIA.values()
+        )
         issues = []
 
         # Primary image check
@@ -166,7 +231,12 @@ class DataQualityMetrics:
 
         percentage = (points_earned / max_points * 100) if max_points > 0 else 0
 
-        return QualityScore(points_earned=points_earned, max_points=max_points, percentage=percentage, issues=issues)
+        return QualityScore(
+            points_earned=points_earned,
+            max_points=max_points,
+            percentage=percentage,
+            issues=issues,
+        )
 
     @classmethod
     def assess_animal_overall(cls, animal: Dict[str, Any]) -> QualityAssessment:

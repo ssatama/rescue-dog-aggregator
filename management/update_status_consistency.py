@@ -12,7 +12,6 @@ Usage:
 import argparse
 import os
 import sys
-from datetime import datetime
 from pathlib import Path
 
 import psycopg2
@@ -31,7 +30,12 @@ class StatusConsistencyUpdater:
         self.verbose = verbose
         self.conn = None
         self.cursor = None
-        self.stats = {"total_checked": 0, "already_consistent": 0, "updated": 0, "errors": 0}
+        self.stats = {
+            "total_checked": 0,
+            "already_consistent": 0,
+            "updated": 0,
+            "errors": 0,
+        }
 
     def connect(self):
         """Connect to the database."""
@@ -99,7 +103,9 @@ class StatusConsistencyUpdater:
 
         print("\nStatus/Confidence combinations:")
         for row in combinations:
-            print(f"  - {row['status']}/{row['availability_confidence']}: {row['count']:,} dogs")
+            print(
+                f"  - {row['status']}/{row['availability_confidence']}: {row['count']:,} dogs"
+            )
 
         # Identify dogs needing updates
         self.cursor.execute(
@@ -138,9 +144,14 @@ class StatusConsistencyUpdater:
         if self.dry_run:
             print("DRY RUN - Would update dogs with high miss count to low confidence")
             self.cursor.execute(
-                update_query.replace("UPDATE", "SELECT id, name, consecutive_scrapes_missing FROM")
+                update_query.replace(
+                    "UPDATE", "SELECT id, name, consecutive_scrapes_missing FROM"
+                )
                 .replace("SET", "-- SET")
-                .replace("RETURNING", "WHERE consecutive_scrapes_missing >= 3 AND availability_confidence != 'low' -- RETURNING")
+                .replace(
+                    "RETURNING",
+                    "WHERE consecutive_scrapes_missing >= 3 AND availability_confidence != 'low' -- RETURNING",
+                )
             )
         else:
             self.cursor.execute(update_query)
@@ -151,7 +162,9 @@ class StatusConsistencyUpdater:
             print(f"Updated {len(updated_dogs)} dogs to low confidence:")
             if self.verbose:
                 for dog in updated_dogs[:10]:  # Show first 10
-                    print(f"  - {dog['name']} (ID: {dog['id']}, misses: {dog['consecutive_scrapes_missing']})")
+                    print(
+                        f"  - {dog['name']} (ID: {dog['id']}, misses: {dog['consecutive_scrapes_missing']})"
+                    )
                 if len(updated_dogs) > 10:
                     print(f"  ... and {len(updated_dogs) - 10} more")
 
@@ -169,7 +182,9 @@ class StatusConsistencyUpdater:
         """
 
         if self.dry_run:
-            print("DRY RUN - Would update available dogs with no misses to high confidence")
+            print(
+                "DRY RUN - Would update available dogs with no misses to high confidence"
+            )
         else:
             self.cursor.execute(update_query2)
             updated_dogs2 = self.cursor.fetchall()
@@ -319,7 +334,7 @@ if consecutive_scrapes_missing >= threshold:
         else:
             print("\n✅ All dogs pass consistency checks!")
 
-        print(f"\nUpdate Statistics:")
+        print("\nUpdate Statistics:")
         print(f"  - Total dogs checked: {self.stats['total_checked']:,}")
         print(f"  - Dogs updated: {self.stats['updated']:,}")
         print(f"  - Already consistent: {self.stats['already_consistent']:,}")
@@ -368,7 +383,9 @@ if consecutive_scrapes_missing >= threshold:
 
 def main():
     parser = argparse.ArgumentParser(description="Update status values for consistency")
-    parser.add_argument("--dry-run", action="store_true", help="Preview changes without applying")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Preview changes without applying"
+    )
     parser.add_argument("--verbose", action="store_true", help="Show detailed output")
     args = parser.parse_args()
 

@@ -19,7 +19,10 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[Organization])
-def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: RealDictCursor = Depends(get_db_cursor)):
+def get_organizations(
+    filters: OrganizationFilterRequest = Depends(),
+    cursor: RealDictCursor = Depends(get_db_cursor),
+):
     """
     Get all organizations.
 
@@ -91,8 +94,12 @@ def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: Re
         handle_validation_error(ve, "get_organizations")
     except psycopg2.Error as db_err:
         handle_database_error(db_err, "get_organizations")
-    except Exception as e:
-        raise APIException(status_code=500, detail="Failed to fetch organizations", error_code="INTERNAL_ERROR")
+    except Exception:
+        raise APIException(
+            status_code=500,
+            detail="Failed to fetch organizations",
+            error_code="INTERNAL_ERROR",
+        )
 
 
 @router.get("/enhanced", response_model=List[dict])
@@ -186,9 +193,13 @@ def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
         for org in organizations:
             org_dict = dict(org)
             # Ensure JSON fields are parsed
-            if org_dict.get("social_media") and isinstance(org_dict["social_media"], str):
+            if org_dict.get("social_media") and isinstance(
+                org_dict["social_media"], str
+            ):
                 org_dict["social_media"] = json.loads(org_dict["social_media"])
-            if org_dict.get("service_regions") and isinstance(org_dict["service_regions"], str):
+            if org_dict.get("service_regions") and isinstance(
+                org_dict["service_regions"], str
+            ):
                 org_dict["service_regions"] = json.loads(org_dict["service_regions"])
             if org_dict.get("ships_to") and isinstance(org_dict["ships_to"], str):
                 org_dict["ships_to"] = json.loads(org_dict["ships_to"])
@@ -201,12 +212,18 @@ def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
 
     except psycopg2.Error as db_err:
         handle_database_error(db_err, "get_enhanced_organizations")
-    except Exception as e:
-        raise APIException(status_code=500, detail="Failed to fetch enhanced organizations data", error_code="INTERNAL_ERROR")
+    except Exception:
+        raise APIException(
+            status_code=500,
+            detail="Failed to fetch enhanced organizations data",
+            error_code="INTERNAL_ERROR",
+        )
 
 
 @router.get("/{organization_slug}", response_model=Organization)
-def get_organization_by_slug(organization_slug: str, cursor: RealDictCursor = Depends(get_db_cursor)):
+def get_organization_by_slug(
+    organization_slug: str, cursor: RealDictCursor = Depends(get_db_cursor)
+):
     """
     Get a specific organization by slug, with legacy ID redirect support.
 
@@ -217,10 +234,15 @@ def get_organization_by_slug(organization_slug: str, cursor: RealDictCursor = De
         if organization_slug.isdigit():
             organization_id = int(organization_slug)
             # Get org by ID and redirect to slug
-            cursor.execute("SELECT slug FROM organizations WHERE id = %s AND active = true", (organization_id,))
+            cursor.execute(
+                "SELECT slug FROM organizations WHERE id = %s AND active = true",
+                (organization_id,),
+            )
             result = cursor.fetchone()
             if result:
-                return RedirectResponse(url=f"/api/organizations/{result['slug']}", status_code=301)
+                return RedirectResponse(
+                    url=f"/api/organizations/{result['slug']}", status_code=301
+                )
 
         # Lookup by slug
         cursor.execute(
@@ -262,28 +284,41 @@ def get_organization_by_slug(organization_slug: str, cursor: RealDictCursor = De
         handle_validation_error(ve, f"get_organization_by_slug({organization_slug})")
     except psycopg2.Error as db_err:
         handle_database_error(db_err, f"get_organization_by_slug({organization_slug})")
-    except Exception as e:
-        raise APIException(status_code=500, detail=f"Failed to fetch organization {organization_slug}", error_code="INTERNAL_ERROR")
+    except Exception:
+        raise APIException(
+            status_code=500,
+            detail=f"Failed to fetch organization {organization_slug}",
+            error_code="INTERNAL_ERROR",
+        )
 
 
 # --- Legacy ID Route (Explicit Redirect) ---
 @router.get("/id/{organization_id}", response_model=Organization)
-def get_organization_by_id_legacy(organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
+def get_organization_by_id_legacy(
+    organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)
+):
     """Legacy endpoint - redirects to slug URL."""
     try:
-        cursor.execute("SELECT slug FROM organizations WHERE id = %s AND active = true", (organization_id,))
+        cursor.execute(
+            "SELECT slug FROM organizations WHERE id = %s AND active = true",
+            (organization_id,),
+        )
         result = cursor.fetchone()
 
         if not result:
             raise HTTPException(status_code=404, detail="Organization not found")
 
         # 301 redirect to new slug URL
-        return RedirectResponse(url=f"/api/organizations/{result['slug']}", status_code=301)
+        return RedirectResponse(
+            url=f"/api/organizations/{result['slug']}", status_code=301
+        )
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise APIException(status_code=500, detail="Internal server error", error_code="INTERNAL_ERROR")
+    except Exception:
+        raise APIException(
+            status_code=500, detail="Internal server error", error_code="INTERNAL_ERROR"
+        )
 
 
 @router.get("/{organization_id}/recent-dogs")
@@ -323,13 +358,21 @@ def get_organization_recent_dogs(
         return dogs_with_thumbnails
 
     except psycopg2.Error as db_err:
-        handle_database_error(db_err, f"get_organization_recent_dogs({organization_id})")
-    except Exception as e:
-        raise APIException(status_code=500, detail=f"Failed to fetch recent dogs for organization {organization_id}", error_code="INTERNAL_ERROR")
+        handle_database_error(
+            db_err, f"get_organization_recent_dogs({organization_id})"
+        )
+    except Exception:
+        raise APIException(
+            status_code=500,
+            detail=f"Failed to fetch recent dogs for organization {organization_id}",
+            error_code="INTERNAL_ERROR",
+        )
 
 
 @router.get("/{organization_id}/statistics")
-def get_organization_statistics(organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
+def get_organization_statistics(
+    organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)
+):
     """
     Get statistics for a specific organization.
 
@@ -357,5 +400,9 @@ def get_organization_statistics(organization_id: int, cursor: RealDictCursor = D
 
     except psycopg2.Error as db_err:
         handle_database_error(db_err, f"get_organization_statistics({organization_id})")
-    except Exception as e:
-        raise APIException(status_code=500, detail=f"Failed to fetch statistics for organization {organization_id}", error_code="INTERNAL_ERROR")
+    except Exception:
+        raise APIException(
+            status_code=500,
+            detail=f"Failed to fetch statistics for organization {organization_id}",
+            error_code="INTERNAL_ERROR",
+        )

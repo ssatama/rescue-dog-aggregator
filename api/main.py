@@ -3,7 +3,6 @@ import os
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, Dict
 
 import psycopg2
 from fastapi import Depends, FastAPI
@@ -16,7 +15,9 @@ from api.dependencies import get_database_connection
 
 # Import middleware
 from api.middleware.cache_headers import CacheHeadersMiddleware
-from api.middleware.sentry_middleware import SentryTimeoutMiddleware  # Only keep timeout middleware
+from api.middleware.sentry_middleware import (
+    SentryTimeoutMiddleware,
+)  # Only keep timeout middleware
 
 # Import Sentry monitoring
 from api.monitoring import init_sentry
@@ -44,14 +45,20 @@ init_sentry(ENVIRONMENT)
 if ENVIRONMENT == "production":
     import sentry_sdk
 
-    if sentry_sdk.get_client().is_active():  # Fixed: Use modern API instead of deprecated Hub
+    if (
+        sentry_sdk.get_client().is_active()
+    ):  # Fixed: Use modern API instead of deprecated Hub
         logger.info("✅ Sentry initialized successfully")
         # Only send test message if debug mode is enabled
         if os.getenv("SENTRY_DEBUG", "false").lower() == "true":
-            sentry_sdk.capture_message("Backend API started - Sentry connection verified", level="info")
+            sentry_sdk.capture_message(
+                "Backend API started - Sentry connection verified", level="info"
+            )
     else:
         logger.critical("❌ CRITICAL: Sentry initialization FAILED in production!")
-        logger.critical("Continuing without Sentry - errors will only be logged locally")
+        logger.critical(
+            "Continuing without Sentry - errors will only be logged locally"
+        )
         # Don't crash production - continue with local logging only
         # Consider setting a global flag to disable Sentry calls if needed
 
@@ -67,7 +74,10 @@ async def lifespan(app: FastAPI):
 
     # Skip pool initialization for unit tests
     is_pytest = "pytest" in sys.modules
-    is_unit_test = os.environ.get("PYTEST_CURRENT_TEST", "").find("unit") != -1 or os.environ.get("PYTEST_CURRENT_TEST", "").find("fast") != -1
+    is_unit_test = (
+        os.environ.get("PYTEST_CURRENT_TEST", "").find("unit") != -1
+        or os.environ.get("PYTEST_CURRENT_TEST", "").find("fast") != -1
+    )
     skip_pool = is_pytest and is_unit_test
 
     if skip_pool:
@@ -85,7 +95,9 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize database connection pool: {e}")
         # Allow the app to start but log the error prominently
         # The pool will return proper error messages when accessed
-        logger.warning("Application starting without database connection pool - database operations will fail")
+        logger.warning(
+            "Application starting without database connection pool - database operations will fail"
+        )
 
     yield
 
@@ -131,7 +143,9 @@ async def global_exception_handler(request, exc):
         return JSONResponse(status_code=500, content={"detail": str(exc)})
 
     # Return a generic error response for production and non-test endpoints
-    return JSONResponse(status_code=500, content={"detail": "Internal server error occurred"})
+    return JSONResponse(
+        status_code=500, content={"detail": "Internal server error occurred"}
+    )
 
 
 # Sentry performance tracking is handled by FastApiIntegration - no need for custom middleware

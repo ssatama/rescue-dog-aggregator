@@ -6,12 +6,14 @@ Focuses on proper breed standardization (including potential Bulgarian breeds),
 age parsing, size handling, and overall data consistency.
 """
 
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from scrapers.base_scraper import BaseScraper
-from scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper import SanterPawsBulgarianRescueScraper
+from scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper import (
+    SanterPawsBulgarianRescueScraper,
+)
 
 
 class TestSanterPawsBulgarianRescueUnifiedStandardization:
@@ -21,8 +23,13 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
     def scraper(self):
         """Create a SanterPaws scraper instance."""
         # Mock the database service to avoid database connections
-        with patch("scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper.SanterPawsBulgarianRescueScraper.__init__", return_value=None):
-            scraper = SanterPawsBulgarianRescueScraper.__new__(SanterPawsBulgarianRescueScraper)
+        with patch(
+            "scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper.SanterPawsBulgarianRescueScraper.__init__",
+            return_value=None,
+        ):
+            scraper = SanterPawsBulgarianRescueScraper.__new__(
+                SanterPawsBulgarianRescueScraper
+            )
             scraper.config_id = "santerpawsbulgarianrescue"
             scraper.standardizer = Mock()
             scraper.use_unified_standardization = True
@@ -70,14 +77,22 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
         result = scraper.process_animal(raw_data)
 
         # Assert - check that standardizer was called with keyword args
-        scraper.standardizer.apply_full_standardization.assert_called_once_with(breed="bulgarian shepherd mix", age="2 years", size="Large")
+        scraper.standardizer.apply_full_standardization.assert_called_once_with(
+            breed="bulgarian shepherd mix", age="2 years", size="Large"
+        )
         assert result["breed"] == "Bulgarian Shepherd Mix"
         assert result["breed_category"] == "Mixed"
 
     def test_bulgarian_breed_standardization(self, scraper):
         """Test that Bulgarian breeds are properly standardized."""
         # Arrange - test with Karakachan (Bulgarian shepherd breed)
-        raw_data = {"name": "Boris", "breed": "karakachan", "age": "4 years old", "gender": "Male", "size": "XLarge"}
+        raw_data = {
+            "name": "Boris",
+            "breed": "karakachan",
+            "age": "4 years old",
+            "gender": "Male",
+            "size": "XLarge",
+        }
 
         # Mock both standardizer methods
         scraper.standardizer.apply_field_normalization.return_value = raw_data.copy()
@@ -106,13 +121,26 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
     def test_age_text_standardization(self, scraper):
         """Test various age formats are properly standardized."""
         # Arrange
-        test_cases = [("8 weeks", "Puppy", 2, 3), ("6 months", "Puppy", 6, 12), ("1 year", "Young", 12, 24), ("5 years old", "Adult", 60, 72), ("10+ years", "Senior", 120, 132)]
+        test_cases = [
+            ("8 weeks", "Puppy", 2, 3),
+            ("6 months", "Puppy", 6, 12),
+            ("1 year", "Young", 12, 24),
+            ("5 years old", "Adult", 60, 72),
+            ("10+ years", "Senior", 120, 132),
+        ]
 
-        for age_text, expected_category, expected_min_months, expected_max_months in test_cases:
+        for (
+            age_text,
+            expected_category,
+            expected_min_months,
+            expected_max_months,
+        ) in test_cases:
             raw_data = {"name": "Test Dog", "age": age_text, "breed": "Mixed Breed"}
 
             # Mock both standardizer methods for each iteration
-            scraper.standardizer.apply_field_normalization.return_value = raw_data.copy()
+            scraper.standardizer.apply_field_normalization.return_value = (
+                raw_data.copy()
+            )
             scraper.standardizer.apply_full_standardization.return_value = {
                 "breed": "Mixed Breed",
                 "breed_category": "Mixed",
@@ -148,7 +176,9 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
             raw_data = {"name": "Test Dog", "size": raw_size, "breed": "Mixed Breed"}
 
             # Mock both standardizer methods
-            scraper.standardizer.apply_field_normalization.return_value = raw_data.copy()
+            scraper.standardizer.apply_field_normalization.return_value = (
+                raw_data.copy()
+            )
             scraper.standardizer.apply_full_standardization.return_value = {
                 "breed": "Mixed Breed",
                 "breed_category": "Mixed",
@@ -200,7 +230,12 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
     def test_defaults_for_missing_fields(self, scraper):
         """Test that missing fields get proper defaults."""
         # Arrange
-        raw_data = {"name": "Unknown Dog", "adoption_url": "https://example.com/dog", "breed": "Mixed Breed", "standardized_size": "Medium"}  # Add default breed  # Add default size
+        raw_data = {
+            "name": "Unknown Dog",
+            "adoption_url": "https://example.com/dog",
+            "breed": "Mixed Breed",
+            "standardized_size": "Medium",
+        }  # Add default breed  # Add default size
 
         # Mock both standardizer methods
         scraper.standardizer.apply_field_normalization.return_value = raw_data.copy()

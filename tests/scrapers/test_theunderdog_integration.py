@@ -96,7 +96,14 @@ class TestTheUnderdogIntegration:
         """
 
     @patch("scrapers.theunderdog.theunderdog_scraper.requests.get")
-    def test_complete_data_pipeline(self, mock_get, scraper, mock_listing_response, mock_detail_response_vicky, mock_detail_response_luna):
+    def test_complete_data_pipeline(
+        self,
+        mock_get,
+        scraper,
+        mock_listing_response,
+        mock_detail_response_vicky,
+        mock_detail_response_luna,
+    ):
         """Test complete data collection pipeline."""
         # Mock HTTP responses
         mock_responses = [
@@ -119,7 +126,10 @@ class TestTheUnderdogIntegration:
         vicky = next(r for r in results if r["name"] == "Vicky")
         assert vicky["external_id"] == "tud-vicky"
         assert vicky["adoption_url"] == "https://www.theunderdog.org/adopt/vicky"
-        assert vicky["primary_image_url"] == "https://images.squarespace-cdn.com/vicky-hero.jpg"
+        assert (
+            vicky["primary_image_url"]
+            == "https://images.squarespace-cdn.com/vicky-hero.jpg"
+        )
         assert vicky["animal_type"] == "dog"
         assert vicky["status"] == "available"
 
@@ -127,7 +137,9 @@ class TestTheUnderdogIntegration:
         assert vicky["age_text"] == "Young adult (around two years)"  # From Q&A data
         assert vicky["breed"] == "Mixed Breed"
         assert vicky["sex"] == "Female"  # Should be full word
-        assert vicky["size"] == "Large"  # Extracted from properties "Large (around 30kg)"
+        assert (
+            vicky["size"] == "Large"
+        )  # Extracted from properties "Large (around 30kg)"
         assert vicky["weight_kg"] == 30.0  # Extracted from "Large (around 30kg)"
         assert vicky["country"] == "United Kingdom"
         assert vicky["country_code"] == "GB"
@@ -137,10 +149,15 @@ class TestTheUnderdogIntegration:
         luna = next(r for r in results if r["name"] == "Luna")
         assert luna["external_id"] == "tud-luna"
         assert luna["adoption_url"] == "https://www.theunderdog.org/adopt/luna"
-        assert luna["primary_image_url"] == "https://images.squarespace-cdn.com/luna-hero.jpg"
+        assert (
+            luna["primary_image_url"]
+            == "https://images.squarespace-cdn.com/luna-hero.jpg"
+        )
 
         # Test normalized fields
-        assert luna["breed"] == "Shepherd Mix" or luna["breed"] == "Mixed Breed"  # Extracted from description or defaulted
+        assert (
+            luna["breed"] == "Shepherd Mix" or luna["breed"] == "Mixed Breed"
+        )  # Extracted from description or defaulted
         assert luna["sex"] == "Female"  # Should be full word
         assert luna["size"] == "Medium"
         assert luna["country"] == "France"
@@ -148,11 +165,26 @@ class TestTheUnderdogIntegration:
         assert luna["location"] == "France"
 
         # Verify all required fields are present
-        required_fields = ["name", "external_id", "adoption_url", "primary_image_url", "description", "breed", "sex", "size", "animal_type", "status"]
+        required_fields = [
+            "name",
+            "external_id",
+            "adoption_url",
+            "primary_image_url",
+            "description",
+            "breed",
+            "sex",
+            "size",
+            "animal_type",
+            "status",
+        ]
         for dog in results:
             for field in required_fields:
-                assert field in dog, f"Missing required field '{field}' in {dog['name']}"
-                assert dog[field] is not None, f"Field '{field}' is None in {dog['name']}"
+                assert field in dog, (
+                    f"Missing required field '{field}' in {dog['name']}"
+                )
+                assert dog[field] is not None, (
+                    f"Field '{field}' is None in {dog['name']}"
+                )
                 assert dog[field] != "", f"Field '{field}' is empty in {dog['name']}"
 
     @patch("scrapers.theunderdog.theunderdog_scraper.requests.get")
@@ -185,7 +217,10 @@ class TestTheUnderdogIntegration:
         """
 
         mock_get.side_effect = [
-            Mock(text='<div class="ProductList-item"><h3 class="ProductList-title">Buddy 🇷🇴</h3><a href="/adopt/buddy"></a></div>', status_code=200),
+            Mock(
+                text='<div class="ProductList-item"><h3 class="ProductList-title">Buddy 🇷🇴</h3><a href="/adopt/buddy"></a></div>',
+                status_code=200,
+            ),
             Mock(text=minimal_response, status_code=200),
         ]
 
@@ -212,7 +247,13 @@ class TestTheUnderdogIntegration:
             "adoption_url": "https://example.com/test-dog",
             "primary_image_url": "https://example.com/test-dog.jpg",
             "description": "A lovely 2 year old female labrador mix.",
-            "properties": {"raw_qa_data": {"How big?": "Large (25kg)", "How old?": "Young adult (2 years)", "Male or female?": "Female"}},
+            "properties": {
+                "raw_qa_data": {
+                    "How big?": "Large (25kg)",
+                    "How old?": "Young adult (2 years)",
+                    "Male or female?": "Female",
+                }
+            },
             "animal_type": "dog",
             "status": "available",
             "country": {"name": "United Kingdom", "iso_code": "GB"},
@@ -224,7 +265,10 @@ class TestTheUnderdogIntegration:
 
         # Apply the same field population logic as the scraper
         # Extract Q&A data
-        from scrapers.theunderdog.normalizer import extract_qa_data, extract_size_and_weight_from_qa
+        from scrapers.theunderdog.normalizer import (
+            extract_qa_data,
+            extract_size_and_weight_from_qa,
+        )
 
         qa_data = extract_qa_data(result.get("properties", {}))
 
@@ -250,12 +294,26 @@ class TestTheUnderdogIntegration:
             else:
                 result["size"] = "Medium"
         if not result.get("description"):
-            result["description"] = f"Rescue dog from {result.get('country', 'unknown location')}"
+            result["description"] = (
+                f"Rescue dog from {result.get('country', 'unknown location')}"
+            )
         if not result.get("location"):
             result["location"] = result.get("country", "Unknown")
 
         # Test all critical fields are populated
-        critical_fields = ["name", "external_id", "adoption_url", "primary_image_url", "description", "breed", "age_text", "sex", "size", "animal_type", "status"]
+        critical_fields = [
+            "name",
+            "external_id",
+            "adoption_url",
+            "primary_image_url",
+            "description",
+            "breed",
+            "age_text",
+            "sex",
+            "size",
+            "animal_type",
+            "status",
+        ]
 
         for field in critical_fields:
             assert field in result, f"Missing critical field: {field}"
@@ -284,21 +342,35 @@ class TestTheUnderdogIntegration:
     def test_data_accuracy_validation(self, scraper):
         """Test data accuracy and consistency."""
         # Test age extraction accuracy
-        age_tests = [("A 2 year old dog", "2 years"), ("This 6 month old puppy", "6 months"), ("Around 3 years old", "3 years"), ("No age mentioned", None)]
+        age_tests = [
+            ("A 2 year old dog", "2 years"),
+            ("This 6 month old puppy", "6 months"),
+            ("Around 3 years old", "3 years"),
+            ("No age mentioned", None),
+        ]
 
         for description, expected_age in age_tests:
             result = scraper._extract_age_fallback(description)
             assert result == expected_age, f"Age extraction failed for '{description}'"
 
         # Test sex extraction accuracy
-        sex_tests = [("She is a lovely dog", "Female"), ("He loves to play", "Male"), ("This dog is friendly", None)]
+        sex_tests = [
+            ("She is a lovely dog", "Female"),
+            ("He loves to play", "Male"),
+            ("This dog is friendly", None),
+        ]
 
         for description, expected_sex in sex_tests:
             result = scraper._extract_sex_fallback(description)
             assert result == expected_sex, f"Sex extraction failed for '{description}'"
 
         # Test size estimation accuracy
-        size_tests = [(5.0, "Small"), (15.0, "Medium"), (30.0, "Large"), (50.0, "XLarge")]
+        size_tests = [
+            (5.0, "Small"),
+            (15.0, "Medium"),
+            (30.0, "Large"),
+            (50.0, "XLarge"),
+        ]
 
         for weight, expected_size in size_tests:
             result = scraper._estimate_size_from_weight(weight)

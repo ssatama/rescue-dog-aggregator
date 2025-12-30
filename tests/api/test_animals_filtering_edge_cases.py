@@ -7,9 +7,6 @@ Tests complex filtering combinations, edge cases, and boundary conditions.
 import urllib.parse
 
 import pytest
-from fastapi.testclient import TestClient
-
-from api.main import app
 
 
 @pytest.mark.slow
@@ -28,7 +25,9 @@ class TestAnimalsFilteringEdgeCases:
     )
     def test_availability_confidence_levels(self, client, confidence_levels, expected):
         """Test filtering by availability confidence levels."""
-        response = client.get(f"/api/animals?availability_confidence={confidence_levels}")
+        response = client.get(
+            f"/api/animals?availability_confidence={confidence_levels}"
+        )
         assert response.status_code == 200
         data = response.json()
         for animal in data:
@@ -41,7 +40,10 @@ class TestAnimalsFilteringEdgeCases:
         assert response.status_code == 200
         # Should not error, regardless of results
 
-    @pytest.mark.parametrize("search_term", ["O'Malley", "María", "test-dog", "dog@rescue", "", "   ", "\t", "\n"])
+    @pytest.mark.parametrize(
+        "search_term",
+        ["O'Malley", "María", "test-dog", "dog@rescue", "", "   ", "\t", "\n"],
+    )
     def test_search_term_edge_cases(self, client, search_term):
         """Test search functionality with special characters and whitespace."""
         encoded_term = urllib.parse.quote(search_term)
@@ -49,7 +51,9 @@ class TestAnimalsFilteringEdgeCases:
         assert response.status_code == 200
         # Should handle all search terms gracefully
 
-    @pytest.mark.parametrize("breed_group", ["Sporting", "Herding", "Working", "Non-Sporting", "Mixed"])
+    @pytest.mark.parametrize(
+        "breed_group", ["Sporting", "Herding", "Working", "Non-Sporting", "Mixed"]
+    )
     def test_breed_group_filtering(self, client, breed_group):
         """Test breed group filtering with various inputs."""
         response = client.get(f"/api/animals?breed_group={breed_group}")
@@ -80,7 +84,14 @@ class TestAnimalsFilteringEdgeCases:
 
     def test_complex_filter_combination(self, client):
         """Test complex combination of multiple filters."""
-        filters = {"sex": "Male", "size": "large", "availability_confidence": "high", "age_category": "Adult", "breed_group": "Sporting", "limit": 10}
+        filters = {
+            "sex": "Male",
+            "size": "large",
+            "availability_confidence": "high",
+            "age_category": "Adult",
+            "breed_group": "Sporting",
+            "limit": 10,
+        }
         query_string = "&".join(f"{k}={v}" for k, v in filters.items())
         response = client.get(f"/api/animals?{query_string}")
         assert response.status_code == 200
@@ -94,8 +105,12 @@ class TestAnimalsFilteringEdgeCases:
 
     def test_location_filtering_combinations(self, client):
         """Test location filtering combinations."""
-        response = client.get("/api/animals?location_country=Test Country&available_to_country=Test Country")
+        response = client.get(
+            "/api/animals?location_country=Test Country&available_to_country=Test Country"
+        )
         assert response.status_code == 200
 
-        response = client.get("/api/animals?available_to_country=Test Country&available_to_region=Test Region")
+        response = client.get(
+            "/api/animals?available_to_country=Test Country&available_to_region=Test Region"
+        )
         assert response.status_code == 200

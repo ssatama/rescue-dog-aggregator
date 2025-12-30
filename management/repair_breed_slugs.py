@@ -83,9 +83,19 @@ def update_breed_slug(cursor, repair_data: Dict) -> None:
 def main():
     """Main repair function."""
     parser = argparse.ArgumentParser(description="Repair breed slug mismatches")
-    parser.add_argument("--limit", type=int, help="Limit number of records to repair (for testing)")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be changed without making changes")
-    parser.add_argument("--allow-prod", action="store_true", help="Allow running against production database")
+    parser.add_argument(
+        "--limit", type=int, help="Limit number of records to repair (for testing)"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be changed without making changes",
+    )
+    parser.add_argument(
+        "--allow-prod",
+        action="store_true",
+        help="Allow running against production database",
+    )
 
     args = parser.parse_args()
     logger = setup_logging()
@@ -93,7 +103,9 @@ def main():
     # Safety check for production
     db_config = DB_CONFIG
     if db_config["database"] == "rescue_dogs" and not args.allow_prod:
-        logger.error("SAFETY: Refusing to run against production database without --allow-prod")
+        logger.error(
+            "SAFETY: Refusing to run against production database without --allow-prod"
+        )
         return 1
 
     logger.info(f"Connecting to database: {db_config['database']}")
@@ -119,7 +131,7 @@ def main():
             repairs.append(repair_data)
 
         # Show repair summary
-        logger.info(f"\nRepair Summary:")
+        logger.info("\nRepair Summary:")
         logger.info("=" * 80)
 
         changes_by_slug = {}

@@ -44,8 +44,15 @@ class LLMProfilerService(OpenRouterLLMDataService):
         # Initialize pipeline for organization if not already done
         if self.profiler_pipeline is None and self.organization_id:
             try:
-                self.profiler_pipeline = DogProfilerPipeline(organization_id=self.organization_id, dry_run=False, connection_pool=self.connection_pool)
-                self.logger.info(f"Initialized DogProfilerPipeline for org {self.organization_id} " f"with pool: {bool(self.connection_pool)}")
+                self.profiler_pipeline = DogProfilerPipeline(
+                    organization_id=self.organization_id,
+                    dry_run=False,
+                    connection_pool=self.connection_pool,
+                )
+                self.logger.info(
+                    f"Initialized DogProfilerPipeline for org {self.organization_id} "
+                    f"with pool: {bool(self.connection_pool)}"
+                )
             except Exception as e:
                 self.logger.warning(f"Failed to initialize pipeline: {e}")
                 # Fall back to base implementation
@@ -58,10 +65,14 @@ class LLMProfilerService(OpenRouterLLMDataService):
                 profile_data = await self.profiler_pipeline.process_dog(dog_data)
 
                 if profile_data:
-                    self.logger.info(f"Generated profile for {dog_data.get('name')} using pipeline")
+                    self.logger.info(
+                        f"Generated profile for {dog_data.get('name')} using pipeline"
+                    )
                     return profile_data
                 else:
-                    self.logger.warning(f"Pipeline returned empty profile for {dog_data.get('name')}")
+                    self.logger.warning(
+                        f"Pipeline returned empty profile for {dog_data.get('name')}"
+                    )
 
             except Exception as e:
                 self.logger.error(f"Pipeline processing failed: {e}")
@@ -70,7 +81,9 @@ class LLMProfilerService(OpenRouterLLMDataService):
         self.logger.info("Falling back to base profiler implementation")
         return await super().generate_dog_profiler(dog_data)
 
-    async def enrich_animal_with_profile(self, animal_id: int, animal_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def enrich_animal_with_profile(
+        self, animal_id: int, animal_data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """
         Enrich animal with comprehensive profile data.
 
@@ -103,7 +116,9 @@ class LLMProfilerService(OpenRouterLLMDataService):
             profile_data = await self.generate_dog_profiler(profile_input)
 
             if profile_data:
-                self.logger.info(f"Successfully enriched animal {animal_id} with profile")
+                self.logger.info(
+                    f"Successfully enriched animal {animal_id} with profile"
+                )
                 return profile_data
             else:
                 self.logger.warning(f"No profile generated for animal {animal_id}")
@@ -141,7 +156,14 @@ class LLMProfilerService(OpenRouterLLMDataService):
         description = animal_data.get("description", "")
 
         # Need either properties with content or a description
-        has_properties = properties and isinstance(properties, dict) and any(key in properties and properties[key] for key in ["description", "Beschreibung", "details", "info"])
+        has_properties = (
+            properties
+            and isinstance(properties, dict)
+            and any(
+                key in properties and properties[key]
+                for key in ["description", "Beschreibung", "details", "info"]
+            )
+        )
 
         has_description = description and len(description) > 50
 

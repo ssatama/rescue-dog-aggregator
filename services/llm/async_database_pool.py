@@ -12,7 +12,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import asyncpg
 from asyncpg import Connection, Pool
@@ -99,7 +99,9 @@ class AsyncDatabasePool:
                 timeout=self.config.timeout,
             )
             self.is_initialized = True
-            logger.info(f"Database pool initialized with {self.config.min_connections}-{self.config.max_connections} connections")
+            logger.info(
+                f"Database pool initialized with {self.config.min_connections}-{self.config.max_connections} connections"
+            )
         except Exception as e:
             logger.error(f"Failed to initialize database pool: {e}")
             raise
@@ -153,7 +155,9 @@ class AsyncDatabasePool:
             self.metrics["queries_executed"] += len(args_list)
             await connection.executemany(query, args_list)
 
-    async def fetch_with_retry(self, query: str, *args, max_retries: int = 3) -> List[Dict[str, Any]]:
+    async def fetch_with_retry(
+        self, query: str, *args, max_retries: int = 3
+    ) -> List[Dict[str, Any]]:
         """Execute query with retry on connection errors."""
         last_error = None
 
@@ -165,8 +169,10 @@ class AsyncDatabasePool:
                 self.metrics["retries"] += 1
                 if attempt < max_retries - 1:
                     await asyncio.sleep(1 * (attempt + 1))  # Exponential backoff
-                    logger.warning(f"Connection error, retrying ({attempt + 1}/{max_retries}): {e}")
-            except Exception as e:
+                    logger.warning(
+                        f"Connection error, retrying ({attempt + 1}/{max_retries}): {e}"
+                    )
+            except Exception:
                 self.metrics["errors"] += 1
                 raise
 
@@ -179,7 +185,9 @@ class AsyncDatabasePool:
         if self.pool:
             # These methods don't actually exist in asyncpg.Pool
             # We'll use pool._holders for real implementation
-            metrics["current_connections"] = len(self.pool._holders) if hasattr(self.pool, "_holders") else 0
+            metrics["current_connections"] = (
+                len(self.pool._holders) if hasattr(self.pool, "_holders") else 0
+            )
             metrics["min_connections"] = self.config.min_connections
             metrics["max_connections"] = self.config.max_connections
 

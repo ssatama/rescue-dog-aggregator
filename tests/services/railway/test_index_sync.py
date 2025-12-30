@@ -1,10 +1,15 @@
 """Tests for Railway index synchronization."""
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from services.railway.index_sync import get_local_indexes, get_railway_indexes, sync_all_table_indexes, sync_indexes_to_railway
+from services.railway.index_sync import (
+    get_local_indexes,
+    get_railway_indexes,
+    sync_all_table_indexes,
+    sync_indexes_to_railway,
+)
 
 
 @pytest.mark.services
@@ -23,8 +28,16 @@ class TestIndexSync:
         mock_conn.cursor.return_value = mock_cursor
 
         mock_cursor.fetchall.return_value = [
-            ("idx_animals_status", "CREATE INDEX idx_animals_status ON animals(status)", "animals"),
-            ("idx_animals_org", "CREATE INDEX idx_animals_org ON animals(organization_id)", "animals"),
+            (
+                "idx_animals_status",
+                "CREATE INDEX idx_animals_status ON animals(status)",
+                "animals",
+            ),
+            (
+                "idx_animals_org",
+                "CREATE INDEX idx_animals_org ON animals(organization_id)",
+                "animals",
+            ),
         ]
 
         # Execute
@@ -46,8 +59,16 @@ class TestIndexSync:
         mock_railway_session.return_value.__enter__.return_value = mock_session
 
         mock_result = [
-            ("idx_animals_status", "CREATE INDEX idx_animals_status ON animals(status)", "animals"),
-            ("idx_animals_breed", "CREATE INDEX idx_animals_breed ON animals(breed)", "animals"),
+            (
+                "idx_animals_status",
+                "CREATE INDEX idx_animals_status ON animals(status)",
+                "animals",
+            ),
+            (
+                "idx_animals_breed",
+                "CREATE INDEX idx_animals_breed ON animals(breed)",
+                "animals",
+            ),
         ]
         mock_session.execute.return_value = mock_result
 
@@ -62,17 +83,35 @@ class TestIndexSync:
     @patch("services.railway.index_sync.get_railway_indexes")
     @patch("services.railway.index_sync.get_local_indexes")
     @patch("services.railway.index_sync.railway_session")
-    def test_sync_indexes_dry_run(self, mock_railway_session, mock_get_local, mock_get_railway):
+    def test_sync_indexes_dry_run(
+        self, mock_railway_session, mock_get_local, mock_get_railway
+    ):
         """Test dry run mode shows what would be done without executing."""
         # Setup mocks
         mock_get_local.return_value = [
-            {"name": "idx_animals_status", "definition": "CREATE INDEX idx_animals_status ON animals(status)", "table": "animals"},
-            {"name": "idx_animals_new", "definition": "CREATE INDEX idx_animals_new ON animals(name)", "table": "animals"},
+            {
+                "name": "idx_animals_status",
+                "definition": "CREATE INDEX idx_animals_status ON animals(status)",
+                "table": "animals",
+            },
+            {
+                "name": "idx_animals_new",
+                "definition": "CREATE INDEX idx_animals_new ON animals(name)",
+                "table": "animals",
+            },
         ]
 
         mock_get_railway.return_value = [
-            {"name": "idx_animals_status", "definition": "CREATE INDEX idx_animals_status ON animals(status)", "table": "animals"},
-            {"name": "idx_animals_old", "definition": "CREATE INDEX idx_animals_old ON animals(old_field)", "table": "animals"},
+            {
+                "name": "idx_animals_status",
+                "definition": "CREATE INDEX idx_animals_status ON animals(status)",
+                "table": "animals",
+            },
+            {
+                "name": "idx_animals_old",
+                "definition": "CREATE INDEX idx_animals_old ON animals(old_field)",
+                "table": "animals",
+            },
         ]
 
         # Execute
@@ -86,19 +125,33 @@ class TestIndexSync:
     @patch("services.railway.index_sync.get_railway_indexes")
     @patch("services.railway.index_sync.get_local_indexes")
     @patch("services.railway.index_sync.railway_session")
-    def test_sync_indexes_creates_missing(self, mock_railway_session, mock_get_local, mock_get_railway):
+    def test_sync_indexes_creates_missing(
+        self, mock_railway_session, mock_get_local, mock_get_railway
+    ):
         """Test sync creates indexes that exist locally but not in Railway."""
         # Setup mocks
         mock_session = MagicMock()
         mock_railway_session.return_value.__enter__.return_value = mock_session
 
         mock_get_local.return_value = [
-            {"name": "idx_animals_status", "definition": "CREATE INDEX CONCURRENTLY idx_animals_status ON animals(status)", "table": "animals"},
-            {"name": "idx_animals_new", "definition": "CREATE INDEX CONCURRENTLY idx_animals_new ON animals(name)", "table": "animals"},
+            {
+                "name": "idx_animals_status",
+                "definition": "CREATE INDEX CONCURRENTLY idx_animals_status ON animals(status)",
+                "table": "animals",
+            },
+            {
+                "name": "idx_animals_new",
+                "definition": "CREATE INDEX CONCURRENTLY idx_animals_new ON animals(name)",
+                "table": "animals",
+            },
         ]
 
         mock_get_railway.return_value = [
-            {"name": "idx_animals_status", "definition": "CREATE INDEX idx_animals_status ON animals(status)", "table": "animals"},
+            {
+                "name": "idx_animals_status",
+                "definition": "CREATE INDEX idx_animals_status ON animals(status)",
+                "table": "animals",
+            },
         ]
 
         # Execute
@@ -121,19 +174,33 @@ class TestIndexSync:
     @patch("services.railway.index_sync.get_railway_indexes")
     @patch("services.railway.index_sync.get_local_indexes")
     @patch("services.railway.index_sync.railway_session")
-    def test_sync_indexes_drops_extra(self, mock_railway_session, mock_get_local, mock_get_railway):
+    def test_sync_indexes_drops_extra(
+        self, mock_railway_session, mock_get_local, mock_get_railway
+    ):
         """Test sync drops indexes that exist in Railway but not locally."""
         # Setup mocks
         mock_session = MagicMock()
         mock_railway_session.return_value.__enter__.return_value = mock_session
 
         mock_get_local.return_value = [
-            {"name": "idx_animals_status", "definition": "CREATE INDEX idx_animals_status ON animals(status)", "table": "animals"},
+            {
+                "name": "idx_animals_status",
+                "definition": "CREATE INDEX idx_animals_status ON animals(status)",
+                "table": "animals",
+            },
         ]
 
         mock_get_railway.return_value = [
-            {"name": "idx_animals_status", "definition": "CREATE INDEX idx_animals_status ON animals(status)", "table": "animals"},
-            {"name": "idx_animals_old", "definition": "CREATE INDEX idx_animals_old ON animals(old_field)", "table": "animals"},
+            {
+                "name": "idx_animals_status",
+                "definition": "CREATE INDEX idx_animals_status ON animals(status)",
+                "table": "animals",
+            },
+            {
+                "name": "idx_animals_old",
+                "definition": "CREATE INDEX idx_animals_old ON animals(old_field)",
+                "table": "animals",
+            },
         ]
 
         # Execute
@@ -149,12 +216,16 @@ class TestIndexSync:
             if call and call[0] and hasattr(call[0][0], "text"):
                 executed_sqls.append(call[0][0].text)
 
-        assert any("DROP INDEX IF EXISTS idx_animals_old" in sql for sql in executed_sqls)
+        assert any(
+            "DROP INDEX IF EXISTS idx_animals_old" in sql for sql in executed_sqls
+        )
 
     @patch("services.railway.index_sync.get_railway_indexes")
     @patch("services.railway.index_sync.get_local_indexes")
     @patch("services.railway.index_sync.railway_session")
-    def test_sync_indexes_preserves_unique_constraints(self, mock_railway_session, mock_get_local, mock_get_railway):
+    def test_sync_indexes_preserves_unique_constraints(
+        self, mock_railway_session, mock_get_local, mock_get_railway
+    ):
         """Test sync does not drop primary keys or unique constraints."""
         # Setup mocks
         mock_session = MagicMock()
@@ -163,10 +234,26 @@ class TestIndexSync:
         mock_get_local.return_value = []
 
         mock_get_railway.return_value = [
-            {"name": "animals_pkey", "definition": "CREATE UNIQUE INDEX animals_pkey ON animals(id)", "table": "animals"},
-            {"name": "animals_slug_unique", "definition": "CREATE UNIQUE INDEX animals_slug_unique ON animals(slug)", "table": "animals"},
-            {"name": "animals_external_key", "definition": "CREATE UNIQUE INDEX animals_external_key ON animals(external_id)", "table": "animals"},
-            {"name": "idx_animals_old", "definition": "CREATE INDEX idx_animals_old ON animals(old_field)", "table": "animals"},
+            {
+                "name": "animals_pkey",
+                "definition": "CREATE UNIQUE INDEX animals_pkey ON animals(id)",
+                "table": "animals",
+            },
+            {
+                "name": "animals_slug_unique",
+                "definition": "CREATE UNIQUE INDEX animals_slug_unique ON animals(slug)",
+                "table": "animals",
+            },
+            {
+                "name": "animals_external_key",
+                "definition": "CREATE UNIQUE INDEX animals_external_key ON animals(external_id)",
+                "table": "animals",
+            },
+            {
+                "name": "idx_animals_old",
+                "definition": "CREATE INDEX idx_animals_old ON animals(old_field)",
+                "table": "animals",
+            },
         ]
 
         # Execute
@@ -181,7 +268,9 @@ class TestIndexSync:
             if call and call[0] and hasattr(call[0][0], "text"):
                 executed_sqls.append(call[0][0].text)
 
-        assert any("DROP INDEX IF EXISTS idx_animals_old" in sql for sql in executed_sqls)
+        assert any(
+            "DROP INDEX IF EXISTS idx_animals_old" in sql for sql in executed_sqls
+        )
         assert not any("animals_pkey" in sql for sql in executed_sqls)
         assert not any("animals_slug_unique" in sql for sql in executed_sqls)
         assert not any("animals_external_key" in sql for sql in executed_sqls)

@@ -52,7 +52,10 @@ class AnimalService:
             # Apply server-side limit enforcement (max 1000 for security)
             # unless internal bypass is set (for sitemap/export)
             original_limit = filters.limit
-            if not getattr(filters, "internal_bypass_limit", False) and filters.limit > 1000:
+            if (
+                not getattr(filters, "internal_bypass_limit", False)
+                and filters.limit > 1000
+            ):
                 filters.limit = 1000
                 logger.info(f"Capped limit from {original_limit} to 1000 for security")
 
@@ -74,10 +77,16 @@ class AnimalService:
         except Exception as e:
             logger.error(f"Error in get_animals: {e}", exc_info=True)
             logger.error(f"Error type: {type(e).__name__}")
-            logger.error(f"Filter parameters: limit={filters.limit}, animal_type={filters.animal_type}, status={filters.status}")
+            logger.error(
+                f"Filter parameters: limit={filters.limit}, animal_type={filters.animal_type}, status={filters.status}"
+            )
             if hasattr(e, "__dict__"):
                 logger.error(f"Error details: {e.__dict__}")
-            raise APIException(status_code=500, detail="Failed to fetch animals", error_code="INTERNAL_ERROR")
+            raise APIException(
+                status_code=500,
+                detail="Failed to fetch animals",
+                error_code="INTERNAL_ERROR",
+            )
 
     def get_animals_for_sitemap(self, filters: AnimalFilterRequest) -> List[Animal]:
         """
@@ -115,7 +124,11 @@ class AnimalService:
 
         except Exception as e:
             logger.error(f"Error in get_animals_for_sitemap: {e}")
-            raise APIException(status_code=500, detail="Failed to fetch animals for sitemap", error_code="INTERNAL_ERROR")
+            raise APIException(
+                status_code=500,
+                detail="Failed to fetch animals for sitemap",
+                error_code="INTERNAL_ERROR",
+            )
 
     def _filter_by_description_quality(self, animals: List[Animal]) -> List[Animal]:
         """
@@ -142,7 +155,9 @@ class AnimalService:
             # Get description from properties
             description = None
             if hasattr(animal, "properties") and animal.properties:
-                description = animal.properties.get("description") or animal.properties.get("raw_description")
+                description = animal.properties.get(
+                    "description"
+                ) or animal.properties.get("raw_description")
 
             # Skip if no description
             if not description or not isinstance(description, str):
@@ -161,7 +176,9 @@ class AnimalService:
 
             quality_animals.append(animal)
 
-        logger.info(f"Filtered {len(animals)} animals to {len(quality_animals)} with quality descriptions for sitemap")
+        logger.info(
+            f"Filtered {len(animals)} animals to {len(quality_animals)} with quality descriptions for sitemap"
+        )
         return quality_animals
 
     def _strip_html_tags(self, text: str) -> str:
@@ -235,7 +252,9 @@ class AnimalService:
         fallback_filters.curation_type = "random"  # Use default ordering (latest first)
 
         fallback_query, fallback_params = self._build_animals_query(fallback_filters)
-        logger.debug(f"Executing fallback query: {fallback_query} with params: {fallback_params}")
+        logger.debug(
+            f"Executing fallback query: {fallback_query} with params: {fallback_params}"
+        )
         self.cursor.execute(fallback_query, tuple(fallback_params))
         fallback_rows = self.cursor.fetchall()
 
@@ -280,12 +299,16 @@ class AnimalService:
                 clean["organization"] = organization
 
                 # Normalize protocol-relative URLs (e.g., //example.com -> https://example.com)
-                clean["primary_image_url"] = _normalize_url(clean.get("primary_image_url"))
+                clean["primary_image_url"] = _normalize_url(
+                    clean.get("primary_image_url")
+                )
                 clean["adoption_url"] = _normalize_url(clean.get("adoption_url"))
 
                 animals.append(Animal(**clean))
             except Exception as e:
-                logger.error(f"Error building animal response for row {i}, id={row.get('id')}, name={row.get('name')}: {e}")
+                logger.error(
+                    f"Error building animal response for row {i}, id={row.get('id')}, name={row.get('name')}: {e}"
+                )
                 logger.error(f"Row keys: {list(row_dict.keys())}")
                 logger.error(f"Clean dict keys: {list(clean.keys())}")
                 logger.error(f"Error type: {type(e).__name__}")
@@ -356,7 +379,11 @@ class AnimalService:
 
         except Exception as e:
             logger.error(f"Error fetching animal by slug {animal_slug}: {e}")
-            raise APIException(status_code=500, detail=f"Failed to fetch animal {animal_slug}", error_code="INTERNAL_ERROR")
+            raise APIException(
+                status_code=500,
+                detail=f"Failed to fetch animal {animal_slug}",
+                error_code="INTERNAL_ERROR",
+            )
 
     def get_animal_by_id(self, animal_id: int) -> Optional[Animal]:
         """
@@ -420,7 +447,11 @@ class AnimalService:
 
         except Exception as e:
             logger.error(f"Error fetching animal by id {animal_id}: {e}")
-            raise APIException(status_code=500, detail=f"Failed to fetch animal {animal_id}", error_code="INTERNAL_ERROR")
+            raise APIException(
+                status_code=500,
+                detail=f"Failed to fetch animal {animal_id}",
+                error_code="INTERNAL_ERROR",
+            )
 
     def _build_single_animal_response(self, row: dict) -> Animal:
         """Build a single animal response with adoption data if available."""
@@ -477,7 +508,9 @@ class AnimalService:
         # Add adoption check data if available
         if row_dict.get("adoption_check_data"):
             animal_dict["adoption_check_data"] = {
-                "checked_at": row.get("adoption_checked_at").isoformat() if row.get("adoption_checked_at") else None,
+                "checked_at": row.get("adoption_checked_at").isoformat()
+                if row.get("adoption_checked_at")
+                else None,
                 "evidence": row_dict.get("adoption_check_data", {}).get("evidence"),
                 "confidence": row_dict.get("adoption_check_data", {}).get("confidence"),
                 "status": row.get("status"),  # Include the detected status
@@ -511,7 +544,11 @@ class AnimalService:
 
         except Exception as e:
             logger.error(f"Error in get_distinct_breeds: {e}")
-            raise APIException(status_code=500, detail="Failed to fetch breed list", error_code="INTERNAL_ERROR")
+            raise APIException(
+                status_code=500,
+                detail="Failed to fetch breed list",
+                error_code="INTERNAL_ERROR",
+            )
 
     def get_distinct_breed_groups(self) -> List[str]:
         """Get distinct breed groups."""
@@ -549,7 +586,11 @@ class AnimalService:
 
         except Exception as e:
             logger.error(f"Error in get_distinct_breed_groups: {e}")
-            raise APIException(status_code=500, detail="Failed to fetch breed group list", error_code="INTERNAL_ERROR")
+            raise APIException(
+                status_code=500,
+                detail="Failed to fetch breed group list",
+                error_code="INTERNAL_ERROR",
+            )
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get aggregated statistics about animals and organizations."""
@@ -593,7 +634,10 @@ class AnimalService:
                 ORDER BY count DESC, o.country ASC
             """
             )
-            stats["countries"] = [{"country": row["country"], "count": row["count"]} for row in self.cursor.fetchall()]
+            stats["countries"] = [
+                {"country": row["country"], "count": row["count"]}
+                for row in self.cursor.fetchall()
+            ]
 
             # Get organizations with statistics
             self.cursor.execute(
@@ -637,7 +681,11 @@ class AnimalService:
 
         except Exception as e:
             logger.error(f"Error in get_statistics: {e}")
-            raise APIException(status_code=500, detail="Failed to fetch statistics", error_code="INTERNAL_ERROR")
+            raise APIException(
+                status_code=500,
+                detail="Failed to fetch statistics",
+                error_code="INTERNAL_ERROR",
+            )
 
     def get_breed_stats(self) -> dict:
         """
@@ -695,7 +743,10 @@ class AnimalService:
                 ORDER BY count DESC
             """
             )
-            breed_groups = [{"name": row["group_name"], "count": row["count"]} for row in self.cursor.fetchall()]
+            breed_groups = [
+                {"name": row["group_name"], "count": row["count"]}
+                for row in self.cursor.fetchall()
+            ]
 
             # Get qualifying breeds (15+ dogs) with organization distribution
             self.cursor.execute(
@@ -799,7 +850,9 @@ class AnimalService:
             qualifying_breeds = []
             for row in self.cursor.fetchall():
                 # Use stored breed_slug or generate if missing
-                breed_slug = row["breed_slug"] or generate_breed_slug(row["primary_breed"])
+                breed_slug = row["breed_slug"] or generate_breed_slug(
+                    row["primary_breed"]
+                )
 
                 # Calculate personality metrics percentages
                 total_with_data = row["total_with_profiler_data"] or 0
@@ -807,29 +860,61 @@ class AnimalService:
 
                 if total_with_data > 0:
                     # Energy level calculation - convert to 0-100 scale
-                    energy_total = row["energy_low_count"] + row["energy_medium_count"] + row["energy_high_count"]
+                    energy_total = (
+                        row["energy_low_count"]
+                        + row["energy_medium_count"]
+                        + row["energy_high_count"]
+                    )
                     if energy_total > 0:
                         # Weight: low=1, medium=2, high=3, then scale to 0-100
-                        energy_weighted = row["energy_low_count"] * 1 + row["energy_medium_count"] * 2 + row["energy_high_count"] * 3
-                        energy_percentage = int((energy_weighted / (energy_total * 3)) * 100)
+                        energy_weighted = (
+                            row["energy_low_count"] * 1
+                            + row["energy_medium_count"] * 2
+                            + row["energy_high_count"] * 3
+                        )
+                        energy_percentage = int(
+                            (energy_weighted / (energy_total * 3)) * 100
+                        )
                     else:
                         energy_percentage = 50  # Default to medium if no data
 
                     # Affection (using good_with_dogs as proxy) - higher is more affectionate
-                    dogs_total = row["good_with_dogs_yes_count"] + row["good_with_dogs_sometimes_count"] + row["good_with_dogs_no_count"]
+                    dogs_total = (
+                        row["good_with_dogs_yes_count"]
+                        + row["good_with_dogs_sometimes_count"]
+                        + row["good_with_dogs_no_count"]
+                    )
                     if dogs_total > 0:
                         # Weight: yes=3, sometimes=2, no=1, then scale to 0-100
-                        affection_weighted = row["good_with_dogs_yes_count"] * 3 + row["good_with_dogs_sometimes_count"] * 2 + row["good_with_dogs_no_count"] * 1
-                        affection_percentage = int((affection_weighted / (dogs_total * 3)) * 100)
+                        affection_weighted = (
+                            row["good_with_dogs_yes_count"] * 3
+                            + row["good_with_dogs_sometimes_count"] * 2
+                            + row["good_with_dogs_no_count"] * 1
+                        )
+                        affection_percentage = int(
+                            (affection_weighted / (dogs_total * 3)) * 100
+                        )
                     else:
-                        affection_percentage = 70  # Default to high affection if no data
+                        affection_percentage = (
+                            70  # Default to high affection if no data
+                        )
 
                     # Trainability (using confidence as proxy) - higher confidence = better trainability
-                    confidence_total = row["confidence_high_count"] + row["confidence_moderate_count"] + row["confidence_low_count"]
+                    confidence_total = (
+                        row["confidence_high_count"]
+                        + row["confidence_moderate_count"]
+                        + row["confidence_low_count"]
+                    )
                     if confidence_total > 0:
                         # Weight: high=3, moderate=2, low=1, then scale to 0-100
-                        trainability_weighted = row["confidence_high_count"] * 3 + row["confidence_moderate_count"] * 2 + row["confidence_low_count"] * 1
-                        trainability_percentage = int((trainability_weighted / (confidence_total * 3)) * 100)
+                        trainability_weighted = (
+                            row["confidence_high_count"] * 3
+                            + row["confidence_moderate_count"] * 2
+                            + row["confidence_low_count"] * 1
+                        )
+                        trainability_percentage = int(
+                            (trainability_weighted / (confidence_total * 3)) * 100
+                        )
                     else:
                         trainability_percentage = 60  # Default to moderate if no data
 
@@ -873,10 +958,22 @@ class AnimalService:
                             return "Excellent"
 
                     personality_metrics = {
-                        "energy_level": {"percentage": energy_percentage, "label": get_energy_label(energy_percentage)},
-                        "affection": {"percentage": affection_percentage, "label": get_level_label(affection_percentage)},
-                        "trainability": {"percentage": trainability_percentage, "label": get_trainability_label(trainability_percentage)},
-                        "independence": {"percentage": independence_percentage, "label": get_level_label(independence_percentage)},
+                        "energy_level": {
+                            "percentage": energy_percentage,
+                            "label": get_energy_label(energy_percentage),
+                        },
+                        "affection": {
+                            "percentage": affection_percentage,
+                            "label": get_level_label(affection_percentage),
+                        },
+                        "trainability": {
+                            "percentage": trainability_percentage,
+                            "label": get_trainability_label(trainability_percentage),
+                        },
+                        "independence": {
+                            "percentage": independence_percentage,
+                            "label": get_level_label(independence_percentage),
+                        },
                     }
 
                 breed_data = {
@@ -885,14 +982,38 @@ class AnimalService:
                     "breed_type": row["breed_type"],
                     "breed_group": row["breed_group"],
                     "count": row["count"],
-                    "average_age_months": row["average_age_months"],  # Add actual average age
+                    "average_age_months": row[
+                        "average_age_months"
+                    ],  # Add actual average age
                     "organization_count": row["org_count"],
-                    "organizations": row["organizations"][:5] if row["organizations"] else [],  # Limit to top 5 orgs
-                    "age_distribution": {"puppy": row["puppy_count"], "young": row["young_count"], "adult": row["adult_count"], "senior": row["senior_count"]},
-                    "size_distribution": {"tiny": row["tiny_count"], "small": row["small_count"], "medium": row["medium_count"], "large": row["large_count"], "xlarge": row["xlarge_count"]},
-                    "sex_distribution": {"male": row["male_count"], "female": row["female_count"]},
-                    "personality_traits": row["personality_traits"] if row["personality_traits"] else [],
-                    "experience_distribution": {"first_time_ok": row["first_time_ok_count"], "some_experience": row["some_experience_count"], "experienced": row["experienced_count"]},
+                    "organizations": row["organizations"][:5]
+                    if row["organizations"]
+                    else [],  # Limit to top 5 orgs
+                    "age_distribution": {
+                        "puppy": row["puppy_count"],
+                        "young": row["young_count"],
+                        "adult": row["adult_count"],
+                        "senior": row["senior_count"],
+                    },
+                    "size_distribution": {
+                        "tiny": row["tiny_count"],
+                        "small": row["small_count"],
+                        "medium": row["medium_count"],
+                        "large": row["large_count"],
+                        "xlarge": row["xlarge_count"],
+                    },
+                    "sex_distribution": {
+                        "male": row["male_count"],
+                        "female": row["female_count"],
+                    },
+                    "personality_traits": row["personality_traits"]
+                    if row["personality_traits"]
+                    else [],
+                    "experience_distribution": {
+                        "first_time_ok": row["first_time_ok_count"],
+                        "some_experience": row["some_experience_count"],
+                        "experienced": row["experienced_count"],
+                    },
                 }
 
                 # Only add personality_metrics if we have data
@@ -927,16 +1048,37 @@ class AnimalService:
 
         except Exception as e:
             logger.error(f"Error in get_breed_stats: {e}")
-            raise APIException(status_code=500, detail="Failed to fetch breed statistics", error_code="INTERNAL_ERROR")
+            raise APIException(
+                status_code=500,
+                detail="Failed to fetch breed statistics",
+                error_code="INTERNAL_ERROR",
+            )
 
-    def get_breeds_with_images(self, breed_type: str = None, breed_group: str = None, min_count: int = 0, limit: int = 10) -> List[dict]:
+    def get_breeds_with_images(
+        self,
+        breed_type: str = None,
+        breed_group: str = None,
+        min_count: int = 0,
+        limit: int = 10,
+    ) -> List[dict]:
         """Get breeds with sample dog images for the breeds overview page."""
         try:
             # Build WHERE conditions for counting ALL dogs (not just with images)
-            count_conditions = ["a.animal_type = 'dog'", "a.status = 'available'", "a.active = true", "o.active = TRUE"]
+            count_conditions = [
+                "a.animal_type = 'dog'",
+                "a.status = 'available'",
+                "a.active = true",
+                "o.active = TRUE",
+            ]
 
             # Build WHERE conditions for sample dogs (must have images)
-            sample_conditions = ["a.animal_type = 'dog'", "a.status = 'available'", "a.active = true", "o.active = TRUE", "a.primary_image_url IS NOT NULL"]
+            sample_conditions = [
+                "a.animal_type = 'dog'",
+                "a.status = 'available'",
+                "a.active = true",
+                "o.active = TRUE",
+                "a.primary_image_url IS NOT NULL",
+            ]
             params = []
 
             if breed_type:
@@ -1117,9 +1259,15 @@ class AnimalService:
 
         except Exception as e:
             logger.error(f"Error in get_breeds_with_images: {e}")
-            raise APIException(status_code=500, detail="Failed to fetch breeds with images", error_code="INTERNAL_ERROR")
+            raise APIException(
+                status_code=500,
+                detail="Failed to fetch breeds with images",
+                error_code="INTERNAL_ERROR",
+            )
 
-    def _build_animals_query(self, filters: AnimalFilterRequest) -> tuple[str, List[Any]]:
+    def _build_animals_query(
+        self, filters: AnimalFilterRequest
+    ) -> tuple[str, List[Any]]:
         """Build the animals query with filters."""
         # Base query selects distinct animals and joins with organizations
         # Include dog_profiler_data for sitemap and other requests that need LLM content
@@ -1154,7 +1302,9 @@ class AnimalService:
 
         # Add JOIN for service_regions if filtering by available_to
         if filters.needs_service_region_join():
-            joins += " JOIN service_regions sr ON a.organization_id = sr.organization_id"
+            joins += (
+                " JOIN service_regions sr ON a.organization_id = sr.organization_id"
+            )
 
         # Add all filter conditions
         if filters.status and filters.status != "all":
@@ -1176,7 +1326,9 @@ class AnimalService:
                 params.extend(confidence_levels)
 
         if filters.search:
-            conditions.append("(a.name ILIKE %s OR a.breed ILIKE %s OR a.standardized_breed ILIKE %s)")
+            conditions.append(
+                "(a.name ILIKE %s OR a.breed ILIKE %s OR a.standardized_breed ILIKE %s)"
+            )
             search_term = f"%{filters.search}%"
             params.extend([search_term, search_term, search_term])
 
@@ -1292,7 +1444,9 @@ class AnimalService:
 
         return query, params
 
-    def get_filter_counts(self, filters: AnimalFilterCountRequest) -> FilterCountsResponse:
+    def get_filter_counts(
+        self, filters: AnimalFilterCountRequest
+    ) -> FilterCountsResponse:
         """
         Get counts for each filter option based on current filter context.
 
@@ -1312,37 +1466,59 @@ class AnimalService:
             base_conditions, base_params = self._build_count_base_conditions(filters)
 
             # Get size counts
-            response.size_options = self._get_size_counts(base_conditions, base_params, filters)
+            response.size_options = self._get_size_counts(
+                base_conditions, base_params, filters
+            )
 
             # Get age counts
-            response.age_options = self._get_age_counts(base_conditions, base_params, filters)
+            response.age_options = self._get_age_counts(
+                base_conditions, base_params, filters
+            )
 
             # Get sex counts
-            response.sex_options = self._get_sex_counts(base_conditions, base_params, filters)
+            response.sex_options = self._get_sex_counts(
+                base_conditions, base_params, filters
+            )
 
             # Get breed counts (limit to top breeds to avoid overwhelming response)
-            response.breed_options = self._get_breed_counts(base_conditions, base_params, filters)
+            response.breed_options = self._get_breed_counts(
+                base_conditions, base_params, filters
+            )
 
             # Get organization counts
-            response.organization_options = self._get_organization_counts(base_conditions, base_params, filters)
+            response.organization_options = self._get_organization_counts(
+                base_conditions, base_params, filters
+            )
 
             # Get location country counts
-            response.location_country_options = self._get_location_country_counts(base_conditions, base_params, filters)
+            response.location_country_options = self._get_location_country_counts(
+                base_conditions, base_params, filters
+            )
 
             # Get available country counts
-            response.available_country_options = self._get_available_country_counts(base_conditions, base_params, filters)
+            response.available_country_options = self._get_available_country_counts(
+                base_conditions, base_params, filters
+            )
 
             # Get available region counts (if country is selected)
             if filters.available_to_country:
-                response.available_region_options = self._get_available_region_counts(base_conditions, base_params, filters)
+                response.available_region_options = self._get_available_region_counts(
+                    base_conditions, base_params, filters
+                )
 
             return response
 
         except Exception as e:
             logger.error(f"Error in get_filter_counts: {e}")
-            raise APIException(status_code=500, detail="Failed to fetch filter counts", error_code="INTERNAL_ERROR")
+            raise APIException(
+                status_code=500,
+                detail="Failed to fetch filter counts",
+                error_code="INTERNAL_ERROR",
+            )
 
-    def _build_count_base_conditions(self, filters: AnimalFilterCountRequest) -> tuple[List[str], List[Any]]:
+    def _build_count_base_conditions(
+        self, filters: AnimalFilterCountRequest
+    ) -> tuple[List[str], List[Any]]:
         """Build base WHERE conditions for filter counting queries."""
         conditions = [
             "a.animal_type = %s",
@@ -1372,7 +1548,9 @@ class AnimalService:
 
         # Add search filter
         if filters.search:
-            conditions.append("(a.name ILIKE %s OR a.breed ILIKE %s OR a.standardized_breed ILIKE %s)")
+            conditions.append(
+                "(a.name ILIKE %s OR a.breed ILIKE %s OR a.standardized_breed ILIKE %s)"
+            )
             search_term = f"%{filters.search}%"
             params.extend([search_term, search_term, search_term])
 
@@ -1407,7 +1585,12 @@ class AnimalService:
 
         return conditions, params
 
-    def _get_size_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+    def _get_size_counts(
+        self,
+        base_conditions: List[str],
+        base_params: List[Any],
+        filters: AnimalFilterCountRequest,
+    ) -> List[FilterOption]:
         """Get counts for each size option, excluding current size filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1432,7 +1615,7 @@ class AnimalService:
             SELECT a.standardized_size, COUNT(*) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
               AND a.standardized_size IS NOT NULL
             GROUP BY a.standardized_size
             HAVING COUNT(*) > 0
@@ -1451,11 +1634,32 @@ class AnimalService:
         results = self.cursor.fetchall()
 
         # Map standardized sizes to UI labels
-        size_labels = {"Tiny": "Tiny", "Small": "Small", "Medium": "Medium", "Large": "Large", "XLarge": "Extra Large"}
+        size_labels = {
+            "Tiny": "Tiny",
+            "Small": "Small",
+            "Medium": "Medium",
+            "Large": "Large",
+            "XLarge": "Extra Large",
+        }
 
-        return [FilterOption(value=row["standardized_size"], label=size_labels.get(row["standardized_size"], row["standardized_size"]), count=row["count"]) for row in results if row["count"] > 0]
+        return [
+            FilterOption(
+                value=row["standardized_size"],
+                label=size_labels.get(
+                    row["standardized_size"], row["standardized_size"]
+                ),
+                count=row["count"],
+            )
+            for row in results
+            if row["count"] > 0
+        ]
 
-    def _get_age_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+    def _get_age_counts(
+        self,
+        base_conditions: List[str],
+        base_params: List[Any],
+        filters: AnimalFilterCountRequest,
+    ) -> List[FilterOption]:
         """Get counts for each age category, excluding current age filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1481,7 +1685,7 @@ class AnimalService:
                 COUNT(*) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
               AND a.age_min_months IS NOT NULL
               AND a.age_max_months IS NOT NULL
             GROUP BY 1
@@ -1492,9 +1696,20 @@ class AnimalService:
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
 
-        return [FilterOption(value=row["age_category"], label=row["age_category"], count=row["count"]) for row in results if row["age_category"] != "Unknown" and row["count"] > 0]
+        return [
+            FilterOption(
+                value=row["age_category"], label=row["age_category"], count=row["count"]
+            )
+            for row in results
+            if row["age_category"] != "Unknown" and row["count"] > 0
+        ]
 
-    def _get_sex_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+    def _get_sex_counts(
+        self,
+        base_conditions: List[str],
+        base_params: List[Any],
+        filters: AnimalFilterCountRequest,
+    ) -> List[FilterOption]:
         """Get counts for each sex option, excluding current sex filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1518,7 +1733,7 @@ class AnimalService:
             SELECT a.sex, COUNT(*) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
               AND a.sex IS NOT NULL
             GROUP BY a.sex
             HAVING COUNT(*) > 0
@@ -1528,9 +1743,18 @@ class AnimalService:
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
 
-        return [FilterOption(value=row["sex"], label=row["sex"], count=row["count"]) for row in results if row["count"] > 0]
+        return [
+            FilterOption(value=row["sex"], label=row["sex"], count=row["count"])
+            for row in results
+            if row["count"] > 0
+        ]
 
-    def _get_breed_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+    def _get_breed_counts(
+        self,
+        base_conditions: List[str],
+        base_params: List[Any],
+        filters: AnimalFilterCountRequest,
+    ) -> List[FilterOption]:
         """Get counts for top breeds, excluding current breed filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1558,7 +1782,7 @@ class AnimalService:
             SELECT a.standardized_breed, COUNT(*) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
               AND a.standardized_breed IS NOT NULL
               AND a.standardized_breed != ''
             GROUP BY a.standardized_breed
@@ -1570,9 +1794,22 @@ class AnimalService:
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
 
-        return [FilterOption(value=row["standardized_breed"], label=row["standardized_breed"], count=row["count"]) for row in results if row["count"] > 0]
+        return [
+            FilterOption(
+                value=row["standardized_breed"],
+                label=row["standardized_breed"],
+                count=row["count"],
+            )
+            for row in results
+            if row["count"] > 0
+        ]
 
-    def _get_organization_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+    def _get_organization_counts(
+        self,
+        base_conditions: List[str],
+        base_params: List[Any],
+        filters: AnimalFilterCountRequest,
+    ) -> List[FilterOption]:
         """Get counts for each organization, excluding current organization filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1600,7 +1837,7 @@ class AnimalService:
             SELECT o.id, o.name, COUNT(*) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             GROUP BY o.id, o.name
             HAVING COUNT(*) > 0
             ORDER BY o.name ASC
@@ -1609,9 +1846,18 @@ class AnimalService:
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
 
-        return [FilterOption(value=str(row["id"]), label=row["name"], count=row["count"]) for row in results if row["count"] > 0]
+        return [
+            FilterOption(value=str(row["id"]), label=row["name"], count=row["count"])
+            for row in results
+            if row["count"] > 0
+        ]
 
-    def _get_location_country_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+    def _get_location_country_counts(
+        self,
+        base_conditions: List[str],
+        base_params: List[Any],
+        filters: AnimalFilterCountRequest,
+    ) -> List[FilterOption]:
         """Get counts for each location country, excluding current location country filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1639,7 +1885,7 @@ class AnimalService:
             SELECT o.country, COUNT(*) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
               AND o.country IS NOT NULL
               AND o.country != ''
             GROUP BY o.country
@@ -1649,9 +1895,18 @@ class AnimalService:
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
 
-        return [FilterOption(value=row["country"], label=row["country"], count=row["count"]) for row in results if row["count"] > 0]
+        return [
+            FilterOption(value=row["country"], label=row["country"], count=row["count"])
+            for row in results
+            if row["count"] > 0
+        ]
 
-    def _get_available_country_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+    def _get_available_country_counts(
+        self,
+        base_conditions: List[str],
+        base_params: List[Any],
+        filters: AnimalFilterCountRequest,
+    ) -> List[FilterOption]:
         """Get counts for each available-to country, excluding current available country filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1685,7 +1940,7 @@ class AnimalService:
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
             JOIN service_regions sr ON a.organization_id = sr.organization_id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
               AND sr.country IS NOT NULL
               AND sr.country != ''
             GROUP BY sr.country
@@ -1695,9 +1950,18 @@ class AnimalService:
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
 
-        return [FilterOption(value=row["country"], label=row["country"], count=row["count"]) for row in results if row["count"] > 0]
+        return [
+            FilterOption(value=row["country"], label=row["country"], count=row["count"])
+            for row in results
+            if row["count"] > 0
+        ]
 
-    def _get_available_region_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+    def _get_available_region_counts(
+        self,
+        base_conditions: List[str],
+        base_params: List[Any],
+        filters: AnimalFilterCountRequest,
+    ) -> List[FilterOption]:
         """Get counts for each available-to region for the selected country."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1730,7 +1994,7 @@ class AnimalService:
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
             JOIN service_regions sr ON a.organization_id = sr.organization_id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
               AND sr.region IS NOT NULL
               AND sr.region != ''
             GROUP BY sr.region
@@ -1741,9 +2005,18 @@ class AnimalService:
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
 
-        return [FilterOption(value=row["region"], label=row["region"], count=row["count"]) for row in results if row["count"] > 0]
+        return [
+            FilterOption(value=row["region"], label=row["region"], count=row["count"])
+            for row in results
+            if row["count"] > 0
+        ]
 
-    def _get_primary_breed_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+    def _get_primary_breed_counts(
+        self,
+        base_conditions: List[str],
+        base_params: List[Any],
+        filters: AnimalFilterCountRequest,
+    ) -> List[FilterOption]:
         """Get counts for primary breeds, excluding current primary_breed filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1772,7 +2045,7 @@ class AnimalService:
             SELECT a.primary_breed, COUNT(DISTINCT a.id) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
               AND a.primary_breed IS NOT NULL
               AND a.primary_breed != ''
             GROUP BY a.primary_breed
@@ -1784,9 +2057,22 @@ class AnimalService:
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
 
-        return [FilterOption(value=row["primary_breed"], label=row["primary_breed"], count=row["count"]) for row in results if row["count"] > 0]
+        return [
+            FilterOption(
+                value=row["primary_breed"],
+                label=row["primary_breed"],
+                count=row["count"],
+            )
+            for row in results
+            if row["count"] > 0
+        ]
 
-    def _get_breed_type_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+    def _get_breed_type_counts(
+        self,
+        base_conditions: List[str],
+        base_params: List[Any],
+        filters: AnimalFilterCountRequest,
+    ) -> List[FilterOption]:
         """Get counts for breed types, excluding current breed_type filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1815,7 +2101,7 @@ class AnimalService:
             SELECT a.breed_type, COUNT(DISTINCT a.id) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
               AND a.breed_type IS NOT NULL
               AND a.breed_type != ''
             GROUP BY a.breed_type
@@ -1827,6 +2113,22 @@ class AnimalService:
         results = self.cursor.fetchall()
 
         # Capitalize breed type labels for display
-        breed_type_labels = {"purebred": "Purebred", "mixed": "Mixed", "crossbreed": "Crossbreed", "unknown": "Unknown", "sighthound": "Sighthound"}
+        breed_type_labels = {
+            "purebred": "Purebred",
+            "mixed": "Mixed",
+            "crossbreed": "Crossbreed",
+            "unknown": "Unknown",
+            "sighthound": "Sighthound",
+        }
 
-        return [FilterOption(value=row["breed_type"], label=breed_type_labels.get(row["breed_type"].lower(), row["breed_type"]), count=row["count"]) for row in results if row["count"] > 0]
+        return [
+            FilterOption(
+                value=row["breed_type"],
+                label=breed_type_labels.get(
+                    row["breed_type"].lower(), row["breed_type"]
+                ),
+                count=row["count"],
+            )
+            for row in results
+            if row["count"] > 0
+        ]

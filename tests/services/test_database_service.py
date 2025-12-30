@@ -13,10 +13,7 @@ Following CLAUDE.md principles:
 - Early returns, no nested conditionals
 """
 
-import json
-import os
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
 from unittest.mock import Mock, patch
 
 import pytest
@@ -70,7 +67,12 @@ class TestDatabaseServiceImplementation:
     @pytest.fixture
     def mock_db_config(self):
         """Mock database configuration."""
-        return {"host": "localhost", "user": "test_user", "database": "test_db", "password": "test_pass"}
+        return {
+            "host": "localhost",
+            "user": "test_user",
+            "database": "test_db",
+            "password": "test_pass",
+        }
 
     @pytest.fixture
     def mock_connection(self):
@@ -93,7 +95,10 @@ class TestDatabaseServiceImplementation:
         result = db_service.get_existing_animal("test-123", 1)
 
         assert result == (123, "Test Dog", "2024-01-01")
-        mock_cursor.execute.assert_called_once_with("SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s", ("test-123", 1))
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s",
+            ("test-123", 1),
+        )
 
     def test_get_existing_animal_not_found(self, mock_db_config, mock_connection):
         """Test get_existing_animal when animal doesn't exist."""
@@ -152,12 +157,12 @@ class TestDatabaseServiceIntegration:
         """Test that existing BaseScraper functionality is preserved."""
         pytest.skip("Integration tests pending service implementation")
 
-    @pytest.mark.skip(reason="Test creates real database records and contaminates production data")
+    @pytest.mark.skip(
+        reason="Test creates real database records and contaminates production data"
+    )
     def test_complete_scrape_log_with_detailed_metrics(self):
         """Test that complete_scrape_log can store detailed metrics, duration, and quality score."""
         # Following TDD - this test should FAIL initially
-        import json
-        import os
 
         from config import DB_CONFIG
         from services.database_service import DatabaseService
@@ -181,7 +186,9 @@ class TestDatabaseServiceIntegration:
                 cursor.connection.commit()
 
             # Create a scrape log
-            scrape_log_id = db_service.create_scrape_log(organization_id=999)  # Use our test org
+            scrape_log_id = db_service.create_scrape_log(
+                organization_id=999
+            )  # Use our test org
             assert scrape_log_id is not None
 
             # Test data for detailed metrics
@@ -217,13 +224,20 @@ class TestDatabaseServiceIntegration:
             from api.database.connection_pool import get_pooled_cursor
 
             with get_pooled_cursor() as cursor:
-                cursor.execute("SELECT detailed_metrics, duration_seconds, data_quality_score FROM scrape_logs WHERE id = %s", (scrape_log_id,))
+                cursor.execute(
+                    "SELECT detailed_metrics, duration_seconds, data_quality_score FROM scrape_logs WHERE id = %s",
+                    (scrape_log_id,),
+                )
                 result = cursor.fetchone()
 
                 assert result is not None
-                assert result["detailed_metrics"] == detailed_metrics  # JSONB comparison
+                assert (
+                    result["detailed_metrics"] == detailed_metrics
+                )  # JSONB comparison
                 assert abs(float(result["duration_seconds"]) - duration_seconds) < 0.1
-                assert abs(float(result["data_quality_score"]) - data_quality_score) < 0.01
+                assert (
+                    abs(float(result["data_quality_score"]) - data_quality_score) < 0.01
+                )
 
         finally:
             db_service.close()
@@ -245,7 +259,10 @@ class TestDatabaseServiceWithConnectionPool:
         mock_pool_service = Mock(spec=ConnectionPoolService)
 
         # Test initialization
-        db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"}, connection_pool=mock_pool_service)
+        db_service = DatabaseService(
+            db_config={"host": "localhost", "user": "test", "database": "test_db"},
+            connection_pool=mock_pool_service,
+        )
 
         # Verify pool service is stored
         assert db_service.connection_pool == mock_pool_service
@@ -269,7 +286,10 @@ class TestDatabaseServiceWithConnectionPool:
         mock_cursor.fetchone.return_value = (123, "Test Dog", datetime(2024, 1, 15))
 
         # Create DatabaseService with pool
-        db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"}, connection_pool=mock_pool_service)
+        db_service = DatabaseService(
+            db_config={"host": "localhost", "user": "test", "database": "test_db"},
+            connection_pool=mock_pool_service,
+        )
 
         # Test
         result = db_service.get_existing_animal("test-123", 1)
@@ -278,7 +298,10 @@ class TestDatabaseServiceWithConnectionPool:
         mock_pool_service.get_connection_context.assert_called_once()
 
         # Verify database query
-        mock_cursor.execute.assert_called_once_with("SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s", ("test-123", 1))
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s",
+            ("test-123", 1),
+        )
 
         # Verify result
         assert result == (123, "Test Dog", datetime(2024, 1, 15))
@@ -300,10 +323,16 @@ class TestDatabaseServiceWithConnectionPool:
         mock_connection.cursor.return_value = mock_cursor
 
         # Mock responses for slug uniqueness check and animal creation
-        mock_cursor.fetchone.side_effect = [(0,), (456,)]  # First call: slug uniqueness check (0 = unique)  # Second call: INSERT RETURNING id
+        mock_cursor.fetchone.side_effect = [
+            (0,),
+            (456,),
+        ]  # First call: slug uniqueness check (0 = unique)  # Second call: INSERT RETURNING id
 
         # Create DatabaseService with pool
-        db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"}, connection_pool=mock_pool_service)
+        db_service = DatabaseService(
+            db_config={"host": "localhost", "user": "test", "database": "test_db"},
+            connection_pool=mock_pool_service,
+        )
 
         # Test data
         animal_data = {
@@ -352,7 +381,10 @@ class TestDatabaseServiceWithConnectionPool:
         mock_cursor.fetchone.return_value = (789,)  # Scrape log ID
 
         # Create DatabaseService with pool
-        db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"}, connection_pool=mock_pool_service)
+        db_service = DatabaseService(
+            db_config={"host": "localhost", "user": "test", "database": "test_db"},
+            connection_pool=mock_pool_service,
+        )
 
         # Test
         scrape_log_id = db_service.create_scrape_log(1)
@@ -376,7 +408,9 @@ class TestDatabaseServiceWithConnectionPool:
 
         with patch("psycopg2.connect", return_value=mock_connection):
             # Create DatabaseService without pool
-            db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"})
+            db_service = DatabaseService(
+                db_config={"host": "localhost", "user": "test", "database": "test_db"}
+            )
 
             # Test connect method
             result = db_service.connect()
@@ -395,7 +429,10 @@ class TestDatabaseServiceWithConnectionPool:
         mock_pool_service.get_connection_context.side_effect = Exception("Pool error")
 
         # Create DatabaseService with pool
-        db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"}, connection_pool=mock_pool_service)
+        db_service = DatabaseService(
+            db_config={"host": "localhost", "user": "test", "database": "test_db"},
+            connection_pool=mock_pool_service,
+        )
 
         # Test get_existing_animal with pool error
         result = db_service.get_existing_animal("test-123", 1)
@@ -416,7 +453,9 @@ class TestDatabaseServiceWithConnectionPool:
 
         with patch("psycopg2.connect", return_value=mock_connection):
             # Create DatabaseService in legacy mode (no pool)
-            db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"})
+            db_service = DatabaseService(
+                db_config={"host": "localhost", "user": "test", "database": "test_db"}
+            )
 
             # Connect using legacy method
             db_service.connect()

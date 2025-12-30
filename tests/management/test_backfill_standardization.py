@@ -4,8 +4,7 @@ Tests for backfill_standardization management command.
 Following TDD approach - tests written before implementation.
 """
 
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -37,7 +36,9 @@ class TestStandardizationBackfillService:
 
     def test_connect_success(self, service):
         """Test successful database connection."""
-        with patch("management.backfill_standardization.psycopg2.connect") as mock_connect:
+        with patch(
+            "management.backfill_standardization.psycopg2.connect"
+        ) as mock_connect:
             mock_connect.return_value = MagicMock()
 
             result = service.connect()
@@ -48,7 +49,9 @@ class TestStandardizationBackfillService:
 
     def test_connect_failure(self, service):
         """Test database connection failure handling."""
-        with patch("management.backfill_standardization.psycopg2.connect") as mock_connect:
+        with patch(
+            "management.backfill_standardization.psycopg2.connect"
+        ) as mock_connect:
             mock_connect.side_effect = Exception("Connection failed")
 
             result = service.connect()
@@ -107,7 +110,12 @@ class TestStandardizationBackfillService:
         mock_conn, mock_cursor = mock_connection
         service.conn = mock_conn
 
-        standardized_data = {"breed": "German Shepherd Dog", "breed_category": "Herding", "breed_group": "Herding", "standardized_size": "Large"}
+        standardized_data = {
+            "breed": "German Shepherd Dog",
+            "breed_category": "Herding",
+            "breed_group": "Herding",
+            "standardized_size": "Large",
+        }
 
         result = service.update_animal_standardization(1, standardized_data)
 
@@ -135,8 +143,12 @@ class TestStandardizationBackfillService:
         ]
 
         with patch.object(service, "get_lurchers_to_fix", return_value=lurchers):
-            with patch.object(service, "update_animal_standardization", return_value=True) as mock_update:
-                with patch.object(service.standardizer, "apply_full_standardization") as mock_standardize:
+            with patch.object(
+                service, "update_animal_standardization", return_value=True
+            ) as mock_update:
+                with patch.object(
+                    service.standardizer, "apply_full_standardization"
+                ) as mock_standardize:
                     # Mock standardization to return Hound group - use actual field names from apply_full_standardization
                     mock_standardize.return_value = {
                         "breed": "Lurcher",
@@ -171,7 +183,6 @@ class TestStandardizationBackfillService:
 
         with patch.object(service, "get_lurchers_to_fix", return_value=lurchers):
             with patch.object(service, "update_animal_standardization") as mock_update:
-
                 stats = service.fix_lurchers(dry_run=True)
 
                 assert stats["total"] == 1
@@ -189,8 +200,12 @@ class TestStandardizationBackfillService:
         ]
 
         with patch.object(service, "get_staffordshires_to_fix", return_value=staffies):
-            with patch.object(service, "update_animal_standardization", return_value=True) as mock_update:
-                with patch.object(service.standardizer, "apply_full_standardization") as mock_standardize:
+            with patch.object(
+                service, "update_animal_standardization", return_value=True
+            ) as mock_update:
+                with patch.object(
+                    service.standardizer, "apply_full_standardization"
+                ) as mock_standardize:
                     # Mock standardization to return proper Staffordshire name - use actual field names
                     mock_standardize.return_value = {
                         "breed": "Staffordshire Bull Terrier",
@@ -220,12 +235,18 @@ class TestStandardizationBackfillService:
         service.conn = mock_conn
 
         # Mock 250 animals to test batch processing
-        animals = [(i, f"Dog{i}", "Mixed Breed", None, "Unknown", "2 years", "Medium") for i in range(1, 251)]
+        animals = [
+            (i, f"Dog{i}", "Mixed Breed", None, "Unknown", "2 years", "Medium")
+            for i in range(1, 251)
+        ]
         mock_cursor.fetchall.return_value = animals
 
-        with patch.object(service, "update_animal_standardization", return_value=True) as mock_update:
-
-            stats = service.backfill_breed_data(batch_size=100, dry_run=False, show_progress=False)
+        with patch.object(
+            service, "update_animal_standardization", return_value=True
+        ) as mock_update:
+            stats = service.backfill_breed_data(
+                batch_size=100, dry_run=False, show_progress=False
+            )
 
             # Should process in 3 batches (100, 100, 50)
             assert stats["total"] == 250
@@ -279,13 +300,29 @@ class TestStandardizationBackfillService:
         test_args = ["backfill_standardization.py", "--dry-run", "--limit", "10"]
 
         with patch("sys.argv", test_args):
-            with patch("management.backfill_standardization.StandardizationBackfillService") as mock_service_class:
+            with patch(
+                "management.backfill_standardization.StandardizationBackfillService"
+            ) as mock_service_class:
                 mock_service = MagicMock()
                 mock_service_class.return_value = mock_service
                 mock_service.connect.return_value = True
-                mock_service.fix_lurchers.return_value = {"total": 5, "processed": 0, "failed": 0}  # dry-run doesn't process
-                mock_service.fix_staffordshire.return_value = {"total": 3, "processed": 0, "failed": 0}
-                mock_service.backfill_breed_data.return_value = {"total": 10, "processed": 0, "failed": 0, "batches": 1, "errors": []}
+                mock_service.fix_lurchers.return_value = {
+                    "total": 5,
+                    "processed": 0,
+                    "failed": 0,
+                }  # dry-run doesn't process
+                mock_service.fix_staffordshire.return_value = {
+                    "total": 3,
+                    "processed": 0,
+                    "failed": 0,
+                }
+                mock_service.backfill_breed_data.return_value = {
+                    "total": 10,
+                    "processed": 0,
+                    "failed": 0,
+                    "batches": 1,
+                    "errors": [],
+                }
 
                 from management.backfill_standardization import main
 
@@ -293,4 +330,6 @@ class TestStandardizationBackfillService:
 
                 assert result == 0
                 mock_service.fix_lurchers.assert_called_with(dry_run=True)
-                mock_service.backfill_breed_data.assert_called_with(limit=10, batch_size=100, dry_run=True, show_progress=True)
+                mock_service.backfill_breed_data.assert_called_with(
+                    limit=10, batch_size=100, dry_run=True, show_progress=True
+                )

@@ -1,5 +1,3 @@
-from typing import Any, Dict, Optional
-
 import pytest
 
 from utils.unified_standardization import UnifiedStandardizer
@@ -24,7 +22,9 @@ class TestUnifiedStandardizer:
     def test_empty_input_handling(self):
         """Test that empty inputs are handled gracefully."""
         standardizer = UnifiedStandardizer()
-        result = standardizer.apply_full_standardization(breed=None, age=None, size=None)
+        result = standardizer.apply_full_standardization(
+            breed=None, age=None, size=None
+        )
         assert result is not None
         assert "breed" in result
         assert "age" in result
@@ -70,7 +70,9 @@ class TestUnifiedStandardizer:
         # Labradoodle (Labrador + Poodle)
         result = standardizer.apply_full_standardization(breed="Labradoodle")
         assert result["breed"] == "Labradoodle"
-        assert result["breed_category"] == "Designer/Hybrid"  # Labradoodle specifically gets Designer/Hybrid
+        assert (
+            result["breed_category"] == "Designer/Hybrid"
+        )  # Labradoodle specifically gets Designer/Hybrid
         assert result["primary_breed"] == "Labrador Retriever"
         assert result["secondary_breed"] == "Poodle"
 
@@ -106,7 +108,9 @@ class TestUnifiedStandardizer:
 
         for variation in variations:
             result = standardizer.apply_full_standardization(breed=variation)
-            assert result["breed"] == "Staffordshire Bull Terrier", f"Failed for variation: {variation}"
+            assert result["breed"] == "Staffordshire Bull Terrier", (
+                f"Failed for variation: {variation}"
+            )
             assert result["breed_category"] == "Terrier"
             assert result["standardized_size"] == "Medium"
 
@@ -114,11 +118,19 @@ class TestUnifiedStandardizer:
         """Test that American Staffordshire Terrier remains distinct from Staffordshire Bull Terrier."""
         standardizer = UnifiedStandardizer()
 
-        variations = ["American Staffordshire Terrier", "Am Staff", "Amstaff", "American Stafford", "American Staffy"]
+        variations = [
+            "American Staffordshire Terrier",
+            "Am Staff",
+            "Amstaff",
+            "American Stafford",
+            "American Staffy",
+        ]
 
         for variation in variations:
             result = standardizer.apply_full_standardization(breed=variation)
-            assert result["breed"] == "American Staffordshire Terrier", f"Failed for variation: {variation}"
+            assert result["breed"] == "American Staffordshire Terrier", (
+                f"Failed for variation: {variation}"
+            )
             assert result["breed_category"] == "Terrier"
             assert result["standardized_size"] == "Medium"
 
@@ -142,7 +154,9 @@ class TestUnifiedStandardizer:
         """Test that all three standardization types work together correctly."""
         standardizer = UnifiedStandardizer()
 
-        result = standardizer.apply_full_standardization(breed="Lurcher", age="2 years old", size="Large")
+        result = standardizer.apply_full_standardization(
+            breed="Lurcher", age="2 years old", size="Large"
+        )
 
         # Breed standardization
         assert result["breed"] == "Lurcher"
@@ -171,9 +185,15 @@ class TestUnifiedStandardizer:
 
     def test_feature_flag_support(self):
         """Test that feature flags can enable/disable specific standardization features."""
-        standardizer = UnifiedStandardizer(enable_breed_standardization=True, enable_age_standardization=False, enable_size_standardization=True)
+        standardizer = UnifiedStandardizer(
+            enable_breed_standardization=True,
+            enable_age_standardization=False,
+            enable_size_standardization=True,
+        )
 
-        result = standardizer.apply_full_standardization(breed="Lurcher", age="2 years old", size="Large")
+        result = standardizer.apply_full_standardization(
+            breed="Lurcher", age="2 years old", size="Large"
+        )
 
         # Breed should be standardized
         assert result["breed"] == "Lurcher"
@@ -207,7 +227,11 @@ class TestUnifiedStandardizer:
         """Test that multiple animals can be processed efficiently in batch."""
         standardizer = UnifiedStandardizer()
 
-        animals = [{"breed": "Lurcher", "age": "2 years", "size": "Large"}, {"breed": "Cockapoo", "age": "6 months", "size": "Small"}, {"breed": "Staffie", "age": "Adult", "size": None}]
+        animals = [
+            {"breed": "Lurcher", "age": "2 years", "size": "Large"},
+            {"breed": "Cockapoo", "age": "6 months", "size": "Small"},
+            {"breed": "Staffie", "age": "Adult", "size": None},
+        ]
 
         results = standardizer.apply_batch_standardization(animals)
 
@@ -260,7 +284,9 @@ def test_new_terrier_breed_mappings():
     assert result["breed_category"] == "Terrier"
 
     # Test Soft Coated Wheaten Terrier
-    result = standardizer.apply_full_standardization(breed="Terrier (soft Coated Wheaten)")
+    result = standardizer.apply_full_standardization(
+        breed="Terrier (soft Coated Wheaten)"
+    )
     assert result["breed"] == "Soft Coated Wheaten Terrier"
     assert result["breed_category"] == "Terrier"
 
@@ -272,7 +298,9 @@ def test_new_terrier_breed_mappings():
     # Test Boston Terrier
     result = standardizer.apply_full_standardization(breed="Terrier (boston)")
     assert result["breed"] == "Boston Terrier"
-    assert result["breed_category"] == "Non-Sporting"  # Boston Terrier is Non-Sporting group!
+    assert (
+        result["breed_category"] == "Non-Sporting"
+    )  # Boston Terrier is Non-Sporting group!
 
     # Test Bedlington Terrier
     result = standardizer.apply_full_standardization(breed="Terrier (bedlington)")
@@ -327,14 +355,20 @@ def test_new_hound_breed_mappings():
     # Test Maremma variant
     result = standardizer.apply_full_standardization(breed="Brindle Maremma Hound")
     assert result["breed"] == "Maremma Sheepdog"
-    assert result["breed_category"] == "Guardian"  # Maremma is actually a guardian breed
+    assert (
+        result["breed_category"] == "Guardian"
+    )  # Maremma is actually a guardian breed
 
     # Test Bulgarian Scenthound
-    result = standardizer.apply_full_standardization(breed="Gonche (bulgarian Scenthound)")
+    result = standardizer.apply_full_standardization(
+        breed="Gonche (bulgarian Scenthound)"
+    )
     assert result["breed"] == "Bulgarian Scenthound"
     assert result["breed_category"] == "Hound"
 
-    result = standardizer.apply_full_standardization(breed="Gonche Bulgarian Scenthound")
+    result = standardizer.apply_full_standardization(
+        breed="Gonche Bulgarian Scenthound"
+    )
     assert result["breed"] == "Bulgarian Scenthound"
     assert result["breed_category"] == "Hound"
 
@@ -389,7 +423,9 @@ def test_new_working_and_spitz_breed_mappings():
     assert result["breed_category"] == "Guardian"
 
     # Test Czechoslovakian Wolfdog
-    result = standardizer.apply_full_standardization(breed="Tschechoslowakischer Wolfshund")
+    result = standardizer.apply_full_standardization(
+        breed="Tschechoslowakischer Wolfshund"
+    )
     assert result["breed"] == "Czechoslovakian Wolfdog"
     assert result["breed_category"] == "Working"
 

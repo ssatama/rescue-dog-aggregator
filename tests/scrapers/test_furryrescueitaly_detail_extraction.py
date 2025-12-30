@@ -37,7 +37,10 @@ class TestFurryRescueItalyDetailExtraction(unittest.TestCase):
 
         hero_image = self.scraper._extract_hero_image(soup)
 
-        self.assertEqual(hero_image, "https://furryrescueitaly.com/wp-content/uploads/2025/05/judy-1-600x600.jpg")
+        self.assertEqual(
+            hero_image,
+            "https://furryrescueitaly.com/wp-content/uploads/2025/05/judy-1-600x600.jpg",
+        )
 
     def test_extract_properties_with_all_fields(self):
         """Test extracting all properties from bulleted list."""
@@ -154,7 +157,9 @@ class TestFurryRescueItalyDetailExtraction(unittest.TestCase):
         description = self.scraper._extract_clean_description(soup)
 
         # Should exclude contact info and emojis
-        self.assertIn("Hi everyone! Let me introduce myself: my name is Judy.", description)
+        self.assertIn(
+            "Hi everyone! Let me introduce myself: my name is Judy.", description
+        )
         self.assertIn("I was found in the countryside", description)
         self.assertIn("sweet and playful puppy", description)
         self.assertIn("Can you foster me", description)
@@ -201,12 +206,19 @@ class TestFurryRescueItalyDetailExtraction(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        details = self.scraper.scrape_animal_details("https://furryrescueitaly.com/adoption/judy/")
+        details = self.scraper.scrape_animal_details(
+            "https://furryrescueitaly.com/adoption/judy/"
+        )
 
         self.assertEqual(details["name"], "JUDY")
-        self.assertEqual(details["primary_image_url"], "https://furryrescueitaly.com/wp-content/uploads/2025/05/judy-1-600x600.jpg")
+        self.assertEqual(
+            details["primary_image_url"],
+            "https://furryrescueitaly.com/wp-content/uploads/2025/05/judy-1-600x600.jpg",
+        )
         self.assertIn("Hi everyone! Let me introduce myself", details["description"])
-        self.assertIn("I was found abandoned in the countryside", details["description"])
+        self.assertIn(
+            "I was found abandoned in the countryside", details["description"]
+        )
         self.assertNotIn("👉", details["description"])
 
         # Check properties
@@ -250,10 +262,15 @@ class TestFurryRescueItalyDetailExtraction(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        details = self.scraper.scrape_animal_details("https://furryrescueitaly.com/adoption/thor-2/")
+        details = self.scraper.scrape_animal_details(
+            "https://furryrescueitaly.com/adoption/thor-2/"
+        )
 
         self.assertEqual(details["name"], "THOR")
-        self.assertEqual(details["primary_image_url"], "https://furryrescueitaly.com/wp-content/uploads/2024/05/15-1-600x600.jpg")
+        self.assertEqual(
+            details["primary_image_url"],
+            "https://furryrescueitaly.com/wp-content/uploads/2024/05/15-1-600x600.jpg",
+        )
 
         # Check properties - should have "size" not "future_size"
         properties = details["properties"]
@@ -285,7 +302,9 @@ class TestFurryRescueItalyDetailExtraction(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        details = self.scraper.scrape_animal_details("https://furryrescueitaly.com/adoption/test/")
+        details = self.scraper.scrape_animal_details(
+            "https://furryrescueitaly.com/adoption/test/"
+        )
 
         self.assertIsNone(details.get("primary_image_url"))
 
@@ -294,7 +313,9 @@ class TestFurryRescueItalyDetailExtraction(unittest.TestCase):
         """Test handling network errors gracefully."""
         mock_get.side_effect = Exception("Network error")
 
-        details = self.scraper.scrape_animal_details("https://furryrescueitaly.com/adoption/test/")
+        details = self.scraper.scrape_animal_details(
+            "https://furryrescueitaly.com/adoption/test/"
+        )
 
         self.assertEqual(details, {})
 
@@ -306,7 +327,9 @@ class TestFurryRescueItalyDetailExtraction(unittest.TestCase):
         mock_response.raise_for_status.side_effect = Exception("404 Not Found")
         mock_get.return_value = mock_response
 
-        details = self.scraper.scrape_animal_details("https://furryrescueitaly.com/adoption/missing/")
+        details = self.scraper.scrape_animal_details(
+            "https://furryrescueitaly.com/adoption/missing/"
+        )
 
         self.assertEqual(details, {})
 

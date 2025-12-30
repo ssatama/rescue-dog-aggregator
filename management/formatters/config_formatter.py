@@ -94,8 +94,12 @@ class ConfigFormatter:
             if "service_regions" in status:
                 sr_status = status["service_regions"]
                 print("🗺️  Service Regions Status:")
-                print(f"  Total service regions: {sr_status.get('total_service_regions', 0)}")
-                print(f"  Organizations with regions: {sr_status.get('organizations_with_regions', 0)}")
+                print(
+                    f"  Total service regions: {sr_status.get('total_service_regions', 0)}"
+                )
+                print(
+                    f"  Organizations with regions: {sr_status.get('organizations_with_regions', 0)}"
+                )
                 print(f"  Coverage: {sr_status.get('coverage_percentage', 0)}%")
                 print()
 
@@ -148,7 +152,9 @@ class ConfigFormatter:
         print(f"  Configs with warnings: {validation_result['configs_with_warnings']}")
         print(f"  Valid configs: {validation_result['valid_configs']}")
 
-    def format_scraper_results(self, config_id: str, scraper_result: Dict[str, Any]) -> None:
+    def format_scraper_results(
+        self, config_id: str, scraper_result: Dict[str, Any]
+    ) -> None:
         """Format and print scraper execution results."""
         print(f"🚀 Running scraper for: {config_id}")
 

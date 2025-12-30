@@ -1,6 +1,6 @@
 """Unit tests for AnimalService breed-related methods."""
 
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import psycopg2
 import pytest
@@ -34,7 +34,10 @@ class TestAnimalServiceBreeds:
 
         # Mock breed groups
         mock_cursor.fetchall.side_effect = [
-            [{"group_name": "Hound", "count": 450}, {"group_name": "Sporting", "count": 300}],  # breed groups
+            [
+                {"group_name": "Hound", "count": 450},
+                {"group_name": "Sporting", "count": 300},
+            ],  # breed groups
             # Qualifying breeds with all required fields
             [
                 {
@@ -46,7 +49,13 @@ class TestAnimalServiceBreeds:
                     "average_age_months": 48,
                     "org_count": 10,
                     "organizations": ["Org1", "Org2"],
-                    "personality_traits": ["Friendly", "Adaptable", "Loyal", "Playful", "Gentle"],  # Added
+                    "personality_traits": [
+                        "Friendly",
+                        "Adaptable",
+                        "Loyal",
+                        "Playful",
+                        "Gentle",
+                    ],  # Added
                     "puppy_count": 200,
                     "young_count": 500,
                     "adult_count": 600,
@@ -81,7 +90,13 @@ class TestAnimalServiceBreeds:
                     "average_age_months": 36,
                     "org_count": 3,
                     "organizations": ["Org1", "Org3", "Org4"],
-                    "personality_traits": ["Gentle", "Calm", "Lazy", "Affectionate", "Independent"],  # Added
+                    "personality_traits": [
+                        "Gentle",
+                        "Calm",
+                        "Lazy",
+                        "Affectionate",
+                        "Independent",
+                    ],  # Added
                     "puppy_count": 10,
                     "young_count": 40,
                     "adult_count": 50,
@@ -131,7 +146,11 @@ class TestAnimalServiceBreeds:
 
     def test_get_breed_stats_handles_null_values(self, service, mock_cursor):
         """Test breed stats handles null average age gracefully."""
-        mock_cursor.fetchone.side_effect = [{"total": 100}, {"count": 10}, {"purebred_count": 50, "crossbreed_count": 20}]
+        mock_cursor.fetchone.side_effect = [
+            {"total": 100},
+            {"count": 10},
+            {"purebred_count": 50, "crossbreed_count": 20},
+        ]
         mock_cursor.fetchall.side_effect = [
             [],  # No breed groups
             [
@@ -182,8 +201,15 @@ class TestAnimalServiceBreeds:
 
     def test_get_breed_stats_empty_results(self, service, mock_cursor):
         """Test breed stats with no qualifying breeds."""
-        mock_cursor.fetchone.side_effect = [{"total": 0}, {"count": 0}, {"purebred_count": 0, "crossbreed_count": 0}]
-        mock_cursor.fetchall.side_effect = [[], []]  # No breed groups, no qualifying breeds
+        mock_cursor.fetchone.side_effect = [
+            {"total": 0},
+            {"count": 0},
+            {"purebred_count": 0, "crossbreed_count": 0},
+        ]
+        mock_cursor.fetchall.side_effect = [
+            [],
+            [],
+        ]  # No breed groups, no qualifying breeds
 
         result = service.get_breed_stats()
 
@@ -209,7 +235,14 @@ class TestAnimalServiceBreeds:
                 "breed_group": "Hound",
                 "count": 120,
                 "sample_dogs": [
-                    {"name": "Shadow", "slug": "shadow-123", "primary_image_url": "https://example.com/shadow.jpg", "age_text": "3 years", "sex": "Male", "personality_traits": ["Gentle", "Calm"]}
+                    {
+                        "name": "Shadow",
+                        "slug": "shadow-123",
+                        "primary_image_url": "https://example.com/shadow.jpg",
+                        "age_text": "3 years",
+                        "sex": "Male",
+                        "personality_traits": ["Gentle", "Calm"],
+                    }
                 ],
             }
         ]
@@ -260,7 +293,9 @@ class TestAnimalServiceBreeds:
         execute_call = mock_cursor.execute.call_args[0][0]
         assert "HAVING COUNT(DISTINCT a.id) >= %s" in execute_call
 
-    def test_get_breeds_with_images_sql_injection_protection(self, service, mock_cursor):
+    def test_get_breeds_with_images_sql_injection_protection(
+        self, service, mock_cursor
+    ):
         """Test breed images protects against SQL injection."""
         mock_cursor.fetchall.return_value = []
 
@@ -294,14 +329,25 @@ class TestAnimalServiceBreeds:
 
     def test_get_breeds_with_images_empty_sample_dogs(self, service, mock_cursor):
         """Test breed images handles breeds with no sample dogs."""
-        mock_cursor.fetchall.return_value = [{"primary_breed": "Rare Breed", "breed_slug": "rare-breed", "breed_type": "purebred", "breed_group": "Working", "count": 1, "sample_dogs": []}]
+        mock_cursor.fetchall.return_value = [
+            {
+                "primary_breed": "Rare Breed",
+                "breed_slug": "rare-breed",
+                "breed_type": "purebred",
+                "breed_group": "Working",
+                "count": 1,
+                "sample_dogs": [],
+            }
+        ]
 
         result = service.get_breeds_with_images(limit=10)
 
         assert len(result) == 1
         assert result[0]["sample_dogs"] == []
 
-    def test_get_breeds_with_images_personality_traits_parsing(self, service, mock_cursor):
+    def test_get_breeds_with_images_personality_traits_parsing(
+        self, service, mock_cursor
+    ):
         """Test breed images correctly parses personality traits JSON."""
         mock_cursor.fetchall.return_value = [
             {
@@ -333,7 +379,11 @@ class TestAnimalServiceBreeds:
 
     def test_get_breed_stats_with_mixed_breeds(self, service, mock_cursor):
         """Test breed stats correctly handles mixed breed categorization."""
-        mock_cursor.fetchone.side_effect = [{"total": 2000}, {"count": 50}, {"purebred_count": 500, "crossbreed_count": 100}]
+        mock_cursor.fetchone.side_effect = [
+            {"total": 2000},
+            {"count": 50},
+            {"purebred_count": 500, "crossbreed_count": 100},
+        ]
 
         mock_cursor.fetchall.side_effect = [
             [{"group_name": "Mixed", "count": 1400}],

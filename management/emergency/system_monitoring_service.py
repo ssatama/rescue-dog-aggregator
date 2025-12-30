@@ -53,16 +53,27 @@ class SystemMonitoringService:
                 status.update(failure_metrics)
 
                 # Determine system health
-                status["system_health"] = self.check_system_health(failure_rate=status["failure_rate_24h"], active_scrapers=active_scrapers, recent_failures=status["recent_failures"])
+                status["system_health"] = self.check_system_health(
+                    failure_rate=status["failure_rate_24h"],
+                    active_scrapers=active_scrapers,
+                    recent_failures=status["recent_failures"],
+                )
 
                 cursor.close()
                 return status
 
         except Exception as e:
             self.logger.error(f"Error getting system status: {e}")
-            return {"timestamp": datetime.now(), "database_status": "error", "system_health": "critical", "error": str(e)}
+            return {
+                "timestamp": datetime.now(),
+                "database_status": "error",
+                "system_health": "critical",
+                "error": str(e),
+            }
 
-    def check_system_health(self, failure_rate: float, active_scrapers: int, recent_failures: int) -> str:
+    def check_system_health(
+        self, failure_rate: float, active_scrapers: int, recent_failures: int
+    ) -> str:
         """Determine system health based on metrics.
 
         Args:
@@ -94,7 +105,12 @@ class SystemMonitoringService:
 
         except Exception as e:
             self.logger.error(f"Error getting failure metrics: {e}")
-            return {"recent_failures": 0, "total_scrapes": 0, "failure_rate_24h": 0.0, "error": str(e)}
+            return {
+                "recent_failures": 0,
+                "total_scrapes": 0,
+                "failure_rate_24h": 0.0,
+                "error": str(e),
+            }
 
     def is_system_degraded(self, failure_rate: float, active_scrapers: int) -> bool:
         """Check if system is degraded or critical.
@@ -161,4 +177,8 @@ class SystemMonitoringService:
         total_scrapes = cursor.fetchone()[0] or 0
         failure_rate = (recent_failures / max(total_scrapes, 1)) * 100
 
-        return {"recent_failures": recent_failures, "total_scrapes": total_scrapes, "failure_rate_24h": round(failure_rate, 2)}
+        return {
+            "recent_failures": recent_failures,
+            "total_scrapes": total_scrapes,
+            "failure_rate_24h": round(failure_rate, 2),
+        }

@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from bs4 import BeautifulSoup
@@ -28,7 +28,9 @@ class TestMisisRescueScraper(ScraperTestBase):
         </body></html>
         """
         soup = BeautifulSoup(html_with_reserved, "html.parser")
-        reserved_heading = soup.find("h2", string=lambda text: text and "reserved" in text.lower())
+        reserved_heading = soup.find(
+            "h2", string=lambda text: text and "reserved" in text.lower()
+        )
         assert scraper._is_reserved_section(reserved_heading)
         available_dogs = scraper._extract_dogs_before_reserved(soup)
         assert len(available_dogs) == 2
@@ -40,7 +42,9 @@ class TestMisisRescueScraper(ScraperTestBase):
         mock_driver_instance.page_source = mock_html
         mock_driver_instance.quit = Mock()
 
-        with patch.object(scraper, "_setup_selenium_driver", return_value=mock_driver_instance):
+        with patch.object(
+            scraper, "_setup_selenium_driver", return_value=mock_driver_instance
+        ):
             urls = scraper._extract_dog_urls_from_page(1)
             assert len(urls) == 2
             assert all("/post/" in url for url in urls)
@@ -75,7 +79,9 @@ class TestMisisRescueScraper(ScraperTestBase):
         mock_driver_instance.title = "Test Dog - MISIs Animal Rescue"
         mock_driver_instance.quit = Mock()
 
-        with patch.object(scraper, "_setup_selenium_driver", return_value=mock_driver_instance):
+        with patch.object(
+            scraper, "_setup_selenium_driver", return_value=mock_driver_instance
+        ):
             dog_data = scraper._scrape_dog_detail("https://example.com/post/test-dog")
             assert dog_data["name"] == "Test Dog"
             assert dog_data["external_id"] == "mar-test-dog"

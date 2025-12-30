@@ -8,7 +8,6 @@ and reserved dog filtering requirements.
 from unittest.mock import Mock, patch
 
 import pytest
-import requests
 
 from scrapers.base_scraper import BaseScraper
 from scrapers.dogstrust.dogstrust_scraper import DogsTrustScraper
@@ -81,8 +80,16 @@ class TestDogsTrustUnifiedStandardization:
         scraper = DogsTrustScraper()
 
         # Mock feature flag enabled
-        with patch("utils.feature_flags.is_scraper_standardization_enabled", return_value=True):
-            raw_animal_data = {"name": "Buddy", "breed": "german shepherd", "age": "3 years old", "size": "large", "gender": "Male"}
+        with patch(
+            "utils.feature_flags.is_scraper_standardization_enabled", return_value=True
+        ):
+            raw_animal_data = {
+                "name": "Buddy",
+                "breed": "german shepherd",
+                "age": "3 years old",
+                "size": "large",
+                "gender": "Male",
+            }
 
             processed = scraper.process_animal(raw_animal_data)
 
@@ -100,7 +107,12 @@ class TestDogsTrustUnifiedStandardization:
         # Disable unified standardization
         scraper.use_unified_standardization = False
 
-        raw_animal_data = {"name": "Buddy", "breed": "german shepherd", "age": "3 years old", "size": "large"}
+        raw_animal_data = {
+            "name": "Buddy",
+            "breed": "german shepherd",
+            "age": "3 years old",
+            "size": "large",
+        }
 
         processed = scraper.process_animal(raw_animal_data)
 
@@ -126,7 +138,9 @@ class TestDogsTrustUnifiedStandardization:
         """Test that DogsTrust handles missing breed data gracefully."""
         scraper = DogsTrustScraper()
 
-        with patch("utils.feature_flags.is_scraper_standardization_enabled", return_value=True):
+        with patch(
+            "utils.feature_flags.is_scraper_standardization_enabled", return_value=True
+        ):
             raw_animal_data = {
                 "name": "Buddy",
                 # Missing breed field

@@ -2,7 +2,7 @@
 Test ManyTearsRescue scraper with unified standardization.
 """
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -22,7 +22,12 @@ class TestManyTearsRescueUnifiedStandardization:
 
     def test_staffordshire_bull_terrier_standardization(self, scraper):
         """Test that Staffordshire Bull Terrier variations are standardized."""
-        test_data = {"breed": "Staffie", "age": "2 years", "size": "Medium", "location": "UK"}
+        test_data = {
+            "breed": "Staffie",
+            "age": "2 years",
+            "size": "Medium",
+            "location": "UK",
+        }
 
         result = scraper.process_animal(test_data)
 
@@ -53,7 +58,11 @@ class TestManyTearsRescueUnifiedStandardization:
 
     def test_english_springer_spaniel_standardization(self, scraper):
         """Test English Springer Spaniel standardization."""
-        test_data = {"breed": "English Springer", "age": "1 year", "size": None}  # Test size inference
+        test_data = {
+            "breed": "English Springer",
+            "age": "1 year",
+            "size": None,
+        }  # Test size inference
 
         result = scraper.process_animal(test_data)
 
@@ -78,7 +87,10 @@ class TestManyTearsRescueUnifiedStandardization:
             ("6 months", "Puppy"),
             ("1 year old", "Young"),
             ("3-4 years", "Adult"),
-            ("7 years", "Adult"),  # 7 years = 84 months = Adult (Senior starts at 96 months/8 years)
+            (
+                "7 years",
+                "Adult",
+            ),  # 7 years = 84 months = Adult (Senior starts at 96 months/8 years)
             ("10 years", "Senior"),
         ]
 
@@ -90,7 +102,14 @@ class TestManyTearsRescueUnifiedStandardization:
 
     def test_size_standardization(self, scraper):
         """Test size value standardization."""
-        test_cases = [("tiny", "Tiny"), ("small", "Small"), ("medium", "Medium"), ("large", "Large"), ("giant", "Large"), ("xl", "Large")]
+        test_cases = [
+            ("tiny", "Tiny"),
+            ("small", "Small"),
+            ("medium", "Medium"),
+            ("large", "Large"),
+            ("giant", "Large"),
+            ("xl", "Large"),
+        ]
 
         for input_size, expected_size in test_cases:
             test_data = {"breed": "Mixed Breed", "age": "2 years", "size": input_size}

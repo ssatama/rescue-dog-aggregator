@@ -77,7 +77,9 @@ class TestWoofProjectScraperOptimized:
         with patch.object(scraper, "_fetch_detail_page") as mock_fetch:
             mock_fetch.return_value = BeautifulSoup(detail_html, "html.parser")
 
-            result = scraper.scrape_animal_details("https://woofproject.eu/adoption/special-name/")
+            result = scraper.scrape_animal_details(
+                "https://woofproject.eu/adoption/special-name/"
+            )
 
             # Test essential data extraction
             assert result is not None
@@ -160,7 +162,10 @@ class TestWoofProjectScraperOptimized:
         image_url = scraper._extract_primary_image_from_detail(soup)
 
         # Should prioritize the wp-content/uploads image
-        assert image_url == "https://woofproject.eu/wp-content/uploads/2025/07/actual-dog-photo.jpeg"
+        assert (
+            image_url
+            == "https://woofproject.eu/wp-content/uploads/2025/07/actual-dog-photo.jpeg"
+        )
 
     def test_external_id_generation(self, scraper):
         """Test external ID generation from various URL formats."""
@@ -181,13 +186,14 @@ class TestWoofProjectScraperOptimized:
             patch.object(scraper, "_fetch_with_browser") as mock_browser,
             patch("scrapers.woof_project.dogs_scraper.requests.get") as mock_get,
         ):
-
             # Mock browser automation to fail
             mock_browser.side_effect = Exception("Browser not available")
 
             # Test successful requests fallback
             mock_response = Mock()
-            mock_response.text = '<html><body><div class="fusion-text">Dogs</div></body></html>'
+            mock_response.text = (
+                '<html><body><div class="fusion-text">Dogs</div></body></html>'
+            )
             mock_response.raise_for_status.return_value = None
             mock_get.return_value = mock_response
 
@@ -208,10 +214,11 @@ class TestWoofProjectScraperOptimized:
             patch.object(scraper, "_fetch_with_browser_playwright", mock_playwright),
             patch("scrapers.woof_project.dogs_scraper.requests.get") as mock_get,
         ):
-
             # Test successful requests fallback
             mock_response = Mock()
-            mock_response.text = '<html><body><div class="fusion-text">Dogs</div></body></html>'
+            mock_response.text = (
+                '<html><body><div class="fusion-text">Dogs</div></body></html>'
+            )
             mock_response.raise_for_status.return_value = None
             mock_get.return_value = mock_response
 
@@ -234,7 +241,9 @@ class TestWoofProjectScraperOptimized:
             with patch.object(scraper, "_fetch_detail_page") as mock_fetch:
                 mock_fetch.return_value = BeautifulSoup(html_content, "html.parser")
 
-                result = scraper.scrape_animal_details(f"https://woofproject.eu/adoption/{case_name}/")
+                result = scraper.scrape_animal_details(
+                    f"https://woofproject.eu/adoption/{case_name}/"
+                )
 
                 # Should handle gracefully without exceptions
                 if result is not None:
@@ -265,7 +274,9 @@ class TestWoofProjectScraperOptimized:
         with patch.object(scraper, "_fetch_detail_page") as mock_fetch:
             mock_fetch.return_value = BeautifulSoup(detail_html, "html.parser")
 
-            result = scraper.scrape_animal_details("https://woofproject.eu/adoption/lisbon/")
+            result = scraper.scrape_animal_details(
+                "https://woofproject.eu/adoption/lisbon/"
+            )
 
             # Verify standardization is applied
             assert result is not None

@@ -4,7 +4,7 @@ Behavioral tests for BaseScraper - testing outcomes, not implementation details.
 Replaces the overly granular test_base_scraper.py with focused behavioral tests.
 """
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -16,7 +16,11 @@ class ConcreteTestScraper(BaseScraper):
 
     def collect_data(self):
         return [
-            {"name": "Test Dog", "external_id": "test-1", "primary_image_url": "https://example.com/dog.jpg"},
+            {
+                "name": "Test Dog",
+                "external_id": "test-1",
+                "primary_image_url": "https://example.com/dog.jpg",
+            },
         ]
 
 
@@ -39,7 +43,9 @@ class TestBaseScraperBehavior:
     def test_scraper_saves_new_animals(self, scraper):
         """Test that scraper successfully saves new animals to database."""
         # Setup
-        scraper.database_service.get_existing_animal.return_value = None  # No existing animal
+        scraper.database_service.get_existing_animal.return_value = (
+            None  # No existing animal
+        )
         scraper.database_service.create_animal.return_value = (123, "create")
 
         animal_data = {

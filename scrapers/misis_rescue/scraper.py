@@ -24,7 +24,10 @@ if TYPE_CHECKING:
     from selenium.webdriver.remote.webdriver import WebDriver
 
 if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+    from services.playwright_browser_service import (
+        PlaywrightOptions,
+        get_playwright_service,
+    )
 else:
     from selenium.common.exceptions import NoSuchElementException, TimeoutException
     from selenium.webdriver.common.by import By
@@ -151,7 +154,9 @@ class MisisRescueScraper(BaseScraper):
             driver.get(self.listing_url)
 
             # Wait for page to load
-            WebDriverWait(driver, self.timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+            WebDriverWait(driver, self.timeout).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
             time.sleep(5)  # Give Wix time to load dynamic content
 
             # Scroll to bottom to load all dogs on page 1 (lazy loading)
@@ -247,7 +252,9 @@ class MisisRescueScraper(BaseScraper):
                 page_num = 2
                 while page_num <= 10:  # Safety limit
                     try:
-                        if not await self._click_pagination_button_playwright(page, page_num):
+                        if not await self._click_pagination_button_playwright(
+                            page, page_num
+                        ):
                             break
 
                         await asyncio.sleep(5)  # Wait for page to load after click
@@ -297,7 +304,9 @@ class MisisRescueScraper(BaseScraper):
             current_dogs = await page.locator('a[href*="/post/"]').count()
 
             if current_dogs > initial_dogs:
-                self.logger.debug(f"New dogs loaded: {current_dogs} (was {initial_dogs})")
+                self.logger.debug(
+                    f"New dogs loaded: {current_dogs} (was {initial_dogs})"
+                )
                 initial_dogs = current_dogs
                 scroll_attempts = 0
             else:
@@ -323,7 +332,9 @@ class MisisRescueScraper(BaseScraper):
                         await element.scroll_into_view_if_needed()
                         await asyncio.sleep(1)
                         await element.click()
-                        self.logger.debug(f"Clicked pagination button for page {page_num}")
+                        self.logger.debug(
+                            f"Clicked pagination button for page {page_num}"
+                        )
                         return True
                 except Exception:
                     continue
@@ -332,7 +343,9 @@ class MisisRescueScraper(BaseScraper):
             return False
 
         except Exception as e:
-            self.logger.error(f"Error clicking pagination button for page {page_num}: {e}")
+            self.logger.error(
+                f"Error clicking pagination button for page {page_num}: {e}"
+            )
             return False
 
     def _get_all_dog_urls(self) -> List[str]:
@@ -395,7 +408,9 @@ class MisisRescueScraper(BaseScraper):
             driver.get(page_url)
 
             # Wait for page to load
-            WebDriverWait(driver, self.timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+            WebDriverWait(driver, self.timeout).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
 
             # Give Wix site more time to load dynamic content
             time.sleep(5)
@@ -444,7 +459,9 @@ class MisisRescueScraper(BaseScraper):
             driver.get(page_url)
 
             # Wait for page to load
-            WebDriverWait(driver, self.timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+            WebDriverWait(driver, self.timeout).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
 
             # Parse page with BeautifulSoup
             soup = BeautifulSoup(driver.page_source, "html.parser")
@@ -467,7 +484,9 @@ class MisisRescueScraper(BaseScraper):
             if driver:
                 driver.quit()
 
-    def _extract_dogs_before_reserved(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_dogs_before_reserved(
+        self, soup: BeautifulSoup
+    ) -> List[Dict[str, str]]:
         """Extract dog links only from available section, stop at Reserved.
 
         CRITICAL: This is the key method that enforces the Reserved section skip!
@@ -516,11 +535,15 @@ class MisisRescueScraper(BaseScraper):
                 self.logger.debug(f"Processing available dog: {name} at {relative_url}")
 
                 # Add available dog (image will be assigned later)
-                dogs.append({"url": relative_url, "name": name, "image_url": None})  # Will be assigned by _assign_images_to_dogs
+                dogs.append(
+                    {"url": relative_url, "name": name, "image_url": None}
+                )  # Will be assigned by _assign_images_to_dogs
 
         return dogs
 
-    def _assign_images_to_dogs(self, dogs: List[Dict[str, str]], soup: BeautifulSoup) -> None:
+    def _assign_images_to_dogs(
+        self, dogs: List[Dict[str, str]], soup: BeautifulSoup
+    ) -> None:
         """Assign images to dogs from the listing page.
 
         For Wix sites, images are often in separate elements from links.
@@ -547,10 +570,14 @@ class MisisRescueScraper(BaseScraper):
             # Filter for likely dog photos from Wix static content
             if (
                 "wixstatic.com" in src
-                and any(ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"])
-                and not any(skip in src.lower() for skip in ["logo", "icon", "button", "header", "footer"])
+                and any(
+                    ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"]
+                )
+                and not any(
+                    skip in src.lower()
+                    for skip in ["logo", "icon", "button", "header", "footer"]
+                )
             ):
-
                 # Skip very small images (likely icons)
                 if "w_" in src:
                     # Extract width from Wix URL parameters
@@ -574,7 +601,9 @@ class MisisRescueScraper(BaseScraper):
         for i, dog in enumerate(sorted_dogs):
             if i < len(sorted_images):
                 dog["image_url"] = sorted_images[i]
-                self.logger.debug(f"Assigned image to {dog['name']}: {sorted_images[i]}")
+                self.logger.debug(
+                    f"Assigned image to {dog['name']}: {sorted_images[i]}"
+                )
             else:
                 # If we run out of images, leave image_url as None
                 self.logger.debug(f"No image available for {dog['name']}")
@@ -697,14 +726,18 @@ class MisisRescueScraper(BaseScraper):
             # Enhanced wait for Wix dynamic content to fully load
             try:
                 # Wait for main content to appear
-                WebDriverWait(driver, self.timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+                WebDriverWait(driver, self.timeout).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "body"))
+                )
 
                 # Give extra time for Wix to load dynamic content
                 time.sleep(3)
 
                 # CRITICAL: Check for error pages BEFORE processing
                 page_title = driver.title.lower() if driver.title else ""
-                page_source_lower = driver.page_source.lower()[:1000]  # Check first 1000 chars
+                page_source_lower = driver.page_source.lower()[
+                    :1000
+                ]  # Check first 1000 chars
 
                 # Check for various error indicators
                 error_indicators = [
@@ -723,33 +756,54 @@ class MisisRescueScraper(BaseScraper):
 
                 for indicator in error_indicators:
                     if indicator in page_title or indicator in page_source_lower:
-                        self.logger.warning(f"Error page detected for {url}: '{driver.title}'")
+                        self.logger.warning(
+                            f"Error page detected for {url}: '{driver.title}'"
+                        )
                         return None
 
                 # Scroll to trigger lazy loading of all content
                 self._scroll_detail_page_for_content(driver)
 
                 # Wait for any h1 tag (dog name) to ensure content loaded
-                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "h1")))
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "h1"))
+                )
 
                 # Additional wait for images to load
                 time.sleep(2)
 
             except TimeoutException:
-                self.logger.warning(f"Timeout waiting for content on {url}, may be an error page")
+                self.logger.warning(
+                    f"Timeout waiting for content on {url}, may be an error page"
+                )
                 # Check again for error indicators after timeout
                 if driver.title:
                     title_lower = driver.title.lower()
-                    if any(err in title_lower for err in ["can't be reached", "cant be reached", "not found", "error"]):
-                        self.logger.warning(f"Error page detected after timeout: '{driver.title}'")
+                    if any(
+                        err in title_lower
+                        for err in [
+                            "can't be reached",
+                            "cant be reached",
+                            "not found",
+                            "error",
+                        ]
+                    ):
+                        self.logger.warning(
+                            f"Error page detected after timeout: '{driver.title}'"
+                        )
                         return None
 
             # Parse with BeautifulSoup and detail parser
             soup = BeautifulSoup(driver.page_source, "html.parser")
 
             # Double-check the parsed content for error indicators
-            h1_text = soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
-            if any(err in h1_text for err in ["can't be reached", "cant be reached", "not found"]):
+            h1_text = (
+                soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
+            )
+            if any(
+                err in h1_text
+                for err in ["can't be reached", "cant be reached", "not found"]
+            ):
                 self.logger.warning(f"Error page h1 detected: '{h1_text}'")
                 return None
 
@@ -762,7 +816,9 @@ class MisisRescueScraper(BaseScraper):
 
             # If size was calculated from weight, copy it to top level for database
             if dog_data.get("properties", {}).get("standardized_size"):
-                dog_data["standardized_size"] = dog_data["properties"]["standardized_size"]
+                dog_data["standardized_size"] = dog_data["properties"][
+                    "standardized_size"
+                ]
 
             # Extract the main image - try hero image first, then grid fallback
             main_image_url = self._extract_main_image(driver, soup)
@@ -825,8 +881,13 @@ class MisisRescueScraper(BaseScraper):
             soup = BeautifulSoup(content, "html.parser")
 
             # Check h1 for errors
-            h1_text = soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
-            if any(err in h1_text for err in ["can't be reached", "cant be reached", "not found"]):
+            h1_text = (
+                soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
+            )
+            if any(
+                err in h1_text
+                for err in ["can't be reached", "cant be reached", "not found"]
+            ):
                 self.logger.warning(f"Error page h1 detected: '{h1_text}'")
                 return None
 
@@ -839,7 +900,9 @@ class MisisRescueScraper(BaseScraper):
 
             # If size was calculated from weight, copy it to top level for database
             if dog_data.get("properties", {}).get("standardized_size"):
-                dog_data["standardized_size"] = dog_data["properties"]["standardized_size"]
+                dog_data["standardized_size"] = dog_data["properties"][
+                    "standardized_size"
+                ]
 
             # Extract the main image using BeautifulSoup-only method
             main_image_url = self._extract_main_image_soup(soup)
@@ -883,7 +946,11 @@ class MisisRescueScraper(BaseScraper):
                 if "w_50" in src or "w_100" in src or "h_50" in src or "h_100" in src:
                     continue
                 # Skip if in related posts section
-                parent = img.find_parent(text=lambda x: x and "related" in x.lower() if isinstance(x, str) else False)
+                parent = img.find_parent(
+                    text=lambda x: x and "related" in x.lower()
+                    if isinstance(x, str)
+                    else False
+                )
                 if parent:
                     continue
                 return src
@@ -907,19 +974,31 @@ class MisisRescueScraper(BaseScraper):
         """
         try:
             # Use requests with a proper user agent
-            headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            }
 
             self.logger.debug(f"Fast-loading detail page: {url}")
             response = requests.get(url, headers=headers, timeout=10)
 
             # Check for HTTP errors
             if response.status_code != 200:
-                self.logger.warning(f"HTTP {response.status_code} for {url}, falling back to Selenium")
+                self.logger.warning(
+                    f"HTTP {response.status_code} for {url}, falling back to Selenium"
+                )
                 return self._scrape_dog_detail(url)
 
             # Check for error pages in content
             content_lower = response.text.lower()[:2000]
-            error_indicators = ["this site can't be reached", "this site cant be reached", "dns_probe_finished", "err_name_not_resolved", "404", "500", "not found"]
+            error_indicators = [
+                "this site can't be reached",
+                "this site cant be reached",
+                "dns_probe_finished",
+                "err_name_not_resolved",
+                "404",
+                "500",
+                "not found",
+            ]
 
             for indicator in error_indicators:
                 if indicator in content_lower:
@@ -930,15 +1009,22 @@ class MisisRescueScraper(BaseScraper):
             soup = BeautifulSoup(response.text, "html.parser")
 
             # Check h1 for error indicators
-            h1_text = soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
-            if any(err in h1_text for err in ["can't be reached", "cant be reached", "not found"]):
+            h1_text = (
+                soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
+            )
+            if any(
+                err in h1_text
+                for err in ["can't be reached", "cant be reached", "not found"]
+            ):
                 self.logger.warning(f"Error page h1 detected (fast): '{h1_text}'")
                 return None
 
             # Check if we got actual dog content (Wix sometimes requires JS)
             # If no "Things you should know" section, fall back to Selenium
             if "things you should know" not in response.text.lower():
-                self.logger.debug(f"No dog content found with requests for {url}, falling back to Selenium")
+                self.logger.debug(
+                    f"No dog content found with requests for {url}, falling back to Selenium"
+                )
                 return self._scrape_dog_detail(url)
 
             # Parse the page
@@ -951,7 +1037,9 @@ class MisisRescueScraper(BaseScraper):
 
             # If size was calculated from weight, copy it to top level for database
             if dog_data.get("properties", {}).get("standardized_size"):
-                dog_data["standardized_size"] = dog_data["properties"]["standardized_size"]
+                dog_data["standardized_size"] = dog_data["properties"][
+                    "standardized_size"
+                ]
 
             # For images, we'll need to extract them differently since JS won't run
             # Try to find image URLs in the static HTML
@@ -961,17 +1049,23 @@ class MisisRescueScraper(BaseScraper):
                 dog_data["primary_image_url"] = image_urls[0]
             else:
                 # If no images found, might need JS - fall back to Selenium
-                self.logger.debug(f"No images found with requests for {url}, falling back to Selenium")
+                self.logger.debug(
+                    f"No images found with requests for {url}, falling back to Selenium"
+                )
                 return self._scrape_dog_detail(url)
 
             self.logger.debug(f"Successfully scraped {url} with fast method")
             return dog_data
 
         except requests.RequestException as e:
-            self.logger.warning(f"Request failed for {url}: {e}, falling back to Selenium")
+            self.logger.warning(
+                f"Request failed for {url}: {e}, falling back to Selenium"
+            )
             return self._scrape_dog_detail(url)
         except Exception as e:
-            self.logger.error(f"Error in fast scraping {url}: {e}, falling back to Selenium")
+            self.logger.error(
+                f"Error in fast scraping {url}: {e}, falling back to Selenium"
+            )
             return self._scrape_dog_detail(url)
 
     def _extract_static_image_urls(self, soup: BeautifulSoup) -> List[str]:
@@ -995,8 +1089,12 @@ class MisisRescueScraper(BaseScraper):
             src = img.get("src")
             if isinstance(src, str) and "wixstatic.com" in src:
                 # Filter for actual dog photos
-                if any(ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"]):
-                    if not any(skip in src.lower() for skip in ["logo", "icon", "button"]):
+                if any(
+                    ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"]
+                ):
+                    if not any(
+                        skip in src.lower() for skip in ["logo", "icon", "button"]
+                    ):
                         # CRITICAL FIX: Clean up Wix image URLs to get high quality versions
                         cleaned_url = self._clean_wix_image_url(src)
 
@@ -1056,7 +1154,9 @@ class MisisRescueScraper(BaseScraper):
                                     new_params.append(param)
                             except (IndexError, ValueError):
                                 new_params.append("h_800")
-                        elif not param.startswith("blur") and not param.startswith("q_"):
+                        elif not param.startswith("blur") and not param.startswith(
+                            "q_"
+                        ):
                             new_params.append(param)
 
                     # Add quality if not present
@@ -1233,7 +1333,9 @@ class MisisRescueScraper(BaseScraper):
         # World-class logging: Lazy loading handled by centralized system
 
         # Get initial number of dogs
-        initial_dogs = len(driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]'))
+        initial_dogs = len(
+            driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]')
+        )
         self.logger.debug(f"Initial dogs visible: {initial_dogs}")
 
         scroll_attempts = 0
@@ -1245,10 +1347,14 @@ class MisisRescueScraper(BaseScraper):
             time.sleep(2)  # Wait for lazy loading
 
             # Check if new dogs loaded
-            current_dogs = len(driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]'))
+            current_dogs = len(
+                driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]')
+            )
 
             if current_dogs > initial_dogs:
-                self.logger.debug(f"New dogs loaded: {current_dogs} (was {initial_dogs})")
+                self.logger.debug(
+                    f"New dogs loaded: {current_dogs} (was {initial_dogs})"
+                )
                 initial_dogs = current_dogs
                 scroll_attempts = 0  # Reset counter when new content loads
             else:
@@ -1258,7 +1364,9 @@ class MisisRescueScraper(BaseScraper):
             if scroll_attempts >= 3:
                 break
 
-        final_dogs = len(driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]'))
+        final_dogs = len(
+            driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]')
+        )
         # World-class logging: Scrolling completion handled by centralized system
 
     def _scroll_detail_page_for_content(self, driver: "WebDriver") -> None:
@@ -1285,7 +1393,9 @@ class MisisRescueScraper(BaseScraper):
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.5);")
         time.sleep(1)
 
-    def _extract_main_image(self, driver: "WebDriver", soup: BeautifulSoup) -> Optional[str]:
+    def _extract_main_image(
+        self, driver: "WebDriver", soup: BeautifulSoup
+    ) -> Optional[str]:
         """Extract the main image for the dog - hero image or enhanced grid fallback.
 
         Args:
@@ -1333,7 +1443,9 @@ class MisisRescueScraper(BaseScraper):
         width = self._extract_image_width(image_url)
         return width is not None and width >= 600
 
-    def _extract_first_grid_image(self, driver: "WebDriver", soup: BeautifulSoup) -> Optional[str]:
+    def _extract_first_grid_image(
+        self, driver: "WebDriver", soup: BeautifulSoup
+    ) -> Optional[str]:
         """Extract the first image from the image grid with click-and-wait for high-res.
 
         IMPORTANT: Avoid images from 'Related Posts' section at bottom of page.
@@ -1347,7 +1459,11 @@ class MisisRescueScraper(BaseScraper):
         """
         try:
             # Wait for image grid to be present
-            WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, "img[src*='wixstatic.com']")))
+            WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, "img[src*='wixstatic.com']")
+                )
+            )
 
             # Find all grid images using WebDriver, but exclude related posts section
             # Try to find main content area first to avoid related posts
@@ -1366,14 +1482,18 @@ class MisisRescueScraper(BaseScraper):
                     content_images = driver.find_elements(By.CSS_SELECTOR, selector)
                     if content_images:
                         main_content_images = content_images
-                        self.logger.debug(f"Found {len(main_content_images)} images in main content using selector: {selector}")
+                        self.logger.debug(
+                            f"Found {len(main_content_images)} images in main content using selector: {selector}"
+                        )
                         break
                 except Exception as e:
                     self.logger.debug(f"Selector {selector} failed: {e}")
 
             # If no main content images found, fall back to all images but filter out related posts
             if not main_content_images:
-                all_images = driver.find_elements(By.CSS_SELECTOR, "img[src*='wixstatic.com']")
+                all_images = driver.find_elements(
+                    By.CSS_SELECTOR, "img[src*='wixstatic.com']"
+                )
                 self.logger.debug(f"Found {len(all_images)} total images on page")
 
                 # Filter out images that are likely from related posts section
@@ -1395,41 +1515,64 @@ class MisisRescueScraper(BaseScraper):
                     # Check if image is near bottom of page (likely related posts)
                     try:
                         img_location = img.location_once_scrolled_into_view
-                        page_height = driver.execute_script("return document.body.scrollHeight")
+                        page_height = driver.execute_script(
+                            "return document.body.scrollHeight"
+                        )
                         if img_location["y"] > page_height * 0.8:  # Bottom 20% of page
-                            self.logger.debug(f"Skipping image near bottom of page (y={img_location['y']}, page_height={page_height})")
+                            self.logger.debug(
+                                f"Skipping image near bottom of page (y={img_location['y']}, page_height={page_height})"
+                            )
                             continue
                     except Exception:
                         pass
 
                     main_content_images.append(img)
 
-                self.logger.debug(f"Filtered to {len(main_content_images)} main content images")
+                self.logger.debug(
+                    f"Filtered to {len(main_content_images)} main content images"
+                )
 
             # Look for suitable grid images (skip first few which are usually hero/header)
             suitable_images = []
             for i, img in enumerate(main_content_images[2:], 2):  # Skip first 2
                 try:
                     src = img.get_attribute("src")
-                    if src and "w_" in src and not any(skip in src.lower() for skip in ["logo", "icon", "button", "header", "footer"]) and img.is_displayed() and img.is_enabled():
-
+                    if (
+                        src
+                        and "w_" in src
+                        and not any(
+                            skip in src.lower()
+                            for skip in ["logo", "icon", "button", "header", "footer"]
+                        )
+                        and img.is_displayed()
+                        and img.is_enabled()
+                    ):
                         # Check minimum size
                         width = self._extract_image_width(src)
                         if width and width >= 200:  # Minimum size for grid image
-
                             # CRITICAL: Exclude 289x162 images which are likely related posts
                             size = img.size
-                            if size and size.get("width") == 289 and size.get("height") == 162:
-                                self.logger.debug(f"Skipping 289x162 image {i} (likely related posts): {src[:100]}...")
+                            if (
+                                size
+                                and size.get("width") == 289
+                                and size.get("height") == 162
+                            ):
+                                self.logger.debug(
+                                    f"Skipping 289x162 image {i} (likely related posts): {src[:100]}..."
+                                )
                                 continue
 
                             # Exclude images with specific problematic hash that we know is wrong
                             if "ef9e05_aac9fec0f9a64d0fba7e40a67965686b" in src:
-                                self.logger.debug(f"Skipping known problematic image {i}: {src[:100]}...")
+                                self.logger.debug(
+                                    f"Skipping known problematic image {i}: {src[:100]}..."
+                                )
                                 continue
 
                             suitable_images.append((i, img, src, width))
-                            self.logger.debug(f"Suitable grid image {i}: width={width}px, size={size}")
+                            self.logger.debug(
+                                f"Suitable grid image {i}: width={width}px, size={size}"
+                            )
 
                 except Exception as e:
                     self.logger.debug(f"Skipping image {i}: {e}")
@@ -1442,7 +1585,9 @@ class MisisRescueScraper(BaseScraper):
             suitable_images.sort(key=lambda x: x[3], reverse=True)
             img_index, first_grid_img, initial_src, initial_width = suitable_images[0]
 
-            self.logger.debug(f"Selected grid image {img_index}: {initial_width}px wide")
+            self.logger.debug(
+                f"Selected grid image {img_index}: {initial_width}px wide"
+            )
 
             # Scroll to image and click
             driver.execute_script("arguments[0].scrollIntoView(true);", first_grid_img)
@@ -1456,7 +1601,9 @@ class MisisRescueScraper(BaseScraper):
                 self.logger.debug("Clicked grid image, waiting for high-res version...")
 
                 # Wait up to 5 seconds for high-res version to load
-                high_res_src = self._wait_for_high_res_image(driver, first_grid_img, initial_src)
+                high_res_src = self._wait_for_high_res_image(
+                    driver, first_grid_img, initial_src
+                )
 
                 if high_res_src and high_res_src != initial_src:
                     # CRITICAL FIX: Clean the high-res image URL to ensure quality
@@ -1466,7 +1613,9 @@ class MisisRescueScraper(BaseScraper):
                 else:
                     # CRITICAL FIX: Clean the initial image URL to ensure quality
                     cleaned_url = self._clean_wix_image_url(initial_src)
-                    self.logger.debug("High-res image didn't load, using cleaned initial version")
+                    self.logger.debug(
+                        "High-res image didn't load, using cleaned initial version"
+                    )
                     return cleaned_url
 
             except Exception as e:
@@ -1514,7 +1663,9 @@ class MisisRescueScraper(BaseScraper):
                 content_imgs = soup.select(selector)
                 if content_imgs:
                     main_content_images.extend(content_imgs)
-                    self.logger.debug(f"Found {len(content_imgs)} images with selector: {selector}")
+                    self.logger.debug(
+                        f"Found {len(content_imgs)} images with selector: {selector}"
+                    )
             except Exception as e:
                 self.logger.debug(f"Selector {selector} failed: {e}")
 
@@ -1540,7 +1691,10 @@ class MisisRescueScraper(BaseScraper):
 
                 # Check for specific related posts classes/IDs that Wix might use
                 parent_attrs = str(img.parent) if img.parent else ""
-                if any(term in parent_attrs.lower() for term in ["related", "recommendation", "suggestion"]):
+                if any(
+                    term in parent_attrs.lower()
+                    for term in ["related", "recommendation", "suggestion"]
+                ):
                     is_in_related_posts = True
 
                 if not is_in_related_posts:
@@ -1562,13 +1716,19 @@ class MisisRescueScraper(BaseScraper):
             # Filter for substantial dog photos from Wix static content
             if (
                 "wixstatic.com" in src
-                and any(ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"])
-                and not any(skip in src.lower() for skip in ["logo", "icon", "button", "header", "footer"])
+                and any(
+                    ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"]
+                )
+                and not any(
+                    skip in src.lower()
+                    for skip in ["logo", "icon", "button", "header", "footer"]
+                )
             ):
-
                 # CRITICAL: Exclude images with specific problematic hash that we know is wrong
                 if "ef9e05_aac9fec0f9a64d0fba7e40a67965686b" in src:
-                    self.logger.debug(f"Skipping known problematic hero image: {src[:100]}...")
+                    self.logger.debug(
+                        f"Skipping known problematic hero image: {src[:100]}..."
+                    )
                     continue
 
                 # Look for larger images (hero images are typically bigger)
@@ -1578,12 +1738,18 @@ class MisisRescueScraper(BaseScraper):
                         width = int(width_param.split("w_")[1])
 
                         # CRITICAL: Exclude 289x162 images which are likely related posts
-                        height_param = [p for p in src.split(",") if "h_" in p and "h_" in p][0] if any("h_" in p for p in src.split(",")) else None
+                        height_param = (
+                            [p for p in src.split(",") if "h_" in p and "h_" in p][0]
+                            if any("h_" in p for p in src.split(","))
+                            else None
+                        )
                         if height_param:
                             try:
                                 height = int(height_param.split("h_")[1])
                                 if width == 289 and height == 162:
-                                    self.logger.debug(f"Skipping 289x162 hero image (likely related posts): {src[:100]}...")
+                                    self.logger.debug(
+                                        f"Skipping 289x162 hero image (likely related posts): {src[:100]}..."
+                                    )
                                     continue
                             except (IndexError, ValueError):
                                 pass
@@ -1620,7 +1786,9 @@ class MisisRescueScraper(BaseScraper):
             return []
 
         # Split URLs into batches
-        batches = [urls[i : i + self.batch_size] for i in range(0, len(urls), self.batch_size)]
+        batches = [
+            urls[i : i + self.batch_size] for i in range(0, len(urls), self.batch_size)
+        ]
         all_results = []
 
         # World-class logging: Batch processing handled by centralized system
@@ -1653,7 +1821,12 @@ class MisisRescueScraper(BaseScraper):
 
         with ThreadPoolExecutor(max_workers=self.batch_size) as executor:
             # Submit all tasks - use fast method first
-            future_to_url = {executor.submit(self._scrape_with_retry, self._scrape_dog_detail_fast, url): url for url in urls}
+            future_to_url = {
+                executor.submit(
+                    self._scrape_with_retry, self._scrape_dog_detail_fast, url
+                ): url
+                for url in urls
+            }
 
             # Collect results as they complete
             for future in as_completed(future_to_url):
@@ -1688,7 +1861,9 @@ class MisisRescueScraper(BaseScraper):
         except (IndexError, ValueError):
             return None
 
-    def _wait_for_high_res_image(self, driver: "WebDriver", img_element, initial_src: str, max_wait: int = 5) -> Optional[str]:
+    def _wait_for_high_res_image(
+        self, driver: "WebDriver", img_element, initial_src: str, max_wait: int = 5
+    ) -> Optional[str]:
         """Wait for image src to change to high-res version after clicking.
 
         Args:
@@ -1711,7 +1886,9 @@ class MisisRescueScraper(BaseScraper):
                     current_width = self._extract_image_width(current_src)
                     initial_width = self._extract_image_width(initial_src)
 
-                    self.logger.debug(f"Image src changed: {initial_width}px → {current_width}px")
+                    self.logger.debug(
+                        f"Image src changed: {initial_width}px → {current_width}px"
+                    )
                     return current_src
 
             except Exception as e:

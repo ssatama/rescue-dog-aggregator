@@ -8,7 +8,15 @@ All models follow modern Pydantic v2 patterns with comprehensive validation,
 type safety, and security features.
 """
 
-from .dog import Animal, AnimalBase, AnimalFilter, AnimalStatus, AvailabilityConfidence, PaginationParams, StandardizedSize
+from .dog import (
+    Animal,
+    AnimalBase,
+    AnimalFilter,
+    AnimalStatus,
+    AvailabilityConfidence,
+    PaginationParams,
+    StandardizedSize,
+)
 from .organization import Organization
 
 __all__ = [

@@ -16,6 +16,7 @@ Environment Variables Required:
     OPENROUTER_API_KEY: For LLM enrichment
     R2_*: For image uploads to Cloudflare R2
 """
+
 import nest_asyncio
 
 nest_asyncio.apply()
@@ -27,7 +28,6 @@ import os
 import signal
 import sys
 from datetime import datetime, timezone
-from typing import Optional
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -35,7 +35,10 @@ if project_root not in sys.path:
 
 from config import enable_world_class_scraper_logging, get_database_config
 from scrapers.sentry_integration import add_scrape_breadcrumb, init_scraper_sentry
-from utils.db_connection import create_database_config_from_env, initialize_database_pool
+from utils.db_connection import (
+    create_database_config_from_env,
+    initialize_database_pool,
+)
 from utils.secure_config_scraper_runner import (
     BatchRunResult,
     SecureConfigScraperRunner,
@@ -44,7 +47,12 @@ from utils.secure_config_scraper_runner import (
 # Configure root logger directly (basicConfig doesn't work if called after config.py import)
 root_logger = logging.getLogger()
 handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%dT%H:%M:%SZ"))
+handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%SZ",
+    )
+)
 root_logger.handlers.clear()
 root_logger.addHandler(handler)
 root_logger.setLevel(logging.INFO)
@@ -67,10 +75,14 @@ def validate_environment() -> bool:
     db_config = get_database_config()
 
     if not db_config.get("host") or not db_config.get("database"):
-        logger.error("Database configuration missing. Set DATABASE_URL or RAILWAY_DATABASE_URL.")
+        logger.error(
+            "Database configuration missing. Set DATABASE_URL or RAILWAY_DATABASE_URL."
+        )
         return False
 
-    logger.info(f"Database: {db_config['user']}@{db_config['host']}/{db_config['database']}")
+    logger.info(
+        f"Database: {db_config['user']}@{db_config['host']}/{db_config['database']}"
+    )
     return True
 
 
@@ -139,9 +151,13 @@ def main():
     """Main entry point for Railway cron job."""
     parser = argparse.ArgumentParser(description="Railway scraper cron job")
     parser.add_argument("--org", type=str, help="Run only a specific organization")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would run without executing")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show what would run without executing"
+    )
     parser.add_argument("--list", action="store_true", help="List available scrapers")
-    parser.add_argument("--json", action="store_true", help="Output results as JSON only")
+    parser.add_argument(
+        "--json", action="store_true", help="Output results as JSON only"
+    )
     args = parser.parse_args()
 
     signal.signal(signal.SIGTERM, handle_shutdown)
@@ -155,7 +171,9 @@ def main():
         logger.info(f"Environment: {environment}")
 
     init_scraper_sentry(environment=environment)
-    add_scrape_breadcrumb("Cron job started", category="cron", data={"start_time": start_time.isoformat()})
+    add_scrape_breadcrumb(
+        "Cron job started", category="cron", data={"start_time": start_time.isoformat()}
+    )
 
     if not validate_environment():
         logger.error("Environment validation failed")
@@ -204,7 +222,9 @@ def main():
             print(json.dumps(result, indent=2))
         else:
             if result["success"]:
-                logger.info(f"Scraper completed: {result['organization']} - {result['animals_found']} animals found")
+                logger.info(
+                    f"Scraper completed: {result['organization']} - {result['animals_found']} animals found"
+                )
             else:
                 logger.error(f"Scraper failed: {result['error']}")
 

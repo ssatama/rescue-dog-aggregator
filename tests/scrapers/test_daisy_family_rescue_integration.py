@@ -7,7 +7,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from scrapers.daisy_family_rescue.dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
+from scrapers.daisy_family_rescue.dog_detail_scraper import (
+    DaisyFamilyRescueDogDetailScraper,
+)
 from scrapers.daisy_family_rescue.dogs_scraper import DaisyFamilyRescueScraper
 
 
@@ -39,10 +41,11 @@ class TestDaisyFamilyRescueIntegration:
             patch("scrapers.base_scraper.R2Service"),
             patch.dict("os.environ", {"TESTING_VALIDATE_SYNC": "true"}),
         ):
-
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
+            mock_sync_service.sync_single_organization.return_value = Mock(
+                organization_id=12, was_created=True
+            )
             mock_sync.return_value = mock_sync_service
 
             scraper = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
@@ -82,7 +85,12 @@ class TestDaisyFamilyRescueIntegration:
                 "external_id": "hund-bruno",
                 "adoption_url": "https://daisyfamilyrescue.de/hund-bruno/",
                 "primary_image_url": "https://example.com/bruno.jpg",
-                "properties": {"character_german": "menschenbezogen, verschmust, liebevoll", "origin": "Nordmazedonien", "current_location": "München", "language": "de"},
+                "properties": {
+                    "character_german": "menschenbezogen, verschmust, liebevoll",
+                    "origin": "Nordmazedonien",
+                    "current_location": "München",
+                    "language": "de",
+                },
             }
         ]
 
@@ -112,17 +120,29 @@ class TestDaisyFamilyRescueIntegration:
     def test_detail_scraper_integration(self, scraper):
         """Test integration with detail scraper."""
         # Mock basic dog data from listing
-        basic_dog_data = {"name": "Test Dog", "external_id": "hund-test", "adoption_url": "https://daisyfamilyrescue.de/hund-test/", "properties": {"source": "daisyfamilyrescue.de"}}
+        basic_dog_data = {
+            "name": "Test Dog",
+            "external_id": "hund-test",
+            "adoption_url": "https://daisyfamilyrescue.de/hund-test/",
+            "properties": {"source": "daisyfamilyrescue.de"},
+        }
 
         # Mock detail scraper response
         mock_detailed_data = {
             "breed": "Mischling",
             "sex": "weiblich, kastriert",
             "age_text": "2 Jahre",
-            "properties": {"character_german": "freundlich, verspielt", "origin": "Nordmazedonien", "weight_kg": 15, "height_cm": 45},
+            "properties": {
+                "character_german": "freundlich, verspielt",
+                "origin": "Nordmazedonien",
+                "weight_kg": 15,
+                "height_cm": 45,
+            },
         }
 
-        with patch.object(DaisyFamilyRescueDogDetailScraper, "extract_dog_details") as mock_extract:
+        with patch.object(
+            DaisyFamilyRescueDogDetailScraper, "extract_dog_details"
+        ) as mock_extract:
             mock_extract.return_value = mock_detailed_data
 
             # Test enhancement
@@ -143,10 +163,17 @@ class TestDaisyFamilyRescueIntegration:
     @pytest.mark.integration
     def test_detail_scraper_error_handling(self, scraper):
         """Test error handling in detail scraper integration."""
-        basic_dog_data = {"name": "Test Dog", "external_id": "hund-test", "adoption_url": "https://daisyfamilyrescue.de/hund-test/", "properties": {"source": "daisyfamilyrescue.de"}}
+        basic_dog_data = {
+            "name": "Test Dog",
+            "external_id": "hund-test",
+            "adoption_url": "https://daisyfamilyrescue.de/hund-test/",
+            "properties": {"source": "daisyfamilyrescue.de"},
+        }
 
         # Mock detail scraper to raise exception
-        with patch.object(DaisyFamilyRescueDogDetailScraper, "extract_dog_details") as mock_extract:
+        with patch.object(
+            DaisyFamilyRescueDogDetailScraper, "extract_dog_details"
+        ) as mock_extract:
             mock_extract.side_effect = Exception("Connection error")
 
             # Should return basic data on error
@@ -157,11 +184,20 @@ class TestDaisyFamilyRescueIntegration:
     def test_data_validation_integration(self, scraper):
         """Test data validation integration in the scraping flow."""
         # Test valid data passes through
-        valid_dog = {"name": "Valid Dog", "external_id": "valid-123", "adoption_url": "https://example.com/dog", "properties": {}}
+        valid_dog = {
+            "name": "Valid Dog",
+            "external_id": "valid-123",
+            "adoption_url": "https://example.com/dog",
+            "properties": {},
+        }
         assert scraper._validate_dog_data(valid_dog) is True
 
         # Test invalid data is caught
-        invalid_dog = {"name": "", "external_id": "test", "properties": {}}  # Invalid name
+        invalid_dog = {
+            "name": "",
+            "external_id": "test",
+            "properties": {},
+        }  # Invalid name
         assert scraper._validate_dog_data(invalid_dog) is False
 
     @pytest.mark.integration
@@ -237,7 +273,9 @@ class TestDaisyFamilyRescueIntegration:
         scraper.metrics_collector = mock_metrics_collector
 
         quality_score = scraper.metrics_collector.assess_data_quality(sample_data)
-        assert 0.8 <= quality_score <= 1.0, f"Quality score should be high: {quality_score}"
+        assert 0.8 <= quality_score <= 1.0, (
+            f"Quality score should be high: {quality_score}"
+        )
 
     @pytest.mark.integration
     def test_configuration_driven_initialization(self):
@@ -248,7 +286,6 @@ class TestDaisyFamilyRescueIntegration:
             patch("scrapers.base_scraper.R2Service"),
             patch.dict("os.environ", {"TESTING_VALIDATE_SYNC": "true"}),
         ):
-
             # Mock successful config loading
             mock_config = MagicMock()
             mock_config.name = "Daisy Family Rescue e.V."
@@ -261,7 +298,9 @@ class TestDaisyFamilyRescueIntegration:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
+            mock_sync_service.sync_single_organization.return_value = Mock(
+                organization_id=12, was_created=True
+            )
             mock_sync.return_value = mock_sync_service
 
             # Initialize through config system
@@ -276,8 +315,11 @@ class TestDaisyFamilyRescueIntegration:
     @pytest.mark.integration
     def test_legacy_initialization_compatibility(self):
         """Test backward compatibility with legacy organization_id initialization."""
-        with patch("scrapers.base_scraper.create_default_sync_service"), patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.R2Service"):
-
+        with (
+            patch("scrapers.base_scraper.create_default_sync_service"),
+            patch("scrapers.base_scraper.ConfigLoader"),
+            patch("scrapers.base_scraper.R2Service"),
+        ):
             # Test legacy mode
             scraper = DaisyFamilyRescueScraper(organization_id=12)
 

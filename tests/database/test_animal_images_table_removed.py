@@ -45,7 +45,9 @@ class TestAnimalImagesTableRemoved:
         cursor.close()
 
         # Table should NOT exist
-        assert table_exists is False, "animal_images table still exists but should be removed"
+        assert table_exists is False, (
+            "animal_images table still exists but should be removed"
+        )
 
     def test_animals_table_has_primary_image_fields(self, db_connection):
         """Test that animals table still has primary_image_url fields."""
@@ -66,8 +68,12 @@ class TestAnimalImagesTableRemoved:
         cursor.close()
 
         # These columns should exist in animals table
-        assert "primary_image_url" in columns, "primary_image_url column missing from animals table"
-        assert "original_image_url" in columns, "original_image_url column missing from animals table"
+        assert "primary_image_url" in columns, (
+            "primary_image_url column missing from animals table"
+        )
+        assert "original_image_url" in columns, (
+            "original_image_url column missing from animals table"
+        )
 
     def test_no_foreign_key_references_to_animal_images(self, db_connection):
         """Test that there are no foreign key references to animal_images table."""
@@ -96,4 +102,6 @@ class TestAnimalImagesTableRemoved:
         cursor.close()
 
         # Should be no foreign keys referencing animal_images
-        assert len(foreign_keys) == 0, f"Found foreign keys referencing animal_images: {foreign_keys}"
+        assert len(foreign_keys) == 0, (
+            f"Found foreign keys referencing animal_images: {foreign_keys}"
+        )

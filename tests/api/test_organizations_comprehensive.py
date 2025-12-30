@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 
 import psycopg2
 import pytest
-from fastapi.testclient import TestClient
 
 from api.dependencies import get_db_cursor
 from api.main import app
@@ -51,7 +50,9 @@ class TestOrganizationsJSONParsing:
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):
-            app.dependency_overrides[get_db_cursor] = mock_db_cursor_invalid_social_media
+            app.dependency_overrides[get_db_cursor] = (
+                mock_db_cursor_invalid_social_media
+            )
 
             try:
                 response = client.get("/api/organizations/")
@@ -137,7 +138,9 @@ class TestOrganizationsJSONParsing:
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):
-            app.dependency_overrides[get_db_cursor] = mock_db_cursor_invalid_service_regions
+            app.dependency_overrides[get_db_cursor] = (
+                mock_db_cursor_invalid_service_regions
+            )
 
             try:
                 response = client.get("/api/organizations/")
@@ -191,7 +194,9 @@ class TestOrganizationsJSONParsing:
 
                 org = data[0]
                 # Verify JSON fields were parsed correctly
-                assert org["social_media"] == {"facebook": "https://facebook.com/testorg"}
+                assert org["social_media"] == {
+                    "facebook": "https://facebook.com/testorg"
+                }
                 assert org["ships_to"] == ["USA", "Canada"]
                 assert org["service_regions"] == ["North America"]
             finally:
@@ -295,7 +300,15 @@ class TestOrganizationRecentDogsEndpoint:
         def mock_db_cursor_recent_dogs():
             mock_cursor = MagicMock()
             mock_cursor.fetchall.return_value = [
-                {"id": 1, "name": "Recent Dog 1", "primary_image_url": "http://example.com/dog1.jpg", "breed": "Labrador", "age_text": "2 years", "sex": "Male", "created_at": "2023-12-01T00:00:00"},
+                {
+                    "id": 1,
+                    "name": "Recent Dog 1",
+                    "primary_image_url": "http://example.com/dog1.jpg",
+                    "breed": "Labrador",
+                    "age_text": "2 years",
+                    "sex": "Male",
+                    "created_at": "2023-12-01T00:00:00",
+                },
                 {
                     "id": 2,
                     "name": "Recent Dog 2",
@@ -333,7 +346,15 @@ class TestOrganizationRecentDogsEndpoint:
         def mock_db_cursor_recent_dogs_limit():
             mock_cursor = MagicMock()
             mock_cursor.fetchall.return_value = [
-                {"id": 1, "name": "Recent Dog 1", "primary_image_url": "http://example.com/dog1.jpg", "breed": "Labrador", "age_text": "2 years", "sex": "Male", "created_at": "2023-12-01T00:00:00"}
+                {
+                    "id": 1,
+                    "name": "Recent Dog 1",
+                    "primary_image_url": "http://example.com/dog1.jpg",
+                    "breed": "Labrador",
+                    "age_text": "2 years",
+                    "sex": "Male",
+                    "created_at": "2023-12-01T00:00:00",
+                }
             ]
             mock_cursor.execute.return_value = None
             yield mock_cursor
@@ -403,7 +424,13 @@ class TestOrganizationStatisticsEndpoint:
 
         def mock_db_cursor_statistics():
             mock_cursor = MagicMock()
-            mock_cursor.fetchone.return_value = {"total_dogs": 25, "available_dogs": 20, "adopted_this_month": 5, "new_this_week": 3, "avg_days_to_adoption": 30.5}
+            mock_cursor.fetchone.return_value = {
+                "total_dogs": 25,
+                "available_dogs": 20,
+                "adopted_this_month": 5,
+                "new_this_week": 3,
+                "avg_days_to_adoption": 30.5,
+            }
             mock_cursor.execute.return_value = None
             yield mock_cursor
 
@@ -429,7 +456,13 @@ class TestOrganizationStatisticsEndpoint:
 
         def mock_db_cursor_no_statistics():
             mock_cursor = MagicMock()
-            mock_cursor.fetchone.return_value = {"total_dogs": 0, "available_dogs": 0, "adopted_this_month": 0, "new_this_week": 0, "avg_days_to_adoption": None}
+            mock_cursor.fetchone.return_value = {
+                "total_dogs": 0,
+                "available_dogs": 0,
+                "adopted_this_month": 0,
+                "new_this_week": 0,
+                "avg_days_to_adoption": None,
+            }
             mock_cursor.execute.return_value = None
             yield mock_cursor
 
@@ -467,7 +500,11 @@ class TestOrganizationStatisticsEndpoint:
                 assert response.status_code == 200
                 data = response.json()
                 # Should return empty stats when no data found
-                assert data == {"total_dogs": 0, "new_this_week": 0, "new_this_month": 0}
+                assert data == {
+                    "total_dogs": 0,
+                    "new_this_week": 0,
+                    "new_this_month": 0,
+                }
             finally:
                 app.dependency_overrides.clear()
 
@@ -515,7 +552,10 @@ class TestOrganizationDetailEdgeCases:
                 data = response.json()
 
                 # Verify all JSON fields were parsed correctly
-                assert data["social_media"] == {"facebook": "https://facebook.com/testorg", "instagram": "https://instagram.com/testorg"}
+                assert data["social_media"] == {
+                    "facebook": "https://facebook.com/testorg",
+                    "instagram": "https://instagram.com/testorg",
+                }
                 assert data["ships_to"] == ["USA", "Canada", "Mexico"]
                 assert data["service_regions"] == ["North America", "Central America"]
             finally:

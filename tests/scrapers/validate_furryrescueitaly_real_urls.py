@@ -15,7 +15,9 @@ def test_detail_extraction(url):
     print(f"\nTesting: {url}")
     print("-" * 60)
 
-    headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+    }
 
     try:
         response = requests.get(url, headers=headers, timeout=30)
@@ -72,7 +74,15 @@ def test_detail_extraction(url):
                 key = key.strip().lower()
                 value = value.strip()
 
-                if key in ["born", "sex", "size", "future size", "breed", "personality", "good with"]:
+                if key in [
+                    "born",
+                    "sex",
+                    "size",
+                    "future size",
+                    "breed",
+                    "personality",
+                    "good with",
+                ]:
                     clean_key = key.replace(" ", "_")
                     properties[clean_key] = value
                     print(f"   {clean_key}: {value}")
@@ -116,7 +126,9 @@ def test_detail_extraction(url):
                             elif key == "breed" and "breed" not in properties:
                                 properties["breed"] = value
                                 print(f"   breed: {value}")
-                            elif key == "personality" and "personality" not in properties:
+                            elif (
+                                key == "personality" and "personality" not in properties
+                            ):
                                 properties["personality"] = value
                                 print(f"   personality: {value}")
                             elif key == "good with" and "good_with" not in properties:
@@ -133,7 +145,11 @@ def test_detail_extraction(url):
         has_description = False
         for p in paragraphs:
             text = p.get_text(strip=True)
-            if text and len(text) > 50 and not any(x in text for x in ["👉", "📝", "WhatsApp"]):
+            if (
+                text
+                and len(text) > 50
+                and not any(x in text for x in ["👉", "📝", "WhatsApp"])
+            ):
                 has_description = True
                 print(f"✅ Description: Found ({len(text)} chars)")
                 print(f"   Preview: {text[:100]}...")

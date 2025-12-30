@@ -8,7 +8,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
-from utils.shared_extraction_patterns import extract_age_from_text
 
 from .normalizer import extract_qa_data, extract_size_and_weight_from_qa
 
@@ -68,7 +67,9 @@ class TheUnderdogScraper(BaseScraper):
             filtered_urls_set = set(filtered_urls)
 
             original_count = len(available_dogs)
-            dogs_to_process = [dog for dog in available_dogs if dog.get("url") in filtered_urls_set]
+            dogs_to_process = [
+                dog for dog in available_dogs if dog.get("url") in filtered_urls_set
+            ]
             skipped_count = original_count - len(dogs_to_process)
 
             # Track filtering stats for failure detection
@@ -95,7 +96,9 @@ class TheUnderdogScraper(BaseScraper):
                     self.logger.debug(f"Collected data for {dog_data['name']}")
 
             except Exception as e:
-                self.logger.error(f"Error collecting data for {dog_info.get('url', 'unknown')}: {e}")
+                self.logger.error(
+                    f"Error collecting data for {dog_info.get('url', 'unknown')}: {e}"
+                )
                 continue
 
         # World-class logging: Collection results handled by centralized system
@@ -154,7 +157,13 @@ class TheUnderdogScraper(BaseScraper):
         try:
             # World-class logging: Page fetching handled by centralized system
 
-            response = requests.get(self.listing_url, timeout=self.timeout, headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"})
+            response = requests.get(
+                self.listing_url,
+                timeout=self.timeout,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"
+                },
+            )
             response.raise_for_status()
 
             return BeautifulSoup(response.text, "html.parser")
@@ -200,7 +209,12 @@ class TheUnderdogScraper(BaseScraper):
             if thumbnail_url and thumbnail_url.startswith("//"):
                 thumbnail_url = "https:" + thumbnail_url
 
-            return {"name": clean_name, "original_name": original_name, "url": full_url, "thumbnail_url": thumbnail_url}  # Keep original for availability checking
+            return {
+                "name": clean_name,
+                "original_name": original_name,
+                "url": full_url,
+                "thumbnail_url": thumbnail_url,
+            }  # Keep original for availability checking
 
         except Exception as e:
             self.logger.error(f"Error extracting dog info: {e}")
@@ -262,7 +276,9 @@ class TheUnderdogScraper(BaseScraper):
             # Extract all data
             external_id = self._generate_external_id(url)
             hero_image_url = self._extract_hero_image(soup)
-            properties, description = self._extract_properties_and_description_from_soup(soup)
+            properties, description = (
+                self._extract_properties_and_description_from_soup(soup)
+            )
 
             # Ensure properties is never None or completely empty
             if not properties:
@@ -347,7 +363,9 @@ class TheUnderdogScraper(BaseScraper):
 
             # Ensure description is not empty
             if not result.get("description"):
-                result["description"] = f"Rescue dog from {result.get('country', 'unknown location')}"
+                result["description"] = (
+                    f"Rescue dog from {result.get('country', 'unknown location')}"
+                )
 
             # Add location standardization
             if not result.get("location"):
@@ -374,7 +392,13 @@ class TheUnderdogScraper(BaseScraper):
             BeautifulSoup object or None if error
         """
         try:
-            response = requests.get(url, timeout=self.timeout, headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"})
+            response = requests.get(
+                url,
+                timeout=self.timeout,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"
+                },
+            )
             response.raise_for_status()
 
             return BeautifulSoup(response.text, "html.parser")
@@ -464,9 +488,15 @@ class TheUnderdogScraper(BaseScraper):
         gallery_imgs = soup.select(".ProductItem-gallery img[data-src]")
         for img in gallery_imgs:
             data_src_attr = img.get("data-src", "")
-            data_src = "".join(data_src_attr) if isinstance(data_src_attr, list) else data_src_attr
+            data_src = (
+                "".join(data_src_attr)
+                if isinstance(data_src_attr, list)
+                else data_src_attr
+            )
             alt_attr = img.get("alt", "")
-            alt = "".join(alt_attr) if isinstance(alt_attr, list) else str(alt_attr or "")
+            alt = (
+                "".join(alt_attr) if isinstance(alt_attr, list) else str(alt_attr or "")
+            )
 
             if data_src and alt:
                 # Skip organization logo
@@ -478,7 +508,9 @@ class TheUnderdogScraper(BaseScraper):
                 # Found a valid dog image with full Squarespace URL
                 if data_src.startswith("http"):
                     # Add format parameter for optimized loading if not present
-                    if "?format=" not in data_src and data_src.endswith((".jpg", ".jpeg", ".png")):
+                    if "?format=" not in data_src and data_src.endswith(
+                        (".jpg", ".jpeg", ".png")
+                    ):
                         data_src += "?format=1500w"
                     return data_src
 
@@ -486,7 +518,9 @@ class TheUnderdogScraper(BaseScraper):
         gallery_imgs = soup.select(".ProductItem-gallery-slides img")
         for img in gallery_imgs:
             alt_attr = img.get("alt", "")
-            alt = "".join(alt_attr) if isinstance(alt_attr, list) else str(alt_attr or "")
+            alt = (
+                "".join(alt_attr) if isinstance(alt_attr, list) else str(alt_attr or "")
+            )
             if alt and alt != "Underdog International" and alt.lower() != "no src":
                 # Skip organization logo
                 if "underdog" in alt.lower() and "international" in alt.lower():
@@ -511,7 +545,10 @@ class TheUnderdogScraper(BaseScraper):
                 src_attr = img.get("src")
                 src = "".join(src_attr) if isinstance(src_attr, list) else src_attr
                 # Skip small thumbnails, icons, or org logos
-                if any(skip in src.lower() for skip in ["thumb", "icon", "logo", "primary_ud_label"]):
+                if any(
+                    skip in src.lower()
+                    for skip in ["thumb", "icon", "logo", "primary_ud_label"]
+                ):
                     continue
                 # Fix protocol-relative URLs
                 if src.startswith("//"):
@@ -533,10 +570,14 @@ class TheUnderdogScraper(BaseScraper):
             return None
 
         # Base Squarespace CDN pattern observed from the site
-        base_cdn = "https://images.squarespace-cdn.com/content/v1/5c40fa0e1aef1d1aa24274ea"
+        base_cdn = (
+            "https://images.squarespace-cdn.com/content/v1/5c40fa0e1aef1d1aa24274ea"
+        )
 
         # Clean the filename - remove URL encoding artifacts
-        clean_filename = alt_filename.replace("+", " ").replace("%28", "(").replace("%29", ")")
+        clean_filename = (
+            alt_filename.replace("+", " ").replace("%28", "(").replace("%29", ")")
+        )
 
         # Try common Squarespace patterns
         possible_paths = [
@@ -552,7 +593,9 @@ class TheUnderdogScraper(BaseScraper):
 
         return None
 
-    def _extract_properties_and_description_from_soup(self, soup: BeautifulSoup) -> Tuple[Dict[str, str], str]:
+    def _extract_properties_and_description_from_soup(
+        self, soup: BeautifulSoup
+    ) -> Tuple[Dict[str, str], str]:
         """Extract properties and description from detail page.
 
         Args:
@@ -571,7 +614,9 @@ class TheUnderdogScraper(BaseScraper):
 
         return self._extract_properties_and_description(excerpt_text)
 
-    def _extract_properties_and_description(self, text: str) -> Tuple[Dict[str, str], str]:
+    def _extract_properties_and_description(
+        self, text: str
+    ) -> Tuple[Dict[str, str], str]:
         """Extract properties and description from text content.
 
         Args:
@@ -605,7 +650,18 @@ class TheUnderdogScraper(BaseScraper):
             # Look for property patterns - handle Q&A on separate lines
             if line.endswith("?") and not in_description:
                 # Check if this looks like a property we want
-                if any(keyword in line for keyword in ["How big", "How old", "Male or female", "Living with", "Where can", "Resident dog", "Where am"]):
+                if any(
+                    keyword in line
+                    for keyword in [
+                        "How big",
+                        "How old",
+                        "Male or female",
+                        "Living with",
+                        "Where can",
+                        "Resident dog",
+                        "Where am",
+                    ]
+                ):
                     # Look for the answer on the next line
                     if i + 1 < len(lines):
                         next_line = lines[i + 1].strip()
@@ -619,7 +675,9 @@ class TheUnderdogScraper(BaseScraper):
                                 properties[line] = actual_value
 
                                 # Start collecting description after "About [Name]"
-                                about_match = re.match(r"About\s+\w+(.*)$", about_text, re.DOTALL)
+                                about_match = re.match(
+                                    r"About\s+\w+(.*)$", about_text, re.DOTALL
+                                )
                                 if about_match:
                                     desc_start = about_match.group(1).strip()
                                     if desc_start:
@@ -637,7 +695,18 @@ class TheUnderdogScraper(BaseScraper):
                 value_part = property_match.group(2).strip()
 
                 # Check if this looks like a property we want
-                if any(keyword in key_part for keyword in ["How big", "How old", "Male or female", "Living with", "Where can", "Resident dog", "Where am"]):
+                if any(
+                    keyword in key_part
+                    for keyword in [
+                        "How big",
+                        "How old",
+                        "Male or female",
+                        "Living with",
+                        "Where can",
+                        "Resident dog",
+                        "Where am",
+                    ]
+                ):
                     key = key_part + "?"
 
                     # Check if value contains "About" - if so, split it
@@ -649,7 +718,9 @@ class TheUnderdogScraper(BaseScraper):
                         properties[key] = actual_value
 
                         # Start collecting description after "About [Name]"
-                        about_match = re.match(r"About\s+\w+(.*)$", about_text, re.DOTALL)
+                        about_match = re.match(
+                            r"About\s+\w+(.*)$", about_text, re.DOTALL
+                        )
                         if about_match:
                             desc_start = about_match.group(1).strip()
                             if desc_start:
@@ -743,7 +814,18 @@ class TheUnderdogScraper(BaseScraper):
                         return f"{match.group(1)} years"
                 elif unit == "years_word":
                     # Convert word numbers to digits
-                    word_to_num = {"one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10"}
+                    word_to_num = {
+                        "one": "1",
+                        "two": "2",
+                        "three": "3",
+                        "four": "4",
+                        "five": "5",
+                        "six": "6",
+                        "seven": "7",
+                        "eight": "8",
+                        "nine": "9",
+                        "ten": "10",
+                    }
                     word = match.group(1).lower()
                     if word in word_to_num:
                         return f"{word_to_num[word]} years"

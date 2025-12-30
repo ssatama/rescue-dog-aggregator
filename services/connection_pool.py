@@ -35,7 +35,12 @@ class PoolConfig:
 class ConnectionPoolService:
     """Thread-safe database connection pool service."""
 
-    def __init__(self, db_config: Dict[str, str], min_connections: int = 2, max_connections: int = 25):
+    def __init__(
+        self,
+        db_config: Dict[str, str],
+        min_connections: int = 2,
+        max_connections: int = 25,
+    ):
         """Initialize connection pool with database configuration.
 
         Args:
@@ -63,7 +68,11 @@ class ConnectionPoolService:
             conn_params["password"] = self.db_config["password"]
 
         try:
-            pool = psycopg2.pool.ThreadedConnectionPool(self.pool_config.min_connections, self.pool_config.max_connections, **conn_params)
+            pool = psycopg2.pool.ThreadedConnectionPool(
+                self.pool_config.min_connections,
+                self.pool_config.max_connections,
+                **conn_params,
+            )
             self.logger.info(
                 f"Connection pool created: min={self.pool_config.min_connections}, "
                 f"max={self.pool_config.max_connections}, host={conn_params['host']}:{conn_params['port']}, database={self.db_config['database']}"

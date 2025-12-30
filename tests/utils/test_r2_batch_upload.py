@@ -1,9 +1,7 @@
 """Test R2 Service batch upload functionality for improved performance."""
 
-import time
 import unittest
-from typing import List, Tuple
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -57,7 +55,9 @@ class TestR2BatchUpload(unittest.TestCase):
             mock_upload.return_value = ("https://r2.com/image.jpg", True)
 
             with patch("time.sleep") as mock_sleep:
-                results = R2Service.batch_upload_images(test_images, batch_size=2, batch_delay=2.0)
+                results = R2Service.batch_upload_images(
+                    test_images, batch_size=2, batch_delay=2.0
+                )
 
                 # Should pause after first batch (2 images), not after last
                 # Expecting 1 pause for 4 images with batch_size=2
@@ -122,7 +122,9 @@ class TestR2BatchUpload(unittest.TestCase):
         with patch.object(R2Service, "upload_image_from_url") as mock_upload:
             mock_upload.return_value = ("https://r2.com/image.jpg", True)
 
-            R2Service.batch_upload_images(test_images, batch_size=2, progress_callback=progress_callback)
+            R2Service.batch_upload_images(
+                test_images, batch_size=2, progress_callback=progress_callback
+            )
 
             # Should have 3 progress calls
             self.assertEqual(len(progress_calls), 3)
@@ -146,7 +148,9 @@ class TestR2BatchUpload(unittest.TestCase):
                 results = R2Service.batch_upload_images(test_images, batch_size=5)
 
                 # No batch delay should be applied for single image
-                batch_delay_calls = [c for c in mock_sleep.call_args_list if c[0][0] >= 2.0]
+                batch_delay_calls = [
+                    c for c in mock_sleep.call_args_list if c[0][0] >= 2.0
+                ]
                 self.assertEqual(len(batch_delay_calls), 0)
                 self.assertEqual(len(results), 1)
 
@@ -169,18 +173,26 @@ class TestR2BatchUpload(unittest.TestCase):
             ]
 
             with patch("time.sleep") as mock_sleep:
-                results = R2Service.batch_upload_images(test_images, batch_size=2, adaptive_delay=True)
+                results = R2Service.batch_upload_images(
+                    test_images, batch_size=2, adaptive_delay=True
+                )
 
                 # Should see increased delays after failures
                 sleep_calls = mock_sleep.call_args_list
                 if len(sleep_calls) >= 2:
                     # Second batch delay should be larger due to failures
-                    first_batch_delays = [c[0][0] for c in sleep_calls[:1] if c[0][0] >= 1.0]
-                    second_batch_delays = [c[0][0] for c in sleep_calls[1:] if c[0][0] >= 1.0]
+                    first_batch_delays = [
+                        c[0][0] for c in sleep_calls[:1] if c[0][0] >= 1.0
+                    ]
+                    second_batch_delays = [
+                        c[0][0] for c in sleep_calls[1:] if c[0][0] >= 1.0
+                    ]
 
                     if first_batch_delays and second_batch_delays:
                         # Adaptive delay should increase after failures
-                        self.assertGreater(max(second_batch_delays), max(first_batch_delays))
+                        self.assertGreater(
+                            max(second_batch_delays), max(first_batch_delays)
+                        )
 
 
 class TestR2BatchUploadIntegration(unittest.TestCase):
@@ -214,7 +226,9 @@ class TestR2BatchUploadIntegration(unittest.TestCase):
             from botocore.exceptions import ClientError
 
             error_response = {"Error": {"Code": "404", "Message": "Not found"}}
-            mock_s3_client.head_object.side_effect = ClientError(error_response, "HeadObject")
+            mock_s3_client.head_object.side_effect = ClientError(
+                error_response, "HeadObject"
+            )
 
             # Mock successful upload
             mock_s3_client.upload_fileobj.return_value = None

@@ -2,6 +2,7 @@
 """
 Validation script for pytest markers - ensures consistency and compliance.
 """
+
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -132,25 +133,27 @@ def print_validation_report():
     marker_stats, file_count, all_issues = analyze_marker_distribution()
 
     # Overall statistics
-    print(f"\n📊 Overall Statistics:")
+    print("\n📊 Overall Statistics:")
     print(f"  Total test files: {file_count}")
     print(f"  Unique markers used: {len(marker_stats)}")
     print(f"  Files with issues: {len(all_issues)}")
 
     # Marker distribution
-    print(f"\n📈 Marker Distribution:")
+    print("\n📈 Marker Distribution:")
     sorted_markers = sorted(marker_stats.items(), key=lambda x: x[1], reverse=True)
     for marker, count in sorted_markers:
         percentage = (count / file_count) * 100
         print(f"  {marker:20} {count:3d} files ({percentage:5.1f}%)")
 
     # Performance marker distribution
-    print(f"\n⚡ Performance Marker Analysis:")
+    print("\n⚡ Performance Marker Analysis:")
     perf_counts = {marker: marker_stats[marker] for marker in PERFORMANCE_MARKERS}
     total_perf = sum(perf_counts.values())
     for marker, count in perf_counts.items():
         percentage = (count / total_perf) * 100 if total_perf > 0 else 0
-        print(f"  {marker:10} {count:3d} files ({percentage:5.1f}% of performance-tagged)")
+        print(
+            f"  {marker:10} {count:3d} files ({percentage:5.1f}% of performance-tagged)"
+        )
 
     # Issues found
     if all_issues:
@@ -163,10 +166,10 @@ def print_validation_report():
         if len(all_issues) > 10:
             print(f"    ... and {len(all_issues) - 10} more files with issues")
     else:
-        print(f"\n✅ No issues found! All markers are valid and consistent.")
+        print("\n✅ No issues found! All markers are valid and consistent.")
 
     # Recommendations
-    print(f"\n💡 Recommendations:")
+    print("\n💡 Recommendations:")
 
     unit_pct = (marker_stats["unit"] / file_count) * 100
     slow_pct = (marker_stats["slow"] / file_count) * 100
@@ -175,14 +178,16 @@ def print_validation_report():
         print(f"  - Consider adding more unit tests (currently {unit_pct:.1f}%)")
 
     if slow_pct > 70:
-        print(f"  - Many slow tests ({slow_pct:.1f}%) - consider optimizing CI pipeline")
+        print(
+            f"  - Many slow tests ({slow_pct:.1f}%) - consider optimizing CI pipeline"
+        )
 
     # CI optimization suggestions
     fast_feedback_tests = marker_stats["unit"] + marker_stats.get("fast", 0)
     fast_pct = (fast_feedback_tests / file_count) * 100
 
     print(f"  - Fast feedback tests: {fast_feedback_tests} files ({fast_pct:.1f}%)")
-    print(f"  - Recommended CI command: pytest -m 'unit or fast' -v")
+    print("  - Recommended CI command: pytest -m 'unit or fast' -v")
 
     return len(all_issues) == 0
 
@@ -192,10 +197,10 @@ def main():
     success = print_validation_report()
 
     if success:
-        print(f"\n🎉 Validation passed! All test markers are consistent.")
+        print("\n🎉 Validation passed! All test markers are consistent.")
         return 0
     else:
-        print(f"\n⚠️  Validation found issues. Please review and fix.")
+        print("\n⚠️  Validation found issues. Please review and fix.")
         return 1
 
 

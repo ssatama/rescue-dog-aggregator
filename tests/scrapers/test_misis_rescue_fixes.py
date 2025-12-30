@@ -7,7 +7,7 @@ Tests the following critical issues:
 4. Size standardization persistence
 """
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from bs4 import BeautifulSoup
@@ -65,7 +65,9 @@ class TestMisisRescueErrorPageDetection:
         # Mock error response
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.text = "<html><head><title>This site can't be reached</title></head></html>"
+        mock_response.text = (
+            "<html><head><title>This site can't be reached</title></head></html>"
+        )
         mock_get.return_value = mock_response
 
         result = scraper._scrape_dog_detail_fast("https://test.com/dog")
@@ -102,7 +104,11 @@ class TestMisisRescuePerformanceOptimization:
         mock_get.return_value = mock_response
 
         with patch.object(scraper.detail_parser, "parse_detail_page") as mock_parse:
-            mock_parse.return_value = {"name": "Fluffy", "size": "Small", "properties": {"standardized_size": "Small"}}
+            mock_parse.return_value = {
+                "name": "Fluffy",
+                "size": "Small",
+                "properties": {"standardized_size": "Small"},
+            }
 
             result = scraper._scrape_dog_detail_fast("https://test.com/fluffy")
 
@@ -136,7 +142,9 @@ class TestMisisRescuePerformanceOptimization:
 
         with patch.object(scraper, "_setup_selenium_driver", return_value=mock_driver):
             with patch("scrapers.misis_rescue.scraper.WebDriverWait"):
-                with patch.object(scraper, "_extract_main_image", return_value="http://image.jpg"):
+                with patch.object(
+                    scraper, "_extract_main_image", return_value="http://image.jpg"
+                ):
                     result = scraper._scrape_dog_detail_fast("https://test.com/fluffy")
 
         # Should have called Selenium driver setup as fallback
@@ -195,7 +203,9 @@ class TestMisisRescueSizeStandardization:
             soup = BeautifulSoup(html, "html.parser")
             result = parser.parse_detail_page(soup)
 
-            assert result["size"] == expected_size, f"Weight {weight}kg should be {expected_size}"
+            assert result["size"] == expected_size, (
+                f"Weight {weight}kg should be {expected_size}"
+            )
             assert result["properties"]["standardized_size"] == expected_size
 
 
@@ -259,7 +269,9 @@ class TestMisisRescueIntegration:
         """
         mock_get.return_value = mock_response
 
-        result = scraper._scrape_dog_detail_fast("https://www.misisrescue.com/post/fluffy-2")
+        result = scraper._scrape_dog_detail_fast(
+            "https://www.misisrescue.com/post/fluffy-2"
+        )
 
         # Verify all expected fields
         assert result is not None

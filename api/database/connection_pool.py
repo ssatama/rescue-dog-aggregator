@@ -85,19 +85,25 @@ class ConnectionPool:
 
             for attempt in range(1, self._max_retries + 1):
                 try:
-                    logger.info(f"Attempting to initialize connection pool (attempt {attempt}/{self._max_retries})")
+                    logger.info(
+                        f"Attempting to initialize connection pool (attempt {attempt}/{self._max_retries})"
+                    )
                     self._create_pool()
                     self._validate_pool()
                     ConnectionPool._initialized = True
                     ConnectionPool._initialization_error = None
-                    logger.info(f"Connection pool initialized successfully on attempt {attempt}")
+                    logger.info(
+                        f"Connection pool initialized successfully on attempt {attempt}"
+                    )
                     return
                 except Exception as e:
                     last_error = e
                     logger.error(f"Pool initialization attempt {attempt} failed: {e}")
 
                     if attempt < self._max_retries:
-                        retry_delay = self._base_retry_delay * (2 ** (attempt - 1))  # Exponential backoff
+                        retry_delay = self._base_retry_delay * (
+                            2 ** (attempt - 1)
+                        )  # Exponential backoff
                         logger.info(f"Retrying in {retry_delay} seconds...")
                         time.sleep(retry_delay)
 
@@ -124,7 +130,9 @@ class ConnectionPool:
             **conn_params,
         )
 
-        logger.info(f"Connection pool created: min={POOL_MIN_CONN}, max={POOL_MAX_CONN}, database={DB_CONFIG['database']}")
+        logger.info(
+            f"Connection pool created: min={POOL_MIN_CONN}, max={POOL_MAX_CONN}, database={DB_CONFIG['database']}"
+        )
 
     def _validate_pool(self):
         """Validate that the pool can provide working connections."""
@@ -162,11 +170,17 @@ class ConnectionPool:
                 last_error = e
                 if attempt < POOL_ACQUIRE_RETRIES - 1:
                     delay = POOL_ACQUIRE_RETRY_DELAY * (2**attempt)
-                    logger.warning(f"Pool exhausted, retrying in {delay:.2f}s (attempt {attempt + 1}/{POOL_ACQUIRE_RETRIES})")
+                    logger.warning(
+                        f"Pool exhausted, retrying in {delay:.2f}s (attempt {attempt + 1}/{POOL_ACQUIRE_RETRIES})"
+                    )
                     time.sleep(delay)
 
-        logger.error(f"Failed to acquire connection after {POOL_ACQUIRE_RETRIES} retries: {last_error}")
-        raise RuntimeError(f"Connection pool exhausted after {POOL_ACQUIRE_RETRIES} retries")
+        logger.error(
+            f"Failed to acquire connection after {POOL_ACQUIRE_RETRIES} retries: {last_error}"
+        )
+        raise RuntimeError(
+            f"Connection pool exhausted after {POOL_ACQUIRE_RETRIES} retries"
+        )
 
     @contextmanager
     def get_connection(self) -> Generator[psycopg2.extensions.connection, None, None]:
@@ -175,8 +189,12 @@ class ConnectionPool:
         try:
             if not ConnectionPool._initialized or self._pool is None:
                 if ConnectionPool._initialization_error:
-                    raise RuntimeError(f"Connection pool initialization failed: {ConnectionPool._initialization_error}")
-                raise RuntimeError("Connection pool not initialized. Call initialize() first.")
+                    raise RuntimeError(
+                        f"Connection pool initialization failed: {ConnectionPool._initialization_error}"
+                    )
+                raise RuntimeError(
+                    "Connection pool not initialized. Call initialize() first."
+                )
 
             conn = self._acquire_connection_with_retry()
             logger.debug(f"Connection acquired from pool: {id(conn)}")
@@ -223,7 +241,9 @@ class ConnectionPool:
                 "status": "not_initialized",
                 "initialized": ConnectionPool._initialized,
                 "has_pool": self._pool is not None,
-                "initialization_error": str(ConnectionPool._initialization_error) if ConnectionPool._initialization_error else None,
+                "initialization_error": str(ConnectionPool._initialization_error)
+                if ConnectionPool._initialization_error
+                else None,
             }
 
         return {

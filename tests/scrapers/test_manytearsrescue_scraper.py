@@ -19,7 +19,10 @@ class TestManyTearsRescueScraper:
 
     def test_scraper_initialization_with_config(self):
         """Test scraper can be initialized with config_id."""
-        with patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.create_default_sync_service"):
+        with (
+            patch("scrapers.base_scraper.ConfigLoader"),
+            patch("scrapers.base_scraper.create_default_sync_service"),
+        ):
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
             assert scraper is not None
             assert hasattr(scraper, "collect_data")
@@ -29,7 +32,10 @@ class TestManyTearsRescueScraper:
         """Test that ManyTearsRescueScraper properly inherits from BaseScraper."""
         from scrapers.base_scraper import BaseScraper
 
-        with patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.create_default_sync_service"):
+        with (
+            patch("scrapers.base_scraper.ConfigLoader"),
+            patch("scrapers.base_scraper.create_default_sync_service"),
+        ):
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
             assert isinstance(scraper, BaseScraper)
 
@@ -40,7 +46,10 @@ class TestManyTearsRescueScraper:
         mock_webdriver.return_value = mock_driver
         mock_driver.get.side_effect = Exception("Network error")
 
-        with patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.create_default_sync_service"):
+        with (
+            patch("scrapers.base_scraper.ConfigLoader"),
+            patch("scrapers.base_scraper.create_default_sync_service"),
+        ):
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
 
             # Should handle exception gracefully and clean up driver
@@ -56,11 +65,16 @@ class TestManyTearsRescueScraper:
         mock_webdriver.return_value = mock_driver
         mock_driver.page_source = "<html><body></body></html>"
 
-        with patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.create_default_sync_service"):
+        with (
+            patch("scrapers.base_scraper.ConfigLoader"),
+            patch("scrapers.base_scraper.create_default_sync_service"),
+        ):
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
 
             # Mock get_animal_list to verify it's called
-            with patch.object(scraper, "get_animal_list", return_value=[]) as mock_get_animals:
+            with patch.object(
+                scraper, "get_animal_list", return_value=[]
+            ) as mock_get_animals:
                 result = scraper.collect_data()
 
                 mock_get_animals.assert_called_once()
@@ -72,8 +86,13 @@ class TestManyTearsRescueScraper:
 
         mock_metrics = NullMetricsCollector()
 
-        with patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.create_default_sync_service"):
-            scraper = ManyTearsRescueScraper(config_id="manytearsrescue", metrics_collector=mock_metrics)
+        with (
+            patch("scrapers.base_scraper.ConfigLoader"),
+            patch("scrapers.base_scraper.create_default_sync_service"),
+        ):
+            scraper = ManyTearsRescueScraper(
+                config_id="manytearsrescue", metrics_collector=mock_metrics
+            )
 
             assert scraper is not None
             # Verify dependency injection works

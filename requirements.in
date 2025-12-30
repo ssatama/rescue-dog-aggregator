@@ -44,3 +44,6 @@ iniconfig>=2.3.0
 cachetools>=6.2.4
 pytest-benchmark>=5.2.3
 firecrawl-py>=4.12.0
+
+# Code Quality
+ruff>=0.14.0

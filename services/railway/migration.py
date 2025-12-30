@@ -51,19 +51,23 @@ def railway_migration_lock(timeout: int = 60):
                         break
                     else:
                         # Mock file object - just proceed for testing
-                        logger.info("Railway migration lock acquired successfully (mock)")
+                        logger.info(
+                            "Railway migration lock acquired successfully (mock)"
+                        )
                         break
                 else:
                     # No fileno method - mock object
                     logger.info("Railway migration lock acquired successfully (mock)")
                     break
-            except (IOError, OSError, ValueError) as e:
+            except (IOError, OSError, ValueError):
                 if "mock" in str(type(lock_file)).lower():
                     # Mock file object - just proceed
                     logger.info("Railway migration lock acquired successfully (mock)")
                     break
                 elif time.time() - start_time > timeout:
-                    raise TimeoutError(f"Failed to acquire Railway migration lock within {timeout} seconds")
+                    raise TimeoutError(
+                        f"Failed to acquire Railway migration lock within {timeout} seconds"
+                    )
                 else:
                     time.sleep(0.1)  # Wait 100ms before retry
 
@@ -118,7 +122,7 @@ def init_railway_alembic() -> bool:
             pass
 
         # Create alembic.ini for Railway (use environment variable, not hardcoded URL)
-        alembic_ini_content = f"""# Railway Alembic Configuration
+        alembic_ini_content = """# Railway Alembic Configuration
 [alembic]
 script_location = migrations/railway
 prepend_sys_path = .
@@ -267,7 +271,14 @@ def create_initial_migration(message: str = "Initial Railway schema") -> bool:
     """Create initial migration for Railway database using manual SQL schema."""
     try:
         # First, create a blank migration
-        cmd = ["alembic", "-c", "migrations/railway/alembic.ini", "revision", "-m", message]
+        cmd = [
+            "alembic",
+            "-c",
+            "migrations/railway/alembic.ini",
+            "revision",
+            "-m",
+            message,
+        ]
 
         result = subprocess.run(cmd, capture_output=True, text=True)
 
@@ -297,7 +308,7 @@ def create_initial_migration(message: str = "Initial Railway schema") -> bool:
         # Create migration content with the schema
         migration_content = f'''"""Initial Railway schema
 
-Revision ID: {latest_migration.stem.split('_')[0]}
+Revision ID: {latest_migration.stem.split("_")[0]}
 Revises: 
 Create Date: {latest_migration.stat().st_mtime}
 
@@ -307,7 +318,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '{latest_migration.stem.split('_')[0]}'
+revision = '{latest_migration.stem.split("_")[0]}'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -410,7 +421,9 @@ class RailwayMigrationManager:
                 # Check if migrations have already been completed by another process
                 current_status = get_migration_status()
                 if current_status and "head" in current_status.lower():
-                    self.logger.info("Railway migrations already completed by another process")
+                    self.logger.info(
+                        "Railway migrations already completed by another process"
+                    )
                     return True
 
                 # Initialize Alembic if needed
@@ -420,7 +433,9 @@ class RailwayMigrationManager:
 
                 # Check if migration files already exist
                 versions_dir = Path("migrations/railway/versions")
-                existing_migrations = list(versions_dir.glob("*.py")) if versions_dir.exists() else []
+                existing_migrations = (
+                    list(versions_dir.glob("*.py")) if versions_dir.exists() else []
+                )
 
                 if not existing_migrations:
                     # Create initial migration only if none exist
@@ -428,14 +443,18 @@ class RailwayMigrationManager:
                         self.logger.error("Failed to create initial Railway migration")
                         return False
                 else:
-                    self.logger.info(f"Found {len(existing_migrations)} existing migration files, skipping creation")
+                    self.logger.info(
+                        f"Found {len(existing_migrations)} existing migration files, skipping creation"
+                    )
 
                 # Run migrations
                 if not run_railway_migrations():
                     self.logger.error("Failed to run Railway migrations")
                     return False
 
-                self.logger.info("Railway database setup and migration completed successfully")
+                self.logger.info(
+                    "Railway database setup and migration completed successfully"
+                )
                 return True
 
         except TimeoutError as e:

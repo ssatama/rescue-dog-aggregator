@@ -8,7 +8,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 from utils.config_loader import ConfigLoader
-from utils.organization_sync_service import OrganizationSyncService, create_default_sync_service
+from utils.organization_sync_service import (
+    OrganizationSyncService,
+    create_default_sync_service,
+)
 from utils.secure_scraper_loader import ScraperModuleInfo, SecureScraperLoader
 
 logger = logging.getLogger(__name__)
@@ -63,7 +66,12 @@ class ConfigLoaderProtocol(Protocol):
 class SecureConfigScraperRunner:
     """Secure scraper runner with dependency injection."""
 
-    def __init__(self, config_loader: Optional[ConfigLoaderProtocol] = None, scraper_loader: Optional[SecureScraperLoader] = None, sync_service: Optional[OrganizationSyncService] = None):
+    def __init__(
+        self,
+        config_loader: Optional[ConfigLoaderProtocol] = None,
+        scraper_loader: Optional[SecureScraperLoader] = None,
+        sync_service: Optional[OrganizationSyncService] = None,
+    ):
         """Initialize with injected dependencies."""
         self.config_loader = config_loader or ConfigLoader()
         self.scraper_loader = scraper_loader or SecureScraperLoader()
@@ -76,7 +84,12 @@ class SecureConfigScraperRunner:
         scrapers = []
         for config_id, config in configs.items():
             scraper_info = ScraperInfo(
-                config_id=config_id, name=config.name, enabled=config.enabled, scraper_class=config.scraper.class_name, module=config.scraper.module, display_name=config.get_display_name()
+                config_id=config_id,
+                name=config.name,
+                enabled=config.enabled,
+                scraper_class=config.scraper.class_name,
+                module=config.scraper.module,
+                display_name=config.get_display_name(),
             )
             scrapers.append(scraper_info)
 
@@ -92,7 +105,9 @@ class SecureConfigScraperRunner:
                 return False, f"Organization '{config.get_display_name()}' is disabled"
 
             # Validate scraper module info
-            module_info = ScraperModuleInfo(module_path=config.scraper.module, class_name=config.scraper.class_name)
+            module_info = ScraperModuleInfo(
+                module_path=config.scraper.module, class_name=config.scraper.class_name
+            )
 
             # Check if module is allowed
             if not self.scraper_loader.validate_module_path(module_info.module_path):
@@ -118,7 +133,9 @@ class SecureConfigScraperRunner:
         config = self.config_loader.load_config(config_id)
 
         # Create module info
-        module_info = ScraperModuleInfo(module_path=config.scraper.module, class_name=config.scraper.class_name)
+        module_info = ScraperModuleInfo(
+            module_path=config.scraper.module, class_name=config.scraper.class_name
+        )
 
         # Load scraper class and create instance
         scraper = self.scraper_loader.create_scraper_instance(module_info, config_id)
@@ -141,7 +158,9 @@ class SecureConfigScraperRunner:
         sync_result = self.sync_service.sync_all_organizations(configs)
 
         if not sync_result.success:
-            raise RuntimeError(f"Failed to sync organization {config_id}: {sync_result.errors}")
+            raise RuntimeError(
+                f"Failed to sync organization {config_id}: {sync_result.errors}"
+            )
 
         if config_id not in sync_result.org_mappings:
             raise RuntimeError(f"Organization {config_id} not found in sync results")
@@ -156,14 +175,22 @@ class SecureConfigScraperRunner:
 
             # Early return if disabled
             if not config.is_enabled_for_scraping():
-                return ScraperRunResult(config_id=config_id, success=False, error=f"Organization '{config.get_display_name()}' is disabled")
+                return ScraperRunResult(
+                    config_id=config_id,
+                    success=False,
+                    error=f"Organization '{config.get_display_name()}' is disabled",
+                )
 
             # Ensure organization is synced if requested
             if sync_first:
                 try:
                     self.ensure_organization_synced(config_id)
                 except Exception as e:
-                    return ScraperRunResult(config_id=config_id, success=False, error=f"Organization sync failed: {e}")
+                    return ScraperRunResult(
+                        config_id=config_id,
+                        success=False,
+                        error=f"Organization sync failed: {e}",
+                    )
 
             # Load scraper
             scraper = self.load_scraper_safely(config_id)
@@ -172,9 +199,18 @@ class SecureConfigScraperRunner:
             success = scraper.run()
 
             if success:
-                return ScraperRunResult(config_id=config_id, success=True, organization=config.get_display_name(), animals_found=getattr(scraper, "animals_found", 0))
+                return ScraperRunResult(
+                    config_id=config_id,
+                    success=True,
+                    organization=config.get_display_name(),
+                    animals_found=getattr(scraper, "animals_found", 0),
+                )
             else:
-                return ScraperRunResult(config_id=config_id, success=False, error="Scraper returned False (check logs for details)")
+                return ScraperRunResult(
+                    config_id=config_id,
+                    success=False,
+                    error="Scraper returned False (check logs for details)",
+                )
 
         except Exception as e:
             logger.error(f"Error running scraper for {config_id}: {e}")
@@ -188,7 +224,9 @@ class SecureConfigScraperRunner:
 
             # Early return if no enabled orgs
             if not enabled_orgs:
-                return BatchRunResult(success=True, total_orgs=0, successful=0, failed=0, results=[])
+                return BatchRunResult(
+                    success=True, total_orgs=0, successful=0, failed=0, results=[]
+                )
 
             # Sync all organizations first
             configs = {org.id: org for org in enabled_orgs}
@@ -205,12 +243,26 @@ class SecureConfigScraperRunner:
             failed = sum(1 for r in results if not r.success)
 
             return BatchRunResult(
-                success=True, total_orgs=len(enabled_orgs), successful=successful, failed=failed, results=results, sync_results=sync_results.__dict__ if hasattr(sync_results, "__dict__") else None
+                success=True,
+                total_orgs=len(enabled_orgs),
+                successful=successful,
+                failed=failed,
+                results=results,
+                sync_results=sync_results.__dict__
+                if hasattr(sync_results, "__dict__")
+                else None,
             )
 
         except Exception as e:
             logger.error(f"Error running all scrapers: {e}")
-            return BatchRunResult(success=False, total_orgs=0, successful=0, failed=0, results=[], error=str(e))
+            return BatchRunResult(
+                success=False,
+                total_orgs=0,
+                successful=0,
+                failed=0,
+                results=[],
+                error=str(e),
+            )
 
     def get_scraper_status(self, config_id: str) -> Dict[str, Any]:
         """Get status information for a scraper."""
@@ -219,7 +271,12 @@ class SecureConfigScraperRunner:
             is_valid, error = self.validate_scraper_config(config_id)
 
             if not is_valid:
-                return {"config_id": config_id, "valid": False, "error": error, "can_run": False}
+                return {
+                    "config_id": config_id,
+                    "valid": False,
+                    "error": error,
+                    "can_run": False,
+                }
 
             # Load configuration
             config = self.config_loader.load_config(config_id)
@@ -243,7 +300,12 @@ class SecureConfigScraperRunner:
 
         except Exception as e:
             logger.error(f"Error getting scraper status for {config_id}: {e}")
-            return {"config_id": config_id, "valid": False, "error": str(e), "can_run": False}
+            return {
+                "config_id": config_id,
+                "valid": False,
+                "error": str(e),
+                "can_run": False,
+            }
 
     def get_all_scraper_status(self) -> List[Dict[str, Any]]:
         """Get status for all scrapers."""
@@ -253,7 +315,9 @@ class SecureConfigScraperRunner:
 
 # Factory function for dependency injection
 def create_secure_scraper_runner(
-    config_loader: Optional[ConfigLoaderProtocol] = None, scraper_loader: Optional[SecureScraperLoader] = None, sync_service: Optional[OrganizationSyncService] = None
+    config_loader: Optional[ConfigLoaderProtocol] = None,
+    scraper_loader: Optional[SecureScraperLoader] = None,
+    sync_service: Optional[OrganizationSyncService] = None,
 ) -> SecureConfigScraperRunner:
     """Create secure scraper runner with dependency injection."""
     return SecureConfigScraperRunner(config_loader, scraper_loader, sync_service)

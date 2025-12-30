@@ -22,7 +22,13 @@ def clear_railway_database():
     try:
         with railway_session() as session:
             # Clear in reverse dependency order
-            tables = ["service_regions", "animal_images", "scrape_logs", "animals", "organizations"]
+            tables = [
+                "service_regions",
+                "animal_images",
+                "scrape_logs",
+                "animals",
+                "organizations",
+            ]
 
             for table in tables:
                 result = session.execute(text(f"DELETE FROM {table}"))

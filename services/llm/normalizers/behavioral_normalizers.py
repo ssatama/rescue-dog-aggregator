@@ -66,7 +66,12 @@ class BehavioralNormalizers:
             normalized = mappings.get(value_lower, value_lower)
 
             # Validate against allowed values
-            if normalized not in ["easy", "moderate", "challenging", "very_challenging"]:
+            if normalized not in [
+                "easy",
+                "moderate",
+                "challenging",
+                "very_challenging",
+            ]:
                 return "moderate"
             return normalized
 
@@ -78,14 +83,28 @@ class BehavioralNormalizers:
         if not value:
             return "selective"
 
-        mappings = {"friendly": "social", "reserved": "selective", "shy": "independent", "outgoing": "very_social", "antisocial": "needs_work", "aggressive": "needs_work", "medium": "selective"}
+        mappings = {
+            "friendly": "social",
+            "reserved": "selective",
+            "shy": "independent",
+            "outgoing": "very_social",
+            "antisocial": "needs_work",
+            "aggressive": "needs_work",
+            "medium": "selective",
+        }
 
         if isinstance(value, str):
             value_lower = value.lower().strip()
             normalized = mappings.get(value_lower, value_lower)
 
             # Validate against allowed values
-            if normalized not in ["very_social", "social", "selective", "independent", "needs_work"]:
+            if normalized not in [
+                "very_social",
+                "social",
+                "selective",
+                "independent",
+                "needs_work",
+            ]:
                 return "selective"
             return normalized
 
@@ -97,14 +116,28 @@ class BehavioralNormalizers:
         if not value:
             return "moderate"
 
-        mappings = {"medium": "moderate", "low": "shy", "high": "confident", "timid": "very_shy", "fearful": "very_shy", "bold": "very_confident", "anxious": "shy"}
+        mappings = {
+            "medium": "moderate",
+            "low": "shy",
+            "high": "confident",
+            "timid": "very_shy",
+            "fearful": "very_shy",
+            "bold": "very_confident",
+            "anxious": "shy",
+        }
 
         if isinstance(value, str):
             value_lower = value.lower().strip()
             normalized = mappings.get(value_lower, value_lower)
 
             # Validate against allowed values
-            if normalized not in ["very_confident", "confident", "moderate", "shy", "very_shy"]:
+            if normalized not in [
+                "very_confident",
+                "confident",
+                "moderate",
+                "shy",
+                "very_shy",
+            ]:
                 return "moderate"
             return normalized
 

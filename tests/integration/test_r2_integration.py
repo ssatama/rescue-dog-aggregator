@@ -7,7 +7,9 @@ import pytest
 from utils.r2_service import R2Service
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 
 @pytest.mark.slow
@@ -49,7 +51,10 @@ class TestR2Integration:
         # Mock ClientError for 404 (object not found)
         from botocore.exceptions import ClientError
 
-        mock_s3_client.head_object.side_effect = ClientError(error_response={"Error": {"Code": "404", "Message": "Not Found"}}, operation_name="HeadObject")
+        mock_s3_client.head_object.side_effect = ClientError(
+            error_response={"Error": {"Code": "404", "Message": "Not Found"}},
+            operation_name="HeadObject",
+        )
         mock_s3_client.upload_fileobj.return_value = None  # Successful upload
         mock_boto_client.return_value = mock_s3_client
 
@@ -57,11 +62,15 @@ class TestR2Integration:
 
         # Test the upload
         service = R2Service()
-        r2_url, success = service.upload_image_from_url("https://example.com/original.jpg", "Test Dog", "Test Org")
+        r2_url, success = service.upload_image_from_url(
+            "https://example.com/original.jpg", "Test Dog", "Test Org"
+        )
 
         # Verify results
         assert success is True
-        assert r2_url.startswith("https://images.example.com/rescue_dogs/test_org/test_dog_")
+        assert r2_url.startswith(
+            "https://images.example.com/rescue_dogs/test_org/test_dog_"
+        )
         assert r2_url.endswith(".jpg")
         mock_s3_client.upload_fileobj.assert_called_once()
         mock_requests.assert_called_once()
@@ -81,10 +90,14 @@ class TestR2Integration:
     def test_missing_credentials_handling(self):
         """Test that missing R2 credentials are handled gracefully."""
         service = R2Service()
-        r2_url, success = service.upload_image_from_url("https://example.com/test.jpg", "Test Dog", "Test Org")
+        r2_url, success = service.upload_image_from_url(
+            "https://example.com/test.jpg", "Test Dog", "Test Org"
+        )
 
         assert success is False
-        assert r2_url == "https://example.com/test.jpg"  # Returns original URL as fallback
+        assert (
+            r2_url == "https://example.com/test.jpg"
+        )  # Returns original URL as fallback
 
     @patch.dict(
         "os.environ",
@@ -105,10 +118,14 @@ class TestR2Integration:
         mock_requests.side_effect = Exception("Network timeout")
 
         service = R2Service()
-        r2_url, success = service.upload_image_from_url("https://example.com/unreachable.jpg", "Test Dog", "Test Org")
+        r2_url, success = service.upload_image_from_url(
+            "https://example.com/unreachable.jpg", "Test Dog", "Test Org"
+        )
 
         assert success is False
-        assert r2_url == "https://example.com/unreachable.jpg"  # Returns original URL as fallback
+        assert (
+            r2_url == "https://example.com/unreachable.jpg"
+        )  # Returns original URL as fallback
 
     @patch.dict(
         "os.environ",
@@ -136,14 +153,20 @@ class TestR2Integration:
 
         # Mock existing image in R2
         mock_s3_client = Mock()
-        mock_s3_client.head_object.return_value = {"ContentLength": 1024}  # Image exists
+        mock_s3_client.head_object.return_value = {
+            "ContentLength": 1024
+        }  # Image exists
         mock_boto_client.return_value = mock_s3_client
 
         service = R2Service()
-        r2_url, success = service.upload_image_from_url("https://example.com/existing.jpg", "Existing Dog", "Test Org")
+        r2_url, success = service.upload_image_from_url(
+            "https://example.com/existing.jpg", "Existing Dog", "Test Org"
+        )
 
         assert success is True
-        assert r2_url.startswith("https://images.example.com/rescue_dogs/test_org/existing_dog_")
+        assert r2_url.startswith(
+            "https://images.example.com/rescue_dogs/test_org/existing_dog_"
+        )
         assert r2_url.endswith(".jpg")
         # Should not call upload_fileobj since image already exists
         mock_s3_client.upload_fileobj.assert_not_called()
@@ -172,10 +195,14 @@ class TestR2Integration:
         mock_requests.return_value = mock_response
 
         service = R2Service()
-        r2_url, success = service.upload_image_from_url("https://example.com/fake-image.jpg", "Test Dog", "Test Org")
+        r2_url, success = service.upload_image_from_url(
+            "https://example.com/fake-image.jpg", "Test Dog", "Test Org"
+        )
 
         assert success is False
-        assert r2_url == "https://example.com/fake-image.jpg"  # Returns original URL as fallback
+        assert (
+            r2_url == "https://example.com/fake-image.jpg"
+        )  # Returns original URL as fallback
 
     def test_r2_service_is_configured_check(self):
         """Test R2Service configuration validation."""

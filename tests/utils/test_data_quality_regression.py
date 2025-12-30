@@ -34,7 +34,9 @@ class TestDataQualityNoRegression:
 
         for text, expected in production_cases:
             result = extract_age_from_text(text)
-            assert result == pytest.approx(expected, rel=0.01), f"Age extraction failed for '{text}'"
+            assert result == pytest.approx(expected, rel=0.01), (
+                f"Age extraction failed for '{text}'"
+            )
 
     @pytest.mark.unit
     def test_critical_breed_extraction_unchanged(self):
@@ -85,7 +87,9 @@ class TestDataQualityNoRegression:
 
         for text, expected in production_cases:
             result = extract_weight_from_text(text)
-            assert result == pytest.approx(expected, rel=0.01), f"Weight extraction failed for '{text}'"
+            assert result == pytest.approx(expected, rel=0.01), (
+                f"Weight extraction failed for '{text}'"
+            )
 
 
 class TestActualScraperDataQuality:
@@ -96,8 +100,24 @@ class TestActualScraperDataQuality:
         """Test TheUnderdog's actual data patterns."""
         # From real TheUnderdog descriptions
         test_cases = [
-            {"description": "Charlie is a 2 year old male Golden Retriever weighing 25kg", "expected": {"age": 2.0, "breed": "Golden Retriever", "sex": "Male", "weight": 25.0}},
-            {"description": "Luna is an 18 month old female Labrador mix", "expected": {"age": 1.5, "breed": "Labrador Mix", "sex": "Female", "weight": None}},
+            {
+                "description": "Charlie is a 2 year old male Golden Retriever weighing 25kg",
+                "expected": {
+                    "age": 2.0,
+                    "breed": "Golden Retriever",
+                    "sex": "Male",
+                    "weight": 25.0,
+                },
+            },
+            {
+                "description": "Luna is an 18 month old female Labrador mix",
+                "expected": {
+                    "age": 1.5,
+                    "breed": "Labrador Mix",
+                    "sex": "Female",
+                    "weight": None,
+                },
+            },
         ]
 
         for case in test_cases:
@@ -121,8 +141,19 @@ class TestActualScraperDataQuality:
         """Test MisisRescue's actual data patterns."""
         # From real MisisRescue format
         test_cases = [
-            {"text": "Female • 3 years • 15kg • Collie Cross", "expected": {"age": 3.0, "sex": "Female", "weight": 15.0, "breed": "Collie Mix"}},  # Cross -> Mix is acceptable
-            {"text": "Male | 6 months | Mixed Breed", "expected": {"age": 0.5, "sex": "Male", "breed": "Mixed Breed"}},
+            {
+                "text": "Female • 3 years • 15kg • Collie Cross",
+                "expected": {
+                    "age": 3.0,
+                    "sex": "Female",
+                    "weight": 15.0,
+                    "breed": "Collie Mix",
+                },
+            },  # Cross -> Mix is acceptable
+            {
+                "text": "Male | 6 months | Mixed Breed",
+                "expected": {"age": 0.5, "sex": "Male", "breed": "Mixed Breed"},
+            },
         ]
 
         for case in test_cases:
@@ -151,7 +182,10 @@ class TestActualScraperDataQuality:
                     "age": 0.42,  # 5/12
                 },
             },
-            {"text": "Daisy is 2 years old, spayed female, 18kg", "expected": {"age": 2.0, "sex": "Female", "weight": 18.0}},
+            {
+                "text": "Daisy is 2 years old, spayed female, 18kg",
+                "expected": {"age": 2.0, "sex": "Female", "weight": 18.0},
+            },
         ]
 
         for case in test_cases:
