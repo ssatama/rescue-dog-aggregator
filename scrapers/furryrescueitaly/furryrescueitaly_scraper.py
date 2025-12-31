@@ -802,25 +802,11 @@ class FurryRescueItalyScraper(BaseScraper):
             return []
 
         # Apply filtering if configured
+        # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+        # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
         if self.skip_existing_animals:
-            all_urls = [animal["adoption_url"] for animal in animals]
-            filtered_urls = self._filter_existing_urls(all_urls)
-            skipped_count = len(all_urls) - len(filtered_urls)
-
-            # Set filtering stats for failure detection
-            self.set_filtering_stats(len(all_urls), skipped_count)
-
-            # Filter animals list
-            url_to_animal = {animal["adoption_url"]: animal for animal in animals}
-            animals = [
-                url_to_animal[url] for url in filtered_urls if url in url_to_animal
-            ]
-
-            self.logger.info(
-                f"Skip existing animals enabled: {skipped_count} skipped, {len(animals)} to process"
-            )
+            animals = self._filter_existing_animals(animals)
         else:
-            # No filtering applied
             self.set_filtering_stats(len(animals), 0)
 
         # For small sites (<=10 animals), process sequentially

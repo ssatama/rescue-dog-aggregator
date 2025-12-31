@@ -449,25 +449,22 @@ class AnimalRescueBosniaScraper(BaseScraper):
             animals_list = self.get_animal_list()
             # World-class logging: Animal list stats handled by centralized system
 
-            # Extract URLs from animal list
-            all_urls = [animal["url"] for animal in animals_list]
+            # Pre-generate external_ids for stale detection
+            # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+            # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
+            for animal in animals_list:
+                if animal.get("name") and "external_id" not in animal:
+                    slug = animal["name"].lower().replace(" ", "-")
+                    animal["external_id"] = f"arb-{slug}"
+                    animal["adoption_url"] = animal["url"]
 
-            # Filter existing URLs if skip is enabled
+            # Filter existing animals if skip is enabled
             if self.skip_existing_animals:
-                urls_to_process = self._filter_existing_urls(all_urls)
-                skipped_count = len(all_urls) - len(urls_to_process)
-
-                # Track filtering stats for failure detection
-                self.set_filtering_stats(len(all_urls), skipped_count)
-
-                if len(urls_to_process) != len(all_urls):
-                    # World-class logging: URL filtering stats handled by centralized system
-                    pass
+                filtered_animals = self._filter_existing_animals(animals_list)
+                urls_to_process = [a["url"] for a in filtered_animals]
             else:
-                urls_to_process = all_urls
-                # No filtering applied
-                self.set_filtering_stats(len(all_urls), 0)
-                # World-class logging: Processing stats handled by centralized system
+                urls_to_process = [animal["url"] for animal in animals_list]
+                self.set_filtering_stats(len(animals_list), 0)
 
             # Process URLs in batches with parallel processing
             if urls_to_process:

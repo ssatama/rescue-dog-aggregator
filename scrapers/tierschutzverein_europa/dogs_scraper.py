@@ -46,12 +46,12 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             self.logger.info(f"Found {len(animals)} animals on listing pages")
 
             # Filter based on skip_existing_animals if enabled
+            # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+            # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
             if self.skip_existing_animals:
-                existing_urls = self._get_existing_animal_urls()
-                animals = [a for a in animals if a["adoption_url"] not in existing_urls]
-                self.logger.info(
-                    f"After filtering existing: {len(animals)} new animals to process"
-                )
+                animals = self._filter_existing_animals(animals)
+            else:
+                self.set_filtering_stats(len(animals), 0)
 
             if not animals:
                 self.logger.info("All animals already exist - skipping detail scraping")

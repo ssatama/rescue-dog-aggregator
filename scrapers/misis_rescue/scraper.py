@@ -88,31 +88,23 @@ class MisisRescueScraper(BaseScraper):
                 full_url = urljoin(self.base_url, relative_url)
                 all_urls.append(full_url)
 
-            # Debug: Show sample URLs being processed
-            if all_urls:
-                #  logging: Sample URLs handled by centralized system
-                for url in all_urls[:3]:
-                    # logging: URL samples handled by centralized system
-                    pass
+            # Create animal objects with external_id for stale detection
+            # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+            # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
+            animals = []
+            for url in all_urls:
+                animals.append({
+                    "adoption_url": url,
+                    "external_id": self._generate_external_id(url)
+                })
 
-            # Filter existing URLs if skip is enabled
-            # logging: Configuration status handled by centralized system
+            # Apply skip_existing_animals filtering
             if self.skip_existing_animals:
-                #  logging: URL filtering handled by centralized system
-                pass
-
-            urls_to_process = self._filter_existing_urls(all_urls)
-
-            # Track filtering stats for failure detection
-            total_skipped = len(all_urls) - len(urls_to_process)
-            self.set_filtering_stats(len(all_urls), total_skipped)
-
-            if self.skip_existing_animals and len(urls_to_process) != len(all_urls):
-                #  logging: Skip existing stats handled by centralized system
-                pass
+                filtered_animals = self._filter_existing_animals(animals)
+                urls_to_process = [a["adoption_url"] for a in filtered_animals]
             else:
-                # class logging: Processing stats handled by centralized system
-                pass
+                self.set_filtering_stats(len(all_urls), 0)
+                urls_to_process = all_urls
 
             # Process URLs in batches with retry mechanism (MisisRescue-specific)
             if urls_to_process:

@@ -215,34 +215,12 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     continue
 
             # Apply skip_existing_animals filtering
-            # World-class logging: Configuration handled by centralized system
+            # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+            # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
             if self.skip_existing_animals and basic_dogs_data:
-                all_urls = [
-                    dog.get("adoption_url")
-                    for dog in basic_dogs_data
-                    if dog.get("adoption_url")
-                ]
-                # World-class logging: URL filtering handled by centralized system
-                filtered_urls = self._filter_existing_urls(all_urls)
-                filtered_urls_set = set(filtered_urls)
-
-                # Filter dogs to only those with URLs we should process
-                original_count = len(basic_dogs_data)
-                basic_dogs_data = [
-                    dog
-                    for dog in basic_dogs_data
-                    if dog.get("adoption_url") in filtered_urls_set
-                ]
-                skipped_count = original_count - len(basic_dogs_data)
-
-                # Track filtering stats for failure detection
-                self.set_filtering_stats(original_count, skipped_count)
-
-                # World-class logging: Skip existing stats handled by centralized system
+                basic_dogs_data = self._filter_existing_animals(basic_dogs_data)
             else:
-                # No filtering applied
                 self.set_filtering_stats(len(basic_dogs_data), 0)
-                # World-class logging: Processing stats handled by centralized system
 
             # Second pass: Process the filtered dogs with detail page enhancement
             processed_count = 0
@@ -344,24 +322,10 @@ class DaisyFamilyRescueScraper(BaseScraper):
                         continue
 
                 # Apply skip_existing_animals filtering
+                # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+                # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
                 if self.skip_existing_animals and basic_dogs_data:
-                    all_urls = [
-                        dog.get("adoption_url")
-                        for dog in basic_dogs_data
-                        if dog.get("adoption_url")
-                    ]
-                    filtered_urls = self._filter_existing_urls(all_urls)
-                    filtered_urls_set = set(filtered_urls)
-
-                    original_count = len(basic_dogs_data)
-                    basic_dogs_data = [
-                        dog
-                        for dog in basic_dogs_data
-                        if dog.get("adoption_url") in filtered_urls_set
-                    ]
-                    skipped_count = original_count - len(basic_dogs_data)
-
-                    self.set_filtering_stats(original_count, skipped_count)
+                    basic_dogs_data = self._filter_existing_animals(basic_dogs_data)
                 else:
                     self.set_filtering_stats(len(basic_dogs_data), 0)
 
