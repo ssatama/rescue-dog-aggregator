@@ -319,10 +319,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
             scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
 
-            with (
-                patch.object(scraper, "get_animal_list") as mock_get_list,
-                patch.object(scraper, "_filter_existing_urls") as mock_filter_urls,
-            ):
+            with patch.object(scraper, "get_animal_list") as mock_get_list:
                 mock_animals = [
                     {
                         "name": "Existing Dog",
@@ -337,8 +334,10 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 ]
                 mock_get_list.return_value = mock_animals
 
-                # Mock that only "new" URL should be processed (existing one filtered out)
-                mock_filter_urls.return_value = ["https://santerpawsbulgarianrescue.com/dog/new/"]
+                # Mock filtering_service to return only "new" URL
+                scraper.filtering_service.filter_existing_urls = Mock(
+                    return_value=["https://santerpawsbulgarianrescue.com/dog/new/"]
+                )
 
                 result = scraper._get_filtered_animals()
 
@@ -346,12 +345,12 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 self.assertEqual(len(result), 1)
                 self.assertEqual(result[0]["name"], "New Dog")
 
-                # Verify _filter_existing_urls was called with correct URLs
+                # Verify filtering_service was called with correct URLs
                 expected_urls = [
                     "https://santerpawsbulgarianrescue.com/dog/existing/",
                     "https://santerpawsbulgarianrescue.com/dog/new/",
                 ]
-                mock_filter_urls.assert_called_once_with(expected_urls)
+                scraper.filtering_service.filter_existing_urls.assert_called_once_with(expected_urls)
 
     def test_filtering_stats_tracked(self):
         """Test that filtering statistics are properly tracked and logged."""
@@ -370,11 +369,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
             scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
 
-            with (
-                patch.object(scraper, "get_animal_list") as mock_get_list,
-                patch.object(scraper, "_filter_existing_urls") as mock_filter_urls,
-                patch.object(scraper, "set_filtering_stats") as mock_set_stats,
-            ):
+            with patch.object(scraper, "get_animal_list") as mock_get_list:
                 # Mock 3 animals total
                 mock_animals = [
                     {"adoption_url": "https://site.com/1/", "name": "Dog1"},
@@ -383,13 +378,16 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 ]
                 mock_get_list.return_value = mock_animals
 
-                # Mock that 2 are filtered out, 1 remains
-                mock_filter_urls.return_value = ["https://site.com/3/"]
+                # Mock filtering_service to return only 1 URL (2 filtered out)
+                scraper.filtering_service.filter_existing_urls = Mock(
+                    return_value=["https://site.com/3/"]
+                )
 
                 result = scraper._get_filtered_animals()
 
-                # Verify set_filtering_stats was called with correct counts
-                mock_set_stats.assert_called_once_with(3, 2)  # total=3, skipped=2
+                # Verify filtering stats are tracked via filtering_service
+                self.assertEqual(scraper.filtering_service.total_animals_before_filter, 3)
+                self.assertEqual(scraper.filtering_service.total_animals_skipped, 2)
 
     def test_collect_data_deduplicates_by_url(self):
         """Test that collect_data removes duplicate dogs by URL."""
@@ -569,7 +567,6 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
             with (
                 patch.object(scraper, "get_animal_list") as mock_get_list,
-                patch.object(scraper, "_filter_existing_urls") as mock_filter_urls,
                 patch.object(scraper, "_scrape_animal_details") as mock_scrape_details,
             ):
                 # Mock 4 animals from listing
@@ -583,11 +580,13 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 ]  # 4 animals total
                 mock_get_list.return_value = mock_animals
 
-                # Mock that 2 are filtered out (skip existing), 2 remain
-                mock_filter_urls.return_value = [
-                    "https://site.com/dog3/",
-                    "https://site.com/dog4/",
-                ]
+                # Mock filtering_service to filter out 2 animals (2 remain)
+                scraper.filtering_service.filter_existing_urls = Mock(
+                    return_value=[
+                        "https://site.com/dog3/",
+                        "https://site.com/dog4/",
+                    ]
+                )
 
                 # Mock detail scraping
                 mock_scrape_details.return_value = {
@@ -600,8 +599,8 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 # Should return only the 2 non-existing animals
                 self.assertEqual(len(result), 2)
 
-                # Should have called filtering
-                mock_filter_urls.assert_called_once()
+                # Should have called filtering_service
+                scraper.filtering_service.filter_existing_urls.assert_called_once()
 
                 # Should have called detail scraping for remaining animals
                 self.assertEqual(mock_scrape_details.call_count, 2)

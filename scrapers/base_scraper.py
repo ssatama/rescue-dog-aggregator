@@ -27,7 +27,10 @@ from scrapers.sentry_integration import (
 )
 
 # Import services and utilities
-from services.null_objects import NullMetricsCollector
+from scrapers.enrichment.llm_handler import LLMEnrichmentHandler
+from scrapers.filtering.filtering_service import FilteringService
+from scrapers.validation.animal_validator import AnimalValidator
+from services.null_objects import NullLLMEnrichmentHandler, NullMetricsCollector
 from services.progress_tracker import ProgressTracker
 from utils.config_loader import ConfigLoader
 from utils.config_models import OrganizationConfig
@@ -58,6 +61,9 @@ class BaseScraper(ABC):
         image_processing_service=None,
         session_manager=None,
         metrics_collector=None,
+        animal_validator=None,
+        filtering_service=None,
+        llm_handler=None,
     ):
         """Initialize the scraper with organization ID or config and optional service injection."""
         # Handle both legacy and config-based initialization
@@ -131,8 +137,21 @@ class BaseScraper(ABC):
         self.database_service = database_service
         self.session_manager = session_manager
         self.metrics_collector = metrics_collector or NullMetricsCollector()
-
-        # Import here to avoid circular dependency
+        self.animal_validator = animal_validator or AnimalValidator(logger=self.logger)
+        self.filtering_service = filtering_service or FilteringService(
+            database_service=database_service,
+            session_manager=session_manager,
+            organization_id=self.organization_id,
+            skip_existing_animals=self.skip_existing_animals,
+            logger=self.logger,
+        )
+        self.llm_handler = llm_handler or LLMEnrichmentHandler(
+            organization_id=self.organization_id,
+            organization_name=self.organization_name,
+            org_config=getattr(self, "org_config", None),
+            alert_callback=alert_llm_enrichment_failure,
+            logger=self.logger,
+        )
 
         self.image_processing_service = image_processing_service
 
@@ -323,48 +342,13 @@ class BaseScraper(ABC):
     def validate_external_id(self, external_id):
         """Validate that external_id follows organization prefix pattern.
 
+        Delegates to AnimalValidator for validation logic.
+
         Args:
             external_id: The external_id to validate
-
-        Raises:
-            ValueError: If external_id doesn't follow the required pattern
         """
-        if not external_id:
-            return  # Some scrapers may not have external_id yet
-
-        # Known organization prefixes (collision-safe patterns)
-        known_prefixes = [
-            "arb-",  # Animal Rescue Bosnia
-            "spbr-",  # Santer Paws Bulgarian Rescue
-            "gds-",  # Galgos del Sol
-            "mar-",  # MISIs Animal Rescue
-            "tud-",  # The Underdog
-            "wp-",  # Woof Project
-            "fri-",  # Furry Rescue Italy
-            "pit-",  # Pets in Turkey
-            "rean-",  # REAN
-            "hund-",  # Daisy Family Rescue
-            "dt-",  # Dogs Trust
-            "mtr-",  # Many Tears Rescue (uses numeric but may change)
-            "tve-",  # Tierschutzverein Europa
-        ]
-
-        # Check if external_id starts with any known prefix or is numeric
-        has_prefix = any(external_id.startswith(prefix) for prefix in known_prefixes)
-        is_numeric = external_id.isdigit()
-
-        # Special case: Tierschutzverein Europa uses slug format like "yara-in-rumaenien-tierheim"
-        # This is their established pattern and is acceptable
-        is_tierschutzverein_pattern = (
-            self.org_config and self.org_config.id == "tierschutzverein-europa" and "-" in external_id and len(external_id) > 10  # Their IDs are typically longer descriptive slugs
-        )
-
-        if not has_prefix and not is_numeric and not is_tierschutzverein_pattern:
-            self.logger.warning(
-                f"External ID '{external_id}' does not follow organization prefix pattern. "
-                f"This may cause collisions with other organizations. "
-                f"Consider using a prefix like 'org-' to ensure uniqueness."
-            )
+        org_config_id = self.org_config.id if self.org_config else None
+        self.animal_validator.validate_external_id(external_id, org_config_id)
 
     def process_animal(self, animal_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -945,266 +929,59 @@ class BaseScraper(ABC):
     def _is_invalid_name(self, name: str) -> bool:
         """Check if extracted name indicates a scraping error or invalid data.
 
-        Args:
-            name: Animal name to validate
-
-        Returns:
-            True if name indicates an error or is invalid, False if valid
+        Delegates to AnimalValidator. Deprecated - use animal_validator.is_valid_name() directly.
         """
-        if not name or not isinstance(name, str):
-            return True
-
-        # Reject pure numeric names (likely extraction errors)
-        # Allow names with numbers (e.g., "Max 2") but reject pure digits
-        if name.strip().isdigit():
-            return True
-
-        # Reject names with excessive digits (>60% of characters are digits)
-        # This catches cases like "251abc" or "123dog456"
-        digit_count = sum(c.isdigit() for c in name)
-        alpha_count = sum(c.isalpha() for c in name)
-        if digit_count > 0 and alpha_count > 0:
-            digit_ratio = digit_count / len(name)
-            if digit_ratio > 0.6:
-                return True
-
-        # Reject names that are too short (< 2 chars) after normalization
-        # This catches single-char names or whitespace-only
-        if len(name.strip()) < 2:
-            return True
-
-        # Normalize the name for checking - remove apostrophes and special chars
-        name_normalized = name.lower().strip()
-        # Replace various apostrophe types with empty string
-        name_normalized = name_normalized.replace("'", "").replace("'", "").replace("`", "")
-
-        # Common error patterns (normalized without apostrophes)
-        error_patterns = [
-            "this site cant be reached",
-            "site cant be reached",
-            "site can t be reached",  # Handle spaces around t
-            "connection failed",
-            "page not found",
-            "error 404",
-            "error 500",
-            "dns_probe_finished",
-            "err_name_not_resolved",
-            "err_connection",
-            "timeout",
-            "unavailable",
-            "access denied",
-        ]
-
-        if any(pattern in name_normalized for pattern in error_patterns):
-            return True
-
-        # Gift card and promotional patterns (not dog names)
-        gift_card_patterns = [
-            "gift card",
-            "giftcard",
-            "gift certificate",
-            "voucher",
-            "coupon",
-            "promo code",
-            "discount",
-        ]
-
-        if any(pattern in name_normalized for pattern in gift_card_patterns):
-            return True
-
-        # URL patterns (extraction error - got URL instead of name)
-        if "http://" in name_normalized or "https://" in name_normalized or "www." in name_normalized:
-            return True
-
-        # Price patterns (e.g., "$50", "€100", "£25", "50€")
-        price_pattern = re.compile(r"[$€£¥₹]\s*\d+|\d+\s*[$€£¥₹]")
-        if price_pattern.search(name):
-            return True
-
-        # Product SKU patterns (e.g., "ABC-123-XYZ", "DOG123ABC")
-        sku_pattern = re.compile(r"^[A-Z]{2,4}-?\d{3,}-?[A-Z]{2,4}$", re.IGNORECASE)
-        if sku_pattern.match(name.strip()):
-            return True
-
-        # Promo codes with known marketing keywords (SAVE20, FREE100, GET50OFF, etc.)
-        # Using specific keywords to avoid false positives on dog names like MAX3, REX2
-        promo_keywords = r"^(SAVE|GET|CODE|FREE|SALE|DEAL|BUY|WIN|DISCOUNT|OFF)\d+"
-        promo_pattern = re.compile(promo_keywords, re.IGNORECASE)
-        if promo_pattern.match(name.strip()):
-            return True
-
-        return False
+        return not self.animal_validator.is_valid_name(name)
 
     def _normalize_animal_name(self, name: str) -> str:
         """Normalize animal name by fixing encoding issues and HTML entities.
 
-        Args:
-            name: Raw animal name
-
-        Returns:
-            Normalized name with fixed encoding and decoded HTML entities
+        Delegates to AnimalValidator. Deprecated - use animal_validator.normalize_name() directly.
         """
-        if not name or not isinstance(name, str):
-            return name
-
-        # Step 1: Decode HTML entities (&amp; → &, &quot; → ")
-        name = html.unescape(name)
-
-        # Step 2: Fix UTF-8 double-encoding (Ã« → ë)
-        # Common issue: UTF-8 bytes interpreted as Latin-1 then re-encoded
-        try:
-            # Check if name contains mojibake patterns
-            if "Ã" in name:
-                # Try to fix by encoding as Latin-1 and decoding as UTF-8
-                name = name.encode("latin1").decode("utf-8")
-        except (UnicodeDecodeError, UnicodeEncodeError):
-            # If fix fails, keep original (better than crashing)
-            pass
-
-        # Step 3: Normalize Unicode (é → é, combining chars)
-        name = unicodedata.normalize("NFC", name)
-
-        # Step 4: Strip whitespace
-        name = name.strip()
-
-        return name
+        return self.animal_validator.normalize_name(name)
 
     def _validate_animal_data(self, animal_data: Dict[str, Any]) -> bool:
-        """Validate animal data dictionary for required fields and invalid names."""
-        if not animal_data or not isinstance(animal_data, dict):
-            return False
+        """Validate animal data dictionary for required fields and invalid names.
 
-        # Check for required fields
-        required_fields = ["name", "external_id", "adoption_url"]
-        for field in required_fields:
-            if not animal_data.get(field):
-                return False
+        Delegates to AnimalValidator. Maintains backward compatibility by mutating
+        animal_data in place (updating normalized name).
+        """
+        is_valid, normalized_data = self.animal_validator.validate_animal_data(animal_data)
 
-        # Normalize name before validation
-        name = animal_data.get("name", "")
-        normalized_name = self._normalize_animal_name(name)
+        if is_valid:
+            animal_data["name"] = normalized_data["name"]
 
-        # Check for invalid names (connection errors, numeric-only, etc.)
-        if self._is_invalid_name(normalized_name):
-            self.logger.warning(f"Rejecting animal with invalid name: {name}")
-            return False
-
-        # Update animal_data with normalized name
-        animal_data["name"] = normalized_name
-
-        # Check for invalid image URLs (empty strings are not valid URLs)
-        primary_image_url = animal_data.get("primary_image_url")
-        if primary_image_url == "":
-            self.logger.error(f"Rejecting animal '{normalized_name}' (ID: {animal_data.get('external_id')}) with empty image URL")
-            return False
-
-        # Check for missing image URLs (None is not valid)
-        if primary_image_url is None:
-            self.logger.warning(f"Skipping animal '{normalized_name}' (ID: {animal_data.get('external_id')}) - no valid image URL found")
-            return False
-
-        return True
+        return is_valid
 
     def _get_existing_animal_urls(self) -> set:
-        """Get set of existing animal URLs for this organization."""
-        if self.database_service:
-            return self.database_service.get_existing_animal_urls(self.organization_id)
-
-        self._log_service_unavailable("DatabaseService", "cannot check existing animals")
-        return set()
+        """Delegates to FilteringService. Deprecated - use filtering_service directly."""
+        return self.filtering_service.get_existing_animal_urls()
 
     def _filter_existing_urls(self, all_urls: List[str]) -> List[str]:
-        """Filter out existing URLs if skip_existing_animals is enabled."""
-        if not self.skip_existing_animals:
-            self.logger.debug(f"skip_existing_animals is False, returning all {len(all_urls)} URLs")
-            return all_urls
-
-        self.logger.info("🔎 Checking database for existing animals...")
-        existing_urls = self._get_existing_animal_urls()
-
-        if not existing_urls:
-            self.logger.info(f"📊 No existing animals found in database, processing all {len(all_urls)} URLs")
-            return all_urls
-
-        # Filter out existing URLs
-        filtered_urls = [url for url in all_urls if url not in existing_urls]
-
-        skipped_count = len(all_urls) - len(filtered_urls)
-        self.logger.info(f"🚫 Found {len(existing_urls)} existing animals in database")
-        self.logger.info(f"✅ Filtered results: Skipped {skipped_count} existing, will process {len(filtered_urls)} new animals")
-
-        # Debug logging for URL matching issues
-        if skipped_count == 0 and len(existing_urls) > 0:
-            self.logger.warning("⚠️ No URLs were filtered despite having existing animals - possible URL mismatch!")
-
-        return filtered_urls
+        """Delegates to FilteringService. Deprecated - use filtering_service directly."""
+        return self.filtering_service.filter_existing_urls(all_urls)
 
     def _filter_existing_animals(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Filter existing animals and record ALL found external_ids for stale detection.
+        """Delegates to FilteringService. Deprecated - use filtering_service directly."""
+        result = self.filtering_service.filter_existing_animals(animals)
+        self._sync_filtering_stats()
+        return result
 
-        CRITICAL: Records all external_ids BEFORE filtering so mark_skipped_animals_as_seen()
-        knows which dogs were actually found on the website.
-
-        This method should be used by scrapers that implement _get_filtered_animals()
-        to ensure external_ids are recorded before filtering discards existing animals.
-
-        Args:
-            animals: List of animal data dicts, each containing 'external_id' and 'adoption_url'
-
-        Returns:
-            Filtered list of animals (only new ones if skip_existing_animals is True)
-        """
-        if not animals:
-            return []
-
-        # Record ALL external_ids BEFORE filtering for accurate stale detection
-        recorded_count = 0
-        for animal in animals:
-            external_id = animal.get("external_id")
-            if external_id and self.session_manager:
-                self.session_manager.record_found_animal(external_id)
-                recorded_count += 1
-
-        if recorded_count > 0:
-            self.logger.info(f"📝 Recorded {recorded_count} external IDs for stale detection")
-
-        # If skip_existing_animals is disabled, return all animals
-        if not self.skip_existing_animals:
-            self.logger.info(f"Processing all {len(animals)} animals")
-            return animals
-
-        # Filter based on adoption_url
-        all_urls = [animal.get("adoption_url", "") for animal in animals]
-        filtered_urls = self._filter_existing_urls(all_urls)
-
-        # Set filtering stats
-        skipped_count = len(all_urls) - len(filtered_urls)
-        self.set_filtering_stats(len(all_urls), skipped_count)
-
-        # Return only animals whose URLs passed the filter
-        url_to_animal = {animal.get("adoption_url", ""): animal for animal in animals}
-        filtered_animals = [url_to_animal[url] for url in filtered_urls if url in url_to_animal]
-
-        self.logger.info(f"🔍 Filtering: {skipped_count} existing (skipped), {len(filtered_animals)} new " f"({skipped_count / len(all_urls) * 100:.1f}% skip rate)")
-
-        return filtered_animals
+    def _sync_filtering_stats(self):
+        """Sync filtering stats from FilteringService for backward compatibility."""
+        self.total_animals_before_filter = self.filtering_service.total_animals_before_filter
+        self.total_animals_skipped = self.filtering_service.total_animals_skipped
 
     def set_filtering_stats(self, total_before_filter: int, total_skipped: int):
-        """Set statistics about skip_existing_animals filtering."""
+        """Set statistics about skip_existing_animals filtering. Deprecated."""
         self.total_animals_before_filter = total_before_filter
         self.total_animals_skipped = total_skipped
-        self.logger.info(f"📊 Filtering stats: {total_before_filter} found, {total_skipped} skipped, {total_before_filter - total_skipped} to process")
+        self.logger.info(f"Filtering stats: {total_before_filter} found, {total_skipped} skipped, {total_before_filter - total_skipped} to process")
 
     def _get_correct_animals_found_count(self, animals_data: list) -> int:
-        """Get correct animals_found count for logging.
-
-        Returns total_animals_before_filter if filtering was applied and stats were set,
-        otherwise returns the length of animals_data.
-
-        This ensures dogs_found shows total animals found on website (e.g., 35),
-        not the filtered count (e.g., 0) when skip_existing_animals=true.
-        """
-        if self.skip_existing_animals and hasattr(self, "total_animals_before_filter") and self.total_animals_before_filter > 0:
+        """Delegates to FilteringService. Deprecated - use filtering_service directly."""
+        self._sync_filtering_stats()
+        if self.skip_existing_animals and self.total_animals_before_filter > 0:
             return self.total_animals_before_filter
         return len(animals_data)
 
@@ -1457,135 +1234,12 @@ class BaseScraper(ABC):
         return True
 
     def _is_significant_update(self, existing_animal):
-        """Determine if an update is significant enough to warrant re-profiling.
-
-        Args:
-            existing_animal: Tuple from database with existing animal data
-
-        Returns:
-            bool: True if update is significant
-        """
-        # Since get_existing_animal only returns (id, name, updated_at),
-        # we can't compare old values directly. For now, we'll consider
-        # all updates as potentially significant to ensure LLM profiles
-        # stay current. The LLM pipeline itself can handle deduplication.
-
-        # In the future, we could enhance get_existing_animal to return
-        # more fields for proper change detection.
-
-        # For now, always return True to ensure updates get profiled
-        # This is safer than missing important updates due to incomplete data
-        return True
+        """Delegates to LLMEnrichmentHandler. Deprecated - use llm_handler directly."""
+        return self.llm_handler.is_significant_update(existing_animal)
 
     def _post_process_llm_enrichment(self):
-        """Post-process animals with LLM enrichment if enabled.
-
-        This method runs after all animals are saved and handles batch LLM profiling
-        for organizations that have it enabled.
-        """
-        # Check if LLM profiling is enabled in config
-        if not hasattr(self, "org_config") or not self.org_config:
-            return
-
-        scraper_config = self.org_config.get_scraper_config_dict()
-        if not scraper_config.get("enable_llm_profiling", False):
-            return
-
-        # Check if we have animals to enrich
-        if not self.animals_for_llm_enrichment:
-            self.logger.info("No animals need LLM enrichment")
-            return
-
-        # Get LLM organization ID (might be different from scraper org ID)
-        llm_org_id = scraper_config.get("llm_organization_id", self.organization_id)
-
-        try:
-            import asyncio
-
-            from services.llm.dog_profiler import DogProfilerPipeline
-            from services.llm.organization_config_loader import get_config_loader
-
-            # Check if organization has LLM config
-            loader = get_config_loader()
-            org_config = loader.load_config(llm_org_id)
-
-            if not org_config:
-                self.logger.warning(f"No LLM configuration found for organization {llm_org_id}")
-                return
-
-            # Check if prompt template exists
-            from pathlib import Path
-
-            template_path = Path("prompts/organizations") / org_config.prompt_file
-            if not template_path.exists():
-                self.logger.warning(f"Prompt template not found for organization {llm_org_id}: {org_config.prompt_file}")
-                return
-
-            self.logger.info(f"Starting LLM enrichment for {len(self.animals_for_llm_enrichment)} animals")
-
-            # Prepare data for pipeline
-            dogs_to_profile = []
-            for item in self.animals_for_llm_enrichment:
-                animal_data = item["data"]
-                dog_data = {
-                    "id": item["id"],
-                    "name": animal_data.get("name", "Unknown"),
-                    "breed": animal_data.get("breed", "Mixed Breed"),
-                    "age_text": animal_data.get("age_text", "Unknown"),
-                    "properties": animal_data.get("properties", {}),
-                }
-
-                # Add description if available
-                description = animal_data.get("description", "")
-                if not description and "properties" in animal_data:
-                    description = animal_data["properties"].get("description", "")
-                if description:
-                    dog_data["properties"]["description"] = description
-
-                dogs_to_profile.append(dog_data)
-
-            # Initialize pipeline
-            pipeline = DogProfilerPipeline(organization_id=llm_org_id, dry_run=False)
-
-            # Process batch
-            self.logger.info(f"Processing {len(dogs_to_profile)} dogs with LLM profiler...")
-            results = asyncio.run(pipeline.process_batch(dogs_to_profile, batch_size=5))
-
-            if results:
-                # Save results
-                success = asyncio.run(pipeline.save_results(results))
-                if success:
-                    self.logger.info(f"Successfully enriched {len(results)} animals with LLM profiles")
-                else:
-                    self.logger.warning("Failed to save some LLM enrichment results")
-
-            # Get statistics
-            stats = pipeline.get_statistics()
-            if stats:
-                self.logger.info(
-                    f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, " f"Processed: {stats.get('total_processed', 0)}, " f"Failed: {stats.get('total_failed', 0)}"
-                )
-                failed_count = stats.get("total_failed", 0)
-                if failed_count > 0:
-                    alert_llm_enrichment_failure(
-                        org_name=self.organization_name,
-                        batch_size=stats.get("total_processed", 0) + failed_count,
-                        failed_count=failed_count,
-                        error_message=f"Partial LLM enrichment failure - {stats.get('success_rate', 0):.1f}% success rate",
-                        org_id=self.organization_id,
-                    )
-
-        except ImportError as e:
-            self.logger.warning(f"LLM profiler modules not available: {e}")
-        except Exception as e:
-            self.logger.error(f"Error during LLM enrichment post-processing: {e}")
-            alert_llm_enrichment_failure(
-                org_name=self.organization_name,
-                batch_size=len(self.animals_for_llm_enrichment),
-                failed_count=len(self.animals_for_llm_enrichment),
-                error_message=str(e),
-                org_id=self.organization_id,
-            )
+        """Delegates to LLMEnrichmentHandler. Deprecated - use llm_handler directly."""
+        self.llm_handler.enrich_animals(self.animals_for_llm_enrichment)
 
     def _check_adoptions_if_enabled(self):
         """Check for dog adoptions if enabled in organization config.

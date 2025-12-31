@@ -136,3 +136,106 @@ class NullLLMDataService(LLMDataService):
     async def batch_process(self, animals: List[Dict[str, Any]], processing_type: ProcessingType) -> List[Dict[str, Any]]:
         """Batch process animals - returns with enriched_description field added."""
         return [{**animal, "enriched_description": animal.get("description", "")} for animal in animals]
+
+
+class NullAnimalValidator:
+    """A Null Object implementation for the AnimalValidator service.
+
+    Allows all data through without validation - useful for testing
+    or when validation should be disabled.
+    """
+
+    def __init__(self, logger: Optional[logging.Logger] = None):
+        """Initialize NullAnimalValidator with minimal setup."""
+        self.logger = logger or logging.getLogger(__name__)
+
+    def is_valid_name(self, name: str) -> bool:
+        """Check if name is valid - always returns True."""
+        return True
+
+    def normalize_name(self, name: str) -> str:
+        """Normalize name - returns unchanged."""
+        return name
+
+    def validate_animal_data(self, animal_data: Dict[str, Any]) -> tuple:
+        """Validate animal data - always returns True with original data."""
+        return True, animal_data
+
+    def validate_external_id(self, external_id: str, org_config_id: Optional[str] = None) -> bool:
+        """Validate external ID - always returns True."""
+        return True
+
+
+class NullFilteringService:
+    """A Null Object implementation for the FilteringService.
+
+    Returns all data unfiltered - useful for testing or when filtering
+    should be disabled.
+    """
+
+    def __init__(self, logger: Optional[logging.Logger] = None):
+        """Initialize NullFilteringService with minimal setup."""
+        self.logger = logger or logging.getLogger(__name__)
+        self._total_animals_before_filter = 0
+        self._total_animals_skipped = 0
+
+    @property
+    def total_animals_before_filter(self) -> int:
+        return self._total_animals_before_filter
+
+    @property
+    def total_animals_skipped(self) -> int:
+        return self._total_animals_skipped
+
+    def get_existing_animal_urls(self) -> set:
+        """Get existing URLs - returns empty set."""
+        return set()
+
+    def filter_existing_urls(self, all_urls: List[str]) -> List[str]:
+        """Filter URLs - returns all unchanged."""
+        return all_urls
+
+    def filter_existing_animals(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Filter animals - returns all unchanged."""
+        return animals
+
+    def get_correct_animals_found_count(self, animals_data: List) -> int:
+        """Get correct count - returns list length."""
+        return len(animals_data)
+
+    def record_all_found_external_ids(self, animals_data: List[Dict[str, Any]]) -> int:
+        """Record external IDs - no-op, returns 0."""
+        return 0
+
+
+class NullLLMEnrichmentHandler:
+    """A Null Object implementation for the LLMEnrichmentHandler.
+
+    Performs no LLM enrichment - useful when LLM profiling is disabled
+    or for testing without actual LLM dependencies.
+    """
+
+    def __init__(self, logger: Optional[logging.Logger] = None, **kwargs):
+        """Initialize NullLLMEnrichmentHandler with minimal setup."""
+        self.logger = logger or logging.getLogger(__name__)
+        self._last_stats: Optional[Dict[str, Any]] = None
+
+    def is_enrichment_enabled(self) -> bool:
+        """Check if enrichment is enabled - always returns False."""
+        return False
+
+    def get_llm_organization_id(self) -> int:
+        """Get LLM org ID - returns 0."""
+        return 0
+
+    def is_significant_update(self, existing_animal) -> bool:
+        """Check if update is significant - always returns True."""
+        return True
+
+    def enrich_animals(self, animals_for_enrichment: List[Dict[str, Any]]) -> bool:
+        """Enrich animals - no-op, returns True."""
+        return True
+
+    def get_last_statistics(self) -> Optional[Dict[str, Any]]:
+        """Get last statistics - returns None."""
+        return self._last_stats
