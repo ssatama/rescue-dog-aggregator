@@ -49,11 +49,24 @@ class TestBaseScraperBatchUploads:
             mock_image_service_instance.batch_process_images = Mock(side_effect=lambda animals, *args, **kwargs: animals)
             mock_image_service.return_value = mock_image_service_instance
 
+            # Mock progress tracker
+            mock_progress_tracker = Mock()
+            mock_progress_tracker.update = Mock()
+            mock_progress_tracker.should_log_progress = Mock(return_value=False)
+            mock_progress_tracker.get_progress_message = Mock(return_value="")
+            mock_progress_tracker.log_batch_progress = Mock()
+            mock_progress_tracker.track_processing_stats = Mock()
+            mock_progress_tracker.track_image_stats = Mock()
+            mock_progress_tracker.track_quality_stats = Mock()
+            mock_progress_tracker.track_performance_stats = Mock()
+            mock_progress_tracker.log_completion_summary = Mock()
+
             yield {
                 "sync": mock_sync_instance,
                 "r2": mock_r2_instance,
                 "image_service": mock_image_service_instance,
                 "config": mock_config,
+                "progress_tracker": mock_progress_tracker,
             }
 
     def test_batch_upload_for_single_animal(self, mock_services):
@@ -72,6 +85,7 @@ class TestBaseScraperBatchUploads:
         scraper = TestScraper(config_id="test")
         scraper.image_processing_service = mock_services["image_service"]
         scraper.r2_service = mock_services["r2"]
+        scraper.progress_tracker = mock_services["progress_tracker"]
 
         # Mock database connection
         with patch.object(scraper, "connect_to_database"):
@@ -110,6 +124,7 @@ class TestBaseScraperBatchUploads:
         scraper = TestScraper(config_id="test")
         scraper.image_processing_service = mock_services["image_service"]
         scraper.r2_service = mock_services["r2"]
+        scraper.progress_tracker = mock_services["progress_tracker"]
 
         with patch.object(scraper, "connect_to_database"):
             with patch.object(scraper, "save_animal", return_value=(1, "created")):
@@ -139,6 +154,7 @@ class TestBaseScraperBatchUploads:
         scraper = TestScraper(config_id="test")
         scraper.image_processing_service = mock_services["image_service"]
         scraper.r2_service = mock_services["r2"]
+        scraper.progress_tracker = mock_services["progress_tracker"]
 
         with patch.object(scraper, "connect_to_database"):
             with patch.object(scraper, "save_animal", return_value=(1, "created")):
@@ -170,6 +186,7 @@ class TestBaseScraperBatchUploads:
         scraper = TestScraper(config_id="test")
         scraper.image_processing_service = mock_services["image_service"]
         scraper.r2_service = mock_services["r2"]
+        scraper.progress_tracker = mock_services["progress_tracker"]
 
         with patch.object(scraper, "connect_to_database"):
             with patch.object(scraper, "save_animal", return_value=(1, "created")):
@@ -195,6 +212,7 @@ class TestBaseScraperBatchUploads:
         scraper = TestScraper(config_id="test")
         scraper.image_processing_service = mock_services["image_service"]
         scraper.r2_service = mock_services["r2"]
+        scraper.progress_tracker = mock_services["progress_tracker"]
 
         with patch.object(scraper, "connect_to_database"):
             with patch.object(scraper, "save_animal", return_value=(1, "created")):

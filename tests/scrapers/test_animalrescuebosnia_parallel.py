@@ -20,30 +20,31 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
         """Set up test fixtures."""
         self.scraper = AnimalRescueBosniaScraper(config_id="animalrescuebosnia")
 
-    def test_collect_data_uses_filter_existing_urls(self):
-        """Test that collect_data uses _filter_existing_urls when skip_existing_animals is True."""
+    def test_collect_data_uses_filter_existing_animals(self):
+        """Test that collect_data uses _filter_existing_animals when skip_existing_animals is True."""
         # Ensure skip_existing_animals is True
         self.scraper.skip_existing_animals = True
 
         mock_animal_list = [
-            {"name": "Dog1", "url": "https://example.com/dog1/"},
-            {"name": "Dog2", "url": "https://example.com/dog2/"},
+            {"name": "Dog1", "url": "https://example.com/dog1/", "external_id": "arb-dog1", "adoption_url": "https://example.com/dog1/"},
+            {"name": "Dog2", "url": "https://example.com/dog2/", "external_id": "arb-dog2", "adoption_url": "https://example.com/dog2/"},
         ]
 
         with (
             patch.object(self.scraper, "get_animal_list", return_value=mock_animal_list),
             patch.object(
                 self.scraper,
-                "_filter_existing_urls",
-                return_value=["https://example.com/dog1/"],
+                "_filter_existing_animals",
+                return_value=[mock_animal_list[0]],
             ) as mock_filter,
             patch.object(self.scraper, "_process_dogs_in_batches", return_value=[]) as mock_process,
         ):
             self.scraper.collect_data()
 
-            # Verify _filter_existing_urls was called with the URLs
-            expected_urls = ["https://example.com/dog1/", "https://example.com/dog2/"]
-            mock_filter.assert_called_once_with(expected_urls)
+            # Verify _filter_existing_animals was called with the animals list
+            mock_filter.assert_called_once()
+            call_args = mock_filter.call_args[0][0]
+            self.assertEqual(len(call_args), 2)
 
             # Verify _process_dogs_in_batches was called with filtered URLs
             mock_process.assert_called_once_with(["https://example.com/dog1/"])
@@ -59,12 +60,12 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
 
         with (
             patch.object(self.scraper, "get_animal_list", return_value=mock_animal_list),
-            patch.object(self.scraper, "_filter_existing_urls") as mock_filter,
+            patch.object(self.scraper, "_filter_existing_animals") as mock_filter,
             patch.object(self.scraper, "_process_dogs_in_batches", return_value=[]) as mock_process,
         ):
             self.scraper.collect_data()
 
-            # Verify _filter_existing_urls was NOT called
+            # Verify _filter_existing_animals was NOT called
             mock_filter.assert_not_called()
 
             # Verify _process_dogs_in_batches was called with all URLs

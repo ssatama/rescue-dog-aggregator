@@ -1,8 +1,8 @@
 """
 Test for the availability confidence logic fix.
 
-This test verifies that the SQL logic bug in update_stale_data_detection()
-has been fixed and animals maintain correct confidence levels.
+This test verifies that the SQL logic in update_stale_data_detection()
+correctly handles availability confidence transitions.
 """
 
 from datetime import datetime
@@ -17,7 +17,7 @@ from services.session_manager import SessionManager
 @pytest.mark.integration
 @pytest.mark.slow
 class TestAvailabilityConfidenceFix:
-    """Test the fix for availability confidence SQL logic bug."""
+    """Test the availability confidence SQL logic."""
 
     def test_availability_confidence_progression_correct(self):
         """Test that availability confidence progresses correctly through missing scrapes."""
@@ -43,13 +43,13 @@ class TestAvailabilityConfidenceFix:
         assert mock_cursor.execute.called
         executed_query = mock_cursor.execute.call_args[0][0]
 
-        # Verify the fix: CASE statement should check specific values, not >= 1
+        # Verify the simplified logic: first miss = medium, subsequent = low
         assert "WHEN consecutive_scrapes_missing = 0 THEN 'medium'" in executed_query
-        assert "WHEN consecutive_scrapes_missing = 1 THEN 'low'" in executed_query
-        assert "WHEN consecutive_scrapes_missing >= 2 THEN 'low'" in executed_query
+        assert "ELSE 'low'" in executed_query
 
-        # Verify the bug is fixed: should NOT have "WHEN consecutive_scrapes_missing >= 1"
-        assert "WHEN consecutive_scrapes_missing >= 1 THEN 'low'" not in executed_query
+        # Verify the status/active transitions at >= 2 consecutive misses
+        assert "WHEN consecutive_scrapes_missing >= 2 THEN 'unknown'" in executed_query
+        assert "WHEN consecutive_scrapes_missing >= 2 THEN false" in executed_query
 
     def test_animal_confidence_scenarios(self):
         """Test specific scenarios for availability confidence logic."""
@@ -75,21 +75,20 @@ class TestAvailabilityConfidenceFix:
 
         # Verify logical progression:
         # consecutive_scrapes_missing = 0 → medium (first miss)
-        # consecutive_scrapes_missing = 1 → low (second miss)
-        # consecutive_scrapes_missing >= 2 → low (subsequent misses)
-        # consecutive_scrapes_missing >= 2 → unavailable (status change)
+        # ELSE → low (any subsequent miss)
+        # consecutive_scrapes_missing >= 2 → status becomes unknown, active becomes false
 
-        lines = executed_query.split("\n")
-        case_lines = [line.strip() for line in lines if "WHEN consecutive_scrapes_missing" in line]
+        # Check availability_confidence CASE uses simplified logic
+        assert "availability_confidence = CASE" in executed_query
+        assert "WHEN consecutive_scrapes_missing = 0 THEN 'medium'" in executed_query
 
-        # Should have exactly 3 WHEN clauses for availability_confidence
-        availability_case_lines = [line for line in case_lines if "THEN" in line and ("medium" in line or "low" in line)]
-        assert len(availability_case_lines) == 3
+        # Status transitions
+        assert "status = CASE" in executed_query
+        assert "WHEN consecutive_scrapes_missing >= 2 THEN 'unknown'" in executed_query
 
-        # Verify the specific logic
-        assert any("= 0 THEN 'medium'" in line for line in availability_case_lines)
-        assert any("= 1 THEN 'low'" in line for line in availability_case_lines)
-        assert any(">= 2 THEN 'low'" in line for line in availability_case_lines)
+        # Active flag transitions
+        assert "active = CASE" in executed_query
+        assert "WHEN consecutive_scrapes_missing >= 2 THEN false" in executed_query
 
     def test_mark_animal_as_seen_sets_high_confidence(self):
         """Test that marking an animal as seen correctly sets high confidence."""
