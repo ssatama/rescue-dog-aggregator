@@ -17,6 +17,17 @@ from langdetect import detect
 # Import config
 from config import DB_CONFIG, enable_world_class_scraper_logging
 
+# Import centralized constants
+from scrapers.constants import (
+    CONCURRENT_UPLOAD_THRESHOLD,
+    MAX_R2_FAILURE_RATE,
+    SMALL_BATCH_THRESHOLD,
+)
+
+# Import services and utilities
+from scrapers.enrichment.llm_handler import LLMEnrichmentHandler
+from scrapers.filtering.filtering_service import FilteringService
+
 # Import Sentry integration for error tracking
 from scrapers.sentry_integration import (
     add_scrape_breadcrumb,
@@ -25,10 +36,6 @@ from scrapers.sentry_integration import (
     capture_scraper_error,
     scrape_transaction,
 )
-
-# Import services and utilities
-from scrapers.enrichment.llm_handler import LLMEnrichmentHandler
-from scrapers.filtering.filtering_service import FilteringService
 from scrapers.validation.animal_validator import AnimalValidator
 from services.null_objects import NullLLMEnrichmentHandler, NullMetricsCollector
 from services.progress_tracker import ProgressTracker
@@ -45,10 +52,11 @@ logger = logging.getLogger(__name__)
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
 
-    # Batch processing configuration constants
-    SMALL_BATCH_THRESHOLD = 3
-    CONCURRENT_UPLOAD_THRESHOLD = 10
-    MAX_R2_FAILURE_RATE = 50
+    # Batch processing configuration constants (deprecated - use scrapers.constants)
+    # Kept for backward compatibility with any code referencing class attributes
+    SMALL_BATCH_THRESHOLD = SMALL_BATCH_THRESHOLD
+    CONCURRENT_UPLOAD_THRESHOLD = CONCURRENT_UPLOAD_THRESHOLD
+    MAX_R2_FAILURE_RATE = MAX_R2_FAILURE_RATE
 
     # Type annotations for instance variables
     org_config: Optional[OrganizationConfig]
