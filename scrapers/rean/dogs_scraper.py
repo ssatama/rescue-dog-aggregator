@@ -1152,8 +1152,7 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Critical error during scraping: {e}")
             self.handle_scraper_failure(str(e))
             return []
-        finally:
-            self.update_stale_data_detection()
+        # Stale detection handled by BaseScraper._finalize_scrape() with proper safety guards
 
     def scrape_page(self, url: str) -> Optional[str]:
         """
@@ -1942,14 +1941,12 @@ class REANScraper(BaseScraper):
         """
         animals = self.scrape_animals()
 
-        # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
-        # before filtering, ensuring accurate stale detection
         if self.skip_existing_animals:
             return self._filter_existing_animals(animals)
-        else:
-            # Still need to record external IDs for stale detection even when not filtering
-            for animal in animals:
-                if animal.get("external_id") and self.session_manager:
-                    self.session_manager.record_found_animal(animal["external_id"])
-            self.set_filtering_stats(len(animals), 0)
+
+        # Not filtering - record external IDs for stale detection
+        for animal in animals:
+            if animal.get("external_id") and self.session_manager:
+                self.session_manager.record_found_animal(animal["external_id"])
+        self.set_filtering_stats(len(animals), 0)
         return animals

@@ -532,7 +532,8 @@ class BaseScraper(ABC):
                 )  # Single page scrape
 
                 # Track filtering phase stats
-                # Note: animals_data already contains only NEW dogs (after filtering in collect_data)
+                # Note: animals_data contents depend on scraper implementation -
+                # may contain all dogs or only new dogs based on skip_existing_animals setting
                 self.progress_tracker.track_filtering_stats(
                     dogs_skipped=self.total_animals_skipped,
                     new_dogs=len(animals_data),
@@ -696,7 +697,7 @@ class BaseScraper(ABC):
                             if "images.rescuedogs.me" in animal["primary_image_url"]:
                                 processing_stats["images_uploaded"] += 1
                 except Exception as e:
-                    self.logger.warning(f"Batch image processing failed, falling back to individual: {e}")
+                    self.logger.warning(f"Batch image processing failed; per-animal processing will handle images: {e}")
 
         for i, animal_data in enumerate(animals_data):
             # Add organization_id and animal_type to the animal data
