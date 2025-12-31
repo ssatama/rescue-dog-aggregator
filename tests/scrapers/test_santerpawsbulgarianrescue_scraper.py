@@ -335,9 +335,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 mock_get_list.return_value = mock_animals
 
                 # Mock filtering_service to return only "new" URL
-                scraper.filtering_service.filter_existing_urls = Mock(
-                    return_value=["https://santerpawsbulgarianrescue.com/dog/new/"]
-                )
+                scraper.filtering_service.filter_existing_urls = Mock(return_value=["https://santerpawsbulgarianrescue.com/dog/new/"])
 
                 result = scraper._get_filtered_animals()
 
@@ -379,9 +377,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 mock_get_list.return_value = mock_animals
 
                 # Mock filtering_service to return only 1 URL (2 filtered out)
-                scraper.filtering_service.filter_existing_urls = Mock(
-                    return_value=["https://site.com/3/"]
-                )
+                scraper.filtering_service.filter_existing_urls = Mock(return_value=["https://site.com/3/"])
 
                 result = scraper._get_filtered_animals()
 

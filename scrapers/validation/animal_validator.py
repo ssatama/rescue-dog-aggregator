@@ -93,9 +93,7 @@ class AnimalValidator:
 
         return name
 
-    def validate_animal_data(
-        self, animal_data: Dict[str, Any]
-    ) -> Tuple[bool, Dict[str, Any]]:
+    def validate_animal_data(self, animal_data: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
         """Validate animal data dictionary for required fields and invalid names.
 
         Returns (is_valid, normalized_data) tuple.
@@ -121,24 +119,16 @@ class AnimalValidator:
 
         primary_image_url = animal_data.get("primary_image_url")
         if primary_image_url == "":
-            self.logger.error(
-                f"Rejecting animal '{normalized_name}' "
-                f"(ID: {animal_data.get('external_id')}) with empty image URL"
-            )
+            self.logger.error(f"Rejecting animal '{normalized_name}' " f"(ID: {animal_data.get('external_id')}) with empty image URL")
             return False, result_data
 
         if primary_image_url is None:
-            self.logger.warning(
-                f"Skipping animal '{normalized_name}' "
-                f"(ID: {animal_data.get('external_id')}) - no valid image URL found"
-            )
+            self.logger.warning(f"Skipping animal '{normalized_name}' " f"(ID: {animal_data.get('external_id')}) - no valid image URL found")
             return False, result_data
 
         return True, result_data
 
-    def validate_external_id(
-        self, external_id: str, org_config_id: Optional[str] = None
-    ) -> bool:
+    def validate_external_id(self, external_id: str, org_config_id: Optional[str] = None) -> bool:
         """Validate that external_id follows organization prefix pattern.
 
         Returns True if valid or if validation can't be performed.
@@ -150,11 +140,7 @@ class AnimalValidator:
         has_prefix = any(external_id.startswith(prefix) for prefix in KNOWN_ORG_PREFIXES)
         is_numeric = external_id.isdigit()
 
-        is_tierschutzverein_pattern = (
-            org_config_id == "tierschutzverein-europa"
-            and "-" in external_id
-            and len(external_id) > 10
-        )
+        is_tierschutzverein_pattern = org_config_id == "tierschutzverein-europa" and "-" in external_id and len(external_id) > 10
 
         if not has_prefix and not is_numeric and not is_tierschutzverein_pattern:
             self.logger.warning(

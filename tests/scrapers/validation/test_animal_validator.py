@@ -228,10 +228,7 @@ class TestAnimalValidatorExternalId:
         assert validator.validate_external_id("1")
 
     def test_accepts_tierschutzverein_pattern(self, validator):
-        assert validator.validate_external_id(
-            "yara-in-rumaenien-tierheim",
-            org_config_id="tierschutzverein-europa"
-        )
+        assert validator.validate_external_id("yara-in-rumaenien-tierheim", org_config_id="tierschutzverein-europa")
 
     def test_warns_on_unknown_pattern(self, validator):
         result = validator.validate_external_id("unknown-pattern-123")

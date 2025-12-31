@@ -89,9 +89,7 @@ class LLMEnrichmentHandler:
             )
             return False
 
-    def _process_enrichment_batch(
-        self, animals_for_enrichment: List[Dict[str, Any]], llm_org_id: int
-    ) -> bool:
+    def _process_enrichment_batch(self, animals_for_enrichment: List[Dict[str, Any]], llm_org_id: int) -> bool:
         """Process a batch of animals with LLM enrichment."""
         import asyncio
 
@@ -107,9 +105,7 @@ class LLMEnrichmentHandler:
 
         template_path = Path("prompts/organizations") / org_config.prompt_file
         if not template_path.exists():
-            self.logger.warning(
-                f"Prompt template not found for organization {llm_org_id}: {org_config.prompt_file}"
-            )
+            self.logger.warning(f"Prompt template not found for organization {llm_org_id}: {org_config.prompt_file}")
             return False
 
         self.logger.info(f"Starting LLM enrichment for {len(animals_for_enrichment)} animals")
@@ -130,9 +126,7 @@ class LLMEnrichmentHandler:
         self._collect_and_log_statistics(pipeline, len(animals_for_enrichment))
         return True
 
-    def _prepare_dogs_for_profiling(
-        self, animals_for_enrichment: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _prepare_dogs_for_profiling(self, animals_for_enrichment: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Prepare animal data for LLM profiling pipeline."""
         dogs_to_profile = []
 
@@ -164,11 +158,7 @@ class LLMEnrichmentHandler:
         if not stats:
             return
 
-        self.logger.info(
-            f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, "
-            f"Processed: {stats.get('total_processed', 0)}, "
-            f"Failed: {stats.get('total_failed', 0)}"
-        )
+        self.logger.info(f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, " f"Processed: {stats.get('total_processed', 0)}, " f"Failed: {stats.get('total_failed', 0)}")
 
         failed_count = stats.get("total_failed", 0)
         if failed_count > 0:

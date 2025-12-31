@@ -126,9 +126,7 @@ class TestLLMEnrichmentHandlerEnrichment:
 
         animals = [{"id": 1, "data": {"name": "Buddy"}, "action": "create"}]
 
-        with patch.object(
-            handler, "_process_enrichment_batch", side_effect=Exception("Pipeline error")
-        ):
+        with patch.object(handler, "_process_enrichment_batch", side_effect=Exception("Pipeline error")):
             result = handler.enrich_animals(animals)
 
             assert result is False

@@ -79,9 +79,7 @@ class TestFilteringServiceAnimalFiltering:
     def mock_session_manager(self):
         return Mock()
 
-    def test_filter_existing_animals_records_all_external_ids(
-        self, mock_database_service, mock_session_manager
-    ):
+    def test_filter_existing_animals_records_all_external_ids(self, mock_database_service, mock_session_manager):
         service = FilteringService(
             database_service=mock_database_service,
             session_manager=mock_session_manager,
@@ -102,9 +100,7 @@ class TestFilteringServiceAnimalFiltering:
         mock_session_manager.record_found_animal.assert_any_call("id2")
         mock_session_manager.record_found_animal.assert_any_call("id3")
 
-    def test_filter_existing_animals_returns_all_when_skip_disabled(
-        self, mock_database_service, mock_session_manager
-    ):
+    def test_filter_existing_animals_returns_all_when_skip_disabled(self, mock_database_service, mock_session_manager):
         service = FilteringService(
             database_service=mock_database_service,
             session_manager=mock_session_manager,
@@ -121,9 +117,7 @@ class TestFilteringServiceAnimalFiltering:
 
         assert result == animals
 
-    def test_filter_existing_animals_filters_when_skip_enabled(
-        self, mock_database_service, mock_session_manager
-    ):
+    def test_filter_existing_animals_filters_when_skip_enabled(self, mock_database_service, mock_session_manager):
         mock_database_service.get_existing_animal_urls.return_value = {"url1"}
 
         service = FilteringService(
@@ -143,9 +137,7 @@ class TestFilteringServiceAnimalFiltering:
         assert len(result) == 1
         assert result[0]["external_id"] == "id2"
 
-    def test_filter_existing_animals_handles_empty_list(
-        self, mock_database_service, mock_session_manager
-    ):
+    def test_filter_existing_animals_handles_empty_list(self, mock_database_service, mock_session_manager):
         service = FilteringService(
             database_service=mock_database_service,
             session_manager=mock_session_manager,

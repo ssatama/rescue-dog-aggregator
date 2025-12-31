@@ -48,9 +48,7 @@ PRICE_PATTERN = re.compile(r"[$€£¥₹]\s*\d+|\d+\s*[$€£¥₹]")
 
 SKU_PATTERN = re.compile(r"^[A-Z]{2,4}-?\d{3,}-?[A-Z]{2,4}$", re.IGNORECASE)
 
-PROMO_KEYWORDS_PATTERN = re.compile(
-    r"^(SAVE|GET|CODE|FREE|SALE|DEAL|BUY|WIN|DISCOUNT|OFF)\d+", re.IGNORECASE
-)
+PROMO_KEYWORDS_PATTERN = re.compile(r"^(SAVE|GET|CODE|FREE|SALE|DEAL|BUY|WIN|DISCOUNT|OFF)\d+", re.IGNORECASE)
 
 MAX_DIGIT_RATIO = 0.6
 MIN_NAME_LENGTH = 2

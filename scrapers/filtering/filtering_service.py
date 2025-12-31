@@ -106,10 +106,7 @@ class FilteringService:
         url_to_animal = {animal.get("adoption_url", ""): animal for animal in animals}
         filtered_animals = [url_to_animal[url] for url in filtered_urls if url in url_to_animal]
 
-        self.logger.info(
-            f"Filtering: {skipped_count} existing (skipped), {len(filtered_animals)} new "
-            f"({skipped_count / len(all_urls) * 100:.1f}% skip rate)"
-        )
+        self.logger.info(f"Filtering: {skipped_count} existing (skipped), {len(filtered_animals)} new " f"({skipped_count / len(all_urls) * 100:.1f}% skip rate)")
 
         return filtered_animals
 
@@ -117,10 +114,7 @@ class FilteringService:
         """Set statistics about skip_existing_animals filtering."""
         self._total_animals_before_filter = total_before_filter
         self._total_animals_skipped = total_skipped
-        self.logger.info(
-            f"Filtering stats: {total_before_filter} found, {total_skipped} skipped, "
-            f"{total_before_filter - total_skipped} to process"
-        )
+        self.logger.info(f"Filtering stats: {total_before_filter} found, {total_skipped} skipped, " f"{total_before_filter - total_skipped} to process")
 
     def get_correct_animals_found_count(self, animals_data: List) -> int:
         """Get correct animals_found count for logging.
