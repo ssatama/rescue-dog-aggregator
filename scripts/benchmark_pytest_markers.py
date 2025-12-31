@@ -10,9 +10,7 @@ import time
 from typing import Tuple
 
 
-def run_pytest_command(
-    marker_expression: str, timeout_seconds: int = 300
-) -> Tuple[float, int, str]:
+def run_pytest_command(marker_expression: str, timeout_seconds: int = 300) -> Tuple[float, int, str]:
     """
     Run pytest with specific marker expression and measure execution time.
 
@@ -32,9 +30,7 @@ def run_pytest_command(
 
     start_time = time.time()
     try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout_seconds, cwd="."
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_seconds, cwd=".")
         execution_time = time.time() - start_time
         return execution_time, result.returncode, result.stdout + result.stderr
     except subprocess.TimeoutExpired:
@@ -123,9 +119,7 @@ def main():
         # Calculate metrics
         avg_time_per_test = execution_time / test_count if test_count > 0 else 0
 
-        status = (
-            "success" if exit_code == 0 else "failed" if exit_code > 0 else "timeout"
-        )
+        status = "success" if exit_code == 0 else "failed" if exit_code > 0 else "timeout"
 
         results[category_name] = {
             "test_count": test_count,
@@ -150,36 +144,23 @@ def main():
     # Sort by average time per test
     sorted_results = sorted(results.items(), key=lambda x: x[1]["avg_time_per_test"])
 
-    print(
-        f"{'Category':<20} {'Tests':<8} {'Total(s)':<10} {'Avg(ms)':<10} {'Status':<10}"
-    )
+    print(f"{'Category':<20} {'Tests':<8} {'Total(s)':<10} {'Avg(ms)':<10} {'Status':<10}")
     print("-" * 70)
 
     for category, data in sorted_results:
         if data["test_count"] > 0:
-            print(
-                f"{category:<20} {data['test_count']:<8} {data['execution_time']:<10.2f} "
-                f"{data['avg_time_per_test'] * 1000:<10.1f} {data['status']:<10}"
-            )
+            print(f"{category:<20} {data['test_count']:<8} {data['execution_time']:<10.2f} " f"{data['avg_time_per_test'] * 1000:<10.1f} {data['status']:<10}")
 
     # Performance analysis
     print("\n🔍 PERFORMANCE ANALYSIS:")
 
     # Identify fastest categories (should be unit tests)
-    fastest_categories = [
-        cat
-        for cat, data in sorted_results
-        if data["avg_time_per_test"] < 0.01 and data["test_count"] > 0
-    ]
+    fastest_categories = [cat for cat, data in sorted_results if data["avg_time_per_test"] < 0.01 and data["test_count"] > 0]
     if fastest_categories:
         print(f"⚡ Fastest categories (<10ms avg): {', '.join(fastest_categories[:3])}")
 
     # Identify slowest categories
-    slowest_categories = [
-        cat
-        for cat, data in sorted_results
-        if data["avg_time_per_test"] > 1.0 and data["test_count"] > 0
-    ]
+    slowest_categories = [cat for cat, data in sorted_results if data["avg_time_per_test"] > 1.0 and data["test_count"] > 0]
     if slowest_categories:
         print(f"🐌 Slowest categories (>1s avg): {', '.join(slowest_categories[-3:])}")
 
@@ -188,24 +169,14 @@ def main():
 
     ci_safe_data = results.get("ci_safe", {})
     if ci_safe_data.get("test_count", 0) > 0:
-        print(
-            f"✅ CI-safe tests: {ci_safe_data['test_count']} tests, "
-            f"{ci_safe_data['execution_time']:.1f}s total"
-        )
+        print(f"✅ CI-safe tests: {ci_safe_data['test_count']} tests, " f"{ci_safe_data['execution_time']:.1f}s total")
 
     development_data = results.get("development", {})
     if development_data.get("test_count", 0) > 0:
-        print(
-            f"⚡ Development tests: {development_data['test_count']} tests, "
-            f"{development_data['execution_time']:.1f}s total"
-        )
+        print(f"⚡ Development tests: {development_data['test_count']} tests, " f"{development_data['execution_time']:.1f}s total")
 
     # Test distribution validation
-    total_tests = sum(
-        data["test_count"]
-        for data in results.values()
-        if data["test_count"] > 0 and data["status"] != "no_tests"
-    )
+    total_tests = sum(data["test_count"] for data in results.values() if data["test_count"] > 0 and data["status"] != "no_tests")
 
     if total_tests > 0:
         print("\n📈 TEST DISTRIBUTION ANALYSIS:")
@@ -216,9 +187,7 @@ def main():
         if unit_count > 0:
             print(f"Unit tests: {unit_count} ({unit_count / total_tests * 100:.1f}%)")
         if integration_count > 0:
-            print(
-                f"Integration tests: {integration_count} ({integration_count / total_tests * 100:.1f}%)"
-            )
+            print(f"Integration tests: {integration_count} ({integration_count / total_tests * 100:.1f}%)")
         if slow_count > 0:
             print(f"Slow tests: {slow_count} ({slow_count / total_tests * 100:.1f}%)")
 

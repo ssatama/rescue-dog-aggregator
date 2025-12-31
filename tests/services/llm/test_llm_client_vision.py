@@ -72,25 +72,19 @@ class TestLLMClientVisionAPI:
         }
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_formats_message_correctly(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_formats_message_correctly(self, llm_client, sample_image_url, sample_prompt):
         """Test that call_vision_api formats messages with correct vision API structure."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "choices": [{"message": {"content": '{"test": "data"}'}}]
-            }
+            mock_response.json.return_value = {"choices": [{"message": {"content": '{"test": "data"}'}}]}
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
-            await llm_client.call_vision_api(
-                image_url=sample_image_url, prompt=sample_prompt
-            )
+            await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
             # Verify post was called
             assert mock_client.post.called
@@ -125,9 +119,7 @@ class TestLLMClientVisionAPI:
             assert image_part["image_url"]["url"] == sample_image_url
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_success(
-        self, llm_client, sample_image_url, sample_prompt, mock_vision_response
-    ):
+    async def test_call_vision_api_success(self, llm_client, sample_image_url, sample_prompt, mock_vision_response):
         """Test successful vision API call with proper response parsing."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
@@ -139,9 +131,7 @@ class TestLLMClientVisionAPI:
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
-            result = await llm_client.call_vision_api(
-                image_url=sample_image_url, prompt=sample_prompt
-            )
+            result = await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
             # Verify result is parsed JSON
             assert isinstance(result, dict)
@@ -154,50 +144,38 @@ class TestLLMClientVisionAPI:
             assert result["confidence"] == "high"
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_uses_correct_endpoint(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_uses_correct_endpoint(self, llm_client, sample_image_url, sample_prompt):
         """Test that vision API calls the correct OpenRouter endpoint."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "choices": [{"message": {"content": '{"test": "data"}'}}]
-            }
+            mock_response.json.return_value = {"choices": [{"message": {"content": '{"test": "data"}'}}]}
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
-            await llm_client.call_vision_api(
-                image_url=sample_image_url, prompt=sample_prompt
-            )
+            await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
             # Verify correct endpoint
             call_args = mock_client.post.call_args
             assert call_args.args[0] == "https://openrouter.ai/api/v1/chat/completions"
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_includes_correct_headers(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_includes_correct_headers(self, llm_client, sample_image_url, sample_prompt):
         """Test that vision API includes proper authentication and metadata headers."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "choices": [{"message": {"content": '{"test": "data"}'}}]
-            }
+            mock_response.json.return_value = {"choices": [{"message": {"content": '{"test": "data"}'}}]}
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
-            await llm_client.call_vision_api(
-                image_url=sample_image_url, prompt=sample_prompt
-            )
+            await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
             call_args = mock_client.post.call_args
             headers = call_args.kwargs["headers"]
@@ -210,9 +188,7 @@ class TestLLMClientVisionAPI:
             assert headers["X-Title"] == "Rescue Dog Aggregator"
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_with_custom_model(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_with_custom_model(self, llm_client, sample_image_url, sample_prompt):
         """Test vision API with custom model parameter."""
         custom_model = "google/gemini-2.0-flash-exp"
 
@@ -220,17 +196,13 @@ class TestLLMClientVisionAPI:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "choices": [{"message": {"content": '{"test": "data"}'}}]
-            }
+            mock_response.json.return_value = {"choices": [{"message": {"content": '{"test": "data"}'}}]}
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
-            await llm_client.call_vision_api(
-                image_url=sample_image_url, prompt=sample_prompt, model=custom_model
-            )
+            await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt, model=custom_model)
 
             call_args = mock_client.post.call_args
             json_payload = call_args.kwargs["json"]
@@ -238,17 +210,13 @@ class TestLLMClientVisionAPI:
             assert json_payload["model"] == custom_model
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_with_custom_parameters(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_with_custom_parameters(self, llm_client, sample_image_url, sample_prompt):
         """Test vision API with custom temperature, max_tokens, and timeout."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "choices": [{"message": {"content": '{"test": "data"}'}}]
-            }
+            mock_response.json.return_value = {"choices": [{"message": {"content": '{"test": "data"}'}}]}
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
@@ -270,127 +238,91 @@ class TestLLMClientVisionAPI:
             assert call_args.kwargs["timeout"] == 60.0
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_handles_500_error(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_handles_500_error(self, llm_client, sample_image_url, sample_prompt):
         """Test vision API handles 500 server error."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.status_code = 500
             mock_response.json.return_value = {"error": "Internal server error"}
-            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-                "500 Server Error", request=MagicMock(), response=mock_response
-            )
+            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError("500 Server Error", request=MagicMock(), response=mock_response)
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
             with pytest.raises(httpx.HTTPStatusError):
-                await llm_client.call_vision_api(
-                    image_url=sample_image_url, prompt=sample_prompt
-                )
+                await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_handles_429_rate_limit(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_handles_429_rate_limit(self, llm_client, sample_image_url, sample_prompt):
         """Test vision API handles 429 rate limit error."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.status_code = 429
             mock_response.json.return_value = {"error": "Rate limit exceeded"}
-            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-                "429 Too Many Requests", request=MagicMock(), response=mock_response
-            )
+            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError("429 Too Many Requests", request=MagicMock(), response=mock_response)
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
             with pytest.raises(httpx.HTTPStatusError):
-                await llm_client.call_vision_api(
-                    image_url=sample_image_url, prompt=sample_prompt
-                )
+                await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_handles_timeout(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_handles_timeout(self, llm_client, sample_image_url, sample_prompt):
         """Test vision API handles timeout errors."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client.post = AsyncMock(
-                side_effect=httpx.TimeoutException("Request timeout")
-            )
+            mock_client.post = AsyncMock(side_effect=httpx.TimeoutException("Request timeout"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
             with pytest.raises(httpx.TimeoutException):
-                await llm_client.call_vision_api(
-                    image_url=sample_image_url, prompt=sample_prompt, timeout=1.0
-                )
+                await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt, timeout=1.0)
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_handles_network_error(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_handles_network_error(self, llm_client, sample_image_url, sample_prompt):
         """Test vision API handles network connection errors."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client.post = AsyncMock(
-                side_effect=httpx.NetworkError("Connection failed")
-            )
+            mock_client.post = AsyncMock(side_effect=httpx.NetworkError("Connection failed"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
             with pytest.raises(httpx.NetworkError):
-                await llm_client.call_vision_api(
-                    image_url=sample_image_url, prompt=sample_prompt
-                )
+                await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_handles_invalid_json_response(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_handles_invalid_json_response(self, llm_client, sample_image_url, sample_prompt):
         """Test vision API handles invalid JSON in response."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "choices": [{"message": {"content": "Not valid JSON at all"}}]
-            }
+            mock_response.json.return_value = {"choices": [{"message": {"content": "Not valid JSON at all"}}]}
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
             with pytest.raises(json.JSONDecodeError):
-                await llm_client.call_vision_api(
-                    image_url=sample_image_url, prompt=sample_prompt
-                )
+                await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_reuses_existing_methods(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_reuses_existing_methods(self, llm_client, sample_image_url, sample_prompt):
         """Test that call_vision_api reuses call_api_and_parse for consistency."""
         # This test verifies the implementation approach
         # call_vision_api should format messages then delegate to call_api_and_parse
 
-        with patch.object(
-            llm_client, "call_api_and_parse", new_callable=AsyncMock
-        ) as mock_parse:
+        with patch.object(llm_client, "call_api_and_parse", new_callable=AsyncMock) as mock_parse:
             mock_parse.return_value = {"test": "data"}
 
-            result = await llm_client.call_vision_api(
-                image_url=sample_image_url, prompt=sample_prompt
-            )
+            result = await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
             # Verify call_api_and_parse was called
             assert mock_parse.called
@@ -406,25 +338,19 @@ class TestLLMClientVisionAPI:
             assert isinstance(messages[0]["content"], list)
 
     @pytest.mark.asyncio
-    async def test_call_vision_api_default_parameters(
-        self, llm_client, sample_image_url, sample_prompt
-    ):
+    async def test_call_vision_api_default_parameters(self, llm_client, sample_image_url, sample_prompt):
         """Test that call_vision_api uses correct default parameters."""
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "choices": [{"message": {"content": '{"test": "data"}'}}]
-            }
+            mock_response.json.return_value = {"choices": [{"message": {"content": '{"test": "data"}'}}]}
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
-            await llm_client.call_vision_api(
-                image_url=sample_image_url, prompt=sample_prompt
-            )
+            await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
             call_args = mock_client.post.call_args
             json_payload = call_args.kwargs["json"]

@@ -64,10 +64,7 @@ async def generate_blur_data_url(image_url: str) -> Optional[str]:
                 headers={"User-Agent": "RescueDogAggregator/1.0"},
             ) as response:
                 if response.status != 200:
-                    logger.warning(
-                        f"Failed to download image: {image_url} "
-                        f"(status={response.status})"
-                    )
+                    logger.warning(f"Failed to download image: {image_url} " f"(status={response.status})")
                     return None
 
                 image_data = await response.read()
@@ -126,9 +123,7 @@ def _process_image_sync(image_data: bytes) -> Optional[str]:
         return None
 
 
-async def batch_generate_blur_urls(
-    image_urls: list[str], max_concurrent: int = 5
-) -> dict[str, Optional[str]]:
+async def batch_generate_blur_urls(image_urls: list[str], max_concurrent: int = 5) -> dict[str, Optional[str]]:
     """
     Generate blur data URLs for multiple images concurrently.
 

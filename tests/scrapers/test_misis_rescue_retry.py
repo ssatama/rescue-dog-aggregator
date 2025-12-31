@@ -37,9 +37,7 @@ class TestMisisRescueRetryMechanism:
                 },
             ]
 
-            result = self.scraper._scrape_with_retry(
-                self.scraper._scrape_dog_detail, "http://test.com"
-            )
+            result = self.scraper._scrape_with_retry(self.scraper._scrape_dog_detail, "http://test.com")
 
             # Should succeed after retries
             assert result is not None
@@ -60,9 +58,7 @@ class TestMisisRescueRetryMechanism:
                 },
             ]
 
-            result = self.scraper._scrape_with_retry(
-                self.scraper._scrape_dog_detail, "http://test.com"
-            )
+            result = self.scraper._scrape_with_retry(self.scraper._scrape_dog_detail, "http://test.com")
 
             # Should succeed after retries
             assert result is not None
@@ -75,9 +71,7 @@ class TestMisisRescueRetryMechanism:
             # Mock to always fail
             mock_scrape.side_effect = TimeoutException("Always timeout")
 
-            result = self.scraper._scrape_with_retry(
-                self.scraper._scrape_dog_detail, "http://test.com"
-            )
+            result = self.scraper._scrape_with_retry(self.scraper._scrape_dog_detail, "http://test.com")
 
             # Should return None after max retries
             assert result is None
@@ -125,9 +119,7 @@ class TestMisisRescueRetryMechanism:
             # Mock to always fail
             mock_scrape.side_effect = TimeoutException("Always timeout")
 
-            self.scraper._scrape_with_retry(
-                self.scraper._scrape_dog_detail, "http://test.com"
-            )
+            self.scraper._scrape_with_retry(self.scraper._scrape_dog_detail, "http://test.com")
 
             # Should have called sleep with increasing delays
             expected_calls = [

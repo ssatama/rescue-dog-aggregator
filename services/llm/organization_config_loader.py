@@ -99,9 +99,7 @@ class OrganizationConfigLoader:
             prompt_file=org_data["prompt_file"],
             source_language=org_data.get("source_language", "en"),
             target_language=org_data.get("target_language", "en"),
-            model_preference=org_data.get(
-                "model_preference", "google/gemini-3-flash-preview"
-            ),
+            model_preference=org_data.get("model_preference", "google/gemini-3-flash-preview"),
             enabled=org_data.get("enabled", True),
         )
 
@@ -212,9 +210,7 @@ class OrganizationConfigLoader:
                 data = yaml.safe_load(f)
 
             if not data or "organizations" not in data:
-                raise ValueError(
-                    "Invalid configuration file: missing 'organizations' key"
-                )
+                raise ValueError("Invalid configuration file: missing 'organizations' key")
 
             # Convert to expected format
             config_map = {}
@@ -225,9 +221,7 @@ class OrganizationConfigLoader:
             if not config_map:
                 raise ValueError("No organizations found in configuration file")
 
-            logger.info(
-                f"Loaded {len(config_map)} organization configs from {yaml_config_path}"
-            )
+            logger.info(f"Loaded {len(config_map)} organization configs from {yaml_config_path}")
             return config_map
 
         except yaml.YAMLError as e:

@@ -66,9 +66,7 @@ class TestUnifiedStandardizationIntegration:
 
     @patch("scrapers.base_scraper.ConfigLoader")
     @patch("scrapers.base_scraper.create_default_sync_service")
-    def test_base_scraper_applies_standardization(
-        self, mock_sync_service, mock_config_loader
-    ):
+    def test_base_scraper_applies_standardization(self, mock_sync_service, mock_config_loader):
         """Test that base scraper correctly applies unified standardization."""
         # Setup config mock
         mock_config = Mock()
@@ -165,9 +163,7 @@ class TestUnifiedStandardizationIntegration:
         standardizer = UnifiedStandardizer()
 
         # Test None values - standardizer accepts individual params not dicts
-        result = standardizer.apply_full_standardization(
-            breed=None, age=None, size=None
-        )
+        result = standardizer.apply_full_standardization(breed=None, age=None, size=None)
         assert result is not None
         assert result["breed_category"] == "Unknown"
         assert result["standardization_confidence"] == 0.0
@@ -181,9 +177,7 @@ class TestUnifiedStandardizationIntegration:
         result = standardizer.apply_full_standardization(breed="Unknown")
         assert result["breed"] == "Unknown"
         assert result["breed_category"] == "Unknown"
-        assert (
-            result["standardization_confidence"] == 0.3
-        )  # "Unknown" has 0.3 confidence
+        assert result["standardization_confidence"] == 0.3  # "Unknown" has 0.3 confidence
 
         # Test empty string breed
         result = standardizer.apply_full_standardization(breed="")

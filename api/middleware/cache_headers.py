@@ -37,24 +37,16 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Response-Time"] = f"{response_time:.3f}"
 
         if request.method == "GET" and response.status_code == 200:
-            cache_type, cache_duration, swr_duration = self._determine_cache_strategy(
-                request.url.path, dict(request.query_params)
-            )
+            cache_type, cache_duration, swr_duration = self._determine_cache_strategy(request.url.path, dict(request.query_params))
 
             if cache_duration > 0:
-                cache_control = self._build_cache_control(
-                    cache_duration, swr_duration, is_public=True
-                )
+                cache_control = self._build_cache_control(cache_duration, swr_duration, is_public=True)
                 response.headers["Cache-Control"] = cache_control
 
-                cdn_cache_control = self._build_cache_control(
-                    cache_duration, swr_duration, is_public=True, is_cdn=True
-                )
+                cdn_cache_control = self._build_cache_control(cache_duration, swr_duration, is_public=True, is_cdn=True)
                 response.headers["CDN-Cache-Control"] = cdn_cache_control
 
-                vary_headers = self._get_vary_headers(
-                    request.url.path, dict(request.query_params)
-                )
+                vary_headers = self._get_vary_headers(request.url.path, dict(request.query_params))
                 if vary_headers:
                     response.headers["Vary"] = vary_headers
 
@@ -66,9 +58,7 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
                     if if_none_match and if_none_match == etag:
                         return Response(status_code=304, headers=dict(response.headers))
             else:
-                response.headers["Cache-Control"] = (
-                    "no-cache, no-store, must-revalidate"
-                )
+                response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
                 response.headers["Pragma"] = "no-cache"
                 response.headers["Expires"] = "0"
 
@@ -77,9 +67,7 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
 
         return response
 
-    def _determine_cache_strategy(
-        self, path: str, query_params: Dict
-    ) -> Tuple[str, int, int]:
+    def _determine_cache_strategy(self, path: str, query_params: Dict) -> Tuple[str, int, int]:
         if path in ["/health", "/"] or path.startswith("/monitoring"):
             return ("health", 0, 0)
 
@@ -112,9 +100,7 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
                     self.SWR_DURATIONS["diverse_animals"],
                 )
 
-        if path.startswith("/api/animals/") and (
-            path.count("/") == 3 or "/id/" in path
-        ):
+        if path.startswith("/api/animals/") and (path.count("/") == 3 or "/id/" in path):
             return (
                 "individual_animal",
                 self.CACHE_DURATIONS["individual_animal"],
@@ -151,9 +137,7 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
 
         return ("default_animals", 900, 120)
 
-    def _build_cache_control(
-        self, max_age: int, swr: int, is_public: bool = True, is_cdn: bool = False
-    ) -> str:
+    def _build_cache_control(self, max_age: int, swr: int, is_public: bool = True, is_cdn: bool = False) -> str:
         parts = []
 
         if is_public:
@@ -177,10 +161,7 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
         if "/animals" in path:
             vary_headers.append("Origin")
 
-            if any(
-                param in query_params
-                for param in ["city", "state", "country", "latitude", "longitude"]
-            ):
+            if any(param in query_params for param in ["city", "state", "country", "latitude", "longitude"]):
                 vary_headers.append("X-Forwarded-For")
 
         return ", ".join(vary_headers)

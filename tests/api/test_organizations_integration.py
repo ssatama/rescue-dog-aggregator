@@ -137,9 +137,7 @@ class TestOrganizationStatisticsIntegration:
 
         # Week should be subset of month (in most cases)
         # Allow for edge cases around month boundaries
-        assert (
-            data["new_this_week"] <= data["new_this_month"] + 7
-        )  # Allow some flexibility
+        assert data["new_this_week"] <= data["new_this_month"] + 7  # Allow some flexibility
 
 
 @pytest.mark.slow

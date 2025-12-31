@@ -15,9 +15,7 @@ def fix_pytest_import(file_path: Path) -> bool:
 
     # Check if file has pytest markers but no pytest import
     has_markers = "@pytest.mark" in content
-    has_import = re.search(r"^import pytest", content, re.MULTILINE) or re.search(
-        r"^from pytest", content, re.MULTILINE
-    )
+    has_import = re.search(r"^import pytest", content, re.MULTILINE) or re.search(r"^from pytest", content, re.MULTILINE)
 
     if has_markers and not has_import:
         # Find the right place to insert import
@@ -26,9 +24,7 @@ def fix_pytest_import(file_path: Path) -> bool:
         # Find last import line
         last_import_line = -1
         for i, line in enumerate(lines):
-            if line.strip().startswith(
-                ("import ", "from ")
-            ) and not line.strip().startswith("from ."):
+            if line.strip().startswith(("import ", "from ")) and not line.strip().startswith("from ."):
                 last_import_line = i
 
         if last_import_line >= 0:

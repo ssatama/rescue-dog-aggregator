@@ -75,14 +75,10 @@ def validate_environment() -> bool:
     db_config = get_database_config()
 
     if not db_config.get("host") or not db_config.get("database"):
-        logger.error(
-            "Database configuration missing. Set DATABASE_URL or RAILWAY_DATABASE_URL."
-        )
+        logger.error("Database configuration missing. Set DATABASE_URL or RAILWAY_DATABASE_URL.")
         return False
 
-    logger.info(
-        f"Database: {db_config['user']}@{db_config['host']}/{db_config['database']}"
-    )
+    logger.info(f"Database: {db_config['user']}@{db_config['host']}/{db_config['database']}")
     return True
 
 
@@ -151,13 +147,9 @@ def main():
     """Main entry point for Railway cron job."""
     parser = argparse.ArgumentParser(description="Railway scraper cron job")
     parser.add_argument("--org", type=str, help="Run only a specific organization")
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Show what would run without executing"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="Show what would run without executing")
     parser.add_argument("--list", action="store_true", help="List available scrapers")
-    parser.add_argument(
-        "--json", action="store_true", help="Output results as JSON only"
-    )
+    parser.add_argument("--json", action="store_true", help="Output results as JSON only")
     args = parser.parse_args()
 
     signal.signal(signal.SIGTERM, handle_shutdown)
@@ -171,9 +163,7 @@ def main():
         logger.info(f"Environment: {environment}")
 
     init_scraper_sentry(environment=environment)
-    add_scrape_breadcrumb(
-        "Cron job started", category="cron", data={"start_time": start_time.isoformat()}
-    )
+    add_scrape_breadcrumb("Cron job started", category="cron", data={"start_time": start_time.isoformat()})
 
     if not validate_environment():
         logger.error("Environment validation failed")
@@ -222,9 +212,7 @@ def main():
             print(json.dumps(result, indent=2))
         else:
             if result["success"]:
-                logger.info(
-                    f"Scraper completed: {result['organization']} - {result['animals_found']} animals found"
-                )
+                logger.info(f"Scraper completed: {result['organization']} - {result['animals_found']} animals found")
             else:
                 logger.error(f"Scraper failed: {result['error']}")
 

@@ -70,9 +70,7 @@ class TestAgeTranslation:
 
         for german_age, expected_english in production_ages.items():
             result = translate_age(german_age)
-            assert result == expected_english, (
-                f"Failed for {german_age}: expected {expected_english}, got {result}"
-            )
+            assert result == expected_english, f"Failed for {german_age}: expected {expected_english}, got {result}"
 
     def test_translate_age_handles_none(self):
         """Test that None values are handled gracefully."""
@@ -108,9 +106,7 @@ class TestBreedTranslation:
 
         for german, english in production_breeds.items():
             result = translate_breed(german)
-            assert result == english, (
-                f"Failed for {german}: expected {english}, got {result}"
-            )
+            assert result == english, f"Failed for {german}: expected {english}, got {result}"
 
     def test_breeds_that_remain_unchanged(self):
         """Test breeds that should remain unchanged (already in English or proper names)."""
@@ -152,9 +148,7 @@ class TestBreedTranslation:
 
         for german, english in complex_breeds.items():
             result = translate_breed(german)
-            assert result == english, (
-                f"Failed for {german}: expected {english}, got {result}"
-            )
+            assert result == english, f"Failed for {german}: expected {english}, got {result}"
 
 
 class TestNameNormalization:
@@ -229,15 +223,9 @@ class TestBasescraperCompatibility:
 
             # Verify base_scraper can standardize it
             age_info = standardize_age(english_age)
-            assert age_info is not None, (
-                f"Standardization failed for {english_age} (from {german_age})"
-            )
-            assert "age_min_months" in age_info, (
-                f"Missing age_min_months for {english_age}"
-            )
-            assert "age_max_months" in age_info, (
-                f"Missing age_max_months for {english_age}"
-            )
+            assert age_info is not None, f"Standardization failed for {english_age} (from {german_age})"
+            assert "age_min_months" in age_info, f"Missing age_min_months for {english_age}"
+            assert "age_max_months" in age_info, f"Missing age_max_months for {english_age}"
 
     def test_translated_breeds_work_with_standardize_breed(self):
         """Test that translated breeds can be properly standardized by base_scraper.py."""
@@ -255,13 +243,9 @@ class TestBasescraperCompatibility:
             assert english_breed is not None, f"Translation failed for {german_breed}"
 
             # Verify base_scraper can standardize it
-            standardized_breed, breed_group, size_estimate = standardize_breed(
-                english_breed
-            )
+            standardized_breed, breed_group, size_estimate = standardize_breed(english_breed)
             # At minimum, we should get the breed back (may not be in standardization mapping)
-            assert standardized_breed is not None, (
-                f"Standardization failed for {english_breed} (from {german_breed})"
-            )
+            assert standardized_breed is not None, f"Standardization failed for {english_breed} (from {german_breed})"
 
     def test_age_translation_preserves_semantic_meaning(self):
         """Test that age translations preserve semantic meaning for standardization."""
@@ -273,28 +257,20 @@ class TestBasescraperCompatibility:
             english_age = translate_age(german_age)
             age_info = standardize_age(english_age)
             # Should be categorized as Puppy or Young
-            assert age_info["age_min_months"] < 36, (
-                f"Young dog {german_age} not categorized as young"
-            )
+            assert age_info["age_min_months"] < 36, f"Young dog {german_age} not categorized as young"
 
         for german_age in old_ages:
             english_age = translate_age(german_age)
             age_info = standardize_age(english_age)
             # Should be categorized as Adult or Senior
-            assert age_info["age_min_months"] >= 36, (
-                f"Old dog {german_age} not categorized as mature"
-            )
+            assert age_info["age_min_months"] >= 36, f"Old dog {german_age} not categorized as mature"
 
     def test_breed_translation_preserves_size_information(self):
         """Test that breed translations allow size estimation by standardization."""
         # Test that German Shepherd gets properly sized
         german_shepherd = translate_breed("Deutscher Schäferhund")
-        standardized_breed, breed_group, size_estimate = standardize_breed(
-            german_shepherd
-        )
+        standardized_breed, breed_group, size_estimate = standardize_breed(german_shepherd)
 
         # German Shepherds should be recognized and sized appropriately
-        assert (
-            "Shepherd" in standardized_breed or "German Shepherd" in standardized_breed
-        )
+        assert "Shepherd" in standardized_breed or "German Shepherd" in standardized_breed
         assert size_estimate in ["Medium", "Large", "XLarge"] or size_estimate is None

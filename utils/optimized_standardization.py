@@ -16,9 +16,7 @@ MAX_DOG_AGE_MONTHS = 360
 
 # Pre-compiled regex patterns for performance
 _COMPILED_PATTERNS = {
-    "years": re.compile(
-        r"(?<!-)\b(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)"
-    ),
+    "years": re.compile(r"(?<!-)\b(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)"),
     "months": re.compile(r"(?<!-)\b(\d+)\s*(?:months?|mo|mon)"),
     "weeks": re.compile(r"(?<!-)\b(\d+)\s*(?:weeks?|wks?)"),
     "birth_date": re.compile(r"(?:born\s*)?(\d{1,2})[/-](\d{4})", re.IGNORECASE),
@@ -88,9 +86,7 @@ BREED_MAPPING = {
     "golden retriever": BreedInfo("Golden Retriever", "Sporting", "Large"),
     "retriever": BreedInfo("Retriever", "Sporting", "Large"),
     "cocker spaniel": BreedInfo("Cocker Spaniel", "Sporting", "Medium"),
-    "english springer spaniel": BreedInfo(
-        "English Springer Spaniel", "Sporting", "Medium"
-    ),
+    "english springer spaniel": BreedInfo("English Springer Spaniel", "Sporting", "Medium"),
     "spaniel": BreedInfo("Spaniel", "Sporting", "Medium"),
     "pointer": BreedInfo("Pointer", "Sporting", "Large"),
     "setter": BreedInfo("Setter", "Sporting", "Large"),
@@ -128,12 +124,8 @@ BREED_MAPPING = {
     "pit bull": BreedInfo("American Pit Bull Terrier", "Terrier", "Medium"),
     "pitbull": BreedInfo("American Pit Bull Terrier", "Terrier", "Medium"),
     "pittie": BreedInfo("American Pit Bull Terrier", "Terrier", "Medium"),
-    "american staffordshire terrier": BreedInfo(
-        "American Staffordshire Terrier", "Terrier", "Medium"
-    ),
-    "staffordshire bull terrier": BreedInfo(
-        "Staffordshire Bull Terrier", "Terrier", "Medium"
-    ),
+    "american staffordshire terrier": BreedInfo("American Staffordshire Terrier", "Terrier", "Medium"),
+    "staffordshire bull terrier": BreedInfo("Staffordshire Bull Terrier", "Terrier", "Medium"),
     "staffie": BreedInfo("Staffordshire Bull Terrier", "Terrier", "Medium"),
     "jack russell": BreedInfo("Jack Russell Terrier", "Terrier", "Small"),
     "jack russell terrier": BreedInfo("Jack Russell Terrier", "Terrier", "Small"),
@@ -374,9 +366,7 @@ def _parse_birth_date(age_text: str) -> Optional[AgeInfo]:
                 return None
 
             # Calculate age
-            age_months = (current_date.year - birth_year) * 12 + (
-                current_date.month - birth_month
-            )
+            age_months = (current_date.year - birth_year) * 12 + (current_date.month - birth_month)
             if age_months < 0:
                 age_months += 12
 
@@ -391,9 +381,7 @@ def _parse_birth_date(age_text: str) -> Optional[AgeInfo]:
         try:
             birth_year = int(birth_year_match.group(1))
             if current_date.year - 20 <= birth_year <= current_date.year + 1:
-                age_months = (current_date.year - birth_year) * 12 + (
-                    current_date.month - 6
-                )
+                age_months = (current_date.year - birth_year) * 12 + (current_date.month - 6)
                 if age_months >= 0:
                     return AgeInfo(
                         *_categorize_age_from_months(age_months)[:1],
@@ -421,9 +409,7 @@ def _parse_descriptive_age(age_text: str) -> Optional[AgeInfo]:
     # Partial matches
     if any(term in age_text for term in ["puppy", "pup", "baby", "young puppy"]):
         return AgeInfo("Puppy", 2, 10)
-    elif any(
-        term in age_text for term in ["young adult", "adolescent", "juvenile", "teen"]
-    ):
+    elif any(term in age_text for term in ["young adult", "adolescent", "juvenile", "teen"]):
         return AgeInfo("Young", 12, 36)
     elif any(term in age_text for term in ["adult", "grown", "mature"]):
         return AgeInfo("Adult", 36, 96)
@@ -477,16 +463,10 @@ def standardize_size_value(size: str) -> Optional[str]:
     # Handle hyphenated sizes
     if "-" in clean_size:
         parts = clean_size.split("-")
-        sizes = [
-            SIZE_MAPPINGS.get(part.strip())
-            for part in parts
-            if part.strip() in SIZE_MAPPINGS
-        ]
+        sizes = [SIZE_MAPPINGS.get(part.strip()) for part in parts if part.strip() in SIZE_MAPPINGS]
         if sizes:
             size_order = ["Tiny", "Small", "Medium", "Large", "XLarge"]
-            return max(
-                sizes, key=lambda x: size_order.index(x) if x in size_order else -1
-            )
+            return max(sizes, key=lambda x: size_order.index(x) if x in size_order else -1)
 
     return None
 

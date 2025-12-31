@@ -126,10 +126,7 @@ class TestTheUnderdogIntegration:
         vicky = next(r for r in results if r["name"] == "Vicky")
         assert vicky["external_id"] == "tud-vicky"
         assert vicky["adoption_url"] == "https://www.theunderdog.org/adopt/vicky"
-        assert (
-            vicky["primary_image_url"]
-            == "https://images.squarespace-cdn.com/vicky-hero.jpg"
-        )
+        assert vicky["primary_image_url"] == "https://images.squarespace-cdn.com/vicky-hero.jpg"
         assert vicky["animal_type"] == "dog"
         assert vicky["status"] == "available"
 
@@ -137,9 +134,7 @@ class TestTheUnderdogIntegration:
         assert vicky["age_text"] == "Young adult (around two years)"  # From Q&A data
         assert vicky["breed"] == "Mixed Breed"
         assert vicky["sex"] == "Female"  # Should be full word
-        assert (
-            vicky["size"] == "Large"
-        )  # Extracted from properties "Large (around 30kg)"
+        assert vicky["size"] == "Large"  # Extracted from properties "Large (around 30kg)"
         assert vicky["weight_kg"] == 30.0  # Extracted from "Large (around 30kg)"
         assert vicky["country"] == "United Kingdom"
         assert vicky["country_code"] == "GB"
@@ -149,15 +144,10 @@ class TestTheUnderdogIntegration:
         luna = next(r for r in results if r["name"] == "Luna")
         assert luna["external_id"] == "tud-luna"
         assert luna["adoption_url"] == "https://www.theunderdog.org/adopt/luna"
-        assert (
-            luna["primary_image_url"]
-            == "https://images.squarespace-cdn.com/luna-hero.jpg"
-        )
+        assert luna["primary_image_url"] == "https://images.squarespace-cdn.com/luna-hero.jpg"
 
         # Test normalized fields
-        assert (
-            luna["breed"] == "Shepherd Mix" or luna["breed"] == "Mixed Breed"
-        )  # Extracted from description or defaulted
+        assert luna["breed"] == "Shepherd Mix" or luna["breed"] == "Mixed Breed"  # Extracted from description or defaulted
         assert luna["sex"] == "Female"  # Should be full word
         assert luna["size"] == "Medium"
         assert luna["country"] == "France"
@@ -179,12 +169,8 @@ class TestTheUnderdogIntegration:
         ]
         for dog in results:
             for field in required_fields:
-                assert field in dog, (
-                    f"Missing required field '{field}' in {dog['name']}"
-                )
-                assert dog[field] is not None, (
-                    f"Field '{field}' is None in {dog['name']}"
-                )
+                assert field in dog, f"Missing required field '{field}' in {dog['name']}"
+                assert dog[field] is not None, f"Field '{field}' is None in {dog['name']}"
                 assert dog[field] != "", f"Field '{field}' is empty in {dog['name']}"
 
     @patch("scrapers.theunderdog.theunderdog_scraper.requests.get")
@@ -294,9 +280,7 @@ class TestTheUnderdogIntegration:
             else:
                 result["size"] = "Medium"
         if not result.get("description"):
-            result["description"] = (
-                f"Rescue dog from {result.get('country', 'unknown location')}"
-            )
+            result["description"] = f"Rescue dog from {result.get('country', 'unknown location')}"
         if not result.get("location"):
             result["location"] = result.get("country", "Unknown")
 

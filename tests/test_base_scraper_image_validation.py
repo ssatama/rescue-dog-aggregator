@@ -2,7 +2,6 @@
 
 from unittest.mock import Mock
 
-
 from scrapers.base_scraper import BaseScraper
 
 
@@ -82,14 +81,8 @@ class TestBaseScraperImageValidation:
         assert save_animal_mock.call_count == 2  # Valid Dog 1 and Valid Dog 2 only
 
         # Verify warning was logged for invalid animal
-        warning_calls = [
-            call
-            for call in scraper.logger.warning.call_args_list
-            if "Invalid Dog - Empty String" in str(call)
-        ]
-        assert len(warning_calls) == 1, (
-            "Should have logged warning for dog with empty image URL"
-        )
+        warning_calls = [call for call in scraper.logger.warning.call_args_list if "Invalid Dog - Empty String" in str(call)]
+        assert len(warning_calls) == 1, "Should have logged warning for dog with empty image URL"
 
     def test_validate_animal_data_rejects_empty_image_urls(self):
         """Test that _validate_animal_data correctly rejects empty image URLs."""

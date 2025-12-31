@@ -201,9 +201,7 @@ class BackupManager:
             print(f"Verifying backup integrity: {backup_path.name}")
 
             # Test gzip integrity
-            result = subprocess.run(
-                ["gzip", "-t", str(backup_path)], capture_output=True, text=True
-            )
+            result = subprocess.run(["gzip", "-t", str(backup_path)], capture_output=True, text=True)
 
             if result.returncode != 0:
                 return (
@@ -228,9 +226,7 @@ class BackupManager:
         except Exception as e:
             return False, f"Backup integrity check failed: {e}"
 
-    def test_backup_restore(
-        self, backup_path: Optional[Path] = None
-    ) -> tuple[bool, str]:
+    def test_backup_restore(self, backup_path: Optional[Path] = None) -> tuple[bool, str]:
         """Test backup restoration to a temporary database."""
         if backup_path is None:
             # Use latest daily backup
@@ -286,9 +282,7 @@ class BackupManager:
                 )
 
                 if result.returncode != 0:
-                    raise Exception(
-                        f"Failed to restore backup: {result.stderr.decode()}"
-                    )
+                    raise Exception(f"Failed to restore backup: {result.stderr.decode()}")
 
             # Verify restored data
             psql_check_cmd = [
@@ -369,10 +363,7 @@ class BackupManager:
         # Clean up weekly backups (with different retention period)
         weekly_cutoff = datetime.now() - timedelta(days=self.weekly_retention_days)
         for backup_dir in self.weekly_dir.iterdir():
-            if (
-                backup_dir.is_dir()
-                and datetime.fromtimestamp(backup_dir.stat().st_mtime) < weekly_cutoff
-            ):
+            if backup_dir.is_dir() and datetime.fromtimestamp(backup_dir.stat().st_mtime) < weekly_cutoff:
                 print(f"Removing old weekly backup: {backup_dir.name}")
                 shutil.rmtree(backup_dir)
                 weekly_removed += 1
@@ -386,9 +377,7 @@ class BackupManager:
 
         try:
             msg = MIMEText(message)
-            msg["Subject"] = (
-                f"[Backup {'Success' if is_success else 'FAILURE'}] {subject}"
-            )
+            msg["Subject"] = f"[Backup {'Success' if is_success else 'FAILURE'}] {subject}"
             msg["From"] = "backup@rescuedogs.app"
             msg["To"] = self.notification_email
 
@@ -421,23 +410,15 @@ class BackupManager:
             latest_weekly = None
             latest_weekly_time = None
 
-        total_size = sum(f.stat().st_size for f in daily_backups) + sum(
-            sum(f.stat().st_size for f in backup_dir.rglob("*") if f.is_file())
-            for backup_dir in weekly_backups
-            if backup_dir.is_dir()
-        )
+        total_size = sum(f.stat().st_size for f in daily_backups) + sum(sum(f.stat().st_size for f in backup_dir.rglob("*") if f.is_file()) for backup_dir in weekly_backups if backup_dir.is_dir())
 
         return {
             "daily_backup_count": len(daily_backups),
             "weekly_backup_count": len([b for b in weekly_backups if b.is_dir()]),
             "latest_daily_backup": latest_daily.name if latest_daily else None,
-            "latest_daily_time": latest_daily_time.isoformat()
-            if latest_daily_time
-            else None,
+            "latest_daily_time": latest_daily_time.isoformat() if latest_daily_time else None,
             "latest_weekly_backup": latest_weekly.name if latest_weekly else None,
-            "latest_weekly_time": latest_weekly_time.isoformat()
-            if latest_weekly_time
-            else None,
+            "latest_weekly_time": latest_weekly_time.isoformat() if latest_weekly_time else None,
             "total_backup_size_mb": round(total_size / (1024 * 1024), 2),
             "backup_directory": str(self.backup_base_dir),
         }
@@ -451,9 +432,7 @@ def main():
         choices=["daily", "weekly", "test-restore", "cleanup", "status"],
         help="Backup command to run",
     )
-    parser.add_argument(
-        "--backup-dir", default="/var/backups/postgresql", help="Base backup directory"
-    )
+    parser.add_argument("--backup-dir", default="/var/backups/postgresql", help="Base backup directory")
     parser.add_argument("--days", type=int, help="Retention days for cleanup")
     parser.add_argument("--email", help="Notification email address")
     parser.add_argument("--test-backup", help="Specific backup file to test restore")
@@ -472,9 +451,7 @@ def main():
 
             if success and backup_path:
                 # Verify backup integrity
-                integrity_ok, integrity_msg = backup_manager.verify_backup_integrity(
-                    backup_path
-                )
+                integrity_ok, integrity_msg = backup_manager.verify_backup_integrity(backup_path)
                 message += f"\n{integrity_msg}"
 
                 if not integrity_ok:
@@ -485,9 +462,7 @@ def main():
             # Clean up old backups
             daily_removed, weekly_removed = backup_manager.cleanup_old_backups()
             if daily_removed > 0 or weekly_removed > 0:
-                print(
-                    f"Cleaned up {daily_removed} daily and {weekly_removed} weekly old backups"
-                )
+                print(f"Cleaned up {daily_removed} daily and {weekly_removed} weekly old backups")
 
             sys.exit(0 if success else 1)
 
@@ -529,9 +504,7 @@ def main():
         error_msg = f"Backup operation failed: {e}"
         print(f"ERROR: {error_msg}")
         if args.email:
-            backup_manager.send_notification(
-                f"{args.command.title()} Backup Error", error_msg, False
-            )
+            backup_manager.send_notification(f"{args.command.title()} Backup Error", error_msg, False)
         sys.exit(1)
 
 

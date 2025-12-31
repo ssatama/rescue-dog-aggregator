@@ -72,9 +72,7 @@ class TestManyTearsRescueScraper:
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
 
             # Mock get_animal_list to verify it's called
-            with patch.object(
-                scraper, "get_animal_list", return_value=[]
-            ) as mock_get_animals:
+            with patch.object(scraper, "get_animal_list", return_value=[]) as mock_get_animals:
                 result = scraper.collect_data()
 
                 mock_get_animals.assert_called_once()
@@ -90,9 +88,7 @@ class TestManyTearsRescueScraper:
             patch("scrapers.base_scraper.ConfigLoader"),
             patch("scrapers.base_scraper.create_default_sync_service"),
         ):
-            scraper = ManyTearsRescueScraper(
-                config_id="manytearsrescue", metrics_collector=mock_metrics
-            )
+            scraper = ManyTearsRescueScraper(config_id="manytearsrescue", metrics_collector=mock_metrics)
 
             assert scraper is not None
             # Verify dependency injection works

@@ -49,9 +49,7 @@ class TestDetectPartialFailure:
         result = actual_method(scraper, animals_found=8)
 
         # Verify the SessionManager was called
-        mock_session_manager.detect_partial_failure.assert_called_once_with(
-            8, 0.5, 3, 3, 0, 0
-        )
+        mock_session_manager.detect_partial_failure.assert_called_once_with(8, 0.5, 3, 3, 0, 0)
 
         # Since we're now using SessionManager, we don't need to check SQL syntax
         # The SQL is handled by the SessionManager service
@@ -82,9 +80,7 @@ class TestDetectPartialFailure:
         assert isinstance(result, bool)
 
         # Verify SessionManager was called
-        mock_session_manager.detect_partial_failure.assert_called_once_with(
-            8, 0.5, 3, 3, 0, 0
-        )
+        mock_session_manager.detect_partial_failure.assert_called_once_with(8, 0.5, 3, 3, 0, 0)
 
     def test_detect_partial_failure_handles_sql_error_gracefully(self):
         """Test that the SQL query structure is correct to avoid PostgreSQL GROUP BY errors."""
@@ -111,9 +107,7 @@ class TestDetectPartialFailure:
         assert isinstance(result, bool)
 
         # Verify SessionManager was called
-        mock_session_manager.detect_partial_failure.assert_called_once_with(
-            8, 0.5, 3, 3, 0, 0
-        )
+        mock_session_manager.detect_partial_failure.assert_called_once_with(8, 0.5, 3, 3, 0, 0)
 
         # This structure avoids the PostgreSQL GROUP BY error by using SessionManager
 
@@ -138,16 +132,12 @@ class TestDetectPartialFailure:
         assert result is False
 
         # Test case 2: Insufficient historical data
-        result = BaseScraper.detect_partial_failure(
-            scraper, animals_found=5, minimum_historical_scrapes=3
-        )
+        result = BaseScraper.detect_partial_failure(scraper, animals_found=5, minimum_historical_scrapes=3)
         # Should fall back to absolute minimum checking
         assert isinstance(result, bool)
 
         # Verify SessionManager was called
-        mock_session_manager.detect_partial_failure.assert_called_with(
-            5, 0.5, 3, 3, 0, 0
-        )
+        mock_session_manager.detect_partial_failure.assert_called_with(5, 0.5, 3, 3, 0, 0)
 
         # Test case 3: Zero animals found (catastrophic failure)
         # Set session manager to return True for zero animals

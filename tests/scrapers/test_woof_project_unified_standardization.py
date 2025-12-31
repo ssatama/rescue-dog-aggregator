@@ -2,7 +2,6 @@
 
 from unittest.mock import patch
 
-
 from scrapers.base_scraper import BaseScraper
 from scrapers.woof_project.dogs_scraper import WoofProjectScraper
 from utils.unified_standardization import UnifiedStandardizer
@@ -115,7 +114,5 @@ class TestWoofProjectUnifiedStandardization:
         assert "primary_breed" in result
         assert "breed_category" in result
         assert result["primary_breed"] == "Lurcher"
-        assert (
-            result["breed_category"] == "Hound"
-        )  # Critical: Lurcher should be Hound, not Unknown
+        assert result["breed_category"] == "Hound"  # Critical: Lurcher should be Hound, not Unknown
         assert result["standardization_confidence"] > 0.9

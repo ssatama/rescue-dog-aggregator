@@ -57,9 +57,7 @@ class DogProfileQualityRubric:
     }
 
     @staticmethod
-    def score_profile(
-        profile_data: Dict[str, Any], source_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def score_profile(profile_data: Dict[str, Any], source_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Score a dog profile against quality criteria.
 
@@ -85,18 +83,9 @@ class DogProfileQualityRubric:
 
         # Content quality - check for descriptive elements (more flexible)
         quality_indicators = [
-            any(
-                word in desc.lower()
-                for word in ["personality", "temperament", "character", "nature"]
-            ),
-            any(
-                word in desc.lower()
-                for word in ["need", "require", "looking for", "seek", "dream"]
-            ),
-            any(
-                word in desc.lower()
-                for word in ["home", "family", "companion", "friend"]
-            ),
+            any(word in desc.lower() for word in ["personality", "temperament", "character", "nature"]),
+            any(word in desc.lower() for word in ["need", "require", "looking for", "seek", "dream"]),
+            any(word in desc.lower() for word in ["home", "family", "companion", "friend"]),
             any(
                 word in desc.lower()
                 for word in [
@@ -116,12 +105,8 @@ class DogProfileQualityRubric:
         scores["description_quality"] = desc_score
 
         # Field completeness
-        required = DogProfileQualityRubric.QUALITY_CRITERIA["field_completeness"][
-            "required_fields"
-        ]
-        present = sum(
-            1 for field in required if field in profile_data and profile_data[field]
-        )
+        required = DogProfileQualityRubric.QUALITY_CRITERIA["field_completeness"]["required_fields"]
+        present = sum(1 for field in required if field in profile_data and profile_data[field])
         scores["field_completeness"] = present / len(required)
 
         # Data accuracy (check for hallucinations)
@@ -132,22 +117,16 @@ class DogProfileQualityRubric:
             accuracy_score += 0.33
         # Check average confidence
         if "confidence_scores" in profile_data:
-            avg_confidence = sum(profile_data["confidence_scores"].values()) / len(
-                profile_data["confidence_scores"]
-            )
+            avg_confidence = sum(profile_data["confidence_scores"].values()) / len(profile_data["confidence_scores"])
             if avg_confidence > 0.7:
                 accuracy_score += 0.34
         scores["data_accuracy"] = accuracy_score
 
         # Language quality
         lang_score = 0.0
-        if desc and not any(
-            word in desc.lower() for word in ["hund", "rüde", "hündin", "jahr"]
-        ):
+        if desc and not any(word in desc.lower() for word in ["hund", "rüde", "hündin", "jahr"]):
             lang_score += 0.5
-        if desc and any(
-            word in desc.lower() for word in ["friendly", "loving", "playful", "gentle"]
-        ):
+        if desc and any(word in desc.lower() for word in ["friendly", "loving", "playful", "gentle"]):
             lang_score += 0.5
         scores["language_quality"] = lang_score
 
@@ -155,15 +134,9 @@ class DogProfileQualityRubric:
         consistency_score = 1.0  # Start with full score, deduct for issues
 
         # Check for contradictions
-        if (
-            profile_data.get("confidence") == "shy"
-            and profile_data.get("sociability") == "very_social"
-        ):
+        if profile_data.get("confidence") == "shy" and profile_data.get("sociability") == "very_social":
             consistency_score -= 0.5
-        if (
-            profile_data.get("energy_level") == "very_high"
-            and profile_data.get("exercise_needs") == "minimal"
-        ):
+        if profile_data.get("energy_level") == "very_high" and profile_data.get("exercise_needs") == "minimal":
             consistency_score -= 0.5
 
         scores["consistency"] = max(0, consistency_score)
@@ -205,9 +178,7 @@ class DogProfileQualityRubric:
 
         return issues
 
-    def calculate_quality_score(
-        self, profile_data: Dict[str, Any], source_data: Optional[Dict[str, Any]] = None
-    ) -> float:
+    def calculate_quality_score(self, profile_data: Dict[str, Any], source_data: Optional[Dict[str, Any]] = None) -> float:
         """
         Calculate quality score for a dog profile.
 

@@ -35,16 +35,12 @@ class EmergencyCoordinator:
             database_service: Optional database service, creates default if not provided
         """
         self.logger = logging.getLogger(__name__)
-        self.database_service = database_service or create_database_service_from_config(
-            DB_CONFIG
-        )
+        self.database_service = database_service or create_database_service_from_config(DB_CONFIG)
         self.config_loader = ConfigLoader()
 
         # Initialize all emergency services
         self.system_monitoring = SystemMonitoringService(self.database_service)
-        self.scraper_control = ScraperControlService(
-            self.database_service, self.config_loader
-        )
+        self.scraper_control = ScraperControlService(self.database_service, self.config_loader)
         self.rollback_service = RollbackService(self.database_service)
         self.recovery_service = DataRecoveryService(self.database_service)
 
@@ -107,9 +103,7 @@ class EmergencyCoordinator:
         """
         return self.scraper_control.emergency_stop_all_scrapers()
 
-    def emergency_disable_organization(
-        self, organization_id: int, reason: str
-    ) -> Dict[str, Any]:
+    def emergency_disable_organization(self, organization_id: int, reason: str) -> Dict[str, Any]:
         """Emergency disable scraping for a specific organization.
 
         Args:
@@ -119,9 +113,7 @@ class EmergencyCoordinator:
         Returns:
             Dictionary containing disable operation results
         """
-        return self.scraper_control.emergency_disable_organization(
-            organization_id, reason
-        )
+        return self.scraper_control.emergency_disable_organization(organization_id, reason)
 
     def execute_emergency_recovery(self, organization_id: int) -> Dict[str, Any]:
         """Execute complete emergency recovery workflow for an organization.
@@ -136,9 +128,7 @@ class EmergencyCoordinator:
         backup_id = None
 
         try:
-            self.logger.warning(
-                f"EMERGENCY RECOVERY: Starting for organization {organization_id}"
-            )
+            self.logger.warning(f"EMERGENCY RECOVERY: Starting for organization {organization_id}")
 
             # Step 0: Validate operation safety
             safety_check = self._validate_operation_safety(organization_id)
@@ -165,16 +155,12 @@ class EmergencyCoordinator:
                 }
 
             # Step 2: Create safety backup
-            backup_result = self.rollback_service.create_data_backup(
-                organization_id, "Emergency recovery safety backup"
-            )
+            backup_result = self.rollback_service.create_data_backup(organization_id, "Emergency recovery safety backup")
             backup_id = backup_result.get("backup_id")
             recovery_log.append(f"Created backup: {backup_id}")
 
             # Step 3: Rollback last scrape
-            rollback_result = self.rollback_service.rollback_last_scrape(
-                organization_id
-            )
+            rollback_result = self.rollback_service.rollback_last_scrape(organization_id)
             recovery_log.append(f"Rollback result: {rollback_result}")
 
             if not rollback_result["success"]:
@@ -186,9 +172,7 @@ class EmergencyCoordinator:
                 }
 
             # Step 4: Validate data consistency
-            validation_result = self.recovery_service.validate_data_consistency(
-                organization_id
-            )
+            validation_result = self.recovery_service.validate_data_consistency(organization_id)
             recovery_log.append(f"Validation result: {validation_result}")
 
             recovery_summary = {
@@ -209,9 +193,7 @@ class EmergencyCoordinator:
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Emergency recovery failed for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Emergency recovery failed for org {organization_id}: {e}")
             return {
                 "success": False,
                 "organization_id": organization_id,

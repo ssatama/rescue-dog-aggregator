@@ -33,9 +33,7 @@ class TestR2ConcurrentUpload(unittest.TestCase):
         with patch.object(R2Service, "upload_image_from_url") as mock_upload:
             mock_upload.return_value = ("https://r2.com/image.jpg", True)
 
-            results = R2Service.concurrent_upload_images(
-                test_images, max_workers=2, throttle_ms=100
-            )
+            results = R2Service.concurrent_upload_images(test_images, max_workers=2, throttle_ms=100)
 
             self.assertEqual(len(results), 4)
             self.assertEqual(mock_upload.call_count, 4)
@@ -55,13 +53,9 @@ class TestR2ConcurrentUpload(unittest.TestCase):
             time.sleep(0.1)  # Simulate upload time
             return (f"https://r2.com/{name}.jpg", True)
 
-        with patch.object(
-            R2Service, "upload_image_from_url", side_effect=mock_upload_with_timing
-        ):
+        with patch.object(R2Service, "upload_image_from_url", side_effect=mock_upload_with_timing):
             start_time = time.time()
-            results = R2Service.concurrent_upload_images(
-                test_images, max_workers=2, throttle_ms=0
-            )
+            results = R2Service.concurrent_upload_images(test_images, max_workers=2, throttle_ms=0)
             total_time = time.time() - start_time
 
             # With max_workers=2 and 3 images taking 0.1s each,
@@ -80,16 +74,10 @@ class TestR2ConcurrentUpload(unittest.TestCase):
             mock_upload.return_value = ("https://r2.com/image.jpg", True)
 
             with patch("time.sleep") as mock_sleep:
-                R2Service.concurrent_upload_images(
-                    test_images, max_workers=1, throttle_ms=500
-                )
+                R2Service.concurrent_upload_images(test_images, max_workers=1, throttle_ms=500)
 
                 # Should see throttle delays
-                throttle_calls = [
-                    c
-                    for c in mock_sleep.call_args_list
-                    if c[0][0] >= 0.4 and c[0][0] <= 0.6
-                ]
+                throttle_calls = [c for c in mock_sleep.call_args_list if c[0][0] >= 0.4 and c[0][0] <= 0.6]
                 self.assertGreater(len(throttle_calls), 0)
 
     def test_concurrent_upload_handles_failures(self):
@@ -106,9 +94,7 @@ class TestR2ConcurrentUpload(unittest.TestCase):
                 return (url, False)
             return (f"https://r2.com/{name}.jpg", True)
 
-        with patch.object(
-            R2Service, "upload_image_from_url", side_effect=mock_upload_by_url
-        ):
+        with patch.object(R2Service, "upload_image_from_url", side_effect=mock_upload_by_url):
             results = R2Service.concurrent_upload_images(test_images, max_workers=2)
 
             # Results should maintain order
@@ -118,9 +104,7 @@ class TestR2ConcurrentUpload(unittest.TestCase):
 
     def test_concurrent_upload_with_semaphore_limiting(self):
         """Test concurrent upload uses semaphore for rate limiting."""
-        test_images = [
-            ("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(10)
-        ]
+        test_images = [("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(10)]
 
         concurrent_count = []
         current_uploads = 0
@@ -133,12 +117,8 @@ class TestR2ConcurrentUpload(unittest.TestCase):
             current_uploads -= 1
             return (f"https://r2.com/{name}.jpg", True)
 
-        with patch.object(
-            R2Service, "upload_image_from_url", side_effect=mock_upload_tracking
-        ):
-            results = R2Service.concurrent_upload_images(
-                test_images, max_workers=3, max_concurrent_uploads=2
-            )
+        with patch.object(R2Service, "upload_image_from_url", side_effect=mock_upload_tracking):
+            results = R2Service.concurrent_upload_images(test_images, max_workers=3, max_concurrent_uploads=2)
 
             # Should never exceed max_concurrent_uploads
             self.assertLessEqual(max(concurrent_count), 2)
@@ -160,9 +140,7 @@ class TestR2ConcurrentUpload(unittest.TestCase):
         with patch.object(R2Service, "upload_image_from_url") as mock_upload:
             mock_upload.return_value = ("https://r2.com/image.jpg", True)
 
-            R2Service.concurrent_upload_images(
-                test_images, max_workers=2, progress_callback=progress_callback
-            )
+            R2Service.concurrent_upload_images(test_images, max_workers=2, progress_callback=progress_callback)
 
             # Should receive progress updates
             self.assertEqual(len(progress_updates), 3)
@@ -182,9 +160,7 @@ class TestR2ConcurrentUpload(unittest.TestCase):
                 raise Exception("Network error")
             return ("https://r2.com/dog2.jpg", True)
 
-        with patch.object(
-            R2Service, "upload_image_from_url", side_effect=mock_upload_with_exception
-        ):
+        with patch.object(R2Service, "upload_image_from_url", side_effect=mock_upload_with_exception):
             results = R2Service.concurrent_upload_images(test_images, max_workers=2)
 
             # Should handle exception and return failure
@@ -193,17 +169,13 @@ class TestR2ConcurrentUpload(unittest.TestCase):
 
     def test_concurrent_vs_sequential_performance(self):
         """Test that concurrent upload is faster than sequential."""
-        test_images = [
-            ("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(6)
-        ]
+        test_images = [("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(6)]
 
         def mock_slow_upload(url, name, org):
             time.sleep(0.05)  # Simulate network delay
             return (f"https://r2.com/{name}.jpg", True)
 
-        with patch.object(
-            R2Service, "upload_image_from_url", side_effect=mock_slow_upload
-        ):
+        with patch.object(R2Service, "upload_image_from_url", side_effect=mock_slow_upload):
             # Sequential upload
             start = time.time()
             sequential_results = []
@@ -214,9 +186,7 @@ class TestR2ConcurrentUpload(unittest.TestCase):
 
             # Concurrent upload
             start = time.time()
-            concurrent_results = R2Service.concurrent_upload_images(
-                test_images, max_workers=3, throttle_ms=0
-            )
+            concurrent_results = R2Service.concurrent_upload_images(test_images, max_workers=3, throttle_ms=0)
             concurrent_time = time.time() - start
 
             # Concurrent should be significantly faster
@@ -229,9 +199,7 @@ class TestR2ConcurrentUploadStatistics(unittest.TestCase):
 
     def test_concurrent_upload_with_statistics(self):
         """Test concurrent upload returns detailed statistics."""
-        test_images = [
-            ("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(5)
-        ]
+        test_images = [("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(5)]
 
         with patch.object(R2Service, "upload_image_from_url") as mock_upload:
             mock_upload.side_effect = [
@@ -242,9 +210,7 @@ class TestR2ConcurrentUploadStatistics(unittest.TestCase):
                 ("http://test.com/dog4.jpg", False),
             ]
 
-            results, stats = R2Service.concurrent_upload_images_with_stats(
-                test_images, max_workers=2
-            )
+            results, stats = R2Service.concurrent_upload_images_with_stats(test_images, max_workers=2)
 
             self.assertEqual(stats["total"], 5)
             self.assertEqual(stats["successful"], 3)
@@ -256,9 +222,7 @@ class TestR2ConcurrentUploadStatistics(unittest.TestCase):
 
     def test_concurrent_upload_adaptive_throttling(self):
         """Test concurrent upload adapts throttling based on failures."""
-        test_images = [
-            ("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(4)
-        ]
+        test_images = [("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(4)]
 
         call_count = 0
 
@@ -270,18 +234,12 @@ class TestR2ConcurrentUploadStatistics(unittest.TestCase):
                 return (url, False)
             return (f"https://r2.com/{name}.jpg", True)
 
-        with patch.object(
-            R2Service, "upload_image_from_url", side_effect=mock_upload_with_failures
-        ):
+        with patch.object(R2Service, "upload_image_from_url", side_effect=mock_upload_with_failures):
             with patch("time.sleep") as mock_sleep:
-                R2Service.concurrent_upload_images(
-                    test_images, max_workers=1, adaptive_throttle=True, throttle_ms=100
-                )  # Start with 100ms throttle
+                R2Service.concurrent_upload_images(test_images, max_workers=1, adaptive_throttle=True, throttle_ms=100)  # Start with 100ms throttle
 
                 # Should see throttle delays between uploads
-                sleep_calls = [
-                    c[0][0] for c in mock_sleep.call_args_list if len(c[0]) > 0
-                ]
+                sleep_calls = [c[0][0] for c in mock_sleep.call_args_list if len(c[0]) > 0]
                 # Filter for throttle-related delays (not rate limiting)
                 throttle_delays = [d for d in sleep_calls if 0.05 < d < 5.0]
 

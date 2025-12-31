@@ -122,11 +122,7 @@ def sync_indexes_to_railway(table_name: str = "animals", dry_run: bool = False) 
         for name, railway_idx in railway_index_dict.items():
             if name not in local_index_dict:
                 # Don't drop primary keys or unique constraints
-                if (
-                    "pkey" not in name
-                    and "unique" not in name.lower()
-                    and "_key" not in name
-                ):
+                if "pkey" not in name and "unique" not in name.lower() and "_key" not in name:
                     to_drop.append(railway_idx)
 
         # Log the plan
@@ -206,9 +202,7 @@ def sync_indexes_to_railway(table_name: str = "animals", dry_run: bool = False) 
                 session.commit()
 
             total_changes = len(to_create) + len(to_drop) + len(to_update)
-            logger.info(
-                f"✅ Index sync completed: {success_count}/{total_changes} operations successful"
-            )
+            logger.info(f"✅ Index sync completed: {success_count}/{total_changes} operations successful")
 
             return success_count == total_changes
 

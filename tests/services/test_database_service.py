@@ -157,9 +157,7 @@ class TestDatabaseServiceIntegration:
         """Test that existing BaseScraper functionality is preserved."""
         pytest.skip("Integration tests pending service implementation")
 
-    @pytest.mark.skip(
-        reason="Test creates real database records and contaminates production data"
-    )
+    @pytest.mark.skip(reason="Test creates real database records and contaminates production data")
     def test_complete_scrape_log_with_detailed_metrics(self):
         """Test that complete_scrape_log can store detailed metrics, duration, and quality score."""
         # Following TDD - this test should FAIL initially
@@ -186,9 +184,7 @@ class TestDatabaseServiceIntegration:
                 cursor.connection.commit()
 
             # Create a scrape log
-            scrape_log_id = db_service.create_scrape_log(
-                organization_id=999
-            )  # Use our test org
+            scrape_log_id = db_service.create_scrape_log(organization_id=999)  # Use our test org
             assert scrape_log_id is not None
 
             # Test data for detailed metrics
@@ -231,13 +227,9 @@ class TestDatabaseServiceIntegration:
                 result = cursor.fetchone()
 
                 assert result is not None
-                assert (
-                    result["detailed_metrics"] == detailed_metrics
-                )  # JSONB comparison
+                assert result["detailed_metrics"] == detailed_metrics  # JSONB comparison
                 assert abs(float(result["duration_seconds"]) - duration_seconds) < 0.1
-                assert (
-                    abs(float(result["data_quality_score"]) - data_quality_score) < 0.01
-                )
+                assert abs(float(result["data_quality_score"]) - data_quality_score) < 0.01
 
         finally:
             db_service.close()
@@ -408,9 +400,7 @@ class TestDatabaseServiceWithConnectionPool:
 
         with patch("psycopg2.connect", return_value=mock_connection):
             # Create DatabaseService without pool
-            db_service = DatabaseService(
-                db_config={"host": "localhost", "user": "test", "database": "test_db"}
-            )
+            db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"})
 
             # Test connect method
             result = db_service.connect()
@@ -453,9 +443,7 @@ class TestDatabaseServiceWithConnectionPool:
 
         with patch("psycopg2.connect", return_value=mock_connection):
             # Create DatabaseService in legacy mode (no pool)
-            db_service = DatabaseService(
-                db_config={"host": "localhost", "user": "test", "database": "test_db"}
-            )
+            db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"})
 
             # Connect using legacy method
             db_service.connect()

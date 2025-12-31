@@ -104,9 +104,7 @@ class TestR2ExponentialBackoff(unittest.TestCase):
             from botocore.exceptions import ClientError
 
             error_response = {"Error": {"Code": "404", "Message": "Not found"}}
-            mock_s3_client.head_object.side_effect = ClientError(
-                error_response, "HeadObject"
-            )
+            mock_s3_client.head_object.side_effect = ClientError(error_response, "HeadObject")
 
             # Mock successful upload
             mock_s3_client.upload_fileobj.return_value = None
@@ -123,9 +121,7 @@ class TestR2ExponentialBackoff(unittest.TestCase):
                 R2Service._consecutive_failures = 3
 
                 # Upload should succeed and reset counter
-                url, success = R2Service.upload_image_from_url(
-                    "http://test.com/image.jpg", "test_dog", "test_org"
-                )
+                url, success = R2Service.upload_image_from_url("http://test.com/image.jpg", "test_dog", "test_org")
 
                 self.assertTrue(success)
                 self.assertEqual(R2Service._consecutive_failures, 0)
@@ -152,15 +148,9 @@ class TestR2ExponentialBackoff(unittest.TestCase):
             mock_boto3.return_value = mock_s3_client
 
             # Mock rate limit error
-            error_response = {
-                "Error": {"Code": "SlowDown", "Message": "Please reduce request rate"}
-            }
-            mock_s3_client.head_object.side_effect = ClientError(
-                error_response, "HeadObject"
-            )
-            mock_s3_client.upload_fileobj.side_effect = ClientError(
-                error_response, "PutObject"
-            )
+            error_response = {"Error": {"Code": "SlowDown", "Message": "Please reduce request rate"}}
+            mock_s3_client.head_object.side_effect = ClientError(error_response, "HeadObject")
+            mock_s3_client.upload_fileobj.side_effect = ClientError(error_response, "PutObject")
 
             with patch("requests.get") as mock_get:
                 mock_response = MagicMock()
@@ -174,17 +164,13 @@ class TestR2ExponentialBackoff(unittest.TestCase):
                 self.assertEqual(R2Service._consecutive_failures, 0)
 
                 # Upload should fail with rate limit
-                url, success = R2Service.upload_image_from_url(
-                    "http://test.com/image.jpg", "test_dog", "test_org"
-                )
+                url, success = R2Service.upload_image_from_url("http://test.com/image.jpg", "test_dog", "test_org")
 
                 self.assertFalse(success)
                 self.assertEqual(R2Service._consecutive_failures, 1)
 
                 # Another failure should increment
-                url, success = R2Service.upload_image_from_url(
-                    "http://test.com/image2.jpg", "test_dog2", "test_org"
-                )
+                url, success = R2Service.upload_image_from_url("http://test.com/image2.jpg", "test_dog2", "test_org")
 
                 self.assertFalse(success)
                 self.assertEqual(R2Service._consecutive_failures, 2)

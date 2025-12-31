@@ -105,9 +105,7 @@ class SecureConfigScraperRunner:
                 return False, f"Organization '{config.get_display_name()}' is disabled"
 
             # Validate scraper module info
-            module_info = ScraperModuleInfo(
-                module_path=config.scraper.module, class_name=config.scraper.class_name
-            )
+            module_info = ScraperModuleInfo(module_path=config.scraper.module, class_name=config.scraper.class_name)
 
             # Check if module is allowed
             if not self.scraper_loader.validate_module_path(module_info.module_path):
@@ -133,9 +131,7 @@ class SecureConfigScraperRunner:
         config = self.config_loader.load_config(config_id)
 
         # Create module info
-        module_info = ScraperModuleInfo(
-            module_path=config.scraper.module, class_name=config.scraper.class_name
-        )
+        module_info = ScraperModuleInfo(module_path=config.scraper.module, class_name=config.scraper.class_name)
 
         # Load scraper class and create instance
         scraper = self.scraper_loader.create_scraper_instance(module_info, config_id)
@@ -158,9 +154,7 @@ class SecureConfigScraperRunner:
         sync_result = self.sync_service.sync_all_organizations(configs)
 
         if not sync_result.success:
-            raise RuntimeError(
-                f"Failed to sync organization {config_id}: {sync_result.errors}"
-            )
+            raise RuntimeError(f"Failed to sync organization {config_id}: {sync_result.errors}")
 
         if config_id not in sync_result.org_mappings:
             raise RuntimeError(f"Organization {config_id} not found in sync results")
@@ -224,9 +218,7 @@ class SecureConfigScraperRunner:
 
             # Early return if no enabled orgs
             if not enabled_orgs:
-                return BatchRunResult(
-                    success=True, total_orgs=0, successful=0, failed=0, results=[]
-                )
+                return BatchRunResult(success=True, total_orgs=0, successful=0, failed=0, results=[])
 
             # Sync all organizations first
             configs = {org.id: org for org in enabled_orgs}
@@ -248,9 +240,7 @@ class SecureConfigScraperRunner:
                 successful=successful,
                 failed=failed,
                 results=results,
-                sync_results=sync_results.__dict__
-                if hasattr(sync_results, "__dict__")
-                else None,
+                sync_results=sync_results.__dict__ if hasattr(sync_results, "__dict__") else None,
             )
 
         except Exception as e:

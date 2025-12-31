@@ -30,9 +30,7 @@ class LoggingLevel(Enum):
 class ProgressTracker:
     """Tracks processing progress with adaptive verbosity and world-class logging."""
 
-    def __init__(
-        self, total_items: int, logger: logging.Logger, config: Dict[str, Any]
-    ):
+    def __init__(self, total_items: int, logger: logging.Logger, config: Dict[str, Any]):
         """Initialize progress tracker with adaptive logging level.
 
         Args:
@@ -252,9 +250,7 @@ class ProgressTracker:
 
         # Add operation breakdown
         if len(self.operation_counts) > 1:
-            breakdown = ", ".join(
-                [f"{count} {op}" for op, count in self.operation_counts.items()]
-            )
+            breakdown = ", ".join([f"{count} {op}" for op, count in self.operation_counts.items()])
             message += f"\n🎯 Operations: {breakdown}"
 
         return message
@@ -294,9 +290,7 @@ class ProgressTracker:
         bar = "█" * filled + "░" * (width - filled)
         return f"[{bar}]"
 
-    def track_discovery_stats(
-        self, dogs_found: int, pages_processed: int = 0, extraction_failures: int = 0
-    ) -> None:
+    def track_discovery_stats(self, dogs_found: int, pages_processed: int = 0, extraction_failures: int = 0) -> None:
         """Track discovery phase statistics.
 
         Args:
@@ -311,9 +305,7 @@ class ProgressTracker:
         # Calculate success rate
         total_attempts = dogs_found + extraction_failures
         if total_attempts > 0:
-            self.stats["discovery"]["success_rate"] = (
-                dogs_found / total_attempts
-            ) * 100.0
+            self.stats["discovery"]["success_rate"] = (dogs_found / total_attempts) * 100.0
 
     def track_filtering_stats(self, dogs_skipped: int, new_dogs: int) -> None:
         """Track filtering phase statistics.
@@ -351,14 +343,10 @@ class ProgressTracker:
         self.stats["processing"]["processing_failures"] = processing_failures
 
         # Calculate success rate
-        total_attempted = (
-            dogs_added + dogs_updated + dogs_unchanged + processing_failures
-        )
+        total_attempted = dogs_added + dogs_updated + dogs_unchanged + processing_failures
         successful = dogs_added + dogs_updated + dogs_unchanged
         if total_attempted > 0:
-            self.stats["processing"]["success_rate"] = (
-                successful / total_attempted
-            ) * 100.0
+            self.stats["processing"]["success_rate"] = (successful / total_attempted) * 100.0
 
     def track_image_stats(
         self,
@@ -380,9 +368,7 @@ class ProgressTracker:
         # Calculate success rate
         total_images = images_uploaded + images_failed
         if total_images > 0:
-            self.stats["images"]["image_success_rate"] = (
-                images_uploaded / total_images
-            ) * 100.0
+            self.stats["images"]["image_success_rate"] = (images_uploaded / total_images) * 100.0
 
     def track_performance_stats(
         self,
@@ -416,9 +402,7 @@ class ProgressTracker:
         self.stats["performance"]["total_duration"] = elapsed
         self.stats["performance"]["throughput"] = self.total_items / max(elapsed, 0.1)
 
-    def track_quality_stats(
-        self, data_quality_score: float, completion_rate: float = 100.0
-    ) -> None:
+    def track_quality_stats(self, data_quality_score: float, completion_rate: float = 100.0) -> None:
         """Track quality statistics.
 
         Args:
@@ -429,17 +413,10 @@ class ProgressTracker:
         self.stats["quality"]["completion_rate"] = completion_rate
 
         # Calculate error rate based on processing failures
-        total_dogs = (
-            self.stats["processing"]["dogs_added"]
-            + self.stats["processing"]["dogs_updated"]
-            + self.stats["processing"]["dogs_unchanged"]
-            + self.stats["processing"]["processing_failures"]
-        )
+        total_dogs = self.stats["processing"]["dogs_added"] + self.stats["processing"]["dogs_updated"] + self.stats["processing"]["dogs_unchanged"] + self.stats["processing"]["processing_failures"]
 
         if total_dogs > 0:
-            self.stats["quality"]["error_rate"] = (
-                self.stats["processing"]["processing_failures"] / total_dogs
-            ) * 100.0
+            self.stats["quality"]["error_rate"] = (self.stats["processing"]["processing_failures"] / total_dogs) * 100.0
 
     def get_comprehensive_stats(self) -> Dict[str, Any]:
         """Get all comprehensive statistics.
@@ -478,15 +455,11 @@ class ProgressTracker:
 
         # Add memory usage if tracked
         if stats["performance"]["memory_usage"] > 0:
-            summary_lines.append(
-                f"💾 Peak Memory: {stats['performance']['memory_usage']} MB"
-            )
+            summary_lines.append(f"💾 Peak Memory: {stats['performance']['memory_usage']} MB")
 
         # Add retry information if any
         if stats["performance"]["retry_attempts"] > 0:
-            summary_lines.append(
-                f"🔄 Retry Attempts: {stats['performance']['retry_attempts']}"
-            )
+            summary_lines.append(f"🔄 Retry Attempts: {stats['performance']['retry_attempts']}")
 
         return "\n".join(summary_lines)
 
@@ -501,9 +474,7 @@ class ProgressTracker:
         elif self.verbosity_level == LoggingLevel.STANDARD:
             self.logger.info(f"▶️  {phase_name}")
 
-    def log_phase_complete(
-        self, phase_name: str, duration: float, summary: str = ""
-    ) -> None:
+    def log_phase_complete(self, phase_name: str, duration: float, summary: str = "") -> None:
         """Log the completion of a scrape phase.
 
         Args:
@@ -528,8 +499,4 @@ class ProgressTracker:
         else:
             # Even minimal logging shows basic completion stats
             stats = self.stats
-            self.logger.info(
-                f"✅ Complete: {stats['processing']['dogs_added']} added, "
-                f"{stats['processing']['dogs_updated']} updated, "
-                f"{stats['performance']['total_duration']:.1f}s"
-            )
+            self.logger.info(f"✅ Complete: {stats['processing']['dogs_added']} added, " f"{stats['processing']['dogs_updated']} updated, " f"{stats['performance']['total_duration']:.1f}s")

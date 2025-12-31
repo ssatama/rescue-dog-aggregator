@@ -58,15 +58,10 @@ class EnhancedAnimalService:
                 last_exception = e
                 if attempt < self.max_retries - 1:
                     sleep_time = 0.1 * (2**attempt)  # Exponential backoff
-                    logger.warning(
-                        f"Database query failed (attempt {attempt + 1}/{self.max_retries}), "
-                        f"retrying in {sleep_time}s: {e}"
-                    )
+                    logger.warning(f"Database query failed (attempt {attempt + 1}/{self.max_retries}), " f"retrying in {sleep_time}s: {e}")
                     time.sleep(sleep_time)
                 else:
-                    logger.error(
-                        f"Database query failed after {self.max_retries} attempts: {e}"
-                    )
+                    logger.error(f"Database query failed after {self.max_retries} attempts: {e}")
 
             except Exception as e:
                 # Non-transient errors should not be retried
@@ -239,9 +234,7 @@ class EnhancedAnimalService:
 
         self._metrics["cache_misses"]["bulk"] += 1
         self._metrics["db_queries"]["bulk"] += 1
-        logger.debug(
-            f"Bulk cache miss for {len(animal_ids)} animals, fetching from database"
-        )
+        logger.debug(f"Bulk cache miss for {len(animal_ids)} animals, fetching from database")
 
         query = """
             SELECT 
@@ -271,16 +264,12 @@ class EnhancedAnimalService:
         # Cache the bulk result
         if len(responses) <= 100:  # Only cache reasonable sized requests
             self._bulk_cache[cache_key] = responses
-            logger.debug(
-                f"Cached bulk result for {len(responses)} animals with key {cache_key}"
-            )
+            logger.debug(f"Cached bulk result for {len(responses)} animals with key {cache_key}")
 
         self._track_response_time(start_time)
         return responses
 
-    def get_attributes(
-        self, animal_ids: List[int], attributes: List[str]
-    ) -> Dict[int, Dict[str, Any]]:
+    def get_attributes(self, animal_ids: List[int], attributes: List[str]) -> Dict[int, Dict[str, Any]]:
         """
         Fetch specific attributes using JSONB operators.
 
@@ -377,35 +366,21 @@ class EnhancedAnimalService:
                 enhanced_attrs = EnhancedAttributes(
                     description=profiler_data.get("description"),
                     tagline=profiler_data.get("tagline"),
-                    personality_traits=self._ensure_list(
-                        profiler_data.get("personality_traits", [])
-                    ),
+                    personality_traits=self._ensure_list(profiler_data.get("personality_traits", [])),
                     energy_level=profiler_data.get("energy_level"),
                     trainability=profiler_data.get("trainability"),
                     experience_level=profiler_data.get("experience_level"),
                     grooming_needs=profiler_data.get("grooming_needs"),
                     exercise_needs=profiler_data.get("exercise_needs"),
-                    good_with_kids=self._normalize_boolean(
-                        profiler_data.get("good_with_kids")
-                    ),
-                    good_with_dogs=self._normalize_boolean(
-                        profiler_data.get("good_with_dogs")
-                    ),
-                    good_with_cats=self._normalize_boolean(
-                        profiler_data.get("good_with_cats")
-                    ),
-                    good_with_strangers=self._normalize_boolean(
-                        profiler_data.get("good_with_strangers")
-                    ),
-                    special_needs=self._ensure_list(
-                        profiler_data.get("special_needs", [])
-                    ),
+                    good_with_kids=self._normalize_boolean(profiler_data.get("good_with_kids")),
+                    good_with_dogs=self._normalize_boolean(profiler_data.get("good_with_dogs")),
+                    good_with_cats=self._normalize_boolean(profiler_data.get("good_with_cats")),
+                    good_with_strangers=self._normalize_boolean(profiler_data.get("good_with_strangers")),
+                    special_needs=self._ensure_list(profiler_data.get("special_needs", [])),
                     ideal_home=profiler_data.get("ideal_home"),
                 )
             except Exception as e:
-                logger.warning(
-                    f"Error parsing enhanced attributes for animal {row['id']}: {e}"
-                )
+                logger.warning(f"Error parsing enhanced attributes for animal {row['id']}: {e}")
                 # Raise specific error for data normalization issues
                 raise DataNormalizationError(
                     f"Failed to normalize enhanced data for animal {row['id']}",
@@ -423,15 +398,9 @@ class EnhancedAnimalService:
             data_completeness_score=completeness,
             metadata={
                 "cached": False,
-                "profiled_at": profiler_data.get("profiled_at")
-                if profiler_data
-                else None,
-                "model_used": profiler_data.get("model_used")
-                if profiler_data
-                else None,
-                "quality_score": profiler_data.get("quality_score")
-                if profiler_data
-                else None,
+                "profiled_at": profiler_data.get("profiled_at") if profiler_data else None,
+                "model_used": profiler_data.get("model_used") if profiler_data else None,
+                "quality_score": profiler_data.get("quality_score") if profiler_data else None,
             },
         )
 
@@ -614,9 +583,7 @@ class EnhancedAnimalService:
         content_hits = self._metrics["cache_hits"].get("content", 0)
         content_misses = self._metrics["cache_misses"].get("content", 0)
         content_total = content_hits + content_misses
-        content_hit_rate = (
-            (content_hits / content_total * 100) if content_total > 0 else 0
-        )
+        content_hit_rate = (content_hits / content_total * 100) if content_total > 0 else 0
 
         bulk_hits = self._metrics["cache_hits"].get("bulk", 0)
         bulk_misses = self._metrics["cache_misses"].get("bulk", 0)
@@ -644,9 +611,7 @@ class EnhancedAnimalService:
         """
         # Calculate average response time
         response_times = self._metrics["response_times"]
-        avg_response_time = (
-            sum(response_times) / len(response_times) if response_times else 0
-        )
+        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
 
         # Calculate percentiles if we have data
         p50 = p95 = p99 = 0

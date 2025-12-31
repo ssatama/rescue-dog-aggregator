@@ -44,9 +44,7 @@ async def get_async_db_connection() -> AsyncGenerator[asyncpg.Connection, None]:
         if DB_CONFIG["password"]:
             conn_params["password"] = DB_CONFIG["password"]
 
-        logger.debug(
-            f"[async_dependencies.py] Attempting asyncpg connection: database={conn_params.get('database')}, user={conn_params.get('user')}, host={conn_params.get('host')}"
-        )
+        logger.debug(f"[async_dependencies.py] Attempting asyncpg connection: database={conn_params.get('database')}, user={conn_params.get('user')}, host={conn_params.get('host')}")
 
         # Create async connection
         conn = await asyncpg.connect(**conn_params)
@@ -55,9 +53,7 @@ async def get_async_db_connection() -> AsyncGenerator[asyncpg.Connection, None]:
         yield conn
 
     except HTTPException as http_exc:
-        logger.warning(
-            f"[async_dependencies.py] HTTPException caught: {http_exc.detail}"
-        )
+        logger.warning(f"[async_dependencies.py] HTTPException caught: {http_exc.detail}")
         raise http_exc
     except RequestValidationError as validation_err:
         # Let FastAPI handle validation errors with proper 422 response
@@ -65,9 +61,7 @@ async def get_async_db_connection() -> AsyncGenerator[asyncpg.Connection, None]:
         raise validation_err
     except asyncpg.PostgresError as db_err:
         logger.error(f"[async_dependencies.py] AsyncPG error: {db_err}")
-        raise HTTPException(
-            status_code=500, detail=f"Async database connection error: {db_err}"
-        )
+        raise HTTPException(status_code=500, detail=f"Async database connection error: {db_err}")
     except Exception as e:
         logger.exception(f"[async_dependencies.py] Unexpected error: {e}")
         raise HTTPException(
@@ -98,9 +92,7 @@ async def get_async_db_transaction() -> AsyncGenerator[asyncpg.Connection, None]
         if DB_CONFIG["password"]:
             conn_params["password"] = DB_CONFIG["password"]
 
-        logger.debug(
-            f"[async_dependencies.py] Attempting asyncpg transaction: database={conn_params.get('database')}"
-        )
+        logger.debug(f"[async_dependencies.py] Attempting asyncpg transaction: database={conn_params.get('database')}")
 
         # Create async connection and start transaction
         conn = await asyncpg.connect(**conn_params)
@@ -118,33 +110,23 @@ async def get_async_db_transaction() -> AsyncGenerator[asyncpg.Connection, None]
     except HTTPException as http_exc:
         if transaction:
             await transaction.rollback()
-            logger.warning(
-                f"[async_dependencies.py] HTTPException caught, transaction rolled back: {http_exc.detail}"
-            )
+            logger.warning(f"[async_dependencies.py] HTTPException caught, transaction rolled back: {http_exc.detail}")
         raise http_exc
     except RequestValidationError as validation_err:
         # Let FastAPI handle validation errors with proper 422 response
         if transaction:
             await transaction.rollback()
-            logger.debug(
-                "[async_dependencies.py] Validation error, transaction rolled back"
-            )
+            logger.debug("[async_dependencies.py] Validation error, transaction rolled back")
         raise validation_err
     except asyncpg.PostgresError as db_err:
         if transaction:
             await transaction.rollback()
-            logger.error(
-                f"[async_dependencies.py] AsyncPG error, transaction rolled back: {db_err}"
-            )
-        raise HTTPException(
-            status_code=500, detail=f"Async database transaction error: {db_err}"
-        )
+            logger.error(f"[async_dependencies.py] AsyncPG error, transaction rolled back: {db_err}")
+        raise HTTPException(status_code=500, detail=f"Async database transaction error: {db_err}")
     except Exception as e:
         if transaction:
             await transaction.rollback()
-            logger.exception(
-                f"[async_dependencies.py] Unexpected error, transaction rolled back: {e}"
-            )
+            logger.exception(f"[async_dependencies.py] Unexpected error, transaction rolled back: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Internal server error in async transaction: {type(e).__name__}: {e}",

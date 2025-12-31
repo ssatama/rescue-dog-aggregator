@@ -32,21 +32,11 @@ class FilterCountsResponse(BaseModel):
     Only includes options that have at least one matching animal.
     """
 
-    size_options: List[FilterOption] = Field(
-        default_factory=list, description="Available size options with counts"
-    )
-    age_options: List[FilterOption] = Field(
-        default_factory=list, description="Available age options with counts"
-    )
-    sex_options: List[FilterOption] = Field(
-        default_factory=list, description="Available sex options with counts"
-    )
-    breed_options: List[FilterOption] = Field(
-        default_factory=list, description="Available breed options with counts"
-    )
-    organization_options: List[FilterOption] = Field(
-        default_factory=list, description="Available organization options with counts"
-    )
+    size_options: List[FilterOption] = Field(default_factory=list, description="Available size options with counts")
+    age_options: List[FilterOption] = Field(default_factory=list, description="Available age options with counts")
+    sex_options: List[FilterOption] = Field(default_factory=list, description="Available sex options with counts")
+    breed_options: List[FilterOption] = Field(default_factory=list, description="Available breed options with counts")
+    organization_options: List[FilterOption] = Field(default_factory=list, description="Available organization options with counts")
     location_country_options: List[FilterOption] = Field(
         default_factory=list,
         description="Available location country options with counts",
@@ -95,15 +85,9 @@ class SizeDistribution(BaseModel):
 class ExperienceDistribution(BaseModel):
     """Model for experience level distribution of a breed."""
 
-    first_time_ok: int = Field(
-        ..., description="Number suitable for first-time owners", ge=0
-    )
-    some_experience: int = Field(
-        ..., description="Number requiring some experience", ge=0
-    )
-    experienced: int = Field(
-        ..., description="Number requiring experienced owners", ge=0
-    )
+    first_time_ok: int = Field(..., description="Number suitable for first-time owners", ge=0)
+    some_experience: int = Field(..., description="Number requiring some experience", ge=0)
+    experienced: int = Field(..., description="Number requiring experienced owners", ge=0)
 
 
 class SexDistribution(BaseModel):
@@ -124,9 +108,7 @@ class PersonalityMetrics(BaseModel):
     """Model for personality metrics from dog_profiler_data aggregation."""
 
     energy_level: PersonalityMetric = Field(..., description="Energy level metric")
-    affection: PersonalityMetric = Field(
-        ..., description="Affection/sociability metric"
-    )
+    affection: PersonalityMetric = Field(..., description="Affection/sociability metric")
     trainability: PersonalityMetric = Field(..., description="Trainability metric")
     independence: PersonalityMetric = Field(..., description="Independence metric")
 
@@ -142,33 +124,15 @@ class QualifyingBreed(BaseModel):
     )
     breed_group: Optional[str] = Field(None, description="Breed group classification")
     count: int = Field(..., description="Total number of dogs of this breed", ge=0)
-    average_age_months: Optional[int] = Field(
-        None, description="Average age in months for this breed"
-    )
-    organization_count: int = Field(
-        ..., description="Number of organizations with this breed", ge=0
-    )
-    organizations: List[str] = Field(
-        default_factory=list, description="List of organization names (top 5)"
-    )
-    age_distribution: AgeDistribution = Field(
-        ..., description="Age distribution for this breed"
-    )
-    size_distribution: SizeDistribution = Field(
-        ..., description="Size distribution for this breed"
-    )
-    sex_distribution: Optional[SexDistribution] = Field(
-        None, description="Sex distribution for this breed"
-    )
-    personality_traits: List[str] = Field(
-        default_factory=list, description="Top 5 personality traits from LLM analysis"
-    )
-    experience_distribution: ExperienceDistribution = Field(
-        ..., description="Experience level distribution for this breed"
-    )
-    personality_metrics: Optional[PersonalityMetrics] = Field(
-        None, description="Personality metrics from dog_profiler_data aggregation"
-    )
+    average_age_months: Optional[int] = Field(None, description="Average age in months for this breed")
+    organization_count: int = Field(..., description="Number of organizations with this breed", ge=0)
+    organizations: List[str] = Field(default_factory=list, description="List of organization names (top 5)")
+    age_distribution: AgeDistribution = Field(..., description="Age distribution for this breed")
+    size_distribution: SizeDistribution = Field(..., description="Size distribution for this breed")
+    sex_distribution: Optional[SexDistribution] = Field(None, description="Sex distribution for this breed")
+    personality_traits: List[str] = Field(default_factory=list, description="Top 5 personality traits from LLM analysis")
+    experience_distribution: ExperienceDistribution = Field(..., description="Experience level distribution for this breed")
+    personality_metrics: Optional[PersonalityMetrics] = Field(None, description="Personality metrics from dog_profiler_data aggregation")
 
 
 class BreedStatsResponse(BaseModel):
@@ -181,13 +145,7 @@ class BreedStatsResponse(BaseModel):
 
     total_dogs: int = Field(..., description="Total number of available dogs", ge=0)
     unique_breeds: int = Field(..., description="Number of unique breeds", ge=0)
-    breed_groups: List[BreedGroupStats] = Field(
-        default_factory=list, description="Distribution of dogs by breed group"
-    )
-    qualifying_breeds: List[QualifyingBreed] = Field(
-        default_factory=list, description="Breeds with 15+ dogs"
-    )
+    breed_groups: List[BreedGroupStats] = Field(default_factory=list, description="Distribution of dogs by breed group")
+    qualifying_breeds: List[QualifyingBreed] = Field(default_factory=list, description="Breeds with 15+ dogs")
     purebred_count: int = Field(default=0, description="Number of purebred dogs", ge=0)
-    crossbreed_count: int = Field(
-        default=0, description="Number of crossbreed dogs", ge=0
-    )
+    crossbreed_count: int = Field(default=0, description="Number of crossbreed dogs", ge=0)

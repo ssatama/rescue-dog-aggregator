@@ -52,10 +52,7 @@ def internal_only(func: Callable) -> Callable:
         if internal_key != expected_key:
             # Log potential security issue
             client_ip = request.client.host if request.client else "unknown"
-            logger.warning(
-                f"Unauthorized internal endpoint access attempt from {client_ip} "
-                f"to {request.url.path}"
-            )
+            logger.warning(f"Unauthorized internal endpoint access attempt from {client_ip} " f"to {request.url.path}")
             raise HTTPException(
                 status_code=403,
                 detail="This endpoint is restricted to internal services only",
@@ -107,11 +104,7 @@ def rate_limit(max_requests: int = 100, window_seconds: int = 60):
                 current_time = time.time()
 
                 # Clean old entries
-                request_counts[client_ip] = [
-                    t
-                    for t in request_counts.get(client_ip, [])
-                    if current_time - t < window_seconds
-                ]
+                request_counts[client_ip] = [t for t in request_counts.get(client_ip, []) if current_time - t < window_seconds]
 
                 # Check rate limit
                 if len(request_counts.get(client_ip, [])) >= max_requests:

@@ -33,9 +33,7 @@ class ScraperLLMIntegration:
 
         if self.enabled:
             try:
-                self.pipeline = DogProfilerPipeline(
-                    organization_id=organization_id, dry_run=False
-                )
+                self.pipeline = DogProfilerPipeline(organization_id=organization_id, dry_run=False)
                 logger.info(f"LLM profiling enabled for organization {organization_id}")
             except Exception as e:
                 logger.warning(f"Failed to initialize LLM pipeline: {e}")
@@ -73,16 +71,11 @@ class ScraperLLMIntegration:
             return False
 
         # Check for description in properties
-        has_content = any(
-            key in properties and properties[key]
-            for key in ["description", "Beschreibung", "details", "info"]
-        )
+        has_content = any(key in properties and properties[key] for key in ["description", "Beschreibung", "details", "info"])
 
         return has_content
 
-    async def profile_animal(
-        self, animal_data: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+    async def profile_animal(self, animal_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Profile a single animal using LLM.
 
@@ -120,9 +113,7 @@ class ScraperLLMIntegration:
             logger.error(f"Error profiling {animal_data.get('name')}: {e}")
             return None
 
-    def profile_batch(
-        self, animals: List[Dict[str, Any]], max_batch: int = 5
-    ) -> List[Dict[str, Any]]:
+    def profile_batch(self, animals: List[Dict[str, Any]], max_batch: int = 5) -> List[Dict[str, Any]]:
         """
         Profile a batch of animals synchronously.
 
@@ -208,9 +199,7 @@ class ScraperLLMIntegration:
 
         # Replace method
         scraper_instance.save_animal = save_with_profiling
-        logger.info(
-            f"Integrated LLM profiling with {scraper_instance.__class__.__name__}"
-        )
+        logger.info(f"Integrated LLM profiling with {scraper_instance.__class__.__name__}")
 
 
 def add_llm_profiling_to_scraper(scraper_class):

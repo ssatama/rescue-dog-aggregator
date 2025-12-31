@@ -74,9 +74,7 @@ class TestTierschutzvereinTranslations:
 
         for german, expected in test_cases:
             result = translate_age(german)
-            assert result == expected, (
-                f"Failed for {german}: got {result}, expected {expected}"
-            )
+            assert result == expected, f"Failed for {german}: got {result}, expected {expected}"
 
     def test_translate_age_handles_simple_patterns(self):
         """Test age translation for simple patterns."""
@@ -92,9 +90,7 @@ class TestTierschutzvereinTranslations:
 
         for german, expected in test_cases:
             result = translate_age(german)
-            assert result == expected, (
-                f"Failed for {german}: got {result}, expected {expected}"
-            )
+            assert result == expected, f"Failed for {german}: got {result}, expected {expected}"
 
     def test_translate_age_handles_unknown(self):
         """Test that unknown age returns None."""
@@ -122,9 +118,7 @@ class TestTierschutzvereinTranslations:
 
         for german, expected in test_cases:
             result = translate_breed(german)
-            assert expected in result or result == expected, (
-                f"Failed for {german}: got {result}, expected substring {expected}"
-            )
+            assert expected in result or result == expected, f"Failed for {german}: got {result}, expected substring {expected}"
 
     def test_translate_breed_existing_patterns(self):
         """Test existing breed translation patterns still work."""
@@ -139,9 +133,7 @@ class TestTierschutzvereinTranslations:
 
         for german, expected in test_cases:
             result = translate_breed(german)
-            assert result == expected, (
-                f"Failed for {german}: got {result}, expected {expected}"
-            )
+            assert result == expected, f"Failed for {german}: got {result}, expected {expected}"
 
     def test_translate_gender(self):
         """Test gender translation."""

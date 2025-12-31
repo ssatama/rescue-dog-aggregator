@@ -85,17 +85,13 @@ class DataQualityMetrics:
     }
 
     # Visual appeal criteria (10 points total)
-    VISUAL_CRITERIA = {
-        "primary_image": {"points": 10, "description": "Primary image URL present"}
-    }
+    VISUAL_CRITERIA = {"primary_image": {"points": 10, "description": "Primary image URL present"}}
 
     @classmethod
     def assess_animal_completeness(cls, animal: Dict[str, Any]) -> QualityScore:
         """Assess completeness of animal data."""
         points_earned = 0
-        max_points = sum(
-            criteria["points"] for criteria in cls.COMPLETENESS_CRITERIA.values()
-        )
+        max_points = sum(criteria["points"] for criteria in cls.COMPLETENESS_CRITERIA.values())
         issues = []
 
         # Name check
@@ -148,19 +144,12 @@ class DataQualityMetrics:
     def assess_animal_standardization(cls, animal: Dict[str, Any]) -> QualityScore:
         """Assess standardization quality of animal data."""
         points_earned = 0
-        max_points = sum(
-            criteria["points"] for criteria in cls.STANDARDIZATION_CRITERIA.values()
-        )
+        max_points = sum(criteria["points"] for criteria in cls.STANDARDIZATION_CRITERIA.values())
         issues = []
 
         # Standardized breed check
-        if (
-            animal.get("standardized_breed")
-            and animal.get("standardized_breed").strip()
-        ):
-            points_earned += cls.STANDARDIZATION_CRITERIA["standardized_breed"][
-                "points"
-            ]
+        if animal.get("standardized_breed") and animal.get("standardized_breed").strip():
+            points_earned += cls.STANDARDIZATION_CRITERIA["standardized_breed"]["points"]
         else:
             issues.append("Missing standardized breed")
 
@@ -183,9 +172,7 @@ class DataQualityMetrics:
     def assess_animal_rich_content(cls, animal: Dict[str, Any]) -> QualityScore:
         """Assess rich content quality of animal data."""
         points_earned = 0
-        max_points = sum(
-            criteria["points"] for criteria in cls.RICH_CONTENT_CRITERIA.values()
-        )
+        max_points = sum(criteria["points"] for criteria in cls.RICH_CONTENT_CRITERIA.values())
         issues = []
 
         # Description check (from properties JSON)
@@ -196,9 +183,7 @@ class DataQualityMetrics:
             except (json.JSONDecodeError, TypeError):
                 properties = {}
 
-        description = (
-            properties.get("description", "") if isinstance(properties, dict) else ""
-        )
+        description = properties.get("description", "") if isinstance(properties, dict) else ""
 
         if description and len(description.strip()) > 50:  # Meaningful description
             points_earned += cls.RICH_CONTENT_CRITERIA["description"]["points"]
@@ -218,9 +203,7 @@ class DataQualityMetrics:
     def assess_animal_visual_appeal(cls, animal: Dict[str, Any]) -> QualityScore:
         """Assess visual appeal quality of animal data."""
         points_earned = 0
-        max_points = sum(
-            criteria["points"] for criteria in cls.VISUAL_CRITERIA.values()
-        )
+        max_points = sum(criteria["points"] for criteria in cls.VISUAL_CRITERIA.values())
         issues = []
 
         # Primary image check

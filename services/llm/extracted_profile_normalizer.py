@@ -41,49 +41,31 @@ class ExtractedProfileNormalizer:
         result = copy.deepcopy(data)
 
         if "energy_level" in result:
-            result["energy_level"] = self.normalizers.normalize_energy_level(
-                result["energy_level"]
-            )
+            result["energy_level"] = self.normalizers.normalize_energy_level(result["energy_level"])
 
         if "trainability" in result:
-            result["trainability"] = self.normalizers.normalize_trainability(
-                result["trainability"]
-            )
+            result["trainability"] = self.normalizers.normalize_trainability(result["trainability"])
 
         if "sociability" in result:
-            result["sociability"] = self.normalizers.normalize_sociability(
-                result["sociability"]
-            )
+            result["sociability"] = self.normalizers.normalize_sociability(result["sociability"])
 
         if "confidence" in result:
-            result["confidence"] = self.normalizers.normalize_confidence(
-                result["confidence"]
-            )
+            result["confidence"] = self.normalizers.normalize_confidence(result["confidence"])
 
         if "home_type" in result:
-            result["home_type"] = self.normalizers.normalize_home_type(
-                result["home_type"]
-            )
+            result["home_type"] = self.normalizers.normalize_home_type(result["home_type"])
 
         if "experience_level" in result:
-            result["experience_level"] = self.normalizers.normalize_experience_level(
-                result["experience_level"]
-            )
+            result["experience_level"] = self.normalizers.normalize_experience_level(result["experience_level"])
 
         if "exercise_needs" in result:
-            result["exercise_needs"] = self.normalizers.normalize_exercise_needs(
-                result["exercise_needs"]
-            )
+            result["exercise_needs"] = self.normalizers.normalize_exercise_needs(result["exercise_needs"])
 
         if "grooming_needs" in result:
-            result["grooming_needs"] = self.normalizers.normalize_grooming_needs(
-                result["grooming_needs"]
-            )
+            result["grooming_needs"] = self.normalizers.normalize_grooming_needs(result["grooming_needs"])
 
         if "adoption_fee_euros" in result:
-            result["adoption_fee_euros"] = self.normalizers.normalize_adoption_fee(
-                result["adoption_fee_euros"]
-            )
+            result["adoption_fee_euros"] = self.normalizers.normalize_adoption_fee(result["adoption_fee_euros"])
 
         return result
 
@@ -130,9 +112,7 @@ class ExtractedProfileNormalizer:
         for field, limit in text_limits.items():
             if field in result and result[field]:
                 if isinstance(result[field], str):
-                    result[field] = self.normalizers.smart_truncate(
-                        result[field], limit
-                    )
+                    result[field] = self.normalizers.smart_truncate(result[field], limit)
 
         return result
 
@@ -215,19 +195,13 @@ class ExtractedProfileNormalizer:
 
             # Add required default references if missing
             if "description" not in result["source_references"]:
-                result["source_references"]["description"] = (
-                    "generated from available data"
-                )
+                result["source_references"]["description"] = "generated from available data"
             if "personality_traits" not in result["source_references"]:
                 has_breed = "breed" in str(result)
-                result["source_references"]["personality_traits"] = (
-                    "inferred from breed" if has_breed else "default values"
-                )
+                result["source_references"]["personality_traits"] = "inferred from breed" if has_breed else "default values"
 
         # Confidence scores
-        if "confidence_scores" in result and isinstance(
-            result["confidence_scores"], dict
-        ):
+        if "confidence_scores" in result and isinstance(result["confidence_scores"], dict):
             for key in result["confidence_scores"]:
                 if result["confidence_scores"][key] is None:
                     result["confidence_scores"][key] = 0.0

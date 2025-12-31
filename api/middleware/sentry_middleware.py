@@ -70,9 +70,7 @@ class SentryPerformanceMiddleware(BaseHTTPMiddleware):
             finally:
                 # Track request duration
                 duration = (time.time() - start_time) * 1000
-                transaction.set_measurement(
-                    "http.request.duration", duration, "millisecond"
-                )
+                transaction.set_measurement("http.request.duration", duration, "millisecond")
 
                 # Alert on slow requests
                 if duration > 3000:  # 3 seconds
@@ -114,9 +112,7 @@ class SentryTimeoutMiddleware(BaseHTTPMiddleware):
 
         try:
             # Set a timeout for the request
-            response = await asyncio.wait_for(
-                call_next(request), timeout=self.timeout_seconds
-            )
+            response = await asyncio.wait_for(call_next(request), timeout=self.timeout_seconds)
             return response
 
         except asyncio.TimeoutError:

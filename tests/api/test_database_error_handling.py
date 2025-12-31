@@ -157,9 +157,7 @@ class TestDatabaseQueryErrors:
 
         def mock_db_cursor_query_error():
             mock_cursor = MagicMock()
-            mock_cursor.execute.side_effect = psycopg2.Error(
-                "Breed groups query failed"
-            )
+            mock_cursor.execute.side_effect = psycopg2.Error("Breed groups query failed")
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):

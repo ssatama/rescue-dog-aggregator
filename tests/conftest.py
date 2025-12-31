@@ -18,10 +18,10 @@ from psycopg2.extras import RealDictCursor
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from api.dependencies import (
+from api.dependencies import (  # Import the original dependencies
     get_db_cursor,
     get_pooled_db_cursor,
-)  # Import the original dependencies
+)
 from api.main import app
 
 # Import database pool to initialize it
@@ -51,24 +51,18 @@ def initialize_database_pool(request):
     For unit/fast tests, skip database initialization since they should not access database.
     """
     # Check if we're running only unit/fast tests that don't need database
-    print(
-        f"\n[conftest] DEBUG: request.config exists: {hasattr(request.config, 'getoption')}"
-    )
+    print(f"\n[conftest] DEBUG: request.config exists: {hasattr(request.config, 'getoption')}")
     if hasattr(request.config, "getoption"):
         markexpr = request.config.getoption("-m", None)
         print(f"[conftest] DEBUG: markexpr = {markexpr}")
         if markexpr and ("unit or fast" in markexpr or "unit and fast" in markexpr):
-            print(
-                "\n[conftest] Skipping database pool initialization for unit/fast tests."
-            )
+            print("\n[conftest] Skipping database pool initialization for unit/fast tests.")
             yield  # Must yield for fixture to work
             return
 
     # Check environment variable that indicates unit-only test run
     if os.environ.get("PYTEST_UNIT_ONLY") == "true":
-        print(
-            "\n[conftest] Skipping database pool initialization for unit-only test run."
-        )
+        print("\n[conftest] Skipping database pool initialization for unit-only test run.")
         yield  # Must yield for fixture to work
         return
 
@@ -113,9 +107,7 @@ def initialize_database_pool(request):
 
     except Exception as e:
         print(f"[conftest] Warning: Could not initialize database pools: {e}")
-        print(
-            "[conftest] This is expected for unit/fast tests that don't need database access."
-        )
+        print("[conftest] This is expected for unit/fast tests that don't need database access.")
 
     yield
 
@@ -210,26 +202,20 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
 
         except psycopg2.IntegrityError as e:
             # Foreign key constraint violation
-            print(
-                f"[conftest robust_cleanup] Foreign key constraint error (attempt {attempt + 1}): {e}"
-            )
+            print(f"[conftest robust_cleanup] Foreign key constraint error (attempt {attempt + 1}): {e}")
             conn.rollback()
 
             if attempt == max_retries - 1:
                 # Last attempt: use CASCADE deletion
                 try:
-                    print(
-                        "[conftest robust_cleanup] Using CASCADE deletion as fallback"
-                    )
+                    print("[conftest robust_cleanup] Using CASCADE deletion as fallback")
                     cursor.execute("DELETE FROM organizations CASCADE;")
                     # animal_images table removed in migration 005 - no longer exists
                     conn.commit()
                     print("[conftest robust_cleanup] CASCADE deletion successful")
                     return
                 except Exception as cascade_error:
-                    print(
-                        f"[conftest robust_cleanup] CASCADE deletion failed: {cascade_error}"
-                    )
+                    print(f"[conftest robust_cleanup] CASCADE deletion failed: {cascade_error}")
                     conn.rollback()
                     raise
 
@@ -238,9 +224,7 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
 
         except (psycopg2.OperationalError, psycopg2.DatabaseError) as e:
             # Network/connection issues
-            print(
-                f"[conftest robust_cleanup] Database connection error (attempt {attempt + 1}): {e}"
-            )
+            print(f"[conftest robust_cleanup] Database connection error (attempt {attempt + 1}): {e}")
             conn.rollback()
 
             if attempt == max_retries - 1:
@@ -251,9 +235,7 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
 
         except Exception as e:
             # Unexpected error
-            print(
-                f"[conftest robust_cleanup] Unexpected error (attempt {attempt + 1}): {e}"
-            )
+            print(f"[conftest robust_cleanup] Unexpected error (attempt {attempt + 1}): {e}")
             conn.rollback()
 
             if attempt == max_retries - 1:
@@ -268,9 +250,7 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
 def manage_test_data(request):
     """Fixture to clear tables and insert test data using the override connection logic."""
     # Skip database setup for unit tests that don't need it
-    if request.node.get_closest_marker("unit") or request.node.get_closest_marker(
-        "fast"
-    ):
+    if request.node.get_closest_marker("unit") or request.node.get_closest_marker("fast"):
         # Unit tests don't need database setup
         yield
         return
@@ -327,9 +307,7 @@ def manage_test_data(request):
             age_min_months = EXCLUDED.age_min_months, age_max_months = EXCLUDED.age_max_months;
         """
         cursor.execute(animals_sql)
-        print(
-            "[conftest.manage_test_data] Comprehensive test animals inserted (12 dogs with various breeds)."
-        )
+        print("[conftest.manage_test_data] Comprehensive test animals inserted (12 dogs with various breeds).")
 
         # --- IMPORTANT: Commit the setup data using the connection from the override ---
         conn.commit()
@@ -339,9 +317,7 @@ def manage_test_data(request):
 
         # Teardown is implicitly handled by the next test's setup clearing
         # tables
-        print(
-            "[conftest.manage_test_data] Teardown for test function (data cleared by next setup)."
-        )
+        print("[conftest.manage_test_data] Teardown for test function (data cleared by next setup).")
 
     except Exception as e:
         if conn:
@@ -410,14 +386,10 @@ def isolate_database_writes():
     Note: This uses stop_all=False to allow test-specific mocks to override these.
     """
     # Start patches but don't use context manager to allow test overrides
-    mock_sync_service = patch(
-        "utils.organization_sync_service.create_default_sync_service"
-    )
+    mock_sync_service = patch("utils.organization_sync_service.create_default_sync_service")
     mock_execute_query = patch("utils.db_connection.execute_query")
     mock_execute_command = patch("utils.db_connection.execute_command")
-    mock_inject_services = patch(
-        "utils.secure_scraper_loader.SecureScraperLoader._inject_services"
-    )
+    mock_inject_services = patch("utils.secure_scraper_loader.SecureScraperLoader._inject_services")
 
     # Start all patches
     mock_sync_service_obj = mock_sync_service.start()

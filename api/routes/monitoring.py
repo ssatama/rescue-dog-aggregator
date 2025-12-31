@@ -178,18 +178,13 @@ async def get_scraper_status(
 
                 recent_failures = cursor.fetchall()
                 if recent_failures:
-                    failure_detection["last_failure_type"] = recent_failures[0][
-                        1
-                    ]  # error_message
+                    failure_detection["last_failure_type"] = recent_failures[0][1]  # error_message
                     failure_detection["consecutive_failures"] = len(recent_failures)
 
             # Build performance metrics
             performance_metrics = {
                 f"scrapes_{filters.time_range_hours}h": scrapes_in_range or 0,
-                "success_rate": (
-                    1 - (failed_in_range or 0) / max(scrapes_in_range or 1, 1)
-                )
-                * 100,
+                "success_rate": (1 - (failed_in_range or 0) / max(scrapes_in_range or 1, 1)) * 100,
                 "avg_animals_found": round(avg_animals or 0, 1),
                 "avg_duration_seconds": round(avg_duration or 0, 1),
                 "avg_data_quality": round(avg_quality or 0, 3),
@@ -214,9 +209,7 @@ async def get_scraper_status(
             "failure_rate": (total_failures_24h / max(total_scrapes_24h, 1)) * 100,
             "active_scrapers": len([s for s in scrapers if s["status"] != "never_run"]),
             "healthy_scrapers": len([s for s in scrapers if s["status"] == "success"]),
-            "unhealthy_scrapers": len(
-                [s for s in scrapers if s["status"] in ["error", "warning"]]
-            ),
+            "unhealthy_scrapers": len([s for s in scrapers if s["status"] in ["error", "warning"]]),
         }
 
         cursor.close()
@@ -239,9 +232,7 @@ async def get_scraper_status(
 
 
 @router.get("/scrapers/{organization_id}", dependencies=[Depends(verify_admin_key)])
-async def get_individual_scraper_details(
-    organization_id: int, db_conn=Depends(get_database_connection)
-):
+async def get_individual_scraper_details(organization_id: int, db_conn=Depends(get_database_connection)):
     """
     Get detailed information about a specific scraper.
 
@@ -407,9 +398,7 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
             raise
 
         failure_counts = cursor.fetchone()
-        logger.debug(
-            f"Failure counts query result: {failure_counts}, type: {type(failure_counts)}"
-        )
+        logger.debug(f"Failure counts query result: {failure_counts}, type: {type(failure_counts)}")
 
         if failure_counts and len(failure_counts) >= 4:
             catastrophic, partial, database_errors, total_failures = failure_counts
@@ -477,9 +466,7 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
                 recent_failures.append(
                     {
                         "timestamp": failure[0] if len(failure) > 0 else None,
-                        "organization_name": (
-                            failure[1] if len(failure) > 1 else "Unknown"
-                        ),
+                        "organization_name": (failure[1] if len(failure) > 1 else "Unknown"),
                         "status": failure[2] if len(failure) > 2 else "unknown",
                         "animals_found": failure[3] if len(failure) > 3 else None,
                         "failure_type": failure_type,
@@ -552,9 +539,7 @@ async def get_performance_metrics(db_conn=Depends(get_database_connection)):
             "success_rate": (successful / max(total, 1)) * 100,
             "total_animals_7d": scraper_data[4] or 0,
             "avg_animals_per_scrape": round(scraper_data[5] or 0, 1),
-            "animals_per_hour": round(
-                (scraper_data[4] or 0) / (7 * 24), 1
-            ),  # Animals per hour over 7 days
+            "animals_per_hour": round((scraper_data[4] or 0) / (7 * 24), 1),  # Animals per hour over 7 days
         }
 
         # Get database connection pool info (basic version)
@@ -747,15 +732,7 @@ async def get_active_alerts(db_conn=Depends(get_database_connection)):
                     "organization_name": org_name,
                     "message": f"{org_name} has not been scraped recently",
                     "last_occurrence": last_scrape,
-                    "metadata": {
-                        "hours_since_last_scrape": (
-                            48
-                            if not last_scrape
-                            else int(
-                                (datetime.now() - last_scrape).total_seconds() / 3600
-                            )
-                        )
-                    },
+                    "metadata": {"hours_since_last_scrape": (48 if not last_scrape else int((datetime.now() - last_scrape).total_seconds() / 3600))},
                 }
             )
 

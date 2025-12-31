@@ -57,14 +57,9 @@ class FurryRescueItalyScraper(BaseScraper):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         }
 
-        self.logger.info(
-            f"Initialized with config: rate_limit_delay={self.rate_limit_delay}, "
-            f"batch_size={self.batch_size}, skip_existing_animals={self.skip_existing_animals}"
-        )
+        self.logger.info(f"Initialized with config: rate_limit_delay={self.rate_limit_delay}, " f"batch_size={self.batch_size}, skip_existing_animals={self.skip_existing_animals}")
 
-    def get_animal_list(
-        self, max_pages_to_scrape: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+    def get_animal_list(self, max_pages_to_scrape: Optional[int] = None) -> List[Dict[str, Any]]:
         """Get list of all available dogs from listing pages.
 
         Args:
@@ -73,9 +68,7 @@ class FurryRescueItalyScraper(BaseScraper):
         Returns:
             List of dictionaries containing dog information
         """
-        self.logger.info(
-            f"get_animal_list: Starting with max_pages_to_scrape={max_pages_to_scrape}"
-        )
+        self.logger.info(f"get_animal_list: Starting with max_pages_to_scrape={max_pages_to_scrape}")
         self.logger.info(f"get_animal_list: Base URL: {self.base_url}")
         self.logger.info(f"get_animal_list: Listing URL: {self.listing_url}")
 
@@ -99,16 +92,12 @@ class FurryRescueItalyScraper(BaseScraper):
                 self.logger.info(f"Fetching page {current_page}: {url}")
 
                 # Rate limiting for respectful scraping (applies to all pages)
-                if (
-                    current_page > 1 or all_dogs
-                ):  # Rate limit all pages except the very first request
+                if current_page > 1 or all_dogs:  # Rate limit all pages except the very first request
                     time.sleep(self.rate_limit_delay)
 
                 # Fetch the page
                 try:
-                    response = requests.get(
-                        url, headers=self.headers, timeout=self.timeout
-                    )
+                    response = requests.get(url, headers=self.headers, timeout=self.timeout)
                     response.raise_for_status()
                 except Exception as e:
                     self.logger.error(f"Error fetching page {current_page}: {e}")
@@ -119,13 +108,9 @@ class FurryRescueItalyScraper(BaseScraper):
                 # Extract dogs from current page
                 page_dogs = self._extract_dogs_from_page(soup)
 
-                self.logger.info(
-                    f"Page {current_page}: _extract_dogs_from_page returned {len(page_dogs)} dogs"
-                )
+                self.logger.info(f"Page {current_page}: _extract_dogs_from_page returned {len(page_dogs)} dogs")
                 if not page_dogs:
-                    self.logger.info(
-                        f"No dogs found on page {current_page}, stopping pagination"
-                    )
+                    self.logger.info(f"No dogs found on page {current_page}, stopping pagination")
                     break
 
                 all_dogs.extend(page_dogs)
@@ -163,9 +148,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         # Look for the specific structure: h6 with class="adoption-header"
         headings = soup.find_all("h6", class_="adoption-header")
-        self.logger.debug(
-            f"_extract_dogs_from_page: Found {len(headings)} adoption-header headings"
-        )
+        self.logger.debug(f"_extract_dogs_from_page: Found {len(headings)} adoption-header headings")
 
         for heading in headings:
             text = heading.get_text(strip=True)
@@ -183,9 +166,7 @@ class FurryRescueItalyScraper(BaseScraper):
             # Looking for the closest div that contains the whole card
             parent = heading.find_parent("div", class_="adopt-card")
             if not parent:
-                parent = heading.find_parent(
-                    "div", id=lambda x: x and x.startswith("post-")
-                )
+                parent = heading.find_parent("div", id=lambda x: x and x.startswith("post-"))
             if not parent:
                 parent = heading.find_parent("article")
 
@@ -239,11 +220,7 @@ class FurryRescueItalyScraper(BaseScraper):
                         weight_text = item_text.split(":", 1)[1].strip()
                     else:
                         # Extract text after "Weight" or "weight"
-                        weight_text = (
-                            item_text.replace("Weight", "")
-                            .replace("weight", "")
-                            .strip()
-                        )
+                        weight_text = item_text.replace("Weight", "").replace("weight", "").strip()
                     if weight_text:
                         dog_data["weight"] = weight_text
 
@@ -262,9 +239,7 @@ class FurryRescueItalyScraper(BaseScraper):
             dog_data["organization_id"] = self.org_config.id
 
             dogs.append(dog_data)
-            self.logger.debug(
-                f"Extracted dog: {name} with URL: {dog_data.get('adoption_url', 'N/A')}"
-            )
+            self.logger.debug(f"Extracted dog: {name} with URL: {dog_data.get('adoption_url', 'N/A')}")
 
         self.logger.info(f"_extract_dogs_from_page: Returning {len(dogs)} dogs")
         return dogs
@@ -649,11 +624,7 @@ class FurryRescueItalyScraper(BaseScraper):
             for element in next_elements:
                 if element.name in ["p", "div"]:
                     text = element.get_text(strip=True)
-                    if (
-                        text
-                        and not text.startswith("•")
-                        and not self._looks_like_property_data(text)
-                    ):
+                    if text and not text.startswith("•") and not self._looks_like_property_data(text):
                         cleaned = self._clean_description_text(text)
                         if cleaned:
                             description_parts.append(cleaned)
@@ -741,9 +712,7 @@ class FurryRescueItalyScraper(BaseScraper):
         # Remove contact and admin patterns (whole lines)
         for pattern in CONTACT_PATTERNS + ADMIN_PATTERNS:
             # Remove entire lines containing these patterns
-            result = re.sub(
-                f".*{pattern}.*\n?", "", result, flags=re.IGNORECASE | re.MULTILINE
-            )
+            result = re.sub(f".*{pattern}.*\n?", "", result, flags=re.IGNORECASE | re.MULTILINE)
 
         # Remove lines that start with emojis (likely footer/contact lines)
         result = re.sub(r"^[👉📝🇮🇹🇬🇧🇩🇪💕🐾📸💙🩷❤]+.*$", "", result, flags=re.MULTILINE)
@@ -793,9 +762,7 @@ class FurryRescueItalyScraper(BaseScraper):
         # Get all animals from listing pages
         self.logger.info("collect_data: Calling get_animal_list()")
         animals = self.get_animal_list()
-        self.logger.info(
-            f"collect_data: get_animal_list() returned {len(animals)} animals"
-        )
+        self.logger.info(f"collect_data: get_animal_list() returned {len(animals)} animals")
 
         if not animals:
             self.logger.warning("No animals found to process")
@@ -816,23 +783,17 @@ class FurryRescueItalyScraper(BaseScraper):
         else:
             enriched_animals = self._process_animals_parallel(animals)
 
-        self.logger.info(
-            f"Successfully enriched {len(enriched_animals)} animals with detail data"
-        )
+        self.logger.info(f"Successfully enriched {len(enriched_animals)} animals with detail data")
 
         return enriched_animals
 
-    def _process_animals_sequentially(
-        self, animals: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _process_animals_sequentially(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Process animals sequentially - best for small datasets."""
         enriched_animals = []
 
         for i, animal in enumerate(animals, 1):
             try:
-                self.logger.info(
-                    f"Processing {i}/{len(animals)}: {animal.get('name', 'Unknown')}"
-                )
+                self.logger.info(f"Processing {i}/{len(animals)}: {animal.get('name', 'Unknown')}")
 
                 # Scrape detail page
                 if "adoption_url" in animal:
@@ -846,23 +807,17 @@ class FurryRescueItalyScraper(BaseScraper):
                 if self._validate_animal_data(animal):
                     enriched_animals.append(animal)
                 else:
-                    self.logger.warning(
-                        f"Skipping animal {animal.get('name', 'Unknown')} due to missing required fields"
-                    )
+                    self.logger.warning(f"Skipping animal {animal.get('name', 'Unknown')} due to missing required fields")
 
             except Exception as e:
-                self.logger.error(
-                    f"Error processing animal {animal.get('name', 'Unknown')}: {e}"
-                )
+                self.logger.error(f"Error processing animal {animal.get('name', 'Unknown')}: {e}")
                 # Still add the animal with whatever data we have if it's valid
                 if self._validate_animal_data(animal):
                     enriched_animals.append(animal)
 
         return enriched_animals
 
-    def _process_animals_parallel(
-        self, animals: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Process animals in parallel batches - for larger datasets."""
         import concurrent.futures
         from threading import Lock
@@ -873,9 +828,7 @@ class FurryRescueItalyScraper(BaseScraper):
         # Use batch_size from config, default to 4 for this small site
         batch_size = min(self.batch_size, 4)  # Don't overdo it for 50 dogs
 
-        self.logger.info(
-            f"Processing {len(animals)} animals in parallel with batch_size={batch_size}"
-        )
+        self.logger.info(f"Processing {len(animals)} animals in parallel with batch_size={batch_size}")
 
         def process_single_animal(animal: Dict[str, Any]) -> Dict[str, Any]:
             """Process a single animal with detail enrichment."""
@@ -890,17 +843,12 @@ class FurryRescueItalyScraper(BaseScraper):
 
                 return animal
             except Exception as e:
-                self.logger.error(
-                    f"Error processing {animal.get('name', 'Unknown')}: {e}"
-                )
+                self.logger.error(f"Error processing {animal.get('name', 'Unknown')}: {e}")
                 return animal
 
         # Process in parallel
         with concurrent.futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
-            future_to_animal = {
-                executor.submit(process_single_animal, animal): animal
-                for animal in animals
-            }
+            future_to_animal = {executor.submit(process_single_animal, animal): animal for animal in animals}
 
             for future in concurrent.futures.as_completed(future_to_animal):
                 try:
@@ -909,14 +857,10 @@ class FurryRescueItalyScraper(BaseScraper):
                         with results_lock:
                             enriched_animals.append(result)
                     else:
-                        self.logger.warning(
-                            f"Skipping animal {result.get('name', 'Unknown')} due to missing required fields"
-                        )
+                        self.logger.warning(f"Skipping animal {result.get('name', 'Unknown')} due to missing required fields")
                 except Exception as e:
                     original_animal = future_to_animal[future]
-                    self.logger.error(
-                        f"Failed to process {original_animal.get('name', 'Unknown')}: {e}"
-                    )
+                    self.logger.error(f"Failed to process {original_animal.get('name', 'Unknown')}: {e}")
                     # Add with original data if valid
                     if self._validate_animal_data(original_animal):
                         with results_lock:
@@ -924,9 +868,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         return enriched_animals
 
-    def _merge_animal_details(
-        self, animal: Dict[str, Any], details: Dict[str, Any]
-    ) -> None:
+    def _merge_animal_details(self, animal: Dict[str, Any], details: Dict[str, Any]) -> None:
         """Merge detail page data into animal dictionary."""
         # Update name if found on detail page (convert from UPPERCASE to Title Case)
         if "name" in details and details["name"]:
@@ -959,17 +901,12 @@ class FurryRescueItalyScraper(BaseScraper):
             animal["properties"]["description"] = details["description"]
 
             # If there's also a description from good_with extraction, merge them
-            if (
-                "description" in animal["properties"]
-                and animal["properties"]["description"] != details["description"]
-            ):
+            if "description" in animal["properties"] and animal["properties"]["description"] != details["description"]:
                 # Merge if they're different
                 existing_desc = animal["properties"]["description"]
                 new_desc = details["description"]
                 if new_desc not in existing_desc:
-                    animal["properties"]["description"] = (
-                        existing_desc + "\n\n" + new_desc
-                    )
+                    animal["properties"]["description"] = existing_desc + "\n\n" + new_desc
 
         # Prepare data for unified standardization
         # Extract key fields to match expected format

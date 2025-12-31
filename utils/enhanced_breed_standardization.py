@@ -138,9 +138,7 @@ class EnhancedBreedStandardizer:
             processed = processed.replace(typo, correction)
 
         # Apply language normalization
-        for foreign, english in self.preprocessing_rules[
-            "language_normalization"
-        ].items():
+        for foreign, english in self.preprocessing_rules["language_normalization"].items():
             processed = processed.replace(foreign, english)
 
         # Apply abbreviation expansion
@@ -148,17 +146,13 @@ class EnhancedBreedStandardizer:
         expanded_words = []
         for word in words:
             if word in self.preprocessing_rules["abbreviation_expansion"]:
-                expanded_words.append(
-                    self.preprocessing_rules["abbreviation_expansion"][word]
-                )
+                expanded_words.append(self.preprocessing_rules["abbreviation_expansion"][word])
             else:
                 expanded_words.append(word)
 
         return " ".join(expanded_words).strip()
 
-    def apply_breed_specific_mappings(
-        self, processed_text: str
-    ) -> Optional[Tuple[str, str, Optional[str]]]:
+    def apply_breed_specific_mappings(self, processed_text: str) -> Optional[Tuple[str, str, Optional[str]]]:
         """Apply breed-specific mapping rules."""
         # First, try exact mappings
         exact_mappings = self.breed_mappings.get("exact_mappings", {})
@@ -201,9 +195,7 @@ class EnhancedBreedStandardizer:
 
         return None
 
-    def fuzzy_match_breed(
-        self, processed_text: str
-    ) -> Optional[Tuple[str, str, Optional[str]]]:
+    def fuzzy_match_breed(self, processed_text: str) -> Optional[Tuple[str, str, Optional[str]]]:
         """Apply fuzzy string matching to find similar breeds."""
         if not self.thresholds["exact_match_first"]:
             return None
@@ -217,19 +209,12 @@ class EnhancedBreedStandardizer:
             group,
             size,
         ) in self.original_breed_mapping.items():
-            ratio = (
-                SequenceMatcher(None, processed_text, original_breed.lower()).ratio()
-                * 100
-            )
+            ratio = SequenceMatcher(None, processed_text, original_breed.lower()).ratio() * 100
 
             # Check similarity threshold and length difference
             length_diff = abs(len(processed_text) - len(original_breed))
 
-            if (
-                ratio >= self.thresholds["similarity_threshold"]
-                and length_diff <= self.thresholds["length_difference_threshold"]
-                and ratio > best_ratio
-            ):
+            if ratio >= self.thresholds["similarity_threshold"] and length_diff <= self.thresholds["length_difference_threshold"] and ratio > best_ratio:
                 best_match = (std_breed, group, size)
                 best_ratio = ratio
 
@@ -240,24 +225,13 @@ class EnhancedBreedStandardizer:
         breed_lower = breed_name.lower()
 
         # Size indicators
-        if any(
-            tiny in breed_lower for tiny in ["chihuahua", "yorkshire", "maltese", "toy"]
-        ):
+        if any(tiny in breed_lower for tiny in ["chihuahua", "yorkshire", "maltese", "toy"]):
             return "Tiny"
-        elif any(
-            small in breed_lower
-            for small in ["beagle", "jack russell", "cocker", "shih tzu"]
-        ):
+        elif any(small in breed_lower for small in ["beagle", "jack russell", "cocker", "shih tzu"]):
             return "Small"
-        elif any(
-            large in breed_lower
-            for large in ["labrador", "german shepherd", "golden", "rottweiler"]
-        ):
+        elif any(large in breed_lower for large in ["labrador", "german shepherd", "golden", "rottweiler"]):
             return "Large"
-        elif any(
-            xlarge in breed_lower
-            for xlarge in ["great dane", "mastiff", "saint bernard"]
-        ):
+        elif any(xlarge in breed_lower for xlarge in ["great dane", "mastiff", "saint bernard"]):
             return "XLarge"
         else:
             return "Medium"  # Default for unknown
@@ -266,42 +240,24 @@ class EnhancedBreedStandardizer:
         """Get breed group from breed name."""
         breed_lower = breed_name.lower()
 
-        if any(
-            sporting in breed_lower
-            for sporting in ["retriever", "spaniel", "pointer", "setter"]
-        ):
+        if any(sporting in breed_lower for sporting in ["retriever", "spaniel", "pointer", "setter"]):
             return "Sporting"
-        elif any(
-            hound in breed_lower
-            for hound in ["beagle", "hound", "greyhound", "podenco", "galgo"]
-        ):
+        elif any(hound in breed_lower for hound in ["beagle", "hound", "greyhound", "podenco", "galgo"]):
             return "Hound"
-        elif any(
-            working in breed_lower
-            for working in ["boxer", "rottweiler", "husky", "mastiff"]
-        ):
+        elif any(working in breed_lower for working in ["boxer", "rottweiler", "husky", "mastiff"]):
             return "Working"
-        elif any(
-            terrier in breed_lower for terrier in ["terrier", "pittie", "pit bull"]
-        ):
+        elif any(terrier in breed_lower for terrier in ["terrier", "pittie", "pit bull"]):
             return "Terrier"
-        elif any(
-            toy in breed_lower for toy in ["chihuahua", "pomeranian", "maltese", "pug"]
-        ):
+        elif any(toy in breed_lower for toy in ["chihuahua", "pomeranian", "maltese", "pug"]):
             return "Toy"
-        elif any(
-            herding in breed_lower
-            for herding in ["shepherd", "collie", "corgi", "heeler"]
-        ):
+        elif any(herding in breed_lower for herding in ["shepherd", "collie", "corgi", "heeler"]):
             return "Herding"
         elif "mix" in breed_lower:
             return "Mixed"
         else:
             return "Unknown"
 
-    def standardize_breed_enhanced(
-        self, breed_text: str
-    ) -> Tuple[str, str, Optional[str]]:
+    def standardize_breed_enhanced(self, breed_text: str) -> Tuple[str, str, Optional[str]]:
         """
         Enhanced breed standardization with multi-stage processing.
 
@@ -342,13 +298,7 @@ class EnhancedBreedStandardizer:
         for original, standardized in self.original_breed_mapping.items():
             if original in processed_text:
                 # If we find a mix indicator, adjust the standardized breed name
-                if (
-                    any(
-                        mix_word in processed_text
-                        for mix_word in ["mix", "cross", "mixed"]
-                    )
-                    and " Mix" not in standardized[0]
-                ):
+                if any(mix_word in processed_text for mix_word in ["mix", "cross", "mixed"]) and " Mix" not in standardized[0]:
                     return f"{standardized[0]} Mix", "Mixed", standardized[2]
                 return standardized
 
@@ -362,9 +312,7 @@ class EnhancedBreedStandardizer:
             return "Mixed Breed", "Mixed", None
 
         # Stage 8: Fallback to capitalized original
-        capitalized_breed = " ".join(
-            word.capitalize() for word in processed_text.split()
-        )
+        capitalized_breed = " ".join(word.capitalize() for word in processed_text.split())
         return capitalized_breed, "Unknown", None
 
 
@@ -384,9 +332,7 @@ def normalize_breed_case_v2(breed_text: str, use_enhanced: bool = False) -> str:
         Standardized breed name
     """
     if use_enhanced:
-        standardized_breed, _, _ = enhanced_standardizer.standardize_breed_enhanced(
-            breed_text
-        )
+        standardized_breed, _, _ = enhanced_standardizer.standardize_breed_enhanced(breed_text)
         return standardized_breed
     else:
         # Fall back to original implementation
@@ -395,9 +341,7 @@ def normalize_breed_case_v2(breed_text: str, use_enhanced: bool = False) -> str:
         return normalize_breed_case(breed_text)
 
 
-def standardize_breed_v2(
-    breed_text: str, use_enhanced: bool = False
-) -> Tuple[str, str, Optional[str]]:
+def standardize_breed_v2(breed_text: str, use_enhanced: bool = False) -> Tuple[str, str, Optional[str]]:
     """
     Enhanced version of standardize_breed with feature flag support.
 
@@ -457,9 +401,7 @@ if __name__ == "__main__":
             continue
 
         try:
-            std_breed, group, size = enhanced_standardizer.standardize_breed_enhanced(
-                test_breed
-            )
+            std_breed, group, size = enhanced_standardizer.standardize_breed_enhanced(test_breed)
             print(f"{str(test_breed):<35} {std_breed:<25} {group:<12} {str(size)}")
         except Exception as e:
             print(f"{str(test_breed):<35} ERROR: {str(e)}")

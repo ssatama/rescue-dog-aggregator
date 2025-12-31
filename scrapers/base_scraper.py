@@ -35,9 +35,6 @@ from utils.organization_sync_service import create_default_sync_service
 from utils.r2_service import R2Service
 from utils.unified_standardization import UnifiedStandardizer
 
-# Add the project root directory to Python path BEFORE any local imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 # Set up module-level logger
 logger = logging.getLogger(__name__)
 

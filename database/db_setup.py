@@ -32,9 +32,7 @@ def connect_to_database():
         # Handle case where database doesn't exist (optional, depends on
         # workflow)
         if f'database "{DB_CONFIG["database"]}" does not exist' in str(e):
-            print(
-                f"Database '{DB_CONFIG['database']}' does not exist. Please create it first."
-            )
+            print(f"Database '{DB_CONFIG['database']}' does not exist. Please create it first.")
             # Optionally, try connecting to default 'postgres' db to create it
         else:
             print(f"Database connection error: {e}")
@@ -176,9 +174,7 @@ def verify_index_performance(conn):
             print(f"\nDatabase contains {available_count} available animals")
             print("Performance indexes are ready for optimal query performance")
         else:
-            print(
-                "\nDatabase is empty - performance will be verified when data is added"
-            )
+            print("\nDatabase is empty - performance will be verified when data is added")
 
         cursor.close()
         return True
@@ -223,9 +219,7 @@ def initialize_database():
         return None
 
 
-def add_organization(
-    conn, name, website_url, description=None, country=None, city=None, logo_url=None
-):
+def add_organization(conn, name, website_url, description=None, country=None, city=None, logo_url=None):
     """Add a new organization to the database."""
     if not conn:
         print("Error: Cannot add organization, no valid database connection.")
@@ -238,9 +232,7 @@ def add_organization(
         existing = cursor.fetchone()
 
         if existing:
-            print(
-                f"Organization '{name}' already exists with ID {existing[0]}. Skipping."
-            )
+            print(f"Organization '{name}' already exists with ID {existing[0]}. Skipping.")
             cursor.close()
             return True
 

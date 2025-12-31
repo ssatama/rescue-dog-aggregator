@@ -83,9 +83,7 @@ class TestAPIEndpointsConsolidated:
                     # Some fields might be optional
                     if field in ["standardized_size", "standardized_breed"]:
                         continue  # Optional fields
-                    assert field in item, (
-                        f"Missing field {field} in {endpoint} response"
-                    )
+                    assert field in item, f"Missing field {field} in {endpoint} response"
 
     @pytest.mark.parametrize(
         "endpoint,invalid_params",

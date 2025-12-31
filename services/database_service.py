@@ -96,9 +96,7 @@ class DatabaseService:
             self.conn = None
             self.logger.info("Database connection closed")
 
-    def get_existing_animal(
-        self, external_id: str, organization_id: int
-    ) -> Optional[Tuple]:
+    def get_existing_animal(self, external_id: str, organization_id: int) -> Optional[Tuple]:
         """Check if an animal already exists in the database.
 
         Args:
@@ -179,9 +177,7 @@ class DatabaseService:
                 self.conn.rollback()
             return None, "error"
 
-    def _create_animal_with_connection(
-        self, conn, animal_data: Dict[str, Any]
-    ) -> Tuple[Optional[int], str]:
+    def _create_animal_with_connection(self, conn, animal_data: Dict[str, Any]) -> Tuple[Optional[int], str]:
         """Create animal using provided connection (pure function).
 
         Args:
@@ -198,9 +194,7 @@ class DatabaseService:
         language = self._detect_language(description_text)
 
         # Apply standardization - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
-        standardized_breed, breed_group, size_estimate = standardize_breed(
-            animal_data.get("breed", "")
-        )
+        standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
 
         # Use pre-calculated age values if available (from scraper standardization)
         # Otherwise fall back to parsing age_text
@@ -214,17 +208,11 @@ class DatabaseService:
 
         # Use size estimate if no size provided
         final_size = animal_data.get("size") or animal_data.get("standardized_size")
-        final_standardized_size = (
-            animal_data.get("standardized_size")
-            or size_estimate
-            or standardize_size_value(animal_data.get("size"))
-        )
+        final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))
 
         # NEW: Use unified standardization fields if available, fall back to old logic
         # The UnifiedStandardizer provides these fields, use them if present
-        final_standardized_breed = (
-            animal_data.get("standardized_breed") or standardized_breed
-        )
+        final_standardized_breed = animal_data.get("standardized_breed") or standardized_breed
         final_breed_group = animal_data.get("breed_category") or breed_group
 
         # NEW breed enhancement fields from UnifiedStandardizer
@@ -248,9 +236,7 @@ class DatabaseService:
         except Exception as e:
             self.logger.error(f"Failed to generate temp slug for animal: {e}")
             # Use a fallback slug based on external_id or timestamp
-            fallback_slug = (
-                f"animal-{animal_data.get('external_id', str(int(time.time())))}-temp"
-            )
+            fallback_slug = f"animal-{animal_data.get('external_id', str(int(time.time())))}-temp"
             animal_slug = fallback_slug[:250]  # Ensure it fits in database
 
         # Prepare values for insertion
@@ -291,11 +277,7 @@ class DatabaseService:
                 final_size,
                 final_standardized_size,
                 language,
-                (
-                    json.dumps(_sanitize_for_postgres(animal_data.get("properties")))
-                    if animal_data.get("properties")
-                    else None
-                ),
+                (json.dumps(_sanitize_for_postgres(animal_data.get("properties"))) if animal_data.get("properties") else None),
                 animal_slug,  # slug
                 current_time,  # created_at
                 current_time,  # updated_at
@@ -308,9 +290,7 @@ class DatabaseService:
                 primary_breed,  # primary_breed
                 secondary_breed,  # secondary_breed
                 breed_slug,  # breed_slug
-                str(breed_confidence)
-                if breed_confidence is not None
-                else None,  # breed_confidence (convert to string for database)
+                str(breed_confidence) if breed_confidence is not None else None,  # breed_confidence (convert to string for database)
             ),
         )
 
@@ -327,31 +307,21 @@ class DatabaseService:
             )
 
             # Update the animal with the final slug containing ID
-            cursor.execute(
-                "UPDATE animals SET slug = %s WHERE id = %s", (final_slug, animal_id)
-            )
+            cursor.execute("UPDATE animals SET slug = %s WHERE id = %s", (final_slug, animal_id))
 
-            self.logger.debug(
-                f"Updated animal {animal_id} slug from temp to final: {final_slug}"
-            )
+            self.logger.debug(f"Updated animal {animal_id} slug from temp to final: {final_slug}")
 
         except Exception as e:
-            self.logger.warning(
-                f"Failed to update final slug for animal {animal_id}: {e}"
-            )
+            self.logger.warning(f"Failed to update final slug for animal {animal_id}: {e}")
             # Continue with temp slug rather than failing the entire operation
 
         conn.commit()
         cursor.close()
 
-        self.logger.info(
-            f"Created new animal with ID {animal_id}: {animal_data.get('name')}"
-        )
+        self.logger.info(f"Created new animal with ID {animal_id}: {animal_data.get('name')}")
         return animal_id, "added"
 
-    def update_animal(
-        self, animal_id: int, animal_data: Dict[str, Any]
-    ) -> Tuple[Optional[int], str]:
+    def update_animal(self, animal_id: int, animal_data: Dict[str, Any]) -> Tuple[Optional[int], str]:
         """Update an existing animal in the database.
 
         Args:
@@ -406,21 +376,11 @@ class DatabaseService:
             ) = current_data
 
             # Process the properties (sanitize to remove null bytes that PostgreSQL rejects)
-            current_properties_json = (
-                json.dumps(_sanitize_for_postgres(current_properties))
-                if current_properties
-                else None
-            )
-            new_properties_json = (
-                json.dumps(_sanitize_for_postgres(animal_data.get("properties")))
-                if animal_data.get("properties")
-                else None
-            )
+            current_properties_json = json.dumps(_sanitize_for_postgres(current_properties)) if current_properties else None
+            new_properties_json = json.dumps(_sanitize_for_postgres(animal_data.get("properties"))) if animal_data.get("properties") else None
 
             # Apply standardization for new values - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
-            new_standardized_breed, new_breed_group, size_estimate = standardize_breed(
-                animal_data.get("breed", "")
-            )
+            new_standardized_breed, new_breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
 
             # Use pre-calculated age values if available
             if "age_min_months" in animal_data and "age_max_months" in animal_data:
@@ -432,19 +392,11 @@ class DatabaseService:
                 new_age_max_months = age_info.max_months
 
             # Use size estimate if no size provided
-            new_final_size = animal_data.get("size") or animal_data.get(
-                "standardized_size"
-            )
-            new_final_standardized_size = (
-                animal_data.get("standardized_size")
-                or size_estimate
-                or standardize_size_value(animal_data.get("size"))
-            )
+            new_final_size = animal_data.get("size") or animal_data.get("standardized_size")
+            new_final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))
 
             # NEW: Use unified standardization fields if available, fall back to old logic
-            final_standardized_breed = (
-                animal_data.get("standardized_breed") or new_standardized_breed
-            )
+            final_standardized_breed = animal_data.get("standardized_breed") or new_standardized_breed
             final_breed_group = animal_data.get("breed_category") or new_breed_group
 
             # NEW breed enhancement fields from UnifiedStandardizer
@@ -480,6 +432,8 @@ class DatabaseService:
 
             # Update the animal
             current_time = datetime.now()
+            incoming_status = animal_data.get("status", "available")
+            should_activate = incoming_status == "available"
             cursor.execute(
                 """
                 UPDATE animals
@@ -489,7 +443,7 @@ class DatabaseService:
                     size = %s, standardized_size = %s, properties = %s,
                     updated_at = %s, last_scraped_at = %s, last_seen_at = %s,
                     consecutive_scrapes_missing = 0, availability_confidence = 'high',
-                    active = true,
+                    active = %s,
                     breed_type = %s, primary_breed = %s, secondary_breed = %s,
                     breed_slug = %s, breed_confidence = %s
                 WHERE id = %s
@@ -505,20 +459,19 @@ class DatabaseService:
                     animal_data.get("sex"),
                     animal_data.get("primary_image_url"),
                     animal_data.get("original_image_url"),
-                    animal_data.get("status", "available"),
+                    incoming_status,
                     new_final_size,
                     new_final_standardized_size,
                     new_properties_json,
                     current_time,
                     current_time,
                     current_time,
-                    new_breed_type,  # NEW: breed_type
-                    new_primary_breed,  # NEW: primary_breed
-                    new_secondary_breed,  # NEW: secondary_breed
-                    new_breed_slug,  # NEW: breed_slug
-                    str(new_breed_confidence)
-                    if new_breed_confidence is not None
-                    else None,  # NEW: breed_confidence
+                    should_activate,
+                    new_breed_type,
+                    new_primary_breed,
+                    new_secondary_breed,
+                    new_breed_slug,
+                    str(new_breed_confidence) if new_breed_confidence is not None else None,
                     animal_id,
                 ),
             )
@@ -526,9 +479,7 @@ class DatabaseService:
             self.conn.commit()
             cursor.close()
 
-            self.logger.info(
-                f"Updated animal with ID {animal_id}: {animal_data.get('name')}"
-            )
+            self.logger.info(f"Updated animal with ID {animal_id}: {animal_data.get('name')}")
             return animal_id, "updated"
 
         except Exception as e:
@@ -658,9 +609,7 @@ class DatabaseService:
             )
             self.conn.commit()
             cursor.close()
-            self.logger.info(
-                f"Updated scrape log {scrape_log_id} with status: {status}"
-            )
+            self.logger.info(f"Updated scrape log {scrape_log_id} with status: {status}")
             return True
         except Exception as e:
             self.logger.error(f"Error updating scrape log: {e}")

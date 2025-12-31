@@ -62,10 +62,7 @@ class TestAnimalEndpointsWithAdoptionStatus:
             queries = [call[0][0] for call in calls if call[0]]
 
             # Should have queries that filter by status
-            status_filtered = any(
-                "status = %s" in query or "status = 'available'" in query.lower()
-                for query in queries
-            )
+            status_filtered = any("status = %s" in query or "status = 'available'" in query.lower() for query in queries)
             assert status_filtered, f"No status filter found in queries: {queries}"
 
         finally:
@@ -212,9 +209,7 @@ class TestAnimalEndpointsWithAdoptionStatus:
         finally:
             app.dependency_overrides.pop(get_pooled_db_cursor, None)
 
-    def test_get_animal_by_slug_returns_unknown_status_dog(
-        self, client, mock_db_cursor
-    ):
+    def test_get_animal_by_slug_returns_unknown_status_dog(self, client, mock_db_cursor):
         """Test that single dog endpoint returns dogs with unknown status."""
         from api.dependencies import get_pooled_db_cursor
 
@@ -276,9 +271,7 @@ class TestAnimalEndpointsWithAdoptionStatus:
             data = response.json()
             assert data["status"] == "unknown"
             # Should not have adoption_check_data if not checked yet
-            assert (
-                "adoption_check_data" not in data or data["adoption_check_data"] is None
-            )
+            assert "adoption_check_data" not in data or data["adoption_check_data"] is None
 
         finally:
             app.dependency_overrides.pop(get_pooled_db_cursor, None)
@@ -313,9 +306,7 @@ class TestSwipeEndpointWithActiveFilter:
 
             # At least one query should have the active = true filter
             has_active_filter = any("a.active = true" in query for query in queries)
-            assert has_active_filter, (
-                f"No active = true filter found in queries: {queries}"
-            )
+            assert has_active_filter, f"No active = true filter found in queries: {queries}"
 
         finally:
             app.dependency_overrides.pop(get_pooled_db_cursor, None)

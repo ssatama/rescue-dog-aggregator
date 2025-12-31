@@ -320,10 +320,7 @@ class TestTheUnderdogDetailScraping:
         assert qa_data["Living with dogs?"] == "I can live with other dogs"
         assert qa_data["Resident dog required?"] == "No, but would be beneficial"
         assert qa_data["Living with cats?"] == "I've not been tested with cats"
-        assert (
-            qa_data["Where can I live?"]
-            == "I need a home that appreciates the quieter life options"
-        )
+        assert qa_data["Where can I live?"] == "I need a home that appreciates the quieter life options"
 
         # Check enhanced properties structure
         assert properties["raw_name"] == "Vicky"
@@ -413,12 +410,6 @@ class TestTheUnderdogDetailScraping:
 
     def test_generate_external_id_from_url(self, scraper):
         """Test external ID generation from URL."""
-        assert (
-            scraper._generate_external_id("https://theunderdog.org/adopt/vicky")
-            == "tud-vicky"
-        )
-        assert (
-            scraper._generate_external_id("https://theunderdog.org/adopt/buddy-the-dog")
-            == "tud-buddy-the-dog"
-        )
+        assert scraper._generate_external_id("https://theunderdog.org/adopt/vicky") == "tud-vicky"
+        assert scraper._generate_external_id("https://theunderdog.org/adopt/buddy-the-dog") == "tud-buddy-the-dog"
         assert scraper._generate_external_id("/adopt/max") == "tud-max"

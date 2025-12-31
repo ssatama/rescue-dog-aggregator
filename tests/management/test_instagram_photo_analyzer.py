@@ -93,17 +93,13 @@ class TestInstagramPhotoAnalyzer:
     """Test the Instagram photo analyzer batch processing script."""
 
     @pytest.mark.asyncio
-    async def test_concurrent_batch_processing(
-        self, mock_db_connection, sample_unanalyzed_dogs_dicts, sample_analysis_response
-    ):
+    async def test_concurrent_batch_processing(self, mock_db_connection, sample_unanalyzed_dogs_dicts, sample_analysis_response):
         """Test concurrent processing of multiple dogs in batches."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             mock_vision.return_value = sample_analysis_response.dict()
 
             analyzer = InstagramPhotoAnalyzer(connection=mock_conn)
@@ -118,17 +114,13 @@ class TestInstagramPhotoAnalyzer:
             assert mock_vision.call_count == 30
 
     @pytest.mark.asyncio
-    async def test_progress_tracking(
-        self, mock_db_connection, sample_unanalyzed_dogs_dicts
-    ):
+    async def test_progress_tracking(self, mock_db_connection, sample_unanalyzed_dogs_dicts):
         """Test progress is logged during batch processing."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             mock_vision.return_value = {
                 "quality_score": 8,
                 "visibility_score": 9,
@@ -149,52 +141,38 @@ class TestInstagramPhotoAnalyzer:
 
                 # Verify progress messages were printed
                 print_calls = [str(call) for call in mock_print.call_args_list]
-                progress_messages = [
-                    c
-                    for c in print_calls
-                    if "Processed" in c or "Analyzing" in c or "Batch" in c
-                ]
+                progress_messages = [c for c in print_calls if "Processed" in c or "Analyzing" in c or "Batch" in c]
 
                 assert len(progress_messages) > 0
 
     @pytest.mark.asyncio
-    async def test_error_handling_broken_image_url(
-        self, mock_db_connection, sample_unanalyzed_dogs_dicts
-    ):
+    async def test_error_handling_broken_image_url(self, mock_db_connection, sample_unanalyzed_dogs_dicts):
         """Test handling of 404/broken image URLs."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             # Simulate API error for broken image
             mock_vision.side_effect = Exception("Image not found")
 
             analyzer = InstagramPhotoAnalyzer(connection=mock_conn)
             analyzer.batch_size = 5
 
-            result = await analyzer.analyze_photos(
-                dogs=sample_unanalyzed_dogs_dicts[:1]
-            )
+            result = await analyzer.analyze_photos(dogs=sample_unanalyzed_dogs_dicts[:1])
 
             # Should track error but not crash
             assert result["errors"] >= 1
             assert result["processed"] == 0  # Failed to process
 
     @pytest.mark.asyncio
-    async def test_error_handling_continues_after_failure(
-        self, mock_db_connection, sample_unanalyzed_dogs_dicts
-    ):
+    async def test_error_handling_continues_after_failure(self, mock_db_connection, sample_unanalyzed_dogs_dicts):
         """Test that batch processing continues after individual failures."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             # First dog fails, second succeeds, third fails
             mock_vision.side_effect = [
                 Exception("Network error"),
@@ -222,9 +200,7 @@ class TestInstagramPhotoAnalyzer:
             assert result["errors"] == 2
 
     @pytest.mark.asyncio
-    async def test_database_insertion_success(
-        self, mock_db_connection, sample_analysis_response
-    ):
+    async def test_database_insertion_success(self, mock_db_connection, sample_analysis_response):
         """Test successful database insertion of analysis results."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
@@ -267,9 +243,7 @@ class TestInstagramPhotoAnalyzer:
         mock_conn.commit.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_database_insertion_handles_duplicate(
-        self, mock_db_connection, sample_analysis_response
-    ):
+    async def test_database_insertion_handles_duplicate(self, mock_db_connection, sample_analysis_response):
         """Test database insertion handles duplicate dog_id (UPSERT)."""
         import psycopg2
 
@@ -303,22 +277,16 @@ class TestInstagramPhotoAnalyzer:
             pass
 
         # Verify rollback was called on error
-        assert mock_conn.rollback.called or "ON CONFLICT" in str(
-            mock_cursor.execute.call_args
-        )
+        assert mock_conn.rollback.called or "ON CONFLICT" in str(mock_cursor.execute.call_args)
 
     @pytest.mark.asyncio
-    async def test_cost_tracking(
-        self, mock_db_connection, sample_unanalyzed_dogs_dicts
-    ):
+    async def test_cost_tracking(self, mock_db_connection, sample_unanalyzed_dogs_dicts):
         """Test cost accumulation throughout batch processing."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             mock_vision.return_value = {
                 "quality_score": 8,
                 "visibility_score": 9,
@@ -340,23 +308,17 @@ class TestInstagramPhotoAnalyzer:
             # Verify cost tracking
             expected_cost = len(sample_unanalyzed_dogs_dicts) * 0.0015
             assert "total_cost" in result
-            assert (
-                abs(result["total_cost"] - expected_cost) < 0.0001
-            )  # Float comparison
+            assert abs(result["total_cost"] - expected_cost) < 0.0001  # Float comparison
 
     @pytest.mark.asyncio
-    async def test_loads_final_prompt_from_file(
-        self, mock_db_connection, sample_final_prompt
-    ):
+    async def test_loads_final_prompt_from_file(self, mock_db_connection, sample_final_prompt):
         """Test that analyzer loads the final prompt from prompts/instagram/."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
         with patch("builtins.open", create=True) as mock_open:
-            mock_open.return_value.__enter__.return_value.read.return_value = (
-                sample_final_prompt
-            )
+            mock_open.return_value.__enter__.return_value.read.return_value = sample_final_prompt
 
             analyzer = InstagramPhotoAnalyzer(connection=mock_conn)
 
@@ -367,23 +329,16 @@ class TestInstagramPhotoAnalyzer:
             # Verify correct file was opened
             mock_open.assert_called()
             call_args = str(mock_open.call_args)
-            assert (
-                "photo_quality_analysis_final.txt" in call_args
-                or "instagram" in call_args
-            )
+            assert "photo_quality_analysis_final.txt" in call_args or "instagram" in call_args
 
     @pytest.mark.asyncio
-    async def test_uses_correct_vision_model(
-        self, mock_db_connection, sample_unanalyzed_dogs_dicts
-    ):
+    async def test_uses_correct_vision_model(self, mock_db_connection, sample_unanalyzed_dogs_dicts):
         """Test that analyzer uses google/gemini-2.5-flash-image model."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             mock_vision.return_value = {
                 "quality_score": 8,
                 "visibility_score": 9,
@@ -407,43 +362,33 @@ class TestInstagramPhotoAnalyzer:
             assert call_kwargs.get("model") == "google/gemini-2.5-flash-image"
 
     @pytest.mark.asyncio
-    async def test_validates_response_with_pydantic(
-        self, mock_db_connection, sample_unanalyzed_dogs_dicts
-    ):
+    async def test_validates_response_with_pydantic(self, mock_db_connection, sample_unanalyzed_dogs_dicts):
         """Test that API responses are validated with PhotoAnalysisResponse model."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             # Return invalid response (missing required fields)
             mock_vision.return_value = {"quality_score": 8}  # Missing many fields
 
             analyzer = InstagramPhotoAnalyzer(connection=mock_conn)
             analyzer.batch_size = 5
 
-            result = await analyzer.analyze_photos(
-                dogs=sample_unanalyzed_dogs_dicts[:1]
-            )
+            result = await analyzer.analyze_photos(dogs=sample_unanalyzed_dogs_dicts[:1])
 
             # Should catch validation error and count as error
             assert result["errors"] >= 1
             assert result["processed"] == 0
 
     @pytest.mark.asyncio
-    async def test_dry_run_mode_no_database_writes(
-        self, mock_db_connection, sample_unanalyzed_dogs_dicts
-    ):
+    async def test_dry_run_mode_no_database_writes(self, mock_db_connection, sample_unanalyzed_dogs_dicts):
         """Test dry-run mode makes API calls but doesn't write to database."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             mock_vision.return_value = {
                 "quality_score": 8,
                 "visibility_score": 9,
@@ -465,28 +410,20 @@ class TestInstagramPhotoAnalyzer:
             assert mock_vision.called
 
             # Verify NO database writes
-            insert_calls = [
-                c
-                for c in mock_cursor.execute.call_args_list
-                if c and "INSERT" in str(c)
-            ]
+            insert_calls = [c for c in mock_cursor.execute.call_args_list if c and "INSERT" in str(c)]
             assert len(insert_calls) == 0
 
             # Verify NO commits
             assert mock_conn.commit.call_count == 0
 
     @pytest.mark.asyncio
-    async def test_summary_statistics(
-        self, mock_db_connection, sample_unanalyzed_dogs_dicts
-    ):
+    async def test_summary_statistics(self, mock_db_connection, sample_unanalyzed_dogs_dicts):
         """Test that analyze_photos returns comprehensive statistics."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             # 2 succeed, 1 fails
             mock_vision.side_effect = [
                 {
@@ -530,17 +467,13 @@ class TestInstagramPhotoAnalyzer:
             assert result["errors"] == 1
 
     @pytest.mark.asyncio
-    async def test_logs_errors_with_details(
-        self, mock_db_connection, sample_unanalyzed_dogs_dicts, capsys
-    ):
+    async def test_logs_errors_with_details(self, mock_db_connection, sample_unanalyzed_dogs_dicts, capsys):
         """Test that errors are logged with dog name and error message."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             mock_vision.side_effect = Exception("Network timeout")
 
             analyzer = InstagramPhotoAnalyzer(connection=mock_conn)
@@ -612,18 +545,14 @@ class TestInstagramPhotoAnalyzerIntegration:
     """Integration-style tests for full workflow."""
 
     @pytest.mark.asyncio
-    async def test_full_batch_workflow(
-        self, mock_db_connection, sample_unanalyzed_dogs
-    ):
+    async def test_full_batch_workflow(self, mock_db_connection, sample_unanalyzed_dogs):
         """Test complete workflow from query to database insertion."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
 
         mock_conn, mock_cursor = mock_db_connection
         mock_cursor.fetchall.return_value = sample_unanalyzed_dogs
 
-        with patch(
-            "services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock
-        ) as mock_vision:
+        with patch("services.llm.llm_client.LLMClient.call_vision_api", new_callable=AsyncMock) as mock_vision:
             mock_vision.return_value = {
                 "quality_score": 8,
                 "visibility_score": 9,
@@ -651,9 +580,5 @@ class TestInstagramPhotoAnalyzerIntegration:
             assert mock_vision.call_count == 3
 
             # Verify database inserts made
-            insert_calls = [
-                c
-                for c in mock_cursor.execute.call_args_list
-                if "INSERT" in str(c[0][0])
-            ]
+            insert_calls = [c for c in mock_cursor.execute.call_args_list if "INSERT" in str(c[0][0])]
             assert len(insert_calls) == 3

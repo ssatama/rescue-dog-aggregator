@@ -119,16 +119,12 @@ class LLMDataService(ABC):
     """Abstract base class for LLM data services."""
 
     @abstractmethod
-    async def enrich_animal_data(
-        self, animal_data: Dict[str, Any], processing_type: ProcessingType
-    ) -> Dict[str, Any]:
+    async def enrich_animal_data(self, animal_data: Dict[str, Any], processing_type: ProcessingType) -> Dict[str, Any]:
         """Enrich animal data based on processing type."""
         pass
 
     @abstractmethod
-    async def clean_description(
-        self, description: str, organization_config: Optional[Dict] = None
-    ) -> str:
+    async def clean_description(self, description: str, organization_config: Optional[Dict] = None) -> str:
         """Clean and improve animal description."""
         pass
 
@@ -138,16 +134,12 @@ class LLMDataService(ABC):
         pass
 
     @abstractmethod
-    async def translate_text(
-        self, text: str, target_language: str, source_language: Optional[str] = None
-    ) -> str:
+    async def translate_text(self, text: str, target_language: str, source_language: Optional[str] = None) -> str:
         """Translate text to target language."""
         pass
 
     @abstractmethod
-    async def batch_process(
-        self, animals: List[Dict[str, Any]], processing_type: ProcessingType
-    ) -> List[Dict[str, Any]]:
+    async def batch_process(self, animals: List[Dict[str, Any]], processing_type: ProcessingType) -> List[Dict[str, Any]]:
         """Process multiple animals in batch."""
         pass
 
@@ -224,15 +216,11 @@ class OpenRouterLLMDataService(LLMDataService):
         config = self.config.retry
 
         if config.strategy.value == "exponential":
-            wait_strategy = wait_exponential(
-                multiplier=1, min=config.base_delay, max=config.max_delay
-            )
+            wait_strategy = wait_exponential(multiplier=1, min=config.base_delay, max=config.max_delay)
         elif config.strategy.value == "linear":
             from tenacity import wait_incrementing
 
-            wait_strategy = wait_incrementing(
-                start=config.base_delay, increment=config.base_delay
-            )
+            wait_strategy = wait_incrementing(start=config.base_delay, increment=config.base_delay)
         else:  # fixed
             from tenacity import wait_fixed
 
@@ -289,9 +277,7 @@ class OpenRouterLLMDataService(LLMDataService):
             self.logger.error(f"Unexpected error calling OpenRouter: {e}")
             raise ValueError(f"Failed to process LLM request: {e}") from e
 
-    async def clean_description(
-        self, description: str, organization_config: Optional[Dict] = None
-    ) -> str:
+    async def clean_description(self, description: str, organization_config: Optional[Dict] = None) -> str:
         """Clean and improve animal description."""
         if not description:
             return description
@@ -311,9 +297,7 @@ class OpenRouterLLMDataService(LLMDataService):
         request = LLMRequest(
             messages=[
                 LLMMessage(role="system", content=system_prompt),
-                LLMMessage(
-                    role="user", content=f"Clean this dog description: {description}"
-                ),
+                LLMMessage(role="user", content=f"Clean this dog description: {description}"),
             ],
             model=self.config.models.default_model,
             temperature=temperature,
@@ -393,9 +377,7 @@ Description: {dog_data.get("description", "")}"""
             self.logger.error(f"Failed to parse dog profiler response: {e}")
             return {}
 
-    async def translate_text(
-        self, text: str, target_language: str, source_language: Optional[str] = None
-    ) -> str:
+    async def translate_text(self, text: str, target_language: str, source_language: Optional[str] = None) -> str:
         """Translate text to target language."""
         if not text:
             return text
@@ -451,9 +433,7 @@ Description: {dog_data.get("description", "")}"""
         }
         return languages.get(code, code)
 
-    async def enrich_animal_data(
-        self, animal_data: Dict[str, Any], processing_type: ProcessingType
-    ) -> Dict[str, Any]:
+    async def enrich_animal_data(self, animal_data: Dict[str, Any], processing_type: ProcessingType) -> Dict[str, Any]:
         """Enrich animal data based on processing type."""
         if processing_type == ProcessingType.DESCRIPTION_CLEANING:
             description = animal_data.get("description", "")
@@ -474,9 +454,7 @@ Description: {dog_data.get("description", "")}"""
 
         return animal_data
 
-    async def batch_process(
-        self, animals: List[Dict[str, Any]], processing_type: ProcessingType
-    ) -> List[Dict[str, Any]]:
+    async def batch_process(self, animals: List[Dict[str, Any]], processing_type: ProcessingType) -> List[Dict[str, Any]]:
         """Process multiple animals in batch with concurrency control."""
         # Process in batches to avoid overwhelming the API
         batch_size = self.config.batch.default_size
@@ -484,16 +462,12 @@ Description: {dog_data.get("description", "")}"""
 
         for i in range(0, len(animals), batch_size):
             batch = animals[i : i + batch_size]
-            tasks = [
-                self.enrich_animal_data(animal, processing_type) for animal in batch
-            ]
+            tasks = [self.enrich_animal_data(animal, processing_type) for animal in batch]
             batch_results = await asyncio.gather(*tasks, return_exceptions=True)
 
             for animal, result in zip(batch, batch_results):
                 if isinstance(result, Exception):
-                    self.logger.error(
-                        f"Failed to process animal {animal.get('id')}: {result}"
-                    )
+                    self.logger.error(f"Failed to process animal {animal.get('id')}: {result}")
                     # Return original data on failure
                     results.append(
                         {

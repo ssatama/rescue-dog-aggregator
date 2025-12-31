@@ -50,9 +50,7 @@ class DogProfilerMonitor:
         self.alerts = []
         self.metrics = {}
 
-    def get_recent_runs(
-        self, hours: int = 24, organization_id: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+    def get_recent_runs(self, hours: int = 24, organization_id: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Get recent profiler runs from database.
 
@@ -116,9 +114,7 @@ class DogProfilerMonitor:
 
         return runs
 
-    def get_quality_distribution(
-        self, organization_id: Optional[int] = None
-    ) -> Dict[str, int]:
+    def get_quality_distribution(self, organization_id: Optional[int] = None) -> Dict[str, int]:
         """
         Get distribution of quality scores.
 
@@ -215,9 +211,7 @@ class DogProfilerMonitor:
 
         return model_stats
 
-    def check_alerts(
-        self, batch_stats: Optional[Dict[str, Any]] = None
-    ) -> List[Dict[str, Any]]:
+    def check_alerts(self, batch_stats: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
         Check for alert conditions.
 
@@ -284,9 +278,7 @@ class DogProfilerMonitor:
         self.alerts = alerts
         return alerts
 
-    def generate_report(
-        self, hours: int = 24, organization_id: Optional[int] = None
-    ) -> Dict[str, Any]:
+    def generate_report(self, hours: int = 24, organization_id: Optional[int] = None) -> Dict[str, Any]:
         """
         Generate comprehensive monitoring report.
 
@@ -312,12 +304,8 @@ class DogProfilerMonitor:
             report["summary"] = {
                 "total_organizations": len(recent_runs),
                 "total_dogs_profiled": sum(run["profiled"] for run in recent_runs),
-                "average_success_rate": sum(run["success_rate"] for run in recent_runs)
-                / len(recent_runs),
-                "average_processing_time_ms": sum(
-                    run["avg_time_ms"] for run in recent_runs if run["avg_time_ms"]
-                )
-                / len([r for r in recent_runs if r["avg_time_ms"]]),
+                "average_success_rate": sum(run["success_rate"] for run in recent_runs) / len(recent_runs),
+                "average_processing_time_ms": sum(run["avg_time_ms"] for run in recent_runs if run["avg_time_ms"]) / len([r for r in recent_runs if r["avg_time_ms"]]),
             }
 
         # Get quality distribution
@@ -339,9 +327,7 @@ class DogProfilerMonitor:
 
         return report
 
-    def save_report(
-        self, report: Dict[str, Any], output_dir: Optional[Path] = None
-    ) -> Path:
+    def save_report(self, report: Dict[str, Any], output_dir: Optional[Path] = None) -> Path:
         """
         Save monitoring report to file.
 
@@ -382,16 +368,10 @@ class DogProfilerMonitor:
         # Summary
         if report.get("summary"):
             print("\nSUMMARY:")
-            print(
-                f"  Organizations processed: {report['summary']['total_organizations']}"
-            )
+            print(f"  Organizations processed: {report['summary']['total_organizations']}")
             print(f"  Dogs profiled: {report['summary']['total_dogs_profiled']}")
-            print(
-                f"  Average success rate: {report['summary']['average_success_rate']:.1%}"
-            )
-            print(
-                f"  Average processing time: {report['summary']['average_processing_time_ms']:.0f}ms"
-            )
+            print(f"  Average success rate: {report['summary']['average_success_rate']:.1%}")
+            print(f"  Average processing time: {report['summary']['average_processing_time_ms']:.0f}ms")
 
         # Quality distribution
         if report.get("quality_distribution"):

@@ -57,17 +57,10 @@ class PromptBuilder:
             raise ValueError(f"No configuration found for organization {org_id}")
 
         # Check if enabled (if the config has that field)
-        template_path = (
-            Path(__file__).parent.parent.parent
-            / "prompts"
-            / "organizations"
-            / org_config.prompt_file
-        )
+        template_path = Path(__file__).parent.parent.parent / "prompts" / "organizations" / org_config.prompt_file
 
         if not template_path.exists():
-            raise FileNotFoundError(
-                f"Prompt template not found: {template_path}. Organization {org_id} ({org_config.organization_name}) needs a prompt template to be created."
-            )
+            raise FileNotFoundError(f"Prompt template not found: {template_path}. Organization {org_id} ({org_config.organization_name}) needs a prompt template to be created.")
 
         with open(template_path, "r", encoding="utf-8") as f:
             return yaml.safe_load(f)
@@ -99,9 +92,7 @@ class PromptBuilder:
 
         return prompt
 
-    def build_messages(
-        self, dog_data: Dict[str, Any], prompt_adjustment: str = ""
-    ) -> list:
+    def build_messages(self, dog_data: Dict[str, Any], prompt_adjustment: str = "") -> list:
         """
         Build message list for LLM API call.
 

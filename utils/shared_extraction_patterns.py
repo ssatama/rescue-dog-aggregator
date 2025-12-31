@@ -146,9 +146,7 @@ def extract_age_from_text(text: Optional[str]) -> Optional[float]:
         return float(match.group(1))
 
     # Pattern 10: "4 y old", "roughly 3 y old"
-    match = re.search(
-        r"(?:roughly|approximately|about)?\s*(\d+(?:\.\d+)?)\s*y\s+old", text
-    )
+    match = re.search(r"(?:roughly|approximately|about)?\s*(\d+(?:\.\d+)?)\s*y\s+old", text)
     if match:
         return float(match.group(1))
 
@@ -347,32 +345,20 @@ def extract_sex_from_text(text: Optional[str]) -> Optional[str]:
     boy_count = len(re.findall(r"\bboy\b", text_lower))
 
     # Calculate confidence scores
-    female_score = (
-        (spayed_count * 3) + (she_count + her_count) + ((female_count + girl_count) * 2)
-    )
-    male_score = (
-        ((neutered_count + castrated_count) * 3)
-        + (he_count + his_count)
-        + ((male_count + boy_count) * 2)
-    )
+    female_score = (spayed_count * 3) + (she_count + her_count) + ((female_count + girl_count) * 2)
+    male_score = ((neutered_count + castrated_count) * 3) + (he_count + his_count) + ((male_count + boy_count) * 2)
 
     # Check for conflicting signals (mixed pronouns might indicate multiple dogs)
-    pronoun_conflict = (she_count > 0 and he_count > 0) and abs(
-        she_count - he_count
-    ) <= 1
+    pronoun_conflict = (she_count > 0 and he_count > 0) and abs(she_count - he_count) <= 1
 
     # Also check for explicit gender conflicts (e.g., "she is a good boy")
     gender_conflict = (female_count + girl_count) > 0 and (male_count + boy_count) > 0
 
     # Additional check for contradictory gender language
-    contradictory_language = (she_count > 0 and boy_count > 0) or (
-        he_count > 0 and girl_count > 0
-    )
+    contradictory_language = (she_count > 0 and boy_count > 0) or (he_count > 0 and girl_count > 0)
 
     # If there are conflicts without strong medical indicators, return None
-    if (pronoun_conflict or gender_conflict or contradictory_language) and (
-        spayed_count == 0 and neutered_count == 0 and castrated_count == 0
-    ):
+    if (pronoun_conflict or gender_conflict or contradictory_language) and (spayed_count == 0 and neutered_count == 0 and castrated_count == 0):
         return None  # Likely multiple dogs or conflicting info
 
     # Return result based on confidence scores
@@ -407,17 +393,13 @@ def extract_weight_from_text(text: Optional[str]) -> Optional[float]:
     text_lower = text.lower()
 
     # Pattern 1: Multiple weights - "was 35kg, now 30kg" (take the last/current one)
-    multiple_weights = re.findall(
-        r"(\d+\.?\d*)\s*k(?:g|ilos?)", text_lower, re.IGNORECASE
-    )
+    multiple_weights = re.findall(r"(\d+\.?\d*)\s*k(?:g|ilos?)", text_lower, re.IGNORECASE)
     if len(multiple_weights) > 1:
         # Take the last weight mentioned (most current)
         return float(multiple_weights[-1])
 
     # Pattern 2: Ranges with "around" - "✔️weighs around 22-25kg"
-    match = re.search(
-        r"weighs\s+around\s+(\d+\.?\d*)-(\d+\.?\d*)\s*k(?:g|ilos?)", text_lower
-    )
+    match = re.search(r"weighs\s+around\s+(\d+\.?\d*)-(\d+\.?\d*)\s*k(?:g|ilos?)", text_lower)
     if match:
         weight1 = float(match.group(1))
         weight2 = float(match.group(2))

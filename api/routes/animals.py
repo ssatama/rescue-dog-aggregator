@@ -181,9 +181,7 @@ async def get_distinct_available_countries(
     summary="Get Distinct Available-To Regions for a Country",
 )
 async def get_distinct_available_regions(
-    country: str = Query(
-        ..., description="Country to get regions for"
-    ),  # Make country required
+    country: str = Query(..., description="Country to get regions for"),  # Make country required
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Get a distinct list of regions within a specific country organizations can adopt to."""
@@ -205,9 +203,7 @@ async def get_distinct_available_regions(
     except psycopg2.Error as db_err:
         handle_database_error(db_err, f"get_distinct_available_regions({country})")
     except Exception as e:
-        logger.exception(
-            f"Unexpected error fetching distinct available regions for {country}: {e}"
-        )
+        logger.exception(f"Unexpected error fetching distinct available regions for {country}: {e}")
         raise APIException(
             status_code=500,
             detail=f"Failed to fetch available regions for {country}",
@@ -219,9 +215,7 @@ async def get_distinct_available_regions(
 
 
 # --- Breed Statistics Endpoint ---
-@router.get(
-    "/breeds/stats", response_model=BreedStatsResponse, summary="Get Breed Statistics"
-)
+@router.get("/breeds/stats", response_model=BreedStatsResponse, summary="Get Breed Statistics")
 async def get_breed_stats(
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
@@ -362,14 +356,10 @@ async def get_search_suggestions(
 
 @router.get("/breeds/with-images")
 async def get_breeds_with_images(
-    breed_type: str = Query(
-        None, description="Filter by breed type (mixed, purebred, crossbreed)"
-    ),
+    breed_type: str = Query(None, description="Filter by breed type (mixed, purebred, crossbreed)"),
     breed_group: str = Query(None, description="Filter by breed group"),
     min_count: int = Query(0, ge=0, description="Minimum number of dogs per breed"),
-    limit: int = Query(
-        10, ge=1, le=50, description="Maximum number of breeds to return"
-    ),
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of breeds to return"),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """
@@ -447,9 +437,7 @@ async def get_breed_suggestions(
 
         cursor.execute(query, params)
         results = cursor.fetchall()
-        suggestions = [
-            row["standardized_breed"] for row in results if row["standardized_breed"]
-        ]
+        suggestions = [row["standardized_breed"] for row in results if row["standardized_breed"]]
         return suggestions
 
     except psycopg2.Error as db_err:
@@ -523,9 +511,7 @@ async def get_statistics(
 # --- Random Animal Endpoint ---
 @router.get("/random", response_model=List[Animal], summary="Get Random Animals")
 async def get_random_animals(
-    limit: int = Query(
-        3, ge=1, le=10, description="Number of random animals to return"
-    ),
+    limit: int = Query(3, ge=1, le=10, description="Number of random animals to return"),
     # Removed animal_type query parameter as we always want dogs
     status: Optional[str] = Query("available", description="Animal status"),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
@@ -563,9 +549,7 @@ async def get_random_animals(
 
 # --- Single Animal Detail (New Slug-Based Route) ---
 @router.get("/{animal_slug}", response_model=Animal)
-async def get_animal_by_slug(
-    animal_slug: str, cursor: RealDictCursor = Depends(get_pooled_db_cursor)
-):
+async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(get_pooled_db_cursor)):
     """Get a specific animal by slug, with legacy ID redirect support."""
     try:
         animal_service = AnimalService(cursor)
@@ -576,9 +560,7 @@ async def get_animal_by_slug(
             animal = animal_service.get_animal_by_id(animal_id)
             if animal and hasattr(animal, "slug"):
                 # 301 redirect to new slug URL
-                return RedirectResponse(
-                    url=f"/api/animals/{animal.slug}", status_code=301
-                )
+                return RedirectResponse(url=f"/api/animals/{animal.slug}", status_code=301)
 
         # Lookup by slug
         animal = animal_service.get_animal_by_slug(animal_slug)
@@ -608,9 +590,7 @@ async def get_animal_by_slug(
 
 # --- Legacy ID Route (Explicit Redirect) ---
 @router.get("/id/{animal_id}", response_model=Animal)
-async def get_animal_by_id_legacy(
-    animal_id: int, cursor: RealDictCursor = Depends(get_pooled_db_cursor)
-):
+async def get_animal_by_id_legacy(animal_id: int, cursor: RealDictCursor = Depends(get_pooled_db_cursor)):
     """Legacy endpoint - redirects to slug URL."""
     try:
         animal_service = AnimalService(cursor)
@@ -626,6 +606,4 @@ async def get_animal_by_id_legacy(
         raise
     except Exception as e:
         logger.exception(f"Error in legacy animal ID redirect {animal_id}: {e}")
-        raise APIException(
-            status_code=500, detail="Internal server error", error_code="INTERNAL_ERROR"
-        )
+        raise APIException(status_code=500, detail="Internal server error", error_code="INTERNAL_ERROR")

@@ -17,16 +17,11 @@ logger = logging.getLogger(__name__)
 _sentry_initialized = False
 
 
-def scrub_sensitive_data(
-    event: Dict[str, Any], hint: Dict[str, Any]
-) -> Optional[Dict[str, Any]]:
+def scrub_sensitive_data(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Remove sensitive data from Sentry events."""
     if "extra" in event:
         for key in list(event["extra"].keys()):
-            if any(
-                sensitive in key.lower()
-                for sensitive in ["password", "token", "secret", "key", "dsn"]
-            ):
+            if any(sensitive in key.lower() for sensitive in ["password", "token", "secret", "key", "dsn"]):
                 event["extra"][key] = "[REDACTED]"
 
     return event
@@ -53,9 +48,7 @@ def init_scraper_sentry(environment: str = "production") -> bool:
     dsn = os.getenv("SENTRY_DSN_BACKEND")
 
     if environment != "production":
-        logger.info(
-            f"Sentry disabled for {environment} environment - only enabled in production"
-        )
+        logger.info(f"Sentry disabled for {environment} environment - only enabled in production")
         return False
 
     if not dsn:
@@ -213,9 +206,7 @@ def alert_partial_failure(
                 "dogs_found": dogs_found,
                 "historical_average": historical_average,
                 "threshold_percentage": threshold_percentage,
-                "percentage_of_expected": dogs_found / historical_average
-                if historical_average > 0
-                else 0,
+                "percentage_of_expected": dogs_found / historical_average if historical_average > 0 else 0,
             },
         )
 
@@ -224,9 +215,7 @@ def alert_partial_failure(
             level="warning",
         )
 
-    logger.warning(
-        f"Sent partial-failure alert for {org_name}: {dogs_found}/{historical_average:.0f}"
-    )
+    logger.warning(f"Sent partial-failure alert for {org_name}: {dogs_found}/{historical_average:.0f}")
 
 
 def alert_llm_enrichment_failure(
@@ -260,9 +249,7 @@ def alert_llm_enrichment_failure(
                 "org_id": org_id,
                 "batch_size": batch_size,
                 "failed_count": failed_count,
-                "success_rate": (batch_size - failed_count) / batch_size
-                if batch_size > 0
-                else 0,
+                "success_rate": (batch_size - failed_count) / batch_size if batch_size > 0 else 0,
                 "error_message": error_message,
             },
         )
@@ -272,9 +259,7 @@ def alert_llm_enrichment_failure(
             level="warning",
         )
 
-    logger.warning(
-        f"Sent LLM failure alert for {org_name}: {failed_count}/{batch_size} failed"
-    )
+    logger.warning(f"Sent LLM failure alert for {org_name}: {failed_count}/{batch_size} failed")
 
 
 @contextmanager

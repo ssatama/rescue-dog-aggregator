@@ -28,9 +28,7 @@ def get_railway_database_url() -> str:
 def _is_valid_postgresql_url(url: str) -> bool:
     try:
         parsed = urlparse(url)
-        return (
-            parsed.scheme in ("postgresql", "postgres") and parsed.hostname is not None
-        )
+        return parsed.scheme in ("postgresql", "postgres") and parsed.hostname is not None
     except Exception:
         return False
 

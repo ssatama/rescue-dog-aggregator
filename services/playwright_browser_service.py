@@ -112,9 +112,7 @@ class PlaywrightBrowserService:
 
         return url
 
-    async def create_browser(
-        self, options: Optional[PlaywrightOptions] = None
-    ) -> PlaywrightResult:
+    async def create_browser(self, options: Optional[PlaywrightOptions] = None) -> PlaywrightResult:
         """Create a Playwright browser instance based on environment.
 
         Args:
@@ -170,9 +168,7 @@ class PlaywrightBrowserService:
         context = await self._create_context(browser, opts)
         page = await context.new_page()
 
-        logger.info(
-            f"Created remote Playwright browser via Browserless: {self._endpoint}"
-        )
+        logger.info(f"Created remote Playwright browser via Browserless: {self._endpoint}")
 
         return PlaywrightResult(
             browser=browser,
@@ -181,9 +177,7 @@ class PlaywrightBrowserService:
             is_remote=True,
         )
 
-    async def _create_context(
-        self, browser: Browser, opts: PlaywrightOptions
-    ) -> BrowserContext:
+    async def _create_context(self, browser: Browser, opts: PlaywrightOptions) -> BrowserContext:
         """Create browser context with configured options."""
         user_agent = opts.user_agent
         if not user_agent and opts.random_user_agent:
@@ -230,9 +224,7 @@ class PlaywrightBrowserService:
             logger.warning(f"Failed to apply stealth mode: {e}")
 
     @asynccontextmanager
-    async def get_browser(
-        self, options: Optional[PlaywrightOptions] = None
-    ) -> AsyncIterator[PlaywrightResult]:
+    async def get_browser(self, options: Optional[PlaywrightOptions] = None) -> AsyncIterator[PlaywrightResult]:
         """Async context manager for browser lifecycle.
 
         Usage:
@@ -255,9 +247,7 @@ class PlaywrightBrowserService:
             if browser_result:
                 await browser_result.close()
 
-    async def get_page_content(
-        self, url: str, options: Optional[PlaywrightOptions] = None
-    ) -> PageContentResult:
+    async def get_page_content(self, url: str, options: Optional[PlaywrightOptions] = None) -> PageContentResult:
         """Convenience method to fetch page content with automatic browser lifecycle.
 
         Creates browser, navigates to URL, gets content, then closes browser.

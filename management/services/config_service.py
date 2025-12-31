@@ -24,9 +24,7 @@ class ConfigService:
         self.sync_manager = sync_manager
         self.scraper_runner = scraper_runner
 
-    def get_organizations_list(
-        self, enabled_only: bool = False
-    ) -> List[Dict[str, Any]]:
+    def get_organizations_list(self, enabled_only: bool = False) -> List[Dict[str, Any]]:
         """Get list of organizations with optional enabled filter."""
         configs = self.config_loader.load_all_configs()
 
@@ -71,11 +69,7 @@ class ConfigService:
         if hasattr(config.scraper, "config") and config.scraper.config is not None:
             scraper_config_obj = config.scraper.config
             if hasattr(scraper_config_obj, "__dict__"):
-                scraper_config = {
-                    key: value
-                    for key, value in scraper_config_obj.__dict__.items()
-                    if not key.startswith("_")
-                }
+                scraper_config = {key: value for key, value in scraper_config_obj.__dict__.items() if not key.startswith("_")}
             elif hasattr(scraper_config_obj, "items"):
                 scraper_config = dict(scraper_config_obj.items())
             else:

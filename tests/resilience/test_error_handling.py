@@ -7,9 +7,7 @@ import pytest
 from scrapers.base_scraper import BaseScraper
 
 # Add project root to path
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
 @pytest.mark.slow
@@ -79,9 +77,7 @@ class TestErrorResilience:
         mock_requests.side_effect = requests.exceptions.Timeout("Request timeout")
 
         service = R2Service()
-        url, success = service.upload_image_from_url(
-            "https://example.com/slow-image.jpg", "Test Dog", "Test Org"
-        )
+        url, success = service.upload_image_from_url("https://example.com/slow-image.jpg", "Test Dog", "Test Org")
 
         assert success is False
         # Updated: Should return original URL as fallback, not None
@@ -153,9 +149,7 @@ class TestErrorResilience:
         mock_requests.return_value = mock_response
 
         service = R2Service()
-        url, success = service.upload_image_from_url(
-            "https://example.com/fake-image.jpg", "Test Dog", "Test Org"
-        )
+        url, success = service.upload_image_from_url("https://example.com/fake-image.jpg", "Test Dog", "Test Org")
 
         assert success is False
         # Updated: Should return original URL as fallback, not None

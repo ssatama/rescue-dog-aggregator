@@ -27,9 +27,7 @@ class TestREANScraper:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(
-                organization_id=1, was_created=True
-            )
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=True)
             mock_sync.return_value = mock_sync_service
 
             scraper = REANScraper()
@@ -117,13 +115,8 @@ class TestREANScraper:
     def test_determine_location_uk_cities(self, scraper):
         """Test location determination for UK cities."""
         assert scraper.determine_location("foster in Norfolk", "uk_foster") == "Norfolk"
-        assert (
-            scraper.determine_location("fostered in Lincolnshire", "uk_foster")
-            == "Lincolnshire"
-        )
-        assert (
-            scraper.determine_location("foster care in Derby", "uk_foster") == "Derby"
-        )
+        assert scraper.determine_location("fostered in Lincolnshire", "uk_foster") == "Lincolnshire"
+        assert scraper.determine_location("foster care in Derby", "uk_foster") == "Derby"
 
     def test_extract_medical_status_romania(self, scraper):
         """Test medical status extraction for Romania dogs."""
@@ -136,9 +129,7 @@ class TestREANScraper:
         text1 = "He is neutered, vaccinated and chipped"
         text2 = "She is spayed, vaccinated and chipped"
 
-        assert (
-            scraper.extract_medical_status(text1) == "neutered, vaccinated and chipped"
-        )
+        assert scraper.extract_medical_status(text1) == "neutered, vaccinated and chipped"
         assert scraper.extract_medical_status(text2) == "spayed, vaccinated and chipped"
 
     def test_assess_urgency_standard(self, scraper):
@@ -208,9 +199,7 @@ class TestREANScraper:
         assert data["properties"]["source_page"] == "uk_foster"
         assert data["properties"]["current_location"] == "Norfolk"
         assert data["properties"]["transport_required"] is False
-        assert (
-            data["properties"]["medical_status"] == "neutered, vaccinated and chipped"
-        )
+        assert data["properties"]["medical_status"] == "neutered, vaccinated and chipped"
         assert data["properties"]["urgency_level"] == "standard"
 
     def test_extract_rescue_context(self, scraper):
@@ -295,9 +284,7 @@ class TestREANScraper:
         images = scraper.extract_images_from_html(html_content)
         assert len(images) == 1
         # Should normalize protocol-relative URLs
-        expected_url = (
-            "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg/:/rs=w:400,h:300"
-        )
+        expected_url = "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg/:/rs=w:400,h:300"
         assert images[0] == expected_url
 
     def test_extract_image_with_data_src(self, scraper):
@@ -354,25 +341,17 @@ class TestREANScraper:
         mock_chrome.return_value = mock_driver
 
         # Mock execute_script to return appropriate values
-        mock_driver.execute_script.side_effect = (
-            lambda script: 1000 if "scrollHeight" in script else None
-        )
+        mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
 
         # Mock image elements with wsimg.com URLs (REAN CDN)
         mock_img1 = MagicMock()
-        mock_img1.get_attribute.return_value = (
-            "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg"
-        )
+        mock_img1.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg"
 
         mock_img2 = MagicMock()
-        mock_img2.get_attribute.return_value = (
-            "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg"
-        )
+        mock_img2.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg"
 
         mock_placeholder = MagicMock()
-        mock_placeholder.get_attribute.return_value = (
-            "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
-        )
+        mock_placeholder.get_attribute.return_value = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
 
         mock_driver.find_elements.return_value = [
             mock_img1,
@@ -398,16 +377,12 @@ class TestREANScraper:
     @pytest.mark.browser
     @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
     @patch("scrapers.rean.dogs_scraper.time.sleep")
-    def test_extract_images_with_browser_waits_for_loading(
-        self, mock_sleep, mock_chrome, scraper
-    ):
+    def test_extract_images_with_browser_waits_for_loading(self, mock_sleep, mock_chrome, scraper):
         """Test that browser extraction waits for JavaScript loading."""
         mock_driver = MagicMock()
         mock_chrome.return_value = mock_driver
         mock_driver.find_elements.return_value = []
-        mock_driver.execute_script.side_effect = (
-            lambda script: 1000 if "scrollHeight" in script else None
-        )
+        mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
 
         scraper.extract_images_with_browser("https://rean.org.uk/test")
 
@@ -416,11 +391,7 @@ class TestREANScraper:
 
         # Should scroll to trigger lazy loading
         mock_driver.execute_script.assert_called()
-        scroll_calls = [
-            call
-            for call in mock_driver.execute_script.call_args_list
-            if "scrollTo" in str(call)
-        ]
+        scroll_calls = [call for call in mock_driver.execute_script.call_args_list if "scrollTo" in str(call)]
         assert len(scroll_calls) > 0
 
     @pytest.mark.slow
@@ -431,18 +402,14 @@ class TestREANScraper:
         """Test that browser extraction only returns wsimg.com CDN images."""
         mock_driver = MagicMock()
         mock_chrome.return_value = mock_driver
-        mock_driver.execute_script.side_effect = (
-            lambda script: 1000 if "scrollHeight" in script else None
-        )
+        mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
 
         # Mock various image sources
         mock_images = []
 
         # Valid wsimg.com image
         mock_img1 = MagicMock()
-        mock_img1.get_attribute.return_value = (
-            "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg"
-        )
+        mock_img1.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg"
         mock_images.append(mock_img1)
 
         # Invalid external image
@@ -469,9 +436,7 @@ class TestREANScraper:
         assert images[0] == "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg"
 
     @patch("scrapers.rean.dogs_scraper.get_browser_service")
-    def test_extract_images_with_browser_handles_errors(
-        self, mock_browser_service, scraper
-    ):
+    def test_extract_images_with_browser_handles_errors(self, mock_browser_service, scraper):
         """Test browser extraction handles WebDriver errors gracefully."""
         # Mock browser service that raises exception when creating driver
         mock_service = MagicMock()
@@ -492,9 +457,7 @@ class TestREANScraper:
         mock_driver = MagicMock()
         mock_chrome.return_value = mock_driver
         mock_driver.find_elements.return_value = []
-        mock_driver.execute_script.side_effect = (
-            lambda script: 1000 if "scrollHeight" in script else None
-        )
+        mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
 
         scraper.extract_images_with_browser("https://rean.org.uk/test")
 
@@ -529,20 +492,11 @@ class TestREANScraper:
 
         assert len(result) == 3
         assert result[0]["name"] == "Toby"
-        assert (
-            result[0]["primary_image_url"]
-            == "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg"
-        )
+        assert result[0]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg"
         assert result[1]["name"] == "Max"
-        assert (
-            result[1]["primary_image_url"]
-            == "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg"
-        )
+        assert result[1]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg"
         assert result[2]["name"] == "Donald"
-        assert (
-            result[2]["primary_image_url"]
-            == "https://img1.wsimg.com/isteam/ip/ghi789/dog3.jpg"
-        )
+        assert result[2]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/ghi789/dog3.jpg"
 
     def test_associate_images_with_dogs_fewer_images(self, scraper):
         """Test association when there are fewer images than dogs."""
@@ -557,10 +511,7 @@ class TestREANScraper:
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
 
         assert len(result) == 3
-        assert (
-            result[0]["primary_image_url"]
-            == "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg"
-        )
+        assert result[0]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg"
         assert "primary_image_url" not in result[1]  # No image assigned
         assert "primary_image_url" not in result[2]  # No image assigned
 
@@ -580,10 +531,7 @@ class TestREANScraper:
         # With improved association logic, excess images trigger offset detection
         # 1 dog + 3 images (ratio > 1.5) triggers offset of 2, so dog gets 3rd
         # image
-        assert (
-            result[0]["primary_image_url"]
-            == "https://img1.wsimg.com/isteam/ip/ghi789/dog3.jpg"
-        )
+        assert result[0]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/ghi789/dog3.jpg"
 
     def test_associate_images_with_dogs_no_images(self, scraper):
         """Test association when no images are available."""

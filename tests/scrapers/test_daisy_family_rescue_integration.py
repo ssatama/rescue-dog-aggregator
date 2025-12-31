@@ -43,9 +43,7 @@ class TestDaisyFamilyRescueIntegration:
         ):
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(
-                organization_id=12, was_created=True
-            )
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
             mock_sync.return_value = mock_sync_service
 
             scraper = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
@@ -140,9 +138,7 @@ class TestDaisyFamilyRescueIntegration:
             },
         }
 
-        with patch.object(
-            DaisyFamilyRescueDogDetailScraper, "extract_dog_details"
-        ) as mock_extract:
+        with patch.object(DaisyFamilyRescueDogDetailScraper, "extract_dog_details") as mock_extract:
             mock_extract.return_value = mock_detailed_data
 
             # Test enhancement
@@ -171,9 +167,7 @@ class TestDaisyFamilyRescueIntegration:
         }
 
         # Mock detail scraper to raise exception
-        with patch.object(
-            DaisyFamilyRescueDogDetailScraper, "extract_dog_details"
-        ) as mock_extract:
+        with patch.object(DaisyFamilyRescueDogDetailScraper, "extract_dog_details") as mock_extract:
             mock_extract.side_effect = Exception("Connection error")
 
             # Should return basic data on error
@@ -273,9 +267,7 @@ class TestDaisyFamilyRescueIntegration:
         scraper.metrics_collector = mock_metrics_collector
 
         quality_score = scraper.metrics_collector.assess_data_quality(sample_data)
-        assert 0.8 <= quality_score <= 1.0, (
-            f"Quality score should be high: {quality_score}"
-        )
+        assert 0.8 <= quality_score <= 1.0, f"Quality score should be high: {quality_score}"
 
     @pytest.mark.integration
     def test_configuration_driven_initialization(self):
@@ -298,9 +290,7 @@ class TestDaisyFamilyRescueIntegration:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(
-                organization_id=12, was_created=True
-            )
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
             mock_sync.return_value = mock_sync_service
 
             # Initialize through config system

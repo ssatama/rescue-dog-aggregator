@@ -79,10 +79,7 @@ class TestEnhancedAnimalsAPI:
         assert data["id"] == 123
         assert data["name"] == "Max"
         assert data["enhanced_data_available"] is True
-        assert (
-            data["enhanced_attributes"]["description"]
-            == sample_enhanced_data["description"]
-        )
+        assert data["enhanced_attributes"]["description"] == sample_enhanced_data["description"]
         assert data["enhanced_attributes"]["tagline"] == sample_enhanced_data["tagline"]
         assert data["data_completeness_score"] > 0
 
@@ -146,9 +143,7 @@ class TestEnhancedAnimalsAPI:
         app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
         client = TestClient(app)
 
-        response = client.post(
-            "/api/animals/enhanced/detail-content", params={"animal_ids": [123, 124]}
-        )
+        response = client.post("/api/animals/enhanced/detail-content", params={"animal_ids": [123, 124]})
 
         app.dependency_overrides.clear()
 
@@ -183,9 +178,7 @@ class TestEnhancedAnimalsAPI:
         app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
         client = TestClient(app)
 
-        response = client.post(
-            "/api/animals/enhanced/bulk", json={"animal_ids": [123, 124]}
-        )
+        response = client.post("/api/animals/enhanced/bulk", json={"animal_ids": [123, 124]})
 
         app.dependency_overrides.clear()
 
@@ -205,9 +198,7 @@ class TestEnhancedAnimalsAPI:
         app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
         client = TestClient(app)
 
-        response = client.post(
-            "/api/animals/enhanced/bulk", json={"animal_ids": too_many_ids}
-        )
+        response = client.post("/api/animals/enhanced/bulk", json={"animal_ids": too_many_ids})
 
         app.dependency_overrides.clear()
 

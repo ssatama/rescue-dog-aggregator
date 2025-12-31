@@ -58,9 +58,7 @@ class TestPetsInTurkeyUnifiedStandardization:
         assert result["breed"] == "Kangal"
         assert result["breed_category"] == "Guardian"
         assert result["standardized_size"] == "Large"  # XLarge maps to Large
-        assert (
-            result["standardization_confidence"] >= 0.9
-        )  # Changed to >= for exact 0.9
+        assert result["standardization_confidence"] >= 0.9  # Changed to >= for exact 0.9
 
         # Test Anatolian Shepherd
         test_data = {
@@ -114,12 +112,8 @@ class TestPetsInTurkeyUnifiedStandardization:
             result = scraper.process_animal(test_data)
 
             # Now that we've restored full age parsing functionality:
-            assert result["age_min_months"] == expected_min, (
-                f"Failed for age '{age_text}': expected min {expected_min}, got {result.get('age_min_months')}"
-            )
-            assert result["age_max_months"] == expected_max, (
-                f"Failed for age '{age_text}': expected max {expected_max}, got {result.get('age_max_months')}"
-            )
+            assert result["age_min_months"] == expected_min, f"Failed for age '{age_text}': expected min {expected_min}, got {result.get('age_min_months')}"
+            assert result["age_max_months"] == expected_max, f"Failed for age '{age_text}': expected max {expected_max}, got {result.get('age_max_months')}"
 
     def test_gender_standardization(self, scraper):
         """Test gender field standardization."""
@@ -244,9 +238,7 @@ class TestPetsInTurkeyUnifiedStandardization:
             result = scraper.process_animal(test_data)
 
             # Now that we've restored boolean conversion functionality:
-            assert result.get("neutered") == expected, (
-                f"Failed for input '{input_value}': expected {expected}, got {result.get('neutered')}"
-            )
+            assert result.get("neutered") == expected, f"Failed for input '{input_value}': expected {expected}, got {result.get('neutered')}"
 
     @pytest.mark.unit
     @pytest.mark.fast

@@ -37,9 +37,7 @@ def mock_config_loader():
 @pytest.fixture
 def mock_adoption_service():
     """Mock adoption detection service."""
-    with patch(
-        "management.check_adoptions.AdoptionDetectionService"
-    ) as mock_service_class:
+    with patch("management.check_adoptions.AdoptionDetectionService") as mock_service_class:
         mock_service = MagicMock()
         mock_service_class.return_value = mock_service
         yield mock_service
@@ -116,9 +114,7 @@ class TestCheckAdoptionsCommand:
             assert command.conn is not None
             assert command.cursor is not None
 
-    def test_get_organizations_specific(
-        self, mock_config_loader, sample_organization_config
-    ):
+    def test_get_organizations_specific(self, mock_config_loader, sample_organization_config):
         """Test getting a specific organization."""
         command = CheckAdoptionsCommand()
         command.config_loader = mock_config_loader
@@ -135,9 +131,7 @@ class TestCheckAdoptionsCommand:
         assert orgs[0].slug == "dogstrust"
         mock_config_loader.load_config.assert_called_once_with("dogstrust")
 
-    def test_get_organizations_all_enabled(
-        self, mock_config_loader, sample_organization_config
-    ):
+    def test_get_organizations_all_enabled(self, mock_config_loader, sample_organization_config):
         """Test getting all organizations with adoption checking enabled."""
         command = CheckAdoptionsCommand()
         command.config_loader = mock_config_loader
@@ -172,9 +166,7 @@ class TestCheckAdoptionsCommand:
 
         mock_cursor.fetchall.return_value = sample_eligible_dogs
 
-        dogs = command.get_eligible_dogs(
-            org_id=1, threshold=3, limit=50, check_interval_hours=24
-        )
+        dogs = command.get_eligible_dogs(org_id=1, threshold=3, limit=50, check_interval_hours=24)
 
         assert len(dogs) == 2
         assert dogs[0]["name"] == "Max"
@@ -265,9 +257,7 @@ class TestCheckAdoptionsCommand:
         assert mock_adoption_service.check_adoption_status.call_count == 2
 
         # Verify database updates
-        assert (
-            mock_cursor.execute.call_count >= 3
-        )  # 1 for eligible dogs + 2 for updates
+        assert mock_cursor.execute.call_count >= 3  # 1 for eligible dogs + 2 for updates
         assert mock_conn.commit.call_count == 2
 
     def test_update_dog_status(self, mock_db_connection):
@@ -409,9 +399,7 @@ class TestMainFunction:
     def test_main_with_org_flag(self):
         """Test main function with --org flag."""
         with patch("sys.argv", ["check_adoptions.py", "--org", "dogstrust"]):
-            with patch(
-                "management.check_adoptions.CheckAdoptionsCommand"
-            ) as mock_command_class:
+            with patch("management.check_adoptions.CheckAdoptionsCommand") as mock_command_class:
                 mock_command = MagicMock()
                 mock_command_class.return_value = mock_command
 
@@ -425,16 +413,12 @@ class TestMainFunction:
                         raise
 
                 mock_command.connect.assert_called_once()
-                mock_command.get_organizations.assert_called_once_with(
-                    org_slug="dogstrust", all_orgs=False
-                )
+                mock_command.get_organizations.assert_called_once_with(org_slug="dogstrust", all_orgs=False)
 
     def test_main_with_all_flag(self):
         """Test main function with --all flag."""
         with patch("sys.argv", ["check_adoptions.py", "--all"]):
-            with patch(
-                "management.check_adoptions.CheckAdoptionsCommand"
-            ) as mock_command_class:
+            with patch("management.check_adoptions.CheckAdoptionsCommand") as mock_command_class:
                 mock_command = MagicMock()
                 mock_command_class.return_value = mock_command
                 mock_command.get_organizations.return_value = []
@@ -447,9 +431,7 @@ class TestMainFunction:
                     if e.code != 0:
                         raise
 
-                mock_command.get_organizations.assert_called_once_with(
-                    org_slug=None, all_orgs=True
-                )
+                mock_command.get_organizations.assert_called_once_with(org_slug=None, all_orgs=True)
 
     def test_main_missing_required_args(self):
         """Test main function without required arguments."""
@@ -467,9 +449,7 @@ class TestMainFunction:
             "sys.argv",
             ["check_adoptions.py", "--org", "dogstrust", "--dry-run", "--verbose"],
         ):
-            with patch(
-                "management.check_adoptions.CheckAdoptionsCommand"
-            ) as mock_command_class:
+            with patch("management.check_adoptions.CheckAdoptionsCommand") as mock_command_class:
                 mock_command = MagicMock()
                 mock_command_class.return_value = mock_command
                 mock_command.get_organizations.return_value = [{"slug": "dogstrust"}]
@@ -486,12 +466,8 @@ class TestMainFunction:
 
     def test_main_with_limit(self):
         """Test main function with --limit flag."""
-        with patch(
-            "sys.argv", ["check_adoptions.py", "--org", "dogstrust", "--limit", "10"]
-        ):
-            with patch(
-                "management.check_adoptions.CheckAdoptionsCommand"
-            ) as mock_command_class:
+        with patch("sys.argv", ["check_adoptions.py", "--org", "dogstrust", "--limit", "10"]):
+            with patch("management.check_adoptions.CheckAdoptionsCommand") as mock_command_class:
                 mock_command = MagicMock()
                 mock_command_class.return_value = mock_command
                 mock_command.get_organizations.return_value = [{"slug": "dogstrust"}]
@@ -504,6 +480,4 @@ class TestMainFunction:
                     if e.code != 0:
                         raise
 
-                mock_command.check_organization.assert_called_with(
-                    {"slug": "dogstrust"}, 10
-                )
+                mock_command.check_organization.assert_called_with({"slug": "dogstrust"}, 10)

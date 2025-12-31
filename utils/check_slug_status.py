@@ -43,9 +43,7 @@ def check_slug_status():
             print("❌ Slug column does not exist in animals table")
             return False
 
-        print(
-            f"✅ Slug column exists: {slug_column[2]} {'NULL' if slug_column[1] == 'YES' else 'NOT NULL'}"
-        )
+        print(f"✅ Slug column exists: {slug_column[2]} {'NULL' if slug_column[1] == 'YES' else 'NOT NULL'}")
 
         # Check animals with NULL slugs
         cursor.execute("SELECT COUNT(*) FROM animals WHERE slug IS NULL")

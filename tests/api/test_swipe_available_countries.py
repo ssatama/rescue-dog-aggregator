@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock
 
-
 from api.main import app
 
 
@@ -89,9 +88,7 @@ class TestAvailableCountriesEndpoint:
 
         try:
             # Simulate database error
-            mock_db_cursor.execute.side_effect = psycopg2.OperationalError(
-                "Connection lost"
-            )
+            mock_db_cursor.execute.side_effect = psycopg2.OperationalError("Connection lost")
 
             response = client.get("/api/dogs/available-countries")
 

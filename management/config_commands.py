@@ -29,9 +29,7 @@ class ConfigManager:
         self.logger = logging.getLogger(__name__)
 
         # Create new decomposed components
-        self.config_service = ConfigService(
-            self.config_loader, self.sync_manager, self.scraper_runner
-        )
+        self.config_service = ConfigService(self.config_loader, self.sync_manager, self.scraper_runner)
         self.formatter = ConfigFormatter()
         self.cli = ConfigCLI(self.config_service, self.formatter)
 
@@ -113,17 +111,11 @@ class ConfigManager:
 
         template_path = Path("prompts/organizations") / org_config.prompt_file
         if not template_path.exists():
-            print(
-                f"❌ Organization {org_id} ({org_config.organization_name}) is configured but prompt template not found: {org_config.prompt_file}"
-            )
-            print(
-                "   This organization needs a prompt template to be created before LLM profiling can be used."
-            )
+            print(f"❌ Organization {org_id} ({org_config.organization_name}) is configured but prompt template not found: {org_config.prompt_file}")
+            print("   This organization needs a prompt template to be created before LLM profiling can be used.")
             return
 
-        print(
-            f"🤖 Starting LLM profiling for {org_config.organization_name} (ID: {org_id})"
-        )
+        print(f"🤖 Starting LLM profiling for {org_config.organization_name} (ID: {org_id})")
         print(f"   Source Language: {org_config.source_language}")
         print(f"   Model: {org_config.model_preference}")
 
@@ -211,9 +203,7 @@ def main():
 
     # List command
     list_parser = subparsers.add_parser("list", help="List organizations")
-    list_parser.add_argument(
-        "--enabled-only", action="store_true", help="Show only enabled organizations"
-    )
+    list_parser.add_argument("--enabled-only", action="store_true", help="Show only enabled organizations")
 
     # Show command
     show_parser = subparsers.add_parser("show", help="Show organization details")
@@ -249,15 +239,9 @@ def main():
 
     # Profile command
     profile_parser = subparsers.add_parser("profile", help="Run LLM profiling for dogs")
-    profile_parser.add_argument(
-        "--org-id", type=int, default=11, help="Organization ID (default: 11)"
-    )
-    profile_parser.add_argument(
-        "--limit", type=int, help="Maximum number of dogs to profile"
-    )
-    profile_parser.add_argument(
-        "--dry-run", action="store_true", help="Don't save results to database"
-    )
+    profile_parser.add_argument("--org-id", type=int, default=11, help="Organization ID (default: 11)")
+    profile_parser.add_argument("--limit", type=int, help="Maximum number of dogs to profile")
+    profile_parser.add_argument("--dry-run", action="store_true", help="Don't save results to database")
 
     args = parser.parse_args()
 

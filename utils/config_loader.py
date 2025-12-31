@@ -74,9 +74,7 @@ class ConfigLoader:
             validate(instance=config_data, schema=schema)
             self.logger.debug(f"Schema validation passed for {config_file}")
         except jsonschema.ValidationError as e:
-            raise ConfigValidationError(
-                f"Schema validation failed for {config_file}: {e.message}"
-            )
+            raise ConfigValidationError(f"Schema validation failed for {config_file}: {e.message}")
         except Exception as e:
             self.logger.warning(f"Schema validation error for {config_file}: {e}")
 
@@ -87,9 +85,7 @@ class ConfigLoader:
                 config_data = yaml.safe_load(f)
 
             if not isinstance(config_data, dict):
-                raise ConfigValidationError(
-                    f"Config file {file_path} must contain a YAML object, not {type(config_data)}"
-                )
+                raise ConfigValidationError(f"Config file {file_path} must contain a YAML object, not {type(config_data)}")
 
             self.logger.debug(f"Loaded YAML from {file_path}")
             return config_data
@@ -97,15 +93,11 @@ class ConfigLoader:
         except yaml.YAMLError as e:
             raise ConfigLoadError(f"YAML parsing error in {file_path}: {e}")
 
-    def _validate_config_id(
-        self, config_data: dict, expected_id: str, config_file: Path
-    ) -> None:
+    def _validate_config_id(self, config_data: dict, expected_id: str, config_file: Path) -> None:
         """Validate that config ID matches filename."""
         actual_id = config_data.get("id")
         if actual_id != expected_id:
-            raise ValueError(
-                f"Config ID '{actual_id}' does not match filename '{expected_id}' in {config_file}"
-            )
+            raise ValueError(f"Config ID '{actual_id}' does not match filename '{expected_id}' in {config_file}")
 
     def _validate_schema_version(self, config_data: dict, config_file: Path) -> None:
         """Validate schema version is supported."""
@@ -113,10 +105,7 @@ class ConfigLoader:
         supported_versions = ["1.0"]
 
         if schema_version not in supported_versions:
-            raise ValueError(
-                f"Unsupported schema version '{schema_version}' in {config_file}. "
-                f"Supported versions: {supported_versions}"
-            )
+            raise ValueError(f"Unsupported schema version '{schema_version}' in {config_file}. " f"Supported versions: {supported_versions}")
 
     def load_config(self, org_id: str) -> OrganizationConfig:
         """Load a single organization configuration by ID.
@@ -134,9 +123,7 @@ class ConfigLoader:
         config_file = self.config_dir / f"{org_id}.yaml"
 
         if not config_file.exists():
-            raise ConfigLoadError(
-                f"Config file not found for organization '{org_id}': {config_file}"
-            )
+            raise ConfigLoadError(f"Config file not found for organization '{org_id}': {config_file}")
 
         # Load and parse YAML
         config_data = self._load_yaml_file(config_file)
@@ -156,9 +143,7 @@ class ConfigLoader:
             self.logger.info(f"Successfully loaded config for organization '{org_id}'")
             return config
         except Exception as e:
-            raise ConfigValidationError(
-                f"Pydantic validation failed for {config_file}: {e}"
-            )
+            raise ConfigValidationError(f"Pydantic validation failed for {config_file}: {e}")
 
     def load_all_configs(self, force_reload: bool = False) -> ConfigDict:
         """Load all organization configurations.
@@ -200,9 +185,7 @@ class ConfigLoader:
         all_configs = self.load_all_configs()
         enabled = [config for config in all_configs.values() if config.enabled]
 
-        self.logger.info(
-            f"Found {len(enabled)} enabled organizations out of {len(all_configs)} total"
-        )
+        self.logger.info(f"Found {len(enabled)} enabled organizations out of {len(all_configs)} total")
         return enabled
 
     def reload_config(self, org_id: str) -> OrganizationConfig:

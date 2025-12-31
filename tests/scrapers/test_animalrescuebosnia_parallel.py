@@ -31,17 +31,13 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
         ]
 
         with (
-            patch.object(
-                self.scraper, "get_animal_list", return_value=mock_animal_list
-            ),
+            patch.object(self.scraper, "get_animal_list", return_value=mock_animal_list),
             patch.object(
                 self.scraper,
                 "_filter_existing_urls",
                 return_value=["https://example.com/dog1/"],
             ) as mock_filter,
-            patch.object(
-                self.scraper, "_process_dogs_in_batches", return_value=[]
-            ) as mock_process,
+            patch.object(self.scraper, "_process_dogs_in_batches", return_value=[]) as mock_process,
         ):
             self.scraper.collect_data()
 
@@ -62,13 +58,9 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
         ]
 
         with (
-            patch.object(
-                self.scraper, "get_animal_list", return_value=mock_animal_list
-            ),
+            patch.object(self.scraper, "get_animal_list", return_value=mock_animal_list),
             patch.object(self.scraper, "_filter_existing_urls") as mock_filter,
-            patch.object(
-                self.scraper, "_process_dogs_in_batches", return_value=[]
-            ) as mock_process,
+            patch.object(self.scraper, "_process_dogs_in_batches", return_value=[]) as mock_process,
         ):
             self.scraper.collect_data()
 
@@ -92,9 +84,7 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
         ]
 
         with (
-            patch.object(
-                self.scraper, "_process_single_batch", return_value=[]
-            ) as mock_single_batch,
+            patch.object(self.scraper, "_process_single_batch", return_value=[]) as mock_single_batch,
             patch("time.sleep"),
         ):  # Mock sleep for rate limiting
             self.scraper._process_dogs_in_batches(urls)
@@ -136,9 +126,7 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
                 return_value=[mock_future1, mock_future2],
             ),
             patch.object(self.scraper, "_scrape_with_retry") as mock_scrape_retry,
-            patch.object(
-                self.scraper, "_validate_dog_data", return_value=True
-            ) as mock_validate,
+            patch.object(self.scraper, "_validate_dog_data", return_value=True) as mock_validate,
         ):
             mock_tpe_class.return_value = mock_executor
 
@@ -184,9 +172,7 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
 
         mock_executor = Mock()
         mock_future = Mock(spec=Future)
-        mock_future.result.return_value = {
-            "name": "Invalid Dog"
-        }  # Missing required fields
+        mock_future.result.return_value = {"name": "Invalid Dog"}  # Missing required fields
 
         mock_executor.submit.return_value = mock_future
         # Configure context manager methods

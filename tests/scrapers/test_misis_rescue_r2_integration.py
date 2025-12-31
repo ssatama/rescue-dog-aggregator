@@ -76,16 +76,12 @@ class TestMisisRescueR2Integration(unittest.TestCase):
             },
         ]
 
-        with patch.object(
-            scraper, "_get_all_dogs_from_listing", return_value=test_dogs
-        ):
+        with patch.object(scraper, "_get_all_dogs_from_listing", return_value=test_dogs):
             with patch.object(scraper, "_filter_existing_urls") as mock_filter:
                 # Return all URLs (no filtering)
                 mock_filter.side_effect = lambda urls: urls
 
-                with patch.object(
-                    scraper, "_process_dogs_in_batches", return_value=expected_dogs
-                ):
+                with patch.object(scraper, "_process_dogs_in_batches", return_value=expected_dogs):
                     with patch.object(R2Service, "batch_upload_images") as mock_batch:
                         mock_batch.return_value = [
                             ("https://images.test.com/dog1.jpg", True),
@@ -117,19 +113,13 @@ class TestMisisRescueR2Integration(unittest.TestCase):
             "primary_image_url": "http://test.com/dog1.jpg",
         }
 
-        with patch.object(
-            scraper, "_get_all_dogs_from_listing", return_value=test_dogs
-        ):
+        with patch.object(scraper, "_get_all_dogs_from_listing", return_value=test_dogs):
             with patch.object(scraper, "_filter_existing_urls") as mock_filter:
                 mock_filter.side_effect = lambda urls: urls
 
-                with patch.object(
-                    scraper, "_process_dogs_in_batches", return_value=[expected_dog]
-                ):
+                with patch.object(scraper, "_process_dogs_in_batches", return_value=[expected_dog]):
                     # Simulate R2 failure
-                    with patch.object(
-                        R2Service, "upload_image_from_url"
-                    ) as mock_upload:
+                    with patch.object(R2Service, "upload_image_from_url") as mock_upload:
                         mock_upload.return_value = ("http://test.com/dog1.jpg", False)
 
                         dogs = scraper.collect_data()
@@ -138,9 +128,7 @@ class TestMisisRescueR2Integration(unittest.TestCase):
                         self.assertEqual(len(dogs), 1)
                         self.assertEqual(dogs[0]["name"], "Dog 1")
                         # Should keep original URL
-                        self.assertEqual(
-                            dogs[0]["primary_image_url"], "http://test.com/dog1.jpg"
-                        )
+                        self.assertEqual(dogs[0]["primary_image_url"], "http://test.com/dog1.jpg")
 
     def test_circuit_breaker_prevents_excessive_r2_calls(self):
         """Test that circuit breaker stops R2 uploads after failures."""
@@ -164,18 +152,12 @@ class TestMisisRescueR2Integration(unittest.TestCase):
                 }
             )
 
-        with patch.object(
-            scraper, "_get_all_dogs_from_listing", return_value=test_dogs
-        ):
+        with patch.object(scraper, "_get_all_dogs_from_listing", return_value=test_dogs):
             with patch.object(scraper, "_filter_existing_urls") as mock_filter:
                 mock_filter.side_effect = lambda urls: urls
 
-                with patch.object(
-                    scraper, "_process_dogs_in_batches", return_value=expected_dogs
-                ):
-                    with patch.object(
-                        R2Service, "upload_image_from_url"
-                    ) as mock_upload:
+                with patch.object(scraper, "_process_dogs_in_batches", return_value=expected_dogs):
+                    with patch.object(R2Service, "upload_image_from_url") as mock_upload:
                         mock_upload.return_value = ("http://test.com/image.jpg", False)
 
                         # Use circuit breaker upload
@@ -243,18 +225,14 @@ class TestMisisRescuePerformanceImprovements(unittest.TestCase):
         import time
 
         # Create test images
-        test_images = [
-            (f"http://test.com/dog{i}.jpg", f"Dog {i}", "misisrescue") for i in range(6)
-        ]
+        test_images = [(f"http://test.com/dog{i}.jpg", f"Dog {i}", "misisrescue") for i in range(6)]
 
         def mock_slow_upload(url, name, org):
             # Simulate network delay
             time.sleep(0.01)
             return (f"https://r2.com/{name}.jpg", True)
 
-        with patch.object(
-            R2Service, "upload_image_from_url", side_effect=mock_slow_upload
-        ):
+        with patch.object(R2Service, "upload_image_from_url", side_effect=mock_slow_upload):
             # Test sequential upload time
             start = time.time()
             sequential_results = []
@@ -265,9 +243,7 @@ class TestMisisRescuePerformanceImprovements(unittest.TestCase):
 
             # Test concurrent upload time
             start = time.time()
-            concurrent_results = R2Service.concurrent_upload_images(
-                test_images, max_workers=3, throttle_ms=0
-            )
+            concurrent_results = R2Service.concurrent_upload_images(test_images, max_workers=3, throttle_ms=0)
             concurrent_time = time.time() - start
 
             # Concurrent should be significantly faster
@@ -276,10 +252,7 @@ class TestMisisRescuePerformanceImprovements(unittest.TestCase):
 
     def test_batch_upload_reduces_api_calls(self):
         """Test that batch upload with delays reduces rate limiting."""
-        test_images = [
-            (f"http://test.com/dog{i}.jpg", f"Dog {i}", "misisrescue")
-            for i in range(10)
-        ]
+        test_images = [(f"http://test.com/dog{i}.jpg", f"Dog {i}", "misisrescue") for i in range(10)]
 
         with patch.object(R2Service, "upload_image_from_url") as mock_upload:
             # Simulate some failures in the middle
@@ -293,9 +266,7 @@ class TestMisisRescuePerformanceImprovements(unittest.TestCase):
             mock_upload.side_effect = results
 
             with patch("time.sleep") as mock_sleep:
-                batch_results, stats = R2Service.batch_upload_images_with_stats(
-                    test_images, batch_size=3, adaptive_delay=True
-                )
+                batch_results, stats = R2Service.batch_upload_images_with_stats(test_images, batch_size=3, adaptive_delay=True)
 
                 # Should have paused between batches
                 self.assertTrue(mock_sleep.called)

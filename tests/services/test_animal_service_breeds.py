@@ -293,9 +293,7 @@ class TestAnimalServiceBreeds:
         execute_call = mock_cursor.execute.call_args[0][0]
         assert "HAVING COUNT(DISTINCT a.id) >= %s" in execute_call
 
-    def test_get_breeds_with_images_sql_injection_protection(
-        self, service, mock_cursor
-    ):
+    def test_get_breeds_with_images_sql_injection_protection(self, service, mock_cursor):
         """Test breed images protects against SQL injection."""
         mock_cursor.fetchall.return_value = []
 
@@ -345,9 +343,7 @@ class TestAnimalServiceBreeds:
         assert len(result) == 1
         assert result[0]["sample_dogs"] == []
 
-    def test_get_breeds_with_images_personality_traits_parsing(
-        self, service, mock_cursor
-    ):
+    def test_get_breeds_with_images_personality_traits_parsing(self, service, mock_cursor):
         """Test breed images correctly parses personality traits JSON."""
         mock_cursor.fetchall.return_value = [
             {

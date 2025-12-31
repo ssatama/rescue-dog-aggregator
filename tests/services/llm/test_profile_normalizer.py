@@ -64,10 +64,7 @@ class TestProfileNormalizer:
 
     def test_normalize_compatibility(self, normalizer):
         """Test compatibility field normalization."""
-        assert (
-            normalizer.normalize_compatibility("selective", "children")
-            == "older_children"
-        )
+        assert normalizer.normalize_compatibility("selective", "children") == "older_children"
         assert normalizer.normalize_compatibility("selective", "cats") == "maybe"
         assert normalizer.normalize_compatibility("yes", "dogs") == "yes"
         assert normalizer.normalize_compatibility("no", "children") == "no"
@@ -76,24 +73,18 @@ class TestProfileNormalizer:
     def test_normalize_list_field(self, normalizer):
         """Test list field normalization."""
         # Too few items - should pad
-        result = normalizer.normalize_list_field(
-            ["friendly"], min_items=3, max_items=5, default_item="gentle"
-        )
+        result = normalizer.normalize_list_field(["friendly"], min_items=3, max_items=5, default_item="gentle")
         assert len(result) == 3
         assert "friendly" in result
         assert "gentle" in result
 
         # Too many items - should truncate
-        result = normalizer.normalize_list_field(
-            ["a", "b", "c", "d", "e", "f"], min_items=3, max_items=5
-        )
+        result = normalizer.normalize_list_field(["a", "b", "c", "d", "e", "f"], min_items=3, max_items=5)
         assert len(result) == 5
         assert result == ["a", "b", "c", "d", "e"]
 
         # Just right
-        result = normalizer.normalize_list_field(
-            ["a", "b", "c", "d"], min_items=3, max_items=5
-        )
+        result = normalizer.normalize_list_field(["a", "b", "c", "d"], min_items=3, max_items=5)
         assert len(result) == 4
 
     def test_normalize_boolean(self, normalizer):

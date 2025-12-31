@@ -51,9 +51,7 @@ def railway_migration_lock(timeout: int = 60):
                         break
                     else:
                         # Mock file object - just proceed for testing
-                        logger.info(
-                            "Railway migration lock acquired successfully (mock)"
-                        )
+                        logger.info("Railway migration lock acquired successfully (mock)")
                         break
                 else:
                     # No fileno method - mock object
@@ -65,9 +63,7 @@ def railway_migration_lock(timeout: int = 60):
                     logger.info("Railway migration lock acquired successfully (mock)")
                     break
                 elif time.time() - start_time > timeout:
-                    raise TimeoutError(
-                        f"Failed to acquire Railway migration lock within {timeout} seconds"
-                    )
+                    raise TimeoutError(f"Failed to acquire Railway migration lock within {timeout} seconds")
                 else:
                     time.sleep(0.1)  # Wait 100ms before retry
 
@@ -421,9 +417,7 @@ class RailwayMigrationManager:
                 # Check if migrations have already been completed by another process
                 current_status = get_migration_status()
                 if current_status and "head" in current_status.lower():
-                    self.logger.info(
-                        "Railway migrations already completed by another process"
-                    )
+                    self.logger.info("Railway migrations already completed by another process")
                     return True
 
                 # Initialize Alembic if needed
@@ -433,9 +427,7 @@ class RailwayMigrationManager:
 
                 # Check if migration files already exist
                 versions_dir = Path("migrations/railway/versions")
-                existing_migrations = (
-                    list(versions_dir.glob("*.py")) if versions_dir.exists() else []
-                )
+                existing_migrations = list(versions_dir.glob("*.py")) if versions_dir.exists() else []
 
                 if not existing_migrations:
                     # Create initial migration only if none exist
@@ -443,18 +435,14 @@ class RailwayMigrationManager:
                         self.logger.error("Failed to create initial Railway migration")
                         return False
                 else:
-                    self.logger.info(
-                        f"Found {len(existing_migrations)} existing migration files, skipping creation"
-                    )
+                    self.logger.info(f"Found {len(existing_migrations)} existing migration files, skipping creation")
 
                 # Run migrations
                 if not run_railway_migrations():
                     self.logger.error("Failed to run Railway migrations")
                     return False
 
-                self.logger.info(
-                    "Railway database setup and migration completed successfully"
-                )
+                self.logger.info("Railway database setup and migration completed successfully")
                 return True
 
         except TimeoutError as e:

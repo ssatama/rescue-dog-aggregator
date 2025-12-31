@@ -116,9 +116,7 @@ class TestGalgosDelSolUnifiedStandardization:
             }
 
             result = galgosdelsol_scraper.process_animal(animal)
-            assert result.get("age_category") == expected_category, (
-                f"Failed for age: {age_text}"
-            )
+            assert result.get("age_category") == expected_category, f"Failed for age: {age_text}"
 
     def test_size_standardization(self, galgosdelsol_scraper):
         """Test that sizes are properly standardized."""

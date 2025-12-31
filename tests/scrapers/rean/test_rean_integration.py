@@ -35,9 +35,7 @@ class TestREANIntegration:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(
-                organization_id=1, was_created=True
-            )
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=True)
             mock_sync.return_value = mock_sync_service
 
             return REANScraper()
@@ -85,20 +83,14 @@ class TestREANIntegration:
         mock_chrome.return_value = mock_driver
 
         # Mock scrolling behavior
-        mock_driver.execute_script.side_effect = (
-            lambda script: 1000 if "scrollHeight" in script else None
-        )
+        mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
 
         # Mock image elements
         mock_img1 = Mock()
-        mock_img1.get_attribute.return_value = (
-            "https://img1.wsimg.com/isteam/ip/abc/dog1.jpg"
-        )
+        mock_img1.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/abc/dog1.jpg"
 
         mock_img2 = Mock()
-        mock_img2.get_attribute.return_value = (
-            "https://img1.wsimg.com/isteam/ip/def/dog2.jpg"
-        )
+        mock_img2.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/def/dog2.jpg"
 
         mock_driver.find_elements.return_value = [mock_img1, mock_img2]
 
@@ -139,25 +131,18 @@ class TestREANIntegration:
 
         # Mock image in container
         mock_img = Mock()
-        mock_img.get_attribute.return_value = (
-            "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
-        )
+        mock_img.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
         mock_container.find_elements.return_value = [mock_img]
 
         # Mock finding containers
         scraper._find_dog_containers = Mock(return_value=[mock_container])
 
-        result = scraper.extract_dogs_with_images_unified(
-            "https://rean.org.uk/dogs", "romania"
-        )
+        result = scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs", "romania")
 
         assert len(result) == 1
         assert result[0]["name"] == "Toby"
         assert result[0]["age_text"] == "4 months"
-        assert (
-            result[0]["primary_image_url"]
-            == "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
-        )
+        assert result[0]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
 
     @pytest.mark.slow
     @pytest.mark.selenium
@@ -170,9 +155,7 @@ class TestREANIntegration:
         # Mock the legacy fallback
         scraper._extract_dogs_legacy_fallback = Mock(return_value=[])
 
-        result = scraper.extract_dogs_with_images_unified(
-            "https://rean.org.uk/dogs", "romania"
-        )
+        result = scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs", "romania")
 
         assert result == []
         scraper._extract_dogs_legacy_fallback.assert_called_once()
@@ -209,9 +192,7 @@ class TestREANIntegration:
         mock_container.text = "Buddy is 2 years old, rescued from streets. He is vaccinated and chipped. (Updated 22/4/25)"
 
         mock_img = Mock()
-        mock_img.get_attribute.return_value = (
-            "https://img1.wsimg.com/isteam/ip/abc/buddy.jpg"
-        )
+        mock_img.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/abc/buddy.jpg"
         mock_container.find_elements.return_value = [mock_img]
 
         scraper._find_dog_containers = Mock(return_value=[mock_container])

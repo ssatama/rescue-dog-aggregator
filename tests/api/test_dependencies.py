@@ -144,9 +144,7 @@ class TestGetDbCursor:
         cursor = next(generator)
 
         # Verify password is not included in connection params when empty
-        mock_connect.assert_called_once_with(
-            host="localhost", user="test", database="test_db", port=5432
-        )
+        mock_connect.assert_called_once_with(host="localhost", user="test", database="test_db", port=5432)
         assert cursor == mock_cursor
 
     @patch("api.dependencies.psycopg2.connect")

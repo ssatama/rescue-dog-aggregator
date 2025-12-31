@@ -70,9 +70,7 @@ def build_age_conditions(age_groups):
     return age_conditions
 
 
-def apply_filters_to_query(
-    query_parts, params, filter_country, size, age, excluded_ids
-):
+def apply_filters_to_query(query_parts, params, filter_country, size, age, excluded_ids):
     """Apply filters to a query. Returns updated query_parts and params."""
     if filter_country:
         query_parts.append("AND o.ships_to ? %s")
@@ -111,9 +109,7 @@ async def get_swipe_stack(
         None,
         description="Filter by country code (e.g., 'GB', 'US') - DEPRECATED, use adoptable_to_country",
     ),
-    adoptable_to_country: Optional[str] = Query(
-        None, description="Filter by adoptable to country code (e.g., 'GB', 'US')"
-    ),
+    adoptable_to_country: Optional[str] = Query(None, description="Filter by adoptable to country code (e.g., 'GB', 'US')"),
     size: Optional[List[str]] = Query(
         None,
         alias="size[]",
@@ -124,12 +120,8 @@ async def get_swipe_stack(
         alias="age[]",
         description="Filter by age group (puppy, young, adult, senior) - accepts multiple values",
     ),
-    excluded: Optional[str] = Query(
-        None, description="Comma-separated list of excluded dog IDs"
-    ),
-    limit: int = Query(
-        20, ge=1, le=50, description="Number of dogs to return (default: 20, max: 50)"
-    ),
+    excluded: Optional[str] = Query(None, description="Comma-separated list of excluded dog IDs"),
+    limit: int = Query(20, ge=1, le=50, description="Number of dogs to return (default: 20, max: 50)"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
     randomize: bool = Query(False, description="Randomize the order of dogs returned"),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
@@ -146,14 +138,10 @@ async def get_swipe_stack(
     Excludes dogs that have already been swiped (passed via excluded parameter).
     """
     # Start performance monitoring for this endpoint
-    with sentry_sdk.start_transaction(
-        name="GET /swipe", op="http.server"
-    ) as transaction:
+    with sentry_sdk.start_transaction(name="GET /swipe", op="http.server") as transaction:
         transaction.set_tag("http.method", "GET")
         transaction.set_tag("http.route", "/swipe")
-        transaction.set_tag(
-            "filters.country", adoptable_to_country or country or "none"
-        )
+        transaction.set_tag("filters.country", adoptable_to_country or country or "none")
         transaction.set_tag("filters.size", ",".join(size) if size else "none")
         transaction.set_tag("filters.age", ",".join(age) if age else "none")
         transaction.set_tag("filters.randomize", str(randomize))
@@ -173,11 +161,7 @@ async def get_swipe_stack(
                             detail="Invalid excluded IDs format. Only comma-separated numbers are allowed.",
                         )
                     try:
-                        excluded_ids = [
-                            int(id_str.strip())
-                            for id_str in excluded.split(",")
-                            if id_str.strip()
-                        ]
+                        excluded_ids = [int(id_str.strip()) for id_str in excluded.split(",") if id_str.strip()]
                     except ValueError:
                         logger.warning(f"Invalid excluded IDs format: {excluded}")
                         raise HTTPException(
@@ -244,9 +228,7 @@ async def get_swipe_stack(
 
                 # Apply filters using helper function
                 filter_country = adoptable_to_country or country
-                query_parts, params = apply_filters_to_query(
-                    query_parts, params, filter_country, size, age, excluded_ids
-                )
+                query_parts, params = apply_filters_to_query(query_parts, params, filter_country, size, age, excluded_ids)
 
                 # Add ordering - use random if requested, otherwise deterministic
                 if randomize:
@@ -258,8 +240,7 @@ async def get_swipe_stack(
                 else:
                     query_parts.append(
                         """
-                        ORDER BY a.id, sort_priority DESC,
-                                 a.id  -- Use id for stable, deterministic ordering
+                        ORDER BY a.id, sort_priority DESC  -- a.id first for DISTINCT ON compatibility
                     """
                     )
 
@@ -273,9 +254,7 @@ async def get_swipe_stack(
                 params.extend([limit, offset])
 
             # Execute main query with performance tracking
-            with sentry_sdk.start_span(
-                op="db.query", description="Fetch swipe stack"
-            ) as span:
+            with sentry_sdk.start_span(op="db.query", description="Fetch swipe stack") as span:
                 import time
 
                 start_time = time.time()
@@ -318,10 +297,7 @@ async def get_swipe_stack(
                         # Convert snake_case keys to camelCase for frontend
                         camel_profiler_data = {}
                         for key, value in profiler_data.items():
-                            camel_key = "".join(
-                                word.capitalize() if i > 0 else word
-                                for i, word in enumerate(key.split("_"))
-                            )
+                            camel_key = "".join(word.capitalize() if i > 0 else word for i, word in enumerate(key.split("_")))
                             camel_profiler_data[camel_key] = value
                         profiler_data = camel_profiler_data
 
@@ -338,8 +314,7 @@ async def get_swipe_stack(
                         "standardized_breed": animal_dict.get("standardized_breed"),
                         "secondary_breed": properties.get("secondary_breed"),
                         "mixed_breed": properties.get("mixed_breed", False),
-                        "age": animal_dict.get("age_text")
-                        or properties.get("age_text"),
+                        "age": animal_dict.get("age_text") or properties.get("age_text"),
                         "age_min_months": animal_dict.get("age_min_months"),
                         "age_max_months": animal_dict.get("age_max_months"),
                         "sex": animal_dict.get("sex") or properties.get("sex"),
@@ -364,21 +339,15 @@ async def get_swipe_stack(
                         "state": properties.get("state"),
                         "postcode": properties.get("postcode"),
                         "country": org_data.get("country"),
-                        "created_at": animal_dict.get("created_at").isoformat()
-                        if animal_dict.get("created_at")
-                        else None,
-                        "updated_at": animal_dict.get("updated_at").isoformat()
-                        if animal_dict.get("updated_at")
-                        else None,
+                        "created_at": animal_dict.get("created_at").isoformat() if animal_dict.get("created_at") else None,
+                        "updated_at": animal_dict.get("updated_at").isoformat() if animal_dict.get("updated_at") else None,
                         "organization": org_data,
                         "dogProfilerData": profiler_data,  # camelCase for frontend
                     }
                     dogs.append(dog)
 
             # Check if there are more dogs available with performance tracking
-            with sentry_sdk.start_span(
-                op="db.query", description="Check for more dogs"
-            ):
+            with sentry_sdk.start_span(op="db.query", description="Check for more dogs"):
                 check_more_query_parts = [
                     """
                     SELECT COUNT(*) as total

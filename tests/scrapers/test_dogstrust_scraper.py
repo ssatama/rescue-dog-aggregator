@@ -80,9 +80,7 @@ class TestDogsTrustUnifiedStandardization:
         scraper = DogsTrustScraper()
 
         # Mock feature flag enabled
-        with patch(
-            "utils.feature_flags.is_scraper_standardization_enabled", return_value=True
-        ):
+        with patch("utils.feature_flags.is_scraper_standardization_enabled", return_value=True):
             raw_animal_data = {
                 "name": "Buddy",
                 "breed": "german shepherd",
@@ -138,9 +136,7 @@ class TestDogsTrustUnifiedStandardization:
         """Test that DogsTrust handles missing breed data gracefully."""
         scraper = DogsTrustScraper()
 
-        with patch(
-            "utils.feature_flags.is_scraper_standardization_enabled", return_value=True
-        ):
+        with patch("utils.feature_flags.is_scraper_standardization_enabled", return_value=True):
             raw_animal_data = {
                 "name": "Buddy",
                 # Missing breed field

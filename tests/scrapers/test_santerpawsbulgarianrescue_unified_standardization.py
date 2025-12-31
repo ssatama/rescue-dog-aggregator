@@ -27,9 +27,7 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
             "scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper.SanterPawsBulgarianRescueScraper.__init__",
             return_value=None,
         ):
-            scraper = SanterPawsBulgarianRescueScraper.__new__(
-                SanterPawsBulgarianRescueScraper
-            )
+            scraper = SanterPawsBulgarianRescueScraper.__new__(SanterPawsBulgarianRescueScraper)
             scraper.config_id = "santerpawsbulgarianrescue"
             scraper.standardizer = Mock()
             scraper.use_unified_standardization = True
@@ -77,9 +75,7 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
         result = scraper.process_animal(raw_data)
 
         # Assert - check that standardizer was called with keyword args
-        scraper.standardizer.apply_full_standardization.assert_called_once_with(
-            breed="bulgarian shepherd mix", age="2 years", size="Large"
-        )
+        scraper.standardizer.apply_full_standardization.assert_called_once_with(breed="bulgarian shepherd mix", age="2 years", size="Large")
         assert result["breed"] == "Bulgarian Shepherd Mix"
         assert result["breed_category"] == "Mixed"
 
@@ -138,9 +134,7 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
             raw_data = {"name": "Test Dog", "age": age_text, "breed": "Mixed Breed"}
 
             # Mock both standardizer methods for each iteration
-            scraper.standardizer.apply_field_normalization.return_value = (
-                raw_data.copy()
-            )
+            scraper.standardizer.apply_field_normalization.return_value = raw_data.copy()
             scraper.standardizer.apply_full_standardization.return_value = {
                 "breed": "Mixed Breed",
                 "breed_category": "Mixed",
@@ -176,9 +170,7 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
             raw_data = {"name": "Test Dog", "size": raw_size, "breed": "Mixed Breed"}
 
             # Mock both standardizer methods
-            scraper.standardizer.apply_field_normalization.return_value = (
-                raw_data.copy()
-            )
+            scraper.standardizer.apply_field_normalization.return_value = raw_data.copy()
             scraper.standardizer.apply_full_standardization.return_value = {
                 "breed": "Mixed Breed",
                 "breed_category": "Mixed",

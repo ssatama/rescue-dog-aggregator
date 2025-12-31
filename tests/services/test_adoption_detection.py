@@ -85,9 +85,7 @@ class TestAdoptionDetectionService:
         assert result.animal_id == 123
         assert result.animal_name == "Buddy"
         assert result.detected_status == "adopted"
-        assert (
-            result.evidence == "This dog has been ADOPTED and found their forever home!"
-        )
+        assert result.evidence == "This dog has been ADOPTED and found their forever home!"
         assert result.confidence == 0.95
         assert result.error is None
 
@@ -106,9 +104,7 @@ class TestAdoptionDetectionService:
         assert result.detected_status == "reserved"
         assert result.confidence == 0.85
 
-    def test_check_adoption_status_available(
-        self, service, mock_animal, mock_firecrawl
-    ):
+    def test_check_adoption_status_available(self, service, mock_animal, mock_firecrawl):
         """Test detecting available status."""
         mock_firecrawl.extract = Mock(
             return_value={
@@ -138,9 +134,7 @@ class TestAdoptionDetectionService:
         assert result.error == "Missing URL"
         assert "No URL available" in result.evidence
 
-    def test_check_adoption_status_extraction_failure(
-        self, service, mock_animal, mock_firecrawl
-    ):
+    def test_check_adoption_status_extraction_failure(self, service, mock_animal, mock_firecrawl):
         """Test handling extraction failure."""
         mock_firecrawl.extract = Mock(side_effect=Exception("Extraction failed"))
 
@@ -150,9 +144,7 @@ class TestAdoptionDetectionService:
         assert result.confidence == 0.0
         assert "Extraction failed" in result.error
 
-    def test_check_adoption_status_empty_response(
-        self, service, mock_animal, mock_firecrawl
-    ):
+    def test_check_adoption_status_empty_response(self, service, mock_animal, mock_firecrawl):
         """Test handling empty response."""
         mock_firecrawl.extract = Mock(return_value=None)
 
@@ -218,9 +210,7 @@ class TestAdoptionDetectionService:
         mock_db.cursor.return_value = mock_cursor
 
         # Single animal data
-        animals_data = [
-            (1, "TestDog", "unknown", "https://example.org/dogs/test", 1, 3, None)
-        ]
+        animals_data = [(1, "TestDog", "unknown", "https://example.org/dogs/test", 1, 3, None)]
         mock_cursor.fetchall.return_value = animals_data
 
         mock_firecrawl.extract = Mock(
@@ -231,9 +221,7 @@ class TestAdoptionDetectionService:
             }
         )
 
-        results = service.batch_check_adoptions(
-            mock_db, organization_id=1, dry_run=True
-        )
+        results = service.batch_check_adoptions(mock_db, organization_id=1, dry_run=True)
 
         assert len(results) == 1
         assert results[0].detected_status == "adopted"
@@ -242,9 +230,7 @@ class TestAdoptionDetectionService:
         assert mock_cursor.execute.call_count == 1  # Only the SELECT query
         mock_db.commit.assert_not_called()
 
-    def test_batch_check_adoptions_respects_recheck_interval(
-        self, service, mock_firecrawl
-    ):
+    def test_batch_check_adoptions_respects_recheck_interval(self, service, mock_firecrawl):
         """Test that recently checked dogs are not rechecked."""
         mock_cursor = Mock()
         mock_db = Mock()
@@ -274,9 +260,7 @@ class TestAdoptionDetectionService:
         mock_cursor.fetchall.return_value = animals_data
 
         # Call batch check with 24 hour interval
-        service.batch_check_adoptions(
-            mock_db, organization_id=1, check_interval_hours=24, dry_run=True
-        )
+        service.batch_check_adoptions(mock_db, organization_id=1, check_interval_hours=24, dry_run=True)
 
         # Verify the query was executed with correct parameters
         mock_cursor.execute.assert_called_once()
@@ -293,9 +277,7 @@ class TestAdoptionDetectionService:
         mock_db.cursor.return_value = mock_cursor
         mock_cursor.fetchone.return_value = (15,)
 
-        count = service.get_eligible_dogs_count(
-            mock_db, organization_id=1, threshold=3, check_interval_hours=24
-        )
+        count = service.get_eligible_dogs_count(mock_db, organization_id=1, threshold=3, check_interval_hours=24)
 
         assert count == 15
         mock_cursor.execute.assert_called_once()

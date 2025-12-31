@@ -132,6 +132,4 @@ class TestCORSSentryHeaders:
 
             # Request should be successful
             assert response.status_code == 200
-            assert (
-                "Welcome to the Rescue Dog Aggregator API" in response.json()["message"]
-            )
+            assert "Welcome to the Rescue Dog Aggregator API" in response.json()["message"]

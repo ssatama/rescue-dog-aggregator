@@ -39,9 +39,7 @@ class DataRecoveryService:
         """
         return self._analyze_data_integrity(organization_id)
 
-    def repair_data_corruption(
-        self, organization_id: int, corruption_report: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def repair_data_corruption(self, organization_id: int, corruption_report: Dict[str, Any]) -> Dict[str, Any]:
         """Repair detected data corruption.
 
         Args:
@@ -69,18 +67,14 @@ class DataRecoveryService:
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Error repairing corruption for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error repairing corruption for org {organization_id}: {e}")
             return {
                 "success": False,
                 "error": str(e),
                 "repairs_performed": repairs_performed,
             }
 
-    def recover_from_backup(
-        self, organization_id: int, backup_id: str
-    ) -> Dict[str, Any]:
+    def recover_from_backup(self, organization_id: int, backup_id: str) -> Dict[str, Any]:
         """Recover organization data from backup.
 
         Args:
@@ -197,9 +191,7 @@ class DataRecoveryService:
                 }
 
         except Exception as e:
-            self.logger.error(
-                f"Error analyzing data integrity for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error analyzing data integrity for org {organization_id}: {e}")
             return {"error": str(e), "integrity_score": 0.0}
 
     def _repair_missing_fields(self, organization_id: int) -> Dict[str, Any]:
@@ -251,9 +243,7 @@ class DataRecoveryService:
                 }
 
         except Exception as e:
-            self.logger.error(
-                f"Error repairing missing fields for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error repairing missing fields for org {organization_id}: {e}")
             return {"repaired": 0, "failed": 1, "error": str(e)}
 
     def _resolve_duplicates(self, organization_id: int) -> Dict[str, Any]:
@@ -290,14 +280,10 @@ class DataRecoveryService:
                 return {"resolved": resolved_count, "failed": 0}
 
         except Exception as e:
-            self.logger.error(
-                f"Error resolving duplicates for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error resolving duplicates for org {organization_id}: {e}")
             return {"resolved": 0, "failed": 1, "error": str(e)}
 
-    def _restore_from_backup(
-        self, organization_id: int, backup_id: str
-    ) -> Dict[str, Any]:
+    def _restore_from_backup(self, organization_id: int, backup_id: str) -> Dict[str, Any]:
         """Restore organization data from backup.
 
         Args:
@@ -370,11 +356,7 @@ class DataRecoveryService:
                 cursor.close()
 
                 # Determine if data is consistent
-                consistent = (
-                    total_animals > 0
-                    and uniqueness_ratio >= 0.98
-                    and animals_with_images > 0
-                )  # 98% unique external_ids
+                consistent = total_animals > 0 and uniqueness_ratio >= 0.98 and animals_with_images > 0  # 98% unique external_ids
 
                 return {
                     "consistent": consistent,
@@ -385,9 +367,7 @@ class DataRecoveryService:
                 }
 
         except Exception as e:
-            self.logger.error(
-                f"Error validating consistency for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error validating consistency for org {organization_id}: {e}")
             return {
                 "consistent": False,
                 "error": str(e),

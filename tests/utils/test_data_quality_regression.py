@@ -34,9 +34,7 @@ class TestDataQualityNoRegression:
 
         for text, expected in production_cases:
             result = extract_age_from_text(text)
-            assert result == pytest.approx(expected, rel=0.01), (
-                f"Age extraction failed for '{text}'"
-            )
+            assert result == pytest.approx(expected, rel=0.01), f"Age extraction failed for '{text}'"
 
     @pytest.mark.unit
     def test_critical_breed_extraction_unchanged(self):
@@ -87,9 +85,7 @@ class TestDataQualityNoRegression:
 
         for text, expected in production_cases:
             result = extract_weight_from_text(text)
-            assert result == pytest.approx(expected, rel=0.01), (
-                f"Weight extraction failed for '{text}'"
-            )
+            assert result == pytest.approx(expected, rel=0.01), f"Weight extraction failed for '{text}'"
 
 
 class TestActualScraperDataQuality:

@@ -40,9 +40,7 @@ router = APIRouter(tags=["enhanced"])
     summary="Get enhanced data for single animal",
     description="Returns full LLM-generated enhanced data including description, tagline, and attributes",
 )
-async def get_enhanced_animal(
-    animal_id: int, cursor: RealDictCursor = Depends(get_pooled_db_cursor)
-) -> EnhancedAnimalResponse:
+async def get_enhanced_animal(animal_id: int, cursor: RealDictCursor = Depends(get_pooled_db_cursor)) -> EnhancedAnimalResponse:
     """
     Get enhanced data for a single animal.
 
@@ -110,9 +108,7 @@ async def get_detail_content(
     summary="Bulk fetch enhanced data",
     description="Retrieve enhanced data for multiple animals (max 100)",
 )
-async def get_bulk_enhanced(
-    request: BulkEnhancedRequest, cursor: RealDictCursor = Depends(get_pooled_db_cursor)
-) -> List[EnhancedAnimalResponse]:
+async def get_bulk_enhanced(request: BulkEnhancedRequest, cursor: RealDictCursor = Depends(get_pooled_db_cursor)) -> List[EnhancedAnimalResponse]:
     """
     Bulk retrieval of enhanced animal data.
 
@@ -131,9 +127,7 @@ async def get_bulk_enhanced(
         return results or []
 
     except Exception as e:
-        logger.exception(
-            f"Error in bulk enhanced fetch for {len(request.animal_ids)} animals"
-        )
+        logger.exception(f"Error in bulk enhanced fetch for {len(request.animal_ids)} animals")
         handle_database_error(e, "get_bulk_enhanced")
 
 
@@ -143,9 +137,7 @@ async def get_bulk_enhanced(
     summary="Get specific attributes",
     description="Fetch only specific enhanced attributes for filtering",
 )
-async def get_attributes(
-    request: AttributesRequest, cursor: RealDictCursor = Depends(get_pooled_db_cursor)
-) -> AttributesResponse:
+async def get_attributes(request: AttributesRequest, cursor: RealDictCursor = Depends(get_pooled_db_cursor)) -> AttributesResponse:
     """
     Fetch specific attributes for one or more animals.
 
@@ -167,9 +159,7 @@ async def get_attributes(
         )
 
     except Exception as e:
-        logger.exception(
-            f"Error fetching attributes for {len(request.animal_ids)} animals"
-        )
+        logger.exception(f"Error fetching attributes for {len(request.animal_ids)} animals")
         handle_database_error(e, "get_attributes")
 
 

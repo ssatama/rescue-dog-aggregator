@@ -59,9 +59,7 @@ class TestAdoptionFeesConfig:
             "scraper": {"class_name": "TestScraper", "module": "test_module"},
         }
 
-    def test_organization_config_loads_with_adoption_fees(
-        self, sample_config_with_fees
-    ):
+    def test_organization_config_loads_with_adoption_fees(self, sample_config_with_fees):
         """
         Test that OrganizationConfig loads correctly with adoption_fees.
 
@@ -77,9 +75,7 @@ class TestAdoptionFeesConfig:
         assert config.metadata.adoption_fees["usual_fee"] == 350
         assert config.metadata.adoption_fees["currency"] == "USD"
 
-    def test_organization_config_loads_without_adoption_fees(
-        self, sample_config_without_fees
-    ):
+    def test_organization_config_loads_without_adoption_fees(self, sample_config_without_fees):
         """
         Test that OrganizationConfig loads correctly without adoption_fees.
 
@@ -183,10 +179,7 @@ class TestAdoptionFeesConfig:
             loaded_configs[config.id] = config
 
             # Check adoption_fees if present
-            if (
-                hasattr(config.metadata, "adoption_fees")
-                and config.metadata.adoption_fees
-            ):
+            if hasattr(config.metadata, "adoption_fees") and config.metadata.adoption_fees:
                 fees = config.metadata.adoption_fees
 
                 # Validate structure if present (fees is a dict)
@@ -215,10 +208,7 @@ class TestAdoptionFeesConfig:
         configs_with_fees = []
 
         for config_id, config in configs.items():
-            if (
-                hasattr(config.metadata, "adoption_fees")
-                and config.metadata.adoption_fees
-            ):
+            if hasattr(config.metadata, "adoption_fees") and config.metadata.adoption_fees:
                 configs_with_fees.append(config)
 
         # Should have at least some configs with fees (based on the git diff)
@@ -231,24 +221,12 @@ class TestAdoptionFeesConfig:
                 assert "currency" in fees, f"Config {config.id} missing currency"
 
                 # Check value types and ranges
-                assert isinstance(fees["usual_fee"], (int, float)), (
-                    f"Config {config.id} usual_fee not numeric"
-                )
-                assert isinstance(fees["currency"], str), (
-                    f"Config {config.id} currency not string"
-                )
-                assert fees["usual_fee"] > 0, (
-                    f"Config {config.id} usual_fee not positive"
-                )
-                assert fees["usual_fee"] < 5000, (
-                    f"Config {config.id} usual_fee unreasonably high"
-                )
-                assert len(fees["currency"]) == 3, (
-                    f"Config {config.id} currency not 3 chars"
-                )
-                assert fees["currency"].isupper(), (
-                    f"Config {config.id} currency not uppercase"
-                )
+                assert isinstance(fees["usual_fee"], (int, float)), f"Config {config.id} usual_fee not numeric"
+                assert isinstance(fees["currency"], str), f"Config {config.id} currency not string"
+                assert fees["usual_fee"] > 0, f"Config {config.id} usual_fee not positive"
+                assert fees["usual_fee"] < 5000, f"Config {config.id} usual_fee unreasonably high"
+                assert len(fees["currency"]) == 3, f"Config {config.id} currency not 3 chars"
+                assert fees["currency"].isupper(), f"Config {config.id} currency not uppercase"
 
     def test_adoption_fees_schema_validation(self):
         """
@@ -271,19 +249,13 @@ class TestAdoptionFeesConfig:
         # Check if adoption_fees is defined in schema
         if "properties" in schema and "metadata" in schema["properties"]:
             metadata_props = schema["properties"]["metadata"]
-            if (
-                "properties" in metadata_props
-                and "adoption_fees" in metadata_props["properties"]
-            ):
+            if "properties" in metadata_props and "adoption_fees" in metadata_props["properties"]:
                 adoption_fees_schema = metadata_props["properties"]["adoption_fees"]
 
                 # Verify schema structure is reasonable
                 assert "type" in adoption_fees_schema
 
-                if (
-                    adoption_fees_schema["type"] == "object"
-                    and "properties" in adoption_fees_schema
-                ):
+                if adoption_fees_schema["type"] == "object" and "properties" in adoption_fees_schema:
                     props = adoption_fees_schema["properties"]
 
                     # Check usual_fee is defined properly
@@ -318,10 +290,7 @@ class TestAdoptionFeesConfig:
                 assert hasattr(config, "metadata")
 
                 # Check adoption_fees handling
-                if (
-                    hasattr(config.metadata, "adoption_fees")
-                    and config.metadata.adoption_fees
-                ):
+                if hasattr(config.metadata, "adoption_fees") and config.metadata.adoption_fees:
                     fees_count += 1
 
                     # Validate fee structure
@@ -371,18 +340,12 @@ class TestAdoptionFeesConfig:
                 config = OrganizationConfig(**config_data)
 
                 # Should have adoption_fees
-                assert hasattr(config.metadata, "adoption_fees"), (
-                    f"{org_file} missing adoption_fees"
-                )
-                assert config.metadata.adoption_fees is not None, (
-                    f"{org_file} adoption_fees is None"
-                )
+                assert hasattr(config.metadata, "adoption_fees"), f"{org_file} missing adoption_fees"
+                assert config.metadata.adoption_fees is not None, f"{org_file} adoption_fees is None"
 
                 # Should have required fields (fees is a dict)
                 fees = config.metadata.adoption_fees
                 assert "usual_fee" in fees, f"{org_file} missing usual_fee"
                 assert "currency" in fees, f"{org_file} missing currency"
                 assert fees["usual_fee"] > 0, f"{org_file} invalid usual_fee"
-                assert fees["currency"] in ["USD", "EUR", "GBP", "CAD"], (
-                    f"{org_file} invalid currency"
-                )
+                assert fees["currency"] in ["USD", "EUR", "GBP", "CAD"], f"{org_file} invalid currency"

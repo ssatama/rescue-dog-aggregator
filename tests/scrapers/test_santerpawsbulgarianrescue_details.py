@@ -17,9 +17,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.scraper = SanterPawsBulgarianRescueScraper(
-            config_id="santerpawsbulgarianrescue"
-        )
+        self.scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
 
     @patch("requests.get")
     def test_scrape_animal_details_extracts_hero_image(self, mock_get):
@@ -45,9 +43,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details(
-            "https://santerpawsbulgarianrescue.com/dog/anastasia/"
-        )
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/anastasia/")
 
         # Should extract first image as hero image
         self.assertIn("primary_image_url", result)
@@ -78,9 +74,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details(
-            "https://santerpawsbulgarianrescue.com/dog/anastasia/"
-        )
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/anastasia/")
 
         # Should extract combined about text
         self.assertIn("description", result)
@@ -128,18 +122,14 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details(
-            "https://santerpawsbulgarianrescue.com/dog/anastasia/"
-        )
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/anastasia/")
 
         # Should extract structured information
         # Note: age field name changed from age_text to age
         self.assertIn("age", result)  # age field should exist
         self.assertEqual(result["standardized_size"], "Medium")
         self.assertEqual(result["gender"], "female")  # gender is lowercase
-        self.assertEqual(
-            result["breed"], "Mixed Breed"
-        )  # "Mixed" standardizes to "Mixed Breed"
+        self.assertEqual(result["breed"], "Mixed Breed")  # "Mixed" standardizes to "Mixed Breed"
 
     @patch("requests.get")
     def test_scrape_animal_details_detects_reserved_status(self, mock_get):
@@ -166,9 +156,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details(
-            "https://santerpawsbulgarianrescue.com/dog/test/"
-        )
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
 
         # Should detect reserved status
         self.assertEqual(result.get("status"), "reserved")
@@ -193,9 +181,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details(
-            "https://santerpawsbulgarianrescue.com/dog/test/"
-        )
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
 
         # Should handle missing fields gracefully
         self.assertIn("description", result)
@@ -209,9 +195,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         """Test that network errors are handled gracefully."""
         mock_get.side_effect = Exception("Network error")
 
-        result = self.scraper._scrape_animal_details(
-            "https://santerpawsbulgarianrescue.com/dog/test/"
-        )
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
 
         # Should return empty dict on error
         self.assertEqual(result, {})
@@ -236,30 +220,18 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details(
-            "https://santerpawsbulgarianrescue.com/dog/test/"
-        )
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
 
         # Should return result with zero NULLs compliance defaults
         # When sections are missing, scraper should still return data
         if result:  # If scraper returned data (not empty dict)
             # Some fields get sensible defaults
             # Description might be None if there's an error in extraction
-            self.assertIn(
-                result.get("description"), ["", None]
-            )  # Empty string or None when no About section
-            self.assertIn(
-                result.get("breed"), ["Mixed Breed", "Unknown", None]
-            )  # Default breed
-            self.assertIn(
-                result.get("standardized_size"), ["Medium", None]
-            )  # Default size
-            self.assertIn(
-                result.get("age"), [None, "Unknown"]
-            )  # May not be set when missing
-            self.assertIn(
-                result.get("gender"), [None, "unknown"]
-            )  # May not be set when missing
+            self.assertIn(result.get("description"), ["", None])  # Empty string or None when no About section
+            self.assertIn(result.get("breed"), ["Mixed Breed", "Unknown", None])  # Default breed
+            self.assertIn(result.get("standardized_size"), ["Medium", None])  # Default size
+            self.assertIn(result.get("age"), [None, "Unknown"])  # May not be set when missing
+            self.assertIn(result.get("gender"), [None, "unknown"])  # May not be set when missing
         else:
             # Scraper might return empty dict for malformed pages
             self.assertEqual(result, {})
@@ -290,9 +262,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
             result = self.scraper.collect_data()
 
             # Should have called detail scraping and merged data
-            mock_scrape_details.assert_called_once_with(
-                "https://santerpawsbulgarianrescue.com/dog/test-dog/"
-            )
+            mock_scrape_details.assert_called_once_with("https://santerpawsbulgarianrescue.com/dog/test-dog/")
 
             self.assertEqual(len(result), 1)
             dog_data = result[0]
@@ -302,6 +272,4 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
             self.assertEqual(dog_data["description"], "Detailed description from page")
             self.assertEqual(dog_data["age_text"], "01/01/2023")
             self.assertEqual(dog_data["sex"], "Male")
-            self.assertEqual(
-                dog_data["primary_image_url"], "https://example.com/image.jpg"
-            )
+            self.assertEqual(dog_data["primary_image_url"], "https://example.com/image.jpg")

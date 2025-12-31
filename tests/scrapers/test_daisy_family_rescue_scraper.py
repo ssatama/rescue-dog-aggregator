@@ -34,9 +34,7 @@ class TestDaisyFamilyRescueScraperMain:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(
-                organization_id=12, was_created=True
-            )
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
             mock_sync.return_value = mock_sync_service
 
             scraper = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
@@ -63,9 +61,7 @@ weiblich, kastriert"""
 
         # Mock image element
         img = Mock()
-        img.get_attribute.return_value = (
-            "https://daisyfamilyrescue.de/wp-content/uploads/brownie.jpg"
-        )
+        img.get_attribute.return_value = "https://daisyfamilyrescue.de/wp-content/uploads/brownie.jpg"
         container.find_element.return_value = img
 
         return container
@@ -79,10 +75,7 @@ weiblich, kastriert"""
         assert result["name"] == "Brownie"
         assert result["external_id"] == "hund-brownie"
         assert result["adoption_url"] == "https://daisyfamilyrescue.de/hund-brownie/"
-        assert (
-            result["primary_image_url"]
-            == "https://daisyfamilyrescue.de/wp-content/uploads/brownie.jpg"
-        )
+        assert result["primary_image_url"] == "https://daisyfamilyrescue.de/wp-content/uploads/brownie.jpg"
         assert result["status"] == "available"
         assert result["animal_type"] == "dog"
 
@@ -110,9 +103,7 @@ weiblich, kastriert"""
         assert result is None
 
     @pytest.mark.unit
-    def test_extract_dog_from_container_invalid_data(
-        self, scraper, mock_selenium_container
-    ):
+    def test_extract_dog_from_container_invalid_data(self, scraper, mock_selenium_container):
         """Test handling when extracted data fails validation."""
         # Mock container with invalid data (short name)
         link = Mock()
@@ -223,9 +214,7 @@ weiblich, kastriert"""
     @pytest.mark.unit
     def test_extract_with_selenium_chrome_options(self, scraper):
         """Test Chrome options setup for Selenium."""
-        with patch(
-            "scrapers.daisy_family_rescue.dogs_scraper.get_browser_service"
-        ) as mock_browser_service:
+        with patch("scrapers.daisy_family_rescue.dogs_scraper.get_browser_service") as mock_browser_service:
             mock_service = Mock()
             mock_browser_service.return_value = mock_service
 

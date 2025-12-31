@@ -108,9 +108,7 @@ class TestAnimalsAPI:
         all_animals = response_all.json()
 
         # Get animals with sitemap quality filter
-        response_quality = client.get(
-            "/api/animals?limit=1000&sitemap_quality_filter=true"
-        )
+        response_quality = client.get("/api/animals?limit=1000&sitemap_quality_filter=true")
         assert response_quality.status_code == 200
         quality_animals = response_quality.json()
 
@@ -133,9 +131,7 @@ class TestAnimalsAPI:
                     if "description" in props and props["description"]:
                         description = props["description"]
                         # Quality descriptions should be >200 chars
-                        assert len(description.strip()) >= 200, (
-                            f"Animal {animal['id']} has short description: {len(description)} chars"
-                        )
+                        assert len(description.strip()) >= 200, f"Animal {animal['id']} has short description: {len(description)} chars"
 
     def test_get_animal_by_id(self, client: TestClient):  # Add client fixture
         """Test GET /api/animals/{id} or /api/dogs/{id} endpoint."""
@@ -144,9 +140,7 @@ class TestAnimalsAPI:
         animals = response.json()
 
         if not animals:
-            pytest.skip(
-                "No animals available in the database to test individual retrieval."
-            )
+            pytest.skip("No animals available in the database to test individual retrieval.")
 
         animal_id = animals[0]["id"]
 
@@ -156,9 +150,7 @@ class TestAnimalsAPI:
         # Fallback to legacy if needed (optional, depends if you want to keep
         # supporting it)
         if detail_response.status_code == 404:
-            print(
-                f"Note: /api/animals/{animal_id} not found, trying /api/dogs/{animal_id}"
-            )
+            print(f"Note: /api/animals/{animal_id} not found, trying /api/dogs/{animal_id}")
             detail_response = client.get(f"/api/dogs/{animal_id}")
 
         # Assert success after potential fallback
@@ -195,9 +187,7 @@ class TestAnimalsAPI:
             first_dog = data[0]
             assert "id" in first_dog
             assert "name" in first_dog
-            assert (
-                "images" not in first_dog
-            )  # /random uses Animal model, not AnimalWithImages
+            assert "images" not in first_dog  # /random uses Animal model, not AnimalWithImages
             assert "organization_id" in first_dog  # Check for organization ID
 
     def test_get_animals_includes_organization_social_media(self, client: TestClient):
@@ -261,15 +251,9 @@ class TestAnimalsAPI:
         if len(data) >= 2:
             for i in range(len(data) - 1):
                 # Parse ISO datetime strings for comparison
-                created_at_current = datetime.fromisoformat(
-                    data[i]["created_at"].replace("Z", "+00:00")
-                )
-                created_at_next = datetime.fromisoformat(
-                    data[i + 1]["created_at"].replace("Z", "+00:00")
-                )
-                assert created_at_current >= created_at_next, (
-                    "Recent dogs should be ordered by created_at DESC"
-                )
+                created_at_current = datetime.fromisoformat(data[i]["created_at"].replace("Z", "+00:00"))
+                created_at_next = datetime.fromisoformat(data[i + 1]["created_at"].replace("Z", "+00:00"))
+                assert created_at_current >= created_at_next, "Recent dogs should be ordered by created_at DESC"
 
         # Check that all dogs are from last 7 days (if any returned)
         if len(data) > 0:
@@ -277,15 +261,9 @@ class TestAnimalsAPI:
 
             seven_days_ago = datetime.now() - timedelta(days=7)
             for dog in data:
-                created_at = datetime.fromisoformat(
-                    dog["created_at"].replace("Z", "+00:00")
-                )
+                created_at = datetime.fromisoformat(dog["created_at"].replace("Z", "+00:00"))
                 # Allow some timezone flexibility
-                assert created_at.replace(tzinfo=None) >= seven_days_ago.replace(
-                    tzinfo=None
-                ) - timedelta(hours=24), (
-                    f"Dog {dog['name']} created at {created_at} should be within last 7 days"
-                )
+                assert created_at.replace(tzinfo=None) >= seven_days_ago.replace(tzinfo=None) - timedelta(hours=24), f"Dog {dog['name']} created at {created_at} should be within last 7 days"
 
     def test_get_animals_with_curation_type_diverse(self, client: TestClient):
         """Test GET /api/animals with curation_type=diverse."""
@@ -298,9 +276,7 @@ class TestAnimalsAPI:
         org_ids = []
         for dog in data:
             if dog.get("organization_id"):
-                assert dog["organization_id"] not in org_ids, (
-                    f"Organization {dog['organization_id']} appears more than once in diverse results"
-                )
+                assert dog["organization_id"] not in org_ids, f"Organization {dog['organization_id']} appears more than once in diverse results"
                 org_ids.append(dog["organization_id"])
 
     def test_get_animals_with_curation_type_random(self, client: TestClient):
@@ -330,9 +306,7 @@ class TestAnimalsAPI:
                 assert dog["size"] == "Medium"
 
         # Test diverse + breed filter
-        response = client.get(
-            "/api/animals?curation_type=diverse&standardized_breed=Labrador%20Retriever&limit=5"
-        )
+        response = client.get("/api/animals?curation_type=diverse&standardized_breed=Labrador%20Retriever&limit=5")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -385,9 +359,7 @@ class TestAnimalsAPI:
         assert data["total_dogs"] >= 0
         assert data["total_organizations"] >= 0
 
-    def test_get_animals_with_curation_type_recent_with_fallback_normal_case(
-        self, client: TestClient
-    ):
+    def test_get_animals_with_curation_type_recent_with_fallback_normal_case(self, client: TestClient):
         """Test recent_with_fallback when recent dogs exist - should return recent dogs."""
         response = client.get("/api/animals?curation_type=recent_with_fallback&limit=4")
         assert response.status_code == 200
@@ -397,19 +369,11 @@ class TestAnimalsAPI:
         # If we have data, verify it's properly ordered by created_at DESC
         if len(data) >= 2:
             for i in range(len(data) - 1):
-                created_at_current = datetime.fromisoformat(
-                    data[i]["created_at"].replace("Z", "+00:00")
-                )
-                created_at_next = datetime.fromisoformat(
-                    data[i + 1]["created_at"].replace("Z", "+00:00")
-                )
-                assert created_at_current >= created_at_next, (
-                    "Dogs should be ordered by created_at DESC"
-                )
+                created_at_current = datetime.fromisoformat(data[i]["created_at"].replace("Z", "+00:00"))
+                created_at_next = datetime.fromisoformat(data[i + 1]["created_at"].replace("Z", "+00:00"))
+                assert created_at_current >= created_at_next, "Dogs should be ordered by created_at DESC"
 
-    def test_get_animals_with_curation_type_recent_with_fallback_fallback_case(
-        self, client: TestClient
-    ):
+    def test_get_animals_with_curation_type_recent_with_fallback_fallback_case(self, client: TestClient):
         """Test recent_with_fallback when no recent dogs exist - should return latest available dogs."""
         # This test assumes there might be periods with no dogs added in last 7 days
         # but some dogs exist in the system (older than 7 days)
@@ -430,19 +394,11 @@ class TestAnimalsAPI:
             # Verify ordered by created_at DESC (latest first)
             if len(data) >= 2:
                 for i in range(len(data) - 1):
-                    created_at_current = datetime.fromisoformat(
-                        data[i]["created_at"].replace("Z", "+00:00")
-                    )
-                    created_at_next = datetime.fromisoformat(
-                        data[i + 1]["created_at"].replace("Z", "+00:00")
-                    )
-                    assert created_at_current >= created_at_next, (
-                        "Fallback dogs should be ordered by created_at DESC"
-                    )
+                    created_at_current = datetime.fromisoformat(data[i]["created_at"].replace("Z", "+00:00"))
+                    created_at_next = datetime.fromisoformat(data[i + 1]["created_at"].replace("Z", "+00:00"))
+                    assert created_at_current >= created_at_next, "Fallback dogs should be ordered by created_at DESC"
 
-    def test_get_animals_with_curation_type_recent_with_fallback_empty_case(
-        self, client: TestClient
-    ):
+    def test_get_animals_with_curation_type_recent_with_fallback_empty_case(self, client: TestClient):
         """Test recent_with_fallback when no dogs exist at all - should return empty list gracefully."""
         # This test verifies graceful handling when database has no dogs
         # Note: In real testing environment, this might not trigger since test data usually exists
@@ -495,9 +451,7 @@ class TestAnimalsAPI:
         if not base:
             pytest.skip("no animals to test")
         # prefer top‐level organization_id, else nested.organization.id
-        org_id = base[0].get("organization_id") or base[0].get("organization", {}).get(
-            "id"
-        )
+        org_id = base[0].get("organization_id") or base[0].get("organization", {}).get("id")
         assert org_id is not None, "Response did not include an org ID"
 
         # now filter by that ID
@@ -505,9 +459,7 @@ class TestAnimalsAPI:
         assert resp.status_code == 200, resp.text
         for animal in resp.json():
             # again prefer top‐level
-            got = animal.get("organization_id") or animal.get("organization", {}).get(
-                "id"
-            )
+            got = animal.get("organization_id") or animal.get("organization", {}).get("id")
             assert got == org_id, f"Expected org_id={org_id}, got {got}"
 
     def test_get_animal_by_valid_id_detailed(self, client: TestClient):

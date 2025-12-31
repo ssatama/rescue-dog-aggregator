@@ -3,9 +3,7 @@ from datetime import datetime
 from fastapi.testclient import TestClient
 
 
-def create_test_animal_dict(
-    animal_id, name, breed="Mixed", size="medium", country="US", **kwargs
-):
+def create_test_animal_dict(animal_id, name, breed="Mixed", size="medium", country="US", **kwargs):
     """Create test animal matching conftest.py schema"""
     return {
         "id": animal_id,
@@ -88,9 +86,7 @@ class TestSwipeEndpoint:
             exclude_ids = [str(dog["id"]) for dog in initial_data["dogs"][:3]]
 
             # Get new stack
-            new_response = client.get(
-                "/api/dogs/swipe?limit=10&exclude_ids=" + ",".join(exclude_ids)
-            )
+            new_response = client.get("/api/dogs/swipe?limit=10&exclude_ids=" + ",".join(exclude_ids))
             assert new_response.status_code == 200
             new_data = new_response.json()
 

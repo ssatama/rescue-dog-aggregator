@@ -14,9 +14,7 @@ from typing import Any, Dict, List, Optional, Union
 logger = logging.getLogger(__name__)
 
 
-def parse_json_field(
-    data: Dict[str, Any], field: str, default_value: Optional[Union[Dict, List]] = None
-) -> None:
+def parse_json_field(data: Dict[str, Any], field: str, default_value: Optional[Union[Dict, List]] = None) -> None:
     """
     Safely parse a JSON string field from a dictionary in-place.
 
@@ -78,9 +76,7 @@ def parse_organization_fields(row_dict: Dict[str, Any]) -> Dict[str, Any]:
         try:
             org_service_regions = json.loads(org_service_regions)
         except json.JSONDecodeError:
-            logger.warning(
-                f"Could not parse service_regions JSON: {org_service_regions}"
-            )
+            logger.warning(f"Could not parse service_regions JSON: {org_service_regions}")
             org_service_regions = []
     elif org_service_regions is None:
         org_service_regions = []

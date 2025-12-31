@@ -17,16 +17,12 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.scraper = SanterPawsBulgarianRescueScraper(
-            config_id="santerpawsbulgarianrescue"
-        )
+        self.scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
 
     def test_scraper_initialization(self):
         """Test that scraper initializes correctly with config."""
         self.assertEqual(self.scraper.base_url, "https://santerpawsbulgarianrescue.com")
-        self.assertEqual(
-            self.scraper.listing_url, "https://santerpawsbulgarianrescue.com/adopt/"
-        )
+        self.assertEqual(self.scraper.listing_url, "https://santerpawsbulgarianrescue.com/adopt/")
         self.assertEqual(self.scraper.organization_name, "Santer Paws Bulgarian Rescue")
 
     def test_extract_dog_name_from_url(self):
@@ -91,9 +87,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
         # Check first call (page 1)
         first_call_args = mock_get.call_args_list[0]
-        self.assertEqual(
-            first_call_args[0][0], "https://santerpawsbulgarianrescue.com/adopt/"
-        )
+        self.assertEqual(first_call_args[0][0], "https://santerpawsbulgarianrescue.com/adopt/")
 
         # Check second call (page 2)
         second_call_args = mock_get.call_args_list[1]
@@ -323,9 +317,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             mock_config.name = "Santer Paws Bulgarian Rescue"
             mock_load_config.return_value = mock_config
 
-            scraper = SanterPawsBulgarianRescueScraper(
-                config_id="santerpawsbulgarianrescue"
-            )
+            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
 
             with (
                 patch.object(scraper, "get_animal_list") as mock_get_list,
@@ -346,9 +338,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 mock_get_list.return_value = mock_animals
 
                 # Mock that only "new" URL should be processed (existing one filtered out)
-                mock_filter_urls.return_value = [
-                    "https://santerpawsbulgarianrescue.com/dog/new/"
-                ]
+                mock_filter_urls.return_value = ["https://santerpawsbulgarianrescue.com/dog/new/"]
 
                 result = scraper._get_filtered_animals()
 
@@ -378,9 +368,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             mock_config.name = "Santer Paws Bulgarian Rescue"
             mock_load_config.return_value = mock_config
 
-            scraper = SanterPawsBulgarianRescueScraper(
-                config_id="santerpawsbulgarianrescue"
-            )
+            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
 
             with (
                 patch.object(scraper, "get_animal_list") as mock_get_list,
@@ -441,9 +429,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
     def test_process_animals_parallel_single_threaded_fallback(self):
         """Test that _process_animals_parallel uses single-threaded processing for small batches."""
         # Test with batch_size=6, animals=3 (should use single-threaded)
-        with patch.object(
-            self.scraper, "_scrape_animal_details"
-        ) as mock_scrape_details:
+        with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
             mock_animals = [
                 {
                     "name": "Dog1",
@@ -487,9 +473,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             mock_config.name = "Santer Paws Bulgarian Rescue"
             mock_load_config.return_value = mock_config
 
-            scraper = SanterPawsBulgarianRescueScraper(
-                config_id="santerpawsbulgarianrescue"
-            )
+            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
 
             with patch.object(scraper, "_scrape_animal_details") as mock_scrape_details:
                 # Create 5 animals to trigger parallel processing (more than batch_size=2)
@@ -520,9 +504,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
         # Test with rate_limit_delay from config (2.5 seconds)
         with patch("time.sleep") as mock_sleep:
-            with patch.object(
-                self.scraper, "_scrape_animal_details"
-            ) as mock_scrape_details:
+            with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
                 mock_animals = [
                     {
                         "name": "Dog1",
@@ -541,9 +523,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
     def test_process_animals_parallel_handles_errors(self):
         """Test that parallel processing handles errors gracefully and continues processing."""
-        with patch.object(
-            self.scraper, "_scrape_animal_details"
-        ) as mock_scrape_details:
+        with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
             mock_animals = [
                 {
                     "name": "GoodDog",
@@ -585,9 +565,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             mock_config.name = "Santer Paws Bulgarian Rescue"
             mock_load_config.return_value = mock_config
 
-            scraper = SanterPawsBulgarianRescueScraper(
-                config_id="santerpawsbulgarianrescue"
-            )
+            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
 
             with (
                 patch.object(scraper, "get_animal_list") as mock_get_list,

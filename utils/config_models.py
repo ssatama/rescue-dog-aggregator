@@ -75,13 +75,9 @@ class OrganizationMetadata(BaseModel):
                 if len(region) == 2 and region.isalpha():
                     validated.append(region)
                 else:
-                    raise ValueError(
-                        f"Invalid country code in service_regions: {region}"
-                    )
+                    raise ValueError(f"Invalid country code in service_regions: {region}")
             else:
-                raise ValueError(
-                    f"service_regions must contain only country codes, got: {type(region)}"
-                )
+                raise ValueError(f"service_regions must contain only country codes, got: {type(region)}")
 
         return validated
 
@@ -102,9 +98,7 @@ class OrganizationMetadata(BaseModel):
                 else:
                     raise ValueError(f"Invalid country code in ships_to: {country}")
             else:
-                raise ValueError(
-                    f"ships_to must contain only country codes, got: {type(country)}"
-                )
+                raise ValueError(f"ships_to must contain only country codes, got: {type(country)}")
 
         return validated
 
@@ -226,12 +220,8 @@ class OrganizationConfig(BaseModel):
         return {
             "enabled": True,
             "threshold": scraper_config.get("adoption_check_threshold", 3),
-            "max_checks_per_run": scraper_config.get("adoption_check_config", {}).get(
-                "max_checks_per_run", 50
-            ),
-            "check_interval_hours": scraper_config.get("adoption_check_config", {}).get(
-                "check_interval_hours", 24
-            ),
+            "max_checks_per_run": scraper_config.get("adoption_check_config", {}).get("max_checks_per_run", 50),
+            "check_interval_hours": scraper_config.get("adoption_check_config", {}).get("check_interval_hours", 24),
         }
 
     def get_display_name(self) -> str:

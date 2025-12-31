@@ -149,9 +149,7 @@ def handle_database_error(error: Exception, operation: str) -> None:
         raise DatabaseError(f"Failed to {operation}", original_error=error)
     else:
         logger.exception(f"Unexpected error during {operation}: {error}")
-        raise DatabaseError(
-            f"Unexpected error during {operation}", original_error=error
-        )
+        raise DatabaseError(f"Unexpected error during {operation}", original_error=error)
 
 
 def handle_validation_error(error: Exception, context: str) -> None:
@@ -198,9 +196,7 @@ def handle_llm_error(error: Exception, operation: str) -> None:
         operation: Description of the operation that failed
     """
     # Log full error details for debugging (server-side only)
-    logger.error(
-        f"LLM service error during {operation}: {type(error).__name__}: {error}"
-    )
+    logger.error(f"LLM service error during {operation}: {type(error).__name__}: {error}")
 
     # Capture to Sentry with rich context
     import sentry_sdk
@@ -225,20 +221,14 @@ def handle_llm_error(error: Exception, operation: str) -> None:
             raise LLMServiceError("LLM service authentication failed")
         elif error.response.status_code == 429:
             logger.warning(f"LLM API rate limit exceeded for {operation}")
-            raise RateLimitError(
-                "LLM service rate limit exceeded, please try again later"
-            )
+            raise RateLimitError("LLM service rate limit exceeded, please try again later")
         elif error.response.status_code == 413:
             raise InvalidInputError("Input text is too long for processing")
         elif 400 <= error.response.status_code < 500:
-            logger.error(
-                f"LLM API client error {error.response.status_code} for {operation}"
-            )
+            logger.error(f"LLM API client error {error.response.status_code} for {operation}")
             raise InvalidInputError("Invalid request for LLM processing")
         else:
-            logger.error(
-                f"LLM API server error {error.response.status_code} for {operation}"
-            )
+            logger.error(f"LLM API server error {error.response.status_code} for {operation}")
             raise LLMServiceError("LLM service temporarily unavailable")
 
     elif isinstance(error, httpx.TimeoutException):
@@ -249,16 +239,11 @@ def handle_llm_error(error: Exception, operation: str) -> None:
         logger.error(f"LLM API connection error for {operation}")
         raise LLMServiceError("LLM service temporarily unavailable")
 
-    elif (
-        isinstance(error, (ValueError, KeyError, TypeError))
-        and "json" in str(error).lower()
-    ):
+    elif isinstance(error, (ValueError, KeyError, TypeError)) and "json" in str(error).lower():
         logger.error(f"LLM API response parsing error for {operation}: {error}")
         raise LLMServiceError("LLM service response format error")
 
-    elif isinstance(error, ValueError) and any(
-        keyword in str(error).lower() for keyword in ["empty", "invalid", "missing"]
-    ):
+    elif isinstance(error, ValueError) and any(keyword in str(error).lower() for keyword in ["empty", "invalid", "missing"]):
         logger.warning(f"Invalid input for LLM {operation}: {error}")
         raise InvalidInputError(f"Invalid input for {operation}")
 

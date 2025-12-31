@@ -19,9 +19,7 @@ class TestManyTearsRescueDetailExtraction:
 
     def test_extract_dog_details_all_five_dogs(self, scraper):
         """Test extraction of details for 5 specific dogs and verify complete data."""
-        pytest.skip(
-            "Dogs in test have been adopted - test needs updating with new dogs"
-        )
+        pytest.skip("Dogs in test have been adopted - test needs updating with new dogs")
         test_dogs = [
             {
                 "url": "https://www.manytearsrescue.org/adopt/dogs/3114/",
@@ -137,16 +135,12 @@ class TestManyTearsRescueDetailExtraction:
 
             # Check if dog has been adopted (no data returned or minimal data)
             if not result or result.get("name") == "Unknown":
-                print(
-                    f"⚠️ {dog_test['expected']['name']} appears to be adopted/unavailable - skipping"
-                )
+                print(f"⚠️ {dog_test['expected']['name']} appears to be adopted/unavailable - skipping")
                 skipped_dogs.append(dog_test["expected"]["name"])
                 continue
 
             # Check basic fields
-            print(
-                f"Name: {result.get('name')} (expected: {dog_test['expected']['name']})"
-            )
+            print(f"Name: {result.get('name')} (expected: {dog_test['expected']['name']})")
             assert result.get("name") == dog_test["expected"]["name"]
 
             # Check age - support both exact match and pattern match
@@ -155,35 +149,27 @@ class TestManyTearsRescueDetailExtraction:
                 pattern = dog_test["expected"]["age_pattern"]
                 print(f"Age: {age_text} (expected pattern: {pattern})")
                 if not re.match(pattern, age_text):
-                    failures.append(
-                        f"{dog_test['expected']['name']}: Age doesn't match pattern - got '{age_text}', expected pattern '{pattern}'"
-                    )
+                    failures.append(f"{dog_test['expected']['name']}: Age doesn't match pattern - got '{age_text}', expected pattern '{pattern}'")
             else:
                 expected_age = dog_test["expected"]["age_text"]
                 print(f"Age: {age_text} (expected: {expected_age})")
                 # Allow "Unknown" as a fallback if the website data has changed
                 if age_text != expected_age and age_text != "Unknown":
-                    failures.append(
-                        f"{dog_test['expected']['name']}: Age mismatch - got '{age_text}', expected '{expected_age}'"
-                    )
+                    failures.append(f"{dog_test['expected']['name']}: Age mismatch - got '{age_text}', expected '{expected_age}'")
 
             # Check sex
             sex = result.get("sex", "")
             print(f"Sex: {sex} (expected: {dog_test['expected']['sex']})")
             # Allow "Unknown" as a fallback if the website data has changed
             if sex != dog_test["expected"]["sex"] and sex != "Unknown":
-                failures.append(
-                    f"{dog_test['expected']['name']}: Sex mismatch - got '{sex}', expected '{dog_test['expected']['sex']}'"
-                )
+                failures.append(f"{dog_test['expected']['name']}: Sex mismatch - got '{sex}', expected '{dog_test['expected']['sex']}'")
 
             # Check breed
             breed = result.get("breed", "")
             print(f"Breed: {breed} (expected: {dog_test['expected']['breed']})")
             # Allow "Mixed Breed" as a fallback if the website data has changed
             if breed != dog_test["expected"]["breed"] and breed != "Mixed Breed":
-                failures.append(
-                    f"{dog_test['expected']['name']}: Breed mismatch - got '{breed}', expected '{dog_test['expected']['breed']}'"
-                )
+                failures.append(f"{dog_test['expected']['name']}: Breed mismatch - got '{breed}', expected '{dog_test['expected']['breed']}'")
 
             # Check requirements
             properties = result.get("properties", {})
@@ -191,24 +177,16 @@ class TestManyTearsRescueDetailExtraction:
             # Check description
             description = result.get("description", "")
             print(f"\nDescription length: {len(description)} characters")
-            print(
-                f"Description preview: {description[:200]}..."
-                if len(description) > 200
-                else f"Description: {description}"
-            )
+            print(f"Description preview: {description[:200]}..." if len(description) > 200 else f"Description: {description}")
 
             # CRITICAL: Check that description is also in properties (this is what gets saved to DB)
             properties_description = properties.get("description", "")
-            print(
-                f"Description in properties: {len(properties_description)} characters"
-            )
+            print(f"Description in properties: {len(properties_description)} characters")
 
             if not description:
                 failures.append(f"{dog_test['expected']['name']}: MISSING DESCRIPTION!")
             elif not properties_description:
-                failures.append(
-                    f"{dog_test['expected']['name']}: MISSING DESCRIPTION IN PROPERTIES!"
-                )
+                failures.append(f"{dog_test['expected']['name']}: MISSING DESCRIPTION IN PROPERTIES!")
             else:
                 # Check for expected content in description
                 for expected_phrase in dog_test["expected"]["description_contains"]:
@@ -217,15 +195,11 @@ class TestManyTearsRescueDetailExtraction:
                         expected_cleaned = expected_phrase.replace(" ", "").lower()
                         description_cleaned = description.replace(" ", "").lower()
                         if expected_cleaned not in description_cleaned:
-                            failures.append(
-                                f"{dog_test['expected']['name']}: Description missing expected phrase: '{expected_phrase}'"
-                            )
+                            failures.append(f"{dog_test['expected']['name']}: Description missing expected phrase: '{expected_phrase}'")
             for req_key, expected_value in dog_test["expected"]["requirements"].items():
                 actual_value = properties.get(req_key, "")
                 if not actual_value:
-                    failures.append(
-                        f"{dog_test['expected']['name']}: Missing requirement '{req_key}'"
-                    )
+                    failures.append(f"{dog_test['expected']['name']}: Missing requirement '{req_key}'")
                 elif actual_value != expected_value:
                     print(f"\nRequirement mismatch for {req_key}:")
                     print(f"  Expected: {expected_value}")
@@ -235,9 +209,7 @@ class TestManyTearsRescueDetailExtraction:
             # Check for primary image
             primary_image = result.get("primary_image_url", "")
             if not primary_image:
-                failures.append(
-                    f"{dog_test['expected']['name']}: Missing primary image URL"
-                )
+                failures.append(f"{dog_test['expected']['name']}: Missing primary image URL")
             else:
                 print(f"Primary image: {primary_image}")
 
@@ -246,9 +218,7 @@ class TestManyTearsRescueDetailExtraction:
         print("=" * 80)
 
         if skipped_dogs:
-            print(
-                f"⚠️ Skipped {len(skipped_dogs)} adopted/unavailable dogs: {', '.join(skipped_dogs)}"
-            )
+            print(f"⚠️ Skipped {len(skipped_dogs)} adopted/unavailable dogs: {', '.join(skipped_dogs)}")
 
         if failures:
             print("\nFAILURES FOUND:")
@@ -259,8 +229,6 @@ class TestManyTearsRescueDetailExtraction:
         # Ensure we tested at least 3 dogs (allowing for 2 to be adopted)
         tested_count = len(test_dogs) - len(skipped_dogs)
         if tested_count < 3:
-            pytest.fail(
-                f"Too many dogs have been adopted. Only {tested_count} dogs could be tested (minimum 3 required)"
-            )
+            pytest.fail(f"Too many dogs have been adopted. Only {tested_count} dogs could be tested (minimum 3 required)")
         else:
             print(f"\n✅ All {tested_count} available dogs have complete data!")

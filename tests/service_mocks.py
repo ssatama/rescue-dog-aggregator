@@ -222,9 +222,7 @@ def create_test_scraper_with_services(
     if config_id:
         # Mock config-based initialization
         with patch("scrapers.base_scraper.ConfigLoader") as mock_loader_class:
-            with patch(
-                "scrapers.base_scraper.create_default_sync_service"
-            ) as mock_sync_class:
+            with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync_class:
                 # Mock config
                 mock_config = Mock()
                 mock_config.name = "Mock Test Org"
@@ -374,9 +372,7 @@ def configure_database_service_for_new_animal(mock_service: Mock) -> None:
     mock_service.create_animal.return_value = (1, "added")
 
 
-def configure_session_manager_for_partial_failure(
-    mock_service: Mock, should_detect_failure: bool = True
-) -> None:
+def configure_session_manager_for_partial_failure(mock_service: Mock, should_detect_failure: bool = True) -> None:
     """Configure mock SessionManager for partial failure detection.
 
     Args:
@@ -386,9 +382,7 @@ def configure_session_manager_for_partial_failure(
     mock_service.detect_partial_failure.return_value = should_detect_failure
 
 
-def configure_image_processing_service_for_success(
-    mock_service: Mock, image_count: int = 3
-) -> None:
+def configure_image_processing_service_for_success(mock_service: Mock, image_count: int = 3) -> None:
     """Configure mock ImageProcessingService for successful operations.
 
     Args:
@@ -402,9 +396,7 @@ def configure_image_processing_service_for_success(
     }
 
 
-def configure_image_processing_service_for_failure(
-    mock_service: Mock, image_count: int = 3
-) -> None:
+def configure_image_processing_service_for_failure(mock_service: Mock, image_count: int = 3) -> None:
     """Configure mock ImageProcessingService for failed operations.
 
     Args:

@@ -21,15 +21,11 @@ class TestBaseScraperBatchUploads:
             patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_loader,
             patch("utils.r2_service.R2Service") as mock_r2,
-            patch(
-                "services.image_processing_service.ImageProcessingService"
-            ) as mock_image_service,
+            patch("services.image_processing_service.ImageProcessingService") as mock_image_service,
         ):
             # Mock sync service
             mock_sync_instance = Mock()
-            mock_sync_instance.sync_single_organization.return_value = Mock(
-                organization_id=1, was_created=False
-            )
+            mock_sync_instance.sync_single_organization.return_value = Mock(organization_id=1, was_created=False)
             mock_sync.return_value = mock_sync_instance
 
             # Mock config
@@ -50,9 +46,7 @@ class TestBaseScraperBatchUploads:
 
             # Mock image processing service
             mock_image_service_instance = Mock()
-            mock_image_service_instance.batch_process_images = Mock(
-                side_effect=lambda animals, *args, **kwargs: animals
-            )
+            mock_image_service_instance.batch_process_images = Mock(side_effect=lambda animals, *args, **kwargs: animals)
             mock_image_service.return_value = mock_image_service_instance
 
             yield {
@@ -88,9 +82,7 @@ class TestBaseScraperBatchUploads:
         mock_services["image_service"].batch_process_images.assert_called_once()
         call_args = mock_services["image_service"].batch_process_images.call_args
         assert len(call_args[0][0]) == 1  # First positional arg is animals_data
-        assert (
-            call_args[1]["batch_size"] == 1
-        )  # batch_size should be 1 for single animal
+        assert call_args[1]["batch_size"] == 1  # batch_size should be 1 for single animal
 
     def test_batch_upload_for_small_dataset(self, mock_services):
         """Test that batch upload is used for small datasets (2-3 animals)."""
@@ -128,9 +120,7 @@ class TestBaseScraperBatchUploads:
         call_args = mock_services["image_service"].batch_process_images.call_args
         assert len(call_args[0][0]) == 3
         assert call_args[1]["batch_size"] == 3  # Should use size 3 for 3 animals
-        assert (
-            call_args[1]["use_concurrent"] is False
-        )  # No concurrent for small dataset
+        assert call_args[1]["use_concurrent"] is False  # No concurrent for small dataset
 
     def test_batch_upload_for_large_dataset(self, mock_services):
         """Test that batch upload uses adaptive batch size and concurrency for large datasets."""
@@ -159,9 +149,7 @@ class TestBaseScraperBatchUploads:
         call_args = mock_services["image_service"].batch_process_images.call_args
         assert len(call_args[0][0]) == 15
         assert call_args[1]["batch_size"] == 5  # Should use adaptive batch size
-        assert (
-            call_args[1]["use_concurrent"] is True
-        )  # Should use concurrent for > 10 animals
+        assert call_args[1]["use_concurrent"] is True  # Should use concurrent for > 10 animals
 
     def test_batch_upload_skipped_on_high_failure_rate(self, mock_services):
         """Test that batch upload is skipped when R2 failure rate is high."""

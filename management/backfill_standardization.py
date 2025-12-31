@@ -31,9 +31,7 @@ from rich.progress import (
 from config import DB_CONFIG
 from utils.unified_standardization import UnifiedStandardizer
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -61,12 +59,8 @@ class StandardizationBackfillService:
             self.conn.autocommit = False
 
             # Production safety check
-            if DB_CONFIG["database"] == "rescue_dogs" and not os.getenv(
-                "ALLOW_PROD_BACKFILL"
-            ):
-                logger.error(
-                    "SAFETY: Refusing to run against production database without ALLOW_PROD_BACKFILL=1"
-                )
+            if DB_CONFIG["database"] == "rescue_dogs" and not os.getenv("ALLOW_PROD_BACKFILL"):
+                logger.error("SAFETY: Refusing to run against production database without ALLOW_PROD_BACKFILL=1")
                 self.conn.close()
                 return False
 
@@ -189,9 +183,7 @@ class StandardizationBackfillService:
             logger.error(f"Error fetching animals to backfill: {e}")
             return []
 
-    def update_animal_standardization(
-        self, animal_id: int, standardized_data: Dict[str, Any]
-    ) -> bool:
+    def update_animal_standardization(self, animal_id: int, standardized_data: Dict[str, Any]) -> bool:
         """Update an animal's standardization fields including new breed enhancement fields."""
         try:
             cursor = self.conn.cursor()
@@ -259,15 +251,11 @@ class StandardizationBackfillService:
         id_, name, breed, standardized_breed, breed_group, age_text, size = animal_tuple
 
         # Apply standardization with individual parameters
-        standardized = self.standardizer.apply_full_standardization(
-            breed=breed, age=age_text, size=size
-        )
+        standardized = self.standardizer.apply_full_standardization(breed=breed, age=age_text, size=size)
 
         return {
             # Legacy fields for backward compatibility
-            "breed": standardized.get(
-                "breed"
-            ),  # Fixed: use 'breed' not 'standardized_breed'
+            "breed": standardized.get("breed"),  # Fixed: use 'breed' not 'standardized_breed'
             "breed_category": standardized.get("breed_category"),
             "standardized_size": standardized.get("standardized_size"),
             # New enhancement fields
@@ -302,9 +290,7 @@ class StandardizationBackfillService:
                 standardized_data = self.standardize_animal_data(animal_tuple)
 
                 if dry_run:
-                    logger.info(
-                        f"Would update Lurcher {id_} ({name}): breed_group -> Hound"
-                    )
+                    logger.info(f"Would update Lurcher {id_} ({name}): breed_group -> Hound")
                 else:
                     if self.update_animal_standardization(id_, standardized_data):
                         processed += 1
@@ -346,9 +332,7 @@ class StandardizationBackfillService:
                 standardized_data = self.standardize_animal_data(animal_tuple)
 
                 if dry_run:
-                    logger.info(
-                        f"Would update Staffordshire {id_} ({name}): {breed} -> Staffordshire Bull Terrier"
-                    )
+                    logger.info(f"Would update Staffordshire {id_} ({name}): {breed} -> Staffordshire Bull Terrier")
                 else:
                     if self.update_animal_standardization(id_, standardized_data):
                         processed += 1
@@ -399,9 +383,7 @@ class StandardizationBackfillService:
                 TaskProgressColumn(),
                 TextColumn("[bold blue]{task.completed}/{task.total} animals"),
             ) as progress:
-                task = progress.add_task(
-                    "[cyan]Backfilling breed data...", total=len(animals)
-                )
+                task = progress.add_task("[cyan]Backfilling breed data...", total=len(animals))
 
                 for i in range(0, len(animals), batch_size):
                     batch = animals[i : i + batch_size]
@@ -412,12 +394,8 @@ class StandardizationBackfillService:
 
                         try:
                             if not dry_run:
-                                standardized_data = self.standardize_animal_data(
-                                    animal_tuple
-                                )
-                                if self.update_animal_standardization(
-                                    id_, standardized_data
-                                ):
+                                standardized_data = self.standardize_animal_data(animal_tuple)
+                                if self.update_animal_standardization(id_, standardized_data):
                                     processed += 1
                                 else:
                                     failed += 1
@@ -452,18 +430,12 @@ class StandardizationBackfillService:
 
                     try:
                         if not dry_run:
-                            standardized_data = self.standardize_animal_data(
-                                animal_tuple
-                            )
-                            if self.update_animal_standardization(
-                                id_, standardized_data
-                            ):
+                            standardized_data = self.standardize_animal_data(animal_tuple)
+                            if self.update_animal_standardization(id_, standardized_data):
                                 processed += 1
                             else:
                                 failed += 1
-                                errors.append(
-                                    {"id": id_, "name": name, "error": "Update failed"}
-                                )
+                                errors.append({"id": id_, "name": name, "error": "Update failed"})
 
                     except Exception as e:
                         logger.error(f"Error processing animal {id_} ({name}): {e}")
@@ -478,9 +450,7 @@ class StandardizationBackfillService:
         if dry_run:
             logger.info(f"Dry run completed: {len(animals)} animals would be updated")
         else:
-            logger.info(
-                f"Backfilled {processed} animals in {batches} batches, {failed} failed"
-            )
+            logger.info(f"Backfilled {processed} animals in {batches} batches, {failed} failed")
 
         return {
             "total": len(animals),
@@ -493,18 +463,14 @@ class StandardizationBackfillService:
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Backfill breed standardization for existing animals"
-    )
+    parser = argparse.ArgumentParser(description="Backfill breed standardization for existing animals")
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Show what would be done without making changes",
     )
     parser.add_argument("--limit", type=int, help="Limit number of animals to process")
-    parser.add_argument(
-        "--skip-lurchers", action="store_true", help="Skip fixing Lurcher breeds"
-    )
+    parser.add_argument("--skip-lurchers", action="store_true", help="Skip fixing Lurcher breeds")
     parser.add_argument(
         "--skip-staffordshires",
         action="store_true",

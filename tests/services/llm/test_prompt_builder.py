@@ -27,18 +27,14 @@ class TestPromptBuilder:
             "metadata": {"version": "1.0.0"},
         }
 
-        with patch.object(
-            PromptBuilder, "_load_prompt_template", return_value=mock_template
-        ):
+        with patch.object(PromptBuilder, "_load_prompt_template", return_value=mock_template):
             builder = PromptBuilder(organization_id=11)
             assert builder.organization_id == 11
             assert builder.prompt_template == mock_template
 
     def test_init_with_invalid_organization(self):
         """Test initialization with invalid organization ID raises ValueError."""
-        with pytest.raises(
-            ValueError, match="No configuration found for organization 999"
-        ):
+        with pytest.raises(ValueError, match="No configuration found for organization 999"):
             PromptBuilder(organization_id=999)
 
     def test_load_prompt_template_success(self):
@@ -65,9 +61,7 @@ class TestPromptBuilder:
         with (
             patch("builtins.open", mock_file),
             patch("pathlib.Path.exists", return_value=True),
-            patch(
-                "services.llm.organization_config_loader.get_config_loader"
-            ) as mock_loader,
+            patch("services.llm.organization_config_loader.get_config_loader") as mock_loader,
         ):
             mock_loader.return_value.load_config.return_value = MockOrgConfig()
             builder = PromptBuilder.__new__(PromptBuilder)  # Create without __init__
@@ -92,9 +86,7 @@ class TestPromptBuilder:
 
         with (
             patch("pathlib.Path.exists", return_value=False),
-            patch(
-                "services.llm.organization_config_loader.get_config_loader"
-            ) as mock_loader,
+            patch("services.llm.organization_config_loader.get_config_loader") as mock_loader,
         ):
             mock_loader.return_value.load_config.return_value = MockOrgConfig()
             builder = PromptBuilder.__new__(PromptBuilder)  # Create without __init__
@@ -103,9 +95,7 @@ class TestPromptBuilder:
 
     def test_build_prompt_with_complete_data(self):
         """Test prompt building with complete dog data."""
-        mock_template = {
-            "extraction_prompt": "Dog: {name}, Breed: {breed}, Age: {age_text}, Properties: {properties}"
-        }
+        mock_template = {"extraction_prompt": "Dog: {name}, Breed: {breed}, Age: {age_text}, Properties: {properties}"}
 
         builder = PromptBuilder.__new__(PromptBuilder)  # Create without __init__
         builder.prompt_template = mock_template
@@ -127,9 +117,7 @@ class TestPromptBuilder:
 
     def test_build_prompt_with_missing_data(self):
         """Test prompt building with missing dog data uses defaults."""
-        mock_template = {
-            "extraction_prompt": "Dog: {name}, Breed: {breed}, Age: {age_text}, Properties: {properties}"
-        }
+        mock_template = {"extraction_prompt": "Dog: {name}, Breed: {breed}, Age: {age_text}, Properties: {properties}"}
 
         builder = PromptBuilder.__new__(PromptBuilder)  # Create without __init__
         builder.prompt_template = mock_template

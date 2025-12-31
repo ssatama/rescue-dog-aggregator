@@ -35,9 +35,7 @@ class TestBaseScraperWithImageProcessingService:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_basescraper_uses_injected_image_processing_service(
-        self, mock_scraper_with_service
-    ):
+    def test_basescraper_uses_injected_image_processing_service(self, mock_scraper_with_service):
         """Test that BaseScraper uses injected ImageProcessingService for image operations."""
         # Create mock image processing service
         mock_image_service = Mock(spec=ImageProcessingService)
@@ -49,9 +47,7 @@ class TestBaseScraperWithImageProcessingService:
         # save_animal_images method removed in refactoring
 
         # Create scraper with injected service
-        scraper = mock_scraper_with_service(
-            organization_id=1, image_processing_service=mock_image_service
-        )
+        scraper = mock_scraper_with_service(organization_id=1, image_processing_service=mock_image_service)
 
         # Test process_primary_image via save_animal
         animal_data = {
@@ -100,9 +96,7 @@ class TestBaseScraperWithImageProcessingService:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_basescraper_falls_back_to_legacy_without_service(
-        self, mock_scraper_with_service
-    ):
+    def test_basescraper_falls_back_to_legacy_without_service(self, mock_scraper_with_service):
         """Test that BaseScraper works properly without ImageProcessingService injection."""
         # Create scraper without service injection
         scraper = mock_scraper_with_service(organization_id=1)
@@ -131,15 +125,11 @@ class TestBaseScraperWithImageProcessingService:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_basescraper_constructor_accepts_image_service(
-        self, mock_scraper_with_service
-    ):
+    def test_basescraper_constructor_accepts_image_service(self, mock_scraper_with_service):
         """Test that BaseScraper constructor properly accepts ImageProcessingService."""
         mock_image_service = Mock(spec=ImageProcessingService)
 
-        scraper = mock_scraper_with_service(
-            organization_id=1, image_processing_service=mock_image_service
-        )
+        scraper = mock_scraper_with_service(organization_id=1, image_processing_service=mock_image_service)
 
         # Verify service is stored
         assert scraper.image_processing_service == mock_image_service

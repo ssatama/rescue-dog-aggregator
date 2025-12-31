@@ -40,9 +40,7 @@ def extract_birth_date(text: Optional[str]) -> Optional[str]:
         return match.group(1)
 
     # Pattern 3: "DOB: April/May 2024" or "DOB -April /May 2024"
-    match = re.search(
-        r"DOB[-:\s]*([A-Za-z]+\s*/\s*[A-Za-z]+\s+\d{4})", text, re.IGNORECASE
-    )
+    match = re.search(r"DOB[-:\s]*([A-Za-z]+\s*/\s*[A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
     if match:
         return match.group(1)
 
@@ -183,9 +181,7 @@ def extract_age_from_text_legacy(text: Optional[str]) -> Optional[float]:
     text = text.lower()
 
     # Pattern 1: "4 y old", "roughly 3 y old"
-    match = re.search(
-        r"(?:roughly|approximately|about)?\s*(\d+(?:\.\d+)?)\s*y\s+old", text
-    )
+    match = re.search(r"(?:roughly|approximately|about)?\s*(\d+(?:\.\d+)?)\s*y\s+old", text)
     if match:
         return float(match.group(1))
 
@@ -251,26 +247,16 @@ def extract_sex_from_text_legacy(text: Optional[str]) -> Optional[str]:
     boy_count = len(re.findall(r"\bboy\b", text))
 
     # Calculate confidence scores
-    female_score = (
-        (spayed_count * 3) + (she_count + her_count) + ((female_count + girl_count) * 2)
-    )
-    male_score = (
-        ((neutered_count + castrated_count) * 3)
-        + (he_count + his_count)
-        + ((male_count + boy_count) * 2)
-    )
+    female_score = (spayed_count * 3) + (she_count + her_count) + ((female_count + girl_count) * 2)
+    male_score = ((neutered_count + castrated_count) * 3) + (he_count + his_count) + ((male_count + boy_count) * 2)
 
     # Check for conflicting signals (mixed pronouns might indicate multiple dogs)
-    pronoun_conflict = (she_count > 0 and he_count > 0) and abs(
-        she_count - he_count
-    ) <= 1
+    pronoun_conflict = (she_count > 0 and he_count > 0) and abs(she_count - he_count) <= 1
 
     # Also check for explicit gender conflicts (e.g., "she is a good boy")
     gender_conflict = (female_count + girl_count) > 0 and (male_count + boy_count) > 0
 
-    if (pronoun_conflict or gender_conflict) and (
-        spayed_count == 0 and neutered_count == 0 and castrated_count == 0
-    ):
+    if (pronoun_conflict or gender_conflict) and (spayed_count == 0 and neutered_count == 0 and castrated_count == 0):
         return None  # Likely multiple dogs or conflicting info
 
     # Return result based on confidence scores

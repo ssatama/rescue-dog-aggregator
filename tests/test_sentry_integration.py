@@ -19,9 +19,7 @@ class TestSentryConfiguration:
         from api.monitoring import init_sentry
 
         with patch.object(sentry_sdk, "init") as mock_init:
-            with patch.dict(
-                os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}
-            ):
+            with patch.dict(os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}):
                 init_sentry("production")  # Use production environment
 
                 mock_init.assert_called_once()
@@ -38,9 +36,7 @@ class TestSentryConfiguration:
         from api.monitoring import init_sentry
 
         with patch.object(sentry_sdk, "init") as mock_init:
-            with patch.dict(
-                os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}
-            ):
+            with patch.dict(os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}):
                 init_sentry("production")
 
                 mock_init.assert_called_once()
@@ -53,9 +49,7 @@ class TestSentryConfiguration:
         from api.monitoring import init_sentry
 
         with patch.object(sentry_sdk, "init") as mock_init:
-            with patch.dict(
-                os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}
-            ):
+            with patch.dict(os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}):
                 init_sentry("production")
 
                 mock_init.assert_called_once()
@@ -110,9 +104,7 @@ class TestSentryConfiguration:
         from api.monitoring import init_sentry
 
         with patch.object(sentry_sdk, "init") as mock_init:
-            with patch.dict(
-                os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}
-            ):
+            with patch.dict(os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}):
                 init_sentry("production")
 
                 mock_init.assert_called_once()
@@ -132,9 +124,7 @@ class TestSentryConfiguration:
         from api.monitoring import init_sentry
 
         with patch.object(sentry_sdk, "init") as mock_init:
-            with patch.dict(
-                os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}
-            ):
+            with patch.dict(os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}):
                 init_sentry("production")
 
                 mock_init.assert_called_once()
@@ -148,18 +138,14 @@ class TestSentryConfiguration:
                         break
 
                 assert fastapi_integration is not None
-                assert fastapi_integration.failed_request_status_codes == set(
-                    range(500, 600)
-                )
+                assert fastapi_integration.failed_request_status_codes == set(range(500, 600))
 
     def test_sentry_not_initialized_in_non_production(self):
         """Test that Sentry is NOT initialized in non-production environments."""
         from api.monitoring import init_sentry
 
         with patch.object(sentry_sdk, "init") as mock_init:
-            with patch.dict(
-                os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}
-            ):
+            with patch.dict(os.environ, {"SENTRY_DSN_BACKEND": "https://test@sentry.io/123"}):
                 # Test with development environment
                 init_sentry("development")
                 mock_init.assert_not_called()

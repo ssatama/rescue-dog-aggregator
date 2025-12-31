@@ -131,9 +131,7 @@ class DogProfilerService:
             for attempt in range(max_attempts):
                 try:
                     # Format prompt
-                    user_prompt = template.user_prompt.format(
-                        dog_data=json.dumps(request.dog_data)
-                    )
+                    user_prompt = template.user_prompt.format(dog_data=json.dumps(request.dog_data))
 
                     # Generate with LLM
                     profile = await self.llm_client.generate(
@@ -166,9 +164,7 @@ class DogProfilerService:
                 )
 
             # Calculate processing time
-            processing_time_ms = int(
-                (datetime.now() - start_time).total_seconds() * 1000
-            )
+            processing_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
 
             return ProfileResult(
                 dog_id=request.dog_id,
@@ -180,9 +176,7 @@ class DogProfilerService:
 
         except Exception as e:
             logger.error(f"Error profiling dog {request.dog_id}: {e}")
-            processing_time_ms = int(
-                (datetime.now() - start_time).total_seconds() * 1000
-            )
+            processing_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
 
             return ProfileResult(
                 dog_id=request.dog_id,
@@ -191,9 +185,7 @@ class DogProfilerService:
                 processing_time_ms=processing_time_ms,
             )
 
-    async def profile_batch(
-        self, dogs: List[Dict[str, Any]], organization_id: int
-    ) -> Dict[str, Any]:
+    async def profile_batch(self, dogs: List[Dict[str, Any]], organization_id: int) -> Dict[str, Any]:
         """
         Profile multiple dogs in batch.
 
@@ -214,9 +206,7 @@ class DogProfilerService:
 
         async def profile_with_semaphore(dog):
             async with semaphore:
-                request = ProfileRequest(
-                    dog_id=dog["id"], dog_data=dog, organization_id=organization_id
-                )
+                request = ProfileRequest(dog_id=dog["id"], dog_data=dog, organization_id=organization_id)
                 result = await self.profile_dog(request)
                 return {
                     "dog_id": result.dog_id,
@@ -266,9 +256,7 @@ class DogProfilerService:
         profile_json = json.dumps(profile)
         await self.pool.execute(query, profile_json, dog_id)
 
-    async def get_unprofiled_dogs(
-        self, organization_id: int, limit: int = 100
-    ) -> List[Dict[str, Any]]:
+    async def get_unprofiled_dogs(self, organization_id: int, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get dogs without profiles (only high confidence available dogs).
 

@@ -43,9 +43,7 @@ class TestBaseScraperBehavior:
     def test_scraper_saves_new_animals(self, scraper):
         """Test that scraper successfully saves new animals to database."""
         # Setup
-        scraper.database_service.get_existing_animal.return_value = (
-            None  # No existing animal
-        )
+        scraper.database_service.get_existing_animal.return_value = None  # No existing animal
         scraper.database_service.create_animal.return_value = (123, "create")
 
         animal_data = {

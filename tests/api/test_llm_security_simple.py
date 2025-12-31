@@ -98,24 +98,18 @@ class TestLLMSecurityBasics:
                     response = test_client.get(case["endpoint"], params=case["data"])
 
                 # Check status code
-                assert response.status_code == case["expected_status"], (
-                    f"Expected {case['expected_status']}, got {response.status_code} for {case['endpoint']}"
-                )
+                assert response.status_code == case["expected_status"], f"Expected {case['expected_status']}, got {response.status_code} for {case['endpoint']}"
 
                 response_data = response.json()
                 detail = response_data.get("detail", "").lower()
 
                 # Check that expected messages are present
                 for expected in case["expected_message_contains"]:
-                    assert expected.lower() in detail, (
-                        f"Expected '{expected}' in error message for {case['endpoint']}: {detail}"
-                    )
+                    assert expected.lower() in detail, f"Expected '{expected}' in error message for {case['endpoint']}: {detail}"
 
                 # Check that sensitive information is not present
                 for sensitive in case["should_not_contain"]:
-                    assert sensitive.lower() not in detail, (
-                        f"Sensitive term '{sensitive}' found in error for {case['endpoint']}: {detail}"
-                    )
+                    assert sensitive.lower() not in detail, f"Sensitive term '{sensitive}' found in error for {case['endpoint']}: {detail}"
 
     def test_nonexistent_animal_secure_message(self, client):
         """Test that nonexistent animal requests provide secure messages."""
@@ -166,9 +160,7 @@ class TestLLMSecurityBasics:
             response = client.post(endpoint, json=data)
 
             # All should return client errors (4xx)
-            assert 400 <= response.status_code < 500, (
-                f"Expected 4xx status for {endpoint}, got {response.status_code}"
-            )
+            assert 400 <= response.status_code < 500, f"Expected 4xx status for {endpoint}, got {response.status_code}"
 
             response_data = response.json()
 
@@ -213,9 +205,7 @@ class TestLLMSecurityBasics:
             ]
 
             for pattern in sensitive_patterns:
-                assert pattern not in detail_lower, (
-                    f"Sensitive pattern '{pattern}' found in {endpoint} error: {detail_lower}"
-                )
+                assert pattern not in detail_lower, f"Sensitive pattern '{pattern}' found in {endpoint} error: {detail_lower}"
 
     def test_clean_description_endpoint_security(self, client):
         """Test clean-description endpoint for secure error handling."""
@@ -238,9 +228,7 @@ class TestLLMSecurityBasics:
 
     def test_processing_type_validation(self, client):
         """Test that invalid processing types are handled securely."""
-        response = client.post(
-            "/api/llm/enrich", json={"animal_id": 1, "processing_type": "invalid_type"}
-        )
+        response = client.post("/api/llm/enrich", json={"animal_id": 1, "processing_type": "invalid_type"})
 
         # This should be caught by Pydantic validation
         assert response.status_code == 422
@@ -278,19 +266,14 @@ class TestLLMSecurityBasics:
             # Should provide generic validation message (either our custom message or Pydantic's)
             detail_str = str(response_data.get("detail", "")).lower()
             # Either our validation message or Pydantic parsing error is fine
-            assert (
-                "organization id must be positive" in detail_str
-                or "input should be a valid integer" in detail_str
-            )
+            assert "organization id must be positive" in detail_str or "input should be a valid integer" in detail_str
             # The most important thing is that the SQL injection is blocked
             # Note: Pydantic may echo back invalid input in validation errors,
             # but this happens before our code processes it, so it's still secure
 
     def test_response_headers_security(self, client):
         """Test that responses don't include sensitive headers."""
-        response = client.post(
-            "/api/llm/translate", json={"text": "hello", "target_language": "es"}
-        )
+        response = client.post("/api/llm/translate", json={"text": "hello", "target_language": "es"})
 
         # Check that sensitive headers are not present
         sensitive_headers = [
@@ -303,9 +286,7 @@ class TestLLMSecurityBasics:
         ]
 
         for header in sensitive_headers:
-            assert header.lower() not in [h.lower() for h in response.headers.keys()], (
-                f"Sensitive header '{header}' found in response headers"
-            )
+            assert header.lower() not in [h.lower() for h in response.headers.keys()], f"Sensitive header '{header}' found in response headers"
 
     def test_concurrent_request_limits(self, client):
         """Test that the API handles multiple requests without exposing internals."""
@@ -323,9 +304,7 @@ class TestLLMSecurityBasics:
 
         # All should return consistent 404s without internal details
         for i, response in enumerate(responses):
-            assert response.status_code == 404, (
-                f"Request {i} returned {response.status_code}"
-            )
+            assert response.status_code == 404, f"Request {i} returned {response.status_code}"
             response_data = response.json()
             detail = response_data["detail"]
             assert "Animal not found" in detail

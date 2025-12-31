@@ -177,9 +177,7 @@ class DogProfilerPipeline:
             # Add/update metadata fields
             profile_data["profiled_at"] = datetime.utcnow().isoformat()
             profile_data["prompt_version"] = self.prompt_builder.get_prompt_version()
-            profile_data["model_used"] = profiler_result.get(
-                "model_used", "google/gemini-3-flash-preview"
-            )
+            profile_data["model_used"] = profiler_result.get("model_used", "google/gemini-3-flash-preview")
 
             # Add confidence scores if not present (using defaults)
             if "confidence_scores" not in profile_data:
@@ -192,9 +190,7 @@ class DogProfilerPipeline:
             # Add source references if not present
             if "source_references" not in profile_data:
                 profile_data["source_references"] = {
-                    "description": str(
-                        dog_data.get("properties", {}).get("description", "")
-                    ),
+                    "description": str(dog_data.get("properties", {}).get("description", "")),
                     "personality_traits": "inferred from description",
                 }
 
@@ -223,10 +219,7 @@ class DogProfilerPipeline:
                 if not hasattr(self, "_rubric_instance"):
                     self._rubric_instance = DogProfileQualityRubric()
                 # Score returns 0-1, multiply by 100 for percentage
-                result["quality_score"] = (
-                    self._rubric_instance.calculate_quality_score(result, dog_data)
-                    * 100
-                )
+                result["quality_score"] = self._rubric_instance.calculate_quality_score(result, dog_data) * 100
             else:
                 # Default quality score for basic validation (80%)
                 result["quality_score"] = 80
@@ -240,9 +233,7 @@ class DogProfilerPipeline:
             logger.error(error_msg)
             return None
 
-    async def process_batch(
-        self, dogs: List[Dict[str, Any]], batch_size: int = 5
-    ) -> List[Dict[str, Any]]:
+    async def process_batch(self, dogs: List[Dict[str, Any]], batch_size: int = 5) -> List[Dict[str, Any]]:
         """
         Process multiple dogs in batches.
 

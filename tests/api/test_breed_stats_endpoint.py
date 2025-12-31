@@ -27,9 +27,7 @@ class TestBreedStatsEndpoint:
             "qualifying_breeds": [],
         }
 
-        with patch(
-            "api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor
-        ):
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
             with patch(
                 "api.services.animal_service.AnimalService.get_breed_stats",
                 return_value=mock_stats,
@@ -47,9 +45,7 @@ class TestBreedStatsEndpoint:
         """Test database error handling in breed stats."""
         import psycopg2
 
-        with patch(
-            "api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor
-        ):
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
             with patch(
                 "api.services.animal_service.AnimalService.get_breed_stats",
                 side_effect=psycopg2.Error("Database connection failed"),
@@ -57,10 +53,7 @@ class TestBreedStatsEndpoint:
                 response = client.get("/api/animals/breeds/stats")
 
         assert response.status_code == 500
-        assert (
-            "Database error" in response.json()["detail"]
-            or "Failed to fetch breed statistics" in response.json()["detail"]
-        )
+        assert "Database error" in response.json()["detail"] or "Failed to fetch breed statistics" in response.json()["detail"]
 
     def test_get_breed_stats_includes_average_age(self, client, mock_db_cursor):
         """Test that breed stats includes average age calculation for qualifying breeds."""
@@ -129,9 +122,7 @@ class TestBreedStatsEndpoint:
             ],
         }
 
-        with patch(
-            "api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor
-        ):
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
             with patch(
                 "api.services.animal_service.AnimalService.get_breed_stats",
                 return_value=mock_stats,
@@ -220,9 +211,7 @@ class TestBreedStatsEndpoint:
             ],
         }
 
-        with patch(
-            "api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor
-        ):
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
             with patch(
                 "api.services.animal_service.AnimalService.get_breed_stats",
                 return_value=mock_stats,

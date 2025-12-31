@@ -22,9 +22,7 @@ class TestMisisRescueListingFix:
             patch("scrapers.base_scraper.R2Service"),
         ):
             mock_sync_instance = Mock()
-            mock_sync_instance.sync_single_organization.return_value = Mock(
-                organization_id=13, was_created=True
-            )
+            mock_sync_instance.sync_single_organization.return_value = Mock(organization_id=13, was_created=True)
             mock_sync.return_value = mock_sync_instance
 
             mock_config = Mock()

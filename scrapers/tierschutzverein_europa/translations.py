@@ -63,9 +63,7 @@ def translate_age(age_text: Optional[str]) -> Optional[str]:
         return None
 
     # Handle full date patterns like "05.2025 (3 Monate alt)" or "01.2024 (1 Jahr alt)"
-    match = re.match(
-        r"^\d{2}\.\d{4}\s*\((\d+)\s*(Jahr[e]?|Monat[e]?)\s*alt\)$", age_text
-    )
+    match = re.match(r"^\d{2}\.\d{4}\s*\((\d+)\s*(Jahr[e]?|Monat[e]?)\s*alt\)$", age_text)
     if match:
         number = int(match.group(1))
         unit = match.group(2)

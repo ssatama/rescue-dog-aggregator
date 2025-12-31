@@ -83,9 +83,7 @@ class TestIndexSync:
     @patch("services.railway.index_sync.get_railway_indexes")
     @patch("services.railway.index_sync.get_local_indexes")
     @patch("services.railway.index_sync.railway_session")
-    def test_sync_indexes_dry_run(
-        self, mock_railway_session, mock_get_local, mock_get_railway
-    ):
+    def test_sync_indexes_dry_run(self, mock_railway_session, mock_get_local, mock_get_railway):
         """Test dry run mode shows what would be done without executing."""
         # Setup mocks
         mock_get_local.return_value = [
@@ -125,9 +123,7 @@ class TestIndexSync:
     @patch("services.railway.index_sync.get_railway_indexes")
     @patch("services.railway.index_sync.get_local_indexes")
     @patch("services.railway.index_sync.railway_session")
-    def test_sync_indexes_creates_missing(
-        self, mock_railway_session, mock_get_local, mock_get_railway
-    ):
+    def test_sync_indexes_creates_missing(self, mock_railway_session, mock_get_local, mock_get_railway):
         """Test sync creates indexes that exist locally but not in Railway."""
         # Setup mocks
         mock_session = MagicMock()
@@ -174,9 +170,7 @@ class TestIndexSync:
     @patch("services.railway.index_sync.get_railway_indexes")
     @patch("services.railway.index_sync.get_local_indexes")
     @patch("services.railway.index_sync.railway_session")
-    def test_sync_indexes_drops_extra(
-        self, mock_railway_session, mock_get_local, mock_get_railway
-    ):
+    def test_sync_indexes_drops_extra(self, mock_railway_session, mock_get_local, mock_get_railway):
         """Test sync drops indexes that exist in Railway but not locally."""
         # Setup mocks
         mock_session = MagicMock()
@@ -216,16 +210,12 @@ class TestIndexSync:
             if call and call[0] and hasattr(call[0][0], "text"):
                 executed_sqls.append(call[0][0].text)
 
-        assert any(
-            "DROP INDEX IF EXISTS idx_animals_old" in sql for sql in executed_sqls
-        )
+        assert any("DROP INDEX IF EXISTS idx_animals_old" in sql for sql in executed_sqls)
 
     @patch("services.railway.index_sync.get_railway_indexes")
     @patch("services.railway.index_sync.get_local_indexes")
     @patch("services.railway.index_sync.railway_session")
-    def test_sync_indexes_preserves_unique_constraints(
-        self, mock_railway_session, mock_get_local, mock_get_railway
-    ):
+    def test_sync_indexes_preserves_unique_constraints(self, mock_railway_session, mock_get_local, mock_get_railway):
         """Test sync does not drop primary keys or unique constraints."""
         # Setup mocks
         mock_session = MagicMock()
@@ -268,9 +258,7 @@ class TestIndexSync:
             if call and call[0] and hasattr(call[0][0], "text"):
                 executed_sqls.append(call[0][0].text)
 
-        assert any(
-            "DROP INDEX IF EXISTS idx_animals_old" in sql for sql in executed_sqls
-        )
+        assert any("DROP INDEX IF EXISTS idx_animals_old" in sql for sql in executed_sqls)
         assert not any("animals_pkey" in sql for sql in executed_sqls)
         assert not any("animals_slug_unique" in sql for sql in executed_sqls)
         assert not any("animals_external_key" in sql for sql in executed_sqls)

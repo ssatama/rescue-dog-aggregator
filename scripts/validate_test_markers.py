@@ -151,9 +151,7 @@ def print_validation_report():
     total_perf = sum(perf_counts.values())
     for marker, count in perf_counts.items():
         percentage = (count / total_perf) * 100 if total_perf > 0 else 0
-        print(
-            f"  {marker:10} {count:3d} files ({percentage:5.1f}% of performance-tagged)"
-        )
+        print(f"  {marker:10} {count:3d} files ({percentage:5.1f}% of performance-tagged)")
 
     # Issues found
     if all_issues:
@@ -178,9 +176,7 @@ def print_validation_report():
         print(f"  - Consider adding more unit tests (currently {unit_pct:.1f}%)")
 
     if slow_pct > 70:
-        print(
-            f"  - Many slow tests ({slow_pct:.1f}%) - consider optimizing CI pipeline"
-        )
+        print(f"  - Many slow tests ({slow_pct:.1f}%) - consider optimizing CI pipeline")
 
     # CI optimization suggestions
     fast_feedback_tests = marker_stats["unit"] + marker_stats.get("fast", 0)

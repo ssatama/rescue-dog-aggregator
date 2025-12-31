@@ -119,11 +119,7 @@ def add_markers_to_file(file_path, markers):
             for i, line in enumerate(lines):
                 if line.startswith("import ") or line.startswith("from "):
                     import_pos = i
-                elif import_pos != -1 and not (
-                    line.startswith("import ")
-                    or line.startswith("from ")
-                    or line.strip() == ""
-                ):
+                elif import_pos != -1 and not (line.startswith("import ") or line.startswith("from ") or line.strip() == ""):
                     break
 
             if import_pos != -1:

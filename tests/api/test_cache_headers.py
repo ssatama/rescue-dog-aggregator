@@ -75,10 +75,7 @@ class TestCacheHeadersBasic:
         """Health endpoints should not be cached."""
         response = test_client.get("/health")
         assert response.status_code == 200
-        assert (
-            response.headers.get("Cache-Control")
-            == "no-cache, no-store, must-revalidate"
-        )
+        assert response.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
         assert response.headers.get("Pragma") == "no-cache"
         assert response.headers.get("Expires") == "0"
 
@@ -86,10 +83,7 @@ class TestCacheHeadersBasic:
         """Monitoring endpoints should not be cached."""
         response = test_client.get("/monitoring/scrapers")
         assert response.status_code == 200
-        assert (
-            response.headers.get("Cache-Control")
-            == "no-cache, no-store, must-revalidate"
-        )
+        assert response.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
 
     def test_response_time_header(self, test_client):
         """All responses should include X-Response-Time header."""
@@ -282,16 +276,12 @@ class TestETagSupport:
             pytest.skip("ETag generation not supported for this response type")
 
         # Second request with If-None-Match
-        response2 = client.get(
-            "/api/animals/meta/breeds", headers={"If-None-Match": etag}
-        )
+        response2 = client.get("/api/animals/meta/breeds", headers={"If-None-Match": etag})
         assert response2.status_code == 304  # Not Modified
 
     def test_conditional_request_modified(self, test_client):
         """Conditional requests with non-matching ETag should return full response."""
-        response = test_client.get(
-            "/api/animals/meta/breeds", headers={"If-None-Match": 'W/"different-etag"'}
-        )
+        response = test_client.get("/api/animals/meta/breeds", headers={"If-None-Match": 'W/"different-etag"'})
         assert response.status_code == 200
         assert response.json() == ["Labrador", "Poodle", "Beagle"]
 
@@ -328,11 +318,7 @@ class TestNonGetRequests:
         assert response.status_code == 200
 
         # Should not have cache headers
-        assert (
-            "Cache-Control" not in response.headers
-            or response.headers.get("Cache-Control")
-            == "no-cache, no-store, must-revalidate"
-        )
+        assert "Cache-Control" not in response.headers or response.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
 
 
 class TestMiddlewareIntegration:
@@ -351,33 +337,25 @@ class TestMiddlewareIntegration:
         middleware = CacheHeadersMiddleware(None)
 
         # Test recent animals
-        cache_type, duration, swr = middleware._determine_cache_strategy(
-            "/api/animals", {"curation": "recent"}
-        )
+        cache_type, duration, swr = middleware._determine_cache_strategy("/api/animals", {"curation": "recent"})
         assert cache_type == "recent_animals"
         assert duration == 300
         assert swr == 60
 
         # Test diverse animals
-        cache_type, duration, swr = middleware._determine_cache_strategy(
-            "/api/animals", {"curation": "diverse"}
-        )
+        cache_type, duration, swr = middleware._determine_cache_strategy("/api/animals", {"curation": "diverse"})
         assert cache_type == "diverse_animals"
         assert duration == 3600
         assert swr == 300
 
         # Test meta endpoint
-        cache_type, duration, swr = middleware._determine_cache_strategy(
-            "/api/animals/meta/breeds", {}
-        )
+        cache_type, duration, swr = middleware._determine_cache_strategy("/api/animals/meta/breeds", {})
         assert cache_type == "meta_endpoints"
         assert duration == 86400
         assert swr == 3600
 
         # Test individual animal
-        cache_type, duration, swr = middleware._determine_cache_strategy(
-            "/api/animals/test-dog", {}
-        )
+        cache_type, duration, swr = middleware._determine_cache_strategy("/api/animals/test-dog", {})
         assert cache_type == "individual_animal"
         assert duration == 1800
         assert swr == 300

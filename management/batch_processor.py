@@ -226,9 +226,7 @@ class DatabaseBatchProcessor:
             batch_end = min(batch_start + self.config.batch_size, total_items)
             batch_items = items[batch_start:batch_end]
 
-            batch_success = self._process_single_batch(
-                batch_items, processor_func, batch_start, errors
-            )
+            batch_success = self._process_single_batch(batch_items, processor_func, batch_start, errors)
 
             if batch_success:
                 successful_batches += 1
@@ -239,9 +237,7 @@ class DatabaseBatchProcessor:
                     try:
                         self.connection.commit()
                     except Exception as e:
-                        logger.error(
-                            f"Failed to commit batch {successful_batches}: {e}"
-                        )
+                        logger.error(f"Failed to commit batch {successful_batches}: {e}")
                         self.connection.rollback()
                         failed_batches += 1
                         errors.append(
@@ -306,9 +302,7 @@ class DatabaseBatchProcessor:
                     except Exception as e:
                         # Error from processor_func - log but continue with batch
                         item_position = batch_start + item_index
-                        logger.warning(
-                            f"Failed to process item at position {item_position}: {e}"
-                        )
+                        logger.warning(f"Failed to process item at position {item_position}: {e}")
                         errors.append(
                             {
                                 "type": "item_processing_error",
@@ -330,17 +324,12 @@ class DatabaseBatchProcessor:
                 self.connection.rollback()
 
                 if retry_attempt < self.config.max_retries:
-                    logger.warning(
-                        f"Database error on batch starting at {batch_start}, "
-                        f"attempt {retry_attempt + 1}/{self.config.max_retries + 1}: {e}"
-                    )
+                    logger.warning(f"Database error on batch starting at {batch_start}, " f"attempt {retry_attempt + 1}/{self.config.max_retries + 1}: {e}")
                     time.sleep(self.config.retry_delay * (retry_attempt + 1))
                     continue
                 else:
                     # Max retries exceeded
-                    logger.error(
-                        f"Failed to process batch after {self.config.max_retries} retries: {e}"
-                    )
+                    logger.error(f"Failed to process batch after {self.config.max_retries} retries: {e}")
                     errors.append(
                         {
                             "type": "batch_database_error",
@@ -355,9 +344,7 @@ class DatabaseBatchProcessor:
             except Exception as e:
                 # Non-database error at cursor level - rollback and don't retry
                 self.connection.rollback()
-                logger.error(
-                    f"Unexpected cursor-level error processing batch starting at {batch_start}: {e}"
-                )
+                logger.error(f"Unexpected cursor-level error processing batch starting at {batch_start}: {e}")
                 errors.append(
                     {
                         "type": "unexpected_error",

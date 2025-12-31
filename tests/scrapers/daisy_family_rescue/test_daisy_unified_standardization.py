@@ -7,7 +7,6 @@ Follows TDD approach - test first, then code.
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-
 from scrapers.daisy_family_rescue.dogs_scraper import DaisyFamilyRescueScraper
 
 
@@ -52,9 +51,7 @@ class TestDaisyFamilyRescueUnifiedStandardization:
         detail_scraper = DaisyFamilyRescueDogDetailScraper()
 
         # Test that detail scraper doesn't have custom _parse_age anymore
-        assert not hasattr(detail_scraper, "_parse_age"), (
-            "Detail scraper should not have custom _parse_age method"
-        )
+        assert not hasattr(detail_scraper, "_parse_age"), "Detail scraper should not have custom _parse_age method"
 
     def test_process_steckbrief_data_extracts_age_text(self):
         """Test that steckbrief data processing extracts age_text for unified parsing."""
@@ -67,9 +64,7 @@ class TestDaisyFamilyRescueUnifiedStandardization:
         steckbrief_data = {"Alter:": "03/2020", "Größe:": "55 cm", "Gewicht:": "25 kg"}
 
         # This should extract age_text for unified parsing
-        processed_data = detail_scraper._process_steckbrief_data(
-            steckbrief_data, Mock()
-        )
+        processed_data = detail_scraper._process_steckbrief_data(steckbrief_data, Mock())
 
         # Age should be extracted as age_text for unified parsing
         assert "age_text" in processed_data
@@ -119,10 +114,6 @@ class TestDaisyFamilyRescueUnifiedStandardization:
             for birth_date, expected_category in test_cases:
                 result = standardizer.apply_full_standardization(age=birth_date)
                 assert "age" in result, f"No age in result for: {birth_date}"
-                assert result["age"] == birth_date, (
-                    f"Original age not preserved: {birth_date}"
-                )
+                assert result["age"] == birth_date, f"Original age not preserved: {birth_date}"
                 # Check category matches (case-insensitive) - currently all default to Adult
-                assert result["age_category"].lower() == expected_category.lower(), (
-                    f"Wrong category for {birth_date}: got {result.get('age_category')}, expected {expected_category}"
-                )
+                assert result["age_category"].lower() == expected_category.lower(), f"Wrong category for {birth_date}: got {result.get('age_category')}, expected {expected_category}"

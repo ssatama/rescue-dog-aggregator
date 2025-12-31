@@ -93,9 +93,7 @@ class SecureScraperLoader:
 
         return True
 
-    def load_scraper_class(
-        self, module_info: ScraperModuleInfo
-    ) -> Type[ScraperProtocol]:
+    def load_scraper_class(self, module_info: ScraperModuleInfo) -> Type[ScraperProtocol]:
         """Load and validate scraper class."""
         # Check cache first
         cache_key = f"{module_info.module_path}.{module_info.class_name}"
@@ -119,33 +117,25 @@ class SecureScraperLoader:
 
             # Get class
             if not hasattr(module, module_info.class_name):
-                raise AttributeError(
-                    f"Class '{module_info.class_name}' not found in module '{module_info.module_path}'"
-                )
+                raise AttributeError(f"Class '{module_info.class_name}' not found in module '{module_info.module_path}'")
 
             scraper_class = getattr(module, module_info.class_name)
 
             # Validate class implements expected interface
             if not self._validate_scraper_interface(scraper_class):
-                raise TypeError(
-                    f"Class '{module_info.class_name}' does not implement expected scraper interface"
-                )
+                raise TypeError(f"Class '{module_info.class_name}' does not implement expected scraper interface")
 
             # Cache the class
             self._module_cache[cache_key] = scraper_class
 
-            logger.info(
-                f"Successfully loaded scraper: {module_info.class_name} from {module_info.module_path}"
-            )
+            logger.info(f"Successfully loaded scraper: {module_info.class_name} from {module_info.module_path}")
             return scraper_class
 
         except ImportError as e:
             logger.error(f"Failed to import module '{module_info.module_path}': {e}")
             raise
         except AttributeError as e:
-            logger.error(
-                f"Class '{module_info.class_name}' not found in module '{module_info.module_path}': {e}"
-            )
+            logger.error(f"Class '{module_info.class_name}' not found in module '{module_info.module_path}': {e}")
             raise
 
     def _validate_scraper_interface(self, scraper_class: Type) -> bool:
@@ -160,9 +150,7 @@ class SecureScraperLoader:
 
         return True
 
-    def create_scraper_instance(
-        self, module_info: ScraperModuleInfo, config_id: str
-    ) -> ScraperProtocol:
+    def create_scraper_instance(self, module_info: ScraperModuleInfo, config_id: str) -> ScraperProtocol:
         """Create scraper instance with dependency injection."""
         scraper_class = self.load_scraper_class(module_info)
 
@@ -173,9 +161,7 @@ class SecureScraperLoader:
             # Then inject the services after organization_id is known
             self._inject_services(instance)
 
-            logger.info(
-                f"Created scraper instance: {module_info.class_name} with config_id: {config_id}"
-            )
+            logger.info(f"Created scraper instance: {module_info.class_name} with config_id: {config_id}")
             return instance
 
         except Exception as e:
@@ -198,16 +184,10 @@ class SecureScraperLoader:
                 global_pool = initialize_database_pool(db_config)
                 if global_pool is None:
                     raise RuntimeError("Global database pool validation failed")
-                logger.info(
-                    "Global database pool initialized and validated successfully"
-                )
+                logger.info("Global database pool initialized and validated successfully")
             except Exception as e:
-                logger.error(
-                    f"CRITICAL: Global database pool initialization failed: {e}"
-                )
-                raise RuntimeError(
-                    f"Global database pool validation failed: {e}"
-                ) from e
+                logger.error(f"CRITICAL: Global database pool initialization failed: {e}")
+                raise RuntimeError(f"Global database pool validation failed: {e}") from e
 
             from services.connection_pool import ConnectionPoolService
             from services.database_service import DatabaseService
@@ -218,23 +198,17 @@ class SecureScraperLoader:
             # Create connection pool for shared database access
             connection_pool = None
             try:
-                connection_pool = ConnectionPoolService(
-                    DB_CONFIG, min_connections=2, max_connections=25
-                )
+                connection_pool = ConnectionPoolService(DB_CONFIG, min_connections=2, max_connections=25)
                 logger.info("Service connection pool created successfully")
             except Exception as e:
                 logger.error(f"CRITICAL: Connection pool creation failed: {e}")
                 raise RuntimeError(f"Connection pool creation failed: {e}") from e
 
             # Create DatabaseService with connection pool
-            database_service = DatabaseService(
-                DB_CONFIG, connection_pool=connection_pool
-            )
+            database_service = DatabaseService(DB_CONFIG, connection_pool=connection_pool)
             if not connection_pool and not database_service.connect():
                 logger.error("CRITICAL: DatabaseService connection failed")
-                raise RuntimeError(
-                    "DatabaseService connection failed - scraper cannot operate without database access"
-                )
+                raise RuntimeError("DatabaseService connection failed - scraper cannot operate without database access")
 
             # Create ImageProcessingService (doesn't need DB_CONFIG - uses R2Service)
             image_processing_service = ImageProcessingService()
@@ -254,9 +228,7 @@ class SecureScraperLoader:
             if not connection_pool and not session_manager.connect():
                 logger.error("CRITICAL: SessionManager connection failed")
                 database_service.close()  # Clean up successful connection
-                raise RuntimeError(
-                    "SessionManager connection failed - scraper cannot track stale data without session management"
-                )
+                raise RuntimeError("SessionManager connection failed - scraper cannot track stale data without session management")
 
             # Store services for cleanup
             services_to_store = [database_service, session_manager]
@@ -270,15 +242,11 @@ class SecureScraperLoader:
             scraper_instance.session_manager = session_manager
             scraper_instance.metrics_collector = metrics_collector
 
-            logger.info(
-                f"Services successfully injected and connected for scraper instance (pool: {'enabled' if connection_pool else 'disabled'})"
-            )
+            logger.info(f"Services successfully injected and connected for scraper instance (pool: {'enabled' if connection_pool else 'disabled'})")
 
         except Exception as e:
             logger.error(f"CRITICAL: Service injection failed: {e}")
-            raise RuntimeError(
-                f"Scraper cannot operate without database services: {e}"
-            ) from e
+            raise RuntimeError(f"Scraper cannot operate without database services: {e}") from e
 
     def get_allowed_modules(self) -> Set[str]:
         """Get copy of allowed modules (immutable)."""
@@ -304,9 +272,7 @@ class SecureScraperLoader:
 
         # Insert at the beginning
         sys.path.insert(0, project_root)
-        logger.debug(
-            f"Ensured project root is at beginning of Python path: {project_root}"
-        )
+        logger.debug(f"Ensured project root is at beginning of Python path: {project_root}")
 
 
 class SecurityError(Exception):
@@ -327,9 +293,7 @@ def get_scraper_loader() -> SecureScraperLoader:
     return _default_loader
 
 
-def load_scraper_securely(
-    module_path: str, class_name: str, config_id: str
-) -> ScraperProtocol:
+def load_scraper_securely(module_path: str, class_name: str, config_id: str) -> ScraperProtocol:
     """Load scraper securely with validation."""
     loader = get_scraper_loader()
     module_info = ScraperModuleInfo(module_path, class_name)

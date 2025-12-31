@@ -50,9 +50,7 @@ class TestOrganizationsJSONParsing:
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):
-            app.dependency_overrides[get_db_cursor] = (
-                mock_db_cursor_invalid_social_media
-            )
+            app.dependency_overrides[get_db_cursor] = mock_db_cursor_invalid_social_media
 
             try:
                 response = client.get("/api/organizations/")
@@ -138,9 +136,7 @@ class TestOrganizationsJSONParsing:
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):
-            app.dependency_overrides[get_db_cursor] = (
-                mock_db_cursor_invalid_service_regions
-            )
+            app.dependency_overrides[get_db_cursor] = mock_db_cursor_invalid_service_regions
 
             try:
                 response = client.get("/api/organizations/")
@@ -194,9 +190,7 @@ class TestOrganizationsJSONParsing:
 
                 org = data[0]
                 # Verify JSON fields were parsed correctly
-                assert org["social_media"] == {
-                    "facebook": "https://facebook.com/testorg"
-                }
+                assert org["social_media"] == {"facebook": "https://facebook.com/testorg"}
                 assert org["ships_to"] == ["USA", "Canada"]
                 assert org["service_regions"] == ["North America"]
             finally:

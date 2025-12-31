@@ -27,23 +27,17 @@ class TestDoubleCDNProcessing:
 
                 # URL should NOT contain Cloudinary processing
                 assert "cloudinary.com" not in url, f"Found Cloudinary URL: {url}"
-                assert "/image/upload/" not in url, (
-                    f"Found Cloudinary upload path: {url}"
-                )
+                assert "/image/upload/" not in url, f"Found Cloudinary upload path: {url}"
 
                 # URL should NOT contain any CDN transformations
-                assert "/cdn-cgi/image/" not in url, (
-                    f"Found CDN transformation in API response: {url}"
-                )
+                assert "/cdn-cgi/image/" not in url, f"Found CDN transformation in API response: {url}"
 
                 # For test environment, we expect test URLs or R2 URLs
                 # Test data uses example.com URLs, production uses R2 URLs
                 if "example.com" not in url:
                     # If not test data, should be a raw R2 URL
                     expected_pattern = "https://images.rescuedogs.me/rescue_dogs/"
-                    assert url.startswith(expected_pattern), (
-                        f"URL should start with {expected_pattern}, got: {url}"
-                    )
+                    assert url.startswith(expected_pattern), f"URL should start with {expected_pattern}, got: {url}"
 
     @pytest.mark.unit
     def test_animal_detail_returns_raw_r2_urls(self, client):
@@ -128,11 +122,7 @@ class TestDoubleCDNProcessing:
 
                 # Count occurrences of cdn-cgi transformation pattern
                 cdn_count = url.count("/cdn-cgi/image/")
-                assert cdn_count == 0, (
-                    f"Found CDN transformations in API response (should be raw): {url}"
-                )
+                assert cdn_count == 0, f"Found CDN transformations in API response (should be raw): {url}"
 
                 # Verify no malformed double transformation URLs
-                assert "/cdn-cgi/image/w=" not in url, (
-                    f"Found transformation parameters in API response: {url}"
-                )
+                assert "/cdn-cgi/image/w=" not in url, f"Found transformation parameters in API response: {url}"

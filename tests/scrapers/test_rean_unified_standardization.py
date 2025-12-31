@@ -22,9 +22,7 @@ class TestREANUnifiedStandardization:
             patch("utils.config_loader.ConfigLoader.load_config") as mock_load_config,
         ):
             # Mock config loading
-            mock_load_config.return_value = Mock(
-                name="REAN", base_url="https://www.rean.org.uk", organization_id="rean"
-            )
+            mock_load_config.return_value = Mock(name="REAN", base_url="https://www.rean.org.uk", organization_id="rean")
             scraper = REANScraper(config_id="rean")
             scraper.db_service = Mock()
             scraper.standardizer = UnifiedStandardizer()
@@ -83,9 +81,7 @@ class TestREANUnifiedStandardization:
         }
 
         # Process through standardizer with proper keyword arguments
-        standardized = scraper.standardizer.apply_full_standardization(
-            breed="Lurcher", age="1 year"
-        )
+        standardized = scraper.standardizer.apply_full_standardization(breed="Lurcher", age="1 year")
 
         # Verify Lurcher would be properly standardized
         if standardized.get("breed"):
@@ -122,6 +118,4 @@ class TestREANUnifiedStandardization:
         scraper.use_unified_standardization = True
         result_enabled = scraper.process_animal(raw_animal)
         assert result_enabled["name"] == "Charlie"
-        assert (
-            result_enabled["age_text"] == "4 years"
-        )  # Unified standardization preserves age_text
+        assert result_enabled["age_text"] == "4 years"  # Unified standardization preserves age_text

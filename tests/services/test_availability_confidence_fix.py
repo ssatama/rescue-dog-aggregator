@@ -80,16 +80,10 @@ class TestAvailabilityConfidenceFix:
         # consecutive_scrapes_missing >= 2 → unavailable (status change)
 
         lines = executed_query.split("\n")
-        case_lines = [
-            line.strip() for line in lines if "WHEN consecutive_scrapes_missing" in line
-        ]
+        case_lines = [line.strip() for line in lines if "WHEN consecutive_scrapes_missing" in line]
 
         # Should have exactly 3 WHEN clauses for availability_confidence
-        availability_case_lines = [
-            line
-            for line in case_lines
-            if "THEN" in line and ("medium" in line or "low" in line)
-        ]
+        availability_case_lines = [line for line in case_lines if "THEN" in line and ("medium" in line or "low" in line)]
         assert len(availability_case_lines) == 3
 
         # Verify the specific logic

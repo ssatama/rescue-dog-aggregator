@@ -85,9 +85,7 @@ class TestPhotoAnalysisResponse:
         "invalid_score",
         [0, -1, 11, 15, -5],
     )
-    def test_quality_score_validation_rejects_invalid(
-        self, valid_response_data, invalid_score
-    ):
+    def test_quality_score_validation_rejects_invalid(self, valid_response_data, invalid_score):
         """Test that quality_score must be 1-10, rejects 0, 11, -1, etc."""
         valid_response_data["quality_score"] = invalid_score
         with pytest.raises(ValidationError) as exc_info:
@@ -98,9 +96,7 @@ class TestPhotoAnalysisResponse:
         "invalid_score",
         [0, -1, 11, 15, -5],
     )
-    def test_visibility_score_validation_rejects_invalid(
-        self, valid_response_data, invalid_score
-    ):
+    def test_visibility_score_validation_rejects_invalid(self, valid_response_data, invalid_score):
         """Test that visibility_score must be 1-10."""
         valid_response_data["visibility_score"] = invalid_score
         with pytest.raises(ValidationError) as exc_info:
@@ -111,9 +107,7 @@ class TestPhotoAnalysisResponse:
         "invalid_score",
         [0, -1, 11, 15, -5],
     )
-    def test_appeal_score_validation_rejects_invalid(
-        self, valid_response_data, invalid_score
-    ):
+    def test_appeal_score_validation_rejects_invalid(self, valid_response_data, invalid_score):
         """Test that appeal_score must be 1-10."""
         valid_response_data["appeal_score"] = invalid_score
         with pytest.raises(ValidationError) as exc_info:
@@ -124,9 +118,7 @@ class TestPhotoAnalysisResponse:
         "invalid_score",
         [0, -1, 11, 15, -5],
     )
-    def test_background_score_validation_rejects_invalid(
-        self, valid_response_data, invalid_score
-    ):
+    def test_background_score_validation_rejects_invalid(self, valid_response_data, invalid_score):
         """Test that background_score must be 1-10."""
         valid_response_data["background_score"] = invalid_score
         with pytest.raises(ValidationError) as exc_info:
@@ -242,9 +234,7 @@ class TestPhotoAnalysisResponse:
         "invalid_confidence",
         ["Low", "HIGH", "med", "unknown", "very_high", ""],
     )
-    def test_confidence_enum_rejects_invalid(
-        self, valid_response_data, invalid_confidence
-    ):
+    def test_confidence_enum_rejects_invalid(self, valid_response_data, invalid_confidence):
         """Test that confidence must be exactly 'low', 'medium', or 'high'."""
         valid_response_data["confidence"] = invalid_confidence
         with pytest.raises(ValidationError) as exc_info:
@@ -301,14 +291,9 @@ class TestPhotoAnalysisResponse:
 
     def test_reasoning_accepts_string(self, valid_response_data):
         """Test reasoning accepts any non-empty string."""
-        valid_response_data["reasoning"] = (
-            "Professional quality photo with excellent composition and lighting"
-        )
+        valid_response_data["reasoning"] = "Professional quality photo with excellent composition and lighting"
         response = PhotoAnalysisResponse(**valid_response_data)
-        assert (
-            response.reasoning
-            == "Professional quality photo with excellent composition and lighting"
-        )
+        assert response.reasoning == "Professional quality photo with excellent composition and lighting"
 
     def test_all_required_fields_present(self, valid_response_data):
         """Test that all required fields must be present."""

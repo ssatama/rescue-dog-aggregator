@@ -58,9 +58,7 @@ class EnrichmentResponse(BaseModel):
 
 
 @router.post("/enrich", response_model=EnrichmentResponse)
-async def enrich_animal(
-    request: EnrichmentRequest, conn=Depends(get_async_db_transaction)
-) -> EnrichmentResponse:
+async def enrich_animal(request: EnrichmentRequest, conn=Depends(get_async_db_transaction)) -> EnrichmentResponse:
     """Enrich a single animal's data using LLM."""
 
     try:
@@ -90,9 +88,7 @@ async def enrich_animal(
         async with OpenRouterLLMDataService() as llm_service:
             if request.processing_type == ProcessingType.DESCRIPTION_CLEANING:
                 if not animal_data.get("description"):
-                    return EnrichmentResponse(
-                        success=False, message="No description to clean"
-                    )
+                    return EnrichmentResponse(success=False, message="No description to clean")
 
                 enriched = await llm_service.clean_description(
                     animal_data["description"],
@@ -134,9 +130,7 @@ async def enrich_animal(
                 raise InvalidInputError("Unsupported processing type")
 
         # Transaction is automatically committed by dependency
-        return EnrichmentResponse(
-            success=True, message="Animal enriched successfully", processed_count=1
-        )
+        return EnrichmentResponse(success=True, message="Animal enriched successfully", processed_count=1)
 
     except asyncpg.PostgresError as db_err:
         handle_database_error(db_err, "animal enrichment")
@@ -150,9 +144,7 @@ async def enrich_animal(
 
 
 @router.post("/batch-enrich", response_model=EnrichmentResponse)
-async def batch_enrich_animals(
-    request: BatchEnrichmentRequest, conn=Depends(get_async_db_transaction)
-) -> EnrichmentResponse:
+async def batch_enrich_animals(request: BatchEnrichmentRequest, conn=Depends(get_async_db_transaction)) -> EnrichmentResponse:
     """Enrich multiple animals in batch."""
 
     try:
@@ -186,9 +178,7 @@ async def batch_enrich_animals(
 
         # Process in batch
         async with OpenRouterLLMDataService() as llm_service:
-            results = await llm_service.batch_process(
-                animals_data, processing_type=request.processing_type
-            )
+            results = await llm_service.batch_process(animals_data, processing_type=request.processing_type)
 
         processed_count = 0
         failed_count = 0
@@ -212,9 +202,7 @@ async def batch_enrich_animals(
                     processed_count += 1
 
             except asyncpg.PostgresError as db_err:
-                logger.warning(
-                    f"Failed to update animal {result.get('id', 'unknown')}: {type(db_err).__name__}"
-                )
+                logger.warning(f"Failed to update animal {result.get('id', 'unknown')}: {type(db_err).__name__}")
                 failed_count += 1
                 continue
 
@@ -246,9 +234,7 @@ async def translate_text(request: TranslationRequest) -> Dict[str, str]:
         if not request.text.strip():
             raise InvalidInputError("Text cannot be empty")
         if len(request.text) > 10000:  # Reasonable limit
-            raise InvalidInputError(
-                "Text is too long for translation (max 10000 characters)"
-            )
+            raise InvalidInputError("Text is too long for translation (max 10000 characters)")
         if not request.target_language:
             raise InvalidInputError("Target language is required")
 
@@ -275,9 +261,7 @@ async def translate_text(request: TranslationRequest) -> Dict[str, str]:
 
 
 @router.get("/stats")
-async def get_llm_stats(
-    organization_id: Optional[int] = Query(None), conn=Depends(get_async_db_connection)
-) -> Dict:
+async def get_llm_stats(organization_id: Optional[int] = Query(None), conn=Depends(get_async_db_connection)) -> Dict:
     """Get LLM processing statistics."""
 
     try:
@@ -326,9 +310,7 @@ async def get_llm_stats(
 
 
 @router.post("/clean-description")
-async def clean_description_direct(
-    text: str, organization_name: Optional[str] = None
-) -> Dict[str, str]:
+async def clean_description_direct(text: str, organization_name: Optional[str] = None) -> Dict[str, str]:
     """Clean a description directly without database interaction."""
 
     try:
@@ -336,14 +318,10 @@ async def clean_description_direct(
         if not text.strip():
             raise InvalidInputError("Text cannot be empty")
         if len(text) > 10000:  # Reasonable limit
-            raise InvalidInputError(
-                "Text is too long for processing (max 10000 characters)"
-            )
+            raise InvalidInputError("Text is too long for processing (max 10000 characters)")
 
         async with OpenRouterLLMDataService() as llm_service:
-            org_config = (
-                {"organization_name": organization_name} if organization_name else None
-            )
+            org_config = {"organization_name": organization_name} if organization_name else None
             cleaned = await llm_service.clean_description(text, org_config)
 
         return {"original": text, "cleaned": cleaned}

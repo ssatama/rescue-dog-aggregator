@@ -65,9 +65,7 @@ class TestGenerateAnimalSlug:
 
     def test_slug_with_standardized_breed_preferred(self):
         """Test that standardized breed is preferred over breed."""
-        slug = generate_animal_slug(
-            "Bella", breed="Mixed", standardized_breed="Labrador Retriever"
-        )
+        slug = generate_animal_slug("Bella", breed="Mixed", standardized_breed="Labrador Retriever")
         assert slug == "bella-labrador-retriever"
 
     def test_slug_with_id(self):
@@ -93,9 +91,7 @@ class TestGenerateAnimalSlug:
 
     def test_special_characters_in_inputs(self):
         """Test handling of special characters in all inputs."""
-        slug = generate_animal_slug(
-            "Max & Friends", breed="German Shepherd-Mix", animal_id=456
-        )
+        slug = generate_animal_slug("Max & Friends", breed="German Shepherd-Mix", animal_id=456)
         assert slug == "max-friends-german-shepherd-mix-456"
 
 
@@ -171,9 +167,7 @@ class TestGenerateUniqueAnimalSlug:
         mock_cursor.fetchone.return_value = (0,)  # Unique
         mock_conn.cursor.return_value = mock_cursor
 
-        result = generate_unique_animal_slug(
-            "Fluffy", breed="Mixed", animal_id=123, connection=mock_conn
-        )
+        result = generate_unique_animal_slug("Fluffy", breed="Mixed", animal_id=123, connection=mock_conn)
         assert result == "fluffy-mixed-123"
 
     def test_handles_collision(self):
@@ -183,9 +177,7 @@ class TestGenerateUniqueAnimalSlug:
         mock_cursor.fetchone.side_effect = [(1,), (0,)]  # First exists, second unique
         mock_conn.cursor.return_value = mock_cursor
 
-        result = generate_unique_animal_slug(
-            "Fluffy", breed="Mixed", animal_id=123, connection=mock_conn
-        )
+        result = generate_unique_animal_slug("Fluffy", breed="Mixed", animal_id=123, connection=mock_conn)
         assert result == "fluffy-mixed-123-1"
 
     def test_no_connection_no_uniqueness_check(self):
@@ -229,6 +221,4 @@ class TestValidateSlug:
         for slug, expected_error in invalid_cases:
             is_valid, error = validate_slug(slug)
             assert not is_valid, f"Slug '{slug}' should be invalid"
-            assert expected_error in error, (
-                f"Expected error containing '{expected_error}', got '{error}'"
-            )
+            assert expected_error in error, f"Expected error containing '{expected_error}', got '{error}'"

@@ -42,9 +42,7 @@ class RetryInfo(BaseModel):
     """Information about retry suggestions."""
 
     suggested: bool = Field(description="Whether retry is suggested")
-    after_seconds: Optional[int] = Field(
-        None, description="Seconds to wait before retry"
-    )
+    after_seconds: Optional[int] = Field(None, description="Seconds to wait before retry")
     attempt: Optional[int] = Field(None, description="Current attempt number")
     max_attempts: Optional[int] = Field(None, description="Maximum number of attempts")
 
@@ -60,12 +58,8 @@ class ErrorDetail(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="Error occurrence time",
     )
-    correlation_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Request correlation ID"
-    )
-    retry: Optional[RetryInfo] = Field(
-        None, description="Retry information if applicable"
-    )
+    correlation_id: str = Field(default_factory=lambda: str(uuid4()), description="Request correlation ID")
+    retry: Optional[RetryInfo] = Field(None, description="Retry information if applicable")
 
     @field_serializer("timestamp")
     def serialize_timestamp(self, timestamp: datetime, _info):
@@ -78,9 +72,7 @@ class ErrorResponse(BaseModel):
     error: ErrorDetail
 
 
-def create_pool_initialization_error(
-    detail: str, retry_attempt: int = 1, max_attempts: int = 3
-) -> ErrorResponse:
+def create_pool_initialization_error(detail: str, retry_attempt: int = 1, max_attempts: int = 3) -> ErrorResponse:
     """Create a pool initialization error response."""
     return ErrorResponse(
         error=ErrorDetail(
@@ -115,9 +107,7 @@ def create_pool_not_initialized_error() -> ErrorResponse:
     )
 
 
-def create_connection_error(
-    detail: str, code: ErrorCode = ErrorCode.CONNECTION_REFUSED
-) -> ErrorResponse:
+def create_connection_error(detail: str, code: ErrorCode = ErrorCode.CONNECTION_REFUSED) -> ErrorResponse:
     """Create a database connection error response."""
     return ErrorResponse(
         error=ErrorDetail(

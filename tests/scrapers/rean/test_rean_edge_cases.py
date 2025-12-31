@@ -34,9 +34,7 @@ class TestREANEdgeCases:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(
-                organization_id=1, was_created=False
-            )
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=False)
             mock_sync.return_value = mock_sync_service
 
             scraper = REANScraper()
@@ -184,9 +182,7 @@ class TestREANEdgeCases:
 
         for code in error_codes:
             mock_response = Mock()
-            mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
-                f"{code} Error"
-            )
+            mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(f"{code} Error")
             mock_get.return_value = mock_response
 
             result = scraper.scrape_page("https://rean.org.uk/test")
@@ -255,9 +251,7 @@ class TestREANEdgeCases:
         mock_driver.find_elements.return_value = []
         scraper._find_dog_containers = Mock(return_value=[])
 
-        result = scraper.extract_dogs_with_images_unified(
-            "https://rean.org.uk/dogs", "romania"
-        )
+        result = scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs", "romania")
 
         # Should fallback gracefully
         assert isinstance(result, list)
@@ -283,9 +277,7 @@ class TestREANEdgeCases:
         entries = scraper.split_dog_entries(page_text, "romania")
 
         # Should extract valid entries
-        valid_count = sum(
-            1 for entry in entries if "years old" in entry or "months old" in entry
-        )
+        valid_count = sum(1 for entry in entries if "years old" in entry or "months old" in entry)
         # The scraper combines "Luna is 1 year old puppy" with the following entry
         # So we get 2 valid entries instead of 3
         assert valid_count >= 2

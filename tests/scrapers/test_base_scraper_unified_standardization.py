@@ -63,15 +63,9 @@ class TestBasScraperUnifiedStandardization:
 
         # Should standardize the breed (Cross becomes Mix)
         assert processed["breed"] == "Staffordshire Bull Terrier Mix"
-        assert (
-            processed["primary_breed"] == "Staffordshire Bull Terrier Mix"
-        )  # Primary is the full name
-        assert (
-            processed["secondary_breed"] == "Mixed Breed"
-        )  # Secondary indicates it's a mix
-        assert (
-            processed["breed_category"] == "Mixed"
-        )  # Mixed breed category for crosses
+        assert processed["primary_breed"] == "Staffordshire Bull Terrier Mix"  # Primary is the full name
+        assert processed["secondary_breed"] == "Mixed Breed"  # Secondary indicates it's a mix
+        assert processed["breed_category"] == "Mixed"  # Mixed breed category for crosses
         assert "standardization_confidence" in processed
         assert processed["name"] == "Buddy"
         assert processed["external_id"] == "dog-123"
@@ -98,9 +92,7 @@ class TestBasScraperUnifiedStandardization:
         """save_animal() should call process_animal() before saving"""
         scraper.database_service.get_existing_animal.return_value = None
         scraper.database_service.create_animal.return_value = (789, "create")
-        scraper.image_processing_service.save_processed_image.return_value = (
-            "https://cdn.example.com/image.jpg"
-        )
+        scraper.image_processing_service.save_processed_image.return_value = "https://cdn.example.com/image.jpg"
 
         # Mock process_animal to verify it's called
         scraper.process_animal = Mock(side_effect=lambda x: x)
@@ -171,9 +163,7 @@ class TestBasScraperUnifiedStandardization:
         assert call_args["breed"] == "Cockapoo"
         assert call_args["primary_breed"] == "Cocker Spaniel"
         assert call_args["secondary_breed"] == "Poodle"
-        assert (
-            call_args["breed_category"] == "Designer/Hybrid"
-        )  # Designer breeds now have their own category
+        assert call_args["breed_category"] == "Designer/Hybrid"  # Designer breeds now have their own category
 
     def test_standardization_logs_events(self, scraper):
         """Standardization should log breed changes"""

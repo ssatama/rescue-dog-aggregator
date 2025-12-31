@@ -58,9 +58,7 @@ class TestTierschutzvereinEuropaIntegration:
         # Mock the extraction method to return our test data
         with (
             patch.object(scraper, "get_animal_list", return_value=german_dogs),
-            patch.object(
-                scraper, "_process_animals_parallel", return_value=german_dogs
-            ),
+            patch.object(scraper, "_process_animals_parallel", return_value=german_dogs),
         ):
             english_dogs = scraper.collect_data()
 
@@ -72,9 +70,7 @@ class TestTierschutzvereinEuropaIntegration:
         assert bella["name"] == "Bella"  # Capitalized from BELLA
         assert bella["sex"] == "Female"  # Translated from Hündin
         assert bella["age_text"] == "3 years"  # Translated from 3 Jahre
-        assert (
-            bella["breed"] == "German Shepherd"
-        )  # Translated from Deutscher Schäferhund
+        assert bella["breed"] == "German Shepherd"  # Translated from Deutscher Schäferhund
         assert bella["properties"]["language"] == "en"  # Updated language
         assert bella["properties"]["original_language"] == "de"  # Translation marker
 
@@ -89,25 +85,15 @@ class TestTierschutzvereinEuropaIntegration:
         for dog in english_dogs:
             # Test breed standardization
             breed_info = standardize_breed(dog["breed"])
-            assert breed_info is not None, (
-                f"Breed standardization failed for {dog['breed']}"
-            )
+            assert breed_info is not None, f"Breed standardization failed for {dog['breed']}"
             standardized_breed, breed_group, size_estimate = breed_info
-            assert standardized_breed is not None, (
-                f"No standardized breed for {dog['breed']}"
-            )
+            assert standardized_breed is not None, f"No standardized breed for {dog['breed']}"
 
             # Test age standardization
             age_info = standardize_age(dog["age_text"])
-            assert age_info is not None, (
-                f"Age standardization failed for {dog['age_text']}"
-            )
-            assert "age_min_months" in age_info, (
-                f"Missing age_min_months for {dog['age_text']}"
-            )
-            assert "age_max_months" in age_info, (
-                f"Missing age_max_months for {dog['age_text']}"
-            )
+            assert age_info is not None, f"Age standardization failed for {dog['age_text']}"
+            assert "age_min_months" in age_info, f"Missing age_min_months for {dog['age_text']}"
+            assert "age_max_months" in age_info, f"Missing age_max_months for {dog['age_text']}"
 
     def test_translation_preserves_semantic_meaning(self):
         """Test that translations preserve semantic meaning for proper categorization."""
@@ -170,9 +156,7 @@ class TestTierschutzvereinEuropaIntegration:
         standardized_breed, breed_group, size_estimate = standardize_breed(dog["breed"])
 
         # German Shepherds should be recognized and sized
-        assert (
-            "Shepherd" in standardized_breed or "German Shepherd" in standardized_breed
-        )
+        assert "Shepherd" in standardized_breed or "German Shepherd" in standardized_breed
         # Size estimate should be provided (Large for German Shepherds)
         assert size_estimate in ["Medium", "Large", "XLarge"] or size_estimate is None
 
@@ -198,18 +182,14 @@ class TestTierschutzvereinEuropaIntegration:
             },
         ]
 
-        with patch.object(
-            scraper, "_process_animals_parallel", return_value=problematic_dogs
-        ):
+        with patch.object(scraper, "_process_animals_parallel", return_value=problematic_dogs):
             translated_dogs = scraper.collect_data()
 
         # Should get both dogs back (translation failures are handled gracefully)
         assert len(translated_dogs) == 2
 
         # Good dog should be translated properly
-        good_dog = next(
-            dog for dog in translated_dogs if dog.get("external_id") == "good-456"
-        )
+        good_dog = next(dog for dog in translated_dogs if dog.get("external_id") == "good-456")
         assert good_dog["name"] == "Good_dog"  # Normalized
         assert good_dog["sex"] == "Female"  # Translated
         assert good_dog["age_text"] == "2 years"  # Translated
@@ -235,9 +215,7 @@ class TestTierschutzvereinEuropaIntegration:
         # We'll mock get_animal_list to succeed with our test dog and let translation happen
         with patch.object(scraper, "get_animal_list", return_value=german_dog):
             # Mock _process_animals_parallel to just return the input (no enrichment)
-            with patch.object(
-                scraper, "_process_animals_parallel", return_value=german_dog
-            ):
+            with patch.object(scraper, "_process_animals_parallel", return_value=german_dog):
                 translated_dogs = scraper.collect_data()
 
         assert len(translated_dogs) == 1
@@ -311,9 +289,7 @@ class TestTierschutzvereinEuropaIntegration:
         # Apply translation (what scraper should do)
         with (
             patch.object(scraper, "get_animal_list", return_value=german_dogs),
-            patch.object(
-                scraper, "_process_animals_parallel", return_value=german_dogs
-            ),
+            patch.object(scraper, "_process_animals_parallel", return_value=german_dogs),
         ):
             english_dogs = scraper.collect_data()
 

@@ -38,9 +38,7 @@ class SecureFileHandler:
 
     def __init__(self, config: FileValidationConfig):
         self.config = config
-        self._normalized_allowed_dirs = self._normalize_directories(
-            config.allowed_directories
-        )
+        self._normalized_allowed_dirs = self._normalize_directories(config.allowed_directories)
 
     def _normalize_directories(self, directories: Set[str]) -> Set[Path]:
         """Normalize and resolve allowed directories."""
@@ -52,9 +50,7 @@ class SecureFileHandler:
                 if normalized_path.exists() and normalized_path.is_dir():
                     normalized.add(normalized_path)
                 else:
-                    logger.warning(
-                        f"Directory does not exist or is not a directory: {dir_path}"
-                    )
+                    logger.warning(f"Directory does not exist or is not a directory: {dir_path}")
             except Exception as e:
                 logger.warning(f"Failed to normalize directory path {dir_path}: {e}")
 
@@ -129,9 +125,7 @@ class SecureFileHandler:
                 return False
 
             # Basic validation against common attack patterns
-            if any(
-                pattern in url.lower() for pattern in ["javascript:", "data:", "file:"]
-            ):
+            if any(pattern in url.lower() for pattern in ["javascript:", "data:", "file:"]):
                 logger.warning(f"Potentially dangerous URL pattern detected: {url}")
                 return False
 

@@ -193,13 +193,9 @@ def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
         for org in organizations:
             org_dict = dict(org)
             # Ensure JSON fields are parsed
-            if org_dict.get("social_media") and isinstance(
-                org_dict["social_media"], str
-            ):
+            if org_dict.get("social_media") and isinstance(org_dict["social_media"], str):
                 org_dict["social_media"] = json.loads(org_dict["social_media"])
-            if org_dict.get("service_regions") and isinstance(
-                org_dict["service_regions"], str
-            ):
+            if org_dict.get("service_regions") and isinstance(org_dict["service_regions"], str):
                 org_dict["service_regions"] = json.loads(org_dict["service_regions"])
             if org_dict.get("ships_to") and isinstance(org_dict["ships_to"], str):
                 org_dict["ships_to"] = json.loads(org_dict["ships_to"])
@@ -221,9 +217,7 @@ def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
 
 
 @router.get("/{organization_slug}", response_model=Organization)
-def get_organization_by_slug(
-    organization_slug: str, cursor: RealDictCursor = Depends(get_db_cursor)
-):
+def get_organization_by_slug(organization_slug: str, cursor: RealDictCursor = Depends(get_db_cursor)):
     """
     Get a specific organization by slug, with legacy ID redirect support.
 
@@ -240,9 +234,7 @@ def get_organization_by_slug(
             )
             result = cursor.fetchone()
             if result:
-                return RedirectResponse(
-                    url=f"/api/organizations/{result['slug']}", status_code=301
-                )
+                return RedirectResponse(url=f"/api/organizations/{result['slug']}", status_code=301)
 
         # Lookup by slug
         cursor.execute(
@@ -294,9 +286,7 @@ def get_organization_by_slug(
 
 # --- Legacy ID Route (Explicit Redirect) ---
 @router.get("/id/{organization_id}", response_model=Organization)
-def get_organization_by_id_legacy(
-    organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)
-):
+def get_organization_by_id_legacy(organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
     """Legacy endpoint - redirects to slug URL."""
     try:
         cursor.execute(
@@ -309,16 +299,12 @@ def get_organization_by_id_legacy(
             raise HTTPException(status_code=404, detail="Organization not found")
 
         # 301 redirect to new slug URL
-        return RedirectResponse(
-            url=f"/api/organizations/{result['slug']}", status_code=301
-        )
+        return RedirectResponse(url=f"/api/organizations/{result['slug']}", status_code=301)
 
     except HTTPException:
         raise
     except Exception:
-        raise APIException(
-            status_code=500, detail="Internal server error", error_code="INTERNAL_ERROR"
-        )
+        raise APIException(status_code=500, detail="Internal server error", error_code="INTERNAL_ERROR")
 
 
 @router.get("/{organization_id}/recent-dogs")
@@ -358,9 +344,7 @@ def get_organization_recent_dogs(
         return dogs_with_thumbnails
 
     except psycopg2.Error as db_err:
-        handle_database_error(
-            db_err, f"get_organization_recent_dogs({organization_id})"
-        )
+        handle_database_error(db_err, f"get_organization_recent_dogs({organization_id})")
     except Exception:
         raise APIException(
             status_code=500,
@@ -370,9 +354,7 @@ def get_organization_recent_dogs(
 
 
 @router.get("/{organization_id}/statistics")
-def get_organization_statistics(
-    organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)
-):
+def get_organization_statistics(organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
     """
     Get statistics for a specific organization.
 

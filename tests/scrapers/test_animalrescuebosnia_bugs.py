@@ -172,36 +172,24 @@ class TestAnimalRescueBosniaFixes(unittest.TestCase):
                 self.assertEqual(calculated_size, expected_size)
 
                 # Test standardization mapping through process_animal
-                result = self.scraper.process_animal(
-                    {"size": calculated_size, "breed": "Mix", "age": "2 years"}
-                )
+                result = self.scraper.process_animal({"size": calculated_size, "breed": "Mix", "age": "2 years"})
                 self.assertEqual(result["standardized_size"], expected_standardized)
 
     def test_empty_size_standardization(self):
         """Test that empty sizes are handled correctly."""
         # Test None input - unified standardizer should provide default
-        result = self.scraper.process_animal(
-            {"size": None, "breed": "Mix", "age": "2 years"}
-        )
+        result = self.scraper.process_animal({"size": None, "breed": "Mix", "age": "2 years"})
         self.assertIn("standardized_size", result)
         # The standardizer may return different defaults based on scraper configuration
-        self.assertIn(
-            result["standardized_size"], ["Medium", "Large"]
-        )  # Accept either default
+        self.assertIn(result["standardized_size"], ["Medium", "Large"])  # Accept either default
 
         # Test empty string input
-        result = self.scraper.process_animal(
-            {"size": "", "breed": "Mix", "age": "2 years"}
-        )
+        result = self.scraper.process_animal({"size": "", "breed": "Mix", "age": "2 years"})
         self.assertIn("standardized_size", result)
-        self.assertIn(
-            result["standardized_size"], ["Medium", "Large"]
-        )  # Accept either default
+        self.assertIn(result["standardized_size"], ["Medium", "Large"])  # Accept either default
 
         # Test unknown size - should use default
-        result = self.scraper.process_animal(
-            {"size": "Unknown", "breed": "Mix", "age": "2 years"}
-        )
+        result = self.scraper.process_animal({"size": "Unknown", "breed": "Mix", "age": "2 years"})
         self.assertIn("standardized_size", result)
         # 'Unknown' as input might become either Medium or Large depending on scraper defaults
         self.assertIn(result["standardized_size"], ["Medium", "Large"])

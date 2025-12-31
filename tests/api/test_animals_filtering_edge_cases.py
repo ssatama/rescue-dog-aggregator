@@ -25,9 +25,7 @@ class TestAnimalsFilteringEdgeCases:
     )
     def test_availability_confidence_levels(self, client, confidence_levels, expected):
         """Test filtering by availability confidence levels."""
-        response = client.get(
-            f"/api/animals?availability_confidence={confidence_levels}"
-        )
+        response = client.get(f"/api/animals?availability_confidence={confidence_levels}")
         assert response.status_code == 200
         data = response.json()
         for animal in data:
@@ -51,9 +49,7 @@ class TestAnimalsFilteringEdgeCases:
         assert response.status_code == 200
         # Should handle all search terms gracefully
 
-    @pytest.mark.parametrize(
-        "breed_group", ["Sporting", "Herding", "Working", "Non-Sporting", "Mixed"]
-    )
+    @pytest.mark.parametrize("breed_group", ["Sporting", "Herding", "Working", "Non-Sporting", "Mixed"])
     def test_breed_group_filtering(self, client, breed_group):
         """Test breed group filtering with various inputs."""
         response = client.get(f"/api/animals?breed_group={breed_group}")
@@ -105,12 +101,8 @@ class TestAnimalsFilteringEdgeCases:
 
     def test_location_filtering_combinations(self, client):
         """Test location filtering combinations."""
-        response = client.get(
-            "/api/animals?location_country=Test Country&available_to_country=Test Country"
-        )
+        response = client.get("/api/animals?location_country=Test Country&available_to_country=Test Country")
         assert response.status_code == 200
 
-        response = client.get(
-            "/api/animals?available_to_country=Test Country&available_to_region=Test Region"
-        )
+        response = client.get("/api/animals?available_to_country=Test Country&available_to_region=Test Region")
         assert response.status_code == 200

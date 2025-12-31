@@ -12,9 +12,7 @@ import psycopg2.extras
 
 from utils.config_models import OrganizationConfig
 from utils.db_connection import execute_command, execute_query, execute_transaction
-from utils.r2_logo_uploader import (
-    R2OrganizationLogoUploader as OrganizationLogoUploader,
-)
+from utils.r2_logo_uploader import R2OrganizationLogoUploader as OrganizationLogoUploader
 from utils.slug_generator import generate_unique_organization_slug
 
 logger = logging.getLogger(__name__)
@@ -70,17 +68,13 @@ class SyncSummary:
 class LogoUploadService(Protocol):
     """Protocol for logo upload services."""
 
-    def upload_organization_logo(
-        self, org_id: str, logo_url: str, force_upload: bool = False
-    ) -> Dict[str, str]: ...
+    def upload_organization_logo(self, org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]: ...
 
 
 class NullLogoUploadService:
     """Null object implementation for logo upload service."""
 
-    def upload_organization_logo(
-        self, org_id: str, logo_url: str, force_upload: bool = False
-    ) -> Dict[str, str]:
+    def upload_organization_logo(self, org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]:
         logger.info(f"Null logo upload service: skipping logo upload for {org_id}")
         return {"original": logo_url} if logo_url else {}
 
@@ -126,9 +120,7 @@ class OrganizationSyncService:
 
         return organizations
 
-    def should_update_organization(
-        self, db_org: OrganizationRecord, config: OrganizationConfig
-    ) -> bool:
+    def should_update_organization(self, db_org: OrganizationRecord, config: OrganizationConfig) -> bool:
         """Determine if organization should be updated (pure function)."""
         # Always update since we don't have last_config_sync in current schema
         # This ensures organizations are kept in sync with config changes
@@ -192,10 +184,7 @@ class OrganizationSyncService:
 
     def _build_adoption_fees_dict(self, config: OrganizationConfig) -> Dict[str, Any]:
         """Build adoption fees dictionary from config (pure function)."""
-        if (
-            not hasattr(config.metadata, "adoption_fees")
-            or not config.metadata.adoption_fees
-        ):
+        if not hasattr(config.metadata, "adoption_fees") or not config.metadata.adoption_fees:
             return {}
 
         fees = config.metadata.adoption_fees
@@ -320,9 +309,7 @@ class OrganizationSyncService:
                 return
 
             # Delete existing and insert new in transaction
-            commands = [
-                ("DELETE FROM service_regions WHERE organization_id = %s", (org_id,))
-            ]
+            commands = [("DELETE FROM service_regions WHERE organization_id = %s", (org_id,))]
 
             for country_code in all_countries:
                 commands.append(
@@ -333,14 +320,10 @@ class OrganizationSyncService:
                 )
 
             execute_transaction(commands)
-            logger.info(
-                f"Synced {len(all_countries)} service regions for organization {org_id}"
-            )
+            logger.info(f"Synced {len(all_countries)} service regions for organization {org_id}")
 
         except Exception as e:
-            logger.error(
-                f"Failed to sync service regions for organization {org_id}: {e}"
-            )
+            logger.error(f"Failed to sync service regions for organization {org_id}: {e}")
             # Don't fail the whole operation
 
     def _sync_organization_logo(self, org_id: int, config: OrganizationConfig) -> None:
@@ -349,9 +332,7 @@ class OrganizationSyncService:
             return
 
         try:
-            logo_urls = self.logo_service.upload_organization_logo(
-                config.id, config.metadata.logo_url, force_upload=False
-            )
+            logo_urls = self.logo_service.upload_organization_logo(config.id, config.metadata.logo_url, force_upload=False)
 
             if logo_urls and "original" in logo_urls:
                 r2_url = logo_urls["original"]
@@ -397,9 +378,7 @@ class OrganizationSyncService:
             logger.error(error_msg)
             return SyncResult(0, config.id, False, False, error_msg)
 
-    def sync_all_organizations(
-        self, configs: Dict[str, OrganizationConfig]
-    ) -> SyncSummary:
+    def sync_all_organizations(self, configs: Dict[str, OrganizationConfig]) -> SyncSummary:
         """Sync all organizations and return summary."""
         if not configs:
             return SyncSummary(0, 0, 0, 0, [], {})
@@ -432,10 +411,7 @@ class OrganizationSyncService:
             org_mappings=org_mappings,
         )
 
-        logger.info(
-            f"Sync completed: {summary.processed}/{summary.total_configs} processed "
-            f"({summary.created} created, {summary.updated} updated, {len(summary.errors)} errors)"
-        )
+        logger.info(f"Sync completed: {summary.processed}/{summary.total_configs} processed " f"({summary.created} created, {summary.updated} updated, {len(summary.errors)} errors)")
 
         return summary
 
@@ -456,9 +432,7 @@ class OrganizationSyncService:
             db_organizations = self.get_database_organizations()
 
             # Create mapping from config names to config IDs
-            config_names_to_ids = {
-                config.name: config_id for config_id, config in configs.items()
-            }
+            config_names_to_ids = {config.name: config_id for config_id, config in configs.items()}
 
             # Find organizations that exist in both configs and database (by name)
             db_org_names = set(db_organizations.keys())

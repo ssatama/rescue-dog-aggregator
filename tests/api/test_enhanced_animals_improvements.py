@@ -267,9 +267,7 @@ class TestErrorHandling:
 
         with patch("time.sleep"):
             with pytest.raises(DatabaseRetryExhaustedError) as exc_info:
-                service._execute_with_retry(
-                    "SELECT * FROM animals WHERE id = %s", (123,)
-                )
+                service._execute_with_retry("SELECT * FROM animals WHERE id = %s", (123,))
 
         error = exc_info.value
         assert error.operation == "execute_query"

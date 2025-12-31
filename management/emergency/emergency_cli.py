@@ -52,9 +52,7 @@ class EmergencyCLI:
 
         return result
 
-    def create_backup(
-        self, organization_id: int, reason: str = "Manual backup"
-    ) -> Dict[str, Any]:
+    def create_backup(self, organization_id: int, reason: str = "Manual backup") -> Dict[str, Any]:
         """Execute backup creation command.
 
         Args:
@@ -64,9 +62,7 @@ class EmergencyCLI:
         Returns:
             Dictionary containing backup information
         """
-        result = self.coordinator.rollback_service.create_data_backup(
-            organization_id, reason
-        )
+        result = self.coordinator.rollback_service.create_data_backup(organization_id, reason)
 
         # Ensure we always return a Dict[str, Any]
         if not isinstance(result, dict):

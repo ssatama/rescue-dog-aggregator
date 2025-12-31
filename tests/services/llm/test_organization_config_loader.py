@@ -43,9 +43,7 @@ class TestOrganizationConfig:
 
     def test_config_defaults(self):
         """Test default values."""
-        config = OrganizationConfig(
-            organization_id=1, organization_name="Test Org", prompt_file="test.yaml"
-        )
+        config = OrganizationConfig(organization_id=1, organization_name="Test Org", prompt_file="test.yaml")
 
         assert config.source_language == "en"
         assert config.target_language == "en"
@@ -100,9 +98,7 @@ class TestOrganizationConfigLoader:
         return {
             "system_prompt": "You are an expert dog profiler",
             "user_prompt": "Create a profile for: {dog_data}",
-            "examples": [
-                {"input": "2 Jahre alter Rüde", "output": "2 year old male dog"}
-            ],
+            "examples": [{"input": "2 Jahre alter Rüde", "output": "2 year old male dog"}],
         }
 
     def test_load_config_by_id(self, loader, mock_config_data):
@@ -158,9 +154,7 @@ class TestOrganizationConfigLoader:
 
     def test_cache_mechanism(self, loader, mock_config_data):
         """Test configuration caching."""
-        with patch.object(
-            loader, "_load_config_map", return_value=mock_config_data
-        ) as mock_load:
+        with patch.object(loader, "_load_config_map", return_value=mock_config_data) as mock_load:
             # First call loads from file
             config1 = loader.load_config(11)
             assert mock_load.call_count == 1
@@ -174,9 +168,7 @@ class TestOrganizationConfigLoader:
 
     def test_reload_configs(self, loader, mock_config_data):
         """Test reloading configurations."""
-        with patch.object(
-            loader, "_load_config_map", return_value=mock_config_data
-        ) as mock_load:
+        with patch.object(loader, "_load_config_map", return_value=mock_config_data) as mock_load:
             # Initial load
             loader.load_config(11)
             assert mock_load.call_count == 1
@@ -202,9 +194,7 @@ class TestOrganizationConfigLoader:
     def test_environment_override(self, loader, mock_config_data):
         """Test environment variable overrides."""
         with patch.dict("os.environ", {"LLM_MODEL_OVERRIDE": "gpt-4"}):
-            with patch.object(
-                loader, "_load_config_map", return_value=mock_config_data
-            ):
+            with patch.object(loader, "_load_config_map", return_value=mock_config_data):
                 config = loader.load_config(11)
                 assert config.model_preference == "gpt-4"  # Overridden by env var
 

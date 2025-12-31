@@ -34,9 +34,7 @@ class TestTierschutzvereinEuropaScraperFast:
 
             mock_config_loader.return_value.load_config.return_value = mock_config
             mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(
-                organization_id=1, was_created=True
-            )
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=True)
             mock_sync.return_value = mock_sync_service
 
             scraper = TierschutzvereinEuropaScraper()
@@ -57,9 +55,7 @@ class TestTierschutzvereinEuropaScraperFast:
 
         for text, expected in test_cases:
             result = normalize_name(text)
-            assert result == expected, (
-                f"Expected {expected}, got {result} for text: {text}"
-            )
+            assert result == expected, f"Expected {expected}, got {result} for text: {text}"
 
     @pytest.mark.unit
     def test_translations_translate_age(self):
@@ -77,9 +73,7 @@ class TestTierschutzvereinEuropaScraperFast:
 
         for text, expected in test_cases:
             result = translate_age(text)
-            assert result == expected, (
-                f"Expected {expected}, got {result} for text: {text}"
-            )
+            assert result == expected, f"Expected {expected}, got {result} for text: {text}"
 
     @pytest.mark.unit
     def test_translations_translate_gender(self):
@@ -97,9 +91,7 @@ class TestTierschutzvereinEuropaScraperFast:
 
         for text, expected in test_cases:
             result = translate_gender(text)
-            assert result == expected, (
-                f"Expected {expected}, got {result} for text: {text}"
-            )
+            assert result == expected, f"Expected {expected}, got {result} for text: {text}"
 
     @pytest.mark.unit
     def test_translations_translate_breed(self):
@@ -116,9 +108,7 @@ class TestTierschutzvereinEuropaScraperFast:
 
         for text, expected in test_cases:
             result = translate_breed(text)
-            assert result == expected, (
-                f"Expected {expected}, got {result} for text: {text}"
-            )
+            assert result == expected, f"Expected {expected}, got {result} for text: {text}"
 
     @pytest.mark.unit
     def test_extract_external_id_from_url(self, scraper):
@@ -140,9 +130,7 @@ class TestTierschutzvereinEuropaScraperFast:
 
         for url, expected in test_cases:
             result = scraper._extract_external_id_from_url(url)
-            assert result == expected, (
-                f"Expected {expected}, got {result} for URL {url}"
-            )
+            assert result == expected, f"Expected {expected}, got {result} for URL {url}"
 
     @pytest.mark.unit
     def test_pagination_url_generation(self, scraper):

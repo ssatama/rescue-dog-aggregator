@@ -38,12 +38,8 @@ async def sentry_health():
             "sentry_initialized": is_initialized,
             "environment": sentry_sdk.get_client().options.get("environment"),
             "dsn_configured": bool(sentry_sdk.get_client().options.get("dsn")),
-            "traces_sample_rate": sentry_sdk.get_client().options.get(
-                "traces_sample_rate"
-            ),
-            "profiles_sample_rate": sentry_sdk.get_client().options.get(
-                "profiles_sample_rate"
-            ),
+            "traces_sample_rate": sentry_sdk.get_client().options.get("traces_sample_rate"),
+            "profiles_sample_rate": sentry_sdk.get_client().options.get("profiles_sample_rate"),
         },
     )
 
@@ -76,15 +72,11 @@ async def test_error(
 
 @router.get("/test-performance", response_model=TestResponse)
 async def test_performance(
-    delay_ms: int = Query(
-        100, description="Delay in milliseconds to simulate slow operation"
-    ),
+    delay_ms: int = Query(100, description="Delay in milliseconds to simulate slow operation"),
 ):
     """Test performance monitoring with configurable delay."""
 
-    with sentry_sdk.start_transaction(
-        name="test-performance", op="test"
-    ) as transaction:
+    with sentry_sdk.start_transaction(name="test-performance", op="test") as transaction:
         transaction.set_tag("test_type", "performance")
 
         # Simulate database query
@@ -114,17 +106,11 @@ async def test_breadcrumb():
     """Test breadcrumb recording."""
 
     # Add various breadcrumbs
-    sentry_sdk.add_breadcrumb(
-        category="test", message="Test breadcrumb 1", level="info", data={"step": 1}
-    )
+    sentry_sdk.add_breadcrumb(category="test", message="Test breadcrumb 1", level="info", data={"step": 1})
 
-    sentry_sdk.add_breadcrumb(
-        category="test", message="Test breadcrumb 2", level="warning", data={"step": 2}
-    )
+    sentry_sdk.add_breadcrumb(category="test", message="Test breadcrumb 2", level="warning", data={"step": 2})
 
-    sentry_sdk.add_breadcrumb(
-        category="test", message="Test breadcrumb 3", level="error", data={"step": 3}
-    )
+    sentry_sdk.add_breadcrumb(category="test", message="Test breadcrumb 3", level="error", data={"step": 3})
 
     return TestResponse(
         message="Breadcrumbs added",
@@ -142,17 +128,11 @@ async def test_custom_event(
     """Test custom event capture."""
 
     if event_type == "info":
-        sentry_sdk.capture_message(
-            "Test info message from Sentry test endpoint", level="info"
-        )
+        sentry_sdk.capture_message("Test info message from Sentry test endpoint", level="info")
     elif event_type == "warning":
-        sentry_sdk.capture_message(
-            "Test warning message from Sentry test endpoint", level="warning"
-        )
+        sentry_sdk.capture_message("Test warning message from Sentry test endpoint", level="warning")
     elif event_type == "error":
-        sentry_sdk.capture_message(
-            "Test error message from Sentry test endpoint", level="error"
-        )
+        sentry_sdk.capture_message("Test error message from Sentry test endpoint", level="error")
     else:
         return TestResponse(
             message="Unknown event type",
@@ -179,9 +159,7 @@ async def test_user_context(
         scope.set_user({"id": user_id, "email": email, "username": f"user_{user_id}"})
 
         # Send a test message with user context
-        sentry_sdk.capture_message(
-            f"Test message with user context for {email}", level="info"
-        )
+        sentry_sdk.capture_message(f"Test message with user context for {email}", level="info")
 
     return TestResponse(
         message="User context set and test event sent",

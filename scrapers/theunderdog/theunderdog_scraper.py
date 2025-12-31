@@ -90,9 +90,7 @@ class TheUnderdogScraper(BaseScraper):
                     self.logger.debug(f"Collected data for {dog_data['name']}")
 
             except Exception as e:
-                self.logger.error(
-                    f"Error collecting data for {dog_info.get('url', 'unknown')}: {e}"
-                )
+                self.logger.error(f"Error collecting data for {dog_info.get('url', 'unknown')}: {e}")
                 continue
 
         # World-class logging: Collection results handled by centralized system
@@ -154,9 +152,7 @@ class TheUnderdogScraper(BaseScraper):
             response = requests.get(
                 self.listing_url,
                 timeout=self.timeout,
-                headers={
-                    "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"
-                },
+                headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"},
             )
             response.raise_for_status()
 
@@ -270,9 +266,7 @@ class TheUnderdogScraper(BaseScraper):
             # Extract all data
             external_id = self._generate_external_id(url)
             hero_image_url = self._extract_hero_image(soup)
-            properties, description = (
-                self._extract_properties_and_description_from_soup(soup)
-            )
+            properties, description = self._extract_properties_and_description_from_soup(soup)
 
             # Ensure properties is never None or completely empty
             if not properties:
@@ -357,9 +351,7 @@ class TheUnderdogScraper(BaseScraper):
 
             # Ensure description is not empty
             if not result.get("description"):
-                result["description"] = (
-                    f"Rescue dog from {result.get('country', 'unknown location')}"
-                )
+                result["description"] = f"Rescue dog from {result.get('country', 'unknown location')}"
 
             # Add location standardization
             if not result.get("location"):
@@ -389,9 +381,7 @@ class TheUnderdogScraper(BaseScraper):
             response = requests.get(
                 url,
                 timeout=self.timeout,
-                headers={
-                    "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"
-                },
+                headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"},
             )
             response.raise_for_status()
 
@@ -482,15 +472,9 @@ class TheUnderdogScraper(BaseScraper):
         gallery_imgs = soup.select(".ProductItem-gallery img[data-src]")
         for img in gallery_imgs:
             data_src_attr = img.get("data-src", "")
-            data_src = (
-                "".join(data_src_attr)
-                if isinstance(data_src_attr, list)
-                else data_src_attr
-            )
+            data_src = "".join(data_src_attr) if isinstance(data_src_attr, list) else data_src_attr
             alt_attr = img.get("alt", "")
-            alt = (
-                "".join(alt_attr) if isinstance(alt_attr, list) else str(alt_attr or "")
-            )
+            alt = "".join(alt_attr) if isinstance(alt_attr, list) else str(alt_attr or "")
 
             if data_src and alt:
                 # Skip organization logo
@@ -502,9 +486,7 @@ class TheUnderdogScraper(BaseScraper):
                 # Found a valid dog image with full Squarespace URL
                 if data_src.startswith("http"):
                     # Add format parameter for optimized loading if not present
-                    if "?format=" not in data_src and data_src.endswith(
-                        (".jpg", ".jpeg", ".png")
-                    ):
+                    if "?format=" not in data_src and data_src.endswith((".jpg", ".jpeg", ".png")):
                         data_src += "?format=1500w"
                     return data_src
 
@@ -512,9 +494,7 @@ class TheUnderdogScraper(BaseScraper):
         gallery_imgs = soup.select(".ProductItem-gallery-slides img")
         for img in gallery_imgs:
             alt_attr = img.get("alt", "")
-            alt = (
-                "".join(alt_attr) if isinstance(alt_attr, list) else str(alt_attr or "")
-            )
+            alt = "".join(alt_attr) if isinstance(alt_attr, list) else str(alt_attr or "")
             if alt and alt != "Underdog International" and alt.lower() != "no src":
                 # Skip organization logo
                 if "underdog" in alt.lower() and "international" in alt.lower():
@@ -539,10 +519,7 @@ class TheUnderdogScraper(BaseScraper):
                 src_attr = img.get("src")
                 src = "".join(src_attr) if isinstance(src_attr, list) else src_attr
                 # Skip small thumbnails, icons, or org logos
-                if any(
-                    skip in src.lower()
-                    for skip in ["thumb", "icon", "logo", "primary_ud_label"]
-                ):
+                if any(skip in src.lower() for skip in ["thumb", "icon", "logo", "primary_ud_label"]):
                     continue
                 # Fix protocol-relative URLs
                 if src.startswith("//"):
@@ -564,14 +541,10 @@ class TheUnderdogScraper(BaseScraper):
             return None
 
         # Base Squarespace CDN pattern observed from the site
-        base_cdn = (
-            "https://images.squarespace-cdn.com/content/v1/5c40fa0e1aef1d1aa24274ea"
-        )
+        base_cdn = "https://images.squarespace-cdn.com/content/v1/5c40fa0e1aef1d1aa24274ea"
 
         # Clean the filename - remove URL encoding artifacts
-        clean_filename = (
-            alt_filename.replace("+", " ").replace("%28", "(").replace("%29", ")")
-        )
+        clean_filename = alt_filename.replace("+", " ").replace("%28", "(").replace("%29", ")")
 
         # Try common Squarespace patterns
         possible_paths = [
@@ -587,9 +560,7 @@ class TheUnderdogScraper(BaseScraper):
 
         return None
 
-    def _extract_properties_and_description_from_soup(
-        self, soup: BeautifulSoup
-    ) -> Tuple[Dict[str, str], str]:
+    def _extract_properties_and_description_from_soup(self, soup: BeautifulSoup) -> Tuple[Dict[str, str], str]:
         """Extract properties and description from detail page.
 
         Args:
@@ -608,9 +579,7 @@ class TheUnderdogScraper(BaseScraper):
 
         return self._extract_properties_and_description(excerpt_text)
 
-    def _extract_properties_and_description(
-        self, text: str
-    ) -> Tuple[Dict[str, str], str]:
+    def _extract_properties_and_description(self, text: str) -> Tuple[Dict[str, str], str]:
         """Extract properties and description from text content.
 
         Args:
@@ -669,9 +638,7 @@ class TheUnderdogScraper(BaseScraper):
                                 properties[line] = actual_value
 
                                 # Start collecting description after "About [Name]"
-                                about_match = re.match(
-                                    r"About\s+\w+(.*)$", about_text, re.DOTALL
-                                )
+                                about_match = re.match(r"About\s+\w+(.*)$", about_text, re.DOTALL)
                                 if about_match:
                                     desc_start = about_match.group(1).strip()
                                     if desc_start:
@@ -712,9 +679,7 @@ class TheUnderdogScraper(BaseScraper):
                         properties[key] = actual_value
 
                         # Start collecting description after "About [Name]"
-                        about_match = re.match(
-                            r"About\s+\w+(.*)$", about_text, re.DOTALL
-                        )
+                        about_match = re.match(r"About\s+\w+(.*)$", about_text, re.DOTALL)
                         if about_match:
                             desc_start = about_match.group(1).strip()
                             if desc_start:

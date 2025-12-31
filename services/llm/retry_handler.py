@@ -60,9 +60,7 @@ class RetryHandler:
             "total_delay_seconds": 0.0,
         }
 
-    async def execute_with_retry(
-        self, func: Callable, *args, model_override: Optional[str] = None, **kwargs
-    ) -> Any:
+    async def execute_with_retry(self, func: Callable, *args, model_override: Optional[str] = None, **kwargs) -> Any:
         """
         Execute function with retry logic and model fallback.
 
@@ -79,9 +77,7 @@ class RetryHandler:
         """
         models_to_try = self.config.fallback_models.copy()
         if model_override:
-            models_to_try = [model_override] + [
-                m for m in models_to_try if m != model_override
-            ]
+            models_to_try = [model_override] + [m for m in models_to_try if m != model_override]
 
         last_error = None
         total_attempts = 0
@@ -96,11 +92,7 @@ class RetryHandler:
 
                 try:
                     # Update model in kwargs if function accepts it
-                    if (
-                        "model" in kwargs
-                        or hasattr(func, "__code__")
-                        and "model" in func.__code__.co_varnames
-                    ):
+                    if "model" in kwargs or hasattr(func, "__code__") and "model" in func.__code__.co_varnames:
                         kwargs["model"] = model
 
                     result = await func(*args, **kwargs)
@@ -109,23 +101,17 @@ class RetryHandler:
                         self.retry_stats["successful_retries"] += 1
                         if model_idx > 0:
                             self.retry_stats["model_fallbacks"] += 1
-                        logger.info(
-                            f"Retry successful with {model} on attempt {total_attempts}"
-                        )
+                        logger.info(f"Retry successful with {model} on attempt {total_attempts}")
 
                     return result
 
                 except json.JSONDecodeError as e:
                     last_error = e
-                    logger.warning(
-                        f"JSON decode error with {model} (attempt {attempt + 1}): {str(e)}"
-                    )
+                    logger.warning(f"JSON decode error with {model} (attempt {attempt + 1}): {str(e)}")
 
                     # For JSON errors, try with adjusted prompt on retry
                     if "prompt_adjustment" in kwargs:
-                        kwargs["prompt_adjustment"] = (
-                            "Please return valid JSON only, no markdown formatting."
-                        )
+                        kwargs["prompt_adjustment"] = "Please return valid JSON only, no markdown formatting."
 
                 except asyncio.TimeoutError as e:
                     last_error = e
@@ -137,18 +123,12 @@ class RetryHandler:
 
                 except Exception as e:
                     last_error = e
-                    logger.warning(
-                        f"Error with {model} (attempt {attempt + 1}): {str(e)}"
-                    )
+                    logger.warning(f"Error with {model} (attempt {attempt + 1}): {str(e)}")
 
                 # Calculate delay with exponential backoff
-                if (
-                    attempt < attempts_per_model - 1
-                    or model_idx < len(models_to_try) - 1
-                ):
+                if attempt < attempts_per_model - 1 or model_idx < len(models_to_try) - 1:
                     delay = min(
-                        self.config.initial_delay
-                        * (self.config.backoff_factor**attempt),
+                        self.config.initial_delay * (self.config.backoff_factor**attempt),
                         self.config.max_delay,
                     )
                     self.retry_stats["total_delay_seconds"] += delay

@@ -38,10 +38,7 @@ class TestAdoptionFeesSchema:
         column_info = result[0]
         assert column_info["column_name"] == "adoption_fees"
         assert "jsonb" in column_info["data_type"].lower()
-        assert (
-            "'{}'" in column_info["column_default"]
-            or "{}" in column_info["column_default"]
-        )
+        assert "'{}'" in column_info["column_default"] or "{}" in column_info["column_default"]
 
     def test_adoption_fees_column_accepts_json_data(self):
         """
@@ -287,9 +284,7 @@ class TestAdoptionFeesSchema:
 
         # Error should be related to JSON parsing
         error_msg = str(exc_info.value).lower()
-        assert any(
-            keyword in error_msg for keyword in ["json", "syntax", "invalid", "parse"]
-        )
+        assert any(keyword in error_msg for keyword in ["json", "syntax", "invalid", "parse"])
 
     def test_adoption_fees_in_existing_organizations(self):
         """
@@ -323,9 +318,7 @@ class TestAdoptionFeesSchema:
                 if org["adoption_fees"]:
                     # If not empty, should have reasonable structure
                     if "usual_fee" in org["adoption_fees"]:
-                        assert isinstance(
-                            org["adoption_fees"]["usual_fee"], (int, float)
-                        )
+                        assert isinstance(org["adoption_fees"]["usual_fee"], (int, float))
                     if "currency" in org["adoption_fees"]:
                         assert isinstance(org["adoption_fees"]["currency"], str)
                         assert len(org["adoption_fees"]["currency"]) <= 5

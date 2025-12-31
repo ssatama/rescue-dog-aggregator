@@ -17,9 +17,7 @@ import psycopg2
 from config import DB_CONFIG
 from utils.slug_generator import generate_unique_animal_slug
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -118,15 +116,11 @@ class MissingIdSlugFixer:
                 )  # Include ID for suffix
 
                 if dry_run:
-                    logger.info(
-                        f"Would update animal {animal_id} ({name}): '{current_slug}' -> '{new_slug}'"
-                    )
+                    logger.info(f"Would update animal {animal_id} ({name}): '{current_slug}' -> '{new_slug}'")
                 else:
                     # Update the animal's slug
                     if self.update_animal_slug(animal_id, new_slug):
-                        logger.info(
-                            f"Updated animal {animal_id} ({name}): '{current_slug}' -> '{new_slug}'"
-                        )
+                        logger.info(f"Updated animal {animal_id} ({name}): '{current_slug}' -> '{new_slug}'")
                         success_count += 1
                     else:
                         logger.error(f"Failed to update animal {animal_id} ({name})")
@@ -140,9 +134,7 @@ class MissingIdSlugFixer:
             # Commit all changes
             try:
                 self.conn.commit()
-                logger.info(
-                    f"Fix completed successfully: {success_count} updated, {error_count} errors"
-                )
+                logger.info(f"Fix completed successfully: {success_count} updated, {error_count} errors")
             except Exception as e:
                 logger.error(f"Error committing changes: {e}")
                 self.conn.rollback()
@@ -157,9 +149,7 @@ def main():
     """Main entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Fix animals with slugs missing ID suffixes"
-    )
+    parser = argparse.ArgumentParser(description="Fix animals with slugs missing ID suffixes")
     parser.add_argument(
         "--dry-run",
         action="store_true",

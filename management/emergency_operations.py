@@ -54,9 +54,7 @@ class EmergencyOperations:
         """
         return self.coordinator.emergency_stop_all_scrapers()
 
-    def emergency_disable_organization(
-        self, organization_id: int, reason: str
-    ) -> Dict[str, Any]:
+    def emergency_disable_organization(self, organization_id: int, reason: str) -> Dict[str, Any]:
         """
         Emergency disable scraping for a specific organization.
 
@@ -124,9 +122,7 @@ class EmergencyOperationsCommands:
         """Execute rollback command for organization."""
         return self.cli.rollback_organization(organization_id)
 
-    def create_backup(
-        self, organization_id: int, reason: str = "Manual backup"
-    ) -> Dict[str, Any]:
+    def create_backup(self, organization_id: int, reason: str = "Manual backup") -> Dict[str, Any]:
         """Execute backup creation command."""
         return self.cli.create_backup(organization_id, reason)
 
@@ -137,45 +133,27 @@ class EmergencyOperationsCommands:
 
 def main():
     """Main CLI entry point for emergency operations."""
-    parser = argparse.ArgumentParser(
-        description="Emergency operations for rescue dog aggregator"
-    )
-    subparsers = parser.add_subparsers(
-        dest="command", help="Available emergency commands"
-    )
+    parser = argparse.ArgumentParser(description="Emergency operations for rescue dog aggregator")
+    subparsers = parser.add_subparsers(dest="command", help="Available emergency commands")
 
     # Emergency stop command
-    stop_parser = subparsers.add_parser(
-        "emergency-stop", help="Stop all running scrapers immediately"
-    )
+    stop_parser = subparsers.add_parser("emergency-stop", help="Stop all running scrapers immediately")
 
     # System status command
     status_parser = subparsers.add_parser("status", help="Get system status")
 
     # Rollback command
-    rollback_parser = subparsers.add_parser(
-        "rollback", help="Rollback organization data"
-    )
-    rollback_parser.add_argument(
-        "organization_id", type=int, help="Organization ID to rollback"
-    )
+    rollback_parser = subparsers.add_parser("rollback", help="Rollback organization data")
+    rollback_parser.add_argument("organization_id", type=int, help="Organization ID to rollback")
 
     # Backup command
     backup_parser = subparsers.add_parser("backup", help="Create data backup")
-    backup_parser.add_argument(
-        "organization_id", type=int, help="Organization ID to backup"
-    )
-    backup_parser.add_argument(
-        "--reason", default="Manual backup", help="Reason for backup"
-    )
+    backup_parser.add_argument("organization_id", type=int, help="Organization ID to backup")
+    backup_parser.add_argument("--reason", default="Manual backup", help="Reason for backup")
 
     # Recovery command
-    recovery_parser = subparsers.add_parser(
-        "recover", help="Execute emergency recovery"
-    )
-    recovery_parser.add_argument(
-        "organization_id", type=int, help="Organization ID to recover"
-    )
+    recovery_parser = subparsers.add_parser("recover", help="Execute emergency recovery")
+    recovery_parser.add_argument("organization_id", type=int, help="Organization ID to recover")
 
     args = parser.parse_args()
 
@@ -214,9 +192,7 @@ def main():
 
         elif args.command == "recover":
             result = cli.emergency_ops.execute_emergency_recovery(args.organization_id)
-            print(
-                f"🚨 Emergency Recovery Results for Organization {args.organization_id}:"
-            )
+            print(f"🚨 Emergency Recovery Results for Organization {args.organization_id}:")
             print(json.dumps(result, indent=2, default=str))
 
     except Exception as e:

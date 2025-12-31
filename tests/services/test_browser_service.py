@@ -89,9 +89,7 @@ class TestBrowserServiceModeDetection:
         """Service uses remote mode when BROWSER_WEBDRIVER_ENDPOINT is set."""
         with patch.dict(
             os.environ,
-            {
-                "BROWSER_WEBDRIVER_ENDPOINT": "wss://browserless.railway.internal/webdriver"
-            },
+            {"BROWSER_WEBDRIVER_ENDPOINT": "wss://browserless.railway.internal/webdriver"},
         ):
             service = BrowserService()
 
@@ -208,9 +206,7 @@ class TestBrowserServiceChromeOptions:
         """Extra arguments are appended."""
         service = BrowserService()
 
-        opts = BrowserOptions(
-            extra_arguments=["--disable-extensions", "--disable-plugins"]
-        )
+        opts = BrowserOptions(extra_arguments=["--disable-extensions", "--disable-plugins"])
         chrome_opts = service._build_chrome_options(opts)
         args = chrome_opts.arguments
 
@@ -289,9 +285,7 @@ class TestBrowserServiceRemoteDriver:
 
         with patch.dict(
             os.environ,
-            {
-                "BROWSER_WEBDRIVER_ENDPOINT": "wss://browserless.railway.internal/webdriver"
-            },
+            {"BROWSER_WEBDRIVER_ENDPOINT": "wss://browserless.railway.internal/webdriver"},
         ):
             service = BrowserService()
             result = service.create_driver(BrowserOptions())
@@ -324,9 +318,7 @@ class TestBrowserServiceRemoteDriver:
 
         with patch.dict(
             os.environ,
-            {
-                "BROWSER_WEBDRIVER_ENDPOINT": "wss://browserless.railway.internal/webdriver"
-            },
+            {"BROWSER_WEBDRIVER_ENDPOINT": "wss://browserless.railway.internal/webdriver"},
         ):
             service = BrowserService()
             service.create_driver(BrowserOptions(stealth_mode=True))

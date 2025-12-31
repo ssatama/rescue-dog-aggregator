@@ -71,9 +71,7 @@ class SystemMonitoringService:
                 "error": str(e),
             }
 
-    def check_system_health(
-        self, failure_rate: float, active_scrapers: int, recent_failures: int
-    ) -> str:
+    def check_system_health(self, failure_rate: float, active_scrapers: int, recent_failures: int) -> str:
         """Determine system health based on metrics.
 
         Args:

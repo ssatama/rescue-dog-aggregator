@@ -126,16 +126,12 @@ class ProfileNormalizer:
 
         # Normalize enum fields
         if "energy_level" in normalized:
-            normalized["energy_level"] = self.normalize_energy_level(
-                normalized["energy_level"]
-            )
+            normalized["energy_level"] = self.normalize_energy_level(normalized["energy_level"])
         elif "energy_level" not in normalized:
             normalized["energy_level"] = self.rules.default_values["energy_level"]
 
         if "trainability" in normalized:
-            normalized["trainability"] = self.normalize_trainability(
-                normalized["trainability"]
-            )
+            normalized["trainability"] = self.normalize_trainability(normalized["trainability"])
         elif "trainability" not in normalized:
             normalized["trainability"] = self.rules.default_values["trainability"]
 
@@ -143,9 +139,7 @@ class ProfileNormalizer:
         for field in ["good_with_children", "good_with_cats", "good_with_dogs"]:
             if field in normalized:
                 field_type = field.replace("good_with_", "")
-                normalized[field] = self.normalize_compatibility(
-                    normalized[field], field_type
-                )
+                normalized[field] = self.normalize_compatibility(normalized[field], field_type)
 
         # Normalize list fields
         for field, constraints in self.rules.list_constraints.items():
@@ -154,9 +148,7 @@ class ProfileNormalizer:
                     normalized[field],
                     min_items=constraints["min"],
                     max_items=constraints["max"],
-                    default_item=constraints["defaults"][0]
-                    if constraints["defaults"]
-                    else None,
+                    default_item=constraints["defaults"][0] if constraints["defaults"] else None,
                 )
             elif field not in normalized and constraints["min"] > 0:
                 # Add default list if required
@@ -170,15 +162,11 @@ class ProfileNormalizer:
 
         # Normalize numeric fields
         if "adoption_fee_euros" in normalized:
-            normalized["adoption_fee_euros"] = self.normalize_numeric(
-                normalized["adoption_fee_euros"]
-            )
+            normalized["adoption_fee_euros"] = self.normalize_numeric(normalized["adoption_fee_euros"])
 
         # Normalize confidence scores
         if "confidence_scores" in normalized:
-            normalized["confidence_scores"] = self.normalize_confidence_scores(
-                normalized["confidence_scores"]
-            )
+            normalized["confidence_scores"] = self.normalize_confidence_scores(normalized["confidence_scores"])
 
         # Apply defaults for missing required fields
         for field, default_value in self.rules.default_values.items():

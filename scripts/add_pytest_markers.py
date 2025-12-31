@@ -82,11 +82,7 @@ def analyze_test_file(file_path: Path) -> Set[str]:
 
     # Determine markers based on patterns
     if any(re.search(pattern, content, re.IGNORECASE) for pattern in external_patterns):
-        if (
-            "selenium" in content.lower()
-            or "webdriver" in content.lower()
-            or "playwright" in content.lower()
-        ):
+        if "selenium" in content.lower() or "webdriver" in content.lower() or "playwright" in content.lower():
             markers.add("browser")
             markers.add("slow")
         else:

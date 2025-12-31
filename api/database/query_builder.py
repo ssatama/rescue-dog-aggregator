@@ -40,9 +40,7 @@ class QueryBuilder:
         self._from_table = f"{table} {alias}" if alias else table
         return self
 
-    def inner_join(
-        self, table: str, on_condition: str, alias: Optional[str] = None
-    ) -> "QueryBuilder":
+    def inner_join(self, table: str, on_condition: str, alias: Optional[str] = None) -> "QueryBuilder":
         """Add INNER JOIN."""
         table_expr = f"{table} {alias}" if alias else table
         self._joins.append(f"INNER JOIN {table_expr} ON {on_condition}")
@@ -139,9 +137,7 @@ class QueryBuilder:
     def execute(self, cursor: RealDictCursor) -> List[Dict[str, Any]]:
         """Execute the query and return results."""
         query, params = self.build()
-        logger.debug(
-            f"Executing query: {query[:200]}{'...' if len(query) > 200 else ''}"
-        )
+        logger.debug(f"Executing query: {query[:200]}{'...' if len(query) > 200 else ''}")
         logger.debug(f"Parameters: {params}")
 
         cursor.execute(query, params)
@@ -154,9 +150,7 @@ class BatchQueryExecutor:
     def __init__(self, cursor: RealDictCursor):
         self.cursor = cursor
 
-    def fetch_service_regions(
-        self, organization_ids: List[int]
-    ) -> Dict[int, List[Dict[str, Any]]]:
+    def fetch_service_regions(self, organization_ids: List[int]) -> Dict[int, List[Dict[str, Any]]]:
         """
         Fetch service regions for multiple organizations in a single query.
         """
@@ -179,9 +173,7 @@ class BatchQueryExecutor:
             org_id = row["organization_id"]
             if org_id not in regions_by_org:
                 regions_by_org[org_id] = []
-            regions_by_org[org_id].append(
-                {"country": row["country"], "region": row["region"]}
-            )
+            regions_by_org[org_id].append({"country": row["country"], "region": row["region"]})
 
         return regions_by_org
 

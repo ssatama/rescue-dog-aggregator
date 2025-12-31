@@ -88,9 +88,7 @@ class AdoptionMigrationRunner:
         already_applied = self.cursor.fetchone()[0]
 
         if already_applied:
-            print(
-                "\n⚠️  Warning: Migration appears to be already applied (adoption_check_data column exists)"
-            )
+            print("\n⚠️  Warning: Migration appears to be already applied (adoption_check_data column exists)")
             response = input("Continue anyway? (y/n): ")
             if response.lower() != "y":
                 print("Migration cancelled.")
@@ -102,12 +100,7 @@ class AdoptionMigrationRunner:
         """Execute the migration SQL."""
         print("\n🚀 Running migration 013_adoption_status_tracking...")
 
-        migration_path = (
-            Path(__file__).parent.parent
-            / "database"
-            / "migrations"
-            / "013_adoption_status_tracking.sql"
-        )
+        migration_path = Path(__file__).parent.parent / "database" / "migrations" / "013_adoption_status_tracking.sql"
 
         if not migration_path.exists():
             print(f"❌ Migration file not found: {migration_path}")
@@ -119,11 +112,7 @@ class AdoptionMigrationRunner:
 
             if self.dry_run:
                 print("\n🔍 DRY RUN - Would execute:")
-                print(
-                    migration_sql[:500] + "..."
-                    if len(migration_sql) > 500
-                    else migration_sql
-                )
+                print(migration_sql[:500] + "..." if len(migration_sql) > 500 else migration_sql)
                 return True
 
             # Execute migration
@@ -170,12 +159,7 @@ class AdoptionMigrationRunner:
         """Execute the rollback SQL."""
         print("\n⏮️  Running rollback for migration 013...")
 
-        rollback_path = (
-            Path(__file__).parent.parent
-            / "database"
-            / "migrations"
-            / "013_adoption_status_tracking_rollback.sql"
-        )
+        rollback_path = Path(__file__).parent.parent / "database" / "migrations" / "013_adoption_status_tracking_rollback.sql"
 
         if not rollback_path.exists():
             print(f"❌ Rollback file not found: {rollback_path}")
@@ -257,15 +241,9 @@ class AdoptionMigrationRunner:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Run adoption status tracking migration"
-    )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Preview migration without applying"
-    )
-    parser.add_argument(
-        "--rollback", action="store_true", help="Rollback the migration"
-    )
+    parser = argparse.ArgumentParser(description="Run adoption status tracking migration")
+    parser.add_argument("--dry-run", action="store_true", help="Preview migration without applying")
+    parser.add_argument("--rollback", action="store_true", help="Rollback the migration")
     args = parser.parse_args()
 
     runner = AdoptionMigrationRunner(dry_run=args.dry_run)

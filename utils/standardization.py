@@ -285,9 +285,7 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
             return "Senior", min_months, max_months
 
     # Check for years pattern (e.g., "2 years", "2.5 y/o") - no negative numbers
-    years_match = re.search(
-        r"(?<!-)\b(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)", age_text
-    )
+    years_match = re.search(r"(?<!-)\b(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)", age_text)
     if years_match:
         try:
             years = float(years_match.group(1).replace(",", "."))
@@ -344,10 +342,7 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
 
             # Validate birth date reasonableness (dogs live max ~15-20 years)
             earliest_reasonable_year = current_date.year - 20
-            if (
-                birth_year < earliest_reasonable_year
-                or birth_year > current_date.year + 1
-            ):
+            if birth_year < earliest_reasonable_year or birth_year > current_date.year + 1:
                 # Dogs don't live 20+ years, future dates are errors
                 return None, None, None
 
@@ -381,18 +376,13 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
 
     # Pattern 2: Born YYYY (just year)
     birth_year_match = re.search(r"(?:born\s*)?(\d{4})(?:\s|$)", age_text)
-    if birth_year_match and not re.search(
-        r"\d+\s*(?:years?|months?)", age_text
-    ):  # Avoid matching "2 years"
+    if birth_year_match and not re.search(r"\d+\s*(?:years?|months?)", age_text):  # Avoid matching "2 years"
         try:
             birth_year = int(birth_year_match.group(1))
 
             # Validate birth year reasonableness (dogs live max ~15-20 years)
             earliest_reasonable_year = current_date.year - 20
-            if (
-                birth_year < earliest_reasonable_year
-                or birth_year > current_date.year + 1
-            ):
+            if birth_year < earliest_reasonable_year or birth_year > current_date.year + 1:
                 return None, None, None
 
             # Assume born in middle of year (June)
@@ -428,9 +418,7 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
     # Check for descriptive terms (includes exact matches from above)
     if any(term in age_text for term in ["puppy", "pup", "baby", "young puppy"]):
         return "Puppy", 2, 10
-    elif any(
-        term in age_text for term in ["young adult", "adolescent", "juvenile", "teen"]
-    ):
+    elif any(term in age_text for term in ["young adult", "adolescent", "juvenile", "teen"]):
         return "Young", 12, 36
     elif any(term in age_text for term in ["adult", "grown", "mature"]):
         return "Adult", 36, 96
@@ -466,9 +454,7 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
         return None, None, None
 
     # Check for corrupted data (gender info in age field)
-    if any(
-        gender_term in age_text for gender_term in ["geschlecht:", "gender:", "sex:"]
-    ):
+    if any(gender_term in age_text for gender_term in ["geschlecht:", "gender:", "sex:"]):
         return None, None, None
 
     # If we can't determine, return None
@@ -574,17 +560,11 @@ def standardize_size_value(size: str) -> Optional[str]:
     if "-" in clean_size:
         # e.g., "medium-large" -> take the larger size
         parts = clean_size.split("-")
-        sizes = [
-            size_mappings.get(part.strip())
-            for part in parts
-            if part.strip() in size_mappings
-        ]
+        sizes = [size_mappings.get(part.strip()) for part in parts if part.strip() in size_mappings]
         if sizes:
             # Return the largest size found
             size_order = ["Tiny", "Small", "Medium", "Large", "XLarge"]
-            return max(
-                sizes, key=lambda x: size_order.index(x) if x in size_order else -1
-            )
+            return max(sizes, key=lambda x: size_order.index(x) if x in size_order else -1)
 
     return None
 
@@ -609,9 +589,7 @@ def apply_standardization(animal_data: Dict) -> Dict:
 
         # Set size estimate if we don't already have a standardized size and we
         # got an estimate
-        if size_estimate and (
-            "standardized_size" not in result or not result["standardized_size"]
-        ):
+        if size_estimate and ("standardized_size" not in result or not result["standardized_size"]):
             result["standardized_size"] = size_estimate
 
     # Standardize size - NEW: fallback to size field standardization
@@ -734,6 +712,4 @@ if __name__ == "__main__":
     print("\nAge Standardization Tests:")
     for age in test_ages:
         age_info = standardize_age(age)
-        print(
-            f"{age:<15} -> Category: {age_info['age_category']:<8}, Range: {age_info['age_min_months']}-{age_info['age_max_months']} months"
-        )
+        print(f"{age:<15} -> Category: {age_info['age_category']:<8}, Range: {age_info['age_min_months']}-{age_info['age_max_months']} months")

@@ -40,9 +40,7 @@ class TestFurryRescueItalyProblematicDogs:
             scraper.batch_size = 4
             scraper.skip_existing_animals = False
             scraper.logger = Mock()
-            scraper.use_unified_standardization = (
-                True  # Add missing attribute for unified standardization
-            )
+            scraper.use_unified_standardization = True  # Add missing attribute for unified standardization
 
             return scraper
 
@@ -128,9 +126,7 @@ class TestFurryRescueItalyProblematicDogs:
         if standardized is None:
             # Apply standardization manually to test
             result = scraper.standardizer.apply_full_standardization(size="Medium")
-            assert result["standardized_size"] == "Medium", (
-                f"Expected 'Medium', got '{result['standardized_size']}'"
-            )
+            assert result["standardized_size"] == "Medium", f"Expected 'Medium', got '{result['standardized_size']}'"
 
     def test_clean_description_removes_footer(self, scraper):
         """Test that description cleaning removes footer text."""

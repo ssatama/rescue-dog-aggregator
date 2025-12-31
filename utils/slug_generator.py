@@ -90,9 +90,7 @@ def generate_animal_slug(
     return slug
 
 
-def ensure_unique_slug(
-    base_slug: str, connection, exclude_id: Optional[int] = None
-) -> str:
+def ensure_unique_slug(base_slug: str, connection, exclude_id: Optional[int] = None) -> str:
     """
     Ensure slug is unique by checking database and adding suffix if needed.
 
@@ -134,9 +132,7 @@ def ensure_unique_slug(
 
             # Check if candidate is unique
             cursor = connection.cursor()
-            cursor.execute(
-                query.replace(" = %s", " = %s"), [candidate_slug] + params[1:]
-            )
+            cursor.execute(query.replace(" = %s", " = %s"), [candidate_slug] + params[1:])
             count = cursor.fetchone()[0]
             cursor.close()
 
@@ -218,9 +214,7 @@ def generate_organization_slug(name: str, config_id: str) -> str:
     return "organization"
 
 
-def ensure_unique_organization_slug(
-    base_slug: str, connection, exclude_id: Optional[int] = None
-) -> str:
+def ensure_unique_organization_slug(base_slug: str, connection, exclude_id: Optional[int] = None) -> str:
     """
     Ensure organization slug is unique by checking database and adding suffix if needed.
 
@@ -233,9 +227,7 @@ def ensure_unique_organization_slug(
         Unique slug string
     """
     if not connection:
-        logger.warning(
-            "No database connection provided for organization slug uniqueness check"
-        )
+        logger.warning("No database connection provided for organization slug uniqueness check")
         return base_slug
 
     try:
@@ -264,9 +256,7 @@ def ensure_unique_organization_slug(
 
             # Check if candidate is unique
             cursor = connection.cursor()
-            cursor.execute(
-                query.replace(" = %s", " = %s"), [candidate_slug] + params[1:]
-            )
+            cursor.execute(query.replace(" = %s", " = %s"), [candidate_slug] + params[1:])
             count = cursor.fetchone()[0]
             cursor.close()
 
@@ -285,9 +275,7 @@ def ensure_unique_organization_slug(
         return base_slug
 
 
-def generate_unique_organization_slug(
-    name: str, config_id: str, connection=None, exclude_id: Optional[int] = None
-) -> str:
+def generate_unique_organization_slug(name: str, config_id: str, connection=None, exclude_id: Optional[int] = None) -> str:
     """
     Generate a unique organization slug by combining generation and uniqueness check.
 

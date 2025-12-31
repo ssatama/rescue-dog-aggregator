@@ -10,9 +10,7 @@ from config import DB_CONFIG
 from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper
 
 # Add the project root directory to Python path
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
 # Import the scrapers and config
@@ -38,9 +36,7 @@ def get_organization_id(organization_name="Pets in Turkey"):
         cursor = conn.cursor()
 
         # Query for the organization ID
-        cursor.execute(
-            "SELECT id FROM organizations WHERE name = %s", (organization_name,)
-        )
+        cursor.execute("SELECT id FROM organizations WHERE name = %s", (organization_name,))
 
         result = cursor.fetchone()
 
