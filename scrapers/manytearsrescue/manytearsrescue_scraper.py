@@ -67,19 +67,16 @@ class ManyTearsRescueScraper(BaseScraper):
         )
 
         # Use config-driven URLs instead of hardcoded values
-        website_url = getattr(
-            self.org_config.metadata, "website_url", "https://www.manytearsrescue.org"
-        )
-        self.base_url = (
-            str(website_url).rstrip("/")
-            if website_url
-            else "https://www.manytearsrescue.org"
-        )
+        website_url = getattr(self.org_config.metadata, "website_url", "https://www.manytearsrescue.org")
+        self.base_url = str(website_url).rstrip("/") if website_url else "https://www.manytearsrescue.org"
         self.listing_url = f"{self.base_url}/adopt/dogs/"
         self.organization_name = self.org_config.name
 
     def _get_filtered_animals(self) -> List[Dict[str, Any]]:
         """Get list of animals and apply skip_existing_animals filtering.
+
+        Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+        BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly.
 
         Returns:
             List of filtered animals ready for detail scraping
@@ -91,40 +88,11 @@ class ManyTearsRescueScraper(BaseScraper):
             self.logger.warning("No animals found to process")
             return []
 
-        # Extract URLs and apply skip_existing_animals filtering
-        all_urls = [animal["adoption_url"] for animal in animals]
+        # Use BaseScraper method that records external_ids BEFORE filtering
+        # This is critical for mark_skipped_animals_as_seen() to work correctly
+        return self._filter_existing_animals(animals)
 
-        # Set filtering stats before filtering
-        self.set_filtering_stats(len(all_urls), 0)  # Initial stats
-
-        # Apply skip_existing_animals filtering via BaseScraper
-        if self.skip_existing_animals:
-            filtered_urls = self._filter_existing_urls(all_urls)
-            skipped_count = len(all_urls) - len(filtered_urls)
-
-            # Update filtering stats
-            self.set_filtering_stats(len(all_urls), skipped_count)
-
-            # Create filtered animals list
-            url_to_animal = {animal["adoption_url"]: animal for animal in animals}
-            animals = [
-                url_to_animal[url] for url in filtered_urls if url in url_to_animal
-            ]
-
-            self.logger.info(
-                f"Skip existing animals enabled: {skipped_count} skipped, {len(animals)} to process"
-            )
-        else:
-            self.logger.info(f"Processing all {len(animals)} animals")
-
-        if not animals:
-            self.logger.info("All animals are existing - no new animals to process")
-
-        return animals
-
-    def _process_animals_parallel(
-        self, animals: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Process animals with reduced parallelism to avoid resource exhaustion.
 
         Args:
@@ -137,16 +105,12 @@ class ManyTearsRescueScraper(BaseScraper):
             return asyncio.run(self._process_animals_parallel_playwright(animals))
         return self._process_animals_parallel_selenium(animals)
 
-    async def _process_animals_parallel_playwright(
-        self, animals: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    async def _process_animals_parallel_playwright(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Playwright implementation of parallel animal processing."""
         all_dogs_data = []
         seen_urls = set()
 
-        self.logger.info(
-            f"Starting detail scraping for {len(animals)} animals using Playwright"
-        )
+        self.logger.info(f"Starting detail scraping for {len(animals)} animals using Playwright")
 
         # Process animals sequentially to avoid overwhelming the server
         # (could be made concurrent with asyncio.gather in batches if needed)
@@ -154,16 +118,12 @@ class ManyTearsRescueScraper(BaseScraper):
             adoption_url = animal["adoption_url"]
 
             if adoption_url in seen_urls:
-                self.logger.debug(
-                    f"Skipping duplicate dog: {animal['name']} ({adoption_url})"
-                )
+                self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
                 continue
             seen_urls.add(adoption_url)
 
             # Respectful delay between requests
-            await asyncio.sleep(
-                random.uniform(self.rate_limit_delay + 1, self.rate_limit_delay + 3)
-            )
+            await asyncio.sleep(random.uniform(self.rate_limit_delay + 1, self.rate_limit_delay + 3))
 
             detail_data = await self._scrape_animal_details_playwright(adoption_url)
 
@@ -173,14 +133,10 @@ class ManyTearsRescueScraper(BaseScraper):
             all_dogs_data.append(animal)
             self.logger.debug(f"Processed {len(all_dogs_data)}/{len(animals)} animals")
 
-        self.logger.info(
-            f"Completed detail scraping: {len(all_dogs_data)} animals processed"
-        )
+        self.logger.info(f"Completed detail scraping: {len(all_dogs_data)} animals processed")
         return all_dogs_data
 
-    def _process_animals_parallel_selenium(
-        self, animals: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _process_animals_parallel_selenium(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Selenium implementation of parallel animal processing."""
         all_dogs_data = []
         seen_urls = set()  # Track URLs to prevent duplicates
@@ -189,9 +145,7 @@ class ManyTearsRescueScraper(BaseScraper):
         import concurrent.futures
         from threading import Lock
 
-        self.logger.info(
-            f"Starting detail scraping for {len(animals)} animals using batch_size={self.batch_size}"
-        )
+        self.logger.info(f"Starting detail scraping for {len(animals)} animals using batch_size={self.batch_size}")
 
         # Thread-safe collections
         results_lock = Lock()
@@ -211,23 +165,15 @@ class ManyTearsRescueScraper(BaseScraper):
                     # Skip duplicates (shouldn't happen but safety check)
                     with results_lock:
                         if adoption_url in seen_urls:
-                            self.logger.debug(
-                                f"Skipping duplicate dog: {animal['name']} ({adoption_url})"
-                            )
+                            self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
                             continue
                         seen_urls.add(adoption_url)
 
                     # Random delay for respectful scraping
-                    time.sleep(
-                        random.uniform(
-                            self.rate_limit_delay + 1, self.rate_limit_delay + 3
-                        )
-                    )
+                    time.sleep(random.uniform(self.rate_limit_delay + 1, self.rate_limit_delay + 3))
 
                     # Use thread-local WebDriver (no locking needed)
-                    detail_data = self._scrape_animal_details_selenium(
-                        adoption_url, driver=local_driver
-                    )
+                    detail_data = self._scrape_animal_details_selenium(adoption_url, driver=local_driver)
 
                     if detail_data:
                         # Merge detail data with listing data (detail data takes precedence)
@@ -253,31 +199,22 @@ class ManyTearsRescueScraper(BaseScraper):
             batch = animals[i : i + self.batch_size]
             batches.append(batch)
 
-        self.logger.info(
-            f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}"
-        )
+        self.logger.info(f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}")
 
         # Process batches with reduced concurrency
         max_workers = min(2, len(batches))  # MAX 2 THREADS to prevent overwhelming
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all batches
-            future_to_batch = {
-                executor.submit(process_animal_batch, batch): i
-                for i, batch in enumerate(batches)
-            }
+            future_to_batch = {executor.submit(process_animal_batch, batch): i for i, batch in enumerate(batches)}
 
             # Collect results as they complete with extended timeout
             for future in concurrent.futures.as_completed(future_to_batch):
                 batch_index = future_to_batch[future]
                 try:
-                    batch_results = future.result(
-                        timeout=600
-                    )  # 10 minute timeout per batch
+                    batch_results = future.result(timeout=600)  # 10 minute timeout per batch
                     all_dogs_data.extend(batch_results)
-                    self.logger.info(
-                        f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch_results)} animals processed"
-                    )
+                    self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch_results)} animals processed")
                 except Exception as e:
                     self.logger.error(f"Batch {batch_index + 1} failed: {e}")
                     continue
@@ -358,39 +295,25 @@ class ManyTearsRescueScraper(BaseScraper):
                             time.sleep(wait_time)
 
                             # Verify page loaded by checking for dog cards
-                            WebDriverWait(driver, 10).until(
-                                EC.presence_of_element_located(
-                                    (By.CSS_SELECTOR, "a[href*='/adopt/dogs/']")
-                                )
-                            )
+                            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='/adopt/dogs/']")))
                             page_loaded = True
                             break
                         except TimeoutException:
-                            self.logger.warning(
-                                f"Timeout on page {page_num}, retry {retry + 1}/3"
-                            )
+                            self.logger.warning(f"Timeout on page {page_num}, retry {retry + 1}/3")
                             if retry < 2:
                                 time.sleep(2 ** (retry + 1))  # Exponential backoff
                             continue
 
                     if not page_loaded:
-                        self.logger.error(
-                            f"Failed to load page {page_num} after 3 retries"
-                        )
+                        self.logger.error(f"Failed to load page {page_num} after 3 retries")
                         break
 
                     # Random human-like scroll
-                    driver.execute_script(
-                        "window.scrollTo(0, document.body.scrollHeight * 0.3);"
-                    )
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.3);")
                     time.sleep(random.uniform(0.5, 1.5))
-                    driver.execute_script(
-                        "window.scrollTo(0, document.body.scrollHeight * 0.6);"
-                    )
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.6);")
                     time.sleep(random.uniform(0.5, 1.5))
-                    driver.execute_script(
-                        "window.scrollTo(0, document.body.scrollHeight);"
-                    )
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
                     # Parse the page content
                     soup = BeautifulSoup(driver.page_source, "html.parser")
@@ -404,9 +327,7 @@ class ManyTearsRescueScraper(BaseScraper):
                     page_dogs = self._extract_dogs_from_page(soup)
                     if page_dogs:
                         all_dogs.extend(page_dogs)
-                        self.logger.info(
-                            f"Found {len(page_dogs)} dogs on page {page_num}"
-                        )
+                        self.logger.info(f"Found {len(page_dogs)} dogs on page {page_num}")
                         consecutive_empty_pages = 0
                     else:
                         self.logger.warning(f"No dogs found on page {page_num}")
@@ -414,9 +335,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
                         # Stop if too many empty pages
                         if consecutive_empty_pages >= max_empty_pages:
-                            self.logger.info(
-                                f"Stopping after {max_empty_pages} consecutive empty pages"
-                            )
+                            self.logger.info(f"Stopping after {max_empty_pages} consecutive empty pages")
                             break
 
                     # Check if we should continue to next page
@@ -428,9 +347,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
                     # Rate limiting between page requests with random delay
                     if page_num <= max_pages:
-                        delay = random.uniform(
-                            self.rate_limit_delay + 2, self.rate_limit_delay + 5
-                        )
+                        delay = random.uniform(self.rate_limit_delay + 2, self.rate_limit_delay + 5)
                         self.logger.debug(f"Waiting {delay:.1f}s before next page...")
                         time.sleep(delay)
 
@@ -482,9 +399,7 @@ class ManyTearsRescueScraper(BaseScraper):
                     result = await playwright_service.get_page_content(url, options)
 
                     if not result.success:
-                        self.logger.error(
-                            f"Playwright failed to load page {page_num}: {result.error}"
-                        )
+                        self.logger.error(f"Playwright failed to load page {page_num}: {result.error}")
                         consecutive_empty_pages += 1
                         if consecutive_empty_pages >= max_empty_pages:
                             break
@@ -502,9 +417,7 @@ class ManyTearsRescueScraper(BaseScraper):
                     page_dogs = self._extract_dogs_from_page(soup)
                     if page_dogs:
                         all_dogs.extend(page_dogs)
-                        self.logger.info(
-                            f"Found {len(page_dogs)} dogs on page {page_num}"
-                        )
+                        self.logger.info(f"Found {len(page_dogs)} dogs on page {page_num}")
                         consecutive_empty_pages = 0
                     else:
                         self.logger.warning(f"No dogs found on page {page_num}")
@@ -520,9 +433,7 @@ class ManyTearsRescueScraper(BaseScraper):
                     page_num += 1
 
                     # Rate limiting
-                    delay = random.uniform(
-                        self.rate_limit_delay + 2, self.rate_limit_delay + 5
-                    )
+                    delay = random.uniform(self.rate_limit_delay + 2, self.rate_limit_delay + 5)
                     await asyncio.sleep(delay)
 
                 except Exception as e:
@@ -562,18 +473,14 @@ class ManyTearsRescueScraper(BaseScraper):
 
         # Anti-detection arguments
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        chrome_options.add_argument(
-            "--disable-features=IsolateOrigins,site-per-process"
-        )
+        chrome_options.add_argument("--disable-features=IsolateOrigins,site-per-process")
         chrome_options.add_argument("--disable-web-security")
         chrome_options.add_argument("--disable-features=VizDisplayCompositor")
         chrome_options.add_argument("--disable-dev-tools")
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-plugins")
         chrome_options.add_argument("--disable-images")  # Faster loading
-        chrome_options.add_argument(
-            "--disable-javascript"
-        )  # Then re-enable selectively
+        chrome_options.add_argument("--disable-javascript")  # Then re-enable selectively
 
         # Random user agent
         user_agent = random.choice(self.USER_AGENTS)
@@ -749,13 +656,7 @@ class ManyTearsRescueScraper(BaseScraper):
         """
         # Extract ID from URL pattern /adopt/dogs/{id}/
         match = re.search(r"/adopt/dogs/(\d+)/?$", url)
-        return (
-            match.group(1)
-            if match
-            else url.split("/")[-2]
-            if url.split("/")[-2].isdigit()
-            else "unknown"
-        )
+        return match.group(1) if match else url.split("/")[-2] if url.split("/")[-2].isdigit() else "unknown"
 
     def _scrape_animal_details(self, adoption_url: str, driver=None) -> Dict[str, Any]:
         """Scrape detailed information from individual dog page.
@@ -775,9 +676,7 @@ class ManyTearsRescueScraper(BaseScraper):
             return asyncio.run(self._scrape_animal_details_playwright(adoption_url))
         return self._scrape_animal_details_selenium(adoption_url, driver)
 
-    def _scrape_animal_details_selenium(
-        self, adoption_url: str, driver=None
-    ) -> Dict[str, Any]:
+    def _scrape_animal_details_selenium(self, adoption_url: str, driver=None) -> Dict[str, Any]:
         """Selenium implementation of _scrape_animal_details."""
         local_driver = None
         try:
@@ -850,11 +749,7 @@ class ManyTearsRescueScraper(BaseScraper):
             result["breed"] = structured_data.get("breed") or "Mixed Breed"
             result["sex"] = structured_data.get("sex") or "Unknown"
             result["age"] = structured_data.get("age") or "Unknown"
-            result["age_text"] = (
-                structured_data.get("age_text")
-                or structured_data.get("age")
-                or "Unknown"
-            )
+            result["age_text"] = structured_data.get("age_text") or structured_data.get("age") or "Unknown"
 
             # Size will be handled by unified standardization
             result["size"] = structured_data.get("size")
@@ -878,9 +773,7 @@ class ManyTearsRescueScraper(BaseScraper):
             if local_driver:
                 local_driver.quit()
 
-    async def _scrape_animal_details_playwright(
-        self, adoption_url: str
-    ) -> Dict[str, Any]:
+    async def _scrape_animal_details_playwright(self, adoption_url: str) -> Dict[str, Any]:
         """Playwright implementation of _scrape_animal_details."""
         try:
             self.logger.debug(f"Scraping details from: {adoption_url}")
@@ -893,9 +786,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
             result = await playwright_service.get_page_content(adoption_url, options)
             if not result.success:
-                self.logger.error(
-                    f"Failed to get page content from {adoption_url}: {result.error}"
-                )
+                self.logger.error(f"Failed to get page content from {adoption_url}: {result.error}")
                 return {}
 
             soup = BeautifulSoup(result.content, "html.parser")
@@ -950,11 +841,7 @@ class ManyTearsRescueScraper(BaseScraper):
             result["breed"] = structured_data.get("breed") or "Mixed Breed"
             result["sex"] = structured_data.get("sex") or "Unknown"
             result["age"] = structured_data.get("age") or "Unknown"
-            result["age_text"] = (
-                structured_data.get("age_text")
-                or structured_data.get("age")
-                or "Unknown"
-            )
+            result["age_text"] = structured_data.get("age_text") or structured_data.get("age") or "Unknown"
 
             # Size will be handled by unified standardization
             result["size"] = structured_data.get("size")
@@ -1054,9 +941,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         return " ".join(description_parts)
 
-    def _extract_structured_data_from_detail_page(
-        self, soup: BeautifulSoup
-    ) -> Dict[str, Any]:
+    def _extract_structured_data_from_detail_page(self, soup: BeautifulSoup) -> Dict[str, Any]:
         """Extract structured data (age, breed, sex) from detail page list items.
 
         Based on DOM analysis, structured data appears in a list format:
@@ -1088,15 +973,8 @@ class ManyTearsRescueScraper(BaseScraper):
 
                 # Check if this looks like the main info list
                 # Look for patterns like "X years", "Male/Female", breed names
-                has_age_pattern = any(
-                    "year" in text.lower()
-                    or "month" in text.lower()
-                    or "week" in text.lower()
-                    for text in list_texts
-                )
-                has_gender_pattern = any(
-                    text.lower() in ["male", "female"] for text in list_texts
-                )
+                has_age_pattern = any("year" in text.lower() or "month" in text.lower() or "week" in text.lower() for text in list_texts)
+                has_gender_pattern = any(text.lower() in ["male", "female"] for text in list_texts)
 
                 if has_age_pattern and has_gender_pattern:
                     # Process each list item
@@ -1104,11 +982,7 @@ class ManyTearsRescueScraper(BaseScraper):
                         text_lower = text.lower()
 
                         # Age extraction
-                        if (
-                            "year" in text_lower
-                            or "month" in text_lower
-                            or "week" in text_lower
-                        ) and text_lower not in ["male", "female"]:
+                        if ("year" in text_lower or "month" in text_lower or "week" in text_lower) and text_lower not in ["male", "female"]:
                             # Store raw age text for unified standardization
                             structured_data["age"] = text
 
@@ -1119,24 +993,15 @@ class ManyTearsRescueScraper(BaseScraper):
                         # Breed extraction - typically appears after age and gender
                         elif (
                             i >= 2  # Should come after status, age, gender
-                            and text_lower
-                            not in ["available for adoption", "male", "female"]
+                            and text_lower not in ["available for adoption", "male", "female"]
                             and not text_lower.startswith("in foster")
                             and not text_lower.startswith("can live with")
                             and not text_lower.startswith("untested with")
                             and not text_lower.startswith("no cats")
                             and
                             # Exclude location patterns that were being extracted as breeds
-                            not (
-                                "many tears" in text_lower
-                                and (
-                                    "llanelli" in text_lower
-                                    or "carmarthen" in text_lower
-                                )
-                            )
-                            and not (
-                                ", " in text and len(text.split(", ")) >= 3
-                            )  # Location format: "City, County, Country"
+                            not ("many tears" in text_lower and ("llanelli" in text_lower or "carmarthen" in text_lower))
+                            and not (", " in text and len(text.split(", ")) >= 3)  # Location format: "City, County, Country"
                             and not text_lower.endswith(" uk")  # UK location indicators
                             and not text_lower.endswith(" wales")
                             and len(text) > 2
@@ -1301,9 +1166,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         return requirements
 
-    def _extract_diary_entries(
-        self, soup: BeautifulSoup, driver=None
-    ) -> Dict[str, str]:
+    def _extract_diary_entries(self, soup: BeautifulSoup, driver=None) -> Dict[str, str]:
         """Extract diary entries from the optional diary section.
 
         Diary entries appear as clickable buttons with dates that expand to show full content.
@@ -1344,9 +1207,7 @@ class ManyTearsRescueScraper(BaseScraper):
                     if date_match:
                         date = date_match.group(1)
                         title = date_match.group(2)
-                        diary_entries[date] = (
-                            f"Title: {title} (Full content requires WebDriver)"
-                        )
+                        diary_entries[date] = f"Title: {title} (Full content requires WebDriver)"
                     else:
                         diary_entries[button_text] = "Title only extracted"
             return diary_entries
@@ -1377,9 +1238,7 @@ class ManyTearsRescueScraper(BaseScraper):
                         diary_title = button_text
 
                     # Click the diary button to expand content
-                    driver.execute_script(
-                        "arguments[0].scrollIntoView();", button_element
-                    )
+                    driver.execute_script("arguments[0].scrollIntoView();", button_element)
                     time.sleep(0.5)  # Brief pause for scroll
 
                     # Click using JavaScript to avoid interception issues
@@ -1390,9 +1249,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
                     # Extract expanded diary content from the same li element
                     # Look for paragraphs that appear after clicking
-                    parent_li = button_element.find_element(
-                        By.XPATH, "./ancestor::li[1]"
-                    )
+                    parent_li = button_element.find_element(By.XPATH, "./ancestor::li[1]")
                     diary_paragraphs = parent_li.find_elements(By.XPATH, ".//p")
 
                     diary_content_parts = []
@@ -1406,17 +1263,13 @@ class ManyTearsRescueScraper(BaseScraper):
                     if diary_content_parts:
                         full_diary_content = "\n\n".join(diary_content_parts)
                         diary_entries[diary_date] = full_diary_content
-                        self.logger.debug(
-                            f"Extracted diary entry for {diary_date}: {len(full_diary_content)} chars"
-                        )
+                        self.logger.debug(f"Extracted diary entry for {diary_date}: {len(full_diary_content)} chars")
                     else:
                         # Fallback to title if no content found
                         diary_entries[diary_date] = f"Title: {diary_title}"
 
                 except Exception as button_error:
-                    self.logger.warning(
-                        f"Failed to extract diary entry from button '{button_text}': {button_error}"
-                    )
+                    self.logger.warning(f"Failed to extract diary entry from button '{button_text}': {button_error}")
                     continue
 
         except Exception as e:
@@ -1436,9 +1289,7 @@ class ManyTearsRescueScraper(BaseScraper):
                         for button in buttons:
                             button_text = button.get_text(strip=True)
                             if button_text:
-                                diary_entries[button_text] = (
-                                    "Fallback: WebDriver extraction failed"
-                                )
+                                diary_entries[button_text] = "Fallback: WebDriver extraction failed"
 
         return diary_entries
 
@@ -1497,11 +1348,7 @@ class ManyTearsRescueScraper(BaseScraper):
             if sentence:
                 # Skip sentences containing Gift of Life sponsor text
                 sentence_lower = sentence.lower()
-                if (
-                    "gift of life by" in sentence_lower
-                    or "through the generosity of a gift of life sponsor"
-                    in sentence_lower
-                ):
+                if "gift of life by" in sentence_lower or "through the generosity of a gift of life sponsor" in sentence_lower:
                     continue
                 sentences.append(sentence)
 

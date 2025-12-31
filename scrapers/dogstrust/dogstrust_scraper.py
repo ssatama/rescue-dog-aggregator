@@ -60,24 +60,16 @@ class DogsTrustScraper(BaseScraper):
         )
 
         # Use config-driven URLs instead of hardcoded values
-        website_url = getattr(
-            self.org_config.metadata, "website_url", "https://www.dogstrust.org.uk"
-        )
-        self.base_url = (
-            str(website_url).rstrip("/")
-            if website_url
-            else "https://www.dogstrust.org.uk"
-        )
+        website_url = getattr(self.org_config.metadata, "website_url", "https://www.dogstrust.org.uk")
+        self.base_url = str(website_url).rstrip("/") if website_url else "https://www.dogstrust.org.uk"
         self.listing_url = f"{self.base_url}/rehoming/dogs"
         self.organization_name = self.org_config.name
 
-    def _get_filtered_animals(
-        self, max_pages_to_scrape: int = None
-    ) -> List[Dict[str, Any]]:
+    def _get_filtered_animals(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
         """Get list of animals and apply skip_existing_animals filtering.
 
-        This method follows the Many Tears pattern for filtering existing animals
-        to avoid re-scraping data that's already in the database.
+        Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+        BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly.
 
         Returns:
             List of filtered animals ready for detail scraping
@@ -89,40 +81,11 @@ class DogsTrustScraper(BaseScraper):
             self.logger.warning("No animals found to process")
             return []
 
-        # Extract URLs and apply skip_existing_animals filtering
-        all_urls = [animal["adoption_url"] for animal in animals]
+        # Use BaseScraper method that records external_ids BEFORE filtering
+        # This is critical for mark_skipped_animals_as_seen() to work correctly
+        return self._filter_existing_animals(animals)
 
-        # Set filtering stats before filtering
-        self.set_filtering_stats(len(all_urls), 0)  # Initial stats
-
-        # Apply skip_existing_animals filtering via BaseScraper
-        if self.skip_existing_animals:
-            filtered_urls = self._filter_existing_urls(all_urls)
-            skipped_count = len(all_urls) - len(filtered_urls)
-
-            # Update filtering stats
-            self.set_filtering_stats(len(all_urls), skipped_count)
-
-            # Create filtered animals list
-            url_to_animal = {animal["adoption_url"]: animal for animal in animals}
-            animals = [
-                url_to_animal[url] for url in filtered_urls if url in url_to_animal
-            ]
-
-            self.logger.info(
-                f"Skip existing animals enabled: {skipped_count} skipped, {len(animals)} to process"
-            )
-        else:
-            self.logger.info(f"Processing all {len(animals)} animals")
-
-        if not animals:
-            self.logger.info("All animals are existing - no new animals to process")
-
-        return animals
-
-    def _process_animals_parallel(
-        self, animals: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Process animals in parallel batches using ThreadPoolExecutor.
 
         This method follows the Many Tears pattern for parallel processing,
@@ -138,9 +101,7 @@ class DogsTrustScraper(BaseScraper):
         all_dogs_data = []
         seen_urls = set()  # Track URLs to prevent duplicates
 
-        self.logger.info(
-            f"Starting detail scraping for {len(animals)} animals using batch_size={self.batch_size}"
-        )
+        self.logger.info(f"Starting detail scraping for {len(animals)} animals using batch_size={self.batch_size}")
 
         # Thread-safe collections
         results_lock = Lock()
@@ -156,9 +117,7 @@ class DogsTrustScraper(BaseScraper):
                     # Skip duplicates - atomic check and add to prevent race condition
                     with results_lock:
                         if adoption_url in seen_urls:
-                            self.logger.debug(
-                                f"Skipping duplicate dog: {animal.get('name', 'unknown')} ({adoption_url})"
-                            )
+                            self.logger.debug(f"Skipping duplicate dog: {animal.get('name', 'unknown')} ({adoption_url})")
                             continue
                         seen_urls.add(adoption_url)
                     # Lock released here - now safe to process without holding lock
@@ -177,9 +136,7 @@ class DogsTrustScraper(BaseScraper):
                         batch_results.append(animal)
 
                     except Exception as e:
-                        self.logger.error(
-                            f"Failed to process {animal.get('name', 'unknown')}: {e}"
-                        )
+                        self.logger.error(f"Failed to process {animal.get('name', 'unknown')}: {e}")
                         # Continue processing other animals on individual failures
                         continue
 
@@ -194,33 +151,22 @@ class DogsTrustScraper(BaseScraper):
             batch = animals[i : i + self.batch_size]
             batches.append(batch)
 
-        self.logger.info(
-            f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}"
-        )
+        self.logger.info(f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}")
 
         # Process batches with controlled concurrency
-        max_workers = min(
-            self.batch_size, 5
-        )  # Increased parallelization for better performance
+        max_workers = min(self.batch_size, 5)  # Increased parallelization for better performance
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all batches
-            future_to_batch = {
-                executor.submit(process_animal_batch, batch): i
-                for i, batch in enumerate(batches)
-            }
+            future_to_batch = {executor.submit(process_animal_batch, batch): i for i, batch in enumerate(batches)}
 
             # Collect results as they complete
             for future in concurrent.futures.as_completed(future_to_batch):
                 batch_index = future_to_batch[future]
                 try:
-                    batch_results = future.result(
-                        timeout=300
-                    )  # 5 minute timeout per batch
+                    batch_results = future.result(timeout=300)  # 5 minute timeout per batch
                     all_dogs_data.extend(batch_results)
-                    self.logger.info(
-                        f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch_results)} animals processed"
-                    )
+                    self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch_results)} animals processed")
                 except Exception as e:
                     self.logger.error(f"Batch {batch_index + 1} failed: {e}")
                     continue
@@ -242,9 +188,7 @@ class DogsTrustScraper(BaseScraper):
         """
         try:
             # Phase 1: Get and filter animals
-            animals = self._get_filtered_animals(
-                max_pages_to_scrape=max_pages_to_scrape
-            )
+            animals = self._get_filtered_animals(max_pages_to_scrape=max_pages_to_scrape)
             if not animals:
                 return []
 
@@ -277,18 +221,14 @@ class DogsTrustScraper(BaseScraper):
             return asyncio.run(self._get_animal_list_playwright(max_pages_to_scrape))
         return self._get_animal_list_selenium(max_pages_to_scrape)
 
-    def _get_animal_list_selenium(
-        self, max_pages_to_scrape: int = None
-    ) -> List[Dict[str, Any]]:
+    def _get_animal_list_selenium(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
         """Fetch list of available dogs using Selenium WebDriver with pagination."""
         driver = self._setup_selenium_driver()
         all_dogs = []
 
         # Log scraping mode
         if max_pages_to_scrape:
-            self.logger.info(
-                f"DEBUG MODE: Limiting scrape to {max_pages_to_scrape} pages"
-            )
+            self.logger.info(f"DEBUG MODE: Limiting scrape to {max_pages_to_scrape} pages")
         else:
             self.logger.info("Scraping all available pages")
 
@@ -328,17 +268,11 @@ class DogsTrustScraper(BaseScraper):
                         continue
 
             except Exception as e:
-                self.logger.debug(
-                    f"No cookie consent banner found or couldn't click: {e}"
-                )
+                self.logger.debug(f"No cookie consent banner found or couldn't click: {e}")
 
             # Wait for the page to fully load and dog cards to appear
             try:
-                wait.until(
-                    EC.presence_of_element_located(
-                        (By.CSS_SELECTOR, 'a[href*="/rehoming/dogs/"]')
-                    )
-                )
+                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href*="/rehoming/dogs/"]')))
                 self.logger.info("Initial page loaded successfully")
             except Exception as e:
                 self.logger.warning(f"Timeout waiting for initial page load: {e}")
@@ -365,18 +299,14 @@ class DogsTrustScraper(BaseScraper):
                     try:
                         filters_button = driver.find_element(By.XPATH, selector)
                         if filters_button and filters_button.is_displayed():
-                            self.logger.debug(
-                                f"Found filters button with selector: {selector}"
-                            )
+                            self.logger.debug(f"Found filters button with selector: {selector}")
                             break
                     except:
                         continue
 
                 if filters_button:
                     # Scroll to and click the filters button using JavaScript to avoid overlay issues
-                    driver.execute_script(
-                        "arguments[0].scrollIntoView(true);", filters_button
-                    )
+                    driver.execute_script("arguments[0].scrollIntoView(true);", filters_button)
                     time.sleep(0.5)
                     # Use JavaScript click to bypass any overlapping elements
                     driver.execute_script("arguments[0].click();", filters_button)
@@ -407,19 +337,13 @@ class DogsTrustScraper(BaseScraper):
                                 if element.tag_name == "input":
                                     if not element.is_selected():
                                         # Use JavaScript to click checkbox to avoid overlay issues
-                                        driver.execute_script(
-                                            "arguments[0].click();", element
-                                        )
+                                        driver.execute_script("arguments[0].click();", element)
                                         checkbox_clicked = True
-                                        self.logger.info(
-                                            "Checked 'Hide reserved dogs' checkbox"
-                                        )
+                                        self.logger.info("Checked 'Hide reserved dogs' checkbox")
                                 else:
                                     element.click()
                                     checkbox_clicked = True
-                                    self.logger.info(
-                                        "Clicked 'Hide reserved dogs' option"
-                                    )
+                                    self.logger.info("Clicked 'Hide reserved dogs' option")
                                 break
                         except:
                             continue
@@ -440,40 +364,26 @@ class DogsTrustScraper(BaseScraper):
                                 apply_button = driver.find_element(By.XPATH, selector)
                                 if apply_button and apply_button.is_displayed():
                                     # Use JavaScript to click apply button to avoid overlay issues
-                                    driver.execute_script(
-                                        "arguments[0].click();", apply_button
-                                    )
-                                    self.logger.info(
-                                        "Applied filter to hide reserved dogs"
-                                    )
+                                    driver.execute_script("arguments[0].click();", apply_button)
+                                    self.logger.info("Applied filter to hide reserved dogs")
                                     # Wait for page to reload with filter applied
                                     time.sleep(1)
                                     break
                             except:
                                 continue
                     else:
-                        self.logger.warning(
-                            "Could not find 'Hide reserved dogs' option"
-                        )
+                        self.logger.warning("Could not find 'Hide reserved dogs' option")
                 else:
-                    self.logger.warning(
-                        "Could not find filters button - proceeding without filter"
-                    )
+                    self.logger.warning("Could not find filters button - proceeding without filter")
 
             except Exception as e:
-                self.logger.warning(
-                    f"Could not apply filter to hide reserved dogs: {e}"
-                )
-                self.logger.info(
-                    "Proceeding without filter - will manually filter reserved dogs"
-                )
+                self.logger.warning(f"Could not apply filter to hide reserved dogs: {e}")
+                self.logger.info("Proceeding without filter - will manually filter reserved dogs")
 
             # Add a bit of scrolling to trigger any lazy-loaded content
             try:
                 self.logger.debug("Scrolling to trigger lazy-loaded content...")
-                driver.execute_script(
-                    "window.scrollTo(0, document.body.scrollHeight / 2);"
-                )
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 2);")
                 time.sleep(0.3)
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 time.sleep(0.3)
@@ -500,21 +410,15 @@ class DogsTrustScraper(BaseScraper):
                 page_dogs = self._extract_dogs_from_page(soup)
                 if page_dogs:
                     all_dogs.extend(page_dogs)
-                    self.logger.info(
-                        f"Page {page_num}: Found {len(page_dogs)} dogs (total so far: {len(all_dogs)})"
-                    )
+                    self.logger.info(f"Page {page_num}: Found {len(page_dogs)} dogs (total so far: {len(all_dogs)})")
                 else:
-                    self.logger.warning(
-                        f"Page {page_num}: No dogs found - may indicate JavaScript loading issue"
-                    )
+                    self.logger.warning(f"Page {page_num}: No dogs found - may indicate JavaScript loading issue")
 
                 pages_scraped += 1
 
                 # Check if we've reached the debug limit
                 if max_pages_to_scrape and pages_scraped >= max_pages_to_scrape:
-                    self.logger.info(
-                        f"Reached debug limit of {max_pages_to_scrape} pages"
-                    )
+                    self.logger.info(f"Reached debug limit of {max_pages_to_scrape} pages")
                     break
 
                 # Check if we should continue to next page
@@ -525,9 +429,7 @@ class DogsTrustScraper(BaseScraper):
                 # Try to navigate to the next page using the Next button
                 try:
                     # Scroll down to ensure pagination controls are visible
-                    driver.execute_script(
-                        "window.scrollTo(0, document.body.scrollHeight);"
-                    )
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                     time.sleep(0.5)
 
                     # Find and click the Next button
@@ -552,53 +454,33 @@ class DogsTrustScraper(BaseScraper):
                             continue
 
                     if next_button:
-                        self.logger.debug(
-                            f"Clicking Next button to navigate to page {page_num + 1}"
-                        )
-                        driver.execute_script(
-                            "arguments[0].scrollIntoView(true);", next_button
-                        )
+                        self.logger.debug(f"Clicking Next button to navigate to page {page_num + 1}")
+                        driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
                         time.sleep(0.2)  # Brief pause for scroll
                         # Use JavaScript to click next button to avoid overlay issues
                         driver.execute_script("arguments[0].click();", next_button)
 
                         # Wait for the new page to load with randomized delay
-                        time.sleep(
-                            self.rate_limit_delay + random.uniform(0, 0.5)
-                        )  # Randomized delay for natural pattern
+                        time.sleep(self.rate_limit_delay + random.uniform(0, 0.5))  # Randomized delay for natural pattern
 
                         # Wait for new content to appear
                         try:
-                            wait.until(
-                                EC.presence_of_element_located(
-                                    (By.CSS_SELECTOR, 'a[href*="/rehoming/dogs/"]')
-                                )
-                            )
+                            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href*="/rehoming/dogs/"]')))
                         except:
-                            self.logger.warning(
-                                f"Timeout waiting for page {page_num + 1} to load"
-                            )
+                            self.logger.warning(f"Timeout waiting for page {page_num + 1} to load")
 
                         # Scroll to trigger lazy loading on the new page
-                        driver.execute_script(
-                            "window.scrollTo(0, document.body.scrollHeight / 2);"
-                        )
+                        driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 2);")
                         time.sleep(0.2)
-                        driver.execute_script(
-                            "window.scrollTo(0, document.body.scrollHeight);"
-                        )
+                        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                         time.sleep(0.2)
 
                         page_num += 1
                     else:
-                        self.logger.info(
-                            "No enabled Next button found - reached end of results"
-                        )
+                        self.logger.info("No enabled Next button found - reached end of results")
                         break
                 except Exception as e:
-                    self.logger.info(
-                        f"Could not find or click Next button: {e} - assuming end of results"
-                    )
+                    self.logger.info(f"Could not find or click Next button: {e} - assuming end of results")
                     break
 
         except Exception as e:
@@ -609,9 +491,7 @@ class DogsTrustScraper(BaseScraper):
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs
 
-    async def _get_animal_list_playwright(
-        self, max_pages_to_scrape: int = None
-    ) -> List[Dict[str, Any]]:
+    async def _get_animal_list_playwright(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
         """Fetch list of available dogs using Playwright with pagination.
 
         Async implementation using Playwright for Browserless v2 compatibility.
@@ -619,9 +499,7 @@ class DogsTrustScraper(BaseScraper):
         all_dogs = []
 
         if max_pages_to_scrape:
-            self.logger.info(
-                f"DEBUG MODE: Limiting scrape to {max_pages_to_scrape} pages"
-            )
+            self.logger.info(f"DEBUG MODE: Limiting scrape to {max_pages_to_scrape} pages")
         else:
             self.logger.info("Scraping all available pages (Playwright)")
 
@@ -636,9 +514,7 @@ class DogsTrustScraper(BaseScraper):
 
         async with playwright_service.get_browser(options) as browser_result:
             page = browser_result.page
-            self.logger.info(
-                f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} for Dogs Trust scraping"
-            )
+            self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} for Dogs Trust scraping")
 
             try:
                 url = self.listing_url
@@ -648,9 +524,7 @@ class DogsTrustScraper(BaseScraper):
                 # Handle cookie consent banner if present (OneTrust)
                 # CRITICAL: Remote Browserless may have timing differences - be aggressive with overlay removal
                 try:
-                    await asyncio.sleep(
-                        2.0
-                    )  # Longer wait for remote browsers to render overlay
+                    await asyncio.sleep(2.0)  # Longer wait for remote browsers to render overlay
                     cookie_selectors = [
                         "#onetrust-accept-btn-handler",
                         "button:has-text('Accept all')",
@@ -663,12 +537,8 @@ class DogsTrustScraper(BaseScraper):
                             cookie_button = page.locator(selector).first
                             if await cookie_button.is_visible(timeout=3000):
                                 # Use JavaScript click to bypass any overlay issues
-                                await page.evaluate(
-                                    f"document.querySelector('{selector}')?.click()"
-                                )
-                                self.logger.info(
-                                    "Accepted cookie consent via JavaScript click"
-                                )
+                                await page.evaluate(f"document.querySelector('{selector}')?.click()")
+                                self.logger.info("Accepted cookie consent via JavaScript click")
                                 cookie_clicked = True
                                 await asyncio.sleep(1.5)
                                 break
@@ -678,9 +548,7 @@ class DogsTrustScraper(BaseScraper):
                     # Wait briefly for overlay to start disappearing
                     if cookie_clicked:
                         try:
-                            await page.wait_for_selector(
-                                "#onetrust-consent-sdk", state="hidden", timeout=3000
-                            )
+                            await page.wait_for_selector("#onetrust-consent-sdk", state="hidden", timeout=3000)
                             self.logger.debug("OneTrust overlay dismissed naturally")
                         except Exception:
                             pass  # Will force-remove below
@@ -711,18 +579,14 @@ class DogsTrustScraper(BaseScraper):
                     """
                     )
                     if removed > 0:
-                        self.logger.debug(
-                            f"Force-removed {removed} OneTrust overlay element(s)"
-                        )
+                        self.logger.debug(f"Force-removed {removed} OneTrust overlay element(s)")
                     await asyncio.sleep(0.5)  # Brief pause for DOM to update
                 except Exception as e:
                     self.logger.debug(f"Overlay removal error (non-critical): {e}")
 
                 # Wait for dog cards to appear
                 try:
-                    await page.wait_for_selector(
-                        'a[href*="/rehoming/dogs/"]', timeout=15000
-                    )
+                    await page.wait_for_selector('a[href*="/rehoming/dogs/"]', timeout=15000)
                     self.logger.info("Initial page loaded successfully")
                 except Exception as e:
                     self.logger.warning(f"Timeout waiting for initial page load: {e}")
@@ -778,9 +642,7 @@ class DogsTrustScraper(BaseScraper):
                                 if await element.is_visible():
                                     await element.click()
                                     checkbox_clicked = True
-                                    self.logger.info(
-                                        "Clicked 'Hide reserved dogs' option"
-                                    )
+                                    self.logger.info("Clicked 'Hide reserved dogs' option")
                                     break
                             except Exception:
                                 continue
@@ -797,9 +659,7 @@ class DogsTrustScraper(BaseScraper):
                                     apply_button = page.locator(selector).first
                                     if await apply_button.is_visible():
                                         await apply_button.click()
-                                        self.logger.info(
-                                            "Applied filter to hide reserved dogs"
-                                        )
+                                        self.logger.info("Applied filter to hide reserved dogs")
                                         await asyncio.sleep(1)
                                         break
                                 except Exception:
@@ -808,9 +668,7 @@ class DogsTrustScraper(BaseScraper):
                     self.logger.warning(f"Could not apply filter: {e}")
 
                 # Scroll to trigger lazy-loaded content
-                await page.evaluate(
-                    "window.scrollTo(0, document.body.scrollHeight / 2)"
-                )
+                await page.evaluate("window.scrollTo(0, document.body.scrollHeight / 2)")
                 await asyncio.sleep(0.3)
                 await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
                 await asyncio.sleep(0.3)
@@ -833,18 +691,14 @@ class DogsTrustScraper(BaseScraper):
                     page_dogs = self._extract_dogs_from_page(soup)
                     if page_dogs:
                         all_dogs.extend(page_dogs)
-                        self.logger.info(
-                            f"Page {page_num}: Found {len(page_dogs)} dogs (total so far: {len(all_dogs)})"
-                        )
+                        self.logger.info(f"Page {page_num}: Found {len(page_dogs)} dogs (total so far: {len(all_dogs)})")
                     else:
                         self.logger.warning(f"Page {page_num}: No dogs found")
 
                     pages_scraped += 1
 
                     if max_pages_to_scrape and pages_scraped >= max_pages_to_scrape:
-                        self.logger.info(
-                            f"Reached debug limit of {max_pages_to_scrape} pages"
-                        )
+                        self.logger.info(f"Reached debug limit of {max_pages_to_scrape} pages")
                         break
 
                     if max_pages is not None and page_num >= max_pages - 1:
@@ -853,9 +707,7 @@ class DogsTrustScraper(BaseScraper):
 
                     # Navigate to next page
                     try:
-                        await page.evaluate(
-                            "window.scrollTo(0, document.body.scrollHeight)"
-                        )
+                        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
                         await asyncio.sleep(0.5)
 
                         next_selectors = [
@@ -874,9 +726,7 @@ class DogsTrustScraper(BaseScraper):
                                 continue
 
                         if next_button:
-                            self.logger.debug(
-                                f"Clicking Next button to navigate to page {page_num + 1}"
-                            )
+                            self.logger.debug(f"Clicking Next button to navigate to page {page_num + 1}")
                             await next_button.scroll_into_view_if_needed()
                             await asyncio.sleep(0.3)
                             # Use JavaScript click to bypass any overlay issues
@@ -894,33 +744,21 @@ class DogsTrustScraper(BaseScraper):
                             except Exception:
                                 # Fallback to Playwright click with force
                                 await next_button.click(force=True, timeout=10000)
-                            await asyncio.sleep(
-                                self.rate_limit_delay + random.uniform(0.3, 0.8)
-                            )
+                            await asyncio.sleep(self.rate_limit_delay + random.uniform(0.3, 0.8))
 
                             try:
-                                await page.wait_for_selector(
-                                    'a[href*="/rehoming/dogs/"]', timeout=10000
-                                )
+                                await page.wait_for_selector('a[href*="/rehoming/dogs/"]', timeout=10000)
                             except Exception:
-                                self.logger.warning(
-                                    f"Timeout waiting for page {page_num + 1}"
-                                )
+                                self.logger.warning(f"Timeout waiting for page {page_num + 1}")
 
-                            await page.evaluate(
-                                "window.scrollTo(0, document.body.scrollHeight / 2)"
-                            )
+                            await page.evaluate("window.scrollTo(0, document.body.scrollHeight / 2)")
                             await asyncio.sleep(0.2)
-                            await page.evaluate(
-                                "window.scrollTo(0, document.body.scrollHeight)"
-                            )
+                            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
                             await asyncio.sleep(0.2)
 
                             page_num += 1
                         else:
-                            self.logger.info(
-                                "No enabled Next button found - reached end of results"
-                            )
+                            self.logger.info("No enabled Next button found - reached end of results")
                             break
                     except Exception as e:
                         self.logger.info(f"Could not find or click Next button: {e}")
@@ -1079,13 +917,7 @@ class DogsTrustScraper(BaseScraper):
         """
         # Extract ID from URL pattern /rehoming/dogs/{breed-slug}/{id} - ID can be any length
         match = re.search(r"/rehoming/dogs/[^/]+/(\d+)/?$", url)
-        return (
-            match.group(1)
-            if match
-            else url.split("/")[-1]
-            if url.split("/")[-1].isdigit()
-            else "unknown"
-        )
+        return match.group(1) if match else url.split("/")[-1] if url.split("/")[-1].isdigit() else "unknown"
 
     def _scrape_animal_details_http(self, adoption_url: str) -> Dict[str, Any]:
         """Scrape detailed information from individual dog page using HTTP requests.
@@ -1132,22 +964,16 @@ class DogsTrustScraper(BaseScraper):
                 requests.exceptions.Timeout,
             ) as e:
                 if attempt < max_retries - 1:
-                    self.logger.warning(
-                        f"HTTP request failed for {adoption_url} (attempt {attempt + 1}/{max_retries}): {e}"
-                    )
+                    self.logger.warning(f"HTTP request failed for {adoption_url} (attempt {attempt + 1}/{max_retries}): {e}")
                     self.logger.info(f"Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
                     retry_delay *= 1.5  # Exponential backoff
                     continue
                 else:
-                    self.logger.error(
-                        f"All {max_retries} HTTP attempts failed for {adoption_url}: {e}"
-                    )
+                    self.logger.error(f"All {max_retries} HTTP attempts failed for {adoption_url}: {e}")
                     return {}
             except Exception as e:
-                self.logger.error(
-                    f"Unexpected error during HTTP request for {adoption_url}: {e}"
-                )
+                self.logger.error(f"Unexpected error during HTTP request for {adoption_url}: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                     retry_delay *= 1.5
@@ -1368,9 +1194,7 @@ class DogsTrustScraper(BaseScraper):
 
         for pattern in medical_patterns:
             # Find elements containing the medical care text
-            elements = soup.find_all(
-                string=lambda text: text and pattern.lower() in text.lower()
-            )
+            elements = soup.find_all(string=lambda text: text and pattern.lower() in text.lower())
 
             for element in elements:
                 if element and element.strip():
@@ -1381,10 +1205,7 @@ class DogsTrustScraper(BaseScraper):
                         parent_text = parent.get_text(strip=True)
                         if parent_text and len(parent_text) < 200:
                             # Check if this is actually medical care info (not navigation/header)
-                            if (
-                                "medical" in parent_text.lower()
-                                and len(parent_text) > 10
-                            ):
+                            if "medical" in parent_text.lower() and len(parent_text) > 10:
                                 return parent_text
 
         return ""
@@ -1457,11 +1278,7 @@ class DogsTrustScraper(BaseScraper):
                     for link in links:
                         link_text = link.get_text(strip=True)
                         # Filter out navigation links
-                        if (
-                            link_text
-                            and len(link_text) < 50
-                            and "May live with" not in link_text
-                        ):
+                        if link_text and len(link_text) < 50 and "May live with" not in link_text:
                             # Check if this looks like a compatibility value
                             if any(
                                 word in link_text.lower()
@@ -1516,12 +1333,7 @@ class DogsTrustScraper(BaseScraper):
 
         # Look for "Can live with" section
         can_live_with_sections = soup.find_all(
-            lambda tag: tag.name in ["div", "section"]
-            and tag.find(
-                lambda t: t.name in ["h2", "h3", "h4"]
-                and "can live with"
-                in (t.get_text(strip=True).lower() if t.get_text(strip=True) else "")
-            )
+            lambda tag: tag.name in ["div", "section"] and tag.find(lambda t: t.name in ["h2", "h3", "h4"] and "can live with" in (t.get_text(strip=True).lower() if t.get_text(strip=True) else ""))
         )
 
         for section in can_live_with_sections:
@@ -1532,9 +1344,7 @@ class DogsTrustScraper(BaseScraper):
                 text = item.get_text(strip=True).lower()
 
                 # Check for children compatibility
-                if "child" in text or (
-                    "adult" in text and ("only" in text or "prefer" in text)
-                ):
+                if "child" in text or ("adult" in text and ("only" in text or "prefer" in text)):
                     if "aged" in text or "age" in text:
                         # Extract age requirement
                         import re
@@ -1553,11 +1363,7 @@ class DogsTrustScraper(BaseScraper):
 
                 # Check for dog compatibility
                 if "dog" in text:
-                    if (
-                        "only dog" in text
-                        or "no other dogs" in text
-                        or "be the only dog" in text
-                    ):
+                    if "only dog" in text or "no other dogs" in text or "be the only dog" in text:
                         traits["good_with_dogs"] = False
                     elif "may be able" in text or ("may" in text and "dogs" in text):
                         traits["good_with_dogs"] = "Maybe"
