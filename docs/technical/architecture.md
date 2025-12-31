@@ -6,10 +6,10 @@
 
 ```
 Production:    www.rescuedogs.me
-Data:          4,568 dogs | 12 active organizations (13 scrapers)
+Data:          4,682 dogs | 12 active organizations (13 scrapers)
 Backend:       Python/FastAPI + PostgreSQL 15 + Alembic
 Frontend:      Next.js 15 App Router + React 18 + TypeScript 5
-LLM:           OpenRouter (Gemini 2.5 Flash primary)
+LLM:           OpenRouter (Gemini 3 Flash primary)
 Monitoring:    Sentry (dev + prod)
 Hosting:       Vercel (frontend) + Railway (backend + DB)
 ```
@@ -18,19 +18,19 @@ Hosting:       Vercel (frontend) + Railway (backend + DB)
 
 ```
 /api                    # FastAPI routes + middleware
-  /routes               # 7 route modules (animals, swipe, llm, etc.)
-/services               # 14 core services + llm/ subdirectory
+  /routes               # 8 route modules (animals, swipe, llm, etc.)
+/services               # 16 core services + llm/ subdirectory
   /llm                  # LLM profiling pipeline (20 files)
 /scrapers               # 13 organization scrapers + base classes
 /frontend/src
   /app                  # Next.js App Router pages
-  /components           # Feature-organized UI components (20 dirs)
-/configs/organizations  # YAML configs (13 active orgs)
-/tests                  # 152 backend test files
-/frontend/__tests__     # 284 frontend test files
+  /components           # Feature-organized UI components (22 dirs)
+/configs/organizations  # YAML configs (13 orgs, 12 active)
+/tests                  # 156 backend test files
+/frontend/__tests__     # 268 frontend test files
 /migrations/versions    # Alembic migrations (dev)
 /migrations/railway     # Production migrations
-/management             # CLI tools (18 scripts)
+/management             # CLI tools (19 scripts)
 ```
 
 ## Core Data Models
@@ -116,12 +116,13 @@ created_at, updated_at
 
 ## Service Layer Pattern
 
-### Core Services (15 root files)
+### Core Services (16 root files)
 
 ```python
 database_service.py          # Connection pool, transactions, retries
 connection_pool.py           # Enhanced pooling (10-30 connections)
 playwright_browser_service.py # Centralized Playwright browser automation
+browser_service.py           # Legacy browser service interface
 metrics_collector.py         # Performance + business metrics
 session_manager.py           # User sessions, preferences
 adoption_detection.py        # Detect adopted dogs via patterns
@@ -360,7 +361,7 @@ organizations:
     prompt_file: "tierschutzverein_europa.yaml"
     source_language: "de"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true
 ```
 
@@ -378,10 +379,10 @@ python management/llm_commands.py generate-profiles   # Batch enrichment
 ### Current Metrics
 
 ```
-Dogs:           4,568 active
-Scrapers:       13 active organizations
-Backend Tests:  152 test files
-Frontend Tests: 284 test files
+Dogs:           4,682 active
+Scrapers:       12 active organizations (13 total)
+Backend Tests:  156 test files
+Frontend Tests: 268 test files
 Daily Users:    20+
 
 API Response Times (p50/p95):
@@ -400,7 +401,7 @@ Database:
 LLM Processing:
   Cost: ~$0.0015/dog
   Success rate: 97%+
-  Model: Gemini 2.5 Flash (primary)
+  Model: Gemini 3 Flash (primary)
 ```
 
 ## Common Operations
@@ -470,7 +471,7 @@ Health Checks → Rollback on Failure
 - **FastAPI**: Native async, automatic OpenAPI docs, Pydantic validation
 - **Next.js 15**: App Router performance, React Server Components, built-in SEO
 - **PostgreSQL**: JSONB flexibility, full-text search, strong ACID, asyncpg driver
-- **OpenRouter/Gemini**: Cost-effective ($0.0015/dog), fast (2-5s), high success (90%+)
+- **OpenRouter/Gemini 3 Flash**: Cost-effective ($0.0015/dog), fast (2-5s), high success (97%+)
 - **Service Pattern**: Testability, clear separation, future microservices path
 
 ### Technology Choices
@@ -565,6 +566,6 @@ NEXT_PUBLIC_R2_IMAGE_PATH=rescue_dogs
 
 ---
 
-**Last Updated**: 2025-12-29
-**Current Scale**: 4,568 dogs | 12 active organizations | 152 backend tests | 284 frontend tests
+**Last Updated**: 2025-12-31
+**Current Scale**: 4,682 dogs | 12 active organizations | 156 backend tests | 268 frontend tests
 **Production**: www.rescuedogs.me
