@@ -121,6 +121,11 @@ class PetsInTurkeyScraper(BaseScraper):
 
             self.logger.info(f"Successfully extracted {len(dogs_data)} dogs")
 
+            # Record external IDs for stale detection before setting filtering stats
+            for dog in dogs_data:
+                if dog.get("external_id") and self.session_manager:
+                    self.session_manager.record_found_animal(dog["external_id"])
+
             # Set filtering stats
             self.set_filtering_stats(len(dog_sections), len(dog_sections) - len(dogs_data))
 

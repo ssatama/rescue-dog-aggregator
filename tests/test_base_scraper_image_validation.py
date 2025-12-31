@@ -3,6 +3,7 @@
 from unittest.mock import Mock
 
 from scrapers.base_scraper import BaseScraper
+from services.progress_tracker import ProgressTracker
 
 
 class TestableBaseScraper(BaseScraper):
@@ -40,6 +41,9 @@ class TestBaseScraperImageValidation:
 
         # Mock logger to verify warnings
         scraper.logger = Mock()
+
+        # Initialize progress_tracker (normally done in _run_with_connection)
+        scraper.progress_tracker = ProgressTracker(total_items=4, logger=scraper.logger, config={})
 
         # Create test data with mix of valid and invalid animals
         animals_data = [
@@ -149,6 +153,10 @@ class TestBaseScraperImageValidation:
         scraper.get_existing_animal = Mock(return_value=None)
         scraper.create_animal = Mock(return_value=(1, "added"))
         scraper.mark_animal_as_seen = Mock()
+        scraper.logger = Mock()
+
+        # Initialize progress_tracker (normally done in _run_with_connection)
+        scraper.progress_tracker = ProgressTracker(total_items=1, logger=scraper.logger, config={})
 
         # Test data with empty image
         animals_data = [

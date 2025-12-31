@@ -494,7 +494,9 @@ class BaseScraper(ABC):
 
                 # Phase 2: Data Collection
                 add_scrape_breadcrumb("Starting data collection phase")
+                discovery_start = datetime.now()
                 animals_data = self._collect_and_time_data()
+                discovery_duration = (datetime.now() - discovery_start).total_seconds()
 
                 # Store count for scraper runner interface
                 # Use the same logic as database logging to ensure consistency
@@ -536,8 +538,8 @@ class BaseScraper(ABC):
                     new_dogs=len(animals_data),
                 )
 
-                # Log discovery completion
-                self.progress_tracker.log_phase_complete("Discovery", 0.0, f"{correct_animals_found} dogs found")  # Will be updated with actual timing
+                # Log discovery completion with actual timing
+                self.progress_tracker.log_phase_complete("Discovery", discovery_duration, f"{correct_animals_found} dogs found")
 
                 # Phase 3: Database Operations
                 add_scrape_breadcrumb(
@@ -667,12 +669,8 @@ class BaseScraper(ABC):
             "images_failed": 0,
         }
 
-        # Initialize progress tracker for world-class logging
-        progress_tracker = ProgressTracker(
-            total_items=len(animals_data),
-            logger=self.logger,
-            config=self._get_logging_config(),
-        )
+        # Use self.progress_tracker (created in _run_with_connection) for consistent stats
+        # This ensures progress logs and completion summary use the same tracker
 
         # ALWAYS use batch image processing for ALL scrapers when ImageProcessingService is available
         # This ensures consistent batch uploading behavior across all organizations
@@ -715,7 +713,7 @@ class BaseScraper(ABC):
             animal_id, action = self.save_animal(animal_data)
 
             # Update progress tracking (only count animals toward progress percentage)
-            progress_tracker.update(items_processed=1, operation_type="animal_save")
+            self.progress_tracker.update(items_processed=1, operation_type="animal_save")
 
             if animal_id:
                 # Mark animal as seen in current session for confidence tracking
@@ -730,19 +728,19 @@ class BaseScraper(ABC):
                     processing_stats["animals_unchanged"] += 1
 
             # Log progress if needed (world-class progress tracking)
-            if progress_tracker.should_log_progress():
-                progress_message = progress_tracker.get_progress_message()
+            if self.progress_tracker.should_log_progress():
+                progress_message = self.progress_tracker.get_progress_message()
                 self.logger.info(progress_message)
 
                 # Log batch summary with processing stats
-                self._log_batch_summary(progress_tracker, processing_stats, i + 1)
+                self._log_batch_summary(self.progress_tracker, processing_stats, i + 1)
 
                 # Mark progress as logged
-                progress_tracker.log_batch_progress()
+                self.progress_tracker.log_batch_progress()
 
         # Log final completion
         if len(animals_data) > 0:
-            final_message = progress_tracker.get_progress_message()
+            final_message = self.progress_tracker.get_progress_message()
             self.logger.info(f"🎯 Processing complete: {final_message}")
 
         phase_duration = (datetime.now() - phase_start).total_seconds()

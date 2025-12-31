@@ -1934,8 +1934,22 @@ class REANScraper(BaseScraper):
         Collect animal data from REAN website.
 
         This is the abstract method required by BaseScraper.
+        Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+        before filtering, ensuring accurate stale detection.
 
         Returns:
             List of dictionaries, each containing data for one animal
         """
-        return self.scrape_animals()
+        animals = self.scrape_animals()
+
+        # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+        # before filtering, ensuring accurate stale detection
+        if self.skip_existing_animals:
+            return self._filter_existing_animals(animals)
+        else:
+            # Still need to record external IDs for stale detection even when not filtering
+            for animal in animals:
+                if animal.get("external_id") and self.session_manager:
+                    self.session_manager.record_found_animal(animal["external_id"])
+            self.set_filtering_stats(len(animals), 0)
+        return animals
