@@ -71,10 +71,11 @@ async def enrich_animal(
         # Get animal data using async query
         result = await conn.fetchrow(
             """
-            SELECT a.*, o.name as org_name 
+            SELECT a.*, o.name as org_name
             FROM animals a
             JOIN organizations o ON a.organization_id = o.id
             WHERE a.id = $1
+            AND a.active = true
         """,
             request.animal_id,
         )
@@ -168,10 +169,11 @@ async def batch_enrich_animals(
         # Get animals data using async query
         animals = await conn.fetch(
             """
-            SELECT a.*, o.name as org_name 
+            SELECT a.*, o.name as org_name
             FROM animals a
             JOIN organizations o ON a.organization_id = o.id
             WHERE a.id = ANY($1)
+            AND a.active = true
         """,
             request.animal_ids,
         )
@@ -285,13 +287,14 @@ async def get_llm_stats(
 
         # Build query with async syntax
         query = """
-            SELECT 
+            SELECT
                 COUNT(*) as total,
                 COUNT(enriched_description) as enriched,
                 COUNT(dog_profiler_data) as with_profiles,
                 COUNT(translations) as with_translations
             FROM animals
             WHERE status = 'available'
+            AND active = true
         """
 
         params = []

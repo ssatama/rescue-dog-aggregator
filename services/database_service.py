@@ -264,11 +264,11 @@ class DatabaseService:
                 breed, standardized_breed, breed_group, age_text, age_min_months, age_max_months,
                 sex, size, standardized_size, language, properties, slug,
                 created_at, updated_at, last_scraped_at, last_seen_at,
-                consecutive_scrapes_missing, availability_confidence,
+                consecutive_scrapes_missing, availability_confidence, active,
                 breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             )
             RETURNING id
             """,
@@ -303,13 +303,14 @@ class DatabaseService:
                 current_time,  # last_seen_at
                 0,  # consecutive_scrapes_missing
                 "high",  # availability_confidence
-                breed_type,  # NEW: breed_type
-                primary_breed,  # NEW: primary_breed
-                secondary_breed,  # NEW: secondary_breed
-                breed_slug,  # NEW: breed_slug
+                True,  # active - explicitly set to true for new animals
+                breed_type,  # breed_type
+                primary_breed,  # primary_breed
+                secondary_breed,  # secondary_breed
+                breed_slug,  # breed_slug
                 str(breed_confidence)
                 if breed_confidence is not None
-                else None,  # NEW: breed_confidence (convert to string for database)
+                else None,  # breed_confidence (convert to string for database)
             ),
         )
 

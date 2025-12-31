@@ -77,7 +77,7 @@ class TestAvailabilityConfidenceFix:
         # consecutive_scrapes_missing = 0 → medium (first miss)
         # consecutive_scrapes_missing = 1 → low (second miss)
         # consecutive_scrapes_missing >= 2 → low (subsequent misses)
-        # consecutive_scrapes_missing >= 3 → unavailable (status change)
+        # consecutive_scrapes_missing >= 2 → unavailable (status change)
 
         lines = executed_query.split("\n")
         case_lines = [

@@ -337,8 +337,8 @@ class AnimalService:
                        o.social_media as org_social_media,
                        o.ships_to as org_ships_to,
                        o.service_regions as org_service_regions,
-                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available') as org_total_dogs,
-                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND active = true) as org_total_dogs,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND active = true AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
                        (
                            SELECT COALESCE(
                                json_agg(
@@ -355,9 +355,10 @@ class AnimalService:
                                '[]'::json
                            )
                            FROM (
-                               SELECT * FROM animals 
-                               WHERE organization_id = o.id 
+                               SELECT * FROM animals
+                               WHERE organization_id = o.id
                                AND status = 'available'
+                               AND active = true
                                ORDER BY created_at DESC
                                LIMIT 3
                            ) a2
@@ -405,8 +406,8 @@ class AnimalService:
                        o.social_media as org_social_media,
                        o.ships_to as org_ships_to,
                        o.service_regions as org_service_regions,
-                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available') as org_total_dogs,
-                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND active = true) as org_total_dogs,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND active = true AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
                        (
                            SELECT COALESCE(
                                json_agg(
@@ -423,9 +424,10 @@ class AnimalService:
                                '[]'::json
                            )
                            FROM (
-                               SELECT * FROM animals 
-                               WHERE organization_id = o.id 
+                               SELECT * FROM animals
+                               WHERE organization_id = o.id
                                AND status = 'available'
+                               AND active = true
                                ORDER BY created_at DESC
                                LIMIT 3
                            ) a2

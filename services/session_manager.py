@@ -150,7 +150,8 @@ class SessionManager:
                         UPDATE animals
                         SET last_seen_at = %s,
                             consecutive_scrapes_missing = 0,
-                            availability_confidence = 'high'
+                            availability_confidence = 'high',
+                            active = true
                         WHERE id = %s
                         """,
                         (self.current_scrape_session, animal_id),
@@ -178,7 +179,8 @@ class SessionManager:
                 UPDATE animals
                 SET last_seen_at = %s,
                     consecutive_scrapes_missing = 0,
-                    availability_confidence = 'high'
+                    availability_confidence = 'high',
+                    active = true
                 WHERE id = %s
                 """,
                 (self.current_scrape_session, animal_id),
@@ -209,8 +211,8 @@ class SessionManager:
                     cursor = conn.cursor()
 
                     # Update animals not seen in current scrape
-                    # FIXED: Use original consecutive_scrapes_missing value in CASE statements
-                    # FIXED: Also set active=false when status becomes 'unknown'
+                    # FIXED: Use >= 2 because CASE evaluates BEFORE increment
+                    # So after 3 misses: pre-increment value is 2, >= 2 triggers active=false
                     cursor.execute(
                         """
                         UPDATE animals
@@ -222,11 +224,11 @@ class SessionManager:
                                 ELSE availability_confidence
                             END,
                             status = CASE
-                                WHEN consecutive_scrapes_missing >= 3 THEN 'unknown'
+                                WHEN consecutive_scrapes_missing >= 2 THEN 'unknown'
                                 ELSE status
                             END,
                             active = CASE
-                                WHEN consecutive_scrapes_missing >= 3 THEN false
+                                WHEN consecutive_scrapes_missing >= 2 THEN false
                                 ELSE active
                             END
                         WHERE organization_id = %s
@@ -260,8 +262,8 @@ class SessionManager:
             cursor = self.conn.cursor()
 
             # Update animals not seen in current scrape
-            # FIXED: Use original consecutive_scrapes_missing value in CASE statements
-            # FIXED: Also set active=false when status becomes 'unknown'
+            # FIXED: Use >= 2 because CASE evaluates BEFORE increment
+            # So after 3 misses: pre-increment value is 2, >= 2 triggers active=false
             cursor.execute(
                 """
                 UPDATE animals
@@ -273,11 +275,11 @@ class SessionManager:
                         ELSE availability_confidence
                     END,
                     status = CASE
-                        WHEN consecutive_scrapes_missing >= 3 THEN 'unknown'
+                        WHEN consecutive_scrapes_missing >= 2 THEN 'unknown'
                         ELSE status
                     END,
                     active = CASE
-                        WHEN consecutive_scrapes_missing >= 3 THEN false
+                        WHEN consecutive_scrapes_missing >= 2 THEN false
                         ELSE active
                     END
                 WHERE organization_id = %s
@@ -431,7 +433,8 @@ class SessionManager:
                         UPDATE animals
                         SET last_seen_at = %s,
                             consecutive_scrapes_missing = 0,
-                            availability_confidence = 'high'
+                            availability_confidence = 'high',
+                            active = true
                         WHERE organization_id = %s
                         AND status = 'available'
                         AND external_id = ANY(%s)
@@ -475,7 +478,8 @@ class SessionManager:
                 UPDATE animals
                 SET last_seen_at = %s,
                     consecutive_scrapes_missing = 0,
-                    availability_confidence = 'high'
+                    availability_confidence = 'high',
+                    active = true
                 WHERE organization_id = %s
                 AND status = 'available'
                 AND external_id = ANY(%s)

@@ -284,11 +284,11 @@ class TestAnimalEndpointsWithAdoptionStatus:
             app.dependency_overrides.pop(get_pooled_db_cursor, None)
 
 
-class TestSwipeEndpointWithConfidenceFilter:
-    """Test swipe endpoint properly filters by availability_confidence."""
+class TestSwipeEndpointWithActiveFilter:
+    """Test swipe endpoint properly filters by active = true."""
 
-    def test_swipe_filters_by_availability_confidence(self, client, mock_db_cursor):
-        """Test that swipe endpoint includes availability_confidence filter."""
+    def test_swipe_filters_by_active_true(self, client, mock_db_cursor):
+        """Test that swipe endpoint includes active = true filter."""
         from api.dependencies import get_pooled_db_cursor
 
         def mock_get_cursor():
@@ -307,17 +307,14 @@ class TestSwipeEndpointWithConfidenceFilter:
             # Verify execute was called
             assert mock_db_cursor.execute.called
 
-            # Check that queries include availability_confidence filter
+            # Check that queries include active = true filter
             calls = mock_db_cursor.execute.call_args_list
             queries = [call[0][0] for call in calls if call[0]]
 
-            # At least one query should have the availability_confidence filter
-            has_confidence_filter = any(
-                "availability_confidence IN ('high', 'medium')" in query
-                for query in queries
-            )
-            assert has_confidence_filter, (
-                f"No availability_confidence filter found in queries: {queries}"
+            # At least one query should have the active = true filter
+            has_active_filter = any("a.active = true" in query for query in queries)
+            assert has_active_filter, (
+                f"No active = true filter found in queries: {queries}"
             )
 
         finally:

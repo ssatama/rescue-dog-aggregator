@@ -151,7 +151,7 @@ class TestUpdateStaleDataDetection:
     def test_sets_active_false_when_status_becomes_unknown(
         self, mock_psycopg2, session_manager
     ):
-        """SQL should set active=false when consecutive_scrapes_missing >= 3."""
+        """SQL should set active=false when consecutive_scrapes_missing >= 2."""
         # Setup mock connection
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -171,7 +171,7 @@ class TestUpdateStaleDataDetection:
 
         # SQL should include the active column update
         assert "active = CASE" in sql
-        assert "WHEN consecutive_scrapes_missing >= 3 THEN false" in sql
+        assert "WHEN consecutive_scrapes_missing >= 2 THEN false" in sql
         assert result is True
 
 
