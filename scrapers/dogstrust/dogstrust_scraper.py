@@ -503,7 +503,6 @@ class DogsTrustScraper(BaseScraper):
         else:
             self.logger.info("Scraping all available pages (Playwright)")
 
-        playwright_service = get_playwright_service()
         options = PlaywrightOptions(
             headless=True,
             viewport_width=1920,
@@ -512,7 +511,8 @@ class DogsTrustScraper(BaseScraper):
             stealth_mode=True,
         )
 
-        async with playwright_service.get_browser(options) as browser_result:
+        # Use retry wrapper for resilient browser connection
+        async with self._with_browser_retry(options) as browser_result:
             page = browser_result.page
             self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} for Dogs Trust scraping")
 

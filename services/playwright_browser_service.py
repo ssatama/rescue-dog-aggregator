@@ -53,9 +53,10 @@ class PlaywrightResult:
     page: Page
     is_remote: bool
     _playwright: Optional[Playwright] = field(default=None, repr=False)
+    _owns_playwright: bool = field(default=False, repr=False)  # Track if we should stop playwright
 
     async def close(self) -> None:
-        """Safely close browser resources including playwright instance."""
+        """Safely close browser resources including playwright instance if owned."""
         try:
             await self.page.close()
             await self.context.close()
@@ -63,8 +64,8 @@ class PlaywrightResult:
         except Exception:
             pass
         finally:
-            # Always stop playwright to prevent process leak
-            if self._playwright:
+            # Only stop playwright if this result owns it (non-singleton usage)
+            if self._owns_playwright and self._playwright:
                 try:
                     await self._playwright.stop()
                 except Exception:
@@ -98,6 +99,33 @@ class PlaywrightBrowserService:
         self._endpoint = os.environ.get("BROWSERLESS_WS_ENDPOINT")
         self._token = os.environ.get("BROWSERLESS_TOKEN")
         self._enabled = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
+        # Singleton Playwright instance to prevent pthread_create exhaustion
+        self._playwright: Optional[Playwright] = None
+        self._playwright_lock = asyncio.Lock()
+
+    async def _get_or_start_playwright(self) -> Playwright:
+        """Get shared Playwright instance, starting if needed.
+
+        This prevents pthread_create exhaustion by reusing a single
+        Playwright/Node.js process across all browser operations.
+        """
+        if self._playwright is None:
+            async with self._playwright_lock:
+                if self._playwright is None:
+                    self._playwright = await async_playwright().start()
+                    logger.info("Started shared Playwright instance")
+        return self._playwright
+
+    async def shutdown(self) -> None:
+        """Stop shared Playwright instance on service shutdown."""
+        if self._playwright:
+            try:
+                await self._playwright.stop()
+                logger.info("Stopped shared Playwright instance")
+            except Exception as e:
+                logger.warning(f"Error stopping Playwright: {e}")
+            finally:
+                self._playwright = None
 
     @property
     def is_enabled(self) -> bool:
@@ -137,10 +165,9 @@ class PlaywrightBrowserService:
         return await self._create_local_browser(opts)
 
     async def _create_local_browser(self, opts: PlaywrightOptions) -> PlaywrightResult:
-        """Create a local Chromium browser instance."""
-        playwright = None
+        """Create a local Chromium browser instance using shared Playwright."""
         try:
-            playwright = await async_playwright().start()
+            playwright = await self._get_or_start_playwright()
 
             launch_args = [
                 "--no-sandbox",
@@ -168,13 +195,9 @@ class PlaywrightBrowserService:
                 page=page,
                 is_remote=False,
                 _playwright=playwright,
+                _owns_playwright=False,  # Shared instance - don't stop on close
             )
         except Exception as e:
-            if playwright:
-                try:
-                    await playwright.stop()
-                except Exception:
-                    pass
             logger.error(f"Failed to create local Playwright browser: {e}")
             raise
 
@@ -184,17 +207,18 @@ class PlaywrightBrowserService:
         Implements exponential backoff to handle transient connection failures
         and resource exhaustion on the Browserless service.
 
+        Uses shared Playwright instance to prevent pthread_create exhaustion.
         Note: Uses 2 retries to limit nested retry explosion since
-        get_page_content() has its own 3-retry loop (total max: 3 × 2 = 6 attempts).
+        get_page_content() has its own 2-retry loop (total max: 2 × 2 = 4 attempts).
         """
         max_retries = 2
         base_delay = 2.0
         ws_url = self._build_ws_url()
 
+        playwright = await self._get_or_start_playwright()
+
         for attempt in range(max_retries):
-            playwright = None
             try:
-                playwright = await async_playwright().start()
                 browser = await playwright.chromium.connect_over_cdp(ws_url)
 
                 context = await self._create_context(browser, opts)
@@ -211,15 +235,10 @@ class PlaywrightBrowserService:
                     page=page,
                     is_remote=True,
                     _playwright=playwright,
+                    _owns_playwright=False,  # Shared instance - don't stop on close
                 )
 
             except Exception as e:
-                if playwright:
-                    try:
-                        await playwright.stop()
-                    except Exception:
-                        pass
-
                 if attempt < max_retries - 1:
                     delay = base_delay * (2**attempt)
                     logger.warning(f"Browserless connection failed (attempt {attempt + 1}/{max_retries}), " f"retrying in {delay}s: {e}")
@@ -312,7 +331,7 @@ class PlaywrightBrowserService:
         Returns:
             PageContentResult with success status, content, and error info.
         """
-        max_retries = 3
+        max_retries = 2  # Reduced from 3 to limit retry explosion (2 × 2 = 4 total attempts)
         base_delay = 1.0
         opts = options or PlaywrightOptions()
 

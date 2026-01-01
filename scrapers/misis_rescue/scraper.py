@@ -211,14 +211,14 @@ class MisisRescueScraper(BaseScraper):
         page_num = 1
 
         try:
-            playwright_service = get_playwright_service()
             options = PlaywrightOptions(
                 headless=True,
                 viewport_width=1920,
                 viewport_height=1080,
             )
 
-            async with playwright_service.get_browser(options) as browser_result:
+            # Use retry wrapper for resilient browser connection
+            async with self._with_browser_retry(options) as browser_result:
                 page = browser_result.page
 
                 # Load first page
@@ -784,7 +784,6 @@ class MisisRescueScraper(BaseScraper):
     async def _scrape_dog_detail_playwright(self, url: str) -> Optional[Dict[str, Any]]:
         """Playwright implementation of _scrape_dog_detail."""
         try:
-            playwright_service = get_playwright_service()
             options = PlaywrightOptions(
                 headless=True,
                 viewport_width=1920,
@@ -793,7 +792,8 @@ class MisisRescueScraper(BaseScraper):
 
             self.logger.debug(f"Loading detail page with Playwright: {url}")
 
-            async with playwright_service.get_browser(options) as browser_result:
+            # Use retry wrapper for resilient browser connection
+            async with self._with_browser_retry(options) as browser_result:
                 page = browser_result.page
 
                 await page.goto(url, wait_until="load", timeout=60000)
