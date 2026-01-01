@@ -210,6 +210,7 @@ class UnifiedStandardizer:
             "maremma sheepdog": BreedInfo("Maremma Sheepdog", "Guardian", "Large"),
             "brindle maremma hound": BreedInfo("Maremma Sheepdog", "Guardian", "Large"),  # Maremma is actually a guardian breed
             # Breed aliases - common short forms and spelling variants
+            "lab": BreedInfo("Labrador Retriever", "Sporting", "Large"),
             "labrador": BreedInfo("Labrador Retriever", "Sporting", "Large"),
             "husky": BreedInfo("Siberian Husky", "Working", "Medium"),
             "saluki": BreedInfo("Saluki", "Hound", "Large"),
@@ -769,7 +770,7 @@ class UnifiedStandardizer:
 
         # HIGH-2: Check for crosses with specific breed mentioned FIRST (before generic mixed breed)
         # Use dynamic breed_data.keys() instead of hardcoded list
-        breed_keywords = [k for k in self.breed_data.keys() if len(k) > 3]
+        breed_keywords = [k for k in self.breed_data.keys() if len(k) >= 3]
         # Also include international terms not in breed_data
         international_terms = ["schäferhund", "hund", "dogo", "gordon", "northern", "irish", "ridgeback"]
         all_keywords = breed_keywords + international_terms

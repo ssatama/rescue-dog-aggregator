@@ -302,7 +302,8 @@ class TestTierschutzvereinEuropaIntegration:
 
         # Verify base_scraper standardization will work
         breed_info = standardize_breed(dog["breed"])
-        assert breed_info[0] == "German Shepherd"  # Standardized breed
+        # German Shepherd Dog is the official AKC breed name
+        assert breed_info[0] == "German Shepherd Dog"  # Standardized breed
 
         age_info = standardize_age(dog["age_text"])
         assert age_info["age_min_months"] == 36  # 3 years = 36 months
