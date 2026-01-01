@@ -28,7 +28,7 @@ from rich.progress import (
     TextColumn,
 )
 
-from config import DB_CONFIG
+from config import DB_CONFIG, ENVIRONMENT
 from utils.unified_standardization import UnifiedStandardizer
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -48,6 +48,7 @@ class StandardizationBackfillService:
         try:
             conn_params = {
                 "host": DB_CONFIG["host"],
+                "port": DB_CONFIG.get("port", 5432),
                 "user": DB_CONFIG["user"],
                 "database": DB_CONFIG["database"],
             }
@@ -58,13 +59,20 @@ class StandardizationBackfillService:
             # CRITICAL: Disable autocommit for proper transaction management
             self.conn.autocommit = False
 
-            # Production safety check
-            if DB_CONFIG["database"] == "rescue_dogs" and not os.getenv("ALLOW_PROD_BACKFILL"):
-                logger.error("SAFETY: Refusing to run against production database without ALLOW_PROD_BACKFILL=1")
+            # Production safety check - use ENVIRONMENT variable, not database name
+            is_production = ENVIRONMENT == "production"
+            if is_production and not os.getenv("ALLOW_PROD_BACKFILL"):
+                logger.error(
+                    "SAFETY: Refusing to run against production database without ALLOW_PROD_BACKFILL=1\n"
+                    f"  Environment: {ENVIRONMENT}\n"
+                    f"  Database: {DB_CONFIG['database']}\n"
+                    f"  Host: {DB_CONFIG['host']}\n"
+                    "Set ALLOW_PROD_BACKFILL=1 to proceed."
+                )
                 self.conn.close()
                 return False
 
-            logger.info(f"Connected to database: {DB_CONFIG['database']}")
+            logger.info(f"Connected to database: {DB_CONFIG['database']} (env: {ENVIRONMENT})")
             return True
         except Exception as e:
             logger.error(f"Database connection error: {e}")

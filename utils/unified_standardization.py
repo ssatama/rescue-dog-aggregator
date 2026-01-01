@@ -224,6 +224,51 @@ class UnifiedStandardizer:
             "american bulldog": BreedInfo("American Bulldog", "Working", "Large"),
             "dutch shepherd": BreedInfo("Dutch Shepherd", "Herding", "Large"),
             "shepherd": BreedInfo("Shepherd", "Herding", "Large"),
+            # Additional breeds from production data analysis (2026-01-01)
+            # Common breeds missing from original data
+            "chow chow": BreedInfo("Chow Chow", "Non-Sporting", "Medium"),
+            "chow": BreedInfo("Chow Chow", "Non-Sporting", "Medium"),
+            "shiba inu": BreedInfo("Shiba Inu", "Non-Sporting", "Medium"),
+            "shiba": BreedInfo("Shiba Inu", "Non-Sporting", "Medium"),
+            "podenca": BreedInfo("Podenco", "Hound", "Medium"),  # feminine form
+            "fox terrier": BreedInfo("Fox Terrier", "Terrier", "Small"),
+            "rhodesian ridgeback": BreedInfo("Rhodesian Ridgeback", "Hound", "Large"),
+            "ridgeback": BreedInfo("Rhodesian Ridgeback", "Hound", "Large"),
+            "shetland sheepdog": BreedInfo("Shetland Sheepdog", "Herding", "Small"),
+            "sheltie": BreedInfo("Shetland Sheepdog", "Herding", "Small"),
+            "leonberger": BreedInfo("Leonberger", "Working", "XLarge"),
+            "spaniel": BreedInfo("Spaniel", "Sporting", "Medium"),  # generic
+            "king charles spaniel": BreedInfo("King Charles Spaniel", "Toy", "Small"),
+            "australian cattle dog": BreedInfo("Australian Cattle Dog", "Herding", "Medium"),
+            "cattle dog": BreedInfo("Australian Cattle Dog", "Herding", "Medium"),
+            "german spitz": BreedInfo("German Spitz", "Non-Sporting", "Medium"),
+            "caucasian shepherd": BreedInfo("Caucasian Shepherd", "Guardian", "XLarge"),
+            "caucasian ovcharka": BreedInfo("Caucasian Shepherd", "Guardian", "XLarge"),
+            "english pointer": BreedInfo("English Pointer", "Sporting", "Large"),
+            "new zealand huntaway": BreedInfo("New Zealand Huntaway", "Herding", "Large"),
+            "huntaway": BreedInfo("New Zealand Huntaway", "Herding", "Large"),
+            # Spanish/Portuguese regional breeds
+            "galga": BreedInfo("Galgo Español", "Hound", "Large"),  # feminine form
+            "galgo espagnol": BreedInfo("Galgo Español", "Hound", "Large"),  # misspelling
+            "galgo espaniol": BreedInfo("Galgo Español", "Hound", "Large"),  # misspelling
+            "burgos pointer": BreedInfo("Burgos Pointer", "Sporting", "Large"),
+            "perdiguero de burgos": BreedInfo("Burgos Pointer", "Sporting", "Large"),
+            "epagneul breton": BreedInfo("Brittany", "Sporting", "Medium"),  # French name
+            "bretonischer spaniel": BreedInfo("Brittany", "Sporting", "Medium"),  # German name
+            "podengo portugues grande": BreedInfo("Portuguese Podengo Grande", "Hound", "Large"),
+            "bodeguero andaluz espanol": BreedInfo("Bodeguero Andaluz", "Terrier", "Small"),
+            "ratonero bodeguero andaluz": BreedInfo("Ratonero Bodeguero Andaluz", "Terrier", "Small"),
+            "ratonero": BreedInfo("Ratonero Bodeguero Andaluz", "Terrier", "Small"),
+            "serra da estrela": BreedInfo("Serra da Estrela", "Guardian", "Large"),
+            "serra da estrela berghund": BreedInfo("Serra da Estrela", "Guardian", "Large"),
+            # German translations
+            "französische bulldogge": BreedInfo("French Bulldog", "Non-Sporting", "Small"),
+            "rauhhaardackel": BreedInfo("Wire-Haired Dachshund", "Hound", "Small"),
+            "zwergspitz": BreedInfo("Pomeranian", "Toy", "Tiny"),
+            # Wire-haired Dachshund variants
+            "miniature wire haired dachshund": BreedInfo("Miniature Wire-Haired Dachshund", "Hound", "Small"),
+            "wire haired dachshund": BreedInfo("Wire-Haired Dachshund", "Hound", "Small"),
+            "wire-haired dachshund": BreedInfo("Wire-Haired Dachshund", "Hound", "Small"),
         }
 
         return breed_data
@@ -353,7 +398,7 @@ class UnifiedStandardizer:
     def _compile_breed_patterns(self) -> Dict[str, re.Pattern]:
         """Compile regex patterns for breed processing."""
         return {
-            "mixed": re.compile(r"(mixed|mix|mongrel|mutt|crossbreed|cross\s*breed)", re.IGNORECASE),
+            "mixed": re.compile(r"(mixed|mix|mongrel|mutt|crossbreed|cross\s*breed|^cross$)", re.IGNORECASE),
             "cross": re.compile(r"\b(cross|x|×)\b", re.IGNORECASE),
         }
 

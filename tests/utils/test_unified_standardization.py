@@ -688,3 +688,54 @@ class TestBreedNormalizationFixes:
         result = standardizer._standardize_breed("Weimaraner Cross")
         assert "Weimaraner" in result["name"]
         assert result["breed_type"] == "crossbreed"
+
+    def test_standalone_cross_is_mixed_breed(self):
+        """Standalone 'Cross' should return Mixed Breed with breed_type='mixed'."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Cross")
+        assert result["name"] == "Mixed Breed"
+        assert result["breed_type"] == "mixed"
+
+    def test_chow_chow_recognized(self):
+        """'Chow Chow' should be recognized as purebred."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Chow Chow")
+        assert result["name"] == "Chow Chow"
+        assert result["breed_type"] == "purebred"
+        assert result["group"] == "Non-Sporting"
+
+    def test_shiba_inu_recognized(self):
+        """'Shiba Inu' should be recognized as purebred."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Shiba Inu")
+        assert result["name"] == "Shiba Inu"
+        assert result["breed_type"] == "purebred"
+
+    def test_podenca_maps_to_podenco(self):
+        """'Podenca' (feminine) should map to 'Podenco'."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Podenca")
+        assert result["name"] == "Podenco"
+        assert result["breed_type"] == "purebred"
+
+    def test_galga_maps_to_galgo_espanol(self):
+        """'Galga' (feminine) should map to 'Galgo Español'."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Galga")
+        assert result["name"] == "Galgo Español"
+        assert result["breed_type"] == "purebred"
+
+    def test_german_breed_name_translation(self):
+        """German breed names should translate correctly."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Französische Bulldogge")
+        assert result["name"] == "French Bulldog"
+        assert result["breed_type"] == "purebred"
+
+    def test_rhodesian_ridgeback_recognized(self):
+        """'Rhodesian Ridgeback' should be recognized."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Rhodesian Ridgeback")
+        assert result["name"] == "Rhodesian Ridgeback"
+        assert result["breed_type"] == "purebred"
+        assert result["group"] == "Hound"
