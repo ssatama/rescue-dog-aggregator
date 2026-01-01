@@ -505,3 +505,186 @@ def test_data_quality_fix():
     result = standardizer.apply_full_standardization(breed="Can Be The Only Dog")
     # Should remain as Unknown since it's not a breed
     assert result["breed_category"] == "Unknown"
+
+
+class TestBreedNormalizationFixes:
+    """Tests for breed normalization fixes - targeting 18.2% unknown to <5%."""
+
+    def test_crossbreed_normalizes_to_mixed(self):
+        """CRITICAL-1: 'Crossbreed' should normalize to Mixed Breed with breed_type='mixed'."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Crossbreed")
+        assert result["name"] == "Mixed Breed"
+        assert result["breed_type"] == "mixed"
+
+    def test_cross_breed_with_space_normalizes_to_mixed(self):
+        """CRITICAL-1: 'Cross breed' with space should also normalize to Mixed Breed."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Cross breed")
+        assert result["name"] == "Mixed Breed"
+        assert result["breed_type"] == "mixed"
+
+    def test_labrador_alias_works(self):
+        """HIGH-1: 'Labrador' should expand to 'Labrador Retriever'."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Labrador")
+        assert result["name"] == "Labrador Retriever"
+        assert result["breed_type"] == "purebred"
+        assert result["group"] == "Sporting"
+
+    def test_husky_alias_works(self):
+        """HIGH-1: 'Husky' should expand to 'Siberian Husky'."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Husky")
+        assert result["name"] == "Siberian Husky"
+        assert result["breed_type"] == "purebred"
+        assert result["group"] == "Working"
+
+    def test_saluki_purebred(self):
+        """HIGH-1: 'Saluki' should be recognized as a purebred Hound."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Saluki")
+        assert result["name"] == "Saluki"
+        assert result["breed_type"] == "purebred"
+        assert result["group"] == "Hound"
+
+    def test_dobermann_alias_works(self):
+        """HIGH-1: 'Dobermann' (European spelling) should expand to 'Doberman Pinscher'."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Dobermann")
+        assert result["name"] == "Doberman Pinscher"
+        assert result["breed_type"] == "purebred"
+
+    def test_lhasa_apso_recognized(self):
+        """HIGH-1: 'Lhasa Apso' should be in breed_data."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Lhasa Apso")
+        assert result["name"] == "Lhasa Apso"
+        assert result["breed_type"] == "purebred"
+        assert result["group"] == "Non-Sporting"
+
+    def test_maltese_terrier_maps_to_maltese(self):
+        """HIGH-1: 'Maltese Terrier' should map to 'Maltese'."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Maltese Terrier")
+        assert result["name"] == "Maltese"
+        assert result["group"] == "Toy"
+
+    def test_springer_spaniel_alias(self):
+        """HIGH-1: 'Springer Spaniel' should expand to 'English Springer Spaniel'."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Springer Spaniel")
+        assert result["name"] == "English Springer Spaniel"
+        assert result["group"] == "Sporting"
+
+    def test_weimaraner_recognized(self):
+        """HIGH-1: 'Weimaraner' should be in breed_data."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Weimaraner")
+        assert result["name"] == "Weimaraner"
+        assert result["group"] == "Sporting"
+
+    def test_akita_recognized(self):
+        """HIGH-1: 'Akita' should be in breed_data."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Akita")
+        assert result["name"] == "Akita"
+        assert result["group"] == "Working"
+
+    def test_american_akita_recognized(self):
+        """HIGH-1: 'American Akita' should be recognized."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("American Akita")
+        assert result["name"] == "American Akita"
+        assert result["group"] == "Working"
+
+    def test_american_bulldog_recognized(self):
+        """HIGH-1: 'American Bulldog' should be in breed_data."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("American Bulldog")
+        assert result["name"] == "American Bulldog"
+        assert result["group"] == "Working"
+
+    def test_dutch_shepherd_recognized(self):
+        """HIGH-1: 'Dutch Shepherd' should be in breed_data."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Dutch Shepherd")
+        assert result["name"] == "Dutch Shepherd"
+        assert result["group"] == "Herding"
+
+    def test_behavioral_text_rejected_can_be_only_dog(self):
+        """CRITICAL-3: 'Can Be the Only Dog' should return Unknown (not a breed)."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Can Be the Only Dog")
+        assert result["name"] == "Unknown"
+        assert result["breed_type"] == "unknown"
+
+    def test_behavioral_text_rejected_tbc(self):
+        """CRITICAL-3: 'TBC' should return Unknown."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("TBC")
+        assert result["name"] == "Unknown"
+        assert result["breed_type"] == "unknown"
+
+    def test_behavioral_text_rejected_breed_tbc(self):
+        """CRITICAL-3: 'Breed TBC' should return Unknown."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Breed TBC")
+        assert result["name"] == "Unknown"
+        assert result["breed_type"] == "unknown"
+
+    def test_behavioral_text_rejected_not_specified(self):
+        """CRITICAL-3: 'Not Specified' should return Unknown."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Not Specified")
+        assert result["name"] == "Unknown"
+        assert result["breed_type"] == "unknown"
+
+    def test_behavioral_text_rejected_pending(self):
+        """CRITICAL-3: 'Pending' should return Unknown."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Pending")
+        assert result["name"] == "Unknown"
+        assert result["breed_type"] == "unknown"
+
+    def test_overly_long_breed_rejected(self):
+        """CRITICAL-3: Breed strings over 60 chars should return Unknown."""
+        standardizer = UnifiedStandardizer()
+        long_text = "This is not a breed but some very long description that should be rejected"
+        result = standardizer._standardize_breed(long_text)
+        assert result["name"] == "Unknown"
+        assert result["breed_type"] == "unknown"
+
+    def test_duplicate_words_removed(self):
+        """MEDIUM-1: 'Bodeguero Andaluz Andaluz' should dedupe to 'Bodeguero Andaluz'."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._capitalize_breed_name("Bodeguero Andaluz Andaluz")
+        assert result == "Bodeguero Andaluz"
+
+    def test_duplicate_words_case_insensitive(self):
+        """MEDIUM-1: Duplicate detection should be case-insensitive."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._capitalize_breed_name("test TEST Test")
+        assert result == "Test"
+
+    def test_saluki_in_mix_detected(self):
+        """HIGH-2: 'Saluki Cross' should be detected as crossbreed with Saluki."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Saluki Cross")
+        assert "Saluki" in result["name"]
+        assert result["breed_type"] == "crossbreed"
+        assert result["is_mixed"] is True
+
+    def test_akita_in_mix_detected(self):
+        """HIGH-2: 'Akita Mix' should be detected as crossbreed with Akita."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Akita Mix")
+        assert "Akita" in result["name"]
+        assert result["breed_type"] == "crossbreed"
+
+    def test_weimaraner_in_mix_detected(self):
+        """HIGH-2: 'Weimaraner Cross' should be detected as crossbreed."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer._standardize_breed("Weimaraner Cross")
+        assert "Weimaraner" in result["name"]
+        assert result["breed_type"] == "crossbreed"

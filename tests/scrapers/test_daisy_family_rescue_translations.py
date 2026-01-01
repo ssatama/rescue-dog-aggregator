@@ -362,9 +362,10 @@ class TestCompatibilityWithStandardization:
         standardized_breed, breed_group, size_estimate = standardize_breed(translated_breed)
 
         assert standardized_breed is not None
-        # Standardization now returns "Mixed Breed" for mixed breeds
+        # Standardization preserves the breed component for mixed breeds
         assert standardized_breed in [
             "German Shepherd Mix",
+            "German Shepherd Mixed Breed",  # Translated input preserved
             "Mixed Breed",
             "German Shepherd Dog",
         ]

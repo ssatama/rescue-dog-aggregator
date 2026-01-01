@@ -201,6 +201,20 @@ BREED_INDICATORS = [
 ]
 
 
+# Module-level singleton for performance (avoid creating new instance per call)
+_unified_standardizer = None
+
+
+def _get_unified_standardizer():
+    """Get or create the singleton UnifiedStandardizer instance."""
+    global _unified_standardizer
+    if _unified_standardizer is None:
+        from utils.unified_standardization import UnifiedStandardizer
+
+        _unified_standardizer = UnifiedStandardizer()
+    return _unified_standardizer
+
+
 def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
     """
     Standardize a dog breed name.
@@ -211,10 +225,10 @@ def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
     Returns:
         Tuple of (standardized_breed, breed_group, size_estimate)
     """
-    # Always use enhanced standardization (migration completed)
-    from utils.enhanced_breed_standardization import enhanced_standardizer
-
-    return enhanced_standardizer.standardize_breed_enhanced(breed_text)
+    # CRITICAL-2: Use UnifiedStandardizer instead of legacy enhanced_standardizer
+    standardizer = _get_unified_standardizer()
+    result = standardizer._standardize_breed(breed_text)
+    return (result["name"], result["group"], result.get("size"))
 
 
 def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:

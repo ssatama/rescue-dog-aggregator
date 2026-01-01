@@ -209,6 +209,20 @@ class UnifiedStandardizer:
             "akbash": BreedInfo("Akbash", "Guardian", "XLarge"),
             "maremma sheepdog": BreedInfo("Maremma Sheepdog", "Guardian", "Large"),
             "brindle maremma hound": BreedInfo("Maremma Sheepdog", "Guardian", "Large"),  # Maremma is actually a guardian breed
+            # Breed aliases - common short forms and spelling variants
+            "labrador": BreedInfo("Labrador Retriever", "Sporting", "Large"),
+            "husky": BreedInfo("Siberian Husky", "Working", "Medium"),
+            "saluki": BreedInfo("Saluki", "Hound", "Large"),
+            "dobermann": BreedInfo("Doberman Pinscher", "Working", "Large"),
+            "lhasa apso": BreedInfo("Lhasa Apso", "Non-Sporting", "Small"),
+            "maltese terrier": BreedInfo("Maltese", "Toy", "Tiny"),
+            "springer spaniel": BreedInfo("English Springer Spaniel", "Sporting", "Medium"),
+            "weimaraner": BreedInfo("Weimaraner", "Sporting", "Large"),
+            "akita": BreedInfo("Akita", "Working", "Large"),
+            "american akita": BreedInfo("American Akita", "Working", "Large"),
+            "american bulldog": BreedInfo("American Bulldog", "Working", "Large"),
+            "dutch shepherd": BreedInfo("Dutch Shepherd", "Herding", "Large"),
+            "shepherd": BreedInfo("Shepherd", "Herding", "Large"),
         }
 
         return breed_data
@@ -338,7 +352,7 @@ class UnifiedStandardizer:
     def _compile_breed_patterns(self) -> Dict[str, re.Pattern]:
         """Compile regex patterns for breed processing."""
         return {
-            "mixed": re.compile(r"(mixed|mix|mongrel|mutt)", re.IGNORECASE),
+            "mixed": re.compile(r"(mixed|mix|mongrel|mutt|crossbreed|cross\s*breed)", re.IGNORECASE),
             "cross": re.compile(r"\b(cross|x|×)\b", re.IGNORECASE),
         }
 
@@ -639,6 +653,27 @@ class UnifiedStandardizer:
             }
 
         breed_lower = breed.strip().lower()
+
+        # CRITICAL-3: Input sanitization - blocklist for known non-breed strings
+        # Note: "unknown" is NOT in blocklist - it's a valid (if uninformative) breed value
+        blocklist = [
+            "can be the only dog",
+            "n/a",
+            "breed tbc",
+            "not specified",
+            "tbc",
+            "pending",
+        ]
+        if breed_lower in blocklist or len(breed_lower) > 60:
+            return {
+                "name": "Unknown",
+                "group": "Unknown",
+                "size": None,
+                "confidence": 0.0,
+                "breed_type": "unknown",
+                "is_mixed": False,
+            }
+
         is_mixed = bool(self.breed_patterns["cross"].search(breed_lower) or self.breed_patterns["mixed"].search(breed_lower))
 
         # Try parenthetical pattern first (Dogs Trust style)
@@ -732,68 +767,35 @@ class UnifiedStandardizer:
                 "is_mixed": is_mixed,
             }
 
-        # Check for crosses with specific breed mentioned FIRST (before generic mixed breed)
-        # Include international breed terms (German: schäferhund=shepherd, hund=dog)
-        if is_mixed and any(
-            word in breed_lower
-            for word in [
-                "labrador",
-                "collie",
-                "terrier",
-                "spaniel",
-                "shepherd",
-                "retriever",
-                "pointer",
-                "setter",
-                "podenco",
-                "galgo",
-                "chihuahua",
-                "beagle",
-                "bulldog",
-                "hound",
-                "pug",
-                "ridgeback",
-                "poodle",
-                "mastiff",
-                "husky",
-                "akita",
-                "boxer",
-                "rottweiler",
-                "newfoundland",
-                "bichon",
-                "maltese",
-                "shih tzu",
-                "whippet",
-                "dalmatian",
-                "basset",
-                "australian",
-                "finnish",
-                "french",
-                "american",
-                "dutch",
-                "schäferhund",
-                "hund",
-                "dogo",
-                "gordon",
-                "lhasa",
-                "pomeranian",
-                "dachshund",
-                "great dane",
-                "irish",
-                "northern",
-            ]
-        ):
-            # This is a cross with an identifiable breed component
-            # Properly capitalize breed names like "Terrier Mix", "Labrador Cross", "German Shepherd Mix"
-            breed_name = self._capitalize_breed_name(breed.strip())
-            return {
-                "name": breed_name,
-                "group": "Mixed",
-                "size": None,
-                "confidence": 0.7,
-                "breed_type": "crossbreed",
-                "is_mixed": True,
-            }  # Medium confidence for identifiable crosses
+        # HIGH-2: Check for crosses with specific breed mentioned FIRST (before generic mixed breed)
+        # Use dynamic breed_data.keys() instead of hardcoded list
+        breed_keywords = [k for k in self.breed_data.keys() if len(k) > 3]
+        # Also include international terms not in breed_data
+        international_terms = ["schäferhund", "hund", "dogo", "gordon", "northern", "irish", "ridgeback"]
+        all_keywords = breed_keywords + international_terms
+
+        if is_mixed:
+            matched_breed_key = None
+            for keyword in all_keywords:
+                if keyword in breed_lower:
+                    matched_breed_key = keyword
+                    break
+
+            if matched_breed_key:
+                # Get size from matched breed if available
+                matched_size = None
+                if matched_breed_key in self.breed_data:
+                    matched_size = self.breed_data[matched_breed_key].size_estimate
+
+                breed_name = self._capitalize_breed_name(breed.strip())
+                return {
+                    "name": breed_name,
+                    "group": "Mixed",
+                    "size": matched_size,
+                    "confidence": 0.7,
+                    "breed_type": "crossbreed",
+                    "is_mixed": True,
+                }  # Medium confidence for identifiable crosses
 
         # Check for generic mixed breed (only if no specific breed identified)
         if self.breed_patterns["mixed"].search(breed_lower):
@@ -842,9 +844,13 @@ class UnifiedStandardizer:
         for i, word in enumerate(words):
             word_lower = word.lower()
 
+            # MEDIUM-1: Skip duplicate adjacent words (case-insensitive)
+            if i > 0 and word_lower == words[i - 1].lower():
+                continue
+
             if word_lower in uppercase_words:
                 result.append(word.upper())
-            elif i == 0 or word_lower not in lowercase_words:
+            elif i == 0 or len(result) == 0 or word_lower not in lowercase_words:
                 # Capitalize first letter, keep rest of case
                 result.append(word.capitalize())
             else:
