@@ -781,7 +781,7 @@ class AnimalService:
                     AND o.active = TRUE
                     AND a.primary_breed IS NOT NULL
                     GROUP BY a.primary_breed, a.breed_slug, a.breed_type, a.breed_group
-                    HAVING COUNT(*) >= 15
+                    HAVING COUNT(*) >= 3
                 ),
                 breed_traits AS (
                     SELECT 

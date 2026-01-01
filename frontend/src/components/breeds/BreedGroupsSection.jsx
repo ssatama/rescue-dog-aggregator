@@ -148,42 +148,52 @@ export default function BreedGroupsSection({ breedGroups }) {
                 </div>
 
                 {/* Expandable Top Breeds */}
-                {isExpanded && group.top_breeds && (
+                {isExpanded && (
                   <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-2">
-                    {group.top_breeds.map((breed) => (
-                      <Link
-                        key={breed.slug}
-                        href={`/breeds/${breed.slug}`}
-                        className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          {breed.image_url ? (
-                            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800">
-                              <Image
-                                src={breed.image_url}
-                                alt={breed.name}
-                                fill
-                                className="object-cover"
-                                sizes="40px"
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                🐕
-                              </span>
-                            </div>
-                          )}
-                          <span className="font-medium text-sm group-hover:text-primary">
-                            {breed.name}
+                    {group.top_breeds && group.top_breeds.length > 0 ? (
+                      group.top_breeds.map((breed) => (
+                        <Link
+                          key={breed.slug}
+                          href={`/breeds/${breed.slug}`}
+                          className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors group"
+                        >
+                          <div className="flex items-center gap-3">
+                            {breed.image_url ? (
+                              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+                                <Image
+                                  src={breed.image_url}
+                                  alt={breed.name}
+                                  fill
+                                  className="object-cover"
+                                  sizes="40px"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  🐕
+                                </span>
+                              </div>
+                            )}
+                            <span className="font-medium text-sm group-hover:text-primary">
+                              {breed.name}
+                            </span>
+                          </div>
+                          <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 font-medium">
+                            {breed.count} available
+                            <span className="text-red-500">❤️</span>
                           </span>
-                        </div>
-                        <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 font-medium">
-                          {breed.count} available
-                          <span className="text-red-500">❤️</span>
-                        </span>
+                        </Link>
+                      ))
+                    ) : (
+                      <Link
+                        href={`/dogs?breed_group=${encodeURIComponent(group.name.replace(" Group", ""))}`}
+                        className="flex items-center justify-center gap-2 p-3 text-primary hover:text-primary/80 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors"
+                      >
+                        <span>Browse all {group.count} {group.name.replace(" Group", "")} dogs</span>
+                        <ChevronRight className="h-4 w-4" />
                       </Link>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>

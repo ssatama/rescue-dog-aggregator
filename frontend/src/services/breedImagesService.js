@@ -43,7 +43,7 @@ export async function getMixedBreedData() {
 
 export async function getPopularBreedsWithImages(limit = 8) {
   return getBreedsWithImages({
-    minCount: 15,
+    minCount: 5,
     limit,
   });
 }
@@ -67,7 +67,7 @@ export async function getBreedGroupsWithTopBreeds() {
     // Then get breeds with images - use fallback if this fails
     let breedsWithImages = [];
     try {
-      const breedsWithImagesUrl = `${API_URL}/api/animals/breeds/with-images?min_count=5&limit=50`;
+      const breedsWithImagesUrl = `${API_URL}/api/animals/breeds/with-images?min_count=2&limit=100`;
       const imagesResponse = await fetch(breedsWithImagesUrl, {
         headers: { "Content-Type": "application/json" },
         next: { revalidate: 300 },
@@ -93,10 +93,13 @@ export async function getBreedGroupsWithTopBreeds() {
     });
 
     // Transform breed groups with their top breeds
+    // Filter out Unknown, Mixed, and groups with too few dogs to display meaningfully
     const breedGroups = (stats.breed_groups || [])
       .filter(
         (group) =>
-          group.name !== "Unknown" && group.count > 0 && group.name !== "Mixed",
+          group.name !== "Unknown" &&
+          group.name !== "Mixed" &&
+          group.count >= 5,
       )
       .sort((a, b) => b.count - a.count)
       .slice(0, 8)
