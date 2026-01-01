@@ -398,6 +398,10 @@ class REANScraper(BaseScraper):
         if not wsimg_url or "wsimg.com" not in wsimg_url:
             return wsimg_url
 
+        # Normalize protocol-relative URLs first
+        if wsimg_url.startswith("//"):
+            wsimg_url = "https:" + wsimg_url
+
         # Remove transformation parameters that cause issues with R2
         # Example: .../image.jpg/:/cr=t:12.5%25,l:0%25,w:100%25,h:75%25/rs=w:600,h:600,cg:true
         # We want: .../image.jpg

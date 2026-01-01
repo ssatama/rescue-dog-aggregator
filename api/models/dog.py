@@ -69,6 +69,14 @@ class AnimalBase(BaseModel):
     primary_image_url: Optional[HttpUrl] = None
     adoption_url: HttpUrl
 
+    @field_validator("primary_image_url", "adoption_url", mode="before")
+    @classmethod
+    def normalize_protocol_relative_urls(cls, v):
+        """Normalize protocol-relative URLs (//example.com) to HTTPS."""
+        if isinstance(v, str) and v.startswith("//"):
+            return "https:" + v
+        return v
+
     @field_validator("name")
     @classmethod
     def validate_name(cls, v):

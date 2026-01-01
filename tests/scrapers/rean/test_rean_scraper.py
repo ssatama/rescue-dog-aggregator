@@ -322,6 +322,41 @@ class TestREANScraper:
         images = scraper.extract_images_from_html(html_content)
         assert len(images) == 0
 
+    # === URL Cleaning Tests ===
+
+    def test_clean_wsimg_url_protocol_relative(self, scraper):
+        """Test that _clean_wsimg_url normalizes protocol-relative URLs."""
+        url = "//img1.wsimg.com/isteam/ip/a820747c-53ff-4d63-a4ae-ca1899d8137c/test.jpg"
+        result = scraper._clean_wsimg_url(url)
+        expected = "https://img1.wsimg.com/isteam/ip/a820747c-53ff-4d63-a4ae-ca1899d8137c/test.jpg"
+        assert result == expected
+
+    def test_clean_wsimg_url_removes_transformations(self, scraper):
+        """Test that _clean_wsimg_url removes transformation parameters."""
+        url = "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg/:/rs=w:400,h:300"
+        result = scraper._clean_wsimg_url(url)
+        expected = "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg"
+        assert result == expected
+
+    def test_clean_wsimg_url_protocol_relative_with_transformations(self, scraper):
+        """Test protocol-relative URL with transformations is fully cleaned."""
+        url = "//img1.wsimg.com/isteam/ip/abc123/dog.jpg/:/cr=t:12.5%25,l:0%25"
+        result = scraper._clean_wsimg_url(url)
+        expected = "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg"
+        assert result == expected
+
+    def test_clean_wsimg_url_https_unchanged(self, scraper):
+        """Test that clean HTTPS wsimg URLs are unchanged."""
+        url = "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg"
+        result = scraper._clean_wsimg_url(url)
+        assert result == url
+
+    def test_clean_wsimg_url_non_wsimg_unchanged(self, scraper):
+        """Test that non-wsimg URLs are returned unchanged."""
+        url = "https://example.com/image.jpg"
+        result = scraper._clean_wsimg_url(url)
+        assert result == url
+
     # === Browser-based Image Extraction Tests (TDD) ===
 
     def test_browser_image_extraction_interface(self, scraper):
