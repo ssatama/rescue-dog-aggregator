@@ -14,9 +14,9 @@ import os
 import random
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator, List, Optional
+from typing import AsyncIterator, List, Optional
 
-from playwright.async_api import Browser, BrowserContext, Page, async_playwright
+from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class PlaywrightResult:
     context: BrowserContext
     page: Page
     is_remote: bool
-    _playwright: Optional[Any] = field(default=None, repr=False)
+    _playwright: Optional[Playwright] = field(default=None, repr=False)
 
     async def close(self) -> None:
         """Safely close browser resources including playwright instance."""
@@ -138,43 +138,56 @@ class PlaywrightBrowserService:
 
     async def _create_local_browser(self, opts: PlaywrightOptions) -> PlaywrightResult:
         """Create a local Chromium browser instance."""
-        playwright = await async_playwright().start()
+        playwright = None
+        try:
+            playwright = await async_playwright().start()
 
-        launch_args = [
-            "--no-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",
-        ]
-        launch_args.extend(opts.extra_args)
+            launch_args = [
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+            ]
+            launch_args.extend(opts.extra_args)
 
-        browser = await playwright.chromium.launch(
-            headless=opts.headless,
-            args=launch_args,
-        )
+            browser = await playwright.chromium.launch(
+                headless=opts.headless,
+                args=launch_args,
+            )
 
-        context = await self._create_context(browser, opts)
-        page = await context.new_page()
+            context = await self._create_context(browser, opts)
+            page = await context.new_page()
 
-        if opts.stealth_mode:
-            await self._apply_stealth_mode(page)
+            if opts.stealth_mode:
+                await self._apply_stealth_mode(page)
 
-        logger.info("Created local Playwright browser")
+            logger.info("Created local Playwright browser")
 
-        return PlaywrightResult(
-            browser=browser,
-            context=context,
-            page=page,
-            is_remote=False,
-            _playwright=playwright,
-        )
+            return PlaywrightResult(
+                browser=browser,
+                context=context,
+                page=page,
+                is_remote=False,
+                _playwright=playwright,
+            )
+        except Exception as e:
+            if playwright:
+                try:
+                    await playwright.stop()
+                except Exception:
+                    pass
+            logger.error(f"Failed to create local Playwright browser: {e}")
+            raise
 
     async def _create_remote_browser(self, opts: PlaywrightOptions) -> PlaywrightResult:
         """Create a remote Browserless browser instance via CDP with retry logic.
 
         Implements exponential backoff to handle transient connection failures
         and resource exhaustion on the Browserless service.
+
+        Note: Uses 2 retries to limit nested retry explosion since
+        get_page_content() has its own 3-retry loop (total max: 3 × 2 = 6 attempts).
         """
-        max_retries = 3
+        max_retries = 2
         base_delay = 2.0
         ws_url = self._build_ws_url()
 
