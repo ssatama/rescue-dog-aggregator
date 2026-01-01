@@ -242,6 +242,13 @@ class SecureScraperLoader:
             scraper_instance.session_manager = session_manager
             scraper_instance.metrics_collector = metrics_collector
 
+            # CRITICAL FIX: Also inject into filtering_service which was created during __init__
+            # with database_service=None before services were available
+            if hasattr(scraper_instance, "filtering_service") and scraper_instance.filtering_service:
+                scraper_instance.filtering_service.database_service = database_service
+                scraper_instance.filtering_service.session_manager = session_manager
+                logger.debug("Injected services into filtering_service")
+
             logger.info(f"Services successfully injected and connected for scraper instance (pool: {'enabled' if connection_pool else 'disabled'})")
 
         except Exception as e:

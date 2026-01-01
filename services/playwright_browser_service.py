@@ -8,12 +8,13 @@ This service replaces browser_service.py (Selenium) for Browserless v2 compatibi
 Browserless v2 removed Selenium/WebDriver support, only Playwright/Puppeteer work.
 """
 
+import asyncio
 import logging
 import os
 import random
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import AsyncIterator, List, Optional
+from typing import Any, AsyncIterator, List, Optional
 
 from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 
@@ -51,15 +52,23 @@ class PlaywrightResult:
     context: BrowserContext
     page: Page
     is_remote: bool
+    _playwright: Optional[Any] = field(default=None, repr=False)
 
     async def close(self) -> None:
-        """Safely close browser resources."""
+        """Safely close browser resources including playwright instance."""
         try:
             await self.page.close()
             await self.context.close()
             await self.browser.close()
         except Exception:
             pass
+        finally:
+            # Always stop playwright to prevent process leak
+            if self._playwright:
+                try:
+                    await self._playwright.stop()
+                except Exception:
+                    pass
 
 
 @dataclass
@@ -156,26 +165,55 @@ class PlaywrightBrowserService:
             context=context,
             page=page,
             is_remote=False,
+            _playwright=playwright,
         )
 
     async def _create_remote_browser(self, opts: PlaywrightOptions) -> PlaywrightResult:
-        """Create a remote Browserless browser instance via CDP."""
-        playwright = await async_playwright().start()
+        """Create a remote Browserless browser instance via CDP with retry logic.
 
+        Implements exponential backoff to handle transient connection failures
+        and resource exhaustion on the Browserless service.
+        """
+        max_retries = 3
+        base_delay = 2.0
         ws_url = self._build_ws_url()
-        browser = await playwright.chromium.connect_over_cdp(ws_url)
 
-        context = await self._create_context(browser, opts)
-        page = await context.new_page()
+        for attempt in range(max_retries):
+            playwright = None
+            try:
+                playwright = await async_playwright().start()
+                browser = await playwright.chromium.connect_over_cdp(ws_url)
 
-        logger.info(f"Created remote Playwright browser via Browserless: {self._endpoint}")
+                context = await self._create_context(browser, opts)
+                page = await context.new_page()
 
-        return PlaywrightResult(
-            browser=browser,
-            context=context,
-            page=page,
-            is_remote=True,
-        )
+                if attempt > 0:
+                    logger.info(f"Created remote Playwright browser via Browserless (succeeded on attempt {attempt + 1})")
+                else:
+                    logger.info(f"Created remote Playwright browser via Browserless: {self._endpoint}")
+
+                return PlaywrightResult(
+                    browser=browser,
+                    context=context,
+                    page=page,
+                    is_remote=True,
+                    _playwright=playwright,
+                )
+
+            except Exception as e:
+                if playwright:
+                    try:
+                        await playwright.stop()
+                    except Exception:
+                        pass
+
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2**attempt)
+                    logger.warning(f"Browserless connection failed (attempt {attempt + 1}/{max_retries}), " f"retrying in {delay}s: {e}")
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"Browserless connection failed after {max_retries} attempts: {e}")
+                    raise
 
     async def _create_context(self, browser: Browser, opts: PlaywrightOptions) -> BrowserContext:
         """Create browser context with configured options."""
@@ -252,6 +290,7 @@ class PlaywrightBrowserService:
 
         Creates browser, navigates to URL, gets content, then closes browser.
         This is the common pattern used by most scrapers.
+        Includes retry logic for navigation failures.
 
         Args:
             url: URL to navigate to and fetch content from.
@@ -260,25 +299,36 @@ class PlaywrightBrowserService:
         Returns:
             PageContentResult with success status, content, and error info.
         """
-        try:
-            opts = options or PlaywrightOptions()
-            async with self.get_browser(opts) as browser_result:
-                page = browser_result.page
-                await page.goto(url, wait_until=opts.wait_until, timeout=opts.timeout)
-                content = await page.content()
-                return PageContentResult(
-                    success=True,
-                    content=content,
-                    url=url,
-                )
-        except Exception as e:
-            logger.error(f"Failed to get page content from {url}: {e}")
-            return PageContentResult(
-                success=False,
-                content="",
-                error=str(e),
-                url=url,
-            )
+        max_retries = 3
+        base_delay = 1.0
+        opts = options or PlaywrightOptions()
+
+        for attempt in range(max_retries):
+            try:
+                async with self.get_browser(opts) as browser_result:
+                    page = browser_result.page
+                    await page.goto(url, wait_until=opts.wait_until, timeout=opts.timeout)
+                    content = await page.content()
+                    if attempt > 0:
+                        logger.info(f"Successfully fetched {url} on attempt {attempt + 1}")
+                    return PageContentResult(
+                        success=True,
+                        content=content,
+                        url=url,
+                    )
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2**attempt)
+                    logger.warning(f"Failed to get page content from {url} (attempt {attempt + 1}/{max_retries}), " f"retrying in {delay}s: {e}")
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"Failed to get page content from {url} after {max_retries} attempts: {e}")
+                    return PageContentResult(
+                        success=False,
+                        content="",
+                        error=str(e),
+                        url=url,
+                    )
 
     def health_check(self) -> dict:
         """Check browser service health.
