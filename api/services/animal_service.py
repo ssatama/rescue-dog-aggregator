@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 def _normalize_url(url: str | None) -> str | None:
     """Normalize protocol-relative URLs to HTTPS."""
-    if url and url.startswith("//"):
+    if isinstance(url, str) and url.startswith("//"):
         return "https:" + url
     return url
 

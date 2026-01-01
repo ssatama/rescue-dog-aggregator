@@ -62,3 +62,36 @@ class TestAnimalModelUrlNormalization:
         )
         expected = "https://img1.wsimg.com/isteam/ip/a820747c-53ff-4d63-a4ae-ca1899d8137c/489929993_1105238274977829_1453731426906221429.jpg"
         assert str(animal.primary_image_url) == expected
+
+    def test_empty_string_adoption_url_rejected(self):
+        """Empty string adoption_url should be rejected by Pydantic."""
+        with pytest.raises(ValueError):
+            AnimalBase(
+                name="Test Dog",
+                adoption_url="",
+            )
+
+    def test_single_slash_path_rejected(self):
+        """Single-slash paths are not valid URLs and should be rejected."""
+        with pytest.raises(ValueError):
+            AnimalBase(
+                name="Test Dog",
+                adoption_url="/images/dog.jpg",
+            )
+
+    def test_whitespace_prefixed_url_rejected(self):
+        """URLs with leading whitespace should be rejected."""
+        with pytest.raises(ValueError):
+            AnimalBase(
+                name="Test Dog",
+                adoption_url="  //example.com/adopt",
+            )
+
+    def test_single_slash_not_normalized_to_invalid_url(self):
+        """Ensure single-slash paths don't become malformed https:/path URLs."""
+        with pytest.raises(ValueError):
+            AnimalBase(
+                name="Test Dog",
+                adoption_url="https://example.com",
+                primary_image_url="/images/dog.jpg",
+            )

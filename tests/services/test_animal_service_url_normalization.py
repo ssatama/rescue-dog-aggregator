@@ -39,3 +39,9 @@ class TestUrlNormalization:
         url = "/images/dog.jpg"
         result = _normalize_url(url)
         assert result == "/images/dog.jpg"
+
+    def test_normalize_non_string_returns_unchanged(self):
+        """Non-string inputs should be returned unchanged."""
+        assert _normalize_url(123) == 123
+        assert _normalize_url({"url": "test"}) == {"url": "test"}
+        assert _normalize_url(["//test"]) == ["//test"]
