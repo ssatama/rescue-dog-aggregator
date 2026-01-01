@@ -26,11 +26,15 @@ class TestDogsTrustScraper(ScraperTestBase):
     expected_org_name = "Dogs Trust"
     expected_base_url = "https://www.dogstrust.org.uk"
 
-    @patch("scrapers.dogstrust.dogstrust_scraper.webdriver.Chrome")
-    def test_selenium_driver_cleanup_on_exception(self, mock_webdriver, scraper):
+    @patch("scrapers.dogstrust.dogstrust_scraper.get_browser_service")
+    def test_selenium_driver_cleanup_on_exception(self, mock_browser_service, scraper):
         """Test WebDriver is properly cleaned up even when exceptions occur."""
+        mock_service = Mock()
+        mock_browser_service.return_value = mock_service
         mock_driver = Mock()
-        mock_webdriver.return_value = mock_driver
+        mock_browser_result = Mock()
+        mock_browser_result.driver = mock_driver
+        mock_service.create_driver.return_value = mock_browser_result
         mock_driver.get.side_effect = Exception("Network error")
 
         # Should handle exception gracefully and clean up driver
@@ -39,11 +43,15 @@ class TestDogsTrustScraper(ScraperTestBase):
         assert isinstance(result, list)  # Should return empty list on error
         mock_driver.quit.assert_called_once()
 
-    @patch("scrapers.dogstrust.dogstrust_scraper.webdriver.Chrome")
-    def test_get_animal_list_applies_reserved_dog_filter(self, mock_webdriver, scraper):
+    @patch("scrapers.dogstrust.dogstrust_scraper.get_browser_service")
+    def test_get_animal_list_applies_reserved_dog_filter(self, mock_browser_service, scraper):
         """Test that get_animal_list applies filter to hide reserved dogs through UI."""
+        mock_service = Mock()
+        mock_browser_service.return_value = mock_service
         mock_driver = Mock()
-        mock_webdriver.return_value = mock_driver
+        mock_browser_result = Mock()
+        mock_browser_result.driver = mock_driver
+        mock_service.create_driver.return_value = mock_browser_result
         mock_driver.page_source = """
         <html>
             <body>

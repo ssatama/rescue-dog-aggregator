@@ -368,12 +368,16 @@ class TestREANScraper:
     @pytest.mark.slow
     @pytest.mark.selenium
     @pytest.mark.browser
-    @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
-    def test_extract_images_with_browser_basic(self, mock_chrome, scraper):
+    @patch("scrapers.rean.dogs_scraper.get_browser_service")
+    def test_extract_images_with_browser_basic(self, mock_browser_service, scraper):
         """Test basic browser-based image extraction functionality."""
-        # Mock WebDriver setup
+        # Mock browser service and driver
+        mock_service = MagicMock()
+        mock_browser_service.return_value = mock_service
         mock_driver = MagicMock()
-        mock_chrome.return_value = mock_driver
+        mock_browser_result = MagicMock()
+        mock_browser_result.driver = mock_driver
+        mock_service.create_driver.return_value = mock_browser_result
 
         # Mock execute_script to return appropriate values
         mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
@@ -397,8 +401,8 @@ class TestREANScraper:
         # Test extraction
         images = scraper.extract_images_with_browser("https://rean.org.uk/test")
 
-        # Verify WebDriver was used correctly
-        mock_chrome.assert_called_once()
+        # Verify browser service was used correctly
+        mock_service.create_driver.assert_called_once()
         mock_driver.get.assert_called_once_with("https://rean.org.uk/test")
         mock_driver.quit.assert_called_once()
 
@@ -410,12 +414,16 @@ class TestREANScraper:
     @pytest.mark.slow
     @pytest.mark.selenium
     @pytest.mark.browser
-    @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
+    @patch("scrapers.rean.dogs_scraper.get_browser_service")
     @patch("scrapers.rean.dogs_scraper.time.sleep")
-    def test_extract_images_with_browser_waits_for_loading(self, mock_sleep, mock_chrome, scraper):
+    def test_extract_images_with_browser_waits_for_loading(self, mock_sleep, mock_browser_service, scraper):
         """Test that browser extraction waits for JavaScript loading."""
+        mock_service = MagicMock()
+        mock_browser_service.return_value = mock_service
         mock_driver = MagicMock()
-        mock_chrome.return_value = mock_driver
+        mock_browser_result = MagicMock()
+        mock_browser_result.driver = mock_driver
+        mock_service.create_driver.return_value = mock_browser_result
         mock_driver.find_elements.return_value = []
         mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
 
@@ -432,11 +440,15 @@ class TestREANScraper:
     @pytest.mark.slow
     @pytest.mark.selenium
     @pytest.mark.browser
-    @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
-    def test_extract_images_with_browser_filters_wsimg_only(self, mock_chrome, scraper):
+    @patch("scrapers.rean.dogs_scraper.get_browser_service")
+    def test_extract_images_with_browser_filters_wsimg_only(self, mock_browser_service, scraper):
         """Test that browser extraction only returns wsimg.com CDN images."""
+        mock_service = MagicMock()
+        mock_browser_service.return_value = mock_service
         mock_driver = MagicMock()
-        mock_chrome.return_value = mock_driver
+        mock_browser_result = MagicMock()
+        mock_browser_result.driver = mock_driver
+        mock_service.create_driver.return_value = mock_browser_result
         mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
 
         # Mock various image sources
@@ -486,19 +498,22 @@ class TestREANScraper:
     @pytest.mark.slow
     @pytest.mark.selenium
     @pytest.mark.browser
-    @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
-    def test_extract_images_with_browser_configuration(self, mock_chrome, scraper):
+    @patch("scrapers.rean.dogs_scraper.get_browser_service")
+    def test_extract_images_with_browser_configuration(self, mock_browser_service, scraper):
         """Test browser is configured correctly for headless operation."""
+        mock_service = MagicMock()
+        mock_browser_service.return_value = mock_service
         mock_driver = MagicMock()
-        mock_chrome.return_value = mock_driver
+        mock_browser_result = MagicMock()
+        mock_browser_result.driver = mock_driver
+        mock_service.create_driver.return_value = mock_browser_result
         mock_driver.find_elements.return_value = []
         mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
 
         scraper.extract_images_with_browser("https://rean.org.uk/test")
 
-        # Verify Chrome was configured (will check specific options in
-        # implementation)
-        mock_chrome.assert_called_once()
+        # Verify browser service was used to create driver
+        mock_service.create_driver.assert_called_once()
 
     # === Image-to-Dog Association Tests ===
 

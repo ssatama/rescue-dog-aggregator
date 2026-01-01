@@ -23,16 +23,20 @@ from scrapers.misis_rescue.scraper import MisisRescueScraper
 class TestMisisRescueErrorPageDetection:
     """Test error page detection prevents bad data."""
 
-    @patch("scrapers.misis_rescue.scraper.webdriver.Chrome")
-    def test_error_page_detected_in_title(self, mock_chrome):
+    @patch("scrapers.misis_rescue.scraper.get_browser_service")
+    def test_error_page_detected_in_title(self, mock_browser_service):
         """Test that error pages are detected by title."""
         scraper = MisisRescueScraper(config_id="misisrescue")
 
-        # Mock driver with error page title
+        # Mock browser service and driver
+        mock_service = Mock()
+        mock_browser_service.return_value = mock_service
         mock_driver = Mock()
+        mock_browser_result = Mock()
+        mock_browser_result.driver = mock_driver
+        mock_service.create_driver.return_value = mock_browser_result
         mock_driver.title = "This site can't be reached"
         mock_driver.page_source = "<html><body>Error</body></html>"
-        mock_chrome.return_value = mock_driver
 
         # Mock wait
         with patch("scrapers.misis_rescue.scraper.WebDriverWait"):
@@ -41,16 +45,20 @@ class TestMisisRescueErrorPageDetection:
         assert result is None  # Should return None for error pages
         mock_driver.quit.assert_called_once()
 
-    @patch("scrapers.misis_rescue.scraper.webdriver.Chrome")
-    def test_error_page_detected_with_apostrophe_variation(self, mock_chrome):
+    @patch("scrapers.misis_rescue.scraper.get_browser_service")
+    def test_error_page_detected_with_apostrophe_variation(self, mock_browser_service):
         """Test that different apostrophe variations are detected."""
         scraper = MisisRescueScraper(config_id="misisrescue")
 
-        # Mock driver with different apostrophe
+        # Mock browser service and driver
+        mock_service = Mock()
+        mock_browser_service.return_value = mock_service
         mock_driver = Mock()
+        mock_browser_result = Mock()
+        mock_browser_result.driver = mock_driver
+        mock_service.create_driver.return_value = mock_browser_result
         mock_driver.title = "This Site Can'T Be Reached"  # Different apostrophe
         mock_driver.page_source = "<html><body>Error</body></html>"
-        mock_chrome.return_value = mock_driver
 
         with patch("scrapers.misis_rescue.scraper.WebDriverWait"):
             result = scraper._scrape_dog_detail("https://test.com/dog")

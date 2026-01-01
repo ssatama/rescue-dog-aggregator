@@ -189,10 +189,12 @@ class TestAgeStandardization:
         current_year = datetime.now().year
 
         # Test year-only format (assumes June birth)
-        birth_year = str(current_year - 8)
+        # Use 9 years ago to ensure Senior category regardless of current month
+        # (8 years in January would only be ~91 months due to June assumption)
+        birth_year = str(current_year - 9)
         result = standardize_age(birth_year)
         assert result["age_category"] == "Senior"
-        assert result["age_min_months"] >= 90  # Around 8 years old
+        assert result["age_min_months"] >= 96  # Around 9 years old = 108 months
 
     def test_senior_plus_years_format(self):
         """Test parsing of 'X + years' pattern used by Dogs Trust for senior dogs."""

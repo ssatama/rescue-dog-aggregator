@@ -39,11 +39,15 @@ class TestManyTearsRescueScraper:
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
             assert isinstance(scraper, BaseScraper)
 
-    @patch("scrapers.manytearsrescue.manytearsrescue_scraper.webdriver.Chrome")
-    def test_selenium_driver_cleanup_on_exception(self, mock_webdriver):
+    @patch("scrapers.manytearsrescue.manytearsrescue_scraper.get_browser_service")
+    def test_selenium_driver_cleanup_on_exception(self, mock_browser_service):
         """Test WebDriver is properly cleaned up even when exceptions occur."""
+        mock_service = Mock()
+        mock_browser_service.return_value = mock_service
         mock_driver = Mock()
-        mock_webdriver.return_value = mock_driver
+        mock_browser_result = Mock()
+        mock_browser_result.driver = mock_driver
+        mock_service.create_driver.return_value = mock_browser_result
         mock_driver.get.side_effect = Exception("Network error")
 
         with (
@@ -58,11 +62,15 @@ class TestManyTearsRescueScraper:
             assert isinstance(result, list)  # Should return empty list on error
             mock_driver.quit.assert_called_once()
 
-    @patch("scrapers.manytearsrescue.manytearsrescue_scraper.webdriver.Chrome")
-    def test_collect_data_follows_template_method_pattern(self, mock_webdriver):
+    @patch("scrapers.manytearsrescue.manytearsrescue_scraper.get_browser_service")
+    def test_collect_data_follows_template_method_pattern(self, mock_browser_service):
         """Test collect_data follows template method pattern by calling get_animal_list."""
+        mock_service = Mock()
+        mock_browser_service.return_value = mock_service
         mock_driver = Mock()
-        mock_webdriver.return_value = mock_driver
+        mock_browser_result = Mock()
+        mock_browser_result.driver = mock_driver
+        mock_service.create_driver.return_value = mock_browser_result
         mock_driver.page_source = "<html><body></body></html>"
 
         with (
