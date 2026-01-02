@@ -238,3 +238,22 @@ class TestBreedImagesEndpoint:
 
         assert response.status_code == 500
         assert "Database error" in response.json()["detail"] or "Failed to fetch breeds with images" in response.json()["detail"]
+
+    def test_get_breeds_with_images_limit_validation(self, client):
+        """Test limit parameter validation - max allowed is 50."""
+        response = client.get("/api/animals/breeds/with-images?limit=100")
+
+        assert response.status_code == 422
+        error_detail = response.json()["detail"]
+        assert any("less than or equal to 50" in str(e) for e in error_detail)
+
+    def test_get_breeds_with_images_limit_at_max(self, client, mock_db_cursor):
+        """Test limit parameter at maximum allowed value (50)."""
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
+            with patch(
+                "api.services.animal_service.AnimalService.get_breeds_with_images",
+                return_value=[],
+            ):
+                response = client.get("/api/animals/breeds/with-images?limit=50")
+
+        assert response.status_code == 200

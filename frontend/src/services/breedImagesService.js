@@ -67,7 +67,7 @@ export async function getBreedGroupsWithTopBreeds() {
     // Then get breeds with images - use fallback if this fails
     let breedsWithImages = [];
     try {
-      const breedsWithImagesUrl = `${API_URL}/api/animals/breeds/with-images?min_count=2&limit=100`;
+      const breedsWithImagesUrl = `${API_URL}/api/animals/breeds/with-images?min_count=2&limit=50`;
       const imagesResponse = await fetch(breedsWithImagesUrl, {
         headers: { "Content-Type": "application/json" },
         next: { revalidate: 300 },
