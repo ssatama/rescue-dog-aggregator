@@ -50,10 +50,12 @@ class TestDoubleCDNProcessing:
         if not animals:
             pytest.skip("No animals available for testing")
 
-        animal_id = animals[0]["id"]
+        animal_slug = animals[0].get("slug")
+        if not animal_slug:
+            pytest.skip("Animal has no slug for testing")
 
-        # Get animal detail
-        detail_response = client.get(f"/api/animals/{animal_id}")
+        # Get animal detail using slug (the API expects slugs, not IDs)
+        detail_response = client.get(f"/api/animals/{animal_slug}")
         assert detail_response.status_code == 200
 
         animal = detail_response.json()

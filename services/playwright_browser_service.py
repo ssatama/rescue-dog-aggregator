@@ -14,9 +14,25 @@ import os
 import random
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import AsyncIterator, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, List, Optional
 
-from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
+try:
+    from playwright.async_api import (
+        Browser,
+        BrowserContext,
+        Page,
+        Playwright,
+        async_playwright,
+    )
+
+    PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    PLAYWRIGHT_AVAILABLE = False
+    Browser = Any  # type: ignore[misc, assignment]
+    BrowserContext = Any  # type: ignore[misc, assignment]
+    Page = Any  # type: ignore[misc, assignment]
+    Playwright = Any  # type: ignore[misc, assignment]
+    async_playwright = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +173,13 @@ class PlaywrightBrowserService:
 
         Returns:
             PlaywrightResult containing browser, context, page, and metadata.
+
+        Raises:
+            ImportError: If playwright is not installed.
         """
+        if not PLAYWRIGHT_AVAILABLE:
+            raise ImportError("playwright is not installed. Install it with: pip install playwright && playwright install chromium")
+
         opts = options or PlaywrightOptions()
 
         if self.is_remote_mode:

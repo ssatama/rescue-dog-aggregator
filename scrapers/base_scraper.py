@@ -11,11 +11,13 @@ import unicodedata
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, AsyncIterator, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional
 
 import psycopg2
 from langdetect import detect
-from playwright.async_api import Page
+
+if TYPE_CHECKING:
+    from playwright.async_api import Page
 
 # Import config
 from config import DB_CONFIG, enable_world_class_scraper_logging
@@ -1048,7 +1050,7 @@ class BaseScraper(ABC):
 
     async def _navigate_with_retry(
         self,
-        page: Page,
+        page: "Page",
         url: str,
         max_retries: int = 3,
         wait_until: str = "domcontentloaded",

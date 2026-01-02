@@ -32,13 +32,15 @@ def get_connection():
 
 def find_bad_urls(cursor):
     """Find all animals with protocol-relative URLs."""
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT id, slug, name, primary_image_url, adoption_url
         FROM animals
         WHERE primary_image_url LIKE '//%'
            OR adoption_url LIKE '//%'
         ORDER BY id
-    """)
+    """
+    )
     return cursor.fetchall()
 
 
@@ -53,7 +55,7 @@ def fix_urls(cursor, dry_run=True):
     print(f"Found {len(bad_records)} records with protocol-relative URLs:")
     for record in bad_records:
         print(f"  - {record['slug']} (id={record['id']}): {record['name']}")
-        if record['primary_image_url'] and record['primary_image_url'].startswith('//'):
+        if record["primary_image_url"] and record["primary_image_url"].startswith("//"):
             print(f"    primary_image_url: {record['primary_image_url'][:60]}...")
 
     if dry_run:
@@ -61,18 +63,22 @@ def fix_urls(cursor, dry_run=True):
         print("Run without --dry-run to apply changes.")
         return len(bad_records)
 
-    cursor.execute("""
+    cursor.execute(
+        """
         UPDATE animals
         SET primary_image_url = 'https:' || primary_image_url
         WHERE primary_image_url LIKE '//%'
-    """)
+    """
+    )
     primary_fixed = cursor.rowcount
 
-    cursor.execute("""
+    cursor.execute(
+        """
         UPDATE animals
         SET adoption_url = 'https:' || adoption_url
         WHERE adoption_url LIKE '//%'
-    """)
+    """
+    )
     adoption_fixed = cursor.rowcount
 
     print(f"\nFixed {primary_fixed} primary_image_url records")
