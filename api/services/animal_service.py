@@ -1323,6 +1323,19 @@ class AnimalService:
             conditions.append("sr.region = %s")
             params.append(filters.available_to_region)
 
+        # Profiler-based filters (LLM-enriched dog_profiler_data JSONB)
+        if filters.energy_level:
+            conditions.append("a.dog_profiler_data->>'energy_level' = %s")
+            params.append(filters.energy_level)
+
+        if filters.home_type:
+            conditions.append("a.dog_profiler_data->>'home_type' = %s")
+            params.append(filters.home_type)
+
+        if filters.experience_level:
+            conditions.append("a.dog_profiler_data->>'experience_level' = %s")
+            params.append(filters.experience_level)
+
         # Build WHERE clause
         where_clause = " AND ".join(conditions)
 
@@ -1494,6 +1507,19 @@ class AnimalService:
         if filters.organization_id:
             conditions.append("a.organization_id = %s")
             params.append(filters.organization_id)
+
+        # Profiler-based filters (LLM-enriched dog_profiler_data JSONB)
+        if filters.energy_level:
+            conditions.append("a.dog_profiler_data->>'energy_level' = %s")
+            params.append(filters.energy_level)
+
+        if filters.home_type:
+            conditions.append("a.dog_profiler_data->>'home_type' = %s")
+            params.append(filters.home_type)
+
+        if filters.experience_level:
+            conditions.append("a.dog_profiler_data->>'experience_level' = %s")
+            params.append(filters.experience_level)
 
         return conditions, params
 

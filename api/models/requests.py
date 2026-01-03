@@ -83,6 +83,20 @@ class AnimalFilterRequest(BaseModel):
         description="Filter by availability confidence: 'high', 'medium', 'low', or 'all'",
     )
 
+    # Profiler-based filters (LLM-enriched dog_profiler_data JSONB)
+    energy_level: Optional[str] = Field(
+        default=None,
+        description="Filter by energy level (low, medium, high, very_high)",
+    )
+    home_type: Optional[str] = Field(
+        default=None,
+        description="Filter by home type (apartment_ok, house_preferred, house_required)",
+    )
+    experience_level: Optional[str] = Field(
+        default=None,
+        description="Filter by experience level (first_time_ok, some_experience, experienced_only)",
+    )
+
     # Curation
     curation_type: str = Field(
         default="random",
@@ -127,6 +141,39 @@ class AnimalFilterRequest(BaseModel):
         """Validate breed_type field."""
         if not validate_breed_type(v):
             raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound")
+        return v
+
+    @field_validator("energy_level")
+    @classmethod
+    def validate_energy_level(cls, v):
+        """Validate energy_level field."""
+        if v is None:
+            return v
+        valid_values = ["low", "medium", "high", "very_high"]
+        if v not in valid_values:
+            raise ValueError(f"Invalid energy_level value: {v}. Must be one of: {', '.join(valid_values)}")
+        return v
+
+    @field_validator("home_type")
+    @classmethod
+    def validate_home_type(cls, v):
+        """Validate home_type field."""
+        if v is None:
+            return v
+        valid_values = ["apartment_ok", "house_preferred", "house_required"]
+        if v not in valid_values:
+            raise ValueError(f"Invalid home_type value: {v}. Must be one of: {', '.join(valid_values)}")
+        return v
+
+    @field_validator("experience_level")
+    @classmethod
+    def validate_experience_level(cls, v):
+        """Validate experience_level field."""
+        if v is None:
+            return v
+        valid_values = ["first_time_ok", "some_experience", "experienced_only"]
+        if v not in valid_values:
+            raise ValueError(f"Invalid experience_level value: {v}. Must be one of: {', '.join(valid_values)}")
         return v
 
     def get_confidence_levels(self) -> list[str]:
@@ -203,12 +250,59 @@ class AnimalFilterCountRequest(BaseModel):
         description="Availability confidence context for counting",
     )
 
+    # Profiler-based filters (LLM-enriched dog_profiler_data JSONB)
+    energy_level: Optional[str] = Field(
+        default=None,
+        description="Filter by energy level (low, medium, high, very_high)",
+    )
+    home_type: Optional[str] = Field(
+        default=None,
+        description="Filter by home type (apartment_ok, house_preferred, house_required)",
+    )
+    experience_level: Optional[str] = Field(
+        default=None,
+        description="Filter by experience level (first_time_ok, some_experience, experienced_only)",
+    )
+
     @field_validator("breed_type")
     @classmethod
     def validate_breed_type_field(cls, v):
         """Validate breed_type field."""
         if not validate_breed_type(v):
             raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound")
+        return v
+
+    @field_validator("energy_level")
+    @classmethod
+    def validate_energy_level(cls, v):
+        """Validate energy_level field."""
+        if v is None:
+            return v
+        valid_values = ["low", "medium", "high", "very_high"]
+        if v not in valid_values:
+            raise ValueError(f"Invalid energy_level value: {v}. Must be one of: {', '.join(valid_values)}")
+        return v
+
+    @field_validator("home_type")
+    @classmethod
+    def validate_home_type(cls, v):
+        """Validate home_type field."""
+        if v is None:
+            return v
+        valid_values = ["apartment_ok", "house_preferred", "house_required"]
+        if v not in valid_values:
+            raise ValueError(f"Invalid home_type value: {v}. Must be one of: {', '.join(valid_values)}")
+        return v
+
+    @field_validator("experience_level")
+    @classmethod
+    def validate_experience_level(cls, v):
+        """Validate experience_level field."""
+        if v is None:
+            return v
+        valid_values = ["first_time_ok", "some_experience", "experienced_only"]
+        if v not in valid_values:
+            raise ValueError(f"Invalid experience_level value: {v}. Must be one of: {', '.join(valid_values)}")
         return v
 
     def get_confidence_levels(self) -> list[str]:
