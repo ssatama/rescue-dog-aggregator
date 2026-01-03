@@ -334,11 +334,18 @@ server.tool(
     }
 
     if (parsed.response_format === "json") {
+      // Sort available_country_options by count descending (most relevant first)
+      const sortedCounts = {
+        ...counts,
+        available_country_options: [...counts.available_country_options].sort(
+          (a, b) => b.count - a.count
+        ),
+      };
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(counts, null, 2),
+            text: JSON.stringify(sortedCounts, null, 2),
           },
         ],
       };

@@ -34,7 +34,9 @@ export const SearchDogsInputSchema = z
         "Filter by FCI breed group (e.g., 'Herding', 'Sporting', 'Hound')"
       ),
     size: SizeEnum.optional().describe("Filter by standardized size"),
-    age_category: AgeCategoryEnum.optional().describe("Filter by age category"),
+    age_category: AgeCategoryEnum.optional().describe(
+      "Filter by age category: puppy (0-12 months), young (1-3 years), adult (3-8 years), senior (8+ years)"
+    ),
     sex: SexEnum.optional().describe("Filter by sex"),
     energy_level: EnergyLevelEnum.optional().describe(
       "Filter by energy level from LLM profiler data"
