@@ -163,14 +163,32 @@ export interface MetricValue {
   label: string;
 }
 
+export interface CountryStats {
+  country: string;
+  count: number;
+}
+
+export interface OrganizationStats {
+  id: number;
+  name: string;
+  slug: string;
+  dog_count: number;
+  new_this_week: number;
+  logo_url: string | null;
+  country: string;
+  city: string;
+  ships_to: string[];
+  service_regions: string[];
+  social_media: Record<string, string>;
+  website_url: string;
+  description: string;
+}
+
 export interface Statistics {
   total_dogs: number;
-  available_dogs: number;
-  adopted_dogs: number;
-  organizations_count: number;
-  new_this_week: number;
-  breeds_count: number;
-  countries_with_dogs: number;
+  total_organizations: number;
+  countries: CountryStats[];
+  organizations: OrganizationStats[];
 }
 
 export interface FilterOption {

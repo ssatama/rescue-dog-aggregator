@@ -294,21 +294,38 @@ export function formatOrganizationsListMarkdown(orgs: Organization[]): string {
 export function formatStatisticsMarkdown(stats: Statistics): string {
   const parts: string[] = [];
 
+  // Calculate derived stats
+  const newThisWeek = stats.organizations.reduce((sum, org) => sum + org.new_this_week, 0);
+  const totalCountries = stats.countries.length;
+
   parts.push("# Rescue Dogs Statistics");
   parts.push("");
   parts.push("## Overview");
   parts.push("");
-  parts.push(`- **Available Dogs:** ${stats.available_dogs.toLocaleString()}`);
-  parts.push(`- **Total Dogs in Database:** ${stats.total_dogs.toLocaleString()}`);
-  parts.push(`- **Dogs Adopted:** ${stats.adopted_dogs.toLocaleString()}`);
-  parts.push(`- **New This Week:** ${stats.new_this_week.toLocaleString()}`);
+  parts.push(`- **Available Dogs:** ${stats.total_dogs.toLocaleString()}`);
+  parts.push(`- **Rescue Organizations:** ${stats.total_organizations}`);
+  parts.push(`- **Countries Covered:** ${totalCountries}`);
+  parts.push(`- **New This Week:** ${newThisWeek}`);
   parts.push("");
-  parts.push("## Platform");
-  parts.push("");
-  parts.push(`- **Rescue Organizations:** ${stats.organizations_count}`);
-  parts.push(`- **Unique Breeds:** ${stats.breeds_count}`);
-  parts.push(`- **Countries Covered:** ${stats.countries_with_dogs}`);
-  parts.push("");
+
+  if (stats.countries.length > 0) {
+    parts.push("## Dogs by Country");
+    parts.push("");
+    for (const country of stats.countries.slice(0, 8)) {
+      parts.push(`- **${country.country}:** ${country.count} dogs`);
+    }
+    parts.push("");
+  }
+
+  if (stats.organizations.length > 0) {
+    parts.push("## Top Organizations");
+    parts.push("");
+    for (const org of stats.organizations.slice(0, 5)) {
+      parts.push(`- **${org.name}** (${org.country}): ${org.dog_count} dogs`);
+    }
+    parts.push("");
+  }
+
   parts.push("*Data from rescuedogs.me - European & UK rescue dog aggregator*");
 
   return parts.join("\n");
