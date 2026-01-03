@@ -9,6 +9,89 @@ import type {
   FilterCountsResponse,
 } from "../types.js";
 
+// Common interface for profile data (shared between EnhancedDogData and DogProfilerData)
+interface ProfileData {
+  bio?: string | null;
+  enhanced_description?: string | null;
+  description?: string | null;
+  looking_for?: string | null;
+  personality_traits?: string[] | null;
+  interests?: string[] | null;
+  deal_breakers?: string[] | null;
+  fun_fact?: string | null;
+  energy_level?: string | null;
+  home_type?: string | null;
+  experience_level?: string | null;
+}
+
+// Helper function to format shared profile sections
+function formatProfileSections(data: ProfileData, parts: string[]): void {
+  // About/Bio section (bio takes priority, then enhanced_description, then description)
+  const aboutText = data.bio || data.enhanced_description || data.description;
+  if (aboutText) {
+    parts.push("## About");
+    parts.push("");
+    parts.push(aboutText);
+    parts.push("");
+  }
+
+  // Personality traits
+  if (data.personality_traits && data.personality_traits.length > 0) {
+    parts.push("## Personality");
+    parts.push("");
+    parts.push(data.personality_traits.map((t) => `- ${t}`).join("\n"));
+    parts.push("");
+  }
+
+  // Interests
+  if (data.interests && data.interests.length > 0) {
+    parts.push("## Interests");
+    parts.push("");
+    parts.push(data.interests.map((i) => `- ${i}`).join("\n"));
+    parts.push("");
+  }
+
+  // Looking for (ideal home)
+  if (data.looking_for) {
+    parts.push("## Looking For");
+    parts.push("");
+    parts.push(data.looking_for);
+    parts.push("");
+  }
+
+  // Requirements
+  if (data.energy_level || data.home_type || data.experience_level) {
+    parts.push("## Requirements");
+    parts.push("");
+    if (data.energy_level) {
+      parts.push(`- **Energy Level:** ${formatEnumValue(data.energy_level)}`);
+    }
+    if (data.home_type) {
+      parts.push(`- **Home Type:** ${formatEnumValue(data.home_type)}`);
+    }
+    if (data.experience_level) {
+      parts.push(`- **Experience Needed:** ${formatEnumValue(data.experience_level)}`);
+    }
+    parts.push("");
+  }
+
+  // Deal breakers
+  if (data.deal_breakers && data.deal_breakers.length > 0) {
+    parts.push("## Important Notes");
+    parts.push("");
+    parts.push(data.deal_breakers.map((d) => `- ${d}`).join("\n"));
+    parts.push("");
+  }
+
+  // Fun fact
+  if (data.fun_fact) {
+    parts.push("## Fun Fact");
+    parts.push("");
+    parts.push(data.fun_fact);
+    parts.push("");
+  }
+}
+
 export function truncateIfNeeded(text: string): string {
   if (text.length <= CHARACTER_LIMIT) {
     return text;
@@ -53,129 +136,11 @@ export function formatDogMarkdown(
   }
   parts.push("");
 
-  // Enhanced description/bio
-  if (enhanced?.bio || enhanced?.enhanced_description) {
-    parts.push("## About");
-    parts.push("");
-    parts.push(enhanced.bio || enhanced.enhanced_description || "");
-    parts.push("");
-  }
-
-  // Personality traits
-  if (enhanced?.personality_traits && enhanced.personality_traits.length > 0) {
-    parts.push("## Personality");
-    parts.push("");
-    parts.push(enhanced.personality_traits.map((t) => `- ${t}`).join("\n"));
-    parts.push("");
-  }
-
-  // Interests
-  if (enhanced?.interests && enhanced.interests.length > 0) {
-    parts.push("## Interests");
-    parts.push("");
-    parts.push(enhanced.interests.map((i) => `- ${i}`).join("\n"));
-    parts.push("");
-  }
-
-  // Looking for (ideal home)
-  if (enhanced?.looking_for) {
-    parts.push("## Looking For");
-    parts.push("");
-    parts.push(enhanced.looking_for);
-    parts.push("");
-  }
-
-  // Requirements
-  if (enhanced?.energy_level || enhanced?.home_type || enhanced?.experience_level) {
-    parts.push("## Requirements");
-    parts.push("");
-    if (enhanced.energy_level) {
-      parts.push(`- **Energy Level:** ${formatEnumValue(enhanced.energy_level)}`);
-    }
-    if (enhanced.home_type) {
-      parts.push(`- **Home Type:** ${formatEnumValue(enhanced.home_type)}`);
-    }
-    if (enhanced.experience_level) {
-      parts.push(`- **Experience Needed:** ${formatEnumValue(enhanced.experience_level)}`);
-    }
-    parts.push("");
-  }
-
-  // Deal breakers
-  if (enhanced?.deal_breakers && enhanced.deal_breakers.length > 0) {
-    parts.push("## Important Notes");
-    parts.push("");
-    parts.push(enhanced.deal_breakers.map((d) => `- ${d}`).join("\n"));
-    parts.push("");
-  }
-
-  // Fun fact
-  if (enhanced?.fun_fact) {
-    parts.push("## Fun Fact");
-    parts.push("");
-    parts.push(enhanced.fun_fact);
-    parts.push("");
-  }
-
-  // Fallback to dog_profiler_data if no enhanced data available
-  if (!enhanced && dog.dog_profiler_data) {
-    const profiler = dog.dog_profiler_data;
-
-    // Show requirements from profiler data
-    if (profiler.energy_level || profiler.home_type || profiler.experience_level) {
-      parts.push("## Requirements");
-      parts.push("");
-      if (profiler.energy_level) {
-        parts.push(`- **Energy Level:** ${formatEnumValue(profiler.energy_level)}`);
-      }
-      if (profiler.home_type) {
-        parts.push(`- **Home Type:** ${formatEnumValue(profiler.home_type)}`);
-      }
-      if (profiler.experience_level) {
-        parts.push(`- **Experience Needed:** ${formatEnumValue(profiler.experience_level)}`);
-      }
-      parts.push("");
-    }
-
-    // Show personality traits from profiler data
-    if (profiler.personality_traits && profiler.personality_traits.length > 0) {
-      parts.push("## Personality");
-      parts.push("");
-      parts.push(profiler.personality_traits.map((t) => `- ${t}`).join("\n"));
-      parts.push("");
-    }
-
-    // Show bio/description from profiler data
-    if (profiler.bio || profiler.description) {
-      parts.push("## About");
-      parts.push("");
-      parts.push(profiler.bio || profiler.description || "");
-      parts.push("");
-    }
-
-    // Show interests from profiler data
-    if (profiler.interests && profiler.interests.length > 0) {
-      parts.push("## Interests");
-      parts.push("");
-      parts.push(profiler.interests.map((i) => `- ${i}`).join("\n"));
-      parts.push("");
-    }
-
-    // Show deal breakers from profiler data
-    if (profiler.deal_breakers && profiler.deal_breakers.length > 0) {
-      parts.push("## Important Notes");
-      parts.push("");
-      parts.push(profiler.deal_breakers.map((d) => `- ${d}`).join("\n"));
-      parts.push("");
-    }
-
-    // Show fun fact from profiler data
-    if (profiler.fun_fact) {
-      parts.push("## Fun Fact");
-      parts.push("");
-      parts.push(profiler.fun_fact);
-      parts.push("");
-    }
+  // Format profile sections from enhanced data or fallback to dog_profiler_data
+  if (enhanced) {
+    formatProfileSections(enhanced, parts);
+  } else if (dog.dog_profiler_data) {
+    formatProfileSections(dog.dog_profiler_data, parts);
   }
 
   // Organization info

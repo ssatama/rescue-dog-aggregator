@@ -78,9 +78,8 @@ export async function fetchDogImage(
       data: base64,
       mimeType: "image/jpeg",
     };
-  } catch (error) {
-    // Graceful degradation - just return null if image fetch fails
-    console.error(`Failed to fetch image: ${transformedUrl}`, error);
+  } catch {
+    // Graceful degradation - return null if image fetch fails
     return null;
   }
 }

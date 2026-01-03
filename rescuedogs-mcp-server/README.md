@@ -156,7 +156,7 @@ Use these codes for the `adoptable_to_country` parameter:
 
 | Code | Country |
 |------|---------|
-| UK | United Kingdom (**use UK, not GB**) |
+| GB | United Kingdom (UK also accepted) |
 | IE | Ireland |
 | DE | Germany |
 | FR | France |

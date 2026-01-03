@@ -99,8 +99,8 @@ server.tool(
           dogs.map((d) => d.id)
         );
         enhancedMap = new Map(enhancedData.map((e) => [e.id, e]));
-      } catch {
-        // Continue without enhanced data
+      } catch (error) {
+        console.error("Enhanced data fetch failed:", error instanceof Error ? error.message : error);
       }
     }
 
@@ -175,8 +175,8 @@ server.tool(
     let enhanced: EnhancedDogData | null = null;
     try {
       enhanced = await apiClient.getEnhancedDogData(dog.id);
-    } catch {
-      // Continue without enhanced data
+    } catch (error) {
+      console.error("Enhanced data fetch failed:", error instanceof Error ? error.message : error);
     }
 
     if (parsed.response_format === "json") {
@@ -458,8 +458,8 @@ server.tool(
           dogs.map((d) => d.id)
         );
         enhancedMap = new Map(enhancedData.map((e) => [e.id, e]));
-      } catch {
-        // Continue without enhanced data
+      } catch (error) {
+        console.error("Enhanced data fetch failed:", error instanceof Error ? error.message : error);
       }
     }
 
@@ -712,7 +712,9 @@ Some dogs may require:
         DE: `\n\n## Germany-Specific Information\n\n- EU Pet Passport system applies\n- Some states have breed-specific legislation\n- Dog tax (Hundesteuer) required in most municipalities`,
         FR: `\n\n## France-Specific Information\n\n- EU Pet Passport system applies\n- Category 1 & 2 dogs have additional requirements\n- Standard EU pet travel rules`,
       };
-      countryInfo = countryGuides[parsed.country.toUpperCase()] || "";
+      // Allow both GB (ISO standard) and UK (common user input)
+      const normalizedCode = parsed.country.toUpperCase() === 'UK' ? 'GB' : parsed.country.toUpperCase();
+      countryInfo = countryGuides[normalizedCode] || "";
     }
 
     return {

@@ -10,11 +10,6 @@ export const CACHE_TTL = {
   IMAGES: 30 * 60 * 1000, // 30 minutes
 } as const;
 
-export const RATE_LIMIT = {
-  MAX_REQUESTS_PER_SECOND: 10,
-  MAX_CONCURRENT: 4,
-} as const;
-
 export const IMAGE_TRANSFORMS = {
   thumbnail: "w=200,h=200,fit=cover,q=70,f=jpeg",
   medium: "w=400,h=400,fit=cover,q=75,f=jpeg",

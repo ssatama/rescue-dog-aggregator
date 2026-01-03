@@ -23,7 +23,7 @@
     "llm",
     "model-context-protocol"
   ],
-  "author": "",
+  "author": "Sampo Satama",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
