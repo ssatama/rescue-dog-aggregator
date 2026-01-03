@@ -112,6 +112,35 @@ app = FastAPI(
 
 
 # Add global exception handlers for comprehensive error tracking
+# Import Pydantic's ValidationError for proper 422 handling
+from pydantic import ValidationError as PydanticValidationError
+
+
+@app.exception_handler(PydanticValidationError)
+async def pydantic_validation_exception_handler(request, exc):
+    """Handle Pydantic validation errors and return 422 responses.
+
+    This handler ensures that validation errors from Pydantic models
+    (especially from field validators in request models) are properly
+    converted to HTTP 422 responses instead of being caught by the
+    global exception handler.
+    """
+    from fastapi.responses import JSONResponse
+
+    errors = []
+    for error in exc.errors():
+        errors.append({
+            "loc": error.get("loc", []),
+            "msg": str(error.get("msg", "")),
+            "type": error.get("type", "value_error"),
+        })
+
+    return JSONResponse(
+        status_code=422,
+        content={"detail": errors},
+    )
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """Capture ALL unhandled exceptions in Sentry."""
