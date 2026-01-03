@@ -117,6 +117,67 @@ export function formatDogMarkdown(
     parts.push("");
   }
 
+  // Fallback to dog_profiler_data if no enhanced data available
+  if (!enhanced && dog.dog_profiler_data) {
+    const profiler = dog.dog_profiler_data;
+
+    // Show requirements from profiler data
+    if (profiler.energy_level || profiler.home_type || profiler.experience_level) {
+      parts.push("## Requirements");
+      parts.push("");
+      if (profiler.energy_level) {
+        parts.push(`- **Energy Level:** ${formatEnumValue(profiler.energy_level)}`);
+      }
+      if (profiler.home_type) {
+        parts.push(`- **Home Type:** ${formatEnumValue(profiler.home_type)}`);
+      }
+      if (profiler.experience_level) {
+        parts.push(`- **Experience Needed:** ${formatEnumValue(profiler.experience_level)}`);
+      }
+      parts.push("");
+    }
+
+    // Show personality traits from profiler data
+    if (profiler.personality_traits && profiler.personality_traits.length > 0) {
+      parts.push("## Personality");
+      parts.push("");
+      parts.push(profiler.personality_traits.map((t) => `- ${t}`).join("\n"));
+      parts.push("");
+    }
+
+    // Show bio/description from profiler data
+    if (profiler.bio || profiler.description) {
+      parts.push("## About");
+      parts.push("");
+      parts.push(profiler.bio || profiler.description || "");
+      parts.push("");
+    }
+
+    // Show interests from profiler data
+    if (profiler.interests && profiler.interests.length > 0) {
+      parts.push("## Interests");
+      parts.push("");
+      parts.push(profiler.interests.map((i) => `- ${i}`).join("\n"));
+      parts.push("");
+    }
+
+    // Show deal breakers from profiler data
+    if (profiler.deal_breakers && profiler.deal_breakers.length > 0) {
+      parts.push("## Important Notes");
+      parts.push("");
+      parts.push(profiler.deal_breakers.map((d) => `- ${d}`).join("\n"));
+      parts.push("");
+    }
+
+    // Show fun fact from profiler data
+    if (profiler.fun_fact) {
+      parts.push("## Fun Fact");
+      parts.push("");
+      parts.push(profiler.fun_fact);
+      parts.push("");
+    }
+  }
+
   // Organization info
   if (dog.organization) {
     parts.push("## Rescue Organization");
@@ -143,10 +204,20 @@ export function formatDogMarkdown(
 
 export function formatDogsListMarkdown(
   dogs: Dog[],
-  enhancedData?: Map<number, EnhancedDogData>
+  enhancedData?: Map<number, EnhancedDogData>,
+  pagination?: { offset: number; limit: number }
 ): string {
   if (dogs.length === 0) {
-    return "No dogs found matching your criteria. Try broadening your search filters.";
+    return `# No Dogs Found
+
+No dogs found matching your criteria.
+
+**Suggestions:**
+- Use \`rescuedogs_get_filter_counts\` to see available filter options
+- Try removing some filters to broaden your search
+- Check \`rescuedogs_list_organizations\` to find organizations with available dogs
+
+*Note: We aggregate dogs from European and UK rescues only.*`;
   }
 
   const parts: string[] = [];
@@ -181,6 +252,17 @@ export function formatDogsListMarkdown(
     parts.push(`**Adopt:** ${dog.adoption_url}`);
     parts.push("");
     parts.push("---");
+    parts.push("");
+  }
+
+  // Add pagination indicator if provided
+  if (pagination) {
+    const start = pagination.offset + 1;
+    const end = pagination.offset + dogs.length;
+    const hasMore = dogs.length === pagination.limit;
+    parts.push(
+      `*Showing ${start}-${end}.${hasMore ? " More results available - increase offset to see more." : ""}*`
+    );
     parts.push("");
   }
 
@@ -363,8 +445,16 @@ export function formatFilterCountsMarkdown(counts: FilterCountsResponse): string
 
   if (counts.available_country_options.length > 0) {
     parts.push("## Available To (Countries)");
-    for (const opt of counts.available_country_options.slice(0, 10)) {
+    // Sort countries by count (descending) to show most relevant first
+    // This ensures UK appears prominently if many dogs ship there
+    const sortedCountries = [...counts.available_country_options].sort(
+      (a, b) => b.count - a.count
+    );
+    for (const opt of sortedCountries.slice(0, 15)) {
       parts.push(`- ${opt.label}: ${opt.count} dogs`);
+    }
+    if (sortedCountries.length > 15) {
+      parts.push(`- *...and ${sortedCountries.length - 15} more countries*`);
     }
     parts.push("");
   }

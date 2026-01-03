@@ -150,6 +150,28 @@ This server covers **European and UK rescue organizations only**:
 
 US, Canadian, and Australian rescues are not supported.
 
+## Country Codes
+
+Use these codes for the `adoptable_to_country` parameter:
+
+| Code | Country |
+|------|---------|
+| UK | United Kingdom (**use UK, not GB**) |
+| IE | Ireland |
+| DE | Germany |
+| FR | France |
+| ES | Spain |
+| IT | Italy |
+| NL | Netherlands |
+| BE | Belgium |
+| AT | Austria |
+| RO | Romania |
+| GR | Greece |
+| BG | Bulgaria |
+| CY | Cyprus |
+
+Dogs can be adopted to countries where the rescue organization ships to. Use `rescuedogs_list_organizations` to see which countries each organization serves.
+
 ## Data Source
 
 All data comes from [rescuedogs.me](https://www.rescuedogs.me), aggregating listings from vetted rescue organizations.

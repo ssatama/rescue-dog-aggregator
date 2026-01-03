@@ -23,12 +23,20 @@ import {
   MatchPreferencesInputSchema,
   GetAdoptionGuideInputSchema,
 } from "./schemas/index.js";
-import type { EnhancedDogData, ImagePreset } from "./types.js";
+import type { EnhancedDogData, ImagePreset, Organization } from "./types.js";
 
 const server = new McpServer({
   name: "rescuedogs-mcp-server",
   version: "1.0.0",
 });
+
+// Age category mapping: MCP uses lowercase, backend expects capitalized
+const AGE_CATEGORY_MAP: Record<string, string> = {
+  puppy: "Puppy",
+  young: "Young",
+  adult: "Adult",
+  senior: "Senior",
+};
 
 // Tool 1: Search Dogs
 server.tool(
@@ -38,18 +46,47 @@ server.tool(
   async (input) => {
     const parsed = SearchDogsInputSchema.parse(input);
 
+    // Map age_category to capitalized form for backend
+    const mappedAgeCategory = parsed.age_category
+      ? AGE_CATEGORY_MAP[parsed.age_category]
+      : undefined;
+
+    // Check if query matches an organization name
+    let organizationId = parsed.organization_id;
+    let searchQuery = parsed.query;
+
+    if (searchQuery && !organizationId) {
+      let orgs = cacheService.getOrganizations<Organization[]>();
+      if (!orgs) {
+        orgs = await apiClient.getOrganizations({ active_only: true });
+        cacheService.setOrganizations(orgs);
+      }
+
+      const queryLower = searchQuery.toLowerCase();
+      const matchedOrg = orgs.find(
+        (o) =>
+          o.name.toLowerCase().includes(queryLower) ||
+          queryLower.includes(o.name.toLowerCase())
+      );
+
+      if (matchedOrg) {
+        organizationId = matchedOrg.id;
+        searchQuery = undefined;
+      }
+    }
+
     const dogs = await apiClient.searchDogs({
-      search: parsed.query,
+      search: searchQuery,
       breed: parsed.breed,
       breed_group: parsed.breed_group,
       standardized_size: parsed.size,
-      age_category: parsed.age_category,
+      age_category: mappedAgeCategory,
       sex: parsed.sex,
       energy_level: parsed.energy_level,
       home_type: parsed.home_type,
       experience_level: parsed.experience_level,
       available_to_country: parsed.adoptable_to_country,
-      organization_id: parsed.organization_id,
+      organization_id: organizationId,
       limit: parsed.limit,
       offset: parsed.offset,
     });
@@ -95,7 +132,10 @@ server.tool(
     // Add text content
     content.push({
       type: "text" as const,
-      text: formatDogsListMarkdown(dogs, enhancedMap),
+      text: formatDogsListMarkdown(dogs, enhancedMap, {
+        offset: parsed.offset ?? 0,
+        limit: parsed.limit ?? 10,
+      }),
     });
 
     // Add images if requested
@@ -457,7 +497,10 @@ ${parsed.adoptable_to_country ? `- Adopting to: ${parsed.adoptable_to_country}` 
 
     content.push({
       type: "text" as const,
-      text: header + formatDogsListMarkdown(dogs, enhancedMap),
+      text: header + formatDogsListMarkdown(dogs, enhancedMap, {
+        offset: 0,
+        limit: parsed.limit ?? 5,
+      }),
     });
 
     // Add images if requested
