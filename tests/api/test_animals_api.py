@@ -312,15 +312,12 @@ class TestAnimalsAPI:
         assert isinstance(data, list)
 
     def test_get_animals_invalid_curation_type(self, client: TestClient):
-        """Test that invalid curation_type is properly validated."""
-        # This test verifies that invalid curation types are rejected
-        # The actual validation error handling is tested elsewhere
-        import pytest
-
-        with pytest.raises(Exception) as exc_info:
-            response = client.get("/api/animals?curation_type=invalid&limit=5")
+        """Test that invalid curation_type returns 422."""
+        response = client.get("/api/animals?curation_type=invalid&limit=5")
+        assert response.status_code == 422
         # Verify that the error mentions curation_type validation
-        assert "curation_type" in str(exc_info.value)
+        data = response.json()
+        assert "detail" in data
 
     def test_statistics_endpoint(self, client: TestClient):
         """Test GET /api/statistics endpoint."""
