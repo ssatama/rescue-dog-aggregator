@@ -6,12 +6,13 @@
 
 ```
 Production:    www.rescuedogs.me
-Data:          4,682 dogs | 12 active organizations (13 scrapers)
+Data:          1,557 active dogs | 12 active organizations (13 scrapers)
 Backend:       Python/FastAPI + PostgreSQL 15 + Alembic
 Frontend:      Next.js 15 App Router + React 18 + TypeScript 5
+MCP Server:    TypeScript + @modelcontextprotocol/sdk (npm: rescuedogs-mcp-server)
 LLM:           OpenRouter (Gemini 3 Flash primary)
 Monitoring:    Sentry (dev + prod)
-Hosting:       Vercel (frontend) + Railway (backend + DB)
+Hosting:       Vercel (frontend) + Railway (backend + DB + cron)
 ```
 
 ## Directory Structure
@@ -25,9 +26,11 @@ Hosting:       Vercel (frontend) + Railway (backend + DB)
 /frontend/src
   /app                  # Next.js App Router pages
   /components           # Feature-organized UI components (22 dirs)
+/rescuedogs-mcp-server  # MCP server for Claude integration
+  /src                  # TypeScript source (8 tools)
 /configs/organizations  # YAML configs (13 orgs, 12 active)
-/tests                  # 156 backend test files
-/frontend/__tests__     # 268 frontend test files
+/tests                  # 168 backend test files
+/frontend/__tests__     # 285 frontend test files
 /migrations/versions    # Alembic migrations (dev)
 /migrations/railway     # Production migrations
 /management             # CLI tools (19 scripts)
@@ -379,10 +382,10 @@ python management/llm_commands.py generate-profiles   # Batch enrichment
 ### Current Metrics
 
 ```
-Dogs:           4,682 active
+Dogs:           1,557 active
 Scrapers:       12 active organizations (13 total)
-Backend Tests:  156 test files
-Frontend Tests: 268 test files
+Backend Tests:  168 test files
+Frontend Tests: 285 test files
 Daily Users:    20+
 
 API Response Times (p50/p95):
@@ -463,6 +466,46 @@ Railway Multi-Service Architecture:
 
 Health Checks → Rollback on Failure
 ```
+
+## MCP Server Integration
+
+The `rescuedogs-mcp-server` enables LLMs (Claude Code, Claude Desktop) to discover rescue dogs through natural conversation.
+
+**Location:** `/rescuedogs-mcp-server/`
+**Documentation:** `docs/technical/mcp-server.md`
+
+### Quick Setup (Claude Desktop)
+
+```json
+{
+  "mcpServers": {
+    "rescuedogs": {
+      "command": "npx",
+      "args": ["-y", "rescuedogs-mcp-server"]
+    }
+  }
+}
+```
+
+### Available Tools (8 total)
+
+| Tool                            | Purpose                                             |
+| ------------------------------- | --------------------------------------------------- |
+| `rescuedogs_search_dogs`        | Search with filters (breed, size, energy, location) |
+| `rescuedogs_get_dog_details`    | Full profile with AI personality data               |
+| `rescuedogs_list_breeds`        | Available breeds with statistics                    |
+| `rescuedogs_get_statistics`     | Platform overview                                   |
+| `rescuedogs_get_filter_counts`  | Valid filter options to prevent empty searches      |
+| `rescuedogs_list_organizations` | Rescue organizations with dog counts                |
+| `rescuedogs_match_preferences`  | Match dogs to lifestyle preferences                 |
+| `rescuedogs_get_adoption_guide` | Static adoption process guide                       |
+
+### Key Features
+
+- **Opt-in images**: `include_images: true` for inline dog photos
+- **Dual format**: `response_format: "markdown" | "json"`
+- **Caching**: 10-min TTL for breeds/stats/orgs, 5-min for filter counts
+- **Active filter**: All queries filter `status=available` automatically
 
 ## Key Architectural Decisions
 
@@ -566,6 +609,6 @@ NEXT_PUBLIC_R2_IMAGE_PATH=rescue_dogs
 
 ---
 
-**Last Updated**: 2025-12-31
-**Current Scale**: 4,682 dogs | 12 active organizations | 156 backend tests | 268 frontend tests
+**Last Updated**: 2026-01-04
+**Current Scale**: 1,557 dogs | 12 active organizations | 168 backend tests | 285 frontend tests
 **Production**: www.rescuedogs.me

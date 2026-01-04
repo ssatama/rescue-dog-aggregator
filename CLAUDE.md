@@ -10,15 +10,16 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Frontend: Next.js 15 (App Router)/React 18/TypeScript 5
 - Testing: pytest (backend), Jest/Playwright (frontend)
 - AI: OpenRouter API (Google Gemini 3 Flash) for LLM enrichment
+- Browser Automation: Playwright (Browserless v2 in production)
 - Monitoring: Sentry (dev/prod)
-- Current: 152 backend test files, 284 frontend test files, 4,568 dogs
+- Current: 168 backend test files, 285 frontend test files, 1,500+ active dogs
 
 ## Status
 
 - Site live at www.rescuedogs.me
-- 4,568 dogs from 13 organizations
-- Deployment: Vercel (frontend), Railway (backend + PostgreSQL)
-- Development flow: local → dev branch → main → production
+- 1,500+ active dogs from 12 organizations
+- Deployment: Vercel (frontend), Railway (backend + PostgreSQL + cron)
+- Scrapers: Railway cron (Tue/Thu/Sat 6am UTC)
 - Traffic: 20+ daily users, growing steadily
 
 ## USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
@@ -30,13 +31,15 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 **Priority order for efficiency:**
 
 1. **Serena MCP**: Study codebase with symbolic tools (avoid reading entire files)
+
    - `get_symbols_overview`, `find_symbol`, `search_for_pattern`
    - `check_onboarding_performed`, `list_memories`, `read_memory`
 
 2. **Morph MCP**: Fast, precise code edits (preferred over Edit tool)
+
    - `edit_file`, `tiny_edit_file` for line-based changes
 
-3. **Postgres MCP**: Query local dev database directly
+3. **Postgres MCP**: Query prod database directly
    - `query` tool for SELECT statements
 
 ## CRITICAL: Planning-First Workflow
@@ -133,6 +136,7 @@ source venv/bin/activate && echo '🐍 BACKEND CHECKS' && black . && isort . && 
 ```
 
 This validates:
+
 - Python formatting (black, isort)
 - Backend tests (excluding slow/browser/external)
 - Frontend linting (ESLint)
