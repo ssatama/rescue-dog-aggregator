@@ -2,29 +2,35 @@
  * Security utilities for content sanitization and XSS prevention
  */
 
-// Simple HTML sanitizer - removes dangerous tags and attributes
+import DOMPurify from "dompurify";
+
+const DOMPURIFY_CONFIG = {
+  ALLOWED_TAGS: [
+    "p",
+    "br",
+    "b",
+    "i",
+    "em",
+    "strong",
+    "a",
+    "ul",
+    "ol",
+    "li",
+    "img",
+  ],
+  ALLOWED_ATTR: ["href", "target", "rel", "src", "alt"],
+};
+
 export function sanitizeHtml(html) {
   if (typeof html !== "string") return "";
 
-  // Remove script tags and their content (including malformed ones)
-  html = html.replace(
-    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-    "",
-  );
-  html = html.replace(/<script\b[^>]*>[\s\S]*$/gi, ""); // Handle unclosed script tags
+  if (typeof window === "undefined") {
+    // Server-side: strip all tags (DOMPurify requires DOM)
+    // This is a safe fallback since we're removing all HTML
+    return html.replace(/<[^>]*>/g, "");
+  }
 
-  // Remove dangerous attributes (on* events, style with javascript, etc.)
-  html = html.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, "");
-  html = html.replace(/\s+style\s*=\s*["'][^"']*javascript[^"']*["']/gi, "");
-
-  // Remove dangerous tags
-  const dangerousTags = ["iframe", "object", "embed", "link", "meta", "base"];
-  dangerousTags.forEach((tag) => {
-    const regex = new RegExp(`<\\/?${tag}\\b[^>]*>`, "gi");
-    html = html.replace(regex, "");
-  });
-
-  return html;
+  return DOMPurify.sanitize(html, DOMPURIFY_CONFIG);
 }
 
 // Escape HTML entities to prevent XSS
