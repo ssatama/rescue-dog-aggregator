@@ -137,7 +137,7 @@ describe("DogsPageViewportWrapper", () => {
 
   afterAll(() => {
     // Restore original window.location
-    window.location = originalLocation;
+    (window as any).location = originalLocation;
   });
 
   beforeEach(() => {

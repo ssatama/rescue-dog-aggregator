@@ -130,11 +130,11 @@ describe("CompareCard", () => {
     });
 
     it("handles unknown compatibility gracefully", () => {
-      const dogUnknown = {
+      const dogUnknown: Dog = {
         ...mockDog,
         dog_profiler_data: {
           ...mockDog.dog_profiler_data,
-          good_with_dogs: "unknown",
+          good_with_dogs: "unknown" as const,
         },
       };
       render(<CompareCard dog={dogUnknown} />);
@@ -153,12 +153,12 @@ describe("CompareCard", () => {
     });
 
     it("shows apartment suitability for low energy dogs", () => {
-      const lowEnergyDog = {
+      const lowEnergyDog: Dog = {
         ...mockDog,
         standardized_size: "Small",
         dog_profiler_data: {
           ...mockDog.dog_profiler_data!,
-          energy_level: "low",
+          energy_level: "low" as const,
         },
       };
       render(<CompareCard dog={lowEnergyDog} />);

@@ -373,7 +373,6 @@ describe("ComparisonView", () => {
       {
         ...mockDogs[0],
         primary_image_url: undefined,
-        primary_image_url: undefined,
       },
     ];
 

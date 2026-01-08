@@ -7,6 +7,7 @@ name: Tier 1 - Developer Feedback
 
 permissions:
   contents: read
+  actions: read
 
 on:
   push:
