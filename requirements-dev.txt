@@ -8,7 +8,7 @@ aiohappyeyeballs==2.6.1
     # via
     #   -r requirements.txt
     #   aiohttp
-aiohttp==3.12.15
+aiohttp==3.13.3
     # via
     #   -r requirements.txt
     #   firecrawl-py
@@ -119,6 +119,7 @@ greenlet==3.3.0
     # via
     #   -r requirements.txt
     #   playwright
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -r requirements.txt
