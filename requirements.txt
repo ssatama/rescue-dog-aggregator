@@ -34,9 +34,9 @@ attrs==25.3.0
     #   trio
 beautifulsoup4==4.14.3
     # via -r requirements.in
-boto3==1.42.17
+boto3==1.42.24
     # via -r requirements.in
-botocore==1.42.17
+botocore==1.42.24
     # via
     #   boto3
     #   s3transfer
@@ -64,7 +64,7 @@ colorama==0.4.6
     # via -r requirements.in
 cryptography==46.0.3
     # via pyjwt
-fastapi==0.127.1
+fastapi==0.128.0
     # via
     #   -r requirements.in
     #   sentry-sdk
@@ -75,7 +75,9 @@ frozenlist==1.7.0
     #   aiohttp
     #   aiosignal
 greenlet==3.3.0
-    # via playwright
+    # via
+    #   playwright
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   httpcore
@@ -107,7 +109,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-jsonschema==4.25.1
+jsonschema==4.26.0
     # via
     #   -r requirements.in
     #   mcp
@@ -123,7 +125,7 @@ markupsafe==3.0.2
     # via
     #   mako
     #   werkzeug
-mcp==1.23.1
+mcp==1.25.0
     # via -r requirements.in
 mdurl==0.1.2
     # via markdown-it-py
@@ -144,7 +146,7 @@ packaging==25.0
     #   build
     #   pytest
     #   webdriver-manager
-pillow==12.0.0
+pillow==12.1.0
     # via -r requirements.in
 pip-tools==7.5.2
     # via -r requirements.in
@@ -223,13 +225,13 @@ rpds-py==0.26.0
     # via
     #   jsonschema
     #   referencing
-ruff==0.14.10
+ruff==0.14.11
     # via -r requirements.in
 s3transfer==0.16.0
     # via boto3
-selenium==4.38.0
+selenium==4.39.0
     # via -r requirements.in
-sentry-sdk[fastapi,sqlalchemy]==2.47.0
+sentry-sdk[fastapi,sqlalchemy]==2.49.0
     # via -r requirements.in
 six==1.17.0
     # via
@@ -243,7 +245,7 @@ sortedcontainers==2.4.0
     # via trio
 soupsieve==2.7
     # via beautifulsoup4
-sqlalchemy==2.0.44
+sqlalchemy==2.0.45
     # via
     #   -r requirements.in
     #   alembic
@@ -287,7 +289,7 @@ urllib3[socks]==2.6.3
     #   requests
     #   selenium
     #   sentry-sdk
-uvicorn[standard]==0.38.0
+uvicorn[standard]==0.40.0
     # via
     #   -r requirements.in
     #   mcp
