@@ -119,7 +119,6 @@ greenlet==3.3.0
     # via
     #   -r requirements.txt
     #   playwright
-    #   sqlalchemy
 h11==0.16.0
     # via
     #   -r requirements.txt
@@ -451,7 +450,7 @@ typing-inspection==0.4.2
     #   mcp
     #   pydantic
     #   pydantic-settings
-urllib3[socks]==2.6.0
+urllib3[socks]==2.6.3
     # via
     #   -r requirements.txt
     #   botocore

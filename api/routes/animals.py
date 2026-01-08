@@ -47,7 +47,7 @@ async def get_animals(
         import os
 
         if os.getenv("ENV", "development") == "development":
-            raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+            raise HTTPException(status_code=500, detail="Internal server error")
         else:
             raise APIException(
                 status_code=500,

@@ -58,6 +58,24 @@ class MisisRescueScraper(BaseScraper):
         self.listing_url = "https://www.misisrescue.com/available-for-adoption"
         self.detail_parser = MisisRescueDetailParser()
 
+    def _is_wixstatic_url(self, url: str) -> bool:
+        """Check if URL is from wixstatic.com using proper URL parsing.
+
+        Args:
+            url: URL string to check
+
+        Returns:
+            True if URL is from wixstatic.com domain
+        """
+        if not url:
+            return False
+        try:
+            parsed = urlparse(url)
+            hostname = parsed.hostname or ""
+            return hostname.endswith("wixstatic.com")
+        except Exception:
+            return False
+
     def collect_data(self) -> List[Dict[str, Any]]:
         """Main entry point - collect all dog data.
 
@@ -538,7 +556,7 @@ class MisisRescueScraper(BaseScraper):
 
             # Filter for likely dog photos from Wix static content
             if (
-                "wixstatic.com" in src
+                self._is_wixstatic_url(src)
                 and any(ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"])
                 and not any(skip in src.lower() for skip in ["logo", "icon", "button", "header", "footer"])
             ):
@@ -874,7 +892,7 @@ class MisisRescueScraper(BaseScraper):
         """Extract first grid image using BeautifulSoup only."""
         try:
             # Find all wixstatic images
-            all_images = soup.find_all("img", src=lambda x: x and "wixstatic.com" in x)
+            all_images = soup.find_all("img", src=lambda x: x and self._is_wixstatic_url(x))
 
             for img in all_images:
                 src = img.get("src", "")
@@ -1000,7 +1018,7 @@ class MisisRescueScraper(BaseScraper):
                 continue
 
             src = img.get("src")
-            if isinstance(src, str) and "wixstatic.com" in src:
+            if isinstance(src, str) and self._is_wixstatic_url(src):
                 # Filter for actual dog photos
                 if any(ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"]):
                     if not any(skip in src.lower() for skip in ["logo", "icon", "button"]):
@@ -1566,7 +1584,7 @@ class MisisRescueScraper(BaseScraper):
 
             # Filter for substantial dog photos from Wix static content
             if (
-                "wixstatic.com" in src
+                self._is_wixstatic_url(src)
                 and any(ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"])
                 and not any(skip in src.lower() for skip in ["logo", "icon", "button", "header", "footer"])
             ):

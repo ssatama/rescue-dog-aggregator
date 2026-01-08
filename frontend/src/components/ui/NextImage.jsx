@@ -26,13 +26,18 @@ const NextImage = React.memo(function NextImage({
   const [hasError, setHasError] = useState(false);
 
   const isR2Image = useMemo(() => {
-    return (
-      imageSrc &&
-      (imageSrc.includes("r2.cloudflarestorage.com") ||
-        imageSrc.includes("images.rescuedogs.me") ||
-        imageSrc.includes("cdn.rescuedogs.me") ||
-        imageSrc.includes("images.example.com"))
-    );
+    if (!imageSrc) return false;
+    try {
+      const url = new URL(imageSrc);
+      return (
+        url.hostname.endsWith(".r2.cloudflarestorage.com") ||
+        url.hostname === "images.rescuedogs.me" ||
+        url.hostname === "cdn.rescuedogs.me" ||
+        url.hostname === "images.example.com"
+      );
+    } catch {
+      return false;
+    }
   }, [imageSrc]);
 
   const adaptiveQuality = useMemo(() => {

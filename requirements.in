@@ -9,7 +9,7 @@ httpx>=0.28.1
 sqlalchemy>=2.0.44,<3.0.0
 alembic>=1.17.2,<2.0.0
 starlette>=0.50.0
-urllib3>=2.6.0
+urllib3>=2.6.3
 
 # Configuration
 pydantic>=2.12.5

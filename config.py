@@ -77,7 +77,7 @@ logger = logging.getLogger(__name__)
 
 # --- ADD: Safety Check ---
 IS_TESTING = os.environ.get("TESTING") == "true"
-logger.info(f"[config.py] TESTING environment variable detected: {IS_TESTING}")
+logger.debug(f"[config.py] TESTING environment variable detected: {IS_TESTING}")
 # --- END ADD ---
 
 # Get system username as the likely PostgreSQL user
@@ -119,7 +119,7 @@ def get_database_config() -> dict:
     database_url = os.environ.get("DATABASE_URL")
 
     if database_url:
-        logger.info("[config.py] Using DATABASE_URL for database configuration")
+        logger.debug("[config.py] Using DATABASE_URL for database configuration")
         config = parse_database_url(database_url)
         return {
             "host": config["host"],
@@ -129,7 +129,7 @@ def get_database_config() -> dict:
             "port": config["port"],
         }
 
-    logger.info("[config.py] Using individual DB_* environment variables")
+    logger.debug("[config.py] Using individual DB_* environment variables")
     db_host_env = os.environ.get("DB_HOST")
     db_name_env = os.environ.get("DB_NAME")
     db_user_env = os.environ.get("DB_USER")

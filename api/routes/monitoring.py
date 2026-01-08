@@ -356,7 +356,7 @@ async def get_individual_scraper_details(organization_id: int, db_conn=Depends(g
         raise
     except Exception as e:
         logger.error(f"Error getting scraper details for org {organization_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/failures", dependencies=[Depends(verify_admin_key)])
@@ -501,7 +501,7 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
     except Exception as e:
         logger.error(f"Error getting failure metrics: {e}")
         logger.error(f"Full traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/performance", dependencies=[Depends(verify_admin_key)])
@@ -589,7 +589,7 @@ async def get_performance_metrics(db_conn=Depends(get_database_connection)):
 
     except Exception as e:
         logger.error(f"Error getting performance metrics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health/database/pool")
@@ -752,4 +752,4 @@ async def get_active_alerts(db_conn=Depends(get_database_connection)):
 
     except Exception as e:
         logger.error(f"Error getting active alerts: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

@@ -36,10 +36,16 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
     const srcString = String(src);
     setImageSrc(srcString);
     setFallbackLevel(0);
-    setIsR2Image(
-      srcString.includes(R2_CUSTOM_DOMAIN) ||
-        srcString.includes("r2.cloudflarestorage.com"),
-    );
+    // Use URL parsing for proper hostname validation
+    try {
+      const url = new URL(srcString);
+      setIsR2Image(
+        url.hostname === R2_CUSTOM_DOMAIN ||
+          url.hostname.endsWith(".r2.cloudflarestorage.com"),
+      );
+    } catch {
+      setIsR2Image(false);
+    }
   }, [src]);
 
   const getR2FallbackUrl = useCallback(

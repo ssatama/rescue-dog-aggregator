@@ -5,6 +5,9 @@
 
 name: Tier 1 - Developer Feedback
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:

@@ -74,9 +74,9 @@ class AnimalService:
         except Exception as e:
             logger.error(f"Error in get_animals: {e}", exc_info=True)
             logger.error(f"Error type: {type(e).__name__}")
-            logger.error(f"Filter parameters: limit={filters.limit}, animal_type={filters.animal_type}, status={filters.status}")
+            logger.debug(f"Filter parameters: limit={filters.limit}, animal_type={filters.animal_type}, status={filters.status}")
             if hasattr(e, "__dict__"):
-                logger.error(f"Error details: {e.__dict__}")
+                logger.debug(f"Error details: {e.__dict__}")
             raise APIException(
                 status_code=500,
                 detail="Failed to fetch animals",

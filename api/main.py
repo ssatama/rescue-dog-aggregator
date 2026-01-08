@@ -129,11 +129,13 @@ async def pydantic_validation_exception_handler(request, exc):
 
     errors = []
     for error in exc.errors():
-        errors.append({
-            "loc": error.get("loc", []),
-            "msg": str(error.get("msg", "")),
-            "type": error.get("type", "value_error"),
-        })
+        errors.append(
+            {
+                "loc": error.get("loc", []),
+                "msg": str(error.get("msg", "")),
+                "type": error.get("type", "value_error"),
+            }
+        )
 
     return JSONResponse(
         status_code=422,

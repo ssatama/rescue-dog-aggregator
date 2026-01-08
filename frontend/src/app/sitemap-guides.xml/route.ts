@@ -1,5 +1,14 @@
 import { getAllGuideSlugs } from "@/lib/guides";
 
+function escapeXml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 export async function GET() {
   const slugs = getAllGuideSlugs();
   const baseUrl =
@@ -7,7 +16,7 @@ export async function GET() {
   const now = new Date().toISOString();
 
   const urls = slugs.map((slug) => ({
-    url: `${baseUrl}/guides/${slug}`,
+    url: `${baseUrl}/guides/${escapeXml(slug)}`,
     lastModified: now,
     changeFrequency: "monthly",
     priority: 0.8,
@@ -27,7 +36,7 @@ export async function GET() {
     .map(
       ({ url, lastModified, changeFrequency, priority }) => `
   <url>
-    <loc>${url}</loc>
+    <loc>${escapeXml(url)}</loc>
     <lastmod>${lastModified}</lastmod>
     <changefreq>${changeFrequency}</changefreq>
     <priority>${priority}</priority>
