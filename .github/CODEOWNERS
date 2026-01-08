@@ -1,0 +1,14 @@
+# Default owner for everything
+* @ssatama
+
+# Backend
+/api/ @ssatama
+/scrapers/ @ssatama
+/services/ @ssatama
+
+# Frontend
+/frontend/ @ssatama
+
+# Infrastructure
+/.github/ @ssatama
+/configs/ @ssatama

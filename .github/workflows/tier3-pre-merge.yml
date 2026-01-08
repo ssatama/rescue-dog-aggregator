@@ -7,6 +7,7 @@ name: Tier 3 - Pre-merge Validation
 permissions:
   contents: read
   pull-requests: read
+  actions: read
 
 on:
   pull_request:
