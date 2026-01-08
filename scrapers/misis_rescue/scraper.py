@@ -72,7 +72,7 @@ class MisisRescueScraper(BaseScraper):
         try:
             parsed = urlparse(url)
             hostname = parsed.hostname or ""
-            return hostname.endswith("wixstatic.com")
+            return hostname == "wixstatic.com" or hostname.endswith(".wixstatic.com")
         except Exception:
             return False
 

@@ -93,6 +93,13 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Occasional pleasantries are fine.
 - Feel free to ask many questions. If you are in doubt of my intent, don't guess. Ask.
 
+### 5. Commit Message Guidelines
+
+- **NO AI ATTRIBUTION**: Do not include "Claude", "Opus", "Anthropic", "Co-Authored-By: Claude", or similar AI references in commit messages
+- Use conventional commit format: `type(scope): description`
+- Focus on what changed and why, not how it was created
+- Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `style`, `chore`
+
 ## Project Structure
 
 ```
