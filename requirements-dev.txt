@@ -485,7 +485,7 @@ websockets==15.0.1
     #   -r requirements.txt
     #   firecrawl-py
     #   uvicorn
-werkzeug==3.1.4
+werkzeug==3.1.5
     # via -r requirements.txt
 wheel==0.45.1
     # via
