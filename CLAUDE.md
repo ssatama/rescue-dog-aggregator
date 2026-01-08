@@ -100,6 +100,20 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Focus on what changed and why, not how it was created
 - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `style`, `chore`
 
+### 6. PR Workflow (Required)
+
+**Never commit directly to main.** Always use PRs:
+
+1. Create branch: `git checkout -b type/description`
+2. Make changes
+3. Pre-commit review: Use PAL MCP `precommit` tool with external validation
+4. Commit to branch: `git commit -m "type(scope): description"`
+5. Push & create PR: `git push -u origin HEAD && gh pr create`
+6. Run `/code-review` for automated review
+7. Merge via GitHub (1 review required)
+
+Branch naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
+
 ## Project Structure
 
 ```
