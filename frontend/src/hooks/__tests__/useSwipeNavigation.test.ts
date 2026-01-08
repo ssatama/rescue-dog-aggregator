@@ -77,11 +77,12 @@ beforeEach(() => {
     [Symbol.iterator]: jest.fn(),
   } as any);
 
-  // Mock react-swipeable to return proper handlers
+  // Mock react-swipeable to return proper handlers with ref
   mockUseSwipeable.mockImplementation((config) => ({
+    ref: jest.fn(),
     onSwipedLeft: config.onSwipedLeft,
     onSwipedRight: config.onSwipedRight,
-  }));
+  })) as any;
 
   // Mock getAnimals service with fresh mock data each time - always return array
   mockGetAnimals.mockResolvedValue([...mockDogs]);
@@ -157,7 +158,7 @@ describe("useSwipeNavigation", () => {
       });
 
       act(() => {
-        result.current.handlers.onSwipedLeft();
+        (result.current.handlers as any).onSwipedLeft();
       });
 
       expect(mockPush).toHaveBeenCalledWith("/dogs/dog-4");
@@ -171,7 +172,7 @@ describe("useSwipeNavigation", () => {
       });
 
       act(() => {
-        result.current.handlers.onSwipedRight();
+        (result.current.handlers as any).onSwipedRight();
       });
 
       expect(mockPush).toHaveBeenCalledWith("/dogs/dog-2");
@@ -242,7 +243,7 @@ describe("useSwipeNavigation", () => {
     });
 
     it("should preserve URL parameters when navigating", async () => {
-      mockGet.mockImplementation((key) => {
+      (mockGet as jest.Mock).mockImplementation((key: string) => {
         if (key === "breed") return "labrador";
         if (key === "size") return "large";
         return "";
@@ -260,7 +261,7 @@ describe("useSwipeNavigation", () => {
       });
 
       act(() => {
-        result.current.handlers.onSwipedRight();
+        (result.current.handlers as any).onSwipedRight();
       });
 
       expect(mockPush).toHaveBeenCalledWith(
@@ -274,8 +275,8 @@ describe("useSwipeNavigation", () => {
       // Clear cache first to ensure clean state
       navigationCache.clear();
 
-      const { result, rerender } = renderHook((props = defaultProps) =>
-        useSwipeNavigation(props),
+      const { result, rerender } = renderHook(
+        (props: typeof defaultProps = defaultProps) => useSwipeNavigation(props),
       );
 
       // Wait for initial load
@@ -313,8 +314,8 @@ describe("useSwipeNavigation", () => {
     });
 
     it("should reuse cached data when revisiting same dog", async () => {
-      const { result, rerender } = renderHook((props = defaultProps) =>
-        useSwipeNavigation(props),
+      const { result, rerender } = renderHook(
+        (props: typeof defaultProps = defaultProps) => useSwipeNavigation(props),
       );
 
       await waitFor(() => {
@@ -401,8 +402,8 @@ describe("useSwipeNavigation", () => {
     it("should handle non-array API responses gracefully", async () => {
       // Clear cache to ensure fresh API call
       navigationCache.clear();
-      // Mock API to return non-array (e.g., null or object)
-      mockGetAnimals.mockResolvedValueOnce(null);
+      // Mock API to return non-array (e.g., null or object) - cast to any for edge case testing
+      mockGetAnimals.mockResolvedValueOnce(null as any);
 
       const { result } = renderHook(() => useSwipeNavigation(defaultProps));
 
@@ -454,7 +455,7 @@ describe("useSwipeNavigation", () => {
 
       // Try to swipe right (previous) - should not navigate
       act(() => {
-        result.current.handlers.onSwipedRight();
+        (result.current.handlers as any).onSwipedRight();
       });
 
       expect(mockPush).not.toHaveBeenCalled();

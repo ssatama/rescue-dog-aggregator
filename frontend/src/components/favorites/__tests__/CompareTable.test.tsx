@@ -150,13 +150,13 @@ describe("CompareTable", () => {
     });
 
     it("shows experience level row only when ALL dogs have experience level data", () => {
-      const dogsWithExperience = [
+      const dogsWithExperience: Dog[] = [
         { ...completeProfileDog },
         {
           ...partialProfileDog,
           dog_profiler_data: {
             ...partialProfileDog.dog_profiler_data!,
-            experience_level: "first_time_owner",
+            experience_level: "first_time_ok" as const,
           },
         },
       ];
@@ -190,15 +190,15 @@ describe("CompareTable", () => {
     });
 
     it("shows compatibility rows only when ALL dogs have standard compatibility values", () => {
-      const dogsWithStandardCompatibility = [
+      const dogsWithStandardCompatibility: Dog[] = [
         { ...completeProfileDog }, // Has yes/maybe/yes values
         {
           ...partialProfileDog,
           dog_profiler_data: {
             ...partialProfileDog.dog_profiler_data!,
-            good_with_dogs: "maybe",
-            good_with_cats: "maybe",
-            good_with_children: "maybe",
+            good_with_dogs: "maybe" as const,
+            good_with_cats: "maybe" as const,
+            good_with_children: "maybe" as const,
           },
         },
       ];
@@ -363,16 +363,16 @@ describe("CompareTable", () => {
           ...partialProfileDog,
           dog_profiler_data: {
             ...partialProfileDog.dog_profiler_data!,
-            good_with_cats: "unknown", // Real DB value
-            good_with_children: "unknown", // Real DB value
-            good_with_dogs: "unknown", // Real DB value
+            good_with_cats: "unknown" as const,
+            good_with_children: "unknown" as const,
+            good_with_dogs: "unknown" as const,
           },
         },
       ];
 
       render(
         <CompareTable
-          dogs={dogsWithRealDbValues}
+          dogs={dogsWithRealDbValues as Dog[]}
           comparisonData={mockComparisonData}
         />,
       );
@@ -390,6 +390,7 @@ describe("CompareTable", () => {
     });
 
     it("hides compatibility rows when dogs have non-standard values", () => {
+      // Testing non-standard DB values - use type assertion to test edge cases
       const dogsWithNonStandardValues = [
         {
           ...completeProfileDog,
@@ -404,12 +405,12 @@ describe("CompareTable", () => {
           ...partialProfileDog,
           dog_profiler_data: {
             ...partialProfileDog.dog_profiler_data!,
-            good_with_cats: "yes", // Valid value
-            good_with_children: "no", // Valid value
-            good_with_dogs: "maybe", // Valid value
+            good_with_cats: "yes" as const,
+            good_with_children: "no" as const,
+            good_with_dogs: "maybe" as const,
           },
         },
-      ];
+      ] as Dog[];
 
       render(
         <CompareTable
@@ -434,15 +435,15 @@ describe("CompareTable", () => {
     });
 
     it("shows proper behavior with real database edge cases", () => {
-      // Test case that simulates the user's reported bug
+      // Test case that simulates the user's reported bug - use type assertion for non-standard values
       const realWorldScenario = [
         {
           ...completeProfileDog,
           dog_profiler_data: {
             ...completeProfileDog.dog_profiler_data!,
-            good_with_dogs: "yes",
-            good_with_cats: "unknown", // This should cause compatibility rows to be hidden
-            good_with_children: "yes",
+            good_with_dogs: "yes" as const,
+            good_with_cats: "unknown" as const,
+            good_with_children: "yes" as const,
           },
         },
         {
@@ -454,7 +455,7 @@ describe("CompareTable", () => {
             good_with_children: "older_children", // Non-standard value
           },
         },
-      ];
+      ] as Dog[];
 
       render(
         <CompareTable

@@ -83,7 +83,7 @@ describe("useSwipeFilters", () => {
     it("should update all filters at once", () => {
       const { result } = renderHook(() => useSwipeFilters());
 
-      const newFilters = { country: "United States", sizes: ["medium"] };
+      const newFilters = { country: "United States", sizes: ["medium"], ages: [] };
 
       act(() => {
         result.current.setFilters(newFilters);
@@ -253,6 +253,7 @@ describe("useSwipeFilters", () => {
         result.current.completeOnboarding({
           country: "Germany",
           sizes: ["small"],
+          ages: [],
         });
       });
 
@@ -260,6 +261,7 @@ describe("useSwipeFilters", () => {
       expect(result.current.filters).toEqual({
         country: "Germany",
         sizes: ["small"],
+        ages: [],
       });
       expect(result.current.needsOnboarding).toBe(false);
     });

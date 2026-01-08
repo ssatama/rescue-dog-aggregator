@@ -313,7 +313,7 @@ describe("useFavorites", () => {
       const { result } = renderHook(() => useFavorites(), { wrapper });
 
       // Mock localStorage.setItem to throw quota exceeded error
-      localStorageMock.setItem = jest.fn(() => {
+      localStorageMock.setItem = jest.fn((_key: string, _value: string) => {
         const error = new Error("QuotaExceededError");
         error.name = "QuotaExceededError";
         throw error;
@@ -331,7 +331,7 @@ describe("useFavorites", () => {
       const { result } = renderHook(() => useFavorites(), { wrapper });
 
       // Mock localStorage to be unavailable
-      localStorageMock.setItem = jest.fn(() => {
+      localStorageMock.setItem = jest.fn((_key: string, _value: string) => {
         throw new Error("localStorage not available");
       });
 
