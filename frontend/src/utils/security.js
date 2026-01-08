@@ -25,9 +25,15 @@ export function sanitizeHtml(html) {
   if (typeof html !== "string") return "";
 
   if (typeof window === "undefined") {
-    // Server-side: strip all tags (DOMPurify requires DOM)
-    // This is a safe fallback since we're removing all HTML
-    return html.replace(/<[^>]*>/g, "");
+    // Server-side: strip all tags using iterative approach
+    // This prevents bypass attacks with nested/malformed tags like <scri<script>pt>
+    let result = html;
+    let prev;
+    do {
+      prev = result;
+      result = result.replace(/<[^>]*>?/g, "");
+    } while (result !== prev);
+    return result;
   }
 
   return DOMPurify.sanitize(html, DOMPURIFY_CONFIG);

@@ -237,14 +237,73 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
 
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_rescue_dogs
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run security tests
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..10}; do
+            if pg_isready -h localhost -p 5432; then
+              echo "PostgreSQL is ready"
+              break
+            fi
+            echo "Waiting for PostgreSQL... attempt $i/10"
+            sleep 2
+          done
+
+      - name: Setup test database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c "CREATE DATABASE test_rescue_dogs;" || true
+
+      - name: Initialize database schema
+        env:
+          TESTING: "true"
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           source venv/bin/activate 2>/dev/null || python -m venv venv && source venv/bin/activate
           pip install -r requirements.txt -r requirements-dev.txt
+          python -c "
+          from database.db_setup import initialize_database
+          conn = initialize_database()
+          if conn:
+              print('Database schema initialized successfully')
+              conn.close()
+          " || echo "Database initialization completed"
+
+      - name: Run security tests
+        env:
+          TESTING: "true"
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          source venv/bin/activate
           pytest tests/security/ -v --tb=short
 
       - name: Dependency vulnerability check
