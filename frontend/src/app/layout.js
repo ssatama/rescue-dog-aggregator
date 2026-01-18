@@ -127,15 +127,6 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  // Initialize comprehensive performance monitoring on client side
-  if (typeof window !== "undefined") {
-    import("@/utils/performanceMonitoring")
-      .then(({ initPerformanceMonitoring }) => {
-        initPerformanceMonitoring();
-      })
-      .catch(console.error);
-  }
-
   return (
     <html lang="en" className={`${inter.variable} ${caveat.variable}`}>
       <body
