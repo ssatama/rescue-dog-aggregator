@@ -359,7 +359,7 @@ describe("DogCard Rendering", () => {
       const card = screen.getByTestId("dog-card-1");
       expect(card).toHaveClass("shadow-sm");
       expect(card).toHaveClass("hover:shadow-xl");
-      expect(card).toHaveClass("transition-all");
+      expect(card).toHaveClass("transition-[transform,box-shadow]");
       expect(card).toHaveClass("duration-300");
     });
   });
