@@ -24,7 +24,8 @@ interface FavoritesContextType {
   isLoading: boolean;
 }
 
-const STORAGE_KEY = "rescue-dogs-favorites";
+const STORAGE_VERSION = "v1";
+const STORAGE_KEY = `rescue-dogs-favorites:${STORAGE_VERSION}`;
 const MAX_FAVORITES = 100;
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(
