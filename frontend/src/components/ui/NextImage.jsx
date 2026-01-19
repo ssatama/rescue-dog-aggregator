@@ -3,6 +3,15 @@ import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import PropTypes from "prop-types";
 import { getAdaptiveImageQuality } from "../../utils/networkUtils";
+
+function normalizeImageUrl(url) {
+  if (!url || typeof url !== "string") return url;
+  if (url.startsWith("//")) {
+    return `https:${url}`;
+  }
+  return url;
+}
+
 const NextImage = React.memo(function NextImage({
   src,
   alt,
@@ -22,7 +31,7 @@ const NextImage = React.memo(function NextImage({
   blurDataURL: providedBlurDataURL = null, // NEW: Accept blur data from database
   ...props
 }) {
-  const [imageSrc, setImageSrc] = useState(src || fallbackSrc);
+  const [imageSrc, setImageSrc] = useState(normalizeImageUrl(src) || fallbackSrc);
   const [hasError, setHasError] = useState(false);
 
   const isR2Image = useMemo(() => {

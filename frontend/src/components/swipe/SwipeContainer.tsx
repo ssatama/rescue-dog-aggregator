@@ -664,12 +664,12 @@ export function SwipeContainer({
                   (_, idx) => (
                     <div
                       key={idx}
-                      className={`rounded-full transition-all duration-200 ${
+                      className={`rounded-full w-2 h-2 transition-[transform,background-color] duration-200 ${
                         idx === currentIndex % 10
-                          ? "bg-orange-500 w-3 h-3"
+                          ? "bg-orange-500 scale-150"
                           : idx < currentIndex % 10
-                            ? "bg-orange-300 w-2 h-2"
-                            : "bg-gray-300 dark:bg-gray-600 w-2 h-2"
+                            ? "bg-orange-300 scale-100"
+                            : "bg-gray-300 dark:bg-gray-600 scale-100"
                       }`}
                     />
                   ),
@@ -686,7 +686,7 @@ export function SwipeContainer({
               <button
                 onClick={goToPrevious}
                 disabled={currentIndex === 0}
-                className="paw-btn paw-left w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg dark:shadow-xl dark:shadow-black/50 border-2 border-gray-300 dark:border-gray-500 flex flex-col items-center justify-center hover:scale-110 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="paw-btn paw-left w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg dark:shadow-xl dark:shadow-black/50 border-2 border-gray-300 dark:border-gray-500 flex flex-col items-center justify-center hover:scale-110 hover:bg-gray-50 dark:hover:bg-gray-600 transition-[transform,background-color,opacity] disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Previous dog"
               >
                 <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 dark:text-orange-400 transform rotate-180" />
@@ -698,7 +698,7 @@ export function SwipeContainer({
               <button
                 onClick={goToNext}
                 disabled={currentIndex === dogs.length - 1}
-                className="paw-btn paw-right w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg dark:shadow-xl dark:shadow-black/50 border-2 border-gray-300 dark:border-gray-500 flex flex-col items-center justify-center hover:scale-110 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="paw-btn paw-right w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg dark:shadow-xl dark:shadow-black/50 border-2 border-gray-300 dark:border-gray-500 flex flex-col items-center justify-center hover:scale-110 hover:bg-gray-50 dark:hover:bg-gray-600 transition-[transform,background-color,opacity] disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Next dog"
               >
                 <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 dark:text-orange-400" />

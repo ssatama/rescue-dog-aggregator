@@ -67,7 +67,7 @@ describe("useFavorites", () => {
     it("should load favorites from localStorage on mount", () => {
       const savedFavorites = [1, 2, 3];
       localStorageMock.setItem(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify(savedFavorites),
       );
 
@@ -78,7 +78,7 @@ describe("useFavorites", () => {
     });
 
     it("should handle corrupted localStorage data gracefully", () => {
-      localStorageMock.setItem("rescue-dogs-favorites", "invalid-json{]");
+      localStorageMock.setItem("rescue-dogs-favorites:v1", "invalid-json{]");
 
       const { result } = renderHook(() => useFavorites(), { wrapper });
 
@@ -99,7 +99,7 @@ describe("useFavorites", () => {
   describe("isFavorited", () => {
     it("should return true for favorited dogs", () => {
       localStorageMock.setItem(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify([1, 2, 3]),
       );
       const { result } = renderHook(() => useFavorites(), { wrapper });
@@ -111,7 +111,7 @@ describe("useFavorites", () => {
 
     it("should return false for non-favorited dogs", () => {
       localStorageMock.setItem(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify([1, 2, 3]),
       );
       const { result } = renderHook(() => useFavorites(), { wrapper });
@@ -132,7 +132,7 @@ describe("useFavorites", () => {
       expect(result.current.favorites).toContain(1);
       expect(result.current.count).toBe(1);
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify([1]),
       );
     });
@@ -152,7 +152,7 @@ describe("useFavorites", () => {
     it("should respect MAX_FAVORITES limit (100)", async () => {
       const maxFavorites = Array.from({ length: 100 }, (_, i) => i + 1);
       localStorageMock.setItem(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify(maxFavorites),
       );
 
@@ -170,7 +170,7 @@ describe("useFavorites", () => {
   describe("removeFavorite", () => {
     it("should remove a dog from favorites", async () => {
       localStorageMock.setItem(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify([1, 2, 3]),
       );
       const { result } = renderHook(() => useFavorites(), { wrapper });
@@ -182,13 +182,13 @@ describe("useFavorites", () => {
       expect(result.current.favorites).toEqual([1, 3]);
       expect(result.current.count).toBe(2);
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify([1, 3]),
       );
     });
 
     it("should handle removing non-existent favorite gracefully", async () => {
-      localStorageMock.setItem("rescue-dogs-favorites", JSON.stringify([1, 2]));
+      localStorageMock.setItem("rescue-dogs-favorites:v1", JSON.stringify([1, 2]));
       const { result } = renderHook(() => useFavorites(), { wrapper });
 
       await act(async () => {
@@ -212,7 +212,7 @@ describe("useFavorites", () => {
     });
 
     it("should remove dog if already favorited", async () => {
-      localStorageMock.setItem("rescue-dogs-favorites", JSON.stringify([1, 2]));
+      localStorageMock.setItem("rescue-dogs-favorites:v1", JSON.stringify([1, 2]));
       const { result } = renderHook(() => useFavorites(), { wrapper });
 
       await act(async () => {
@@ -226,7 +226,7 @@ describe("useFavorites", () => {
   describe("clearFavorites", () => {
     it("should clear all favorites", () => {
       localStorageMock.setItem(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify([1, 2, 3]),
       );
       const { result } = renderHook(() => useFavorites(), { wrapper });
@@ -238,7 +238,7 @@ describe("useFavorites", () => {
       expect(result.current.favorites).toEqual([]);
       expect(result.current.count).toBe(0);
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify([]),
       );
     });
@@ -247,7 +247,7 @@ describe("useFavorites", () => {
   describe("URL sharing", () => {
     it("should generate a shareable URL with compressed dog IDs", () => {
       localStorageMock.setItem(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify([1, 2, 3]),
       );
       const { result } = renderHook(() => useFavorites(), { wrapper });
@@ -360,7 +360,7 @@ describe("useFavorites", () => {
 
       // Final write should have all favorites
       expect(localStorageMock.setItem).toHaveBeenLastCalledWith(
-        "rescue-dogs-favorites",
+        "rescue-dogs-favorites:v1",
         JSON.stringify([1, 2, 3]),
       );
     });

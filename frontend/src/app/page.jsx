@@ -42,67 +42,46 @@ export async function generateMetadata() {
 
 // Home page with server-side data fetching and ISR
 export default async function Home() {
-  // Fetch all data on the server for optimal performance with error handling
-  let homePageData;
-  let breedsWithImages = null;
-  let organizations = [];
-  let countryStats = [];
-  let ageStats = [];
+  // Fetch all data in parallel for optimal performance
+  const fallbackHomePageData = {
+    statistics: {
+      total_dogs: 0,
+      total_organizations: 0,
+      total_countries: 0,
+    },
+    recentDogs: [],
+    diverseDogs: [],
+  };
 
-  try {
-    homePageData = await getHomePageData();
-  } catch (error) {
-    console.error("Failed to fetch home page data:", error);
-    // Provide fallback data to prevent page crash
-    homePageData = {
-      statistics: {
-        total_dogs: 0,
-        total_organizations: 0,
-        total_countries: 0,
-      },
-      recentDogs: [],
-      diverseDogs: [],
-    };
-  }
-
-  // Fetch breeds with images for homepage (server-side)
-  try {
-    breedsWithImages = await getBreedsWithImagesForHomePage({
-      minCount: 5,
-      limit: 20,
-    });
-  } catch (error) {
-    console.error("Failed to fetch breeds with images:", error);
-    // Will be null, client can handle gracefully
-  }
-
-  // Fetch organizations for TrustBand (server-side)
-  try {
-    organizations = await getEnhancedOrganizationsSSR();
-  } catch (error) {
-    console.error("Failed to fetch organizations:", error);
-    // Will be empty array, client can handle gracefully
-  }
-
-  // Fetch country stats for CountryBrowseSection (server-side)
-  try {
-    const countryData = await getCountryStats();
-    countryStats = countryData?.countries || [];
-  } catch (error) {
-    console.error("Failed to fetch country stats:", error);
-    // Will be empty array, client can handle gracefully
-  }
-
-  // Fetch age stats for AgeBrowseSection (server-side)
-  try {
-    const ageData = await getAgeStats();
-    ageStats = ageData?.ageCategories || [];
-  } catch (error) {
-    console.error("Failed to fetch age stats:", error);
-    // Will be empty array, client can handle gracefully
-  }
+  const [homePageData, breedsWithImages, organizations, countryData, ageData] =
+    await Promise.all([
+      getHomePageData().catch((error) => {
+        console.error("Failed to fetch home page data:", error);
+        return fallbackHomePageData;
+      }),
+      getBreedsWithImagesForHomePage({ minCount: 5, limit: 20 }).catch(
+        (error) => {
+          console.error("Failed to fetch breeds with images:", error);
+          return null;
+        }
+      ),
+      getEnhancedOrganizationsSSR().catch((error) => {
+        console.error("Failed to fetch organizations:", error);
+        return [];
+      }),
+      getCountryStats().catch((error) => {
+        console.error("Failed to fetch country stats:", error);
+        return { countries: [] };
+      }),
+      getAgeStats().catch((error) => {
+        console.error("Failed to fetch age stats:", error);
+        return { ageCategories: [] };
+      }),
+    ]);
 
   const { statistics, recentDogs, diverseDogs } = homePageData;
+  const countryStats = countryData?.countries || [];
+  const ageStats = ageData?.ageCategories || [];
 
   return (
     <Layout>

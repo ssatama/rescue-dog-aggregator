@@ -12,8 +12,10 @@
   }
 }
 
-/* Card hover effect - GPU accelerated */
+/* Card hover effect - GPU accelerated with content-visibility optimization */
 .dog-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 420px;
   transition:
     transform 0.2s ease-out,
     box-shadow 0.2s ease-out;

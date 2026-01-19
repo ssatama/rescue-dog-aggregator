@@ -113,7 +113,7 @@ describe("DogCard Interactions", () => {
       expect(card).toHaveClass("group");
 
       // Card should have proper transition properties for smooth animation
-      expect(card).toHaveClass("transition-all");
+      expect(card).toHaveClass("transition-[transform,box-shadow]");
       expect(card).toHaveClass("duration-300");
     });
 
