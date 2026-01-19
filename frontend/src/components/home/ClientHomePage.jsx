@@ -3,18 +3,18 @@
 import React, { Suspense, lazy } from "react";
 import HeroSection from "./HeroSection";
 import PlatformCapabilities from "./PlatformCapabilities";
-import CountryBrowseSection from "./CountryBrowseSection";
-import AgeBrowseSection from "./AgeBrowseSection";
-import TrustBand from "./TrustBand";
 import FeaturedDogsSection from "./FeaturedDogsSection";
-import TrustSection from "./TrustSection";
-import FinalCTA from "./FinalCTA";
 import Loading from "../ui/Loading";
 import MobileHomePage from "../mobile/MobileHomePage";
 import ErrorBoundary from "../ui/ErrorBoundary";
 import { transformMobileHomePageData } from "../../utils/homePageTransformers";
 
-// Lazy load BreedsCTA for better performance
+// Lazy load below-fold sections for better initial load performance
+const CountryBrowseSection = lazy(() => import("./CountryBrowseSection"));
+const AgeBrowseSection = lazy(() => import("./AgeBrowseSection"));
+const TrustBand = lazy(() => import("./TrustBand"));
+const TrustSection = lazy(() => import("./TrustSection"));
+const FinalCTA = lazy(() => import("./FinalCTA"));
 const BreedsCTA = lazy(() =>
   import("./BreedsCTA").then((module) => ({
     default: module.BreedsCTA,
@@ -75,25 +75,35 @@ export default function ClientHomePage({
 
         {/* Country Browse Section - Dogs from Across Europe */}
         <ErrorBoundary fallbackMessage="Unable to load country browse section. Please refresh the page.">
-          <CountryBrowseSection countryStats={initialCountryStats} />
+          <Suspense fallback={<div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg" />}>
+            <CountryBrowseSection countryStats={initialCountryStats} />
+          </Suspense>
         </ErrorBoundary>
 
         {/* Age Browse Section - Puppies & Seniors */}
         <ErrorBoundary fallbackMessage="Unable to load age browse section. Please refresh the page.">
-          <AgeBrowseSection ageStats={initialAgeStats} />
+          <Suspense fallback={<div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg" />}>
+            <AgeBrowseSection ageStats={initialAgeStats} />
+          </Suspense>
         </ErrorBoundary>
 
         {/* Trust Band - Organization Logos */}
         <ErrorBoundary fallbackMessage="Unable to load organization logos. Please refresh the page.">
-          <TrustBand initialOrganizations={initialOrganizations} />
+          <Suspense fallback={<div className="h-32 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg" />}>
+            <TrustBand initialOrganizations={initialOrganizations} />
+          </Suspense>
         </ErrorBoundary>
 
         {/* Trust Section - Organization Statistics */}
-        <TrustSection initialStatistics={initialStatistics} />
+        <Suspense fallback={<div className="h-48 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg" />}>
+          <TrustSection initialStatistics={initialStatistics} />
+        </Suspense>
 
         {/* Final CTA - Ready to Find Your Dog? */}
         <ErrorBoundary fallbackMessage="Unable to load call-to-action section. Please refresh the page.">
-          <FinalCTA totalCount={initialStatistics?.total_dogs || 3186} />
+          <Suspense fallback={<div className="h-48 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg" />}>
+            <FinalCTA totalCount={initialStatistics?.total_dogs || 3186} />
+          </Suspense>
         </ErrorBoundary>
       </div>
     </>

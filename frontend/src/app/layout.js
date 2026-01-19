@@ -6,11 +6,10 @@ import { ToastProvider } from "@/contexts/ToastContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { Analytics, SpeedInsights } from "@/components/analytics";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
-import QueryProvider from "@/providers/QueryProvider";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import SentryInitializer from "@/components/SentryInitializer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import MobileBottomNav from "@/components/navigation/MobileBottomNav";
+import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
 
 // Use Inter variable font with all required weights
 const inter = Inter({
@@ -132,25 +131,23 @@ export default function RootLayout({ children }) {
       <body
         className={`${inter.className} min-h-screen bg-background font-sans`}
       >
-        <QueryProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              <FavoritesProvider>
-                <ErrorBoundary
-                  showError={process.env.NODE_ENV === "development"}
-                >
-                  {children}
-                  <MobileBottomNav />
-                </ErrorBoundary>
-                <Analytics />
-                <SpeedInsights />
-                <ServiceWorkerRegistration />
-                <PerformanceMonitor />
-                <SentryInitializer />
-              </FavoritesProvider>
-            </ToastProvider>
-          </ThemeProvider>
-        </QueryProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <FavoritesProvider>
+              <ErrorBoundary
+                showError={process.env.NODE_ENV === "development"}
+              >
+                {children}
+                <MobileBottomNavWrapper />
+              </ErrorBoundary>
+              <Analytics />
+              <SpeedInsights />
+              <ServiceWorkerRegistration />
+              <PerformanceMonitor />
+              <SentryInitializer />
+            </FavoritesProvider>
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

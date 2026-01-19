@@ -664,12 +664,12 @@ export function SwipeContainer({
                   (_, idx) => (
                     <div
                       key={idx}
-                      className={`rounded-full transition-[width,height,background-color] duration-200 ${
+                      className={`rounded-full w-2 h-2 transition-[transform,background-color] duration-200 ${
                         idx === currentIndex % 10
-                          ? "bg-orange-500 w-3 h-3"
+                          ? "bg-orange-500 scale-150"
                           : idx < currentIndex % 10
-                            ? "bg-orange-300 w-2 h-2"
-                            : "bg-gray-300 dark:bg-gray-600 w-2 h-2"
+                            ? "bg-orange-300 scale-100"
+                            : "bg-gray-300 dark:bg-gray-600 scale-100"
                       }`}
                     />
                   ),

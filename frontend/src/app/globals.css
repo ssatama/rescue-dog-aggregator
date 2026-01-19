@@ -670,7 +670,8 @@
 
   /* Button Animations */
   .animate-button-hover {
-    transition: all var(--animation-normal) var(--ease-smooth);
+    transition: transform var(--animation-normal) var(--ease-smooth),
+      box-shadow var(--animation-normal) var(--ease-smooth);
     will-change: transform, box-shadow;
   }
 
@@ -686,7 +687,8 @@
 
   /* Card Animations - Session 3 Enhanced */
   .animate-card-hover {
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, box-shadow;
   }
 
@@ -697,7 +699,9 @@
 
   /* Organization Card Animations */
   .animate-org-card {
-    transition: all var(--animation-normal) var(--ease-smooth);
+    transition: transform var(--animation-normal) var(--ease-smooth),
+      box-shadow var(--animation-normal) var(--ease-smooth),
+      border-color var(--animation-normal) var(--ease-smooth);
     will-change: transform, box-shadow, border-color;
   }
 
@@ -825,13 +829,14 @@
   /* Enhanced select focus styles */
   .select-focus:focus {
     @apply border-orange-300 ring-2 ring-orange-200 outline-none dark:border-orange-600 dark:ring-orange-900;
-    transition: all 200ms ease-out;
+    transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
   }
 
   /* Enhanced hover feedback for interactive elements */
   .enhanced-hover:hover {
     @apply bg-orange-50 border-orange-300 dark:bg-gray-700 dark:border-gray-600;
-    transition: all 200ms ease-out;
+    transition: background-color 200ms ease-out, border-color 200ms ease-out,
+      transform 200ms ease-out;
     transform: translateY(-1px);
   }
 
@@ -843,7 +848,7 @@
 
   /* Enhanced visual feedback for form elements */
   .form-enhanced {
-    transition: all 200ms ease-out;
+    transition: box-shadow 200ms ease-out;
   }
 
   .form-enhanced:focus-within {
@@ -852,7 +857,7 @@
 
   /* Enhanced interaction states */
   .interactive-enhanced {
-    transition: all 200ms ease-out;
+    transition: background-color 200ms ease-out, transform 200ms ease-out;
   }
 
   .interactive-enhanced:hover {
@@ -868,11 +873,21 @@
      FLOATING FILTER PANEL ENHANCED ANIMATIONS
      ================================================== */
 
-  /* Filter section smooth collapse animations */
+  /* Filter section smooth collapse animations - using grid for GPU-accelerated animation */
   .filter-section {
     overflow: hidden;
-    transition: height 200ms ease-out;
-    will-change: transform;
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 200ms ease-out, opacity 200ms ease-out;
+    will-change: grid-template-rows;
+  }
+
+  .filter-section.collapsed {
+    grid-template-rows: 0fr;
+  }
+
+  .filter-section > * {
+    overflow: hidden;
   }
 
   .filter-section-content {
@@ -1053,11 +1068,11 @@
 
   /* Enhanced transition support for all browsers */
   .cross-browser-transition {
-    -webkit-transition: all 0.2s ease-out;
-    -moz-transition: all 0.2s ease-out;
-    -ms-transition: all 0.2s ease-out;
-    -o-transition: all 0.2s ease-out;
-    transition: all 0.2s ease-out;
+    -webkit-transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    -moz-transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    -ms-transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    -o-transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
   }
 
   /* Will-change optimization for performance */
@@ -1120,7 +1135,7 @@
   /* Skip link enhanced styling */
   .skip-link:focus {
     @apply ring-4 ring-white ring-offset-2 ring-offset-orange-600 outline-none;
-    transition: all 200ms ease-out;
+    transition: box-shadow 200ms ease-out;
   }
 
   /* Interactive enhanced elements */
@@ -1289,7 +1304,8 @@
     font-weight: 500;
     border-radius: 0.375rem;
     touch-action: manipulation;
-    transition: all 200ms ease-out;
+    transition: background-color 200ms ease-out, transform 200ms ease-out,
+      box-shadow 200ms ease-out;
   }
 
   /* High contrast mode support */
@@ -1513,7 +1529,8 @@
     font-weight: 500;
     border-radius: 0.5rem;
     padding: 0.5rem 1rem;
-    transition: all 200ms ease-out;
+    transition: background-color 200ms ease-out, transform 200ms ease-out,
+      box-shadow 200ms ease-out;
     min-height: 48px;
     touch-action: manipulation;
   }
@@ -1611,7 +1628,7 @@
     color: #ea580c;
     padding: 0.5rem 0.75rem;
     border-radius: 0.375rem;
-    transition: all 200ms ease-out;
+    transition: color 200ms ease-out, background-color 200ms ease-out;
     display: inline-block;
     min-height: 48px;
     display: flex;
@@ -1633,7 +1650,8 @@
     color: white;
     padding: 1rem 1.5rem;
     border-radius: 0.5rem;
-    transition: all 200ms ease-out;
+    transition: background-image 200ms ease-out, transform 200ms ease-out,
+      box-shadow 200ms ease-out;
   }
 
   .theme-consistent-gradient:hover {
@@ -1664,7 +1682,8 @@
     background-color: #f97316;
     height: 100%;
     border-radius: 9999px;
-    transition: width 300ms ease-out;
+    transform-origin: left;
+    transition: transform 300ms ease-out;
   }
 
   /* Consistent alert system */
