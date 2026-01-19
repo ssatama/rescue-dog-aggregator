@@ -16,7 +16,7 @@ aiosignal==1.4.0
     # via
     #   -r requirements.txt
     #   aiohttp
-alembic==1.18.0
+alembic==1.18.1
     # via -r requirements.txt
 annotated-doc==0.0.4
     # via
@@ -36,6 +36,10 @@ anyio==4.9.0
     #   watchfiles
 asttokens==3.0.0
     # via stack-data
+async-generator==1.10
+    # via
+    #   -r requirements.txt
+    #   trio-typing
 asyncpg==0.31.0
     # via -r requirements.txt
 attrs==25.3.0
@@ -48,11 +52,11 @@ attrs==25.3.0
     #   trio
 beautifulsoup4==4.14.3
     # via -r requirements.txt
-black==25.12.0
+black==26.1.0
     # via -r requirements-dev.in
-boto3==1.42.25
+boto3==1.42.30
     # via -r requirements.txt
-botocore==1.42.25
+botocore==1.42.30
     # via
     #   -r requirements.txt
     #   boto3
@@ -63,7 +67,7 @@ build==1.3.0
     #   pip-tools
 cachetools==6.2.4
     # via -r requirements.txt
-certifi==2025.11.12
+certifi==2026.1.4
     # via
     #   -r requirements.txt
     #   httpcore
@@ -104,7 +108,7 @@ fastapi==0.128.0
     # via
     #   -r requirements.txt
     #   sentry-sdk
-firecrawl-py==4.12.0
+firecrawl-py==4.13.0
     # via
     #   -r requirements-dev.in
     #   -r requirements.txt
@@ -151,6 +155,10 @@ idna==3.10
     #   requests
     #   trio
     #   yarl
+importlib-metadata==8.7.1
+    # via
+    #   -r requirements.txt
+    #   trio-typing
 iniconfig==2.3.0
     # via
     #   -r requirements.txt
@@ -212,8 +220,10 @@ mypy==1.19.1
     # via -r requirements-dev.in
 mypy-extensions==1.1.0
     # via
+    #   -r requirements.txt
     #   black
     #   mypy
+    #   trio-typing
 nest-asyncio==1.6.0
     # via
     #   -r requirements.txt
@@ -229,10 +239,11 @@ packaging==25.0
     #   black
     #   build
     #   pytest
+    #   trio-typing
     #   webdriver-manager
 parso==0.8.4
     # via jedi
-pathspec==0.12.1
+pathspec==1.0.3
     # via
     #   black
     #   mypy
@@ -372,13 +383,13 @@ rpds-py==0.26.0
     #   -r requirements.txt
     #   jsonschema
     #   referencing
-ruff==0.14.11
+ruff==0.14.13
     # via -r requirements.txt
 s3transfer==0.16.0
     # via
     #   -r requirements.txt
     #   boto3
-selenium==4.39.0
+selenium==4.40.0
     # via -r requirements.txt
 sentry-sdk[fastapi,sqlalchemy]==2.49.0
     # via
@@ -428,13 +439,26 @@ trio==0.32.0
     # via
     #   -r requirements.txt
     #   selenium
+    #   trio-typing
     #   trio-websocket
+trio-typing==0.10.0
+    # via
+    #   -r requirements.txt
+    #   selenium
 trio-websocket==0.12.2
+    # via
+    #   -r requirements.txt
+    #   selenium
+types-certifi==2021.10.8.3
     # via
     #   -r requirements.txt
     #   selenium
 types-requests==2.32.4.20260107
     # via -r requirements-dev.in
+types-urllib3==1.26.25.14
+    # via
+    #   -r requirements.txt
+    #   selenium
 typing-extensions==4.15.0
     # via
     #   -r requirements.txt
@@ -448,6 +472,7 @@ typing-extensions==4.15.0
     #   pyee
     #   selenium
     #   sqlalchemy
+    #   trio-typing
     #   typing-inspection
 typing-inspection==0.4.2
     # via
@@ -504,6 +529,10 @@ yarl==1.20.1
     # via
     #   -r requirements.txt
     #   aiohttp
+zipp==3.23.0
+    # via
+    #   -r requirements.txt
+    #   importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
