@@ -8,7 +8,7 @@ from scrapers.furryrescueitaly.furryrescueitaly_scraper import FurryRescueItalyS
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestFurryRescueItalyProblematicDogs:
     """Test scraper handling of problematic dogs with malformed data."""
 

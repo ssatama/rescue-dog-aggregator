@@ -151,7 +151,7 @@ weiblich, kastriert"""
         assert len(result) == 2
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @pytest.mark.browser
     def test_handle_lazy_loading(self, scraper):
         """Test lazy loading handling."""

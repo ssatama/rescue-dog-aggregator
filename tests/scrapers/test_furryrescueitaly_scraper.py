@@ -9,7 +9,7 @@ from tests.scrapers.test_scraper_base import ScraperTestBase
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestFurryRescueItalyScraper(ScraperTestBase):
     """Test cases for Furry Rescue Italy scraper - only scraper-specific tests."""
 

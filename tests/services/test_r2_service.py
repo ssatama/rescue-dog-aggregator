@@ -11,7 +11,7 @@ from botocore.exceptions import ClientError
 from utils.r2_service import R2ConfigurationError, R2Service
 
 
-@pytest.mark.computation
+@pytest.mark.slow
 @pytest.mark.integration
 @pytest.mark.network
 @pytest.mark.slow

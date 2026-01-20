@@ -73,7 +73,7 @@ class TestREANIntegration:
         assert mock_get.call_count == 2
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     @patch("time.sleep")  # Speed up waits
@@ -101,7 +101,7 @@ class TestREANIntegration:
         mock_driver.quit.assert_called_once()
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     def test_extract_images_browser_failure(self, mock_chrome, scraper):
         """Test browser image extraction handles WebDriver failures."""
@@ -112,7 +112,7 @@ class TestREANIntegration:
         assert result == []  # Should return empty list on failure
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     @patch("time.sleep")
     def test_unified_extraction_with_dom(self, mock_sleep, mock_chrome, scraper):
@@ -145,7 +145,7 @@ class TestREANIntegration:
         assert result[0]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     def test_unified_extraction_fallback(self, mock_chrome, scraper):
         """Test unified extraction falls back to legacy method on failure."""

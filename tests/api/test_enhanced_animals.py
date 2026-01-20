@@ -53,7 +53,7 @@ class TestEnhancedAnimalsAPI:
             "quality_score": 85.5,
         }
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_get_enhanced_animal_success(self, mock_cursor, sample_enhanced_data):
         """Test successful retrieval of enhanced data for single animal."""
         # Mock database response
@@ -83,7 +83,7 @@ class TestEnhancedAnimalsAPI:
         assert data["enhanced_attributes"]["tagline"] == sample_enhanced_data["tagline"]
         assert data["data_completeness_score"] > 0
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_get_enhanced_animal_not_found(self, mock_cursor):
         """Test 404 when animal doesn't exist."""
         mock_cursor.fetchone.return_value = None
@@ -98,7 +98,7 @@ class TestEnhancedAnimalsAPI:
         assert response.status_code == 404
         assert "Animal" in response.json()["detail"]
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_get_enhanced_animal_no_data(self, mock_cursor):
         """Test graceful degradation when animal has no enhanced data."""
         mock_cursor.fetchone.return_value = {
@@ -122,7 +122,7 @@ class TestEnhancedAnimalsAPI:
         assert data["enhanced_attributes"] is None
         assert data["data_completeness_score"] == 0
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_get_detail_content_optimized(self, mock_cursor):
         """Test optimized endpoint for description + tagline."""
         mock_cursor.fetchall.return_value = [
@@ -155,7 +155,7 @@ class TestEnhancedAnimalsAPI:
         assert data[0]["tagline"] == "Perfect companion"
         assert data[1]["has_enhanced_data"] is False
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_bulk_enhanced_request(self, mock_cursor, sample_enhanced_data):
         """Test bulk retrieval of enhanced data."""
         mock_cursor.fetchall.return_value = [
@@ -188,7 +188,7 @@ class TestEnhancedAnimalsAPI:
         assert data[0]["enhanced_data_available"] is True
         assert data[1]["enhanced_data_available"] is False
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_bulk_enhanced_max_limit(self, mock_cursor):
         """Test bulk request enforces maximum limit."""
         # Create request with 101 IDs (over limit)
@@ -204,7 +204,7 @@ class TestEnhancedAnimalsAPI:
 
         assert response.status_code == 422  # Validation error
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_get_attributes_specific_fields(self, mock_cursor):
         """Test fetching specific attributes only."""
         mock_cursor.fetchall.return_value = [
@@ -231,7 +231,7 @@ class TestEnhancedAnimalsAPI:
         assert "energy_level" in data["data"]["123"]
         assert "trainability" in data["data"]["124"]
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_enhanced_stats_endpoint(self, mock_cursor):
         """Test statistics endpoint for coverage metrics."""
         mock_cursor.fetchone.return_value = {
@@ -275,7 +275,7 @@ class TestEnhancedAnimalService:
         """Create service instance with mock cursor."""
         return EnhancedAnimalService(mock_cursor)
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_calculate_completeness_score(self, service):
         """Test completeness score calculation."""
         # Full data - missing good_with_strangers (5 points)
@@ -303,7 +303,7 @@ class TestEnhancedAnimalService:
         score = service._calculate_completeness_score({})
         assert score == 0.0
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_caching_behavior(self, service, mock_cursor):
         """Test that caching reduces database calls."""
         mock_cursor.fetchone.return_value = {

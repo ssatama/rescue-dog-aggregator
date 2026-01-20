@@ -9,7 +9,7 @@ from scrapers.theunderdog.theunderdog_scraper import TheUnderdogScraper
 
 
 @pytest.mark.api
-@pytest.mark.computation
+@pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.integration
 @pytest.mark.network

@@ -11,7 +11,7 @@ from tests.scrapers.test_scraper_base import ScraperTestBase
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestAnimalRescueBosniaScraper(ScraperTestBase):
     """Test cases for Animal Rescue Bosnia scraper - only scraper-specific tests."""
 

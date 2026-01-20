@@ -238,7 +238,7 @@ class TestREANEdgeCases:
         assert "dog.jpg" in filtered[0]
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @pytest.mark.browser
     @pytest.mark.complex_setup
     @patch("selenium.webdriver.Chrome")

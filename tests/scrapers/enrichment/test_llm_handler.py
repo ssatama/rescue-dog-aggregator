@@ -8,7 +8,7 @@ from scrapers.enrichment.llm_handler import LLMEnrichmentHandler
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestLLMEnrichmentHandlerConfig:
     """Test configuration checking."""
 
@@ -63,7 +63,7 @@ class TestLLMEnrichmentHandlerConfig:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestLLMEnrichmentHandlerEnrichment:
     """Test enrichment processing."""
 
@@ -139,7 +139,7 @@ class TestLLMEnrichmentHandlerEnrichment:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestLLMEnrichmentHandlerDataPreparation:
     """Test data preparation for profiling."""
 
@@ -228,7 +228,7 @@ class TestLLMEnrichmentHandlerDataPreparation:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestLLMEnrichmentHandlerSignificantUpdate:
     """Test significant update detection."""
 
@@ -243,7 +243,7 @@ class TestLLMEnrichmentHandlerSignificantUpdate:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestLLMEnrichmentHandlerStatistics:
     """Test statistics collection."""
 

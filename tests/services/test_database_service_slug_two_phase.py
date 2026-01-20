@@ -17,7 +17,7 @@ import pytest
 from services.database_service import DatabaseService
 
 
-@pytest.mark.computation
+@pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.integration
 @pytest.mark.slow

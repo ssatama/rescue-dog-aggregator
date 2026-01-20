@@ -11,7 +11,7 @@ from scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper import
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
     """Test cases for Santer Paws Bulgarian Rescue detail page scraping."""
 

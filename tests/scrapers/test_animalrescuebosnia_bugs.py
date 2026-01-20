@@ -10,7 +10,7 @@ from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import (
 )
 
 
-@pytest.mark.computation
+@pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.integration
 @pytest.mark.slow

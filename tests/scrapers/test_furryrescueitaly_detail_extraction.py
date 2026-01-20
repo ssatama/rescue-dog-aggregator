@@ -9,7 +9,7 @@ from scrapers.furryrescueitaly.furryrescueitaly_scraper import FurryRescueItalyS
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestFurryRescueItalyDetailExtraction(unittest.TestCase):
     """Test cases for Furry Rescue Italy detail page extraction."""
 

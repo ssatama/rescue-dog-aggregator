@@ -8,7 +8,7 @@ from scrapers.filtering.filtering_service import FilteringService
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestFilteringServiceUrlFiltering:
     """Test URL filtering logic."""
 
@@ -65,7 +65,7 @@ class TestFilteringServiceUrlFiltering:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestFilteringServiceAnimalFiltering:
     """Test animal filtering logic."""
 
@@ -151,7 +151,7 @@ class TestFilteringServiceAnimalFiltering:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestFilteringServiceStats:
     """Test filtering statistics tracking."""
 
@@ -210,7 +210,7 @@ class TestFilteringServiceStats:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestFilteringServiceExternalIdRecording:
     """Test external ID recording for stale detection."""
 

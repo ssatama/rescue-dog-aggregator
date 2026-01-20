@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from scrapers.misis_rescue.scraper import MisisRescueScraper
 
 
-@pytest.mark.computation
+@pytest.mark.slow
 @pytest.mark.integration
 @pytest.mark.network
 @pytest.mark.slow

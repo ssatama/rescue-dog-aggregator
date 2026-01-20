@@ -6,7 +6,7 @@ from scrapers.config.scraper_config import ScraperConfig
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestScraperConfigCreation:
     """Test ScraperConfig creation and defaults."""
 
@@ -70,7 +70,7 @@ class TestScraperConfigCreation:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestScraperConfigImmutability:
     """Test that ScraperConfig is immutable (frozen)."""
 
@@ -91,7 +91,7 @@ class TestScraperConfigImmutability:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestScraperConfigFromConfigId:
     """Test ScraperConfig.from_config_id() factory method."""
 
@@ -116,7 +116,7 @@ class TestScraperConfigFromConfigId:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestScraperConfigFromOrganizationId:
     """Test ScraperConfig.from_organization_id() factory method."""
 
@@ -147,7 +147,7 @@ class TestScraperConfigFromOrganizationId:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestScraperConfigEquality:
     """Test ScraperConfig equality and hashing."""
 
@@ -168,7 +168,7 @@ class TestScraperConfigEquality:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestScraperConfigToDict:
     """Test ScraperConfig.to_dict() method."""
 

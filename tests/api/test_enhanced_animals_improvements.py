@@ -30,7 +30,7 @@ class TestCacheInvalidation:
         cursor = MagicMock(spec=RealDictCursor)
         return EnhancedAnimalService(cursor)
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_invalidate_specific_animal(self, service):
         """Test invalidating cache for specific animal."""
         # Add some data to caches
@@ -47,7 +47,7 @@ class TestCacheInvalidation:
         # Bulk cache should be cleared (we can't efficiently check specific IDs)
         assert len(service._bulk_cache) == 0
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_invalidate_all_caches(self, service):
         """Test invalidating all caches."""
         # Add data to all caches
@@ -64,7 +64,7 @@ class TestCacheInvalidation:
         assert len(service._content_cache) == 0
         assert len(service._bulk_cache) == 0
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_invalidate_bulk_cache_only(self, service):
         """Test invalidating only bulk cache."""
         # Add data to caches
@@ -89,7 +89,7 @@ class TestRetryLogic:
         cursor = MagicMock(spec=RealDictCursor)
         return EnhancedAnimalService(cursor, max_retries=3)
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_retry_on_operational_error(self, service):
         """Test retry logic for operational errors."""
         # Make execute fail twice, then succeed
@@ -108,7 +108,7 @@ class TestRetryLogic:
         # Check exponential backoff: 0.1s, 0.2s
         mock_sleep.assert_has_calls([call(0.1), call(0.2)])
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_retry_exhausted_raises_exception(self, service):
         """Test that exhausted retries raise DatabaseRetryExhaustedError."""
         # Make all attempts fail
@@ -121,7 +121,7 @@ class TestRetryLogic:
         assert "after 3 retries" in str(exc_info.value)
         assert service.cursor.execute.call_count == 3
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_non_transient_error_no_retry(self, service):
         """Test that non-transient errors don't trigger retries."""
         # Make execute fail with non-transient error
@@ -144,7 +144,7 @@ class TestCacheKeyOptimization:
         cursor = MagicMock(spec=RealDictCursor)
         return EnhancedAnimalService(cursor)
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_bulk_cache_key_generation(self, service):
         """Test SHA256 hash generation for bulk cache keys."""
         # Test with unsorted IDs
@@ -159,7 +159,7 @@ class TestCacheKeyOptimization:
         key2 = service._generate_bulk_cache_key([789, 123, 456])
         assert key == key2
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_bulk_cache_key_uniqueness(self, service):
         """Test that different ID sets produce different keys."""
         key1 = service._generate_bulk_cache_key([1, 2, 3])
@@ -190,7 +190,7 @@ class TestMetricsCollection:
         cursor.fetchall.return_value = []
         return EnhancedAnimalService(cursor)
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_cache_hit_metrics(self, service):
         """Test cache hit metrics are tracked."""
         # Populate cache
@@ -203,7 +203,7 @@ class TestMetricsCollection:
         assert service._metrics["cache_hits"]["detail"] == 1
         assert service._metrics["cache_misses"]["detail"] == 1
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_db_query_metrics(self, service):
         """Test database query metrics are tracked."""
         # Make some queries
@@ -214,7 +214,7 @@ class TestMetricsCollection:
         assert service._metrics["db_queries"].get("content", 0) == 1
         assert service._metrics["cache_misses"]["detail"] == 1
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_response_time_tracking(self, service):
         """Test response time tracking."""
         # Make a query
@@ -224,7 +224,7 @@ class TestMetricsCollection:
         assert len(service._metrics["response_times"]) > 0
         assert all(t >= 0 for t in service._metrics["response_times"])
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_get_metrics_output(self, service):
         """Test comprehensive metrics output."""
         # Generate some activity
@@ -260,7 +260,7 @@ class TestErrorHandling:
         cursor = MagicMock(spec=RealDictCursor)
         return EnhancedAnimalService(cursor)
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_database_retry_exhausted_error(self, service):
         """Test DatabaseRetryExhaustedError contains proper context."""
         service.cursor.execute.side_effect = OperationalError("Connection lost")
@@ -274,7 +274,7 @@ class TestErrorHandling:
         assert "SELECT * FROM animals" in error.details["query"]
         assert error.to_dict()["error"] == "DatabaseRetryExhaustedError"
 
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_boolean_normalization(self, service):
         """Test boolean normalization handles various formats."""
         # Test various true values

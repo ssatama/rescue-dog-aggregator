@@ -14,7 +14,7 @@ from tests.fixtures.service_mocks import create_mock_session_manager
 
 
 @pytest.mark.slow
-@pytest.mark.computation
+@pytest.mark.slow
 @pytest.mark.database
 class TestEnhancedFailureDetection:
     """Test enhanced failure detection scenarios."""
@@ -156,7 +156,7 @@ class TestEnhancedFailureDetection:
 
 
 @pytest.mark.slow
-@pytest.mark.computation
+@pytest.mark.slow
 @pytest.mark.database
 class TestFailureDetectionEdgeCases:
     """Test edge cases for failure detection."""
@@ -217,7 +217,7 @@ class TestFailureDetectionEdgeCases:
 
 
 @pytest.mark.slow
-@pytest.mark.computation
+@pytest.mark.slow
 class TestFailureDetectionConfiguration:
     """Test configurable aspects of failure detection."""
 

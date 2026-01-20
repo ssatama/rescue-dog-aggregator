@@ -25,7 +25,7 @@ class ConcreteTestScraper(BaseScraper):
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestBaseScraperBehavior:
     """Test BaseScraper behavior - what it does, not how it does it."""
 
@@ -115,7 +115,7 @@ class TestBaseScraperBehavior:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestNameValidationAndNormalization:
     """Test comprehensive name validation and normalization."""
 

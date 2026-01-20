@@ -9,7 +9,7 @@ from scrapers.pets_in_turkey.petsinturkey_scraper import PetsInTurkeyScraper
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestPetsInTurkeyScraper:
     """Test suite for modernized Pets in Turkey scraper."""
 
