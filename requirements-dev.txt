@@ -16,7 +16,7 @@ aiosignal==1.4.0
     # via
     #   -r requirements.txt
     #   aiohttp
-alembic==1.17.2
+alembic==1.18.0
     # via -r requirements.txt
 annotated-doc==0.0.4
     # via
@@ -48,11 +48,11 @@ attrs==25.3.0
     #   trio
 beautifulsoup4==4.14.3
     # via -r requirements.txt
-black==25.1.0
+black==25.12.0
     # via -r requirements-dev.in
-boto3==1.42.17
+boto3==1.42.25
     # via -r requirements.txt
-botocore==1.42.17
+botocore==1.42.25
     # via
     #   -r requirements.txt
     #   boto3
@@ -87,7 +87,7 @@ click==8.3.1
     #   uvicorn
 colorama==0.4.6
     # via -r requirements.txt
-coverage[toml]==7.9.2
+coverage[toml]==7.13.1
     # via pytest-cov
 cryptography==46.0.3
     # via
@@ -100,7 +100,7 @@ execnet==2.1.1
     # via pytest-xdist
 executing==2.2.0
     # via stack-data
-fastapi==0.127.1
+fastapi==0.128.0
     # via
     #   -r requirements.txt
     #   sentry-sdk
@@ -119,6 +119,7 @@ greenlet==3.3.0
     # via
     #   -r requirements.txt
     #   playwright
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -r requirements.txt
@@ -154,11 +155,11 @@ iniconfig==2.3.0
     # via
     #   -r requirements.txt
     #   pytest
-ipython==9.4.0
+ipython==9.9.0
     # via -r requirements-dev.in
 ipython-pygments-lexers==1.1.1
     # via ipython
-isort==6.0.1
+isort==7.0.0
     # via -r requirements-dev.in
 jedi==0.19.2
     # via ipython
@@ -167,7 +168,7 @@ jmespath==1.0.1
     #   -r requirements.txt
     #   boto3
     #   botocore
-jsonschema==4.25.1
+jsonschema==4.26.0
     # via
     #   -r requirements.txt
     #   mcp
@@ -177,6 +178,8 @@ jsonschema-specifications==2025.4.1
     #   jsonschema
 langdetect==1.0.9
     # via -r requirements.txt
+librt==0.7.7
+    # via mypy
 mako==1.3.10
     # via
     #   -r requirements.txt
@@ -194,7 +197,7 @@ matplotlib-inline==0.1.7
     # via ipython
 mccabe==0.7.0
     # via flake8
-mcp==1.23.1
+mcp==1.25.0
     # via -r requirements.txt
 mdurl==0.1.2
     # via
@@ -205,7 +208,7 @@ multidict==6.6.4
     #   -r requirements.txt
     #   aiohttp
     #   yarl
-mypy==1.16.1
+mypy==1.19.1
     # via -r requirements-dev.in
 mypy-extensions==1.1.0
     # via
@@ -235,7 +238,7 @@ pathspec==0.12.1
     #   mypy
 pexpect==4.9.0
     # via ipython
-pillow==12.0.0
+pillow==12.1.0
     # via -r requirements.txt
 pip-tools==7.5.2
     # via -r requirements.txt
@@ -312,7 +315,7 @@ pysocks==1.7.1
     # via
     #   -r requirements.txt
     #   urllib3
-pytest==8.4.1
+pytest==9.0.2
     # via
     #   -r requirements-dev.in
     #   -r requirements.txt
@@ -321,13 +324,13 @@ pytest==8.4.1
     #   pytest-cov
     #   pytest-mock
     #   pytest-xdist
-pytest-asyncio==1.0.0
+pytest-asyncio==1.3.0
     # via -r requirements-dev.in
 pytest-benchmark==5.2.3
     # via -r requirements.txt
-pytest-cov==6.2.1
+pytest-cov==7.0.0
     # via -r requirements-dev.in
-pytest-mock==3.14.1
+pytest-mock==3.15.1
     # via -r requirements-dev.in
 pytest-xdist==3.8.0
     # via -r requirements-dev.in
@@ -346,6 +349,8 @@ python-multipart==0.0.20
     # via
     #   -r requirements.txt
     #   mcp
+pytokens==0.3.0
+    # via black
 pyyaml==6.0.3
     # via
     #   -r requirements.txt
@@ -367,15 +372,15 @@ rpds-py==0.26.0
     #   -r requirements.txt
     #   jsonschema
     #   referencing
-ruff==0.14.10
+ruff==0.14.11
     # via -r requirements.txt
 s3transfer==0.16.0
     # via
     #   -r requirements.txt
     #   boto3
-selenium==4.38.0
+selenium==4.39.0
     # via -r requirements.txt
-sentry-sdk[fastapi,sqlalchemy]==2.47.0
+sentry-sdk[fastapi,sqlalchemy]==2.49.0
     # via
     #   -r requirements-dev.in
     #   -r requirements.txt
@@ -397,7 +402,7 @@ soupsieve==2.7
     # via
     #   -r requirements.txt
     #   beautifulsoup4
-sqlalchemy==2.0.44
+sqlalchemy==2.0.45
     # via
     #   -r requirements.txt
     #   alembic
@@ -428,7 +433,7 @@ trio-websocket==0.12.2
     # via
     #   -r requirements.txt
     #   selenium
-types-requests==2.32.4.20250611
+types-requests==2.32.4.20260107
     # via -r requirements-dev.in
 typing-extensions==4.15.0
     # via
@@ -458,7 +463,7 @@ urllib3[socks]==2.6.3
     #   selenium
     #   sentry-sdk
     #   types-requests
-uvicorn[standard]==0.38.0
+uvicorn[standard]==0.40.0
     # via
     #   -r requirements.txt
     #   mcp
