@@ -54,11 +54,14 @@ const DogCard = React.memo<{
   const ageGroup = getAgeCategory(dog);
   const formattedBreed = formatBreed(dog);
 
+  // Skip animation for priority images to improve LCP
+  const shouldAnimate = !priority;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
+      animate={shouldAnimate ? { opacity: 1, y: 0 } : undefined}
+      transition={shouldAnimate ? { delay: index * 0.05 } : undefined}
       className="bg-white dark:bg-gray-800 rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.06)] border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none"
       role="button"
       tabIndex={0}
