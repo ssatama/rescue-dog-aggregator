@@ -370,52 +370,9 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   const energyLevel = dog.dog_profiler_data?.energy_level;
   const trainingLevel = dog.dog_profiler_data?.trainability;
 
-  // Get age display text - convert to age groups
+  // Get age display text using shared utility for consistency with cards and filters
   const getAgeDisplay = () => {
-    // First try to get age group from age_text or age field
-    const ageValue = dog.age_text || dog.age || "";
-
-    // If it's already an age group, return it
-    if (["Young", "Adult", "Senior", "Puppy", "Baby"].includes(ageValue)) {
-      return ageValue;
-    }
-
-    // Parse the age string to determine age group
-    const ageStr = ageValue.toLowerCase();
-
-    // Check for keywords first
-    if (ageStr.includes("puppy") || ageStr.includes("baby")) return "Puppy";
-    if (ageStr.includes("young")) return "Young";
-    if (ageStr.includes("adult")) return "Adult";
-    if (ageStr.includes("senior") || ageStr.includes("old")) return "Senior";
-
-    // Try to extract numeric age and convert to age group
-    const ageMatch = ageStr.match(/(\d+(?:\.\d+)?)/);
-    if (ageMatch) {
-      const ageNum = parseFloat(ageMatch[1]);
-
-      // Check if it's in months
-      if (ageStr.includes("month") || ageStr.includes("mo")) {
-        if (ageNum < 12) return "Puppy";
-        if (ageNum <= 24) return "Young";
-        return "Adult";
-      }
-
-      // Check if it's in years (default assumption)
-      if (
-        ageStr.includes("year") ||
-        ageStr.includes("yr") ||
-        !ageStr.includes("month")
-      ) {
-        if (ageNum < 1) return "Puppy";
-        if (ageNum <= 2) return "Young";
-        if (ageNum <= 7) return "Adult";
-        return "Senior";
-      }
-    }
-
-    // If we can't determine the age group, return Unknown
-    return "Unknown";
+    return getAgeCategory(dog);
   };
 
   // Check if favorited
