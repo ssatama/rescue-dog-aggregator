@@ -5,9 +5,11 @@ import HeroSection from "./HeroSection";
 import PlatformCapabilities from "./PlatformCapabilities";
 import FeaturedDogsSection from "./FeaturedDogsSection";
 import Loading from "../ui/Loading";
-import MobileHomePage from "../mobile/MobileHomePage";
 import ErrorBoundary from "../ui/ErrorBoundary";
 import { transformMobileHomePageData } from "../../utils/homePageTransformers";
+
+// Lazy load mobile version - only loaded on mobile devices
+const MobileHomePage = lazy(() => import("../mobile/MobileHomePage"));
 
 // Lazy load below-fold sections for better initial load performance
 const CountryBrowseSection = lazy(() => import("./CountryBrowseSection"));
