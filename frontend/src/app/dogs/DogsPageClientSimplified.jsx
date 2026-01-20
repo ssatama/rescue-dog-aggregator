@@ -739,15 +739,6 @@ export default function DogsPageClientSimplified({
     }
   }, [page, hasMore, filters, loadingMore, updateURL]);;
 
-  // Sync local breed input with URL filter changes (e.g., browser back/forward)
-  useEffect(() => {
-    const urlBreed =
-      filters.breedFilter === "Any breed" ? "" : filters.breedFilter;
-    if (urlBreed !== localBreedInput) {
-      setLocalBreedInput(urlBreed);
-    }
-  }, [filters.breedFilter, localBreedInput]);
-
   // Load available regions when country changes
   useEffect(() => {
     if (
@@ -815,9 +806,6 @@ export default function DogsPageClientSimplified({
     // Cancel debounced updates to avoid stale URL pushes
     updateURL?.cancel?.();
     saveScrollPosition?.cancel?.();
-
-    // Clear local breed input
-    setLocalBreedInput("");
 
     // Navigate to clean URL using replace (no extra history entry)
     router.replace("/dogs", { scroll: false });
