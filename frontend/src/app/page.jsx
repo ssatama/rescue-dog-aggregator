@@ -4,6 +4,7 @@ import ClientHomePage from "../components/home/ClientHomePage";
 import { getHomePageData, getCountryStats, getAgeStats } from "../services/serverAnimalsService";
 import { getBreedsWithImagesForHomePage } from "../services/breedImagesService";
 import { getEnhancedOrganizationsSSR } from "../services/organizationsService";
+import { reportError } from "../utils/logger";
 
 // Enable Incremental Static Regeneration with 5-minute revalidation
 export const revalidate = 300;
@@ -15,7 +16,7 @@ export async function generateMetadata() {
     const data = await getHomePageData();
     stats = data.statistics || stats;
   } catch (e) {
-    // Use fallback stats
+    reportError(e, { context: "metadata_generation", component: "Home" });
   }
 
   const totalDogs = stats.total_dogs || 4500;
@@ -56,30 +57,30 @@ export default async function Home() {
   const [homePageData, breedsWithImages, organizations, countryData, ageData] =
     await Promise.all([
       getHomePageData().catch((error) => {
-        console.error("Failed to fetch home page data:", error);
+        reportError(error, { context: "homepage_data_fetch", component: "Home" });
         return fallbackHomePageData;
       }),
       getBreedsWithImagesForHomePage({ minCount: 5, limit: 20 }).catch(
         (error) => {
-          console.error("Failed to fetch breeds with images:", error);
+          reportError(error, { context: "breeds_with_images_fetch", component: "Home" });
           return null;
         }
       ),
       getEnhancedOrganizationsSSR().catch((error) => {
-        console.error("Failed to fetch organizations:", error);
+        reportError(error, { context: "organizations_fetch", component: "Home" });
         return [];
       }),
       getCountryStats().catch((error) => {
-        console.error("Failed to fetch country stats:", error);
+        reportError(error, { context: "country_stats_fetch", component: "Home" });
         return { countries: [] };
       }),
       getAgeStats().catch((error) => {
-        console.error("Failed to fetch age stats:", error);
+        reportError(error, { context: "age_stats_fetch", component: "Home" });
         return { ageCategories: [] };
       }),
     ]);
 
-  const { statistics, recentDogs, diverseDogs } = homePageData;
+  const { statistics, recentDogs } = homePageData;
   const countryStats = countryData?.countries || [];
   const ageStats = ageData?.ageCategories || [];
 
@@ -88,7 +89,6 @@ export default async function Home() {
       <ClientHomePage
         initialStatistics={statistics}
         initialRecentDogs={recentDogs}
-        initialDiverseDogs={diverseDogs}
         initialBreedsWithImages={breedsWithImages}
         initialOrganizations={organizations}
         initialCountryStats={countryStats}

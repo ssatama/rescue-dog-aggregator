@@ -1,3 +1,7 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compress: true,
@@ -189,7 +193,8 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+// Apply bundle analyzer first, then Sentry
+module.exports = withBundleAnalyzer(nextConfig);
 
 const { withSentryConfig } = require("@sentry/nextjs");
 

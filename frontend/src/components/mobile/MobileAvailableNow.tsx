@@ -1,20 +1,24 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useFavorites } from "@/hooks/useFavorites";
-import DogDetailModalUpgraded from "@/components/dogs/mobile/detail/DogDetailModalUpgraded";
 import {
   formatBreed,
   getPersonalityTraits,
   getAgeCategory,
 } from "@/utils/dogHelpers";
+
+// Lazy load modal to reduce initial bundle size
+const DogDetailModalUpgraded = lazy(
+  () => import("@/components/dogs/mobile/detail/DogDetailModalUpgraded"),
+);
 import { IMAGE_SIZES } from "../../constants/imageSizes";
 import { type Dog } from "../../types/dog";
-import { useRouter } from "next/navigation";
+import Loading from "@/components/ui/Loading";
 
 interface MobileAvailableNowProps {
   dogs?: Dog[];
@@ -45,7 +49,8 @@ const DogCard = React.memo<{
   isFavorite?: boolean;
   onClick?: () => void;
   index?: number;
-}>(({ dog, onFavoriteToggle, isFavorite = false, onClick, index = 0 }) => {
+  priority?: boolean;
+}>(({ dog, onFavoriteToggle, isFavorite = false, onClick, index = 0, priority = false }) => {
   const imageUrl = getDogImage(dog);
   const traits = useMemo(() => getPersonalityTraits(dog), [dog]);
   const displayTraits = traits.slice(0, 2);
@@ -53,11 +58,14 @@ const DogCard = React.memo<{
   const ageGroup = getAgeCategory(dog);
   const formattedBreed = formatBreed(dog);
 
+  // Skip animation for priority images to improve LCP
+  const shouldAnimate = !priority;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
+      animate={shouldAnimate ? { opacity: 1, y: 0 } : undefined}
+      transition={shouldAnimate ? { delay: index * 0.05 } : undefined}
       className="bg-white dark:bg-gray-800 rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.06)] border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none"
       role="button"
       tabIndex={0}
@@ -78,7 +86,8 @@ const DogCard = React.memo<{
           src={imageUrl}
           alt={`Photo of ${dog.name}`}
           className="w-full h-full object-cover"
-          loading="lazy"
+          priority={priority}
+          loading={priority ? undefined : "lazy"}
           width={200}
           height={200}
           sizes={IMAGE_SIZES.CATALOG_CARD}
@@ -154,7 +163,6 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
   dogs = [],
   loading = false,
 }) => {
-  const router = useRouter();
   const { isFavorited, toggleFavorite } = useFavorites();
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -237,6 +245,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
                     key={String(dog.id)}
                     dog={dog}
                     index={index}
+                    priority={index < 2}
                     isFavorite={isFavorited(Number(dog.id))}
                     onFavoriteToggle={handleToggleFavorite}
                     onClick={() => handleDogClick(dog)}
@@ -258,28 +267,38 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
         )}
       </section>
 
-      {/* Dog Detail Modal */}
-      <DogDetailModalUpgraded
-        dog={selectedDog}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onNavigate={handleModalNavigate}
-        hasNext={
-          selectedDog
-            ? safeDogs.findIndex(
-                (d) => String(d.id) === String(selectedDog.id),
-              ) <
-              safeDogs.length - 1
-            : false
-        }
-        hasPrev={
-          selectedDog
-            ? safeDogs.findIndex(
-                (d) => String(d.id) === String(selectedDog.id),
-              ) > 0
-            : false
-        }
-      />
+      {/* Dog Detail Modal - lazy loaded */}
+      {isModalOpen && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <Loading />
+            </div>
+          }
+        >
+          <DogDetailModalUpgraded
+            dog={selectedDog}
+            isOpen={isModalOpen}
+            onClose={handleModalClose}
+            onNavigate={handleModalNavigate}
+            hasNext={
+              selectedDog
+                ? safeDogs.findIndex(
+                    (d) => String(d.id) === String(selectedDog.id),
+                  ) <
+                  safeDogs.length - 1
+                : false
+            }
+            hasPrev={
+              selectedDog
+                ? safeDogs.findIndex(
+                    (d) => String(d.id) === String(selectedDog.id),
+                  ) > 0
+                : false
+            }
+          />
+        </Suspense>
+      )}
     </>
   );
 };
