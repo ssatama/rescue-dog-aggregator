@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useFavorites } from "@/hooks/useFavorites";
 import { type Dog } from "@/types/dog";
+import { getAgeCategory } from "@/utils/dogHelpers";
 
 interface DogDetailModalUpgradedProps {
   dog: Dog | null;
