@@ -1,17 +1,21 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useFavorites } from "@/hooks/useFavorites";
-import DogDetailModalUpgraded from "@/components/dogs/mobile/detail/DogDetailModalUpgraded";
 import {
   formatBreed,
   getPersonalityTraits,
   getAgeCategory,
 } from "@/utils/dogHelpers";
+
+// Lazy load modal to reduce initial bundle size
+const DogDetailModalUpgraded = lazy(
+  () => import("@/components/dogs/mobile/detail/DogDetailModalUpgraded"),
+);
 import { IMAGE_SIZES } from "../../constants/imageSizes";
 import { type Dog } from "../../types/dog";
 import { useRouter } from "next/navigation";
@@ -264,28 +268,32 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
         )}
       </section>
 
-      {/* Dog Detail Modal */}
-      <DogDetailModalUpgraded
-        dog={selectedDog}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onNavigate={handleModalNavigate}
-        hasNext={
-          selectedDog
-            ? safeDogs.findIndex(
-                (d) => String(d.id) === String(selectedDog.id),
-              ) <
-              safeDogs.length - 1
-            : false
-        }
-        hasPrev={
-          selectedDog
-            ? safeDogs.findIndex(
-                (d) => String(d.id) === String(selectedDog.id),
-              ) > 0
-            : false
-        }
-      />
+      {/* Dog Detail Modal - lazy loaded */}
+      {isModalOpen && (
+        <Suspense fallback={null}>
+          <DogDetailModalUpgraded
+            dog={selectedDog}
+            isOpen={isModalOpen}
+            onClose={handleModalClose}
+            onNavigate={handleModalNavigate}
+            hasNext={
+              selectedDog
+                ? safeDogs.findIndex(
+                    (d) => String(d.id) === String(selectedDog.id),
+                  ) <
+                  safeDogs.length - 1
+                : false
+            }
+            hasPrev={
+              selectedDog
+                ? safeDogs.findIndex(
+                    (d) => String(d.id) === String(selectedDog.id),
+                  ) > 0
+                : false
+            }
+          />
+        </Suspense>
+      )}
     </>
   );
 };
