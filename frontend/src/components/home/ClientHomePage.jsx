@@ -17,16 +17,10 @@ const AgeBrowseSection = lazy(() => import("./AgeBrowseSection"));
 const TrustBand = lazy(() => import("./TrustBand"));
 const TrustSection = lazy(() => import("./TrustSection"));
 const FinalCTA = lazy(() => import("./FinalCTA"));
-const BreedsCTA = lazy(() =>
-  import("./BreedsCTA").then((module) => ({
-    default: module.BreedsCTA,
-  })),
-);
 
 export default function ClientHomePage({
   initialStatistics,
   initialRecentDogs,
-  initialDiverseDogs,
   initialBreedsWithImages = null,
   initialOrganizations = [],
   initialCountryStats = [],
@@ -49,9 +43,11 @@ export default function ClientHomePage({
     <>
       {/* Mobile Version - Shown only on mobile devices */}
       <div className="sm:hidden">
-        <Suspense fallback={<Loading className="h-screen" />}>
-          <MobileHomePage initialData={mobileInitialData} />
-        </Suspense>
+        <ErrorBoundary fallbackMessage="Unable to load mobile homepage. Please refresh the page.">
+          <Suspense fallback={<Loading className="h-screen" />}>
+            <MobileHomePage initialData={mobileInitialData} />
+          </Suspense>
+        </ErrorBoundary>
       </div>
 
       {/* Desktop Version - Hidden on mobile devices */}
@@ -97,9 +93,11 @@ export default function ClientHomePage({
         </ErrorBoundary>
 
         {/* Trust Section - Organization Statistics */}
-        <Suspense fallback={<div className="h-48 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg" />}>
-          <TrustSection initialStatistics={initialStatistics} />
-        </Suspense>
+        <ErrorBoundary fallbackMessage="Unable to load trust section. Please refresh the page.">
+          <Suspense fallback={<div className="h-48 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg" />}>
+            <TrustSection initialStatistics={initialStatistics} />
+          </Suspense>
+        </ErrorBoundary>
 
         {/* Final CTA - Ready to Find Your Dog? */}
         <ErrorBoundary fallbackMessage="Unable to load call-to-action section. Please refresh the page.">

@@ -18,7 +18,7 @@ const DogDetailModalUpgraded = lazy(
 );
 import { IMAGE_SIZES } from "../../constants/imageSizes";
 import { type Dog } from "../../types/dog";
-import { useRouter } from "next/navigation";
+import Loading from "@/components/ui/Loading";
 
 interface MobileAvailableNowProps {
   dogs?: Dog[];
@@ -163,7 +163,6 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
   dogs = [],
   loading = false,
 }) => {
-  const router = useRouter();
   const { isFavorited, toggleFavorite } = useFavorites();
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -270,7 +269,13 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
 
       {/* Dog Detail Modal - lazy loaded */}
       {isModalOpen && (
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <Loading />
+            </div>
+          }
+        >
           <DogDetailModalUpgraded
             dog={selectedDog}
             isOpen={isModalOpen}
