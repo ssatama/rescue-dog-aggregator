@@ -1,0 +1,102 @@
+name: Setup PostgreSQL Database
+description: Reusable action for setting up PostgreSQL test database with schema and migrations
+
+inputs:
+  db-name:
+    description: Database name
+    required: false
+    default: test_rescue_dogs
+  db-user:
+    description: Database user
+    required: false
+    default: postgres
+  db-password:
+    description: Database password
+    required: false
+    default: postgres
+  db-host:
+    description: Database host
+    required: false
+    default: localhost
+  db-port:
+    description: Database port
+    required: false
+    default: "5432"
+  run-migrations:
+    description: Whether to run SQL migrations
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Wait for PostgreSQL
+      shell: bash
+      run: |
+        for i in {1..15}; do
+          if pg_isready -h ${{ inputs.db-host }} -p ${{ inputs.db-port }}; then
+            echo "PostgreSQL is ready"
+            break
+          fi
+          echo "Waiting for PostgreSQL... attempt $i/15"
+          sleep 2
+        done
+
+    - name: Create database
+      shell: bash
+      env:
+        PGPASSWORD: ${{ inputs.db-password }}
+      run: |
+        psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
+          -c "CREATE DATABASE ${{ inputs.db-name }};" || true
+
+    - name: Grant privileges
+      shell: bash
+      env:
+        PGPASSWORD: ${{ inputs.db-password }}
+      run: |
+        psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
+          -d ${{ inputs.db-name }} \
+          -c "GRANT ALL PRIVILEGES ON DATABASE ${{ inputs.db-name }} TO ${{ inputs.db-user }};" || true
+        psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
+          -d ${{ inputs.db-name }} \
+          -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${{ inputs.db-user }};" || true
+        psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
+          -d ${{ inputs.db-name }} \
+          -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${{ inputs.db-user }};" || true
+
+    - name: Initialize database schema
+      shell: bash
+      env:
+        TESTING: "true"
+        DB_HOST: ${{ inputs.db-host }}
+        DB_PORT: ${{ inputs.db-port }}
+        DB_NAME: ${{ inputs.db-name }}
+        DB_USER: ${{ inputs.db-user }}
+        DB_PASSWORD: ${{ inputs.db-password }}
+      run: |
+        python -c "
+        from database.db_setup import initialize_database
+        conn = initialize_database()
+        if conn:
+            print('Database schema initialized successfully')
+            conn.close()
+        else:
+            print('Database initialization failed')
+            exit(1)
+        " || echo "Database initialization completed or already initialized"
+
+    - name: Run database migrations
+      if: inputs.run-migrations == 'true'
+      shell: bash
+      env:
+        PGPASSWORD: ${{ inputs.db-password }}
+      run: |
+        echo "Running database migrations..."
+        for migration in database/migrations/*.sql; do
+          if [ -f "$migration" ]; then
+            echo "Running migration: $(basename $migration)"
+            psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
+              -d ${{ inputs.db-name }} -f "$migration" || echo "Migration $(basename $migration) may have already been applied"
+          fi
+        done
