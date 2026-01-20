@@ -45,7 +45,8 @@ const DogCard = React.memo<{
   isFavorite?: boolean;
   onClick?: () => void;
   index?: number;
-}>(({ dog, onFavoriteToggle, isFavorite = false, onClick, index = 0 }) => {
+  priority?: boolean;
+}>(({ dog, onFavoriteToggle, isFavorite = false, onClick, index = 0, priority = false }) => {
   const imageUrl = getDogImage(dog);
   const traits = useMemo(() => getPersonalityTraits(dog), [dog]);
   const displayTraits = traits.slice(0, 2);
@@ -78,7 +79,8 @@ const DogCard = React.memo<{
           src={imageUrl}
           alt={`Photo of ${dog.name}`}
           className="w-full h-full object-cover"
-          loading="lazy"
+          priority={priority}
+          loading={priority ? undefined : "lazy"}
           width={200}
           height={200}
           sizes={IMAGE_SIZES.CATALOG_CARD}
@@ -237,6 +239,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
                     key={String(dog.id)}
                     dog={dog}
                     index={index}
+                    priority={index < 2}
                     isFavorite={isFavorited(Number(dog.id))}
                     onFavoriteToggle={handleToggleFavorite}
                     onClick={() => handleDogClick(dog)}

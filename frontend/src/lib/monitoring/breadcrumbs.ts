@@ -1,4 +1,24 @@
-import * as Sentry from "@sentry/nextjs";
+// Lazy-load Sentry to avoid bundling it with homepage
+let sentryModule: typeof import("@sentry/nextjs") | null = null;
+let sentryLoadPromise: Promise<typeof import("@sentry/nextjs")> | null = null;
+
+async function getSentry(): Promise<typeof import("@sentry/nextjs")> {
+  if (sentryModule) return sentryModule;
+  if (!sentryLoadPromise) {
+    sentryLoadPromise = import("@sentry/nextjs").then((mod) => {
+      sentryModule = mod;
+      return mod;
+    });
+  }
+  return sentryLoadPromise;
+}
+
+// Fire-and-forget breadcrumb helper that doesn't block
+function addBreadcrumbAsync(breadcrumb: Parameters<typeof import("@sentry/nextjs").addBreadcrumb>[0]): void {
+  getSentry()
+    .then((Sentry) => Sentry.addBreadcrumb(breadcrumb))
+    .catch(() => {});
+}
 
 // Debounce timers for tracking functions
 const debounceTimers: Map<string, NodeJS.Timeout> = new Map();
@@ -16,7 +36,7 @@ export function trackDogView(
   orgSlug: string,
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "navigation",
       type: "navigation",
       level: "info",
@@ -47,7 +67,7 @@ export function trackDogCardClick(
   listContext: "search" | "org-page" | "home" | "favorites",
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -77,7 +97,7 @@ export function trackDogImageView(
   totalImages: number,
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -108,7 +128,7 @@ export function trackFavoriteToggle(
   orgSlug: string,
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -132,7 +152,7 @@ export function trackFavoriteToggle(
  */
 export function trackFavoritesPageView(count: number): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "navigation",
       type: "navigation",
       level: "info",
@@ -164,7 +184,7 @@ export function trackSearch(
       ? `Searched for "${query}" with ${filterCount} filters`
       : `Applied ${filterCount} filters`;
 
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -193,7 +213,7 @@ export function trackFilterChange(
   resultCount: number,
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -216,7 +236,7 @@ export function trackFilterChange(
  */
 export function trackSortChange(sortBy: string): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -238,7 +258,7 @@ export function trackSortChange(sortBy: string): void {
  */
 export function trackOrgPageView(orgSlug: string, dogCount: number): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "navigation",
       type: "navigation",
       level: "info",
@@ -270,7 +290,7 @@ export function trackExternalLinkClick(
       ? `Clicked ${linkType} link for dog ${dogId}`
       : `Clicked ${linkType} link for ${orgSlug}`;
 
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -294,7 +314,7 @@ export function trackExternalLinkClick(
  */
 export function trackPaginationClick(page: number, totalPages: number): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "navigation",
       type: "navigation",
       level: "info",
@@ -314,18 +334,9 @@ export function trackPaginationClick(page: number, totalPages: number): void {
  * Only works in development mode.
  */
 export function getCurrentBreadcrumbCount(): number {
-  if (process.env.NODE_ENV !== "development") {
-    return 0;
-  }
-
-  try {
-    const client = Sentry.getClient();
-    const scope = Sentry.getCurrentScope();
-    // This is a simplified approach - actual implementation may vary
-    return 0; // Sentry doesn't expose breadcrumb count directly
-  } catch {
-    return 0;
-  }
+  // Sentry doesn't expose breadcrumb count directly
+  // This function exists for testing compatibility
+  return 0;
 }
 
 /**
@@ -341,7 +352,7 @@ export function addTestBreadcrumb(
   }
 
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "test",
       type: "debug",
       level: "debug",
@@ -432,7 +443,7 @@ export function trackCompareSelection(
   selectedCount: number,
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -460,7 +471,7 @@ export function trackCompareInitiation(
   dogNames: string[],
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "navigation",
       type: "navigation",
       level: "info",
@@ -495,7 +506,7 @@ export function trackShare(
       ? `Shared ${shareType}: ${contentDescription} via ${method}`
       : `Shared ${shareType} via ${method}`;
 
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -525,7 +536,7 @@ export function trackFavoritesShare(
   shareUrl?: string,
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -554,7 +565,7 @@ export function trackPageLoadPerformance(
   dataFetchTime?: number,
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "performance",
       type: "default",
       level: "info",
@@ -582,7 +593,7 @@ export function trackHeaderNavigation(
   isAuthenticated?: boolean,
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "navigation",
       type: "navigation",
       level: "info",
@@ -608,7 +619,7 @@ export function trackFooterNavigation(
   isExternal: boolean,
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "navigation",
       type: "navigation",
       level: "info",
@@ -638,7 +649,7 @@ export function trackEmptyStateInteraction(
       ? `Empty state interaction in ${context}: ${action}`
       : `Viewed empty state in ${context}`;
 
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "ui",
       type: "user",
       level: "info",
@@ -664,7 +675,7 @@ export function trackCatalogPageLoad(
   hasFilters: boolean,
 ): void {
   try {
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: "navigation",
       type: "navigation",
       level: "info",
@@ -694,7 +705,7 @@ export function trackAboutPageInteraction(
       ? `About page ${action}: ${target}`
       : `About page ${action}`;
 
-    Sentry.addBreadcrumb({
+    addBreadcrumbAsync({
       category: action === "view" ? "navigation" : "ui",
       type: action === "view" ? "navigation" : "user",
       level: "info",
