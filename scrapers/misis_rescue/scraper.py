@@ -1282,7 +1282,6 @@ class MisisRescueScraper(BaseScraper):
             if scroll_attempts >= 3:
                 break
 
-        final_dogs = len(driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]'))
         # World-class logging: Scrolling completion handled by centralized system
 
     def _scroll_detail_page_for_content(self, driver: "WebDriver") -> None:

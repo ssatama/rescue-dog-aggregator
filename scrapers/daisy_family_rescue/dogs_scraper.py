@@ -25,8 +25,8 @@ else:
 
     from services.browser_service import BrowserOptions, get_browser_service
 
-from .dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
-from .translations import normalize_name, translate_dog_data
+from .dog_detail_scraper import DaisyFamilyRescueDogDetailScraper  # noqa: E402
+from .translations import normalize_name, translate_dog_data  # noqa: E402
 
 
 class DaisyFamilyRescueScraper(BaseScraper):
@@ -188,7 +188,6 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
             # First pass: Extract basic dog data and URLs from all containers
             basic_dogs_data = []
-            total_containers = len(valid_dog_containers)
 
             for i, container in enumerate(valid_dog_containers):
                 try:
@@ -285,7 +284,6 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
                 # First pass: Extract basic dog data from containers
                 basic_dogs_data = []
-                total_containers = len(valid_dog_containers)
 
                 for i, container in enumerate(valid_dog_containers):
                     try:

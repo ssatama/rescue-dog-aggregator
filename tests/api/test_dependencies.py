@@ -84,7 +84,7 @@ class TestGetDbCursor:
         mock_conn.commit.side_effect = psycopg2.Error("Commit failed")
 
         generator = get_db_cursor()
-        cursor = next(generator)
+        _cursor = next(generator)
 
         # Trigger cleanup that should rollback due to commit error
         with pytest.raises(HTTPException):
@@ -104,7 +104,7 @@ class TestGetDbCursor:
         mock_conn.cursor.return_value = mock_cursor
 
         generator = get_db_cursor()
-        cursor = next(generator)
+        _cursor = next(generator)
 
         # Simulate HTTPException being raised
         original_exception = HTTPException(status_code=404, detail="Not found")
@@ -269,7 +269,7 @@ class TestGetDatabaseConnection:
         mock_conn.commit.side_effect = psycopg2.Error("Commit failed")
 
         generator = get_database_connection()
-        connection = next(generator)
+        _connection = next(generator)
 
         with pytest.raises(HTTPException):
             try:

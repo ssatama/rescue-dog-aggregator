@@ -42,7 +42,7 @@ class TestTheUnderdogScraper:
                         <h2 class="ProductList-title">BELLA 🇬🇧</h2>
                     </a>
                 </article>
-                
+
                 <!-- Reserved dog - has RESERVED in title -->
                 <article class="ProductList-item hentry">
                     <a href="/adopt/max" class="ProductList-item-link">
@@ -52,7 +52,7 @@ class TestTheUnderdogScraper:
                         <h2 class="ProductList-title">MAX 🇨🇾 RESERVED</h2>
                     </a>
                 </article>
-                
+
                 <!-- Adopted dog - has ADOPTED in title -->
                 <article class="ProductList-item hentry">
                     <a href="/adopt/luna" class="ProductList-item-link">
@@ -62,7 +62,7 @@ class TestTheUnderdogScraper:
                         <h2 class="ProductList-title">LUNA 🇧🇦 ADOPTED</h2>
                     </a>
                 </article>
-                
+
                 <!-- Another available dog -->
                 <article class="ProductList-item hentry">
                     <a href="/adopt/buddy" class="ProductList-item-link">
@@ -72,7 +72,7 @@ class TestTheUnderdogScraper:
                         <h2 class="ProductList-title">BUDDY 🇫🇷</h2>
                     </a>
                 </article>
-                
+
                 <!-- Edge case: lowercase reserved -->
                 <article class="ProductList-item hentry">
                     <a href="/adopt/charlie" class="ProductList-item-link">
@@ -226,10 +226,10 @@ class TestTheUnderdogDetailScraping:
                         <img src="https://example.com/vicky-thumb2.jpg" alt="Vicky thumb 2">
                     </div>
                 </div>
-                
+
                 <div class="ProductItem-details">
                     <h1 class="ProductItem-details-title">Vicky 🇬🇧</h1>
-                    
+
                     <div class="ProductItem-details-excerpt">
                         <p>
                             <strong>How big?</strong> Large (around 30kg)<br>
@@ -240,12 +240,12 @@ class TestTheUnderdogDetailScraping:
                             <strong>Resident dog required?</strong> No, but would be beneficial<br>
                             <strong>Living with cats?</strong> I've not been tested with cats<br>
                             <strong>Where can I live?</strong> I need a home that appreciates the quieter life options<br><br>
-                            
+
                             <strong>About Vicky</strong><br>
                             Vicky is currently in a foster home in North Devon after being rescued from a difficult start in life and spending a good few months in the shelter in Cyprus. She's believed to be around two years old and is a large mixed breed with a calm, sweet and endearing personality.
                         </p>
                     </div>
-                    
+
                     <button class="sqs-add-to-cart-button">Add To Cart</button>
                 </div>
             </div>
@@ -262,7 +262,7 @@ class TestTheUnderdogDetailScraping:
             <div class="ProductItem">
                 <div class="ProductItem-details">
                     <h1 class="ProductItem-details-title">Max 🇨🇾 RESERVED</h1>
-                    
+
                     <div class="ProductItem-details-excerpt">
                         <p>This dog has been reserved.</p>
                     </div>
@@ -281,7 +281,7 @@ class TestTheUnderdogDetailScraping:
             <div class="ProductItem">
                 <div class="ProductItem-details">
                     <h1 class="ProductItem-details-title">Buddy 🇫🇷</h1>
-                    
+
                     <div class="ProductItem-details-excerpt">
                         <p>
                             <strong>How big?</strong> Medium<br>

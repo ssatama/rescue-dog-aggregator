@@ -11,7 +11,6 @@ Following CLAUDE.md principles:
 - Clear error handling
 """
 
-from datetime import datetime, timedelta
 from unittest.mock import Mock
 
 import pytest
@@ -125,8 +124,6 @@ def historical_scrape_data():
     Returns:
         List of tuples simulating scrape log history
     """
-    base_time = datetime.now() - timedelta(days=30)
-
     # Normal scrape history - consistent animal counts
     normal_history = [
         (50, 1),  # (dogs_found, count)

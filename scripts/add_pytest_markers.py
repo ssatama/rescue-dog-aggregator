@@ -178,8 +178,6 @@ def add_markers_to_file(file_path: Path, markers: set[str]) -> bool:
 
 def main():
     """Main function to process unmarked test files."""
-    test_dir = Path("tests")
-
     # Files identified as unmarked
     unmarked_files = [
         "tests/management/test_config_commands_llm_filter.py",

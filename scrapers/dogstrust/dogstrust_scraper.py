@@ -263,7 +263,7 @@ class DogsTrustScraper(BaseScraper):
                             self.logger.info("Accepted cookie consent")
                             time.sleep(0.3)  # Brief wait for banner to disappear
                             break
-                    except:
+                    except Exception:
                         continue
 
             except Exception as e:
@@ -300,7 +300,7 @@ class DogsTrustScraper(BaseScraper):
                         if filters_button and filters_button.is_displayed():
                             self.logger.debug(f"Found filters button with selector: {selector}")
                             break
-                    except:
+                    except Exception:
                         continue
 
                 if filters_button:
@@ -344,7 +344,7 @@ class DogsTrustScraper(BaseScraper):
                                     checkbox_clicked = True
                                     self.logger.info("Clicked 'Hide reserved dogs' option")
                                 break
-                        except:
+                        except Exception:
                             continue
 
                     if checkbox_clicked:
@@ -368,7 +368,7 @@ class DogsTrustScraper(BaseScraper):
                                     # Wait for page to reload with filter applied
                                     time.sleep(1)
                                     break
-                            except:
+                            except Exception:
                                 continue
                     else:
                         self.logger.warning("Could not find 'Hide reserved dogs' option")
@@ -449,7 +449,7 @@ class DogsTrustScraper(BaseScraper):
                             next_button = driver.find_element(By.XPATH, selector)
                             if next_button and next_button.is_displayed():
                                 break
-                        except:
+                        except Exception:
                             continue
 
                     if next_button:
@@ -465,7 +465,7 @@ class DogsTrustScraper(BaseScraper):
                         # Wait for new content to appear
                         try:
                             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href*="/rehoming/dogs/"]')))
-                        except:
+                        except Exception:
                             self.logger.warning(f"Timeout waiting for page {page_num + 1} to load")
 
                         # Scroll to trigger lazy loading on the new page

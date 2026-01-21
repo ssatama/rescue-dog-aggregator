@@ -21,25 +21,25 @@ import nest_asyncio
 
 nest_asyncio.apply()
 
-import argparse
-import json
-import logging
-import os
-import signal
-import sys
-from datetime import UTC, datetime
+import argparse  # noqa: E402
+import json  # noqa: E402
+import logging  # noqa: E402
+import os  # noqa: E402
+import signal  # noqa: E402
+import sys  # noqa: E402
+from datetime import UTC, datetime  # noqa: E402
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from config import enable_world_class_scraper_logging, get_database_config
-from scrapers.sentry_integration import add_scrape_breadcrumb, init_scraper_sentry
-from utils.db_connection import (
+from config import enable_world_class_scraper_logging, get_database_config  # noqa: E402
+from scrapers.sentry_integration import add_scrape_breadcrumb, init_scraper_sentry  # noqa: E402
+from utils.db_connection import (  # noqa: E402
     create_database_config_from_env,
     initialize_database_pool,
 )
-from utils.secure_config_scraper_runner import (
+from utils.secure_config_scraper_runner import (  # noqa: E402
     BatchRunResult,
     SecureConfigScraperRunner,
 )

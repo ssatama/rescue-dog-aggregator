@@ -226,7 +226,7 @@ class TestStandardizationBackfillService:
         animals = [(i, f"Dog{i}", "Mixed Breed", None, "Unknown", "2 years", "Medium") for i in range(1, 251)]
         mock_cursor.fetchall.return_value = animals
 
-        with patch.object(service, "update_animal_standardization", return_value=True) as mock_update:
+        with patch.object(service, "update_animal_standardization", return_value=True):
             stats = service.backfill_breed_data(batch_size=100, dry_run=False, show_progress=False)
 
             # Should process in 3 batches (100, 100, 50)

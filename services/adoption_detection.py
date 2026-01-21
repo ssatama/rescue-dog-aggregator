@@ -265,9 +265,9 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
 
         # Query eligible dogs using raw SQL
         query = """
-            SELECT id, name, status, url, organization_id, 
+            SELECT id, name, status, url, organization_id,
                    consecutive_scrapes_missing, adoption_checked_at
-            FROM animals 
+            FROM animals
             WHERE organization_id = %s
             AND consecutive_scrapes_missing >= %s
             AND status NOT IN ('adopted', 'reserved')
@@ -305,7 +305,7 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
             if not dry_run and not result.error:
                 # Update the database with results
                 update_query = """
-                    UPDATE animals 
+                    UPDATE animals
                     SET status = %s,
                         adoption_checked_at = %s,
                         adoption_check_data = %s
@@ -358,8 +358,8 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
         recheck_cutoff = datetime.now(UTC) - timedelta(hours=check_interval_hours)
 
         query = """
-            SELECT COUNT(*) 
-            FROM animals 
+            SELECT COUNT(*)
+            FROM animals
             WHERE organization_id = %s
             AND consecutive_scrapes_missing >= %s
             AND status NOT IN ('adopted', 'reserved')

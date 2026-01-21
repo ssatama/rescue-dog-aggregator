@@ -465,7 +465,7 @@ async def _translate_async(animals, target_language, effective_batch_size, batch
                 def create_update_query(item: tuple[int, str]) -> tuple[str, tuple]:
                     animal_id, translations_json = item
                     query = """
-                        UPDATE animals 
+                        UPDATE animals
                         SET translations = %s,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = %s
@@ -505,7 +505,7 @@ def stats():
     # Get overall stats (for high confidence available dogs)
     cursor.execute(
         """
-        SELECT 
+        SELECT
             COUNT(*) as total,
             COUNT(enriched_description) as enriched,
             COUNT(dog_profiler_data) as with_profiles,
@@ -538,12 +538,12 @@ def stats():
     # Get per-organization stats (for high confidence available dogs)
     cursor.execute(
         """
-        SELECT 
+        SELECT
             o.name,
             COUNT(a.id) as total,
             COUNT(a.enriched_description) as enriched
         FROM organizations o
-        LEFT JOIN animals a ON a.organization_id = o.id 
+        LEFT JOIN animals a ON a.organization_id = o.id
             AND a.status = 'available'
             AND a.availability_confidence = 'high'
         GROUP BY o.id, o.name

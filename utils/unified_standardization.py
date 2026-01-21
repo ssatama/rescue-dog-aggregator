@@ -178,7 +178,6 @@ class UnifiedStandardizer:
             "pug": BreedInfo("Pug", "Toy", "Small"),
             "papillon": BreedInfo("Papillon", "Toy", "Small"),
             "bolognese": BreedInfo("Bolognese", "Toy", "Small"),
-            "miniature pinscher": BreedInfo("Miniature Pinscher", "Toy", "Small"),
             "pinscher (miniature)": BreedInfo("Miniature Pinscher", "Toy", "Small"),
             # Non-Sporting Group
             "poodle": BreedInfo("Poodle", "Non-Sporting", "Medium"),
@@ -190,7 +189,6 @@ class UnifiedStandardizer:
             "spitz": BreedInfo("Spitz", "Non-Sporting", "Medium"),
             "american bully": BreedInfo("American Bully", "Non-Sporting", "Medium"),
             "american bully pocket": BreedInfo("American Bully", "Non-Sporting", "Medium"),
-            "boston terrier": BreedInfo("Boston Terrier", "Non-Sporting", "Small"),  # Boston Terrier is Non-Sporting, not Terrier group!
             "terrier (boston)": BreedInfo("Boston Terrier", "Non-Sporting", "Small"),
             # Additional breeds for European scrapers
             "spanish mastiff": BreedInfo("Spanish Mastiff", "Working", "XLarge"),
@@ -1230,8 +1228,6 @@ class UnifiedStandardizer:
 
     def _standardize_size(self, size: str | None, breed: str | None = None) -> dict[str, Any]:
         """Standardize size with comprehensive fallback chain: explicit → breed → weight → default."""
-        canonical_sizes = ["Tiny", "Small", "Medium", "Large", "XLarge"]
-
         # Step 1: Try to use explicit size if provided
         if size and isinstance(size, str):
             size_lower = size.strip().lower()

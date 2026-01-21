@@ -103,7 +103,7 @@ class DatabaseHealthChecker:
                 # Get connection count and limits
                 cursor.execute(
                     """
-                    SELECT 
+                    SELECT
                         count(*) as active_connections,
                         (SELECT setting::int FROM pg_settings WHERE name = 'max_connections') as max_connections,
                         count(*) FILTER (WHERE state = 'active') as active_queries,
@@ -156,7 +156,7 @@ class DatabaseHealthChecker:
                     """
                     SELECT indexname, tablename, idx_scan, idx_tup_read, idx_tup_fetch
                     FROM pg_stat_user_indexes
-                    WHERE schemaname = 'public' 
+                    WHERE schemaname = 'public'
                       AND indexname = ANY(%s)
                 """,
                     (performance_indexes,),
@@ -202,10 +202,10 @@ class DatabaseHealthChecker:
                 cursor.execute(
                     """
                     EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
-                    SELECT a.*, o.name as org_name 
+                    SELECT a.*, o.name as org_name
                     FROM animals a
                     JOIN organizations o ON a.organization_id = o.id
-                    WHERE a.status = 'available' 
+                    WHERE a.status = 'available'
                       AND o.active = true
                     ORDER BY a.availability_confidence, a.created_at DESC
                     LIMIT 50
@@ -219,9 +219,9 @@ class DatabaseHealthChecker:
                 start_time = datetime.now()
                 cursor.execute(
                     """
-                    SELECT COUNT(*) FROM animals 
-                    WHERE status = 'available' 
-                      AND to_tsvector('english', COALESCE(name, '') || ' ' || COALESCE(breed, '')) 
+                    SELECT COUNT(*) FROM animals
+                    WHERE status = 'available'
+                      AND to_tsvector('english', COALESCE(name, '') || ' ' || COALESCE(breed, ''))
                           @@ plainto_tsquery('english', 'golden retriever')
                 """
                 )
@@ -257,7 +257,7 @@ class DatabaseHealthChecker:
                 # Basic data counts
                 cursor.execute(
                     """
-                    SELECT 
+                    SELECT
                         COUNT(*) as total_animals,
                         COUNT(*) FILTER (WHERE status = 'available') as available_animals,
                         COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') as animals_added_today,
@@ -272,12 +272,12 @@ class DatabaseHealthChecker:
                 # Recent scraping activity
                 cursor.execute(
                     """
-                    SELECT 
+                    SELECT
                         COUNT(*) as scrapes_last_24h,
                         COUNT(*) FILTER (WHERE status = 'completed') as successful_scrapes,
                         COUNT(*) FILTER (WHERE status = 'failed') as failed_scrapes,
                         MAX(started_at) as last_scrape_time
-                    FROM scrape_logs 
+                    FROM scrape_logs
                     WHERE started_at > NOW() - INTERVAL '24 hours'
                 """
                 )
@@ -325,7 +325,7 @@ class DatabaseHealthChecker:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT 
+                    SELECT
                         pg_size_pretty(pg_database_size(current_database())) as database_size,
                         pg_database_size(current_database()) as database_size_bytes,
                         pg_size_pretty(pg_total_relation_size('animals')) as animals_table_size,
@@ -340,7 +340,7 @@ class DatabaseHealthChecker:
                 cursor.execute(
                     """
                     SELECT COUNT(*) as animals_last_week
-                    FROM animals 
+                    FROM animals
                     WHERE created_at <= NOW() - INTERVAL '7 days'
                 """
                 )

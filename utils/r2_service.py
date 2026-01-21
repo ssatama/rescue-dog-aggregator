@@ -237,7 +237,6 @@ class R2Service:
         try:
             # Generate new SHA-256 image key
             image_key = R2Service._generate_image_key(image_url, animal_name, organization_name)
-            legacy_key = R2Service._generate_legacy_image_key(image_url, animal_name, organization_name)
             bucket_name = os.getenv("R2_BUCKET_NAME")
 
             # Get S3 client

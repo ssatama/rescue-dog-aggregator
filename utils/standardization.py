@@ -149,7 +149,6 @@ BREED_MAPPING = {
     "sheltie": ("Shetland Sheepdog", "Herding", "Small"),
     # Spanish/European breeds
     "bardino": ("Bardino", "Herding", "Medium"),
-    "bretone": ("Brittany", "Sporting", "Medium"),
     "bretonen": ("Brittany", "Sporting", "Medium"),
     "basset fauve de bretagne": ("Basset Fauve de Bretagne", "Hound", "Small"),
     "shar pei": ("Shar Pei", "Non-Sporting", "Medium"),

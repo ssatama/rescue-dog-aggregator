@@ -18,14 +18,14 @@ from psycopg2.extras import RealDictCursor
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from api.dependencies import (  # Import the original dependencies
+from api.dependencies import (  # noqa: E402
     get_db_cursor,
     get_pooled_db_cursor,
 )
-from api.main import app
+from api.main import app  # noqa: E402
 
 # Import database pool to initialize it
-from utils.db_connection import DatabaseConfig
+from utils.db_connection import DatabaseConfig  # noqa: E402
 
 # Set TESTING environment variable early
 os.environ["TESTING"] = "true"

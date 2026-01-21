@@ -121,7 +121,7 @@ class StandardizationBackfillService:
             cursor.execute(
                 """
                 SELECT id, name, breed, standardized_breed, breed_group, age_text, standardized_size
-                FROM animals 
+                FROM animals
                 WHERE breed ILIKE '%lurcher%'
                 AND (breed_group = 'Unknown' OR breed_group IS NULL)
                 ORDER BY id
@@ -141,10 +141,10 @@ class StandardizationBackfillService:
             cursor.execute(
                 """
                 SELECT id, name, breed, standardized_breed, breed_group, age_text, standardized_size
-                FROM animals 
+                FROM animals
                 WHERE (
-                    breed ILIKE '%staff%' 
-                    OR breed ILIKE '%staffy%' 
+                    breed ILIKE '%staff%'
+                    OR breed ILIKE '%staffy%'
                     OR breed ILIKE '%staffie%'
                 )
                 AND breed NOT ILIKE '%american staffordshire%'
@@ -241,7 +241,7 @@ class StandardizationBackfillService:
 
             values.append(animal_id)
             query = f"""
-                UPDATE animals 
+                UPDATE animals
                 SET {", ".join(set_clauses)}
                 WHERE id = %s
             """

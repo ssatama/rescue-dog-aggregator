@@ -97,7 +97,7 @@ async def enrich_animal(request: EnrichmentRequest, conn=Depends(get_async_db_tr
                 # Update database using async execute
                 await conn.execute(
                     """
-                    UPDATE animals 
+                    UPDATE animals
                     SET enriched_description = $1,
                         llm_processed_at = CURRENT_TIMESTAMP,
                         llm_model_used = 'openrouter/auto',
@@ -114,7 +114,7 @@ async def enrich_animal(request: EnrichmentRequest, conn=Depends(get_async_db_tr
                 # Update database using async execute
                 await conn.execute(
                     """
-                    UPDATE animals 
+                    UPDATE animals
                     SET dog_profiler_data = $1,
                         llm_processed_at = CURRENT_TIMESTAMP,
                         llm_model_used = 'openrouter/auto',
@@ -188,7 +188,7 @@ async def batch_enrich_animals(request: BatchEnrichmentRequest, conn=Depends(get
                 if "enriched_description" in result:
                     await conn.execute(
                         """
-                        UPDATE animals 
+                        UPDATE animals
                         SET enriched_description = $1,
                             llm_processed_at = CURRENT_TIMESTAMP,
                             llm_model_used = 'openrouter/auto',

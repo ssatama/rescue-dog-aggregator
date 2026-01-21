@@ -53,7 +53,7 @@ class TestErrorResilience:
             ]
 
             # Should handle the failure gracefully
-            result = mock_scraper.connect_to_database()
+            _result = mock_scraper.connect_to_database()
 
             # First attempt should fail, but method should handle it
             assert mock_connect.call_count >= 1

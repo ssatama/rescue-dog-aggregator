@@ -154,13 +154,13 @@ Feature Flags Usage Guide
 
 3. Rollout Strategy:
    Phase 1: Enable for Group C scrapers (no existing standardization)
-   Phase 2: Enable for Group A scrapers (using optimized_standardization)  
+   Phase 2: Enable for Group A scrapers (using optimized_standardization)
    Phase 3: Enable for Group B scrapers (using standardization)
    Phase 4: Enable globally
 
 4. In Scrapers:
    from utils.feature_flags import is_scraper_standardization_enabled
-   
+
    if is_scraper_standardization_enabled('rean'):
        # Use unified standardization via base_scraper
    else:

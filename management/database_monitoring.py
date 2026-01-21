@@ -48,7 +48,7 @@ class IndexMonitor:
     def get_unused_indexes(self, days: int = 7) -> list[dict]:
         """Find indexes that haven't been used in the specified period."""
         query = """
-            SELECT 
+            SELECT
                 schemaname,
                 relname AS tablename,
                 indexrelname AS index_name,
@@ -65,14 +65,14 @@ class IndexMonitor:
     def get_index_effectiveness(self) -> list[dict]:
         """Calculate effectiveness score for all indexes."""
         query = """
-            SELECT 
+            SELECT
                 relname AS tablename,
                 indexrelname AS index_name,
                 idx_scan AS scans,
                 idx_tup_read AS tuples_read,
                 idx_tup_fetch AS tuples_fetched,
                 pg_size_pretty(pg_relation_size(indexrelid)) AS index_size,
-                CASE 
+                CASE
                     WHEN idx_scan = 0 THEN 0
                     ELSE ROUND((idx_tup_fetch::numeric / NULLIF(idx_scan, 0))::numeric, 2)
                 END AS avg_tuples_per_scan
@@ -104,7 +104,7 @@ class IndexMonitor:
                 WHERE n.nspname = 'public'
                 GROUP BY n.nspname, t.relname, i.relname, i.oid, idx.indisunique, idx.indisprimary
             )
-            SELECT 
+            SELECT
                 a.table_name,
                 a.index_name AS index1,
                 b.index_name AS index2,
@@ -112,7 +112,7 @@ class IndexMonitor:
                 a.index_size AS size1,
                 b.index_size AS size2
             FROM index_info a
-            JOIN index_info b ON a.table_name = b.table_name 
+            JOIN index_info b ON a.table_name = b.table_name
                 AND a.column_names = b.column_names
                 AND a.index_name < b.index_name
             WHERE NOT (a.is_unique OR a.is_primary OR b.is_unique OR b.is_primary)
@@ -123,7 +123,7 @@ class IndexMonitor:
     def get_missing_indexes_recommendation(self) -> list[dict]:
         """Recommend potential missing indexes based on query patterns."""
         query = """
-            SELECT 
+            SELECT
                 schemaname,
                 tablename,
                 attname AS column_name,

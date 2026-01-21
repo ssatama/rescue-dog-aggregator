@@ -56,8 +56,8 @@ class SlugBackfillService:
             cursor = self.conn.cursor()
             cursor.execute(
                 """
-                SELECT id, name, breed, standardized_breed, external_id 
-                FROM animals 
+                SELECT id, name, breed, standardized_breed, external_id
+                FROM animals
                 WHERE slug IS NULL OR slug = ''
                 ORDER BY id
             """
@@ -75,8 +75,8 @@ class SlugBackfillService:
             cursor = self.conn.cursor()
             cursor.execute(
                 """
-                UPDATE animals 
-                SET slug = %s 
+                UPDATE animals
+                SET slug = %s
                 WHERE id = %s
             """,
                 (slug, animal_id),

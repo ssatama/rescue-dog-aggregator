@@ -312,7 +312,7 @@ class AnimalService:
             # Don't filter by status - allow all dogs to be viewed
             # Include organization stats and recent dogs for the organization card
             query = """
-                SELECT a.*, 
+                SELECT a.*,
                        o.name as org_name,
                        o.slug as org_slug,
                        o.city as org_city,
@@ -381,7 +381,7 @@ class AnimalService:
             # Don't filter by status - allow all dogs to be viewed
             # Include organization stats and recent dogs for the organization card
             query = """
-                SELECT a.*, 
+                SELECT a.*,
                        o.name as org_name,
                        o.slug as org_slug,
                        o.city as org_city,
@@ -731,7 +731,7 @@ class AnimalService:
             self.cursor.execute(
                 """
                 WITH breed_stats AS (
-                    SELECT 
+                    SELECT
                         a.primary_breed,
                         a.breed_slug,
                         a.breed_type,
@@ -784,7 +784,7 @@ class AnimalService:
                     HAVING COUNT(*) >= 3
                 ),
                 breed_traits AS (
-                    SELECT 
+                    SELECT
                         a.primary_breed,
                         trait,
                         COUNT(*) as trait_count
@@ -804,11 +804,11 @@ class AnimalService:
                     GROUP BY a.primary_breed, trait
                 ),
                 top_traits AS (
-                    SELECT 
+                    SELECT
                         primary_breed,
                         ARRAY_AGG(trait ORDER BY trait_count DESC) FILTER (WHERE row_num <= 5) as top_personality_traits
                     FROM (
-                        SELECT 
+                        SELECT
                             primary_breed,
                             trait,
                             trait_count,
@@ -817,7 +817,7 @@ class AnimalService:
                     ) ranked_traits
                     GROUP BY primary_breed
                 )
-                SELECT 
+                SELECT
                     bs.*,
                     COALESCE(tt.top_personality_traits, ARRAY[]::text[]) as personality_traits
                 FROM breed_stats bs
@@ -964,12 +964,12 @@ class AnimalService:
             # Get purebred and crossbreed counts
             self.cursor.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) FILTER (WHERE breed_type = 'purebred') as purebred_count,
                     COUNT(*) FILTER (WHERE breed_type = 'crossbreed') as crossbreed_count
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
-                WHERE a.animal_type = 'dog' 
+                WHERE a.animal_type = 'dog'
                 AND a.status = 'available'
                 AND o.active = TRUE
             """
@@ -1044,7 +1044,7 @@ class AnimalService:
             if breed_type == "mixed":
                 query = f"""
                 WITH breed_counts AS (
-                    SELECT 
+                    SELECT
                         'Mixed Breed' as primary_breed,
                         'mixed-breed' as breed_slug,
                         'mixed' as breed_type,
@@ -1063,7 +1063,7 @@ class AnimalService:
                         a.slug,
                         a.primary_image_url,
                         a.age_text,
-                        CASE 
+                        CASE
                             WHEN a.age_min_months < 12 THEN 'Puppy'
                             WHEN a.age_min_months < 36 THEN 'Young'
                             WHEN a.age_min_months < 84 THEN 'Adult'
@@ -1072,7 +1072,7 @@ class AnimalService:
                         a.sex,
                         a.dog_profiler_data->'personality_traits' as personality_traits,
                         ROW_NUMBER() OVER (
-                            ORDER BY 
+                            ORDER BY
                                 CASE WHEN a.primary_image_url IS NOT NULL THEN 0 ELSE 1 END,
                                 a.created_at DESC
                         ) as rn
@@ -1080,7 +1080,7 @@ class AnimalService:
                     JOIN organizations o ON a.organization_id = o.id
                     WHERE {sample_where_clause}
                 )
-                SELECT 
+                SELECT
                     bc.primary_breed,
                     bc.breed_slug,
                     bc.breed_type,
@@ -1108,7 +1108,7 @@ class AnimalService:
             else:
                 query = f"""
                 WITH breed_counts AS (
-                    SELECT 
+                    SELECT
                         a.primary_breed,
                         a.breed_slug,
                         a.breed_type,
@@ -1130,7 +1130,7 @@ class AnimalService:
                         a.slug,
                         a.primary_image_url,
                         a.age_text,
-                        CASE 
+                        CASE
                             WHEN a.age_min_months < 12 THEN 'Puppy'
                             WHEN a.age_min_months < 36 THEN 'Young'
                             WHEN a.age_min_months < 84 THEN 'Adult'
@@ -1139,8 +1139,8 @@ class AnimalService:
                         a.sex,
                         a.dog_profiler_data->'personality_traits' as personality_traits,
                         ROW_NUMBER() OVER (
-                            PARTITION BY a.primary_breed 
-                            ORDER BY 
+                            PARTITION BY a.primary_breed
+                            ORDER BY
                                 CASE WHEN a.primary_image_url IS NOT NULL THEN 0 ELSE 1 END,
                                 a.created_at DESC
                         ) as rn
@@ -1149,7 +1149,7 @@ class AnimalService:
                     JOIN breed_counts bc ON a.primary_breed = bc.primary_breed
                     WHERE {sample_where_clause}
                 )
-                SELECT 
+                SELECT
                     bc.primary_breed,
                     bc.breed_slug,
                     bc.breed_type,
@@ -1557,7 +1557,7 @@ class AnimalService:
               AND a.standardized_size IS NOT NULL
             GROUP BY a.standardized_size
             HAVING COUNT(*) > 0
-            ORDER BY 
+            ORDER BY
                 CASE a.standardized_size
                     WHEN 'Tiny' THEN 1
                     WHEN 'Small' THEN 2
@@ -1610,8 +1610,8 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         query = f"""
-            SELECT 
-                CASE 
+            SELECT
+                CASE
                     WHEN a.age_max_months < 12 THEN 'Puppy'
                     WHEN a.age_min_months >= 12 AND a.age_max_months <= 36 THEN 'Young'
                     WHEN a.age_min_months >= 36 AND a.age_max_months <= 96 THEN 'Adult'

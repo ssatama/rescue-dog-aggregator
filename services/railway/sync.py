@@ -160,13 +160,13 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
         with railway_session() as railway_conn:
             insert_sql = text(
                 """
-                INSERT INTO animals 
+                INSERT INTO animals
                 (id, name, animal_type, size, age_text, sex, breed,
                  primary_image_url, organization_id, created_at, updated_at,
                  availability_confidence, last_seen_at, consecutive_scrapes_missing,
                  status, properties, adoption_url, external_id, slug, dog_profiler_data,
                  breed_confidence, breed_type, primary_breed, secondary_breed, breed_slug)
-                VALUES 
+                VALUES
                 (:id, :name, :animal_type, :size, :age_text, :sex, :breed,
                  :primary_image_url, :organization_id, :created_at, :updated_at,
                  :availability_confidence, :last_seen_at, :consecutive_scrapes_missing,
@@ -276,8 +276,8 @@ def _validate_table_schemas() -> bool:
                     cursor.execute(
                         """
                         SELECT column_name, data_type
-                        FROM information_schema.columns 
-                        WHERE table_name = %s 
+                        FROM information_schema.columns
+                        WHERE table_name = %s
                     """,
                         (table,),
                     )
@@ -291,8 +291,8 @@ def _validate_table_schemas() -> bool:
                     text(
                         """
                     SELECT column_name, data_type
-                    FROM information_schema.columns 
-                    WHERE table_name = :table_name 
+                    FROM information_schema.columns
+                    WHERE table_name = :table_name
                 """
                     ),
                     {"table_name": table},
@@ -503,11 +503,11 @@ def _process_organizations_chunk(session, organizations_chunk):
     # Insert into Railway database using the provided session
     insert_sql = text(
         """
-        INSERT INTO organizations 
+        INSERT INTO organizations
         (id, name, website_url, description, country, city, logo_url, active,
-         created_at, updated_at, social_media, config_id, last_config_sync, 
+         created_at, updated_at, social_media, config_id, last_config_sync,
          established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug, adoption_fees)
-        VALUES 
+        VALUES
         (:id, :name, :website_url, :description, :country, :city, :logo_url, :active,
          :created_at, :updated_at, :social_media, :config_id, :last_config_sync,
          :established_year, :ships_to, :service_regions, :total_dogs, :new_this_week, :recent_dogs, :slug, :adoption_fees)
@@ -651,9 +651,9 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
         total_synced = 0
         insert_sql = text(
             """
-            INSERT INTO animals 
+            INSERT INTO animals
             (id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, breed_group, breed_confidence, breed_type, primary_breed, secondary_breed, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, active, slug, dog_profiler_data, breed_slug, adoption_check_data, adoption_checked_at)
-            VALUES 
+            VALUES
             (:id, :name, :organization_id, :animal_type, :external_id, :primary_image_url, :adoption_url, :status, :breed, :standardized_breed, :age_text, :age_min_months, :age_max_months, :sex, :size, :standardized_size, :language, :properties, :created_at, :updated_at, :last_scraped_at, :breed_group, :breed_confidence, :breed_type, :primary_breed, :secondary_breed, :original_image_url, :last_seen_at, :consecutive_scrapes_missing, :availability_confidence, :active, :slug, :dog_profiler_data, :breed_slug, :adoption_check_data, :adoption_checked_at)
             ON CONFLICT (external_id, organization_id) DO UPDATE SET
                 name = EXCLUDED.name,
@@ -777,11 +777,11 @@ def _sync_scrape_logs_with_mapping(session, org_id_mapping: dict, batch_size: in
         total_synced = 0
         insert_sql = text(
             """
-            INSERT INTO scrape_logs 
+            INSERT INTO scrape_logs
             (id, organization_id, started_at, completed_at, dogs_found, dogs_added,
              dogs_updated, status, error_message, created_at, detailed_metrics,
              duration_seconds, data_quality_score)
-            VALUES 
+            VALUES
             (:id, :organization_id, :started_at, :completed_at, :dogs_found, :dogs_added,
              :dogs_updated, :status, :error_message, :created_at, :detailed_metrics,
              :duration_seconds, :data_quality_score)
@@ -870,9 +870,9 @@ def _sync_service_regions_with_mapping(session, org_id_mapping: dict, batch_size
         total_synced = 0
         insert_sql = text(
             """
-            INSERT INTO service_regions 
+            INSERT INTO service_regions
             (id, organization_id, country, active, notes, created_at, updated_at, region)
-            VALUES 
+            VALUES
             (:id, :organization_id, :country, :active, :notes, :created_at, :updated_at, :region)
             ON CONFLICT (organization_id, country) DO UPDATE SET
                 active = EXCLUDED.active,
@@ -968,11 +968,11 @@ def _sync_scrape_logs_to_railway_in_transaction(session, batch_size: int = 100) 
         total_synced = 0
         insert_sql = text(
             """
-            INSERT INTO scrape_logs 
+            INSERT INTO scrape_logs
             (id, organization_id, started_at, completed_at, dogs_found, dogs_added,
              dogs_updated, status, error_message, created_at, detailed_metrics,
              duration_seconds, data_quality_score)
-            VALUES 
+            VALUES
             (:id, :organization_id, :started_at, :completed_at, :dogs_found, :dogs_added,
              :dogs_updated, :status, :error_message, :created_at, :detailed_metrics,
              :duration_seconds, :data_quality_score)
@@ -1068,9 +1068,9 @@ def _sync_service_regions_to_railway_in_transaction(session, batch_size: int = 1
         total_synced = 0
         insert_sql = text(
             """
-            INSERT INTO service_regions 
+            INSERT INTO service_regions
             (id, organization_id, country, active, notes, created_at, updated_at, region)
-            VALUES 
+            VALUES
             (:id, :organization_id, :country, :active, :notes, :created_at, :updated_at, :region)
             ON CONFLICT (organization_id, country) DO UPDATE SET
                 active = EXCLUDED.active,

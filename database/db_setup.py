@@ -85,8 +85,8 @@ def ensure_migration_tracking(conn):
         # Mark the performance indexes migration as applied
         cursor.execute(
             """
-            INSERT INTO schema_migrations (version, description) 
-            VALUES (%s, %s) 
+            INSERT INTO schema_migrations (version, description)
+            VALUES (%s, %s)
             ON CONFLICT (version) DO NOTHING
         """,
             ("010", "Enhanced performance indexes for homepage queries"),
@@ -149,8 +149,8 @@ def verify_index_performance(conn):
         for index_name in performance_indexes:
             cursor.execute(
                 """
-                SELECT indexname, tablename 
-                FROM pg_indexes 
+                SELECT indexname, tablename
+                FROM pg_indexes
                 WHERE indexname = %s
             """,
                 (index_name,),

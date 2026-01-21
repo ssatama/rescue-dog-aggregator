@@ -55,7 +55,7 @@ class TestR2BatchUpload(unittest.TestCase):
             mock_upload.return_value = ("https://r2.com/image.jpg", True)
 
             with patch("time.sleep") as mock_sleep:
-                results = R2Service.batch_upload_images(test_images, batch_size=2, batch_delay=2.0)
+                _results = R2Service.batch_upload_images(test_images, batch_size=2, batch_delay=2.0)
 
                 # Should pause after first batch (2 images), not after last
                 # Expecting 1 pause for 4 images with batch_size=2
@@ -167,7 +167,7 @@ class TestR2BatchUpload(unittest.TestCase):
             ]
 
             with patch("time.sleep") as mock_sleep:
-                results = R2Service.batch_upload_images(test_images, batch_size=2, adaptive_delay=True)
+                _results = R2Service.batch_upload_images(test_images, batch_size=2, adaptive_delay=True)
 
                 # Should see increased delays after failures
                 sleep_calls = mock_sleep.call_args_list

@@ -63,8 +63,8 @@ class DataQualityAnalyzer:
             if org_id:
                 # Get animals for specific organization
                 query = """
-                    SELECT a.id, a.name, a.breed, a.standardized_breed, a.age_text, 
-                           a.age_min_months, a.age_max_months, a.sex, a.size, 
+                    SELECT a.id, a.name, a.breed, a.standardized_breed, a.age_text,
+                           a.age_min_months, a.age_max_months, a.sex, a.size,
                            a.standardized_size, a.properties, a.primary_image_url,
                            a.organization_id, o.name as organization_name
                     FROM animals a
@@ -77,8 +77,8 @@ class DataQualityAnalyzer:
             else:
                 # Get all available animals
                 query = """
-                    SELECT a.id, a.name, a.breed, a.standardized_breed, a.age_text, 
-                           a.age_min_months, a.age_max_months, a.sex, a.size, 
+                    SELECT a.id, a.name, a.breed, a.standardized_breed, a.age_text,
+                           a.age_min_months, a.age_max_months, a.sex, a.size,
                            a.standardized_size, a.properties, a.primary_image_url,
                            a.organization_id, o.name as organization_name
                     FROM animals a
@@ -183,7 +183,7 @@ class DataQualityAnalyzer:
 
             # Get all organizations with animals
             query = """
-                SELECT DISTINCT o.id, o.name 
+                SELECT DISTINCT o.id, o.name
                 FROM organizations o
                 JOIN animals a ON o.id = a.organization_id
                 WHERE a.status = 'available'

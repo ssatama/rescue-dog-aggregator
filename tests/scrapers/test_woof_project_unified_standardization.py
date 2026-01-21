@@ -31,7 +31,7 @@ class TestWoofProjectUnifiedStandardization:
         """Verify feature flag controls unified standardization."""
         from utils.feature_flags import is_scraper_standardization_enabled
 
-        scraper = WoofProjectScraper()
+        _scraper = WoofProjectScraper()
         # Feature flag should be enabled for woof_project
         assert is_scraper_standardization_enabled("woof_project") is True
 

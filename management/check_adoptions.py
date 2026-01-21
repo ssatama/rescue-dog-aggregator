@@ -108,7 +108,7 @@ class CheckAdoptionsCommand:
         recheck_cutoff = datetime.now(UTC) - timedelta(hours=check_interval_hours)
 
         query = """
-            SELECT 
+            SELECT
                 id,
                 name,
                 adoption_url as url,
@@ -121,7 +121,7 @@ class CheckAdoptionsCommand:
             AND consecutive_scrapes_missing >= %s
             AND status NOT IN ('adopted', 'reserved')
             AND (
-                adoption_checked_at IS NULL 
+                adoption_checked_at IS NULL
                 OR adoption_checked_at < %s
             )
             ORDER BY consecutive_scrapes_missing DESC, id
@@ -242,7 +242,7 @@ class CheckAdoptionsCommand:
 
         update_query = """
             UPDATE animals
-            SET 
+            SET
                 status = %s,
                 adoption_check_data = %s,
                 adoption_checked_at = %s

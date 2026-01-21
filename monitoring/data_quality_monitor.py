@@ -28,9 +28,9 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-from monitoring.quality.analyzer import DataQualityAnalyzer
-from monitoring.quality.metrics import DataQualityMetrics
-from monitoring.quality.reporter import DataQualityReporter
+from monitoring.quality.analyzer import DataQualityAnalyzer  # noqa: E402
+from monitoring.quality.metrics import DataQualityMetrics  # noqa: E402
+from monitoring.quality.reporter import DataQualityReporter  # noqa: E402
 
 
 def setup_logging(level: str = "INFO") -> None:
@@ -198,13 +198,13 @@ def main():
         epilog="""
 Examples:
   %(prog)s --mode=overall                    # Analyze all organizations
-  %(prog)s --mode=detailed --org-id=26       # Detailed analysis for org 26 
+  %(prog)s --mode=detailed --org-id=26       # Detailed analysis for org 26
   %(prog)s --mode=detailed --all             # Detailed analysis for all orgs
   %(prog)s --mode=overall --verbose          # Verbose output
 
 Quality Metrics:
   • Completeness (40%): Essential fields present
-  • Standardization (30%): Normalized data available  
+  • Standardization (30%): Normalized data available
   • Rich Content (20%): Descriptions for SEO
   • Visual Appeal (10%): Images for adoption success
 

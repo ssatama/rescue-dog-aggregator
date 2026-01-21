@@ -10,14 +10,13 @@ Tests cover:
 """
 
 import pytest
-
-# Mark all tests in this module as unit tests (no external dependencies)
-pytestmark = pytest.mark.unit
-
 from fastapi import FastAPI, Response
 from fastapi.testclient import TestClient
 
 from api.middleware.cache_headers import CacheHeadersMiddleware
+
+# Mark all tests in this module as unit tests (no external dependencies)
+pytestmark = pytest.mark.unit
 
 
 @pytest.fixture

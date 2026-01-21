@@ -32,8 +32,8 @@ def check_slug_status():
         # Check if slug column exists
         cursor.execute(
             """
-            SELECT column_name, is_nullable, data_type 
-            FROM information_schema.columns 
+            SELECT column_name, is_nullable, data_type
+            FROM information_schema.columns
             WHERE table_name = 'animals' AND column_name = 'slug'
         """
         )
@@ -70,7 +70,7 @@ def check_slug_status():
             cursor.execute(
                 """
                 SELECT id, name, breed, external_id, slug
-                FROM animals 
+                FROM animals
                 WHERE slug IS NULL OR slug = ''
                 LIMIT 5
             """

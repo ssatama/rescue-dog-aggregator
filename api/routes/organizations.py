@@ -114,7 +114,7 @@ def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
         cursor.execute(
             """
             WITH org_stats AS (
-                SELECT 
+                SELECT
                     o.id,
                     o.name,
                     o.description,
@@ -156,7 +156,7 @@ def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
                     AND a.active = true
                     AND a.organization_id IN (SELECT id FROM org_stats)
             )
-            SELECT 
+            SELECT
                 os.*,
                 COALESCE(
                     json_agg(
@@ -175,7 +175,7 @@ def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
                 ) as recent_dogs
             FROM org_stats os
             LEFT JOIN recent_dogs rd ON os.id = rd.organization_id AND rd.rn <= 3
-            GROUP BY 
+            GROUP BY
                 os.id, os.name, os.description, os.logo_url, os.website_url,
                 os.country, os.city, os.social_media, os.service_regions,
                 os.ships_to, os.adoption_fees, os.slug, os.is_active,

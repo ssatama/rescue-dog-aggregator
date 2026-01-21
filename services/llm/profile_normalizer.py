@@ -136,29 +136,29 @@ class ProfileNormalizer:
             normalized["trainability"] = self.rules.default_values["trainability"]
 
         # Normalize compatibility fields
-        for field in ["good_with_children", "good_with_cats", "good_with_dogs"]:
-            if field in normalized:
-                field_type = field.replace("good_with_", "")
-                normalized[field] = self.normalize_compatibility(normalized[field], field_type)
+        for field_name in ["good_with_children", "good_with_cats", "good_with_dogs"]:
+            if field_name in normalized:
+                field_type = field_name.replace("good_with_", "")
+                normalized[field_name] = self.normalize_compatibility(normalized[field_name], field_type)
 
         # Normalize list fields
-        for field, constraints in self.rules.list_constraints.items():
-            if field in normalized:
-                normalized[field] = self.normalize_list_field(
-                    normalized[field],
+        for field_name, constraints in self.rules.list_constraints.items():
+            if field_name in normalized:
+                normalized[field_name] = self.normalize_list_field(
+                    normalized[field_name],
                     min_items=constraints["min"],
                     max_items=constraints["max"],
                     default_item=constraints["defaults"][0] if constraints["defaults"] else None,
                 )
-            elif field not in normalized and constraints["min"] > 0:
+            elif field_name not in normalized and constraints["min"] > 0:
                 # Add default list if required
-                normalized[field] = constraints["defaults"][: constraints["min"]]
+                normalized[field_name] = constraints["defaults"][: constraints["min"]]
 
         # Normalize boolean fields
         boolean_fields = ["vaccinated", "neutered", "ready_to_travel", "yard_required"]
-        for field in boolean_fields:
-            if field in normalized:
-                normalized[field] = self.normalize_boolean(normalized[field])
+        for field_name in boolean_fields:
+            if field_name in normalized:
+                normalized[field_name] = self.normalize_boolean(normalized[field_name])
 
         # Normalize numeric fields
         if "adoption_fee_euros" in normalized:
@@ -169,9 +169,9 @@ class ProfileNormalizer:
             normalized["confidence_scores"] = self.normalize_confidence_scores(normalized["confidence_scores"])
 
         # Apply defaults for missing required fields
-        for field, default_value in self.rules.default_values.items():
-            if field not in normalized:
-                normalized[field] = default_value
+        for field_name, default_value in self.rules.default_values.items():
+            if field_name not in normalized:
+                normalized[field_name] = default_value
 
         return normalized
 

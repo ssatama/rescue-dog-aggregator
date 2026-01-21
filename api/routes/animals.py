@@ -303,9 +303,9 @@ async def get_search_suggestions(
         # Use LIKE patterns for efficient searching without requiring pg_trgm extension
         # Fix: Include ORDER BY expressions in SELECT for DISTINCT compatibility
         query = """
-            SELECT DISTINCT 
+            SELECT DISTINCT
                 name,
-                CASE 
+                CASE
                     WHEN LOWER(name) LIKE LOWER(%s) THEN 1
                     WHEN LOWER(name) LIKE LOWER(%s) THEN 2
                     ELSE 3
@@ -398,9 +398,9 @@ async def get_breed_suggestions(
         # Removed similarity() function to avoid requiring pg_trgm extension
         # Fix: Include ORDER BY expressions in SELECT for DISTINCT compatibility
         query = """
-            SELECT DISTINCT 
+            SELECT DISTINCT
                 standardized_breed,
-                CASE 
+                CASE
                     WHEN LOWER(standardized_breed) LIKE LOWER(%s) THEN 1
                     WHEN LOWER(standardized_breed) LIKE LOWER(%s) THEN 2
                     ELSE 3

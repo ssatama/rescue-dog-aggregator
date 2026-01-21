@@ -102,10 +102,6 @@ class ImageProcessingService:
         if not image_url.startswith(("http://", "https://")):
             return False
 
-        # Check for common image extensions
-        image_extensions = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp")
-        url_lower = image_url.lower()
-
         # Allow URLs without extensions (many sites use dynamic URLs)
         # or with image extensions
         return True  # Basic validation passed
@@ -258,8 +254,8 @@ class ImageProcessingService:
             # The original_urls parameter contains the source URLs (e.g., from the org's website)
             # We need to check if we've already processed and uploaded these
             query = f"""
-                SELECT DISTINCT original_image_url, primary_image_url 
-                FROM animals 
+                SELECT DISTINCT original_image_url, primary_image_url
+                FROM animals
                 WHERE original_image_url IN ({placeholders})
                 AND primary_image_url IS NOT NULL
                 AND primary_image_url LIKE '%%images.rescuedogs.me%%'
