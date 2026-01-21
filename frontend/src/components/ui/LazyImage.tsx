@@ -120,7 +120,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
             blurPlaceholderSrc &&
             !lowQualityLoaded &&
             !isLoaded && (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={blurPlaceholderSrc}
                 alt={alt}
@@ -135,7 +134,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
 
           {/* Stage 2: Low quality image */}
           {enableProgressiveLoading && lowQualitySrc && !isLoaded && (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={lowQualitySrc}
               alt={alt}
@@ -149,7 +147,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
           )}
 
           {/* Stage 3: Full quality image with smooth 300ms fade-in transition */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
             alt={alt}

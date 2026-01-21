@@ -125,7 +125,6 @@ const ProgressiveImage = memo(function ProgressiveImage({
       {...props}
     >
       {/* Placeholder/blur-up image */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={placeholderSrc}
         alt=""
@@ -143,7 +142,6 @@ const ProgressiveImage = memo(function ProgressiveImage({
 
       {/* Main image */}
       {isInView && optimizedSrc && (
-        /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src={optimizedSrc}
           alt={alt}

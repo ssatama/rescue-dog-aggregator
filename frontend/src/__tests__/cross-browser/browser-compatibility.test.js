@@ -105,7 +105,6 @@ jest.mock("../../components/ui/HeroImageWithBlurredBackground", () => {
   return function MockHeroImage({ src, alt }) {
     return (
       <div data-testid="mock-hero-image">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt} data-testid="hero-image" />
       </div>
     );

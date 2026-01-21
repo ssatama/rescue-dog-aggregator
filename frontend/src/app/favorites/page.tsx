@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Layout from "../../components/layout/Layout";
 import { useFavorites } from "../../hooks/useFavorites";
@@ -159,41 +159,6 @@ function FavoritesPageContent() {
   const showInsights = filteredDogs.length >= 2;
   const hasLLMData = filteredDogs.some((dog) => dog.dog_profiler_data);
 
-  // Effect to calculate enhanced insights
-  useEffect(() => {
-    if (!showInsights || filteredDogs.length < 2) {
-      setInsights(null);
-      return;
-    }
-
-    setInsightsLoading(true);
-
-    // Use setTimeout to avoid blocking the UI
-    const timer = setTimeout(() => {
-      try {
-        // Use statically imported function
-        // Cast to DogWithProfiler[] since favorites are always fetched from API with numeric IDs
-        const enhancedInsights = getEnhancedInsights(filteredDogs as any);
-        const basicInsights = getBasicInsights(filteredDogs);
-
-        setInsights({
-          ...basicInsights,
-          ...enhancedInsights,
-          hasEnhancedData: filteredDogs.some((d) => d.dog_profiler_data),
-        });
-      } catch (error) {
-        console.error("Error calculating enhanced insights:", error);
-        // Fall back to basic insights on error
-        setInsights(getBasicInsights(filteredDogs));
-      } finally {
-        setInsightsLoading(false);
-      }
-    }, 0);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredDogs, showInsights]);
-
   // Basic insights function (existing logic)
   const getBasicInsights = useCallback((dogList: Dog[]): Insights | null => {
     if (!dogList || dogList.length === 0) return null;
@@ -298,6 +263,40 @@ function FavoritesPageContent() {
     }
     return `${formatAge(minMonths)} - ${formatAge(maxMonths)}`;
   }
+
+  // Effect to calculate enhanced insights
+  useEffect(() => {
+    if (!showInsights || filteredDogs.length < 2) {
+      setInsights(null);
+      return;
+    }
+
+    setInsightsLoading(true);
+
+    // Use setTimeout to avoid blocking the UI
+    const timer = setTimeout(() => {
+      try {
+        // Use statically imported function
+        // Cast to DogWithProfiler[] since favorites are always fetched from API with numeric IDs
+        const enhancedInsights = getEnhancedInsights(filteredDogs as any);
+        const basicInsights = getBasicInsights(filteredDogs);
+
+        setInsights({
+          ...basicInsights,
+          ...enhancedInsights,
+          hasEnhancedData: filteredDogs.some((d) => d.dog_profiler_data),
+        });
+      } catch (error) {
+        console.error("Error calculating enhanced insights:", error);
+        // Fall back to basic insights on error
+        setInsights(getBasicInsights(filteredDogs));
+      } finally {
+        setInsightsLoading(false);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [filteredDogs, showInsights, getBasicInsights]);
 
   if (isLoading) {
     return (
