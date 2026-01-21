@@ -76,7 +76,7 @@ export interface Dog {
     weight?: string;
     house_trained?: boolean;
     special_needs?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 
   // Timestamps

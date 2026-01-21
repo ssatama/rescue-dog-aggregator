@@ -2,7 +2,8 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import SkeletonPulse from "./SkeletonPulse";
 
-export interface ContentSkeletonProps {
+export interface ContentSkeletonProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "className" | "aria-label"> {
   /** Number of skeleton lines to render (default: 3) */
   lines?: number;
   /** CSS class for line height (default: 'h-4') */
@@ -13,8 +14,6 @@ export interface ContentSkeletonProps {
   className?: string;
   /** Custom aria-label for accessibility */
   "aria-label"?: string;
-  /** Additional props forwarded to container */
-  [key: string]: any;
 }
 
 /**

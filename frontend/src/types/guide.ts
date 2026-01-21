@@ -1,3 +1,5 @@
+import type { MDXRemoteSerializeResult } from "next-mdx-remote";
+
 export interface GuideFrontmatter {
   title: string;
   slug: string;
@@ -16,5 +18,5 @@ export interface Guide {
   slug: string;
   frontmatter: GuideFrontmatter;
   content: string;
-  serializedContent?: any; // MDXRemoteSerializeResult
+  serializedContent?: MDXRemoteSerializeResult;
 }

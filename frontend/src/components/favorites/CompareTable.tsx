@@ -9,9 +9,22 @@ import {
 } from "./compareUtils";
 import type { Dog } from "./types";
 
+interface ComparisonDataField {
+  values: string[];
+  highlight?: boolean[];
+  allSame?: boolean;
+}
+
+interface ComparisonData {
+  age?: ComparisonDataField;
+  size?: ComparisonDataField;
+  organization?: ComparisonDataField;
+  location?: ComparisonDataField;
+}
+
 interface CompareTableProps {
   dogs: Dog[];
-  comparisonData: any;
+  comparisonData: ComparisonData;
 }
 
 function getCompatibilityIcon(value: string) {
@@ -255,9 +268,9 @@ export default function CompareTable({
                       <td key={idx} className="py-4 px-4 text-center">
                         <span
                           className={`text-sm font-medium ${
-                            comparisonData.age.highlight[idx]
+                            comparisonData.age?.highlight?.[idx]
                               ? "text-orange-600 dark:text-orange-400 font-semibold bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-lg"
-                              : comparisonData.age.allSame
+                              : comparisonData.age?.allSame
                                 ? "text-gray-500 dark:text-gray-400"
                                 : "text-gray-900 dark:text-gray-100"
                           }`}
@@ -289,7 +302,7 @@ export default function CompareTable({
                       <td key={idx} className="py-4 px-4 text-center">
                         <span
                           className={`text-sm font-medium ${
-                            comparisonData.size.allSame
+                            comparisonData.size?.allSame
                               ? "text-gray-500 dark:text-gray-400"
                               : "text-gray-900 dark:text-gray-100"
                           }`}
@@ -429,7 +442,7 @@ export default function CompareTable({
                       <td key={idx} className="py-4 px-4 text-center">
                         <span
                           className={`text-sm font-medium ${
-                            comparisonData.organization.allSame
+                            comparisonData.organization?.allSame
                               ? "text-gray-500 dark:text-gray-400"
                               : "text-gray-900 dark:text-gray-100"
                           }`}
@@ -460,7 +473,7 @@ export default function CompareTable({
                       <td key={idx} className="py-4 px-4 text-center">
                         <span
                           className={`text-sm font-medium ${
-                            comparisonData.location.allSame
+                            comparisonData.location?.allSame
                               ? "text-gray-500 dark:text-gray-400"
                               : "text-gray-900 dark:text-gray-100"
                           }`}

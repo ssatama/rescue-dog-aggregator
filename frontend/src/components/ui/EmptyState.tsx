@@ -19,9 +19,8 @@ interface ActionButton {
     | "link";
 }
 
-interface IconProps {
+interface IconProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
-  [key: string]: any;
 }
 
 export interface EmptyStateProps {

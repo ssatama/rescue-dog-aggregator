@@ -3,6 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "@/components/ui/Icon";
 
+interface HiddenGemsQuirk {
+  dogName: string;
+  quirk: string;
+}
+
 interface Insights {
   hasEnhancedData: boolean;
   personalityPattern?: {
@@ -17,7 +22,7 @@ interface Insights {
     recommendation: string;
   };
   hiddenGems?: {
-    uniqueQuirks: Array<{ dogName: string; quirk: string }>;
+    uniqueQuirks: HiddenGemsQuirk[];
   };
   careComplexity?: {
     description: string;
@@ -28,7 +33,6 @@ interface Insights {
   topOrganization?: string;
   sizePreference?: string;
   ageRange?: string;
-  [key: string]: any;
 }
 
 interface FavoritesInsightsProps {
@@ -247,7 +251,7 @@ export default function FavoritesInsights({
                 <div className="text-xs space-y-1">
                   {insights.hiddenGems?.uniqueQuirks
                     ?.slice(0, 2)
-                    .map((item: any, idx: number) => (
+                    .map((item: HiddenGemsQuirk, idx: number) => (
                       <p key={idx} className="text-xs leading-tight">
                         <span className="font-medium text-orange-600 dark:text-orange-400">
                           {item.dogName}:

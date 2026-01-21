@@ -64,14 +64,31 @@ interface MobileHomePageProps {
   initialData?: InitialData;
 }
 
+interface BreedItem {
+  name?: string;
+  breed_name?: string;
+  slug?: string;
+  description?: string;
+  count?: number;
+  available_count?: number;
+  image_url?: string;
+  imageUrl?: string;
+}
+
+interface BreedStatsInput {
+  breeds?: BreedItem[];
+  qualifying_breeds?: BreedItem[];
+  total_breeds?: number;
+}
+
 // Helper function to get random breeds
-const getRandomBreeds = (breedStats: any, count: number = 3) => {
+const getRandomBreeds = (breedStats: BreedStatsInput | undefined, count: number = 3) => {
   if (!breedStats?.breeds?.length) return [];
 
   // Filter breeds with good data
-  const qualifyingBreeds = breedStats.breeds.filter((breed: any) => {
+  const qualifyingBreeds = breedStats.breeds.filter((breed: BreedItem) => {
     return (
-      breed.count > 0 &&
+      (breed.count ?? 0) > 0 &&
       (breed.name || breed.breed_name) &&
       (breed.image_url || breed.imageUrl)
     );
@@ -82,14 +99,14 @@ const getRandomBreeds = (breedStats: any, count: number = 3) => {
   // Shuffle and take requested count
   const shuffled = [...qualifyingBreeds].sort(() => 0.5 - Math.random());
 
-  return shuffled.slice(0, count).map((breed) => ({
+  return shuffled.slice(0, count).map((breed: BreedItem) => ({
     name: breed.name || breed.breed_name || "",
     slug: breed.slug || breed.name?.toLowerCase().replace(/\s+/g, "-"),
     description:
       breed.description ||
       `Discover wonderful ${breed.name || breed.breed_name}s looking for their forever homes.`,
     availableCount: breed.count || breed.available_count || 0,
-    imageUrl: breed.image_url || breed.imageUrl || null,
+    imageUrl: breed.image_url || breed.imageUrl || undefined,
   }));
 };
 

@@ -1,7 +1,9 @@
 import type { Dog } from "../types/dog";
 
+type ComparisonValue = string | number | boolean | undefined | null;
+
 export interface AttributeComparison {
-  values: any[];
+  values: ComparisonValue[];
   allSame: boolean;
   highlight: boolean[];
 }
@@ -34,7 +36,7 @@ function getAgeInMonths(dog: Dog): number {
   return -1; // Unknown age
 }
 
-function findHighlights(values: any[], attribute: string): boolean[] {
+function findHighlights(values: ComparisonValue[], attribute: string): boolean[] {
   if (values.length === 0) return [];
   if (values.length === 1) return [false];
 
@@ -52,11 +54,13 @@ function findHighlights(values: any[], attribute: string): boolean[] {
       // Highlight the youngest dogs
       const ageMonths = values.map((v) => {
         if (typeof v === "number") return v;
-        const match = v?.match(/(\d+)\s*(year|month)/i);
-        if (match) {
-          const value = parseInt(match[1]);
-          const unit = match[2].toLowerCase();
-          return unit.includes("year") ? value * 12 : value;
+        if (typeof v === "string") {
+          const match = v.match(/(\d+)\s*(year|month)/i);
+          if (match) {
+            const value = parseInt(match[1]);
+            const unit = match[2].toLowerCase();
+            return unit.includes("year") ? value * 12 : value;
+          }
         }
         return Infinity;
       });
@@ -69,7 +73,7 @@ function findHighlights(values: any[], attribute: string): boolean[] {
     case "sex":
     case "size": {
       // Highlight the minority values
-      const counts = new Map<any, number>();
+      const counts = new Map<ComparisonValue, number>();
       values.forEach((v) => {
         counts.set(v, (counts.get(v) || 0) + 1);
       });
@@ -85,15 +89,16 @@ function findHighlights(values: any[], attribute: string): boolean[] {
       return values.map((v) => v === false);
     }
 
-    default:
+    default: {
       // For other attributes, highlight values that are different from the majority
-      const counts = new Map<any, number>();
+      const counts = new Map<ComparisonValue, number>();
       values.forEach((v) => {
         counts.set(v, (counts.get(v) || 0) + 1);
       });
 
       const maxCount = Math.max(...counts.values());
       return values.map((v) => counts.get(v) !== maxCount);
+    }
   }
 }
 

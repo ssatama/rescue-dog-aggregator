@@ -476,7 +476,7 @@ const ComparisonView = ({
   };
 
   const handleDragEnd = useCallback(
-    (event: any, info: PanInfo) => {
+    (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       const { offset } = info;
       const swipeThreshold = 50;
 

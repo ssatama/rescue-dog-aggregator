@@ -41,8 +41,14 @@ function getDeviceType(): "mobile" | "tablet" | "desktop" {
   return "desktop";
 }
 
+interface NavigatorWithConnection extends Navigator {
+  connection?: {
+    effectiveType?: string;
+  };
+}
+
 function getConnectionType(): string | undefined {
-  const nav = navigator as any;
+  const nav = navigator as NavigatorWithConnection;
   return nav.connection?.effectiveType;
 }
 
@@ -156,7 +162,7 @@ export function initPerformanceMonitoring() {
           resources: slowResources.map((r) => ({
             name: r.name,
             duration: Math.round(r.duration),
-            type: (r as any).initiatorType,
+            type: (r as PerformanceResourceTiming).initiatorType,
           })),
         });
       }
@@ -168,7 +174,10 @@ export function initPerformanceMonitoring() {
 export function trackCustomMetric(
   name: string,
   value: number,
-  metadata?: Record<string, any>,
+  metadata?: Partial<
+    Pick<PerformanceData, "delta" | "navigationType" | "connectionType">
+  > &
+    Record<string, string | number | boolean | undefined>,
 ) {
   const data: PerformanceData = {
     metric: name,
@@ -227,6 +236,10 @@ export function trackAPIPerformance(endpoint: string, startTime: number) {
 
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
+    gtag?: (
+      command: string,
+      action: string,
+      params?: Record<string, string | number | boolean | undefined>,
+    ) => void;
   }
 }

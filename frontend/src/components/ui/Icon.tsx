@@ -116,7 +116,7 @@ export type IconName = keyof typeof iconMap;
 export type IconSize = keyof typeof sizeClasses;
 export type IconColor = keyof typeof colorClasses;
 
-export interface IconProps {
+export interface IconProps extends Omit<React.SVGProps<SVGSVGElement>, "name"> {
   /** Icon name from the iconMap */
   name: IconName;
   /** Icon size */
@@ -129,8 +129,6 @@ export interface IconProps {
   "aria-label"?: string;
   /** For heart icon, whether to show filled state */
   filled?: boolean;
-  /** Additional props passed to the icon component */
-  [key: string]: any;
 }
 
 /**

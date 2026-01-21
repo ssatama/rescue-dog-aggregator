@@ -60,6 +60,6 @@ export interface DogWithProfiler {
   slug?: string;
   created_at?: string;
   dog_profiler_data?: DogProfilerData;
-  properties?: Record<string, any>;
-  [key: string]: any;
+  properties?: Record<string, unknown>;
+  [key: string]: unknown;
 }

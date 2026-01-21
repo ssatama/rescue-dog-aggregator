@@ -1,5 +1,29 @@
 import * as Sentry from "@sentry/nextjs";
 
+interface SentryBreadcrumb {
+  category?: string;
+  message?: string;
+  level?: "debug" | "info" | "warning" | "error" | "fatal";
+  data?: Record<string, unknown>;
+}
+
+interface SpanConfig {
+  name: string;
+  op: string;
+  attributes?: Record<string, string | number | boolean>;
+}
+
+interface MetricEventBase {
+  type: string;
+  timestamp?: string;
+}
+
+interface MetricEvent extends MetricEventBase {
+  [key: string]: string | number | boolean | undefined;
+}
+
+type MetricInput = MetricEventBase & Record<string, string | number | boolean | undefined>;
+
 // Runtime env checks to avoid import-time capture
 const shouldSendEvents = (): boolean => {
   const isDev = process.env.NODE_ENV === "development";
@@ -23,8 +47,16 @@ const isSentryReady = (): boolean => {
   }
 };
 
+// Minimal span interface for callback
+interface MinimalSpan {
+  setAttribute: (key: string, value: string | number | boolean) => void;
+}
+
 // Safe wrappers for Sentry methods (gate by env + readiness at call-time)
-const safeStartSpan = (config: any, callback?: (span: any) => void): void => {
+const safeStartSpan = (
+  config: SpanConfig,
+  callback?: (span: MinimalSpan) => void,
+): void => {
   if (shouldSendEvents() && isSentryReady()) {
     Sentry.startSpan(config, callback || (() => {}));
   } else if (callback) {
@@ -33,7 +65,7 @@ const safeStartSpan = (config: any, callback?: (span: any) => void): void => {
   }
 };
 
-const safeAddBreadcrumb = (breadcrumb: any): void => {
+const safeAddBreadcrumb = (breadcrumb: SentryBreadcrumb): void => {
   if (shouldSendEvents() && isSentryReady()) {
     Sentry.addBreadcrumb(breadcrumb);
   }
@@ -42,7 +74,7 @@ const safeAddBreadcrumb = (breadcrumb: any): void => {
 // Event batching configuration
 const EVENT_BATCH_SIZE = 10;
 const EVENT_BATCH_TIMEOUT = 5000; // 5 seconds
-let eventBatch: any[] = [];
+let eventBatch: MetricEvent[] = [];
 let batchTimer: NodeJS.Timeout | null = null;
 
 // Helper function to flush the event batch using spans
@@ -89,11 +121,11 @@ function flushEventBatch() {
 }
 
 // Helper function to add metrics to batch
-function addMetricToBatch(metric: any) {
+function addMetricToBatch(metric: Omit<MetricInput, "timestamp">) {
   eventBatch.push({
     ...metric,
     timestamp: new Date().toISOString(),
-  });
+  } as MetricEvent);
 
   // Flush if batch is full
   if (eventBatch.length >= EVENT_BATCH_SIZE) {
