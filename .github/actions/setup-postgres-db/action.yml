@@ -76,7 +76,7 @@ runs:
         DB_PASSWORD: ${{ inputs.db-password }}
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        python -c "
+        uv run python -c "
         import sys
         from database.db_setup import initialize_database
         conn = initialize_database()
