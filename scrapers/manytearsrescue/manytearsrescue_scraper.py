@@ -189,7 +189,7 @@ class ManyTearsRescueScraper(BaseScraper):
                 if local_driver:
                     try:
                         local_driver.quit()
-                    except:
+                    except Exception:
                         pass
 
             return batch_results
@@ -365,7 +365,7 @@ class ManyTearsRescueScraper(BaseScraper):
             if driver:
                 try:
                     driver.quit()
-                except:
+                except Exception:
                     pass
 
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")

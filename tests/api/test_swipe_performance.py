@@ -34,7 +34,7 @@ class TestSwipePerformance:
         self.mock_db.execute.return_value = mock_result
 
         # Initial load
-        result1 = self.swipe_queries.get_swipe_queue(country="Germany", limit=20, offset=0)
+        _result1 = self.swipe_queries.get_swipe_queue(country="Germany", limit=20, offset=0)
 
         # Preload when 5 dogs remain
         result2 = self.swipe_queries.preload_batch(country="Germany", current_queue_size=5, excluded_ids=[1, 2, 3, 4, 5])

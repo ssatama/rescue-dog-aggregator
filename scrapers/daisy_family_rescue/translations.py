@@ -407,7 +407,6 @@ def translate_ideal_home(home_description: str | None) -> str | None:
             "mit": "with",
             "ländliche": "rural",
             "Gegend": "area",
-            "aktive": "active",
         }
 
         result = text

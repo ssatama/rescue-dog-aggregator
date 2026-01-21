@@ -247,7 +247,7 @@ class DogProfilerService:
             profile: Profile data
         """
         query = """
-            UPDATE animals 
+            UPDATE animals
             SET dog_profiler_data = $1,
                 updated_at = NOW()
             WHERE id = $2

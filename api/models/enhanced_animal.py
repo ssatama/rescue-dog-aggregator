@@ -46,12 +46,6 @@ class EnhancedAttributes(BaseModel):
         # Normalize to lowercase for comparison
         normalized = v.lower() if isinstance(v, str) else v
 
-        valid_energy = ["low", "medium", "high", "very_high"]
-        valid_trainability = ["low", "moderate", "high", "very_high"]
-        valid_experience = ["beginner", "intermediate", "experienced"]
-        valid_grooming = ["minimal", "moderate", "high", "professional"]
-        valid_exercise = ["minimal", "moderate", "high", "very_high"]
-
         # Return normalized value if valid, otherwise return as-is
         # (to handle edge cases gracefully)
         return normalized if isinstance(normalized, str) else v

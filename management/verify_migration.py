@@ -38,7 +38,7 @@ def verify_schema(cursor, db_name):
     # Check column count
     cursor.execute(
         """
-        SELECT COUNT(*) FROM information_schema.columns 
+        SELECT COUNT(*) FROM information_schema.columns
         WHERE table_name = 'animals'
     """
     )
@@ -48,7 +48,7 @@ def verify_schema(cursor, db_name):
     cursor.execute(
         """
         SELECT EXISTS (
-            SELECT 1 FROM information_schema.columns 
+            SELECT 1 FROM information_schema.columns
             WHERE table_name = 'animals' AND column_name = 'breed_slug'
         )
     """
@@ -68,7 +68,7 @@ def verify_schema(cursor, db_name):
         cursor.execute(
             """
             SELECT EXISTS (
-                SELECT 1 FROM information_schema.columns 
+                SELECT 1 FROM information_schema.columns
                 WHERE table_name = 'animals' AND column_name = %s
             )
         """,
@@ -149,8 +149,8 @@ def main():
         else:
             print("✗ breed_slug column missing in one or both databases")
             success = False
-    except:
-        pass  # Variables might not be defined if earlier steps failed
+    except Exception:
+        pass
 
     print()
     print("=" * 60)

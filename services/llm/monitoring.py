@@ -70,7 +70,7 @@ class DogProfilerMonitor:
         cursor = conn.cursor()
 
         query = """
-            SELECT 
+            SELECT
                 organization_id,
                 COUNT(*) as total_dogs,
                 COUNT(dog_profiler_data) as profiled,
@@ -134,7 +134,7 @@ class DogProfilerMonitor:
 
         # Get all quality scores
         query = """
-            SELECT 
+            SELECT
                 (dog_profiler_data->'confidence_scores'->>'description')::float as score
             FROM animals
             WHERE dog_profiler_data IS NOT NULL
@@ -180,7 +180,7 @@ class DogProfilerMonitor:
         # Get model usage counts
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 dog_profiler_data->>'model_used' as model,
                 COUNT(*) as count,
                 AVG((dog_profiler_data->>'processing_time_ms')::int) as avg_time

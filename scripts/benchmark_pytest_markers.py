@@ -60,7 +60,7 @@ def count_tests_by_marker(marker_expression: str) -> int:
                     test_count += 1
             return test_count
         return 0
-    except:
+    except Exception:
         return 0
 
 

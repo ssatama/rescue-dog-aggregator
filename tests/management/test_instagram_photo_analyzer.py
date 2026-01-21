@@ -26,7 +26,7 @@ pytestmark = pytest.mark.skipif(
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from services.llm.photo_analysis_models import PhotoAnalysisResponse
+from services.llm.photo_analysis_models import PhotoAnalysisResponse  # noqa: E402
 
 
 @pytest.fixture

@@ -36,7 +36,7 @@ class TestIndexSyncSecurity:
                     mock_session.return_value.__enter__.return_value = session_mock
 
                     # Run sync
-                    result = sync_indexes_to_railway("animals", dry_run=False)
+                    _result = sync_indexes_to_railway("animals", dry_run=False)
 
                     # Check that only valid index was executed
                     executed_queries = [call[0][0]._text if hasattr(call[0][0], "_text") else str(call[0][0]) for call in session_mock.execute.call_args_list]
@@ -63,7 +63,7 @@ class TestIndexSyncSecurity:
 
                     # Try with malicious table name
                     malicious_table = "animals; DROP TABLE users; --"
-                    result = sync_indexes_to_railway(malicious_table, dry_run=False)
+                    _result = sync_indexes_to_railway(malicious_table, dry_run=False)
 
                     # Check that ANALYZE was not executed for malicious table
                     executed_queries = [call[0][0]._text if hasattr(call[0][0], "_text") else str(call[0][0]) for call in session_mock.execute.call_args_list]

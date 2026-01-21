@@ -67,7 +67,7 @@ class TestWoofProjectScraperOptimized:
             <p><strong>Age:</strong> 3 years</p>
             <p><strong>Size:</strong> Large</p>
             <p>This beautiful dog is approximately 3 years old.</p>
-            <img src="https://woofproject.eu/wp-content/uploads/2025/01/special.jpg" 
+            <img src="https://woofproject.eu/wp-content/uploads/2025/01/special.jpg"
                  alt="rescue dog" width="800" height="600" />
         </div>
         </body>

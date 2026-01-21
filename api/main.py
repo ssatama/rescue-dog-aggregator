@@ -7,6 +7,7 @@ from datetime import datetime
 import psycopg2
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError as PydanticValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import database initialization
@@ -112,8 +113,6 @@ app = FastAPI(
 
 
 # Add global exception handlers for comprehensive error tracking
-# Import Pydantic's ValidationError for proper 422 handling
-from pydantic import ValidationError as PydanticValidationError
 
 
 @app.exception_handler(PydanticValidationError)

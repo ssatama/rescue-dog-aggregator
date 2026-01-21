@@ -145,12 +145,12 @@ class TestSwipeEndpoint:
         # Test with DE - should only return dogs from orgs that ship to DE
         de_response = client.get("/api/dogs/swipe?adoptable_to_country=DE&limit=50")
         assert de_response.status_code == 200
-        de_data = de_response.json()
+        _de_data = de_response.json()
 
         # Test with US - might return fewer/no dogs if no orgs ship to US
         us_response = client.get("/api/dogs/swipe?adoptable_to_country=US&limit=50")
         assert us_response.status_code == 200
-        us_data = us_response.json()
+        _us_data = us_response.json()
 
         # The counts should be different for different countries
         # (exact assertion depends on test data)

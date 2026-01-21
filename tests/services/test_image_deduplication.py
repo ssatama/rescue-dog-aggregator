@@ -135,7 +135,7 @@ class TestImageDeduplication:
             {"successful": 2, "total": 2, "success_rate": 100.0, "total_time": 1.0},
         )
 
-        result = image_service.batch_process_images(animals_data, "test_org", database_connection=None)
+        _result = image_service.batch_process_images(animals_data, "test_org", database_connection=None)
 
         # All images should be uploaded (no deduplication without database)
         image_service.r2_service.batch_upload_images_with_stats.assert_called_once()
@@ -162,7 +162,7 @@ class TestImageDeduplication:
             },  # Valid
         ]
 
-        result = image_service.batch_process_images(animals_data, "test_org", database_connection=mock_conn)
+        _result = image_service.batch_process_images(animals_data, "test_org", database_connection=mock_conn)
 
         # Only valid non-R2 URL should be uploaded
         image_service.r2_service.batch_upload_images_with_stats.assert_called_once()
@@ -198,7 +198,7 @@ class TestImageDeduplication:
         ]
 
         with caplog.at_level(logging.INFO, logger="services.image_processing_service"):
-            result = image_service.batch_process_images(animals_data, "test_org", database_connection=mock_conn)
+            _result = image_service.batch_process_images(animals_data, "test_org", database_connection=mock_conn)
 
         # Check for deduplication statistics in logs
         assert "Found 1 existing R2 images to reuse" in caplog.text

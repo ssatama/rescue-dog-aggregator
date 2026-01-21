@@ -12,9 +12,9 @@ load_dotenv()
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from sqlalchemy import text
+from sqlalchemy import text  # noqa: E402
 
-from services.railway.connection import railway_session
+from services.railway.connection import railway_session  # noqa: E402
 
 
 def clear_railway_database():

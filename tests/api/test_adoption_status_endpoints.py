@@ -315,8 +315,8 @@ class TestSwipeEndpointWithActiveFilter:
         """Test that swipe excludes dogs with low availability_confidence."""
         from api.dependencies import get_pooled_db_cursor
 
-        # This dog should be excluded due to low confidence
-        low_confidence_dog = {
+        # This dog data demonstrates what would be excluded due to low confidence
+        _low_confidence_dog = {
             "id": 1,
             "status": "available",
             "availability_confidence": "low",

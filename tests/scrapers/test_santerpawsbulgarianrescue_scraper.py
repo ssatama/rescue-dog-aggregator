@@ -379,7 +379,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 # Mock filtering_service to return only 1 URL (2 filtered out)
                 scraper.filtering_service.filter_existing_urls = Mock(return_value=["https://site.com/3/"])
 
-                result = scraper._get_filtered_animals()
+                _result = scraper._get_filtered_animals()
 
                 # Verify filtering stats are tracked via filtering_service
                 self.assertEqual(scraper.filtering_service.total_animals_before_filter, 3)

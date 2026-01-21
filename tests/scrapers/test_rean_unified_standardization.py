@@ -72,14 +72,6 @@ class TestREANUnifiedStandardization:
         """Test that if REAN adds breed extraction, it will use unified standardization."""
         scraper.use_unified_standardization = True
 
-        # Simulate future breed data extraction
-        raw_animal = {
-            "name": "Luna",
-            "age_text": "1 year",
-            "breed": "Lurcher",
-            "properties": {},
-        }
-
         # Process through standardizer with proper keyword arguments
         standardized = scraper.standardizer.apply_full_standardization(breed="Lurcher", age="1 year")
 

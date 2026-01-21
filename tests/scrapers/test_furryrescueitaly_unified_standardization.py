@@ -178,4 +178,4 @@ class TestFurryRescueItalyUnifiedStandardization:
         """Test that feature flag is enabled for FurryRescueItaly."""
         from utils.feature_flags import FeatureFlags
 
-        assert FeatureFlags.SCRAPER_FLAGS.get("furryrescueitaly") == True
+        assert FeatureFlags.SCRAPER_FLAGS.get("furryrescueitaly")

@@ -34,7 +34,6 @@ class DataQualityReporter:
         total_orgs = len(org_qualities)
         total_animals = sum(org.total_animals for org in org_qualities)
         avg_quality = sum(org.overall_score for org in org_qualities) / total_orgs
-        orgs_at_100 = sum(1 for org in org_qualities if org.overall_score >= 100)
         orgs_below_70 = sum(1 for org in org_qualities if org.overall_score < 70)
 
         # Sort organizations by quality score (descending)
@@ -170,7 +169,7 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
 
 ### Category Scores
 - **Completeness**: {org.completeness_avg:.1f}% (Basic required fields)
-- **Standardization**: {org.standardization_avg:.1f}% (Normalized data)  
+- **Standardization**: {org.standardization_avg:.1f}% (Normalized data)
 - **Rich Content**: {org.rich_content_avg:.1f}% (Descriptions and details)
 - **Visual Appeal**: {org.visual_appeal_avg:.1f}% (Images)
 
@@ -288,7 +287,7 @@ To ensure optimal user experience, animals need:
 - **Size filtering**: Standardized size categories
 - **Location filtering**: Organization location data
 
-### SEO Optimization Requirements  
+### SEO Optimization Requirements
 For maximum search visibility:
 - **Complete metadata**: Name, breed, age, size, location all present
 - **Rich descriptions**: Detailed animal descriptions for unique content

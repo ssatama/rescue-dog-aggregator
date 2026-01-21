@@ -60,9 +60,9 @@ class StatusConsistencyUpdater:
         # Check status distribution
         self.cursor.execute(
             """
-            SELECT status, COUNT(*) as count 
-            FROM animals 
-            GROUP BY status 
+            SELECT status, COUNT(*) as count
+            FROM animals
+            GROUP BY status
             ORDER BY count DESC
         """
         )
@@ -75,9 +75,9 @@ class StatusConsistencyUpdater:
         # Check availability_confidence distribution
         self.cursor.execute(
             """
-            SELECT availability_confidence, COUNT(*) as count 
-            FROM animals 
-            GROUP BY availability_confidence 
+            SELECT availability_confidence, COUNT(*) as count
+            FROM animals
+            GROUP BY availability_confidence
             ORDER BY count DESC
         """
         )
@@ -90,7 +90,7 @@ class StatusConsistencyUpdater:
         # Check for inconsistencies
         self.cursor.execute(
             """
-            SELECT 
+            SELECT
                 status,
                 availability_confidence,
                 COUNT(*) as count
@@ -108,9 +108,9 @@ class StatusConsistencyUpdater:
         # Identify dogs needing updates
         self.cursor.execute(
             """
-            SELECT COUNT(*) 
-            FROM animals 
-            WHERE 
+            SELECT COUNT(*)
+            FROM animals
+            WHERE
                 (status = 'unknown' AND availability_confidence = 'high')
                 OR (status = 'available' AND availability_confidence = 'low')
                 OR (consecutive_scrapes_missing >= 3 AND availability_confidence = 'high')
@@ -131,7 +131,7 @@ class StatusConsistencyUpdater:
 
         # Dogs with high misses should have low confidence
         update_query = """
-            UPDATE animals 
+            UPDATE animals
             SET availability_confidence = 'low',
                 updated_at = NOW()
             WHERE consecutive_scrapes_missing >= 3
@@ -166,7 +166,7 @@ class StatusConsistencyUpdater:
 
         # Dogs with no misses should have high confidence
         update_query2 = """
-            UPDATE animals 
+            UPDATE animals
             SET availability_confidence = 'high',
                 updated_at = NOW()
             WHERE consecutive_scrapes_missing = 0
@@ -190,7 +190,7 @@ class StatusConsistencyUpdater:
 
         # Unknown dogs with 0 misses should be available
         fix_query = """
-            UPDATE animals 
+            UPDATE animals
             SET status = 'available',
                 availability_confidence = 'high',
                 updated_at = NOW()
@@ -203,9 +203,9 @@ class StatusConsistencyUpdater:
             print("DRY RUN - Would fix unknown dogs with 0 misses")
             self.cursor.execute(
                 """
-                SELECT id, name 
-                FROM animals 
-                WHERE status = 'unknown' 
+                SELECT id, name
+                FROM animals
+                WHERE status = 'unknown'
                 AND consecutive_scrapes_missing = 0
             """
             )
@@ -281,7 +281,7 @@ if consecutive_scrapes_missing >= threshold:
         # Re-check final state
         self.cursor.execute(
             """
-            SELECT 
+            SELECT
                 status,
                 availability_confidence,
                 COUNT(*) as count
@@ -301,8 +301,8 @@ if consecutive_scrapes_missing >= threshold:
         self.cursor.execute(
             """
             WITH consistency_check AS (
-                SELECT 
-                    CASE 
+                SELECT
+                    CASE
                         WHEN status = 'unknown' AND consecutive_scrapes_missing < 3 THEN 'Unknown with low misses'
                         WHEN status = 'available' AND availability_confidence = 'low' THEN 'Available with low confidence'
                         WHEN consecutive_scrapes_missing >= 3 AND availability_confidence = 'high' THEN 'High misses with high confidence'

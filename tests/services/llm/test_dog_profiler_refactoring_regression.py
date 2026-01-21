@@ -355,10 +355,10 @@ class TestNormalizationRegression:
         # Check all required fields have values
         assert result["trainability"] == "moderate"
         assert result["confidence"] == "moderate"
-        assert result["yard_required"] == False
-        assert result["ready_to_travel"] == True
-        assert result["vaccinated"] == False
-        assert result["neutered"] == False
+        assert not result["yard_required"]
+        assert result["ready_to_travel"]
+        assert not result["vaccinated"]
+        assert not result["neutered"]
         assert result["sociability"] == "selective"
         assert result["energy_level"] == "medium"
         assert result["experience_level"] == "some_experience"
@@ -429,8 +429,8 @@ class TestFullPipelineRegression:
         # Verify all normalizations
         assert result["trainability"] == "moderate"
         assert result["confidence"] == "very_shy"
-        assert result["yard_required"] == True
-        assert result["ready_to_travel"] == True
+        assert result["yard_required"]
+        assert result["ready_to_travel"]
         assert result["good_with_dogs"] == "yes"
         assert result["good_with_cats"] == "with_training"  # selective → with_training in second pass
         assert result["good_with_children"] == "older_children"  # selective → older_children in second pass
@@ -441,8 +441,8 @@ class TestFullPipelineRegression:
         assert len(result["personality_traits"]) == 3
         assert len(result["favorite_activities"]) == 4
         assert result["adoption_fee_euros"] == 350
-        assert result["vaccinated"] == True
-        assert result["neutered"] == False
+        assert result["vaccinated"]
+        assert not result["neutered"]
         assert len(result["tagline"]) <= 53  # Smart truncate adds "..." so could be up to 53
         assert len(result["description"]) <= 403  # Updated limit + "..."
         assert len(result["unique_quirk"]) <= 153  # Updated limit + "..."

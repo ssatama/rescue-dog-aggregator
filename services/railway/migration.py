@@ -198,7 +198,7 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section)
     configuration['sqlalchemy.url'] = get_url()
-    
+
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",
@@ -304,7 +304,7 @@ def create_initial_migration(message: str = "Initial Railway schema") -> bool:
         migration_content = f'''"""Initial Railway schema
 
 Revision ID: {latest_migration.stem.split("_")[0]}
-Revises: 
+Revises:
 Create Date: {latest_migration.stat().st_mtime}
 
 """

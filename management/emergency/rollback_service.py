@@ -166,12 +166,12 @@ class RollbackService:
                 # Create backup before rollback
                 backup_result = self._create_backup(organization_id, f"Before rollback to {snapshot_id}")
 
-                # Count animals before rollback
+                # Count animals before rollback (query has side effects for transaction state)
                 cursor.execute(
                     "SELECT COUNT(*) FROM animals WHERE organization_id = %s",
                     (organization_id,),
                 )
-                animals_before = cursor.fetchone()[0]
+                _ = cursor.fetchone()[0]
 
                 # Remove animals added after the snapshot time
                 cursor.execute(

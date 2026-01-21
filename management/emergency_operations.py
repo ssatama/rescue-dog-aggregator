@@ -136,11 +136,11 @@ def main():
     parser = argparse.ArgumentParser(description="Emergency operations for rescue dog aggregator")
     subparsers = parser.add_subparsers(dest="command", help="Available emergency commands")
 
-    # Emergency stop command
-    stop_parser = subparsers.add_parser("emergency-stop", help="Stop all running scrapers immediately")
+    # Emergency stop command (add_parser has side effects, registers subparser)
+    _stop_parser = subparsers.add_parser("emergency-stop", help="Stop all running scrapers immediately")
 
-    # System status command
-    status_parser = subparsers.add_parser("status", help="Get system status")
+    # System status command (add_parser has side effects, registers subparser)
+    _status_parser = subparsers.add_parser("status", help="Get system status")
 
     # Rollback command
     rollback_parser = subparsers.add_parser("rollback", help="Rollback organization data")

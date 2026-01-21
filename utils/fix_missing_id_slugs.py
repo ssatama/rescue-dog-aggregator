@@ -57,7 +57,7 @@ class MissingIdSlugFixer:
             cursor.execute(
                 """
                 SELECT id, name, breed, standardized_breed, slug
-                FROM animals 
+                FROM animals
                 WHERE slug NOT SIMILAR TO '%[-][0-9]+'
                 ORDER BY id
             """
@@ -75,8 +75,8 @@ class MissingIdSlugFixer:
             cursor = self.conn.cursor()
             cursor.execute(
                 """
-                UPDATE animals 
-                SET slug = %s 
+                UPDATE animals
+                SET slug = %s
                 WHERE id = %s
             """,
                 (new_slug, animal_id),

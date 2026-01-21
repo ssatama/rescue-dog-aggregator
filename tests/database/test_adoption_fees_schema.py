@@ -26,9 +26,9 @@ class TestAdoptionFeesSchema:
         THEN adoption_fees column should exist with JSONB type
         """
         query = """
-            SELECT column_name, data_type, column_default 
-            FROM information_schema.columns 
-            WHERE table_name = 'organizations' 
+            SELECT column_name, data_type, column_default
+            FROM information_schema.columns
+            WHERE table_name = 'organizations'
             AND column_name = 'adoption_fees'
         """
 
@@ -180,7 +180,7 @@ class TestAdoptionFeesSchema:
             # Test JSON field query
             query = """
                 SELECT name, adoption_fees->'usual_fee' as fee_amount
-                FROM organizations 
+                FROM organizations
                 WHERE adoption_fees ? 'usual_fee'
                 AND config_id IN ('high-fee', 'low-fee', 'no-fee')
                 ORDER BY name
@@ -235,7 +235,7 @@ class TestAdoptionFeesSchema:
             updated_fees = {"usual_fee": 400, "currency": "EUR", "special_discount": 50}
 
             update_query = """
-                UPDATE organizations 
+                UPDATE organizations
                 SET adoption_fees = %s::jsonb, updated_at = NOW()
                 WHERE id = %s
                 RETURNING adoption_fees
@@ -296,8 +296,8 @@ class TestAdoptionFeesSchema:
         """
         # Query existing organizations
         query = """
-            SELECT id, name, adoption_fees 
-            FROM organizations 
+            SELECT id, name, adoption_fees
+            FROM organizations
             LIMIT 5
         """
 

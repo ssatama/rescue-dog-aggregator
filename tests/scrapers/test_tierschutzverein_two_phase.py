@@ -78,7 +78,7 @@ class TestTierschutzvereinTwoPhase:
             </table>
             <h2>Beschreibung</h2>
             <p>Bonsai – Klein, aber voller Lebensfreude</p>
-            <p>Auch Bonsai ist einer von 15 Welpen, die ohne ihre Mütter im Tierheim abgegeben wurden. 
+            <p>Auch Bonsai ist einer von 15 Welpen, die ohne ihre Mütter im Tierheim abgegeben wurden.
             Sein Start ins Leben war nicht leicht, aber Bonsai schlägt sich tapfer.</p>
         </body>
         </html>
@@ -228,7 +228,7 @@ class TestTierschutzvereinTwoPhase:
         <body>
             <!-- Profile/Hero image -->
             <img class="wp-post-image" src="https://tierschutzverein-europa.de/wp-content/uploads/2025/08/bonsai-hero.jpg" alt="Bonsai">
-            
+
             <!-- Gallery images -->
             <div class="gallery">
                 <img src="https://tierschutzverein-europa.de/wp-content/uploads/2025/08/bonsai-1.jpg" alt="Bonsai 1">

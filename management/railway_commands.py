@@ -22,9 +22,9 @@ if project_root not in sys.path:
 # Load environment variables from .env file
 load_dotenv()
 
-from services.railway.connection import check_railway_connection
-from services.railway.migration import RailwayMigrationManager
-from services.railway.sync import (
+from services.railway.connection import check_railway_connection  # noqa: E402
+from services.railway.migration import RailwayMigrationManager  # noqa: E402
+from services.railway.sync import (  # noqa: E402
     RailwayDataSyncer,
     get_local_data_count,
     get_railway_data_count,

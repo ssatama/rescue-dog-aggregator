@@ -179,24 +179,24 @@ async def get_enhanced_stats(
     """
     try:
         base_query = """
-            SELECT 
+            SELECT
                 COUNT(*) as total_animals,
-                COUNT(CASE 
-                    WHEN dog_profiler_data IS NOT NULL 
-                    AND dog_profiler_data != '{}'::jsonb 
-                    THEN 1 
+                COUNT(CASE
+                    WHEN dog_profiler_data IS NOT NULL
+                    AND dog_profiler_data != '{}'::jsonb
+                    THEN 1
                 END) as enhanced_count,
-                COUNT(CASE 
-                    WHEN dog_profiler_data->>'description' IS NOT NULL 
-                    THEN 1 
+                COUNT(CASE
+                    WHEN dog_profiler_data->>'description' IS NOT NULL
+                    THEN 1
                 END) as with_description,
-                COUNT(CASE 
-                    WHEN dog_profiler_data->>'tagline' IS NOT NULL 
-                    THEN 1 
+                COUNT(CASE
+                    WHEN dog_profiler_data->>'tagline' IS NOT NULL
+                    THEN 1
                 END) as with_tagline,
-                AVG(CASE 
-                    WHEN dog_profiler_data->>'quality_score' IS NOT NULL 
-                    THEN (dog_profiler_data->>'quality_score')::float 
+                AVG(CASE
+                    WHEN dog_profiler_data->>'quality_score' IS NOT NULL
+                    THEN (dog_profiler_data->>'quality_score')::float
                 END) as avg_quality_score
             FROM animals
             WHERE status = 'available'

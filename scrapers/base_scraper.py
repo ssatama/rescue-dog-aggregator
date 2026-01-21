@@ -1361,7 +1361,6 @@ class BaseScraper(ABC):
             # Get threshold and limits from config
             threshold = adoption_config.get("threshold", 3)
             max_checks = adoption_config.get("max_checks_per_run", 50)
-            check_interval_hours = adoption_config.get("check_interval_hours", 24)
 
             self.logger.info(f"🔍 Checking for adoptions (threshold: {threshold} missed scrapes)")
 

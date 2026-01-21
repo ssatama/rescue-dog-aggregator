@@ -28,12 +28,12 @@ def get_local_indexes(table_name: str = "animals") -> list[dict[str, Any]]:
         # Get index definitions from local database
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 indexname,
                 indexdef,
                 tablename
-            FROM pg_indexes 
-            WHERE tablename = %s 
+            FROM pg_indexes
+            WHERE tablename = %s
             AND schemaname = 'public'
             ORDER BY indexname
         """,
@@ -60,11 +60,11 @@ def get_railway_indexes(table_name: str = "animals") -> list[dict[str, Any]]:
             result = session.execute(
                 text(
                     """
-                SELECT 
+                SELECT
                     indexname,
                     indexdef,
                     tablename
-                FROM pg_indexes 
+                FROM pg_indexes
                 WHERE tablename = :table
                 AND schemaname = 'public'
                 ORDER BY indexname

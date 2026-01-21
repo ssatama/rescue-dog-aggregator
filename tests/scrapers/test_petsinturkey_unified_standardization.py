@@ -87,7 +87,7 @@ class TestPetsInTurkeyUnifiedStandardization:
         for weight_kg, expected_size in test_cases:
             test_data = {"breed": "Mixed Breed", "weight": weight_kg, "age": "2 years"}
 
-            result = scraper.process_animal(test_data)
+            _result = scraper.process_animal(test_data)
 
             # NOTE: Size from weight not implemented in unified standardizer
             # assert result['standardized_size'] == expected_size
@@ -134,7 +134,7 @@ class TestPetsInTurkeyUnifiedStandardization:
                 "size": "Medium",
             }
 
-            result = scraper.process_animal(test_data)
+            _result = scraper.process_animal(test_data)
 
             # NOTE: Unified standardizer doesn't lowercase gender
             # assert result['gender'] == expected_gender
@@ -193,7 +193,7 @@ class TestPetsInTurkeyUnifiedStandardization:
             "size": "Medium",
         }
 
-        result = scraper.process_animal(test_data)
+        _result = scraper.process_animal(test_data)
 
         # NOTE: Unified standardizer doesn't clean Wix image URLs
         # The scraper might do this separately
@@ -208,7 +208,7 @@ class TestPetsInTurkeyUnifiedStandardization:
             "size": "Medium",
         }
 
-        result = scraper.process_animal(test_data)
+        _result = scraper.process_animal(test_data)
 
         # NOTE: Birth date processing not in unified standardizer
         # assert 'age_min_months' in result

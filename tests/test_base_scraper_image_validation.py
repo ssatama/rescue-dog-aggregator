@@ -78,7 +78,7 @@ class TestBaseScraperImageValidation:
         ]
 
         # Process animals
-        stats = scraper._process_animals_data(animals_data)
+        _stats = scraper._process_animals_data(animals_data)
 
         # Verify that save_animal was called only for valid animals
         # Both empty string and None should be rejected
@@ -108,7 +108,7 @@ class TestBaseScraperImageValidation:
         }
 
         # Should reject empty string
-        assert scraper._validate_animal_data(invalid_animal) == False
+        assert not scraper._validate_animal_data(invalid_animal)
 
         # Test with valid image URL
         valid_animal = {
@@ -120,7 +120,7 @@ class TestBaseScraperImageValidation:
         }
 
         # Should accept valid URL
-        assert scraper._validate_animal_data(valid_animal) == True
+        assert scraper._validate_animal_data(valid_animal)
 
         # Test with None (no valid image)
         none_animal = {
@@ -132,7 +132,7 @@ class TestBaseScraperImageValidation:
         }
 
         # Should reject None (no valid image URL)
-        assert scraper._validate_animal_data(none_animal) == False
+        assert not scraper._validate_animal_data(none_animal)
 
     def test_integration_no_dogs_saved_with_empty_images(self):
         """Integration test ensuring no dogs with empty images reach the database."""
@@ -199,4 +199,4 @@ class TestBaseScraperImageValidation:
         }
 
         # Should reject due to missing required field
-        assert scraper._validate_animal_data(invalid_animal) == False
+        assert not scraper._validate_animal_data(invalid_animal)

@@ -262,14 +262,14 @@ class TestREANEdgeCases:
         page_text = """
         Buddy is 2 years old, vaccinated and chipped.
         (Updated 22/4/25)
-        
+
         This is not a dog entry.
-        
+
         Max is 3 years old, looking for home.
         (Updated 21/4/25)
-        
+
         Random text without dog info.
-        
+
         Luna is 1 year old puppy.
         (Updated 20/4/25)
         """

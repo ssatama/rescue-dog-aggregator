@@ -29,9 +29,9 @@ def fix_availability_confidence():
         print("\n📊 Current availability confidence distribution:")
         cursor.execute(
             """
-            SELECT organization_id, availability_confidence, COUNT(*) 
-            FROM animals 
-            GROUP BY organization_id, availability_confidence 
+            SELECT organization_id, availability_confidence, COUNT(*)
+            FROM animals
+            GROUP BY organization_id, availability_confidence
             ORDER BY organization_id, availability_confidence
         """
         )
@@ -51,9 +51,9 @@ def fix_availability_confidence():
         # Find animals that should be high confidence
         cursor.execute(
             """
-            SELECT id, name, organization_id, consecutive_scrapes_missing, 
+            SELECT id, name, organization_id, consecutive_scrapes_missing,
                    availability_confidence, last_seen_at
-            FROM animals 
+            FROM animals
             WHERE availability_confidence = 'low'
             AND status = 'available'
             AND last_seen_at >= %s
@@ -90,7 +90,7 @@ def fix_availability_confidence():
         for animal_id, name, org_id, missing, confidence, last_seen in candidates:
             cursor.execute(
                 """
-                UPDATE animals 
+                UPDATE animals
                 SET availability_confidence = 'high',
                     updated_at = NOW()
                 WHERE id = %s
@@ -107,9 +107,9 @@ def fix_availability_confidence():
         print("\n📊 New availability confidence distribution:")
         cursor.execute(
             """
-            SELECT organization_id, availability_confidence, COUNT(*) 
-            FROM animals 
-            GROUP BY organization_id, availability_confidence 
+            SELECT organization_id, availability_confidence, COUNT(*)
+            FROM animals
+            GROUP BY organization_id, availability_confidence
             ORDER BY organization_id, availability_confidence
         """
         )

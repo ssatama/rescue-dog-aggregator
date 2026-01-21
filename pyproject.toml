@@ -103,18 +103,7 @@ exclude = [
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
-ignore = [
-    "E501",   # Line too long (handled by formatter)
-    "E402",   # Module level import not at top (often intentional)
-    "E712",   # Comparison to True/False (style preference)
-    "E722",   # Bare except (needs case-by-case review)
-    "F401",   # Unused import (fix in follow-up)
-    "F402",   # Import shadowed by loop variable (fix in follow-up)
-    "F601",   # Dict key repeated (fix in follow-up)
-    "F841",   # Unused variable (often intentional in tests)
-    "W291",   # Trailing whitespace
-    "W293",   # Blank line contains whitespace
-]
+ignore = ["E501"]  # Line length handled by formatter
 
 [tool.ruff.format]
 quote-style = "double"

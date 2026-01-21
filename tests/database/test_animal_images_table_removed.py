@@ -34,8 +34,8 @@ class TestAnimalImagesTableRemoved:
         cursor.execute(
             """
             SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
+                SELECT FROM information_schema.tables
+                WHERE table_schema = 'public'
                 AND table_name = 'animal_images'
             );
         """
@@ -54,10 +54,10 @@ class TestAnimalImagesTableRemoved:
         # Check for primary_image_url column
         cursor.execute(
             """
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_schema = 'public' 
-            AND table_name = 'animals' 
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+            AND table_name = 'animals'
             AND column_name IN ('primary_image_url', 'original_image_url');
         """
         )
@@ -76,7 +76,7 @@ class TestAnimalImagesTableRemoved:
         # Check for any foreign key constraints referencing animal_images
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 tc.constraint_name,
                 tc.table_name,
                 kcu.column_name
@@ -87,7 +87,7 @@ class TestAnimalImagesTableRemoved:
             JOIN information_schema.constraint_column_usage AS ccu
                 ON ccu.constraint_name = tc.constraint_name
                 AND ccu.table_schema = tc.table_schema
-            WHERE tc.constraint_type = 'FOREIGN KEY' 
+            WHERE tc.constraint_type = 'FOREIGN KEY'
             AND ccu.table_name = 'animal_images';
         """
         )

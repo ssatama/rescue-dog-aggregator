@@ -589,7 +589,6 @@ class TheUnderdogScraper(BaseScraper):
             Tuple of (properties dict, description text)
         """
         properties: dict[str, str] = {}
-        description_parts: list[str] = []
 
         # Parse HTML and convert <br> tags to newlines
         soup = BeautifulSoup(text, "html.parser")

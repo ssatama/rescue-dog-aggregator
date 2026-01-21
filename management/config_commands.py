@@ -126,8 +126,8 @@ class ConfigManager:
         # Get unprofiled dogs (only high confidence available dogs)
         query = """
             SELECT id, name, breed, age_text, properties
-            FROM animals 
-            WHERE organization_id = %s 
+            FROM animals
+            WHERE organization_id = %s
             AND (dog_profiler_data IS NULL OR dog_profiler_data = '{}')
             AND availability_confidence = 'high'
             ORDER BY id DESC

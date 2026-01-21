@@ -50,9 +50,9 @@ class AdoptionMigrationRunner:
         # Check current status distribution
         self.cursor.execute(
             """
-            SELECT status, COUNT(*) as count 
-            FROM animals 
-            GROUP BY status 
+            SELECT status, COUNT(*) as count
+            FROM animals
+            GROUP BY status
             ORDER BY count DESC
         """
         )
@@ -65,8 +65,8 @@ class AdoptionMigrationRunner:
         # Check for animals with consecutive_scrapes_missing > 3
         self.cursor.execute(
             """
-            SELECT COUNT(*) 
-            FROM animals 
+            SELECT COUNT(*)
+            FROM animals
             WHERE consecutive_scrapes_missing >= 3
             AND status != 'adopted'
             AND status != 'reserved'
@@ -79,8 +79,8 @@ class AdoptionMigrationRunner:
         self.cursor.execute(
             """
             SELECT EXISTS (
-                SELECT 1 FROM information_schema.columns 
-                WHERE table_name = 'animals' 
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'animals'
                 AND column_name = 'adoption_check_data'
             )
         """
@@ -129,8 +129,8 @@ class AdoptionMigrationRunner:
             self.cursor.execute(
                 """
                 SELECT EXISTS (
-                    SELECT 1 FROM information_schema.columns 
-                    WHERE table_name = 'animals' 
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'animals'
                     AND column_name = 'adoption_check_data'
                 )
             """
@@ -203,9 +203,9 @@ class AdoptionMigrationRunner:
         # New status distribution
         self.cursor.execute(
             """
-            SELECT status, COUNT(*) as count 
-            FROM animals 
-            GROUP BY status 
+            SELECT status, COUNT(*) as count
+            FROM animals
+            GROUP BY status
             ORDER BY count DESC
         """
         )
@@ -218,9 +218,9 @@ class AdoptionMigrationRunner:
         # Check indexes
         self.cursor.execute(
             """
-            SELECT indexname 
-            FROM pg_indexes 
-            WHERE tablename = 'animals' 
+            SELECT indexname
+            FROM pg_indexes
+            WHERE tablename = 'animals'
             AND indexname LIKE '%adoption%'
         """
         )

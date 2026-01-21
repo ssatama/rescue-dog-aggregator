@@ -314,7 +314,7 @@ class PetsInTurkeyScraper(BaseScraper):
                                 dog_data["age"] = f"{age_months} months"
                             else:
                                 dog_data["age"] = f"{age_months // 12} years"
-                        except:
+                        except Exception:
                             pass
                     break
 

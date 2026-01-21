@@ -322,7 +322,7 @@ class TestLLMClientVisionAPI:
         with patch.object(llm_client, "call_api_and_parse", new_callable=AsyncMock) as mock_parse:
             mock_parse.return_value = {"test": "data"}
 
-            result = await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
+            _result = await llm_client.call_vision_api(image_url=sample_image_url, prompt=sample_prompt)
 
             # Verify call_api_and_parse was called
             assert mock_parse.called

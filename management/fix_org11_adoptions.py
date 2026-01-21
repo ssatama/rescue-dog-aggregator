@@ -32,7 +32,7 @@ def fix_misclassified_dogs():
         print("Fixing Nata (ID: 893) - died in fire, should be 'unknown' not 'adopted'...")
         nata_update = text(
             """
-            UPDATE animals 
+            UPDATE animals
             SET status = 'unknown',
                 adoption_check_data = jsonb_set(
                     COALESCE(adoption_check_data, '{}'::jsonb),
@@ -50,7 +50,7 @@ def fix_misclassified_dogs():
         print("\nFixing Lobo (ID: 850) - page DELETED, should be 'unknown' not 'available'...")
         lobo_update = text(
             """
-            UPDATE animals 
+            UPDATE animals
             SET status = 'unknown',
                 adoption_check_data = jsonb_set(
                     COALESCE(adoption_check_data, '{}'::jsonb),
@@ -85,7 +85,7 @@ def fix_misclassified_dogs():
                 # Fix these as well
                 fix_deleted = text(
                     """
-                    UPDATE animals 
+                    UPDATE animals
                     SET status = 'unknown',
                         adoption_check_data = jsonb_set(
                             adoption_check_data,

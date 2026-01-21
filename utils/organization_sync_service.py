@@ -90,7 +90,7 @@ class OrganizationSyncService:
         """Get all organizations from database (pure function)."""
         query = """
             SELECT id, name, website_url, description, social_media,
-                   created_at, updated_at, ships_to, established_year, 
+                   created_at, updated_at, ships_to, established_year,
                    logo_url, country, city, service_regions, adoption_fees
             FROM organizations
         """

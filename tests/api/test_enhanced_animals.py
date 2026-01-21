@@ -342,7 +342,7 @@ class TestEnhancedAnimalsPerformance:
     @pytest.mark.skip(reason="Benchmark tests require special setup")
     def test_single_dog_detail_performance(self, benchmark, mock_cursor):
         """Test description + tagline fetch meets <50ms target."""
-        service = EnhancedAnimalService(mock_cursor)
+        _service = EnhancedAnimalService(mock_cursor)
         mock_cursor.fetchall.return_value = [
             {
                 "id": 123,
@@ -359,7 +359,7 @@ class TestEnhancedAnimalsPerformance:
     @pytest.mark.skip(reason="Benchmark tests require special setup")
     def test_bulk_100_dogs_performance(self, benchmark, mock_cursor):
         """Test bulk fetch meets <500ms target."""
-        service = EnhancedAnimalService(mock_cursor)
+        _service = EnhancedAnimalService(mock_cursor)
         mock_cursor.fetchall.return_value = [
             {
                 "id": i,
@@ -378,7 +378,7 @@ class TestEnhancedAnimalsPerformance:
     @pytest.mark.skip(reason="Benchmark tests require special setup")
     def test_graceful_degradation_performance(self, mock_cursor):
         """Test performance with 80% non-enriched data."""
-        service = EnhancedAnimalService(mock_cursor)
+        _service = EnhancedAnimalService(mock_cursor)
 
         # Create mix: 20% with data, 80% without
         test_data = []

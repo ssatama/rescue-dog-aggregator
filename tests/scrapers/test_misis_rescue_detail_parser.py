@@ -355,8 +355,8 @@ class TestMisisRescueDetailParser:
                 <h2>Things you should know about   Whitespace Dog</h2>
                 <ul>
                     <li>   DOB:    2023   </li>
-                    <li>  
-                        Mixed    breed   
+                    <li>
+                        Mixed    breed
                     </li>
                     <li>Currently   weighs   15kg   </li>
                 </ul>

@@ -82,7 +82,7 @@ class TestSentryEndpoints:
 
         client = TestClient(app, raise_server_exceptions=False)
 
-        with patch.object(sentry_sdk, "capture_exception") as mock_capture:
+        with patch.object(sentry_sdk, "capture_exception"):
             response = client.get("/api/sentry-test/test-error?error_type=exception")
             assert response.status_code == 500
             assert "Test error from Sentry verification endpoint" in response.json()["detail"]

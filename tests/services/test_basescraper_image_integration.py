@@ -63,7 +63,7 @@ class TestBaseScraperWithImageProcessingService:
         scraper.create_animal = Mock(return_value=(123, "added"))
 
         # This should call the ImageProcessingService
-        result = scraper.save_animal(animal_data)
+        _result = scraper.save_animal(animal_data)
 
         # Verify service was called for primary image processing
         mock_image_service.process_primary_image.assert_called_once()

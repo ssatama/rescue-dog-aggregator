@@ -165,7 +165,7 @@ class TestMisisRescueR2Integration(unittest.TestCase):
                             R2Service,
                             "upload_image_with_circuit_breaker",
                             wraps=R2Service.upload_image_with_circuit_breaker,
-                        ) as mock_cb:
+                        ):
                             dogs = scraper.collect_data()
 
                             # Should return all dogs
@@ -197,7 +197,7 @@ class TestMisisRescueR2Integration(unittest.TestCase):
 
     def test_health_monitoring_during_scraping(self):
         """Test that health metrics are available during scraping."""
-        scraper = MisisRescueScraper(config_id="misisrescue")
+        _scraper = MisisRescueScraper(config_id="misisrescue")
 
         # Simulate some uploads
         R2Service.track_upload_success()

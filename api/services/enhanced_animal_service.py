@@ -116,16 +116,16 @@ class EnhancedAnimalService:
         logger.debug(f"Cache miss for animal {animal_id}, fetching from database")
 
         query = """
-            SELECT 
-                id, 
-                name, 
+            SELECT
+                id,
+                name,
                 slug,
                 dog_profiler_data,
-                CASE 
-                    WHEN dog_profiler_data IS NOT NULL 
-                    AND dog_profiler_data != '{}'::jsonb 
-                    THEN true 
-                    ELSE false 
+                CASE
+                    WHEN dog_profiler_data IS NOT NULL
+                    AND dog_profiler_data != '{}'::jsonb
+                    THEN true
+                    ELSE false
                 END as has_data
             FROM animals
             WHERE id = %s
@@ -171,15 +171,15 @@ class EnhancedAnimalService:
         fresh_results = []
         if uncached_ids:
             query = """
-                SELECT 
+                SELECT
                     id,
                     dog_profiler_data->>'description' as description,
                     dog_profiler_data->>'tagline' as tagline,
-                    CASE 
-                        WHEN dog_profiler_data IS NOT NULL 
+                    CASE
+                        WHEN dog_profiler_data IS NOT NULL
                         AND dog_profiler_data != '{}'::jsonb
-                        THEN true 
-                        ELSE false 
+                        THEN true
+                        ELSE false
                     END as has_enhanced_data
                 FROM animals
                 WHERE id = ANY(%s)
@@ -237,16 +237,16 @@ class EnhancedAnimalService:
         logger.debug(f"Bulk cache miss for {len(animal_ids)} animals, fetching from database")
 
         query = """
-            SELECT 
-                id, 
-                name, 
+            SELECT
+                id,
+                name,
                 slug,
                 dog_profiler_data,
-                CASE 
-                    WHEN dog_profiler_data IS NOT NULL 
-                    AND dog_profiler_data != '{}'::jsonb 
-                    THEN true 
-                    ELSE false 
+                CASE
+                    WHEN dog_profiler_data IS NOT NULL
+                    AND dog_profiler_data != '{}'::jsonb
+                    THEN true
+                    ELSE false
                 END as has_data
             FROM animals
             WHERE id = ANY(%s)
@@ -315,7 +315,7 @@ class EnhancedAnimalService:
                 attr_extracts.append(f"dog_profiler_data->>'{attr}' as {attr}")
 
         query = f"""
-            SELECT 
+            SELECT
                 id,
                 {", ".join(attr_extracts)}
             FROM animals

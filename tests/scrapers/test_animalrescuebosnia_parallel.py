@@ -126,8 +126,8 @@ class TestAnimalRescueBosniaParallel(unittest.TestCase):
                 "concurrent.futures.as_completed",
                 return_value=[mock_future1, mock_future2],
             ),
-            patch.object(self.scraper, "_scrape_with_retry") as mock_scrape_retry,
-            patch.object(self.scraper, "_validate_dog_data", return_value=True) as mock_validate,
+            patch.object(self.scraper, "_scrape_with_retry"),
+            patch.object(self.scraper, "_validate_dog_data", return_value=True),
         ):
             mock_tpe_class.return_value = mock_executor
 

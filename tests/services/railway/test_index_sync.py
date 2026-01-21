@@ -247,7 +247,7 @@ class TestIndexSync:
         ]
 
         # Execute
-        result = sync_indexes_to_railway("animals", dry_run=False)
+        _result = sync_indexes_to_railway("animals", dry_run=False)
 
         # Assert
         # Should only drop idx_animals_old, not the unique constraints

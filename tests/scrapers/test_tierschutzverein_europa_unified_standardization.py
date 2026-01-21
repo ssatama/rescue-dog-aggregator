@@ -137,7 +137,7 @@ class TestTierschutzvereinEuropaUnifiedStandardization:
         """Test that language and original_language fields are preserved."""
         # The scraper sets language='de' and original_language='de'
         # These should be preserved through the standardization process
-        assert scraper.use_unified_standardization == True
+        assert scraper.use_unified_standardization
 
         # Mock dog data should retain language fields
         mock_dog = {"language": "de", "original_language": "de", "breed": "Mischling"}

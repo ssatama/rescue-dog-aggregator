@@ -56,9 +56,9 @@ def check_column_exists(cursor, table_name, column_name):
     cursor.execute(
         """
         SELECT EXISTS (
-            SELECT 1 
-            FROM information_schema.columns 
-            WHERE table_name = %s 
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name = %s
             AND column_name = %s
         )
     """,
@@ -132,8 +132,8 @@ def analyze_schema_differences():
                 # Get local schema
                 local_cursor.execute(
                     """
-                    SELECT column_name, data_type 
-                    FROM information_schema.columns 
+                    SELECT column_name, data_type
+                    FROM information_schema.columns
                     WHERE table_name = 'animals'
                     ORDER BY ordinal_position
                 """
@@ -145,8 +145,8 @@ def analyze_schema_differences():
                 # Get Railway schema
                 railway_cursor.execute(
                     """
-                    SELECT column_name, data_type 
-                    FROM information_schema.columns 
+                    SELECT column_name, data_type
+                    FROM information_schema.columns
                     WHERE table_name = 'animals'
                     ORDER BY ordinal_position
                 """

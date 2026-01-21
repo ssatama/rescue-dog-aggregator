@@ -122,4 +122,4 @@ class TestManyTearsRescueUnifiedStandardization:
         from utils.feature_flags import FeatureFlags
 
         # This will fail initially and pass after migration
-        assert FeatureFlags.SCRAPER_FLAGS.get("manytearsrescue", False) == True
+        assert FeatureFlags.SCRAPER_FLAGS.get("manytearsrescue", False)

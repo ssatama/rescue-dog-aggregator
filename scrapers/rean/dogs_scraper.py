@@ -23,8 +23,12 @@ else:
     from services.browser_service import BrowserOptions, get_browser_service
 
 # Import shared extraction utilities for consolidation
-from utils.shared_extraction_patterns import extract_age_from_text as shared_extract_age
-from utils.shared_extraction_patterns import extract_weight_from_text as shared_extract_weight
+from utils.shared_extraction_patterns import (  # noqa: E402
+    extract_age_from_text as shared_extract_age,
+)
+from utils.shared_extraction_patterns import (  # noqa: E402
+    extract_weight_from_text as shared_extract_weight,
+)
 
 
 class REANScraper(BaseScraper):
@@ -479,8 +483,6 @@ class REANScraper(BaseScraper):
 
             enriched_dogs.append(enriched_dog)
 
-        # Log summary
-        dogs_with_images = sum(1 for dog in enriched_dogs if "primary_image_url" in dog)
         # World-class logging: Association results handled by centralized system
 
         return enriched_dogs
