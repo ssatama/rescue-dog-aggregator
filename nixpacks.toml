@@ -1,0 +1,16 @@
+# Nixpacks configuration for Railway deployment
+# Project uses uv + pyproject.toml (not requirements.txt)
+
+[phases.setup]
+nixPkgs = ["python312", "postgresql_16.dev", "gcc"]
+
+[phases.install]
+dependsOn = ["setup"]
+cmds = [
+    "python -m venv --copies /opt/venv",
+    ". /opt/venv/bin/activate && pip install uv",
+    ". /opt/venv/bin/activate && uv sync --no-dev --frozen"
+]
+
+[start]
+cmd = ". /opt/venv/bin/activate && bash start.sh"
