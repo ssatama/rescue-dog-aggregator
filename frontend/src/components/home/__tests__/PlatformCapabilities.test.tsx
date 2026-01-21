@@ -5,8 +5,14 @@ import { render, screen } from "../../../test-utils";
 import PlatformCapabilities from "../PlatformCapabilities";
 
 // Mock Next.js Link
+interface MockLinkProps {
+  children: React.ReactNode;
+  href: string;
+  className?: string;
+}
+
 jest.mock("next/link", () => {
-  return function MockLink({ children, href, ...props }: any) {
+  return function MockLink({ children, href, ...props }: MockLinkProps) {
     return (
       <a href={href} {...props}>
         {children}

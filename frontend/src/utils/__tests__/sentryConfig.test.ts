@@ -1,5 +1,15 @@
 import * as Sentry from "@sentry/nextjs";
 
+interface SwipeEventData {
+  timestamp?: string;
+  dogId?: number;
+  dogName?: string;
+}
+
+interface MockLocation {
+  hostname: string;
+}
+
 // Mock Sentry
 jest.mock("@sentry/nextjs", () => ({
   addBreadcrumb: jest.fn(),
@@ -21,7 +31,7 @@ describe("Sentry Configuration", () => {
   describe("Swipe Event Tracking", () => {
     it("should track swipe events as breadcrumbs, not errors", () => {
       // Simulate tracking a swipe event
-      const trackSwipeEvent = (eventName: string, data: any) => {
+      const trackSwipeEvent = (eventName: string, data: SwipeEventData) => {
         Sentry.addBreadcrumb({
           message: eventName,
           category: "swipe",
@@ -183,8 +193,10 @@ describe("Sentry Configuration", () => {
     it("should detect production environment correctly", () => {
       // Test with production domain
       const originalLocation = window.location;
-      delete (window as any).location;
-      (window as any).location = { hostname: "www.rescuedogs.me" };
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: { hostname: "www.rescuedogs.me" } as MockLocation,
+      });
 
       const getRuntimeEnvironment = () => {
         if (
@@ -198,13 +210,18 @@ describe("Sentry Configuration", () => {
 
       expect(getRuntimeEnvironment()).toBe("production");
 
-      (window as any).location = originalLocation;
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: originalLocation,
+      });
     });
 
     it("should detect development environment on localhost", () => {
       const originalLocation = window.location;
-      delete (window as any).location;
-      (window as any).location = { hostname: "localhost" };
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: { hostname: "localhost" } as MockLocation,
+      });
 
       const getRuntimeEnvironment = () => {
         if (
@@ -224,7 +241,10 @@ describe("Sentry Configuration", () => {
 
       expect(getRuntimeEnvironment()).toBe("development");
 
-      (window as any).location = originalLocation;
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: originalLocation,
+      });
     });
   });
 

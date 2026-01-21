@@ -1,9 +1,14 @@
+import React from "react";
 import { render, screen } from "@testing-library/react";
 import { GuideContent } from "../GuideContent";
 
 // Mock MDXRemote
+interface MockMDXRemoteProps {
+  children?: React.ReactNode;
+}
+
 jest.mock("next-mdx-remote", () => ({
-  MDXRemote: ({ children }: any) => (
+  MDXRemote: ({ children }: MockMDXRemoteProps) => (
     <div data-testid="mdx-content">{children}</div>
   ),
 }));

@@ -253,23 +253,24 @@ export class AdvancedApiMocker {
     });
   }
 
-  private corruptData(data: any): any {
+  private corruptData(data: unknown): unknown {
     if (Array.isArray(data)) {
       return data.map(item => this.corruptObject(item));
     }
     return this.corruptObject(data);
   }
-  
-  private corruptObject(obj: any): any {
+
+  private corruptObject(obj: unknown): unknown {
     if (!obj || typeof obj !== 'object') return obj;
-    
-    const corrupted = { ...obj };
+
+    const objRecord = obj as Record<string, unknown>;
+    const corrupted: Record<string, unknown> = { ...objRecord };
     const keys = Object.keys(corrupted);
-    
+
     // Randomly corrupt some fields
     keys.forEach(key => {
       const corruption = Math.random();
-      
+
       if (corruption < 0.2) {
         // Delete field
         delete corrupted[key];
@@ -278,13 +279,13 @@ export class AdvancedApiMocker {
         corrupted[key] = null;
       } else if (corruption < 0.6 && typeof corrupted[key] === 'string') {
         // Corrupt string
-        corrupted[key] = this.corruptString(corrupted[key]);
+        corrupted[key] = this.corruptString(corrupted[key] as string);
       } else if (corruption < 0.8 && typeof corrupted[key] === 'number') {
         // Corrupt number
         corrupted[key] = NaN;
       }
     });
-    
+
     return corrupted;
   }
   
@@ -468,20 +469,20 @@ export const EdgeCaseTestData = {
     return params[Math.floor(Math.random() * params.length)];
   },
   
-  generateCorruptedDog(validDog: Dog): any {
-    const corruptions = [
-      { ...validDog, id: null },
+  generateCorruptedDog(validDog: Dog): Partial<Dog> & Record<string, unknown> {
+    const corruptions: Array<Partial<Dog> & Record<string, unknown>> = [
+      { ...validDog, id: null as unknown as number },
       { ...validDog, name: "" },
       { ...validDog, slug: undefined },
       { ...validDog, primary_image_url: "not-a-url" },
-      { ...validDog, organization_id: "not-a-number" },
+      { ...validDog, organization_id: "not-a-number" as unknown as number },
       { ...validDog, created_at: "invalid-date" },
       { ...validDog, age_min_months: -5 },
       { ...validDog, standardized_size: "XXXL" },
       { ...validDog, status: "deleted" },
       { name: validDog.name } // Missing most required fields
     ];
-    
+
     return corruptions[Math.floor(Math.random() * corruptions.length)];
   }
 };

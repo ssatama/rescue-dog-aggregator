@@ -6,11 +6,38 @@ import {
 } from "../utils/imageUtils";
 import { getLoadingStrategy, onNetworkChange } from "../utils/networkUtils";
 
+// Network strategy type from networkUtils.js
+interface NetworkStrategy {
+  loading: "eager" | "lazy";
+  useProgressive: boolean;
+  quality: string;
+  dimensions: { width: number; height: number };
+  timeout: number;
+  retry: {
+    maxRetries: number;
+    baseDelay: number;
+    backoffMultiplier: number;
+  };
+  skipOptimizations: boolean;
+}
+
+// Navigator connection API type
+interface NetworkInformation extends EventTarget {
+  effectiveType?: string;
+  downlink?: number;
+  rtt?: number;
+  saveData?: boolean;
+}
+
+interface NavigatorWithConnection extends Navigator {
+  connection?: NetworkInformation;
+}
+
 // Base configuration constants
 const BASE_RETRY_DELAY = 1000; // 1 second base delay between retries
 
 // Test-aware state update utility
-const safeSetState = (setState: (value: any) => void, value: any) => {
+const safeSetState = <T>(setState: (value: T) => void, value: T) => {
   if (process.env.NODE_ENV === "test") {
     queueMicrotask(() => setState(value));
   } else {
@@ -34,7 +61,7 @@ export interface UseAdvancedImageReturn {
   currentSrc: string;
   position: string;
   isReady: boolean;
-  networkStrategy: any;
+  networkStrategy: NetworkStrategy;
   handleRetry: () => void;
   hydrated: boolean;
 }
@@ -60,8 +87,8 @@ export function useAdvancedImage(
   const [retryCount, setRetryCount] = useState(0);
   const [currentSrc, setCurrentSrc] = useState("");
   const [isReady, setIsReady] = useState(false);
-  const [networkStrategy, setNetworkStrategy] = useState(() =>
-    getLoadingStrategy(type),
+  const [networkStrategy, setNetworkStrategy] = useState<NetworkStrategy>(() =>
+    getLoadingStrategy(type) as NetworkStrategy,
   );
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -102,19 +129,14 @@ export function useAdvancedImage(
   // Network strategy updates
   useEffect(() => {
     const handleNetworkChange = () => {
-      setNetworkStrategy(getLoadingStrategy(type));
+      setNetworkStrategy(getLoadingStrategy(type) as NetworkStrategy);
     };
 
     if (typeof window !== "undefined" && "connection" in navigator) {
-      (navigator as any).connection?.addEventListener(
-        "change",
-        handleNetworkChange,
-      );
+      const nav = navigator as NavigatorWithConnection;
+      nav.connection?.addEventListener("change", handleNetworkChange);
       return () => {
-        (navigator as any).connection?.removeEventListener(
-          "change",
-          handleNetworkChange,
-        );
+        nav.connection?.removeEventListener("change", handleNetworkChange);
       };
     }
   }, [type]);
@@ -174,7 +196,7 @@ export function useAdvancedImage(
       );
     }
 
-    const timeoutDuration = (networkStrategy as any).timeout || 10000;
+    const timeoutDuration = networkStrategy.timeout || 10000;
     timeoutRef.current = setTimeout(() => {
       if (!isCancelled) {
         if (process.env.NODE_ENV !== "production") {

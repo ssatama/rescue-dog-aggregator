@@ -6,6 +6,7 @@ import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import FavoritesPage from "../page";
+import type { Dog } from "@/types/dog";
 
 // Mock react-error-boundary
 jest.mock("react-error-boundary", () => ({
@@ -41,13 +42,13 @@ jest.mock("../../../components/layout/Layout", () => {
 });
 
 jest.mock("../../../components/dogs/DogCardOptimized", () => {
-  return function DogCardOptimized({ dog }: { dog: any }) {
+  return function DogCardOptimized({ dog }: { dog: Dog }) {
     return <div data-testid="dog-card">{dog.name}</div>;
   };
 });
 
 jest.mock("../../../components/dogs/DogsGrid", () => {
-  return function DogsGrid({ dogs }: { dogs: any[] }) {
+  return function DogsGrid({ dogs }: { dogs: Dog[] }) {
     return (
       <div data-testid="dogs-grid">
         {dogs.map((dog) => (
@@ -65,8 +66,8 @@ jest.mock("../../../components/favorites/FilterPanel", () => {
     dogs,
     onFilter,
   }: {
-    dogs: any[];
-    onFilter: Function;
+    dogs: Dog[];
+    onFilter: (filtered: Dog[]) => void;
   }) {
     return (
       <button onClick={() => onFilter(dogs.slice(0, 1))}>🔍 Filter</button>
@@ -75,7 +76,7 @@ jest.mock("../../../components/favorites/FilterPanel", () => {
 });
 
 jest.mock("../../../components/favorites/ShareModal", () => ({
-  ShareModal: ({ isOpen, onClose }: { isOpen: boolean; onClose: Function }) =>
+  ShareModal: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
     isOpen ? <div>Share Modal</div> : null,
 }));
 
@@ -84,8 +85,8 @@ jest.mock("../../../components/favorites/CompareMode", () => {
     dogs,
     onClose,
   }: {
-    dogs: any[];
-    onClose: Function;
+    dogs: Dog[];
+    onClose: () => void;
   }) {
     return <div>Compare Mode</div>;
   };

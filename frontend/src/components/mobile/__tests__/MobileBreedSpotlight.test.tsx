@@ -16,9 +16,15 @@ jest.mock("next/navigation", () => ({
 }));
 
 // Mock Next Image
+interface MockImageProps {
+  src: string;
+  alt: string;
+  className?: string;
+}
+
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: ({ src, alt, className }: any) => (
+  default: ({ src, alt, className }: MockImageProps) => (
     <img src={src} alt={alt} className={className} />
   ),
 }));
@@ -30,6 +36,20 @@ jest.mock("lucide-react", () => ({
 }));
 
 // Mock framer-motion
+interface MockMotionDivProps {
+  children?: React.ReactNode;
+  className?: string;
+  drag?: boolean | "x" | "y";
+  dragConstraints?: object;
+  dragElastic?: number;
+  onDragEnd?: () => void;
+  "data-testid"?: string;
+}
+
+interface MockAnimatePresenceProps {
+  children: React.ReactNode;
+}
+
 jest.mock("framer-motion", () => ({
   motion: {
     div: ({
@@ -40,13 +60,13 @@ jest.mock("framer-motion", () => ({
       dragElastic,
       onDragEnd,
       ...props
-    }: any) => (
+    }: MockMotionDivProps) => (
       <div className={className} {...props}>
         {children}
       </div>
     ),
   },
-  AnimatePresence: ({ children }: any) => children,
+  AnimatePresence: ({ children }: MockAnimatePresenceProps) => children,
 }));
 
 const mockBreeds = [

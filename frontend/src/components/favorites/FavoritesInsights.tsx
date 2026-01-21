@@ -14,22 +14,22 @@ interface Insights {
     personalityTheme: string;
     dominantTraits: string[];
     commonTraits: string[];
-  };
+  } | null;
   lifestyleCompatibility?: {
     messages: string[];
-  };
+  } | null;
   experienceRequirements?: {
     recommendation: string;
-  };
+  } | null;
   hiddenGems?: {
     uniqueQuirks: HiddenGemsQuirk[];
-  };
+  } | null;
   careComplexity?: {
     description: string;
-  };
+  } | null;
   energyProfile?: {
     recommendation: string;
-  };
+  } | null;
   topOrganization?: string;
   sizePreference?: string;
   ageRange?: string;

@@ -1,6 +1,33 @@
 import * as Sentry from "@sentry/nextjs";
 import { SwipeMetrics, testHelpers } from "../swipeMetrics";
 
+interface MockSpan {
+  setAttribute: jest.Mock;
+  setAttributes: jest.Mock;
+  end: jest.Mock;
+}
+
+interface MockPerformance {
+  now: jest.Mock;
+  mark: jest.Mock;
+  measure: jest.Mock;
+  getEntriesByName: jest.Mock;
+}
+
+interface SpanOptions {
+  name: string;
+  op?: string;
+  attributes?: Record<string, unknown>;
+}
+
+interface MockSentry {
+  startSpan: jest.Mock<unknown, [SpanOptions, ((span: MockSpan) => unknown)?]>;
+  addBreadcrumb: jest.Mock;
+  captureMessage: jest.Mock;
+  captureEvent: jest.Mock;
+  getCurrentScope: jest.Mock;
+}
+
 jest.mock("@sentry/nextjs", () => ({
   startSpan: jest.fn((options, callback) => {
     const span = {
@@ -19,9 +46,11 @@ jest.mock("@sentry/nextjs", () => ({
   getCurrentScope: jest.fn(() => ({})),
 }));
 
+const mockSentry = Sentry as unknown as MockSentry;
+
 describe("SwipeMetrics", () => {
   let metrics: SwipeMetrics;
-  let performanceMock: any;
+  let performanceMock: MockPerformance;
   let originalNodeEnv: string | undefined;
 
   beforeEach(() => {
@@ -36,7 +65,7 @@ describe("SwipeMetrics", () => {
     });
 
     // Ensure window is defined for isSentryReady check
-    global.window = {} as any;
+    global.window = {} as Window & typeof globalThis;
 
     metrics = new SwipeMetrics();
 
@@ -47,7 +76,7 @@ describe("SwipeMetrics", () => {
       getEntriesByName: jest.fn().mockReturnValue([{ duration: 100 }]),
     };
 
-    global.performance = performanceMock as any;
+    global.performance = performanceMock as unknown as Performance;
   });
 
   afterEach(() => {
@@ -71,7 +100,7 @@ describe("SwipeMetrics", () => {
     });
 
     it("isSentryReady should detect our mock", () => {
-      global.window = {} as any;
+      global.window = {} as Window & typeof globalThis;
       const isReady = testHelpers.isSentryReady();
       console.log("isSentryReady result:", isReady);
       console.log("Sentry object:", Sentry);
@@ -122,7 +151,7 @@ describe("SwipeMetrics", () => {
       metrics.endSession();
 
       // The current implementation uses captureEvent, so this will fail initially
-      expect((Sentry as any).captureEvent).not.toHaveBeenCalled();
+      expect(mockSentry.captureEvent).not.toHaveBeenCalled();
     });
 
     it("should use startSpan for tracking metrics", () => {
@@ -134,7 +163,7 @@ describe("SwipeMetrics", () => {
       jest.advanceTimersByTime(5000);
 
       // Should create span for metrics instead of event
-      expect((Sentry as any).startSpan).toHaveBeenCalled();
+      expect(mockSentry.startSpan).toHaveBeenCalled();
 
       jest.useRealTimers();
     });
@@ -143,11 +172,12 @@ describe("SwipeMetrics", () => {
       const mockSetAttribute = jest.fn();
       const mockSetAttributes = jest.fn();
 
-      (Sentry as any).startSpan.mockImplementation(
-        (options: any, callback: any) => {
-          const span = {
+      mockSentry.startSpan.mockImplementation(
+        (options: SpanOptions, callback?: (span: MockSpan) => unknown) => {
+          const span: MockSpan = {
             setAttribute: mockSetAttribute,
             setAttributes: mockSetAttributes,
+            end: jest.fn(),
           };
           if (callback) {
             return callback(span);
@@ -160,7 +190,7 @@ describe("SwipeMetrics", () => {
       metrics.trackCardView("dog-456");
 
       // Verify span is created with proper attributes
-      expect((Sentry as any).startSpan).toHaveBeenCalledWith(
+      expect(mockSentry.startSpan).toHaveBeenCalledWith(
         expect.objectContaining({
           name: expect.stringContaining("swipe"),
           op: expect.stringContaining("metrics"),
@@ -172,7 +202,7 @@ describe("SwipeMetrics", () => {
     it("should use breadcrumbs for non-error telemetry", () => {
       metrics.trackQueueExhausted(10);
 
-      expect((Sentry as any).addBreadcrumb).toHaveBeenCalledWith(
+      expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
         expect.objectContaining({
           category: expect.stringContaining("swipe"),
           level: "info",
@@ -189,11 +219,12 @@ describe("SwipeMetrics", () => {
       // has issues with the SwipeMetrics instance caching the performance API state
       const mockSetAttribute = jest.fn();
 
-      (Sentry as any).startSpan.mockImplementation(
-        (options: any, callback: any) => {
-          const span = {
+      mockSentry.startSpan.mockImplementation(
+        (options: SpanOptions, callback?: (span: MockSpan) => unknown) => {
+          const span: MockSpan = {
             setAttribute: mockSetAttribute,
             setAttributes: jest.fn(),
+            end: jest.fn(),
           };
           if (callback) {
             return callback(span);
@@ -212,18 +243,18 @@ describe("SwipeMetrics", () => {
           .mockReturnValueOnce([]) // First call returns empty (no start mark)
           .mockReturnValueOnce([{ duration: 100 }]), // Second call returns duration
       };
-      global.performance = localPerformanceMock as any;
+      global.performance = localPerformanceMock as unknown as Performance;
 
       // Create a new instance after setting up the performance mock
       const localMetrics = new SwipeMetrics();
 
       // Clear previous calls
-      (Sentry as any).startSpan.mockClear();
+      mockSentry.startSpan.mockClear();
 
       localMetrics.trackLoadTime();
 
       // The trackLoadTime method creates a span for load performance
-      expect((Sentry as any).startSpan).toHaveBeenCalledWith(
+      expect(mockSentry.startSpan).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "swipe.performance.load",
           op: "metrics.performance",
@@ -245,7 +276,7 @@ describe("SwipeMetrics", () => {
       metrics.trackSwipe("left", "dog-2");
       metrics.endSession();
 
-      expect((Sentry as any).startSpan).toHaveBeenCalledWith(
+      expect(mockSentry.startSpan).toHaveBeenCalledWith(
         expect.objectContaining({
           name: expect.stringContaining("session"),
           attributes: expect.objectContaining({
@@ -265,12 +296,12 @@ describe("SwipeMetrics", () => {
 
       // Mock low FPS scenario
       const lowFPSMetrics = new SwipeMetrics();
-      (lowFPSMetrics as any).performanceMetrics.fps = 20;
-      (lowFPSMetrics as any).performanceMetrics.fpsHistory = Array(10).fill(20);
+      (lowFPSMetrics as unknown as { performanceMetrics: { fps: number; fpsHistory: number[] } }).performanceMetrics.fps = 20;
+      (lowFPSMetrics as unknown as { performanceMetrics: { fps: number; fpsHistory: number[] } }).performanceMetrics.fpsHistory = Array(10).fill(20);
 
       lowFPSMetrics.checkFPSHealth();
 
-      expect((Sentry as any).addBreadcrumb).toHaveBeenCalledWith(
+      expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
         expect.objectContaining({
           category: "performance",
           level: "warning",
@@ -293,18 +324,18 @@ describe("SwipeMetrics", () => {
         measure: jest.fn(),
         getEntriesByName: jest.fn().mockReturnValue([]),
       };
-      global.performance = localPerformanceMock as any;
+      global.performance = localPerformanceMock as unknown as Performance;
 
       // Create a new instance after setting up the performance mock
       const localMetrics = new SwipeMetrics();
 
       // Clear previous calls
-      (Sentry as any).addBreadcrumb.mockClear();
+      mockSentry.addBreadcrumb.mockClear();
 
       localMetrics.startSwipeGesture();
       localMetrics.endSwipeGesture();
 
-      expect((Sentry as any).addBreadcrumb).toHaveBeenCalledWith(
+      expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
         expect.objectContaining({
           category: "performance",
           level: "warning",
@@ -316,7 +347,7 @@ describe("SwipeMetrics", () => {
         }),
       );
 
-      expect((Sentry as any).captureEvent).not.toHaveBeenCalled();
+      expect(mockSentry.captureEvent).not.toHaveBeenCalled();
     });
   });
 
@@ -335,17 +366,17 @@ describe("SwipeMetrics", () => {
       metrics.trackCardView("dog-3");
 
       // Individual spans are created immediately
-      expect((Sentry as any).startSpan).toHaveBeenCalledTimes(3);
+      expect(mockSentry.startSpan).toHaveBeenCalledTimes(3);
 
       // Clear the mock to check batch flush
-      (Sentry as any).startSpan.mockClear();
+      mockSentry.startSpan.mockClear();
 
       // Advance time to trigger batch flush
       jest.advanceTimersByTime(5000);
 
       // Batch span should be created
-      expect((Sentry as any).startSpan).toHaveBeenCalledTimes(1);
-      expect((Sentry as any).startSpan).toHaveBeenCalledWith(
+      expect(mockSentry.startSpan).toHaveBeenCalledTimes(1);
+      expect(mockSentry.startSpan).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "swipe.metrics.batch",
           op: "metrics.batch",
@@ -364,14 +395,15 @@ describe("SwipeMetrics", () => {
       }
 
       // 10 individual spans + 1 batch flush span
-      expect((Sentry as any).startSpan).toHaveBeenCalledTimes(11);
+      expect(mockSentry.startSpan).toHaveBeenCalledTimes(11);
 
       // Check that batch span was created
-      const batchCall = (Sentry as any).startSpan.mock.calls.find(
-        (call: any) => call[0].name === "swipe.metrics.batch",
+      type StartSpanCall = [SpanOptions, ((span: MockSpan) => unknown)?];
+      const batchCall = mockSentry.startSpan.mock.calls.find(
+        (call: StartSpanCall) => call[0].name === "swipe.metrics.batch",
       );
       expect(batchCall).toBeDefined();
-      expect(batchCall[0].attributes["batch.size"]).toBe(10);
+      expect(batchCall![0].attributes!["batch.size"]).toBe(10);
     });
   });
 });

@@ -83,14 +83,12 @@ describe("OrganizationSchema Component", () => {
   });
 
   test("should not render when organization is null or undefined", () => {
-    const { container: nullContainer } = render(
-      <OrganizationSchema organization={null as any} />,
-    );
+    // @ts-expect-error testing error handling with null
+    const { container: nullContainer } = render(<OrganizationSchema organization={null} />);
     expect(nullContainer.querySelector("script")).toBeNull();
 
-    const { container: undefinedContainer } = render(
-      <OrganizationSchema organization={undefined as any} />,
-    );
+    // @ts-expect-error testing error handling with undefined
+    const { container: undefinedContainer } = render(<OrganizationSchema organization={undefined} />);
     expect(undefinedContainer.querySelector("script")).toBeNull();
   });
 
@@ -101,9 +99,8 @@ describe("OrganizationSchema Component", () => {
       website_url: "https://example.org",
     };
 
-    const { container } = render(
-      <OrganizationSchema organization={invalidOrganization as any} />,
-    );
+    // @ts-expect-error testing error handling with invalid data (missing name)
+    const { container } = render(<OrganizationSchema organization={invalidOrganization} />);
     expect(container.querySelector("script")).toBeNull();
   });
 

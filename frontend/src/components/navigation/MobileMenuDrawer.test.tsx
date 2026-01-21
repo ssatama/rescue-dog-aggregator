@@ -3,15 +3,28 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { MobileMenuDrawer } from "./MobileMenuDrawer";
 
 // Mock framer-motion to avoid animation complexities in tests
+interface MockMotionDivProps {
+  children?: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+  role?: string;
+  "aria-modal"?: boolean | "true" | "false";
+  "data-testid"?: string;
+}
+
+interface MockAnimatePresenceProps {
+  children: React.ReactNode;
+}
+
 jest.mock("framer-motion", () => ({
   motion: {
-    div: ({ children, onClick, ...props }: any) => (
+    div: ({ children, onClick, ...props }: MockMotionDivProps) => (
       <div onClick={onClick} {...props}>
         {children}
       </div>
     ),
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: MockAnimatePresenceProps) => <>{children}</>,
 }));
 
 describe("MobileMenuDrawer", () => {

@@ -22,20 +22,46 @@ import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
 import type { Dog } from "../../types/dog";
 
-// Type definitions
+// Type definitions - compatible with FavoritesInsights component
+interface HiddenGemsQuirk {
+  dogName: string;
+  quirk: string;
+}
+
 interface Insights {
   hasEnhancedData: boolean;
-  commonOrganizations?: Array<{ name: string; count: number }>;
-  commonBreeds?: Array<{ breed: string; count: number }>;
-  ageCounts?: { puppy: number; young: number; adult: number; senior: number };
-  sexBreakdown?: { male: number; female: number };
-  sizeCounts?: {
-    small: number;
-    medium: number;
-    large: number;
-    "extra-large": number;
-  };
-  [key: string]: any;
+  // Enhanced insights from dogProfilerAnalyzer (allow null for spread operator compatibility)
+  personalityPattern?: {
+    personalityTheme: string;
+    dominantTraits: string[];
+    commonTraits: string[];
+  } | null;
+  lifestyleCompatibility?: {
+    messages: string[];
+  } | null;
+  experienceRequirements?: {
+    recommendation: string;
+  } | null;
+  hiddenGems?: {
+    uniqueQuirks: HiddenGemsQuirk[];
+  } | null;
+  careComplexity?: {
+    description: string;
+  } | null;
+  energyProfile?: {
+    recommendation: string;
+  } | null;
+  compatibilityMatrix?: {
+    withDogs: { yes: number; no: number; maybe: number; unknown: number };
+    withCats: { yes: number; no: number; maybe: number; unknown: number };
+    withChildren: { yes: number; no: number; maybe: number; unknown: number };
+  } | null;
+  // Basic insights fields
+  topOrganization?: string;
+  sizePreference?: string;
+  ageRange?: string;
+  commonTraits?: string[] | null;
+  totalCount?: number;
 }
 
 function FavoritesPageContent() {
@@ -225,7 +251,7 @@ function FavoritesPageContent() {
     }
 
     return {
-      topOrganization: topOrg ? `${topOrg[0]} (${topOrg[1]} dogs)` : null,
+      topOrganization: topOrg ? `${topOrg[0]} (${topOrg[1]} dogs)` : undefined,
       sizePreference: hasStrongSizePreference
         ? `Mostly ${topSize[0]} dogs`
         : "Mixed sizes",
@@ -278,7 +304,10 @@ function FavoritesPageContent() {
       try {
         // Use statically imported function
         // Cast to DogWithProfiler[] since favorites are always fetched from API with numeric IDs
-        const enhancedInsights = getEnhancedInsights(filteredDogs as any);
+        // The Dog type has a union id type (number | string), but DogWithProfiler requires number
+        const enhancedInsights = getEnhancedInsights(
+          filteredDogs as unknown as import("@/types/dogProfiler").DogWithProfiler[],
+        );
         const basicInsights = getBasicInsights(filteredDogs);
 
         setInsights({

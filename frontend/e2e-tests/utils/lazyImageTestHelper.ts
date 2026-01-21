@@ -1,9 +1,9 @@
 import { Page, Locator, expect } from 'playwright/test';
 import { EnhancedDog } from '../fixtures/testData';
-import { 
-  LazyImageTestResult, 
+import {
+  LazyImageTestResult,
   ImageLoadingBehavior,
-  ValidationResult 
+  ValidationResult
 } from './dogTestHelperTypes';
 import { getTimeoutConfig } from './testHelpers';
 
@@ -361,14 +361,18 @@ export class LazyImageTestHelper {
         window.IntersectionObserver = class extends originalObserver {
           constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
             super(callback, options);
-            (window as any).observerCallCount = ((window as any).observerCallCount || 0) + 1;
+            const win = window as Window & { observerCallCount?: number };
+            win.observerCallCount = (win.observerCallCount || 0) + 1;
           }
         };
       });
 
       await this.page.goto('/dogs', { waitUntil: 'networkidle' });
 
-      observerCallCount = await this.page.evaluate(() => (window as any).observerCallCount || 0);
+      observerCallCount = await this.page.evaluate(() => {
+        const win = window as Window & { observerCallCount?: number };
+        return win.observerCallCount || 0;
+      });
 
       if (observerCallCount === 0) {
         return { 

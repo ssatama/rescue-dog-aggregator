@@ -58,10 +58,19 @@ export const renderWithProviders = customRender;
 
 export const withoutIntersectionObserver = (fn: () => void) => {
   const originalIO = global.IntersectionObserver;
-  global.IntersectionObserver = undefined as any;
+  // Temporarily remove IntersectionObserver to simulate environments without it
+  Object.defineProperty(global, "IntersectionObserver", {
+    value: undefined,
+    writable: true,
+    configurable: true,
+  });
   try {
     fn();
   } finally {
-    global.IntersectionObserver = originalIO;
+    Object.defineProperty(global, "IntersectionObserver", {
+      value: originalIO,
+      writable: true,
+      configurable: true,
+    });
   }
 };

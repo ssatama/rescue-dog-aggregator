@@ -70,8 +70,8 @@ export interface TestScenario {
   description: string;
   setup?: () => Promise<void>;
   cleanup?: () => Promise<void>;
-  data?: any;
-  expectations?: Record<string, any>;
+  data?: Record<string, unknown>;
+  expectations?: Record<string, unknown>;
 }
 
 export interface NavigationScenario extends TestScenario {

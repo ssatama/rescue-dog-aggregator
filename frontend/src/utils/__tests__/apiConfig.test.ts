@@ -1,5 +1,9 @@
 import { getApiUrl } from "../apiConfig";
 
+declare const global: {
+  window: (Window & typeof globalThis) | undefined;
+};
+
 describe("apiConfig", () => {
   describe("getApiUrl", () => {
     const originalWindow = global.window;
@@ -24,7 +28,7 @@ describe("apiConfig", () => {
         writable: true,
         configurable: true,
       });
-      delete (global as any).window;
+      global.window = undefined;
 
       const url = getApiUrl();
 
@@ -38,7 +42,7 @@ describe("apiConfig", () => {
         configurable: true,
       });
       process.env.NEXT_PUBLIC_API_URL = "https://dev-api.rescuedogs.me";
-      (global as any).window = {};
+      global.window = {} as Window & typeof globalThis;
 
       const url = getApiUrl();
 
@@ -52,7 +56,7 @@ describe("apiConfig", () => {
         configurable: true,
       });
       process.env.NEXT_PUBLIC_API_URL = "https://api.rescuedogs.me";
-      delete (global as any).window;
+      global.window = undefined;
 
       const url = getApiUrl();
 
@@ -66,7 +70,7 @@ describe("apiConfig", () => {
         configurable: true,
       });
       process.env.NEXT_PUBLIC_API_URL = "https://api.rescuedogs.me";
-      (global as any).window = {};
+      global.window = {} as Window & typeof globalThis;
 
       const url = getApiUrl();
 
@@ -80,7 +84,7 @@ describe("apiConfig", () => {
         configurable: true,
       });
       delete process.env.NEXT_PUBLIC_API_URL;
-      (global as any).window = {};
+      global.window = {} as Window & typeof globalThis;
 
       const url = getApiUrl();
 
@@ -93,7 +97,7 @@ describe("apiConfig", () => {
         writable: true,
         configurable: true,
       });
-      delete (global as any).window;
+      global.window = undefined;
 
       const url = getApiUrl();
 
@@ -107,7 +111,7 @@ describe("apiConfig", () => {
         configurable: true,
       });
       process.env.NEXT_PUBLIC_API_URL = "https://api.rescuedogs.me";
-      (global as any).window = {};
+      global.window = {} as Window & typeof globalThis;
 
       const url = getApiUrl();
 
