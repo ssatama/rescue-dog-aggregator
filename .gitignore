@@ -210,3 +210,5 @@ migrations/railway/versions/
 queries/debug/
 
 docs/feature_implementation/
+.vercel
+.env*.local
