@@ -7,10 +7,10 @@ Daisy Family Rescue database. Includes caching to avoid re-translating content.
 import hashlib
 import re
 from functools import lru_cache
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Global translation cache to persist across function calls
-_translation_cache: Dict[str, str] = {}
+_translation_cache: dict[str, str] = {}
 
 
 def _get_cache_key(text: str, translation_type: str) -> str:
@@ -18,7 +18,7 @@ def _get_cache_key(text: str, translation_type: str) -> str:
     return f"{translation_type}:{hashlib.md5(text.encode()).hexdigest()[:8]}"
 
 
-def _cached_translate(text: str, translation_type: str, translator_func) -> Optional[str]:
+def _cached_translate(text: str, translation_type: str, translator_func) -> str | None:
     """Generic cached translation wrapper."""
     if not text or not text.strip():
         return None
@@ -39,7 +39,7 @@ def _cached_translate(text: str, translation_type: str, translator_func) -> Opti
     return result
 
 
-def normalize_name(name: Optional[str]) -> Optional[str]:
+def normalize_name(name: str | None) -> str | None:
     """Normalize dog names to proper capitalization.
 
     Handles German dog names that might be in various cases.
@@ -69,7 +69,7 @@ def normalize_name(name: Optional[str]) -> Optional[str]:
     return name.capitalize()
 
 
-def translate_gender(gender: Optional[str]) -> Optional[str]:
+def translate_gender(gender: str | None) -> str | None:
     """Translate German gender terms to English standard values.
 
     Args:
@@ -81,7 +81,7 @@ def translate_gender(gender: Optional[str]) -> Optional[str]:
     if not gender:
         return None
 
-    def _translate_gender_impl(text: str) -> Optional[str]:
+    def _translate_gender_impl(text: str) -> str | None:
         text_lower = text.lower().strip()
 
         gender_map = {
@@ -100,7 +100,7 @@ def translate_gender(gender: Optional[str]) -> Optional[str]:
     return _cached_translate(gender, "gender", _translate_gender_impl)
 
 
-def translate_age(age_text: Optional[str]) -> Optional[str]:
+def translate_age(age_text: str | None) -> str | None:
     """Translate German age text to English format.
 
     Handles patterns like:
@@ -117,7 +117,7 @@ def translate_age(age_text: Optional[str]) -> Optional[str]:
     if not age_text:
         return None
 
-    def _translate_age_impl(text: str) -> Optional[str]:
+    def _translate_age_impl(text: str) -> str | None:
         # Handle birth date format MM/YYYY
         date_match = re.search(r"(\d{1,2})/(\d{4})", text)
         if date_match:
@@ -140,7 +140,7 @@ def translate_age(age_text: Optional[str]) -> Optional[str]:
     return _cached_translate(age_text, "age", _translate_age_impl)
 
 
-def translate_breed(breed: Optional[str]) -> Optional[str]:
+def translate_breed(breed: str | None) -> str | None:
     """Translate German breed names to English.
 
     Args:
@@ -152,7 +152,7 @@ def translate_breed(breed: Optional[str]) -> Optional[str]:
     if not breed:
         return None
 
-    def _translate_breed_impl(text: str) -> Optional[str]:
+    def _translate_breed_impl(text: str) -> str | None:
         # Word translations
         breed_translations = {
             "Mischling": "Mixed Breed",
@@ -188,7 +188,7 @@ def translate_breed(breed: Optional[str]) -> Optional[str]:
     return _cached_translate(breed, "breed", _translate_breed_impl)
 
 
-def translate_location(location: Optional[str]) -> Optional[str]:
+def translate_location(location: str | None) -> str | None:
     """Translate German location names to English.
 
     Args:
@@ -200,7 +200,7 @@ def translate_location(location: Optional[str]) -> Optional[str]:
     if not location:
         return None
 
-    def _translate_location_impl(text: str) -> Optional[str]:
+    def _translate_location_impl(text: str) -> str | None:
         location_translations = {
             # Countries
             "Nordmazedonien": "North Macedonia",
@@ -244,7 +244,7 @@ def translate_location(location: Optional[str]) -> Optional[str]:
     return _cached_translate(location, "location", _translate_location_impl)
 
 
-def translate_character_traits(traits: Optional[str]) -> Optional[str]:
+def translate_character_traits(traits: str | None) -> str | None:
     """Translate German character trait descriptions to English.
 
     Args:
@@ -256,7 +256,7 @@ def translate_character_traits(traits: Optional[str]) -> Optional[str]:
     if not traits:
         return None
 
-    def _translate_traits_impl(text: str) -> Optional[str]:
+    def _translate_traits_impl(text: str) -> str | None:
         trait_translations = {
             # Character traits
             "menschenbezogen": "people-oriented",
@@ -307,7 +307,7 @@ def translate_character_traits(traits: Optional[str]) -> Optional[str]:
     return _cached_translate(traits, "traits", _translate_traits_impl)
 
 
-def translate_compatibility(compatibility: Optional[str]) -> Optional[str]:
+def translate_compatibility(compatibility: str | None) -> str | None:
     """Translate German compatibility descriptions to English.
 
     Args:
@@ -319,7 +319,7 @@ def translate_compatibility(compatibility: Optional[str]) -> Optional[str]:
     if not compatibility:
         return None
 
-    def _translate_compatibility_impl(text: str) -> Optional[str]:
+    def _translate_compatibility_impl(text: str) -> str | None:
         compatibility_translations = {
             # Animals
             "Hunden": "dogs",
@@ -356,7 +356,7 @@ def translate_compatibility(compatibility: Optional[str]) -> Optional[str]:
     return _cached_translate(compatibility, "compatibility", _translate_compatibility_impl)
 
 
-def translate_ideal_home(home_description: Optional[str]) -> Optional[str]:
+def translate_ideal_home(home_description: str | None) -> str | None:
     """Translate German ideal home descriptions to English.
 
     Args:
@@ -368,7 +368,7 @@ def translate_ideal_home(home_description: Optional[str]) -> Optional[str]:
     if not home_description:
         return None
 
-    def _translate_home_impl(text: str) -> Optional[str]:
+    def _translate_home_impl(text: str) -> str | None:
         home_translations = {
             # Home types
             "Haus": "house",
@@ -423,7 +423,7 @@ def translate_ideal_home(home_description: Optional[str]) -> Optional[str]:
 
 
 @lru_cache(maxsize=1000)
-def translate_description(description: Optional[str]) -> Optional[str]:
+def translate_description(description: str | None) -> str | None:
     """Translate German dog descriptions to English.
 
     This handles longer text blocks like adoption descriptions.
@@ -482,7 +482,7 @@ def translate_description(description: Optional[str]) -> Optional[str]:
     return result
 
 
-def translate_dog_data(dog_data: Dict[str, Any]) -> Dict[str, Any]:
+def translate_dog_data(dog_data: dict[str, Any]) -> dict[str, Any]:
     """Translate all German content in a dog data dictionary.
 
     This is the main function to call after scraping to translate all content.
@@ -559,7 +559,7 @@ def translate_dog_data(dog_data: Dict[str, Any]) -> Dict[str, Any]:
     return translated_data
 
 
-def get_translation_cache_stats() -> Dict[str, int]:
+def get_translation_cache_stats() -> dict[str, int]:
     """Get statistics about the translation cache.
 
     Returns:

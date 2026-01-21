@@ -12,7 +12,7 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 logger = logging.getLogger(__name__)
 
 
-def scrub_sensitive_data(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def scrub_sensitive_data(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any] | None:
     if "request" in event and "headers" in event["request"]:
         sensitive_headers = ["authorization", "cookie", "x-api-key"]
         for header in sensitive_headers:
@@ -30,7 +30,7 @@ def scrub_sensitive_data(event: Dict[str, Any], hint: Dict[str, Any]) -> Optiona
     return event
 
 
-def filter_transactions(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def filter_transactions(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any] | None:
     """Filter out noisy transactions from performance monitoring."""
     transaction_name = event.get("transaction", "")
 

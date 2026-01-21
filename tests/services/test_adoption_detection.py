@@ -5,7 +5,7 @@ Following TDD principles - comprehensive tests for all functionality.
 """
 
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -245,7 +245,7 @@ class TestAdoptionDetectionService:
                 "https://example.org/dogs/old",
                 1,
                 3,
-                datetime.now(timezone.utc) - timedelta(hours=48),
+                datetime.now(UTC) - timedelta(hours=48),
             ),
             (
                 3,

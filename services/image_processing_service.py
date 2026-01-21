@@ -14,7 +14,7 @@ Following CLAUDE.md principles:
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from utils.r2_service import R2Service
 
@@ -24,8 +24,8 @@ class ImageProcessingService:
 
     def __init__(
         self,
-        r2_service: Optional[R2Service] = None,
-        logger: Optional[logging.Logger] = None,
+        r2_service: R2Service | None = None,
+        logger: logging.Logger | None = None,
     ):
         """Initialize ImageProcessingService with dependencies.
 
@@ -38,11 +38,11 @@ class ImageProcessingService:
 
     def process_primary_image(
         self,
-        animal_data: Dict[str, Any],
-        existing_animal: Optional[Tuple] = None,
+        animal_data: dict[str, Any],
+        existing_animal: tuple | None = None,
         database_connection=None,
         organization_name: str = "unknown",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Process primary image for an animal, handling uploads and URL management.
 
         Args:
@@ -73,7 +73,7 @@ class ImageProcessingService:
 
         return processed_data
 
-    def upload_image_to_r2(self, image_url: str, animal_name: str, organization_name: str = "unknown") -> Tuple[Optional[str], bool]:
+    def upload_image_to_r2(self, image_url: str, animal_name: str, organization_name: str = "unknown") -> tuple[str | None, bool]:
         """Upload image to R2 service.
 
         Args:
@@ -112,10 +112,10 @@ class ImageProcessingService:
 
     def _should_upload_primary_image(
         self,
-        existing_animal: Tuple,
+        existing_animal: tuple,
         original_url: str,
         database_connection,
-        processed_data: Dict[str, Any],
+        processed_data: dict[str, Any],
     ) -> bool:
         """Determine if primary image should be uploaded (pure function).
 
@@ -157,7 +157,7 @@ class ImageProcessingService:
 
         return True
 
-    def _upload_primary_image(self, processed_data: Dict[str, Any], original_url: str, organization_name: str) -> Dict[str, Any]:
+    def _upload_primary_image(self, processed_data: dict[str, Any], original_url: str, organization_name: str) -> dict[str, Any]:
         """Upload primary image and update processed data (pure function).
 
         Args:
@@ -221,7 +221,7 @@ class ImageProcessingService:
 
         return has_valid_extension or has_valid_service
 
-    def _get_existing_image_mappings(self, original_urls: List[str], database_connection) -> Dict[str, str]:
+    def _get_existing_image_mappings(self, original_urls: list[str], database_connection) -> dict[str, str]:
         """Query database for existing original_url to primary_image_url mappings.
 
         Args:
@@ -293,12 +293,12 @@ class ImageProcessingService:
 
     def batch_process_images(
         self,
-        animals_data: List[Dict[str, Any]],
+        animals_data: list[dict[str, Any]],
         organization_name: str,
         batch_size: int = 5,
         use_concurrent: bool = True,
         database_connection=None,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Process multiple animal images in batches with deduplication for better performance.
 
         Args:
@@ -370,11 +370,11 @@ class ImageProcessingService:
                     throttle_ms=200,
                     adaptive_throttle=True,
                 )
-                self.logger.info(f"✅ Concurrent upload complete: {stats['successful']}/{stats['total']} " f"successful ({stats['success_rate']:.1f}%) in {stats['total_time']:.1f}s")
+                self.logger.info(f"✅ Concurrent upload complete: {stats['successful']}/{stats['total']} successful ({stats['success_rate']:.1f}%) in {stats['total_time']:.1f}s")
             else:
                 # Use batch upload with adaptive delays
                 results, stats = self.r2_service.batch_upload_images_with_stats(images_to_upload, batch_size=batch_size, adaptive_delay=True)
-                self.logger.info(f"✅ Batch upload complete: {stats['successful']}/{stats['total']} " f"successful ({stats['success_rate']:.1f}%) in {stats['total_time']:.1f}s")
+                self.logger.info(f"✅ Batch upload complete: {stats['successful']}/{stats['total']} successful ({stats['success_rate']:.1f}%) in {stats['total_time']:.1f}s")
 
             # Update animal data with newly uploaded URLs
             for i, (uploaded_url, success) in enumerate(results):

@@ -40,7 +40,7 @@ class TestWoofProjectUnifiedStandardization:
         import scrapers.woof_project.dogs_scraper as module
 
         source = module.__file__
-        with open(source, "r") as f:
+        with open(source) as f:
             content = f.read()
         # Should NOT have these imports anymore after migration
         assert "from utils.optimized_standardization import" not in content
@@ -50,7 +50,7 @@ class TestWoofProjectUnifiedStandardization:
         import scrapers.woof_project.dogs_scraper as module
 
         source = module.__file__
-        with open(source, "r") as f:
+        with open(source) as f:
             content = f.read()
         # These fields should be removed from the result dictionary
         assert '"standardized_breed":' not in content

@@ -14,7 +14,7 @@ from scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper import
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestSanterPawsBulgarianRescueStandardization(unittest.TestCase):
     """Test standardization utilities integration in Santer Paws Bulgarian Rescue scraper."""
 

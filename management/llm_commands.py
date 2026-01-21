@@ -13,7 +13,6 @@ import json
 import logging
 import os
 import sys
-from typing import Optional, Tuple
 
 import click
 import psycopg2
@@ -58,11 +57,11 @@ def llm():
     help="Number of items to process per batch (default: 25)",
 )
 def enrich_descriptions(
-    organization: Optional[str],
-    limit: Optional[int],
+    organization: str | None,
+    limit: int | None,
     dry_run: bool,
     force: bool,
-    batch_size: Optional[int],
+    batch_size: int | None,
 ):
     """Enrich animal descriptions using LLM."""
 
@@ -194,7 +193,7 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
             if enriched_animals:
                 console.print(f"[bold green]✓[/bold green] LLM processing complete. Updating {len(enriched_animals)} records in database...")
 
-                def create_update_query(item: Tuple[int, str]) -> Tuple[str, Tuple]:
+                def create_update_query(item: tuple[int, str]) -> tuple[str, tuple]:
                     animal_id, enriched_description = item
                     query = """
                         UPDATE animals
@@ -243,7 +242,7 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
     type=int,
     help="Number of items to process per batch (default: 10)",
 )
-def generate_profiles(organization: Optional[int], limit: Optional[int], batch_size: int):
+def generate_profiles(organization: int | None, limit: int | None, batch_size: int):
     """Generate dog profiler data using org-specific prompts."""
     from services.llm.dog_profiler import DogProfilerPipeline
     from services.llm.organization_config_loader import get_config_loader
@@ -342,9 +341,9 @@ def generate_profiles(organization: Optional[int], limit: Optional[int], batch_s
 )
 def translate(
     target_language: str,
-    organization: Optional[str],
-    limit: Optional[int],
-    batch_size: Optional[int],
+    organization: str | None,
+    limit: int | None,
+    batch_size: int | None,
 ):
     """Translate animal descriptions to target language."""
 
@@ -463,7 +462,7 @@ async def _translate_async(animals, target_language, effective_batch_size, batch
             if translated_animals:
                 console.print(f"[bold green]✓[/bold green] Translation complete. Updating {len(translated_animals)} records in database...")
 
-                def create_update_query(item: Tuple[int, str]) -> Tuple[str, Tuple]:
+                def create_update_query(item: tuple[int, str]) -> tuple[str, tuple]:
                     animal_id, translations_json = item
                     query = """
                         UPDATE animals 

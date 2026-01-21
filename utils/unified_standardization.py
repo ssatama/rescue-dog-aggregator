@@ -8,7 +8,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from utils.breed_utils import generate_breed_slug
 
@@ -19,7 +19,7 @@ class BreedInfo:
 
     standardized_name: str
     breed_group: str
-    size_estimate: Optional[str]
+    size_estimate: str | None
 
 
 @dataclass(frozen=True)
@@ -64,7 +64,7 @@ class UnifiedStandardizer:
         self.age_patterns = self._compile_age_patterns()
         self.breed_patterns = self._compile_breed_patterns()
 
-    def _initialize_breed_data(self) -> Dict[str, BreedInfo]:
+    def _initialize_breed_data(self) -> dict[str, BreedInfo]:
         """Initialize the consolidated breed data with all fixes."""
         breed_data = {
             # Hound Group - Fixed Lurcher classification
@@ -273,7 +273,7 @@ class UnifiedStandardizer:
 
         return breed_data
 
-    def _initialize_designer_breeds(self) -> Dict[str, Dict[str, str]]:
+    def _initialize_designer_breeds(self) -> dict[str, dict[str, str]]:
         """Initialize designer breed mappings with parent breeds."""
         return {
             "cockapoo": {
@@ -355,7 +355,7 @@ class UnifiedStandardizer:
             },
         }
 
-    def _initialize_staffordshire_variations(self) -> List[str]:
+    def _initialize_staffordshire_variations(self) -> list[str]:
         """Initialize Staffordshire Bull Terrier name variations."""
         return [
             "staffie",
@@ -371,7 +371,7 @@ class UnifiedStandardizer:
             "english staffy",
         ]
 
-    def _initialize_american_staffordshire_variations(self) -> List[str]:
+    def _initialize_american_staffordshire_variations(self) -> list[str]:
         """Initialize American Staffordshire Terrier name variations."""
         return [
             "am staff",
@@ -381,7 +381,7 @@ class UnifiedStandardizer:
             "american staffie",
         ]
 
-    def _compile_age_patterns(self) -> Dict[str, re.Pattern]:
+    def _compile_age_patterns(self) -> dict[str, re.Pattern]:
         """Compile regex patterns for age parsing."""
         return {
             "birth_date": re.compile(r"born\s+on\s+(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})", re.IGNORECASE),
@@ -395,14 +395,14 @@ class UnifiedStandardizer:
             "range": re.compile(r"(\d+)\s*(?:-|to)\s*(\d+)\s*(?:year|yr|month|mo)s?", re.IGNORECASE),
         }
 
-    def _compile_breed_patterns(self) -> Dict[str, re.Pattern]:
+    def _compile_breed_patterns(self) -> dict[str, re.Pattern]:
         """Compile regex patterns for breed processing."""
         return {
             "mixed": re.compile(r"(mixed|mix|mongrel|mutt|crossbreed|cross\s*breed|^cross$)", re.IGNORECASE),
             "cross": re.compile(r"\b(cross|x|×)\b", re.IGNORECASE),
         }
 
-    def _parse_parenthetical_breed(self, breed: str) -> Optional[str]:
+    def _parse_parenthetical_breed(self, breed: str) -> str | None:
         """
         Parse Dogs Trust style parenthetical breed patterns.
         Examples:
@@ -515,10 +515,10 @@ class UnifiedStandardizer:
     @lru_cache(maxsize=1000)
     def apply_full_standardization(
         self,
-        breed: Optional[str] = None,
-        age: Optional[str] = None,
-        size: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        breed: str | None = None,
+        age: str | None = None,
+        size: str | None = None,
+    ) -> dict[str, Any]:
         """
         Apply full standardization to all three fields in a single pass.
 
@@ -583,7 +583,7 @@ class UnifiedStandardizer:
         # Return deep copy to prevent cache mutation
         return deepcopy(result)
 
-    def apply_field_normalization(self, animal_data: Dict[str, Any]) -> Dict[str, Any]:
+    def apply_field_normalization(self, animal_data: dict[str, Any]) -> dict[str, Any]:
         """
         Apply field normalization including trimming, boolean conversion, and defaults.
         This method handles all the field cleaning that was in the legacy standardization.
@@ -628,7 +628,7 @@ class UnifiedStandardizer:
 
         return result
 
-    def _normalize_boolean(self, value: Any) -> Optional[bool]:
+    def _normalize_boolean(self, value: Any) -> bool | None:
         """Convert various boolean representations to actual booleans."""
         if value is None:
             return None
@@ -662,7 +662,7 @@ class UnifiedStandardizer:
 
         return image_url
 
-    def _set_default_values(self, animal_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _set_default_values(self, animal_data: dict[str, Any]) -> dict[str, Any]:
         """Set default values for required fields."""
         defaults = {
             "animal_type": "dog",
@@ -675,7 +675,7 @@ class UnifiedStandardizer:
 
         return animal_data
 
-    def _standardize_breed(self, breed: Optional[str]) -> Dict[str, Any]:
+    def _standardize_breed(self, breed: str | None) -> dict[str, Any]:
         """Standardize breed with all fixes including Lurcher, designer breeds, and Staffordshire."""
         if not breed:
             return {
@@ -904,7 +904,7 @@ class UnifiedStandardizer:
 
         return " ".join(result)
 
-    def _parse_age_text(self, age_text: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:
+    def _parse_age_text(self, age_text: str) -> tuple[str | None, int | None, int | None]:
         """
         Parse age text into a standardized age category and month range.
         Ported from legacy standardization.py for full compatibility.
@@ -1149,7 +1149,7 @@ class UnifiedStandardizer:
         # If we can't determine, return None
         return None, None, None
 
-    def _standardize_age(self, age: Optional[str]) -> Dict[str, Any]:
+    def _standardize_age(self, age: str | None) -> dict[str, Any]:
         """Standardize age string into structured format."""
         if not age:
             return {
@@ -1177,7 +1177,7 @@ class UnifiedStandardizer:
             "age_max_months": max_months,
         }
 
-    def _get_size_from_breed(self, breed: str) -> Optional[str]:
+    def _get_size_from_breed(self, breed: str) -> str | None:
         """
         Estimate dog size based on breed.
         Ported from legacy standardization.py for breed-based size estimation.
@@ -1228,7 +1228,7 @@ class UnifiedStandardizer:
 
         return None
 
-    def _standardize_size(self, size: Optional[str], breed: Optional[str] = None) -> Dict[str, Any]:
+    def _standardize_size(self, size: str | None, breed: str | None = None) -> dict[str, Any]:
         """Standardize size with comprehensive fallback chain: explicit → breed → weight → default."""
         canonical_sizes = ["Tiny", "Small", "Medium", "Large", "XLarge"]
 
@@ -1280,7 +1280,7 @@ class UnifiedStandardizer:
             "source": "default",
         }
 
-    def _get_weight_range(self, size_category: str) -> Dict[str, int]:
+    def _get_weight_range(self, size_category: str) -> dict[str, int]:
         """Get weight range for a size category."""
         weight_ranges = {
             "Tiny": {"min": 0, "max": 10},
@@ -1291,7 +1291,7 @@ class UnifiedStandardizer:
         }
         return weight_ranges.get(size_category, {"min": 25, "max": 60})
 
-    def apply_batch_standardization(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def apply_batch_standardization(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Process multiple animals efficiently in batch."""
         results = []
         for animal in animals:
@@ -1307,6 +1307,6 @@ class UnifiedStandardizer:
         """Clear all LRU caches."""
         self.apply_full_standardization.cache_clear()
 
-    def get_cache_info(self) -> Dict[str, Any]:
+    def get_cache_info(self) -> dict[str, Any]:
         """Get cache statistics."""
         return {"full_standardization": self.apply_full_standardization.cache_info()._asdict()}

@@ -3,7 +3,7 @@
 import logging
 import os
 import sys
-from typing import Generator
+from collections.abc import Generator
 
 import psycopg2
 from fastapi import HTTPException

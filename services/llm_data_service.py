@@ -16,7 +16,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 from tenacity import (
@@ -92,7 +92,7 @@ class LRUCache:
         self._hits = 0
         self._misses = 0
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics for monitoring."""
         total_requests = self._hits + self._misses
         hit_rate = self._hits / total_requests if total_requests > 0 else 0.0
@@ -119,27 +119,27 @@ class LLMDataService(ABC):
     """Abstract base class for LLM data services."""
 
     @abstractmethod
-    async def enrich_animal_data(self, animal_data: Dict[str, Any], processing_type: ProcessingType) -> Dict[str, Any]:
+    async def enrich_animal_data(self, animal_data: dict[str, Any], processing_type: ProcessingType) -> dict[str, Any]:
         """Enrich animal data based on processing type."""
         pass
 
     @abstractmethod
-    async def clean_description(self, description: str, organization_config: Optional[Dict] = None) -> str:
+    async def clean_description(self, description: str, organization_config: dict | None = None) -> str:
         """Clean and improve animal description."""
         pass
 
     @abstractmethod
-    async def generate_dog_profiler(self, dog_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def generate_dog_profiler(self, dog_data: dict[str, Any]) -> dict[str, Any]:
         """Generate dog profiler data for matching feature."""
         pass
 
     @abstractmethod
-    async def translate_text(self, text: str, target_language: str, source_language: Optional[str] = None) -> str:
+    async def translate_text(self, text: str, target_language: str, source_language: str | None = None) -> str:
         """Translate text to target language."""
         pass
 
     @abstractmethod
-    async def batch_process(self, animals: List[Dict[str, Any]], processing_type: ProcessingType) -> List[Dict[str, Any]]:
+    async def batch_process(self, animals: list[dict[str, Any]], processing_type: ProcessingType) -> list[dict[str, Any]]:
         """Process multiple animals in batch."""
         pass
 
@@ -149,13 +149,13 @@ class OpenRouterLLMDataService(LLMDataService):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        timeout: Optional[float] = None,
-        max_retries: Optional[int] = None,
-        cache_enabled: Optional[bool] = None,
-        max_cache_size: Optional[int] = None,
+        config: Any | None = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        cache_enabled: bool | None = None,
+        max_cache_size: int | None = None,
     ):
         """Initialize OpenRouter LLM service with configuration or individual parameters."""
         if config is None:
@@ -277,7 +277,7 @@ class OpenRouterLLMDataService(LLMDataService):
             self.logger.error(f"Unexpected error calling OpenRouter: {e}")
             raise ValueError(f"Failed to process LLM request: {e}") from e
 
-    async def clean_description(self, description: str, organization_config: Optional[Dict] = None) -> str:
+    async def clean_description(self, description: str, organization_config: dict | None = None) -> str:
         """Clean and improve animal description."""
         if not description:
             return description
@@ -312,7 +312,7 @@ class OpenRouterLLMDataService(LLMDataService):
 
         return cleaned
 
-    def _build_cleaning_prompt(self, org_config: Optional[Dict]) -> str:
+    def _build_cleaning_prompt(self, org_config: dict | None) -> str:
         """Build system prompt for description cleaning."""
         base_prompt = """You are an expert at cleaning and improving dog adoption descriptions.
 Your task is to:
@@ -332,7 +332,7 @@ Your task is to:
 
         return base_prompt
 
-    async def generate_dog_profiler(self, dog_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def generate_dog_profiler(self, dog_data: dict[str, Any]) -> dict[str, Any]:
         """Generate dog profiler data for matching feature."""
         if not dog_data.get("name"):
             return {}
@@ -377,7 +377,7 @@ Description: {dog_data.get("description", "")}"""
             self.logger.error(f"Failed to parse dog profiler response: {e}")
             return {}
 
-    async def translate_text(self, text: str, target_language: str, source_language: Optional[str] = None) -> str:
+    async def translate_text(self, text: str, target_language: str, source_language: str | None = None) -> str:
         """Translate text to target language."""
         if not text:
             return text
@@ -433,7 +433,7 @@ Description: {dog_data.get("description", "")}"""
         }
         return languages.get(code, code)
 
-    async def enrich_animal_data(self, animal_data: Dict[str, Any], processing_type: ProcessingType) -> Dict[str, Any]:
+    async def enrich_animal_data(self, animal_data: dict[str, Any], processing_type: ProcessingType) -> dict[str, Any]:
         """Enrich animal data based on processing type."""
         if processing_type == ProcessingType.DESCRIPTION_CLEANING:
             description = animal_data.get("description", "")
@@ -454,7 +454,7 @@ Description: {dog_data.get("description", "")}"""
 
         return animal_data
 
-    async def batch_process(self, animals: List[Dict[str, Any]], processing_type: ProcessingType) -> List[Dict[str, Any]]:
+    async def batch_process(self, animals: list[dict[str, Any]], processing_type: ProcessingType) -> list[dict[str, Any]]:
         """Process multiple animals in batch with concurrency control."""
         # Process in batches to avoid overwhelming the API
         batch_size = self.config.batch.default_size
@@ -480,7 +480,7 @@ Description: {dog_data.get("description", "")}"""
 
         return results
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics for monitoring memory usage and performance."""
         if not self.cache_enabled or self.cache is None:
             return {"cache_enabled": False, "message": "Caching is disabled"}

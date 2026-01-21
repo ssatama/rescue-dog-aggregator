@@ -1,7 +1,6 @@
 # api/routes/organizations.py
 
 import json
-from typing import List
 
 import psycopg2
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,7 +17,7 @@ from api.utils.json_parser import parse_json_field
 router = APIRouter()
 
 
-@router.get("/", response_model=List[Organization])
+@router.get("/", response_model=list[Organization])
 def get_organizations(
     filters: OrganizationFilterRequest = Depends(),
     cursor: RealDictCursor = Depends(get_db_cursor),
@@ -102,7 +101,7 @@ def get_organizations(
         )
 
 
-@router.get("/enhanced", response_model=List[dict])
+@router.get("/enhanced", response_model=list[dict])
 def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
     """
     Get all organizations with statistics and recent dogs in a single optimized query.

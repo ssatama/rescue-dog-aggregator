@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from monitoring.quality.analyzer import OrganizationQuality
 from monitoring.quality.metrics import QualityAssessment
@@ -24,7 +24,7 @@ class DataQualityReporter:
         self.detailed_dir = self.report_dir / "detailed-analysis"
         self.detailed_dir.mkdir(exist_ok=True)
 
-    def generate_overall_summary(self, org_qualities: List[OrganizationQuality]) -> str:
+    def generate_overall_summary(self, org_qualities: list[OrganizationQuality]) -> str:
         """Generate overall summary report."""
 
         if not org_qualities:
@@ -151,7 +151,7 @@ Generated: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
     def generate_detailed_organization_report(
         self,
         org_quality: OrganizationQuality,
-        animal_details: List[Tuple[Dict[str, Any], QualityAssessment]],
+        animal_details: list[tuple[dict[str, Any], QualityAssessment]],
     ) -> str:
         """Generate detailed report for a single organization."""
 
@@ -325,7 +325,7 @@ For maximum search visibility:
 
         return report
 
-    def save_overall_summary(self, org_qualities: List[OrganizationQuality]) -> str:
+    def save_overall_summary(self, org_qualities: list[OrganizationQuality]) -> str:
         """Save overall summary report and return file path."""
         report_content = self.generate_overall_summary(org_qualities)
         file_path = self.report_dir / "overall-summary.md"
@@ -338,7 +338,7 @@ For maximum search visibility:
     def save_detailed_report(
         self,
         org_quality: OrganizationQuality,
-        animal_details: List[Tuple[Dict[str, Any], QualityAssessment]],
+        animal_details: list[tuple[dict[str, Any], QualityAssessment]],
     ) -> str:
         """Save detailed organization report and return file path."""
         report_content = self.generate_detailed_organization_report(org_quality, animal_details)

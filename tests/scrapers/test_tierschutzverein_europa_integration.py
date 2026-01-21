@@ -11,11 +11,11 @@ from scrapers.tierschutzverein_europa.dogs_scraper import TierschutzvereinEuropa
 from utils.standardization import standardize_age, standardize_breed
 
 
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.browser
 @pytest.mark.database
 @pytest.mark.integration
-@pytest.mark.selenium
+@pytest.mark.browser
 @pytest.mark.slow
 class TestTierschutzvereinEuropaIntegration:
     """Test integration between scraper, translation, and base_scraper standardization."""

@@ -19,7 +19,7 @@ import pytest
 from services.llm.llm_client import LLMClient
 
 
-@pytest.mark.services
+@pytest.mark.integration
 class TestLLMClientVisionAPI:
     """Test the LLMClient vision API integration."""
 

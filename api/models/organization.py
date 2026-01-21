@@ -1,7 +1,7 @@
 # api/models/organization.py
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
@@ -12,28 +12,28 @@ class Organization(BaseModel):
     name: str
     slug: str
 
-    website_url: Optional[HttpUrl] = None
-    description: Optional[str] = None
-    country: Optional[str] = None
-    city: Optional[str] = None
-    logo_url: Optional[HttpUrl] = None
-    active: Optional[bool] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    website_url: HttpUrl | None = None
+    description: str | None = None
+    country: str | None = None
+    city: str | None = None
+    logo_url: HttpUrl | None = None
+    active: bool | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     # Enhanced fields for organization profiles
-    social_media: Dict[str, str] = Field(default_factory=dict)
-    ships_to: List[str] = Field(default_factory=list)
-    established_year: Optional[int] = None
+    social_media: dict[str, str] = Field(default_factory=dict)
+    ships_to: list[str] = Field(default_factory=list)
+    established_year: int | None = None
 
     # Enhanced card fields
-    service_regions: List[str] = Field(default_factory=list)
-    total_dogs: Optional[int] = None
-    new_this_week: Optional[int] = None
-    recent_dogs: List[Dict[str, Any]] = Field(default_factory=list)
+    service_regions: list[str] = Field(default_factory=list)
+    total_dogs: int | None = None
+    new_this_week: int | None = None
+    recent_dogs: list[dict[str, Any]] = Field(default_factory=list)
 
     # Adoption fees for dynamic pricing
-    adoption_fees: Dict[str, Any] = Field(default_factory=dict)
+    adoption_fees: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("name")
     @classmethod

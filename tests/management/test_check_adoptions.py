@@ -1,7 +1,7 @@
 """Tests for the check_adoptions management command."""
 
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -78,7 +78,7 @@ def sample_eligible_dogs():
             "url": "https://dogstrust.org.uk/dogs/bella",
             "status": "unknown",
             "consecutive_scrapes_missing": 3,
-            "adoption_checked_at": datetime.now(timezone.utc) - timedelta(hours=48),
+            "adoption_checked_at": datetime.now(UTC) - timedelta(hours=48),
             "adoption_check_data": None,
         },
     ]
@@ -232,7 +232,7 @@ class TestCheckAdoptionsCommand:
                 detected_status="adopted",
                 evidence="Page shows REHOMED",
                 confidence=0.95,
-                checked_at=datetime.now(timezone.utc),
+                checked_at=datetime.now(UTC),
                 raw_response=None,
                 error=None,
             ),
@@ -243,7 +243,7 @@ class TestCheckAdoptionsCommand:
                 detected_status="available",
                 evidence="Still listed as available",
                 confidence=0.90,
-                checked_at=datetime.now(timezone.utc),
+                checked_at=datetime.now(UTC),
                 raw_response=None,
                 error=None,
             ),
@@ -274,7 +274,7 @@ class TestCheckAdoptionsCommand:
             detected_status="adopted",
             evidence="Page shows REHOMED",
             confidence=0.95,
-            checked_at=datetime.now(timezone.utc),
+            checked_at=datetime.now(UTC),
             raw_response={"markdown": "test"},
             error=None,
         )
@@ -306,7 +306,7 @@ class TestCheckAdoptionsCommand:
             detected_status="adopted",
             evidence="Page shows REHOMED",
             confidence=0.95,
-            checked_at=datetime.now(timezone.utc),
+            checked_at=datetime.now(UTC),
             raw_response=None,
             error=None,
         )
@@ -329,7 +329,7 @@ class TestCheckAdoptionsCommand:
                 detected_status="adopted",
                 evidence="",
                 confidence=0.95,
-                checked_at=datetime.now(timezone.utc),
+                checked_at=datetime.now(UTC),
                 raw_response=None,
                 error=None,
             ),
@@ -340,7 +340,7 @@ class TestCheckAdoptionsCommand:
                 detected_status="adopted",
                 evidence="",
                 confidence=0.90,
-                checked_at=datetime.now(timezone.utc),
+                checked_at=datetime.now(UTC),
                 raw_response=None,
                 error=None,
             ),
@@ -351,7 +351,7 @@ class TestCheckAdoptionsCommand:
                 detected_status="available",
                 evidence="",
                 confidence=0.85,
-                checked_at=datetime.now(timezone.utc),
+                checked_at=datetime.now(UTC),
                 raw_response=None,
                 error=None,
             ),
@@ -362,7 +362,7 @@ class TestCheckAdoptionsCommand:
                 detected_status="unknown",
                 evidence="",
                 confidence=0.0,
-                checked_at=datetime.now(timezone.utc),
+                checked_at=datetime.now(UTC),
                 raw_response=None,
                 error="Failed to fetch page",
             ),

@@ -8,7 +8,7 @@ Following CLAUDE.md principles:
 - Comprehensive validation rules
 """
 
-from typing import List, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -35,7 +35,7 @@ class PhotoAnalysisResponse(BaseModel):
     ig_ready: bool = Field(..., description="True if overall_score >= 8.0")
     confidence: Literal["low", "medium", "high"] = Field(..., description="Analysis confidence level")
     reasoning: str = Field(..., description="Explanation of the scores")
-    flags: List[str] = Field(default_factory=list, description="Issues or notable features")
+    flags: list[str] = Field(default_factory=list, description="Issues or notable features")
 
     @model_validator(mode="after")
     def validate_overall_score(self) -> "PhotoAnalysisResponse":

@@ -1,7 +1,7 @@
 """Filtering service for managing existing animal detection and filtering."""
 
 import logging
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 
 class FilteringService:
@@ -15,9 +15,9 @@ class FilteringService:
         self,
         database_service=None,
         session_manager=None,
-        organization_id: Optional[int] = None,
+        organization_id: int | None = None,
         skip_existing_animals: bool = False,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.database_service = database_service
         self.session_manager = session_manager
@@ -36,7 +36,7 @@ class FilteringService:
     def total_animals_skipped(self) -> int:
         return self._total_animals_skipped
 
-    def get_existing_animal_urls(self) -> Set[str]:
+    def get_existing_animal_urls(self) -> set[str]:
         """Get set of existing animal URLs for this organization."""
         if self.database_service:
             return self.database_service.get_existing_animal_urls(self.organization_id)
@@ -44,7 +44,7 @@ class FilteringService:
         self.logger.warning("No DatabaseService available - cannot check existing animals")
         return set()
 
-    def filter_existing_urls(self, all_urls: List[str]) -> List[str]:
+    def filter_existing_urls(self, all_urls: list[str]) -> list[str]:
         """Filter out existing URLs if skip_existing_animals is enabled."""
         if not self.skip_existing_animals:
             self.logger.debug(f"skip_existing_animals is False, returning all {len(all_urls)} URLs")
@@ -68,7 +68,7 @@ class FilteringService:
 
         return filtered_urls
 
-    def filter_existing_animals(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def filter_existing_animals(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Filter existing animals and record ALL found external_ids for stale detection.
 
         CRITICAL: Records all external_ids BEFORE filtering so stale detection
@@ -106,7 +106,7 @@ class FilteringService:
         url_to_animal = {animal.get("adoption_url", ""): animal for animal in animals}
         filtered_animals = [url_to_animal[url] for url in filtered_urls if url in url_to_animal]
 
-        self.logger.info(f"Filtering: {skipped_count} existing (skipped), {len(filtered_animals)} new " f"({skipped_count / len(all_urls) * 100:.1f}% skip rate)")
+        self.logger.info(f"Filtering: {skipped_count} existing (skipped), {len(filtered_animals)} new ({skipped_count / len(all_urls) * 100:.1f}% skip rate)")
 
         return filtered_animals
 
@@ -114,9 +114,9 @@ class FilteringService:
         """Set statistics about skip_existing_animals filtering."""
         self._total_animals_before_filter = total_before_filter
         self._total_animals_skipped = total_skipped
-        self.logger.info(f"Filtering stats: {total_before_filter} found, {total_skipped} skipped, " f"{total_before_filter - total_skipped} to process")
+        self.logger.info(f"Filtering stats: {total_before_filter} found, {total_skipped} skipped, {total_before_filter - total_skipped} to process")
 
-    def get_correct_animals_found_count(self, animals_data: List) -> int:
+    def get_correct_animals_found_count(self, animals_data: list) -> int:
         """Get correct animals_found count for logging.
 
         Returns total_animals_before_filter if filtering was applied and stats were set,
@@ -129,7 +129,7 @@ class FilteringService:
             return self._total_animals_before_filter
         return len(animals_data)
 
-    def record_all_found_external_ids(self, animals_data: List[Dict[str, Any]]) -> int:
+    def record_all_found_external_ids(self, animals_data: list[dict[str, Any]]) -> int:
         """Record all external_ids from discovered animals for accurate stale detection.
 
         This must be called BEFORE any skip_existing_animals filtering happens.

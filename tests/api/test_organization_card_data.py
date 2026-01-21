@@ -10,7 +10,7 @@ includes all fields required for the OrganizationCard component, including:
 - new_this_week: Count of dogs added in the last 7 days
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
@@ -72,11 +72,11 @@ class TestOrganizationCardData:
             "external_id": "ext-5305",
             "language": "en",
             "properties": {},
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
-            "last_scraped_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+            "last_scraped_at": datetime.now(UTC),
             "availability_confidence": "high",
-            "last_seen_at": datetime.now(timezone.utc),
+            "last_seen_at": datetime.now(UTC),
             "consecutive_scrapes_missing": 0,
             "dog_profiler_data": {},
             "adoption_check_data": None,
@@ -214,11 +214,11 @@ class TestOrganizationCardData:
             "external_id": "ext-1",
             "language": "en",
             "properties": {},
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
-            "last_scraped_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+            "last_scraped_at": datetime.now(UTC),
             "availability_confidence": "high",
-            "last_seen_at": datetime.now(timezone.utc),
+            "last_seen_at": datetime.now(UTC),
             "consecutive_scrapes_missing": 0,
             "dog_profiler_data": {},
             "adoption_check_data": None,
@@ -282,11 +282,11 @@ class TestOrganizationCardData:
             "external_id": "ext-2",
             "language": "en",
             "properties": {},
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
-            "last_scraped_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+            "last_scraped_at": datetime.now(UTC),
             "availability_confidence": "high",
-            "last_seen_at": datetime.now(timezone.utc),
+            "last_seen_at": datetime.now(UTC),
             "consecutive_scrapes_missing": 0,
             "dog_profiler_data": {},
             "adoption_check_data": None,
@@ -350,7 +350,7 @@ class TestOrganizationCardData:
         """Test that new_this_week correctly reflects dogs added in last 7 days."""
 
         # Create a dog that was just added
-        recent_date = datetime.now(timezone.utc) - timedelta(days=2)
+        recent_date = datetime.now(UTC) - timedelta(days=2)
 
         animal_data = {
             "id": 3,
@@ -380,9 +380,9 @@ class TestOrganizationCardData:
             "properties": {"description": "Adorable beagle puppy"},
             "created_at": recent_date,  # Created 2 days ago
             "updated_at": recent_date,
-            "last_scraped_at": datetime.now(timezone.utc),
+            "last_scraped_at": datetime.now(UTC),
             "availability_confidence": "high",
-            "last_seen_at": datetime.now(timezone.utc),
+            "last_seen_at": datetime.now(UTC),
             "consecutive_scrapes_missing": 0,
             "dog_profiler_data": {"quality_score": 0.9},
             "adoption_check_data": None,

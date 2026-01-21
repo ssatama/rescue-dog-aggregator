@@ -276,7 +276,7 @@ class TestETagSupport:
             pytest.skip("ETag generation not supported for this response type")
 
         # Second request with If-None-Match
-        response2 = client.get("/api/animals/meta/breeds", headers={"If-None-Match": etag})
+        response2 = test_client.get("/api/animals/meta/breeds", headers={"If-None-Match": etag})
         assert response2.status_code == 304  # Not Modified
 
     def test_conditional_request_modified(self, test_client):

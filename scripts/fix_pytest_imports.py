@@ -8,7 +8,7 @@ from pathlib import Path
 def fix_pytest_import(file_path: Path) -> bool:
     """Add pytest import to file if it has @pytest.mark but no pytest import."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
     except Exception:
         return False

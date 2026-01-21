@@ -5,7 +5,7 @@ import os
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from psycopg2.extras import RealDictCursor
 
@@ -34,7 +34,7 @@ class OrganizationQuality:
     rich_content_avg: float
     visual_appeal_avg: float
     critical_issues_count: int
-    common_issues: Dict[str, int]
+    common_issues: dict[str, int]
 
 
 class DataQualityAnalyzer:
@@ -57,7 +57,7 @@ class DataQualityAnalyzer:
             except StopIteration:
                 pass
 
-    def get_organization_animals(self, cursor, org_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    def get_organization_animals(self, cursor, org_id: int | None = None) -> list[dict[str, Any]]:
         """Fetch animals from database for analysis."""
         try:
             if org_id:
@@ -116,11 +116,11 @@ class DataQualityAnalyzer:
             self.logger.error(f"Error fetching animals: {e}")
             return []
 
-    def analyze_animal(self, animal: Dict[str, Any]) -> QualityAssessment:
+    def analyze_animal(self, animal: dict[str, Any]) -> QualityAssessment:
         """Analyze a single animal's data quality."""
         return self.metrics.assess_animal_overall(animal)
 
-    def analyze_organization_quality(self, animals: List[Dict[str, Any]]) -> OrganizationQuality:
+    def analyze_organization_quality(self, animals: list[dict[str, Any]]) -> OrganizationQuality:
         """Analyze overall quality for an organization."""
         if not animals:
             return None
@@ -174,7 +174,7 @@ class DataQualityAnalyzer:
             common_issues=common_issues,
         )
 
-    def analyze_all_organizations(self) -> List[OrganizationQuality]:
+    def analyze_all_organizations(self) -> list[OrganizationQuality]:
         """Analyze data quality for all organizations."""
         results = []
 
@@ -211,7 +211,7 @@ class DataQualityAnalyzer:
 
         return results
 
-    def analyze_single_organization(self, org_id: int) -> Tuple[OrganizationQuality, List[Tuple[Dict[str, Any], QualityAssessment]]]:
+    def analyze_single_organization(self, org_id: int) -> tuple[OrganizationQuality, list[tuple[dict[str, Any], QualityAssessment]]]:
         """Analyze data quality for a single organization with detailed animal data."""
 
         with self.get_connection() as connection:

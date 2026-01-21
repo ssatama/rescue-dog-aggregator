@@ -1,7 +1,7 @@
 """ScraperConfig dataclass for centralized scraper configuration."""
 
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -59,7 +59,7 @@ class ScraperConfig:
     def from_organization_id(
         cls,
         org_id: int,
-        organization_name: Optional[str] = None,
+        organization_name: str | None = None,
         rate_limit_delay: float = 1.0,
         max_retries: int = 3,
         timeout: int = 30,
@@ -97,7 +97,7 @@ class ScraperConfig:
             skip_existing_animals=skip_existing_animals,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary.
 
         Returns:

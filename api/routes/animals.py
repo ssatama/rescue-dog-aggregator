@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional
 
 import psycopg2
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["animals"])
 
 
-@router.get("/", response_model=List[Animal])
+@router.get("/", response_model=list[Animal])
 async def get_animals(
     filters: AnimalFilterRequest = Depends(),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
@@ -57,9 +56,9 @@ async def get_animals(
 
 
 # --- Meta Endpoints ---
-@router.get("/meta/breeds", response_model=List[str])
+@router.get("/meta/breeds", response_model=list[str])
 async def get_distinct_breeds(
-    breed_group: Optional[str] = Query(None),
+    breed_group: str | None = Query(None),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Get distinct standardized breeds, optionally filtered by breed group."""
@@ -77,7 +76,7 @@ async def get_distinct_breeds(
         )
 
 
-@router.get("/meta/breed_groups", response_model=List[str])
+@router.get("/meta/breed_groups", response_model=list[str])
 async def get_distinct_breed_groups(
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
@@ -99,7 +98,7 @@ async def get_distinct_breed_groups(
 # --- NEW: Location Countries Meta Endpoint ---
 @router.get(
     "/meta/location_countries",
-    response_model=List[str],
+    response_model=list[str],
     summary="Get Distinct Location Countries",
 )
 async def get_distinct_location_countries(
@@ -138,7 +137,7 @@ async def get_distinct_location_countries(
 # --- NEW: Available-To Countries Meta Endpoint ---
 @router.get(
     "/meta/available_countries",
-    response_model=List[str],
+    response_model=list[str],
     summary="Get Distinct Available-To Countries",
 )
 async def get_distinct_available_countries(
@@ -177,7 +176,7 @@ async def get_distinct_available_countries(
 # --- NEW: Available-To Regions Meta Endpoint ---
 @router.get(
     "/meta/available_regions",
-    response_model=List[str],
+    response_model=list[str],
     summary="Get Distinct Available-To Regions for a Country",
 )
 async def get_distinct_available_regions(
@@ -292,7 +291,7 @@ async def get_stats_by_country(
 
 
 # --- Search Suggestions Endpoints ---
-@router.get("/search/suggestions", response_model=List[str])
+@router.get("/search/suggestions", response_model=list[str])
 async def get_search_suggestions(
     q: str = Query(..., min_length=1, max_length=100, description="Search query"),
     limit: int = Query(5, ge=1, le=10, description="Maximum number of suggestions"),
@@ -387,7 +386,7 @@ async def get_breeds_with_images(
         )
 
 
-@router.get("/breeds/suggestions", response_model=List[str])
+@router.get("/breeds/suggestions", response_model=list[str])
 async def get_breed_suggestions(
     q: str = Query(..., min_length=1, max_length=100, description="Breed query"),
     limit: int = Query(5, ge=1, le=10, description="Maximum number of suggestions"),
@@ -509,11 +508,11 @@ async def get_statistics(
 
 
 # --- Random Animal Endpoint ---
-@router.get("/random", response_model=List[Animal], summary="Get Random Animals")
+@router.get("/random", response_model=list[Animal], summary="Get Random Animals")
 async def get_random_animals(
     limit: int = Query(3, ge=1, le=10, description="Number of random animals to return"),
     # Removed animal_type query parameter as we always want dogs
-    status: Optional[str] = Query("available", description="Animal status"),
+    status: str | None = Query("available", description="Animal status"),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Get random available dogs for featured section."""

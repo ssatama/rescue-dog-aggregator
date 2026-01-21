@@ -58,7 +58,7 @@ def analyze_file_for_markers(file_path):
 
     # Read file content for additional analysis
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read().lower()
 
         # Add markers based on content
@@ -92,7 +92,7 @@ def analyze_file_for_markers(file_path):
 def add_markers_to_file(file_path, markers):
     """Add pytest markers to a test file."""
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         # Find the first class or function definition
@@ -154,7 +154,7 @@ def main():
     untagged_files = []
     for test_file in tests_dir.rglob("test_*.py"):
         try:
-            with open(test_file, "r") as f:
+            with open(test_file) as f:
                 content = f.read()
             if "@pytest.mark" not in content:
                 untagged_files.append(test_file)

@@ -28,7 +28,6 @@ import sys
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from pathlib import Path
-from typing import Optional
 
 # Add parent directory to path for config import
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -65,7 +64,7 @@ class BackupManager:
             env["PGPASSWORD"] = self.db_config["password"]
         return env
 
-    def create_daily_backup(self) -> tuple[bool, str, Optional[Path]]:
+    def create_daily_backup(self) -> tuple[bool, str, Path | None]:
         """Create daily compressed backup."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_filename = f"{self.db_name}_{timestamp}.sql.gz"
@@ -226,7 +225,7 @@ class BackupManager:
         except Exception as e:
             return False, f"Backup integrity check failed: {e}"
 
-    def test_backup_restore(self, backup_path: Optional[Path] = None) -> tuple[bool, str]:
+    def test_backup_restore(self, backup_path: Path | None = None) -> tuple[bool, str]:
         """Test backup restoration to a temporary database."""
         if backup_path is None:
             # Use latest daily backup

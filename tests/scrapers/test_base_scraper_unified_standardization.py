@@ -19,7 +19,7 @@ class ConcreteTestScraper(BaseScraper):
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestBasScraperUnifiedStandardization:
     """Test UnifiedStandardizer integration in BaseScraper"""
 

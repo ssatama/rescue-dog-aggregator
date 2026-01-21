@@ -16,7 +16,7 @@ from pydantic import ValidationError
 from services.llm.photo_analysis_models import PhotoAnalysisResponse
 
 
-@pytest.mark.services
+@pytest.mark.integration
 class TestPhotoAnalysisResponse:
     """Test the PhotoAnalysisResponse Pydantic model."""
 

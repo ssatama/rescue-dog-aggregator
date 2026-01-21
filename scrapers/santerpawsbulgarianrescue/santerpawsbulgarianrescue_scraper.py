@@ -1,7 +1,7 @@
 """Scraper implementation for Santer Paws Bulgarian Rescue organization."""
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
@@ -54,7 +54,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             f"max_retries={self.max_retries}, timeout={self.timeout}"
         )
 
-    def _get_filtered_animals(self) -> List[Dict[str, Any]]:
+    def _get_filtered_animals(self) -> list[dict[str, Any]]:
         """Get list of animals and apply skip_existing_animals filtering.
 
         Uses BaseScraper._filter_existing_animals() which records ALL external_ids
@@ -74,7 +74,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         # This is critical for mark_skipped_animals_as_seen() to work correctly
         return self._filter_existing_animals(animals)
 
-    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Process animals in parallel batches for efficient detail scraping.
 
         Uses ThreadPoolExecutor to process animals in batches based on batch_size config.
@@ -192,7 +192,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
         return all_dogs_data
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """Collect all available dog data from the listing page.
 
         This method implements the BaseScraper template method pattern.
@@ -219,7 +219,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             self.logger.error(f"Error collecting data: {e}")
             return []
 
-    def get_animal_list(self) -> List[Dict[str, Any]]:
+    def get_animal_list(self) -> list[dict[str, Any]]:
         """Fetch list of available dogs by paginating through all listing pages.
 
         Loops through paginated listing pages (/adopt/page/1/, /adopt/page/2/, etc.)
@@ -402,7 +402,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
         return name
 
-    def _extract_properties(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_properties(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract properties from detail page Information section.
 
         Args:
@@ -411,7 +411,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         Returns:
             Dictionary with extracted properties
         """
-        properties: Dict[str, Any] = {}
+        properties: dict[str, Any] = {}
 
         # Extract Information section structured data - use robust H2 text matching
         info_heading = None
@@ -532,7 +532,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
         return ""
 
-    def _extract_hero_image(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_hero_image(self, soup: BeautifulSoup) -> str | None:
         """Extract hero image URL from detail page.
 
         Args:
@@ -557,7 +557,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
         return None
 
-    def _scrape_animal_details(self, adoption_url: str) -> Dict[str, Any]:
+    def _scrape_animal_details(self, adoption_url: str) -> dict[str, Any]:
         """Scrape detailed information from individual dog page.
 
         Extracts all available information from the dog detail page including

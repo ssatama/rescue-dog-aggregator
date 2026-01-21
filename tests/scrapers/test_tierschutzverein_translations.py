@@ -10,9 +10,9 @@ from scrapers.tierschutzverein_europa.translations import (
 )
 
 
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.integration
-@pytest.mark.scrapers
+@pytest.mark.integration
 class TestTierschutzvereinTranslations:
     """Test all translation functions with real production data patterns."""
 

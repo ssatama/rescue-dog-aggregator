@@ -7,7 +7,7 @@ specifically designed for the scraper context (no FastAPI/Starlette).
 import logging
 import os
 from contextlib import contextmanager
-from typing import Any, Dict, Optional
+from typing import Any
 
 import sentry_sdk
 from sentry_sdk.integrations.logging import LoggingIntegration
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 _sentry_initialized = False
 
 
-def scrub_sensitive_data(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def scrub_sensitive_data(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any] | None:
     """Remove sensitive data from Sentry events."""
     if "extra" in event:
         for key in list(event["extra"].keys()):
@@ -85,9 +85,9 @@ def init_scraper_sentry(environment: str = "production") -> bool:
 def capture_scraper_error(
     error: Exception,
     org_name: str,
-    org_id: Optional[int] = None,
-    scrape_log_id: Optional[int] = None,
-    phase: Optional[str] = None,
+    org_id: int | None = None,
+    scrape_log_id: int | None = None,
+    phase: str | None = None,
 ) -> None:
     """Capture a scraper exception with organization context.
 
@@ -125,8 +125,8 @@ def capture_scraper_error(
 
 def alert_zero_dogs_found(
     org_name: str,
-    org_id: Optional[int] = None,
-    scrape_log_id: Optional[int] = None,
+    org_id: int | None = None,
+    scrape_log_id: int | None = None,
 ) -> None:
     """Send a Sentry warning when a scraper finds zero dogs.
 
@@ -174,8 +174,8 @@ def alert_partial_failure(
     dogs_found: int,
     historical_average: float,
     threshold_percentage: float = 0.5,
-    org_id: Optional[int] = None,
-    scrape_log_id: Optional[int] = None,
+    org_id: int | None = None,
+    scrape_log_id: int | None = None,
 ) -> None:
     """Send a Sentry warning when a scraper finds significantly fewer dogs than usual.
 
@@ -222,8 +222,8 @@ def alert_llm_enrichment_failure(
     org_name: str,
     batch_size: int,
     failed_count: int,
-    error_message: Optional[str] = None,
-    org_id: Optional[int] = None,
+    error_message: str | None = None,
+    org_id: int | None = None,
 ) -> None:
     """Send a Sentry warning when LLM enrichment fails for multiple dogs.
 
@@ -263,7 +263,7 @@ def alert_llm_enrichment_failure(
 
 
 @contextmanager
-def scrape_transaction(org_name: str, org_id: Optional[int] = None):
+def scrape_transaction(org_name: str, org_id: int | None = None):
     """Context manager for tracking scrape duration as a Sentry transaction.
 
     Usage:
@@ -299,7 +299,7 @@ def add_scrape_breadcrumb(
     message: str,
     category: str = "scraper",
     level: str = "info",
-    data: Optional[Dict[str, Any]] = None,
+    data: dict[str, Any] | None = None,
 ) -> None:
     """Add a breadcrumb for scraper debugging context.
 

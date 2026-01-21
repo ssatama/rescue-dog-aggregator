@@ -11,8 +11,9 @@ Following CLAUDE.md principles:
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 import psycopg2
 from rich.progress import Progress
@@ -50,7 +51,7 @@ class BatchResult:
     total_processed: int
     successful_batches: int
     failed_batches: int
-    errors: List[Dict[str, Any]] = field(default_factory=list)
+    errors: list[dict[str, Any]] = field(default_factory=list)
     processing_time: float = 0.0
 
     @property
@@ -162,10 +163,10 @@ class DatabaseBatchProcessor:
 
     def process_batch(
         self,
-        items: List[Any],
-        processor_func: Callable[[Any], Tuple[str, Tuple]],
-        progress: Optional[Progress] = None,
-        task_id: Optional[int] = None,
+        items: list[Any],
+        processor_func: Callable[[Any], tuple[str, tuple]],
+        progress: Progress | None = None,
+        task_id: int | None = None,
     ) -> BatchResult:
         """
         Process items in batches with optimized database operations achieving 47.5x performance improvement.
@@ -279,10 +280,10 @@ class DatabaseBatchProcessor:
 
     def _process_single_batch(
         self,
-        batch_items: List[Any],
-        processor_func: Callable[[Any], Tuple[str, Tuple]],
+        batch_items: list[Any],
+        processor_func: Callable[[Any], tuple[str, tuple]],
         batch_start: int,
-        errors: List[Dict[str, Any]],
+        errors: list[dict[str, Any]],
     ) -> bool:
         """
         Process a single batch with retry logic and error handling.
@@ -324,7 +325,7 @@ class DatabaseBatchProcessor:
                 self.connection.rollback()
 
                 if retry_attempt < self.config.max_retries:
-                    logger.warning(f"Database error on batch starting at {batch_start}, " f"attempt {retry_attempt + 1}/{self.config.max_retries + 1}: {e}")
+                    logger.warning(f"Database error on batch starting at {batch_start}, attempt {retry_attempt + 1}/{self.config.max_retries + 1}: {e}")
                     time.sleep(self.config.retry_delay * (retry_attempt + 1))
                     continue
                 else:

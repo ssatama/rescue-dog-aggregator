@@ -6,7 +6,7 @@ This ensures both databases have the same optimized index structure.
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from sqlalchemy import text
 
@@ -15,7 +15,7 @@ from .connection import railway_session
 logger = logging.getLogger(__name__)
 
 
-def get_local_indexes(table_name: str = "animals") -> List[Dict[str, Any]]:
+def get_local_indexes(table_name: str = "animals") -> list[dict[str, Any]]:
     """Get all indexes from local database for a table."""
     import psycopg2
 
@@ -53,7 +53,7 @@ def get_local_indexes(table_name: str = "animals") -> List[Dict[str, Any]]:
         return []
 
 
-def get_railway_indexes(table_name: str = "animals") -> List[Dict[str, Any]]:
+def get_railway_indexes(table_name: str = "animals") -> list[dict[str, Any]]:
     """Get all indexes from Railway database for a table."""
     try:
         with railway_session() as session:

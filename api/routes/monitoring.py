@@ -7,7 +7,7 @@ Provides visibility into scraper performance, failure detection, and system heal
 import logging
 import traceback
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any
 
 import psycopg2
 from fastapi import APIRouter, Depends, HTTPException
@@ -28,11 +28,11 @@ class ScraperStatus(BaseModel):
 
     organization_id: int
     organization_name: str
-    last_scrape: Optional[datetime]
+    last_scrape: datetime | None
     status: str  # success, warning, error, never_run
-    animals_found: Optional[int]
-    failure_detection: Dict[str, Any]
-    performance_metrics: Dict[str, Any]
+    animals_found: int | None
+    failure_detection: dict[str, Any]
+    performance_metrics: dict[str, Any]
 
 
 class FailureSummary(BaseModel):

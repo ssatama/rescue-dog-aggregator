@@ -9,7 +9,7 @@ from scrapers.theunderdog.theunderdog_scraper import TheUnderdogScraper
 
 @pytest.mark.integration
 @pytest.mark.slow
-@pytest.mark.network
+@pytest.mark.external
 class TestTheUnderdogIntegration:
     """Integration test suite for The Underdog scraper."""
 

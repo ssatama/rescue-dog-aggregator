@@ -7,7 +7,6 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
-from typing import Dict, Optional
 
 # Maximum dog age in months (30 years) - covers all recorded lifespans + buffer
 # Based on 2024 research: longest verified dog lived 29 years (Bluey)
@@ -32,16 +31,16 @@ class BreedInfo:
 
     standardized_name: str
     breed_group: str
-    size_estimate: Optional[str] = None
+    size_estimate: str | None = None
 
 
 @dataclass(frozen=True)
 class AgeInfo:
     """Immutable age information."""
 
-    category: Optional[str] = None
-    min_months: Optional[int] = None
-    max_months: Optional[int] = None
+    category: str | None = None
+    min_months: int | None = None
+    max_months: int | None = None
 
 
 @dataclass(frozen=True)
@@ -50,19 +49,19 @@ class StandardizedAnimal:
 
     # Original data (preserved)
     name: str
-    breed: Optional[str] = None
-    age_text: Optional[str] = None
-    size: Optional[str] = None
+    breed: str | None = None
+    age_text: str | None = None
+    size: str | None = None
 
     # Standardized data
-    standardized_breed: Optional[str] = None
-    breed_group: Optional[str] = None
-    age_category: Optional[str] = None
-    age_min_months: Optional[int] = None
-    age_max_months: Optional[int] = None
-    standardized_size: Optional[str] = None
+    standardized_breed: str | None = None
+    breed_group: str | None = None
+    age_category: str | None = None
+    age_min_months: int | None = None
+    age_max_months: int | None = None
+    standardized_size: str | None = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary for backward compatibility."""
         return {
             "name": self.name,
@@ -348,7 +347,7 @@ def _categorize_age_from_months(months: int) -> AgeInfo:
         return AgeInfo("Senior", months, months + 24)
 
 
-def _parse_birth_date(age_text: str) -> Optional[AgeInfo]:
+def _parse_birth_date(age_text: str) -> AgeInfo | None:
     """Parse birth date from age text."""
     current_date = datetime.now()
 
@@ -394,7 +393,7 @@ def _parse_birth_date(age_text: str) -> Optional[AgeInfo]:
     return None
 
 
-def _parse_descriptive_age(age_text: str) -> Optional[AgeInfo]:
+def _parse_descriptive_age(age_text: str) -> AgeInfo | None:
     """Parse descriptive age terms."""
     # Exact matches first
     if age_text == "puppy":
@@ -419,7 +418,7 @@ def _parse_descriptive_age(age_text: str) -> Optional[AgeInfo]:
     return None
 
 
-def _parse_age_range(age_text: str) -> Optional[AgeInfo]:
+def _parse_age_range(age_text: str) -> AgeInfo | None:
     """Parse age ranges."""
     range_match = _COMPILED_PATTERNS["range"].search(age_text)
     if range_match:
@@ -441,7 +440,7 @@ def _parse_age_range(age_text: str) -> Optional[AgeInfo]:
 
 
 @lru_cache(maxsize=200)
-def standardize_size_value(size: str) -> Optional[str]:
+def standardize_size_value(size: str) -> str | None:
     """
     Standardize size value (cached for performance).
 
@@ -471,7 +470,7 @@ def standardize_size_value(size: str) -> Optional[str]:
     return None
 
 
-def standardize_animal_data(animal_data: Dict) -> StandardizedAnimal:
+def standardize_animal_data(animal_data: dict) -> StandardizedAnimal:
     """
     Standardize animal data following immutability principles.
 
@@ -527,7 +526,7 @@ def standardize_animal_data(animal_data: Dict) -> StandardizedAnimal:
     )
 
 
-def apply_standardization(animal_data: Dict) -> Dict:
+def apply_standardization(animal_data: dict) -> dict:
     """
     Apply standardization and return new dictionary (backward compatibility).
 

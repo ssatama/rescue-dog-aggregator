@@ -10,7 +10,6 @@ Following CLAUDE.md principles:
 
 import json
 import logging
-from typing import Dict, List, Optional
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -43,7 +42,7 @@ class EnrichmentRequest(BaseModel):
 class BatchEnrichmentRequest(BaseModel):
     """Request to enrich multiple animals."""
 
-    animal_ids: List[int]
+    animal_ids: list[int]
     processing_type: ProcessingType = ProcessingType.DESCRIPTION_CLEANING
     batch_size: int = 10
 
@@ -226,7 +225,7 @@ async def batch_enrich_animals(request: BatchEnrichmentRequest, conn=Depends(get
 
 
 @router.post("/translate")
-async def translate_text(request: TranslationRequest) -> Dict[str, str]:
+async def translate_text(request: TranslationRequest) -> dict[str, str]:
     """Translate text to target language."""
 
     try:
@@ -261,7 +260,7 @@ async def translate_text(request: TranslationRequest) -> Dict[str, str]:
 
 
 @router.get("/stats")
-async def get_llm_stats(organization_id: Optional[int] = Query(None), conn=Depends(get_async_db_connection)) -> Dict:
+async def get_llm_stats(organization_id: int | None = Query(None), conn=Depends(get_async_db_connection)) -> dict:
     """Get LLM processing statistics."""
 
     try:
@@ -310,7 +309,7 @@ async def get_llm_stats(organization_id: Optional[int] = Query(None), conn=Depen
 
 
 @router.post("/clean-description")
-async def clean_description_direct(text: str, organization_name: Optional[str] = None) -> Dict[str, str]:
+async def clean_description_direct(text: str, organization_name: str | None = None) -> dict[str, str]:
     """Clean a description directly without database interaction."""
 
     try:

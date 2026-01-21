@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -43,7 +43,7 @@ def fix_misclassified_dogs():
             WHERE id = 893 AND organization_id = 11
         """
         )
-        result = session.execute(nata_update, {"check_date": datetime.now(timezone.utc)})
+        result = session.execute(nata_update, {"check_date": datetime.now(UTC)})
         print(f"  Updated {result.rowcount} row(s) for Nata")
 
         # Fix Lobo (ID: 850) - page marked DELETED, should be 'unknown' not 'available'
@@ -61,7 +61,7 @@ def fix_misclassified_dogs():
             WHERE id = 850 AND organization_id = 11
         """
         )
-        result = session.execute(lobo_update, {"check_date": datetime.now(timezone.utc)})
+        result = session.execute(lobo_update, {"check_date": datetime.now(UTC)})
         print(f"  Updated {result.rowcount} row(s) for Lobo")
 
         # Check for any other dogs with DELETED in their adoption_check_data that might be misclassified
@@ -98,7 +98,7 @@ def fix_misclassified_dogs():
                 )
                 session.execute(
                     fix_deleted,
-                    {"dog_id": dog.id, "check_date": datetime.now(timezone.utc)},
+                    {"dog_id": dog.id, "check_date": datetime.now(UTC)},
                 )
                 print(f"    Fixed {dog.name}")
         else:

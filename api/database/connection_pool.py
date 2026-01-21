@@ -16,8 +16,9 @@ import logging
 import os
 import threading
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator, Optional
+from typing import Optional
 
 import psycopg2
 from psycopg2 import pool
@@ -40,7 +41,7 @@ class ConnectionPool:
     _lock = threading.Lock()
     _initialization_lock = threading.Lock()
     _initialized = False
-    _initialization_error: Optional[Exception] = None
+    _initialization_error: Exception | None = None
 
     def __new__(cls) -> "ConnectionPool":
         """Singleton pattern with thread-safe initialization."""

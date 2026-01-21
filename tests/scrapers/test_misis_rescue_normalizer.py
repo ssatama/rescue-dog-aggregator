@@ -5,22 +5,16 @@ import pytest
 # Updated imports for legacy functions after consolidation
 from scrapers.misis_rescue.normalizer import (
     calculate_age_years,
-)
-from scrapers.misis_rescue.normalizer import extract_age_from_text_legacy as extract_age_from_text
-from scrapers.misis_rescue.normalizer import (
     extract_birth_date,
     extract_breed,
-)
-from scrapers.misis_rescue.normalizer import extract_breed_from_text_legacy as extract_breed_from_text
-from scrapers.misis_rescue.normalizer import (
     extract_sex,
-)
-from scrapers.misis_rescue.normalizer import extract_sex_from_text_legacy as extract_sex_from_text
-from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy as extract_weight_kg
-from scrapers.misis_rescue.normalizer import (
     normalize_name,
     normalize_size,
 )
+from scrapers.misis_rescue.normalizer import extract_age_from_text_legacy as extract_age_from_text
+from scrapers.misis_rescue.normalizer import extract_breed_from_text_legacy as extract_breed_from_text
+from scrapers.misis_rescue.normalizer import extract_sex_from_text_legacy as extract_sex_from_text
+from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy as extract_weight_kg
 
 
 @pytest.mark.database

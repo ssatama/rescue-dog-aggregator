@@ -12,7 +12,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from services.llm.async_database_pool import AsyncDatabasePool
 from services.llm.organization_config_loader import get_config_loader
@@ -26,7 +26,7 @@ class ProfileRequest:
     """Request to profile a dog."""
 
     dog_id: int
-    dog_data: Dict[str, Any]
+    dog_data: dict[str, Any]
     organization_id: int
     force_regenerate: bool = False
 
@@ -37,10 +37,10 @@ class ProfileResult:
 
     dog_id: int
     success: bool
-    profile: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    profile: dict[str, Any] | None = None
+    error: str | None = None
     processing_time_ms: int = 0
-    model_used: Optional[str] = None
+    model_used: str | None = None
 
 
 @dataclass
@@ -51,7 +51,7 @@ class BatchProfileResult:
     success: int
     failed: int
     total: int
-    results: List[Dict[str, Any]] = field(default_factory=list)
+    results: list[dict[str, Any]] = field(default_factory=list)
     processing_time_ms: int = 0
 
     @property
@@ -69,8 +69,8 @@ class DogProfilerService:
         self,
         pool: AsyncDatabasePool,
         llm_client: Any,
-        normalizer: Optional[ProfileNormalizer] = None,
-        config_loader: Optional[Any] = None,
+        normalizer: ProfileNormalizer | None = None,
+        config_loader: Any | None = None,
         max_concurrent: int = 5,
         enable_retry: bool = False,
     ):
@@ -185,7 +185,7 @@ class DogProfilerService:
                 processing_time_ms=processing_time_ms,
             )
 
-    async def profile_batch(self, dogs: List[Dict[str, Any]], organization_id: int) -> Dict[str, Any]:
+    async def profile_batch(self, dogs: list[dict[str, Any]], organization_id: int) -> dict[str, Any]:
         """
         Profile multiple dogs in batch.
 
@@ -238,7 +238,7 @@ class DogProfilerService:
             "processing_time_ms": processing_time_ms,
         }
 
-    async def save_profile(self, dog_id: int, profile: Dict[str, Any]) -> None:
+    async def save_profile(self, dog_id: int, profile: dict[str, Any]) -> None:
         """
         Save profile to database.
 
@@ -256,7 +256,7 @@ class DogProfilerService:
         profile_json = json.dumps(profile)
         await self.pool.execute(query, profile_json, dog_id)
 
-    async def get_unprofiled_dogs(self, organization_id: int, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_unprofiled_dogs(self, organization_id: int, limit: int = 100) -> list[dict[str, Any]]:
         """
         Get dogs without profiles (only high confidence available dogs).
 
@@ -280,7 +280,7 @@ class DogProfilerService:
         rows = await self.pool.fetch(query, organization_id, limit)
         return [dict(row) for row in rows]
 
-    def _validate_profile(self, profile: Dict[str, Any]) -> bool:
+    def _validate_profile(self, profile: dict[str, Any]) -> bool:
         """
         Validate profile has minimum required fields.
 

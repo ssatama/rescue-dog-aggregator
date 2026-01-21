@@ -9,7 +9,7 @@ from utils.standardization import standardize_age, standardize_breed
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-@pytest.mark.computation
+@pytest.mark.slow
 @pytest.mark.slow
 class TestDataConsistency:
     """Test data standardization consistency."""

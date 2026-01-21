@@ -11,7 +11,6 @@ Provides thread-safe connection pool management following CLAUDE.md principles:
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Dict
 
 import psycopg2
 import psycopg2.pool
@@ -37,7 +36,7 @@ class ConnectionPoolService:
 
     def __init__(
         self,
-        db_config: Dict[str, str],
+        db_config: dict[str, str],
         min_connections: int = 2,
         max_connections: int = 25,
     ):

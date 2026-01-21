@@ -6,7 +6,7 @@ Provides authentication and authorization decorators for securing endpoints.
 
 import functools
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import HTTPException, Request
 
@@ -52,7 +52,7 @@ def internal_only(func: Callable) -> Callable:
         if internal_key != expected_key:
             # Log potential security issue
             client_ip = request.client.host if request.client else "unknown"
-            logger.warning(f"Unauthorized internal endpoint access attempt from {client_ip} " f"to {request.url.path}")
+            logger.warning(f"Unauthorized internal endpoint access attempt from {client_ip} to {request.url.path}")
             raise HTTPException(
                 status_code=403,
                 detail="This endpoint is restricted to internal services only",

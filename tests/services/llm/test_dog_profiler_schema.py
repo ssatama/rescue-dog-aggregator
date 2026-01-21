@@ -15,7 +15,7 @@ from pydantic import ValidationError
 from services.llm.schemas.dog_profiler import DogProfilerData
 
 
-@pytest.mark.services
+@pytest.mark.integration
 class TestDogProfilerDataSchema:
     """Test the enhanced dog profiler schema."""
 

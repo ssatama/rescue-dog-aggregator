@@ -1,7 +1,7 @@
 """Scraper implementation for The Underdog organization."""
 
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
@@ -44,7 +44,7 @@ class TheUnderdogScraper(BaseScraper):
             "🇷🇴": {"name": "Romania", "iso_code": "RO"},
         }
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """Collect all available dog data.
 
         This method is called by BaseScraper.run() and must return
@@ -96,7 +96,7 @@ class TheUnderdogScraper(BaseScraper):
         # World-class logging: Collection results handled by centralized system
         return all_dogs_data
 
-    def get_animal_list(self) -> List[Dict[str, str]]:
+    def get_animal_list(self) -> list[dict[str, str]]:
         """Get list of available dogs from listing page.
 
         Fetches the listing page and extracts information about all
@@ -140,7 +140,7 @@ class TheUnderdogScraper(BaseScraper):
             self.logger.error(f"Error getting animal list: {e}")
             return []
 
-    def _fetch_listing_page(self) -> Optional[BeautifulSoup]:
+    def _fetch_listing_page(self) -> BeautifulSoup | None:
         """Fetch and parse the listing page.
 
         Returns:
@@ -162,7 +162,7 @@ class TheUnderdogScraper(BaseScraper):
             self.logger.error(f"Error fetching listing page: {e}")
             return None
 
-    def _extract_dog_info(self, card) -> Optional[Dict[str, str]]:
+    def _extract_dog_info(self, card) -> dict[str, str] | None:
         """Extract dog information from a card element.
 
         Args:
@@ -229,7 +229,7 @@ class TheUnderdogScraper(BaseScraper):
         name_upper = name.upper()
         return "ADOPTED" not in name_upper and "RESERVED" not in name_upper
 
-    def scrape_animal_details(self, url: str) -> Optional[Dict[str, Any]]:
+    def scrape_animal_details(self, url: str) -> dict[str, Any] | None:
         """Scrape detailed information for a single dog.
 
         Args:
@@ -368,7 +368,7 @@ class TheUnderdogScraper(BaseScraper):
             self.logger.error(f"Error scraping detail page {url}: {e}")
             return None
 
-    def _fetch_detail_page(self, url: str) -> Optional[BeautifulSoup]:
+    def _fetch_detail_page(self, url: str) -> BeautifulSoup | None:
         """Fetch and parse a detail page.
 
         Args:
@@ -391,7 +391,7 @@ class TheUnderdogScraper(BaseScraper):
             self.logger.error(f"Error fetching detail page {url}: {e}")
             return None
 
-    def _extract_raw_name(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_raw_name(self, soup: BeautifulSoup) -> str | None:
         """Extract raw dog name from detail page (includes flag emoji).
 
         Args:
@@ -411,7 +411,7 @@ class TheUnderdogScraper(BaseScraper):
 
         return None
 
-    def _extract_name(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_name(self, soup: BeautifulSoup) -> str | None:
         """Extract dog name from detail page.
 
         Args:
@@ -459,7 +459,7 @@ class TheUnderdogScraper(BaseScraper):
 
         return name
 
-    def _extract_hero_image(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_hero_image(self, soup: BeautifulSoup) -> str | None:
         """Extract main hero image URL from detail page.
 
         Args:
@@ -528,7 +528,7 @@ class TheUnderdogScraper(BaseScraper):
 
         return None
 
-    def _construct_squarespace_url(self, alt_filename: str) -> Optional[str]:
+    def _construct_squarespace_url(self, alt_filename: str) -> str | None:
         """Construct Squarespace CDN URL from alt attribute filename.
 
         Args:
@@ -560,7 +560,7 @@ class TheUnderdogScraper(BaseScraper):
 
         return None
 
-    def _extract_properties_and_description_from_soup(self, soup: BeautifulSoup) -> Tuple[Dict[str, str], str]:
+    def _extract_properties_and_description_from_soup(self, soup: BeautifulSoup) -> tuple[dict[str, str], str]:
         """Extract properties and description from detail page.
 
         Args:
@@ -579,7 +579,7 @@ class TheUnderdogScraper(BaseScraper):
 
         return self._extract_properties_and_description(excerpt_text)
 
-    def _extract_properties_and_description(self, text: str) -> Tuple[Dict[str, str], str]:
+    def _extract_properties_and_description(self, text: str) -> tuple[dict[str, str], str]:
         """Extract properties and description from text content.
 
         Args:
@@ -588,8 +588,8 @@ class TheUnderdogScraper(BaseScraper):
         Returns:
             Tuple of (properties dict, description text)
         """
-        properties: Dict[str, str] = {}
-        description_parts: List[str] = []
+        properties: dict[str, str] = {}
+        description_parts: list[str] = []
 
         # Parse HTML and convert <br> tags to newlines
         soup = BeautifulSoup(text, "html.parser")
@@ -712,7 +712,7 @@ class TheUnderdogScraper(BaseScraper):
 
         return properties, description
 
-    def _extract_country_from_name(self, name: str) -> Optional[Dict[str, str]]:
+    def _extract_country_from_name(self, name: str) -> dict[str, str] | None:
         """Extract country from flag emoji in name.
 
         Args:
@@ -739,7 +739,7 @@ class TheUnderdogScraper(BaseScraper):
         slug = url.rstrip("/").split("/")[-1]
         return f"tud-{slug}"
 
-    def _extract_age_fallback(self, description: str) -> Optional[str]:
+    def _extract_age_fallback(self, description: str) -> str | None:
         """Extract age from description as fallback.
 
         Args:
@@ -795,7 +795,7 @@ class TheUnderdogScraper(BaseScraper):
 
         return None
 
-    def _extract_sex_fallback(self, description: str) -> Optional[str]:
+    def _extract_sex_fallback(self, description: str) -> str | None:
         """Extract sex from description as fallback.
 
         Args:

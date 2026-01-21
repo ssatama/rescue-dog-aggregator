@@ -3,7 +3,7 @@
 import logging
 import os
 import time
-from typing import Callable
+from collections.abc import Callable
 
 import sentry_sdk
 from fastapi import Request, Response
@@ -115,7 +115,7 @@ class SentryTimeoutMiddleware(BaseHTTPMiddleware):
             response = await asyncio.wait_for(call_next(request), timeout=self.timeout_seconds)
             return response
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             # Capture timeout as an error
             error_msg = f"Request timeout: {request.method} {request.url.path} exceeded {self.timeout_seconds}s"
 

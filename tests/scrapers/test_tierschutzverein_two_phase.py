@@ -85,7 +85,7 @@ class TestTierschutzvereinTwoPhase:
         """
 
     @pytest.mark.unit
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_get_animal_list_extracts_dogs_from_listing(self, scraper, listing_html):
         """Test Phase 1: Extract dogs from listing page HTML."""
         # Mock the requests.get call to return HTML only for first page, empty for others
@@ -123,7 +123,7 @@ class TestTierschutzvereinTwoPhase:
         assert animals[2]["external_id"] == "bacon-in-deutschland-vermittlungshilfe"
 
     @pytest.mark.unit
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_scrape_animal_details_extracts_german_properties(self, scraper, detail_html):
         """Test Phase 2: Extract German properties and hero image from detail page."""
         mock_response = Mock()
@@ -156,7 +156,7 @@ class TestTierschutzvereinTwoPhase:
         assert "ohne ihre Mütter im Tierheim" in properties["Beschreibung"]
 
     @pytest.mark.unit
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_external_id_preservation(self, scraper):
         """Test that external_id format is preserved exactly as before."""
         # Test various URL patterns to ensure external_id extraction remains unchanged
@@ -181,7 +181,7 @@ class TestTierschutzvereinTwoPhase:
             assert external_id == expected_id, f"External ID mismatch for {url}"
 
     @pytest.mark.unit
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_process_animals_parallel_batching(self, scraper):
         """Test parallel processing respects batch_size and rate limits."""
         animals = [
@@ -212,7 +212,7 @@ class TestTierschutzvereinTwoPhase:
             assert "test" in animal["properties"]
 
     @pytest.mark.unit
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_pagination_url_generation(self, scraper):
         """Test that pagination URLs are generated correctly."""
         assert scraper.get_page_url(1) == "https://tierschutzverein-europa.de/tiervermittlung/"
@@ -220,7 +220,7 @@ class TestTierschutzvereinTwoPhase:
         assert scraper.get_page_url(12) == "https://tierschutzverein-europa.de/tiervermittlung/page/12/"
 
     @pytest.mark.unit
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_hero_image_extraction_from_detail_page(self, scraper):
         """Test extraction of hero/primary image from detail page."""
         html_with_images = """
@@ -244,7 +244,7 @@ class TestTierschutzvereinTwoPhase:
         assert hero_image == "https://tierschutzverein-europa.de/wp-content/uploads/2025/08/bonsai-hero.jpg"
 
     @pytest.mark.unit
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_german_properties_extraction_with_missing_fields(self, scraper):
         """Test graceful handling of missing property fields."""
         html_partial = """

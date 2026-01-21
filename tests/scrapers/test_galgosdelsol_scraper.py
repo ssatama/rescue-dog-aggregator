@@ -7,7 +7,7 @@ from tests.scrapers.test_scraper_base import ScraperTestBase
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestGalgosDelSolScraper(ScraperTestBase):
     """Test cases for Galgos del Sol scraper - only scraper-specific tests."""
 

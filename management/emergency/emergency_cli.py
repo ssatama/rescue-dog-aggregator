@@ -9,7 +9,7 @@ Follows CLAUDE.md principles:
 - Small functions <50 lines each
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from management.emergency.emergency_coordinator import EmergencyCoordinator
 
@@ -21,7 +21,7 @@ class EmergencyCLI:
         """Initialize emergency CLI with coordinator."""
         self.coordinator = EmergencyCoordinator()
 
-    def emergency_stop(self) -> Dict[str, Any]:
+    def emergency_stop(self) -> dict[str, Any]:
         """Execute emergency stop command.
 
         Returns:
@@ -35,7 +35,7 @@ class EmergencyCLI:
 
         return result
 
-    def rollback_organization(self, organization_id: int) -> Dict[str, Any]:
+    def rollback_organization(self, organization_id: int) -> dict[str, Any]:
         """Execute rollback command for organization.
 
         Args:
@@ -52,7 +52,7 @@ class EmergencyCLI:
 
         return result
 
-    def create_backup(self, organization_id: int, reason: str = "Manual backup") -> Dict[str, Any]:
+    def create_backup(self, organization_id: int, reason: str = "Manual backup") -> dict[str, Any]:
         """Execute backup creation command.
 
         Args:
@@ -70,7 +70,7 @@ class EmergencyCLI:
 
         return result
 
-    def system_status(self) -> Dict[str, Any]:
+    def system_status(self) -> dict[str, Any]:
         """Execute system status command.
 
         Returns:

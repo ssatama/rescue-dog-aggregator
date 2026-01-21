@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestAnimalsAPI:
     # Use the client fixture from conftest.py instead of creating our own
 

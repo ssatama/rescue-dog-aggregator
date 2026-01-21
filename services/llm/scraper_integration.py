@@ -6,7 +6,7 @@ Follows existing patterns from BaseScraper for seamless integration.
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from services.llm.dog_profiler import DogProfilerPipeline
 
@@ -39,7 +39,7 @@ class ScraperLLMIntegration:
                 logger.warning(f"Failed to initialize LLM pipeline: {e}")
                 self.enabled = False
 
-    def should_profile(self, animal_data: Dict[str, Any]) -> bool:
+    def should_profile(self, animal_data: dict[str, Any]) -> bool:
         """
         Determine if an animal should be profiled.
 
@@ -75,7 +75,7 @@ class ScraperLLMIntegration:
 
         return has_content
 
-    async def profile_animal(self, animal_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def profile_animal(self, animal_data: dict[str, Any]) -> dict[str, Any] | None:
         """
         Profile a single animal using LLM.
 
@@ -113,7 +113,7 @@ class ScraperLLMIntegration:
             logger.error(f"Error profiling {animal_data.get('name')}: {e}")
             return None
 
-    def profile_batch(self, animals: List[Dict[str, Any]], max_batch: int = 5) -> List[Dict[str, Any]]:
+    def profile_batch(self, animals: list[dict[str, Any]], max_batch: int = 5) -> list[dict[str, Any]]:
         """
         Profile a batch of animals synchronously.
 

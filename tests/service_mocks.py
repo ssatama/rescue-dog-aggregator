@@ -15,7 +15,6 @@ Following CLAUDE.md principles:
 """
 
 from datetime import datetime
-from typing import Optional
 from unittest.mock import Mock, patch
 
 import pytest
@@ -171,11 +170,11 @@ def create_mock_metrics_collector(success_mode: bool = True) -> Mock:
 
 def create_test_scraper_with_services(
     organization_id: int = 1,
-    config_id: Optional[str] = None,
-    database_service: Optional[Mock] = None,
-    image_processing_service: Optional[Mock] = None,
-    session_manager: Optional[Mock] = None,
-    metrics_collector: Optional[Mock] = None,
+    config_id: str | None = None,
+    database_service: Mock | None = None,
+    image_processing_service: Mock | None = None,
+    session_manager: Mock | None = None,
+    metrics_collector: Mock | None = None,
 ) -> BaseScraper:
     """Create a BaseScraper instance with mock services injected.
 

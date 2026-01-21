@@ -5,10 +5,9 @@ Tierschutzverein Europa database. All mappings are based on actual production da
 """
 
 import re
-from typing import Optional
 
 
-def translate_gender(gender: Optional[str]) -> Optional[str]:
+def translate_gender(gender: str | None) -> str | None:
     """Translate German gender terms to English standard values.
 
     Based on production data:
@@ -36,7 +35,7 @@ def translate_gender(gender: Optional[str]) -> Optional[str]:
     return gender_map.get(gender_lower)
 
 
-def translate_age(age_text: Optional[str]) -> Optional[str]:
+def translate_age(age_text: str | None) -> str | None:
     """Translate German age text to English format expected by base_scraper.py.
 
     Handles patterns like:
@@ -119,7 +118,7 @@ def translate_age(age_text: Optional[str]) -> Optional[str]:
     return None
 
 
-def translate_breed(breed: Optional[str]) -> Optional[str]:
+def translate_breed(breed: str | None) -> str | None:
     """Translate German breed names to English.
 
     Handles common German breed terms and compounds found in production data.
@@ -212,7 +211,7 @@ def translate_breed(breed: Optional[str]) -> Optional[str]:
     return result
 
 
-def normalize_name(name: Optional[str]) -> Optional[str]:
+def normalize_name(name: str | None) -> str | None:
     """Normalize dog names to proper capitalization and remove extra text.
 
     Handles patterns like:

@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 
 @pytest.mark.slow
-@pytest.mark.network
+@pytest.mark.external
 class TestErrorResilience:
     """Test system resilience to various failure scenarios."""
 

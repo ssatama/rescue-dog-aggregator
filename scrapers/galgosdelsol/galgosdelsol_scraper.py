@@ -1,7 +1,7 @@
 """Scraper implementation for Galgos del Sol organization."""
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
@@ -57,7 +57,7 @@ class GalgosDelSolScraper(BaseScraper):
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"})
 
-    def _get_filtered_animals(self) -> List[Dict[str, Any]]:
+    def _get_filtered_animals(self) -> list[dict[str, Any]]:
         """Get list of animals and apply skip_existing_animals filtering.
 
         Uses BaseScraper._filter_existing_animals() which records ALL external_ids
@@ -103,7 +103,7 @@ class GalgosDelSolScraper(BaseScraper):
         # This is critical for mark_skipped_animals_as_seen() to work correctly
         return self._filter_existing_animals(all_dogs_data)
 
-    def _process_animals_in_batches(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_in_batches(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Process animals in batches respecting the configured batch_size.
 
         Args:
@@ -158,7 +158,7 @@ class GalgosDelSolScraper(BaseScraper):
 
         return all_processed_data
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """Collect all available dog data from all listing pages.
 
         This method implements the BaseScraper template method pattern.
@@ -184,7 +184,7 @@ class GalgosDelSolScraper(BaseScraper):
             self.logger.error(f"Error collecting data from Galgos del Sol: {e}")
             return []
 
-    def _scrape_detail_page(self, url: str) -> Dict[str, Any]:
+    def _scrape_detail_page(self, url: str) -> dict[str, Any]:
         """Scrape detailed information from a dog's detail page.
 
         Args:
@@ -195,7 +195,7 @@ class GalgosDelSolScraper(BaseScraper):
         """
         return self.scrape_animal_details(url)
 
-    def scrape_animal_details(self, url: str) -> Dict[str, Any]:
+    def scrape_animal_details(self, url: str) -> dict[str, Any]:
         """Scrape detailed information from a dog's detail page.
 
         Extracts all available information from the dog detail page including
@@ -294,7 +294,7 @@ class GalgosDelSolScraper(BaseScraper):
             self.logger.error(f"Error scraping detail page {url}: {e}")
             return {}
 
-    def _extract_name(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_name(self, soup: BeautifulSoup) -> str | None:
         """Extract dog name from detail page.
 
         Args:
@@ -446,7 +446,7 @@ class GalgosDelSolScraper(BaseScraper):
 
         return False
 
-    def _extract_properties(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_properties(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract properties from detail page.
 
         Args:
@@ -455,7 +455,7 @@ class GalgosDelSolScraper(BaseScraper):
         Returns:
             Dictionary with extracted properties
         """
-        properties: Dict[str, Any] = {}
+        properties: dict[str, Any] = {}
 
         # Find the main content area with dog information
         main_content = soup.find("article") or soup.find("main")
@@ -621,7 +621,7 @@ class GalgosDelSolScraper(BaseScraper):
         valid_paragraphs.sort(key=len, reverse=True)
         return valid_paragraphs[0]
 
-    def _extract_hero_image(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_hero_image(self, soup: BeautifulSoup) -> str | None:
         """Extract hero image URL from detail page.
 
         Args:
@@ -698,7 +698,7 @@ class GalgosDelSolScraper(BaseScraper):
 
         return url
 
-    def _calculate_age_from_birth_date(self, birth_date_str: str) -> Optional[str]:
+    def _calculate_age_from_birth_date(self, birth_date_str: str) -> str | None:
         """Calculate age text from birth date string with robust validation.
 
         Args:
@@ -817,7 +817,7 @@ class GalgosDelSolScraper(BaseScraper):
             self.logger.debug(f"Error calculating age from birth date '{birth_date_str}': {e}")
             return None
 
-    def _scrape_listing_page(self, url: str) -> List[Dict[str, Any]]:
+    def _scrape_listing_page(self, url: str) -> list[dict[str, Any]]:
         """Scrape a single listing page for available dogs.
 
         Args:

@@ -7,16 +7,14 @@ Improved breed standardization algorithm based on database analysis and pattern 
 import json
 import re
 from difflib import SequenceMatcher
-from typing import Dict, Optional, Tuple
 
 
 # Load the enhanced mapping rules from Phase 2 analysis
-def load_enhanced_rules() -> Dict:
+def load_enhanced_rules() -> dict:
     """Load enhanced mapping rules from Phase 2 analysis."""
     try:
         with open(
             "/Users/samposatama/Documents/rescue-dog-aggregator/analysis/enhanced_mapping_rules.json",
-            "r",
         ) as f:
             return json.load(f)
     except FileNotFoundError:
@@ -24,7 +22,7 @@ def load_enhanced_rules() -> Dict:
         return get_embedded_enhanced_rules()
 
 
-def get_embedded_enhanced_rules() -> Dict:
+def get_embedded_enhanced_rules() -> dict:
     """Embedded enhanced rules as fallback."""
     return {
         "preprocessing_rules": {
@@ -152,7 +150,7 @@ class EnhancedBreedStandardizer:
 
         return " ".join(expanded_words).strip()
 
-    def apply_breed_specific_mappings(self, processed_text: str) -> Optional[Tuple[str, str, Optional[str]]]:
+    def apply_breed_specific_mappings(self, processed_text: str) -> tuple[str, str, str | None] | None:
         """Apply breed-specific mapping rules."""
         # First, try exact mappings
         exact_mappings = self.breed_mappings.get("exact_mappings", {})
@@ -195,7 +193,7 @@ class EnhancedBreedStandardizer:
 
         return None
 
-    def fuzzy_match_breed(self, processed_text: str) -> Optional[Tuple[str, str, Optional[str]]]:
+    def fuzzy_match_breed(self, processed_text: str) -> tuple[str, str, str | None] | None:
         """Apply fuzzy string matching to find similar breeds."""
         if not self.thresholds["exact_match_first"]:
             return None
@@ -220,7 +218,7 @@ class EnhancedBreedStandardizer:
 
         return best_match
 
-    def _estimate_size_from_breed(self, breed_name: str) -> Optional[str]:
+    def _estimate_size_from_breed(self, breed_name: str) -> str | None:
         """Estimate size from breed name."""
         breed_lower = breed_name.lower()
 
@@ -257,7 +255,7 @@ class EnhancedBreedStandardizer:
         else:
             return "Unknown"
 
-    def standardize_breed_enhanced(self, breed_text: str) -> Tuple[str, str, Optional[str]]:
+    def standardize_breed_enhanced(self, breed_text: str) -> tuple[str, str, str | None]:
         """
         Enhanced breed standardization with multi-stage processing.
 
@@ -341,7 +339,7 @@ def normalize_breed_case_v2(breed_text: str, use_enhanced: bool = False) -> str:
         return normalize_breed_case(breed_text)
 
 
-def standardize_breed_v2(breed_text: str, use_enhanced: bool = False) -> Tuple[str, str, Optional[str]]:
+def standardize_breed_v2(breed_text: str, use_enhanced: bool = False) -> tuple[str, str, str | None]:
     """
     Enhanced version of standardize_breed with feature flag support.
 

@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 
 
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.integration
 class TestSortingFunctionality:
     """Test suite for animals API sorting functionality."""

@@ -4,7 +4,7 @@ Provides centralized database connection management with context manager support
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import psycopg2
 
@@ -16,7 +16,7 @@ class DatabaseConfig:
     host: str
     user: str
     database: str
-    password: Optional[str] = None
+    password: str | None = None
 
 
 class DatabaseService:
@@ -49,7 +49,7 @@ class DatabaseService:
         if hasattr(self, "_connection"):
             self._connection.close()
 
-    def execute_query(self, query: str, params: Optional[Tuple] = None) -> List[Tuple]:
+    def execute_query(self, query: str, params: tuple | None = None) -> list[tuple]:
         """Execute read query and return results."""
         with self as connection:
             cursor = connection.cursor()
@@ -59,7 +59,7 @@ class DatabaseService:
             finally:
                 cursor.close()
 
-    def execute_command(self, command: str, params: Optional[Tuple] = None) -> int:
+    def execute_command(self, command: str, params: tuple | None = None) -> int:
         """Execute write command and return affected rows."""
         with self as connection:
             cursor = connection.cursor()
@@ -71,7 +71,7 @@ class DatabaseService:
                 cursor.close()
 
 
-def create_database_service_from_config(db_config: Dict[str, Any]) -> DatabaseService:
+def create_database_service_from_config(db_config: dict[str, Any]) -> DatabaseService:
     """Factory function to create DatabaseService from config dictionary."""
     config = DatabaseConfig(
         host=db_config["host"],

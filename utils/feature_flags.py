@@ -2,7 +2,6 @@
 
 import os
 from functools import lru_cache
-from typing import Dict, List
 
 
 class FeatureFlags:
@@ -17,7 +16,7 @@ class FeatureFlags:
 
     # Per-scraper flags for granular control
     # ALL scrapers now enabled with unified standardization
-    SCRAPER_FLAGS: Dict[str, bool] = {
+    SCRAPER_FLAGS: dict[str, bool] = {
         # Group C: Non-standardized scrapers (migrate first)
         "rean": True,  # Enabled - REAN has no custom standardization, ready to use unified
         "theunderdog": True,  # Enabled - TheUnderdog migrated to unified standardization
@@ -113,7 +112,7 @@ def is_feature_enabled(feature_name: str, scraper_name: str) -> bool:
     return False
 
 
-def get_enabled_scrapers() -> List[str]:
+def get_enabled_scrapers() -> list[str]:
     """Get list of scrapers with unified standardization enabled.
 
     Returns:

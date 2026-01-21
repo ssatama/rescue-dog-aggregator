@@ -8,7 +8,7 @@ Following CLAUDE.md principles:
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -98,11 +98,11 @@ class LLMRequest(BaseModel):
     Complexity: O(n) for validation where n is number of messages
     """
 
-    messages: List[LLMMessage]
+    messages: list[LLMMessage]
     model: str = Field(default="openrouter/auto", description="Model to use for the request")
-    temperature: Optional[float] = Field(default=0.7, ge=0.0, le=2.0)
-    max_tokens: Optional[int] = Field(default=None, gt=0)
-    top_p: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    temperature: float | None = Field(default=0.7, ge=0.0, le=2.0)
+    max_tokens: int | None = Field(default=None, gt=0)
+    top_p: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
 class LLMResponse(BaseModel):
@@ -134,8 +134,8 @@ class LLMResponse(BaseModel):
     id: str
     model: str
     content: str
-    usage: Optional[Dict[str, Any]] = None
-    finish_reason: Optional[str] = None
+    usage: dict[str, Any] | None = None
+    finish_reason: str | None = None
 
 
 class AnimalEnrichmentRequest(BaseModel):
@@ -166,10 +166,10 @@ class AnimalEnrichmentRequest(BaseModel):
     Complexity: O(1) for construction, O(n) for processing based on content size
     """
 
-    animal_data: Dict[str, Any]
+    animal_data: dict[str, Any]
     processing_type: ProcessingType
-    organization_config: Optional[Dict[str, Any]] = None
-    language: Optional[str] = "en"
+    organization_config: dict[str, Any] | None = None
+    language: str | None = "en"
 
 
 class AnimalEnrichmentResponse(BaseModel):
@@ -203,11 +203,11 @@ class AnimalEnrichmentResponse(BaseModel):
     Complexity: O(1) for construction, O(n) for data serialization
     """
 
-    original_data: Dict[str, Any]
-    enriched_data: Dict[str, Any]
+    original_data: dict[str, Any]
+    enriched_data: dict[str, Any]
     processing_type: ProcessingType
     model_used: str
-    tokens_used: Optional[int] = None
+    tokens_used: int | None = None
     cached: bool = False
 
 
@@ -245,10 +245,10 @@ class DogProfilerData(BaseModel):
     tagline: str = Field(..., description="Catchy one-liner for the dog")
     bio: str = Field(..., description="Engaging biography")
     looking_for: str = Field(..., description="Ideal home description")
-    personality_traits: List[str] = Field(..., description="Key personality traits")
-    interests: List[str] = Field(default_factory=list, description="Hobbies and interests")
-    deal_breakers: Optional[List[str]] = Field(default=None, description="Non-negotiable requirements")
-    fun_fact: Optional[str] = Field(default=None, description="Unique or amusing fact")
+    personality_traits: list[str] = Field(..., description="Key personality traits")
+    interests: list[str] = Field(default_factory=list, description="Hobbies and interests")
+    deal_breakers: list[str] | None = Field(default=None, description="Non-negotiable requirements")
+    fun_fact: str | None = Field(default=None, description="Unique or amusing fact")
 
 
 class TranslationRequest(BaseModel):
@@ -277,9 +277,9 @@ class TranslationRequest(BaseModel):
     """
 
     text: str
-    source_language: Optional[str] = None
+    source_language: str | None = None
     target_language: str
-    context: Optional[str] = None
+    context: str | None = None
 
 
 class BatchProcessingRequest(BaseModel):
@@ -310,9 +310,9 @@ class BatchProcessingRequest(BaseModel):
     Complexity: O(n/batch_size) for n animals with concurrent processing
     """
 
-    animals: List[Dict[str, Any]]
+    animals: list[dict[str, Any]]
     processing_type: ProcessingType
-    organization_config: Optional[Dict[str, Any]] = None
+    organization_config: dict[str, Any] | None = None
     batch_size: int = Field(default=10, gt=0, le=100)
 
 
@@ -345,6 +345,6 @@ class BatchProcessingResponse(BaseModel):
     """
 
     processed_count: int
-    successful: List[AnimalEnrichmentResponse]
-    failed: List[Dict[str, Any]]
-    total_tokens_used: Optional[int] = None
+    successful: list[AnimalEnrichmentResponse]
+    failed: list[dict[str, Any]]
+    total_tokens_used: int | None = None

@@ -241,7 +241,7 @@ class TestPetsInTurkeyUnifiedStandardization:
             assert result.get("neutered") == expected, f"Failed for input '{input_value}': expected {expected}, got {result.get('neutered')}"
 
     @pytest.mark.unit
-    @pytest.mark.fast
+    @pytest.mark.unit
     def test_full_standardization_flow(self, scraper):
         """Test complete standardization flow with all fields."""
         test_data = {

@@ -17,7 +17,6 @@ import logging
 # Add the project root to the path so we can import from utils
 import os
 import sys
-from typing import Dict, List
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -34,7 +33,7 @@ def setup_logging() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-def get_misclassified_crossbreeds(cursor, limit: int = None) -> List[Dict]:
+def get_misclassified_crossbreeds(cursor, limit: int = None) -> list[dict]:
     """
     Get crossbreeds that were incorrectly classified as 'unknown'.
 
@@ -68,7 +67,7 @@ def get_misclassified_crossbreeds(cursor, limit: int = None) -> List[Dict]:
     return cursor.fetchall()
 
 
-def get_unknown_purebreds(cursor, limit: int = None) -> List[Dict]:
+def get_unknown_purebreds(cursor, limit: int = None) -> list[dict]:
     """
     Get purebreds that might have been incorrectly classified as 'unknown'.
 
@@ -100,7 +99,7 @@ def get_unknown_purebreds(cursor, limit: int = None) -> List[Dict]:
     return cursor.fetchall()
 
 
-def repair_animal_classification(animal: Dict, standardizer: UnifiedStandardizer) -> Dict:
+def repair_animal_classification(animal: dict, standardizer: UnifiedStandardizer) -> dict:
     """Apply correct standardization to a misclassified animal record."""
 
     # Apply the now-fixed unified standardization
@@ -118,7 +117,7 @@ def repair_animal_classification(animal: Dict, standardizer: UnifiedStandardizer
     }
 
 
-def update_animal_classification(cursor, repair_data: Dict) -> None:
+def update_animal_classification(cursor, repair_data: dict) -> None:
     """Update a single animal record with corrected classification."""
 
     update_query = """

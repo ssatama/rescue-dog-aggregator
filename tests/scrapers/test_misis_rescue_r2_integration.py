@@ -9,11 +9,11 @@ from scrapers.misis_rescue.scraper import MisisRescueScraper
 from utils.r2_service import R2Service
 
 
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.external
-@pytest.mark.file_io
 @pytest.mark.integration
-@pytest.mark.scrapers
+@pytest.mark.integration
+@pytest.mark.integration
 @pytest.mark.slow
 class TestMisisRescueR2Integration(unittest.TestCase):
     """Test MISIs Rescue scraper with new R2 upload improvements."""

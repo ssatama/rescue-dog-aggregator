@@ -12,9 +12,10 @@ import asyncio
 import logging
 import os
 import random
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, AsyncIterator, List, Optional
+from typing import Any
 
 try:
     from playwright.async_api import (
@@ -51,12 +52,12 @@ class PlaywrightOptions:
     headless: bool = True
     viewport_width: int = 1920
     viewport_height: int = 1080
-    user_agent: Optional[str] = None
+    user_agent: str | None = None
     random_user_agent: bool = True
     timeout: int = 60000
     stealth_mode: bool = False
     disable_images: bool = False
-    extra_args: List[str] = field(default_factory=list)
+    extra_args: list[str] = field(default_factory=list)
     wait_until: str = "domcontentloaded"  # networkidle, load, domcontentloaded, commit
 
 
@@ -68,7 +69,7 @@ class PlaywrightResult:
     context: BrowserContext
     page: Page
     is_remote: bool
-    _playwright: Optional[Playwright] = field(default=None, repr=False)
+    _playwright: Playwright | None = field(default=None, repr=False)
     _owns_playwright: bool = field(default=False, repr=False)  # Track if we should stop playwright
 
     async def close(self) -> None:
@@ -94,8 +95,8 @@ class PageContentResult:
 
     success: bool
     content: str = ""
-    error: Optional[str] = None
-    url: Optional[str] = None
+    error: str | None = None
+    url: str | None = None
 
 
 class PlaywrightBrowserService:
@@ -116,7 +117,7 @@ class PlaywrightBrowserService:
         self._token = os.environ.get("BROWSERLESS_TOKEN")
         self._enabled = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
         # Singleton Playwright instance to prevent pthread_create exhaustion
-        self._playwright: Optional[Playwright] = None
+        self._playwright: Playwright | None = None
         self._playwright_lock = asyncio.Lock()
 
     async def _get_or_start_playwright(self) -> Playwright:
@@ -165,7 +166,7 @@ class PlaywrightBrowserService:
 
         return url
 
-    async def create_browser(self, options: Optional[PlaywrightOptions] = None) -> PlaywrightResult:
+    async def create_browser(self, options: PlaywrightOptions | None = None) -> PlaywrightResult:
         """Create a Playwright browser instance based on environment.
 
         Args:
@@ -263,7 +264,7 @@ class PlaywrightBrowserService:
             except Exception as e:
                 if attempt < max_retries - 1:
                     delay = base_delay * (2**attempt)
-                    logger.warning(f"Browserless connection failed (attempt {attempt + 1}/{max_retries}), " f"retrying in {delay}s: {e}")
+                    logger.warning(f"Browserless connection failed (attempt {attempt + 1}/{max_retries}), retrying in {delay}s: {e}")
                     await asyncio.sleep(delay)
                 else:
                     logger.error(f"Browserless connection failed after {max_retries} attempts: {e}")
@@ -316,7 +317,7 @@ class PlaywrightBrowserService:
             logger.warning(f"Failed to apply stealth mode: {e}")
 
     @asynccontextmanager
-    async def get_browser(self, options: Optional[PlaywrightOptions] = None) -> AsyncIterator[PlaywrightResult]:
+    async def get_browser(self, options: PlaywrightOptions | None = None) -> AsyncIterator[PlaywrightResult]:
         """Async context manager for browser lifecycle.
 
         Usage:
@@ -339,7 +340,7 @@ class PlaywrightBrowserService:
             if browser_result:
                 await browser_result.close()
 
-    async def get_page_content(self, url: str, options: Optional[PlaywrightOptions] = None) -> PageContentResult:
+    async def get_page_content(self, url: str, options: PlaywrightOptions | None = None) -> PageContentResult:
         """Convenience method to fetch page content with automatic browser lifecycle.
 
         Creates browser, navigates to URL, gets content, then closes browser.
@@ -373,7 +374,7 @@ class PlaywrightBrowserService:
             except Exception as e:
                 if attempt < max_retries - 1:
                     delay = base_delay * (2**attempt)
-                    logger.warning(f"Failed to get page content from {url} (attempt {attempt + 1}/{max_retries}), " f"retrying in {delay}s: {e}")
+                    logger.warning(f"Failed to get page content from {url} (attempt {attempt + 1}/{max_retries}), retrying in {delay}s: {e}")
                     await asyncio.sleep(delay)
                 else:
                     logger.error(f"Failed to get page content from {url} after {max_retries} attempts: {e}")
@@ -398,7 +399,7 @@ class PlaywrightBrowserService:
         }
 
 
-_playwright_service_instance: Optional[PlaywrightBrowserService] = None
+_playwright_service_instance: PlaywrightBrowserService | None = None
 
 
 def get_playwright_service() -> PlaywrightBrowserService:

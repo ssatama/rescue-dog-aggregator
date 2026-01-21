@@ -7,10 +7,9 @@ Measures execution time by marker category to validate our categorization.
 import subprocess
 import sys
 import time
-from typing import Tuple
 
 
-def run_pytest_command(marker_expression: str, timeout_seconds: int = 300) -> Tuple[float, int, str]:
+def run_pytest_command(marker_expression: str, timeout_seconds: int = 300) -> tuple[float, int, str]:
     """
     Run pytest with specific marker expression and measure execution time.
 
@@ -149,7 +148,7 @@ def main():
 
     for category, data in sorted_results:
         if data["test_count"] > 0:
-            print(f"{category:<20} {data['test_count']:<8} {data['execution_time']:<10.2f} " f"{data['avg_time_per_test'] * 1000:<10.1f} {data['status']:<10}")
+            print(f"{category:<20} {data['test_count']:<8} {data['execution_time']:<10.2f} {data['avg_time_per_test'] * 1000:<10.1f} {data['status']:<10}")
 
     # Performance analysis
     print("\n🔍 PERFORMANCE ANALYSIS:")
@@ -169,11 +168,11 @@ def main():
 
     ci_safe_data = results.get("ci_safe", {})
     if ci_safe_data.get("test_count", 0) > 0:
-        print(f"✅ CI-safe tests: {ci_safe_data['test_count']} tests, " f"{ci_safe_data['execution_time']:.1f}s total")
+        print(f"✅ CI-safe tests: {ci_safe_data['test_count']} tests, {ci_safe_data['execution_time']:.1f}s total")
 
     development_data = results.get("development", {})
     if development_data.get("test_count", 0) > 0:
-        print(f"⚡ Development tests: {development_data['test_count']} tests, " f"{development_data['execution_time']:.1f}s total")
+        print(f"⚡ Development tests: {development_data['test_count']} tests, {development_data['execution_time']:.1f}s total")
 
     # Test distribution validation
     total_tests = sum(data["test_count"] for data in results.values() if data["test_count"] > 0 and data["status"] != "no_tests")

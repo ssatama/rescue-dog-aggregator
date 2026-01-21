@@ -9,13 +9,12 @@ Age, breed, sex, and weight extraction logic has been moved to:
 """
 
 import re
-from typing import List, Optional
 
 # Import shared extraction utilities
 from utils.shared_extraction_patterns import extract_weight_from_text
 
 
-def extract_birth_date(text: Optional[str]) -> Optional[str]:
+def extract_birth_date(text: str | None) -> str | None:
     """Extract birth date from various text formats.
 
     Args:
@@ -82,7 +81,7 @@ def extract_birth_date(text: Optional[str]) -> Optional[str]:
     return None
 
 
-def normalize_name(name: Optional[str]) -> str:
+def normalize_name(name: str | None) -> str:
     """Normalize animal names by removing emojis, gender descriptors, and location info.
 
     Args:
@@ -166,7 +165,7 @@ def normalize_name(name: Optional[str]) -> str:
     return cleaned.title()
 
 
-def extract_age_from_text_legacy(text: Optional[str]) -> Optional[float]:
+def extract_age_from_text_legacy(text: str | None) -> float | None:
     """Extract age from detailed text using enhanced patterns.
 
     Args:
@@ -215,7 +214,7 @@ def extract_age_from_text_legacy(text: Optional[str]) -> Optional[float]:
     return None
 
 
-def extract_sex_from_text_legacy(text: Optional[str]) -> Optional[str]:
+def extract_sex_from_text_legacy(text: str | None) -> str | None:
     """Extract sex from detailed text with confidence scoring.
 
     Args:
@@ -269,7 +268,7 @@ def extract_sex_from_text_legacy(text: Optional[str]) -> Optional[str]:
     return None
 
 
-def extract_breed_from_text_legacy(text: Optional[str]) -> Optional[str]:
+def extract_breed_from_text_legacy(text: str | None) -> str | None:
     """Extract breed from detailed text when bullet points are insufficient.
 
     Args:
@@ -341,7 +340,7 @@ def extract_breed_from_text_legacy(text: Optional[str]) -> Optional[str]:
     return None
 
 
-def calculate_age_years(birth_date_text: Optional[str]) -> Optional[float]:
+def calculate_age_years(birth_date_text: str | None) -> float | None:
     """Calculate age in years from birth date text.
 
     Args:
@@ -422,7 +421,7 @@ def calculate_age_years(birth_date_text: Optional[str]) -> Optional[float]:
     return None
 
 
-def extract_breed(bullets: Optional[List[str]]) -> Optional[str]:
+def extract_breed(bullets: list[str] | None) -> str | None:
     """Extract and normalize breed information from bullet points.
 
     Args:
@@ -518,7 +517,7 @@ def extract_breed(bullets: Optional[List[str]]) -> Optional[str]:
     return None
 
 
-def extract_sex(bullets: Optional[List[str]]) -> Optional[str]:
+def extract_sex(bullets: list[str] | None) -> str | None:
     """Extract sex information from bullet points.
 
     Args:
@@ -556,7 +555,7 @@ def extract_sex(bullets: Optional[List[str]]) -> Optional[str]:
     return None
 
 
-def normalize_size(weight_text: Optional[str]) -> Optional[str]:
+def normalize_size(weight_text: str | None) -> str | None:
     """Normalize size based on weight information.
 
     Args:
@@ -586,7 +585,7 @@ def normalize_size(weight_text: Optional[str]) -> Optional[str]:
         return "XLarge"
 
 
-def extract_weight_kg_legacy(text: Optional[str]) -> Optional[float]:
+def extract_weight_kg_legacy(text: str | None) -> float | None:
     """Extract weight in kg from text.
 
     Args:

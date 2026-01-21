@@ -27,7 +27,7 @@ import logging
 import os
 import signal
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -108,7 +108,7 @@ def run_all_scrapers(runner: SecureConfigScraperRunner) -> BatchRunResult:
 
 def format_batch_summary(result: BatchRunResult, start_time: datetime) -> dict:
     """Format batch result as JSON summary."""
-    end_time = datetime.now(timezone.utc)
+    end_time = datetime.now(UTC)
     duration_seconds = (end_time - start_time).total_seconds()
 
     total_dogs_found = sum(r.animals_found or 0 for r in result.results if r.success)
@@ -155,7 +155,7 @@ def main():
     signal.signal(signal.SIGTERM, handle_shutdown)
     signal.signal(signal.SIGINT, handle_shutdown)
 
-    start_time = datetime.now(timezone.utc)
+    start_time = datetime.now(UTC)
     environment = os.getenv("ENVIRONMENT", "production")
 
     if not args.json:

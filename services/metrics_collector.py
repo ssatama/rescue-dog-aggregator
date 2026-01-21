@@ -17,13 +17,13 @@ Following CLAUDE.md principles:
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class MetricsCollector:
     """Service for metrics collection and calculation extracted from BaseScraper."""
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """Initialize MetricsCollector with minimal dependencies.
 
         Args:
@@ -82,7 +82,7 @@ class MetricsCollector:
         duration = end_time - start_time
         return duration.total_seconds()
 
-    def assess_data_quality(self, animals_data: List[Dict[str, Any]]) -> float:
+    def assess_data_quality(self, animals_data: list[dict[str, Any]]) -> float:
         """Assess the quality of scraped animal data.
 
         Args:
@@ -130,7 +130,7 @@ class MetricsCollector:
         final_score = total_score / len(animals_data)
         return round(final_score, 3)
 
-    def log_detailed_metrics(self, metrics: Dict[str, Any]) -> None:
+    def log_detailed_metrics(self, metrics: dict[str, Any]) -> None:
         """Log detailed metrics in a structured format.
 
         Args:
@@ -183,7 +183,7 @@ class MetricsCollector:
         except Exception as e:
             self.logger.error(f"Error logging detailed metrics: {e}")
 
-    def get_retry_metrics(self) -> Dict[str, Any]:
+    def get_retry_metrics(self) -> dict[str, Any]:
         """Get retry-related metrics.
 
         Returns:
@@ -195,7 +195,7 @@ class MetricsCollector:
             "retry_failure_rate": self._calculate_retry_failure_rate(),
         }
 
-    def get_phase_timings(self) -> Dict[str, float]:
+    def get_phase_timings(self) -> dict[str, float]:
         """Get phase timing metrics.
 
         Returns:
@@ -203,7 +203,7 @@ class MetricsCollector:
         """
         return self._phase_timings.copy()  # Return copy for immutability
 
-    def get_animal_count_metrics(self) -> Dict[str, Any]:
+    def get_animal_count_metrics(self) -> dict[str, Any]:
         """Get animal count and filtering metrics.
 
         Returns:
@@ -257,7 +257,7 @@ class MetricsCollector:
         duration_seconds: float,
         quality_score: float,
         **additional_metrics,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate comprehensive metrics dictionary (pure function).
 
         Args:

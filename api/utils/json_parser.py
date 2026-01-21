@@ -9,12 +9,12 @@ across route handlers.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def parse_json_field(data: Dict[str, Any], field: str, default_value: Optional[Union[Dict, List]] = None) -> None:
+def parse_json_field(data: dict[str, Any], field: str, default_value: dict | list | None = None) -> None:
     """
     Safely parse a JSON string field from a dictionary in-place.
 
@@ -38,7 +38,7 @@ def parse_json_field(data: Dict[str, Any], field: str, default_value: Optional[U
     # If it's already a dict/list, keep it as is
 
 
-def parse_organization_fields(row_dict: Dict[str, Any]) -> Dict[str, Any]:
+def parse_organization_fields(row_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Parse organization-related JSON fields from a database row.
 
@@ -88,7 +88,7 @@ def parse_organization_fields(row_dict: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def build_organization_object(row_dict: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def build_organization_object(row_dict: dict[str, Any]) -> dict[str, Any] | None:
     """
     Build nested organization object from database row.
 

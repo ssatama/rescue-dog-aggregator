@@ -55,7 +55,7 @@ def extract_markers_from_file(file_path):
     """Extract all pytest markers from a test file."""
     markers = set()
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         # Find all @pytest.mark.* markers

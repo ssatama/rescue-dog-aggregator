@@ -6,12 +6,14 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 ## Tech Stack
 
-- Backend: Python/FastAPI/PostgreSQL 15/Alembic
+- Backend: Python 3.12+/FastAPI/PostgreSQL 15/Alembic
 - Frontend: Next.js 15 (App Router)/React 18/TypeScript 5
 - Testing: pytest (backend), Jest/Playwright (frontend)
 - AI: OpenRouter API (Google Gemini 3 Flash) for LLM enrichment
 - Browser Automation: Playwright (Browserless v2 in production)
 - Monitoring: Sentry (dev/prod)
+- Package Management: **uv** (backend), **pnpm** (frontend)
+- Linting: **ruff** (replaces black/isort/flake8)
 - Current: 168 backend test files, 285 frontend test files, 1,500+ active dogs
 
 ## Status
@@ -142,7 +144,7 @@ management/       # CLI tools (18 scripts)
 ## Quality Gates (Required for ANY commit)
 
 - All tests passing (backend + frontend)
-- Linting/formatting clean (black, isort, ESLint)
+- Linting/formatting clean (ruff, ESLint)
 - No new type errors
 - Test count stable or increasing
 - **No JSX/TSX duplicate files** (enforced by pre-commit)
@@ -153,17 +155,33 @@ management/       # CLI tools (18 scripts)
 **Run this before every commit:**
 
 ```bash
-source venv/bin/activate && echo '🐍 BACKEND CHECKS' && black . && isort . && pytest -m 'not slow and not browser and not external' --maxfail=3 && echo '⚛️ FRONTEND CHECKS' && cd frontend && npm run lint && npm test -- --passWithNoTests --watchAll=false && echo '✅ PRE-COMMIT VALIDATION PASSED - SAFE TO COMMIT!'
+# Backend
+uv run ruff check . --fix
+uv run ruff format .
+uv run pytest -m 'not slow and not browser and not external' --maxfail=3
+
+# Frontend
+cd frontend
+pnpm tsc --noEmit
+pnpm lint
+pnpm test -- --passWithNoTests --watchAll=false
 ```
 
-This validates:
+**Do not commit if any command fails.**
 
-- Python formatting (black, isort)
-- Backend tests (excluding slow/browser/external)
-- Frontend linting (ESLint)
-- Frontend tests (Jest)
+### CI Requirements Table
 
-**Do not commit if this command fails.**
+| Gate | Commits | PRs | Pre-merge |
+|------|---------|-----|-----------|
+| Backend lint (ruff) | ✅ | ✅ | ✅ |
+| Backend unit tests | ✅ | ✅ | ✅ |
+| Backend integration tests | - | ✅ | ✅ |
+| Backend comprehensive tests | - | - | ✅ |
+| Frontend type check (tsc) | ✅ | ✅ | ✅ |
+| Frontend lint (eslint) | ✅ | ✅ | ✅ |
+| Frontend unit tests | ✅ | ✅ | ✅ |
+| Frontend build | - | ✅ | ✅ |
+| Security scan | - | ⚠️ warn | ⚠️ warn |
 
 ## Testing Commands
 
@@ -171,26 +189,39 @@ This validates:
 
 ```bash
 cd frontend
-npm test                  # Unit tests
-npm run build            # Build verification
+pnpm test                 # Unit tests
+pnpm build               # Build verification
+pnpm tsc --noEmit        # Type check
 ```
 
 ### Backend
 
 ```bash
-source venv/bin/activate
-pytest -m "unit or fast" --maxfail=5           # Tier 1: Quick feedback
-pytest -m "not slow and not browser" --maxfail=3  # Tier 2: CI
-pytest                                          # Tier 3: Full suite
+uv run pytest -m "unit" --maxfail=5              # Tier 1: Quick feedback
+uv run pytest -m "not slow and not browser and not external" --maxfail=3  # Tier 2: CI
+uv run pytest                                     # Tier 3: Full suite
 ```
+
+### Pytest Markers (8 essential)
+
+| Marker | Purpose |
+|--------|---------|
+| `unit` | Pure logic, no I/O (<10ms) |
+| `integration` | Internal services (10-100ms) |
+| `slow` | Complex setup (>1s) |
+| `database` | Requires DB access |
+| `browser` | Requires Playwright/Selenium |
+| `external` | Requires external APIs |
+| `security` | Security validation |
+| `requires_migrations` | Production-like migrations |
 
 ## Config Management
 
 ```bash
-python management/config_commands.py list      # List organizations
-python management/config_commands.py sync      # Sync to database
-python management/config_commands.py profile --org-id 11  # LLM profiling
-python management/llm_commands.py generate-profiles       # Batch enrichment
+uv run python management/config_commands.py list      # List organizations
+uv run python management/config_commands.py sync      # Sync to database
+uv run python management/config_commands.py profile --org-id 11  # LLM profiling
+uv run python management/llm_commands.py generate-profiles       # Batch enrichment
 ```
 
 ## Database Schema Highlights
@@ -210,17 +241,17 @@ organizations: 21 columns including id, name, slug, config_id, active, ships_to(
 # Database
 psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals WHERE active = true;"
 # Or use Postgres MCP: mcp__postgres__query tool
-python management/emergency_operations.py --reset-stale-data
+uv run python management/emergency_operations.py --reset-stale-data
 
 # Frontend rebuild
-cd frontend && rm -rf node_modules .next && npm install && npm run build
+cd frontend && rm -rf node_modules .next && pnpm install && pnpm build
 
-# Python modules
-source venv/bin/activate && pip install -r requirements.txt
+# Python environment rebuild
+rm -rf .venv && uv sync
 
 # Single test
-pytest tests/api/test_swipe.py::test_name -v
-npm test -- --testNamePattern="PersonalityTraits"
+uv run pytest tests/api/test_swipe.py::test_name -v
+pnpm test -- --testNamePattern="PersonalityTraits"
 ```
 
 ## API Endpoints

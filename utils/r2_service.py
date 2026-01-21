@@ -8,9 +8,9 @@ import logging
 import os
 import threading
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
-from typing import Callable, Dict, List, Optional, Tuple
 
 import boto3
 import requests
@@ -205,7 +205,7 @@ class R2Service:
         animal_name: str,
         organization_name: str = "unknown",
         raise_on_missing_config: bool = False,
-    ) -> Tuple[Optional[str], bool]:
+    ) -> tuple[str | None, bool]:
         """
         Upload image to R2 from URL and return the URL.
 
@@ -331,7 +331,7 @@ class R2Service:
             return image_url, False
 
     @staticmethod
-    def get_optimized_url(r2_url: str, transformation_options: Optional[Dict] = None) -> str:
+    def get_optimized_url(r2_url: str, transformation_options: dict | None = None) -> str:
         """
         Get optimized URL using Cloudflare Images transformations.
 
@@ -398,7 +398,7 @@ class R2Service:
             return r2_url
 
     @staticmethod
-    def get_status() -> Dict:
+    def get_status() -> dict:
         """Get R2 service status for health checks."""
         return {
             "configured": R2Service.is_configured(),
@@ -417,7 +417,7 @@ class R2Service:
         batch_size: int = 5,
         batch_delay: float = 3.0,
         adaptive_delay: bool = True,
-        progress_callback: Optional[Callable] = None,
+        progress_callback: Callable | None = None,
     ) -> list:
         """Upload multiple images in batches with delays to avoid rate limiting.
 
@@ -478,7 +478,7 @@ class R2Service:
         batch_size: int = 5,
         batch_delay: float = 3.0,
         adaptive_delay: bool = True,
-    ) -> Tuple[list, Dict]:
+    ) -> tuple[list, dict]:
         """Upload multiple images and return statistics.
 
         Args:
@@ -512,20 +512,20 @@ class R2Service:
             "average_time": total_time / len(results) if results else 0,
         }
 
-        logger.info(f"Batch upload completed: {successful}/{len(results)} successful " f"({stats['success_rate']:.1f}%), took {total_time:.1f}s total, " f"{stats['average_time']:.2f}s per image")
+        logger.info(f"Batch upload completed: {successful}/{len(results)} successful ({stats['success_rate']:.1f}%), took {total_time:.1f}s total, {stats['average_time']:.2f}s per image")
 
         return results, stats
 
     @classmethod
     def concurrent_upload_images(
         cls,
-        images: List[Tuple[str, str, str]],
+        images: list[tuple[str, str, str]],
         max_workers: int = 3,
         throttle_ms: int = 200,
-        max_concurrent_uploads: Optional[int] = None,
+        max_concurrent_uploads: int | None = None,
         adaptive_throttle: bool = False,
-        progress_callback: Optional[Callable] = None,
-    ) -> List[Tuple[str, bool]]:
+        progress_callback: Callable | None = None,
+    ) -> list[tuple[str, bool]]:
         """Upload multiple images concurrently with throttling.
 
         Args:
@@ -551,7 +551,7 @@ class R2Service:
         if max_concurrent_uploads:
             semaphore = threading.Semaphore(max_concurrent_uploads)
 
-        def upload_with_index(index: int, image_data: Tuple[str, str, str]) -> Tuple[int, str, bool]:
+        def upload_with_index(index: int, image_data: tuple[str, str, str]) -> tuple[int, str, bool]:
             """Upload single image and return index with result."""
             nonlocal current_throttle
             image_url, animal_name, org_name = image_data
@@ -607,11 +607,11 @@ class R2Service:
     @classmethod
     def concurrent_upload_images_with_stats(
         cls,
-        images: List[Tuple[str, str, str]],
+        images: list[tuple[str, str, str]],
         max_workers: int = 3,
         throttle_ms: int = 200,
         adaptive_throttle: bool = False,
-    ) -> Tuple[List[Tuple[str, bool]], Dict]:
+    ) -> tuple[list[tuple[str, bool]], dict]:
         """Upload images concurrently and return statistics.
 
         Args:
@@ -754,7 +754,7 @@ class R2Service:
         return max(0.1, delay + jitter)
 
     @classmethod
-    def upload_image_with_circuit_breaker(cls, image_url: str, animal_name: str, organization_name: str = "unknown") -> Tuple[Optional[str], bool]:
+    def upload_image_with_circuit_breaker(cls, image_url: str, animal_name: str, organization_name: str = "unknown") -> tuple[str | None, bool]:
         """Upload image with circuit breaker protection."""
         # Check circuit breaker
         if cls.is_circuit_breaker_open():
@@ -779,7 +779,7 @@ class R2Service:
         animal_name: str,
         organization_name: str = "unknown",
         failure_threshold: float = 50.0,
-    ) -> Tuple[Optional[str], bool]:
+    ) -> tuple[str | None, bool]:
         """Upload image with intelligent fallback based on failure rate."""
         # Check failure rate
         failure_rate = cls.get_failure_rate()
@@ -792,7 +792,7 @@ class R2Service:
         return cls.upload_image_with_circuit_breaker(image_url, animal_name, organization_name)
 
     @classmethod
-    def get_health_status(cls) -> Dict:
+    def get_health_status(cls) -> dict:
         """Get comprehensive health status for monitoring."""
         recent_errors = [(e, count) for e, count in cls._get_error_counts().items()][:5]
 
@@ -812,7 +812,7 @@ class R2Service:
         }
 
     @classmethod
-    def _get_error_counts(cls) -> Dict[str, int]:
+    def _get_error_counts(cls) -> dict[str, int]:
         """Get count of recent errors by type."""
         from collections import Counter
 

@@ -8,7 +8,7 @@ and batch operations to prevent N+1 query patterns.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from psycopg2.extras import RealDictCursor
 
@@ -19,28 +19,28 @@ class QueryBuilder:
     """Fluent query builder for PostgreSQL queries."""
 
     def __init__(self):
-        self._select_fields: List[str] = []
+        self._select_fields: list[str] = []
         self._from_table: str = ""
-        self._joins: List[str] = []
-        self._where_conditions: List[str] = []
-        self._group_by_fields: List[str] = []
-        self._having_conditions: List[str] = []
-        self._order_by_fields: List[str] = []
-        self._limit_value: Optional[int] = None
-        self._offset_value: Optional[int] = None
-        self._params: List[Any] = []
+        self._joins: list[str] = []
+        self._where_conditions: list[str] = []
+        self._group_by_fields: list[str] = []
+        self._having_conditions: list[str] = []
+        self._order_by_fields: list[str] = []
+        self._limit_value: int | None = None
+        self._offset_value: int | None = None
+        self._params: list[Any] = []
 
     def select(self, *fields: str) -> "QueryBuilder":
         """Add SELECT fields."""
         self._select_fields.extend(fields)
         return self
 
-    def from_table(self, table: str, alias: Optional[str] = None) -> "QueryBuilder":
+    def from_table(self, table: str, alias: str | None = None) -> "QueryBuilder":
         """Set FROM table."""
         self._from_table = f"{table} {alias}" if alias else table
         return self
 
-    def inner_join(self, table: str, on_condition: str, alias: Optional[str] = None) -> "QueryBuilder":
+    def inner_join(self, table: str, on_condition: str, alias: str | None = None) -> "QueryBuilder":
         """Add INNER JOIN."""
         table_expr = f"{table} {alias}" if alias else table
         self._joins.append(f"INNER JOIN {table_expr} ON {on_condition}")
@@ -52,7 +52,7 @@ class QueryBuilder:
         self._params.extend(params)
         return self
 
-    def where_in(self, column: str, values: List[Any]) -> "QueryBuilder":
+    def where_in(self, column: str, values: list[Any]) -> "QueryBuilder":
         """Add WHERE IN condition."""
         if not values:
             # Handle empty list case
@@ -90,7 +90,7 @@ class QueryBuilder:
         self._offset_value = count
         return self
 
-    def build(self) -> Tuple[str, List[Any]]:
+    def build(self) -> tuple[str, list[Any]]:
         """Build the query and return query string and parameters."""
         if not self._select_fields:
             raise ValueError("SELECT fields are required")
@@ -134,7 +134,7 @@ class QueryBuilder:
         query = " ".join(query_parts)
         return query, self._params
 
-    def execute(self, cursor: RealDictCursor) -> List[Dict[str, Any]]:
+    def execute(self, cursor: RealDictCursor) -> list[dict[str, Any]]:
         """Execute the query and return results."""
         query, params = self.build()
         logger.debug(f"Executing query: {query[:200]}{'...' if len(query) > 200 else ''}")
@@ -150,7 +150,7 @@ class BatchQueryExecutor:
     def __init__(self, cursor: RealDictCursor):
         self.cursor = cursor
 
-    def fetch_service_regions(self, organization_ids: List[int]) -> Dict[int, List[Dict[str, Any]]]:
+    def fetch_service_regions(self, organization_ids: list[int]) -> dict[int, list[dict[str, Any]]]:
         """
         Fetch service regions for multiple organizations in a single query.
         """

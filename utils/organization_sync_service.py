@@ -6,7 +6,7 @@ Implements: immutable data, pure functions, context managers, dependency injecti
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Protocol
 
 import psycopg2.extras
 
@@ -24,18 +24,18 @@ class OrganizationRecord:
 
     id: int
     name: str
-    website_url: Optional[str] = None
-    description: Optional[str] = None
-    social_media: Optional[Dict] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    ships_to: Optional[List[str]] = None
-    established_year: Optional[int] = None
-    logo_url: Optional[str] = None
-    country: Optional[str] = None
-    city: Optional[str] = None
-    service_regions: Optional[List[str]] = None
-    adoption_fees: Optional[Dict] = None
+    website_url: str | None = None
+    description: str | None = None
+    social_media: dict | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    ships_to: list[str] | None = None
+    established_year: int | None = None
+    logo_url: str | None = None
+    country: str | None = None
+    city: str | None = None
+    service_regions: list[str] | None = None
+    adoption_fees: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -46,7 +46,7 @@ class SyncResult:
     config_id: str
     was_created: bool
     success: bool
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -57,8 +57,8 @@ class SyncSummary:
     processed: int
     created: int
     updated: int
-    errors: List[str]
-    org_mappings: Dict[str, int]
+    errors: list[str]
+    org_mappings: dict[str, int]
 
     @property
     def success(self) -> bool:
@@ -68,13 +68,13 @@ class SyncSummary:
 class LogoUploadService(Protocol):
     """Protocol for logo upload services."""
 
-    def upload_organization_logo(self, org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]: ...
+    def upload_organization_logo(self, org_id: str, logo_url: str, force_upload: bool = False) -> dict[str, str]: ...
 
 
 class NullLogoUploadService:
     """Null object implementation for logo upload service."""
 
-    def upload_organization_logo(self, org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]:
+    def upload_organization_logo(self, org_id: str, logo_url: str, force_upload: bool = False) -> dict[str, str]:
         logger.info(f"Null logo upload service: skipping logo upload for {org_id}")
         return {"original": logo_url} if logo_url else {}
 
@@ -82,11 +82,11 @@ class NullLogoUploadService:
 class OrganizationSyncService:
     """Service for synchronizing organizations with dependency injection."""
 
-    def __init__(self, logo_service: Optional[LogoUploadService] = None):
+    def __init__(self, logo_service: LogoUploadService | None = None):
         """Initialize with optional logo service."""
         self.logo_service = logo_service or NullLogoUploadService()
 
-    def get_database_organizations(self) -> Dict[str, OrganizationRecord]:
+    def get_database_organizations(self) -> dict[str, OrganizationRecord]:
         """Get all organizations from database (pure function)."""
         query = """
             SELECT id, name, website_url, description, social_media,
@@ -162,7 +162,7 @@ class OrganizationSyncService:
 
         return False
 
-    def _build_social_media_dict(self, config: OrganizationConfig) -> Dict[str, str]:
+    def _build_social_media_dict(self, config: OrganizationConfig) -> dict[str, str]:
         """Build social media dictionary from config (pure function)."""
         social = config.metadata.social_media
         social_data = {}
@@ -182,7 +182,7 @@ class OrganizationSyncService:
 
         return social_data
 
-    def _build_adoption_fees_dict(self, config: OrganizationConfig) -> Dict[str, Any]:
+    def _build_adoption_fees_dict(self, config: OrganizationConfig) -> dict[str, Any]:
         """Build adoption fees dictionary from config (pure function)."""
         if not hasattr(config.metadata, "adoption_fees") or not config.metadata.adoption_fees:
             return {}
@@ -350,7 +350,7 @@ class OrganizationSyncService:
     def sync_single_organization(
         self,
         config: OrganizationConfig,
-        db_organizations: Optional[Dict[str, OrganizationRecord]] = None,
+        db_organizations: dict[str, OrganizationRecord] | None = None,
     ) -> SyncResult:
         """Sync single organization (pure business logic)."""
         if db_organizations is None:
@@ -378,7 +378,7 @@ class OrganizationSyncService:
             logger.error(error_msg)
             return SyncResult(0, config.id, False, False, error_msg)
 
-    def sync_all_organizations(self, configs: Dict[str, OrganizationConfig]) -> SyncSummary:
+    def sync_all_organizations(self, configs: dict[str, OrganizationConfig]) -> SyncSummary:
         """Sync all organizations and return summary."""
         if not configs:
             return SyncSummary(0, 0, 0, 0, [], {})
@@ -411,11 +411,11 @@ class OrganizationSyncService:
             org_mappings=org_mappings,
         )
 
-        logger.info(f"Sync completed: {summary.processed}/{summary.total_configs} processed " f"({summary.created} created, {summary.updated} updated, {len(summary.errors)} errors)")
+        logger.info(f"Sync completed: {summary.processed}/{summary.total_configs} processed ({summary.created} created, {summary.updated} updated, {len(summary.errors)} errors)")
 
         return summary
 
-    def get_config_to_db_mapping(self) -> Dict[str, int]:
+    def get_config_to_db_mapping(self) -> dict[str, int]:
         """Get mapping from organization name to database organization ID."""
         query = """
             SELECT name, id
@@ -426,7 +426,7 @@ class OrganizationSyncService:
         rows = execute_query(query)
         return {row["name"]: row["id"] for row in rows}
 
-    def get_sync_status(self, configs: Dict[str, OrganizationConfig]) -> Dict[str, Any]:
+    def get_sync_status(self, configs: dict[str, OrganizationConfig]) -> dict[str, Any]:
         """Get sync status between configs and database."""
         try:
             db_organizations = self.get_database_organizations()
@@ -472,7 +472,7 @@ class OrganizationSyncService:
 
 # Factory function with dependency injection
 def create_organization_sync_service(
-    logo_service: Optional[LogoUploadService] = None,
+    logo_service: LogoUploadService | None = None,
 ) -> OrganizationSyncService:
     """Create organization sync service with optional logo service."""
     if logo_service is None:

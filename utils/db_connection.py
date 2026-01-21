@@ -4,10 +4,10 @@ Follows CLAUDE.md principles: immutable data, pure functions, context managers.
 """
 
 import logging
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from threading import Lock
-from typing import Generator, Optional
 
 import psycopg2
 from psycopg2 import pool
@@ -23,7 +23,7 @@ class DatabaseConfig:
     host: str
     user: str
     database: str
-    password: Optional[str] = None
+    password: str | None = None
     port: int = 5432
 
     def __post_init__(self):
@@ -40,7 +40,7 @@ class DatabaseConnectionPool:
 
     def __init__(self, config: DatabaseConfig, min_conn: int = 1, max_conn: int = 10):
         self.config = config
-        self._pool: Optional[pool.ThreadedConnectionPool] = None
+        self._pool: pool.ThreadedConnectionPool | None = None
         self._lock = Lock()
         self._min_conn = min_conn
         self._max_conn = max_conn
@@ -103,7 +103,7 @@ class DatabaseConnectionPool:
 
 
 # Global connection pool instance
-_connection_pool: Optional[DatabaseConnectionPool] = None
+_connection_pool: DatabaseConnectionPool | None = None
 
 
 def initialize_database_pool(config: DatabaseConfig) -> DatabaseConnectionPool:
@@ -149,14 +149,14 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
         yield cursor
 
 
-def execute_query(query: str, params: Optional[tuple] = None) -> list:
+def execute_query(query: str, params: tuple | None = None) -> list:
     """Execute read query and return results."""
     with get_db_cursor() as cursor:
         cursor.execute(query, params)
         return cursor.fetchall()
 
 
-def execute_command(query: str, params: Optional[tuple] = None) -> Optional[dict]:
+def execute_command(query: str, params: tuple | None = None) -> dict | None:
     """Execute write command and return single result."""
     with get_db_cursor() as cursor:
         cursor.execute(query, params)

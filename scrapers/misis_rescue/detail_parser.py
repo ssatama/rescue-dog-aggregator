@@ -5,28 +5,22 @@ from MisisRescue website and extract structured data using BeautifulSoup.
 """
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from bs4 import BeautifulSoup, Tag
 
 from .normalizer import (
     calculate_age_years,
-)
-from .normalizer import extract_age_from_text_legacy as extract_age_from_text
-from .normalizer import (
     extract_birth_date,
     extract_breed,
-)
-from .normalizer import extract_breed_from_text_legacy as extract_breed_from_text
-from .normalizer import (
     extract_sex,
-)
-from .normalizer import extract_sex_from_text_legacy as extract_sex_from_text
-from .normalizer import extract_weight_kg_legacy as extract_weight_kg
-from .normalizer import (
     normalize_name,
     normalize_size,
 )
+from .normalizer import extract_age_from_text_legacy as extract_age_from_text
+from .normalizer import extract_breed_from_text_legacy as extract_breed_from_text
+from .normalizer import extract_sex_from_text_legacy as extract_sex_from_text
+from .normalizer import extract_weight_kg_legacy as extract_weight_kg
 
 
 class MisisRescueDetailParser:
@@ -36,7 +30,7 @@ class MisisRescueDetailParser:
         """Initialize the detail parser."""
         pass
 
-    def parse_detail_page(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def parse_detail_page(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Parse a dog detail page and extract structured information.
 
         Args:
@@ -45,7 +39,7 @@ class MisisRescueDetailParser:
         Returns:
             Dictionary containing extracted dog information
         """
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "bullet_points": [],
             "name": None,
             "breed": None,
@@ -183,7 +177,7 @@ class MisisRescueDetailParser:
 
         return result
 
-    def _extract_dog_name(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_dog_name(self, soup: BeautifulSoup) -> str | None:
         """Extract dog name from the page.
 
         Args:
@@ -226,7 +220,7 @@ class MisisRescueDetailParser:
         # Delegate to the enhanced normalizer function
         return normalize_name(name)
 
-    def _extract_bullet_points(self, soup: BeautifulSoup) -> List[str]:
+    def _extract_bullet_points(self, soup: BeautifulSoup) -> list[str]:
         """Extract bullet points from the 'Things you should know' section.
 
         Args:
@@ -262,7 +256,7 @@ class MisisRescueDetailParser:
 
         return bullet_points
 
-    def _find_things_section(self, soup: BeautifulSoup) -> Optional[Tag]:
+    def _find_things_section(self, soup: BeautifulSoup) -> Tag | None:
         """Find the 'Things you should know' section in the page.
 
         Args:

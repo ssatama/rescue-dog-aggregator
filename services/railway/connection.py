@@ -1,7 +1,6 @@
 import logging
 import os
 from contextlib import contextmanager
-from typing import Optional
 from urllib.parse import urlparse
 
 from sqlalchemy import Engine, create_engine, text
@@ -11,7 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 logger = logging.getLogger(__name__)
 
 # Global engine cache to prevent resource leaks
-_railway_engine_cache: Optional[Engine] = None
+_railway_engine_cache: Engine | None = None
 
 
 def get_railway_database_url() -> str:
@@ -97,7 +96,7 @@ def check_railway_connection() -> bool:
 
 class RailwayConnectionManager:
     def __init__(self):
-        self.session: Optional[Session] = None
+        self.session: Session | None = None
 
     def __enter__(self) -> Session:
         self.session = get_railway_session()

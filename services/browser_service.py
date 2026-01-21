@@ -12,9 +12,9 @@ instance accessible via WebDriver protocol.
 import logging
 import os
 import random
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Iterator, List, Optional
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -36,13 +36,13 @@ class BrowserOptions:
 
     headless: bool = True
     window_size: tuple = (1920, 1080)
-    user_agent: Optional[str] = None
+    user_agent: str | None = None
     random_user_agent: bool = True
     page_load_timeout: int = 60
     implicit_wait: int = 10
     stealth_mode: bool = False
     disable_images: bool = False
-    extra_arguments: List[str] = field(default_factory=list)
+    extra_arguments: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -82,7 +82,7 @@ class BrowserService:
         """Check if using remote Browserless."""
         return bool(self._endpoint)
 
-    def create_driver(self, options: Optional[BrowserOptions] = None) -> BrowserResult:
+    def create_driver(self, options: BrowserOptions | None = None) -> BrowserResult:
         """Create a WebDriver instance based on environment.
 
         Args:
@@ -209,7 +209,7 @@ class BrowserService:
             logger.warning(f"Failed to apply stealth mode: {e}")
 
     @contextmanager
-    def get_browser(self, options: Optional[BrowserOptions] = None) -> Iterator[BrowserResult]:
+    def get_browser(self, options: BrowserOptions | None = None) -> Iterator[BrowserResult]:
         """Context manager for browser lifecycle.
 
         Usage:
@@ -247,7 +247,7 @@ class BrowserService:
         }
 
 
-_browser_service_instance: Optional[BrowserService] = None
+_browser_service_instance: BrowserService | None = None
 
 
 def get_browser_service() -> BrowserService:

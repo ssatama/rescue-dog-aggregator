@@ -10,7 +10,7 @@ from scrapers.constants import (
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestBatchProcessingConstants:
     """Test batch processing configuration constants."""
 
@@ -37,7 +37,7 @@ class TestBatchProcessingConstants:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestConstantsRelationships:
     """Test that constants have sensible relationships."""
 

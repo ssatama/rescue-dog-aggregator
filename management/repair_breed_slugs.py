@@ -13,7 +13,6 @@ import argparse
 import logging
 import os
 import sys
-from typing import Dict, List
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -31,7 +30,7 @@ def setup_logging() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-def get_mismatched_breed_slugs(cursor, limit: int = None) -> List[Dict]:
+def get_mismatched_breed_slugs(cursor, limit: int = None) -> list[dict]:
     """
     Get records where breed_slug doesn't match the primary_breed.
 
@@ -56,7 +55,7 @@ def get_mismatched_breed_slugs(cursor, limit: int = None) -> List[Dict]:
     return cursor.fetchall()
 
 
-def repair_breed_slug(animal: Dict) -> Dict:
+def repair_breed_slug(animal: dict) -> dict:
     """Generate correct breed slug for an animal record."""
     primary_breed = animal["primary_breed"]
     correct_slug = generate_breed_slug(primary_breed)
@@ -69,7 +68,7 @@ def repair_breed_slug(animal: Dict) -> Dict:
     }
 
 
-def update_breed_slug(cursor, repair_data: Dict) -> None:
+def update_breed_slug(cursor, repair_data: dict) -> None:
     """Update a single animal record with corrected breed slug."""
     update_query = """
     UPDATE animals

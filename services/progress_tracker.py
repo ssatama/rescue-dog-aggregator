@@ -15,7 +15,7 @@ Features:
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class LoggingLevel(Enum):
@@ -30,7 +30,7 @@ class LoggingLevel(Enum):
 class ProgressTracker:
     """Tracks processing progress with adaptive verbosity and world-class logging."""
 
-    def __init__(self, total_items: int, logger: logging.Logger, config: Dict[str, Any]):
+    def __init__(self, total_items: int, logger: logging.Logger, config: dict[str, Any]):
         """Initialize progress tracker with adaptive logging level.
 
         Args:
@@ -59,7 +59,7 @@ class ProgressTracker:
             self.verbosity_level = self._determine_logging_level(total_items)
 
         # Operation tracking
-        self.operation_counts: Dict[str, int] = {}
+        self.operation_counts: dict[str, int] = {}
         self.last_progress_logged = 0
 
         # Comprehensive stats tracking for world-class logging
@@ -174,7 +174,7 @@ class ProgressTracker:
             return 0.0
         return self.processed_items / elapsed_seconds
 
-    def get_eta(self) -> Optional[datetime]:
+    def get_eta(self) -> datetime | None:
         """Calculate estimated time of completion.
 
         Returns:
@@ -372,7 +372,7 @@ class ProgressTracker:
 
     def track_performance_stats(
         self,
-        phase_durations: Dict[str, float] = None,
+        phase_durations: dict[str, float] = None,
         memory_usage: int = 0,
         retry_attempts: int = 0,
         total_duration: float = None,
@@ -418,7 +418,7 @@ class ProgressTracker:
         if total_dogs > 0:
             self.stats["quality"]["error_rate"] = (self.stats["processing"]["processing_failures"] / total_dogs) * 100.0
 
-    def get_comprehensive_stats(self) -> Dict[str, Any]:
+    def get_comprehensive_stats(self) -> dict[str, Any]:
         """Get all comprehensive statistics.
 
         Returns:
@@ -499,4 +499,4 @@ class ProgressTracker:
         else:
             # Even minimal logging shows basic completion stats
             stats = self.stats
-            self.logger.info(f"✅ Complete: {stats['processing']['dogs_added']} added, " f"{stats['processing']['dogs_updated']} updated, " f"{stats['performance']['total_duration']:.1f}s")
+            self.logger.info(f"✅ Complete: {stats['processing']['dogs_added']} added, {stats['processing']['dogs_updated']} updated, {stats['performance']['total_duration']:.1f}s")

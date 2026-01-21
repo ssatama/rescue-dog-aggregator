@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -9,7 +9,7 @@ class ServiceRegion(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     country: str
-    regions: List[str]
+    regions: list[str]
 
 
 class ContactInfo(BaseModel):
@@ -17,9 +17,9 @@ class ContactInfo(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    website: Optional[str] = None
+    email: str | None = None
+    phone: str | None = None
+    website: str | None = None
 
 
 class SocialMedia(BaseModel):
@@ -27,12 +27,12 @@ class SocialMedia(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    facebook: Optional[str] = None
-    instagram: Optional[str] = None
-    twitter: Optional[str] = None
-    youtube: Optional[str] = None
-    linkedin: Optional[str] = None
-    website: Optional[str] = None
+    facebook: str | None = None
+    instagram: str | None = None
+    twitter: str | None = None
+    youtube: str | None = None
+    linkedin: str | None = None
+    website: str | None = None
 
 
 class Location(BaseModel):
@@ -40,9 +40,9 @@ class Location(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    country: Optional[str] = None
-    city: Optional[str] = None
-    address: Optional[str] = None
+    country: str | None = None
+    city: str | None = None
+    address: str | None = None
 
 
 class OrganizationMetadata(BaseModel):
@@ -50,15 +50,15 @@ class OrganizationMetadata(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True, extra="allow")
 
-    website_url: Optional[str] = None
-    description: Optional[str] = None
+    website_url: str | None = None
+    description: str | None = None
     contact: ContactInfo = ContactInfo()
     social_media: SocialMedia = SocialMedia()
     location: Location = Location()
-    service_regions: List[str] = []  # Simplified to just country codes
-    ships_to: List[str] = []  # Countries where they ship animals
-    established_year: Optional[int] = None
-    logo_url: Optional[str] = None
+    service_regions: list[str] = []  # Simplified to just country codes
+    ships_to: list[str] = []  # Countries where they ship animals
+    established_year: int | None = None
+    logo_url: str | None = None
 
     @field_validator("service_regions")
     @classmethod
@@ -123,9 +123,9 @@ class ScraperConfig(BaseModel):
 
     model_config = ConfigDict(extra="allow")  # Allow additional fields
 
-    rate_limit_delay: Optional[float] = None
-    max_retries: Optional[int] = None
-    timeout: Optional[int] = None
+    rate_limit_delay: float | None = None
+    max_retries: int | None = None
+    timeout: int | None = None
 
 
 class ScraperInfo(BaseModel):
@@ -135,7 +135,7 @@ class ScraperInfo(BaseModel):
 
     class_name: str
     module: str
-    config: Optional[ScraperConfig] = ScraperConfig()
+    config: ScraperConfig | None = ScraperConfig()
 
     @field_validator("class_name")
     @classmethod
@@ -190,7 +190,7 @@ class OrganizationConfig(BaseModel):
             raise ValueError("Scraper configuration is required")
         return v
 
-    def get_scraper_config_dict(self) -> Dict[str, Any]:
+    def get_scraper_config_dict(self) -> dict[str, Any]:
         """Get scraper configuration as a dictionary.
 
         Returns:
@@ -204,7 +204,7 @@ class OrganizationConfig(BaseModel):
 
         return config_dict or {}
 
-    def get_adoption_check_config(self) -> Optional[Dict[str, Any]]:
+    def get_adoption_check_config(self) -> dict[str, Any] | None:
         """Get adoption checking configuration.
 
         Returns:
@@ -248,7 +248,7 @@ class OrganizationConfig(BaseModel):
         """
         return self.enabled
 
-    def validate_business_rules(self) -> List[str]:
+    def validate_business_rules(self) -> list[str]:
         """Validate business rules and return warnings.
 
         Returns:

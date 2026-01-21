@@ -9,7 +9,7 @@ Following CLAUDE.md principles:
 """
 
 from datetime import datetime
-from typing import Dict, List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -42,9 +42,9 @@ class DogProfilerData(BaseModel):
     confidence: Literal["very_confident", "confident", "moderate", "shy", "very_shy"] = Field(..., description="Dog's confidence level")
 
     # ===== COMPATIBILITY =====
-    good_with_dogs: Optional[Literal["yes", "no", "selective", "unknown"]] = Field(None, description="Compatibility with other dogs")
-    good_with_cats: Optional[Literal["yes", "no", "with_training", "unknown"]] = Field(None, description="Compatibility with cats")
-    good_with_children: Optional[Literal["yes", "older_children", "no", "unknown"]] = Field(None, description="Compatibility with children")
+    good_with_dogs: Literal["yes", "no", "selective", "unknown"] | None = Field(None, description="Compatibility with other dogs")
+    good_with_cats: Literal["yes", "no", "with_training", "unknown"] | None = Field(None, description="Compatibility with cats")
+    good_with_children: Literal["yes", "older_children", "no", "unknown"] | None = Field(None, description="Compatibility with children")
 
     # ===== LIVING REQUIREMENTS =====
     home_type: Literal["apartment_ok", "house_preferred", "house_required", "farm_only"] = Field(..., description="Suitable home environment")
@@ -54,16 +54,16 @@ class DogProfilerData(BaseModel):
 
     # ===== CARE NEEDS =====
     grooming_needs: Literal["minimal", "weekly", "frequent", "professional"] = Field(..., description="Grooming requirements")
-    medical_needs: Optional[str] = Field(None, max_length=250, description="Any ongoing medical conditions or needs")
-    special_needs: Optional[str] = Field(None, max_length=250, description="Any special requirements or considerations")
+    medical_needs: str | None = Field(None, max_length=250, description="Any ongoing medical conditions or needs")
+    special_needs: str | None = Field(None, max_length=250, description="Any special requirements or considerations")
 
     # ===== PERSONALITY =====
-    personality_traits: List[str] = Field(..., min_items=3, max_items=5, description="Key personality characteristics")
-    favorite_activities: List[str] = Field(..., min_items=2, max_items=4, description="Things the dog enjoys doing")
-    unique_quirk: Optional[str] = Field(None, max_length=200, description="A unique or endearing trait")
+    personality_traits: list[str] = Field(..., min_items=3, max_items=5, description="Key personality characteristics")
+    favorite_activities: list[str] = Field(..., min_items=2, max_items=4, description="Things the dog enjoys doing")
+    unique_quirk: str | None = Field(None, max_length=200, description="A unique or endearing trait")
 
     # ===== ADOPTION INFO =====
-    adoption_fee_euros: Optional[int] = Field(None, ge=0, le=2000, description="Adoption fee in euros")
+    adoption_fee_euros: int | None = Field(None, ge=0, le=2000, description="Adoption fee in euros")
     ready_to_travel: bool = Field(..., description="Whether dog can be transported internationally")
     vaccinated: bool = Field(..., description="Current vaccination status")
     neutered: bool = Field(..., description="Spay/neuter status")
@@ -72,16 +72,16 @@ class DogProfilerData(BaseModel):
     profiler_version: str = Field(default="1.0.0", description="Version of the profiler system")
     profiled_at: datetime = Field(default_factory=datetime.utcnow, description="When the profile was generated")
     processing_time_ms: int = Field(..., description="Time taken to generate profile")
-    confidence_scores: Dict[str, float] = Field(..., description="Field-level confidence scores (0.0-1.0)")
-    source_references: Dict[str, str] = Field(..., description="Which German text mapped to which field")
+    confidence_scores: dict[str, float] = Field(..., description="Field-level confidence scores (0.0-1.0)")
+    source_references: dict[str, str] = Field(..., description="Which German text mapped to which field")
     prompt_version: str = Field(..., description="Version of the prompt used")
-    model_used: Optional[str] = Field(None, description="Which LLM model was selected by Auto Router")
+    model_used: str | None = Field(None, description="Which LLM model was selected by Auto Router")
 
     # ===== VALIDATORS =====
 
     @field_validator("personality_traits", "favorite_activities")
     @classmethod
-    def validate_list_items(cls, v: List[str]) -> List[str]:
+    def validate_list_items(cls, v: list[str]) -> list[str]:
         """Ensure list items are non-empty strings."""
         if not v:
             return v
@@ -107,7 +107,7 @@ class DogProfilerData(BaseModel):
 
     @field_validator("confidence_scores")
     @classmethod
-    def validate_confidence_scores(cls, v: Dict[str, float]) -> Dict[str, float]:
+    def validate_confidence_scores(cls, v: dict[str, float]) -> dict[str, float]:
         """Ensure confidence scores are valid probabilities."""
         if not v:
             raise ValueError("Confidence scores are required")
@@ -126,7 +126,7 @@ class DogProfilerData(BaseModel):
 
     @field_validator("source_references")
     @classmethod
-    def validate_source_references(cls, v: Dict[str, str]) -> Dict[str, str]:
+    def validate_source_references(cls, v: dict[str, str]) -> dict[str, str]:
         """Ensure source references prevent hallucination."""
         if not v:
             raise ValueError("Source references are required for transparency")

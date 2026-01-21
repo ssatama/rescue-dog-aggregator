@@ -9,7 +9,7 @@ import pytest
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestOrganizationRecentDogsIntegration:
     # Use the client fixture from conftest.py instead of creating our own
     # Docstring moved above
@@ -73,7 +73,7 @@ class TestOrganizationRecentDogsIntegration:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestOrganizationStatisticsIntegration:
     # Use the client fixture from conftest.py instead of creating our own
     # Docstring moved above
@@ -142,7 +142,7 @@ class TestOrganizationStatisticsIntegration:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestOrganizationJSONParsingIntegration:
     # Use the client fixture from conftest.py instead of creating our own
     # Docstring moved above

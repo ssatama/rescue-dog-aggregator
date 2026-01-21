@@ -41,7 +41,7 @@ class TestREANIntegration:
             return REANScraper()
 
     @pytest.mark.slow
-    @pytest.mark.network
+    @pytest.mark.external
     @patch("requests.get")
     def test_scrape_page_success(self, mock_get, scraper):
         """Test successful page scraping with network request."""
@@ -56,7 +56,7 @@ class TestREANIntegration:
         mock_get.assert_called_once()
 
     @pytest.mark.slow
-    @pytest.mark.network
+    @pytest.mark.external
     @patch("requests.get")
     @patch("time.sleep")  # Speed up retries
     def test_scrape_page_with_retries(self, mock_sleep, mock_get, scraper):
@@ -73,7 +73,7 @@ class TestREANIntegration:
         assert mock_get.call_count == 2
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     @patch("time.sleep")  # Speed up waits
@@ -101,7 +101,7 @@ class TestREANIntegration:
         mock_driver.quit.assert_called_once()
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     def test_extract_images_browser_failure(self, mock_chrome, scraper):
         """Test browser image extraction handles WebDriver failures."""
@@ -112,7 +112,7 @@ class TestREANIntegration:
         assert result == []  # Should return empty list on failure
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     @patch("time.sleep")
     def test_unified_extraction_with_dom(self, mock_sleep, mock_chrome, scraper):
@@ -145,7 +145,7 @@ class TestREANIntegration:
         assert result[0]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     def test_unified_extraction_fallback(self, mock_chrome, scraper):
         """Test unified extraction falls back to legacy method on failure."""
@@ -161,7 +161,7 @@ class TestREANIntegration:
         scraper._extract_dogs_legacy_fallback.assert_called_once()
 
     @pytest.mark.slow
-    @pytest.mark.network
+    @pytest.mark.external
     @patch("requests.get")
     @patch("selenium.webdriver.Chrome")
     @patch("time.sleep")
@@ -208,7 +208,7 @@ class TestREANIntegration:
         assert "external_id" in dog
 
     @pytest.mark.slow
-    @pytest.mark.network
+    @pytest.mark.external
     def test_rate_limiting_between_pages(self, scraper):
         """Test rate limiting is applied between page requests."""
         with patch("time.sleep") as mock_sleep, patch("requests.get") as mock_get:

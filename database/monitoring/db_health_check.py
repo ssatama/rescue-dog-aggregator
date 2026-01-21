@@ -21,7 +21,6 @@ import os
 import sys
 from datetime import datetime
 from email.mime.text import MIMEText
-from typing import Dict, Optional
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -34,7 +33,7 @@ from config import DB_CONFIG
 class DatabaseHealthChecker:
     """Comprehensive database health monitoring for production operations."""
 
-    def __init__(self, alert_email: Optional[str] = None):
+    def __init__(self, alert_email: str | None = None):
         self.db_config = DB_CONFIG
         self.alerts = []
         self.warnings = []
@@ -70,7 +69,7 @@ class DatabaseHealthChecker:
             self.alerts.append(f"CRITICAL: Cannot connect to database: {e}")
             raise
 
-    def check_basic_connectivity(self, conn) -> Dict:
+    def check_basic_connectivity(self, conn) -> dict:
         """Test basic database connectivity and response time."""
         start_time = datetime.now()
 
@@ -97,7 +96,7 @@ class DatabaseHealthChecker:
             self.alerts.append(f"CRITICAL: Basic connectivity test failed: {e}")
             return {"connected": False, "error": str(e)}
 
-    def check_connection_stats(self, conn) -> Dict:
+    def check_connection_stats(self, conn) -> dict:
         """Monitor active connections and connection limits."""
         try:
             with conn.cursor() as cursor:
@@ -129,7 +128,7 @@ class DatabaseHealthChecker:
                 }
 
                 if connection_percent > self.THRESHOLDS["max_connections_percent"]:
-                    self.alerts.append(f"HIGH: Connection usage at {connection_percent:.1f}% " f"({stats['active_connections']}/{stats['max_connections']})")
+                    self.alerts.append(f"HIGH: Connection usage at {connection_percent:.1f}% ({stats['active_connections']}/{stats['max_connections']})")
                 elif connection_percent > 60:
                     self.warnings.append(f"Connection usage at {connection_percent:.1f}% - monitor closely")
 
@@ -139,7 +138,7 @@ class DatabaseHealthChecker:
             self.alerts.append(f"ERROR: Failed to check connection stats: {e}")
             return {}
 
-    def check_performance_indexes(self, conn) -> Dict:
+    def check_performance_indexes(self, conn) -> dict:
         """Verify performance indexes exist and are being used."""
         try:
             with conn.cursor() as cursor:
@@ -194,7 +193,7 @@ class DatabaseHealthChecker:
             self.alerts.append(f"ERROR: Failed to check performance indexes: {e}")
             return {}
 
-    def check_query_performance(self, conn) -> Dict:
+    def check_query_performance(self, conn) -> dict:
         """Test performance of key queries."""
         try:
             with conn.cursor() as cursor:
@@ -251,7 +250,7 @@ class DatabaseHealthChecker:
             self.alerts.append(f"ERROR: Failed to check query performance: {e}")
             return {}
 
-    def check_data_health(self, conn) -> Dict:
+    def check_data_health(self, conn) -> dict:
         """Check data integrity and business metrics."""
         try:
             with conn.cursor() as cursor:
@@ -299,13 +298,13 @@ class DatabaseHealthChecker:
 
                 # Check for data issues
                 if data_stats["available_animals"] < self.THRESHOLDS["available_animals_min"]:
-                    self.alerts.append(f"LOW: Only {data_stats['available_animals']} available animals " f"(<{self.THRESHOLDS['available_animals_min']})")
+                    self.alerts.append(f"LOW: Only {data_stats['available_animals']} available animals (<{self.THRESHOLDS['available_animals_min']})")
 
                 # Check scraping health
                 if scrape_stats["last_scrape_time"]:
                     hours_since_scrape = (datetime.now() - scrape_stats["last_scrape_time"]).total_seconds() / 3600
                     if hours_since_scrape > self.THRESHOLDS["scrape_failure_hours"]:
-                        self.alerts.append(f"STALE: Last scrape was {hours_since_scrape:.1f} hours ago " f"(>{self.THRESHOLDS['scrape_failure_hours']} hours)")
+                        self.alerts.append(f"STALE: Last scrape was {hours_since_scrape:.1f} hours ago (>{self.THRESHOLDS['scrape_failure_hours']} hours)")
 
                 if scrape_stats["scrapes_last_24h"] > 0:
                     failure_rate = (scrape_stats["failed_scrapes"] / scrape_stats["scrapes_last_24h"]) * 100
@@ -320,7 +319,7 @@ class DatabaseHealthChecker:
             self.alerts.append(f"ERROR: Failed to check data health: {e}")
             return {}
 
-    def check_database_size(self, conn) -> Dict:
+    def check_database_size(self, conn) -> dict:
         """Monitor database size and growth trends."""
         try:
             with conn.cursor() as cursor:
@@ -395,7 +394,7 @@ class DatabaseHealthChecker:
         except Exception as e:
             print(f"Failed to send alert email: {e}")
 
-    def run_health_check(self, verbose: bool = False) -> Dict:
+    def run_health_check(self, verbose: bool = False) -> dict:
         """Run complete database health check."""
         start_time = datetime.now()
 

@@ -5,7 +5,7 @@ Follows CLAUDE.md principles: immutable data, pure functions, early returns.
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Protocol
 
 from utils.config_loader import ConfigLoader
 from utils.organization_sync_service import (
@@ -35,9 +35,9 @@ class ScraperRunResult:
 
     config_id: str
     success: bool
-    organization: Optional[str] = None
-    animals_found: Optional[int] = None
-    error: Optional[str] = None
+    organization: str | None = None
+    animals_found: int | None = None
+    error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -48,19 +48,19 @@ class BatchRunResult:
     total_orgs: int
     successful: int
     failed: int
-    results: List[ScraperRunResult]
-    sync_results: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    results: list[ScraperRunResult]
+    sync_results: dict[str, Any] | None = None
+    error: str | None = None
 
 
 class ConfigLoaderProtocol(Protocol):
     """Protocol for configuration loaders."""
 
-    def load_all_configs(self) -> Dict[str, Any]: ...
+    def load_all_configs(self) -> dict[str, Any]: ...
 
     def load_config(self, org_id: str) -> Any: ...
 
-    def get_enabled_orgs(self) -> List[Any]: ...
+    def get_enabled_orgs(self) -> list[Any]: ...
 
 
 class SecureConfigScraperRunner:
@@ -68,16 +68,16 @@ class SecureConfigScraperRunner:
 
     def __init__(
         self,
-        config_loader: Optional[ConfigLoaderProtocol] = None,
-        scraper_loader: Optional[SecureScraperLoader] = None,
-        sync_service: Optional[OrganizationSyncService] = None,
+        config_loader: ConfigLoaderProtocol | None = None,
+        scraper_loader: SecureScraperLoader | None = None,
+        sync_service: OrganizationSyncService | None = None,
     ):
         """Initialize with injected dependencies."""
         self.config_loader = config_loader or ConfigLoader()
         self.scraper_loader = scraper_loader or SecureScraperLoader()
         self.sync_service = sync_service or create_default_sync_service()
 
-    def list_available_scrapers(self) -> List[ScraperInfo]:
+    def list_available_scrapers(self) -> list[ScraperInfo]:
         """List all available scrapers from configs (pure function)."""
         configs = self.config_loader.load_all_configs()
 
@@ -95,7 +95,7 @@ class SecureConfigScraperRunner:
 
         return scrapers
 
-    def validate_scraper_config(self, config_id: str) -> Tuple[bool, Optional[str]]:
+    def validate_scraper_config(self, config_id: str) -> tuple[bool, str | None]:
         """Validate scraper configuration (pure function)."""
         try:
             config = self.config_loader.load_config(config_id)
@@ -254,7 +254,7 @@ class SecureConfigScraperRunner:
                 error=str(e),
             )
 
-    def get_scraper_status(self, config_id: str) -> Dict[str, Any]:
+    def get_scraper_status(self, config_id: str) -> dict[str, Any]:
         """Get status information for a scraper."""
         try:
             # Validate configuration
@@ -297,7 +297,7 @@ class SecureConfigScraperRunner:
                 "can_run": False,
             }
 
-    def get_all_scraper_status(self) -> List[Dict[str, Any]]:
+    def get_all_scraper_status(self) -> list[dict[str, Any]]:
         """Get status for all scrapers."""
         scrapers = self.list_available_scrapers()
         return [self.get_scraper_status(scraper.config_id) for scraper in scrapers]
@@ -305,9 +305,9 @@ class SecureConfigScraperRunner:
 
 # Factory function for dependency injection
 def create_secure_scraper_runner(
-    config_loader: Optional[ConfigLoaderProtocol] = None,
-    scraper_loader: Optional[SecureScraperLoader] = None,
-    sync_service: Optional[OrganizationSyncService] = None,
+    config_loader: ConfigLoaderProtocol | None = None,
+    scraper_loader: SecureScraperLoader | None = None,
+    sync_service: OrganizationSyncService | None = None,
 ) -> SecureConfigScraperRunner:
     """Create secure scraper runner with dependency injection."""
     return SecureConfigScraperRunner(config_loader, scraper_loader, sync_service)

@@ -9,10 +9,10 @@ import pytest
 from utils.r2_service import R2Service
 
 
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.external
-@pytest.mark.file_io
-@pytest.mark.utils
+@pytest.mark.integration
+@pytest.mark.integration
 class TestR2IntelligentFallback(unittest.TestCase):
     """Test intelligent fallback mechanism for R2 Service."""
 

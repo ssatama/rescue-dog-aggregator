@@ -7,7 +7,7 @@ Following CLAUDE.md principles:
 - No side effects
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -15,20 +15,20 @@ from pydantic import BaseModel, Field, field_validator
 class EnhancedAttributes(BaseModel):
     """LLM-generated enhanced attributes with tagline support."""
 
-    description: Optional[str] = None
-    tagline: Optional[str] = None  # Short compelling tagline for detail pages
-    personality_traits: Optional[List[str]] = Field(default_factory=list)
-    energy_level: Optional[str] = None
-    trainability: Optional[str] = None
-    experience_level: Optional[str] = None
-    grooming_needs: Optional[str] = None
-    exercise_needs: Optional[str] = None
-    good_with_kids: Optional[bool] = None
-    good_with_dogs: Optional[bool] = None
-    good_with_cats: Optional[bool] = None
-    good_with_strangers: Optional[bool] = None
-    special_needs: Optional[List[str]] = Field(default_factory=list)
-    ideal_home: Optional[str] = None
+    description: str | None = None
+    tagline: str | None = None  # Short compelling tagline for detail pages
+    personality_traits: list[str] | None = Field(default_factory=list)
+    energy_level: str | None = None
+    trainability: str | None = None
+    experience_level: str | None = None
+    grooming_needs: str | None = None
+    exercise_needs: str | None = None
+    good_with_kids: bool | None = None
+    good_with_dogs: bool | None = None
+    good_with_cats: bool | None = None
+    good_with_strangers: bool | None = None
+    special_needs: list[str] | None = Field(default_factory=list)
+    ideal_home: str | None = None
 
     @field_validator(
         "energy_level",
@@ -64,21 +64,21 @@ class EnhancedAnimalResponse(BaseModel):
     name: str
     slug: str
     enhanced_data_available: bool
-    enhanced_attributes: Optional[EnhancedAttributes] = None
+    enhanced_attributes: EnhancedAttributes | None = None
     data_completeness_score: float = Field(..., ge=0, le=100, description="Percentage of enhanced fields populated (0-100)")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata about the enhanced data")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata about the enhanced data")
 
 
 class BulkEnhancedRequest(BaseModel):
     """Request model for bulk enhanced data retrieval."""
 
-    animal_ids: List[int] = Field(
+    animal_ids: list[int] = Field(
         ...,
         min_items=1,
         max_items=100,
         description="List of animal IDs to fetch (max 100)",
     )
-    include_fields: Optional[List[str]] = Field(None, description="Optional list of specific fields to include")
+    include_fields: list[str] | None = Field(None, description="Optional list of specific fields to include")
 
     @field_validator("animal_ids")
     @classmethod
@@ -93,16 +93,16 @@ class DetailContentResponse(BaseModel):
     """Optimized response for detail page content."""
 
     id: int
-    description: Optional[str] = None
-    tagline: Optional[str] = None
+    description: str | None = None
+    tagline: str | None = None
     has_enhanced_data: bool
 
 
 class AttributesRequest(BaseModel):
     """Request for specific attributes."""
 
-    animal_ids: List[int] = Field(..., min_items=1, max_items=1000, description="Animal IDs to query")
-    attributes: List[str] = Field(..., min_items=1, max_items=20, description="Attribute names to fetch")
+    animal_ids: list[int] = Field(..., min_items=1, max_items=1000, description="Animal IDs to query")
+    attributes: list[str] = Field(..., min_items=1, max_items=20, description="Attribute names to fetch")
 
     @field_validator("animal_ids")
     @classmethod
@@ -143,6 +143,6 @@ class AttributesRequest(BaseModel):
 class AttributesResponse(BaseModel):
     """Response for attributes query."""
 
-    data: Dict[int, Dict[str, Any]] = Field(..., description="Map of animal ID to requested attributes")
-    requested_attributes: List[str]
+    data: dict[int, dict[str, Any]] = Field(..., description="Map of animal ID to requested attributes")
+    requested_attributes: list[str]
     animals_found: int

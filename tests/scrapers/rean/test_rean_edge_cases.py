@@ -161,7 +161,7 @@ class TestREANEdgeCases:
         assert scraper.extract_dog_data(short_text, "romania") is None
 
     @pytest.mark.slow
-    @pytest.mark.network
+    @pytest.mark.external
     @patch("requests.get")
     @patch("time.sleep")
     def test_network_timeout_handling(self, mock_sleep, mock_get, scraper):
@@ -174,7 +174,7 @@ class TestREANEdgeCases:
         assert mock_get.call_count <= scraper.max_retries + 1
 
     @pytest.mark.slow
-    @pytest.mark.network
+    @pytest.mark.external
     @patch("requests.get")
     def test_http_error_codes(self, mock_get, scraper):
         """Test handling of various HTTP error codes."""
@@ -238,9 +238,9 @@ class TestREANEdgeCases:
         assert "dog.jpg" in filtered[0]
 
     @pytest.mark.slow
-    @pytest.mark.selenium
     @pytest.mark.browser
-    @pytest.mark.complex_setup
+    @pytest.mark.browser
+    @pytest.mark.slow
     @patch("selenium.webdriver.Chrome")
     def test_browser_element_not_found(self, mock_chrome, scraper):
         """Test handling when browser can't find expected elements."""

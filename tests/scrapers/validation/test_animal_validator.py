@@ -6,7 +6,7 @@ from scrapers.validation.animal_validator import AnimalValidator
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestAnimalValidatorNameValidation:
     """Test name validation logic."""
 
@@ -89,7 +89,7 @@ class TestAnimalValidatorNameValidation:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestAnimalValidatorNameNormalization:
     """Test name normalization logic."""
 
@@ -115,7 +115,7 @@ class TestAnimalValidatorNameNormalization:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestAnimalValidatorDataValidation:
     """Test full animal data validation."""
 
@@ -210,7 +210,7 @@ class TestAnimalValidatorDataValidation:
 
 
 @pytest.mark.unit
-@pytest.mark.fast
+@pytest.mark.unit
 class TestAnimalValidatorExternalId:
     """Test external ID validation."""
 

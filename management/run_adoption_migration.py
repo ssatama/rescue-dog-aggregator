@@ -107,7 +107,7 @@ class AdoptionMigrationRunner:
             return False
 
         try:
-            with open(migration_path, "r") as f:
+            with open(migration_path) as f:
                 migration_sql = f.read()
 
             if self.dry_run:
@@ -166,7 +166,7 @@ class AdoptionMigrationRunner:
             return False
 
         try:
-            with open(rollback_path, "r") as f:
+            with open(rollback_path) as f:
                 rollback_sql = f.read()
 
             if self.dry_run:

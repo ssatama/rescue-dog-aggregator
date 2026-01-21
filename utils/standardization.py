@@ -9,7 +9,6 @@ This module provides functions to standardize dog data including:
 """
 
 import re
-from typing import Dict, Optional, Tuple
 
 # Maximum dog age in months (30 years) - covers all recorded lifespans + buffer
 # Based on 2024 research: longest verified dog lived 29 years (Bluey)
@@ -215,7 +214,7 @@ def _get_unified_standardizer():
     return _unified_standardizer
 
 
-def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
+def standardize_breed(breed_text: str) -> tuple[str, str, str | None]:
     """
     Standardize a dog breed name.
 
@@ -231,7 +230,7 @@ def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
     return (result["name"], result["group"], result.get("size"))
 
 
-def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:
+def parse_age_text(age_text: str) -> tuple[str | None, int | None, int | None]:
     """
     Parse age text into a standardized age category and month range.
 
@@ -475,7 +474,7 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
     return None, None, None
 
 
-def standardize_age(age_text: str) -> Dict:
+def standardize_age(age_text: str) -> dict:
     """
     Standardize age text into structured data.
 
@@ -494,7 +493,7 @@ def standardize_age(age_text: str) -> Dict:
     }
 
 
-def get_size_from_breed(breed: str) -> Optional[str]:
+def get_size_from_breed(breed: str) -> str | None:
     """
     Estimate dog size based on breed.
 
@@ -521,7 +520,7 @@ def get_size_from_breed(breed: str) -> Optional[str]:
     return None
 
 
-def standardize_size_value(size: str) -> Optional[str]:
+def standardize_size_value(size: str) -> str | None:
     """
     Standardize a size value to canonical form.
 
@@ -583,7 +582,7 @@ def standardize_size_value(size: str) -> Optional[str]:
     return None
 
 
-def apply_standardization(animal_data: Dict) -> Dict:
+def apply_standardization(animal_data: dict) -> dict:
     """
     Apply all standardization functions to animal data.
 
@@ -623,7 +622,7 @@ def apply_standardization(animal_data: Dict) -> Dict:
     return result
 
 
-def clean_breed_text(breed: str) -> Optional[str]:
+def clean_breed_text(breed: str) -> str | None:
     """
     Clean and normalize breed text to remove unclear or problematic entries.
 

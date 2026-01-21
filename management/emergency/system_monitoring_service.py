@@ -11,7 +11,7 @@ Follows CLAUDE.md principles:
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from typing import Any
 
 from management.services.database_service import DatabaseService
 
@@ -28,7 +28,7 @@ class SystemMonitoringService:
         self.database_service = database_service
         self.logger = logging.getLogger(__name__)
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Get comprehensive system status for emergency assessment.
 
         Returns:
@@ -88,7 +88,7 @@ class SystemMonitoringService:
             return "degraded"
         return "healthy"
 
-    def get_failure_metrics(self) -> Dict[str, Any]:
+    def get_failure_metrics(self) -> dict[str, Any]:
         """Get failure metrics for the last 24 hours.
 
         Returns:
@@ -142,7 +142,7 @@ class SystemMonitoringService:
         )
         return cursor.fetchone()[0] or 0
 
-    def _get_failure_metrics_from_cursor(self, cursor) -> Dict[str, Any]:
+    def _get_failure_metrics_from_cursor(self, cursor) -> dict[str, Any]:
         """Get failure metrics using provided cursor.
 
         Args:

@@ -227,8 +227,8 @@ class TestREANScraper:
         assert result == "Sample page content"
 
     @pytest.mark.slow
-    @pytest.mark.network
-    @pytest.mark.network_dependent
+    @pytest.mark.external
+    @pytest.mark.external
     @patch("requests.get")
     def test_scrape_page_failure(self, mock_get, scraper):
         """Test page scraping failure handling."""
@@ -366,7 +366,7 @@ class TestREANScraper:
         assert callable(getattr(scraper, "extract_images_with_browser"))
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @pytest.mark.browser
     @patch("scrapers.rean.dogs_scraper.get_browser_service")
     def test_extract_images_with_browser_basic(self, mock_browser_service, scraper):
@@ -412,7 +412,7 @@ class TestREANScraper:
         assert "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg" in images
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @pytest.mark.browser
     @patch("scrapers.rean.dogs_scraper.get_browser_service")
     @patch("scrapers.rean.dogs_scraper.time.sleep")
@@ -438,7 +438,7 @@ class TestREANScraper:
         assert len(scroll_calls) > 0
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @pytest.mark.browser
     @patch("scrapers.rean.dogs_scraper.get_browser_service")
     def test_extract_images_with_browser_filters_wsimg_only(self, mock_browser_service, scraper):
@@ -496,7 +496,7 @@ class TestREANScraper:
         assert images == []
 
     @pytest.mark.slow
-    @pytest.mark.selenium
+    @pytest.mark.browser
     @pytest.mark.browser
     @patch("scrapers.rean.dogs_scraper.get_browser_service")
     def test_extract_images_with_browser_configuration(self, mock_browser_service, scraper):

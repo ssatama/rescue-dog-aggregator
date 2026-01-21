@@ -14,7 +14,7 @@ import argparse
 import logging
 import os
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -114,7 +114,7 @@ class StandardizationBackfillService:
         finally:
             cursor.close()
 
-    def get_lurchers_to_fix(self) -> List[Tuple]:
+    def get_lurchers_to_fix(self) -> list[tuple]:
         """Get Lurcher dogs that need breed_group fix."""
         try:
             cursor = self.conn.cursor()
@@ -134,7 +134,7 @@ class StandardizationBackfillService:
             logger.error(f"Error fetching Lurchers: {e}")
             return []
 
-    def get_staffordshires_to_fix(self) -> List[Tuple]:
+    def get_staffordshires_to_fix(self) -> list[tuple]:
         """Get Staffordshire dogs that need breed name standardization."""
         try:
             cursor = self.conn.cursor()
@@ -162,7 +162,7 @@ class StandardizationBackfillService:
             logger.error(f"Error fetching Staffordshires: {e}")
             return []
 
-    def get_animals_to_backfill(self, limit: int = None) -> List[Tuple]:
+    def get_animals_to_backfill(self, limit: int = None) -> list[tuple]:
         """Get animals that need breed standardization backfill including new enhancement fields."""
         try:
             cursor = self.conn.cursor()
@@ -191,7 +191,7 @@ class StandardizationBackfillService:
             logger.error(f"Error fetching animals to backfill: {e}")
             return []
 
-    def update_animal_standardization(self, animal_id: int, standardized_data: Dict[str, Any]) -> bool:
+    def update_animal_standardization(self, animal_id: int, standardized_data: dict[str, Any]) -> bool:
         """Update an animal's standardization fields including new breed enhancement fields."""
         try:
             cursor = self.conn.cursor()
@@ -254,7 +254,7 @@ class StandardizationBackfillService:
             logger.error(f"Error updating animal {animal_id}: {e}")
             return False
 
-    def standardize_animal_data(self, animal_tuple: Tuple) -> Dict[str, Any]:
+    def standardize_animal_data(self, animal_tuple: tuple) -> dict[str, Any]:
         """Apply unified standardization to animal data including new enhancement fields."""
         id_, name, breed, standardized_breed, breed_group, age_text, size = animal_tuple
 
@@ -274,7 +274,7 @@ class StandardizationBackfillService:
             "breed_slug": standardized.get("breed_slug"),  # Add breed_slug field
         }
 
-    def fix_lurchers(self, dry_run: bool = False) -> Dict[str, Any]:
+    def fix_lurchers(self, dry_run: bool = False) -> dict[str, Any]:
         """Fix all Lurcher breeds to have Hound group."""
         lurchers = self.get_lurchers_to_fix()
 
@@ -316,7 +316,7 @@ class StandardizationBackfillService:
 
         return {"total": len(lurchers), "processed": processed, "failed": failed}
 
-    def fix_staffordshire(self, dry_run: bool = False) -> Dict[str, Any]:
+    def fix_staffordshire(self, dry_run: bool = False) -> dict[str, Any]:
         """Fix all Staffordshire breed names."""
         staffies = self.get_staffordshires_to_fix()
 
@@ -364,7 +364,7 @@ class StandardizationBackfillService:
         batch_size: int = 100,
         dry_run: bool = False,
         show_progress: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Backfill breed standardization for all animals."""
         animals = self.get_animals_to_backfill(limit)
 

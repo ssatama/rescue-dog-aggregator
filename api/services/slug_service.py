@@ -1,6 +1,5 @@
 import re
 import unicodedata
-from typing import Optional
 
 
 def generate_organization_slug(name: str, org_id: int) -> str:
@@ -21,7 +20,7 @@ def generate_organization_slug(name: str, org_id: int) -> str:
     return f"{clean_name}-{org_id}"
 
 
-def generate_animal_slug(name: str, standardized_breed: Optional[str], breed: Optional[str], animal_id: int) -> str:
+def generate_animal_slug(name: str, standardized_breed: str | None, breed: str | None, animal_id: int) -> str:
     """
     Generate SEO-friendly slug for animal using breed information.
 

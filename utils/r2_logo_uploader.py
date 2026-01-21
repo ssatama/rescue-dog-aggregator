@@ -3,7 +3,6 @@
 import logging
 import os
 from pathlib import Path
-from typing import Dict, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -31,7 +30,7 @@ class R2OrganizationLogoUploader:
     }
 
     @classmethod
-    def upload_organization_logo(cls, org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]:
+    def upload_organization_logo(cls, org_id: str, logo_url: str, force_upload: bool = False) -> dict[str, str]:
         """
         Upload organization logo to R2 with multiple size presets.
 
@@ -133,7 +132,7 @@ class R2OrganizationLogoUploader:
         return Path(path).exists()
 
     @classmethod
-    def _upload_local_file(cls, org_id: str, file_path: str) -> Optional[str]:
+    def _upload_local_file(cls, org_id: str, file_path: str) -> str | None:
         """Upload a local file to R2 and return the URL."""
         try:
             # Resolve the file path
@@ -195,7 +194,7 @@ class R2OrganizationLogoUploader:
             return None
 
     @classmethod
-    def get_logo_urls(cls, org_id: str, base_url: str) -> Dict[str, str]:
+    def get_logo_urls(cls, org_id: str, base_url: str) -> dict[str, str]:
         """
         Generate logo URLs for different sizes from an R2 base URL.
 

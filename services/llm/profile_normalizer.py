@@ -9,7 +9,7 @@ Following CLAUDE.md principles:
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class NormalizationRules:
     """Configuration for normalization rules."""
 
-    energy_mappings: Dict[str, str] = field(
+    energy_mappings: dict[str, str] = field(
         default_factory=lambda: {
             "moderate": "medium",
             "very_energetic": "very_high",
@@ -30,7 +30,7 @@ class NormalizationRules:
         }
     )
 
-    trainability_mappings: Dict[str, str] = field(
+    trainability_mappings: dict[str, str] = field(
         default_factory=lambda: {
             "easily_trainable": "easy",
             "easy_to_train": "easy",
@@ -42,7 +42,7 @@ class NormalizationRules:
         }
     )
 
-    compatibility_mappings: Dict[str, Dict[str, str]] = field(
+    compatibility_mappings: dict[str, dict[str, str]] = field(
         default_factory=lambda: {
             "children": {
                 "selective": "older_children",
@@ -68,7 +68,7 @@ class NormalizationRules:
         }
     )
 
-    default_values: Dict[str, Any] = field(
+    default_values: dict[str, Any] = field(
         default_factory=lambda: {
             "energy_level": "medium",
             "trainability": "moderate",
@@ -82,7 +82,7 @@ class NormalizationRules:
         }
     )
 
-    list_constraints: Dict[str, Dict[str, Any]] = field(
+    list_constraints: dict[str, dict[str, Any]] = field(
         default_factory=lambda: {
             "personality_traits": {
                 "min": 3,
@@ -103,7 +103,7 @@ class NormalizationRules:
 class ProfileNormalizer:
     """Normalizes LLM profile outputs to match schema requirements."""
 
-    def __init__(self, rules: Optional[NormalizationRules] = None):
+    def __init__(self, rules: NormalizationRules | None = None):
         """
         Initialize normalizer with rules.
 
@@ -112,7 +112,7 @@ class ProfileNormalizer:
         """
         self.rules = rules or NormalizationRules()
 
-    def normalize(self, profile: Dict[str, Any]) -> Dict[str, Any]:
+    def normalize(self, profile: dict[str, Any]) -> dict[str, Any]:
         """
         Normalize a complete profile.
 
@@ -246,11 +246,11 @@ class ProfileNormalizer:
 
     def normalize_list_field(
         self,
-        values: List[str],
+        values: list[str],
         min_items: int,
         max_items: int,
-        default_item: Optional[str] = None,
-    ) -> List[str]:
+        default_item: str | None = None,
+    ) -> list[str]:
         """Normalize list fields to meet constraints."""
         if not values:
             values = []
@@ -276,7 +276,7 @@ class ProfileNormalizer:
 
         return values
 
-    def normalize_boolean(self, value: Any) -> Optional[bool]:
+    def normalize_boolean(self, value: Any) -> bool | None:
         """Normalize boolean values."""
         if value is None:
             return None
@@ -295,7 +295,7 @@ class ProfileNormalizer:
 
         return None
 
-    def normalize_numeric(self, value: Any) -> Optional[Union[int, float]]:
+    def normalize_numeric(self, value: Any) -> int | float | None:
         """Normalize numeric values."""
         if value is None:
             return None
@@ -317,7 +317,7 @@ class ProfileNormalizer:
         except (ValueError, TypeError):
             return None
 
-    def normalize_confidence_scores(self, scores: Dict[str, Any]) -> Dict[str, float]:
+    def normalize_confidence_scores(self, scores: dict[str, Any]) -> dict[str, float]:
         """Normalize confidence scores."""
         normalized = {}
 

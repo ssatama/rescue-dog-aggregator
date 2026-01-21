@@ -88,7 +88,7 @@ def sample_final_prompt():
     return "Analyze this dog photo for Instagram quality..."
 
 
-@pytest.mark.management
+@pytest.mark.integration
 class TestInstagramPhotoAnalyzer:
     """Test the Instagram photo analyzer batch processing script."""
 
@@ -489,7 +489,7 @@ class TestInstagramPhotoAnalyzer:
             assert "Max" in output or "error" in output.lower()
 
 
-@pytest.mark.management
+@pytest.mark.integration
 class TestInstagramPhotoAnalyzerCLI:
     """Test the command-line interface for the analyzer."""
 
@@ -540,7 +540,7 @@ class TestInstagramPhotoAnalyzerCLI:
             pass
 
 
-@pytest.mark.management
+@pytest.mark.integration
 class TestInstagramPhotoAnalyzerIntegration:
     """Integration-style tests for full workflow."""
 

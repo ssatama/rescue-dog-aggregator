@@ -10,8 +10,9 @@ Following CLAUDE.md principles:
 import asyncio
 import json
 import logging
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from typing import Any, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ class RetryConfig:
         initial_delay: float = 1.0,
         backoff_factor: float = 2.0,
         max_delay: float = 30.0,
-        fallback_models: Optional[List[str]] = None,
+        fallback_models: list[str] | None = None,
     ):
         """
         Initialize retry configuration.
@@ -49,7 +50,7 @@ class RetryConfig:
 class RetryHandler:
     """Handles retry logic with exponential backoff and model fallback."""
 
-    def __init__(self, config: Optional[RetryConfig] = None):
+    def __init__(self, config: RetryConfig | None = None):
         """Initialize with retry configuration."""
         self.config = config or RetryConfig()
         self.retry_stats = {
@@ -60,7 +61,7 @@ class RetryHandler:
             "total_delay_seconds": 0.0,
         }
 
-    async def execute_with_retry(self, func: Callable, *args, model_override: Optional[str] = None, **kwargs) -> Any:
+    async def execute_with_retry(self, func: Callable, *args, model_override: str | None = None, **kwargs) -> Any:
         """
         Execute function with retry logic and model fallback.
 
@@ -113,7 +114,7 @@ class RetryHandler:
                     if "prompt_adjustment" in kwargs:
                         kwargs["prompt_adjustment"] = "Please return valid JSON only, no markdown formatting."
 
-                except asyncio.TimeoutError as e:
+                except TimeoutError as e:
                     last_error = e
                     logger.warning(f"Timeout with {model} (attempt {attempt + 1})")
 
@@ -139,7 +140,7 @@ class RetryHandler:
         logger.error(f"All retry attempts failed after {total_attempts} tries")
         raise last_error or Exception("All retry attempts failed")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get retry statistics."""
         return self.retry_stats.copy()
 
@@ -154,7 +155,7 @@ class RetryHandler:
         }
 
 
-def with_retry(config: Optional[RetryConfig] = None):
+def with_retry(config: RetryConfig | None = None):
     """
     Decorator for adding retry logic to async functions.
 

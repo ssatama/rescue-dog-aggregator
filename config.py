@@ -3,7 +3,6 @@ import logging
 import os
 import socket
 import sys
-from typing import List
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
@@ -189,7 +188,7 @@ logger.debug(f"[config.py]   password: {'[SET]' if DB_CONFIG['password'] else '[
 # ENVIRONMENT already defined above
 
 
-def parse_cors_origins() -> List[str]:
+def parse_cors_origins() -> list[str]:
     """Parse and validate ALLOWED_ORIGINS from environment variable."""
     origins_env = os.getenv("ALLOWED_ORIGINS", "")
 
@@ -205,7 +204,7 @@ def parse_cors_origins() -> List[str]:
             return default_origins
         else:
             # Production requires explicit configuration
-            raise ValueError("ALLOWED_ORIGINS must be set in production environment. " "Example: ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com")
+            raise ValueError("ALLOWED_ORIGINS must be set in production environment. Example: ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com")
 
     # Parse comma-separated origins
     origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]

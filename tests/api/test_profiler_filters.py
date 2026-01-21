@@ -142,7 +142,7 @@ class TestProfilerFilterCombinations:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestProfilerFilterAPI:
     """Integration tests for profiler filter API endpoints."""
 

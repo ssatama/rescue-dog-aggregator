@@ -7,7 +7,6 @@ Run this before applying the database migration that adds NOT NULL constraint.
 import logging
 import os
 import sys
-from typing import List, Tuple
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -51,7 +50,7 @@ class SlugBackfillService:
             self.conn.close()
             logger.info("Database connection closed")
 
-    def get_animals_without_slugs(self) -> List[Tuple]:
+    def get_animals_without_slugs(self) -> list[tuple]:
         """Get animals that have NULL or empty slugs."""
         try:
             cursor = self.conn.cursor()

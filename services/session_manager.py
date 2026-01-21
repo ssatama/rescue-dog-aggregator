@@ -16,7 +16,6 @@ Following CLAUDE.md principles:
 
 import logging
 from datetime import datetime
-from typing import Dict, Optional, Set, Tuple
 
 import psycopg2
 
@@ -26,10 +25,10 @@ class SessionManager:
 
     def __init__(
         self,
-        db_config: Dict[str, str],
+        db_config: dict[str, str],
         organization_id: int,
         skip_existing_animals: bool = False,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         connection_pool=None,
     ):
         """Initialize SessionManager with configuration.
@@ -47,8 +46,8 @@ class SessionManager:
         self.logger = logger or logging.getLogger(__name__)
         self.connection_pool = connection_pool
         self.conn = None
-        self.current_scrape_session: Optional[datetime] = None
-        self.found_external_ids: Set[str] = set()
+        self.current_scrape_session: datetime | None = None
+        self.found_external_ids: set[str] = set()
 
     def connect(self) -> bool:
         """Establish database connection.
@@ -97,7 +96,7 @@ class SessionManager:
             self.logger.error(f"Error starting scrape session: {e}")
             return False
 
-    def get_current_session(self) -> Optional[datetime]:
+    def get_current_session(self) -> datetime | None:
         """Get current scrape session timestamp.
 
         Returns:
@@ -433,7 +432,7 @@ class SessionManager:
                     cursor.close()
 
                     if rows_affected > 0:
-                        self.logger.info(f"Marked {rows_affected} actually-found animals as seen " f"(from {len(self.found_external_ids)} found external IDs)")
+                        self.logger.info(f"Marked {rows_affected} actually-found animals as seen (from {len(self.found_external_ids)} found external IDs)")
 
                     return rows_affected
             except Exception as e:
@@ -473,7 +472,7 @@ class SessionManager:
             cursor.close()
 
             if rows_affected > 0:
-                self.logger.info(f"Marked {rows_affected} actually-found animals as seen " f"(from {len(self.found_external_ids)} found external IDs)")
+                self.logger.info(f"Marked {rows_affected} actually-found animals as seen (from {len(self.found_external_ids)} found external IDs)")
 
             return rows_affected
 
@@ -483,7 +482,7 @@ class SessionManager:
                 self.conn.rollback()
             return 0
 
-    def get_stale_animals_summary(self) -> Dict[Tuple[str, str], int]:
+    def get_stale_animals_summary(self) -> dict[tuple[str, str], int]:
         """Get summary of animals by availability confidence and status.
 
         Returns:
@@ -699,7 +698,7 @@ class SessionManager:
             if not result or not result[0] or (len(result) > 1 and result[1] < minimum_historical_scrapes):
                 # No historical data or insufficient data - use absolute minimum
                 scrape_count = result[1] if (result and len(result) > 1) else 0
-                self.logger.info(f"Insufficient historical data for organization_id {self.organization_id} " f"({scrape_count} scrapes). Using absolute minimum threshold.")
+                self.logger.info(f"Insufficient historical data for organization_id {self.organization_id} ({scrape_count} scrapes). Using absolute minimum threshold.")
 
                 # Check if low count is due to skip_existing_animals filtering (for new organizations)
                 if self.skip_existing_animals and animals_found == 0 and total_animals_before_filter > 0:
@@ -719,7 +718,7 @@ class SessionManager:
                         )
                         return False
 
-                    self.logger.warning(f"Potential failure detected: {animals_found} animals found " f"(below absolute minimum of {absolute_minimum}) for new organization")
+                    self.logger.warning(f"Potential failure detected: {animals_found} animals found (below absolute minimum of {absolute_minimum}) for new organization")
                     return True
                 return False
 
@@ -800,7 +799,7 @@ class SessionManager:
                 return False
 
             # Zero animals with no skip filtering or zero before filtering = catastrophic
-            self.logger.error(f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. " f"This indicates complete scraper failure or website unavailability.")
+            self.logger.error(f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. This indicates complete scraper failure or website unavailability.")
             return True
 
         # Check against absolute minimum threshold

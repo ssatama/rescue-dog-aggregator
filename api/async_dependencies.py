@@ -11,7 +11,7 @@ Following CLAUDE.md principles:
 import logging
 import os
 import sys
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import asyncpg
 from fastapi import HTTPException
