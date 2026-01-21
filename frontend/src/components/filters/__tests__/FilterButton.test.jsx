@@ -32,7 +32,7 @@ describe("FilterButton", () => {
     });
 
     it("renders without crashing when children is missing", () => {
-      render(<FilterButton {...defaultProps} children={undefined} />);
+      render(<FilterButton {...defaultProps}>{undefined}</FilterButton>);
       expect(screen.getByRole("button")).toBeInTheDocument();
     });
   });

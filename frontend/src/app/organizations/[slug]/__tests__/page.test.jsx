@@ -22,9 +22,11 @@ jest.mock("next/navigation", () => ({
 }));
 
 // mock Loading
-jest.mock("../../../../components/ui/Loading", () => () => (
-  <div data-testid="loading" />
-));
+jest.mock("../../../../components/ui/Loading", () => {
+  const MockLoading = () => <div data-testid="loading" />;
+  MockLoading.displayName = "MockLoading";
+  return MockLoading;
+});
 
 // Console error suppression is handled globally in jest.setup.js
 
