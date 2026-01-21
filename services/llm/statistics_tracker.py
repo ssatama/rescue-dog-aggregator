@@ -7,7 +7,7 @@ Following CLAUDE.md principles:
 - Clear interfaces
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class StatisticsTracker:
@@ -18,14 +18,14 @@ class StatisticsTracker:
         self.processed_count = 0
         self.success_count = 0
         self.error_count = 0
-        self.errors: List[Dict[str, Any]] = []
+        self.errors: list[dict[str, Any]] = []
 
     def record_success(self) -> None:
         """Record a successful processing."""
         self.processed_count += 1
         self.success_count += 1
 
-    def record_error(self, error_info: Dict[str, Any]) -> None:
+    def record_error(self, error_info: dict[str, Any]) -> None:
         """
         Record a processing error.
 
@@ -36,7 +36,7 @@ class StatisticsTracker:
         self.error_count += 1
         self.errors.append(error_info)
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """
         Get processing summary.
 
@@ -51,7 +51,7 @@ class StatisticsTracker:
             "errors": self.errors[:10],  # First 10 errors
         }
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get processing statistics (alias for get_summary).
 

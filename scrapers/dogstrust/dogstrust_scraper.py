@@ -7,7 +7,7 @@ import random
 import re
 import time
 from threading import Lock
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 from bs4 import BeautifulSoup
@@ -19,7 +19,6 @@ USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 if USE_PLAYWRIGHT:
     from services.playwright_browser_service import (
         PlaywrightOptions,
-        get_playwright_service,
     )
 else:
     from selenium.webdriver.common.by import By
@@ -65,7 +64,7 @@ class DogsTrustScraper(BaseScraper):
         self.listing_url = f"{self.base_url}/rehoming/dogs"
         self.organization_name = self.org_config.name
 
-    def _get_filtered_animals(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
+    def _get_filtered_animals(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Get list of animals and apply skip_existing_animals filtering.
 
         Uses BaseScraper._filter_existing_animals() which records ALL external_ids
@@ -85,7 +84,7 @@ class DogsTrustScraper(BaseScraper):
         # This is critical for mark_skipped_animals_as_seen() to work correctly
         return self._filter_existing_animals(animals)
 
-    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Process animals in parallel batches using ThreadPoolExecutor.
 
         This method follows the Many Tears pattern for parallel processing,
@@ -173,7 +172,7 @@ class DogsTrustScraper(BaseScraper):
 
         return all_dogs_data
 
-    def collect_data(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
+    def collect_data(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Collect all available dog data from listing pages.
 
         This method implements the BaseScraper template method pattern with
@@ -202,7 +201,7 @@ class DogsTrustScraper(BaseScraper):
             self.logger.error(f"Error collecting data from Dogs Trust: {e}")
             return []
 
-    def get_animal_list(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
+    def get_animal_list(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Fetch list of available dogs using browser automation with pagination.
 
         Handles JavaScript-rendered listing pages by using headless browser.
@@ -221,7 +220,7 @@ class DogsTrustScraper(BaseScraper):
             return asyncio.run(self._get_animal_list_playwright(max_pages_to_scrape))
         return self._get_animal_list_selenium(max_pages_to_scrape)
 
-    def _get_animal_list_selenium(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
+    def _get_animal_list_selenium(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Fetch list of available dogs using Selenium WebDriver with pagination."""
         driver = self._setup_selenium_driver()
         all_dogs = []
@@ -491,7 +490,7 @@ class DogsTrustScraper(BaseScraper):
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs
 
-    async def _get_animal_list_playwright(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
+    async def _get_animal_list_playwright(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Fetch list of available dogs using Playwright with pagination.
 
         Async implementation using Playwright for Browserless v2 compatibility.
@@ -822,7 +821,7 @@ class DogsTrustScraper(BaseScraper):
         self.logger.warning("Could not detect max pages, defaulting to 47")
         return 47
 
-    def _extract_dogs_from_page(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _extract_dogs_from_page(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract dog information from a single listing page.
 
         Uses CSS selectors identified in analysis phase:
@@ -866,7 +865,7 @@ class DogsTrustScraper(BaseScraper):
 
         return dogs
 
-    def _extract_card_data(self, link_element) -> Dict[str, Any]:
+    def _extract_card_data(self, link_element) -> dict[str, Any]:
         """Extract data from a single dog card element.
 
         Args:
@@ -919,7 +918,7 @@ class DogsTrustScraper(BaseScraper):
         match = re.search(r"/rehoming/dogs/[^/]+/(\d+)/?$", url)
         return match.group(1) if match else url.split("/")[-1] if url.split("/")[-1].isdigit() else "unknown"
 
-    def _scrape_animal_details_http(self, adoption_url: str) -> Dict[str, Any]:
+    def _scrape_animal_details_http(self, adoption_url: str) -> dict[str, Any]:
         """Scrape detailed information from individual dog page using HTTP requests.
 
         Uses standard HTTP requests as analysis showed detail pages don't require JavaScript.
@@ -1142,7 +1141,7 @@ class DogsTrustScraper(BaseScraper):
 
         return ""
 
-    def _extract_additional_properties(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_additional_properties(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract additional Dogs Trust-specific properties.
 
         This method aggregates all additional property extraction methods
@@ -1210,7 +1209,7 @@ class DogsTrustScraper(BaseScraper):
 
         return ""
 
-    def _extract_living_situation(self, soup: BeautifulSoup) -> Dict[str, str]:
+    def _extract_living_situation(self, soup: BeautifulSoup) -> dict[str, str]:
         """Extract living situation information from Dogs Trust detail page.
 
         Uses targeted DOM navigation to find "Living off site" label and its value.
@@ -1248,7 +1247,7 @@ class DogsTrustScraper(BaseScraper):
 
         return living_situation
 
-    def _extract_compatibility(self, soup: BeautifulSoup) -> Dict[str, str]:
+    def _extract_compatibility(self, soup: BeautifulSoup) -> dict[str, str]:
         """Extract compatibility information from Dogs Trust detail page.
 
         Looks for "May live with" label and extracts the associated value which
@@ -1310,7 +1309,7 @@ class DogsTrustScraper(BaseScraper):
 
         return compatibility
 
-    def _extract_behavioral_traits(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_behavioral_traits(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract behavioral traits (good with children/dogs/cats) from Dogs Trust detail page.
 
         Looks for "Can live with" section and parses the list items to determine

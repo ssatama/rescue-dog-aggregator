@@ -9,7 +9,6 @@ query performance, and generate optimization recommendations.
 import argparse
 import logging
 from datetime import datetime
-from typing import Dict, List
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -46,7 +45,7 @@ class IndexMonitor:
             logger.error(f"Failed to capture index stats: {e}")
             self.conn.rollback()
 
-    def get_unused_indexes(self, days: int = 7) -> List[Dict]:
+    def get_unused_indexes(self, days: int = 7) -> list[dict]:
         """Find indexes that haven't been used in the specified period."""
         query = """
             SELECT 
@@ -63,7 +62,7 @@ class IndexMonitor:
         self.cursor.execute(query)
         return self.cursor.fetchall()
 
-    def get_index_effectiveness(self) -> List[Dict]:
+    def get_index_effectiveness(self) -> list[dict]:
         """Calculate effectiveness score for all indexes."""
         query = """
             SELECT 
@@ -84,7 +83,7 @@ class IndexMonitor:
         self.cursor.execute(query)
         return self.cursor.fetchall()
 
-    def get_duplicate_indexes(self) -> List[Dict]:
+    def get_duplicate_indexes(self) -> list[dict]:
         """Find potentially duplicate indexes."""
         query = """
             WITH index_info AS (
@@ -121,7 +120,7 @@ class IndexMonitor:
         self.cursor.execute(query)
         return self.cursor.fetchall()
 
-    def get_missing_indexes_recommendation(self) -> List[Dict]:
+    def get_missing_indexes_recommendation(self) -> list[dict]:
         """Recommend potential missing indexes based on query patterns."""
         query = """
             SELECT 

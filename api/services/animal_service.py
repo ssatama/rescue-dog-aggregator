@@ -9,7 +9,7 @@ abstracting away database details and providing a clean API for routes.
 
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from psycopg2.extras import RealDictCursor
 
@@ -38,7 +38,7 @@ class AnimalService:
         self.cursor = cursor
         self.batch_executor = create_batch_executor(cursor)
 
-    def get_animals(self, filters: AnimalFilterRequest) -> List[Animal]:
+    def get_animals(self, filters: AnimalFilterRequest) -> list[Animal]:
         """
         Get animals with filtering and pagination.
 
@@ -83,7 +83,7 @@ class AnimalService:
                 error_code="INTERNAL_ERROR",
             )
 
-    def get_animals_for_sitemap(self, filters: AnimalFilterRequest) -> List[Animal]:
+    def get_animals_for_sitemap(self, filters: AnimalFilterRequest) -> list[Animal]:
         """
         Get animals filtered for sitemap generation with meaningful descriptions.
 
@@ -125,7 +125,7 @@ class AnimalService:
                 error_code="INTERNAL_ERROR",
             )
 
-    def _filter_by_description_quality(self, animals: List[Animal]) -> List[Animal]:
+    def _filter_by_description_quality(self, animals: list[Animal]) -> list[Animal]:
         """
         Filter animals by description quality for sitemap inclusion.
 
@@ -212,7 +212,7 @@ class AnimalService:
         # If 2+ patterns match, likely fallback content
         return pattern_count >= 2
 
-    def _get_animals_with_fallback(self, filters: AnimalFilterRequest) -> List[Animal]:
+    def _get_animals_with_fallback(self, filters: AnimalFilterRequest) -> list[Animal]:
         """
         Get animals with recent_with_fallback curation logic.
 
@@ -250,7 +250,7 @@ class AnimalService:
         logger.info(f"Found {len(fallback_rows)} animals in fallback")
         return self._build_animals_response(fallback_rows)
 
-    def _build_animals_response(self, animal_rows) -> List[Animal]:
+    def _build_animals_response(self, animal_rows) -> list[Animal]:
         """
         Build Animal response from database rows.
 
@@ -302,7 +302,7 @@ class AnimalService:
                 raise
         return animals
 
-    def get_animal_by_slug(self, animal_slug: str) -> Optional[Animal]:
+    def get_animal_by_slug(self, animal_slug: str) -> Animal | None:
         """
         Get a single animal by slug, regardless of status.
 
@@ -371,7 +371,7 @@ class AnimalService:
                 error_code="INTERNAL_ERROR",
             )
 
-    def get_animal_by_id(self, animal_id: int) -> Optional[Animal]:
+    def get_animal_by_id(self, animal_id: int) -> Animal | None:
         """
         Get a single animal by ID, regardless of status.
 
@@ -503,7 +503,7 @@ class AnimalService:
 
         return Animal(**animal_dict)
 
-    def get_distinct_breeds(self, breed_group: Optional[str] = None) -> List[str]:
+    def get_distinct_breeds(self, breed_group: str | None = None) -> list[str]:
         """Get distinct standardized breeds."""
         try:
             query = """
@@ -535,7 +535,7 @@ class AnimalService:
                 error_code="INTERNAL_ERROR",
             )
 
-    def get_distinct_breed_groups(self) -> List[str]:
+    def get_distinct_breed_groups(self) -> list[str]:
         """Get distinct breed groups."""
         try:
             # First try getting breed groups from the properties field
@@ -577,7 +577,7 @@ class AnimalService:
                 error_code="INTERNAL_ERROR",
             )
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get aggregated statistics about animals and organizations."""
         try:
             stats = {}
@@ -999,7 +999,7 @@ class AnimalService:
         breed_group: str = None,
         min_count: int = 0,
         limit: int = 10,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Get breeds with sample dog images for the breeds overview page."""
         try:
             # Build WHERE conditions for counting ALL dogs (not just with images)
@@ -1204,7 +1204,7 @@ class AnimalService:
                 error_code="INTERNAL_ERROR",
             )
 
-    def _build_animals_query(self, filters: AnimalFilterRequest) -> tuple[str, List[Any]]:
+    def _build_animals_query(self, filters: AnimalFilterRequest) -> tuple[str, list[Any]]:
         """Build the animals query with filters."""
         # Base query selects distinct animals and joins with organizations
         # Include dog_profiler_data for sitemap and other requests that need LLM content
@@ -1444,7 +1444,7 @@ class AnimalService:
                 error_code="INTERNAL_ERROR",
             )
 
-    def _build_count_base_conditions(self, filters: AnimalFilterCountRequest) -> tuple[List[str], List[Any]]:
+    def _build_count_base_conditions(self, filters: AnimalFilterCountRequest) -> tuple[list[str], list[Any]]:
         """Build base WHERE conditions for filter counting queries."""
         conditions = [
             "a.animal_type = %s",
@@ -1525,10 +1525,10 @@ class AnimalService:
 
     def _get_size_counts(
         self,
-        base_conditions: List[str],
-        base_params: List[Any],
+        base_conditions: list[str],
+        base_params: list[Any],
         filters: AnimalFilterCountRequest,
-    ) -> List[FilterOption]:
+    ) -> list[FilterOption]:
         """Get counts for each size option, excluding current size filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1592,10 +1592,10 @@ class AnimalService:
 
     def _get_age_counts(
         self,
-        base_conditions: List[str],
-        base_params: List[Any],
+        base_conditions: list[str],
+        base_params: list[Any],
         filters: AnimalFilterCountRequest,
-    ) -> List[FilterOption]:
+    ) -> list[FilterOption]:
         """Get counts for each age category, excluding current age filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1636,10 +1636,10 @@ class AnimalService:
 
     def _get_sex_counts(
         self,
-        base_conditions: List[str],
-        base_params: List[Any],
+        base_conditions: list[str],
+        base_params: list[Any],
         filters: AnimalFilterCountRequest,
-    ) -> List[FilterOption]:
+    ) -> list[FilterOption]:
         """Get counts for each sex option, excluding current sex filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1677,10 +1677,10 @@ class AnimalService:
 
     def _get_breed_counts(
         self,
-        base_conditions: List[str],
-        base_params: List[Any],
+        base_conditions: list[str],
+        base_params: list[Any],
         filters: AnimalFilterCountRequest,
-    ) -> List[FilterOption]:
+    ) -> list[FilterOption]:
         """Get counts for top breeds, excluding current breed filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1732,10 +1732,10 @@ class AnimalService:
 
     def _get_organization_counts(
         self,
-        base_conditions: List[str],
-        base_params: List[Any],
+        base_conditions: list[str],
+        base_params: list[Any],
         filters: AnimalFilterCountRequest,
-    ) -> List[FilterOption]:
+    ) -> list[FilterOption]:
         """Get counts for each organization, excluding current organization filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1776,10 +1776,10 @@ class AnimalService:
 
     def _get_location_country_counts(
         self,
-        base_conditions: List[str],
-        base_params: List[Any],
+        base_conditions: list[str],
+        base_params: list[Any],
         filters: AnimalFilterCountRequest,
-    ) -> List[FilterOption]:
+    ) -> list[FilterOption]:
         """Get counts for each location country, excluding current location country filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1821,10 +1821,10 @@ class AnimalService:
 
     def _get_available_country_counts(
         self,
-        base_conditions: List[str],
-        base_params: List[Any],
+        base_conditions: list[str],
+        base_params: list[Any],
         filters: AnimalFilterCountRequest,
-    ) -> List[FilterOption]:
+    ) -> list[FilterOption]:
         """Get counts for each available-to country, excluding current available country filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1867,10 +1867,10 @@ class AnimalService:
 
     def _get_available_region_counts(
         self,
-        base_conditions: List[str],
-        base_params: List[Any],
+        base_conditions: list[str],
+        base_params: list[Any],
         filters: AnimalFilterCountRequest,
-    ) -> List[FilterOption]:
+    ) -> list[FilterOption]:
         """Get counts for each available-to region for the selected country."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1918,10 +1918,10 @@ class AnimalService:
 
     def _get_primary_breed_counts(
         self,
-        base_conditions: List[str],
-        base_params: List[Any],
+        base_conditions: list[str],
+        base_params: list[Any],
         filters: AnimalFilterCountRequest,
-    ) -> List[FilterOption]:
+    ) -> list[FilterOption]:
         """Get counts for primary breeds, excluding current primary_breed filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
@@ -1974,10 +1974,10 @@ class AnimalService:
 
     def _get_breed_type_counts(
         self,
-        base_conditions: List[str],
-        base_params: List[Any],
+        base_conditions: list[str],
+        base_params: list[Any],
         filters: AnimalFilterCountRequest,
-    ) -> List[FilterOption]:
+    ) -> list[FilterOption]:
         """Get counts for breed types, excluding current breed_type filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()

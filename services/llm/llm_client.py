@@ -11,7 +11,7 @@ Following CLAUDE.md principles:
 import json
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any
 
 import httpx
 from dotenv import load_dotenv
@@ -41,12 +41,12 @@ class LLMClient:
 
     async def call_openrouter_api(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         model: str = "google/gemini-3-flash-preview",
         temperature: float = 0.7,
         max_tokens: int = 4000,
         timeout: float = 30.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Make API call to OpenRouter.
 
@@ -90,7 +90,7 @@ class LLMClient:
 
             return response.json()
 
-    def extract_content_from_response(self, response_data: Dict[str, Any]) -> str:
+    def extract_content_from_response(self, response_data: dict[str, Any]) -> str:
         """
         Extract content from API response.
 
@@ -132,7 +132,7 @@ class LLMClient:
 
         return "\n".join(json_lines)
 
-    def parse_json_response(self, content: str, model: str = None) -> Dict[str, Any]:
+    def parse_json_response(self, content: str, model: str = None) -> dict[str, Any]:
         """
         Parse JSON content and add metadata.
 
@@ -156,12 +156,12 @@ class LLMClient:
 
     async def call_api_and_parse(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         model: str = "google/gemini-3-flash-preview",
         temperature: float = 0.7,
         max_tokens: int = 4000,
         timeout: float = 30.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Complete API call with content extraction and parsing.
 
@@ -208,7 +208,7 @@ class LLMClient:
         temperature: float = 0.3,
         max_tokens: int = 1000,
         timeout: float = 30.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Call OpenRouter vision API for image analysis.
 

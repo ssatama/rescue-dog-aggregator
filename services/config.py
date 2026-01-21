@@ -12,7 +12,6 @@ Following CLAUDE.md principles:
 import os
 from enum import Enum
 from functools import lru_cache
-from typing import Dict, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -59,14 +58,14 @@ class LLMModelConfig(BaseModel):
     """
 
     default_model: str = Field(default="openrouter/auto", description="Default model to use")
-    temperature_ranges: Dict[str, tuple] = Field(
+    temperature_ranges: dict[str, tuple] = Field(
         default_factory=lambda: {
             "description_cleaning": (0.2, 0.4),
             "dog_profiler": (0.7, 0.9),
             "translation": (0.1, 0.3),
         }
     )
-    max_tokens: Optional[int] = Field(default=None, description="Maximum tokens per request")
+    max_tokens: int | None = Field(default=None, description="Maximum tokens per request")
 
 
 class CacheConfig(BaseModel):
@@ -270,7 +269,7 @@ class LLMConfig(BaseModel):
     environment: Environment = Field(default=Environment.DEVELOPMENT)
 
     # API Configuration
-    api_key: Optional[str] = Field(default=None, description="OpenRouter API key")
+    api_key: str | None = Field(default=None, description="OpenRouter API key")
     base_url: str = Field(default="https://openrouter.ai/api/v1", description="API base URL")
     timeout_seconds: float = Field(default=30.0, gt=0, description="Request timeout")
 
@@ -287,7 +286,7 @@ class LLMConfig(BaseModel):
     batch: BatchConfig = Field(default_factory=BatchConfig)
 
     # Feature Flags
-    features: Dict[str, bool] = Field(
+    features: dict[str, bool] = Field(
         default_factory=lambda: {
             "description_cleaning_enabled": True,
             "dog_profiler_enabled": True,
@@ -512,7 +511,7 @@ class LLMConfigLoader:
         )
 
     @staticmethod
-    def _load_features(environment: Environment) -> Dict[str, bool]:
+    def _load_features(environment: Environment) -> dict[str, bool]:
         """
         Load feature flags for enabling/disabling LLM functionality.
 

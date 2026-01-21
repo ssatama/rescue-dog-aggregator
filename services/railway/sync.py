@@ -4,7 +4,6 @@ import time
 from contextlib import contextmanager
 from datetime import date, datetime
 from enum import Enum
-from typing import Dict
 
 from sqlalchemy import text
 
@@ -32,7 +31,7 @@ class SyncMode(Enum):
 
 
 # Safety thresholds for rebuild mode validation
-SAFETY_THRESHOLDS: Dict[str, int] = {
+SAFETY_THRESHOLDS: dict[str, int] = {
     "organizations": 5,  # Must have at least 5 organizations
     "animals": 50,  # Must have at least 50 animals
     "scrape_logs": 10,  # Must have at least 10 logs
@@ -1152,7 +1151,7 @@ def _validate_sync_integrity_in_transaction(session) -> bool:
                 return False
 
             if local_count != railway_count:
-                logger.error(f"Sync validation failed for {table}: " f"local={local_count}, railway={railway_count}")
+                logger.error(f"Sync validation failed for {table}: local={local_count}, railway={railway_count}")
                 return False
 
             logger.info(f"Sync validation passed for {table}: {local_count} records")
@@ -1197,7 +1196,7 @@ def validate_sync_integrity() -> bool:
             railway_count = get_railway_data_count(table)
 
             if local_count != railway_count:
-                logger.error(f"Sync validation failed for {table}: " f"local={local_count}, railway={railway_count}")
+                logger.error(f"Sync validation failed for {table}: local={local_count}, railway={railway_count}")
                 return False
 
             logger.info(f"Sync validation passed for {table}: {local_count} records")

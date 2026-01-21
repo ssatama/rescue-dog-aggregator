@@ -1,6 +1,6 @@
 """Animal Rescue Bosnia scraper implementation."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import requests
 from bs4 import BeautifulSoup
@@ -11,7 +11,7 @@ from scrapers.base_scraper import BaseScraper
 class AnimalRescueBosniaScraper(BaseScraper):
     """Scraper for Animal Rescue Bosnia website."""
 
-    def __init__(self, organization_id: Optional[int] = None, config_id: Optional[str] = None):
+    def __init__(self, organization_id: int | None = None, config_id: str | None = None):
         """Initialize the scraper with config."""
         super().__init__(organization_id=organization_id, config_id=config_id)
 
@@ -19,7 +19,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
         self.base_url = "https://www.animal-rescue-bosnia.org"
         self.listing_url = f"{self.base_url}/our-dogs/"
 
-    def get_animal_list(self) -> List[Dict[str, str]]:
+    def get_animal_list(self) -> list[dict[str, str]]:
         """Get list of available animals from listing page.
 
         Returns:
@@ -115,7 +115,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             self.logger.error(f"Error fetching animal list: {e}")
             return []
 
-    def scrape_animal_details(self, url: str) -> Optional[Dict[str, Any]]:
+    def scrape_animal_details(self, url: str) -> dict[str, Any] | None:
         """Scrape detailed information from a single animal page.
 
         Args:
@@ -285,7 +285,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             self.logger.error(f"Error scraping animal details from {url}: {e}")
             return None
 
-    def _calculate_age_text(self, date_of_birth: Optional[str]) -> Optional[str]:
+    def _calculate_age_text(self, date_of_birth: str | None) -> str | None:
         """Calculate age text from date of birth for standardization."""
         if not date_of_birth:
             return None
@@ -347,7 +347,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             self.logger.warning(f"Could not calculate age from '{date_of_birth}': {e}")
             return None
 
-    def _standardize_sex(self, gender: Optional[str]) -> Optional[str]:
+    def _standardize_sex(self, gender: str | None) -> str | None:
         """Standardize sex field from gender for frontend filters.
 
         Frontend expects "Male"/"Female" (not "M"/"F") for filters to work.
@@ -363,7 +363,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
         else:
             return None
 
-    def _extract_size_from_weight(self, weight: Optional[str]) -> Optional[str]:
+    def _extract_size_from_weight(self, weight: str | None) -> str | None:
         """Extract size category from weight."""
         if not weight:
             return None
@@ -394,7 +394,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             self.logger.warning(f"Could not extract size from weight '{weight}': {e}")
             return None
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """Collect all animal data from Animal Rescue Bosnia.
 
         This method integrates with BaseScraper which handles:
@@ -445,7 +445,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             self.logger.error(f"Error during data collection: {e}")
             return []
 
-    def _process_dogs_in_batches(self, urls: List[str]) -> List[Dict[str, Any]]:
+    def _process_dogs_in_batches(self, urls: list[str]) -> list[dict[str, Any]]:
         """Process dog URLs in batches using parallel processing.
 
         Args:
@@ -477,7 +477,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
         # World-class logging: Batch completion handled by centralized system
         return all_results
 
-    def _process_single_batch(self, urls: List[str]) -> List[Dict[str, Any]]:
+    def _process_single_batch(self, urls: list[str]) -> list[dict[str, Any]]:
         """Process a single batch of URLs concurrently.
 
         Args:
@@ -511,7 +511,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
         return results
 
-    def _validate_dog_data(self, dog_data: Dict[str, Any]) -> bool:
+    def _validate_dog_data(self, dog_data: dict[str, Any]) -> bool:
         """Validate dog data has required fields.
 
         Args:

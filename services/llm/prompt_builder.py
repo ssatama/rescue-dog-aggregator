@@ -10,7 +10,7 @@ Following CLAUDE.md principles:
 
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import yaml
 
@@ -32,7 +32,7 @@ class PromptBuilder:
         self.organization_id = organization_id
         self.prompt_template = self._load_prompt_template(organization_id)
 
-    def _load_prompt_template(self, org_id: int) -> Dict[str, Any]:
+    def _load_prompt_template(self, org_id: int) -> dict[str, Any]:
         """
         Load organization-specific prompt template from YAML using OrganizationConfigLoader.
 
@@ -62,10 +62,10 @@ class PromptBuilder:
         if not template_path.exists():
             raise FileNotFoundError(f"Prompt template not found: {template_path}. Organization {org_id} ({org_config.organization_name}) needs a prompt template to be created.")
 
-        with open(template_path, "r", encoding="utf-8") as f:
+        with open(template_path, encoding="utf-8") as f:
             return yaml.safe_load(f)
 
-    def build_prompt(self, dog_data: Dict[str, Any]) -> str:
+    def build_prompt(self, dog_data: dict[str, Any]) -> str:
         """
         Construct prompt with dog data.
 
@@ -92,7 +92,7 @@ class PromptBuilder:
 
         return prompt
 
-    def build_messages(self, dog_data: Dict[str, Any], prompt_adjustment: str = "") -> list:
+    def build_messages(self, dog_data: dict[str, Any], prompt_adjustment: str = "") -> list:
         """
         Build message list for LLM API call.
 

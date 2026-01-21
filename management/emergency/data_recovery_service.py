@@ -11,7 +11,7 @@ Follows CLAUDE.md principles:
 
 import logging
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from management.services.database_service import DatabaseService
 
@@ -28,7 +28,7 @@ class DataRecoveryService:
         self.database_service = database_service
         self.logger = logging.getLogger(__name__)
 
-    def detect_data_corruption(self, organization_id: int) -> Dict[str, Any]:
+    def detect_data_corruption(self, organization_id: int) -> dict[str, Any]:
         """Detect data corruption or inconsistencies.
 
         Args:
@@ -39,7 +39,7 @@ class DataRecoveryService:
         """
         return self._analyze_data_integrity(organization_id)
 
-    def repair_data_corruption(self, organization_id: int, corruption_report: Dict[str, Any]) -> Dict[str, Any]:
+    def repair_data_corruption(self, organization_id: int, corruption_report: dict[str, Any]) -> dict[str, Any]:
         """Repair detected data corruption.
 
         Args:
@@ -74,7 +74,7 @@ class DataRecoveryService:
                 "repairs_performed": repairs_performed,
             }
 
-    def recover_from_backup(self, organization_id: int, backup_id: str) -> Dict[str, Any]:
+    def recover_from_backup(self, organization_id: int, backup_id: str) -> dict[str, Any]:
         """Recover organization data from backup.
 
         Args:
@@ -90,7 +90,7 @@ class DataRecoveryService:
             self.logger.error(f"Error recovering from backup {backup_id}: {e}")
             return {"success": False, "error": str(e)}
 
-    def validate_data_consistency(self, organization_id: int) -> Dict[str, Any]:
+    def validate_data_consistency(self, organization_id: int) -> dict[str, Any]:
         """Validate data consistency after recovery.
 
         Args:
@@ -101,7 +101,7 @@ class DataRecoveryService:
         """
         return self._validate_consistency(organization_id)
 
-    def _analyze_data_integrity(self, organization_id: int) -> Dict[str, Any]:
+    def _analyze_data_integrity(self, organization_id: int) -> dict[str, Any]:
         """Analyze data integrity for an organization.
 
         Args:
@@ -194,7 +194,7 @@ class DataRecoveryService:
             self.logger.error(f"Error analyzing data integrity for org {organization_id}: {e}")
             return {"error": str(e), "integrity_score": 0.0}
 
-    def _repair_missing_fields(self, organization_id: int) -> Dict[str, Any]:
+    def _repair_missing_fields(self, organization_id: int) -> dict[str, Any]:
         """Repair animals with missing required fields.
 
         Args:
@@ -246,7 +246,7 @@ class DataRecoveryService:
             self.logger.error(f"Error repairing missing fields for org {organization_id}: {e}")
             return {"repaired": 0, "failed": 1, "error": str(e)}
 
-    def _resolve_duplicates(self, organization_id: int) -> Dict[str, Any]:
+    def _resolve_duplicates(self, organization_id: int) -> dict[str, Any]:
         """Resolve duplicate external_ids.
 
         Args:
@@ -283,7 +283,7 @@ class DataRecoveryService:
             self.logger.error(f"Error resolving duplicates for org {organization_id}: {e}")
             return {"resolved": 0, "failed": 1, "error": str(e)}
 
-    def _restore_from_backup(self, organization_id: int, backup_id: str) -> Dict[str, Any]:
+    def _restore_from_backup(self, organization_id: int, backup_id: str) -> dict[str, Any]:
         """Restore organization data from backup.
 
         Args:
@@ -307,7 +307,7 @@ class DataRecoveryService:
             self.logger.error(f"Error restoring from backup {backup_id}: {e}")
             return {"success": False, "error": str(e)}
 
-    def _validate_consistency(self, organization_id: int) -> Dict[str, Any]:
+    def _validate_consistency(self, organization_id: int) -> dict[str, Any]:
         """Validate data consistency for an organization.
 
         Args:

@@ -7,7 +7,7 @@ Following CLAUDE.md principles:
 - Comprehensive validation
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class DogProfileQualityRubric:
@@ -57,7 +57,7 @@ class DogProfileQualityRubric:
     }
 
     @staticmethod
-    def score_profile(profile_data: Dict[str, Any], source_data: Dict[str, Any]) -> Dict[str, Any]:
+    def score_profile(profile_data: dict[str, Any], source_data: dict[str, Any]) -> dict[str, Any]:
         """
         Score a dog profile against quality criteria.
 
@@ -161,7 +161,7 @@ class DogProfileQualityRubric:
         }
 
     @staticmethod
-    def _identify_issues(scores: Dict[str, float]) -> List[str]:
+    def _identify_issues(scores: dict[str, float]) -> list[str]:
         """Identify specific issues based on scores."""
         issues = []
 
@@ -178,7 +178,7 @@ class DogProfileQualityRubric:
 
         return issues
 
-    def calculate_quality_score(self, profile_data: Dict[str, Any], source_data: Optional[Dict[str, Any]] = None) -> float:
+    def calculate_quality_score(self, profile_data: dict[str, Any], source_data: dict[str, Any] | None = None) -> float:
         """
         Calculate quality score for a dog profile.
 

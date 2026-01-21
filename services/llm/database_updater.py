@@ -9,7 +9,7 @@ Following CLAUDE.md principles:
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import psycopg2
 
@@ -36,7 +36,7 @@ class DatabaseUpdater:
         self.connection_pool = connection_pool
         self.dry_run = dry_run
 
-    async def save_results(self, results: List[Dict[str, Any]]) -> bool:
+    async def save_results(self, results: list[dict[str, Any]]) -> bool:
         """
         Save profiler results to database.
 
@@ -72,7 +72,7 @@ class DatabaseUpdater:
             logger.error(f"Failed to save results: {e}")
             return False
 
-    def _save_with_connection(self, conn, results: List[Dict[str, Any]]) -> None:
+    def _save_with_connection(self, conn, results: list[dict[str, Any]]) -> None:
         """
         Save results using provided database connection.
 

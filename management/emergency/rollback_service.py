@@ -11,7 +11,7 @@ Follows CLAUDE.md principles:
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from management.services.database_service import DatabaseService
 
@@ -28,7 +28,7 @@ class RollbackService:
         self.database_service = database_service
         self.logger = logging.getLogger(__name__)
 
-    def get_available_snapshots(self, organization_id: int) -> List[Dict[str, Any]]:
+    def get_available_snapshots(self, organization_id: int) -> list[dict[str, Any]]:
         """Get available data snapshots for rollback.
 
         Args:
@@ -78,7 +78,7 @@ class RollbackService:
             self.logger.error(f"Error querying snapshots for org {organization_id}: {e}")
             return []
 
-    def rollback_to_snapshot(self, organization_id: int, snapshot_id: str, require_confirmation: bool = True) -> Dict[str, Any]:
+    def rollback_to_snapshot(self, organization_id: int, snapshot_id: str, require_confirmation: bool = True) -> dict[str, Any]:
         """Rollback organization data to a specific snapshot.
 
         Args:
@@ -103,7 +103,7 @@ class RollbackService:
 
         return self._execute_rollback(organization_id, snapshot_id)
 
-    def rollback_last_scrape(self, organization_id: int) -> Dict[str, Any]:
+    def rollback_last_scrape(self, organization_id: int) -> dict[str, Any]:
         """Rollback the most recent scrape for an organization.
 
         Args:
@@ -133,7 +133,7 @@ class RollbackService:
             self.logger.error(f"Error rolling back last scrape for org {organization_id}: {e}")
             return {"success": False, "error": str(e)}
 
-    def create_data_backup(self, organization_id: int, reason: str) -> Dict[str, Any]:
+    def create_data_backup(self, organization_id: int, reason: str) -> dict[str, Any]:
         """Create emergency data backup for an organization.
 
         Args:
@@ -145,7 +145,7 @@ class RollbackService:
         """
         return self._create_backup(organization_id, reason)
 
-    def _execute_rollback(self, organization_id: int, snapshot_id: str) -> Dict[str, Any]:
+    def _execute_rollback(self, organization_id: int, snapshot_id: str) -> dict[str, Any]:
         """Execute rollback to a specific snapshot.
 
         Args:
@@ -215,7 +215,7 @@ class RollbackService:
             self.logger.error(f"Error executing rollback for org {organization_id}: {e}")
             return {"success": False, "error": str(e)}
 
-    def _get_last_scrape_session(self, organization_id: int) -> Optional[str]:
+    def _get_last_scrape_session(self, organization_id: int) -> str | None:
         """Get the most recent scrape session ID for an organization.
 
         Args:
@@ -248,7 +248,7 @@ class RollbackService:
             self.logger.error(f"Error getting last scrape session for org {organization_id}: {e}")
             return None
 
-    def _rollback_scrape_session(self, organization_id: int, session_id: str) -> Dict[str, Any]:
+    def _rollback_scrape_session(self, organization_id: int, session_id: str) -> dict[str, Any]:
         """Rollback a specific scrape session.
 
         Args:
@@ -340,7 +340,7 @@ class RollbackService:
             self.logger.error(f"Error rolling back session {session_id}: {e}")
             return {"success": False, "error": str(e)}
 
-    def _create_backup(self, organization_id: int, reason: str) -> Dict[str, Any]:
+    def _create_backup(self, organization_id: int, reason: str) -> dict[str, Any]:
         """Create a data backup for an organization.
 
         Args:

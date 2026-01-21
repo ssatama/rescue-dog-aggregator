@@ -1,8 +1,9 @@
 """LLM Enrichment Handler for post-processing animals with AI profiles."""
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 
 class LLMEnrichmentHandler:
@@ -20,15 +21,15 @@ class LLMEnrichmentHandler:
         organization_id: int,
         organization_name: str,
         org_config=None,
-        alert_callback: Optional[Callable] = None,
-        logger: Optional[logging.Logger] = None,
+        alert_callback: Callable | None = None,
+        logger: logging.Logger | None = None,
     ):
         self.organization_id = organization_id
         self.organization_name = organization_name
         self.org_config = org_config
         self.alert_callback = alert_callback
         self.logger = logger or logging.getLogger(__name__)
-        self._last_stats: Optional[Dict[str, Any]] = None
+        self._last_stats: dict[str, Any] | None = None
 
     def is_enrichment_enabled(self) -> bool:
         """Check if LLM enrichment is enabled for this organization."""
@@ -57,7 +58,7 @@ class LLMEnrichmentHandler:
         """
         return True
 
-    def enrich_animals(self, animals_for_enrichment: List[Dict[str, Any]]) -> bool:
+    def enrich_animals(self, animals_for_enrichment: list[dict[str, Any]]) -> bool:
         """Process animals with LLM enrichment.
 
         Args:
@@ -89,7 +90,7 @@ class LLMEnrichmentHandler:
             )
             return False
 
-    def _process_enrichment_batch(self, animals_for_enrichment: List[Dict[str, Any]], llm_org_id: int) -> bool:
+    def _process_enrichment_batch(self, animals_for_enrichment: list[dict[str, Any]], llm_org_id: int) -> bool:
         """Process a batch of animals with LLM enrichment."""
         import asyncio
 
@@ -126,7 +127,7 @@ class LLMEnrichmentHandler:
         self._collect_and_log_statistics(pipeline, len(animals_for_enrichment))
         return True
 
-    def _prepare_dogs_for_profiling(self, animals_for_enrichment: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _prepare_dogs_for_profiling(self, animals_for_enrichment: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Prepare animal data for LLM profiling pipeline."""
         dogs_to_profile = []
 
@@ -158,7 +159,7 @@ class LLMEnrichmentHandler:
         if not stats:
             return
 
-        self.logger.info(f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, " f"Processed: {stats.get('total_processed', 0)}, " f"Failed: {stats.get('total_failed', 0)}")
+        self.logger.info(f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, Processed: {stats.get('total_processed', 0)}, Failed: {stats.get('total_failed', 0)}")
 
         failed_count = stats.get("total_failed", 0)
         if failed_count > 0:
@@ -179,6 +180,6 @@ class LLMEnrichmentHandler:
                 org_id=self.organization_id,
             )
 
-    def get_last_statistics(self) -> Optional[Dict[str, Any]]:
+    def get_last_statistics(self) -> dict[str, Any] | None:
         """Get statistics from the last enrichment run."""
         return self._last_stats

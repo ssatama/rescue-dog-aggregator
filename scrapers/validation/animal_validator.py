@@ -3,7 +3,7 @@
 import html
 import logging
 import unicodedata
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from scrapers.validation.constants import (
     ERROR_PATTERNS,
@@ -20,7 +20,7 @@ from scrapers.validation.constants import (
 class AnimalValidator:
     """Validates and normalizes animal data for scrapers."""
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger or logging.getLogger(__name__)
 
     def is_valid_name(self, name: str) -> bool:
@@ -93,7 +93,7 @@ class AnimalValidator:
 
         return name
 
-    def validate_animal_data(self, animal_data: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
+    def validate_animal_data(self, animal_data: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
         """Validate animal data dictionary for required fields and invalid names.
 
         Returns (is_valid, normalized_data) tuple.
@@ -119,16 +119,16 @@ class AnimalValidator:
 
         primary_image_url = animal_data.get("primary_image_url")
         if primary_image_url == "":
-            self.logger.error(f"Rejecting animal '{normalized_name}' " f"(ID: {animal_data.get('external_id')}) with empty image URL")
+            self.logger.error(f"Rejecting animal '{normalized_name}' (ID: {animal_data.get('external_id')}) with empty image URL")
             return False, result_data
 
         if primary_image_url is None:
-            self.logger.warning(f"Skipping animal '{normalized_name}' " f"(ID: {animal_data.get('external_id')}) - no valid image URL found")
+            self.logger.warning(f"Skipping animal '{normalized_name}' (ID: {animal_data.get('external_id')}) - no valid image URL found")
             return False, result_data
 
         return True, result_data
 
-    def validate_external_id(self, external_id: str, org_config_id: Optional[str] = None) -> bool:
+    def validate_external_id(self, external_id: str, org_config_id: str | None = None) -> bool:
         """Validate that external_id follows organization prefix pattern.
 
         Returns True if valid or if validation can't be performed.

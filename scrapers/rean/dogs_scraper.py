@@ -3,7 +3,7 @@ import hashlib
 import os
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import requests
 from bs4 import BeautifulSoup
@@ -44,7 +44,7 @@ class REANScraper(BaseScraper):
             "uk_foster": "/dogs-in-foster-in-the-uk",
         }
 
-    def extract_dog_content_from_html(self, html_content: str) -> List[str]:
+    def extract_dog_content_from_html(self, html_content: str) -> list[str]:
         """
         Extract individual dog content blocks from HTML.
 
@@ -119,7 +119,7 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error extracting dog content from HTML: {e}")
             return []
 
-    def extract_images_from_html(self, html_content: str) -> List[str]:
+    def extract_images_from_html(self, html_content: str) -> list[str]:
         """
         Extract image URLs from HTML content.
 
@@ -181,7 +181,7 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error extracting images from HTML: {e}")
             return []
 
-    def determine_dog_image(self, dog_name: str, available_images: List[str]) -> Optional[str]:
+    def determine_dog_image(self, dog_name: str, available_images: list[str]) -> str | None:
         """
         Determine the best image for a specific dog.
 
@@ -216,7 +216,7 @@ class REANScraper(BaseScraper):
 
         return None
 
-    def extract_images_with_browser(self, url: str) -> List[str]:
+    def extract_images_with_browser(self, url: str) -> list[str]:
         """
         Extract image URLs using browser automation to handle JavaScript-loaded images.
 
@@ -236,7 +236,7 @@ class REANScraper(BaseScraper):
             return asyncio.run(self._extract_images_with_browser_playwright(url))
         return self._extract_images_with_browser_selenium(url)
 
-    def _extract_images_with_browser_selenium(self, url: str) -> List[str]:
+    def _extract_images_with_browser_selenium(self, url: str) -> list[str]:
         """Selenium implementation of extract_images_with_browser."""
         try:
             browser_service = get_browser_service()
@@ -305,7 +305,7 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error during browser-based image extraction: {e}")
             return []
 
-    async def _extract_images_with_browser_playwright(self, url: str) -> List[str]:
+    async def _extract_images_with_browser_playwright(self, url: str) -> list[str]:
         """Playwright implementation of extract_images_with_browser."""
         try:
             playwright_service = get_playwright_service()
@@ -428,7 +428,7 @@ class REANScraper(BaseScraper):
             self.logger.warning(f"Error cleaning wsimg URL {wsimg_url[:50]}...: {e}")
             return wsimg_url
 
-    def associate_images_with_dogs(self, dog_data_list: List[Dict[str, Any]], image_urls: List[str]) -> List[Dict[str, Any]]:
+    def associate_images_with_dogs(self, dog_data_list: list[dict[str, Any]], image_urls: list[str]) -> list[dict[str, Any]]:
         """
         Associate extracted images with specific dogs using improved matching algorithms.
 
@@ -485,7 +485,7 @@ class REANScraper(BaseScraper):
 
         return enriched_dogs
 
-    def _filter_non_dog_images(self, image_urls: List[str]) -> List[str]:
+    def _filter_non_dog_images(self, image_urls: list[str]) -> list[str]:
         """
         Enhanced filtering to remove non-dog images more effectively.
 
@@ -545,7 +545,7 @@ class REANScraper(BaseScraper):
 
         return filtered_images
 
-    def _detect_image_offset(self, filtered_images: List[str], num_dogs: int) -> int:
+    def _detect_image_offset(self, filtered_images: list[str], num_dogs: int) -> int:
         """
         Detect if there's a systematic offset in image positioning.
 
@@ -583,7 +583,7 @@ class REANScraper(BaseScraper):
         self.logger.debug("No systematic offset detected - using direct association")
         return 0
 
-    def extract_dogs_with_images_unified(self, url: str, page_type: str) -> List[Dict[str, Any]]:
+    def extract_dogs_with_images_unified(self, url: str, page_type: str) -> list[dict[str, Any]]:
         """
         Extract dogs and their images in a single pass using DOM structure.
 
@@ -602,7 +602,7 @@ class REANScraper(BaseScraper):
             return asyncio.run(self._extract_dogs_with_images_unified_playwright(url, page_type))
         return self._extract_dogs_with_images_unified_selenium(url, page_type)
 
-    def _extract_dogs_with_images_unified_selenium(self, url: str, page_type: str) -> List[Dict[str, Any]]:
+    def _extract_dogs_with_images_unified_selenium(self, url: str, page_type: str) -> list[dict[str, Any]]:
         """Selenium implementation of extract_dogs_with_images_unified."""
         try:
             browser_service = get_browser_service()
@@ -644,7 +644,7 @@ class REANScraper(BaseScraper):
             # World-class logging: Fallback handled by centralized system
             return self._extract_dogs_legacy_fallback(url, page_type)
 
-    async def _extract_dogs_with_images_unified_playwright(self, url: str, page_type: str) -> List[Dict[str, Any]]:
+    async def _extract_dogs_with_images_unified_playwright(self, url: str, page_type: str) -> list[dict[str, Any]]:
         """Playwright implementation of extract_dogs_with_images_unified."""
         try:
             playwright_service = get_playwright_service()
@@ -705,7 +705,7 @@ class REANScraper(BaseScraper):
         except Exception as e:
             self.logger.warning(f"Error during Playwright lazy loading trigger: {e}")
 
-    def _extract_dogs_from_dom_soup(self, soup: BeautifulSoup, page_type: str) -> List[Dict[str, Any]]:
+    def _extract_dogs_from_dom_soup(self, soup: BeautifulSoup, page_type: str) -> list[dict[str, Any]]:
         """Extract dog data from BeautifulSoup parsed DOM."""
         dogs_data = []
 
@@ -733,7 +733,7 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error during DOM extraction: {e}")
             return []
 
-    def _find_dog_containers_soup(self, soup: BeautifulSoup) -> List:
+    def _find_dog_containers_soup(self, soup: BeautifulSoup) -> list:
         """Find dog containers using BeautifulSoup."""
         selectors_to_try = [
             {"class_": "x-el-article"},
@@ -770,7 +770,7 @@ class REANScraper(BaseScraper):
 
         return []
 
-    def _validate_dog_containers_soup(self, containers) -> List:
+    def _validate_dog_containers_soup(self, containers) -> list:
         """Validate that containers actually contain dog information."""
         valid_containers = []
 
@@ -785,7 +785,7 @@ class REANScraper(BaseScraper):
 
         return valid_containers
 
-    def _extract_single_dog_from_container_soup(self, container, page_type: str, container_num: int) -> Dict[str, Any]:
+    def _extract_single_dog_from_container_soup(self, container, page_type: str, container_num: int) -> dict[str, Any]:
         """Extract complete dog data from a single BeautifulSoup container."""
         try:
             full_text = container.get_text().strip()
@@ -811,7 +811,7 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error extracting dog from container {container_num}: {e}")
             return None
 
-    def _extract_image_from_container_soup(self, container, dog_name: str, container_num: int) -> Optional[str]:
+    def _extract_image_from_container_soup(self, container, dog_name: str, container_num: int) -> str | None:
         """Extract image URL from a BeautifulSoup dog container."""
         try:
             img_elements = container.find_all("img")
@@ -876,7 +876,7 @@ class REANScraper(BaseScraper):
         except Exception as e:
             self.logger.warning(f"Error during lazy loading trigger: {e}")
 
-    def _extract_dogs_from_dom(self, driver, page_type: str) -> List[Dict[str, Any]]:
+    def _extract_dogs_from_dom(self, driver, page_type: str) -> list[dict[str, Any]]:
         """
         Extract dog data from DOM using unified container approach.
 
@@ -999,7 +999,7 @@ class REANScraper(BaseScraper):
 
         return valid_containers
 
-    def _extract_single_dog_from_container(self, container, page_type: str, container_num: int) -> Dict[str, Any]:
+    def _extract_single_dog_from_container(self, container, page_type: str, container_num: int) -> dict[str, Any]:
         """
         Extract complete dog data from a single DOM container.
 
@@ -1038,7 +1038,7 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error extracting dog from container {container_num}: {e}")
             return None
 
-    def _extract_image_from_container(self, container, dog_name: str, container_num: int) -> Optional[str]:
+    def _extract_image_from_container(self, container, dog_name: str, container_num: int) -> str | None:
         """
         Extract image URL from a dog container.
 
@@ -1078,7 +1078,7 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error extracting image from container {container_num}: {e}")
             return None
 
-    def _extract_dogs_legacy_fallback(self, url: str, page_type: str) -> List[Dict[str, Any]]:
+    def _extract_dogs_legacy_fallback(self, url: str, page_type: str) -> list[dict[str, Any]]:
         """
         Fallback to legacy extraction method if unified approach fails.
 
@@ -1116,7 +1116,7 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Legacy fallback also failed: {e}")
             return []
 
-    def scrape_animals(self) -> List[Dict[str, Any]]:
+    def scrape_animals(self) -> list[dict[str, Any]]:
         """
         Main scraping method that processes both Romania and UK pages.
 
@@ -1158,7 +1158,7 @@ class REANScraper(BaseScraper):
             return []
         # Stale detection handled by BaseScraper._finalize_scrape() with proper safety guards
 
-    def scrape_page(self, url: str) -> Optional[str]:
+    def scrape_page(self, url: str) -> str | None:
         """
         Scrape a single page with error handling and retries.
 
@@ -1190,7 +1190,7 @@ class REANScraper(BaseScraper):
 
         return None
 
-    def split_dog_entries(self, page_text: str, page_type: str) -> List[str]:
+    def split_dog_entries(self, page_text: str, page_type: str) -> list[str]:
         """
         Split page text into individual dog entries using update timestamps.
 
@@ -1244,7 +1244,7 @@ class REANScraper(BaseScraper):
 
         return cleaned_entries
 
-    def extract_name(self, text: str) -> Optional[str]:
+    def extract_name(self, text: str) -> str | None:
         """
         Extract dog name from text entry.
 
@@ -1339,7 +1339,7 @@ class REANScraper(BaseScraper):
         else:
             return f"{age_years:.1f} years" if age_years != int(age_years) else f"{int(age_years)} years"
 
-    def extract_age(self, text: str) -> Optional[str]:
+    def extract_age(self, text: str) -> str | None:
         """
         Extract age information from text.
 
@@ -1399,7 +1399,7 @@ class REANScraper(BaseScraper):
         # Default for UK if no specific location found
         return "UK"
 
-    def extract_medical_status(self, text: str) -> Optional[str]:
+    def extract_medical_status(self, text: str) -> str | None:
         """
         Extract medical/vaccination status.
 
@@ -1459,7 +1459,7 @@ class REANScraper(BaseScraper):
 
         return "standard"
 
-    def extract_weight(self, text: str) -> Optional[float]:
+    def extract_weight(self, text: str) -> float | None:
         """
         Extract weight in kg from text.
 
@@ -1501,7 +1501,7 @@ class REANScraper(BaseScraper):
         else:
             return "Large"
 
-    def predict_size_from_description(self, text: str) -> Optional[str]:
+    def predict_size_from_description(self, text: str) -> str | None:
         """
         Predict size from descriptive text.
 
@@ -1690,7 +1690,7 @@ class REANScraper(BaseScraper):
         # Fallback: if no good sentences found, return cleaned original text
         return text
 
-    def extract_dog_data(self, entry_text: str, page_type: str) -> Optional[Dict[str, Any]]:
+    def extract_dog_data(self, entry_text: str, page_type: str) -> dict[str, Any] | None:
         """
         Extract structured data from a dog entry.
 
@@ -1766,7 +1766,7 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error extracting dog data from entry: {e}")
             return None
 
-    def _validate_dog_data(self, dog_data: Dict[str, Any], entry_text: str) -> List[str]:
+    def _validate_dog_data(self, dog_data: dict[str, Any], entry_text: str) -> list[str]:
         """
         Validate that extracted dog data contains expected fields.
 
@@ -1818,7 +1818,7 @@ class REANScraper(BaseScraper):
 
         return errors
 
-    def standardize_animal_data(self, dog_data: Dict[str, Any], page_type: str) -> Dict[str, Any]:
+    def standardize_animal_data(self, dog_data: dict[str, Any], page_type: str) -> dict[str, Any]:
         """
         Convert extracted data to standardized format for database.
 
@@ -1900,7 +1900,7 @@ class REANScraper(BaseScraper):
         # Apply unified standardization
         return self.process_animal(standardized_data)
 
-    def standardize_age_to_months(self, age_text: str) -> Optional[int]:
+    def standardize_age_to_months(self, age_text: str) -> int | None:
         """
         Convert age text to months.
 
@@ -1932,7 +1932,7 @@ class REANScraper(BaseScraper):
 
         return None
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """
         Collect animal data from REAN website.
 

@@ -3,7 +3,7 @@ import hashlib
 import os
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
@@ -22,6 +22,7 @@ else:
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.webdriver.support.ui import WebDriverWait
+
     from services.browser_service import BrowserOptions, get_browser_service
 
 from .dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
@@ -63,7 +64,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         # Initialize detail scraper for enhanced data extraction
         self.detail_scraper = None
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """Main entry point - implements abstract method from BaseScraper.
 
         Orchestrates the complete scraping flow:
@@ -101,7 +102,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
             # Return empty list to trigger partial failure detection in BaseScraper
             return []
 
-    def _translate_and_normalize_dogs(self, dogs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _translate_and_normalize_dogs(self, dogs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Translate German data to English using comprehensive translation service.
 
         This is the critical integration point where raw German data is translated
@@ -152,7 +153,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         # World-class logging: Translation stats handled by centralized system
         return translated_dogs
 
-    def _extract_with_selenium(self) -> List[Dict[str, Any]]:
+    def _extract_with_selenium(self) -> list[dict[str, Any]]:
         """Extract dogs using Selenium with section filtering."""
         all_dogs = []
         driver = None
@@ -243,7 +244,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
         return all_dogs
 
-    async def _extract_with_playwright(self) -> List[Dict[str, Any]]:
+    async def _extract_with_playwright(self) -> list[dict[str, Any]]:
         """Extract dogs using Playwright with section filtering.
 
         Async implementation using Playwright for Browserless v2 compatibility.
@@ -341,7 +342,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         await page.evaluate("window.scrollTo(0, 0)")
         await asyncio.sleep(1)
 
-    def _filter_dogs_by_section_soup(self, soup: BeautifulSoup) -> List:
+    def _filter_dogs_by_section_soup(self, soup: BeautifulSoup) -> list:
         """Filter dog containers to only include those from target sections using BeautifulSoup."""
         valid_containers = []
 
@@ -383,7 +384,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
         return valid_containers
 
-    def _extract_dog_from_container_soup(self, container, container_num: int) -> Optional[Dict[str, Any]]:
+    def _extract_dog_from_container_soup(self, container, container_num: int) -> dict[str, Any] | None:
         """Extract dog data from a single container element using BeautifulSoup."""
         try:
             dog_link = None
@@ -449,7 +450,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
             self.logger.error(f"Error extracting dog from container {container_num}: {e}")
             return None
 
-    def _extract_image_from_container_soup(self, container) -> Optional[str]:
+    def _extract_image_from_container_soup(self, container) -> str | None:
         """Extract image URL from container using BeautifulSoup."""
         try:
             img_element = container.find("img")
@@ -461,7 +462,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
             self.logger.warning(f"Error extracting image: {e}")
         return None
 
-    def _enhance_with_detail_page(self, basic_dog_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _enhance_with_detail_page(self, basic_dog_data: dict[str, Any]) -> dict[str, Any] | None:
         """Enhance basic dog data with detailed information from the dog's detail page.
 
         Uses DaisyFamilyRescueDogDetailScraper to extract comprehensive information
@@ -535,7 +536,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         driver.execute_script("window.scrollTo(0, 0);")
         time.sleep(1)
 
-    def _filter_dogs_by_section(self, driver) -> List:
+    def _filter_dogs_by_section(self, driver) -> list:
         """Filter dog containers to only include those from target sections."""
         valid_containers = []
 
@@ -603,7 +604,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         # World-class logging: Container filtering handled by centralized system
         return valid_containers
 
-    def _find_container_section(self, container_position: int, section_positions: Dict[str, int]) -> Optional[str]:
+    def _find_container_section(self, container_position: int, section_positions: dict[str, int]) -> str | None:
         """Find which section a container belongs to based on DOM positions."""
         # Find the section header that comes before this container
         closest_section = None
@@ -618,7 +619,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
         return closest_section
 
-    def _extract_dog_from_container(self, container, container_num: int) -> Optional[Dict[str, Any]]:
+    def _extract_dog_from_container(self, container, container_num: int) -> dict[str, Any] | None:
         """Extract dog data from a single container element."""
         try:
             # Extract dog name and location from link text - try multiple selectors
@@ -700,7 +701,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
             self.logger.error(f"Error extracting dog from container {container_num}: {e}")
             return None
 
-    def _parse_name_and_location(self, link_text: str) -> tuple[Optional[str], Optional[str]]:
+    def _parse_name_and_location(self, link_text: str) -> tuple[str | None, str | None]:
         """Parse dog name and location from link text like 'Brownie - in München'."""
         if not link_text:
             return None, None
@@ -722,7 +723,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
             # Fallback: treat entire text as name
             return link_text.strip(), None
 
-    def _extract_image_from_container(self, container) -> Optional[str]:
+    def _extract_image_from_container(self, container) -> str | None:
         """Extract image URL from container."""
         try:
             img_element = container.find_element(By.TAG_NAME, "img")
@@ -774,7 +775,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         # Fallback: generate ID from URL
         return hashlib.md5(url.encode()).hexdigest()[:8]
 
-    def _extract_additional_info_from_text(self, container_text: str) -> Dict[str, Any]:
+    def _extract_additional_info_from_text(self, container_text: str) -> dict[str, Any]:
         """Extract additional information from container text."""
         additional_info = {}
 
@@ -797,7 +798,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
         return additional_info
 
-    def _validate_dog_data(self, dog_data: Dict[str, Any]) -> bool:
+    def _validate_dog_data(self, dog_data: dict[str, Any]) -> bool:
         """Validate dog data before processing.
 
         Ensures data meets minimum requirements for BaseScraper processing.

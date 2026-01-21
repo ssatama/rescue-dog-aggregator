@@ -171,7 +171,7 @@ class TestAdoptionFeesConfig:
         loaded_configs = {}
 
         for config_file in config_files:
-            with open(config_file, "r") as f:
+            with open(config_file) as f:
                 config_data = yaml.safe_load(f)
 
             # Should load without error
@@ -243,7 +243,7 @@ class TestAdoptionFeesConfig:
 
         import json
 
-        with open(schema_file, "r") as f:
+        with open(schema_file) as f:
             schema = json.load(f)
 
         # Check if adoption_fees is defined in schema
@@ -334,7 +334,7 @@ class TestAdoptionFeesConfig:
             config_path = config_dir / org_file
 
             if config_path.exists():
-                with open(config_path, "r") as f:
+                with open(config_path) as f:
                     config_data = yaml.safe_load(f)
 
                 config = OrganizationConfig(**config_data)

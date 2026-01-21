@@ -17,7 +17,7 @@ import asyncio
 import logging
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from dotenv import load_dotenv
 
@@ -42,9 +42,9 @@ class DogProfilerPipeline:
     def __init__(
         self,
         organization_id: int,
-        llm_service: Optional[OpenRouterLLMDataService] = None,
+        llm_service: OpenRouterLLMDataService | None = None,
         dry_run: bool = False,
-        retry_config: Optional[RetryConfig] = None,
+        retry_config: RetryConfig | None = None,
         connection_pool: Optional["ConnectionPoolService"] = None,
     ):
         """
@@ -80,7 +80,7 @@ class DogProfilerPipeline:
             )
         self.retry_handler = RetryHandler(retry_config)
 
-    def _normalize_profile_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_profile_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """
         Normalize model output to match our schema requirements.
 
@@ -97,11 +97,11 @@ class DogProfilerPipeline:
 
     async def _call_llm_api(
         self,
-        dog_data: Dict[str, Any],
+        dog_data: dict[str, Any],
         model: str = "google/gemini-3-flash-preview",
         timeout: float = 30.0,
         prompt_adjustment: str = "",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Make LLM API call with specified model.
 
@@ -131,7 +131,7 @@ class DogProfilerPipeline:
             timeout=timeout,
         )
 
-    async def process_dog(self, dog_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def process_dog(self, dog_data: dict[str, Any]) -> dict[str, Any] | None:
         """
         Process a single dog with error handling and retry logic.
 
@@ -233,7 +233,7 @@ class DogProfilerPipeline:
             logger.error(error_msg)
             return None
 
-    async def process_batch(self, dogs: List[Dict[str, Any]], batch_size: int = 5) -> List[Dict[str, Any]]:
+    async def process_batch(self, dogs: list[dict[str, Any]], batch_size: int = 5) -> list[dict[str, Any]]:
         """
         Process multiple dogs in batches.
 
@@ -267,7 +267,7 @@ class DogProfilerPipeline:
 
         return results
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """
         Get processing summary statistics.
 
@@ -276,7 +276,7 @@ class DogProfilerPipeline:
         """
         return self.statistics.get_summary()
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get processing statistics (alias for get_summary).
 
@@ -285,7 +285,7 @@ class DogProfilerPipeline:
         """
         return self.statistics.get_statistics()
 
-    async def save_results(self, results: List[Dict[str, Any]]) -> bool:
+    async def save_results(self, results: list[dict[str, Any]]) -> bool:
         """
         Save profiler results to database.
 

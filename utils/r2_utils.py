@@ -1,7 +1,6 @@
 # utils/r2_utils.py
 
 import logging
-from typing import Dict
 from urllib.parse import urlparse
 
 import requests
@@ -29,7 +28,7 @@ class OrganizationLogoUploader:
     }
 
     @classmethod
-    def upload_organization_logo(cls, org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]:
+    def upload_organization_logo(cls, org_id: str, logo_url: str, force_upload: bool = False) -> dict[str, str]:
         """
         Upload organization logo to R2 with Cloudflare Images transformation URLs.
 
@@ -134,7 +133,7 @@ class OrganizationLogoUploader:
             return False
 
     @classmethod
-    def get_logo_urls(cls, org_id: str) -> Dict[str, str]:
+    def get_logo_urls(cls, org_id: str) -> dict[str, str]:
         """
         Get existing logo URLs for an organization.
 
@@ -169,7 +168,7 @@ class OrganizationLogoUploader:
             return False
 
 
-def upload_organization_logo(org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]:
+def upload_organization_logo(org_id: str, logo_url: str, force_upload: bool = False) -> dict[str, str]:
     """
     Convenience function to upload organization logo.
 

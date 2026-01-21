@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import Any, Dict
+from typing import Any
 
 import sentry_sdk
 from fastapi import APIRouter, HTTPException, Query
@@ -15,7 +15,7 @@ class TestResponse(BaseModel):
     """Response model for test endpoints."""
 
     message: str
-    details: Dict[str, Any] = {}
+    details: dict[str, Any] = {}
 
 
 @router.get("/health", response_model=TestResponse)

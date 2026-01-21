@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any
 
 
 @dataclass
@@ -12,7 +12,7 @@ class QualityScore:
     points_earned: int
     max_points: int
     percentage: float
-    issues: List[str]
+    issues: list[str]
 
 
 @dataclass
@@ -25,7 +25,7 @@ class QualityAssessment:
     visual_appeal: QualityScore
     overall_score: float
     overall_percentage: float
-    critical_issues: List[str]
+    critical_issues: list[str]
 
 
 class DataQualityMetrics:
@@ -88,7 +88,7 @@ class DataQualityMetrics:
     VISUAL_CRITERIA = {"primary_image": {"points": 10, "description": "Primary image URL present"}}
 
     @classmethod
-    def assess_animal_completeness(cls, animal: Dict[str, Any]) -> QualityScore:
+    def assess_animal_completeness(cls, animal: dict[str, Any]) -> QualityScore:
         """Assess completeness of animal data."""
         points_earned = 0
         max_points = sum(criteria["points"] for criteria in cls.COMPLETENESS_CRITERIA.values())
@@ -141,7 +141,7 @@ class DataQualityMetrics:
         )
 
     @classmethod
-    def assess_animal_standardization(cls, animal: Dict[str, Any]) -> QualityScore:
+    def assess_animal_standardization(cls, animal: dict[str, Any]) -> QualityScore:
         """Assess standardization quality of animal data."""
         points_earned = 0
         max_points = sum(criteria["points"] for criteria in cls.STANDARDIZATION_CRITERIA.values())
@@ -169,7 +169,7 @@ class DataQualityMetrics:
         )
 
     @classmethod
-    def assess_animal_rich_content(cls, animal: Dict[str, Any]) -> QualityScore:
+    def assess_animal_rich_content(cls, animal: dict[str, Any]) -> QualityScore:
         """Assess rich content quality of animal data."""
         points_earned = 0
         max_points = sum(criteria["points"] for criteria in cls.RICH_CONTENT_CRITERIA.values())
@@ -200,7 +200,7 @@ class DataQualityMetrics:
         )
 
     @classmethod
-    def assess_animal_visual_appeal(cls, animal: Dict[str, Any]) -> QualityScore:
+    def assess_animal_visual_appeal(cls, animal: dict[str, Any]) -> QualityScore:
         """Assess visual appeal quality of animal data."""
         points_earned = 0
         max_points = sum(criteria["points"] for criteria in cls.VISUAL_CRITERIA.values())
@@ -222,7 +222,7 @@ class DataQualityMetrics:
         )
 
     @classmethod
-    def assess_animal_overall(cls, animal: Dict[str, Any]) -> QualityAssessment:
+    def assess_animal_overall(cls, animal: dict[str, Any]) -> QualityAssessment:
         """Perform complete quality assessment of animal data."""
 
         # Get individual category scores

@@ -7,7 +7,6 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Set, Union
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
@@ -17,9 +16,9 @@ logger = logging.getLogger(__name__)
 class FileValidationConfig:
     """Immutable file validation configuration."""
 
-    allowed_extensions: Set[str]
+    allowed_extensions: set[str]
     max_file_size: int  # in bytes
-    allowed_directories: Set[str]
+    allowed_directories: set[str]
 
     def __post_init__(self):
         """Validate configuration."""
@@ -40,7 +39,7 @@ class SecureFileHandler:
         self.config = config
         self._normalized_allowed_dirs = self._normalize_directories(config.allowed_directories)
 
-    def _normalize_directories(self, directories: Set[str]) -> Set[Path]:
+    def _normalize_directories(self, directories: set[str]) -> set[Path]:
         """Normalize and resolve allowed directories."""
         normalized = set()
 
@@ -56,7 +55,7 @@ class SecureFileHandler:
 
         return normalized
 
-    def validate_file_path(self, file_path: Union[str, Path]) -> bool:
+    def validate_file_path(self, file_path: str | Path) -> bool:
         """Validate file path against security rules."""
         if not file_path:
             return False
@@ -158,7 +157,7 @@ class SecureFileHandler:
 
         return filename
 
-    def get_secure_upload_path(self, base_dir: str, filename: str) -> Optional[Path]:
+    def get_secure_upload_path(self, base_dir: str, filename: str) -> Path | None:
         """Get secure path for file upload."""
         if not filename:
             return None

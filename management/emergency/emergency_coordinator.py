@@ -11,7 +11,7 @@ Follows CLAUDE.md principles:
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any
 
 from config import DB_CONFIG
 from management.emergency.data_recovery_service import DataRecoveryService
@@ -28,7 +28,7 @@ from utils.config_loader import ConfigLoader
 class EmergencyCoordinator:
     """Coordinates emergency operations across all services."""
 
-    def __init__(self, database_service: Optional[DatabaseService] = None):
+    def __init__(self, database_service: DatabaseService | None = None):
         """Initialize EmergencyCoordinator.
 
         Args:
@@ -44,7 +44,7 @@ class EmergencyCoordinator:
         self.rollback_service = RollbackService(self.database_service)
         self.recovery_service = DataRecoveryService(self.database_service)
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Get comprehensive system status for emergency assessment.
 
         Returns:
@@ -95,7 +95,7 @@ class EmergencyCoordinator:
 
         return status
 
-    def emergency_stop_all_scrapers(self) -> Dict[str, Any]:
+    def emergency_stop_all_scrapers(self) -> dict[str, Any]:
         """Emergency stop all running scrapers.
 
         Returns:
@@ -103,7 +103,7 @@ class EmergencyCoordinator:
         """
         return self.scraper_control.emergency_stop_all_scrapers()
 
-    def emergency_disable_organization(self, organization_id: int, reason: str) -> Dict[str, Any]:
+    def emergency_disable_organization(self, organization_id: int, reason: str) -> dict[str, Any]:
         """Emergency disable scraping for a specific organization.
 
         Args:
@@ -115,7 +115,7 @@ class EmergencyCoordinator:
         """
         return self.scraper_control.emergency_disable_organization(organization_id, reason)
 
-    def execute_emergency_recovery(self, organization_id: int) -> Dict[str, Any]:
+    def execute_emergency_recovery(self, organization_id: int) -> dict[str, Any]:
         """Execute complete emergency recovery workflow for an organization.
 
         Args:
@@ -202,7 +202,7 @@ class EmergencyCoordinator:
                 "recovery_log": recovery_log,
             }
 
-    def get_recovery_status(self) -> Dict[str, Any]:
+    def get_recovery_status(self) -> dict[str, Any]:
         """Get status of ongoing recovery operations.
 
         Returns:
@@ -210,7 +210,7 @@ class EmergencyCoordinator:
         """
         return self._check_recovery_operations()
 
-    def _check_recovery_operations(self) -> Dict[str, Any]:
+    def _check_recovery_operations(self) -> dict[str, Any]:
         """Check status of recovery operations.
 
         Returns:
@@ -225,7 +225,7 @@ class EmergencyCoordinator:
             "operations": [],
         }
 
-    def _validate_operation_safety(self, organization_id: int) -> Dict[str, Any]:
+    def _validate_operation_safety(self, organization_id: int) -> dict[str, Any]:
         """Validate that it's safe to perform emergency operations.
 
         Args:

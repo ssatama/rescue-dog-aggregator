@@ -11,7 +11,7 @@ import logging
 import os
 import sys
 import traceback
-from typing import Any, Dict, Optional
+from typing import Any
 
 from management.emergency.emergency_cli import EmergencyCLI
 from management.emergency.emergency_coordinator import EmergencyCoordinator
@@ -24,7 +24,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 class EmergencyOperations:
     """Main emergency operations manager - delegates to EmergencyCoordinator."""
 
-    def __init__(self, database_service: Optional[DatabaseService] = None):
+    def __init__(self, database_service: DatabaseService | None = None):
         """Initialize emergency operations manager."""
         self.logger = logging.getLogger(__name__)
         self.coordinator = EmergencyCoordinator(database_service)
@@ -36,7 +36,7 @@ class EmergencyOperations:
         self.system_monitoring = self.coordinator.system_monitoring
         self.scraper_control = self.coordinator.scraper_control
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """
         Get comprehensive system status for emergency assessment.
 
@@ -45,7 +45,7 @@ class EmergencyOperations:
         """
         return self.coordinator.get_system_status()
 
-    def emergency_stop_all_scrapers(self) -> Dict[str, Any]:
+    def emergency_stop_all_scrapers(self) -> dict[str, Any]:
         """
         Emergency stop all running scrapers.
 
@@ -54,7 +54,7 @@ class EmergencyOperations:
         """
         return self.coordinator.emergency_stop_all_scrapers()
 
-    def emergency_disable_organization(self, organization_id: int, reason: str) -> Dict[str, Any]:
+    def emergency_disable_organization(self, organization_id: int, reason: str) -> dict[str, Any]:
         """
         Emergency disable scraping for a specific organization.
 
@@ -67,7 +67,7 @@ class EmergencyOperations:
         """
         return self.coordinator.emergency_disable_organization(organization_id, reason)
 
-    def execute_emergency_recovery(self, organization_id: int) -> Dict[str, Any]:
+    def execute_emergency_recovery(self, organization_id: int) -> dict[str, Any]:
         """
         Execute complete emergency recovery workflow for an organization.
 
@@ -79,7 +79,7 @@ class EmergencyOperations:
         """
         return self.coordinator.execute_emergency_recovery(organization_id)
 
-    def get_recovery_status(self) -> Dict[str, Any]:
+    def get_recovery_status(self) -> dict[str, Any]:
         """
         Get status of ongoing recovery operations.
 
@@ -88,11 +88,11 @@ class EmergencyOperations:
         """
         return self.coordinator.get_recovery_status()
 
-    def _check_recovery_operations(self) -> Dict[str, Any]:
+    def _check_recovery_operations(self) -> dict[str, Any]:
         """Check status of recovery operations."""
         return self.coordinator._check_recovery_operations()
 
-    def _validate_operation_safety(self, organization_id: int) -> Dict[str, Any]:
+    def _validate_operation_safety(self, organization_id: int) -> dict[str, Any]:
         """
         Validate that it's safe to perform emergency operations.
 
@@ -114,19 +114,19 @@ class EmergencyOperationsCommands:
         # Keep emergency_ops for backward compatibility
         self.emergency_ops = EmergencyOperations()
 
-    def emergency_stop(self) -> Dict[str, Any]:
+    def emergency_stop(self) -> dict[str, Any]:
         """Execute emergency stop command."""
         return self.cli.emergency_stop()
 
-    def rollback_organization(self, organization_id: int) -> Dict[str, Any]:
+    def rollback_organization(self, organization_id: int) -> dict[str, Any]:
         """Execute rollback command for organization."""
         return self.cli.rollback_organization(organization_id)
 
-    def create_backup(self, organization_id: int, reason: str = "Manual backup") -> Dict[str, Any]:
+    def create_backup(self, organization_id: int, reason: str = "Manual backup") -> dict[str, Any]:
         """Execute backup creation command."""
         return self.cli.create_backup(organization_id, reason)
 
-    def system_status(self) -> Dict[str, Any]:
+    def system_status(self) -> dict[str, Any]:
         """Execute system status command."""
         return self.cli.system_status()
 

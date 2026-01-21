@@ -3,7 +3,7 @@ Configuration service for management operations following CLAUDE.md principles.
 Provides pure business logic functions for configuration management.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from utils.config_loader import ConfigLoader
 from utils.config_scraper_runner import ConfigScraperRunner
@@ -24,7 +24,7 @@ class ConfigService:
         self.sync_manager = sync_manager
         self.scraper_runner = scraper_runner
 
-    def get_organizations_list(self, enabled_only: bool = False) -> List[Dict[str, Any]]:
+    def get_organizations_list(self, enabled_only: bool = False) -> list[dict[str, Any]]:
         """Get list of organizations with optional enabled filter."""
         configs = self.config_loader.load_all_configs()
 
@@ -45,7 +45,7 @@ class ConfigService:
 
         return organizations
 
-    def get_organization_details(self, config_id: str) -> Dict[str, Any]:
+    def get_organization_details(self, config_id: str) -> dict[str, Any]:
         """Get detailed information about specific organization."""
         config = self.config_loader.load_config(config_id)
 
@@ -103,7 +103,7 @@ class ConfigService:
             "validation_warnings": config.validate_business_rules(),
         }
 
-    def sync_organizations(self, dry_run: bool = False) -> Dict[str, Any]:
+    def sync_organizations(self, dry_run: bool = False) -> dict[str, Any]:
         """Sync organizations to database."""
         configs = self.config_loader.load_all_configs()
 
@@ -121,7 +121,7 @@ class ConfigService:
                 "errors": results.errors,
             }
 
-    def run_scraper(self, config_id: str, sync_first: bool = True) -> Dict[str, Any]:
+    def run_scraper(self, config_id: str, sync_first: bool = True) -> dict[str, Any]:
         """Run specific scraper with optional pre-sync."""
         sync_errors = []
         if sync_first:
@@ -138,7 +138,7 @@ class ConfigService:
 
         return scraper_result
 
-    def run_all_scrapers(self, sync_first: bool = True) -> Dict[str, Any]:
+    def run_all_scrapers(self, sync_first: bool = True) -> dict[str, Any]:
         """Run all enabled scrapers with optional pre-sync."""
         if sync_first:
             configs = self.config_loader.load_all_configs()
@@ -152,7 +152,7 @@ class ConfigService:
 
         return self.scraper_runner.run_all_enabled_scrapers()
 
-    def validate_configs(self) -> Dict[str, Any]:
+    def validate_configs(self) -> dict[str, Any]:
         """Validate all configuration files."""
         configs = self.config_loader.load_all_configs()
 

@@ -23,7 +23,6 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent
@@ -111,7 +110,7 @@ def run_overall_analysis() -> None:
     print(f"   View detailed analysis at: {reporter.report_dir}")
 
 
-def run_detailed_analysis(org_id: Optional[int] = None, all_orgs: bool = False) -> None:
+def run_detailed_analysis(org_id: int | None = None, all_orgs: bool = False) -> None:
     """Run detailed analysis for specific organization(s)."""
     analyzer = DataQualityAnalyzer()
     reporter = DataQualityReporter()

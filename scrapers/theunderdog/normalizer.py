@@ -5,10 +5,10 @@ Most standardization is now handled by UnifiedStandardizer via BaseScraper.
 """
 
 import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 
-def extract_qa_data(properties: Dict[str, Any]) -> Dict[str, str]:
+def extract_qa_data(properties: dict[str, Any]) -> dict[str, str]:
     """Extract Q&A data from TheUnderdog's properties structure.
 
     Args:
@@ -25,8 +25,8 @@ def extract_qa_data(properties: Dict[str, Any]) -> Dict[str, str]:
 
 
 def extract_size_and_weight_from_qa(
-    qa_data: Dict[str, str],
-) -> Tuple[Optional[str], Optional[float]]:
+    qa_data: dict[str, str],
+) -> tuple[str | None, float | None]:
     """Extract size and weight from TheUnderdog's Q&A 'How big?' field.
 
     This handles TheUnderdog-specific patterns like:

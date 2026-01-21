@@ -5,7 +5,6 @@ import subprocess
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -57,7 +56,7 @@ def railway_migration_lock(timeout: int = 60):
                     # No fileno method - mock object
                     logger.info("Railway migration lock acquired successfully (mock)")
                     break
-            except (IOError, OSError, ValueError):
+            except (OSError, ValueError):
                 if "mock" in str(type(lock_file)).lower():
                     # Mock file object - just proceed
                     logger.info("Railway migration lock acquired successfully (mock)")
@@ -298,7 +297,7 @@ def create_initial_migration(message: str = "Initial Railway schema") -> bool:
             logger.error("database/schema.sql not found")
             return False
 
-        with open(schema_path, "r") as f:
+        with open(schema_path) as f:
             schema_sql = f.read()
 
         # Create migration content with the schema
@@ -349,7 +348,7 @@ def downgrade() -> None:
         return False
 
 
-def run_railway_migrations(target_revision: Optional[str] = None) -> bool:
+def run_railway_migrations(target_revision: str | None = None) -> bool:
     """Run Railway database migrations."""
     try:
         target = target_revision or "head"
@@ -370,7 +369,7 @@ def run_railway_migrations(target_revision: Optional[str] = None) -> bool:
         return False
 
 
-def get_migration_status() -> Optional[str]:
+def get_migration_status() -> str | None:
     """Get current migration status for Railway database."""
     try:
         cmd = ["alembic", "-c", "migrations/railway/alembic.ini", "current", "-v"]

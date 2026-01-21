@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import (
     BaseModel,
@@ -51,22 +51,22 @@ class AnimalBase(BaseModel):
 
     name: str
     animal_type: str = "dog"
-    breed: Optional[str] = None
-    standardized_breed: Optional[str] = None
-    breed_group: Optional[str] = None
-    primary_breed: Optional[str] = None
-    breed_type: Optional[str] = None
-    breed_confidence: Optional[str] = None
-    secondary_breed: Optional[str] = None
-    breed_slug: Optional[str] = None
-    age_text: Optional[str] = None
-    age_min_months: Optional[int] = None
-    age_max_months: Optional[int] = None
-    sex: Optional[str] = None
-    size: Optional[str] = None
-    standardized_size: Optional[StandardizedSize] = None
+    breed: str | None = None
+    standardized_breed: str | None = None
+    breed_group: str | None = None
+    primary_breed: str | None = None
+    breed_type: str | None = None
+    breed_confidence: str | None = None
+    secondary_breed: str | None = None
+    breed_slug: str | None = None
+    age_text: str | None = None
+    age_min_months: int | None = None
+    age_max_months: int | None = None
+    sex: str | None = None
+    size: str | None = None
+    standardized_size: StandardizedSize | None = None
     status: AnimalStatus = AnimalStatus.AVAILABLE
-    primary_image_url: Optional[HttpUrl] = None
+    primary_image_url: HttpUrl | None = None
     adoption_url: HttpUrl
 
     @field_validator("primary_image_url", "adoption_url", mode="before")
@@ -106,34 +106,34 @@ class Animal(AnimalBase):
     id: int
     slug: str
     organization_id: int
-    external_id: Optional[str] = None
+    external_id: str | None = None
     language: str = "en"
-    properties: Dict[str, Any] = Field(default_factory=dict)
+    properties: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
-    last_scraped_at: Optional[datetime] = None
-    availability_confidence: Optional[AvailabilityConfidence] = AvailabilityConfidence.HIGH
-    last_seen_at: Optional[datetime] = None
-    consecutive_scrapes_missing: Optional[int] = 0
-    dog_profiler_data: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    breed_slug: Optional[str] = None
-    organization: Optional[Organization] = None
-    adoption_check_data: Optional[Dict[str, Any]] = None
+    last_scraped_at: datetime | None = None
+    availability_confidence: AvailabilityConfidence | None = AvailabilityConfidence.HIGH
+    last_seen_at: datetime | None = None
+    consecutive_scrapes_missing: int | None = 0
+    dog_profiler_data: dict[str, Any] | None = Field(default_factory=dict)
+    breed_slug: str | None = None
+    organization: Organization | None = None
+    adoption_check_data: dict[str, Any] | None = None
 
 
 class AnimalFilter(BaseModel):
     """Schema for filtering animals."""
 
-    animal_type: Optional[str] = "dog"
-    breed: Optional[str] = None
-    standardized_breed: Optional[str] = None
-    sex: Optional[str] = None
-    size: Optional[str] = None
-    standardized_size: Optional[str] = None
-    status: Optional[str] = None
-    organization_id: Optional[int] = None
-    primary_breed: Optional[str] = None
-    breed_type: Optional[str] = None
+    animal_type: str | None = "dog"
+    breed: str | None = None
+    standardized_breed: str | None = None
+    sex: str | None = None
+    size: str | None = None
+    standardized_size: str | None = None
+    status: str | None = None
+    organization_id: int | None = None
+    primary_breed: str | None = None
+    breed_type: str | None = None
 
 
 class PaginationParams(BaseModel):

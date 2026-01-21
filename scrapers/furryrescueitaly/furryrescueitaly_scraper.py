@@ -2,7 +2,7 @@
 
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
@@ -57,9 +57,9 @@ class FurryRescueItalyScraper(BaseScraper):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         }
 
-        self.logger.info(f"Initialized with config: rate_limit_delay={self.rate_limit_delay}, " f"batch_size={self.batch_size}, skip_existing_animals={self.skip_existing_animals}")
+        self.logger.info(f"Initialized with config: rate_limit_delay={self.rate_limit_delay}, batch_size={self.batch_size}, skip_existing_animals={self.skip_existing_animals}")
 
-    def get_animal_list(self, max_pages_to_scrape: Optional[int] = None) -> List[Dict[str, Any]]:
+    def get_animal_list(self, max_pages_to_scrape: int | None = None) -> list[dict[str, Any]]:
         """Get list of all available dogs from listing pages.
 
         Args:
@@ -135,7 +135,7 @@ class FurryRescueItalyScraper(BaseScraper):
         self.logger.info(f"Total dogs found: {len(all_dogs)}")
         return all_dogs
 
-    def _extract_dogs_from_page(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _extract_dogs_from_page(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract dog information from a listing page.
 
         Args:
@@ -244,7 +244,7 @@ class FurryRescueItalyScraper(BaseScraper):
         self.logger.info(f"_extract_dogs_from_page: Returning {len(dogs)} dogs")
         return dogs
 
-    def _detect_max_pages(self, soup: BeautifulSoup) -> Optional[int]:
+    def _detect_max_pages(self, soup: BeautifulSoup) -> int | None:
         """Detect the maximum number of pages from pagination.
 
         Args:
@@ -276,7 +276,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         return None
 
-    def scrape_animal_details(self, url: str) -> Dict[str, Any]:
+    def scrape_animal_details(self, url: str) -> dict[str, Any]:
         """Scrape detailed information from an animal's detail page.
 
         Args:
@@ -331,7 +331,7 @@ class FurryRescueItalyScraper(BaseScraper):
             self.logger.error(f"Error scraping details from {url}: {e}")
             return {}
 
-    def _extract_name_from_detail(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_name_from_detail(self, soup: BeautifulSoup) -> str | None:
         """Extract dog name from detail page."""
         # Try fusion-tb-text class first
         name_element = soup.find("h4", class_="fusion-tb-text")
@@ -348,7 +348,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         return None
 
-    def _extract_hero_image(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_hero_image(self, soup: BeautifulSoup) -> str | None:
         """Extract the first 600x600 image as hero image."""
         # Look for fusion-tb-images-container first
         container = soup.find("div", class_="fusion-tb-images-container")
@@ -366,7 +366,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         return None
 
-    def _extract_properties(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_properties(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract properties from bullet point div elements."""
 
         properties = {}
@@ -731,7 +731,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         return result.strip()
 
-    def _extract_weight_from_size(self, size_text: str) -> Optional[str]:
+    def _extract_weight_from_size(self, size_text: str) -> str | None:
         """Extract weight information from size text."""
 
         # Look for patterns like "20-25 kg", "28 kgs", "10kg"
@@ -748,7 +748,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         return None
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """Collect all animal data from the website.
 
         This is the main method called by BaseScraper.run().
@@ -787,7 +787,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         return enriched_animals
 
-    def _process_animals_sequentially(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_sequentially(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Process animals sequentially - best for small datasets."""
         enriched_animals = []
 
@@ -817,7 +817,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         return enriched_animals
 
-    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Process animals in parallel batches - for larger datasets."""
         import concurrent.futures
         from threading import Lock
@@ -830,7 +830,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         self.logger.info(f"Processing {len(animals)} animals in parallel with batch_size={batch_size}")
 
-        def process_single_animal(animal: Dict[str, Any]) -> Dict[str, Any]:
+        def process_single_animal(animal: dict[str, Any]) -> dict[str, Any]:
             """Process a single animal with detail enrichment."""
             try:
                 # Rate limiting between requests
@@ -868,7 +868,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         return enriched_animals
 
-    def _merge_animal_details(self, animal: Dict[str, Any], details: Dict[str, Any]) -> None:
+    def _merge_animal_details(self, animal: dict[str, Any], details: dict[str, Any]) -> None:
         """Merge detail page data into animal dictionary."""
         # Update name if found on detail page (convert from UPPERCASE to Title Case)
         if "name" in details and details["name"]:
@@ -983,7 +983,7 @@ class FurryRescueItalyScraper(BaseScraper):
             elif location.lower() in ["uk", "united kingdom", "england"]:
                 props["location_country"] = "UK"
 
-    def _validate_animal_data(self, animal: Dict[str, Any]) -> bool:
+    def _validate_animal_data(self, animal: dict[str, Any]) -> bool:
         """Validate that animal has all required fields with non-null values."""
         required_fields = ["name", "animal_type", "status", "organization_id"]
 

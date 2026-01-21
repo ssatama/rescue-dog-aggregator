@@ -11,7 +11,7 @@ Follows CLAUDE.md principles:
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from typing import Any
 
 from management.services.database_service import DatabaseService
 from utils.config_loader import ConfigLoader
@@ -31,7 +31,7 @@ class ScraperControlService:
         self.config_loader = config_loader
         self.logger = logging.getLogger(__name__)
 
-    def emergency_stop_all_scrapers(self) -> Dict[str, Any]:
+    def emergency_stop_all_scrapers(self) -> dict[str, Any]:
         """Emergency stop all running scrapers.
 
         Returns:
@@ -49,7 +49,7 @@ class ScraperControlService:
             self.logger.error(f"Error during emergency stop: {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now()}
 
-    def emergency_disable_organization(self, organization_id: int, reason: str) -> Dict[str, Any]:
+    def emergency_disable_organization(self, organization_id: int, reason: str) -> dict[str, Any]:
         """Emergency disable scraping for a specific organization.
 
         Args:
@@ -80,7 +80,7 @@ class ScraperControlService:
                 "timestamp": datetime.now(),
             }
 
-    def stop_running_scrapers(self) -> Dict[str, Any]:
+    def stop_running_scrapers(self) -> dict[str, Any]:
         """Stop all currently running scrapers.
 
         Returns:

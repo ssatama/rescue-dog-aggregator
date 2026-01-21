@@ -4,9 +4,8 @@
 Structured error models for consistent error responses.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_serializer
@@ -42,9 +41,9 @@ class RetryInfo(BaseModel):
     """Information about retry suggestions."""
 
     suggested: bool = Field(description="Whether retry is suggested")
-    after_seconds: Optional[int] = Field(None, description="Seconds to wait before retry")
-    attempt: Optional[int] = Field(None, description="Current attempt number")
-    max_attempts: Optional[int] = Field(None, description="Maximum number of attempts")
+    after_seconds: int | None = Field(None, description="Seconds to wait before retry")
+    attempt: int | None = Field(None, description="Current attempt number")
+    max_attempts: int | None = Field(None, description="Maximum number of attempts")
 
 
 class ErrorDetail(BaseModel):
@@ -53,13 +52,13 @@ class ErrorDetail(BaseModel):
     type: ErrorType = Field(description="Category of error")
     code: ErrorCode = Field(description="Specific error code")
     message: str = Field(description="User-friendly error message")
-    detail: Optional[str] = Field(None, description="Technical details")
+    detail: str | None = Field(None, description="Technical details")
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Error occurrence time",
     )
     correlation_id: str = Field(default_factory=lambda: str(uuid4()), description="Request correlation ID")
-    retry: Optional[RetryInfo] = Field(None, description="Retry information if applicable")
+    retry: RetryInfo | None = Field(None, description="Retry information if applicable")
 
     @field_serializer("timestamp")
     def serialize_timestamp(self, timestamp: datetime, _info):

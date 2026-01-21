@@ -6,7 +6,6 @@ Follows CLAUDE.md principles: pure functions, immutable data, early returns.
 import logging
 import re
 import time
-from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +37,9 @@ def sanitize_for_slug(text: str) -> str:
 
 def generate_animal_slug(
     name: str,
-    breed: Optional[str] = None,
-    standardized_breed: Optional[str] = None,
-    animal_id: Optional[int] = None,
+    breed: str | None = None,
+    standardized_breed: str | None = None,
+    animal_id: int | None = None,
 ) -> str:
     """
     Generate SEO-friendly slug for animal.
@@ -90,7 +89,7 @@ def generate_animal_slug(
     return slug
 
 
-def ensure_unique_slug(base_slug: str, connection, exclude_id: Optional[int] = None) -> str:
+def ensure_unique_slug(base_slug: str, connection, exclude_id: int | None = None) -> str:
     """
     Ensure slug is unique by checking database and adding suffix if needed.
 
@@ -153,11 +152,11 @@ def ensure_unique_slug(base_slug: str, connection, exclude_id: Optional[int] = N
 
 def generate_unique_animal_slug(
     name: str,
-    breed: Optional[str] = None,
-    standardized_breed: Optional[str] = None,
-    animal_id: Optional[int] = None,
+    breed: str | None = None,
+    standardized_breed: str | None = None,
+    animal_id: int | None = None,
     connection=None,
-    exclude_id: Optional[int] = None,
+    exclude_id: int | None = None,
 ) -> str:
     """
     Generate a unique animal slug by combining generation and uniqueness check.
@@ -214,7 +213,7 @@ def generate_organization_slug(name: str, config_id: str) -> str:
     return "organization"
 
 
-def ensure_unique_organization_slug(base_slug: str, connection, exclude_id: Optional[int] = None) -> str:
+def ensure_unique_organization_slug(base_slug: str, connection, exclude_id: int | None = None) -> str:
     """
     Ensure organization slug is unique by checking database and adding suffix if needed.
 
@@ -275,7 +274,7 @@ def ensure_unique_organization_slug(base_slug: str, connection, exclude_id: Opti
         return base_slug
 
 
-def generate_unique_organization_slug(name: str, config_id: str, connection=None, exclude_id: Optional[int] = None) -> str:
+def generate_unique_organization_slug(name: str, config_id: str, connection=None, exclude_id: int | None = None) -> str:
     """
     Generate a unique organization slug by combining generation and uniqueness check.
 
@@ -298,7 +297,7 @@ def generate_unique_organization_slug(name: str, config_id: str, connection=None
     return base_slug
 
 
-def validate_slug(slug: str) -> Tuple[bool, str]:
+def validate_slug(slug: str) -> tuple[bool, str]:
     """
     Validate that a slug meets requirements.
 

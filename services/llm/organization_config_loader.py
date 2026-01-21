@@ -11,7 +11,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -24,7 +24,7 @@ class PromptTemplate:
 
     system_prompt: str
     user_prompt: str
-    examples: List[Dict[str, str]]
+    examples: list[dict[str, str]]
 
 
 @dataclass
@@ -50,7 +50,7 @@ class OrganizationConfig:
 class OrganizationConfigLoader:
     """Loads and manages organization configurations."""
 
-    def __init__(self, config_dir: Optional[str] = None):
+    def __init__(self, config_dir: str | None = None):
         """
         Initialize the config loader.
 
@@ -60,10 +60,10 @@ class OrganizationConfigLoader:
         """
         self.config_dir = Path(config_dir or "configs/organizations")
         self.prompt_dir = Path("prompts/organizations")
-        self._config_cache: Dict[int, OrganizationConfig] = {}
-        self._prompt_cache: Dict[str, PromptTemplate] = {}
+        self._config_cache: dict[int, OrganizationConfig] = {}
+        self._prompt_cache: dict[str, PromptTemplate] = {}
 
-    def load_config(self, organization_id: int) -> Optional[OrganizationConfig]:
+    def load_config(self, organization_id: int) -> OrganizationConfig | None:
         """
         Load configuration for a specific organization.
 
@@ -107,7 +107,7 @@ class OrganizationConfigLoader:
         self._config_cache[organization_id] = config
         return config
 
-    def load_all_configs(self) -> List[OrganizationConfig]:
+    def load_all_configs(self) -> list[OrganizationConfig]:
         """
         Load all available organization configurations.
 
@@ -128,7 +128,7 @@ class OrganizationConfigLoader:
 
         return configs
 
-    def load_prompt_template(self, prompt_file: str) -> Optional[PromptTemplate]:
+    def load_prompt_template(self, prompt_file: str) -> PromptTemplate | None:
         """
         Load prompt template from file.
 
@@ -149,7 +149,7 @@ class OrganizationConfigLoader:
             return None
 
         try:
-            with open(prompt_path, "r") as f:
+            with open(prompt_path) as f:
                 data = yaml.safe_load(f)
 
             template = PromptTemplate(
@@ -166,7 +166,7 @@ class OrganizationConfigLoader:
             logger.error(f"Failed to load prompt template {prompt_file}: {e}")
             return None
 
-    def get_supported_organizations(self) -> List[int]:
+    def get_supported_organizations(self) -> list[int]:
         """
         Get list of organization IDs with configurations.
 
@@ -190,7 +190,7 @@ class OrganizationConfigLoader:
         self._prompt_cache.clear()
         logger.info("Configuration cache cleared")
 
-    def _load_config_map(self) -> Dict[str, Dict[str, Any]]:
+    def _load_config_map(self) -> dict[str, dict[str, Any]]:
         """
         Load the organization configuration map from YAML file.
 
@@ -206,7 +206,7 @@ class OrganizationConfigLoader:
             raise ValueError(f"Configuration file not found: {yaml_config_path}")
 
         try:
-            with open(yaml_config_path, "r") as f:
+            with open(yaml_config_path) as f:
                 data = yaml.safe_load(f)
 
             if not data or "organizations" not in data:
@@ -231,7 +231,7 @@ class OrganizationConfigLoader:
 
 
 # Singleton instance
-_loader_instance: Optional[OrganizationConfigLoader] = None
+_loader_instance: OrganizationConfigLoader | None = None
 
 
 def get_config_loader() -> OrganizationConfigLoader:

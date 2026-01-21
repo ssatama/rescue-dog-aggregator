@@ -4,7 +4,7 @@ import asyncio
 import os
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
@@ -44,7 +44,7 @@ class WoofProjectScraper(BaseScraper):
         self.base_url = "https://woofproject.eu"
         self.listing_url = "https://woofproject.eu/adoption/"
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """Collect all available dog data.
 
         This method is called by BaseScraper.run() and must return
@@ -192,7 +192,7 @@ class WoofProjectScraper(BaseScraper):
 
         return True
 
-    def _extract_dog_info(self, element: Tag) -> Optional[Dict[str, str]]:
+    def _extract_dog_info(self, element: Tag) -> dict[str, str] | None:
         """Extract dog information from a listing element.
 
         Args:
@@ -239,7 +239,7 @@ class WoofProjectScraper(BaseScraper):
             self.logger.error(f"Error extracting dog info: {e}")
             return None
 
-    def get_animal_list(self) -> List[Dict[str, str]]:
+    def get_animal_list(self) -> list[dict[str, str]]:
         """Get list of available dogs from all listing pages.
 
         Fetches all paginated listing pages and extracts information about all
@@ -279,7 +279,7 @@ class WoofProjectScraper(BaseScraper):
         # World-class logging: Total dogs count handled by centralized system
         return all_dogs
 
-    def _get_pagination_urls(self) -> List[str]:
+    def _get_pagination_urls(self) -> list[str]:
         """Generate pagination URLs dynamically by checking for pagination.
 
         Dynamically discovers pagination instead of using fixed page count.
@@ -341,7 +341,7 @@ class WoofProjectScraper(BaseScraper):
 
         return urls
 
-    def _fetch_listing_page(self, url: str) -> Optional[BeautifulSoup]:
+    def _fetch_listing_page(self, url: str) -> BeautifulSoup | None:
         """Fetch and parse a listing page with lazy loading support.
 
         Args:
@@ -369,7 +369,7 @@ class WoofProjectScraper(BaseScraper):
 
             # Fallback to requests with better headers
             headers = {
-                "User-Agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"),
+                "User-Agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"),
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.5",
                 "Accept-Encoding": "gzip, deflate",
@@ -386,7 +386,7 @@ class WoofProjectScraper(BaseScraper):
             self.logger.error(f"Error fetching listing page {url}: {e}")
             return None
 
-    def _fetch_with_browser(self, url: str) -> Optional[BeautifulSoup]:
+    def _fetch_with_browser(self, url: str) -> BeautifulSoup | None:
         """Fetch page using browser automation to handle lazy loading.
 
         Args:
@@ -513,7 +513,7 @@ class WoofProjectScraper(BaseScraper):
         except Exception as e:
             self.logger.warning(f"Error waiting for elements: {e}")
 
-    async def _fetch_with_browser_playwright(self, url: str) -> Optional[BeautifulSoup]:
+    async def _fetch_with_browser_playwright(self, url: str) -> BeautifulSoup | None:
         """Fetch page using Playwright browser automation to handle lazy loading.
 
         Args:
@@ -534,7 +534,7 @@ class WoofProjectScraper(BaseScraper):
 
             async with playwright_service.get_browser(options) as browser_result:
                 page = browser_result.page
-                self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} " f"for Woof Project scraping")
+                self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} for Woof Project scraping")
 
                 self.logger.debug(f"Starting Playwright browser automation for {url}")
                 await page.goto(url, wait_until="domcontentloaded")
@@ -612,7 +612,7 @@ class WoofProjectScraper(BaseScraper):
         except Exception as e:
             self.logger.warning(f"Error waiting for elements (Playwright): {e}")
 
-    def _extract_dogs_from_page(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_dogs_from_page(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         """Extract available dogs from a single listing page.
 
         Args:
@@ -628,7 +628,7 @@ class WoofProjectScraper(BaseScraper):
             self.logger.warning(f"New extraction method failed, falling back to old method: {e}")
             return self._extract_dogs_from_page_old_method(soup)
 
-    def _extract_dogs_from_page_new_method(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_dogs_from_page_new_method(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         """Extract dogs using robust container-first approach.
 
         Instead of processing H2 tags linearly, this method finds containers
@@ -656,7 +656,7 @@ class WoofProjectScraper(BaseScraper):
         # World-class logging: Extraction results handled by centralized system
         return dogs
 
-    def _extract_dogs_by_widget_containers(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_dogs_by_widget_containers(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         """Extract dogs by finding elementor widget containers."""
         dogs = []
 
@@ -708,7 +708,7 @@ class WoofProjectScraper(BaseScraper):
 
         return dogs
 
-    def _extract_dogs_by_content_sections(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_dogs_by_content_sections(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         """Fallback method: extract dogs by analyzing content sections."""
         dogs = []
 
@@ -827,7 +827,7 @@ class WoofProjectScraper(BaseScraper):
 
         return True
 
-    def _extract_dogs_from_page_old_method(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_dogs_from_page_old_method(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         """Original extraction method as fallback.
 
         Args:
@@ -863,7 +863,7 @@ class WoofProjectScraper(BaseScraper):
 
         return dogs
 
-    def scrape_animal_details(self, url: str) -> Optional[Dict[str, Any]]:
+    def scrape_animal_details(self, url: str) -> dict[str, Any] | None:
         """Scrape detailed information for a single dog with NULL prevention.
 
         Args:
@@ -931,7 +931,7 @@ class WoofProjectScraper(BaseScraper):
 
             result["properties"] = properties
 
-            self.logger.debug(f"Extracted data for {result['name']}: breed={result['breed']}, " f"age={result.get('age', 'Unknown')}, size={result['size']}")
+            self.logger.debug(f"Extracted data for {result['name']}: breed={result['breed']}, age={result.get('age', 'Unknown')}, size={result['size']}")
 
             # Apply unified standardization
             return self.process_animal(result)
@@ -940,7 +940,7 @@ class WoofProjectScraper(BaseScraper):
             self.logger.error(f"Error scraping detail page {url}: {e}")
             return None
 
-    def _extract_sex_from_description(self, description: str) -> Optional[str]:
+    def _extract_sex_from_description(self, description: str) -> str | None:
         """Extract sex from description text using pronoun analysis.
 
         Args:
@@ -972,7 +972,7 @@ class WoofProjectScraper(BaseScraper):
 
         return None
 
-    def _fetch_detail_page(self, url: str) -> Optional[BeautifulSoup]:
+    def _fetch_detail_page(self, url: str) -> BeautifulSoup | None:
         """Fetch and parse a detail page.
 
         Args:
@@ -1008,7 +1008,7 @@ class WoofProjectScraper(BaseScraper):
         slug = url.rstrip("/").split("/")[-1]
         return f"wp-{slug}"
 
-    def _extract_name_from_detail(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_name_from_detail(self, soup: BeautifulSoup) -> str | None:
         """Extract dog name from detail page.
 
         Args:
@@ -1055,7 +1055,7 @@ class WoofProjectScraper(BaseScraper):
 
         return None
 
-    def _extract_breed_from_detail(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_breed_from_detail(self, soup: BeautifulSoup) -> str | None:
         """Extract breed from detail page with comprehensive fallback.
 
         Args:
@@ -1120,7 +1120,7 @@ class WoofProjectScraper(BaseScraper):
 
         return None
 
-    def _extract_age_from_detail(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_age_from_detail(self, soup: BeautifulSoup) -> str | None:
         """Extract age from detail page with comprehensive fallback.
 
         Args:
@@ -1174,7 +1174,7 @@ class WoofProjectScraper(BaseScraper):
 
         return None
 
-    def _extract_size_from_detail(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_size_from_detail(self, soup: BeautifulSoup) -> str | None:
         """Extract size from detail page with comprehensive fallback.
 
         Args:
@@ -1258,7 +1258,7 @@ class WoofProjectScraper(BaseScraper):
         else:
             return "Extra Large"
 
-    def _extract_description_from_detail(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_description_from_detail(self, soup: BeautifulSoup) -> str | None:
         """Extract clean description using multi-stage filtering pipeline.
 
         Args:
@@ -1270,7 +1270,7 @@ class WoofProjectScraper(BaseScraper):
         # Use optimized pattern-based extraction (no complex DOM traversal needed)
         return self._extract_filtered_description(soup)
 
-    def _extract_filtered_description(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_filtered_description(self, soup: BeautifulSoup) -> str | None:
         """Multi-stage filtering pipeline for clean description extraction.
 
         Based on comprehensive analysis, uses a 3-stage approach:
@@ -1382,7 +1382,7 @@ class WoofProjectScraper(BaseScraper):
         self.logger.debug(f"Extracted {len(description)} chars using multi-stage pipeline")
         return description
 
-    def _extract_primary_image_from_detail(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_primary_image_from_detail(self, soup: BeautifulSoup) -> str | None:
         """Extract primary image URL from detail page.
 
         Prioritizes wp-content/uploads images (actual dog photos) over other images.
@@ -1560,7 +1560,7 @@ class WoofProjectScraper(BaseScraper):
 
         return True
 
-    def _find_dog_url_near_h2(self, h2_element: Tag, dog_name: str) -> Optional[str]:
+    def _find_dog_url_near_h2(self, h2_element: Tag, dog_name: str) -> str | None:
         """Find the adoption URL for a dog near its H2 element.
 
         The structure on woofproject.eu is:

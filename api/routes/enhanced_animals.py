@@ -14,7 +14,7 @@ Following CLAUDE.md principles:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from psycopg2.extras import RealDictCursor
@@ -68,14 +68,14 @@ async def get_enhanced_animal(animal_id: int, cursor: RealDictCursor = Depends(g
 
 @router.post(
     "/enhanced/detail-content",
-    response_model=List[DetailContentResponse],
+    response_model=list[DetailContentResponse],
     summary="Get detail page content (optimized)",
     description="Ultra-fast endpoint for fetching description + tagline for detail pages",
 )
 async def get_detail_content(
-    animal_ids: List[int] = Query(..., min_items=1, max_items=100),
+    animal_ids: list[int] = Query(..., min_items=1, max_items=100),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
-) -> List[DetailContentResponse]:
+) -> list[DetailContentResponse]:
     """
     Optimized endpoint for dog detail pages.
 
@@ -104,11 +104,11 @@ async def get_detail_content(
 
 @router.post(
     "/enhanced/bulk",
-    response_model=List[EnhancedAnimalResponse],
+    response_model=list[EnhancedAnimalResponse],
     summary="Bulk fetch enhanced data",
     description="Retrieve enhanced data for multiple animals (max 100)",
 )
-async def get_bulk_enhanced(request: BulkEnhancedRequest, cursor: RealDictCursor = Depends(get_pooled_db_cursor)) -> List[EnhancedAnimalResponse]:
+async def get_bulk_enhanced(request: BulkEnhancedRequest, cursor: RealDictCursor = Depends(get_pooled_db_cursor)) -> list[EnhancedAnimalResponse]:
     """
     Bulk retrieval of enhanced animal data.
 
@@ -169,9 +169,9 @@ async def get_attributes(request: AttributesRequest, cursor: RealDictCursor = De
     description="Statistics about LLM data coverage and quality",
 )
 async def get_enhanced_stats(
-    organization_id: Optional[int] = Query(None, ge=1),
+    organization_id: int | None = Query(None, ge=1),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get statistics about enhanced data coverage.
 
@@ -236,7 +236,7 @@ async def get_enhanced_stats(
 )
 async def get_enhanced_metrics(
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get comprehensive metrics for the enhanced animals service.
 

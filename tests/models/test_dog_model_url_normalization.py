@@ -2,7 +2,7 @@
 
 import pytest
 
-from api.models.dog import Animal, AnimalBase
+from api.models.dog import AnimalBase
 
 
 class TestAnimalModelUrlNormalization:

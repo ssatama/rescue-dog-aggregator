@@ -1,6 +1,5 @@
 import hashlib
 import time
-from typing import Dict, Optional, Tuple
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -67,7 +66,7 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
 
         return response
 
-    def _determine_cache_strategy(self, path: str, query_params: Dict) -> Tuple[str, int, int]:
+    def _determine_cache_strategy(self, path: str, query_params: dict) -> tuple[str, int, int]:
         if path in ["/health", "/"] or path.startswith("/monitoring"):
             return ("health", 0, 0)
 
@@ -155,7 +154,7 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
 
         return ", ".join(parts)
 
-    def _get_vary_headers(self, path: str, query_params: Dict) -> str:
+    def _get_vary_headers(self, path: str, query_params: dict) -> str:
         vary_headers = ["Accept", "Accept-Encoding"]
 
         if "/animals" in path:
@@ -166,7 +165,7 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
 
         return ", ".join(vary_headers)
 
-    async def _generate_etag(self, response: Response) -> Optional[str]:
+    async def _generate_etag(self, response: Response) -> str | None:
         try:
             if isinstance(response, StreamingResponse):
                 return None

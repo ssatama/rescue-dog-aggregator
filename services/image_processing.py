@@ -15,7 +15,6 @@ import asyncio
 import base64
 import io
 import logging
-from typing import Optional
 
 import aiohttp
 from PIL import Image, ImageFilter
@@ -30,7 +29,7 @@ BLUR_QUALITY = 50
 REQUEST_TIMEOUT = 10  # seconds
 
 
-async def generate_blur_data_url(image_url: str) -> Optional[str]:
+async def generate_blur_data_url(image_url: str) -> str | None:
     """
     Generate a tiny blurred base64-encoded placeholder image.
 
@@ -64,7 +63,7 @@ async def generate_blur_data_url(image_url: str) -> Optional[str]:
                 headers={"User-Agent": "RescueDogAggregator/1.0"},
             ) as response:
                 if response.status != 200:
-                    logger.warning(f"Failed to download image: {image_url} " f"(status={response.status})")
+                    logger.warning(f"Failed to download image: {image_url} (status={response.status})")
                     return None
 
                 image_data = await response.read()
@@ -74,7 +73,7 @@ async def generate_blur_data_url(image_url: str) -> Optional[str]:
 
         return blur_data_url
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.warning(f"Timeout downloading image: {image_url}")
         return None
     except aiohttp.ClientError as e:
@@ -85,7 +84,7 @@ async def generate_blur_data_url(image_url: str) -> Optional[str]:
         return None
 
 
-def _process_image_sync(image_data: bytes) -> Optional[str]:
+def _process_image_sync(image_data: bytes) -> str | None:
     """
     Synchronous image processing (runs in thread pool).
 
@@ -123,7 +122,7 @@ def _process_image_sync(image_data: bytes) -> Optional[str]:
         return None
 
 
-async def batch_generate_blur_urls(image_urls: list[str], max_concurrent: int = 5) -> dict[str, Optional[str]]:
+async def batch_generate_blur_urls(image_urls: list[str], max_concurrent: int = 5) -> dict[str, str | None]:
     """
     Generate blur data URLs for multiple images concurrently.
 
@@ -142,7 +141,7 @@ async def batch_generate_blur_urls(image_urls: list[str], max_concurrent: int = 
     """
     semaphore = asyncio.Semaphore(max_concurrent)
 
-    async def process_with_limit(url: str) -> tuple[str, Optional[str]]:
+    async def process_with_limit(url: str) -> tuple[str, str | None]:
         async with semaphore:
             blur_url = await generate_blur_data_url(url)
             return (url, blur_url)

@@ -1,17 +1,15 @@
 # scrapers/base_scraper.py
 
 import asyncio
-import html
 import logging
 import os
-import re
 import sys
 import time
-import unicodedata
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 import psycopg2
 from langdetect import detect
@@ -42,7 +40,7 @@ from scrapers.sentry_integration import (
     scrape_transaction,
 )
 from scrapers.validation.animal_validator import AnimalValidator
-from services.null_objects import NullLLMEnrichmentHandler, NullMetricsCollector
+from services.null_objects import NullMetricsCollector
 from services.playwright_browser_service import (
     PlaywrightOptions,
     PlaywrightResult,
@@ -69,12 +67,12 @@ class BaseScraper(ABC):
     MAX_R2_FAILURE_RATE = MAX_R2_FAILURE_RATE
 
     # Type annotations for instance variables
-    org_config: Optional[OrganizationConfig]
+    org_config: OrganizationConfig | None
 
     def __init__(
         self,
-        organization_id: Optional[int] = None,
-        config_id: Optional[str] = None,
+        organization_id: int | None = None,
+        config_id: str | None = None,
         database_service=None,
         image_processing_service=None,
         session_manager=None,
@@ -368,7 +366,7 @@ class BaseScraper(ABC):
         org_config_id = self.org_config.id if self.org_config else None
         self.animal_validator.validate_external_id(external_id, org_config_id)
 
-    def process_animal(self, animal_data: Dict[str, Any]) -> Dict[str, Any]:
+    def process_animal(self, animal_data: dict[str, Any]) -> dict[str, Any]:
         """
         Process animal data through standardization if enabled.
 
@@ -408,7 +406,7 @@ class BaseScraper(ABC):
             new_breed = processed_data.get("breed")
             if original_breed and new_breed != original_breed:
                 confidence = processed_data.get("standardization_confidence", 0)
-                self.logger.info(f"Breed standardized: '{original_breed}' -> '{new_breed}' " f"(confidence: {confidence:.2f})")
+                self.logger.info(f"Breed standardized: '{original_breed}' -> '{new_breed}' (confidence: {confidence:.2f})")
 
         except Exception as e:
             # If standardization fails, log the error and return the original data
@@ -640,7 +638,7 @@ class BaseScraper(ABC):
 
         return animals_data
 
-    def _get_logging_config(self) -> Dict[str, Any]:
+    def _get_logging_config(self) -> dict[str, Any]:
         """Get logging configuration from scraper config or defaults.
 
         Returns:
@@ -754,7 +752,7 @@ class BaseScraper(ABC):
     def _log_batch_summary(
         self,
         progress_tracker: ProgressTracker,
-        processing_stats: Dict[str, int],
+        processing_stats: dict[str, int],
         processed_count: int,
     ):
         """Log batch summary with processing statistics.
@@ -877,7 +875,7 @@ class BaseScraper(ABC):
             # Fallback to basic logging if no ProgressTracker
             central_logger = logging.getLogger("scraper")
             central_logger.info(
-                f"✅ Scrape completed: {processing_stats['animals_added']} added, " f"{processing_stats['animals_updated']} updated, Quality: {quality_score:.2f}, " f"Duration: {duration:.1f}s"
+                f"✅ Scrape completed: {processing_stats['animals_added']} added, {processing_stats['animals_updated']} updated, Quality: {quality_score:.2f}, Duration: {duration:.1f}s"
             )
 
     @abstractmethod
@@ -958,7 +956,7 @@ class BaseScraper(ABC):
         """
         return self.animal_validator.normalize_name(name)
 
-    def _validate_animal_data(self, animal_data: Dict[str, Any]) -> bool:
+    def _validate_animal_data(self, animal_data: dict[str, Any]) -> bool:
         """Validate animal data dictionary for required fields and invalid names.
 
         Delegates to AnimalValidator. Maintains backward compatibility by mutating
@@ -975,11 +973,11 @@ class BaseScraper(ABC):
         """Delegates to FilteringService. Deprecated - use filtering_service directly."""
         return self.filtering_service.get_existing_animal_urls()
 
-    def _filter_existing_urls(self, all_urls: List[str]) -> List[str]:
+    def _filter_existing_urls(self, all_urls: list[str]) -> list[str]:
         """Delegates to FilteringService. Deprecated - use filtering_service directly."""
         return self.filtering_service.filter_existing_urls(all_urls)
 
-    def _filter_existing_animals(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _filter_existing_animals(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Delegates to FilteringService. Deprecated - use filtering_service directly."""
         result = self.filtering_service.filter_existing_animals(animals)
         self._sync_filtering_stats()
@@ -1010,7 +1008,7 @@ class BaseScraper(ABC):
     @asynccontextmanager
     async def _with_browser_retry(
         self,
-        options: Optional[PlaywrightOptions] = None,
+        options: PlaywrightOptions | None = None,
         max_retries: int = 3,
         base_delay: float = 2.0,
     ) -> AsyncIterator[PlaywrightResult]:
@@ -1030,7 +1028,7 @@ class BaseScraper(ABC):
         playwright_service = get_playwright_service()
         opts = options or PlaywrightOptions()
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         for attempt in range(max_retries):
             try:
                 async with playwright_service.get_browser(opts) as result:
@@ -1040,7 +1038,7 @@ class BaseScraper(ABC):
                 last_error = e
                 if attempt < max_retries - 1:
                     delay = base_delay * (2**attempt)
-                    self.logger.warning(f"Browser operation failed (attempt {attempt + 1}/{max_retries}), " f"retrying in {delay}s: {e}")
+                    self.logger.warning(f"Browser operation failed (attempt {attempt + 1}/{max_retries}), retrying in {delay}s: {e}")
                     await asyncio.sleep(delay)
                 else:
                     self.logger.error(f"Browser operation failed after {max_retries} attempts: {e}")
@@ -1078,7 +1076,7 @@ class BaseScraper(ABC):
             except Exception as e:
                 if attempt < max_retries - 1:
                     delay = 2**attempt
-                    self.logger.warning(f"Navigation to {url} failed (attempt {attempt + 1}/{max_retries}), " f"retrying in {delay}s: {e}")
+                    self.logger.warning(f"Navigation to {url} failed (attempt {attempt + 1}/{max_retries}), retrying in {delay}s: {e}")
                     await asyncio.sleep(delay)
                 else:
                     self.logger.error(f"Navigation to {url} failed after {max_retries} attempts: {e}")
@@ -1321,7 +1319,7 @@ class BaseScraper(ABC):
             )
             return False
 
-    def log_detailed_metrics(self, metrics: Dict[str, Any]):
+    def log_detailed_metrics(self, metrics: dict[str, Any]):
         """Log detailed metrics to the scrape log.
 
         Args:
@@ -1384,7 +1382,7 @@ class BaseScraper(ABC):
                 adopted_count = sum(1 for r in results if r.detected_status == "adopted")
                 reserved_count = sum(1 for r in results if r.detected_status == "reserved")
 
-                self.logger.info(f"✅ Adoption check complete: {len(results)} dogs checked, " f"{adopted_count} adopted, {reserved_count} reserved")
+                self.logger.info(f"✅ Adoption check complete: {len(results)} dogs checked, {adopted_count} adopted, {reserved_count} reserved")
 
                 # Track metrics
                 self.metrics_collector.track_custom_metric("adoptions_checked", len(results))

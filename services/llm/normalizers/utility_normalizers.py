@@ -7,7 +7,7 @@ Following CLAUDE.md principles:
 - Pure functions (no side effects)
 """
 
-from typing import Any, Optional
+from typing import Any
 
 
 class UtilityNormalizers:
@@ -62,7 +62,7 @@ class UtilityNormalizers:
         return text[:max_length]
 
     @staticmethod
-    def normalize_adoption_fee(value: Any) -> Optional[int]:
+    def normalize_adoption_fee(value: Any) -> int | None:
         """Normalize adoption_fee_euros field."""
         # Handle None or empty string
         if value is None or value == "":

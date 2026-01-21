@@ -6,15 +6,14 @@ Based on comprehensive audit of rescue-dog-aggregator test suite.
 
 import re
 from pathlib import Path
-from typing import Set
 
 
-def analyze_test_file(file_path: Path) -> Set[str]:
+def analyze_test_file(file_path: Path) -> set[str]:
     """Analyze test file content to determine appropriate markers."""
     markers = set()
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
     except Exception:
         return markers
@@ -135,13 +134,13 @@ def analyze_test_file(file_path: Path) -> Set[str]:
     return markers
 
 
-def add_markers_to_file(file_path: Path, markers: Set[str]) -> bool:
+def add_markers_to_file(file_path: Path, markers: set[str]) -> bool:
     """Add pytest markers to the beginning of a test file."""
     if not markers:
         return False
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
     except Exception:
         return False

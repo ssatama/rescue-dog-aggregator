@@ -1,6 +1,6 @@
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import sentry_sdk
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -105,27 +105,27 @@ def apply_filters_to_query(query_parts, params, filter_country, size, age, exclu
 
 @router.get("/swipe")
 async def get_swipe_stack(
-    country: Optional[str] = Query(
+    country: str | None = Query(
         None,
         description="Filter by country code (e.g., 'GB', 'US') - DEPRECATED, use adoptable_to_country",
     ),
-    adoptable_to_country: Optional[str] = Query(None, description="Filter by adoptable to country code (e.g., 'GB', 'US')"),
-    size: Optional[List[str]] = Query(
+    adoptable_to_country: str | None = Query(None, description="Filter by adoptable to country code (e.g., 'GB', 'US')"),
+    size: list[str] | None = Query(
         None,
         alias="size[]",
         description="Filter by size (small, medium, large) - accepts multiple values",
     ),
-    age: Optional[List[str]] = Query(
+    age: list[str] | None = Query(
         None,
         alias="age[]",
         description="Filter by age group (puppy, young, adult, senior) - accepts multiple values",
     ),
-    excluded: Optional[str] = Query(None, description="Comma-separated list of excluded dog IDs"),
+    excluded: str | None = Query(None, description="Comma-separated list of excluded dog IDs"),
     limit: int = Query(20, ge=1, le=50, description="Number of dogs to return (default: 20, max: 50)"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
     randomize: bool = Query(False, description="Randomize the order of dogs returned"),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get a stack of dogs for the swipe feature.
 
@@ -224,7 +224,7 @@ async def get_swipe_stack(
                             AND (a.dog_profiler_data->>'quality_score')::float > 0.7
                         """
                     ]
-                    params = [datetime.now(timezone.utc) - timedelta(days=7)]
+                    params = [datetime.now(UTC) - timedelta(days=7)]
 
                 # Apply filters using helper function
                 filter_country = adoptable_to_country or country
@@ -401,7 +401,7 @@ async def get_swipe_stack(
 @router.get("/available-countries")
 async def get_available_countries(
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Get list of all countries that dogs can be adopted to, with dog counts.
 

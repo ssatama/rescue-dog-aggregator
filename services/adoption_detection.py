@@ -15,8 +15,8 @@ import json
 import logging
 import os
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from firecrawl import FirecrawlApp
 
@@ -32,8 +32,8 @@ class AdoptionCheckResult:
     evidence: str
     confidence: float
     checked_at: datetime
-    raw_response: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    raw_response: dict[str, Any] | None = None
+    error: str | None = None
 
 
 class AdoptionDetectionService:
@@ -65,7 +65,7 @@ class AdoptionDetectionService:
         "could you give",
     ]
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         """Initialize with Firecrawl API key.
 
         Args:
@@ -103,7 +103,7 @@ class AdoptionDetectionService:
                 detected_status="unknown",
                 evidence="Adoption detection service not available",
                 confidence=0.0,
-                checked_at=datetime.now(timezone.utc),
+                checked_at=datetime.now(UTC),
                 error="FIRECRAWL_API_KEY not configured",
             )
 
@@ -115,7 +115,7 @@ class AdoptionDetectionService:
                 detected_status="unknown",
                 evidence="No URL available for this animal",
                 confidence=0.0,
-                checked_at=datetime.now(timezone.utc),
+                checked_at=datetime.now(UTC),
                 error="Missing URL",
             )
 
@@ -195,7 +195,7 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
                     detected_status=data.get("status", "unknown"),
                     evidence=data.get("evidence", "")[:200],  # Limit evidence length
                     confidence=data.get("confidence", 0.0),
-                    checked_at=datetime.now(timezone.utc),
+                    checked_at=datetime.now(UTC),
                     raw_response=extraction_result if isinstance(extraction_result, dict) else str(extraction_result),
                 )
             else:
@@ -206,7 +206,7 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
                     detected_status="unknown",
                     evidence="Failed to extract data from page",
                     confidence=0.0,
-                    checked_at=datetime.now(timezone.utc),
+                    checked_at=datetime.now(UTC),
                     error="Extraction failed",
                 )
 
@@ -219,11 +219,11 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
                 detected_status="unknown",
                 evidence=f"Error: {str(e)[:100]}",
                 confidence=0.0,
-                checked_at=datetime.now(timezone.utc),
+                checked_at=datetime.now(UTC),
                 error=str(e),
             )
 
-    def _extract_with_retry(self, url: str, timeout: int, max_retries: int = 2) -> Optional[Dict[str, Any]]:
+    def _extract_with_retry(self, url: str, timeout: int, max_retries: int = 2) -> dict[str, Any] | None:
         """Extract data from URL with retry logic.
 
         Args:
@@ -246,7 +246,7 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
         limit: int = 50,
         check_interval_hours: int = 24,
         dry_run: bool = False,
-    ) -> List[AdoptionCheckResult]:
+    ) -> list[AdoptionCheckResult]:
         """Check adoption status for eligible dogs in batch.
 
         Args:
@@ -261,7 +261,7 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
             List of AdoptionCheckResult for processed dogs
         """
         # Calculate cutoff time for rechecking
-        recheck_cutoff = datetime.now(timezone.utc) - timedelta(hours=check_interval_hours)
+        recheck_cutoff = datetime.now(UTC) - timedelta(hours=check_interval_hours)
 
         # Query eligible dogs using raw SQL
         query = """
@@ -330,7 +330,7 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
                     ),
                 )
 
-                self.logger.info(f"Updated {dog.name}: {result.previous_status} → {result.detected_status} " f"(confidence: {result.confidence:.2f})")
+                self.logger.info(f"Updated {dog.name}: {result.previous_status} → {result.detected_status} (confidence: {result.confidence:.2f})")
 
         if not dry_run and hasattr(db_connection, "commit"):
             db_connection.commit()
@@ -355,7 +355,7 @@ Be very careful: death, deletion, or disappearance is NOT adoption!""",
         Returns:
             Count of eligible dogs
         """
-        recheck_cutoff = datetime.now(timezone.utc) - timedelta(hours=check_interval_hours)
+        recheck_cutoff = datetime.now(UTC) - timedelta(hours=check_interval_hours)
 
         query = """
             SELECT COUNT(*) 

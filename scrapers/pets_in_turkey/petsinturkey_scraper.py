@@ -2,7 +2,7 @@
 
 import re
 import time
-from typing import Any, Dict, List
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
@@ -46,9 +46,9 @@ class PetsInTurkeyScraper(BaseScraper):
         self.organization_name = "Pets in Turkey"
 
         # Log configuration values
-        self.logger.info(f"Initialized with config: rate_limit_delay={self.rate_limit_delay}, " f"batch_size={self.batch_size}, skip_existing_animals={self.skip_existing_animals}")
+        self.logger.info(f"Initialized with config: rate_limit_delay={self.rate_limit_delay}, batch_size={self.batch_size}, skip_existing_animals={self.skip_existing_animals}")
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """Collect dog data from the Pets in Turkey website.
 
         Returns:
@@ -137,7 +137,7 @@ class PetsInTurkeyScraper(BaseScraper):
 
         return dogs_data
 
-    def _extract_dog_data(self, section) -> Dict[str, Any]:
+    def _extract_dog_data(self, section) -> dict[str, Any]:
         """Extract data for a single dog from its section.
 
         Args:
@@ -385,7 +385,7 @@ class PetsInTurkeyScraper(BaseScraper):
         # Make relative URLs absolute
         return urljoin(self.base_url, url)
 
-    def _apply_standardization(self, dog_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_standardization(self, dog_data: dict[str, Any]) -> dict[str, Any]:
         """Apply standardization utilities to dog data.
 
         Args:

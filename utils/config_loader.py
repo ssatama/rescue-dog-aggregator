@@ -1,7 +1,6 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import jsonschema
 import yaml
@@ -13,7 +12,7 @@ from utils.config_models import OrganizationConfig
 CONFIG_DIR = Path(__file__).parent.parent / "configs"
 
 # Type alias for configuration dictionary
-ConfigDict = Dict[str, OrganizationConfig]
+ConfigDict = dict[str, OrganizationConfig]
 
 
 class ConfigLoadError(Exception):
@@ -31,7 +30,7 @@ class ConfigValidationError(Exception):
 class ConfigLoader:
     """Loads and manages organization configurations."""
 
-    def __init__(self, config_dir: Optional[Path] = None):
+    def __init__(self, config_dir: Path | None = None):
         """Initialize the config loader.
 
         Args:
@@ -42,14 +41,14 @@ class ConfigLoader:
         self.schema_dir = (config_dir or CONFIG_DIR) / "schemas"
         self.logger = logging.getLogger(__name__)
         self._config_cache: ConfigDict = {}
-        self._schema_cache: Optional[dict] = None  # Initialize schema cache
+        self._schema_cache: dict | None = None  # Initialize schema cache
 
     def _load_schema(self) -> dict:
         """Load and cache the JSON schema."""
         if self._schema_cache is None:
             schema_file = self.schema_dir / "organization.schema.json"
             if schema_file.exists():
-                with open(schema_file, "r", encoding="utf-8") as f:
+                with open(schema_file, encoding="utf-8") as f:
                     self._schema_cache = json.load(f)
             else:
                 # Fallback: basic schema if file doesn't exist
@@ -81,7 +80,7 @@ class ConfigLoader:
     def _load_yaml_file(self, file_path: Path) -> dict:
         """Load and parse a YAML configuration file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 config_data = yaml.safe_load(f)
 
             if not isinstance(config_data, dict):
@@ -105,7 +104,7 @@ class ConfigLoader:
         supported_versions = ["1.0"]
 
         if schema_version not in supported_versions:
-            raise ValueError(f"Unsupported schema version '{schema_version}' in {config_file}. " f"Supported versions: {supported_versions}")
+            raise ValueError(f"Unsupported schema version '{schema_version}' in {config_file}. Supported versions: {supported_versions}")
 
     def load_config(self, org_id: str) -> OrganizationConfig:
         """Load a single organization configuration by ID.
@@ -176,7 +175,7 @@ class ConfigLoader:
         self.logger.info(f"Loaded {len(configs)} organization configurations")
         return configs
 
-    def get_enabled_orgs(self) -> List[OrganizationConfig]:
+    def get_enabled_orgs(self) -> list[OrganizationConfig]:
         """Get list of enabled organizations.
 
         Returns:
@@ -204,7 +203,7 @@ class ConfigLoader:
         # Load fresh from disk
         return self.load_config(org_id)
 
-    def validate_all_configs(self) -> Dict[str, List[str]]:
+    def validate_all_configs(self) -> dict[str, list[str]]:
         """Validate all configurations and return warnings.
 
         Returns:

@@ -5,7 +5,7 @@ import os
 import random
 import re
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 from bs4 import BeautifulSoup, Tag
 
@@ -72,7 +72,7 @@ class ManyTearsRescueScraper(BaseScraper):
         self.listing_url = f"{self.base_url}/adopt/dogs/"
         self.organization_name = self.org_config.name
 
-    def _get_filtered_animals(self) -> List[Dict[str, Any]]:
+    def _get_filtered_animals(self) -> list[dict[str, Any]]:
         """Get list of animals and apply skip_existing_animals filtering.
 
         Uses BaseScraper._filter_existing_animals() which records ALL external_ids
@@ -92,7 +92,7 @@ class ManyTearsRescueScraper(BaseScraper):
         # This is critical for mark_skipped_animals_as_seen() to work correctly
         return self._filter_existing_animals(animals)
 
-    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Process animals with reduced parallelism to avoid resource exhaustion.
 
         Args:
@@ -105,7 +105,7 @@ class ManyTearsRescueScraper(BaseScraper):
             return asyncio.run(self._process_animals_parallel_playwright(animals))
         return self._process_animals_parallel_selenium(animals)
 
-    async def _process_animals_parallel_playwright(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def _process_animals_parallel_playwright(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Playwright implementation of parallel animal processing."""
         all_dogs_data = []
         seen_urls = set()
@@ -136,7 +136,7 @@ class ManyTearsRescueScraper(BaseScraper):
         self.logger.info(f"Completed detail scraping: {len(all_dogs_data)} animals processed")
         return all_dogs_data
 
-    def _process_animals_parallel_selenium(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_parallel_selenium(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Selenium implementation of parallel animal processing."""
         all_dogs_data = []
         seen_urls = set()  # Track URLs to prevent duplicates
@@ -221,7 +221,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         return all_dogs_data
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """Collect all available dog data from listing pages.
 
         This method implements the BaseScraper template method pattern.
@@ -248,7 +248,7 @@ class ManyTearsRescueScraper(BaseScraper):
             self.logger.error(f"Error collecting data from Many Tears Rescue: {e}")
             return []
 
-    def get_animal_list(self) -> List[Dict[str, Any]]:
+    def get_animal_list(self) -> list[dict[str, Any]]:
         """Fetch list of available dogs using browser automation with pagination.
 
         Handles Cloudflare Bot Management by using headless Chrome with proper options.
@@ -261,7 +261,7 @@ class ManyTearsRescueScraper(BaseScraper):
             return asyncio.run(self._get_animal_list_playwright())
         return self._get_animal_list_selenium()
 
-    def _get_animal_list_selenium(self) -> List[Dict[str, Any]]:
+    def _get_animal_list_selenium(self) -> list[dict[str, Any]]:
         """Selenium implementation of get_animal_list."""
         driver = None
         all_dogs = []
@@ -370,7 +370,7 @@ class ManyTearsRescueScraper(BaseScraper):
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs
 
-    async def _get_animal_list_playwright(self) -> List[Dict[str, Any]]:
+    async def _get_animal_list_playwright(self) -> list[dict[str, Any]]:
         """Playwright implementation of get_animal_list."""
         all_dogs = []
 
@@ -571,7 +571,7 @@ class ManyTearsRescueScraper(BaseScraper):
         # Return highest page number found, default to 1
         return max(page_numbers) if page_numbers else 1
 
-    def _extract_dogs_from_page(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _extract_dogs_from_page(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract dog information from a single listing page.
 
         Uses CSS selectors identified in Session 1 analysis:
@@ -600,7 +600,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         return dogs
 
-    def _extract_card_data(self, link_element) -> Dict[str, Any]:
+    def _extract_card_data(self, link_element) -> dict[str, Any]:
         """Extract data from a single dog card element.
 
         Args:
@@ -658,7 +658,7 @@ class ManyTearsRescueScraper(BaseScraper):
         match = re.search(r"/adopt/dogs/(\d+)/?$", url)
         return match.group(1) if match else url.split("/")[-2] if url.split("/")[-2].isdigit() else "unknown"
 
-    def _scrape_animal_details(self, adoption_url: str, driver=None) -> Dict[str, Any]:
+    def _scrape_animal_details(self, adoption_url: str, driver=None) -> dict[str, Any]:
         """Scrape detailed information from individual dog page.
 
         Extracts comprehensive data including name, requirements sections, diary entries,
@@ -676,7 +676,7 @@ class ManyTearsRescueScraper(BaseScraper):
             return asyncio.run(self._scrape_animal_details_playwright(adoption_url))
         return self._scrape_animal_details_selenium(adoption_url, driver)
 
-    def _scrape_animal_details_selenium(self, adoption_url: str, driver=None) -> Dict[str, Any]:
+    def _scrape_animal_details_selenium(self, adoption_url: str, driver=None) -> dict[str, Any]:
         """Selenium implementation of _scrape_animal_details."""
         local_driver = None
         try:
@@ -773,7 +773,7 @@ class ManyTearsRescueScraper(BaseScraper):
             if local_driver:
                 local_driver.quit()
 
-    async def _scrape_animal_details_playwright(self, adoption_url: str) -> Dict[str, Any]:
+    async def _scrape_animal_details_playwright(self, adoption_url: str) -> dict[str, Any]:
         """Playwright implementation of _scrape_animal_details."""
         try:
             self.logger.debug(f"Scraping details from: {adoption_url}")
@@ -941,7 +941,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         return " ".join(description_parts)
 
-    def _extract_structured_data_from_detail_page(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_structured_data_from_detail_page(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract structured data (age, breed, sex) from detail page list items.
 
         Based on DOM analysis, structured data appears in a list format:
@@ -1014,7 +1014,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         return structured_data
 
-    def _extract_requirements_sections(self, soup: BeautifulSoup) -> Dict[str, str]:
+    def _extract_requirements_sections(self, soup: BeautifulSoup) -> dict[str, str]:
         """Extract the 6 requirements sections from the structured list.
 
         Based on Playwright analysis, these are in a ul > li structure where
@@ -1166,7 +1166,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         return requirements
 
-    def _extract_diary_entries(self, soup: BeautifulSoup, driver=None) -> Dict[str, str]:
+    def _extract_diary_entries(self, soup: BeautifulSoup, driver=None) -> dict[str, str]:
         """Extract diary entries from the optional diary section.
 
         Diary entries appear as clickable buttons with dates that expand to show full content.
@@ -1179,7 +1179,7 @@ class ManyTearsRescueScraper(BaseScraper):
         Returns:
             Dictionary mapping dates to full diary entry content
         """
-        diary_entries: Dict[str, str] = {}
+        diary_entries: dict[str, str] = {}
 
         # Find diary heading first
         diary_heading = None
@@ -1293,7 +1293,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         return diary_entries
 
-    def _extract_compatibility_sections(self, soup: BeautifulSoup) -> Dict[str, str]:
+    def _extract_compatibility_sections(self, soup: BeautifulSoup) -> dict[str, str]:
         """Extract compatibility sections from h1 headings.
 
         Based on Playwright analysis, compatibility sections are h1 elements

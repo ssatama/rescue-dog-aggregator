@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from utils.config_loader import ConfigLoader
 from utils.secure_config_scraper_runner import SecureConfigScraperRunner
@@ -8,7 +8,7 @@ from utils.secure_config_scraper_runner import SecureConfigScraperRunner
 class ConfigScraperRunner:
     """Manages running scrapers based on config files - now uses secure implementation."""
 
-    def __init__(self, config_loader: Optional[ConfigLoader] = None):
+    def __init__(self, config_loader: ConfigLoader | None = None):
         """Initialize the scraper runner.
 
         Args:
@@ -18,7 +18,7 @@ class ConfigScraperRunner:
         self.logger = logging.getLogger(__name__)
         self._secure_runner = SecureConfigScraperRunner(config_loader)
 
-    def list_available_scrapers(self) -> List[Dict[str, Any]]:
+    def list_available_scrapers(self) -> list[dict[str, Any]]:
         """List all available scrapers from configs.
 
         Returns:
@@ -37,7 +37,7 @@ class ConfigScraperRunner:
             for scraper in scrapers
         ]
 
-    def run_scraper(self, config_id: str) -> Dict[str, Any]:
+    def run_scraper(self, config_id: str) -> dict[str, Any]:
         """Run a specific scraper.
 
         Args:
@@ -55,7 +55,7 @@ class ConfigScraperRunner:
             "error": result.error,
         }
 
-    def run_all_enabled_scrapers(self) -> Dict[str, Any]:
+    def run_all_enabled_scrapers(self) -> dict[str, Any]:
         """Run all enabled scrapers.
 
         Returns:
@@ -81,7 +81,7 @@ class ConfigScraperRunner:
             "error": result.error,
         }
 
-    def get_scraper_status(self, config_id: str) -> Dict[str, Any]:
+    def get_scraper_status(self, config_id: str) -> dict[str, Any]:
         """Get status information for a scraper.
 
         Args:
@@ -92,7 +92,7 @@ class ConfigScraperRunner:
         """
         return self._secure_runner.get_scraper_status(config_id)
 
-    def get_all_scraper_status(self) -> List[Dict[str, Any]]:
+    def get_all_scraper_status(self) -> list[dict[str, Any]]:
         """Get status for all scrapers.
 
         Returns:

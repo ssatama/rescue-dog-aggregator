@@ -21,9 +21,9 @@ import argparse
 import asyncio
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import psycopg2
 from pydantic import ValidationError
@@ -86,10 +86,10 @@ class InstagramPhotoAnalyzer:
         if not prompt_path.exists():
             raise FileNotFoundError(f"Prompt file not found: {prompt_path}")
 
-        with open(prompt_path, "r", encoding="utf-8") as f:
+        with open(prompt_path, encoding="utf-8") as f:
             return f.read()
 
-    async def get_unanalyzed_dogs(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    async def get_unanalyzed_dogs(self, limit: int | None = None) -> list[dict[str, Any]]:
         """
         Query dogs without existing photo analysis.
 
@@ -119,7 +119,7 @@ class InstagramPhotoAnalyzer:
 
         return [{"id": row[0], "name": row[1], "primary_image_url": row[2]} for row in rows]
 
-    async def analyze_single_dog(self, dog: Dict[str, Any]) -> Optional[PhotoAnalysisResponse]:
+    async def analyze_single_dog(self, dog: dict[str, Any]) -> PhotoAnalysisResponse | None:
         """
         Analyze a single dog's photo using vision API.
 
@@ -223,7 +223,7 @@ class InstagramPhotoAnalyzer:
                     analysis.reasoning,
                     analysis.flags,
                     image_url,
-                    datetime.now(timezone.utc),
+                    datetime.now(UTC),
                     self.model,
                     cost,
                 ),
@@ -241,7 +241,7 @@ class InstagramPhotoAnalyzer:
             self.connection.rollback()
             return False
 
-    async def analyze_photos(self, dogs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def analyze_photos(self, dogs: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Analyze photos for a list of dogs with concurrent batch processing.
 
@@ -306,7 +306,7 @@ class InstagramPhotoAnalyzer:
             "total_cost": round(total_cost, 4),
         }
 
-    async def run(self, limit: Optional[int] = None) -> Dict[str, Any]:
+    async def run(self, limit: int | None = None) -> dict[str, Any]:
         """
         Main entry point for batch processing.
 
@@ -350,7 +350,7 @@ class InstagramPhotoAnalyzer:
         return result
 
 
-def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Analyze dog photos for Instagram suitability",

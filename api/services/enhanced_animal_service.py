@@ -18,7 +18,7 @@ import json
 import logging
 import time
 from collections import Counter
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from cachetools import TTLCache
 from psycopg2 import InterfaceError, OperationalError
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 class EnhancedAnimalService:
     """Service for handling enhanced animal data operations."""
 
-    def _execute_with_retry(self, query: str, params: Optional[tuple] = None) -> None:
+    def _execute_with_retry(self, query: str, params: tuple | None = None) -> None:
         """
         Execute database query with retry logic for transient failures.
 
@@ -58,7 +58,7 @@ class EnhancedAnimalService:
                 last_exception = e
                 if attempt < self.max_retries - 1:
                     sleep_time = 0.1 * (2**attempt)  # Exponential backoff
-                    logger.warning(f"Database query failed (attempt {attempt + 1}/{self.max_retries}), " f"retrying in {sleep_time}s: {e}")
+                    logger.warning(f"Database query failed (attempt {attempt + 1}/{self.max_retries}), retrying in {sleep_time}s: {e}")
                     time.sleep(sleep_time)
                 else:
                     logger.error(f"Database query failed after {self.max_retries} attempts: {e}")
@@ -95,7 +95,7 @@ class EnhancedAnimalService:
             "response_times": [],  # Store last 100 response times
         }
 
-    def get_enhanced_detail(self, animal_id: int) -> Optional[EnhancedAnimalResponse]:
+    def get_enhanced_detail(self, animal_id: int) -> EnhancedAnimalResponse | None:
         """
         Get enhanced data for single animal - optimized for detail pages.
 
@@ -146,7 +146,7 @@ class EnhancedAnimalService:
         self._track_response_time(start_time)
         return response
 
-    def get_detail_content(self, animal_ids: List[int]) -> List[DetailContentResponse]:
+    def get_detail_content(self, animal_ids: list[int]) -> list[DetailContentResponse]:
         """
         Ultra-optimized for description + tagline (primary use case).
 
@@ -210,7 +210,7 @@ class EnhancedAnimalService:
         self._track_response_time(start_time)
         return all_results
 
-    def get_bulk_enhanced(self, animal_ids: List[int]) -> List[EnhancedAnimalResponse]:
+    def get_bulk_enhanced(self, animal_ids: list[int]) -> list[EnhancedAnimalResponse]:
         """
         Bulk retrieval with efficient batching.
 
@@ -269,7 +269,7 @@ class EnhancedAnimalService:
         self._track_response_time(start_time)
         return responses
 
-    def get_attributes(self, animal_ids: List[int], attributes: List[str]) -> Dict[int, Dict[str, Any]]:
+    def get_attributes(self, animal_ids: list[int], attributes: list[str]) -> dict[int, dict[str, Any]]:
         """
         Fetch specific attributes using JSONB operators.
 
@@ -349,7 +349,7 @@ class EnhancedAnimalService:
         self._track_response_time(start_time)
         return response
 
-    def _build_enhanced_response(self, row: Dict) -> EnhancedAnimalResponse:
+    def _build_enhanced_response(self, row: dict) -> EnhancedAnimalResponse:
         """Transform database row to response model."""
 
         profiler_data = row.get("dog_profiler_data") or {}
@@ -404,7 +404,7 @@ class EnhancedAnimalService:
             },
         )
 
-    def _calculate_completeness_score(self, data: Dict[str, Any]) -> float:
+    def _calculate_completeness_score(self, data: dict[str, Any]) -> float:
         """
         Calculate how complete the enhanced data is (0-100).
 
@@ -443,7 +443,7 @@ class EnhancedAnimalService:
 
         return min(score, 100.0)
 
-    def _normalize_boolean(self, value: Any) -> Optional[bool]:
+    def _normalize_boolean(self, value: Any) -> bool | None:
         """
         Normalize various boolean representations from LLM data.
 
@@ -483,7 +483,7 @@ class EnhancedAnimalService:
         # If we can't parse it, return None
         return None
 
-    def _generate_bulk_cache_key(self, animal_ids: List[int]) -> str:
+    def _generate_bulk_cache_key(self, animal_ids: list[int]) -> str:
         """
         Generate memory-efficient cache key for bulk operations.
 
@@ -496,7 +496,7 @@ class EnhancedAnimalService:
         # Generate hash (first 16 chars is sufficient for uniqueness)
         return hashlib.sha256(ids_str.encode()).hexdigest()[:16]
 
-    def _ensure_list(self, value: Any) -> List[str]:
+    def _ensure_list(self, value: Any) -> list[str]:
         """
         Ensure value is a list, converting strings if necessary.
 
@@ -520,7 +520,7 @@ class EnhancedAnimalService:
         # Fallback to empty list
         return []
 
-    def invalidate_cache(self, animal_id: Optional[int] = None) -> None:
+    def invalidate_cache(self, animal_id: int | None = None) -> None:
         """
         Invalidate cache entries.
 
@@ -567,7 +567,7 @@ class EnhancedAnimalService:
         if elapsed > 100:  # Single query target
             logger.warning(f"Slow query detected: {elapsed:.2f}ms")
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """
         Get cache statistics for monitoring.
 
@@ -602,7 +602,7 @@ class EnhancedAnimalService:
             "bulk_hit_rate": round(bulk_hit_rate, 2),
         }
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get comprehensive metrics for monitoring.
 

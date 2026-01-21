@@ -73,6 +73,6 @@ class TestRobotsTxtCompliance:
 
         for line in lines:
             # Each line should be valid robots.txt syntax
-            assert (
-                line.startswith("User-agent:") or line.startswith("Disallow:") or line.startswith("Allow:") or line.startswith("Sitemap:") or line.startswith("Crawl-delay:")
-            ), f"Invalid robots.txt syntax: {line}"
+            assert line.startswith("User-agent:") or line.startswith("Disallow:") or line.startswith("Allow:") or line.startswith("Sitemap:") or line.startswith("Crawl-delay:"), (
+                f"Invalid robots.txt syntax: {line}"
+            )

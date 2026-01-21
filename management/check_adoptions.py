@@ -13,9 +13,8 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import List, Optional
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -64,7 +63,7 @@ class CheckAdoptionsCommand:
             print(f"❌ Failed to connect to database: {e}")
             sys.exit(1)
 
-    def get_organizations(self, org_slug: Optional[str] = None, all_orgs: bool = False):
+    def get_organizations(self, org_slug: str | None = None, all_orgs: bool = False):
         """Get organizations to check.
 
         Args:
@@ -93,7 +92,7 @@ class CheckAdoptionsCommand:
             print("❌ Must specify --org or --all")
             sys.exit(1)
 
-    def get_eligible_dogs(self, org_id: int, threshold: int, limit: int, check_interval_hours: int) -> List[dict]:
+    def get_eligible_dogs(self, org_id: int, threshold: int, limit: int, check_interval_hours: int) -> list[dict]:
         """Get dogs eligible for adoption checking.
 
         Args:
@@ -106,7 +105,7 @@ class CheckAdoptionsCommand:
             List of eligible dogs
         """
         # Calculate cutoff time for rechecks
-        recheck_cutoff = datetime.now(timezone.utc) - timedelta(hours=check_interval_hours)
+        recheck_cutoff = datetime.now(UTC) - timedelta(hours=check_interval_hours)
 
         query = """
             SELECT 
@@ -132,7 +131,7 @@ class CheckAdoptionsCommand:
         self.cursor.execute(query, (org_id, threshold, recheck_cutoff, limit))
         return self.cursor.fetchall()
 
-    def get_organization_id(self, config_id: str) -> Optional[int]:
+    def get_organization_id(self, config_id: str) -> int | None:
         """Get organization ID from database using config ID.
 
         Args:
@@ -269,7 +268,7 @@ class CheckAdoptionsCommand:
         )
         self.conn.commit()
 
-    def print_summary(self, org_name: str, results: List[AdoptionCheckResult]):
+    def print_summary(self, org_name: str, results: list[AdoptionCheckResult]):
         """Print summary of adoption checks.
 
         Args:

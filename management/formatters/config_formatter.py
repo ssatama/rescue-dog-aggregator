@@ -3,13 +3,13 @@ Configuration output formatter for CLI commands.
 Handles all formatted output for configuration management operations.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class ConfigFormatter:
     """Handles formatted output for configuration management commands."""
 
-    def format_organizations_list(self, organizations: List[Dict[str, Any]]) -> None:
+    def format_organizations_list(self, organizations: list[dict[str, Any]]) -> None:
         """Format and print organizations list."""
         print("🏢 Available Organizations:")
         print("=" * 50)
@@ -22,7 +22,7 @@ class ConfigFormatter:
             print(f"  Module: {org['scraper_module']}")
             print()
 
-    def format_organization_details(self, details: Dict[str, Any]) -> None:
+    def format_organization_details(self, details: dict[str, Any]) -> None:
         """Format and print organization details."""
         print(f"🏢 Organization Details: {details['display_name']}")
         print("=" * 50)
@@ -79,7 +79,7 @@ class ConfigFormatter:
         else:
             print("✅ No validation warnings")
 
-    def format_sync_status(self, sync_result: Dict[str, Any]) -> None:
+    def format_sync_status(self, sync_result: dict[str, Any]) -> None:
         """Format and print sync status or results."""
         if sync_result.get("dry_run", False):
             print("🔍 Dry run - checking what would be synced...")
@@ -128,7 +128,7 @@ class ConfigFormatter:
                 for error in sync_result.get("errors", []):
                     print(f"  Error: {error}")
 
-    def format_validation_results(self, validation_result: Dict[str, Any]) -> None:
+    def format_validation_results(self, validation_result: dict[str, Any]) -> None:
         """Format and print validation results."""
         print("🔍 Validating configurations...")
         print("=" * 50)
@@ -148,7 +148,7 @@ class ConfigFormatter:
         print(f"  Configs with warnings: {validation_result['configs_with_warnings']}")
         print(f"  Valid configs: {validation_result['valid_configs']}")
 
-    def format_scraper_results(self, config_id: str, scraper_result: Dict[str, Any]) -> None:
+    def format_scraper_results(self, config_id: str, scraper_result: dict[str, Any]) -> None:
         """Format and print scraper execution results."""
         print(f"🚀 Running scraper for: {config_id}")
 

@@ -7,7 +7,7 @@ Following CLAUDE.md principles:
 - Immutable data (no mutations)
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from .normalizers import (
     BehavioralNormalizers,
@@ -72,5 +72,5 @@ class FieldNormalizers:
         return UtilityNormalizers.smart_truncate(text, max_length)
 
     @staticmethod
-    def normalize_adoption_fee(value: Any) -> Optional[int]:
+    def normalize_adoption_fee(value: Any) -> int | None:
         return UtilityNormalizers.normalize_adoption_fee(value)

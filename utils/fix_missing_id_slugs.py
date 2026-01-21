@@ -7,7 +7,6 @@ These animals have valid slugs but in "name-breed" format instead of "name-breed
 import logging
 import os
 import sys
-from typing import List, Tuple
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -51,7 +50,7 @@ class MissingIdSlugFixer:
             self.conn.close()
             logger.info("Database connection closed")
 
-    def get_animals_missing_id_suffixes(self) -> List[Tuple]:
+    def get_animals_missing_id_suffixes(self) -> list[tuple]:
         """Get animals that have slugs but are missing ID suffixes."""
         try:
             cursor = self.conn.cursor()

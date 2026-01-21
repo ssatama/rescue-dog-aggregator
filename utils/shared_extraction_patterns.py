@@ -22,10 +22,9 @@ Design principles:
 """
 
 import re
-from typing import Optional, Tuple
 
 
-def extract_age_from_text(text: Optional[str]) -> Optional[float]:
+def extract_age_from_text(text: str | None) -> float | None:
     """
     Extract age in decimal years from text using consolidated patterns.
 
@@ -163,7 +162,7 @@ def extract_age_from_text(text: Optional[str]) -> Optional[float]:
     return None
 
 
-def extract_breed_from_text(text: Optional[str]) -> str:
+def extract_breed_from_text(text: str | None) -> str:
     """
     Extract breed from description text.
 
@@ -307,7 +306,7 @@ def extract_breed_from_text(text: Optional[str]) -> str:
     return "Mixed Breed"
 
 
-def extract_sex_from_text(text: Optional[str]) -> Optional[str]:
+def extract_sex_from_text(text: str | None) -> str | None:
     """
     Extract sex from text using confidence-based scoring.
 
@@ -372,7 +371,7 @@ def extract_sex_from_text(text: Optional[str]) -> Optional[str]:
     return None
 
 
-def extract_weight_from_text(text: Optional[str]) -> Optional[float]:
+def extract_weight_from_text(text: str | None) -> float | None:
     """
     Extract weight in kg from text with unit conversion.
 
@@ -436,7 +435,7 @@ def extract_weight_from_text(text: Optional[str]) -> Optional[float]:
     return None
 
 
-def normalize_age_text(age_years: Optional[float]) -> Optional[str]:
+def normalize_age_text(age_years: float | None) -> str | None:
     """
     Format age in years to standardized text format.
 
@@ -469,8 +468,8 @@ def normalize_age_text(age_years: Optional[float]) -> Optional[str]:
 
 
 def calculate_age_range_months(
-    age_years: Optional[float],
-) -> Tuple[Optional[int], Optional[int]]:
+    age_years: float | None,
+) -> tuple[int | None, int | None]:
     """
     Calculate age range in months from decimal years.
 

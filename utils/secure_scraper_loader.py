@@ -7,7 +7,7 @@ import importlib
 import logging
 import sys
 from dataclasses import dataclass
-from typing import Dict, Optional, Protocol, Set, Type
+from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class SecureScraperLoader:
     """Secure scraper loader with import validation."""
 
     # Whitelist of allowed scraper modules
-    ALLOWED_MODULES: Set[str] = {
+    ALLOWED_MODULES: set[str] = {
         "scrapers.pets_turkey.dogs_scraper",
         "scrapers.happy_tails.dogs_scraper",
         "scrapers.base_scraper",
@@ -61,10 +61,10 @@ class SecureScraperLoader:
         # Add new modules here as needed
     }
 
-    def __init__(self, allowed_modules: Optional[Set[str]] = None):
+    def __init__(self, allowed_modules: set[str] | None = None):
         """Initialize with optional custom allowed modules."""
         self.allowed_modules = allowed_modules or self.ALLOWED_MODULES
-        self._module_cache: Dict[str, Type] = {}
+        self._module_cache: dict[str, type] = {}
 
     def validate_module_path(self, module_path: str) -> bool:
         """Validate module path against whitelist."""
@@ -93,7 +93,7 @@ class SecureScraperLoader:
 
         return True
 
-    def load_scraper_class(self, module_info: ScraperModuleInfo) -> Type[ScraperProtocol]:
+    def load_scraper_class(self, module_info: ScraperModuleInfo) -> type[ScraperProtocol]:
         """Load and validate scraper class."""
         # Check cache first
         cache_key = f"{module_info.module_path}.{module_info.class_name}"
@@ -138,7 +138,7 @@ class SecureScraperLoader:
             logger.error(f"Class '{module_info.class_name}' not found in module '{module_info.module_path}': {e}")
             raise
 
-    def _validate_scraper_interface(self, scraper_class: Type) -> bool:
+    def _validate_scraper_interface(self, scraper_class: type) -> bool:
         """Validate that class implements expected scraper interface."""
         # Check if class has required methods
         required_methods = ["__init__", "run"]
@@ -255,7 +255,7 @@ class SecureScraperLoader:
             logger.error(f"CRITICAL: Service injection failed: {e}")
             raise RuntimeError(f"Scraper cannot operate without database services: {e}") from e
 
-    def get_allowed_modules(self) -> Set[str]:
+    def get_allowed_modules(self) -> set[str]:
         """Get copy of allowed modules (immutable)."""
         return self.allowed_modules.copy()
 
@@ -289,7 +289,7 @@ class SecurityError(Exception):
 
 
 # Default global loader instance
-_default_loader: Optional[SecureScraperLoader] = None
+_default_loader: SecureScraperLoader | None = None
 
 
 def get_scraper_loader() -> SecureScraperLoader:

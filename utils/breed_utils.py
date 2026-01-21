@@ -1,7 +1,6 @@
 # utils/breed_utils.py
 
 import re
-from typing import Optional
 
 
 def generate_breed_slug(primary_breed: str) -> str:
@@ -54,7 +53,7 @@ def is_qualifying_breed(count: int, threshold: int = 15) -> bool:
     return count >= threshold
 
 
-def validate_breed_type(breed_type: Optional[str]) -> bool:
+def validate_breed_type(breed_type: str | None) -> bool:
     """
     Validate breed type values against allowed types.
 

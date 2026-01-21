@@ -12,7 +12,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import asyncpg
 from asyncpg import Connection, Pool
@@ -60,7 +60,7 @@ class ConnectionContext:
     def __init__(self, pool: Pool):
         """Initialize with connection pool."""
         self.pool = pool
-        self.connection: Optional[Connection] = None
+        self.connection: Connection | None = None
 
     async def __aenter__(self) -> Connection:
         """Acquire connection from pool."""
@@ -79,7 +79,7 @@ class AsyncDatabasePool:
     def __init__(self, config: PoolConfig):
         """Initialize with configuration."""
         self.config = config
-        self.pool: Optional[Pool] = None
+        self.pool: Pool | None = None
         self.is_initialized = False
         self.metrics = {"queries_executed": 0, "errors": 0, "retries": 0}
 
@@ -127,14 +127,14 @@ class AsyncDatabasePool:
             async with connection.transaction():
                 yield connection
 
-    async def fetch(self, query: str, *args) -> List[Dict[str, Any]]:
+    async def fetch(self, query: str, *args) -> list[dict[str, Any]]:
         """Execute query and fetch results."""
         async with self.acquire() as connection:
             self.metrics["queries_executed"] += 1
             rows = await connection.fetch(query, *args)
             return [dict(row) for row in rows]
 
-    async def fetchrow(self, query: str, *args) -> Optional[Dict[str, Any]]:
+    async def fetchrow(self, query: str, *args) -> dict[str, Any] | None:
         """Execute query and fetch single row."""
         async with self.acquire() as connection:
             self.metrics["queries_executed"] += 1
@@ -147,13 +147,13 @@ class AsyncDatabasePool:
             self.metrics["queries_executed"] += 1
             return await connection.execute(query, *args)
 
-    async def execute_many(self, query: str, args_list: List[Tuple]) -> None:
+    async def execute_many(self, query: str, args_list: list[tuple]) -> None:
         """Execute query multiple times with different arguments."""
         async with self.acquire() as connection:
             self.metrics["queries_executed"] += len(args_list)
             await connection.executemany(query, args_list)
 
-    async def fetch_with_retry(self, query: str, *args, max_retries: int = 3) -> List[Dict[str, Any]]:
+    async def fetch_with_retry(self, query: str, *args, max_retries: int = 3) -> list[dict[str, Any]]:
         """Execute query with retry on connection errors."""
         last_error = None
 
@@ -172,7 +172,7 @@ class AsyncDatabasePool:
 
         raise last_error
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get pool metrics."""
         metrics = self.metrics.copy()
 
@@ -196,7 +196,7 @@ class AsyncDatabasePool:
 
 
 # Singleton pool instance for the application
-_pool_instance: Optional[AsyncDatabasePool] = None
+_pool_instance: AsyncDatabasePool | None = None
 
 
 async def get_pool() -> AsyncDatabasePool:

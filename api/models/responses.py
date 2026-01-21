@@ -6,8 +6,6 @@ Response models for API endpoints.
 This module contains Pydantic models for API response structures.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -32,20 +30,20 @@ class FilterCountsResponse(BaseModel):
     Only includes options that have at least one matching animal.
     """
 
-    size_options: List[FilterOption] = Field(default_factory=list, description="Available size options with counts")
-    age_options: List[FilterOption] = Field(default_factory=list, description="Available age options with counts")
-    sex_options: List[FilterOption] = Field(default_factory=list, description="Available sex options with counts")
-    breed_options: List[FilterOption] = Field(default_factory=list, description="Available breed options with counts")
-    organization_options: List[FilterOption] = Field(default_factory=list, description="Available organization options with counts")
-    location_country_options: List[FilterOption] = Field(
+    size_options: list[FilterOption] = Field(default_factory=list, description="Available size options with counts")
+    age_options: list[FilterOption] = Field(default_factory=list, description="Available age options with counts")
+    sex_options: list[FilterOption] = Field(default_factory=list, description="Available sex options with counts")
+    breed_options: list[FilterOption] = Field(default_factory=list, description="Available breed options with counts")
+    organization_options: list[FilterOption] = Field(default_factory=list, description="Available organization options with counts")
+    location_country_options: list[FilterOption] = Field(
         default_factory=list,
         description="Available location country options with counts",
     )
-    available_country_options: List[FilterOption] = Field(
+    available_country_options: list[FilterOption] = Field(
         default_factory=list,
         description="Available adoption country options with counts",
     )
-    available_region_options: List[FilterOption] = Field(
+    available_region_options: list[FilterOption] = Field(
         default_factory=list,
         description="Available adoption region options with counts",
     )
@@ -118,21 +116,21 @@ class QualifyingBreed(BaseModel):
 
     primary_breed: str = Field(..., description="Primary breed name")
     breed_slug: str = Field(..., description="URL-friendly breed slug")
-    breed_type: Optional[str] = Field(
+    breed_type: str | None = Field(
         None,
         description="Breed type (purebred, mixed, crossbreed, unknown, sighthound)",
     )
-    breed_group: Optional[str] = Field(None, description="Breed group classification")
+    breed_group: str | None = Field(None, description="Breed group classification")
     count: int = Field(..., description="Total number of dogs of this breed", ge=0)
-    average_age_months: Optional[int] = Field(None, description="Average age in months for this breed")
+    average_age_months: int | None = Field(None, description="Average age in months for this breed")
     organization_count: int = Field(..., description="Number of organizations with this breed", ge=0)
-    organizations: List[str] = Field(default_factory=list, description="List of organization names (top 5)")
+    organizations: list[str] = Field(default_factory=list, description="List of organization names (top 5)")
     age_distribution: AgeDistribution = Field(..., description="Age distribution for this breed")
     size_distribution: SizeDistribution = Field(..., description="Size distribution for this breed")
-    sex_distribution: Optional[SexDistribution] = Field(None, description="Sex distribution for this breed")
-    personality_traits: List[str] = Field(default_factory=list, description="Top 5 personality traits from LLM analysis")
+    sex_distribution: SexDistribution | None = Field(None, description="Sex distribution for this breed")
+    personality_traits: list[str] = Field(default_factory=list, description="Top 5 personality traits from LLM analysis")
     experience_distribution: ExperienceDistribution = Field(..., description="Experience level distribution for this breed")
-    personality_metrics: Optional[PersonalityMetrics] = Field(None, description="Personality metrics from dog_profiler_data aggregation")
+    personality_metrics: PersonalityMetrics | None = Field(None, description="Personality metrics from dog_profiler_data aggregation")
 
 
 class BreedStatsResponse(BaseModel):
@@ -145,7 +143,7 @@ class BreedStatsResponse(BaseModel):
 
     total_dogs: int = Field(..., description="Total number of available dogs", ge=0)
     unique_breeds: int = Field(..., description="Number of unique breeds", ge=0)
-    breed_groups: List[BreedGroupStats] = Field(default_factory=list, description="Distribution of dogs by breed group")
-    qualifying_breeds: List[QualifyingBreed] = Field(default_factory=list, description="Breeds with 15+ dogs")
+    breed_groups: list[BreedGroupStats] = Field(default_factory=list, description="Distribution of dogs by breed group")
+    qualifying_breeds: list[QualifyingBreed] = Field(default_factory=list, description="Breeds with 15+ dogs")
     purebred_count: int = Field(default=0, description="Number of purebred dogs", ge=0)
     crossbreed_count: int = Field(default=0, description="Number of crossbreed dogs", ge=0)

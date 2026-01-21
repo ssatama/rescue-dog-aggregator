@@ -13,7 +13,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import psycopg2
 from dotenv import load_dotenv
@@ -50,7 +50,7 @@ class DogProfilerMonitor:
         self.alerts = []
         self.metrics = {}
 
-    def get_recent_runs(self, hours: int = 24, organization_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    def get_recent_runs(self, hours: int = 24, organization_id: int | None = None) -> list[dict[str, Any]]:
         """
         Get recent profiler runs from database.
 
@@ -114,7 +114,7 @@ class DogProfilerMonitor:
 
         return runs
 
-    def get_quality_distribution(self, organization_id: Optional[int] = None) -> Dict[str, int]:
+    def get_quality_distribution(self, organization_id: int | None = None) -> dict[str, int]:
         """
         Get distribution of quality scores.
 
@@ -162,7 +162,7 @@ class DogProfilerMonitor:
 
         return distribution
 
-    def get_model_usage_stats(self) -> Dict[str, Any]:
+    def get_model_usage_stats(self) -> dict[str, Any]:
         """
         Get statistics about model usage.
 
@@ -211,7 +211,7 @@ class DogProfilerMonitor:
 
         return model_stats
 
-    def check_alerts(self, batch_stats: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def check_alerts(self, batch_stats: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         """
         Check for alert conditions.
 
@@ -278,7 +278,7 @@ class DogProfilerMonitor:
         self.alerts = alerts
         return alerts
 
-    def generate_report(self, hours: int = 24, organization_id: Optional[int] = None) -> Dict[str, Any]:
+    def generate_report(self, hours: int = 24, organization_id: int | None = None) -> dict[str, Any]:
         """
         Generate comprehensive monitoring report.
 
@@ -327,7 +327,7 @@ class DogProfilerMonitor:
 
         return report
 
-    def save_report(self, report: Dict[str, Any], output_dir: Optional[Path] = None) -> Path:
+    def save_report(self, report: dict[str, Any], output_dir: Path | None = None) -> Path:
         """
         Save monitoring report to file.
 
@@ -349,7 +349,7 @@ class DogProfilerMonitor:
 
         return output_file
 
-    def print_report(self, report: Dict[str, Any]):
+    def print_report(self, report: dict[str, Any]):
         """
         Print formatted monitoring report.
 

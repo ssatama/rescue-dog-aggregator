@@ -11,7 +11,7 @@ Following CLAUDE.md principles:
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from services.llm.dog_profiler import DogProfilerPipeline
 from services.llm_data_service import OpenRouterLLMDataService
@@ -34,7 +34,7 @@ class LLMProfilerService(OpenRouterLLMDataService):
         self.profiler_pipeline = None
         self.logger = logging.getLogger(__name__)
 
-    async def generate_dog_profiler(self, dog_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def generate_dog_profiler(self, dog_data: dict[str, Any]) -> dict[str, Any]:
         """
         Generate comprehensive dog profile using DogProfilerPipeline.
 
@@ -49,7 +49,7 @@ class LLMProfilerService(OpenRouterLLMDataService):
                     dry_run=False,
                     connection_pool=self.connection_pool,
                 )
-                self.logger.info(f"Initialized DogProfilerPipeline for org {self.organization_id} " f"with pool: {bool(self.connection_pool)}")
+                self.logger.info(f"Initialized DogProfilerPipeline for org {self.organization_id} with pool: {bool(self.connection_pool)}")
             except Exception as e:
                 self.logger.warning(f"Failed to initialize pipeline: {e}")
                 # Fall back to base implementation
@@ -74,7 +74,7 @@ class LLMProfilerService(OpenRouterLLMDataService):
         self.logger.info("Falling back to base profiler implementation")
         return await super().generate_dog_profiler(dog_data)
 
-    async def enrich_animal_with_profile(self, animal_id: int, animal_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def enrich_animal_with_profile(self, animal_id: int, animal_data: dict[str, Any]) -> dict[str, Any] | None:
         """
         Enrich animal with comprehensive profile data.
 
@@ -117,7 +117,7 @@ class LLMProfilerService(OpenRouterLLMDataService):
             self.logger.error(f"Error enriching animal {animal_id}: {e}")
             return None
 
-    def _should_profile(self, animal_data: Dict[str, Any]) -> bool:
+    def _should_profile(self, animal_data: dict[str, Any]) -> bool:
         """
         Determine if an animal should be profiled.
 

@@ -8,7 +8,7 @@ Following CLAUDE.md principles:
 """
 
 import copy
-from typing import Any, Dict
+from typing import Any
 
 from services.llm.field_normalizers import FieldNormalizers
 
@@ -19,7 +19,7 @@ class ExtractedProfileNormalizer:
     def __init__(self):
         self.normalizers = FieldNormalizers()
 
-    def normalize(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def normalize(self, data: dict[str, Any]) -> dict[str, Any]:
         """Normalize profile data to match schema requirements."""
         # Create a deep copy to ensure immutability
         result = copy.deepcopy(data)
@@ -36,7 +36,7 @@ class ExtractedProfileNormalizer:
 
         return result
 
-    def _normalize_basic_fields(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_basic_fields(self, data: dict[str, Any]) -> dict[str, Any]:
         """Normalize basic enum fields."""
         result = copy.deepcopy(data)
 
@@ -69,7 +69,7 @@ class ExtractedProfileNormalizer:
 
         return result
 
-    def _normalize_boolean_fields(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_boolean_fields(self, data: dict[str, Any]) -> dict[str, Any]:
         """Normalize boolean fields."""
         result = copy.deepcopy(data)
 
@@ -81,7 +81,7 @@ class ExtractedProfileNormalizer:
 
         return result
 
-    def _normalize_compatibility_fields(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_compatibility_fields(self, data: dict[str, Any]) -> dict[str, Any]:
         """Normalize compatibility fields."""
         result = copy.deepcopy(data)
 
@@ -97,7 +97,7 @@ class ExtractedProfileNormalizer:
 
         return result
 
-    def _normalize_text_fields(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_text_fields(self, data: dict[str, Any]) -> dict[str, Any]:
         """Normalize and truncate text fields."""
         result = copy.deepcopy(data)
 
@@ -116,7 +116,7 @@ class ExtractedProfileNormalizer:
 
         return result
 
-    def _normalize_lists(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_lists(self, data: dict[str, Any]) -> dict[str, Any]:
         """Normalize list fields."""
         result = copy.deepcopy(data)
 
@@ -174,7 +174,7 @@ class ExtractedProfileNormalizer:
 
         return result
 
-    def _normalize_metadata_fields(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_metadata_fields(self, data: dict[str, Any]) -> dict[str, Any]:
         """Normalize metadata fields."""
         result = copy.deepcopy(data)
 
@@ -208,7 +208,7 @@ class ExtractedProfileNormalizer:
 
         return result
 
-    def _apply_field_specific_fixes(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_field_specific_fixes(self, data: dict[str, Any]) -> dict[str, Any]:
         """Apply second-pass field-specific fixes."""
         result = copy.deepcopy(data)
 
@@ -236,7 +236,7 @@ class ExtractedProfileNormalizer:
 
         return result
 
-    def _apply_defaults(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_defaults(self, data: dict[str, Any]) -> dict[str, Any]:
         """Apply default values for missing required fields."""
         result = copy.deepcopy(data)
 

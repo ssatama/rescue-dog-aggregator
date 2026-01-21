@@ -2,7 +2,7 @@ import concurrent.futures
 import re
 import time
 from threading import Lock
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -32,7 +32,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         self.base_url: str = "https://tierschutzverein-europa.de"
         self.listing_url: str = "https://tierschutzverein-europa.de/tiervermittlung/"
 
-    def collect_data(self) -> List[Dict[str, Any]]:
+    def collect_data(self) -> list[dict[str, Any]]:
         """Main entry point - orchestrates two-phase scraping with parallel processing."""
         try:
             # Phase 1: Get list of animals from listing pages
@@ -72,7 +72,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             self.logger.error(f"Error in collect_data: {e}")
             return []
 
-    def get_animal_list(self) -> List[Dict[str, Any]]:
+    def get_animal_list(self) -> list[dict[str, Any]]:
         """Phase 1: Extract dogs from all pagination pages."""
         all_animals = []
         page = 1
@@ -127,7 +127,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         self.logger.info(f"Extracted {len(all_animals)} animals from {page - 1} listing pages")
         return all_animals
 
-    def _extract_animal_from_article(self, article) -> Optional[Dict[str, Any]]:
+    def _extract_animal_from_article(self, article) -> dict[str, Any] | None:
         """Extract basic animal data from listing page article."""
         try:
             # Find the main link
@@ -172,7 +172,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             self.logger.warning(f"Error extracting animal from article: {e}")
             return None
 
-    def _scrape_animal_details(self, adoption_url: str) -> Dict[str, Any]:
+    def _scrape_animal_details(self, adoption_url: str) -> dict[str, Any]:
         """Phase 2: Scrape detailed information from individual dog page."""
         try:
             self.logger.debug(f"Scraping details from: {adoption_url}")
@@ -219,7 +219,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             self.logger.error(f"Error scraping details from {adoption_url}: {e}")
             return {}
 
-    def _extract_properties_from_soup(self, soup: BeautifulSoup) -> Dict[str, str]:
+    def _extract_properties_from_soup(self, soup: BeautifulSoup) -> dict[str, str]:
         """Extract German properties from detail page."""
         properties = {}
 
@@ -263,7 +263,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         return properties
 
-    def _extract_hero_image(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_hero_image(self, soup: BeautifulSoup) -> str | None:
         """Extract the main/hero image from detail page."""
         # Try multiple patterns for hero image
         patterns = [
@@ -293,7 +293,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         return None
 
-    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Process animals in parallel batches for efficient detail scraping."""
         all_dogs_data = []
         seen_urls = set()
@@ -377,7 +377,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         return all_dogs_data
 
-    def _translate_and_normalize_dogs(self, dogs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _translate_and_normalize_dogs(self, dogs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Translate German data to English for BaseScraper processing."""
         translated_dogs = []
 
@@ -446,7 +446,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         return ""
 
-    def _extract_name_from_external_id(self, external_id: str) -> Optional[str]:
+    def _extract_name_from_external_id(self, external_id: str) -> str | None:
         """Extract dog name from external_id like 'bonsai-in-spanien-perros-con-alma'."""
         if not external_id:
             return None

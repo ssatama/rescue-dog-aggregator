@@ -18,7 +18,7 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import psycopg2
 
@@ -47,8 +47,8 @@ class DatabaseService:
 
     def __init__(
         self,
-        db_config: Dict[str, str],
-        logger: Optional[logging.Logger] = None,
+        db_config: dict[str, str],
+        logger: logging.Logger | None = None,
         connection_pool=None,
     ):
         """Initialize DatabaseService with configuration.
@@ -96,7 +96,7 @@ class DatabaseService:
             self.conn = None
             self.logger.info("Database connection closed")
 
-    def get_existing_animal(self, external_id: str, organization_id: int) -> Optional[Tuple]:
+    def get_existing_animal(self, external_id: str, organization_id: int) -> tuple | None:
         """Check if an animal already exists in the database.
 
         Args:
@@ -144,7 +144,7 @@ class DatabaseService:
                 self.conn.rollback()
             return None
 
-    def create_animal(self, animal_data: Dict[str, Any]) -> Tuple[Optional[int], str]:
+    def create_animal(self, animal_data: dict[str, Any]) -> tuple[int | None, str]:
         """Create a new animal in the database.
 
         Args:
@@ -177,7 +177,7 @@ class DatabaseService:
                 self.conn.rollback()
             return None, "error"
 
-    def _create_animal_with_connection(self, conn, animal_data: Dict[str, Any]) -> Tuple[Optional[int], str]:
+    def _create_animal_with_connection(self, conn, animal_data: dict[str, Any]) -> tuple[int | None, str]:
         """Create animal using provided connection (pure function).
 
         Args:
@@ -321,7 +321,7 @@ class DatabaseService:
         self.logger.info(f"Created new animal with ID {animal_id}: {animal_data.get('name')}")
         return animal_id, "added"
 
-    def update_animal(self, animal_id: int, animal_data: Dict[str, Any]) -> Tuple[Optional[int], str]:
+    def update_animal(self, animal_id: int, animal_data: dict[str, Any]) -> tuple[int | None, str]:
         """Update an existing animal in the database.
 
         Args:
@@ -488,7 +488,7 @@ class DatabaseService:
                 self.conn.rollback()
             return None, "error"
 
-    def create_scrape_log(self, organization_id: int) -> Optional[int]:
+    def create_scrape_log(self, organization_id: int) -> int | None:
         """Create a new entry in the scrape_logs table.
 
         Args:
@@ -556,10 +556,10 @@ class DatabaseService:
         animals_found: int = 0,
         animals_added: int = 0,
         animals_updated: int = 0,
-        error_message: Optional[str] = None,
-        detailed_metrics: Optional[Dict[str, Any]] = None,
-        duration_seconds: Optional[float] = None,
-        data_quality_score: Optional[float] = None,
+        error_message: str | None = None,
+        detailed_metrics: dict[str, Any] | None = None,
+        duration_seconds: float | None = None,
+        data_quality_score: float | None = None,
     ) -> bool:
         """Update the scrape log with completion information.
 
@@ -667,12 +667,12 @@ class DatabaseService:
 
     def _detect_animal_changes(
         self,
-        current_data: Tuple,
-        animal_data: Dict[str, Any],
+        current_data: tuple,
+        animal_data: dict[str, Any],
         new_standardized_breed: str,
-        new_age_min_months: Optional[int],
-        new_age_max_months: Optional[int],
-        new_final_standardized_size: Optional[str],
+        new_age_min_months: int | None,
+        new_age_max_months: int | None,
+        new_final_standardized_size: str | None,
         new_properties_json: str,
         current_properties_json: str,
     ) -> bool:

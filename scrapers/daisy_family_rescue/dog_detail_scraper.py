@@ -1,7 +1,7 @@
 import asyncio
 import os
 import re
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
@@ -87,13 +87,13 @@ class DaisyFamilyRescueDogDetailScraper:
         browser_result = browser_service.create_driver(browser_options)
         return browser_result.driver
 
-    def extract_dog_details(self, dog_url: str, logger=None) -> Optional[Dict[str, Any]]:
+    def extract_dog_details(self, dog_url: str, logger=None) -> dict[str, Any] | None:
         """Extract detailed information from a single dog's detail page."""
         if USE_PLAYWRIGHT:
             return asyncio.run(self._extract_dog_details_playwright(dog_url, logger))
         return self._extract_dog_details_selenium(dog_url, logger)
 
-    def _extract_dog_details_selenium(self, dog_url: str, logger=None) -> Optional[Dict[str, Any]]:
+    def _extract_dog_details_selenium(self, dog_url: str, logger=None) -> dict[str, Any] | None:
         """Extract detailed information using Selenium."""
         driver = None
 
@@ -159,7 +159,7 @@ class DaisyFamilyRescueDogDetailScraper:
             if driver:
                 driver.quit()
 
-    async def _extract_dog_details_playwright(self, dog_url: str, logger=None) -> Optional[Dict[str, Any]]:
+    async def _extract_dog_details_playwright(self, dog_url: str, logger=None) -> dict[str, Any] | None:
         """Extract detailed information using Playwright."""
         playwright_service = get_playwright_service()
         options = PlaywrightOptions(
@@ -226,7 +226,7 @@ class DaisyFamilyRescueDogDetailScraper:
                     logger.error(f"Error extracting details from {dog_url}: {e}")
                 return None
 
-    def _extract_steckbrief_data_soup(self, soup: BeautifulSoup, logger=None) -> Dict[str, str]:
+    def _extract_steckbrief_data_soup(self, soup: BeautifulSoup, logger=None) -> dict[str, str]:
         """Extract structured data from the Steckbrief section using BeautifulSoup."""
         steckbrief_data = {}
 
@@ -264,7 +264,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return steckbrief_data
 
-    def _extract_main_image_soup(self, soup: BeautifulSoup, logger=None) -> Optional[str]:
+    def _extract_main_image_soup(self, soup: BeautifulSoup, logger=None) -> str | None:
         """Extract main dog image using BeautifulSoup."""
         try:
             image_selectors = [
@@ -292,7 +292,7 @@ class DaisyFamilyRescueDogDetailScraper:
                 logger.error(f"Error extracting main image: {e}")
         return None
 
-    def _extract_description_soup(self, soup: BeautifulSoup, logger=None) -> Optional[str]:
+    def _extract_description_soup(self, soup: BeautifulSoup, logger=None) -> str | None:
         """Extract dog description using BeautifulSoup."""
         try:
             description_selectors = [
@@ -317,7 +317,7 @@ class DaisyFamilyRescueDogDetailScraper:
                 logger.error(f"Error extracting description: {e}")
         return None
 
-    def _extract_dog_name_soup(self, soup: BeautifulSoup, logger=None) -> Optional[str]:
+    def _extract_dog_name_soup(self, soup: BeautifulSoup, logger=None) -> str | None:
         """Extract dog name using BeautifulSoup."""
         try:
             heading_selectors = [
@@ -343,7 +343,7 @@ class DaisyFamilyRescueDogDetailScraper:
                 logger.error(f"Error extracting dog name: {e}")
         return None
 
-    def _extract_steckbrief_data(self, driver, logger=None) -> Dict[str, str]:
+    def _extract_steckbrief_data(self, driver, logger=None) -> dict[str, str]:
         """Extract structured data from the Steckbrief section."""
         steckbrief_data = {}
 
@@ -385,7 +385,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return steckbrief_data
 
-    def _extract_field_value(self, text: str, field_pattern: str) -> Optional[str]:
+    def _extract_field_value(self, text: str, field_pattern: str) -> str | None:
         """Extract the value for a specific field from text."""
         # Create regex pattern to match field and its value
         # Pattern: "Alter: 03/2020" or "Geschlecht: weiblich, kastriert"
@@ -400,7 +400,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return None
 
-    def _process_steckbrief_data(self, steckbrief_data: Dict[str, str], logger=None) -> Dict[str, Any]:
+    def _process_steckbrief_data(self, steckbrief_data: dict[str, str], logger=None) -> dict[str, Any]:
         """Process and standardize the raw Steckbrief data."""
         processed_data = {}
 
@@ -468,12 +468,12 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return processed_data
 
-    def _parse_sex(self, sex_text: str) -> Optional[Dict[str, Any]]:
+    def _parse_sex(self, sex_text: str) -> dict[str, Any] | None:
         """Parse sex from German text like 'weiblich, kastriert'."""
         if not sex_text:
             return None
 
-        sex_data: Dict[str, Any] = {}
+        sex_data: dict[str, Any] = {}
         sex_lower = sex_text.lower()
 
         # Determine gender
@@ -497,7 +497,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return sex_data
 
-    def _parse_breed(self, breed_text: str) -> Optional[str]:
+    def _parse_breed(self, breed_text: str) -> str | None:
         """Parse breed from German text."""
         if not breed_text:
             return None
@@ -512,7 +512,7 @@ class DaisyFamilyRescueDogDetailScraper:
         # Return original if no translation found
         return breed_text
 
-    def _parse_weight(self, weight_text: str) -> Optional[float]:
+    def _parse_weight(self, weight_text: str) -> float | None:
         """Parse weight from text like '19 kg'."""
         if not weight_text:
             return None
@@ -524,7 +524,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return None
 
-    def _parse_height(self, height_text: str) -> Optional[int]:
+    def _parse_height(self, height_text: str) -> int | None:
         """Parse height from text like '53 cm'."""
         if not height_text:
             return None
@@ -536,7 +536,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return None
 
-    def _determine_size(self, height_cm: int) -> Optional[str]:
+    def _determine_size(self, height_cm: int) -> str | None:
         """Determine size category based on height."""
         # Size mapping with proper case for frontend compatibility
         size_mapping = {"small": "Small", "medium": "Medium", "large": "Large"}
@@ -553,7 +553,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return "medium"  # Default fallback
 
-    def _parse_location(self, location_text: str) -> Optional[str]:
+    def _parse_location(self, location_text: str) -> str | None:
         """Parse location from text."""
         if not location_text:
             return None
@@ -577,7 +577,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return location
 
-    def _parse_adoption_fee(self, fee_text: str) -> Optional[float]:
+    def _parse_adoption_fee(self, fee_text: str) -> float | None:
         """Parse adoption fee from text like '615 €'."""
         if not fee_text:
             return None
@@ -589,7 +589,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return None
 
-    def _extract_main_image(self, driver: "WebDriver", logger=None) -> Optional[str]:
+    def _extract_main_image(self, driver: "WebDriver", logger=None) -> str | None:
         """Extract the main dog image from the page."""
         try:
             # Look for images with specific patterns (found in inspection)
@@ -665,7 +665,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return False
 
-    def _extract_description(self, driver: "WebDriver", logger=None) -> Optional[str]:
+    def _extract_description(self, driver: "WebDriver", logger=None) -> str | None:
         """Extract additional description text from the page."""
         try:
             # Look for content areas that might contain descriptions
@@ -703,7 +703,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return None
 
-    def _extract_dog_name(self, driver: "WebDriver", logger=None) -> Optional[str]:
+    def _extract_dog_name(self, driver: "WebDriver", logger=None) -> str | None:
         """Extract dog name from page title or content."""
         try:
             # Try to get name from page title

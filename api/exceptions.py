@@ -7,7 +7,7 @@ This module provides consistent error handling patterns across all endpoints.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import httpx
 import psycopg2
@@ -24,8 +24,8 @@ class APIException(HTTPException):
         self,
         status_code: int,
         detail: str,
-        error_code: Optional[str] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        error_code: str | None = None,
+        headers: dict[str, Any] | None = None,
     ):
         super().__init__(status_code=status_code, detail=detail, headers=headers)
         self.error_code = error_code
@@ -34,7 +34,7 @@ class APIException(HTTPException):
 class DatabaseError(APIException):
     """Database-related errors."""
 
-    def __init__(self, detail: str, original_error: Optional[Exception] = None):
+    def __init__(self, detail: str, original_error: Exception | None = None):
         super().__init__(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {detail}",
@@ -46,7 +46,7 @@ class DatabaseError(APIException):
 class ValidationError(APIException):
     """Validation-related errors."""
 
-    def __init__(self, detail: str, field: Optional[str] = None):
+    def __init__(self, detail: str, field: str | None = None):
         super().__init__(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Validation error: {detail}",
@@ -83,7 +83,7 @@ class LLMServiceError(APIException):
     def __init__(
         self,
         detail: str = "LLM service error",
-        original_error: Optional[Exception] = None,
+        original_error: Exception | None = None,
     ):
         super().__init__(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -107,7 +107,7 @@ class RateLimitError(APIException):
 class InvalidInputError(APIException):
     """Invalid input errors."""
 
-    def __init__(self, detail: str, field: Optional[str] = None):
+    def __init__(self, detail: str, field: str | None = None):
         super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=detail,
@@ -301,9 +301,9 @@ class EnhancedAnimalError(Exception):
     def __init__(
         self,
         message: str,
-        animal_id: Optional[int] = None,
-        operation: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        animal_id: int | None = None,
+        operation: str | None = None,
+        details: dict[str, Any] | None = None,
     ):
         self.message = message
         self.animal_id = animal_id
@@ -311,7 +311,7 @@ class EnhancedAnimalError(Exception):
         self.details = details or {}
         super().__init__(self.message)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert exception to dictionary for API responses."""
         return {
             "error": self.__class__.__name__,

@@ -50,7 +50,7 @@ def create_tables(conn):
 
         # Read the schema file
         schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
-        with open(schema_path, "r") as f:
+        with open(schema_path) as f:
             schema_sql = f.read()
 
         # Execute the SQL commands
