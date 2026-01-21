@@ -356,13 +356,16 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   const traits =
     dog.dog_profiler_data?.personality_traits || dog.personality_traits || [];
   const size =
-    dog.standardized_size || dog.size || dog.properties?.size || "Unknown";
+    dog.standardized_size ||
+    dog.size ||
+    (dog.properties?.size as string | undefined) ||
+    "Unknown";
   const description =
     dog.dog_profiler_data?.description ||
     dog.llm_description ||
     dog.summary ||
-    dog.properties?.description ||
-    dog.properties?.raw_description ||
+    (dog.properties?.description as string | undefined) ||
+    (dog.properties?.raw_description as string | undefined) ||
     "";
   const favoriteActivities = dog.dog_profiler_data?.favorite_activities || [];
   const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;

@@ -4,7 +4,7 @@ import { R2_CUSTOM_DOMAIN, R2_IMAGE_PATH } from "../../constants/imageConfig";
 
 interface FallbackImageProps extends Omit<ImageProps, "onError"> {
   fallbackSrc?: string;
-  onError?: (error: any) => void;
+  onError?: (error: React.SyntheticEvent<HTMLImageElement, Event>) => void;
 }
 
 /**
@@ -111,7 +111,7 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
   );
 
   const handleError = useCallback(
-    (error: any) => {
+    (error: React.SyntheticEvent<HTMLImageElement, Event>) => {
       console.warn(
         `Image failed to load (level ${fallbackLevel}):`,
         imageSrc,

@@ -101,14 +101,12 @@ describe("DogSchema Component", () => {
   });
 
   test("should not render when dog is null or undefined", () => {
-    const { container: nullContainer } = render(
-      <DogSchema dog={null as any} />,
-    );
+    // @ts-expect-error testing error handling with null
+    const { container: nullContainer } = render(<DogSchema dog={null} />);
     expect(nullContainer.querySelector("script")).toBeNull();
 
-    const { container: undefinedContainer } = render(
-      <DogSchema dog={undefined as any} />,
-    );
+    // @ts-expect-error testing error handling with undefined
+    const { container: undefinedContainer } = render(<DogSchema dog={undefined} />);
     expect(undefinedContainer.querySelector("script")).toBeNull();
   });
 
@@ -121,7 +119,8 @@ describe("DogSchema Component", () => {
       },
     };
 
-    const { container } = render(<DogSchema dog={invalidDog as any} />);
+    // @ts-expect-error testing error handling with invalid data (missing name)
+    const { container } = render(<DogSchema dog={invalidDog} />);
     expect(container.querySelector("script")).toBeNull();
   });
 });

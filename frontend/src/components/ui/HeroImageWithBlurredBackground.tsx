@@ -111,7 +111,6 @@ const HeroImageWithBlurredBackground = memo(
           data-testid="image-container"
         >
           {/* Main Image */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             key={`hero-${currentSrc}`}
             src={currentSrc || "/placeholder_dog.svg"}

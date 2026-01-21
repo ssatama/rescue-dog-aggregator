@@ -10,10 +10,17 @@ jest.mock("next/navigation", () => ({
 }));
 
 // Mock next/image
+interface MockImageProps {
+  src: string;
+  alt: string;
+  width?: number | string;
+  height?: number | string;
+  className?: string;
+}
+
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: (props: any) => {
-    // eslint-disable-next-line jsx-a11y/alt-text
+  default: (props: MockImageProps) => {
     return <img {...props} />;
   },
 }));

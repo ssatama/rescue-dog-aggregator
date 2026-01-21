@@ -1,15 +1,14 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export interface SkeletonPulseProps {
+export interface SkeletonPulseProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "className"> {
   /** Additional CSS classes to apply */
   className?: string;
   /** Whether this is a standalone skeleton (adds ARIA attributes) */
   standalone?: boolean;
   /** Intensity of the shimmer animation */
   intensity?: "subtle" | "normal";
-  /** Additional props forwarded to the div element */
-  [key: string]: any;
 }
 
 /**

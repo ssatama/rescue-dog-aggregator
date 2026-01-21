@@ -1,8 +1,46 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSwipeable } from "react-swipeable";
+import { useSwipeable, SwipeableHandlers, SwipeEventData } from "react-swipeable";
 import { getAnimals } from "../../services/animalsService";
 import { useSwipeNavigation, navigationCache } from "../useSwipeNavigation";
+
+// Mock types for testing
+interface MockSearchParams {
+  get: jest.Mock;
+  getAll: jest.Mock;
+  has: jest.Mock;
+  keys: jest.Mock;
+  values: jest.Mock;
+  entries: jest.Mock;
+  forEach: jest.Mock;
+  toString: () => string;
+  append: jest.Mock;
+  delete: jest.Mock;
+  set: jest.Mock;
+  sort: jest.Mock;
+  size: number;
+  [Symbol.iterator]: jest.Mock;
+}
+
+type SwipeCallback = (eventData: SwipeEventData) => void;
+
+interface SwipeHandlersWithCallbacks extends SwipeableHandlers {
+  onSwipedLeft?: SwipeCallback;
+  onSwipedRight?: SwipeCallback;
+}
+
+const mockSwipeEventData: SwipeEventData = {
+  absX: 100,
+  absY: 0,
+  deltaX: 100,
+  deltaY: 0,
+  dir: "Left",
+  event: {} as TouchEvent,
+  first: false,
+  initial: [0, 0],
+  velocity: 1,
+  vxvy: [1, 0],
+};
 
 // Mock dependencies
 jest.mock("next/navigation", () => ({
@@ -61,7 +99,7 @@ beforeEach(() => {
   });
 
   // Mock search params
-  mockUseSearchParams.mockReturnValue({
+  const mockSearchParams: MockSearchParams = {
     get: mockGet,
     getAll: jest.fn(),
     has: jest.fn(),
@@ -74,15 +112,21 @@ beforeEach(() => {
     delete: jest.fn(),
     set: jest.fn(),
     sort: jest.fn(),
+    size: 0,
     [Symbol.iterator]: jest.fn(),
-  } as any);
+  };
+  mockUseSearchParams.mockReturnValue(mockSearchParams as unknown as ReturnType<typeof useSearchParams>);
 
   // Mock react-swipeable to return proper handlers with ref
-  mockUseSwipeable.mockImplementation((config) => ({
-    ref: jest.fn(),
-    onSwipedLeft: config.onSwipedLeft,
-    onSwipedRight: config.onSwipedRight,
-  })) as any;
+  mockUseSwipeable.mockImplementation((config) => {
+    const handlers: SwipeHandlersWithCallbacks = {
+      ref: jest.fn() as unknown as SwipeableHandlers["ref"],
+      onMouseDown: jest.fn(),
+      onSwipedLeft: config.onSwipedLeft,
+      onSwipedRight: config.onSwipedRight,
+    };
+    return handlers as SwipeableHandlers;
+  });
 
   // Mock getAnimals service with fresh mock data each time - always return array
   mockGetAnimals.mockResolvedValue([...mockDogs]);
@@ -158,7 +202,7 @@ describe("useSwipeNavigation", () => {
       });
 
       act(() => {
-        (result.current.handlers as any).onSwipedLeft();
+        (result.current.handlers as SwipeHandlersWithCallbacks).onSwipedLeft?.(mockSwipeEventData);
       });
 
       expect(mockPush).toHaveBeenCalledWith("/dogs/dog-4");
@@ -172,7 +216,7 @@ describe("useSwipeNavigation", () => {
       });
 
       act(() => {
-        (result.current.handlers as any).onSwipedRight();
+        (result.current.handlers as SwipeHandlersWithCallbacks).onSwipedRight?.(mockSwipeEventData);
       });
 
       expect(mockPush).toHaveBeenCalledWith("/dogs/dog-2");
@@ -261,7 +305,7 @@ describe("useSwipeNavigation", () => {
       });
 
       act(() => {
-        (result.current.handlers as any).onSwipedRight();
+        (result.current.handlers as SwipeHandlersWithCallbacks).onSwipedRight?.(mockSwipeEventData);
       });
 
       expect(mockPush).toHaveBeenCalledWith(
@@ -402,8 +446,8 @@ describe("useSwipeNavigation", () => {
     it("should handle non-array API responses gracefully", async () => {
       // Clear cache to ensure fresh API call
       navigationCache.clear();
-      // Mock API to return non-array (e.g., null or object) - cast to any for edge case testing
-      mockGetAnimals.mockResolvedValueOnce(null as any);
+      // Mock API to return non-array (e.g., null or object) - cast for edge case testing
+      mockGetAnimals.mockResolvedValueOnce(null as unknown as ReturnType<typeof getAnimals>);
 
       const { result } = renderHook(() => useSwipeNavigation(defaultProps));
 
@@ -455,7 +499,7 @@ describe("useSwipeNavigation", () => {
 
       // Try to swipe right (previous) - should not navigate
       act(() => {
-        (result.current.handlers as any).onSwipedRight();
+        (result.current.handlers as SwipeHandlersWithCallbacks).onSwipedRight?.(mockSwipeEventData);
       });
 
       expect(mockPush).not.toHaveBeenCalled();

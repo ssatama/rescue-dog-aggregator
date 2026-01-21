@@ -114,8 +114,8 @@ export function DogGrid({
 
         const data = await getAnimals(params);
         setDogs(data || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to load dogs");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to load dogs");
       } finally {
         setIsLoading(false);
       }

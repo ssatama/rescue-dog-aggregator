@@ -97,8 +97,14 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
         const data = await get("/api/dogs/available-countries");
 
         // Transform API response to CountryOption format
+        interface CountryResponse {
+          code: string;
+          name: string;
+          dog_count?: number;
+          dogCount?: number;
+        }
         const countriesWithCounts = (data.countries || data).map(
-          (country: any) => ({
+          (country: CountryResponse) => ({
             value: country.code,
             label: country.name,
             flag: COUNTRY_FLAGS[country.code] || "🏳️",

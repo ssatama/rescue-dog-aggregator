@@ -161,6 +161,10 @@ export default function DogsPageClientSimplified({
   // Mount useEffect already handles initial data loading
   const isInitialMount = useRef(true);
 
+  // Refs for stable function references in effects
+  const fetchDogsWithFiltersRef = useRef(null);
+  const hydrateDeepLinkPagesRef = useRef(null);
+
   // Local breed input state for fallback handling
   const localBreedInput = useMemo(
     () => (filters.breedFilter === "Any breed" ? "" : filters.breedFilter),
@@ -428,7 +432,10 @@ export default function DogsPageClientSimplified({
         });
       }
     }
-  };;
+  };
+
+  // Keep ref updated with latest function
+  hydrateDeepLinkPagesRef.current = hydrateDeepLinkPages;
 
   // Load initial dogs on mount or when URL filters/page change
   useEffect(() => {
@@ -441,10 +448,10 @@ export default function DogsPageClientSimplified({
     if (needsFetch) {
       if (urlPage > 1) {
         // CRITICAL FIX: Hydrate pages 1..urlPage so user can scroll through all results
-        hydrateDeepLinkPages(urlPage, filters);
+        hydrateDeepLinkPagesRef.current?.(urlPage, filters);
       } else {
         // Regular single page load
-        fetchDogsWithFilters(filters, 1);
+        fetchDogsWithFiltersRef.current?.(filters, 1);
       }
     }
 
@@ -455,9 +462,7 @@ export default function DogsPageClientSimplified({
         currentAbortControllerRef.current = null;
       }
     };
-    // INTENTIONAL: Only run on mount for initial load/deep links
-    // Changes after mount are handled by searchParams useEffect
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Mount-only effect: refs provide stable access to latest functions
   }, []); // Only on mount
 
   // CRITICAL FIX: Listen to URL changes and refetch when searchParams change
@@ -528,12 +533,12 @@ export default function DogsPageClientSimplified({
     // CRITICAL FIX: Use same branching logic as mount useEffect
     // Hydrate pages 1-N when page > 1 to show accumulated results
     if (newPage > 1) {
-      hydrateDeepLinkPages(newPage, filters);
+      hydrateDeepLinkPagesRef.current?.(newPage, filters);
     } else {
-      fetchDogsWithFilters(filters, newPage, false);
+      fetchDogsWithFiltersRef.current?.(filters, newPage, false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, pathname]);
+    // Refs provide stable access to latest functions without causing re-runs
+  }, [searchParams, pathname, queryKey, filters]);
 
   // Handle filter changes - support both single and batch updates
   const handleFilterChange = useCallback(
@@ -619,7 +624,10 @@ export default function DogsPageClientSimplified({
         currentAbortControllerRef.current = null;
       }
     }
-  };;
+  };
+
+  // Keep ref updated with latest function
+  fetchDogsWithFiltersRef.current = fetchDogsWithFilters;
 
   // Load more dogs
   const loadMoreDogs = useCallback(async () => {

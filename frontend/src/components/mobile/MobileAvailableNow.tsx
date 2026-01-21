@@ -167,8 +167,11 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Ensure dogs is always an array
-  const safeDogs = Array.isArray(dogs) ? dogs : [];
+  // Ensure dogs is always an array - memoize to maintain stable reference
+  const safeDogs = useMemo(
+    () => (Array.isArray(dogs) ? dogs : []),
+    [dogs],
+  );
 
   const handleToggleFavorite = useCallback(
     async (dogId: string) => {

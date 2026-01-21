@@ -20,11 +20,20 @@ jest.mock("../MobileNavCards", () => ({
   default: () => <div data-testid="mobile-nav-cards">Mobile Nav Cards</div>,
 }));
 
+interface StatItem {
+  label: string;
+  value: string | number;
+}
+
+interface MockStatsProps {
+  stats?: StatItem[];
+}
+
 jest.mock("../MobileStats", () => ({
   __esModule: true,
-  default: ({ stats }: any) => (
+  default: ({ stats }: MockStatsProps) => (
     <div data-testid="mobile-stats">
-      {stats?.map((stat: any) => {
+      {stats?.map((stat: StatItem) => {
         if (stat.label === "Dogs") {
           return (
             <span key="dogs" data-testid="dogs-count">
@@ -52,17 +61,37 @@ jest.mock("../MobileStats", () => ({
   ),
 }));
 
+interface CountryStat {
+  country: string;
+  count: number;
+}
+
+interface MockCountryBrowseProps {
+  countryStats?: CountryStat[];
+}
+
 jest.mock("../MobileCountryBrowse", () => ({
   __esModule: true,
-  default: ({ countryStats }: any) => (
+  default: ({ countryStats }: MockCountryBrowseProps) => (
     <div data-testid="mobile-country-browse">
       <span data-testid="country-count">{countryStats?.length || 0}</span>
     </div>
   ),
 }));
 
+interface MockDog {
+  id: number;
+  name: string;
+  breed: string;
+}
+
+interface MockAvailableNowProps {
+  dogs?: MockDog[];
+  totalCount?: number;
+}
+
 jest.mock("../MobileAvailableNow", () => ({
-  MobileAvailableNow: ({ dogs, totalCount }: any) => (
+  MobileAvailableNow: ({ dogs, totalCount }: MockAvailableNowProps) => (
     <div data-testid="mobile-available-now">
       <span data-testid="dogs-length">{dogs?.length || 0}</span>
       <span data-testid="total-count">{totalCount || 0}</span>
@@ -70,8 +99,17 @@ jest.mock("../MobileAvailableNow", () => ({
   ),
 }));
 
+interface MockBreed {
+  name: string;
+  slug?: string;
+}
+
+interface MockBreedSpotlightProps {
+  breeds?: MockBreed[];
+}
+
 jest.mock("../MobileBreedSpotlight", () => ({
-  MobileBreedSpotlight: ({ breeds }: any) => (
+  MobileBreedSpotlight: ({ breeds }: MockBreedSpotlightProps) => (
     <div data-testid="mobile-breed-spotlight">
       {breeds && breeds.length > 0 && (
         <span data-testid="breed-name">{breeds[0].name}</span>
@@ -163,7 +201,7 @@ describe("MobileHomePage", () => {
   });
 
   it("handles missing initial data gracefully", () => {
-    render(<MobileHomePage initialData={undefined as any} />);
+    render(<MobileHomePage initialData={undefined} />);
 
     // All components should still render
     expect(screen.getByTestId("mobile-top-header")).toBeInTheDocument();
@@ -211,7 +249,7 @@ describe("MobileHomePage", () => {
       featuredBreed: mockInitialData.featuredBreed,
     };
 
-    render(<MobileHomePage initialData={dataWithoutStats as any} />);
+    render(<MobileHomePage initialData={dataWithoutStats} />);
 
     // Should render with undefined values
     expect(screen.getByTestId("mobile-stats")).toBeInTheDocument();
@@ -223,7 +261,7 @@ describe("MobileHomePage", () => {
       statistics: mockInitialData.statistics,
     };
 
-    render(<MobileHomePage initialData={dataWithoutBreed as any} />);
+    render(<MobileHomePage initialData={dataWithoutBreed} />);
 
     // Should render without breed name
     expect(screen.getByTestId("mobile-breed-spotlight")).toBeInTheDocument();

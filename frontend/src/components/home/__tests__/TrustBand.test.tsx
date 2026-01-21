@@ -5,10 +5,17 @@ import { render, screen } from "../../../test-utils";
 import TrustBand from "../TrustBand";
 
 // Mock Next.js Image component
+interface MockImageProps {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  className?: string;
+}
+
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: (props: any) => {
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+  default: (props: MockImageProps) => {
     return <img {...props} />;
   },
 }));
@@ -137,8 +144,8 @@ describe("TrustBand", () => {
     });
 
     test("should handle missing logo_url", () => {
-      const orgsWithoutLogos = [
-        { id: 1, name: "Org 1" } as any, // No logo_url
+      const orgsWithoutLogos: Array<{ id: number; name: string; logo_url?: string }> = [
+        { id: 1, name: "Org 1" }, // No logo_url
         { id: 2, name: "Org 2", logo_url: "/logo.png" },
       ];
 

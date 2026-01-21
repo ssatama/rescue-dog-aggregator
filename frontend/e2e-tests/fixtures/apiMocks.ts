@@ -127,7 +127,7 @@ export class ApiMocker {
     }
   }
 
-  private async handleResponse(route: Route, data: any, options: ApiMockOptions) {
+  private async handleResponse(route: Route, data: unknown, options: ApiMockOptions) {
     const { delay = 0, status = 200, errorMessage, headers = {} } = options;
 
     if (delay > 0) {

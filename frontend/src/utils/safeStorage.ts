@@ -48,7 +48,7 @@ export const safeStorage = {
     }
   },
 
-  stringify(key: string, value: any): boolean {
+  stringify(key: string, value: unknown): boolean {
     try {
       return this.set(key, JSON.stringify(value));
     } catch {

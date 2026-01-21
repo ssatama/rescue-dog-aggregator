@@ -44,24 +44,6 @@ test.describe('SEO Meta Tags & Dynamic Metadata @critical', () => {
     // NOTE: For testing with mock data, use integration tests with mock backend
   });
 
-  test.skip('should generate proper Open Graph meta tags @critical', async ({ page }) => {
-    // SKIPPED: Cannot test dynamic Open Graph tags due to SSR limitations
-    // Server-side generateMetadata bypasses MockAPI
-    // TODO: Implement integration tests for Open Graph validation
-  });
-
-  test.skip('should generate proper Twitter Card meta tags @critical', async ({ page }) => {
-    // SKIPPED: Cannot test dynamic Twitter Cards due to SSR limitations
-    // Server-side generateMetadata bypasses MockAPI
-    // TODO: Implement integration tests for Twitter Card validation
-  });
-
-  test.skip('should inject structured data JSON-LD with proper schema @critical', async ({ page }) => {
-    // SKIPPED: Cannot test dynamic structured data due to SSR limitations
-    // Server-side generateMetadata bypasses MockAPI
-    // TODO: Implement integration tests for JSON-LD validation
-  });
-
   test('should handle non-existent dog routes with proper error fallback @critical', async ({ page }) => {
     // MockAPI will return 404 for non-existent dogs, triggering error fallback
     await page.goto('/dogs/non-existent-dog-slug');

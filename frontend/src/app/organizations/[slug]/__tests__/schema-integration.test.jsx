@@ -27,12 +27,17 @@ jest.mock("next/navigation", () => ({
 }));
 
 // Mock UI components to focus on schema testing
-jest.mock("../../../../components/ui/Loading", () => () => (
-  <div data-testid="loading" />
-));
-jest.mock("../../../../components/ui/DogDetailSkeleton", () => () => (
-  <div data-testid="loading" />
-));
+jest.mock("../../../../components/ui/Loading", () => {
+  const MockLoading = () => <div data-testid="loading" />;
+  MockLoading.displayName = "MockLoading";
+  return MockLoading;
+});
+
+jest.mock("../../../../components/ui/DogDetailSkeleton", () => {
+  const MockDogDetailSkeleton = () => <div data-testid="loading" />;
+  MockDogDetailSkeleton.displayName = "MockDogDetailSkeleton";
+  return MockDogDetailSkeleton;
+});
 
 describe("OrganizationDetailClient - Schema Integration", () => {
   beforeEach(() => {

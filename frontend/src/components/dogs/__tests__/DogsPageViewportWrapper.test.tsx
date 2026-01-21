@@ -21,16 +21,47 @@ jest.mock("next/navigation", () => ({
   usePathname: () => "/dogs",
 }));
 
+// Types for mock components
+interface MockDog {
+  id: string;
+  name: string;
+  slug?: string;
+}
+
+interface MockDogDetailModalProps {
+  dog: MockDog | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+interface MockDogCardProps {
+  dog: MockDog;
+  onClick: () => void;
+}
+
+interface MockErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface MockMobileCatalogProps {
+  dogs: MockDog[];
+  onDogClick?: (dog: MockDog) => void;
+}
+
+interface MockBottomNavProps {
+  children: React.ReactNode;
+}
+
 // Mock the dynamic imports
 jest.mock("../mobile/detail/DogDetailModalUpgraded", () => ({
   __esModule: true,
-  default: ({ dog, isOpen, onClose }: any) =>
+  default: ({ dog, isOpen }: MockDogDetailModalProps) =>
     isOpen && dog ? <div data-testid="dog-modal">{dog.name} Modal</div> : null,
 }));
 
 jest.mock("../DogCardOptimized", () => ({
   __esModule: true,
-  default: ({ dog, onClick }: any) => (
+  default: ({ dog, onClick }: MockDogCardProps) => (
     <div data-testid="dog-card-desktop" onClick={onClick}>
       {dog.name} - Desktop Card
     </div>
@@ -39,14 +70,14 @@ jest.mock("../DogCardOptimized", () => ({
 
 jest.mock("../../error/DogCardErrorBoundary", () => ({
   __esModule: true,
-  default: ({ children }: any) => <>{children}</>,
+  default: ({ children }: MockErrorBoundaryProps) => <>{children}</>,
 }));
 
 jest.mock("../mobile/catalog/PremiumMobileCatalog", () => ({
   __esModule: true,
-  default: ({ dogs, onDogClick }: any) => (
+  default: ({ dogs }: MockMobileCatalogProps) => (
     <div data-testid="premium-mobile-catalog">
-      {dogs.map((dog: any) => (
+      {dogs.map((dog: MockDog) => (
         <div
           key={dog.id}
           onClick={() => {
@@ -63,7 +94,7 @@ jest.mock("../mobile/catalog/PremiumMobileCatalog", () => ({
 }));
 
 jest.mock("../mobile/navigation/DogBottomNav", () => ({
-  DogBottomNav: ({ children }: any) => (
+  DogBottomNav: ({ children }: MockBottomNavProps) => (
     <div data-testid="dog-bottom-nav">{children}</div>
   ),
 }));
@@ -124,20 +155,33 @@ const mockDogs = [
 // Store original window.location
 const originalLocation = window.location;
 
+// Define a minimal location interface for testing
+interface MockLocation {
+  href: string;
+  pathname: string;
+  assign: jest.Mock;
+}
+
 describe("DogsPageViewportWrapper", () => {
   beforeAll(() => {
     // Mock window.location
-    delete (window as any).location;
-    window.location = {
+    const mockLocation: MockLocation = {
       href: "http://localhost:3000/dogs",
       pathname: "/dogs",
       assign: jest.fn(),
-    } as any;
+    };
+    Object.defineProperty(window, "location", {
+      value: mockLocation,
+      writable: true,
+    });
   });
 
   afterAll(() => {
     // Restore original window.location
-    (window as any).location = originalLocation;
+    Object.defineProperty(window, "location", {
+      value: originalLocation,
+      writable: true,
+    });
   });
 
   beforeEach(() => {

@@ -23,7 +23,7 @@ interface BreadcrumbItem {
   message?: string;
   level?: string;
   type?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 interface EnvironmentInfo {
@@ -38,7 +38,7 @@ interface EnvironmentInfo {
 export default function SentryTestPage() {
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   const [envInfo, setEnvInfo] = useState<EnvironmentInfo | null>(null);
-  const [userContext, setUserContext] = useState<any>(null);
+  const [userContext, setUserContext] = useState<Sentry.User | null>(null);
   const [tags, setTags] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState("");
   const [showBreadcrumbs, setShowBreadcrumbs] = useState(true);
@@ -46,22 +46,31 @@ export default function SentryTestPage() {
   useEffect(() => {
     // Capture Sentry configuration
     const client = Sentry.getClient();
-    const options = client?.getOptions() as any;
+    const options = client?.getOptions();
 
     if (options) {
+      // Access options with type assertion for internal properties
+      const optionsWithReplay = options as typeof options & {
+        replaysSessionSampleRate?: number;
+      };
       setEnvInfo({
         environment: options.environment || "unknown",
         release: options.release || "unknown",
         dsn: options.dsn ? "***" + options.dsn.slice(-8) : "not set",
         sampleRate: options.tracesSampleRate || 0,
-        replaySampleRate: options.replaysSessionSampleRate || 0,
+        replaySampleRate: optionsWithReplay.replaysSessionSampleRate || 0,
         debug: options.debug || false,
       });
     }
 
     // Get current scope data
     const scope = Sentry.getCurrentScope();
-    const scopeData = scope as any;
+    // Access internal scope properties for debug display
+    // These are private properties, so we use type assertion
+    const scopeData = scope as unknown as {
+      _user?: Sentry.User;
+      _tags?: Record<string, string>;
+    };
 
     // Try to get user context
     if (scopeData._user) {
@@ -82,7 +91,7 @@ export default function SentryTestPage() {
   }, []);
 
   // Track breadcrumbs manually when we add them
-  const trackBreadcrumb = (message: string, data?: any) => {
+  const trackBreadcrumb = (message: string, data?: Record<string, unknown>) => {
     setBreadcrumbs((prev) =>
       [
         {

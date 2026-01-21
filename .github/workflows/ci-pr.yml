@@ -7,18 +7,18 @@ permissions:
 on:
   pull_request:
     branches: [main]
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
 
 jobs:
   backend-tests:
-    name: Backend Tests (Python ${{ matrix.python-version }})
+    name: Backend CI Tests (${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13"]
+        python-version: ["3.11", "3.12"]
 
     services:
       postgres:

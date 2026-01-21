@@ -16,9 +16,15 @@ jest.mock("next/navigation", () => ({
 }));
 
 // Mock Next Image
+interface MockImageProps {
+  src: string;
+  alt: string;
+  className?: string;
+}
+
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: ({ src, alt, className }: any) => (
+  default: ({ src, alt, className }: MockImageProps) => (
     <img src={src} alt={alt} className={className} />
   ),
 }));
@@ -30,6 +36,20 @@ jest.mock("lucide-react", () => ({
 }));
 
 // Mock framer-motion
+interface MockMotionDivProps {
+  children?: React.ReactNode;
+  className?: string;
+  drag?: boolean | "x" | "y";
+  dragConstraints?: object;
+  dragElastic?: number;
+  onDragEnd?: () => void;
+  "data-testid"?: string;
+}
+
+interface MockAnimatePresenceProps {
+  children: React.ReactNode;
+}
+
 jest.mock("framer-motion", () => ({
   motion: {
     div: ({
@@ -40,13 +60,13 @@ jest.mock("framer-motion", () => ({
       dragElastic,
       onDragEnd,
       ...props
-    }: any) => (
+    }: MockMotionDivProps) => (
       <div className={className} {...props}>
         {children}
       </div>
     ),
   },
-  AnimatePresence: ({ children }: any) => children,
+  AnimatePresence: ({ children }: MockAnimatePresenceProps) => children,
 }));
 
 const mockBreeds = [
@@ -186,22 +206,6 @@ describe("MobileBreedSpotlight", () => {
     fireEvent.click(ctaButton);
 
     expect(mockPush).toHaveBeenCalledWith("/breeds");
-  });
-
-  it.skip("truncates long descriptions with ellipsis", () => {
-    // Skipped: Description is not currently rendered in the component
-    const longDescription =
-      "This is a very long description that should be truncated. ".repeat(10);
-    const breedWithLongDesc = [
-      {
-        ...mockBreeds[0],
-        description: longDescription,
-      },
-    ];
-    render(<MobileBreedSpotlight breeds={breedWithLongDesc} />);
-
-    // const description = screen.getByTestId("breed-description");
-    // expect(description).toHaveClass("line-clamp-3");
   });
 
   it("formats breed name correctly for CTA button", () => {

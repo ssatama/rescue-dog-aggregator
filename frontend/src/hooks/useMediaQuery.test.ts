@@ -119,13 +119,23 @@ describe("useMediaQuery", () => {
 
   it("should handle SSR gracefully", () => {
     // Temporarily remove window.matchMedia to simulate SSR
-    delete (window as any).matchMedia;
+    const windowWithOptionalMatchMedia = window as Window & { matchMedia?: typeof window.matchMedia };
+    const savedMatchMedia = windowWithOptionalMatchMedia.matchMedia;
+    Object.defineProperty(window, "matchMedia", {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
 
     const { result } = renderHook(() => useMediaQuery("(min-width: 768px)"));
 
     expect(result.current).toBe(false);
 
     // Restore matchMedia
-    window.matchMedia = originalMatchMedia;
+    Object.defineProperty(window, "matchMedia", {
+      value: savedMatchMedia,
+      writable: true,
+      configurable: true,
+    });
   });
 });

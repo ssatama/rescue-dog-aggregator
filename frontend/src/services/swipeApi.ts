@@ -26,6 +26,31 @@ export interface SwipeDog {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+interface ApiDogResponse {
+  id: number;
+  name: string;
+  breed?: string;
+  age?: string;
+  age_min_months?: number;
+  age_max_months?: number;
+  image_url?: string;
+  primary_image_url?: string;
+  main_image?: string;
+  image?: string;
+  organization_name?: string;
+  organization?: { name?: string } | string;
+  location?: string;
+  slug: string;
+  tagline?: string;
+  description?: string;
+  personality_traits?: string[];
+  energy_level?: number;
+  unique_quirk?: string;
+  special_characteristic?: string;
+  quality_score?: number;
+  created_at?: string;
+}
+
 export async function fetchSwipeDogs(
   filters: SwipeFilters,
 ): Promise<SwipeDog[]> {
@@ -53,7 +78,7 @@ export async function fetchSwipeDogs(
   const data = await response.json();
 
   // Transform backend response to match frontend interface
-  return data.dogs.map((dog: any) => ({
+  return data.dogs.map((dog: ApiDogResponse) => ({
     id: dog.id,
     name: dog.name,
     breed: dog.breed,

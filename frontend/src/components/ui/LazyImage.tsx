@@ -1,7 +1,11 @@
 import React from "react";
 import { useLazyImage } from "../../hooks/useLazyImage";
 
-export interface LazyImageProps {
+export interface LazyImageProps
+  extends Omit<
+    React.ImgHTMLAttributes<HTMLImageElement>,
+    "src" | "alt" | "onLoad" | "onError" | "placeholder"
+  > {
   /** Image source URL */
   src: string;
   /** Alt text for the image */
@@ -20,8 +24,6 @@ export interface LazyImageProps {
   priority?: boolean;
   /** Responsive image sizes attribute for optimal loading */
   sizes?: string;
-  /** Additional props to pass to img elements */
-  [key: string]: any;
 }
 
 export const LazyImage: React.FC<LazyImageProps> = ({
@@ -34,14 +36,8 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   enableProgressiveLoading = false,
   priority = false,
   sizes = undefined,
-  ...props
+  ...domProps
 }) => {
-  // Filter out React-specific props before spreading to DOM elements
-  const {
-    enableProgressiveLoading: _enableProgressiveLoading,
-    priority: _priority,
-    ...domProps
-  } = props;
   const {
     isLoaded,
     isInView,
@@ -120,7 +116,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
             blurPlaceholderSrc &&
             !lowQualityLoaded &&
             !isLoaded && (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={blurPlaceholderSrc}
                 alt={alt}
@@ -135,7 +130,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
 
           {/* Stage 2: Low quality image */}
           {enableProgressiveLoading && lowQualitySrc && !isLoaded && (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={lowQualitySrc}
               alt={alt}
@@ -149,7 +143,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
           )}
 
           {/* Stage 3: Full quality image with smooth 300ms fade-in transition */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
             alt={alt}

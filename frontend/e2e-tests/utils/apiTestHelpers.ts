@@ -862,12 +862,12 @@ export class ApiTestHelper {
       const typedCounts = filterCounts as ApiFilterCountsResponse;
       const filterFields = [
         'size_options', 'age_options', 'sex_options', 'breed_options',
-        'organization_options', 'location_country_options', 
+        'organization_options', 'location_country_options',
         'available_country_options', 'available_region_options'
-      ];
+      ] as const;
 
       for (const fieldName of filterFields) {
-        const options = (typedCounts as any)[fieldName];
+        const options = typedCounts[fieldName];
         if (Array.isArray(options) && options.length > 0) {
           const optionResult = ApiSchemaValidator.validateArray(options, API_SCHEMAS.FILTER_OPTION);
           
@@ -1322,7 +1322,7 @@ export class ApiTestHelper {
     schema: ResponseSchema,
     context: string
   ): Promise<void> {
-    const edgeCases: Array<{ name: string; data: any }> = [
+    const edgeCases: Array<{ name: string; data: Record<string, unknown> | unknown[] }> = [
       { name: 'empty object', data: {} },
       { name: 'null values', data: Object.keys(schema).reduce((acc, key) => ({ ...acc, [key]: null }), {}) },
       { name: 'string overflow', data: { name: 'a'.repeat(1000) } },

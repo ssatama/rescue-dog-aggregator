@@ -19,17 +19,31 @@ jest.mock("../../../hooks/useFavorites", () => ({
 }));
 
 // Mock Next Image
+interface MockImageProps {
+  src: string;
+  alt: string;
+  className?: string;
+  fill?: boolean;
+  sizes?: string;
+  priority?: boolean;
+}
+
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: ({ src, alt, className, ...props }: any) => (
+  default: ({ src, alt, className, ...props }: MockImageProps) => (
     <img src={src} alt={alt} className={className} {...props} />
   ),
 }));
 
 // Mock MobileFilterDrawer
+interface MockFilterDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
 jest.mock("../../filters/MobileFilterDrawer", () => ({
   __esModule: true,
-  default: ({ isOpen, onClose }: any) =>
+  default: ({ isOpen }: MockFilterDrawerProps) =>
     isOpen ? <div data-testid="mobile-filter-drawer">Filter Drawer</div> : null,
 }));
 

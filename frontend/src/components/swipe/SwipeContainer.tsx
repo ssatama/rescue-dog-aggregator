@@ -65,6 +65,12 @@ export function SwipeContainer({
   const swipedDogIdsRef = useRef(swipedDogIds);
   swipedDogIdsRef.current = swipedDogIds;
   const isProcessingSwipe = useRef(false);
+
+  // Refs for callback and filter values to avoid stale closures in effects
+  const onDogsLoadedRef = useRef(onDogsLoaded);
+  onDogsLoadedRef.current = onDogsLoaded;
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
   const [offset, setOffset] = useState(0);
 
   // Memoize the query string to prevent unnecessary re-renders
@@ -149,8 +155,8 @@ export function SwipeContainer({
         });
 
         setDogs(newDogs);
-        if (onDogsLoaded) {
-          onDogsLoaded(newDogs);
+        if (onDogsLoadedRef.current) {
+          onDogsLoadedRef.current(newDogs);
         }
 
         setCurrentIndex((prevIndex) => {
@@ -168,7 +174,7 @@ export function SwipeContainer({
           category: "swipe",
           level: "info",
           data: {
-            filtersData: filters,
+            filtersData: filtersRef.current,
             dogCount: newDogs.length,
             filteredOut: fetchedDogs.length - newDogs.length,
           },

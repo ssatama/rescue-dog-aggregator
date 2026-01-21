@@ -31,14 +31,18 @@ jest.mock("next/navigation", () => ({
 }));
 
 // mock Loading
-jest.mock("../../../../components/ui/Loading", () => () => (
-  <div data-testid="loading" />
-));
+jest.mock("../../../../components/ui/Loading", () => {
+  const MockLoading = () => <div data-testid="loading" />;
+  MockLoading.displayName = "MockLoading";
+  return MockLoading;
+});
 
 // mock DogDetailSkeleton
-jest.mock("../../../../components/ui/DogDetailSkeleton", () => () => (
-  <div data-testid="loading" />
-));
+jest.mock("../../../../components/ui/DogDetailSkeleton", () => {
+  const MockDogDetailSkeleton = () => <div data-testid="loading" />;
+  MockDogDetailSkeleton.displayName = "MockDogDetailSkeleton";
+  return MockDogDetailSkeleton;
+});
 
 // mock useSwipeNavigation hook
 jest.mock("../../../../hooks/useSwipeNavigation", () => ({

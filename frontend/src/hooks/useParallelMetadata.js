@@ -2,7 +2,7 @@
  * Hook for parallel metadata API calls
  * TDD Implementation for Performance Optimization
  */
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   getStandardizedBreeds,
   getLocationCountries,
@@ -88,11 +88,14 @@ export function useParallelMetadata() {
     organizationsCache,
   ]);
 
+  // Stable ref for mount-only effect
+  const fetchAllMetadataRef = useRef(fetchAllMetadata);
+  fetchAllMetadataRef.current = fetchAllMetadata;
+
   // Fetch metadata on mount only
   useEffect(() => {
-    fetchAllMetadata();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount, not when fetchAllMetadata changes
+    fetchAllMetadataRef.current();
+  }, []);
 
   return {
     metadata,

@@ -392,13 +392,21 @@ export default function BreedDetailClient({
     };
   }, [updateURL, debouncedFetchDogs]);
 
+  // Stable refs for mount-only effect
+  const fetchDogsWithFiltersRef = useRef(fetchDogsWithFilters);
+  fetchDogsWithFiltersRef.current = fetchDogsWithFilters;
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+  const buildAPIParamsRef = useRef(buildAPIParams);
+  buildAPIParamsRef.current = buildAPIParams;
+
   // Initial load with filter counts - only on mount
   useEffect(() => {
     if (!initialDogs || initialDogs.length === 0) {
-      fetchDogsWithFilters(filters);
+      fetchDogsWithFiltersRef.current(filtersRef.current);
     } else {
       // Just fetch counts if we have initial dogs
-      const params = buildAPIParams(filters);
+      const params = buildAPIParamsRef.current(filtersRef.current);
       getFilterCounts(params)
         .then((counts) => {
           setFilterCounts(counts);
@@ -409,8 +417,7 @@ export default function BreedDetailClient({
           }
         });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialDogs]);
 
   // Cleanup debounced callbacks on unmount
   useEffect(() => {

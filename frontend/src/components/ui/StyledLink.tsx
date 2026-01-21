@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 
 export type StyledLinkVariant = "text" | "button" | "nav";
 
-export interface StyledLinkProps {
+export interface StyledLinkProps
+  extends Omit<React.ComponentProps<typeof Link>, "className" | "href"> {
   /** Visual variant of the link */
   variant?: StyledLinkVariant;
   /** Additional CSS classes */
@@ -13,8 +14,6 @@ export interface StyledLinkProps {
   children: React.ReactNode;
   /** Next.js link href */
   href: string;
-  /** Additional props forwarded to Link */
-  [key: string]: any;
 }
 
 const StyledLink = React.forwardRef<HTMLAnchorElement, StyledLinkProps>(

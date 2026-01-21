@@ -44,14 +44,21 @@ export default function useProgressiveLoading(options = {}) {
     [isVisible, loadDelay, onVisible],
   );
 
+  // Stable ref for intersection callback to avoid observer recreation
+  const handleIntersectionRef = useRef(handleIntersection);
+  handleIntersectionRef.current = handleIntersection;
+
   useEffect(() => {
     if (!ref.current) return;
 
-    // Create intersection observer
-    observerRef.current = new IntersectionObserver(handleIntersection, {
-      rootMargin,
-      threshold,
-    });
+    // Create intersection observer with stable ref callback
+    observerRef.current = new IntersectionObserver(
+      (entries) => handleIntersectionRef.current(entries),
+      {
+        rootMargin,
+        threshold,
+      },
+    );
 
     // Start observing
     observerRef.current.observe(ref.current);
@@ -62,8 +69,7 @@ export default function useProgressiveLoading(options = {}) {
         observerRef.current.disconnect();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rootMargin, threshold]); // Exclude handleIntersection to prevent recreation
+  }, [rootMargin, threshold]);
 
   return {
     ref,

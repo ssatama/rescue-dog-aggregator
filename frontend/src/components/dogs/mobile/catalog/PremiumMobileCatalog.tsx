@@ -233,6 +233,10 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, [dogs]);
 
+  // Track selectedDog in ref to avoid dependency in effect
+  const selectedDogRef = useRef(selectedDog);
+  selectedDogRef.current = selectedDog;
+
   // Re-check hash when dogs array changes (for late-loading data)
   useEffect(() => {
     if (typeof window === "undefined" || !dogs.length) return;
@@ -245,11 +249,11 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
       (d) => d.slug === slug || `unknown-dog-${d.id}` === slug,
     );
 
-    if (dog && !selectedDog) {
+    if (dog && !selectedDogRef.current) {
       setSelectedDog(dog);
       setIsModalOpen(true);
     }
-  }, [dogs]); // Only depend on dogs, not selectedDog to avoid loops
+  }, [dogs]);
 
   const handleToggleFavorite = async (dogId: string) => {
     const numericId = parseInt(dogId, 10);

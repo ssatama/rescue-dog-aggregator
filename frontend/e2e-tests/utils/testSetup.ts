@@ -2,11 +2,16 @@ import { Page, Browser, BrowserContext, test as baseTest } from 'playwright/test
 import { MockAPI, createMockAPI, mockAPIScenarios } from '../fixtures/mockAPI';
 import { getTimeoutConfig } from './testHelpers';
 
+// Placeholder page object types - will be replaced when page objects are implemented
+export interface PageObjectPlaceholder {
+  page: Page;
+}
+
 export interface TestFixtures {
   mockAPI: MockAPI;
-  dogsPage: any; // Will be properly typed when DogsPage is created
-  dogDetailPage: any; // Will be properly typed when DogDetailPage is created
-  homePage: any; // Will be properly typed when HomePage is created
+  dogsPage: PageObjectPlaceholder;
+  dogDetailPage: PageObjectPlaceholder;
+  homePage: PageObjectPlaceholder;
 }
 
 export interface WorkerFixtures {

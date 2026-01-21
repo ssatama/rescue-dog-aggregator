@@ -8,6 +8,13 @@ import {
   setupChunkErrorHandler,
 } from "@/lib/chunkLoadError";
 
+// Extend Window interface for Sentry initialization tracking
+declare global {
+  interface Window {
+    __sentryInitialized?: boolean;
+  }
+}
+
 // Determine environment - simplified to use Vercel's provided env vars
 const environment =
   process.env.NEXT_PUBLIC_VERCEL_ENV ||
@@ -26,10 +33,10 @@ if (isDevelopment) {
 if (
   isProduction &&
   typeof window !== "undefined" &&
-  !(window as any).__sentryInitialized
+  !window.__sentryInitialized
 ) {
   // Prevent multiple initializations in production
-  (window as any).__sentryInitialized = true;
+  window.__sentryInitialized = true;
 
   // Only log initialization in development mode
   if (isDevelopment) {

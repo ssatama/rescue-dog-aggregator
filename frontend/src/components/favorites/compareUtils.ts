@@ -20,20 +20,28 @@ export function getAgeDisplay(dog: Dog): string {
   return "Unknown";
 }
 
-export function getCompatibility(dog: Dog) {
+export type CompatibilityValue = "yes" | "no" | "maybe" | "unknown";
+
+export interface CompatibilityResult {
+  dogs: CompatibilityValue;
+  cats: CompatibilityValue;
+  children: CompatibilityValue;
+}
+
+export function getCompatibility(dog: Dog): CompatibilityResult {
   const props = dog.properties || {};
   const profilerData = dog.dog_profiler_data;
 
-  const compatibility: any = {
+  const compatibility: CompatibilityResult = {
     dogs: "unknown",
     cats: "unknown",
     children: "unknown",
   };
 
   if (profilerData) {
-    compatibility.dogs = profilerData.good_with_dogs || "unknown";
-    compatibility.cats = profilerData.good_with_cats || "unknown";
-    compatibility.children = profilerData.good_with_children || "unknown";
+    compatibility.dogs = profilerData.good_with_dogs ?? "unknown";
+    compatibility.cats = profilerData.good_with_cats ?? "unknown";
+    compatibility.children = profilerData.good_with_children ?? "unknown";
   } else if (props) {
     compatibility.dogs =
       props.good_with_dogs === true || props.good_with_dogs === "yes"

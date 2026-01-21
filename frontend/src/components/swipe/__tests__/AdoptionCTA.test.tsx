@@ -17,8 +17,8 @@ describe("AdoptionCTA", () => {
   });
 
   afterEach(() => {
-    // Clean up
-    delete (global.window as any).open;
+    // Clean up - restore original or remove mock
+    (global.window as Window & typeof globalThis).open = mockWindowOpen;
   });
 
   it("should render adoption button with correct text", () => {

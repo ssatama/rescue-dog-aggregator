@@ -1,7 +1,8 @@
 import { ReactElement } from "react";
+import type { Dog } from "@/types/dog";
 
-interface DogsGridProps {
-  dogs?: any[];
+interface DogsGridProps extends React.HTMLAttributes<HTMLDivElement> {
+  dogs?: Dog[];
   loading?: boolean;
   skeletonCount?: number;
   className?: string;
@@ -9,7 +10,7 @@ interface DogsGridProps {
   onClearFilters?: () => void;
   onBrowseOrganizations?: () => void;
   loadingType?: "initial" | "filter" | "pagination";
-  [key: string]: any;
+  listContext?: string;
 }
 
 declare const DogsGrid: React.FC<DogsGridProps>;

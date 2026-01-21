@@ -28,9 +28,10 @@ const mockDogWithNonStandardValues: Dog = {
   sex: "Female",
   organization_name: "Another Rescue",
   dog_profiler_data: {
-    good_with_dogs: "selective" as any, // Non-standard DB value
-    good_with_cats: "with_training" as any, // Non-standard DB value
-    good_with_children: "older_children" as any, // Non-standard DB value
+    // Non-standard DB values that are intentionally invalid types for testing
+    good_with_dogs: "selective" as "yes" | "no" | "maybe" | "unknown",
+    good_with_cats: "with_training" as "yes" | "no" | "maybe" | "unknown",
+    good_with_children: "older_children" as "yes" | "no" | "maybe" | "unknown",
     tagline: "Needs special attention",
   },
   properties: {},

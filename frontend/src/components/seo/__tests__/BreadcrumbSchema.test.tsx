@@ -108,14 +108,12 @@ describe("BreadcrumbSchema Component", () => {
   });
 
   test("should not render when items is null or undefined", () => {
-    const { container: nullContainer } = render(
-      <BreadcrumbSchema items={null as any} />,
-    );
+    // @ts-expect-error testing error handling with null
+    const { container: nullContainer } = render(<BreadcrumbSchema items={null} />);
     expect(nullContainer.querySelector("script")).toBeNull();
 
-    const { container: undefinedContainer } = render(
-      <BreadcrumbSchema items={undefined as any} />,
-    );
+    // @ts-expect-error testing error handling with undefined
+    const { container: undefinedContainer } = render(<BreadcrumbSchema items={undefined} />);
     expect(undefinedContainer.querySelector("script")).toBeNull();
   });
 
@@ -125,21 +123,21 @@ describe("BreadcrumbSchema Component", () => {
   });
 
   test("should not render when items is not an array", () => {
-    const { container } = render(
-      <BreadcrumbSchema items={"not-an-array" as any} />,
-    );
+    // @ts-expect-error testing error handling with invalid type
+    const { container } = render(<BreadcrumbSchema items={"not-an-array"} />);
     expect(container.querySelector("script")).toBeNull();
   });
 
   test("should include all items even those without names", () => {
-    const itemsWithInvalid = [
+    const itemsWithInvalid: Array<{ name?: string; url: string }> = [
       { name: "Home", url: "/" },
       { url: "/invalid" }, // No name
       { name: "Dogs", url: "/dogs" },
     ];
 
     const { container } = render(
-      <BreadcrumbSchema items={itemsWithInvalid as any} />,
+      // @ts-expect-error testing error handling with partial data
+      <BreadcrumbSchema items={itemsWithInvalid} />,
     );
 
     const script = container.querySelector(
