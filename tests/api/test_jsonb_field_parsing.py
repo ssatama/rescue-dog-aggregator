@@ -3,7 +3,7 @@ import pytest
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestJSONBFieldParsing:
     """Test JSONB field parsing across all API endpoints."""
 

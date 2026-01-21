@@ -24,7 +24,7 @@ from scrapers.daisy_family_rescue.translations import (
 from utils.standardization import standardize_age, standardize_breed
 
 
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.integration
 @pytest.mark.slow
 class TestNameNormalization:

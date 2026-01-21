@@ -5,8 +5,8 @@ import pytest
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
-@pytest.mark.complex_setup
+@pytest.mark.database
+@pytest.mark.slow
 class TestAnimalsMeta:
     @pytest.mark.parametrize(
         "endpoint, key",
@@ -25,7 +25,7 @@ class TestAnimalsMeta:
         # every element is a non-empty string
         assert all(isinstance(x, str) and x for x in data)
 
-    @pytest.mark.complex_setup  # Fails in CI due to database setup differences
+    @pytest.mark.slow  # Fails in CI due to database setup differences
     def test_breeds_contains_known_value(self, client):
         """Ensure the breeds meta endpoint returns 'Mixed Breed'."""
         resp = client.get("/api/animals/meta/breeds")
@@ -38,7 +38,7 @@ class TestAnimalsMeta:
         resp = client.get("/api/animals/meta/available_regions")
         assert resp.status_code == 422
 
-    @pytest.mark.complex_setup  # Fails in CI due to missing service_regions table
+    @pytest.mark.slow  # Fails in CI due to missing service_regions table
     def test_available_regions_with_country(self, client):
         """GET /api/animals/meta/available_regions?country=<X> returns string list."""
         # First grab any valid country

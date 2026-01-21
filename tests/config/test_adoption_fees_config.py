@@ -14,7 +14,7 @@ from utils.config_loader import ConfigLoader
 from utils.config_models import OrganizationConfig
 
 
-@pytest.mark.config
+@pytest.mark.unit
 @pytest.mark.integration
 class TestAdoptionFeesConfig:
     """Test suite for adoption_fees in organization configurations."""

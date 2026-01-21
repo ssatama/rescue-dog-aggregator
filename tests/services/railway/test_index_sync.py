@@ -12,7 +12,7 @@ from services.railway.index_sync import (
 )
 
 
-@pytest.mark.services
+@pytest.mark.integration
 @pytest.mark.slow
 @pytest.mark.unit
 class TestIndexSync:

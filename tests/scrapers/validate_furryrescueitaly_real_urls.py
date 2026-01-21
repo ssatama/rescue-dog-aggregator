@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 
 # This is a validation utility that makes external HTTP requests
 @pytest.mark.external
-@pytest.mark.scrapers
+@pytest.mark.integration
 @pytest.mark.browser
 def test_detail_extraction(url):
     """Test extracting details from a single URL."""

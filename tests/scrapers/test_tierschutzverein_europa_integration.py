@@ -11,7 +11,7 @@ from scrapers.tierschutzverein_europa.dogs_scraper import TierschutzvereinEuropa
 from utils.standardization import standardize_age, standardize_breed
 
 
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.browser
 @pytest.mark.database
 @pytest.mark.integration

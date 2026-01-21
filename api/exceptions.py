@@ -12,7 +12,7 @@ from typing import Any
 import httpx
 import psycopg2
 from fastapi import HTTPException, status
-from pydantic import ValidationError
+from pydantic import ValidationError as PydanticValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -176,7 +176,7 @@ def handle_validation_error(error: Exception, context: str) -> None:
         )
         sentry_sdk.capture_exception(error)
 
-    if isinstance(error, ValidationError):
+    if isinstance(error, PydanticValidationError):
         logger.error(f"Validation error in {context}: {error}")
         raise ValidationError(str(error))
     else:

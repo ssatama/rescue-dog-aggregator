@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 
 @pytest.mark.slow
-@pytest.mark.network
+@pytest.mark.external
 @pytest.mark.integration
 class TestR2Integration:
     """Test the complete image upload flow from scraper to frontend."""

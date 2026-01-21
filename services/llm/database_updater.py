@@ -9,11 +9,14 @@ Following CLAUDE.md principles:
 
 import json
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import psycopg2
 
 from config import get_database_config
+
+if TYPE_CHECKING:
+    from services.connection_pool import ConnectionPoolService
 
 logger = logging.getLogger(__name__)
 

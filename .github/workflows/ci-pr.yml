@@ -7,6 +7,7 @@ permissions:
 on:
   pull_request:
     branches: [main]
+    types: [opened, reopened]
 
 jobs:
   backend-tests:
@@ -126,7 +127,6 @@ jobs:
     name: Security Check
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -143,6 +143,5 @@ jobs:
         run: uv sync --frozen
 
       - name: Check dependencies for vulnerabilities
-        run: |
-          uv pip install pip-audit
-          uv run pip-audit || echo "::warning::Security vulnerabilities found in dependencies"
+        continue-on-error: true
+        run: uv run pip-audit || echo "::warning::Security vulnerabilities found in dependencies"

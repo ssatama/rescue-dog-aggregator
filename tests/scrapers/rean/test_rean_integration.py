@@ -41,7 +41,7 @@ class TestREANIntegration:
             return REANScraper()
 
     @pytest.mark.slow
-    @pytest.mark.network
+    @pytest.mark.external
     @patch("requests.get")
     def test_scrape_page_success(self, mock_get, scraper):
         """Test successful page scraping with network request."""
@@ -56,7 +56,7 @@ class TestREANIntegration:
         mock_get.assert_called_once()
 
     @pytest.mark.slow
-    @pytest.mark.network
+    @pytest.mark.external
     @patch("requests.get")
     @patch("time.sleep")  # Speed up retries
     def test_scrape_page_with_retries(self, mock_sleep, mock_get, scraper):
@@ -161,7 +161,7 @@ class TestREANIntegration:
         scraper._extract_dogs_legacy_fallback.assert_called_once()
 
     @pytest.mark.slow
-    @pytest.mark.network
+    @pytest.mark.external
     @patch("requests.get")
     @patch("selenium.webdriver.Chrome")
     @patch("time.sleep")
@@ -208,7 +208,7 @@ class TestREANIntegration:
         assert "external_id" in dog
 
     @pytest.mark.slow
-    @pytest.mark.network
+    @pytest.mark.external
     def test_rate_limiting_between_pages(self, scraper):
         """Test rate limiting is applied between page requests."""
         with patch("time.sleep") as mock_sleep, patch("requests.get") as mock_get:

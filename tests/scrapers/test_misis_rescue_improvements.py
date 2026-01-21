@@ -21,7 +21,7 @@ from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy as extract
 
 
 @pytest.mark.integration
-@pytest.mark.scrapers
+@pytest.mark.integration
 @pytest.mark.slow
 class TestSizeStandardization:
     """Test correct size categorization based on weight."""

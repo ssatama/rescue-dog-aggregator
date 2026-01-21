@@ -19,8 +19,8 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.mark.api
-@pytest.mark.services
+@pytest.mark.database
+@pytest.mark.integration
 class TestNormalizationRegression:
     """Comprehensive tests capturing current normalization behavior."""
 

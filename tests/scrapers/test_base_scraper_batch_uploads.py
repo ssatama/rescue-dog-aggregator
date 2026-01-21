@@ -8,7 +8,7 @@ from scrapers.base_scraper import BaseScraper
 
 
 @pytest.mark.external
-@pytest.mark.scrapers
+@pytest.mark.integration
 @pytest.mark.slow
 @pytest.mark.unit
 class TestBaseScraperBatchUploads:

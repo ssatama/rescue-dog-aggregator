@@ -3,7 +3,7 @@ import pytest
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestRandomAnimals:
     # Use the client fixture from conftest.py instead of creating our own
     def test_default_limit(self, client):

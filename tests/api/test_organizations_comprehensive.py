@@ -15,7 +15,7 @@ from api.main import app
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestOrganizationsJSONParsing:
     # Use the client fixture from conftest.py instead of creating our own
     # Docstring moved above
@@ -199,7 +199,7 @@ class TestOrganizationsJSONParsing:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestOrganizationsDatabaseErrors:
     # Use the client fixture from conftest.py instead of creating our own
     # Docstring moved above
@@ -283,7 +283,7 @@ class TestOrganizationsDatabaseErrors:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestOrganizationRecentDogsEndpoint:
     # Use the client fixture from conftest.py instead of creating our own
     # Docstring moved above
@@ -408,7 +408,7 @@ class TestOrganizationRecentDogsEndpoint:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestOrganizationStatisticsEndpoint:
     # Use the client fixture from conftest.py instead of creating our own
     # Docstring moved above
@@ -505,7 +505,7 @@ class TestOrganizationStatisticsEndpoint:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestOrganizationDetailEdgeCases:
     # Use the client fixture from conftest.py instead of creating our own
     # Docstring moved above

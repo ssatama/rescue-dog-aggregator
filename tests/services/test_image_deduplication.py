@@ -9,7 +9,7 @@ from services.image_processing_service import ImageProcessingService
 
 
 @pytest.mark.external
-@pytest.mark.services
+@pytest.mark.integration
 @pytest.mark.slow
 @pytest.mark.unit
 class TestImageDeduplication:

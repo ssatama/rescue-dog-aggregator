@@ -12,7 +12,7 @@ import pytest
 
 
 @pytest.mark.security
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.integration
 class TestLLMSecurityBasics:
     """Test basic security patterns in LLM routes without complex mocking."""

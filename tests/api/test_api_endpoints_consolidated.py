@@ -9,7 +9,7 @@ import pytest
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestAPIEndpointsConsolidated:
     """Consolidated tests for all API endpoints using parametrization."""
 

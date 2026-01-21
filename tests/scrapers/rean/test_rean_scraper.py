@@ -227,8 +227,8 @@ class TestREANScraper:
         assert result == "Sample page content"
 
     @pytest.mark.slow
-    @pytest.mark.network
-    @pytest.mark.network_dependent
+    @pytest.mark.external
+    @pytest.mark.external
     @patch("requests.get")
     def test_scrape_page_failure(self, mock_get, scraper):
         """Test page scraping failure handling."""

@@ -17,9 +17,12 @@ import asyncio
 import logging
 import time
 from datetime import datetime
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from dotenv import load_dotenv
+
+if TYPE_CHECKING:
+    from services.connection_pool import ConnectionPoolService
 
 from services.llm.database_updater import DatabaseUpdater
 from services.llm.extracted_profile_normalizer import ExtractedProfileNormalizer

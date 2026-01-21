@@ -13,7 +13,7 @@ from fastapi import HTTPException
 from api.dependencies import get_database_connection, get_db_cursor
 
 
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.database
 @pytest.mark.slow
 class TestGetDbCursor:

@@ -18,7 +18,7 @@ from scrapers.misis_rescue.scraper import MisisRescueScraper
 
 @pytest.mark.browser
 @pytest.mark.integration
-@pytest.mark.scrapers
+@pytest.mark.integration
 @pytest.mark.slow
 class TestMisisRescueErrorPageDetection:
     """Test error page detection prevents bad data."""

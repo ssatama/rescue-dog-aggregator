@@ -8,7 +8,7 @@ client = TestClient(app)
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestInputValidationComprehensive:
     """Test comprehensive input validation across all endpoints."""
 

@@ -1,5 +1,7 @@
 name: Setup PostgreSQL Database
-description: Reusable action for setting up PostgreSQL test database with schema and migrations
+description: |
+  Reusable action for setting up PostgreSQL test database with schema and migrations.
+  Note: uv must be pre-installed before using this action.
 
 inputs:
   db-name:
@@ -36,34 +38,52 @@ runs:
         for i in {1..15}; do
           if pg_isready -h ${{ inputs.db-host }} -p ${{ inputs.db-port }}; then
             echo "PostgreSQL is ready"
-            break
+            exit 0
           fi
           echo "Waiting for PostgreSQL... attempt $i/15"
           sleep 2
         done
+        echo "ERROR: PostgreSQL did not become ready after 15 attempts"
+        exit 1
 
     - name: Create database
       shell: bash
       env:
         PGPASSWORD: ${{ inputs.db-password }}
       run: |
-        psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
-          -c "CREATE DATABASE ${{ inputs.db-name }};" || true
+        if psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
+          -c "CREATE DATABASE ${{ inputs.db-name }};" 2>&1; then
+          echo "Database created successfully"
+        else
+          # Check if database already exists
+          if psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
+            -lqt | cut -d \| -f 1 | grep -qw ${{ inputs.db-name }}; then
+            echo "Database already exists, continuing"
+          else
+            echo "ERROR: Failed to create database and database does not exist"
+            exit 1
+          fi
+        fi
 
     - name: Grant privileges
       shell: bash
       env:
         PGPASSWORD: ${{ inputs.db-password }}
       run: |
+        # Grant database privileges (always succeeds for owner)
         psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
           -d ${{ inputs.db-name }} \
-          -c "GRANT ALL PRIVILEGES ON DATABASE ${{ inputs.db-name }} TO ${{ inputs.db-user }};" || true
+          -c "GRANT ALL PRIVILEGES ON DATABASE ${{ inputs.db-name }} TO ${{ inputs.db-user }};"
+
+        # Grant table privileges (may have no tables yet, which is expected)
         psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
           -d ${{ inputs.db-name }} \
-          -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${{ inputs.db-user }};" || true
+          -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${{ inputs.db-user }};" 2>&1 || true
+
+        # Grant sequence privileges (may have no sequences yet, which is expected)
         psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
           -d ${{ inputs.db-name }} \
-          -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${{ inputs.db-user }};" || true
+          -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${{ inputs.db-user }};" 2>&1 || true
 
     - name: Initialize database schema
       shell: bash
@@ -94,10 +114,25 @@ runs:
         PGPASSWORD: ${{ inputs.db-password }}
       run: |
         echo "Running database migrations..."
+        migration_failed=0
         for migration in database/migrations/*.sql; do
           if [ -f "$migration" ]; then
             echo "Running migration: $(basename $migration)"
-            psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
-              -d ${{ inputs.db-name }} -f "$migration" || echo "Migration $(basename $migration) may have already been applied"
+            if ! output=$(psql -h ${{ inputs.db-host }} -p ${{ inputs.db-port }} -U ${{ inputs.db-user }} \
+              -d ${{ inputs.db-name }} -f "$migration" 2>&1); then
+              # Check if this is an "already exists" type error (expected for idempotent migrations)
+              if echo "$output" | grep -qE "(already exists|duplicate)"; then
+                echo "Migration $(basename $migration) already applied, continuing"
+              else
+                echo "ERROR: Migration $(basename $migration) failed:"
+                echo "$output"
+                migration_failed=1
+              fi
+            fi
           fi
         done
+        if [ "$migration_failed" -eq 1 ]; then
+          echo "ERROR: One or more migrations failed"
+          exit 1
+        fi
+        echo "All migrations completed successfully"

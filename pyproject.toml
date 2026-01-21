@@ -54,6 +54,7 @@ dev = [
     "ipython>=8.0.0",
     "watchdog>=3.0.0",
     "cryptography>=41.0.0",
+    "pip-audit>=2.7.0",
 ]
 
 [build-system]
@@ -76,6 +77,7 @@ dev-dependencies = [
     "ipython>=8.0.0",
     "watchdog>=3.0.0",
     "cryptography>=41.0.0",
+    "pip-audit>=2.7.0",
 ]
 
 [tool.ruff]
@@ -109,8 +111,6 @@ ignore = [
     "F401",   # Unused import (fix in follow-up)
     "F402",   # Import shadowed by loop variable (fix in follow-up)
     "F601",   # Dict key repeated (fix in follow-up)
-    "F811",   # Redefinition of unused name (fix in follow-up)
-    "F821",   # Undefined name (fix in follow-up)
     "F841",   # Unused variable (often intentional in tests)
     "W291",   # Trailing whitespace
     "W293",   # Blank line contains whitespace

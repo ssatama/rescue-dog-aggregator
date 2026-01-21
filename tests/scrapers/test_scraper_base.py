@@ -33,7 +33,7 @@ class ScraperTestBase:
             scraper.cursor = Mock()
             return scraper
 
-    @pytest.mark.scrapers
+    @pytest.mark.integration
     @pytest.mark.unit
     def test_initialization_with_config(self, scraper):
         """Test scraper initializes correctly with config."""

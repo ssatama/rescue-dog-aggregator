@@ -10,7 +10,7 @@ import pytest
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestHealthCheckEndpoint:
     """Test basic health check functionality."""
 
@@ -46,7 +46,7 @@ class TestHealthCheckEndpoint:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.requires_migrations
 class TestScraperMonitoringEndpoint:
     """
@@ -62,7 +62,7 @@ class TestScraperMonitoringEndpoint:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.requires_migrations
 class TestFailureDetectionMonitoring:
     """
@@ -79,7 +79,7 @@ class TestFailureDetectionMonitoring:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.requires_migrations
 class TestPerformanceMetrics:
     """
@@ -96,7 +96,7 @@ class TestPerformanceMetrics:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 class TestAlertingConfiguration:
     """
     Test alerting configuration and thresholds.
@@ -111,7 +111,7 @@ class TestAlertingConfiguration:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.requires_migrations
 class TestMonitoringAuthentication:
     """Test that monitoring endpoints have appropriate security."""
@@ -142,7 +142,7 @@ class TestMonitoringAuthentication:
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.requires_migrations
 class TestMonitoringIntegration:
     """

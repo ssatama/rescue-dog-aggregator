@@ -8,10 +8,10 @@ import pytest
 from utils.r2_service import R2Service
 
 
-@pytest.mark.api
+@pytest.mark.database
 @pytest.mark.external
 @pytest.mark.slow
-@pytest.mark.utils
+@pytest.mark.integration
 class TestR2ExponentialBackoff(unittest.TestCase):
     """Test exponential backoff for R2 uploads"""
 

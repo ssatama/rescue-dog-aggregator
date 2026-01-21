@@ -198,7 +198,7 @@ pnpm tsc --noEmit        # Type check
 
 ```bash
 uv run pytest -m "unit" --maxfail=5              # Tier 1: Quick feedback
-uv run pytest -m "not slow and not browser" --maxfail=3  # Tier 2: CI
+uv run pytest -m "not slow and not browser and not external" --maxfail=3  # Tier 2: CI
 uv run pytest                                     # Tier 3: Full suite
 ```
 

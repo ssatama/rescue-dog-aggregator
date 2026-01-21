@@ -12,7 +12,7 @@ import pytest
 from services.llm.profile_normalizer import ProfileNormalizer
 
 
-@pytest.mark.services
+@pytest.mark.integration
 class TestProfileNormalizer:
     """Test the refactored profile normalization."""
 
