@@ -288,7 +288,9 @@ describe("FilterPanel Component", () => {
       );
 
       // Should not contain Max (48 months = Adult)
-      expect(lastCall.find((d: any) => d.name === "Max")).toBeUndefined();
+      expect(
+        lastCall.find((d: { name: string }) => d.name === "Max"),
+      ).toBeUndefined();
     });
 
     test("shows size options", async () => {

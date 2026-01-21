@@ -3,6 +3,23 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import PremiumMobileCatalog from "../PremiumMobileCatalog";
 import { useViewport } from "@/hooks/useViewport";
+import type { Dog } from "@/types/dog";
+
+interface MockMotionProps {
+  children?: React.ReactNode;
+  [key: string]: unknown;
+}
+
+interface MockFilterDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+interface MockDogModalProps {
+  dog: Dog | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
 
 // Mock the useViewport hook
 jest.mock("@/hooks/useViewport", () => ({
@@ -45,25 +62,31 @@ jest.mock("next/navigation", () => ({
 // Mock framer-motion to avoid animation complexities in tests
 jest.mock("framer-motion", () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    article: ({ children, ...props }: any) => (
-      <article {...props}>{children}</article>
+    div: ({ children, ...props }: MockMotionProps) => (
+      <div {...(props as React.HTMLAttributes<HTMLDivElement>)}>{children}</div>
+    ),
+    article: ({ children, ...props }: MockMotionProps) => (
+      <article {...(props as React.HTMLAttributes<HTMLElement>)}>
+        {children}
+      </article>
     ),
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: { children?: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 // Mock MobileFilterDrawer
 jest.mock("@/components/filters/MobileFilterDrawer", () => ({
   __esModule: true,
-  default: ({ isOpen, onClose }: any) =>
+  default: ({ isOpen }: MockFilterDrawerProps) =>
     isOpen ? <div data-testid="filter-drawer">Filter Drawer</div> : null,
 }));
 
 // Mock DogDetailModalUpgraded
 jest.mock("@/components/dogs/mobile/detail/DogDetailModalUpgraded", () => ({
   __esModule: true,
-  default: ({ dog, isOpen, onClose }: any) =>
+  default: ({ dog, isOpen }: MockDogModalProps) =>
     isOpen && dog ? <div data-testid="dog-modal">{dog.name} Modal</div> : null,
 }));
 
