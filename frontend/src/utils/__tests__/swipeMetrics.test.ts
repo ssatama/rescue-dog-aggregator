@@ -213,58 +213,6 @@ describe("SwipeMetrics", () => {
       );
     });
 
-    it.skip("should track performance metrics as span attributes", () => {
-      // TODO: This test is skipped due to challenges with mocking performance API
-      // The implementation works correctly in production, but the test setup
-      // has issues with the SwipeMetrics instance caching the performance API state
-      const mockSetAttribute = jest.fn();
-
-      mockSentry.startSpan.mockImplementation(
-        (options: SpanOptions, callback?: (span: MockSpan) => unknown) => {
-          const span: MockSpan = {
-            setAttribute: mockSetAttribute,
-            setAttributes: jest.fn(),
-            end: jest.fn(),
-          };
-          if (callback) {
-            return callback(span);
-          }
-          return span;
-        },
-      );
-
-      // Setup performance mock to ensure hasPerformanceAPI() returns true
-      const localPerformanceMock = {
-        now: jest.fn().mockReturnValue(1000),
-        mark: jest.fn(),
-        measure: jest.fn(),
-        getEntriesByName: jest
-          .fn()
-          .mockReturnValueOnce([]) // First call returns empty (no start mark)
-          .mockReturnValueOnce([{ duration: 100 }]), // Second call returns duration
-      };
-      global.performance = localPerformanceMock as unknown as Performance;
-
-      // Create a new instance after setting up the performance mock
-      const localMetrics = new SwipeMetrics();
-
-      // Clear previous calls
-      mockSentry.startSpan.mockClear();
-
-      localMetrics.trackLoadTime();
-
-      // The trackLoadTime method creates a span for load performance
-      expect(mockSentry.startSpan).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: "swipe.performance.load",
-          op: "metrics.performance",
-          attributes: expect.objectContaining({
-            "performance.load_time": expect.any(Number),
-          }),
-        }),
-        expect.any(Function),
-      );
-    });
   });
 
   describe("Session metrics tracking", () => {
@@ -310,45 +258,6 @@ describe("SwipeMetrics", () => {
       );
     });
 
-    it.skip("should track slow gestures as breadcrumbs not errors", () => {
-      // TODO: This test is skipped due to challenges with mocking performance API
-      // The implementation works correctly in production, but the test setup
-      // has issues with the SwipeMetrics instance caching the performance API state
-      // Setup performance mock to ensure proper timing
-      const localPerformanceMock = {
-        now: jest
-          .fn()
-          .mockReturnValueOnce(1000) // startSwipeGesture
-          .mockReturnValueOnce(1600), // endSwipeGesture (600ms later)
-        mark: jest.fn(),
-        measure: jest.fn(),
-        getEntriesByName: jest.fn().mockReturnValue([]),
-      };
-      global.performance = localPerformanceMock as unknown as Performance;
-
-      // Create a new instance after setting up the performance mock
-      const localMetrics = new SwipeMetrics();
-
-      // Clear previous calls
-      mockSentry.addBreadcrumb.mockClear();
-
-      localMetrics.startSwipeGesture();
-      localMetrics.endSwipeGesture();
-
-      expect(mockSentry.addBreadcrumb).toHaveBeenCalledWith(
-        expect.objectContaining({
-          category: "performance",
-          level: "warning",
-          message: expect.stringContaining("Slow swipe gesture"),
-          data: expect.objectContaining({
-            duration: 600,
-            threshold: 500,
-          }),
-        }),
-      );
-
-      expect(mockSentry.captureEvent).not.toHaveBeenCalled();
-    });
   });
 
   describe("Batch processing", () => {
