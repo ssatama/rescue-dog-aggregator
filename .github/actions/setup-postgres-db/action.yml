@@ -74,17 +74,18 @@ runs:
         DB_NAME: ${{ inputs.db-name }}
         DB_USER: ${{ inputs.db-user }}
         DB_PASSWORD: ${{ inputs.db-password }}
+        PYTHONPATH: ${{ github.workspace }}
       run: |
         python -c "
+        import sys
         from database.db_setup import initialize_database
         conn = initialize_database()
-        if conn:
-            print('Database schema initialized successfully')
-            conn.close()
-        else:
-            print('Database initialization failed')
-            exit(1)
-        " || echo "Database initialization completed or already initialized"
+        if not conn:
+            print('ERROR: Database schema initialization failed')
+            sys.exit(1)
+        print('Database schema initialized successfully')
+        conn.close()
+        "
 
     - name: Run database migrations
       if: inputs.run-migrations == 'true'

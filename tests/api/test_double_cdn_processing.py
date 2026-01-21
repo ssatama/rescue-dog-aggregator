@@ -13,7 +13,7 @@ class TestDoubleCDNProcessing:
 
     # Use the client fixture from conftest.py instead of creating our own
 
-    @pytest.mark.unit
+    @pytest.mark.database
     def test_api_returns_raw_r2_urls_without_cloudinary_processing(self, client):
         """API should return raw R2 URLs without any Cloudinary processing."""
         response = client.get("/api/animals?limit=5")
@@ -39,7 +39,7 @@ class TestDoubleCDNProcessing:
                     expected_pattern = "https://images.rescuedogs.me/rescue_dogs/"
                     assert url.startswith(expected_pattern), f"URL should start with {expected_pattern}, got: {url}"
 
-    @pytest.mark.unit
+    @pytest.mark.database
     def test_animal_detail_returns_raw_r2_urls(self, client):
         """Animal detail endpoint should return raw R2 URLs."""
         # Get first animal
@@ -85,7 +85,7 @@ class TestDoubleCDNProcessing:
                     # If not test data, should be R2 URL
                     assert "images.rescuedogs.me" in url
 
-    @pytest.mark.unit
+    @pytest.mark.database
     def test_organizations_return_raw_r2_urls(self, client):
         """Organization endpoints should return raw R2 URLs."""
         response = client.get("/api/organizations")
@@ -109,7 +109,7 @@ class TestDoubleCDNProcessing:
                         assert "cloudinary.com" not in url
                         assert "/cdn-cgi/image/" not in url
 
-    @pytest.mark.unit
+    @pytest.mark.database
     def test_no_double_cdn_transformation_patterns(self, client):
         """Test that no URLs contain double CDN transformation patterns."""
         response = client.get("/api/animals?limit=10")
