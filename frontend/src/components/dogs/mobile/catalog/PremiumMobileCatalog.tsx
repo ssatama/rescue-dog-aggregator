@@ -83,18 +83,21 @@ const DogCard: React.FC<{
   onClick: () => void;
   index: number;
   isFavorite: boolean;
-}> = ({ dog, onToggleFavorite, onClick, index, isFavorite }) => {
+  priority?: boolean;
+}> = ({ dog, onToggleFavorite, onClick, index, isFavorite, priority = false }) => {
   const imageUrl = getDogImage(dog);
   const displayTraits = getPersonalityTraits(dog).slice(0, 2);
   const extraTraitsCount = getPersonalityTraits(dog).length - 2;
   const ageGroup = getAgeCategory(dog);
   const formattedBreed = formatBreed(dog);
 
+  const shouldAnimate = !priority;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
+      animate={shouldAnimate ? { opacity: 1, y: 0 } : undefined}
+      transition={shouldAnimate ? { delay: index * 0.05 } : undefined}
       className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow"
       style={{ borderRadius: UI_CONSTANTS.BORDER_RADIUS }}
       role="button"
@@ -117,7 +120,8 @@ const DogCard: React.FC<{
           src={imageUrl}
           alt={dog.name}
           className="w-full h-full object-cover"
-          loading="lazy"
+          priority={priority}
+          loading={priority ? undefined : "lazy"}
           fill
           sizes={IMAGE_SIZES.CATALOG_CARD}
         />
@@ -371,6 +375,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                     key={dog.id}
                     dog={dog}
                     index={index}
+                    priority={index < 4}
                     isFavorite={
                       isHydrated &&
                       favorites.includes(parseInt(String(dog.id), 10))
