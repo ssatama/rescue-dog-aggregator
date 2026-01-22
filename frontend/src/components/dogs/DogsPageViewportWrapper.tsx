@@ -11,6 +11,7 @@ import { type Dog } from "@/types/dog";
 interface DogCardOptimizedProps {
   dog: Dog;
   onClick: () => void;
+  priority?: boolean;
 }
 
 // Import JavaScript component with proper typing
@@ -120,9 +121,13 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
       <div className="dog-viewport-wrapper">
         {/* Use responsive CSS classes that work on all viewports */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-          {dogs.map((dog) => (
+          {dogs.map((dog, index) => (
             <DogCardErrorBoundary key={dog.id}>
-              <DogCardOptimized dog={dog} onClick={() => handleDogClick(dog)} />
+              <DogCardOptimized
+                dog={dog}
+                onClick={() => handleDogClick(dog)}
+                priority={index < 8}
+              />
             </DogCardErrorBoundary>
           ))}
         </div>
@@ -136,9 +141,13 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
       <div
         className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${className}`}
       >
-        {dogs.map((dog) => (
+        {dogs.map((dog, index) => (
           <DogCardErrorBoundary key={dog.id}>
-            <DogCardOptimized dog={dog} onClick={() => handleDogClick(dog)} />
+            <DogCardOptimized
+              dog={dog}
+              onClick={() => handleDogClick(dog)}
+              priority={index < 8}
+            />
           </DogCardErrorBoundary>
         ))}
       </div>
