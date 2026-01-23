@@ -9,7 +9,7 @@ An open-source platform that aggregates rescue dog listings from multiple Europe
 | Active Dogs   | 1,500+                                |
 | Organizations | 12 active                             |
 | AI Profiling  | 97%+ success rate                     |
-| Test Coverage | 168 backend + 285 frontend test files |
+| Test Coverage | 168 backend + 276 frontend test files |
 
 ---
 
@@ -68,12 +68,14 @@ Claude Code and Claude Desktop users can discover rescue dogs through natural co
 
 | Layer              | Technology                                        |
 | ------------------ | ------------------------------------------------- |
-| Backend            | Python 3.9+ / FastAPI / PostgreSQL 15 / Alembic   |
+| Backend            | Python 3.12+ / FastAPI / PostgreSQL 15 / Alembic  |
 | Frontend           | Next.js 15 (App Router) / React 18 / TypeScript 5 |
 | AI                 | OpenRouter API (Google Gemini 3 Flash)            |
 | Browser Automation | Playwright (Browserless v2 in production)         |
 | Monitoring         | Sentry (dev + prod)                               |
 | Hosting            | Vercel (frontend) + Railway (backend + DB + cron) |
+| Package Management | uv (backend) + pnpm (frontend)                    |
+| Linting            | ruff (Python) + ESLint (TypeScript)               |
 
 ### System Overview
 
@@ -103,7 +105,7 @@ frontend/src/
 rescuedogs-mcp-server/  # MCP server for Claude integration
 configs/organizations/  # YAML configs (13 orgs)
 tests/                  # 168 backend test files
-frontend/__tests__/     # 285 frontend test files
+frontend/__tests__/     # 276 frontend test files
 migrations/             # Alembic database migrations
 management/             # CLI tools (19 scripts)
 ```
@@ -143,9 +145,11 @@ management/             # CLI tools (19 scripts)
 
 ### Prerequisites
 
-- Python 3.9+
-- PostgreSQL 13+
+- Python 3.12+
+- PostgreSQL 15+
 - Node.js 18+
+- [uv](https://docs.astral.sh/uv/) (Python package manager)
+- [pnpm](https://pnpm.io/) (Node.js package manager)
 
 ### Installation
 
@@ -155,26 +159,24 @@ git clone https://github.com/ssatama/rescue-dog-aggregator.git
 cd rescue-dog-aggregator
 
 # Setup backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+uv sync
 
 # Setup database
 createdb rescue_dogs
-alembic upgrade head
+uv run alembic upgrade head
 
 # Configure environment
 cp .env.example .env
 # Edit .env with your database credentials
 
 # Start backend
-uvicorn api.main:app --reload
+uv run uvicorn api.main:app --reload
 # API at http://localhost:8000
 
 # Setup frontend (new terminal)
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm dev
 # Frontend at http://localhost:3000
 ```
 
@@ -187,19 +189,17 @@ The project follows strict test-driven development.
 ### Backend Tests
 
 ```bash
-source venv/bin/activate
-
 # Tier 1: Quick feedback (2-3 min)
-pytest -m "unit or fast" --maxfail=5
+uv run pytest -m "unit or fast" --maxfail=5
 
 # Tier 2: CI tests (5-8 min)
-pytest -m "not slow and not browser" --maxfail=3
+uv run pytest -m "not slow and not browser" --maxfail=3
 
 # Tier 3: Full suite (10-15 min)
-pytest
+uv run pytest
 
 # Single test
-pytest tests/api/test_swipe.py::test_name -v
+uv run pytest tests/api/test_swipe.py::test_name -v
 ```
 
 ### Frontend Tests
@@ -207,10 +207,10 @@ pytest tests/api/test_swipe.py::test_name -v
 ```bash
 cd frontend
 
-npm test              # Unit tests
-npm run test:watch    # Watch mode
-npx playwright test   # E2E tests
-npm run build         # Build verification
+pnpm test              # Unit tests
+pnpm test -- --watch   # Watch mode
+pnpm exec playwright test   # E2E tests
+pnpm build             # Build verification
 ```
 
 ### Test Markers
@@ -229,17 +229,17 @@ Organizations are managed through YAML configuration files.
 
 ```bash
 # List all organizations
-python management/config_commands.py list
+uv run python management/config_commands.py list
 
 # Sync configs to database
-python management/config_commands.py sync
+uv run python management/config_commands.py sync
 
 # Run LLM enrichment
-python management/config_commands.py profile --org-id 11
-python management/llm_commands.py generate-profiles
+uv run python management/config_commands.py profile --org-id 11
+uv run python management/llm_commands.py generate-profiles
 
 # Cost report
-python management/llm_commands.py cost-report
+uv run python management/llm_commands.py cost-report
 ```
 
 ### Adding a New Organization
@@ -247,8 +247,8 @@ python management/llm_commands.py cost-report
 1. Create YAML config: `configs/organizations/[slug].yaml`
 2. Create scraper: `scrapers/[slug]/scraper.py` (extend `BaseScraper`)
 3. Add LLM prompt: `prompts/organizations/[slug].yaml`
-4. Sync: `python management/config_commands.py sync`
-5. Test: `pytest tests/scrapers/test_[slug].py -v`
+4. Sync: `uv run python management/config_commands.py sync`
+5. Test: `uv run pytest tests/scrapers/test_[slug].py -v`
 
 ---
 
@@ -293,7 +293,6 @@ NEXT_PUBLIC_SENTRY_DSN=xxx
 - [MCP Server](docs/technical/mcp-server.md) - Claude integration guide
 - [Scraper Architecture](docs/technical/scraper-architecture.md) - Scraper patterns
 - [LLM Enrichment](docs/features/llm-data-enrichment.md) - AI profiling system
-- [API Reference](docs/technical/api-reference.md) - REST API endpoints
 
 ---
 
@@ -309,9 +308,9 @@ We welcome contributions to help rescue dogs find homes.
 4. Implement the feature
 5. Run pre-commit validation:
    ```bash
-   source venv/bin/activate && black . && isort . && \
-   pytest -m 'not slow and not browser' --maxfail=3 && \
-   cd frontend && npm run lint && npm test -- --passWithNoTests --watchAll=false
+   uv run ruff check . --fix && uv run ruff format . && \
+   uv run pytest -m 'not slow and not browser' --maxfail=3 && \
+   cd frontend && pnpm lint && pnpm test -- --passWithNoTests --watchAll=false
    ```
 6. Submit a pull request
 

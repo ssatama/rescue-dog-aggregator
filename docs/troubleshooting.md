@@ -11,9 +11,8 @@
 # Fix: Ensure __init__.py files exist
 touch utils/__init__.py management/__init__.py scrapers/__init__.py
 
-# Fix: Install in development mode
-source venv/bin/activate
-pip install -e .
+# Fix: Install dependencies
+uv sync
 ```
 
 #### Database Connection Failed
@@ -26,7 +25,7 @@ createdb rescue_dogs
 createdb test_rescue_dogs
 
 # Run migrations
-python database/db_setup.py
+uv run python database/db_setup.py
 ```
 
 #### Tests Failing with Database Errors
@@ -35,16 +34,16 @@ python database/db_setup.py
 createdb test_rescue_dogs
 
 # Check TESTING environment variable
-TESTING=true pytest tests/api/test_animals_api.py -v
+TESTING=true uv run pytest tests/api/test_animals_api.py -v
 ```
 
 #### Scraper Not Finding Animals
 ```bash
 # Check organization config
-python management/config_commands.py show [org-name]
+uv run python management/config_commands.py show [org-name]
 
 # Test scraper in isolation
-python management/config_commands.py run [org-name] --test
+uv run python management/config_commands.py run [org-name] --test
 
 # Check website changes
 curl -I https://[organization-website]
@@ -56,9 +55,9 @@ curl -I https://[organization-website]
 ```bash
 # Clean install
 cd frontend
-rm -rf node_modules .next package-lock.json
-npm install
-npm run build
+rm -rf node_modules .next pnpm-lock.yaml
+pnpm install
+pnpm build
 ```
 
 #### Hydration Mismatch Errors
@@ -82,13 +81,13 @@ curl http://localhost:8000/api/health
 #### Test Failures
 ```bash
 # Clear Jest cache
-npm test -- --clearCache
+pnpm test -- --clearCache
 
 # Run specific test
-npm test DogCard
+pnpm test DogCard
 
 # Debug mode
-npm test -- --detectOpenHandles --forceExit
+pnpm test -- --detectOpenHandles --forceExit
 ```
 
 ### Deployment Issues
@@ -99,10 +98,10 @@ npm test -- --detectOpenHandles --forceExit
 RAILWAY_DATABASE_URL=$RAILWAY_DATABASE_URL psql -c "SELECT 1;"
 
 # Manual sync
-python management/railway_commands.py sync --force
+uv run python management/railway_commands.py sync --force
 
 # Check for migrations
-alembic -c migrations/railway/alembic.ini current
+uv run alembic -c migrations/railway/alembic.ini current
 ```
 
 #### Environment Variables Missing
@@ -120,10 +119,10 @@ export NEXT_PUBLIC_GOOGLE_ANALYTICS_ID="GA-..."
 #### Production Build Timeout
 ```bash
 # Increase memory limit
-NODE_OPTIONS="--max-old-space-size=4096" npm run build
+NODE_OPTIONS="--max-old-space-size=4096" pnpm build
 
 # Build locally and deploy
-npm run build
+pnpm build
 # Upload .next folder
 ```
 
@@ -150,19 +149,19 @@ WHERE updated_at < (
 #### Stale Data Detection
 ```bash
 # Check for stale animals
-python monitoring/data_quality_monitor.py --check-stale
+uv run python monitoring/data_quality_monitor.py --check-stale
 
 # Mark stale animals as unavailable
-python management/emergency_operations.py --reset-stale-data
+uv run python management/emergency_operations.py --reset-stale-data
 ```
 
 #### Missing Standardized Fields
 ```bash
 # Re-run standardization
-python management/config_commands.py standardize --all
+uv run python management/config_commands.py standardize --all
 
 # Check specific organization
-python monitoring/data_quality_monitor.py --org-id=26
+uv run python monitoring/data_quality_monitor.py --org-id=26
 ```
 
 ### Performance Issues
@@ -182,16 +181,16 @@ export REDIS_URL="redis://localhost:6379"
 #### High Memory Usage
 ```bash
 # Check for memory leaks
-python -m memory_profiler scrapers/run_all.py
+uv run python -m memory_profiler scrapers/run_all.py
 
 # Limit concurrent scrapers
-python management/config_commands.py run --max-concurrent=2
+uv run python management/config_commands.py run --max-concurrent=2
 ```
 
 #### Frontend Bundle Too Large
 ```bash
 # Analyze bundle
-npm run analyze
+pnpm analyze
 
 # Enable tree shaking
 # Check next.config.js for optimization settings
@@ -202,7 +201,7 @@ npm run analyze
 ### Backend Debugging
 ```bash
 # Interactive shell
-python -i
+uv run python -i
 >>> from api.database import get_db_connection
 >>> conn = get_db_connection()
 >>> cursor = conn.cursor()
@@ -220,13 +219,13 @@ tail -f logs/api.log
 ### Frontend Debugging
 ```bash
 # Development mode with verbose logging
-DEBUG=* npm run dev
+DEBUG=* pnpm dev
 
 # Check build output
-npm run build > build.log 2>&1
+pnpm build > build.log 2>&1
 
 # Test production build locally
-npm run build && npm run start
+pnpm build && pnpm start
 ```
 
 ### Database Debugging
@@ -255,14 +254,14 @@ dropdb rescue_dogs
 dropdb test_rescue_dogs
 createdb rescue_dogs
 createdb test_rescue_dogs
-python database/db_setup.py
-python management/config_commands.py sync
+uv run python database/db_setup.py
+uv run python management/config_commands.py sync
 
 # Frontend reset
 cd frontend
-rm -rf node_modules .next package-lock.json
-npm install
-npm run build
+rm -rf node_modules .next pnpm-lock.yaml
+pnpm install
+pnpm build
 ```
 
 ### Rollback Deployment
@@ -281,7 +280,7 @@ git push --force
 psql rescue_dogs < backup.sql
 
 # From Railway
-python management/railway_commands.py sync --from-railway
+uv run python management/railway_commands.py sync --from-railway
 ```
 
 ## Getting Help

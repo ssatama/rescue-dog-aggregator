@@ -6,12 +6,11 @@
 
 ### Initial Setup
 ```bash
-# Activate Python environment
-source venv/bin/activate
+# Install dependencies with uv
+uv sync
 
-# Install dependencies
-pip install -r requirements.txt
-npm install --prefix frontend
+# Install frontend dependencies with pnpm
+cd frontend && pnpm install
 
 # Database setup
 psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals;"
@@ -20,10 +19,10 @@ psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals;"
 ### Running the Application
 ```bash
 # Start backend (from root)
-python run_api.py
+uv run python run_api.py
 
 # Start frontend (separate terminal)
-cd frontend && npm run dev
+cd frontend && pnpm dev
 
 # Access application
 open http://localhost:3000
@@ -34,40 +33,39 @@ open http://localhost:3000
 ### Fast Test Suites
 ```bash
 # Tier 1: Quick developer feedback (most common)
-pytest -m "unit or fast" --maxfail=5 -x
+uv run pytest -m "unit or fast" --maxfail=5 -x
 
 # Frontend tests
-cd frontend && npm test
+cd frontend && pnpm test
 
 # Single test file
-pytest tests/api/test_swipe_endpoint.py -v
-npm test -- SwipeDetails.test.tsx
+uv run pytest tests/api/test_swipe_endpoint.py -v
+pnpm test -- SwipeDetails.test.tsx
 ```
 
 ### Comprehensive Testing
 ```bash
 # Full backend test suite
-pytest -m "not slow and not browser and not external" --maxfail=3
+uv run pytest -m "not slow and not browser and not external" --maxfail=3
 
 # Frontend with coverage
-cd frontend && npm run test:coverage
+cd frontend && pnpm test -- --coverage
 
 # Type checking
-cd frontend && npm run type-check
-mypy .
+cd frontend && pnpm tsc --noEmit
 ```
 
 ## Build & Validation
 ```bash
 # Backend build verification
-python -m py_compile api/**/*.py
+uv run python -m py_compile api/**/*.py
 
 # Frontend build
-cd frontend && npm run build
+cd frontend && pnpm build
 
 # Lint checking
-ruff check .
-cd frontend && npm run lint
+uv run ruff check .
+cd frontend && pnpm lint
 ```
 
 ## Database Operations
@@ -76,22 +74,22 @@ cd frontend && npm run lint
 psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals; SELECT COUNT(*) FROM organizations;"
 
 # Run migrations
-alembic upgrade head
+uv run alembic upgrade head
 
 # Emergency reset
-python management/emergency_operations.py --reset-stale-data
+uv run python management/emergency_operations.py --reset-stale-data
 ```
 
 ## Configuration Management
 ```bash
 # List organizations
-python management/config_commands.py list
+uv run python management/config_commands.py list
 
 # Sync configurations
-python management/config_commands.py sync
+uv run python management/config_commands.py sync
 
 # Run specific scraper
-python management/config_commands.py run pets-turkey
+uv run python management/config_commands.py run pets-turkey
 ```
 
 ## Git Operations
@@ -111,9 +109,6 @@ git push origin main
 
 ## Debugging Commands
 ```bash
-# Check Sentry errors (via MCP)
-# Use Sentry MCP tools in Claude Code
-
 # View logs
 tail -f logs/api.log
 
@@ -121,7 +116,7 @@ tail -f logs/api.log
 curl http://localhost:8000/health
 
 # Database connection test
-python -c "from services.database_service import DatabaseService; print(DatabaseService().test_connection())"
+uv run python -c "from services.database_service import DatabaseService; print(DatabaseService().test_connection())"
 ```
 
 ## Production Operations
@@ -131,7 +126,7 @@ git push origin main
 
 # Railway CLI operations
 railway logs
-railway run python management/emergency_operations.py
+railway run uv run python management/emergency_operations.py
 
 # Vercel operations
 vercel --prod
@@ -144,45 +139,44 @@ vercel rollback
 ```bash
 touch utils/__init__.py
 touch management/__init__.py
-source venv/bin/activate
-pip install -e .
+uv sync
 ```
 
 ### Frontend Module Issues
 ```bash
 cd frontend
-rm -rf node_modules package-lock.json .next
-npm install
-npm run build
+rm -rf node_modules .next
+pnpm install
+pnpm build
 ```
 
 ### Test Isolation Issues
 ```bash
 # Tests are automatically isolated via global conftest.py
 # If issues persist:
-pytest --fixtures  # List all fixtures
-pytest -k "not integration"  # Skip integration tests
+uv run pytest --fixtures  # List all fixtures
+uv run pytest -k "not integration"  # Skip integration tests
 ```
 
 ### Type Errors
 ```bash
 # Quick type check
-cd frontend && npm run type-check
+cd frontend && pnpm tsc --noEmit
 
 # Fix common type issues
-npm install --save-dev @types/[package-name]
+pnpm add -D @types/[package-name]
 ```
 
 ## Performance & Monitoring
 ```bash
 # Run performance tests
-pytest -m performance -v
+uv run pytest -m performance -v
 
 # Check metrics
 curl http://localhost:8000/api/metrics
 
 # Memory profiling
-python -m memory_profiler run_api.py
+uv run python -m memory_profiler run_api.py
 ```
 
 ## Development Workflow
@@ -193,25 +187,26 @@ python -m memory_profiler run_api.py
 git checkout -b feature/new-feature
 
 # 2. Write failing test first
-pytest tests/test_new_feature.py  # See it fail
+uv run pytest tests/test_new_feature.py  # See it fail
 
 # 3. Implement feature
 # ... code ...
 
 # 4. Verify tests pass
-pytest tests/test_new_feature.py -v
+uv run pytest tests/test_new_feature.py -v
 
 # 5. Run full test suite
-pytest -m "unit or fast" --maxfail=5
+uv run pytest -m "unit or fast" --maxfail=5
 ```
 
 ### Before Committing
 ```bash
 # Run quality checks
-pytest -m "unit or fast" --maxfail=5
-cd frontend && npm test
-cd frontend && npm run build
-ruff check .
+uv run ruff check . --fix
+uv run ruff format .
+uv run pytest -m "unit or fast" --maxfail=5
+cd frontend && pnpm test
+cd frontend && pnpm build
 ```
 
 ## Environment Variables
@@ -228,7 +223,7 @@ export API_URL="http://localhost:8000"
 ## Quick Diagnostics
 ```bash
 # Check Python version
-python --version  # Should be 3.9+
+python --version  # Should be 3.12+
 
 # Check Node version  
 node --version  # Should be 18+
@@ -240,17 +235,15 @@ psql -d rescue_dogs -c "\conninfo"
 curl -I http://localhost:8000/health
 
 # Check frontend is building
-cd frontend && npm run build --dry-run
+cd frontend && pnpm build --dry-run
 ```
 
 ## Emergency Recovery
 ```bash
 # Full reset (nuclear option)
-rm -rf venv node_modules
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-cd frontend && npm install
+rm -rf .venv node_modules
+uv sync
+cd frontend && pnpm install
 
 # Database recovery
 pg_dump rescue_dogs > backup.sql

@@ -40,6 +40,8 @@ Before contributing, ensure you have:
 1. **Development Environment**: Follow our [Installation Guide](docs/guides/installation.md)
 2. **Testing Setup**: Review [Testing Guide](docs/guides/testing.md)
 3. **Git Knowledge**: Basic familiarity with Git and GitHub workflows
+4. **uv**: Python package manager - [install](https://docs.astral.sh/uv/getting-started/installation/)
+5. **pnpm**: Node.js package manager - `npm install -g pnpm`
 
 ### Fork and Clone
 
@@ -56,22 +58,19 @@ Before contributing, ensure you have:
 
 ### Development Setup
 
-Follow the complete setup in our [Installation Guide](../getting-started/installation.md):
+Follow the complete setup in our [Installation Guide](docs/guides/installation.md):
 
 ```bash
 # Backend setup
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+uv sync
 
 # Frontend setup
 cd frontend
-npm install
+pnpm install
 
 # Verify setup
-source venv/bin/activate                            # Activate virtual environment
-python -m pytest tests/ -m "not slow" --tb=no -q  # Backend tests (99+ test files)
-npm test                                            # Frontend tests (384+ test files)
+uv run pytest tests/ -m "not slow" --tb=no -q  # Backend tests (168 test files)
+cd frontend && pnpm test                        # Frontend tests (276 test files)
 ```
 
 ## Development Workflow
@@ -137,30 +136,23 @@ test(scrapers): add tests for unified DOM extraction
 
 1. **Run all tests**:
    ```bash
-   # Backend tests (REQUIRED - 99+ test files)
-   source venv/bin/activate
-   python -m pytest tests/ -m "not slow" -v      # Fast tests for development
-   python -m pytest tests/ -m "unit or fast" -v  # Unit + fast tests
+   # Backend tests (REQUIRED - 168 test files)
+   uv run pytest tests/ -m "not slow" -v      # Fast tests for development
+   uv run pytest tests/ -m "unit or fast" -v  # Unit + fast tests
 
-   # Frontend tests (REQUIRED - 384+ test files)
+   # Frontend tests (REQUIRED - 276 test files)
    cd frontend
-   npm test
+   pnpm test
 
    # Build verification
-   npm run build
+   pnpm build
    ```
 
 2. **Code quality checks**:
    ```bash
-   # ALWAYS activate virtual environment first
-   source venv/bin/activate
-   
-   # Python linting (current baseline: <750 violations)
-   flake8 --exclude=venv . | wc -l
-
-   # Fix common issues
-   black . && isort .  # Format code
-   autopep8 --in-place --aggressive --exclude=venv --recursive .
+   # Python linting and formatting
+   uv run ruff check . --fix
+   uv run ruff format .
    ```
 
 3. **Documentation updates**: Update relevant documentation if needed
@@ -180,9 +172,9 @@ Brief description of changes and motivation.
 - [ ] Documentation update
 
 ## Testing
-- [ ] Backend tests pass (`source venv/bin/activate && python -m pytest tests/ -m "not slow"`)
-- [ ] Frontend tests pass (`npm test`)
-- [ ] Build succeeds (`npm run build`)
+- [ ] Backend tests pass (`uv run pytest tests/ -m "not slow"`)
+- [ ] Frontend tests pass (`pnpm test`)
+- [ ] Build succeeds (`pnpm build`)
 - [ ] Manual testing completed
 - [ ] Database isolation automatically enforced (via global conftest.py)
 
@@ -215,8 +207,7 @@ Any additional information, dependencies, or migration steps.
 - Follow PEP 8 with line length of 120 characters
 - Use type hints where appropriate
 - Write docstrings for functions and classes
-- Current baseline: <750 flake8 violations (improved from ~1000)
-- ALWAYS activate virtual environment: `source venv/bin/activate`
+- Use ruff for linting and formatting
 
 **Example:**
 ```python
@@ -241,7 +232,6 @@ def get_animals_by_organization(
 ```
 
 **Required Patterns:**
-- Use virtual environment: `source venv/bin/activate` (MANDATORY)
 - Configuration-driven approach for new scrapers (YAML-based)
 - Modern BaseScraper architecture with Context Manager pattern
 - Service injection for metrics and session management
@@ -323,20 +313,17 @@ We follow TDD principles:
 ### Backend Testing
 
 ```bash
-# Activate virtual environment (REQUIRED)
-source venv/bin/activate
-
-# Fast test suite (recommended for development - 99+ test files)
-python -m pytest tests/ -m "not slow" -v      # Excludes slow tests
-python -m pytest tests/ -m "unit or fast" -v  # Unit + fast tests
+# Fast test suite (recommended for development - 168 test files)
+uv run pytest tests/ -m "not slow" -v      # Excludes slow tests
+uv run pytest tests/ -m "unit or fast" -v  # Unit + fast tests
 
 # Specific test categories
-python -m pytest tests/ -m "unit" -v          # Unit tests (~1s)
-python -m pytest tests/ -m "api" -v           # API tests
-python -m pytest tests/ -m "database" -v      # Database tests
+uv run pytest tests/ -m "unit" -v          # Unit tests (~1s)
+uv run pytest tests/ -m "api" -v           # API tests
+uv run pytest tests/ -m "database" -v      # Database tests
 
 # Full test suite (CI/CD)
-python -m pytest tests/ -v
+uv run pytest tests/ -v
 ```
 
 **Critical: Database Isolation**
@@ -357,16 +344,16 @@ python -m pytest tests/ -v
 ```bash
 cd frontend
 
-# All tests (384+ test files)
-npm test
+# All tests (276 test files)
+pnpm test
 
 # Specific test categories
-npm test -- --testPathPattern="performance"     # Performance tests
-npm test -- --testPathPattern="accessibility"   # Accessibility tests
-npm test -- --testPathPattern="cross-browser"   # Cross-browser tests
+pnpm test -- --testPathPattern="performance"     # Performance tests
+pnpm test -- --testPathPattern="accessibility"   # Accessibility tests
+pnpm test -- --testPathPattern="cross-browser"   # Cross-browser tests
 
 # Coverage report
-npm test -- --coverage
+pnpm test -- --coverage
 ```
 
 **Next.js 15 Compatibility**:
@@ -394,19 +381,10 @@ npm test -- --coverage
 
 ```
 docs/
-├── api/
-│   └── reference.md         # API endpoints and examples
-├── getting-started/
-│   ├── installation.md      # Setup instructions
-│   └── configuration.md     # Configuration system
-├── development/
-│   ├── workflow.md          # Development processes
-│   └── contributing.md      # This file
-├── operations/
-│   ├── troubleshooting.md   # Common issues and solutions
-│   ├── weekly-scraping.md   # Production operations
-│   └── production-deployment.md
-└── ... (feature-specific docs)
+├── features/           # Feature documentation
+├── guides/             # Installation, testing, deployment
+├── reference/          # Database schema, API reference
+└── technical/          # Architecture, scraper docs
 ```
 
 ### Writing Guidelines
@@ -442,7 +420,7 @@ What actually happened.
 
 **Environment**
 - OS: [e.g. macOS, Ubuntu]
-- Python version: [e.g. 3.9.6]
+- Python version: [e.g. 3.12]
 - Node version: [e.g. 18.17.0]
 - Browser: [e.g. Chrome, Safari]
 
@@ -535,20 +513,17 @@ class NewOrgScraper(BaseScraper):
 ### 3. Test Implementation
 
 ```bash
-# Activate virtual environment
-source venv/bin/activate
-
 # Validate configuration
-python management/config_commands.py validate new-org
+uv run python management/config_commands.py validate new-org
 
 # Sync to database
-python management/config_commands.py sync
+uv run python management/config_commands.py sync
 
 # Test scraper
-python management/config_commands.py run new-org
+uv run python management/config_commands.py run new-org
 
 # Verify results
-python management/config_commands.py show new-org
+uv run python management/config_commands.py show new-org
 ```
 
 ### 4. Documentation
@@ -581,9 +556,9 @@ We use semantic versioning (MAJOR.MINOR.PATCH):
 ### Resources
 
 - **Documentation**: Check [docs/](docs/) directory
-- **API Reference**: [docs/api/reference.md](../api/reference.md)
-- **Troubleshooting**: [docs/operations/troubleshooting.md](../operations/troubleshooting.md)
-- **Installation**: [docs/getting-started/installation.md](../getting-started/installation.md)
+- **Installation**: [docs/guides/installation.md](docs/guides/installation.md)
+- **Testing**: [docs/guides/testing.md](docs/guides/testing.md)
+- **Troubleshooting**: [docs/troubleshooting.md](docs/troubleshooting.md)
 
 ### Communication
 
@@ -596,17 +571,16 @@ We use semantic versioning (MAJOR.MINOR.PATCH):
 **Common Commands:**
 ```bash
 # Backend development
-source venv/bin/activate
-python -m pytest tests/ -m "not slow" -v
-python management/config_commands.py list
+uv run pytest tests/ -m "not slow" -v
+uv run python management/config_commands.py list
 
 # Frontend development
 cd frontend
-npm test
-npm run dev
+pnpm test
+pnpm dev
 
 # Full verification
-python -m pytest tests/ -m "not slow" && cd frontend && npm test && npm run build
+uv run pytest tests/ -m "not slow" && cd frontend && pnpm test && pnpm build
 ```
 
 ## Recognition

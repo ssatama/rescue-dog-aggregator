@@ -6,13 +6,15 @@
 
 ```
 Production:    www.rescuedogs.me
-Data:          1,557 active dogs | 12 active organizations (13 scrapers)
-Backend:       Python/FastAPI + PostgreSQL 15 + Alembic
+Data:          1,500+ active dogs | 12 active organizations (13 scrapers)
+Backend:       Python 3.12+/FastAPI + PostgreSQL 15 + Alembic
 Frontend:      Next.js 15 App Router + React 18 + TypeScript 5
 MCP Server:    TypeScript + @modelcontextprotocol/sdk (npm: rescuedogs-mcp-server)
 LLM:           OpenRouter (Gemini 3 Flash primary)
 Monitoring:    Sentry (dev + prod)
 Hosting:       Vercel (frontend) + Railway (backend + DB + cron)
+Packages:      uv (Python) + pnpm (Node.js)
+Linting:       ruff (Python) + ESLint (TypeScript)
 ```
 
 ## Directory Structure
@@ -30,7 +32,7 @@ Hosting:       Vercel (frontend) + Railway (backend + DB + cron)
   /src                  # TypeScript source (8 tools)
 /configs/organizations  # YAML configs (13 orgs, 12 active)
 /tests                  # 168 backend test files
-/frontend/__tests__     # 285 frontend test files
+/frontend/__tests__     # 276 frontend test files
 /migrations/versions    # Alembic migrations (dev)
 /migrations/railway     # Production migrations
 /management             # CLI tools (19 scripts)
@@ -541,27 +543,26 @@ Refer to `CLAUDE.md` for comprehensive list. Key ones:
 
 ```bash
 # Development
-source venv/bin/activate
-python run_api.py                 # Start backend (port 8000)
-cd frontend && npm run dev        # Start frontend (port 3000)
+uv run python run_api.py                 # Start backend (port 8000)
+cd frontend && pnpm dev                  # Start frontend (port 3000)
 
 # Testing
-pytest -m "unit or fast" --maxfail=5  # Quick backend tests
-cd frontend && npm test               # Frontend tests
+uv run pytest -m "unit or fast" --maxfail=5  # Quick backend tests
+cd frontend && pnpm test                     # Frontend tests
 
 # Database
 psql -d rescue_dogs
-alembic upgrade head
+uv run alembic upgrade head
 
 # Config sync
-python management/config_commands.py sync
+uv run python management/config_commands.py sync
 
 # LLM operations
-python management/llm_commands.py generate-profiles
-python management/llm_commands.py cost-report
+uv run python management/llm_commands.py generate-profiles
+uv run python management/llm_commands.py cost-report
 
 # Emergency
-python management/emergency_operations.py --reset-stale-data
+uv run python management/emergency_operations.py --reset-stale-data
 ```
 
 ## Environment Variables
@@ -591,14 +592,14 @@ NEXT_PUBLIC_R2_IMAGE_PATH=rescue_dogs
 1. **Check onboarding**: Use serena's `check_onboarding_performed` tool
 2. **Read memories**: Use serena's `list_memories` and `read_memory` tools
 3. **Understand context**: Use serena's symbolic tools (`get_symbols_overview`, `find_symbol`)
-4. **Plan first**: Use TodoWrite tool to plan before coding
+4. **Plan first**: Create a plan before coding
 
 ### During Work
 
 1. **Read selectively**: Use symbolic tools, avoid reading entire files
 2. **Follow TDD**: Write test → see fail → implement → refactor
 3. **Use sub-agents**: For complex tasks (file-analyzer, code-analyzer)
-4. **Track progress**: Update TodoWrite tool as you complete tasks
+4. **Track progress**: Update tasks as you complete them
 
 ### File Operations
 
@@ -609,6 +610,6 @@ NEXT_PUBLIC_R2_IMAGE_PATH=rescue_dogs
 
 ---
 
-**Last Updated**: 2026-01-04
-**Current Scale**: 1,557 dogs | 12 active organizations | 168 backend tests | 285 frontend tests
+**Last Updated**: 2026-01-24
+**Current Scale**: 1,500+ dogs | 12 active organizations | 168 backend tests | 276 frontend tests
 **Production**: www.rescuedogs.me

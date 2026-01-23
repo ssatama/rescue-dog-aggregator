@@ -4,15 +4,17 @@
 
 Get the Rescue Dog Aggregator platform running locally in under 10 minutes. This guide covers system requirements, step-by-step installation, configuration, and troubleshooting.
 
-**Tech Stack**: Python/FastAPI backend, Next.js 15 frontend, PostgreSQL database, 434+ backend tests, 1,249+ frontend tests.
+**Tech Stack**: Python/FastAPI backend, Next.js 15 frontend, PostgreSQL database, 168 backend test files, 276 frontend test files.
 
 ## ⚡ Prerequisites
 
 ### Required Software
-- **Python 3.9+** (Python 3.13 compatible, 3.9.6+ recommended)
+- **Python 3.12+** (required for modern async features)
 - **Node.js 18+** (required for Next.js 15.3.0+ App Router features)
-- **PostgreSQL 13+** (PostgreSQL 14+ recommended for enhanced JSON performance)
+- **PostgreSQL 15+** (PostgreSQL 15+ recommended for enhanced JSON performance)
 - **Git** (for cloning the repository)
+- **uv** (Python package manager - [install](https://docs.astral.sh/uv/getting-started/installation/))
+- **pnpm** (Node.js package manager - `npm install -g pnpm`)
 
 ### System Requirements
 - **RAM**: Minimum 4GB, 8GB recommended
@@ -30,12 +32,8 @@ Get the Rescue Dog Aggregator platform running locally in under 10 minutes. This
 git clone https://github.com/rescue-dog-aggregator/rescue-dog-aggregator.git
 cd rescue-dog-aggregator
 
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies with uv (creates .venv automatically)
+uv sync
 ```
 
 ### 2. Database Setup
@@ -69,7 +67,7 @@ GRANT ALL PRIVILEGES ON DATABASE rescue_dogs TO rescue_user;
 \q
 
 # Initialize schema
-python database/db_setup.py
+uv run python database/db_setup.py
 ```
 
 ### 3. Environment Configuration
@@ -107,7 +105,7 @@ CORS_ALLOW_CREDENTIALS=false
 
 ```bash
 cd frontend
-npm install
+pnpm install
 
 # Create frontend/.env.local
 echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
@@ -118,12 +116,11 @@ echo "NEXT_PUBLIC_R2_CUSTOM_DOMAIN=images.rescuedogs.me" >> .env.local
 
 ```bash
 # Terminal 1: Backend API (http://localhost:8000)
-source venv/bin/activate
-uvicorn api.main:app --reload
+uv run uvicorn api.main:app --reload
 
 # Terminal 2: Frontend App (http://localhost:3000)
 cd frontend
-npm run dev
+pnpm dev
 ```
 
 ## ✅ Verification
@@ -142,29 +139,28 @@ open http://localhost:3000  # Or visit in browser
 ### Test Suite Validation
 
 ```bash
-# Backend tests (fast subset - ~3 seconds)
-source venv/bin/activate
-pytest tests/ -m "not slow" -v
+# Backend tests (168 test files)
+uv run pytest tests/ -m "not slow" -v
 
-# Frontend tests (1,500+ tests, ~15 seconds)
+# Frontend tests (276 test files)
 cd frontend
-npm test
+pnpm test
 
 # Build verification
-npm run build
+pnpm build
 ```
 
 ### Organization Setup
 
 ```bash
 # Sync organizations from config files
-python management/config_commands.py sync
+uv run python management/config_commands.py sync
 
-# List configured organizations (8 available)
-python management/config_commands.py list
+# List configured organizations (12 active)
+uv run python management/config_commands.py list
 
 # Test scraper (optional)
-python management/config_commands.py run pets-in-turkey
+uv run python management/config_commands.py run pets-in-turkey
 ```
 
 ## 🔧 Configuration System
@@ -208,8 +204,8 @@ metadata:
 2. **Validate and sync**:
 
 ```bash
-python management/config_commands.py validate
-python management/config_commands.py sync
+uv run python management/config_commands.py validate
+uv run python management/config_commands.py sync
 ```
 
 3. **Implement scraper** (using modern patterns):
@@ -233,16 +229,16 @@ class OrgScraper(BaseScraper):
 
 ```bash
 # List organizations
-python management/config_commands.py list
+uv run python management/config_commands.py list
 
 # Show organization details (including service regions)
-python management/config_commands.py show pets-in-turkey
+uv run python management/config_commands.py show pets-in-turkey
 
 # Run specific scraper
-python management/config_commands.py run org-name
+uv run python management/config_commands.py run org-name
 
 # Run all enabled scrapers
-python management/config_commands.py run-all
+uv run python management/config_commands.py run-all
 ```
 
 ## 🏭 Production Deployment
@@ -295,8 +291,7 @@ Type=exec
 User=rescue
 Group=rescue
 WorkingDirectory=/opt/rescue-dog-aggregator
-Environment=PATH=/opt/rescue-dog-aggregator/venv/bin
-ExecStart=/opt/rescue-dog-aggregator/venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 4
+ExecStart=/opt/rescue-dog-aggregator/.venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 4
 Restart=always
 RestartSec=10
 
@@ -308,8 +303,8 @@ WantedBy=multi-user.target
 
 ```bash
 cd frontend
-npm run build
-npm start  # Or use a web server like nginx
+pnpm build
+pnpm start  # Or use a web server like nginx
 ```
 
 ### Scheduled Scraping
@@ -321,7 +316,7 @@ Set up weekly scraping:
 crontab -e
 
 # Add weekly scraping (Monday 2 AM)
-0 2 * * 1 cd /opt/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run-all >> /var/log/rescue-scraper.log 2>&1
+0 2 * * 1 cd /opt/rescue-dog-aggregator && uv run python management/config_commands.py run-all >> /var/log/rescue-scraper.log 2>&1
 ```
 
 ## 🐛 Troubleshooting
@@ -344,12 +339,11 @@ psql -h localhost -d rescue_dogs -U rescue_user
 **Error**: `ModuleNotFoundError: No module named 'fastapi'`
 
 ```bash
-# Ensure virtual environment is activated
-source venv/bin/activate
-which python  # Should point to venv/bin/python
+# Reinstall dependencies with uv
+uv sync
 
-# Reinstall if needed
-pip install -r requirements.txt
+# Verify installation
+uv run python -c "import fastapi; print(fastapi.__version__)"
 ```
 
 ### Frontend Build Errors
@@ -360,15 +354,11 @@ pip install -r requirements.txt
 cd frontend
 
 # Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
-
-# Check for duplicates (automated fix available)
-npm run check:duplicates
-npm run fix:duplicates --interactive
+rm -rf node_modules .next
+pnpm install
 
 # Try building again
-npm run build
+pnpm build
 ```
 
 ### R2 Configuration Issues
@@ -390,16 +380,16 @@ curl -I "https://$R2_CUSTOM_DOMAIN/test-image.jpg"
 
 ```bash
 # Backend: Database isolation is automatic
-pytest tests/ -v --tb=short
+uv run pytest tests/ -v --tb=short
 
 # Frontend: Clear cache if needed
 cd frontend
-npm test -- --clearCache
-npm test
+pnpm test -- --clearCache
+pnpm test
 
 # E2E: Reset browser state
-npm run e2e:install
-npm run e2e
+pnpm exec playwright install
+pnpm exec playwright test
 ```
 
 ### Performance Issues
@@ -422,26 +412,24 @@ npm run e2e
 ## 📊 Essential Commands
 
 ```bash
-# Backend Development (always activate venv first)
-source venv/bin/activate
-pytest tests/ -m "unit or fast" -v          # Fast feedback
-pytest tests/ -m "not browser and not requires_migrations" -v  # CI pipeline
-pytest tests/ -v                            # All tests
+# Backend Development
+uv run pytest tests/ -m "unit or fast" -v          # Fast feedback
+uv run pytest tests/ -m "not browser and not requires_migrations" -v  # CI pipeline
+uv run pytest tests/ -v                            # All tests
 
 # Frontend Development
 cd frontend
-npm test                                    # All tests
-npm run build                              # Verify build
-npm run check:duplicates                   # Check for duplicate files
+pnpm test                                    # All tests
+pnpm build                                   # Verify build
 
 # Configuration Management
-python management/config_commands.py list  # List organizations
-python management/config_commands.py sync  # Sync to database
-python management/config_commands.py run pets-turkey  # Test scraper
+uv run python management/config_commands.py list  # List organizations
+uv run python management/config_commands.py sync  # Sync to database
+uv run python management/config_commands.py run pets-turkey  # Test scraper
 
 # Data Quality Monitoring
-PYTHONPATH=. python monitoring/data_quality_monitor.py --mode=overall --all
-PYTHONPATH=. python monitoring/data_quality_monitor.py --mode=detailed --org-id=26
+uv run python monitoring/data_quality_monitor.py --mode=overall --all
+uv run python monitoring/data_quality_monitor.py --mode=detailed --org-id=26
 ```
 
 ## 🎯 Next Steps
@@ -451,21 +439,20 @@ After successful installation:
 1. **Explore the API**: Visit `http://localhost:8000/docs` for interactive documentation
 2. **Add Organizations**: Configure new scrapers in `configs/organizations/`
 3. **Set up Monitoring**: Configure health checks and alerting
-4. **Review Architecture**: Check `docs/architecture/` for system design
-5. **Contributing**: See `docs/development/workflow.md` for development practices
+4. **Review Architecture**: Check `docs/technical/architecture.md` for system design
+5. **Contributing**: See `CONTRIBUTING.md` for development practices
 
 ## 📚 Additional Resources
 
-- **Development Workflow**: `docs/development/workflow.md`
-- **Testing Guide**: `docs/development/testing.md`
-- **API Reference**: `docs/api/reference.md`
-- **Troubleshooting**: `docs/operations/troubleshooting.md`
-- **Architecture**: `docs/architecture/`
+- **Architecture**: `docs/technical/architecture.md`
+- **Testing Guide**: `docs/guides/testing.md`
+- **Deployment**: `docs/guides/deployment.md`
+- **Troubleshooting**: `docs/troubleshooting.md`
 
 ## 💡 Key Features
 
 - **Configuration-Driven**: YAML-based organization management
-- **Test-Driven Development**: 434+ backend tests, 1,249+ frontend tests
+- **Test-Driven Development**: 168 backend tests, 276 frontend tests
 - **Modern Architecture**: Null Object Pattern, Context Managers, Template Methods
 - **Database Isolation**: Automatic test protection from production data
 - **Service Regions**: Geographic filtering and location-based search

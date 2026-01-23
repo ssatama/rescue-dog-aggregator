@@ -84,7 +84,7 @@ This helps but doesn't solve the fundamental architecture issue.
 1. **Add asyncpg to dependencies**
 
    ```bash
-   pip install asyncpg
+   uv add asyncpg
    ```
 
 2. **Create async connection pool module**

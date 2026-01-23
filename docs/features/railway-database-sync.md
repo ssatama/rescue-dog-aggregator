@@ -2,40 +2,37 @@
 
 ## Quick Start
 
-**⚠️ Important**: Commands must be run from the project root directory with virtual environment activated.
+**⚠️ Important**: Commands must be run from the project root directory.
 
 ### Essential Commands
 
 ```bash
-# Activate virtual environment first
-source venv/bin/activate
-
 # Check Railway connection and data sync status
-python management/railway_commands.py status
+uv run python management/railway_commands.py status
 
 # Test Railway connection
-python management/railway_commands.py test-connection
+uv run python management/railway_commands.py test-connection
 
 # Run database migrations
-python management/railway_commands.py migrate
-python management/railway_commands.py migrate --dry-run  # Preview changes
+uv run python management/railway_commands.py migrate
+uv run python management/railway_commands.py migrate --dry-run  # Preview changes
 
 # Sync data (incremental mode - default)
-python management/railway_commands.py sync
-python management/railway_commands.py sync --dry-run     # Preview sync
+uv run python management/railway_commands.py sync
+uv run python management/railway_commands.py sync --dry-run     # Preview sync
 
 # Sync modes
-python management/railway_commands.py sync --mode incremental              # Default: safe updates
-python management/railway_commands.py sync --mode rebuild --confirm-destructive  # Complete rebuild
-python management/railway_commands.py sync --mode force --confirm-destructive    # Emergency bypass
+uv run python management/railway_commands.py sync --mode incremental              # Default: safe updates
+uv run python management/railway_commands.py sync --mode rebuild --confirm-destructive  # Complete rebuild
+uv run python management/railway_commands.py sync --mode force --confirm-destructive    # Emergency bypass
 
 # Sync options
-python management/railway_commands.py sync --skip-validation  # Skip post-sync checks
-python management/railway_commands.py sync --skip-indexes     # Skip index sync
+uv run python management/railway_commands.py sync --skip-validation  # Skip post-sync checks
+uv run python management/railway_commands.py sync --skip-indexes     # Skip index sync
 
 # Complete setup (migration + initial sync)
-python management/railway_commands.py setup
-python management/railway_commands.py setup --dry-run        # Preview setup
+uv run python management/railway_commands.py setup
+uv run python management/railway_commands.py setup --dry-run        # Preview setup
 ```
 
 ### Command Arguments Reference
@@ -273,25 +270,25 @@ with railway_session() as session:
 
 ```bash
 # Check status before syncing
-python management/railway_commands.py status
+uv run python management/railway_commands.py status
 
 # Standard incremental sync
-python management/railway_commands.py sync
+uv run python management/railway_commands.py sync
 
 # Rebuild mode (complete replacement)
-python management/railway_commands.py sync --mode rebuild --confirm-destructive
+uv run python management/railway_commands.py sync --mode rebuild --confirm-destructive
 
 # Force mode (emergency bypass)
-python management/railway_commands.py sync --mode force --confirm-destructive
+uv run python management/railway_commands.py sync --mode force --confirm-destructive
 
 # Dry run to preview changes
-python management/railway_commands.py sync --dry-run
+uv run python management/railway_commands.py sync --dry-run
 
 # Skip post-sync validation (faster but less safe)
-python management/railway_commands.py sync --skip-validation
+uv run python management/railway_commands.py sync --skip-validation
 
 # Skip index synchronization
-python management/railway_commands.py sync --skip-indexes
+uv run python management/railway_commands.py sync --skip-indexes
 ```
 
 ### Programmatic Usage
@@ -392,16 +389,16 @@ CRITICAL: Data loss risk, corruption detected
 
 ```bash
 # Unit tests for sync logic
-pytest tests/services/test_railway_sync.py
+uv run pytest tests/services/test_railway_sync.py
 
 # Connection management tests
-pytest tests/services/test_railway_connection.py
+uv run pytest tests/services/test_railway_connection.py
 
 # Migration tests
-pytest tests/services/test_railway_migration.py
+uv run pytest tests/services/test_railway_migration.py
 
 # Integration tests
-pytest tests/integration/test_railway_full_sync.py
+uv run pytest tests/integration/test_railway_full_sync.py
 ```
 
 ### Test Scenarios
@@ -481,19 +478,19 @@ WHERE updated_at > last_sync_timestamp
 
 ```bash
 # Check connection and data sync status
-python management/railway_commands.py status
+uv run python management/railway_commands.py status
 
 # Test Railway connection
-python management/railway_commands.py test-connection
+uv run python management/railway_commands.py test-connection
 
 # Validate schemas (dry run)
-python management/railway_commands.py migrate --dry-run
+uv run python management/railway_commands.py migrate --dry-run
 
 # Preview sync without making changes
-python management/railway_commands.py sync --dry-run
+uv run python management/railway_commands.py sync --dry-run
 
 # Complete diagnostic (preview full setup)
-python management/railway_commands.py setup --dry-run
+uv run python management/railway_commands.py setup --dry-run
 ```
 
 ### Common Issues

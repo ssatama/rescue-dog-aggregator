@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Test Statistics**: 1,800+ tests (434+ backend, 1,249+ frontend) across 152 test files  
+**Test Statistics**: 444+ tests across 168 backend files and 276 frontend test files  
 **Methodology**: Strict TDD (Red → Green → Refactor)  
 **Protection**: Automatic database isolation via global `conftest.py`
 
@@ -10,27 +10,25 @@
 
 ### Backend (Python/pytest)
 ```bash
-source venv/bin/activate  # ALWAYS activate first
-
 # Development
-pytest tests/ -m "unit or fast" -v              # Fast feedback (~1-5s) - RECOMMENDED
-pytest tests/ -m "not browser and not complex_setup" -v  # CI pipeline (~55s)
-pytest tests/ -v                                # Full suite (259 tests)
+uv run pytest tests/ -m "unit or fast" -v              # Fast feedback (~1-5s) - RECOMMENDED
+uv run pytest tests/ -m "not browser and not complex_setup" -v  # CI pipeline (~55s)
+uv run pytest tests/ -v                                # Full suite
 
 # By Category
-pytest tests/ -m "api" -v                       # API endpoints
-pytest tests/ -m "database" -v                  # Database integration
-pytest tests/ -m "selenium" -v                  # Browser automation
+uv run pytest tests/ -m "api" -v                       # API endpoints
+uv run pytest tests/ -m "database" -v                  # Database integration
+uv run pytest tests/ -m "selenium" -v                  # Browser automation
 ```
 
 ### Frontend (Next.js/Jest)
 ```bash
 cd frontend
 
-npm test                                         # All tests (1,500+)
-npm test -- --watch                             # TDD watch mode
-npm test -- --coverage                          # Coverage report
-npm test -- --testPathPattern=accessibility     # Specific category
+pnpm test                                         # All tests
+pnpm test -- --watch                             # TDD watch mode
+pnpm test -- --coverage                          # Coverage report
+pnpm test -- --testPathPattern=accessibility     # Specific category
 ```
 
 ## Backend Testing
@@ -251,15 +249,15 @@ def test_sql_injection_prevention():
 
 ```bash
 # Backend
-source venv/bin/activate
-black . && isort .                               # Format
-pytest tests/ -m "not slow" -v                  # Fast tests
+uv run ruff check . --fix
+uv run ruff format .
+uv run pytest tests/ -m "not slow" -v
 
 # Frontend
 cd frontend
-npm test                                         # All tests
-npm run build                                    # TypeScript build
-npm run lint                                     # ESLint
+pnpm test
+pnpm build
+pnpm lint
 
 # Validation
 echo "✅ Safe to commit!"
@@ -270,28 +268,28 @@ echo "✅ Safe to commit!"
 ### Parallel Execution
 ```bash
 # Backend
-pytest tests/ -n auto --dist=loadscope
+uv run pytest tests/ -n auto --dist=loadscope
 
 # Frontend (default in Jest)
-npm test -- --maxWorkers=4
+pnpm test -- --maxWorkers=4
 ```
 
 ### Watch Mode (TDD)
 ```bash
 # Backend
-pytest tests/ -m "not slow" --tb=short -q
+uv run pytest tests/ -m "not slow" --tb=short -q
 
 # Frontend
-npm test -- --watch --coverage
+pnpm test -- --watch --coverage
 ```
 
 ### Coverage Analysis
 ```bash
 # Backend
-pytest --cov=. --cov-report=html --cov-fail-under=90
+uv run pytest --cov=. --cov-report=html --cov-fail-under=90
 
 # Frontend
-npm test -- --coverage --coverageThreshold='{"global":{"lines":80}}'
+pnpm test -- --coverage --coverageThreshold='{"global":{"lines":80}}'
 ```
 
 ## Debugging Tests
@@ -302,10 +300,10 @@ npm test -- --coverage --coverageThreshold='{"global":{"lines":80}}'
 import pdb; pdb.set_trace()
 
 # Verbose output
-pytest tests/failing_test.py -vvs
+uv run pytest tests/failing_test.py -vvs
 
 # Show test durations
-pytest tests/ --durations=10
+uv run pytest tests/ --durations=10
 ```
 
 ### Frontend Debugging
@@ -344,19 +342,19 @@ const createMockDog = (overrides = {}) => ({
 ```yaml
 - name: Run Tests
   run: |
-    pytest tests/ -v --junitxml=test-results.xml
-    cd frontend && npm test -- --ci --coverage
+    uv run pytest tests/ -v --junitxml=test-results.xml
+    cd frontend && pnpm test -- --ci --coverage
 ```
 
 ## Common Issues & Solutions
 
 | Issue | Solution |
 |-------|----------|
-| Import errors | `source venv/bin/activate` |
+| Import errors | `uv sync` |
 | Database connection | Use `pytest -k "not database"` |
-| Jest cache | `npx jest --clearCache` |
-| Flaky tests | `pytest --lf --tb=short` |
-| Memory issues | `npm test -- --maxWorkers=2` |
+| Jest cache | `pnpm test -- --clearCache` |
+| Flaky tests | `uv run pytest --lf --tb=short` |
+| Memory issues | `pnpm test -- --maxWorkers=2` |
 
 ## Summary
 

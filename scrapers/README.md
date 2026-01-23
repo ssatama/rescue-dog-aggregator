@@ -4,7 +4,7 @@ Configuration-driven web scrapers for rescue dog organizations.
 
 ## Architecture
 
-### Modern Design Patterns (2025)
+### Modern Design Patterns
 
 ```python
 # Context Manager Pattern - automatic resource cleanup
@@ -84,16 +84,16 @@ def test_extract_dog_data():
 
 ```bash
 # List all organizations
-python management/config_commands.py list
+uv run python management/config_commands.py list
 
 # Run single scraper
-python management/config_commands.py run new-org
+uv run python management/config_commands.py run new-org
 
 # Run all scrapers
-python management/config_commands.py run --all
+uv run python management/config_commands.py run --all
 
 # Test mode (no database writes)
-python management/config_commands.py run new-org --test
+uv run python management/config_commands.py run new-org --test
 ```
 
 ## Data Standardization
@@ -109,22 +109,29 @@ The base scraper automatically standardizes:
 
 ```bash
 # Check data quality
-python monitoring/data_quality_monitor.py --org-id=26
+uv run python monitoring/data_quality_monitor.py --org-id=26
 
 # Monitor scraper health
 tail -f logs/scraper.log
 ```
 
-## Current Organizations (8)
+## Current Organizations (12 active)
 
-1. Tierschutzverein Europa
-2. Pets in Turkey
-3. Galgos del Sol
-4. Animal Rescue Bosnia
-5. REAN UK
-6. Santer Paws Bulgarian Rescue
-7. Many Tears Animal Rescue
-8. Dogs Trust
+**HTTP-based scrapers:**
+1. Tierschutzverein Europa (Germany)
+2. Pets in Turkey (Turkey)
+3. Animal Rescue Bosnia (Bosnia)
+4. Santer Paws Bulgarian Rescue (Bulgaria)
+5. The Underdog (Malta)
+6. Furry Rescue Italy (Italy)
+
+**Playwright-based scrapers:**
+7. Dogs Trust (UK/Ireland)
+8. Many Tears Rescue (UK)
+9. REAN (Romania/UK)
+10. Woof Project (UK)
+11. MISIS Rescue (Montenegro)
+12. Daisy Family Rescue (Greece)
 
 ---
 

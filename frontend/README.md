@@ -6,8 +6,8 @@ Next.js 15 application with React 18, TypeScript, and Tailwind CSS.
 
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to view the application.
@@ -19,15 +19,17 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 - **Styling**: Tailwind CSS 3.3.2
 - **Components**: Radix UI primitives
 - **Data Fetching**: SWR and React Query (@tanstack/react-query)
-- **Testing**: Jest + React Testing Library (516+ test files)
+- **Testing**: Jest + React Testing Library (276 test files)
+- **Package Manager**: pnpm
 
 ## Development Commands
 
 ```bash
-npm run dev           # Development server
-npm test             # Run tests  
-npm run build        # Production build
-npm run lint         # ESLint
+pnpm dev           # Development server
+pnpm test          # Run tests  
+pnpm build         # Production build
+pnpm lint          # ESLint
+pnpm tsc --noEmit  # Type check
 ```
 
 ## Environment Variables
@@ -40,7 +42,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000  # Backend API URL
 
 - **Server/Client Separation**: SEO metadata (server) + interactivity (client)
 - **Security**: XSS prevention, content sanitization, URL validation
-- **Performance**: Lazy loading, Cloudinary images, component memoization
+- **Performance**: Lazy loading, Cloudflare R2 images, component memoization
 - **Accessibility**: WCAG 2.1 AA, keyboard navigation, screen reader support
 - **Testing**: Comprehensive test coverage across all features
 

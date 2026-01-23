@@ -67,10 +67,7 @@ createdb rescue_dogs_local
 psql rescue_dogs_local < database/schema.sql
 
 # Run migrations
-psql rescue_dogs_local -f database/migrations/001_add_duplicate_stale_detection.sql
-psql rescue_dogs_local -f database/migrations/002_add_detailed_metrics.sql
-psql rescue_dogs_local -f database/migrations/003_add_missing_fields.sql
-psql rescue_dogs_local -f database/migrations/004_add_organization_enhanced_fields.sql
+alembic upgrade head
 ```
 
 ### 2. Environment Configuration
@@ -86,22 +83,20 @@ LLM_CACHE_MAX_SIZE=500
 ### 3. Dependencies
 ```bash
 # Backend
-source venv/bin/activate
-pip install -r requirements.txt
+uv sync
 
 # Frontend
 cd frontend
-npm install
+pnpm install
 ```
 
 ### 4. Test Setup
 ```bash
-# Backend tests (434+ tests)
-source venv/bin/activate
-pytest tests/ -m "unit or fast" -v
+# Backend tests (168 test files)
+uv run pytest tests/ -m "unit or fast" -v
 
-# Frontend tests (1,249+ tests)
-cd frontend && npm test
+# Frontend tests (276 test files)
+cd frontend && pnpm test
 ```
 
 ## Railway Database Deployment
@@ -116,25 +111,25 @@ export RAILWAY_DATABASE_URL="postgresql://username:password@host:port/database"
 ### 2. Database Migration
 ```bash
 # Test connection
-python -m management.railway_commands test-connection
+uv run python -m management.railway_commands test-connection
 
 # Run complete setup (migration + initial sync)
-python -m management.railway_commands setup
+uv run python -m management.railway_commands setup
 
 # Verify deployment
-python -m management.railway_commands status
+uv run python -m management.railway_commands status
 ```
 
 ### 3. Data Synchronization
 ```bash
 # Incremental sync (default - safe for daily use)
-python -m management.railway_commands sync
+uv run python -m management.railway_commands sync
 
 # After major local changes
-python -m management.railway_commands sync --mode rebuild --confirm-destructive
+uv run python -m management.railway_commands sync --mode rebuild --confirm-destructive
 
 # Preview changes
-python -m management.railway_commands sync --dry-run
+uv run python -m management.railway_commands sync --dry-run
 ```
 
 ### 4. Sync Modes
@@ -147,14 +142,13 @@ python -m management.railway_commands sync --dry-run
 ### 1. Pre-Deployment Tests
 ```bash
 # Critical test suite
-source venv/bin/activate
-pytest tests/integration/ tests/security/ tests/resilience/ -v
+uv run pytest tests/integration/ tests/security/ tests/resilience/ -v
 
 # Frontend build test
-cd frontend && npm run build
+cd frontend && pnpm build
 
 # Code quality check
-flake8 --exclude=venv . | wc -l  # Should be <750
+uv run ruff check .
 ```
 
 ### 2. Database Setup
@@ -164,16 +158,13 @@ createdb rescue_dogs_production
 psql rescue_dogs_production < database/schema.sql
 
 # Apply all migrations
-psql rescue_dogs_production -f database/migrations/001_add_duplicate_stale_detection.sql
-psql rescue_dogs_production -f database/migrations/002_add_detailed_metrics.sql
-psql rescue_dogs_production -f database/migrations/003_add_missing_fields.sql
-psql rescue_dogs_production -f database/migrations/004_add_organization_enhanced_fields.sql
+alembic upgrade head
 ```
 
 ### 3. Service Verification
 ```bash
 # Test integrations
-python -c "
+uv run python -c "
 from utils.r2_service import R2Service
 from services.llm.config import get_llm_config
 print('R2 configured:', R2Service()._s3_client is not None)
@@ -201,13 +192,13 @@ print('LLM configured:', get_llm_config().openrouter_api_key is not None)
 # Edit crontab
 crontab -e
 
-# Run all 8 organizations every Monday at 2 AM
-0 2 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run-all >> /var/log/scraper.log 2>&1
+# Run all 12 organizations every Monday at 2 AM
+0 2 * * 1 cd /path/to/rescue-dog-aggregator && uv run python management/config_commands.py run-all >> /var/log/scraper.log 2>&1
 
 # Or stagger individual organizations
-0 2 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run pets-in-turkey >> /var/log/scraper.log 2>&1
-0 3 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run rean >> /var/log/scraper.log 2>&1
-0 4 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run tierschutzverein-europa >> /var/log/scraper.log 2>&1
+0 2 * * 1 cd /path/to/rescue-dog-aggregator && uv run python management/config_commands.py run pets-in-turkey >> /var/log/scraper.log 2>&1
+0 3 * * 1 cd /path/to/rescue-dog-aggregator && uv run python management/config_commands.py run rean >> /var/log/scraper.log 2>&1
+0 4 * * 1 cd /path/to/rescue-dog-aggregator && uv run python management/config_commands.py run tierschutzverein-europa >> /var/log/scraper.log 2>&1
 ```
 
 ### 2. Log Rotation
@@ -253,7 +244,7 @@ curl https://your-api-domain.com/health
 # Test availability system
 curl "https://your-api-domain.com/api/animals?limit=5"
 
-# Verify 8 organizations
+# Verify 12 organizations
 curl "https://your-api-domain.com/api/organizations" | jq 'length'
 ```
 
@@ -276,7 +267,7 @@ ORDER BY sl.started_at DESC;
 ### 3. LLM Service Monitoring
 ```bash
 # Check LLM configuration
-python -c "
+uv run python -c "
 from services.llm.config import get_llm_config, validate_config
 config = get_llm_config()
 print(f'Model: {config.model.default_model}')
@@ -285,20 +276,20 @@ print(f'Valid: {validate_config()}')
 "
 
 # Monitor LLM processing
-python -m management.llm_commands enrich-descriptions --organization pets-turkey --batch-size 5
+uv run python -m management.llm_commands enrich-descriptions --organization pets-turkey --batch-size 5
 ```
 
 ### 4. Railway Sync Monitoring
 ```bash
 # Daily Railway sync check
-python -m management.railway_commands status
+uv run python -m management.railway_commands status
 
 # Weekly full sync
-python -m management.railway_commands sync
+uv run python -m management.railway_commands sync
 
 # After scraping operations
-python management/config_commands.py sync  # Local updates first
-python -m management.railway_commands sync  # Then sync to Railway
+uv run python management/config_commands.py sync  # Local updates first
+uv run python -m management.railway_commands sync  # Then sync to Railway
 ```
 
 ## Troubleshooting
@@ -308,7 +299,7 @@ python -m management.railway_commands sync  # Then sync to Railway
 **Images not loading:**
 ```bash
 # Check R2 integration
-python -c "
+uv run python -c "
 from utils.r2_service import R2Service
 service = R2Service()
 print('R2 configured:', service._s3_client is not None)
@@ -327,14 +318,14 @@ echo $TESTING  # Should be 'false' in production
 **LLM service issues:**
 ```bash
 # Validate configuration
-python -c "
+uv run python -c "
 from services.llm.config import validate_config
 if not validate_config():
     raise ValueError('Invalid LLM configuration')
 "
 
 # Test API connection
-python -c "
+uv run python -c "
 from services.llm_data_service import OpenRouterLLMDataService
 service = OpenRouterLLMDataService()
 print('LLM service ready')
@@ -344,11 +335,10 @@ print('LLM service ready')
 **Scraper failures:**
 ```bash
 # Manual recovery
-source venv/bin/activate
-python management/config_commands.py run pets-in-turkey
+uv run python management/config_commands.py run pets-in-turkey
 
 # Debug specific scraper
-python -c "
+uv run python -c "
 from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper
 with PetsInTurkeyScraper(config_id='pets-in-turkey') as scraper:
     animals = scraper.collect_data()
@@ -436,7 +426,7 @@ LLM_BATCH_CONCURRENT=15
 **Critical security issue:**
 ```bash
 # Run security tests
-pytest tests/security/ -v
+uv run pytest tests/security/ -v
 # Review recent deployments
 # Update dependencies if needed
 ```

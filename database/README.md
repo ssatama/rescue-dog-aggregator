@@ -25,16 +25,16 @@ This directory contains all database administration tools, scripts, and document
 ### 1. Initialize New Database
 ```bash
 # Set up complete database with performance indexes
-python database/db_setup.py
+uv run python database/db_setup.py
 ```
 
 ### 2. Monitor Database Health
 ```bash
 # Run health check
-python database/monitoring/db_health_check.py --verbose
+uv run python database/monitoring/db_health_check.py --verbose
 
 # Run with JSON output for monitoring systems
-python database/monitoring/db_health_check.py --json
+uv run python database/monitoring/db_health_check.py --json
 ```
 
 ### 3. Set Up Automated Operations
@@ -49,13 +49,13 @@ database/scripts/setup_cron_jobs.sh status
 ### 4. Manual Backup Operations
 ```bash
 # Create daily backup
-python database/scripts/backup_automation.py daily
+uv run python database/scripts/backup_automation.py daily
 
 # Create weekly base backup
-python database/scripts/backup_automation.py weekly
+uv run python database/scripts/backup_automation.py weekly
 
 # Test backup restoration
-python database/scripts/backup_automation.py test-restore
+uv run python database/scripts/backup_automation.py test-restore
 ```
 
 ## Performance Indexes
@@ -197,7 +197,7 @@ Update the following in automation scripts:
 
 ## Production Deployment Checklist
 
-- [ ] Run `python database/db_setup.py` to initialize schema
+- [ ] Run `uv run python database/db_setup.py` to initialize schema
 - [ ] Verify all performance indexes are created
 - [ ] Configure backup storage location
 - [ ] Set up email notifications for alerts
@@ -212,13 +212,13 @@ Update the following in automation scripts:
 
 For database issues or questions:
 1. Check the `db_admin_runbook.md` for detailed procedures
-2. Run health check: `python database/monitoring/db_health_check.py`
+2. Run health check: `uv run python database/monitoring/db_health_check.py`
 3. Review recent logs in `/var/log/`
 4. Contact database administrator or operations team
 
 ---
 
-**Last Updated**: 2025-08-29  
+**Last Updated**: 2026-01-24  
 **Schema Version**: 010 (Performance Indexes)  
 **Backup Strategy**: Daily + Weekly with automated testing  
 **Monitoring**: Automated health checks with email alerts

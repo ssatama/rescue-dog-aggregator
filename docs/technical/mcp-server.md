@@ -358,16 +358,16 @@ Use these ISO codes for `adoptable_to_country`:
 cd rescuedogs-mcp-server
 
 # Install dependencies
-npm install
+pnpm install
 
 # Build
-npm run build
+pnpm build
 
 # Run in dev mode
-npm run dev
+pnpm dev
 
 # Type check
-npm run typecheck
+pnpm typecheck
 ```
 
 ## File Structure
@@ -394,11 +394,9 @@ rescuedogs-mcp-server/
 ## Related Documentation
 
 - [Architecture Reference](./architecture.md) - System overview
-- [API Capabilities Audit](../feature_implementation/MCP/1.2-api-capabilities-audit.md) - API endpoint details
-- [Implementation Plan](../feature_implementation/MCP/2.0-mcp-implementation-plan.md) - Development history
 
 ---
 
-**Last Updated**: 2026-01-04
+**Last Updated**: 2026-01-24
 **Package**: rescuedogs-mcp-server v1.0.0
 **API**: api.rescuedogs.me
