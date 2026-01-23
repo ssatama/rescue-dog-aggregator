@@ -91,7 +91,7 @@ export default function PopularBreedsSection({ popularBreeds }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {displayBreeds.map((breed) => {
+          {displayBreeds.map((breed, index) => {
             const firstDog = breed.sample_dogs?.[0];
             const imageUrl =
               firstDog?.primary_image_url || "/images/dog-placeholder.jpg";
@@ -113,6 +113,7 @@ export default function PopularBreedsSection({ popularBreeds }) {
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                      priority={index < 2}
                     />
                     <Badge className="absolute top-3 right-3 bg-orange-500 dark:bg-orange-600 text-white">
                       {breed.count} available
