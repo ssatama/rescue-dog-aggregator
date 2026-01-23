@@ -25,12 +25,10 @@ class DogCardErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     this.setState({ error });
 
-    reportError("DogCard render error", {
-      error: error.message,
-      stack: error.stack,
+    reportError(error, {
+      context: "DogCard render error",
       componentStack: errorInfo.componentStack,
       dogId: this.props.dogId,
-      timestamp: new Date().toISOString(),
     });
   }
 
@@ -58,7 +56,7 @@ class DogCardErrorBoundary extends React.Component {
               Error Loading Dog
             </h3>
             <p className="text-sm text-red-600 mb-4 flex-grow">
-              We couldn't load this dog's information. Please try again later.
+              We couldn&apos;t load this dog&apos;s information. Please try again later.
             </p>
           </CardContent>
 

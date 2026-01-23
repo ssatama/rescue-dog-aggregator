@@ -44,6 +44,18 @@ export async function generateMetadata() {
   };
 }
 
+function LoadingFallback() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {[...Array(8)].map((_, i) => (
+          <DogCardSkeletonOptimized key={i} priority={i < 4} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Server Component - fetches data at build/request time
 export default async function DogsPageOptimized(props) {
   // Await searchParams in Next.js 15
@@ -70,17 +82,6 @@ export default async function DogsPageOptimized(props) {
     getAnimals(params),
     getAllMetadata(),
   ]);
-
-  // Render loading skeletons while client hydrates
-  const LoadingFallback = () => (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, i) => (
-          <DogCardSkeletonOptimized key={i} priority={i < 4} />
-        ))}
-      </div>
-    </div>
-  );
 
   return (
     <Suspense fallback={<LoadingFallback />}>

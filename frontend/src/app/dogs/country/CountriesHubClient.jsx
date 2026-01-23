@@ -141,7 +141,7 @@ export default function CountriesHubClient({ initialStats }) {
           <div className="mt-16 text-center">
             <Card className="p-8 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-950/30 border-orange-200 dark:border-orange-800">
               <h3 className="text-2xl font-semibold mb-3 dark:text-gray-100">
-                Can't decide on a country?
+                Can&apos;t decide on a country?
               </h3>
               <p className="text-muted-foreground mb-6">
                 Browse all available dogs with advanced filters

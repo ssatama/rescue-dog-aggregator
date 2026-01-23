@@ -37,6 +37,7 @@ export function BreedsCTA() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydration flag to prevent SSR/client mismatch
     setIsClient(true);
 
     const checkViewport = () => {

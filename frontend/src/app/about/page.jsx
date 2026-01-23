@@ -111,7 +111,7 @@ export default function AboutPage() {
                   2. View Details
                 </h3>
                 <p className="text-body text-gray-600 dark:text-gray-400">
-                  Click on a dog's profile to see more photos, read their story,
+                  Click on a dog&apos;s profile to see more photos, read their story,
                   and learn about their personality.
                 </p>
               </div>

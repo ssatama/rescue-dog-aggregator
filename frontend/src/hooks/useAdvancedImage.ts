@@ -151,14 +151,19 @@ export function useAdvancedImage(
       });
     }
 
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     if (imageLoaderRef.current) imageLoaderRef.current.src = ""; // Abort ongoing load
 
+    /* eslint-disable react-hooks/set-state-in-effect -- Resetting image state when src changes */
     setImageLoaded(false);
     setHasError(false);
     setIsRetrying(false);
     setRetryCount(0);
     setCurrentSrc("");
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Start loading only if we have a valid src and the document is ready.
     if (src && isReady && hydrated) {
@@ -181,7 +186,12 @@ export function useAdvancedImage(
     }
 
     if (!isLoading || !optimizedSrc) {
-      return;
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      };
     }
 
     let isCancelled = false;
@@ -213,7 +223,10 @@ export function useAdvancedImage(
         if (process.env.NODE_ENV !== "production") {
           console.log("[useAdvancedImage] Image loaded successfully");
         }
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
 
         const loadTime = Date.now() - (loadStartTimeRef.current || 0);
         trackImageLoad(optimizedSrc, loadTime, type, retryCount);
@@ -232,7 +245,10 @@ export function useAdvancedImage(
         if (process.env.NODE_ENV !== "production") {
           console.log("[useAdvancedImage] Image load error");
         }
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
 
         setHasError(true);
         setIsLoading(false);
@@ -252,7 +268,10 @@ export function useAdvancedImage(
 
     return () => {
       isCancelled = true;
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
   }, [
     isLoading,
@@ -284,6 +303,7 @@ export function useAdvancedImage(
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
   }, []);

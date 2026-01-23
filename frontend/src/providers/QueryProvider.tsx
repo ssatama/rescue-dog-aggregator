@@ -1,8 +1,9 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
+import { reportError } from "../utils/logger";
 
 export default function QueryProvider({
   children,
@@ -12,6 +13,16 @@ export default function QueryProvider({
   const [queryClient] = useState(
     () =>
       new QueryClient({
+        queryCache: new QueryCache({
+          onError: (error, query) => {
+            reportError(error, { context: "React Query", queryKey: JSON.stringify(query.queryKey) });
+          },
+        }),
+        mutationCache: new MutationCache({
+          onError: (error) => {
+            reportError(error, { context: "React Query mutation" });
+          },
+        }),
         defaultOptions: {
           queries: {
             // With SSR, we want to avoid refetching immediately on mount

@@ -15,7 +15,6 @@ import { useEffect } from "react";
 
 export default function OrganizationsClient({
   initialData = [],
-  dataTimestamp,
 }) {
   // Use React Query hook with SSR initial data
   const {
@@ -70,7 +69,7 @@ export default function OrganizationsClient({
         <h1 className="text-title text-gray-900 mb-4">Rescue Organizations</h1>
         <p className="text-body text-gray-600 mb-8">
           These organizations work tirelessly to rescue and rehome dogs. By
-          adopting through them, you're supporting their mission to save more
+          adopting through them, you&apos;re supporting their mission to save more
           animals.
         </p>
 

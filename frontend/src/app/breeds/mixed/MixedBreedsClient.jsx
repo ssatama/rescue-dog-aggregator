@@ -142,7 +142,7 @@ export default function MixedBreedsClient({
         setIsLoading(false);
       }
     },
-    [filters, updateURL],
+    [filters, updateURL, buildAPIParams],
   );
 
   // Load more dogs
@@ -415,7 +415,7 @@ export default function MixedBreedsClient({
                 </div>
                 <h4 className="font-semibold mb-2">Perfect Companions</h4>
                 <p className="text-sm text-gray-600">
-                  With such variety, you're sure to find a mixed breed that fits
+                  With such variety, you&apos;re sure to find a mixed breed that fits
                   your lifestyle perfectly
                 </p>
               </div>

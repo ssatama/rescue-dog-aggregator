@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import LazyImage from "@/components/ui/LazyImage";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -38,18 +38,20 @@ export default function MobileOptimizedGallery({
     }
   };
 
-  const scrollToIndex = (index) => {
-    if (scrollRef.current) {
-      const scrollWidth = scrollRef.current.scrollWidth;
-      const containerWidth = scrollRef.current.offsetWidth;
-      const scrollPosition = (scrollWidth / images.length) * index;
-      scrollRef.current.scrollTo({ left: scrollPosition, behavior: "smooth" });
-    }
-  };
+  const scrollToIndex = useCallback(
+    (index) => {
+      if (scrollRef.current) {
+        const scrollWidth = scrollRef.current.scrollWidth;
+        const scrollPosition = (scrollWidth / images.length) * index;
+        scrollRef.current.scrollTo({ left: scrollPosition, behavior: "smooth" });
+      }
+    },
+    [images.length],
+  );
 
   useEffect(() => {
     scrollToIndex(currentIndex);
-  }, [currentIndex]);
+  }, [currentIndex, scrollToIndex]);
 
   if (!images || images.length === 0) {
     return null;

@@ -539,6 +539,7 @@ const SearchTypeahead = forwardRef(
                       className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none"
                       onClick={() => handleSuggestionSelect(suggestion)}
                       role="option"
+                      aria-selected={false}
                     >
                       <div className="flex items-center gap-2">
                         <Icon

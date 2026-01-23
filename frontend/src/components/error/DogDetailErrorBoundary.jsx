@@ -3,6 +3,7 @@
  * Provides graceful error handling with retry options and user-friendly messages
  */
 import React from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { reportError } from "../../utils/logger";
@@ -83,7 +84,7 @@ class DogDetailErrorBoundary extends React.Component {
             </AlertTitle>
             <AlertDescription className="mt-2 text-red-700 dark:text-red-300">
               <p className="mb-4">
-                We're having trouble loading this dog's information. This might
+                We&apos;re having trouble loading this dog&apos;s information. This might
                 be a temporary issue.
               </p>
 
@@ -136,7 +137,7 @@ class DogDetailErrorBoundary extends React.Component {
                   size="sm"
                   className="flex items-center bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800/30 hover:bg-orange-100 dark:hover:bg-orange-900/30 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:ring-offset-2"
                 >
-                  <a href="/dogs">
+                  <Link href="/dogs">
                     <svg
                       className="w-4 h-4 mr-2"
                       fill="currentColor"
@@ -149,7 +150,7 @@ class DogDetailErrorBoundary extends React.Component {
                       />
                     </svg>
                     Browse All Dogs
-                  </a>
+                  </Link>
                 </Button>
               </div>
 
@@ -165,7 +166,7 @@ class DogDetailErrorBoundary extends React.Component {
           {/* Helpful suggestions */}
           <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/30 rounded-lg p-4">
             <h3 className="font-medium text-orange-900 dark:text-orange-100 mb-2">
-              While you're here:
+              While you&apos;re here:
             </h3>
             <ul className="text-sm text-orange-800 dark:text-orange-200 space-y-1">
               <li>• Browse other available dogs</li>

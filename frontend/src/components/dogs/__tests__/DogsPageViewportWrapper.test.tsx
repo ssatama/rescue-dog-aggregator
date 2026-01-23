@@ -152,41 +152,9 @@ const mockDogs = [
   },
 ];
 
-// Store original window.location
-const originalLocation = window.location;
-
-// Define a minimal location interface for testing
-interface MockLocation {
-  href: string;
-  pathname: string;
-  assign: jest.Mock;
-}
-
 describe("DogsPageViewportWrapper", () => {
-  beforeAll(() => {
-    // Mock window.location
-    const mockLocation: MockLocation = {
-      href: "http://localhost:3000/dogs",
-      pathname: "/dogs",
-      assign: jest.fn(),
-    };
-    Object.defineProperty(window, "location", {
-      value: mockLocation,
-      writable: true,
-    });
-  });
-
-  afterAll(() => {
-    // Restore original window.location
-    Object.defineProperty(window, "location", {
-      value: originalLocation,
-      writable: true,
-    });
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
-    window.history.pushState = jest.fn();
     mockPush.mockClear();
   });
 

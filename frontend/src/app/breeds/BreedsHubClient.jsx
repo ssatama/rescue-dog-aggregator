@@ -26,14 +26,14 @@ export default function BreedsHubClient({
   // Breadcrumb items
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Breeds" }];
 
-  // Ensure breed_groups is always an array for safe .find() operations
-  const breedGroupsArray = Array.isArray(breedStats?.breed_groups)
-    ? breedStats.breed_groups
-    : [];
-
   // Breed type cards configuration (3 cards as specified in PRD)
-  const breedTypeCards = useMemo(
-    () => [
+  const breedTypeCards = useMemo(() => {
+    // Ensure breed_groups is always an array for safe .find() operations
+    const breedGroupsArray = Array.isArray(breedStats?.breed_groups)
+      ? breedStats.breed_groups
+      : [];
+
+    return [
       {
         title: "Mixed Breeds",
         count: breedGroupsArray.find((g) => g.name === "Mixed")?.count ?? 0,
@@ -55,9 +55,8 @@ export default function BreedsHubClient({
         icon: <Home className="h-5 w-5" />,
         description: "Best of both worlds combinations",
       },
-    ],
-    [breedGroupsArray, breedStats],
-  );
+    ];
+  }, [breedStats]);
 
   if (!breedStats || breedStats.error) {
     return (
@@ -105,7 +104,7 @@ export default function BreedsHubClient({
           <div className="mt-16 text-center">
             <Card className="p-8 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-950/30">
               <h3 className="text-2xl font-semibold mb-4 dark:text-gray-100">
-                Can't find your perfect match?
+                Can&apos;t find your perfect match?
               </h3>
               <p className="text-lg text-muted-foreground mb-6">
                 Browse all available rescue dogs or use our advanced filters

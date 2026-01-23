@@ -186,8 +186,8 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
           clearTimeout(timeoutId);
         }
 
-        if (mountedRef.current && retryCount === 0 && !retryInProgress) {
-          // Only set loading to false on the original call when no retry is pending
+        if (mountedRef.current && retryCount === 0) {
+          // Only set loading to false on the original call (not retries)
           setLoading(false);
         }
       }
@@ -258,7 +258,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
     return () => {
       mountedRef.current = false;
     };
-  }, [dogSlug, initialDog]); // Include initialDog in dependencies
+  }, [dogSlug, initialDog, fetchDogData]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -348,7 +348,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
             </AlertTitle>
             <AlertDescription>
               <p className="mb-4">
-                Sorry, we couldn't find the dog you're looking for.
+                Sorry, we couldn&apos;t find the dog you&apos;re looking for.
               </p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
@@ -848,7 +848,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                             })()}
                           </div>
                           <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-3 transition-colors duration-200">
-                            You'll be redirected to the rescue organization's
+                            You&apos;ll be redirected to the rescue organization&apos;s
                             website
                           </p>
                         </div>

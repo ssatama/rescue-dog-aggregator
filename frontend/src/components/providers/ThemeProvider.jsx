@@ -1,30 +1,44 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 const ThemeContext = createContext({
   theme: "light",
   setTheme: (theme) => {},
 });
 
+const getInitialTheme = () => {
+  if (typeof window === "undefined") return "light";
+  const savedTheme = localStorage.getItem("theme");
+  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+  return savedTheme || systemTheme;
+};
+
+const emptySubscribe = () => () => {};
+
+const useMounted = () => {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+};
+
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState("light");
-  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState(getInitialTheme);
+  const mounted = useMounted();
 
   useEffect(() => {
-    setMounted(true);
-    // Check localStorage and system preference
-    const savedTheme = localStorage.getItem("theme");
-    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-      .matches
-      ? "dark"
-      : "light";
-    const initialTheme = savedTheme || systemTheme;
-    setTheme(initialTheme);
-
-    // Apply theme class to html element
-    document.documentElement.classList.toggle("dark", initialTheme === "dark");
-  }, []);
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
 
   const updateTheme = (newTheme) => {
     setTheme(newTheme);

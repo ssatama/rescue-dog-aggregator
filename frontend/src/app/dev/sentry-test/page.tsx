@@ -44,7 +44,7 @@ export default function SentryTestPage() {
   const [showBreadcrumbs, setShowBreadcrumbs] = useState(true);
 
   useEffect(() => {
-    // Capture Sentry configuration
+    // Capture Sentry configuration - must be in effect as Sentry client is browser-only
     const client = Sentry.getClient();
     const options = client?.getOptions();
 
@@ -53,6 +53,7 @@ export default function SentryTestPage() {
       const optionsWithReplay = options as typeof options & {
         replaysSessionSampleRate?: number;
       };
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Reading browser-only Sentry config on mount
       setEnvInfo({
         environment: options.environment || "unknown",
         release: options.release || "unknown",

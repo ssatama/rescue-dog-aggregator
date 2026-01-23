@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Dog, MapPin, Users } from "lucide-react";
 
@@ -55,11 +56,14 @@ export default function BreedHeader({ breedData, breedDescription }) {
         </div>
 
         {breedData.sample_image_url && (
-          <div className="lg:w-96">
-            <img
+          <div className="lg:w-96 relative h-64 lg:h-80">
+            <Image
               src={breedData.sample_image_url}
               alt={`${breedData.primary_breed} dog`}
-              className="w-full h-64 lg:h-80 object-cover rounded-xl shadow-lg"
+              fill
+              className="object-cover rounded-xl shadow-lg"
+              sizes="(max-width: 1024px) 100vw, 384px"
+              unoptimized
             />
           </div>
         )}

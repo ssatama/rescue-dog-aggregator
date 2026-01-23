@@ -6,24 +6,7 @@
  */
 import { useEffect } from "react";
 
-export default function ServiceWorkerRegistration() {
-  useEffect(() => {
-    // Register in production and development (for debugging Safari issues)
-    const isDevelopment = process.env.NODE_ENV === "development";
-
-    // Check if service workers are supported
-    if (!("serviceWorker" in navigator)) {
-      if (isDevelopment) {
-        console.log("[SW] Service Workers not supported");
-      }
-      return;
-    }
-
-    // Register service worker
-    registerServiceWorker();
-  }, []);
-
-  const registerServiceWorker = async () => {
+const registerServiceWorker = async () => {
     try {
       const registration = await navigator.serviceWorker.register("/sw.js");
       const isDevelopment = process.env.NODE_ENV === "development";
@@ -83,6 +66,23 @@ export default function ServiceWorkerRegistration() {
       }
     }
   };
+
+export default function ServiceWorkerRegistration() {
+  useEffect(() => {
+    // Register in production and development (for debugging Safari issues)
+    const isDevelopment = process.env.NODE_ENV === "development";
+
+    // Check if service workers are supported
+    if (!("serviceWorker" in navigator)) {
+      if (isDevelopment) {
+        console.log("[SW] Service Workers not supported");
+      }
+      return;
+    }
+
+    // Register service worker
+    registerServiceWorker();
+  }, []);
 
   // This component doesn't render anything
   return null;

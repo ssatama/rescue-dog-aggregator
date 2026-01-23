@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import HeroImageWithBlurredBackground from "../../components/ui/HeroImageWithBlurredBackground";
 import LazyImage from "../../components/ui/LazyImage";
 import {
@@ -121,17 +122,21 @@ export default function TestImages() {
                 />
               </div>
 
-              {/* Regular img tag for comparison */}
+              {/* Next.js Image component for comparison */}
               <div className="mb-4">
-                <h4 className="text-sm font-medium mb-2">Regular img tag:</h4>
-                <img
-                  src={test.url || "/placeholder_dog.svg"}
-                  alt={`Test ${test.name} regular`}
-                  onError={(e) => handleImageErrorWithLog(e, test.url)}
-                  onLoad={() => addLog(`Regular img loaded: ${test.name}`)}
-                  className="w-full max-w-sm h-48 object-cover border"
-                  style={{ backgroundColor: "#f0f0f0" }}
-                />
+                <h4 className="text-sm font-medium mb-2">Next.js Image:</h4>
+                <div className="relative w-full max-w-sm h-48">
+                  <Image
+                    src={test.url || "/placeholder_dog.svg"}
+                    alt={`Test ${test.name} regular`}
+                    fill
+                    className="object-cover border"
+                    style={{ backgroundColor: "#f0f0f0" }}
+                    onError={(e) => handleImageErrorWithLog(e, test.url)}
+                    onLoad={() => addLog(`Next.js Image loaded: ${test.name}`)}
+                    unoptimized={test.type === "external" || test.type === "cloudinary" || test.type === "invalid"}
+                  />
+                </div>
               </div>
 
               {/* LazyImage Component */}

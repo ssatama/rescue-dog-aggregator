@@ -122,6 +122,7 @@ const MobileBottomNav: React.FC = () => {
   // Attach scroll listener
   useEffect(() => {
     if (isSwipePage) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Hiding nav on swipe page requires effect to check pathname
       setIsVisible(false);
       return;
     }

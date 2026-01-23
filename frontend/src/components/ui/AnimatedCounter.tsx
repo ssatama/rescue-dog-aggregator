@@ -121,8 +121,10 @@ export default function AnimatedCounter({
   // Reset animation when value changes
   useEffect(() => {
     if (hasAnimated && value !== displayValue) {
+      /* eslint-disable react-hooks/set-state-in-effect -- Syncing animation state with value prop change */
       setHasAnimated(false);
       setDisplayValue(0);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [value, hasAnimated, displayValue]);
 

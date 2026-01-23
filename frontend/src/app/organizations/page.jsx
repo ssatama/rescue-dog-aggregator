@@ -69,7 +69,6 @@ export default async function OrganizationsPage() {
   return (
     <OrganizationsClient
       initialData={organizations}
-      dataTimestamp={Date.now()}
     />
   );
 }

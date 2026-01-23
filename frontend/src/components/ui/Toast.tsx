@@ -26,6 +26,7 @@ const Toast: React.FC<ToastProps> = ({
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Syncing internal animation state with isVisible prop */
     if (isVisible) {
       setIsShowing(true);
       setIsAnimating(true);
@@ -34,6 +35,7 @@ const Toast: React.FC<ToastProps> = ({
       const timer = setTimeout(() => setIsShowing(false), 300);
       return () => clearTimeout(timer);
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [isVisible]);
 
   useEffect(() => {

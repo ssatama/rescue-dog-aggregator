@@ -51,43 +51,38 @@ describe("useMediaQuery", () => {
   });
 
   it("should update when media query changes", async () => {
-    let listeners: { [key: string]: ((e: MediaQueryListEvent) => void)[] } = {};
+    let listeners: { [key: string]: (() => void)[] } = {};
+    let currentMatches = false;
 
     const mockMatchMedia = jest.fn().mockImplementation((query) => {
       const mediaQueryList = {
-        matches: false,
+        get matches() {
+          return currentMatches;
+        },
         media: query,
         onchange: null,
-        addEventListener: jest.fn(
-          (event: string, handler: (e: MediaQueryListEvent) => void) => {
-            if (!listeners[event]) listeners[event] = [];
-            listeners[event].push(handler);
-          },
-        ),
-        removeEventListener: jest.fn(
-          (event: string, handler: (e: MediaQueryListEvent) => void) => {
-            if (listeners[event]) {
-              listeners[event] = listeners[event].filter((h) => h !== handler);
-            }
-          },
-        ),
+        addEventListener: jest.fn((event: string, handler: () => void) => {
+          if (!listeners[event]) listeners[event] = [];
+          listeners[event].push(handler);
+        }),
+        removeEventListener: jest.fn((event: string, handler: () => void) => {
+          if (listeners[event]) {
+            listeners[event] = listeners[event].filter((h) => h !== handler);
+          }
+        }),
         dispatchEvent: jest.fn(),
       };
       return mediaQueryList;
     });
     window.matchMedia = mockMatchMedia;
 
-    const { result, rerender } = renderHook(() =>
-      useMediaQuery("(min-width: 768px)"),
-    );
+    const { result } = renderHook(() => useMediaQuery("(min-width: 768px)"));
 
     expect(result.current).toBe(false);
 
-    // Simulate media query change
     act(() => {
-      const event = new Event("change") as MediaQueryListEvent;
-      Object.defineProperty(event, "matches", { value: true, writable: false });
-      listeners["change"]?.forEach((handler) => handler(event));
+      currentMatches = true;
+      listeners["change"]?.forEach((handler) => handler());
     });
 
     await waitFor(() => {

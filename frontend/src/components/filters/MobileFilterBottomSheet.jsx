@@ -54,6 +54,20 @@ export default function MobileFilterBottomSheet({
     { value: "name-desc", label: "Name Z-A" },
   ];
 
+  const handleFilterChange = useCallback(
+    (filterType, value) => {
+      if (!onFiltersChange) return;
+
+      const newFilters = {
+        ...filters,
+        [filterType]: value,
+      };
+
+      onFiltersChange(newFilters);
+    },
+    [filters, onFiltersChange],
+  );
+
   // Handle opening/closing with body scroll lock
   useEffect(() => {
     if (isOpen) {
@@ -76,6 +90,7 @@ export default function MobileFilterBottomSheet({
     if (filters?.breed !== localBreedInput) {
       setLocalBreedInput(filters?.breed || "");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only sync when external filter changes, not on local input
   }, [filters?.breed]);
 
   // Debounced breed input handling
@@ -87,7 +102,7 @@ export default function MobileFilterBottomSheet({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [localBreedInput, filters?.breed]);
+  }, [localBreedInput, filters?.breed, handleFilterChange]);
 
   // Handle ESC key
   useEffect(() => {
@@ -102,20 +117,6 @@ export default function MobileFilterBottomSheet({
       return () => document.removeEventListener("keydown", handleEscape);
     }
   }, [isOpen, onClose]);
-
-  const handleFilterChange = useCallback(
-    (filterType, value) => {
-      if (!onFiltersChange) return;
-
-      const newFilters = {
-        ...filters,
-        [filterType]: value,
-      };
-
-      onFiltersChange(newFilters);
-    },
-    [filters, onFiltersChange],
-  );
 
   const handleBackdropClick = useCallback(
     (e) => {

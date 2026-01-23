@@ -1,19 +1,10 @@
-// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-import storybook from "eslint-plugin-storybook";
-
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+import nextConfig from "eslint-config-next";
 
 export default [
-  ...compat.extends("next/core-web-vitals"),
+  {
+    ignores: ["**/*.skip"],
+  },
+  ...nextConfig,
   {
     rules: {
       // Custom rule to prevent invalid OpenGraph types
@@ -66,5 +57,4 @@ export default [
       "jsx-a11y/alt-text": "off",
     },
   },
-  ...storybook.configs["flat/recommended"],
 ];

@@ -84,12 +84,13 @@ describe("Countries Statistics Consistency", () => {
     // Clear and render TrustSection
     rerender(<TrustSection />);
 
+    // Wait for TrustSection to finish loading by checking for the actual stats element
     await waitFor(() => {
-      expect(screen.getByTestId("trust-section")).toBeInTheDocument();
+      expect(screen.getByTestId("countries-stat")).toBeInTheDocument();
     });
 
     // Get countries count from TrustSection (should also be 2)
-    expect(screen.getByText("2")).toBeInTheDocument(); // The countries stat
+    expect(screen.getByTestId("countries-stat")).toHaveTextContent("2");
     expect(screen.getByText("Countries")).toBeInTheDocument();
   });
 
@@ -117,16 +118,13 @@ describe("Countries Statistics Consistency", () => {
     // TrustSection should also show 0 countries
     rerender(<TrustSection />);
 
+    // Wait for TrustSection to finish loading by checking for the actual stats element
     await waitFor(() => {
-      expect(screen.getByTestId("trust-section")).toBeInTheDocument();
+      expect(screen.getByTestId("countries-stat")).toBeInTheDocument();
     });
 
-    // Find the countries stat specifically in TrustSection
-    const trustSection = screen.getByTestId("trust-section");
-    const countriesSection = trustSection.querySelector(
-      '[data-testid="countries-icon"]',
-    ).parentElement;
-    expect(countriesSection.querySelector(".text-4xl")).toHaveTextContent("0");
+    // Check countries stat directly
+    expect(screen.getByTestId("countries-stat")).toHaveTextContent("0");
   });
 
   test("both sections handle single country correctly", async () => {
@@ -153,15 +151,12 @@ describe("Countries Statistics Consistency", () => {
     // TrustSection should also show 1 country
     rerender(<TrustSection />);
 
+    // Wait for TrustSection to finish loading by checking for the actual stats element
     await waitFor(() => {
-      expect(screen.getByTestId("trust-section")).toBeInTheDocument();
+      expect(screen.getByTestId("countries-stat")).toBeInTheDocument();
     });
 
-    // Find the countries stat specifically in TrustSection
-    const trustSection = screen.getByTestId("trust-section");
-    const countriesSection = trustSection.querySelector(
-      '[data-testid="countries-icon"]',
-    ).parentElement;
-    expect(countriesSection.querySelector(".text-4xl")).toHaveTextContent("1");
+    // Check countries stat directly
+    expect(screen.getByTestId("countries-stat")).toHaveTextContent("1");
   });
 });
