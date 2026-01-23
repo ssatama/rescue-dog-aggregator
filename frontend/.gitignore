@@ -42,3 +42,6 @@ storybook-static
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Lighthouse timestamped reports (baseline is tracked)
+lighthouse-*-????-??-??T*.json

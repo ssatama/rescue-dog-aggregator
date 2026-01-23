@@ -57,37 +57,48 @@ async function runAudit(url, device = "mobile") {
     chromeFlags: ["--headless", "--no-sandbox", "--disable-gpu"],
   });
 
-  const config = device === "mobile" ? MOBILE_CONFIG : DESKTOP_CONFIG;
+  try {
+    const config = device === "mobile" ? MOBILE_CONFIG : DESKTOP_CONFIG;
 
-  const options = {
-    logLevel: "error",
-    output: "json",
-    port: chrome.port,
-    onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
-  };
+    const options = {
+      logLevel: "error",
+      output: "json",
+      port: chrome.port,
+      onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
+    };
 
-  const runnerResult = await lighthouse(url, options, config);
-  await chrome.kill();
+    const runnerResult = await lighthouse(url, options, config);
 
-  const lhr = runnerResult.lhr;
+    if (!runnerResult?.lhr) {
+      throw new Error(`Lighthouse returned no results for ${url}`);
+    }
 
-  return {
-    url,
-    device,
-    scores: {
-      performance: Math.round(lhr.categories.performance.score * 100),
-      accessibility: Math.round(lhr.categories.accessibility.score * 100),
-      bestPractices: Math.round(lhr.categories["best-practices"].score * 100),
-      seo: Math.round(lhr.categories.seo.score * 100),
-    },
-    metrics: {
-      LCP: Math.round(lhr.audits["largest-contentful-paint"].numericValue),
-      FCP: Math.round(lhr.audits["first-contentful-paint"].numericValue),
-      CLS: lhr.audits["cumulative-layout-shift"].numericValue.toFixed(3),
-      TBT: Math.round(lhr.audits["total-blocking-time"].numericValue),
-      SI: Math.round(lhr.audits["speed-index"].numericValue),
-    },
-  };
+    const lhr = runnerResult.lhr;
+
+    if (!lhr.categories?.performance?.score) {
+      throw new Error(`Missing performance category for ${url}`);
+    }
+
+    return {
+      url,
+      device,
+      scores: {
+        performance: Math.round(lhr.categories.performance.score * 100),
+        accessibility: Math.round(lhr.categories.accessibility.score * 100),
+        bestPractices: Math.round(lhr.categories["best-practices"].score * 100),
+        seo: Math.round(lhr.categories.seo.score * 100),
+      },
+      metrics: {
+        LCP: Math.round(lhr.audits["largest-contentful-paint"].numericValue),
+        FCP: Math.round(lhr.audits["first-contentful-paint"].numericValue),
+        CLS: lhr.audits["cumulative-layout-shift"].numericValue.toFixed(3),
+        TBT: Math.round(lhr.audits["total-blocking-time"].numericValue),
+        SI: Math.round(lhr.audits["speed-index"].numericValue),
+      },
+    };
+  } finally {
+    await chrome.kill();
+  }
 }
 
 function formatResults(results) {
@@ -111,6 +122,7 @@ function formatResults(results) {
 
 async function auditAllPages() {
   const results = [];
+  const failures = [];
 
   for (const url of URLS_TO_AUDIT) {
     for (const device of ["mobile", "desktop"]) {
@@ -120,6 +132,7 @@ async function auditAllPages() {
         results.push(result);
         console.log(`  ✅ Performance: ${result.scores.performance}, LCP: ${result.metrics.LCP}ms`);
       } catch (error) {
+        failures.push({ url, device, error: error.message });
         console.error(`  ❌ Failed: ${error.message}`);
       }
     }
@@ -129,10 +142,30 @@ async function auditAllPages() {
 
   const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, "-");
   const filename = `lighthouse-breeds-${timestamp}.json`;
-  fs.writeFileSync(filename, JSON.stringify(results, null, 2));
-  console.log(`\nResults saved to: ${filename}`);
+
+  const output = {
+    timestamp: new Date().toISOString(),
+    results,
+    failures,
+  };
+
+  try {
+    fs.writeFileSync(filename, JSON.stringify(output, null, 2));
+    console.log(`\nResults saved to: ${filename}`);
+  } catch (writeError) {
+    console.error(`Failed to write results: ${writeError.message}`);
+    process.exit(2);
+  }
+
+  if (failures.length > 0) {
+    console.error(`\n${failures.length} audit(s) failed`);
+    process.exit(1);
+  }
 
   return results;
 }
 
-auditAllPages().catch(console.error);
+auditAllPages().catch((error) => {
+  console.error(`Fatal error: ${error.message}`);
+  process.exit(2);
+});
