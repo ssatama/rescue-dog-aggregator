@@ -113,6 +113,7 @@ export default function PopularBreedsSection({ popularBreeds }) {
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                      priority
                     />
                     <Badge className="absolute top-3 right-3 bg-orange-500 dark:bg-orange-600 text-white">
                       {breed.count} available

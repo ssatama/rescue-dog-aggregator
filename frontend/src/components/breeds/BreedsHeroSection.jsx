@@ -107,8 +107,8 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
                     alt={dog.name}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    priority={index === 0}
+                    sizes="(max-width: 768px) 50vw, 20vw"
+                    priority={index < 2}
                   />
                 </div>
                 <h3 className="text-gray-800 dark:text-gray-100 font-semibold text-lg mb-1">
