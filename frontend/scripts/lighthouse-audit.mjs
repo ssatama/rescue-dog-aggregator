@@ -2,10 +2,12 @@ import lighthouse from "lighthouse";
 import * as chromeLauncher from "chrome-launcher";
 import fs from "fs";
 
+const BASE_URL = process.env.AUDIT_URL || "https://www.rescuedogs.me";
+
 const URLS_TO_AUDIT = [
-  "https://www.rescuedogs.me/breeds",
-  "https://www.rescuedogs.me/breeds/labrador-retriever",
-  "https://www.rescuedogs.me/breeds/mixed",
+  `${BASE_URL}/breeds`,
+  `${BASE_URL}/breeds/labrador-retriever`,
+  `${BASE_URL}/breeds/mixed`,
 ];
 
 const MOBILE_CONFIG = {
