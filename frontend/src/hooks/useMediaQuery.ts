@@ -1,39 +1,23 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
-/**
- * Custom hook for responsive media query detection
- * Efficiently tracks media query changes with event listeners
- * Prevents performance issues from repeated DOM access
- */
+const getServerSnapshot = (): boolean => false;
+
 export function useMediaQuery(query: string): boolean {
-  // Initialize with SSR-safe default
-  const [matches, setMatches] = useState<boolean>(false);
-
-  useEffect(() => {
-    // Check if we're in a browser environment
+  const subscribe = (callback: () => void): (() => void) => {
     if (typeof window === "undefined" || !window.matchMedia) {
-      return;
+      return () => {};
     }
-
-    // Create media query list
     const mediaQueryList = window.matchMedia(query);
+    mediaQueryList.addEventListener("change", callback);
+    return () => mediaQueryList.removeEventListener("change", callback);
+  };
 
-    // Set initial value
-    setMatches(mediaQueryList.matches);
+  const getSnapshot = (): boolean => {
+    if (typeof window === "undefined" || !window.matchMedia) {
+      return false;
+    }
+    return window.matchMedia(query).matches;
+  };
 
-    // Define event handler
-    const handleChange = (event: MediaQueryListEvent) => {
-      setMatches(event.matches);
-    };
-
-    // Add event listener (modern browsers)
-    mediaQueryList.addEventListener("change", handleChange);
-
-    // Cleanup
-    return () => {
-      mediaQueryList.removeEventListener("change", handleChange);
-    };
-  }, [query]);
-
-  return matches;
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

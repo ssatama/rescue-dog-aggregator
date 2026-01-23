@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-export function middleware(request) {
+export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Check if this is a breed detail page request

@@ -33,9 +33,9 @@ describe('Next.js Configuration', () => {
     expect(optimizedPackages).toContain('lucide-react');
   });
 
-  test('should have webpack optimizations for production', () => {
-    expect(nextConfig.webpack).toBeDefined();
-    expect(typeof nextConfig.webpack).toBe('function');
+  test('should use Turbopack (no custom webpack config)', () => {
+    // Custom webpack config removed in favor of Turbopack's automatic optimizations
+    expect(nextConfig.webpack).toBeUndefined();
   });
 
   test('should have proper image configuration', () => {

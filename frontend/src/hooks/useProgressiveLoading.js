@@ -16,6 +16,7 @@ export default function useProgressiveLoading(options = {}) {
   const [isLoaded, setIsLoaded] = useState(false);
   const ref = useRef(null);
   const observerRef = useRef(null);
+  const handleIntersectionRef = useRef(null);
 
   const handleIntersection = useCallback(
     (entries) => {
@@ -44,9 +45,10 @@ export default function useProgressiveLoading(options = {}) {
     [isVisible, loadDelay, onVisible],
   );
 
-  // Stable ref for intersection callback to avoid observer recreation
-  const handleIntersectionRef = useRef(handleIntersection);
-  handleIntersectionRef.current = handleIntersection;
+  // Update the ref inside useEffect to avoid updating ref during render
+  useEffect(() => {
+    handleIntersectionRef.current = handleIntersection;
+  }, [handleIntersection]);
 
   useEffect(() => {
     if (!ref.current) return;

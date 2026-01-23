@@ -1,7 +1,7 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   isChunkLoadError,
   clearCacheAndReload,
@@ -13,16 +13,13 @@ interface GlobalErrorProps {
 }
 
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
-  const [isChunkError, setIsChunkError] = useState(false);
+  const isChunkError = isChunkLoadError(error);
 
   useEffect(() => {
-    const chunkError = isChunkLoadError(error);
-    setIsChunkError(chunkError);
-
-    if (!chunkError) {
+    if (!isChunkError) {
       Sentry.captureException(error);
     }
-  }, [error]);
+  }, [error, isChunkError]);
 
   if (isChunkError) {
     return (

@@ -33,6 +33,7 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
   const [isR2Image, setIsR2Image] = useState<boolean>(false);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Syncing image state with src prop change for fallback cascade */
     const srcString = String(src);
     setImageSrc(srcString);
     setFallbackLevel(0);
@@ -46,6 +47,7 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
     } catch {
       setIsR2Image(false);
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [src]);
 
   const getR2FallbackUrl = useCallback(

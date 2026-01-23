@@ -69,6 +69,7 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
     if (dogs.length > 1) {
       const hasSeenSwipeHint = localStorage.getItem("hasSeenSwipeHint");
       if (!hasSeenSwipeHint) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Reading localStorage on mount for first-time user hint
         setShowSwipeHint(true);
         // Hide hint after 3 seconds or on first interaction
         const timer = setTimeout(() => {

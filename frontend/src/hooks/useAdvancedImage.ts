@@ -154,11 +154,13 @@ export function useAdvancedImage(
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (imageLoaderRef.current) imageLoaderRef.current.src = ""; // Abort ongoing load
 
+    /* eslint-disable react-hooks/set-state-in-effect -- Resetting image state when src changes */
     setImageLoaded(false);
     setHasError(false);
     setIsRetrying(false);
     setRetryCount(0);
     setCurrentSrc("");
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Start loading only if we have a valid src and the document is ready.
     if (src && isReady && hydrated) {

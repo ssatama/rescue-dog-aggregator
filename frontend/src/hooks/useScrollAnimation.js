@@ -49,6 +49,7 @@ export const useScrollAnimation = (options = {}) => {
     if (!window.IntersectionObserver) {
       // Fallback: set visible immediately in test environment
       if (process.env.NODE_ENV === "test") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Fallback for test env without IntersectionObserver
         setIsVisible(true);
       }
       return;
@@ -118,6 +119,7 @@ export const useReducedMotion = () => {
 
     try {
       const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Reading browser media query on mount
       setPrefersReducedMotion(mediaQuery.matches);
 
       const handleChange = (event) => {

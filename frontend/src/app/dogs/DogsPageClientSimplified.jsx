@@ -89,7 +89,7 @@ export default function DogsPageClientSimplified({
   const searchParams = useSearchParams();
 
   // Validate organization_id parameter against available organizations
-  const validateOrganizationId = (orgId) => {
+  const validateOrganizationId = useCallback((orgId) => {
     if (!orgId || orgId === "any") return "any";
 
     const organizations = metadata?.organizations || [];
@@ -98,10 +98,10 @@ export default function DogsPageClientSimplified({
     );
 
     return isValidOrg ? orgId : "any";
-  };
+  }, [metadata?.organizations]);
 
-  // Parse filters from URL including page and scroll
-  const filters = {
+  // Parse filters from URL including page and scroll - memoized to prevent recreation on every render
+  const filters = useMemo(() => ({
     searchQuery: searchParams.get("search") || "",
     sizeFilter: searchParams.get("size") || "Any size",
     ageFilter:
@@ -121,7 +121,7 @@ export default function DogsPageClientSimplified({
       initialParams?.available_country ||
       "Any country",
     availableRegionFilter: searchParams.get("available_region") || "Any region",
-  };
+  }), [searchParams, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, validateOrganizationId]);
 
   // Parse page and scroll from URL
   const urlPage = parseInt(searchParams.get("page") || "1", 10);
@@ -202,7 +202,7 @@ export default function DogsPageClientSimplified({
     return () => window.removeEventListener("scroll", handleScroll);
   }, [saveScrollPosition]);
 
-  // Restore scroll position when component mounts or URL changes
+  // Restore scroll position when component mounts
   useEffect(() => {
     if (urlScroll > 0) {
       isRestoringScroll.current = true;
@@ -211,7 +211,8 @@ export default function DogsPageClientSimplified({
         isRestoringScroll.current = false;
       }, 100);
     }
-  }, []); // Only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Mount-only: urlScroll is captured at mount time intentionally
+  }, []);
 
   // Update URL with filters and page (debounced)
   const updateURL = useDebouncedCallback(
@@ -462,8 +463,8 @@ export default function DogsPageClientSimplified({
         currentAbortControllerRef.current = null;
       }
     };
-    // Mount-only effect: refs provide stable access to latest functions
-  }, []); // Only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Mount-only: refs provide stable access to latest functions, dependencies intentionally omitted
+  }, []);
 
   // CRITICAL FIX: Listen to URL changes and refetch when searchParams change
   // This ensures reset and browser back/forward navigation trigger fresh fetches
@@ -574,12 +575,13 @@ export default function DogsPageClientSimplified({
       // Fetch with new filters
       fetchDogsWithFilters(newFilters, 1);
     },
-    [filters, updateURL],
-  );;
+    [filters, updateURL, fetchDogsWithFilters],
+  );
 
   // CRITICAL FIX: Fetch dogs with current filters and page
   // Added shouldAppend parameter to explicitly control append vs replace behavior
-  const fetchDogsWithFilters = async (currentFilters, pageNum = 1, shouldAppend = false) => {
+  // Wrapped in useCallback to provide stable reference for dependency arrays
+  const fetchDogsWithFilters = useCallback(async (currentFilters, pageNum = 1, shouldAppend = false) => {
     setLoading(pageNum === 1 && !shouldAppend);
     setLoadingMore(pageNum > 1 || shouldAppend);
     setError(null);
@@ -624,12 +626,13 @@ export default function DogsPageClientSimplified({
         currentAbortControllerRef.current = null;
       }
     }
-  };
+  }, []);
 
   // Keep ref updated with latest function
   fetchDogsWithFiltersRef.current = fetchDogsWithFilters;
 
   // Load more dogs
+  // Note: dogs.length is only used for dev logging, using closure value is acceptable
   const loadMoreDogs = useCallback(async () => {
     // Guard against concurrent operations using both state and ref
     if (loadingMore || !hasMore || isPaginatingRef.current) return;
@@ -639,7 +642,6 @@ export default function DogsPageClientSimplified({
         scrollY: window.scrollY,
         isPaginating: isPaginatingRef.current,
         currentPage: page,
-        dogsLength: dogs.length,
       });
     }
 
@@ -741,11 +743,10 @@ export default function DogsPageClientSimplified({
         console.log('[loadMoreDogs] END', {
           scrollY: window.scrollY,
           isPaginating: isPaginatingRef.current,
-          dogsLength: dogs.length,
         });
       }
     }
-  }, [page, hasMore, filters, loadingMore, updateURL]);;
+  }, [page, hasMore, filters, loadingMore, pathname, searchParams]);
 
   // Load available regions when country changes
   useEffect(() => {

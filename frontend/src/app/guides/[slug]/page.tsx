@@ -66,34 +66,34 @@ export default async function GuidePage({
 }) {
   const { slug } = await params;
 
+  let guide;
   try {
-    const guide = await getGuide(slug);
-
-    // Fetch related guides if specified in frontmatter
-    let relatedGuides: Guide[] = [];
-    if (
-      guide.frontmatter.relatedGuides &&
-      guide.frontmatter.relatedGuides.length > 0
-    ) {
-      const allGuides = await getAllGuides();
-      relatedGuides = allGuides.filter((g) =>
-        guide.frontmatter.relatedGuides?.includes(g.slug),
-      );
-    }
-
-    return (
-      <>
-        <Header />
-        <ReadingProgress />
-        <GuideContent
-          guide={guide}
-          fullPage={true}
-          relatedGuides={relatedGuides}
-        />
-        <Footer />
-      </>
-    );
-  } catch (error) {
+    guide = await getGuide(slug);
+  } catch {
     notFound();
   }
+
+  let relatedGuides: Guide[] = [];
+  if (
+    guide.frontmatter.relatedGuides &&
+    guide.frontmatter.relatedGuides.length > 0
+  ) {
+    const allGuides = await getAllGuides();
+    relatedGuides = allGuides.filter((g) =>
+      guide.frontmatter.relatedGuides?.includes(g.slug),
+    );
+  }
+
+  return (
+    <>
+      <Header />
+      <ReadingProgress />
+      <GuideContent
+        guide={guide}
+        fullPage={true}
+        relatedGuides={relatedGuides}
+      />
+      <Footer />
+    </>
+  );
 }

@@ -178,12 +178,15 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
 
   // Reset states when dog changes
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Syncing state with dog prop change, required for carousel reset */
     setCurrentPhotoIndex(0);
     setIsDescriptionExpanded(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [dog?.id]);
 
   // Reset image error when photo changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing error state with photo/dog prop changes
     setImageError(false);
   }, [currentPhotoIndex, dog]);
 

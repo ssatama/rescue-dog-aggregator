@@ -75,7 +75,7 @@ export default function HeroSection({
             >
               Browse {statistics?.total_dogs?.toLocaleString() || "3,186"} dogs
               aggregated from {statistics?.total_organizations || "13"} rescue
-              organizations across Europe & UK. Adopt Don't Shop.
+              organizations across Europe & UK. Adopt Don&apos;t Shop.
             </p>
 
             {/* CTA Buttons */}

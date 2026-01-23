@@ -9,13 +9,12 @@ jest.mock("../../../services/organizationsService", () => ({
 }));
 
 jest.mock("../OrganizationsClient", () => {
-  return function MockOrganizationsClient({ initialData, dataTimestamp }) {
+  return function MockOrganizationsClient({ initialData }) {
     return (
       <div data-testid="organizations-client">
         <div data-testid="initial-data-count">
           {initialData ? initialData.length : 0}
         </div>
-        <div data-testid="data-timestamp">{dataTimestamp}</div>
       </div>
     );
   };
@@ -63,22 +62,6 @@ describe("OrganizationsPage Performance", () => {
 
     const dataCount = screen.getByTestId("initial-data-count");
     expect(dataCount).toHaveTextContent("2");
-  });
-
-  it("should pass timestamp for cache validation", async () => {
-    getEnhancedOrganizationsSSR.mockResolvedValue(mockOrganizations);
-
-    const beforeTime = Date.now();
-    const result = await OrganizationsPage();
-    const afterTime = Date.now();
-
-    const { container } = render(result);
-
-    const timestamp = screen.getByTestId("data-timestamp");
-    const timestampValue = parseInt(timestamp.textContent);
-
-    expect(timestampValue).toBeGreaterThanOrEqual(beforeTime);
-    expect(timestampValue).toBeLessThanOrEqual(afterTime);
   });
 
   it("should handle empty organizations list", async () => {

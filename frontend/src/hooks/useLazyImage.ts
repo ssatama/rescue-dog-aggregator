@@ -102,6 +102,7 @@ export function useLazyImage(
     // Gracefully handle browsers without IntersectionObserver support
     if (typeof IntersectionObserver === "undefined") {
       // For older browsers, just load the image immediately
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Fallback for browsers without IntersectionObserver
       setIsInView(true);
       return;
     }

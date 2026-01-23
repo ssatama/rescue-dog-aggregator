@@ -16,6 +16,32 @@ import { isSlowConnection, getNetworkInfo } from "../../utils/networkUtils";
 // Dynamically import MobileCarousel for code splitting
 const MobileCarousel = React.lazy(() => import("../ui/MobileCarousel"));
 
+const SkeletonGrid = () => (
+  <div
+    data-testid="skeleton-grid"
+    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+  >
+    {[1, 2, 3, 4].map((i) => (
+      <DogCardSkeletonOptimized key={i} priority={i < 4} />
+    ))}
+  </div>
+);
+
+const SkeletonCarousel = () => (
+  <div
+    data-testid="mobile-carousel-container"
+    className="mobile-carousel-container"
+  >
+    <div className="flex space-x-4 overflow-x-auto">
+      {[1, 2].map((i) => (
+        <div key={i} className="flex-shrink-0 w-80">
+          <DogCardSkeletonOptimized priority={true} />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const DogSection = React.memo(function DogSection({
   title,
   subtitle,
@@ -156,6 +182,7 @@ const DogSection = React.memo(function DogSection({
   useEffect(() => {
     // Only fetch if we don't have initial data
     if (!initialDogs) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Data fetching pattern: fetchDogs sets loading/error/dogs state
       fetchDogs();
     }
   }, [curationType, fetchDogs, initialDogs]);
@@ -167,33 +194,6 @@ const DogSection = React.memo(function DogSection({
 
   const sectionId = `${curationType}-section`;
   const titleId = `${curationType}-title`;
-
-  // Skeleton loading components
-  const SkeletonGrid = () => (
-    <div
-      data-testid="skeleton-grid"
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-    >
-      {[1, 2, 3, 4].map((i) => (
-        <DogCardSkeletonOptimized key={i} priority={i < 4} />
-      ))}
-    </div>
-  );
-
-  const SkeletonCarousel = () => (
-    <div
-      data-testid="mobile-carousel-container"
-      className="mobile-carousel-container"
-    >
-      <div className="flex space-x-4 overflow-x-auto">
-        {[1, 2].map((i) => (
-          <div key={i} className="flex-shrink-0 w-80">
-            <DogCardSkeletonOptimized priority={true} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 
   return (
     <section

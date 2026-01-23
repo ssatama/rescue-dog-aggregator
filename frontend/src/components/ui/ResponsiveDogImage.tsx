@@ -1,6 +1,25 @@
 import React from "react";
-import PropTypes from "prop-types";
 import NextImage from "./NextImage";
+
+type AspectRatio = "4/3" | "1/1" | "16/9" | "auto";
+type Layout = "responsive" | "fill" | "fixed" | "intrinsic";
+
+interface Dog {
+  id: number;
+  name: string;
+  primary_image_url?: string;
+  main_image?: string;
+}
+
+interface ResponsiveDogImageProps {
+  dog: Dog;
+  className?: string;
+  priority?: boolean;
+  sizes?: string;
+  aspectRatio?: AspectRatio;
+  layout?: Layout;
+  [key: string]: unknown;
+}
 
 const ResponsiveDogImage = React.memo(
   ({
@@ -11,7 +30,7 @@ const ResponsiveDogImage = React.memo(
     aspectRatio = "4/3",
     layout = "fill",
     ...props
-  }) => {
+  }: ResponsiveDogImageProps) => {
     const imageUrl = dog.primary_image_url;
 
     return (
@@ -31,16 +50,6 @@ const ResponsiveDogImage = React.memo(
   },
 );
 
-ResponsiveDogImage.propTypes = {
-  dog: PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    name: PropTypes.string.isRequired,
-    primary_image_url: PropTypes.string,
-    main_image: PropTypes.string,
-  }).isRequired,
-  className: PropTypes.string,
-  priority: PropTypes.bool,
-  sizes: PropTypes.string,
-};
+ResponsiveDogImage.displayName = "ResponsiveDogImage";
 
 export default ResponsiveDogImage;

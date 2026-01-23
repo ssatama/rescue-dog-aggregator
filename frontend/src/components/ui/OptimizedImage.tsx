@@ -1,6 +1,18 @@
 import React from "react";
-import PropTypes from "prop-types";
 import NextImage from "./NextImage";
+
+type ObjectFit = "cover" | "contain" | "fill" | "none" | "scale-down";
+
+interface OptimizedImageProps {
+  src?: string;
+  alt: string;
+  className?: string;
+  priority?: boolean;
+  sizes?: string;
+  objectFit?: ObjectFit;
+  objectPosition?: string;
+  [key: string]: unknown;
+}
 
 const OptimizedImage = React.memo(
   ({
@@ -12,7 +24,7 @@ const OptimizedImage = React.memo(
     objectFit = "cover",
     objectPosition = "center",
     ...props
-  }) => {
+  }: OptimizedImageProps) => {
     const mappedObjectPosition =
       objectPosition === "center" ? "center 30%" : objectPosition;
 
@@ -32,22 +44,6 @@ const OptimizedImage = React.memo(
     );
   },
 );
-
-OptimizedImage.propTypes = {
-  src: PropTypes.string,
-  alt: PropTypes.string.isRequired,
-  className: PropTypes.string,
-  priority: PropTypes.bool,
-  sizes: PropTypes.string,
-  objectFit: PropTypes.oneOf([
-    "cover",
-    "contain",
-    "fill",
-    "none",
-    "scale-down",
-  ]),
-  objectPosition: PropTypes.string,
-};
 
 OptimizedImage.displayName = "OptimizedImage";
 

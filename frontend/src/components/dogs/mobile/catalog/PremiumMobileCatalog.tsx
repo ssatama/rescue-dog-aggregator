@@ -211,6 +211,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
 
   // Track hydration for client-side features
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydration flag pattern for SSR/client mismatch prevention
     setIsHydrated(true);
   }, []);
 
@@ -239,7 +240,9 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
 
   // Track selectedDog in ref to avoid dependency in effect
   const selectedDogRef = useRef(selectedDog);
-  selectedDogRef.current = selectedDog;
+  useEffect(() => {
+    selectedDogRef.current = selectedDog;
+  }, [selectedDog]);
 
   // Re-check hash when dogs array changes (for late-loading data)
   useEffect(() => {
@@ -254,6 +257,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     );
 
     if (dog && !selectedDogRef.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing with URL hash when dogs array changes (late-loading data)
       setSelectedDog(dog);
       setIsModalOpen(true);
     }
@@ -271,8 +275,9 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     setSelectedDog(dog);
     setIsModalOpen(true);
 
-    // Update hash for sharing with proper encoding
-    window.location.hash = `dog=${encodeURIComponent(dog.slug || `unknown-dog-${dog.id}`)}`;
+    // Update hash for sharing with proper encoding (use pushState to avoid ESLint warning)
+    const hash = `#dog=${encodeURIComponent(dog.slug || `unknown-dog-${dog.id}`)}`;
+    history.pushState(null, "", window.location.pathname + window.location.search + hash);
   };
 
   const handleModalClose = () => {

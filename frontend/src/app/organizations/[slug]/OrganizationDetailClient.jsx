@@ -118,6 +118,7 @@ export default function OrganizationDetailClient({ params = {} }) {
 
   // Fetch organization dogs with pagination and filtering
   const fetchOrganizationDogs = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Intentionally using organization?.id instead of organization to avoid re-creating callback on non-id property changes
     async (currentPage = 1, loadMore = false) => {
       if (!loadMore) {
         setLoading(true);
@@ -249,12 +250,6 @@ export default function OrganizationDetailClient({ params = {} }) {
     fetchData();
   }, [organizationSlug, filters, organization]);
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    setPage(1);
-    setHasMore(true);
-  }, [filters]);
-
   // Loading state
   if (loading) {
     return (
@@ -295,7 +290,7 @@ export default function OrganizationDetailClient({ params = {} }) {
               Organization Not Found
             </h1>
             <p className="text-gray-700 dark:text-gray-300 mb-6">
-              Sorry, we couldn't find the organization you're looking for.
+              Sorry, we couldn&apos;t find the organization you&apos;re looking for.
             </p>
             <Link
               href="/organizations"

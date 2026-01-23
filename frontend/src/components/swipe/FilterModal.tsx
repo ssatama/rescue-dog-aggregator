@@ -47,7 +47,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 bg-black ${isDarkMode ? "bg-opacity-70" : "bg-opacity-50"} flex items-center justify-center p-4 z-[9999]`}
+      className={`fixed inset-0 ${isDarkMode ? "bg-black/70" : "bg-black/50"} flex items-center justify-center p-4 z-[9999]`}
     >
       <div
         className={`${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} rounded-2xl max-w-md w-full`}

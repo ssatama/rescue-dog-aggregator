@@ -16,6 +16,9 @@ import {
  * Features warm gradient background, logo, location info, and statistics
  */
 export default function OrganizationHero({ organization }) {
+  // State for expandable description on mobile - must be before early return
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
   // Handle missing organization data
   if (!organization) {
     return (
@@ -48,8 +51,6 @@ export default function OrganizationHero({ organization }) {
   const countriesServed = organization.ships_to?.length || 0;
   const newThisWeek = organization.new_this_week || 0;
 
-  // State for expandable description on mobile
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const descriptionLength = organization.description?.length || 0;
   const shouldShowReadMore = descriptionLength > 200; // Show "Read more" if description is longer than 200 chars
 
