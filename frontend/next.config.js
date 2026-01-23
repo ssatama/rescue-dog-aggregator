@@ -6,7 +6,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 const nextConfig = {
   compress: true,
   poweredByHeader: false,
-  
+
   // Generate unique build IDs for better chunk cache invalidation
   generateBuildId: async () => {
     // Use git commit SHA if available (Vercel provides this)
@@ -22,11 +22,11 @@ const nextConfig = {
       return `build-${Date.now()}`;
     }
   },
-  
+
   env: (process.env.NODE_ENV === 'test' || process.env.NEXT_PUBLIC_API_URL === 'http://localhost:3000') ? {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
   } : {},
-  
+
   async rewrites() {
     if (process.env.NODE_ENV === 'development') {
       return [
@@ -38,7 +38,7 @@ const nextConfig = {
     }
     return [];
   },
-  
+
   async headers() {
     return [
       {
@@ -91,13 +91,11 @@ const nextConfig = {
       },
     ];
   },
-  
-  serverExternalPackages: ['react-window', 'react-virtualized-auto-sizer'],
-  
+
   experimental: {
     optimizePackageImports: [
-      '@heroicons/react', 
-      'framer-motion', 
+      '@heroicons/react',
+      'framer-motion',
       'lucide-react'
     ]
   },
@@ -154,42 +152,6 @@ const nextConfig = {
     deviceSizes: [640, 768, 1080, 1920],
     imageSizes: [32, 64, 128, 256],
     unoptimized: false,
-  },
-
-  webpack: (config, { dev, isServer }) => {
-    if (!dev && !isServer) {
-      // Custom chunk loading global for better error identification
-      config.output = {
-        ...config.output,
-        chunkLoadingGlobal: 'rescueDogsChunkLoader',
-      };
-
-      config.optimization.splitChunks = {
-        ...config.optimization.splitChunks,
-        chunks: 'all',
-        cacheGroups: {
-          ...config.optimization.splitChunks.cacheGroups,
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-            priority: 10,
-            enforce: true,
-          },
-          react: {
-            test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
-            name: 'react-vendor',
-            chunks: 'all',
-            priority: 20,
-            enforce: true,
-          },
-        },
-      };
-
-      config.optimization.usedExports = true;
-    }
-
-    return config;
   },
 };
 

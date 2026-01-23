@@ -127,7 +127,7 @@ export const HeroImageSkeleton: React.FC = () => (
   >
     {/* Camera icon placeholder */}
     <div className="absolute inset-0 flex items-center justify-center">
-      <div className="w-16 h-16 bg-gray-300 bg-opacity-50 rounded-lg flex items-center justify-center">
+      <div className="w-16 h-16 bg-gray-300/50 rounded-lg flex items-center justify-center">
         <svg
           className="w-8 h-8 text-gray-400"
           fill="currentColor"

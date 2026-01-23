@@ -1,15 +1,39 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import Image from "next/image";
-import PropTypes from "prop-types";
 import { getAdaptiveImageQuality } from "../../utils/networkUtils";
 
-function normalizeImageUrl(url) {
-  if (!url || typeof url !== "string") return url;
+function normalizeImageUrl(url: string | undefined | null): string | undefined {
+  if (!url || typeof url !== "string") return url ?? undefined;
   if (url.startsWith("//")) {
     return `https:${url}`;
   }
   return url;
+}
+
+type AspectRatio = "4/3" | "1/1" | "16/9" | "auto";
+type Layout = "responsive" | "fill" | "fixed" | "intrinsic";
+type ObjectFit = "cover" | "contain" | "fill" | "none" | "scale-down";
+type Placeholder = "blur" | "empty";
+
+interface NextImageProps {
+  src?: string;
+  alt: string;
+  className?: string;
+  priority?: boolean;
+  sizes?: string;
+  width?: number;
+  height?: number;
+  aspectRatio?: AspectRatio;
+  layout?: Layout;
+  objectFit?: ObjectFit;
+  objectPosition?: string;
+  placeholder?: Placeholder;
+  quality?: number;
+  fallbackSrc?: string;
+  onError?: (error: React.SyntheticEvent<HTMLImageElement, Event>) => void;
+  blurDataURL?: string;
+  [key: string]: unknown;
 }
 
 const NextImage = React.memo(function NextImage({
@@ -25,12 +49,12 @@ const NextImage = React.memo(function NextImage({
   objectFit = "cover",
   objectPosition = "center 30%",
   placeholder = "blur",
-  quality = null,
+  quality = undefined,
   fallbackSrc = "/images/dog-placeholder.svg",
-  onError = null,
-  blurDataURL: providedBlurDataURL = null, // NEW: Accept blur data from database
+  onError = undefined,
+  blurDataURL: providedBlurDataURL = undefined,
   ...props
-}) {
+}: NextImageProps) {
   const [imageSrc, setImageSrc] = useState(normalizeImageUrl(src) || fallbackSrc);
   const [hasError, setHasError] = useState(false);
 
@@ -50,7 +74,7 @@ const NextImage = React.memo(function NextImage({
   }, [imageSrc]);
 
   const adaptiveQuality = useMemo(() => {
-    if (quality) return quality;
+    if (quality) return String(quality);
     return getAdaptiveImageQuality().replace("q_", "").replace(",", "");
   }, [quality]);
 
@@ -85,13 +109,13 @@ const NextImage = React.memo(function NextImage({
       ].join(",");
 
       return `${domain}/cdn-cgi/image/${params}/${imagePath}`;
-    } catch (e) {
+    } catch {
       // Priority 4: Default fallback blur placeholder
       return "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
     }
   }, [providedBlurDataURL, placeholder, isR2Image, imageSrc, fallbackSrc]);
 
-  const handleError = (error) => {
+  const handleError = (error: React.SyntheticEvent<HTMLImageElement, Event>) => {
     if (!hasError && imageSrc !== fallbackSrc) {
       setHasError(true);
       setImageSrc(fallbackSrc);
@@ -107,7 +131,7 @@ const NextImage = React.memo(function NextImage({
       return { width: undefined, height: undefined };
     }
 
-    const aspectRatios = {
+    const aspectRatios: Record<AspectRatio, number> = {
       "4/3": 4 / 3,
       "1/1": 1,
       "16/9": 16 / 9,
@@ -128,7 +152,7 @@ const NextImage = React.memo(function NextImage({
   }, [adaptiveQuality]);
 
   const responsiveSizes = useMemo(() => {
-    const sizePresets = {
+    const sizePresets: Record<string, string> = {
       "dog-card": "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
       "dog-thumbnail":
         "(max-width: 640px) 25vw, (max-width: 1024px) 20vw, 15vw",
@@ -156,7 +180,7 @@ const NextImage = React.memo(function NextImage({
       return "relative overflow-hidden";
     }
 
-    const aspectRatioClass = {
+    const aspectRatioClass: Record<AspectRatio, string> = {
       "4/3": "aspect-[4/3]",
       "1/1": "aspect-square",
       "16/9": "aspect-video",
@@ -180,7 +204,7 @@ const NextImage = React.memo(function NextImage({
     "unoptimized",
   ]);
 
-  const validDomProps = {};
+  const validDomProps: Record<string, unknown> = {};
   Object.keys(props).forEach((key) => {
     if (
       !nextjsOnlyProps.has(key) &&
@@ -230,31 +254,6 @@ const NextImage = React.memo(function NextImage({
     </div>
   );
 });
-
-NextImage.propTypes = {
-  src: PropTypes.string,
-  alt: PropTypes.string.isRequired,
-  className: PropTypes.string,
-  priority: PropTypes.bool,
-  sizes: PropTypes.string,
-  width: PropTypes.number,
-  height: PropTypes.number,
-  aspectRatio: PropTypes.oneOf(["4/3", "1/1", "16/9", "auto"]),
-  layout: PropTypes.oneOf(["responsive", "fill", "fixed", "intrinsic"]),
-  objectFit: PropTypes.oneOf([
-    "cover",
-    "contain",
-    "fill",
-    "none",
-    "scale-down",
-  ]),
-  objectPosition: PropTypes.string,
-  placeholder: PropTypes.oneOf(["blur", "empty"]),
-  quality: PropTypes.number,
-  fallbackSrc: PropTypes.string,
-  onError: PropTypes.func,
-  blurDataURL: PropTypes.string, // NEW: Database-stored blur placeholder
-};
 
 NextImage.displayName = "NextImage";
 
