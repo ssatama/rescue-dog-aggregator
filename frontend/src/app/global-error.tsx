@@ -16,7 +16,13 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
   const isChunkError = isChunkLoadError(error);
 
   useEffect(() => {
-    if (!isChunkError) {
+    if (isChunkError) {
+      Sentry.captureMessage("Chunk load error", {
+        level: "warning",
+        extra: { errorMessage: error.message, errorDigest: error.digest },
+        tags: { errorType: "chunk_load" },
+      });
+    } else {
       Sentry.captureException(error);
     }
   }, [error, isChunkError]);

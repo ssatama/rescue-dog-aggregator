@@ -13,18 +13,28 @@ jest.mock("react-error-boundary", () => ({
   ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+// Create stable references to avoid infinite re-renders
+const mockFavorites = [1, 2];
+const mockClearFavorites = jest.fn();
+const mockGetShareableUrl = jest.fn(() => "/favorites?shared=123");
+const mockLoadFromUrl = jest.fn();
+const mockIsFavorited = jest.fn();
+const mockAddFavorite = jest.fn();
+const mockRemoveFavorite = jest.fn();
+const mockToggleFavorite = jest.fn();
+
 // Mock the hooks and components
 jest.mock("../../../hooks/useFavorites", () => ({
   useFavorites: () => ({
-    favorites: [1, 2],
+    favorites: mockFavorites,
     count: 2,
-    clearFavorites: jest.fn(),
-    getShareableUrl: jest.fn(() => "/favorites?shared=123"),
-    loadFromUrl: jest.fn(),
-    isFavorited: jest.fn(),
-    addFavorite: jest.fn(),
-    removeFavorite: jest.fn(),
-    toggleFavorite: jest.fn(),
+    clearFavorites: mockClearFavorites,
+    getShareableUrl: mockGetShareableUrl,
+    loadFromUrl: mockLoadFromUrl,
+    isFavorited: mockIsFavorited,
+    addFavorite: mockAddFavorite,
+    removeFavorite: mockRemoveFavorite,
+    toggleFavorite: mockToggleFavorite,
     isLoading: false,
   }),
 }));

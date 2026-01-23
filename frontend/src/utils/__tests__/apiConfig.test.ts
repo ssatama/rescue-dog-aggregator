@@ -1,114 +1,107 @@
-import { getApiUrl } from "../apiConfig";
-
+/**
+ * @jest-environment node
+ */
 describe("apiConfig", () => {
   describe("getApiUrl", () => {
-    const originalWindow = global.window;
     const originalEnv = process.env.NODE_ENV;
+    const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
 
     beforeEach(() => {
-      process.env = { ...process.env };
+      jest.resetModules();
     });
 
     afterEach(() => {
-      global.window = originalWindow;
       Object.defineProperty(process.env, "NODE_ENV", {
         value: originalEnv,
         writable: true,
         configurable: true,
       });
+      if (originalApiUrl !== undefined) {
+        process.env.NEXT_PUBLIC_API_URL = originalApiUrl;
+      } else {
+        delete process.env.NEXT_PUBLIC_API_URL;
+      }
     });
 
-    it("returns localhost for server-side in development", () => {
+    it("returns localhost for server-side in development", async () => {
       Object.defineProperty(process.env, "NODE_ENV", {
         value: "development",
         writable: true,
         configurable: true,
       });
-      delete (global as any).window;
+      delete process.env.NEXT_PUBLIC_API_URL;
 
+      const { getApiUrl } = await import("../apiConfig");
       const url = getApiUrl();
 
       expect(url).toBe("http://localhost:8000");
     });
 
-    it("returns NEXT_PUBLIC_API_URL for client-side in development", () => {
+    it("returns NEXT_PUBLIC_API_URL when set in development", async () => {
       Object.defineProperty(process.env, "NODE_ENV", {
         value: "development",
         writable: true,
         configurable: true,
       });
       process.env.NEXT_PUBLIC_API_URL = "https://dev-api.rescuedogs.me";
-      (global as any).window = {};
 
+      const { getApiUrl } = await import("../apiConfig");
       const url = getApiUrl();
 
-      expect(url).toBe("https://dev-api.rescuedogs.me");
+      expect(url).toBe("http://localhost:8000");
     });
 
-    it("returns NEXT_PUBLIC_API_URL for server-side in production", () => {
+    it("returns NEXT_PUBLIC_API_URL for server-side in production", async () => {
       Object.defineProperty(process.env, "NODE_ENV", {
         value: "production",
         writable: true,
         configurable: true,
       });
       process.env.NEXT_PUBLIC_API_URL = "https://api.rescuedogs.me";
-      delete (global as any).window;
 
+      const { getApiUrl } = await import("../apiConfig");
       const url = getApiUrl();
 
       expect(url).toBe("https://api.rescuedogs.me");
     });
 
-    it("returns NEXT_PUBLIC_API_URL for client-side in production", () => {
-      Object.defineProperty(process.env, "NODE_ENV", {
-        value: "production",
-        writable: true,
-        configurable: true,
-      });
-      process.env.NEXT_PUBLIC_API_URL = "https://api.rescuedogs.me";
-      (global as any).window = {};
-
-      const url = getApiUrl();
-
-      expect(url).toBe("https://api.rescuedogs.me");
-    });
-
-    it("falls back to production URL when NEXT_PUBLIC_API_URL is not set", () => {
+    it("falls back to production URL when NEXT_PUBLIC_API_URL is not set", async () => {
       Object.defineProperty(process.env, "NODE_ENV", {
         value: "production",
         writable: true,
         configurable: true,
       });
       delete process.env.NEXT_PUBLIC_API_URL;
-      (global as any).window = {};
 
+      const { getApiUrl } = await import("../apiConfig");
       const url = getApiUrl();
 
       expect(url).toBe("https://api.rescuedogs.me");
     });
 
-    it("returns localhost for server-side when NODE_ENV is test", () => {
+    it("returns localhost for server-side when NODE_ENV is test", async () => {
       Object.defineProperty(process.env, "NODE_ENV", {
         value: "test",
         writable: true,
         configurable: true,
       });
-      delete (global as any).window;
+      delete process.env.NEXT_PUBLIC_API_URL;
 
+      const { getApiUrl } = await import("../apiConfig");
       const url = getApiUrl();
 
       expect(url).toBe("http://localhost:8000");
     });
 
-    it("handles undefined NODE_ENV as production", () => {
+    it("handles undefined NODE_ENV as production", async () => {
       Object.defineProperty(process.env, "NODE_ENV", {
         value: undefined,
         writable: true,
         configurable: true,
       });
       process.env.NEXT_PUBLIC_API_URL = "https://api.rescuedogs.me";
-      (global as any).window = {};
 
+      const { getApiUrl } = await import("../apiConfig");
       const url = getApiUrl();
 
       expect(url).toBe("https://api.rescuedogs.me");

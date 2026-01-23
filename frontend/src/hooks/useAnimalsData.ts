@@ -1,10 +1,10 @@
 import {
   useInfiniteQuery,
   useQuery,
-  useQueryClient,
   InfiniteData,
 } from "@tanstack/react-query";
 import { getAnimals, getFilterCounts } from "../services/animalsService";
+import { reportError } from "../utils/logger";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -56,13 +56,18 @@ export function useAnimalsInfinite(
   } = useInfiniteQuery<Animal[], Error, InfiniteData<Animal[]>, string[], number>({
     queryKey: ["animals", "infinite", JSON.stringify(apiParams)],
     queryFn: async ({ pageParam }) => {
-      const params = {
-        ...apiParams,
-        limit: ITEMS_PER_PAGE,
-        offset: pageParam * ITEMS_PER_PAGE,
-      };
-      const result = await getAnimals(params);
-      return result as Animal[];
+      try {
+        const params = {
+          ...apiParams,
+          limit: ITEMS_PER_PAGE,
+          offset: pageParam * ITEMS_PER_PAGE,
+        };
+        const result = await getAnimals(params);
+        return result as Animal[];
+      } catch (error) {
+        reportError(error, { context: "useAnimalsInfinite", pageParam, apiParams: JSON.stringify(apiParams) });
+        throw error;
+      }
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
@@ -116,8 +121,13 @@ export function useFilterCounts(apiParams: ApiParams | null): UseFilterCountsRes
   } = useQuery<FilterCountsResponse, Error>({
     queryKey: ["filterCounts", JSON.stringify(apiParams)],
     queryFn: async () => {
-      const result = await getFilterCounts(apiParams ?? {});
-      return result as FilterCountsResponse;
+      try {
+        const result = await getFilterCounts(apiParams ?? {});
+        return result as FilterCountsResponse;
+      } catch (error) {
+        reportError(error, { context: "useFilterCounts", apiParams: JSON.stringify(apiParams) });
+        throw error;
+      }
     },
     enabled: apiParams !== null,
     staleTime: 10000,
@@ -131,27 +141,4 @@ export function useFilterCounts(apiParams: ApiParams | null): UseFilterCountsRes
     filterCountsLoading: isLoading && apiParams !== null,
     refreshFilterCounts: refetch,
   };
-}
-
-export function usePrefetchAnimals() {
-  const queryClient = useQueryClient();
-
-  const prefetch = (apiParams: ApiParams, page: number) => {
-    const prefetchParams = {
-      ...apiParams,
-      limit: ITEMS_PER_PAGE,
-      offset: page * ITEMS_PER_PAGE,
-    };
-
-    return queryClient.prefetchQuery({
-      queryKey: ["animals", "page", JSON.stringify(prefetchParams)],
-      queryFn: async () => {
-        const result = await getAnimals(prefetchParams);
-        return result as Animal[];
-      },
-      staleTime: 30000,
-    });
-  };
-
-  return { prefetch };
 }

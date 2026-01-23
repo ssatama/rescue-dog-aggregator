@@ -71,11 +71,11 @@ describe("OrganizationDetailClient - Schema Integration", () => {
     getOrganizationBySlug.mockResolvedValue(mockOrganization);
     getOrganizationDogs.mockResolvedValue([]);
 
-    const { container, debug } = render(<OrganizationDetailClient />);
+    const { container } = render(<OrganizationDetailClient />);
 
-    // Wait for organization to load
+    // Wait for organization heading to appear (indicates data loaded)
     await waitFor(() => {
-      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Happy Paws Rescue" })).toBeInTheDocument();
     });
 
     // Check for JSON-LD script tag with Organization schema
@@ -96,8 +96,9 @@ describe("OrganizationDetailClient - Schema Integration", () => {
 
     const { container } = render(<OrganizationDetailClient />);
 
+    // Wait for organization heading to appear (indicates data loaded)
     await waitFor(() => {
-      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Happy Paws Rescue" })).toBeInTheDocument();
     });
 
     const schemaScript = container.querySelector(
@@ -121,8 +122,9 @@ describe("OrganizationDetailClient - Schema Integration", () => {
 
     const { container } = render(<OrganizationDetailClient />);
 
+    // Wait for organization heading to appear (indicates data loaded)
     await waitFor(() => {
-      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Happy Paws Rescue" })).toBeInTheDocument();
     });
 
     // Check for breadcrumb JSON-LD script tag
@@ -158,9 +160,9 @@ describe("OrganizationDetailClient - Schema Integration", () => {
 
     const { container } = render(<OrganizationDetailClient />);
 
-    // Wait for error state
+    // Wait for error state (Organization Not Found message)
     await waitFor(() => {
-      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+      expect(screen.getByText("Organization Not Found")).toBeInTheDocument();
     });
 
     // Should not have schema script when organization fails to load
@@ -183,8 +185,9 @@ describe("OrganizationDetailClient - Schema Integration", () => {
 
     const { container } = render(<OrganizationDetailClient />);
 
+    // Wait for organization heading to appear (indicates data loaded)
     await waitFor(() => {
-      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "City Animal Shelter" })).toBeInTheDocument();
     });
 
     const schemaScript = container.querySelector(

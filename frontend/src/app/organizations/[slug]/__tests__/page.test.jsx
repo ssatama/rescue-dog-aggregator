@@ -46,9 +46,9 @@ describe("OrgDetailPage – share buttons", () => {
 
     render(<OrgDetailPage />);
 
-    // wait for loading to disappear
+    // wait for organization heading to appear (indicates data loaded)
     await waitFor(() =>
-      expect(screen.queryByTestId("loading")).not.toBeInTheDocument(),
+      expect(screen.getByRole("heading", { name: "Test Org" })).toBeInTheDocument(),
     );
 
     // now ensure the two links render
@@ -74,8 +74,9 @@ describe("OrgDetailPage – share buttons", () => {
 
     render(<OrgDetailPage />);
 
+    // wait for organization heading to appear (indicates data loaded)
     await waitFor(() =>
-      expect(screen.queryByTestId("loading")).not.toBeInTheDocument(),
+      expect(screen.getByRole("heading", { name: "Test Org" })).toBeInTheDocument(),
     );
 
     expect(screen.queryByRole("link", { name: /twitter/i })).toBeNull();

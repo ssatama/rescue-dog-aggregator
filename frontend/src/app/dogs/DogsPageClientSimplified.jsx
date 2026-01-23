@@ -21,6 +21,7 @@ import {
   getFilterCounts,
   getAvailableRegions,
 } from "../../services/animalsService";
+import { reportError } from "../../utils/logger";
 import { Button } from "@/components/ui/button";
 import { Filter, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -417,6 +418,7 @@ export default function DogsPageClientSimplified({
     } catch (err) {
       // Ignore aborted requests
       if (err.name === 'AbortError') return;
+      reportError(err, { context: "hydrateDeepLinkPages", targetPage });
       setError("Failed to load dogs");
     } finally {
       setLoading(false);
@@ -573,9 +575,9 @@ export default function DogsPageClientSimplified({
       });
 
       // Fetch with new filters
-      fetchDogsWithFilters(newFilters, 1);
+      fetchDogsWithFiltersRef.current?.(newFilters, 1);
     },
-    [filters, updateURL, fetchDogsWithFilters],
+    [filters, updateURL],
   );
 
   // CRITICAL FIX: Fetch dogs with current filters and page
@@ -617,6 +619,7 @@ export default function DogsPageClientSimplified({
     } catch (err) {
       // Ignore aborted requests
       if (err.name === 'AbortError') return;
+      reportError(err, { context: "fetchDogsWithFilters", pageNum });
       setError("Failed to load dogs");
     } finally {
       setLoading(false);
@@ -729,6 +732,7 @@ export default function DogsPageClientSimplified({
     } catch (err) {
       // Ignore aborted requests
       if (err.name === 'AbortError') return;
+      reportError(err, { context: "loadMoreDogs", page });
       setError("Failed to load more dogs");
     } finally {
       setLoadingMore(false);
@@ -758,7 +762,8 @@ export default function DogsPageClientSimplified({
         .then((regions) => {
           setAvailableRegions(["Any region", ...regions]);
         })
-        .catch(() => {
+        .catch((err) => {
+          reportError(err, { context: "getAvailableRegions", country: filters.availableCountryFilter });
           setAvailableRegions(["Any region"]);
         });
     } else {
@@ -830,8 +835,8 @@ export default function DogsPageClientSimplified({
 
     // Force fresh fetch with default filters now
     // The URL listener will also refetch, but this makes it immediate
-    fetchDogsWithFilters(defaultFilters, 1);
-  }, [router, updateURL, saveScrollPosition, fetchDogsWithFilters]);
+    fetchDogsWithFiltersRef.current?.(defaultFilters, 1);
+  }, [router, updateURL, saveScrollPosition]);
 
   // Cleanup effect: cancel debouncers on unmount
   useEffect(() => {

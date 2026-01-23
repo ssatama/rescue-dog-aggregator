@@ -6,10 +6,6 @@ interface SwipeEventData {
   dogName?: string;
 }
 
-interface MockLocation {
-  hostname: string;
-}
-
 // Mock Sentry
 jest.mock("@sentry/nextjs", () => ({
   addBreadcrumb: jest.fn(),
@@ -190,61 +186,38 @@ describe("Sentry Configuration", () => {
   });
 
   describe("Environment Detection", () => {
-    it("should detect production environment correctly", () => {
-      // Test with production domain
-      const originalLocation = window.location;
-      Object.defineProperty(window, "location", {
-        writable: true,
-        value: { hostname: "www.rescuedogs.me" } as MockLocation,
-      });
-
-      const getRuntimeEnvironment = () => {
-        if (
-          typeof window !== "undefined" &&
-          window.location.hostname === "www.rescuedogs.me"
-        ) {
-          return "production";
-        }
+    const getRuntimeEnvironment = (hostname: string) => {
+      if (hostname === "www.rescuedogs.me") {
+        return "production";
+      }
+      if (hostname === "localhost") {
         return "development";
-      };
+      }
+      return "development";
+    };
 
-      expect(getRuntimeEnvironment()).toBe("production");
-
-      Object.defineProperty(window, "location", {
-        writable: true,
-        value: originalLocation,
-      });
+    it("should detect production environment correctly", () => {
+      expect(getRuntimeEnvironment("www.rescuedogs.me")).toBe("production");
     });
 
     it("should detect development environment on localhost", () => {
-      const originalLocation = window.location;
-      Object.defineProperty(window, "location", {
-        writable: true,
-        value: { hostname: "localhost" } as MockLocation,
-      });
+      expect(getRuntimeEnvironment("localhost")).toBe("development");
+    });
 
-      const getRuntimeEnvironment = () => {
-        if (
-          typeof window !== "undefined" &&
-          window.location.hostname === "www.rescuedogs.me"
-        ) {
-          return "production";
-        }
-        if (
-          typeof window !== "undefined" &&
-          window.location.hostname === "localhost"
-        ) {
-          return "development";
+    it("should detect development environment for unknown hosts", () => {
+      expect(getRuntimeEnvironment("staging.example.com")).toBe("development");
+    });
+
+    it("should use window.location.hostname in browser context", () => {
+      const mockGetRuntimeEnvironment = () => {
+        if (typeof window !== "undefined") {
+          return getRuntimeEnvironment(window.location.hostname);
         }
         return "development";
       };
 
-      expect(getRuntimeEnvironment()).toBe("development");
-
-      Object.defineProperty(window, "location", {
-        writable: true,
-        value: originalLocation,
-      });
+      const result = mockGetRuntimeEnvironment();
+      expect(result).toBe("development");
     });
   });
 

@@ -1,7 +1,7 @@
 // This file contains functions to interact with the animal-related API endpoints.
 
 import { get } from "../utils/api"; // Assuming api utility exists
-import { logger } from "../utils/logger";
+import { logger, reportError } from "../utils/logger";
 
 /**
  * Fetches a list of animals based on provided filters.
@@ -135,6 +135,7 @@ export async function getStandardizedBreeds(breedGroup = null) {
     return [];
   } catch (error) {
     logger.error("Error fetching standardized breeds:", error);
+    reportError(error, { context: "getStandardizedBreeds", breedGroup });
     return [];
   }
 }
@@ -284,6 +285,7 @@ export async function getAllAnimalsForSitemap(params = {}) {
       );
     } catch (error) {
       logger.error(`Error fetching animals at offset ${offset}:`, error);
+      reportError(error, { context: "getAllAnimalsForSitemap", offset });
       hasMore = false; // Stop on error to return what we have
     }
   }
@@ -355,6 +357,7 @@ export async function getSearchSuggestions(query, limit = 5) {
     return Array.isArray(suggestions) ? suggestions : [];
   } catch (error) {
     logger.error("Error fetching search suggestions:", error);
+    reportError(error, { context: "getSearchSuggestions", query });
     return [];
   }
 }
@@ -382,6 +385,7 @@ export async function getBreedSuggestions(query, limit = 5) {
     return Array.isArray(suggestions) ? suggestions : [];
   } catch (error) {
     logger.error("Error fetching breed suggestions:", error);
+    reportError(error, { context: "getBreedSuggestions", query });
     return [];
   }
 }
@@ -422,6 +426,7 @@ export async function getBreedDogs(breedSlug, filters = {}) {
     return get("/api/animals", params);
   } catch (error) {
     logger.error(`Error fetching breed dogs for ${breedSlug}:`, error);
+    reportError(error, { context: "getBreedDogs", breedSlug });
     return { results: [], total: 0 };
   }
 }

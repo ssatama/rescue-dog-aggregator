@@ -32,7 +32,9 @@ jest.mock("../../../components/dogs/DogCardOptimized", () => {
 });
 
 jest.mock("../../../components/dogs/DogsPageViewportWrapper", () => {
-  return function DogsPageViewportWrapper({ dogs, onLoadMore, hasMore, loadingMore }) {
+  return function DogsPageViewportWrapper({ dogs }) {
+    // Mock matches real desktop behavior: just renders dog cards
+    // Load More button is handled by parent component (DogsPageClientSimplified)
     return (
       <div data-testid="viewport-wrapper">
         {dogs.map(dog => (
@@ -40,11 +42,6 @@ jest.mock("../../../components/dogs/DogsPageViewportWrapper", () => {
             {dog.name}
           </div>
         ))}
-        {hasMore && (
-          <button onClick={onLoadMore} disabled={loadingMore}>
-            {loadingMore ? "Loading..." : "Load More Dogs"}
-          </button>
-        )}
       </div>
     );
   };
@@ -67,7 +64,6 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
 
     mockPush = jest.fn();
     mockReplace = jest.fn();
@@ -87,15 +83,7 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
     });
   });
 
-  afterEach(() => {
-    jest.runOnlyPendingTimers();
-    jest.useRealTimers();
-  });
-
   it("prevents double-fetch when loadMore triggers URL change", async () => {
-    // Use real timers for this test to avoid Promise resolution issues
-    jest.useRealTimers();
-
     let requestCount = 0;
     const page1Dogs = createMockDogs(1, 20);
     const page2Dogs = createMockDogs(21, 20);
@@ -164,23 +152,22 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
     window.history.replaceState = originalReplaceState;
   });
 
-  it("SHOULD FAIL: rapid Load More clicks should not cause duplicate dogs", async () => {
+  it("rapid Load More clicks should not cause duplicate dogs", async () => {
     const page1Dogs = createMockDogs(1, 20);
     const page2Dogs = createMockDogs(21, 20);
-    const page3Dogs = createMockDogs(41, 20);
 
     let callCount = 0;
     getAnimals.mockImplementation(async (params) => {
       callCount++;
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
+      // Small delay to simulate network
+      await new Promise(resolve => setTimeout(resolve, 10));
+
       if (params.offset === 0) return page1Dogs;
       if (params.offset === 20) return page2Dogs;
-      if (params.offset === 40) return page3Dogs;
       return [];
     });
 
-    const { getByRole } = render(
+    const { getByRole, findByRole } = render(
       <DogsPageClientSimplified
         initialDogs={page1Dogs}
         metadata={{
@@ -193,26 +180,28 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
       />
     );
 
+    // Wait for initial render and loading to complete
     await waitFor(() => {
       expect(screen.getAllByTestId("dog-card")).toHaveLength(20);
     });
 
     callCount = 0;
 
-    const loadMoreButton = getByRole("button", { name: /load more dogs/i });
+    // Wait for the Load More button to appear (after loading state clears)
+    const loadMoreButton = await findByRole("button", { name: /load more dogs/i }, { timeout: 3000 });
 
-    // Rapidly click twice
+    // Rapidly click twice - second click should be ignored due to loadingMore guard
     await act(async () => {
       fireEvent.click(loadMoreButton);
       fireEvent.click(loadMoreButton);
     });
 
-    await act(async () => {
-      jest.advanceTimersByTime(150);
+    // Wait for the request to complete
+    await waitFor(() => {
+      expect(callCount).toBeGreaterThanOrEqual(1);
     });
 
-    // CRITICAL TEST: Second click should be ignored due to loadingMore guard
-    // But race condition could still allow duplicate fetches
+    // loadingMore guard should prevent second fetch - at most 1 call
     expect(callCount).toBeLessThanOrEqual(1);
 
     // Verify no duplicate dog IDs
@@ -220,7 +209,7 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
       const dogCards = screen.getAllByTestId("dog-card");
       const dogIds = dogCards.map(card => card.dataset.dogId);
       const uniqueIds = new Set(dogIds);
-      
+
       expect(uniqueIds.size).toBe(dogIds.length);
     });
   });
@@ -229,9 +218,15 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
     const page1Dogs = createMockDogs(1, 20);
     const page2Dogs = createMockDogs(21, 20);
 
-    getAnimals.mockResolvedValueOnce(page1Dogs);
+    getAnimals.mockImplementation(async (params) => {
+      // Small delay to simulate network
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (params.offset === 0) return page1Dogs;
+      if (params.offset === 20) return page2Dogs;
+      return [];
+    });
 
-    const { getByRole, rerender } = render(
+    const { findByRole } = render(
       <DogsPageClientSimplified
         initialDogs={page1Dogs}
         metadata={{
@@ -244,6 +239,7 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
       />
     );
 
+    // Wait for initial render and loading to complete
     await waitFor(() => {
       expect(screen.getAllByTestId("dog-card")).toHaveLength(20);
     });
@@ -251,11 +247,12 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
     let fetchCount = 0;
     getAnimals.mockImplementation(async () => {
       fetchCount++;
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 50));
       return page2Dogs;
     });
 
-    const loadMoreButton = getByRole("button", { name: /load more dogs/i });
+    // Wait for the Load More button to appear (after loading state clears)
+    const loadMoreButton = await findByRole("button", { name: /load more dogs/i }, { timeout: 3000 });
 
     // Click load more
     await act(async () => {
@@ -267,14 +264,10 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
       expect(loadMoreButton).toBeDisabled();
     });
 
-    // Complete the request
-    await act(async () => {
-      jest.advanceTimersByTime(300);
-    });
-
+    // Wait for the request to complete
     await waitFor(() => {
       expect(screen.getAllByTestId("dog-card")).toHaveLength(40);
-    });
+    }, { timeout: 3000 });
 
     // Should have only made one request
     expect(fetchCount).toBe(1);

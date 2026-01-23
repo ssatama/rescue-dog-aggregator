@@ -25,12 +25,10 @@ class DogCardErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     this.setState({ error });
 
-    reportError("DogCard render error", {
-      error: error.message,
-      stack: error.stack,
+    reportError(error, {
+      context: "DogCard render error",
       componentStack: errorInfo.componentStack,
       dogId: this.props.dogId,
-      timestamp: new Date().toISOString(),
     });
   }
 
