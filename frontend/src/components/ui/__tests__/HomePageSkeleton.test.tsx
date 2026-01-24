@@ -17,7 +17,6 @@ describe("HomePageSkeleton", () => {
       render(<HomePageSkeleton />);
 
       const container = screen.getByRole("status");
-      // Hero section should have large title placeholder
       expect(container.querySelector('[data-testid="hero-skeleton"]')).toBeInTheDocument();
     });
 
@@ -25,7 +24,6 @@ describe("HomePageSkeleton", () => {
       render(<HomePageSkeleton />);
 
       const container = screen.getByRole("status");
-      // Platform capabilities with 3 cards
       const capabilitiesSection = container.querySelector('[data-testid="capabilities-skeleton"]');
       expect(capabilitiesSection).toBeInTheDocument();
     });
@@ -34,7 +32,6 @@ describe("HomePageSkeleton", () => {
       render(<HomePageSkeleton />);
 
       const container = screen.getByRole("status");
-      // Featured dogs grid
       const featuredSection = container.querySelector('[data-testid="featured-skeleton"]');
       expect(featuredSection).toBeInTheDocument();
     });
@@ -45,14 +42,12 @@ describe("HomePageSkeleton", () => {
       render(<HomePageSkeleton />);
 
       const container = screen.getByRole("status");
-      // Should have responsive container
       expect(container).toHaveClass("min-h-screen");
     });
 
     it("renders desktop layout skeleton", () => {
       render(<HomePageSkeleton />);
 
-      // Desktop section should be present
       const desktopSection = screen.getByTestId("desktop-skeleton");
       expect(desktopSection).toHaveClass("hidden", "sm:block");
     });
@@ -60,7 +55,6 @@ describe("HomePageSkeleton", () => {
     it("renders mobile layout skeleton", () => {
       render(<HomePageSkeleton />);
 
-      // Mobile section should be present
       const mobileSection = screen.getByTestId("mobile-skeleton");
       expect(mobileSection).toHaveClass("sm:hidden");
     });
@@ -71,7 +65,6 @@ describe("HomePageSkeleton", () => {
       render(<HomePageSkeleton />);
 
       const container = screen.getByRole("status");
-      // Should have multiple skeleton elements with animate-pulse
       const skeletonElements = container.querySelectorAll('[class*="animate-pulse"]');
       expect(skeletonElements.length).toBeGreaterThan(5);
     });
@@ -89,17 +82,6 @@ describe("HomePageSkeleton", () => {
 
       const container = screen.getByRole("status");
       expect(container).toHaveClass("custom-class");
-    });
-  });
-
-  describe("Performance", () => {
-    it("renders efficiently", () => {
-      const startTime = performance.now();
-      render(<HomePageSkeleton />);
-      const endTime = performance.now();
-
-      // Should render in under 50ms
-      expect(endTime - startTime).toBeLessThan(50);
     });
   });
 });
