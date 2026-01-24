@@ -143,12 +143,6 @@ export async function generateMetadata(props) {
 
     // Enhanced image handling with fallbacks
     if (dog.primary_image_url) {
-      // Get optimized hero image URL for preload
-      const { src: optimizedHeroUrl } = getDetailHeroImageWithPosition(
-        dog.primary_image_url,
-        false
-      );
-
       // Enhanced image metadata for better social sharing
       const imageMetadata = {
         url: dog.primary_image_url,
@@ -160,12 +154,6 @@ export async function generateMetadata(props) {
 
       metadata.openGraph.images = [imageMetadata];
       metadata.twitter.images = [imageMetadata];
-
-      // Add preload link for LCP optimization - tells browser to fetch hero image early
-      metadata.other = {
-        ...metadata.other,
-        "link:preload:hero-image": optimizedHeroUrl,
-      };
     } else {
       // Use fallback images when no primary image is available
       metadata.openGraph.images = [fallbackImage];
@@ -238,9 +226,14 @@ async function DogDetailPageAsync(props) {
   }
 
   // Compute optimized hero image URL for preload
-  const heroImageUrl = initialDog?.primary_image_url
-    ? getDetailHeroImageWithPosition(initialDog.primary_image_url, false).src
-    : null;
+  let heroImageUrl = null;
+  if (initialDog?.primary_image_url) {
+    try {
+      heroImageUrl = getDetailHeroImageWithPosition(initialDog.primary_image_url, false).src;
+    } catch (error) {
+      console.error("[DogDetailPageAsync] Hero image URL computation failed:", error);
+    }
+  }
 
   return (
     <>

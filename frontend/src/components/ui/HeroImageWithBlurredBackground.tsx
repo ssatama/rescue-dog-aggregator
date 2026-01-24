@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useState, useMemo } from "react";
 import Image from "next/image";
 import { useAdvancedImage } from "../../hooks/useAdvancedImage";
 import { useReducedMotion } from "../../hooks/useScrollAnimation";
@@ -32,11 +32,18 @@ const HeroImageWithBlurredBackground = memo(
     priority = false,
   }: HeroImageWithBlurredBackgroundProps) {
     const prefersReducedMotion = useReducedMotion();
+    const [priorityImageError, setPriorityImageError] = useState(false);
 
     // For priority images, compute optimized src directly without waiting for hook
-    const priorityImageData = priority
-      ? getDetailHeroImageWithPosition(src, true)
-      : null;
+    const priorityImageData = useMemo(() => {
+      if (!priority) return null;
+      try {
+        return getDetailHeroImageWithPosition(src, true);
+      } catch (error) {
+        console.error("[HeroImageWithBlurredBackground] Priority image computation failed:", error);
+        return { src, position: "center center" };
+      }
+    }, [priority, src]);
 
     const {
       imageLoaded,
@@ -132,11 +139,13 @@ const HeroImageWithBlurredBackground = memo(
               alt={alt}
               fill
               priority
+              unoptimized
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 896px"
               className="object-cover md:object-contain"
               style={{
                 objectPosition: priorityImageData?.position || "center",
               }}
+              onError={() => setPriorityImageError(true)}
               data-testid="hero-image"
             />
           ) : (
@@ -165,7 +174,7 @@ const HeroImageWithBlurredBackground = memo(
           )}
         </div>
 
-        {/* Loading Shimmer Effect - Skip for priority images */}
+        {/* Loading shimmer skipped for priority images - Next.js Image handles loading internally to avoid CLS */}
         {!priority && (isLoading || isRetrying) && !imageLoaded && (
           <div
             className={`absolute inset-0 bg-gradient-to-r from-gray-200 dark:from-gray-700 via-gray-100 dark:via-gray-600 to-gray-200 dark:to-gray-700 ${!prefersReducedMotion ? "animate-shimmer" : ""} transition-opacity duration-300 ${isLoading ? "opacity-100" : "opacity-0"}`}
@@ -180,8 +189,8 @@ const HeroImageWithBlurredBackground = memo(
           </div>
         )}
 
-        {/* Error State - Only show for non-priority images */}
-        {!priority && hasError && (
+        {/* Error State */}
+        {(hasError || priorityImageError) && (
           <div
             className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800"
             data-testid="error-state"
