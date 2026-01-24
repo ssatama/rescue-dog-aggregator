@@ -7,7 +7,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 ## Tech Stack
 
 - Backend: Python 3.12+/FastAPI/PostgreSQL 15/Alembic
-- Frontend: Next.js 15 (App Router)/React 18/TypeScript 5
+- Frontend: Next.js 16 (App Router)/React 19/TypeScript 5
 - Testing: pytest (backend), Jest/Playwright (frontend)
 - AI: OpenRouter API (Google Gemini 3 Flash) for LLM enrichment
 - Browser Automation: Playwright (Browserless v2 in production)
@@ -51,6 +51,50 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 1. **RESEARCH** (no code): `Read relevant files and understand context`
 2. **PLAN**: `Create detailed implementation plan with checkboxes`
 3. **EXECUTE**: `Implement with TDD - test first, code second`
+
+## Code Guidelines (ENFORCED AT PR REVIEW)
+
+> **All guidelines are reviewed at every PR.** Violations block merge.
+
+### Quick Links
+
+| Guideline | Scope | Priority Order |
+|-----------|-------|----------------|
+| [Python Guidelines](docs/guidelines/PYTHON_GUIDELINES.md) | Backend, scrapers, services | Reliability > Simplicity > Performance > Maintainability |
+| [TypeScript Guidelines](docs/guidelines/TYPESCRIPT_GUIDELINES.md) | Frontend types, API calls | Reliability > Simplicity > Performance > Maintainability |
+| [React Guidelines](docs/guidelines/REACT_GUIDELINES.md) | Components, hooks, Next.js | Performance > Reliability > Simplicity > Maintainability |
+| [Web Design Guidelines](docs/guidelines/WEB_DESIGN_GUIDELINES.md) | UI/UX, accessibility | Accessibility > Usability > Performance > Polish |
+
+### Non-Negotiable Rules (PR Blockers)
+
+**Python:**
+- Python 3.12+ with modern syntax (`list[str]` not `List[str]`, `X | None` not `Optional[X]`)
+- Type hints on ALL functions
+- `ruff check` and `ruff format` must pass
+- `logging` module (not `print()`)
+- Async context managers for resources
+
+**TypeScript:**
+- `strict: true` - never disable
+- No `any` - use `unknown` + Zod validation
+- No `@ts-ignore` - use `@ts-expect-error` with explanation if needed
+- Explicit return types on module API functions
+- `import type` for type-only imports
+
+**React/Next.js:**
+- No sequential awaits for independent operations - use `Promise.all()`
+- No barrel file imports - import directly or use `optimizePackageImports`
+- Heavy components use `next/dynamic` with `ssr: false`
+- Functional `setState` for current-state updates
+- `toSorted()` not `sort()` on state/props
+- **No `Link` or Client Components in lists with 20+ items**
+
+**Web Design:**
+- Icon-only buttons need `aria-label`
+- Interactive elements need keyboard support
+- Never remove focus outline without replacement
+- Animations honor `prefers-reduced-motion`
+- Form inputs have associated labels
 
 ## Core Rules
 
@@ -111,7 +155,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 3. Pre-commit review: Use PAL MCP `precommit` tool with external validation
 4. Commit to branch: `git commit -m "type(scope): description"`
 5. Push & create PR: `git push -u origin HEAD && gh pr create`
-6. Run `/code-review` for automated review
+6. Run `/code-review` for automated review (includes guideline compliance check)
 7. Merge via GitHub (1 review required)
 
 Branch naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
@@ -124,13 +168,17 @@ api/              # FastAPI backend with async routes
 services/         # Core services (14 total)
 ├── llm/          # AI profiling pipeline (20 files)
 scrapers/         # 13 organization scrapers
-frontend/         # Next.js 15 App Router
+frontend/         # Next.js 16 App Router
 ├── app/          # Pages: dogs/, swipe/, favorites/, breeds/, guides/
 ├── components/   # UI components organized by feature (20 dirs)
 tests/            # Backend tests with fixtures
 configs/          # Organization YAMLs (13 active)
 migrations/       # Alembic database migrations
 management/       # CLI tools (18 scripts)
+docs/
+├── guidelines/   # Code guidelines (Python, TypeScript, React, Web Design)
+├── features/     # Feature documentation
+├── technical/    # Architecture docs
 ```
 
 ## Key Services
@@ -149,6 +197,7 @@ management/       # CLI tools (18 scripts)
 - Test count stable or increasing
 - **No JSX/TSX duplicate files** (enforced by pre-commit)
 - **Database isolation in tests** (global conftest.py fixture)
+- **Guidelines compliance** (see docs/guidelines/)
 
 ### Pre-Commit Validation (MANDATORY)
 
@@ -182,6 +231,7 @@ pnpm test -- --passWithNoTests --watchAll=false
 | Frontend unit tests | ✅ | ✅ | ✅ |
 | Frontend build | - | ✅ | ✅ |
 | Security scan | - | ⚠️ warn | ⚠️ warn |
+| Guidelines compliance | ✅ | ✅ | ✅ |
 
 ## Testing Commands
 
@@ -276,6 +326,11 @@ pnpm test -- --testNamePattern="PersonalityTraits"
 
 - Architecture: `docs/technical/architecture.md`
 - LLM Feature: `docs/features/llm-data-enrichment.md`
+- **Guidelines:**
+  - Python: `docs/guidelines/PYTHON_GUIDELINES.md`
+  - TypeScript: `docs/guidelines/TYPESCRIPT_GUIDELINES.md`
+  - React/Next.js: `docs/guidelines/REACT_GUIDELINES.md`
+  - Web Design: `docs/guidelines/WEB_DESIGN_GUIDELINES.md`
 
 ## When Stuck
 
@@ -283,4 +338,5 @@ pnpm test -- --testNamePattern="PersonalityTraits"
 2. Review test patterns
 3. Use MCP tools
 4. Run subagents for complex tasks
-5. Ask for clarification - don't guess
+5. **Review guidelines** for best practices
+6. Ask for clarification - don't guess

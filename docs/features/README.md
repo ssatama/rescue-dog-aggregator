@@ -103,8 +103,8 @@
 
 ### Frontend Architecture
 
-- **Next.js 15** App Router
-- **React 18** with TypeScript
+- **Next.js 16** App Router
+- **React 19** with TypeScript
 - **Tailwind CSS** utility-first
 - **SWR** for data fetching
 - **Radix UI** accessible components

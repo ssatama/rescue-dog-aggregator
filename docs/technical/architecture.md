@@ -8,7 +8,7 @@
 Production:    www.rescuedogs.me
 Data:          1,500+ active dogs | 12 active organizations (13 scrapers)
 Backend:       Python 3.12+/FastAPI + PostgreSQL 15 + Alembic
-Frontend:      Next.js 15 App Router + React 18 + TypeScript 5
+Frontend:      Next.js 16 App Router + React 19 + TypeScript 5
 MCP Server:    TypeScript + @modelcontextprotocol/sdk (npm: rescuedogs-mcp-server)
 LLM:           OpenRouter (Gemini 3 Flash primary)
 Monitoring:    Sentry (dev + prod)
@@ -514,7 +514,7 @@ The `rescuedogs-mcp-server` enables LLMs (Claude Code, Claude Desktop) to discov
 ### Why This Stack?
 
 - **FastAPI**: Native async, automatic OpenAPI docs, Pydantic validation
-- **Next.js 15**: App Router performance, React Server Components, built-in SEO
+- **Next.js 16**: App Router performance, React Server Components, built-in SEO
 - **PostgreSQL**: JSONB flexibility, full-text search, strong ACID, asyncpg driver
 - **OpenRouter/Gemini 3 Flash**: Cost-effective ($0.0015/dog), fast (2-5s), high success (97%+)
 - **Service Pattern**: Testability, clear separation, future microservices path

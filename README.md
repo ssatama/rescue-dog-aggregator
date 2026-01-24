@@ -69,7 +69,7 @@ Claude Code and Claude Desktop users can discover rescue dogs through natural co
 | Layer              | Technology                                        |
 | ------------------ | ------------------------------------------------- |
 | Backend            | Python 3.12+ / FastAPI / PostgreSQL 15 / Alembic  |
-| Frontend           | Next.js 15 (App Router) / React 18 / TypeScript 5 |
+| Frontend           | Next.js 16 (App Router) / React 19 / TypeScript 5 |
 | AI                 | OpenRouter API (Google Gemini 3 Flash)            |
 | Browser Automation | Playwright (Browserless v2 in production)         |
 | Monitoring         | Sentry (dev + prod)                               |
@@ -80,7 +80,7 @@ Claude Code and Claude Desktop users can discover rescue dogs through natural co
 ### System Overview
 
 ```
-Frontend (Next.js 15)
+Frontend (Next.js 16)
     ↓ API calls
 Backend (FastAPI)
     ↓ Routes → Services → Database

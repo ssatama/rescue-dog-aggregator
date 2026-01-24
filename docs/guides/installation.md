@@ -4,13 +4,13 @@
 
 Get the Rescue Dog Aggregator platform running locally in under 10 minutes. This guide covers system requirements, step-by-step installation, configuration, and troubleshooting.
 
-**Tech Stack**: Python/FastAPI backend, Next.js 15 frontend, PostgreSQL database, 168 backend test files, 276 frontend test files.
+**Tech Stack**: Python/FastAPI backend, Next.js 16 frontend, PostgreSQL database, 168 backend test files, 276 frontend test files.
 
 ## ⚡ Prerequisites
 
 ### Required Software
 - **Python 3.12+** (required for modern async features)
-- **Node.js 18+** (required for Next.js 15.3.0+ App Router features)
+- **Node.js 20+** (required for Next.js 16 App Router features)
 - **PostgreSQL 15+** (PostgreSQL 15+ recommended for enhanced JSON performance)
 - **Git** (for cloning the repository)
 - **uv** (Python package manager - [install](https://docs.astral.sh/uv/getting-started/installation/))

@@ -138,7 +138,7 @@ Uses JSON-LD `CollectionPage` schema:
 
 ## Static Generation
 
-Uses Next.js 15 static generation with ISR:
+Uses Next.js 16 static generation with ISR:
 
 ```javascript
 export const revalidate = 300; // 5 minutes

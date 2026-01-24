@@ -356,7 +356,7 @@ pnpm test -- --testPathPattern="cross-browser"   # Cross-browser tests
 pnpm test -- --coverage
 ```
 
-**Next.js 15 Compatibility**:
+**Next.js 16 Compatibility**:
 - Environment-aware testing patterns for dynamic routes
 - Automatic mocking of Next.js navigation in test setup
 
@@ -365,7 +365,7 @@ pnpm test -- --coverage
 - Integration tests for user workflows
 - Performance tests for load times
 - Accessibility tests for WCAG 2.1 AA compliance
-- Next.js 15 compatible environment-aware patterns
+- Next.js 16 compatible environment-aware patterns
 - Mobile-first responsive design testing
 
 ## Documentation

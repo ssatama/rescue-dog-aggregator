@@ -128,7 +128,7 @@ export default function DogSection({ dogs }) {
 }
 ```
 
-### Next.js 15 Testing Patterns
+### Next.js 16 Testing Patterns
 ```javascript
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({

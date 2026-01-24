@@ -1,6 +1,6 @@
 # Frontend
 
-Next.js 15 application with React 18, TypeScript, and Tailwind CSS.
+Next.js 16 application with React 19, TypeScript, and Tailwind CSS.
 
 ## Quick Start
 
@@ -14,7 +14,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## Architecture
 
-- **Framework**: Next.js 15.3.0 with App Router
+- **Framework**: Next.js 16 with App Router
 - **Language**: TypeScript 5.8.2
 - **Styling**: Tailwind CSS 3.3.2
 - **Components**: Radix UI primitives
