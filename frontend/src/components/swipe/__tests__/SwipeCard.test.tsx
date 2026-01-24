@@ -59,11 +59,23 @@ describe("SwipeCard", () => {
     expect(screen.getByLabelText("Share")).toBeInTheDocument();
   });
 
-  it("should not display energy level (removed in redesign)", () => {
+  it("should not display energy level when dog lacks energy_level data", () => {
     renderWithProvider(<SwipeCard dog={mockDog} />);
 
-    expect(screen.queryByTestId("energy-indicator")).not.toBeInTheDocument();
     expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
+  });
+
+  it("should display energy level when dog_profiler_data has energy_level", () => {
+    const dogWithEnergy = {
+      ...mockDog,
+      dog_profiler_data: {
+        ...mockDog.dog_profiler_data,
+        energy_level: "high" as const,
+      },
+    };
+    renderWithProvider(<SwipeCard dog={dogWithEnergy} />);
+
+    expect(screen.getByText("Energy:")).toBeInTheDocument();
   });
 
   it("should show unique quirk", () => {
@@ -151,6 +163,37 @@ describe("SwipeCard", () => {
 
     const imageContainer = screen.getByTestId("image-container");
     expect(imageContainer).toHaveClass("aspect-[4/3]");
+  });
+
+  describe("CLS Prevention", () => {
+    it("should render image container with min-height for layout stability", () => {
+      renderWithProvider(<SwipeCard dog={mockDog} />);
+
+      const imageContainer = screen.getByTestId("image-container");
+      expect(imageContainer).toHaveClass("min-h-[200px]");
+    });
+
+    it("should render content area with min-height", () => {
+      renderWithProvider(<SwipeCard dog={mockDog} />);
+
+      const imageContainer = screen.getByTestId("image-container");
+      const contentArea = imageContainer.nextElementSibling;
+      expect(contentArea).toHaveClass("min-h-[280px]");
+    });
+
+    it("should render invisible placeholder when no age/breed info", () => {
+      const minimalDog = {
+        id: 2,
+        name: "Max",
+        slug: "max",
+      };
+      const { container } = renderWithProvider(<SwipeCard dog={minimalDog} />);
+
+      // Invisible placeholder paragraph reserves space when age/breed is missing
+      const invisiblePlaceholder = container.querySelector("p.invisible");
+      expect(invisiblePlaceholder).toBeInTheDocument();
+      expect(invisiblePlaceholder).toHaveClass("mt-1");
+    });
   });
 
   it("should have accessible touch target sizes for action buttons", () => {
