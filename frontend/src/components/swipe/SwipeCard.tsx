@@ -109,7 +109,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
       {/* Main Image - Mobile optimized with 4:3 aspect ratio */}
       <div
-        className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 overflow-hidden rounded-t-xl flex-shrink-0"
+        className="relative aspect-[4/3] min-h-[200px] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 overflow-hidden rounded-t-xl flex-shrink-0"
         data-testid="image-container"
       >
         <FallbackImage
@@ -124,81 +124,91 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       </div>
 
       {/* Essential Info with Enriched Data */}
-      <div className="p-6 flex flex-col space-y-4 dark:bg-gray-800 overflow-y-auto flex-1">
-        {/* Primary info: Name, Age, Breed */}
-        <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+      <div className="p-6 flex flex-col space-y-4 dark:bg-gray-800 overflow-y-auto flex-1 min-h-[280px]">
+        {/* Primary info: Name, Age, Breed - fixed height for consistency */}
+        <div className="min-h-[56px]">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 line-clamp-1">
             {dog.name}
           </h3>
           {(ageCategory && ageCategory !== "Unknown") || breed ? (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-1">
               {[ageCategory !== "Unknown" ? ageCategory : null, breed]
                 .filter(Boolean)
                 .join(" • ")}
             </p>
+          ) : (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 invisible">
+              &nbsp;
+            </p>
+          )}
+        </div>
+
+        {/* Tagline - fixed height with line clamp */}
+        <div className="min-h-[40px]">
+          {tagline ? (
+            <p className="italic text-gray-700 dark:text-gray-300 text-sm line-clamp-2">
+              {tagline}
+            </p>
           ) : null}
         </div>
 
-        {/* Tagline */}
-        {tagline && (
-          <p className="italic text-gray-700 dark:text-gray-300 text-sm line-clamp-2">
-            {tagline}
-          </p>
-        )}
-
-        {/* Top 3 Personality Traits with consistent colors */}
-        {personalityTraits.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {personalityTraits.slice(0, 3).map((trait: string, idx: number) => (
-              <span
-                key={idx}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium ${getPersonalityTraitColor(trait)}`}
-              >
-                {trait.charAt(0).toUpperCase() + trait.slice(1)}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Energy Level Indicator - Visual bars */}
-        {dog.dog_profiler_data?.energy_level && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-600 dark:text-gray-400">
-              Energy:
-            </span>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((level) => (
-                <div
-                  key={level}
-                  className={`h-2 w-6 rounded-full ${
-                    level <=
-                    (dog.dog_profiler_data?.energy_level === "low"
-                      ? 1
-                      : dog.dog_profiler_data?.energy_level === "medium"
-                        ? 3
-                        : dog.dog_profiler_data?.energy_level === "high"
-                          ? 4
-                          : dog.dog_profiler_data?.energy_level === "very_high"
-                            ? 5
-                            : 0)
-                      ? "bg-orange-500"
-                      : "bg-gray-200 dark:bg-gray-700"
-                  }`}
-                />
+        {/* Top 3 Personality Traits with consistent colors - fixed height */}
+        <div className="min-h-[36px]">
+          {personalityTraits.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {personalityTraits.slice(0, 3).map((trait: string, idx: number) => (
+                <span
+                  key={idx}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium ${getPersonalityTraitColor(trait)}`}
+                >
+                  {trait.charAt(0).toUpperCase() + trait.slice(1)}
+                </span>
               ))}
             </div>
-          </div>
-        )}
+          ) : null}
+        </div>
 
-        {/* What Makes Me Special */}
-        {uniqueQuirk && (
-          <div className="mt-auto pt-2 border-t border-gray-100 dark:border-gray-700">
+        {/* Energy Level Indicator - Visual bars - fixed height */}
+        <div className="min-h-[24px]">
+          {dog.dog_profiler_data?.energy_level ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                Energy:
+              </span>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <div
+                    key={level}
+                    className={`h-2 w-6 rounded-full ${
+                      level <=
+                      (dog.dog_profiler_data?.energy_level === "low"
+                        ? 1
+                        : dog.dog_profiler_data?.energy_level === "medium"
+                          ? 3
+                          : dog.dog_profiler_data?.energy_level === "high"
+                            ? 4
+                            : dog.dog_profiler_data?.energy_level === "very_high"
+                              ? 5
+                              : 0)
+                        ? "bg-orange-500"
+                        : "bg-gray-200 dark:bg-gray-700"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* What Makes Me Special - fixed height */}
+        <div className="mt-auto pt-2 border-t border-gray-100 dark:border-gray-700 min-h-[48px]">
+          {uniqueQuirk ? (
             <p className="text-xs text-gray-700 dark:text-gray-300 flex items-start gap-2">
               <span className="text-base">✨</span>
               <span className="line-clamp-2">{uniqueQuirk}</span>
             </p>
-          </div>
-        )}
+          ) : null}
+        </div>
       </div>
     </div>
   );
