@@ -197,7 +197,7 @@ function FavoritesPageContent() {
       orgCounts[orgName] = (orgCounts[orgName] || 0) + 1;
     });
 
-    const topOrg = Object.entries(orgCounts).sort((a, b) => b[1] - a[1])[0];
+    const topOrg = Object.entries(orgCounts).toSorted((a, b) => b[1] - a[1])[0];
 
     // Size preference insights
     const sizeCounts: { [key: string]: number } = {};
@@ -206,7 +206,7 @@ function FavoritesPageContent() {
       sizeCounts[size] = (sizeCounts[size] || 0) + 1;
     });
 
-    const sizes = Object.entries(sizeCounts).sort((a, b) => b[1] - a[1]);
+    const sizes = Object.entries(sizeCounts).toSorted((a, b) => b[1] - a[1]);
     const topSize = sizes[0];
     const hasStrongSizePreference =
       topSize && topSize[1] >= Math.ceil(dogList.length * 0.6);

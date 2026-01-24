@@ -34,7 +34,7 @@ export default function MobileCountryBrowse({
       };
     })
     .filter((c) => c.count > 0)
-    .sort((a, b) => b.count - a.count)
+    .toSorted((a, b) => b.count - a.count)
     .slice(0, 4);
 
   // Don't render if no countries with dogs

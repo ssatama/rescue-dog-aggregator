@@ -85,7 +85,7 @@ export function analyzePersonalityPatterns(
   const commonTraits = Object.entries(traitCounts)
     .filter(([_, count]) => count >= threshold)
     .map(([trait]) => trait)
-    .sort((a, b) => traitCounts[b] - traitCounts[a]);
+    .toSorted((a, b) => traitCounts[b] - traitCounts[a]);
 
   // Determine personality theme
   let personalityTheme = "Diverse personalities";
@@ -110,7 +110,7 @@ export function analyzePersonalityPatterns(
 
   // Get top 5 most common traits
   const dominantTraits = Object.entries(traitCounts)
-    .sort((a, b) => b[1] - a[1])
+    .toSorted((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([trait]) => trait);
 
