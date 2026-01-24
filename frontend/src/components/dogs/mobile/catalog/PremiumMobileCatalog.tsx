@@ -8,6 +8,7 @@ import React, {
   useRef,
 } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import {
   Heart,
   X,
@@ -27,7 +28,14 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { cn } from "@/lib/utils";
 import { safeStorage } from "@/utils/safeStorage";
 
-import DogDetailModalUpgraded from "../detail/DogDetailModalUpgraded";
+// Dynamic import for large modal component (consistent with DogsPageViewportWrapper)
+const DogDetailModalUpgraded = dynamic(
+  () => import("../detail/DogDetailModalUpgraded"),
+  {
+    loading: () => null,
+    ssr: false,
+  },
+);
 import { getPersonalityTraitColor } from "@/utils/personalityColors";
 import {
   formatBreed,
