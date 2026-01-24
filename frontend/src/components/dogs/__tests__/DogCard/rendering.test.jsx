@@ -616,8 +616,10 @@ describe("DogCard Rendering", () => {
 
       render(<DogCard dog={noShipDog} />);
 
+      // Container exists for CLS prevention but should have no content
       const shipsToElement = screen.queryByTestId("ships-to-display");
-      expect(shipsToElement).not.toBeInTheDocument();
+      expect(shipsToElement).toBeInTheDocument();
+      expect(shipsToElement).toBeEmptyDOMElement();
     });
 
     test("displays adoptable text with correct styling", () => {
@@ -774,7 +776,10 @@ describe("DogCard Rendering", () => {
 
       render(<DogCard dog={noTraitsDog} />);
 
-      expect(screen.queryByTestId("traits-display")).not.toBeInTheDocument();
+      // Container exists for CLS prevention but should have no content
+      const traitsElement = screen.queryByTestId("traits-display");
+      expect(traitsElement).toBeInTheDocument();
+      expect(traitsElement).toBeEmptyDOMElement();
     });
   });
 });

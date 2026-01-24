@@ -393,7 +393,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
       </Link>
 
       {/* Card content */}
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 min-h-[64px]">
         <div className="flex items-start justify-between">
           <Link
             href={`/dogs/${slug}`}
@@ -438,10 +438,10 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-2 pb-3" data-testid="card-content">
+      <CardContent className="space-y-2 pb-3 min-h-[200px]" data-testid="card-content">
         {/* Age and Gender */}
         <div
-          className="flex items-center gap-2 text-sm text-muted-foreground"
+          className="flex items-center gap-2 text-sm text-muted-foreground min-h-[20px]"
           data-testid="age-gender-row"
         >
           {formattedAge && ageCategory !== "Unknown" && (
@@ -455,33 +455,35 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
         </div>
 
         {/* Breed */}
-        {breed && breed !== "Unknown" && breed !== "Unknown Breed" && (
-          <div className="space-y-1">
-            <p className="text-sm font-medium truncate" data-testid="dog-breed">
-              {breed}
-            </p>
-          </div>
-        )}
+        <div className="min-h-[24px]">
+          {breed && breed !== "Unknown" && breed !== "Unknown Breed" ? (
+            <div className="space-y-1">
+              <p className="text-sm font-medium truncate" data-testid="dog-breed">
+                {breed}
+              </p>
+            </div>
+          ) : null}
+        </div>
 
         {/* Organization */}
         <p
-          className="text-sm text-muted-foreground"
+          className="text-sm text-muted-foreground min-h-[20px] line-clamp-1"
           data-testid="location-display"
         >
           {organizationName}
         </p>
 
         {/* Experience Level */}
-        {experienceLevel && (
-          <div className="pt-1" data-testid="experience-display">
+        <div className="pt-1 min-h-[24px]" data-testid="experience-display">
+          {experienceLevel ? (
             <p className="text-xs text-blue-600 dark:text-blue-400">
               👥 {experienceLevel}
             </p>
-          </div>
-        )}
+          ) : null}
+        </div>
 
         {/* Compatibility indicators */}
-        <div className="pt-1 space-y-1" data-testid="compatibility-display">
+        <div className="pt-1 space-y-1 min-h-[28px]" data-testid="compatibility-display">
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="flex items-center gap-1">
               <span>🐕</span>
@@ -505,8 +507,8 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
         </div>
 
         {/* Special traits with hover */}
-        {personalityTraits.length > 0 && (
-          <div className="pt-1" data-testid="traits-display">
+        <div className="pt-1 min-h-[32px]" data-testid="traits-display">
+          {personalityTraits.length > 0 ? (
             <div className="flex flex-wrap gap-1">
               {personalityTraits.map((trait, index) => (
                 <span
@@ -518,18 +520,20 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
                 </span>
               ))}
             </div>
-          </div>
-        )}
+          ) : null}
+        </div>
 
         {/* Ships to countries */}
-        {shipsToCountries && shipsToCountries.length > 0 && (
-          <div className="pt-2" data-testid="ships-to-display">
-            <div className="text-xs text-muted-foreground mb-1">
-              Adoptable to:
-            </div>
-            <div className="text-xs">{formatShipsToList(shipsToCountries)}</div>
-          </div>
-        )}
+        <div className="pt-2 min-h-[40px]" data-testid="ships-to-display">
+          {shipsToCountries && shipsToCountries.length > 0 ? (
+            <>
+              <div className="text-xs text-muted-foreground mb-1">
+                Adoptable to:
+              </div>
+              <div className="text-xs">{formatShipsToList(shipsToCountries)}</div>
+            </>
+          ) : null}
+        </div>
       </CardContent>
 
       {/* Call to action */}
