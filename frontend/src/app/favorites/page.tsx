@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import Layout from "../../components/layout/Layout";
 import { useFavorites } from "../../hooks/useFavorites";
 import { useToast } from "../../contexts/ToastContext";
@@ -12,15 +13,32 @@ import { getEnhancedInsights } from "../../utils/dogProfilerAnalyzer";
 import { Button } from "../../components/ui/button";
 import { Trash2, GitCompare } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
-import CompareMode from "../../components/favorites/CompareMode";
 import ShareButton from "../../components/ui/ShareButton";
-import FilterPanel from "../../components/favorites/FilterPanel";
 import FavoritesInsights from "../../components/favorites/FavoritesInsights";
 import type { DogProfilerData } from "../../types/dogProfiler";
 import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
 import type { Dog } from "../../types/dog";
+import FilterPanelSkeleton from "../../components/ui/FilterPanelSkeleton";
+import CompareSkeleton from "../../components/ui/CompareSkeleton";
+
+// Dynamic imports for large components (code splitting)
+const FilterPanel = dynamic(
+  () => import("../../components/favorites/FilterPanel"),
+  {
+    loading: () => <FilterPanelSkeleton />,
+    ssr: false,
+  },
+);
+
+const CompareMode = dynamic(
+  () => import("../../components/favorites/CompareMode"),
+  {
+    loading: () => <CompareSkeleton />,
+    ssr: false,
+  },
+);
 
 // Type definitions - compatible with FavoritesInsights component
 interface HiddenGemsQuirk {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { SwipeContainer } from "../../components/swipe/SwipeContainer";
+import dynamic from "next/dynamic";
 import SwipeErrorBoundary from "../../components/swipe/SwipeErrorBoundary";
 import { useSwipeDevice } from "../../hooks/useSwipeDevice";
 import { swipeMetrics } from "../../utils/swipeMetrics";
@@ -10,7 +10,28 @@ import * as Sentry from "@sentry/nextjs";
 import { type Dog } from "../../types/dog";
 import { type ApiSwipeResponse } from "../../types/apiDog";
 import { transformApiDogsToDogs } from "../../utils/dogTransformer";
-import DogDetailModalUpgraded from "../../components/dogs/mobile/detail/DogDetailModalUpgraded";
+import SwipeContainerSkeleton from "../../components/ui/SwipeContainerSkeleton";
+import DogDetailModalSkeleton from "../../components/ui/DogDetailModalSkeleton";
+
+// Dynamic imports for large components (code splitting)
+const SwipeContainer = dynamic(
+  () =>
+    import("../../components/swipe/SwipeContainer").then(
+      (mod) => mod.SwipeContainer,
+    ),
+  {
+    loading: () => <SwipeContainerSkeleton />,
+    ssr: false,
+  },
+);
+
+const DogDetailModalUpgraded = dynamic(
+  () => import("../../components/dogs/mobile/detail/DogDetailModalUpgraded"),
+  {
+    loading: () => <DogDetailModalSkeleton />,
+    ssr: false,
+  },
+);
 
 export default function SwipePage() {
   const canUseSwipe = useSwipeDevice();
