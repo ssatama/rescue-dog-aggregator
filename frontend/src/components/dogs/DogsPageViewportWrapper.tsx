@@ -6,6 +6,7 @@ import { useViewport } from "@/hooks/useViewport";
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { type Dog } from "@/types/dog";
+import DogDetailModalSkeleton from "@/components/ui/DogDetailModalSkeleton";
 
 // Type declaration for the JavaScript component
 interface DogCardOptimizedProps {
@@ -45,7 +46,7 @@ const DogDetailModal = dynamic(
   () => import("./mobile/detail/DogDetailModalUpgraded"),
   {
     ssr: false,
-    loading: () => null,
+    loading: () => <DogDetailModalSkeleton />,
   },
 );
 

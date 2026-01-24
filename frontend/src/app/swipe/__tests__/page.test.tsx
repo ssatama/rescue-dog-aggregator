@@ -4,27 +4,37 @@ import SwipePage from "../page";
 import { useRouter } from "next/navigation";
 import { useSwipeDevice } from "../../../hooks/useSwipeDevice";
 
-// Mock next/dynamic to render components synchronously in tests
+// Mock next/dynamic to render mocked components synchronously
 jest.mock("next/dynamic", () => {
-  return function dynamic(
-    importFn: () => Promise<{ default: React.ComponentType<unknown> }>,
-    _options?: { loading?: () => React.ReactNode; ssr?: boolean },
-  ) {
-    let Component: React.ComponentType<unknown> | null = null;
+  return jest.fn((importFn: () => Promise<unknown>) => {
+    // Extract the import path from the function to determine which mock to use
+    const fnString = importFn.toString();
 
-    // Synchronously resolve the import for testing
-    importFn().then((mod) => {
-      Component = mod.default || mod;
-    });
+    // Match component based on import path in the function string
+    if (fnString.includes("SwipeContainer")) {
+      return function MockedSwipeContainer(props: Record<string, unknown>) {
+        const { SwipeContainer } =
+          jest.requireMock<{ SwipeContainer: React.ComponentType<unknown> }>(
+            "../../../components/swipe/SwipeContainer",
+          );
+        return React.createElement(SwipeContainer, props);
+      };
+    }
 
-    return function DynamicComponent(props: Record<string, unknown>) {
-      if (Component) {
-        return <Component {...props} />;
-      }
-      // Return loading component or null while resolving
+    if (fnString.includes("DogDetailModalUpgraded")) {
+      return function MockedDogDetailModal(props: Record<string, unknown>) {
+        const mod = jest.requireMock<{ default: React.ComponentType<unknown> }>(
+          "../../../components/dogs/mobile/detail/DogDetailModalUpgraded",
+        );
+        return React.createElement(mod.default, props);
+      };
+    }
+
+    // Default: return null for unknown components
+    return function UnknownDynamicComponent() {
       return null;
     };
-  };
+  });
 });
 
 // Mock the modules
@@ -77,6 +87,11 @@ jest.mock(
 jest.mock("../../../components/ui/SwipeContainerSkeleton", () => ({
   __esModule: true,
   default: () => <div>Loading...</div>,
+}));
+
+jest.mock("../../../components/ui/DogDetailModalSkeleton", () => ({
+  __esModule: true,
+  default: () => <div data-testid="dog-detail-modal-skeleton">Loading modal...</div>,
 }));
 
 describe("SwipePage", () => {

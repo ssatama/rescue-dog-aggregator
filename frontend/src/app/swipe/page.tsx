@@ -11,6 +11,7 @@ import { type Dog } from "../../types/dog";
 import { type ApiSwipeResponse } from "../../types/apiDog";
 import { transformApiDogsToDogs } from "../../utils/dogTransformer";
 import SwipeContainerSkeleton from "../../components/ui/SwipeContainerSkeleton";
+import DogDetailModalSkeleton from "../../components/ui/DogDetailModalSkeleton";
 
 // Dynamic imports for large components (code splitting)
 const SwipeContainer = dynamic(
@@ -27,7 +28,7 @@ const SwipeContainer = dynamic(
 const DogDetailModalUpgraded = dynamic(
   () => import("../../components/dogs/mobile/detail/DogDetailModalUpgraded"),
   {
-    loading: () => null,
+    loading: () => <DogDetailModalSkeleton />,
     ssr: false,
   },
 );

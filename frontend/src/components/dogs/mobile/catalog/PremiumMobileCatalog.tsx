@@ -27,15 +27,6 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useFavorites } from "@/hooks/useFavorites";
 import { cn } from "@/lib/utils";
 import { safeStorage } from "@/utils/safeStorage";
-
-// Dynamic import for large modal component (consistent with DogsPageViewportWrapper)
-const DogDetailModalUpgraded = dynamic(
-  () => import("../detail/DogDetailModalUpgraded"),
-  {
-    loading: () => null,
-    ssr: false,
-  },
-);
 import { getPersonalityTraitColor } from "@/utils/personalityColors";
 import {
   formatBreed,
@@ -48,6 +39,21 @@ import { type Dog } from "@/types/dog";
 import MobileFilterDrawer from "@/components/filters/MobileFilterDrawer";
 import { Button } from "@/components/ui/button";
 import { UI_CONSTANTS } from "@/constants/viewport";
+import DogDetailModalSkeleton from "@/components/ui/DogDetailModalSkeleton";
+
+// Dynamic imports for large components (code splitting)
+const DogDetailModalUpgraded = dynamic(
+  () => import("../detail/DogDetailModalUpgraded"),
+  {
+    loading: () => <DogDetailModalSkeleton />,
+    ssr: false,
+  },
+);
+
+const MobileCatalogErrorBoundary = dynamic(
+  () => import("@/components/error/MobileCatalogErrorBoundary"),
+  { ssr: false },
+);
 
 interface PremiumMobileCatalogProps {
   dogs: Dog[];
@@ -432,23 +438,25 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
         </div>
       </div>
 
-      {/* Add Dog Detail Modal */}
-      <DogDetailModalUpgraded
-        dog={selectedDog}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onNavigate={handleModalNavigate}
-        hasNext={
-          selectedDog
-            ? dogs.findIndex((d) => d.id === selectedDog.id) < dogs.length - 1
-            : false
-        }
-        hasPrev={
-          selectedDog
-            ? dogs.findIndex((d) => d.id === selectedDog.id) > 0
-            : false
-        }
-      />
+      {/* Add Dog Detail Modal with error boundary */}
+      <MobileCatalogErrorBoundary>
+        <DogDetailModalUpgraded
+          dog={selectedDog}
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          onNavigate={handleModalNavigate}
+          hasNext={
+            selectedDog
+              ? dogs.findIndex((d) => d.id === selectedDog.id) < dogs.length - 1
+              : false
+          }
+          hasPrev={
+            selectedDog
+              ? dogs.findIndex((d) => d.id === selectedDog.id) > 0
+              : false
+          }
+        />
+      </MobileCatalogErrorBoundary>
     </>
   );
 };
