@@ -14,8 +14,10 @@ import {
   generateSEODescription,
   generateFallbackDescription,
 } from "../../../utils/descriptionQuality";
+import { getDetailHeroImageWithPosition } from "../../../utils/imageUtils";
 import DogDetailClient from "./DogDetailClient";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
+import ImagePreload from "../../../components/seo/ImagePreload";
 
 /**
  * Generate metadata for dog detail page
@@ -223,10 +225,24 @@ async function DogDetailPageAsync(props) {
     }
   }
 
+  // Compute optimized hero image URL for preload
+  let heroImageUrl = null;
+  if (initialDog?.primary_image_url) {
+    try {
+      heroImageUrl = getDetailHeroImageWithPosition(initialDog.primary_image_url, false).src;
+    } catch (error) {
+      console.error("[DogDetailPageAsync] Hero image URL computation failed:", error);
+    }
+  }
+
   return (
-    <Suspense fallback={<DogDetailSkeleton />}>
-      <DogDetailClient initialDog={initialDog} />
-    </Suspense>
+    <>
+      {/* Preload hero image for LCP optimization */}
+      {heroImageUrl && <ImagePreload src={heroImageUrl} />}
+      <Suspense fallback={<DogDetailSkeleton />}>
+        <DogDetailClient initialDog={initialDog} />
+      </Suspense>
+    </>
   );
 }
 

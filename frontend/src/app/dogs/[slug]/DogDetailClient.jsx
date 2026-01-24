@@ -504,6 +504,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                             src={dog.primary_image_url}
                             alt={`${dog.name} - Hero Image`}
                             className="mb-6 shadow-xl"
+                            priority={true}
                             onClick={() => {
                               // Track image view when hero image is clicked
                               if (dog?.id) {

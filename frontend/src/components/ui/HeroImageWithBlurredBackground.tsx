@@ -1,6 +1,8 @@
-import React, { memo } from "react";
+import React, { memo, useState, useMemo } from "react";
+import Image from "next/image";
 import { useAdvancedImage } from "../../hooks/useAdvancedImage";
 import { useReducedMotion } from "../../hooks/useScrollAnimation";
+import { getDetailHeroImageWithPosition } from "../../utils/imageUtils";
 
 export interface HeroImageWithBlurredBackgroundProps {
   /** Image source URL */
@@ -13,6 +15,10 @@ export interface HeroImageWithBlurredBackgroundProps {
   onError?: () => void;
   /** Whether to use gradient fallback on error */
   useGradientFallback?: boolean;
+  /** Click handler for the image */
+  onClick?: () => void;
+  /** Priority loading - renders immediately with fetchpriority="high" for LCP optimization */
+  priority?: boolean;
 }
 
 const HeroImageWithBlurredBackground = memo(
@@ -22,8 +28,22 @@ const HeroImageWithBlurredBackground = memo(
     className = "",
     onError = () => {},
     useGradientFallback = false,
+    onClick,
+    priority = false,
   }: HeroImageWithBlurredBackgroundProps) {
     const prefersReducedMotion = useReducedMotion();
+    const [priorityImageError, setPriorityImageError] = useState(false);
+
+    // For priority images, compute optimized src directly without waiting for hook
+    const priorityImageData = useMemo(() => {
+      if (!priority) return null;
+      try {
+        return getDetailHeroImageWithPosition(src, true);
+      } catch (error) {
+        console.error("[HeroImageWithBlurredBackground] Priority image computation failed:", error);
+        return { src, position: "center center" };
+      }
+    }, [priority, src]);
 
     const {
       imageLoaded,
@@ -104,38 +124,58 @@ const HeroImageWithBlurredBackground = memo(
       <div
         className={`relative w-full aspect-square md:aspect-[16/9] rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-md ${className}`}
         data-testid="hero-image-clean"
+        onClick={onClick}
       >
         {/* Image container for centering and TDD compliance */}
         <div
           className="flex items-center justify-center absolute inset-0"
           data-testid="image-container"
         >
-          {/* Main Image */}
-          <img
-            key={`hero-${currentSrc}`}
-            src={currentSrc || "/placeholder_dog.svg"}
-            alt={alt}
-            className={`
-            w-full h-full object-cover md:object-contain transition-all duration-700
-            ${imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}
-            ${hasError ? "hidden" : ""}
-          `}
-            style={{
-              objectPosition: position,
-              transform:
-                imageLoaded && !prefersReducedMotion
-                  ? "scale(1)"
-                  : "scale(1.05)",
-            }}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
-            loading={networkStrategy.loading || "eager"}
-            decoding="async"
-            data-testid="hero-image"
-          />
+          {/* Priority mode: Use Next.js Image for automatic optimization and LCP */}
+          {priority ? (
+            <Image
+              key={`hero-priority-${src}`}
+              src={priorityImageData?.src || src}
+              alt={alt}
+              fill
+              priority
+              unoptimized
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 896px"
+              className="object-cover md:object-contain"
+              style={{
+                objectPosition: priorityImageData?.position || "center",
+              }}
+              onError={() => setPriorityImageError(true)}
+              data-testid="hero-image"
+            />
+          ) : (
+            /* Standard mode: Use raw img with advanced loading hook */
+            <img
+              key={`hero-${currentSrc}`}
+              src={currentSrc || "/placeholder_dog.svg"}
+              alt={alt}
+              className={`
+                w-full h-full object-cover md:object-contain transition-all duration-700
+                ${imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}
+                ${hasError ? "hidden" : ""}
+              `}
+              style={{
+                objectPosition: position,
+                transform:
+                  imageLoaded && !prefersReducedMotion
+                    ? "scale(1)"
+                    : "scale(1.05)",
+              }}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
+              loading={networkStrategy.loading || "eager"}
+              decoding="async"
+              data-testid="hero-image"
+            />
+          )}
         </div>
 
-        {/* Loading Shimmer Effect */}
-        {(isLoading || isRetrying) && !imageLoaded && (
+        {/* Loading shimmer skipped for priority images - Next.js Image handles loading internally to avoid CLS */}
+        {!priority && (isLoading || isRetrying) && !imageLoaded && (
           <div
             className={`absolute inset-0 bg-gradient-to-r from-gray-200 dark:from-gray-700 via-gray-100 dark:via-gray-600 to-gray-200 dark:to-gray-700 ${!prefersReducedMotion ? "animate-shimmer" : ""} transition-opacity duration-300 ${isLoading ? "opacity-100" : "opacity-0"}`}
             style={{
@@ -150,7 +190,7 @@ const HeroImageWithBlurredBackground = memo(
         )}
 
         {/* Error State */}
-        {hasError && (
+        {(hasError || priorityImageError) && (
           <div
             className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800"
             data-testid="error-state"
