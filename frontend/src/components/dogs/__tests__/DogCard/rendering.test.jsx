@@ -603,7 +603,7 @@ describe("DogCard Rendering", () => {
       expect(shipsToElement).toHaveTextContent("+3 more");
     });
 
-    test("does not display ships-to when information is missing", () => {
+    test("reserves ships-to container space even when no data (CLS prevention)", () => {
       const noShipDog = {
         id: 3,
         name: "Bella",
@@ -620,6 +620,7 @@ describe("DogCard Rendering", () => {
       const shipsToElement = screen.queryByTestId("ships-to-display");
       expect(shipsToElement).toBeInTheDocument();
       expect(shipsToElement).toBeEmptyDOMElement();
+      expect(shipsToElement).toHaveClass("min-h-[40px]");
     });
 
     test("displays adoptable text with correct styling", () => {
@@ -767,7 +768,7 @@ describe("DogCard Rendering", () => {
       expect(friendlyTrait).toHaveAttribute("title", "Friendly");
     });
 
-    test("does not display traits section when no traits available", () => {
+    test("reserves traits container space even when no data (CLS prevention)", () => {
       const noTraitsDog = {
         id: 2,
         name: "Luna",
@@ -780,6 +781,7 @@ describe("DogCard Rendering", () => {
       const traitsElement = screen.queryByTestId("traits-display");
       expect(traitsElement).toBeInTheDocument();
       expect(traitsElement).toBeEmptyDOMElement();
+      expect(traitsElement).toHaveClass("min-h-[32px]");
     });
   });
 });
