@@ -1,4 +1,5 @@
 import React, { memo } from "react";
+import Image from "next/image";
 import { useAdvancedImage } from "../../hooks/useAdvancedImage";
 import { useReducedMotion } from "../../hooks/useScrollAnimation";
 import { getDetailHeroImageWithPosition } from "../../utils/imageUtils";
@@ -123,30 +124,45 @@ const HeroImageWithBlurredBackground = memo(
           className="flex items-center justify-center absolute inset-0"
           data-testid="image-container"
         >
-          {/* Main Image - Priority mode renders immediately for LCP optimization */}
-          <img
-            key={priority ? `hero-priority-${src}` : `hero-${currentSrc}`}
-            src={priority ? (priorityImageData?.src || src) : (currentSrc || "/placeholder_dog.svg")}
-            alt={alt}
-            className={`
-              w-full h-full object-cover md:object-contain
-              ${priority ? "" : "transition-all duration-700"}
-              ${priority || imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}
-              ${!priority && hasError ? "hidden" : ""}
-            `}
-            style={{
-              objectPosition: priority ? (priorityImageData?.position || "center") : position,
-              transform:
-                (priority || imageLoaded) && !prefersReducedMotion
-                  ? "scale(1)"
-                  : "scale(1.05)",
-            }}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
-            loading={priority ? "eager" : (networkStrategy.loading || "eager")}
-            decoding={priority ? "sync" : "async"}
-            fetchPriority={priority ? "high" : undefined}
-            data-testid="hero-image"
-          />
+          {/* Priority mode: Use Next.js Image for automatic optimization and LCP */}
+          {priority ? (
+            <Image
+              key={`hero-priority-${src}`}
+              src={priorityImageData?.src || src}
+              alt={alt}
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 896px"
+              className="object-cover md:object-contain"
+              style={{
+                objectPosition: priorityImageData?.position || "center",
+              }}
+              data-testid="hero-image"
+            />
+          ) : (
+            /* Standard mode: Use raw img with advanced loading hook */
+            <img
+              key={`hero-${currentSrc}`}
+              src={currentSrc || "/placeholder_dog.svg"}
+              alt={alt}
+              className={`
+                w-full h-full object-cover md:object-contain transition-all duration-700
+                ${imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}
+                ${hasError ? "hidden" : ""}
+              `}
+              style={{
+                objectPosition: position,
+                transform:
+                  imageLoaded && !prefersReducedMotion
+                    ? "scale(1)"
+                    : "scale(1.05)",
+              }}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
+              loading={networkStrategy.loading || "eager"}
+              decoding="async"
+              data-testid="hero-image"
+            />
+          )}
         </div>
 
         {/* Loading Shimmer Effect - Skip for priority images */}
