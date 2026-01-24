@@ -1,6 +1,7 @@
 import React, { memo } from "react";
 import { useAdvancedImage } from "../../hooks/useAdvancedImage";
 import { useReducedMotion } from "../../hooks/useScrollAnimation";
+import { getDetailHeroImageWithPosition } from "../../utils/imageUtils";
 
 export interface HeroImageWithBlurredBackgroundProps {
   /** Image source URL */
@@ -13,6 +14,10 @@ export interface HeroImageWithBlurredBackgroundProps {
   onError?: () => void;
   /** Whether to use gradient fallback on error */
   useGradientFallback?: boolean;
+  /** Click handler for the image */
+  onClick?: () => void;
+  /** Priority loading - renders immediately with fetchpriority="high" for LCP optimization */
+  priority?: boolean;
 }
 
 const HeroImageWithBlurredBackground = memo(
@@ -22,8 +27,15 @@ const HeroImageWithBlurredBackground = memo(
     className = "",
     onError = () => {},
     useGradientFallback = false,
+    onClick,
+    priority = false,
   }: HeroImageWithBlurredBackgroundProps) {
     const prefersReducedMotion = useReducedMotion();
+
+    // For priority images, compute optimized src directly without waiting for hook
+    const priorityImageData = priority
+      ? getDetailHeroImageWithPosition(src, true)
+      : null;
 
     const {
       imageLoaded,
@@ -104,38 +116,41 @@ const HeroImageWithBlurredBackground = memo(
       <div
         className={`relative w-full aspect-square md:aspect-[16/9] rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-md ${className}`}
         data-testid="hero-image-clean"
+        onClick={onClick}
       >
         {/* Image container for centering and TDD compliance */}
         <div
           className="flex items-center justify-center absolute inset-0"
           data-testid="image-container"
         >
-          {/* Main Image */}
+          {/* Main Image - Priority mode renders immediately for LCP optimization */}
           <img
-            key={`hero-${currentSrc}`}
-            src={currentSrc || "/placeholder_dog.svg"}
+            key={priority ? `hero-priority-${src}` : `hero-${currentSrc}`}
+            src={priority ? (priorityImageData?.src || src) : (currentSrc || "/placeholder_dog.svg")}
             alt={alt}
             className={`
-            w-full h-full object-cover md:object-contain transition-all duration-700
-            ${imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}
-            ${hasError ? "hidden" : ""}
-          `}
+              w-full h-full object-cover md:object-contain
+              ${priority ? "" : "transition-all duration-700"}
+              ${priority || imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}
+              ${!priority && hasError ? "hidden" : ""}
+            `}
             style={{
-              objectPosition: position,
+              objectPosition: priority ? (priorityImageData?.position || "center") : position,
               transform:
-                imageLoaded && !prefersReducedMotion
+                (priority || imageLoaded) && !prefersReducedMotion
                   ? "scale(1)"
                   : "scale(1.05)",
             }}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
-            loading={networkStrategy.loading || "eager"}
-            decoding="async"
+            loading={priority ? "eager" : (networkStrategy.loading || "eager")}
+            decoding={priority ? "sync" : "async"}
+            fetchPriority={priority ? "high" : undefined}
             data-testid="hero-image"
           />
         </div>
 
-        {/* Loading Shimmer Effect */}
-        {(isLoading || isRetrying) && !imageLoaded && (
+        {/* Loading Shimmer Effect - Skip for priority images */}
+        {!priority && (isLoading || isRetrying) && !imageLoaded && (
           <div
             className={`absolute inset-0 bg-gradient-to-r from-gray-200 dark:from-gray-700 via-gray-100 dark:via-gray-600 to-gray-200 dark:to-gray-700 ${!prefersReducedMotion ? "animate-shimmer" : ""} transition-opacity duration-300 ${isLoading ? "opacity-100" : "opacity-0"}`}
             style={{
@@ -149,8 +164,8 @@ const HeroImageWithBlurredBackground = memo(
           </div>
         )}
 
-        {/* Error State */}
-        {hasError && (
+        {/* Error State - Only show for non-priority images */}
+        {!priority && hasError && (
           <div
             className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800"
             data-testid="error-state"
