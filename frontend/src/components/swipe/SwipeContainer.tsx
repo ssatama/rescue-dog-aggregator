@@ -638,20 +638,7 @@ export function SwipeContainer({
         {/* Main swipe container - responsive for small screens */}
         <div className="flex-1 flex flex-col items-center justify-start p-2 sm:p-4 pb-8">
           <div
-            className="relative w-full flex flex-col"
-            style={{
-              maxWidth: (() => {
-                if (typeof window === "undefined") return "400px";
-                const vw = window.innerWidth;
-                if (vw < 640) return "calc(100vw - 2rem)"; // Phones: full width minus padding
-                if (vw < 768) return "min(500px, calc(100vw - 3rem))"; // Large phones
-                if (vw < 1024) return "min(600px, calc(100vw - 4rem))"; // Tablets
-                if (vw < 1280) return "700px"; // Large tablets
-                if (vw < 1536) return "600px"; // Small desktop
-                return "650px"; // Large desktop - constrained for optimal viewing
-              })(),
-              minHeight: "300px",
-            }}
+            className="relative w-full flex flex-col max-w-[calc(100vw-1rem)] sm:max-w-[min(500px,calc(100vw-1.5rem))] md:max-w-[min(600px,calc(100vw-2rem))] lg:max-w-[700px] xl:max-w-[600px] 2xl:max-w-[650px] min-h-[300px]"
           >
             <div
               key={`dog-${currentDog.id}`}
