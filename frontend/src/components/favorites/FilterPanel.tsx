@@ -109,7 +109,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
     const breeds = dogs
       .map((dog) => dog.standardized_breed || dog.breed)
       .filter((breed): breed is string => !!breed);
-    return [...new Set(breeds)].sort();
+    return [...new Set(breeds)].toSorted();
   }, [dogs]);
 
   const uniqueSizes = useMemo(() => {
@@ -117,7 +117,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       .map((dog) => dog.standardized_size || dog.size)
       .filter((size): size is string => !!size);
     const sizeOrder = ["Tiny", "Small", "Medium", "Large", "XLarge"];
-    return [...new Set(sizes)].sort((a, b) => {
+    return [...new Set(sizes)].toSorted((a, b) => {
       const aIndex = sizeOrder.indexOf(a);
       const bIndex = sizeOrder.indexOf(b);
       if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
@@ -131,7 +131,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
     const orgs = dogs
       .map((dog) => dog.organization_name || dog.organization?.name)
       .filter((org): org is string => !!org);
-    return [...new Set(orgs)].sort();
+    return [...new Set(orgs)].toSorted();
   }, [dogs]);
 
   // Calculate filtered dogs using debounced values
