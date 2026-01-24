@@ -4,6 +4,29 @@ import SwipePage from "../page";
 import { useRouter } from "next/navigation";
 import { useSwipeDevice } from "../../../hooks/useSwipeDevice";
 
+// Mock next/dynamic to render components synchronously in tests
+jest.mock("next/dynamic", () => {
+  return function dynamic(
+    importFn: () => Promise<{ default: React.ComponentType<unknown> }>,
+    _options?: { loading?: () => React.ReactNode; ssr?: boolean },
+  ) {
+    let Component: React.ComponentType<unknown> | null = null;
+
+    // Synchronously resolve the import for testing
+    importFn().then((mod) => {
+      Component = mod.default || mod;
+    });
+
+    return function DynamicComponent(props: Record<string, unknown>) {
+      if (Component) {
+        return <Component {...props} />;
+      }
+      // Return loading component or null while resolving
+      return null;
+    };
+  };
+});
+
 // Mock the modules
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
@@ -39,7 +62,21 @@ jest.mock("@sentry/nextjs", () => ({
 }));
 
 jest.mock("../../../components/swipe/SwipeContainer", () => ({
+  __esModule: true,
   SwipeContainer: () => <div>Swipe Container</div>,
+}));
+
+jest.mock(
+  "../../../components/dogs/mobile/detail/DogDetailModalUpgraded",
+  () => ({
+    __esModule: true,
+    default: () => null,
+  }),
+);
+
+jest.mock("../../../components/ui/SwipeContainerSkeleton", () => ({
+  __esModule: true,
+  default: () => <div>Loading...</div>,
 }));
 
 describe("SwipePage", () => {
