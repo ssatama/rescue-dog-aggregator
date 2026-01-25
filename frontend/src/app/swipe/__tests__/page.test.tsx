@@ -167,4 +167,70 @@ describe("SwipePageClient", () => {
     render(<SwipePageClient {...defaultProps} hasUrlFilters={false} />);
     expect(screen.getByText("Swipe Container")).toBeInTheDocument();
   });
+
+  describe("localStorage migration", () => {
+    beforeEach(() => {
+      localStorage.clear();
+      jest.clearAllMocks();
+      mockUseSwipeDevice.mockReturnValue(true);
+    });
+
+    it("should migrate localStorage filters to URL on first visit", () => {
+      localStorage.setItem(
+        "swipeFilters",
+        JSON.stringify({ country: "GB", sizes: ["small"], ages: [] }),
+      );
+
+      render(<SwipePageClient {...defaultProps} hasUrlFilters={false} />);
+
+      expect(mockReplace).toHaveBeenCalledWith("/swipe?country=GB&size=small");
+    });
+
+    it("should NOT migrate when URL already has filters", () => {
+      localStorage.setItem(
+        "swipeFilters",
+        JSON.stringify({ country: "DE", sizes: [], ages: [] }),
+      );
+
+      render(
+        <SwipePageClient
+          {...defaultProps}
+          hasUrlFilters={true}
+          initialFilters={{ country: "GB", sizes: [], ages: [] }}
+        />,
+      );
+
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it("should not migrate when localStorage has no country", () => {
+      localStorage.setItem(
+        "swipeFilters",
+        JSON.stringify({ country: "", sizes: [], ages: [] }),
+      );
+
+      render(<SwipePageClient {...defaultProps} hasUrlFilters={false} />);
+
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it("should not migrate when localStorage is empty", () => {
+      render(<SwipePageClient {...defaultProps} hasUrlFilters={false} />);
+
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it("should include multiple sizes in migration URL", () => {
+      localStorage.setItem(
+        "swipeFilters",
+        JSON.stringify({ country: "FR", sizes: ["small", "medium"], ages: ["puppy"] }),
+      );
+
+      render(<SwipePageClient {...defaultProps} hasUrlFilters={false} />);
+
+      expect(mockReplace).toHaveBeenCalledWith(
+        "/swipe?country=FR&size=small&size=medium&age=puppy",
+      );
+    });
+  });
 });

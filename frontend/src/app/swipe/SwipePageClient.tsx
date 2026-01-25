@@ -113,8 +113,6 @@ export default function SwipePageClient({
   );
 
   const handleSwipe = (direction: "left" | "right", dog: Dog) => {
-    console.log(`Swiped ${direction} on ${dog.name}`);
-
     swipeMetrics.trackSwipe(direction, dog.id.toString());
     setTotalSwiped((prev) => {
       const newTotal = prev + 1;

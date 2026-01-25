@@ -109,7 +109,7 @@ export function SwipeContainer({
     if (initialFilters && initialFilters.country) {
       setFilters(initialFilters);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only sync initialFilters on mount, setFilters is stable
   }, []);
 
   // Notify parent of initial dogs on mount
@@ -124,7 +124,7 @@ export function SwipeContainer({
       });
       onDogsLoadedRef.current(filteredDogs);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only notify parent of initial dogs on mount
   }, []);
 
   // Preload next images when dogs change or current index changes
