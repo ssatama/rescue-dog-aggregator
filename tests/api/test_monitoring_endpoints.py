@@ -43,6 +43,12 @@ class TestHealthCheckEndpoint:
         assert "response_time_ms" in db_status
         assert db_status["status"] in ["connected", "error"]
 
+    def test_health_check_head_method(self, client):
+        """Test HEAD method works for uptime monitoring services like UptimeRobot."""
+        response = client.head("/health")
+        assert response.status_code == 200
+        assert response.content == b""
+
 
 @pytest.mark.slow
 @pytest.mark.database

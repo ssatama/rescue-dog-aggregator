@@ -267,7 +267,7 @@ async def root():
     }
 
 
-@app.get("/health", tags=["health"])
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["health"])
 async def health_check(db_conn=Depends(get_database_connection)):
     """
     Basic health check endpoint for load balancers and monitoring systems.
