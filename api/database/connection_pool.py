@@ -18,7 +18,6 @@ import threading
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Optional
 
 import psycopg2
 from psycopg2 import pool
@@ -37,7 +36,7 @@ POOL_ACQUIRE_RETRY_DELAY = float(os.getenv("DB_POOL_ACQUIRE_RETRY_DELAY", "0.1")
 class ConnectionPool:
     """Thread-safe connection pool manager with proper initialization."""
 
-    _instance: Optional["ConnectionPool"] = None
+    _instance: "ConnectionPool | None" = None
     _lock = threading.Lock()
     _initialization_lock = threading.Lock()
     _initialized = False
@@ -178,8 +177,8 @@ class ConnectionPool:
                     logger.warning(f"Stale connection detected, returning to pool and retrying (attempt {attempt + 1})")
                     try:
                         self._pool.putconn(conn, close=True)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.error(f"Failed to return stale connection to pool: {e}", exc_info=True)
                     continue
 
                 if attempt > 0:

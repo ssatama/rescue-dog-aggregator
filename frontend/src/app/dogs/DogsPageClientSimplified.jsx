@@ -621,8 +621,11 @@ export default function DogsPageClientSimplified({
         setIsFilterTransition(false);
       });
     } catch (err) {
-      // Ignore aborted requests
-      if (err.name === 'AbortError') return;
+      // Ignore aborted requests but still reset transition state
+      if (err.name === 'AbortError') {
+        setIsFilterTransition(false);
+        return;
+      }
       reportError(err, { context: "fetchDogsWithFilters", pageNum });
       setError("Failed to load dogs");
       setIsFilterTransition(false);
