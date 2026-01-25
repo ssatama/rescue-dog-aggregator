@@ -3,16 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SwipeFilters } from "../../hooks/useSwipeFilters";
 import { safeStorage } from "../../utils/safeStorage";
 import { get } from "../../utils/api";
+import type { CountryOption } from "../../services/serverSwipeService";
 
 interface SwipeOnboardingProps {
   onComplete: (skipped: boolean, filters?: SwipeFilters) => void;
-}
-
-interface CountryOption {
-  value: string;
-  label: string;
-  flag: string;
-  count: number;
+  availableCountries?: CountryOption[];
 }
 
 interface SizeOption {
@@ -79,24 +74,32 @@ const AGES: SizeOption[] = [
   { value: "senior", label: "Senior", icon: "🐕‍🦺" },
 ];
 
-export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
+export default function SwipeOnboarding({
+  onComplete,
+  availableCountries,
+}: SwipeOnboardingProps) {
   const [step, setStep] = useState(1);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedAges, setSelectedAges] = useState<string[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [countries, setCountries] = useState<CountryOption[]>([]);
+  const [countries, setCountries] = useState<CountryOption[]>(
+    availableCountries || [],
+  );
   const [sizesWithCounts, setSizesWithCounts] = useState<SizeOption[]>(SIZES);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!availableCountries);
   const [showAllCountries, setShowAllCountries] = useState(false);
 
-  // Fetch available countries dynamically
+  // Fetch available countries dynamically if not provided via props
   useEffect(() => {
+    if (availableCountries && availableCountries.length > 0) {
+      return;
+    }
+
     const fetchAvailableCountries = async () => {
       try {
         const data = await get("/api/dogs/available-countries");
 
-        // Transform API response to CountryOption format
         interface CountryResponse {
           code: string;
           name: string;
@@ -107,7 +110,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
           (country: CountryResponse) => ({
             value: country.code,
             label: country.name,
-            flag: COUNTRY_FLAGS[country.code] || "🏳️",
+            flag: COUNTRY_FLAGS[country.code] || "\u{1F3F3}\u{FE0F}",
             count: country.dog_count || country.dogCount,
           }),
         );
@@ -115,7 +118,6 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
         setCountries(countriesWithCounts);
       } catch (error) {
         console.error("Failed to fetch available countries:", error);
-        // Fallback to empty list
         setCountries([]);
       } finally {
         setLoading(false);
@@ -123,7 +125,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
     };
 
     fetchAvailableCountries();
-  }, []);
+  }, [availableCountries]);
 
   // Fetch size counts when country is selected
   useEffect(() => {
