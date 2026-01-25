@@ -1,0 +1,177 @@
+import { getApiUrl } from "../utils/apiConfig";
+import type { Dog } from "../types/dog";
+import type { SwipeFilters } from "../hooks/useSwipeFilters";
+import { transformApiDogsToDogs } from "../utils/dogTransformer";
+import { getCountryFlag } from "../utils/countryUtils";
+import * as Sentry from "@sentry/nextjs";
+
+const API_URL = getApiUrl();
+
+export interface CountryOption {
+  value: string;
+  label: string;
+  flag: string;
+  count: number;
+}
+
+export interface SwipeDogsResponse {
+  dogs: Dog[];
+  total: number;
+}
+
+export async function getSwipeDogs(
+  filters: Partial<SwipeFilters>,
+): Promise<SwipeDogsResponse> {
+  const params = new URLSearchParams();
+
+  if (filters.country) {
+    params.append("adoptable_to_country", filters.country);
+  }
+
+  if (filters.sizes && filters.sizes.length > 0) {
+    filters.sizes.forEach((size) => {
+      params.append("size[]", size);
+    });
+  }
+
+  if (filters.ages && filters.ages.length > 0) {
+    filters.ages.forEach((age) => {
+      params.append("age[]", age);
+    });
+  }
+
+  const url = `${API_URL}/api/dogs/swipe?${params.toString()}`;
+
+  try {
+    const response = await fetch(url, {
+      next: {
+        revalidate: 300,
+        tags: ["swipe-dogs"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch swipe dogs: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const transformedDogs = transformApiDogsToDogs(data.dogs || []);
+
+    return {
+      dogs: transformedDogs,
+      total: data.total || transformedDogs.length,
+    };
+  } catch (error) {
+    console.error("Error fetching swipe dogs:", error);
+    Sentry.withScope((scope) => {
+      scope.setTag("feature", "swipe");
+      scope.setTag("operation", "getSwipeDogs");
+      scope.setContext("request", { url, filters });
+      Sentry.captureException(error);
+    });
+    return { dogs: [], total: 0 };
+  }
+}
+
+export async function getAvailableCountries(): Promise<CountryOption[]> {
+  const url = `${API_URL}/api/dogs/available-countries`;
+
+  try {
+    const response = await fetch(url, {
+      next: {
+        revalidate: 3600,
+        tags: ["available-countries"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch available countries: ${response.statusText}`,
+      );
+    }
+
+    const data = await response.json();
+
+    interface CountryResponse {
+      code: string;
+      name: string;
+      dog_count?: number;
+      dogCount?: number;
+    }
+
+    const countries: CountryOption[] = (data.countries || data).map(
+      (country: CountryResponse) => ({
+        value: country.code,
+        label: country.name,
+        flag: getCountryFlag(country.code) || "\u{1F3F3}\u{FE0F}",
+        count: country.dog_count || country.dogCount || 0,
+      }),
+    );
+
+    return countries;
+  } catch (error) {
+    console.error("Error fetching available countries:", error);
+    Sentry.withScope((scope) => {
+      scope.setTag("feature", "swipe");
+      scope.setTag("operation", "getAvailableCountries");
+      scope.setContext("request", { url });
+      Sentry.captureException(error);
+    });
+    return [];
+  }
+}
+
+export function filtersToSearchParams(filters: SwipeFilters): string {
+  const params = new URLSearchParams();
+
+  if (filters.country) {
+    params.append("country", filters.country);
+  }
+
+  if (filters.sizes && filters.sizes.length > 0) {
+    filters.sizes.forEach((size) => {
+      params.append("size", size);
+    });
+  }
+
+  if (filters.ages && filters.ages.length > 0) {
+    filters.ages.forEach((age) => {
+      params.append("age", age);
+    });
+  }
+
+  return params.toString();
+}
+
+export function searchParamsToFilters(
+  searchParams: Record<string, string | string[] | undefined>,
+): SwipeFilters {
+  const country =
+    typeof searchParams.country === "string" ? searchParams.country : "";
+
+  const sizes: string[] = [];
+  if (searchParams.size) {
+    if (Array.isArray(searchParams.size)) {
+      sizes.push(...searchParams.size);
+    } else {
+      sizes.push(searchParams.size);
+    }
+  }
+
+  const ages: string[] = [];
+  if (searchParams.age) {
+    if (Array.isArray(searchParams.age)) {
+      ages.push(...searchParams.age);
+    } else {
+      ages.push(searchParams.age);
+    }
+  }
+
+  return { country, sizes, ages };
+}

@@ -20,6 +20,7 @@ import { safeStorage } from "../../utils/safeStorage";
 import { useTheme } from "../providers/ThemeProvider";
 import { safeToNumber } from "../../utils/dogImageHelpers";
 import { type Dog } from "../../types/dog";
+import type { CountryOption } from "../../services/serverSwipeService";
 
 // Constants
 const DOUBLE_TAP_DELAY = 300;
@@ -29,6 +30,11 @@ interface SwipeContainerProps {
   onSwipe?: (direction: "left" | "right", dog: Dog) => void;
   onCardExpanded?: (dog: Dog, index: number) => void;
   onDogsLoaded?: (dogs: Dog[]) => void;
+  initialDogs?: Dog[] | null;
+  initialFilters?: Filters;
+  needsOnboarding?: boolean;
+  onFiltersChange?: (filters: Filters) => void;
+  availableCountries?: CountryOption[];
 }
 
 export function SwipeContainer({
@@ -36,6 +42,11 @@ export function SwipeContainer({
   onSwipe,
   onCardExpanded,
   onDogsLoaded,
+  initialDogs,
+  initialFilters,
+  needsOnboarding: needsOnboardingProp,
+  onFiltersChange,
+  availableCountries,
 }: SwipeContainerProps) {
   const { theme } = useTheme();
   const { addFavorite, isFavorited } = useFavorites();
@@ -44,16 +55,28 @@ export function SwipeContainer({
     setFilters,
     isValid,
     toQueryString,
-    needsOnboarding,
+    needsOnboarding: needsOnboardingFromHook,
     completeOnboarding,
   } = useSwipeFilters();
 
-  const [dogs, setDogs] = useState<Dog[]>([]);
+  const showOnboarding = needsOnboardingProp ?? needsOnboardingFromHook;
+
+  const [dogs, setDogs] = useState<Dog[]>(() => {
+    if (initialDogs && initialDogs.length > 0) {
+      const swipedIds = new Set(
+        safeStorage.parse<number[]>("swipedDogIds", []),
+      );
+      return initialDogs.filter((dog) => {
+        const dogId = safeToNumber(dog.id);
+        return dogId !== null && !swipedIds.has(dogId);
+      });
+    }
+    return [];
+  });
   const [currentIndex, setCurrentIndex] = useState(() => {
-    // Initialize from sessionStorage to preserve navigation state
     return safeStorage.parse("swipeCurrentIndex", 0);
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!initialDogs);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [lastTap, setLastTap] = useState<number>(0);
@@ -80,6 +103,29 @@ export function SwipeContainer({
     }
     return "";
   }, [isValid, toQueryString]);
+
+  // Sync initialFilters with hook state on mount
+  useEffect(() => {
+    if (initialFilters && initialFilters.country) {
+      setFilters(initialFilters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only sync initialFilters on mount, setFilters is stable
+  }, []);
+
+  // Notify parent of initial dogs on mount
+  useEffect(() => {
+    if (initialDogs && initialDogs.length > 0 && onDogsLoadedRef.current) {
+      const swipedIds = new Set(
+        safeStorage.parse<number[]>("swipedDogIds", []),
+      );
+      const filteredDogs = initialDogs.filter((dog) => {
+        const dogId = safeToNumber(dog.id);
+        return dogId !== null && !swipedIds.has(dogId);
+      });
+      onDogsLoadedRef.current(filteredDogs);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only notify parent of initial dogs on mount
+  }, []);
 
   // Preload next images when dogs change or current index changes
   useEffect(() => {
@@ -226,9 +272,12 @@ export function SwipeContainer({
     (skipped: boolean, onboardingFilters?: Filters) => {
       if (!skipped && onboardingFilters) {
         completeOnboarding(onboardingFilters);
+        if (onFiltersChange) {
+          onFiltersChange(onboardingFilters);
+        }
       }
     },
-    [completeOnboarding],
+    [completeOnboarding, onFiltersChange],
   );
 
   const goToNext = useCallback(() => {
@@ -489,8 +538,13 @@ export function SwipeContainer({
   }, [dogs, currentIndex, lastTap, onCardExpanded, handleSwipeComplete]);
 
   // Onboarding state - check this first, before loading or empty states
-  if (needsOnboarding) {
-    return <SwipeOnboarding onComplete={handleOnboardingComplete} />;
+  if (showOnboarding) {
+    return (
+      <SwipeOnboarding
+        onComplete={handleOnboardingComplete}
+        availableCountries={availableCountries}
+      />
+    );
   }
 
   // Loading state
