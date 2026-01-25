@@ -147,18 +147,44 @@ class ConnectionPool:
             if test_conn and self._pool:
                 self._pool.putconn(test_conn)
 
+    def _check_connection_health(self, conn: psycopg2.extensions.connection) -> bool:
+        """
+        Check if a connection is still alive and usable.
+
+        Returns True if connection is healthy, False if it's stale/closed.
+        """
+        if conn is None or conn.closed:
+            return False
+
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+            return True
+        except (psycopg2.OperationalError, psycopg2.InterfaceError):
+            return False
+
     def _acquire_connection_with_retry(self) -> psycopg2.extensions.connection:
-        """Acquire a connection with retry logic for pool exhaustion."""
+        """Acquire a connection with retry logic for pool exhaustion and stale connections."""
         last_error = None
 
         for attempt in range(POOL_ACQUIRE_RETRIES):
             try:
                 conn = self._pool.getconn()
-                if conn is not None:
-                    if attempt > 0:
-                        logger.info(f"Connection acquired after {attempt + 1} attempts")
-                    return conn
-                raise pool.PoolError("Pool returned None connection")
+                if conn is None:
+                    raise pool.PoolError("Pool returned None connection")
+
+                if not self._check_connection_health(conn):
+                    logger.warning(f"Stale connection detected, returning to pool and retrying (attempt {attempt + 1})")
+                    try:
+                        self._pool.putconn(conn, close=True)
+                    except Exception:
+                        pass
+                    continue
+
+                if attempt > 0:
+                    logger.info(f"Connection acquired after {attempt + 1} attempts")
+                return conn
             except pool.PoolError as e:
                 last_error = e
                 if attempt < POOL_ACQUIRE_RETRIES - 1:
