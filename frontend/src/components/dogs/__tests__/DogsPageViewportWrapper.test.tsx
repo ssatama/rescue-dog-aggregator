@@ -101,6 +101,7 @@ jest.mock("@tanstack/react-virtual", () => ({
       })),
     options: { scrollMargin: 0 },
     measure: jest.fn(),
+    measureElement: jest.fn(),
   })),
 }));
 
