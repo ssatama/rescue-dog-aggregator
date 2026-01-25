@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { Heart } from "lucide-react";
 import { useFavorites } from "../../hooks/useFavorites";
 import { trackFavoriteToggle } from "@/lib/monitoring/breadcrumbs";
@@ -13,13 +13,14 @@ interface FavoriteButtonProps {
   orgSlug?: string;
 }
 
-export function FavoriteButton({
-  dogId,
-  dogName,
-  className = "",
-  compact = false,
-  orgSlug,
-}: FavoriteButtonProps) {
+export const FavoriteButton = memo(
+  function FavoriteButton({
+    dogId,
+    dogName,
+    className = "",
+    compact = false,
+    orgSlug,
+  }: FavoriteButtonProps) {
   const { isFavorited, toggleFavorite } = useFavorites();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -104,4 +105,9 @@ export function FavoriteButton({
       />
     </button>
   );
-}
+  },
+  (prevProps, nextProps) =>
+    prevProps.dogId === nextProps.dogId &&
+    prevProps.compact === nextProps.compact &&
+    prevProps.className === nextProps.className
+);
