@@ -32,7 +32,6 @@ const DogCardOptimized = React.memo(
   function DogCardOptimized({
     dog,
     priority = false,
-    animationDelay = 0,
     compact = false,
     embedded = false,
     isVirtualized = false,
@@ -121,7 +120,7 @@ const DogCardOptimized = React.memo(
   // Skip animation for:
   // 1. Virtualized cards (controlled by parent)
   // 2. Initial mount (prevent hydration TBT)
-  // 3. Cards beyond position 4 (stagger limit)
+  // 3. Cards at position 4+ (only first 4 cards animate)
   const shouldAnimate = !isVirtualized && canAnimate && position < 4;
 
   const animationClass = shouldAnimate
@@ -526,7 +525,8 @@ const DogCardOptimized = React.memo(
     prevProps.compact === nextProps.compact &&
     prevProps.embedded === nextProps.embedded &&
     prevProps.isVirtualized === nextProps.isVirtualized &&
-    prevProps.position === nextProps.position
+    prevProps.position === nextProps.position &&
+    prevProps.listContext === nextProps.listContext
 );
 
 export default DogCardOptimized;

@@ -53,22 +53,27 @@ export const FavoriteButton = memo(
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    async (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         e.stopPropagation();
 
-        const wasFavorited = isFav;
-        toggleFavorite(dogId, dogName);
+        setIsLoading(true);
+        try {
+          const wasFavorited = isFav;
+          await toggleFavorite(dogId, dogName);
 
-        // Track favorite toggle for keyboard interaction
-        if (dogName && orgSlug) {
-          try {
-            const action = wasFavorited ? "remove" : "add";
-            trackFavoriteToggle(action, dogId.toString(), dogName, orgSlug);
-          } catch (error) {
-            console.error("Failed to track favorite toggle:", error);
+          // Track favorite toggle for keyboard interaction
+          if (dogName && orgSlug) {
+            try {
+              const action = wasFavorited ? "remove" : "add";
+              trackFavoriteToggle(action, dogId.toString(), dogName, orgSlug);
+            } catch (error) {
+              console.error("Failed to track favorite toggle:", error);
+            }
           }
+        } finally {
+          setIsLoading(false);
         }
       }
     },
@@ -109,5 +114,7 @@ export const FavoriteButton = memo(
   (prevProps, nextProps) =>
     prevProps.dogId === nextProps.dogId &&
     prevProps.compact === nextProps.compact &&
-    prevProps.className === nextProps.className
+    prevProps.className === nextProps.className &&
+    prevProps.dogName === nextProps.dogName &&
+    prevProps.orgSlug === nextProps.orgSlug
 );

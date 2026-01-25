@@ -67,21 +67,28 @@ const DogBottomNav = dynamic(
 
 // Constants for virtualization
 const DESKTOP_COLUMNS = 4;
-const ROW_HEIGHT = 520; // Approximate height of a dog card row
+const ROW_HEIGHT = 620; // Card (~580px) + gap-4 (16px) + margin
 const OVERSCAN = 2; // Number of extra rows to render above/below viewport
 
 interface VirtualizedDesktopGridProps {
   dogs: Dog[];
   className?: string;
   onDogClick: (dog: Dog) => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }
 
 function VirtualizedDesktopGrid({
   dogs,
   className = "",
   onDogClick,
+  onLoadMore,
+  hasMore = false,
+  loadingMore = false,
 }: VirtualizedDesktopGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const rowCount = Math.ceil(dogs.length / DESKTOP_COLUMNS);
 
   const rowVirtualizer = useVirtualizer({
@@ -90,6 +97,26 @@ function VirtualizedDesktopGrid({
     estimateSize: () => ROW_HEIGHT,
     overscan: OVERSCAN,
   });
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    if (!onLoadMore || !hasMore || loadingMore) return;
+
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
+          onLoadMore();
+        }
+      },
+      { root: parentRef.current, rootMargin: "200px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [onLoadMore, hasMore, loadingMore]);
 
   return (
     <div
@@ -131,6 +158,13 @@ function VirtualizedDesktopGrid({
           );
         })}
       </div>
+      {/* Sentinel for infinite scroll detection */}
+      <div ref={sentinelRef} className="h-1" aria-hidden="true" />
+      {loadingMore && (
+        <div className="flex justify-center py-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100" />
+        </div>
+      )}
     </div>
   );
 }
@@ -153,8 +187,8 @@ interface DogsPageViewportWrapperProps {
 
 /**
  * Viewport-aware wrapper component that routes to appropriate UI
- * Desktop (1024px+): Uses existing DogCardOptimized components
- * Mobile/Tablet (<1024px): Uses new DogGrid with compact cards
+ * Desktop (1024px+): VirtualizedDesktopGrid with DogCardOptimized
+ * Mobile/Tablet (<1024px): PremiumMobileCatalog
  */
 const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
   dogs,
@@ -216,6 +250,9 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
         dogs={dogs}
         className={className}
         onDogClick={handleDogClick}
+        onLoadMore={onLoadMore}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
       />
     );
   }

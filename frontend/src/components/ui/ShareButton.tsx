@@ -59,9 +59,13 @@ const ShareButton = memo(
     } = useShare(shareOptions);
 
     const handleEmailShare = useCallback(() => {
-      const subject = encodeURIComponent(safeTitle);
-      const body = encodeURIComponent(`${safeText}\n\n${safeUrl}`);
-      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      try {
+        const subject = encodeURIComponent(safeTitle);
+        const body = encodeURIComponent(`${safeText}\n\n${safeUrl}`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      } catch (error) {
+        console.error("Failed to open email client:", error);
+      }
     }, [safeTitle, safeText, safeUrl]);
 
   // Determine button size and content based on compact mode
@@ -155,7 +159,9 @@ const ShareButton = memo(
     prevProps.title === nextProps.title &&
     prevProps.text === nextProps.text &&
     prevProps.variant === nextProps.variant &&
-    prevProps.compact === nextProps.compact
+    prevProps.compact === nextProps.compact &&
+    prevProps.size === nextProps.size &&
+    prevProps.className === nextProps.className
 );
 
 export default ShareButton;

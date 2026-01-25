@@ -80,8 +80,7 @@ jest.mock("../../../hooks/useFavorites", () => ({
 }));
 
 // Import after mocks - the component is JSX so we need to assert the type
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const DogCardOptimized = require("../DogCardOptimized").default as React.FC<any>;
+const DogCardOptimized = require("../DogCardOptimized").default as React.FC<Record<string, unknown>>;
 
 const createMockDog = (overrides = {}) => ({
   id: 1,
@@ -208,6 +207,31 @@ describe("DogCardOptimized Memoization", () => {
       const card = container.querySelector("[data-testid='dog-card-1']");
       // Animation should not be applied for position >= 4
       expect(card?.className).not.toContain("animate-delay-500");
+    });
+  });
+
+  describe("reduced motion preference", () => {
+    it("respects prefers-reduced-motion: reduce preference", () => {
+      const originalMatchMedia = window.matchMedia;
+      window.matchMedia = jest.fn().mockImplementation((query) => ({
+        matches: query === "(prefers-reduced-motion: reduce)",
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      }));
+
+      const { container } = render(
+        <DogCardOptimized dog={createMockDog()} isVirtualized={false} position={0} />
+      );
+
+      const card = container.querySelector("[data-testid='dog-card-1']");
+      expect(card?.className).not.toContain("animate-fadeInUp");
+
+      window.matchMedia = originalMatchMedia;
     });
   });
 

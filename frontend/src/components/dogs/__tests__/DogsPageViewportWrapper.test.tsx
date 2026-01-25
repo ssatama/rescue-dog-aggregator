@@ -397,6 +397,23 @@ describe("DogsPageViewportWrapper", () => {
     });
   });
 
+  describe("Edge Cases", () => {
+    beforeEach(() => {
+      (useViewport as jest.Mock).mockReturnValue({
+        isMobile: false,
+        isTablet: false,
+        isDesktop: true,
+      });
+    });
+
+    it("renders empty state gracefully when dogs array is empty", () => {
+      const { container } = render(<DogsPageViewportWrapper dogs={[]} />);
+      const scrollContainer = container.firstChild as HTMLElement;
+      expect(scrollContainer).toBeInTheDocument();
+      expect(screen.queryByTestId("dog-card-desktop")).not.toBeInTheDocument();
+    });
+  });
+
   describe("Virtual Scrolling (Desktop)", () => {
     beforeEach(() => {
       (useViewport as jest.Mock).mockReturnValue({
