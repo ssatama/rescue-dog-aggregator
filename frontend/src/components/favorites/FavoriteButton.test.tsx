@@ -143,20 +143,36 @@ describe("FavoriteButton", () => {
   });
 
   it("should update aria attributes when favorited changes", () => {
-    const { rerender } = render(<FavoriteButton dogId={1} />);
-
+    // Test unfavorited state
     mockIsFavorited.mockReturnValue(false);
-    rerender(<FavoriteButton dogId={1} />);
+    const { rerender } = render(<FavoriteButton dogId={1} />);
 
     let button = screen.getByRole("button");
     expect(button).toHaveAttribute("aria-label", "Add to favorites");
     expect(button).toHaveAttribute("aria-pressed", "false");
 
+    // To test favorited state with memo, we render a new component instance
+    // because memo prevents re-renders when props are the same.
+    // In production, hook state changes trigger re-renders internally.
     mockIsFavorited.mockReturnValue(true);
-    rerender(<FavoriteButton dogId={1} />);
+    rerender(<FavoriteButton dogId={2} />);
 
     button = screen.getByRole("button");
     expect(button).toHaveAttribute("aria-label", "Remove from favorites");
+    expect(button).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("should render correct state for favorited and unfavorited dogs independently", () => {
+    // This tests that the component correctly reflects the hook state
+    mockIsFavorited.mockReturnValue(false);
+    const { unmount } = render(<FavoriteButton dogId={1} />);
+    let button = screen.getByRole("button");
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    unmount();
+
+    mockIsFavorited.mockReturnValue(true);
+    render(<FavoriteButton dogId={2} />);
+    button = screen.getByRole("button");
     expect(button).toHaveAttribute("aria-pressed", "true");
   });
 });
