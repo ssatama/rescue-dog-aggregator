@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { memo, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "./Icon";
 import {
@@ -35,32 +35,34 @@ export interface ShareButtonProps {
   compact?: boolean;
 }
 
-export default function ShareButton({
-  url,
-  title,
-  text,
-  variant = "outline",
-  size = "default",
-  className = "",
-  children = "Share",
-  compact = false,
-}: ShareButtonProps) {
-  const {
-    copied,
-    hasNativeShare,
-    handleNativeShare,
-    handleCopyLink,
-    handleSocialShare,
-    safeUrl,
-    safeTitle,
-    safeText,
-  } = useShare({ url, title, text });
+const ShareButton = memo(
+  function ShareButton({
+    url,
+    title,
+    text,
+    variant = "outline",
+    size = "default",
+    className = "",
+    children = "Share",
+    compact = false,
+  }: ShareButtonProps) {
+    const shareOptions = useMemo(() => ({ url, title, text }), [url, title, text]);
+    const {
+      copied,
+      hasNativeShare,
+      handleNativeShare,
+      handleCopyLink,
+      handleSocialShare,
+      safeUrl,
+      safeTitle,
+      safeText,
+    } = useShare(shareOptions);
 
-  const handleEmailShare = () => {
-    const subject = encodeURIComponent(safeTitle);
-    const body = encodeURIComponent(`${safeText}\n\n${safeUrl}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  };
+    const handleEmailShare = useCallback(() => {
+      const subject = encodeURIComponent(safeTitle);
+      const body = encodeURIComponent(`${safeText}\n\n${safeUrl}`);
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }, [safeTitle, safeText, safeUrl]);
 
   // Determine button size and content based on compact mode
   const buttonSize = compact ? "icon" : size;
@@ -147,4 +149,13 @@ export default function ShareButton({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+  },
+  (prevProps, nextProps) =>
+    prevProps.url === nextProps.url &&
+    prevProps.title === nextProps.title &&
+    prevProps.text === nextProps.text &&
+    prevProps.variant === nextProps.variant &&
+    prevProps.compact === nextProps.compact
+);
+
+export default ShareButton;
