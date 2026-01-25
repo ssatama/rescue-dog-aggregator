@@ -207,9 +207,9 @@ describe("DogDetailErrorBoundary", () => {
     );
 
     expect(reportError).toHaveBeenCalledWith(
-      "DogDetailErrorBoundary caught error",
+      expect.any(Error),
       expect.objectContaining({
-        error: "Test error",
+        context: "DogDetailErrorBoundary",
         dogSlug: "test-dog-mixed-breed-123",
         retryCount: 0,
       }),
