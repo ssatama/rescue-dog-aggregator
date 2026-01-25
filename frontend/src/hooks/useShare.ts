@@ -64,8 +64,8 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
         showToast("success", "Share successful!");
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
-          reportError("Error sharing", {
-            error: err.message,
+          reportError(err, {
+            context: "useShare.handleShare",
             url: safeUrl,
             title: safeTitle,
           });
@@ -82,8 +82,10 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
       showToast("success", "Link copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      reportError("Failed to copy link", { error: errorMessage, url: safeUrl });
+      reportError(err instanceof Error ? err : new Error(String(err)), {
+        context: "useShare.handleCopyLink",
+        url: safeUrl,
+      });
       showToast("error", "Failed to copy link. Please try again.");
     }
   }, [safeUrl, showToast]);
@@ -109,10 +111,8 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
         window.open(urls[platform], "_blank", "width=600,height=400");
         showToast("success", `Opening share on ${platformNames[platform]}...`);
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Unknown error";
-        reportError("Failed to open social share", {
-          error: errorMessage,
+        reportError(err instanceof Error ? err : new Error(String(err)), {
+          context: "useShare.handleSocialShare",
           platform,
         });
         showToast("error", "Failed to open share dialog. Please try again.");

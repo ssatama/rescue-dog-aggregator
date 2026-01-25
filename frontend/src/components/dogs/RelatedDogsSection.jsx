@@ -53,8 +53,8 @@ const RelatedDogsSection = memo(
         const dogs = await getRelatedDogs(organizationId, currentDogId);
         setRelatedDogs(dogs);
       } catch (err) {
-        reportError("Error fetching related dogs", {
-          error: err.message,
+        reportError(err, {
+          context: "RelatedDogsSection.fetchRelatedDogs",
           organizationId,
           currentDogId,
         });

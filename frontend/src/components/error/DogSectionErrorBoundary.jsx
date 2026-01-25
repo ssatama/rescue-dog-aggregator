@@ -20,8 +20,8 @@ class DogSectionErrorBoundary extends React.Component {
 
     // Report error to logging service
     if (typeof window !== "undefined" && window.reportError) {
-      window.reportError("DogSection Component Error", {
-        error: error.message,
+      window.reportError(error, {
+        context: "DogSectionErrorBoundary",
         componentStack: errorInfo.componentStack,
       });
     }

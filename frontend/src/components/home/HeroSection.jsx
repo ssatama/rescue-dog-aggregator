@@ -34,7 +34,7 @@ export default function HeroSection({
       const stats = await getStatistics();
       setStatistics(stats);
     } catch (err) {
-      reportError("Error fetching statistics", { error: err.message });
+      reportError(err, { context: "HeroSection.fetchStatistics" });
       setError("Unable to load statistics. Please try again later.");
     } finally {
       setLoading(false);

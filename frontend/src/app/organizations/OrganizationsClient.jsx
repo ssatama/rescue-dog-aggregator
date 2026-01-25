@@ -45,9 +45,8 @@ export default function OrganizationsClient({
   // Log errors
   useEffect(() => {
     if (error) {
-      reportError("Error fetching enhanced organizations", {
-        error: error.message,
-        stack: error.stack,
+      reportError(error, {
+        context: "OrganizationsClient.useOrganizations",
       });
     }
   }, [error]);
