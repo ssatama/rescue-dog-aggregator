@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { Heart } from "lucide-react";
 import { useFavorites } from "../../hooks/useFavorites";
 import { trackFavoriteToggle } from "@/lib/monitoring/breadcrumbs";
@@ -13,13 +13,14 @@ interface FavoriteButtonProps {
   orgSlug?: string;
 }
 
-export function FavoriteButton({
-  dogId,
-  dogName,
-  className = "",
-  compact = false,
-  orgSlug,
-}: FavoriteButtonProps) {
+export const FavoriteButton = memo(
+  function FavoriteButton({
+    dogId,
+    dogName,
+    className = "",
+    compact = false,
+    orgSlug,
+  }: FavoriteButtonProps) {
   const { isFavorited, toggleFavorite } = useFavorites();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -52,22 +53,27 @@ export function FavoriteButton({
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    async (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         e.stopPropagation();
 
-        const wasFavorited = isFav;
-        toggleFavorite(dogId, dogName);
+        setIsLoading(true);
+        try {
+          const wasFavorited = isFav;
+          await toggleFavorite(dogId, dogName);
 
-        // Track favorite toggle for keyboard interaction
-        if (dogName && orgSlug) {
-          try {
-            const action = wasFavorited ? "remove" : "add";
-            trackFavoriteToggle(action, dogId.toString(), dogName, orgSlug);
-          } catch (error) {
-            console.error("Failed to track favorite toggle:", error);
+          // Track favorite toggle for keyboard interaction
+          if (dogName && orgSlug) {
+            try {
+              const action = wasFavorited ? "remove" : "add";
+              trackFavoriteToggle(action, dogId.toString(), dogName, orgSlug);
+            } catch (error) {
+              console.error("Failed to track favorite toggle:", error);
+            }
           }
+        } finally {
+          setIsLoading(false);
         }
       }
     },
@@ -104,4 +110,11 @@ export function FavoriteButton({
       />
     </button>
   );
-}
+  },
+  (prevProps, nextProps) =>
+    prevProps.dogId === nextProps.dogId &&
+    prevProps.compact === nextProps.compact &&
+    prevProps.className === nextProps.className &&
+    prevProps.dogName === nextProps.dogName &&
+    prevProps.orgSlug === nextProps.orgSlug
+);

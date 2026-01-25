@@ -1,18 +1,21 @@
 "use client";
 
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import dynamic from "next/dynamic";
 import { useViewport } from "@/hooks/useViewport";
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { type Dog } from "@/types/dog";
 import DogDetailModalSkeleton from "@/components/ui/DogDetailModalSkeleton";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 
 // Type declaration for the JavaScript component
 interface DogCardOptimizedProps {
   dog: Dog;
   onClick: () => void;
   priority?: boolean;
+  isVirtualized?: boolean;
+  position?: number;
 }
 
 // Import JavaScript component with proper typing
@@ -62,6 +65,80 @@ const DogBottomNav = dynamic(
   },
 );
 
+// Constants for virtualization
+const DESKTOP_COLUMNS = 4;
+const ROW_HEIGHT = 620; // Card (~580px) + gap-4 (16px) + margin
+const OVERSCAN = 2; // Number of extra rows to render above/below viewport
+
+interface VirtualizedDesktopGridProps {
+  dogs: Dog[];
+  className?: string;
+  onDogClick: (dog: Dog) => void;
+}
+
+function VirtualizedDesktopGrid({
+  dogs,
+  className = "",
+  onDogClick,
+}: VirtualizedDesktopGridProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollMargin, setScrollMargin] = React.useState(0);
+  const rowCount = Math.ceil(dogs.length / DESKTOP_COLUMNS);
+
+  const rowVirtualizer = useWindowVirtualizer({
+    count: rowCount,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: OVERSCAN,
+    scrollMargin,
+  });
+
+  // Update scroll margin when the list position changes
+  useLayoutEffect(() => {
+    if (listRef.current) {
+      setScrollMargin(listRef.current.offsetTop);
+    }
+  }, []);
+
+  return (
+    <div ref={listRef} className={className}>
+      <div
+        style={{
+          height: `${rowVirtualizer.getTotalSize()}px`,
+          position: "relative",
+        }}
+      >
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const startIndex = virtualRow.index * DESKTOP_COLUMNS;
+          const rowDogs = dogs.slice(startIndex, startIndex + DESKTOP_COLUMNS);
+
+          return (
+            <div
+              key={virtualRow.key}
+              className="absolute w-full grid grid-cols-4 gap-4"
+              style={{
+                transform: `translateY(${virtualRow.start - scrollMargin}px)`,
+                height: `${virtualRow.size}px`,
+              }}
+            >
+              {rowDogs.map((dog, i) => (
+                <DogCardErrorBoundary key={dog.id}>
+                  <DogCardOptimized
+                    dog={dog}
+                    onClick={() => onDogClick(dog)}
+                    priority={startIndex + i < 8}
+                    isVirtualized={true}
+                    position={startIndex + i}
+                  />
+                </DogCardErrorBoundary>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 interface DogsPageViewportWrapperProps {
   dogs: Dog[];
   loading?: boolean;
@@ -80,8 +157,8 @@ interface DogsPageViewportWrapperProps {
 
 /**
  * Viewport-aware wrapper component that routes to appropriate UI
- * Desktop (1024px+): Uses existing DogCardOptimized components
- * Mobile/Tablet (<1024px): Uses new DogGrid with compact cards
+ * Desktop (1024px+): VirtualizedDesktopGrid with DogCardOptimized
+ * Mobile/Tablet (<1024px): PremiumMobileCatalog
  */
 const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
   dogs,
@@ -136,22 +213,14 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
     );
   }
 
-  // DESKTOP: Return existing implementation unchanged
+  // DESKTOP: Virtualized grid for improved TBT (uses window scrolling)
   if (isDesktop) {
     return (
-      <div
-        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${className}`}
-      >
-        {dogs.map((dog, index) => (
-          <DogCardErrorBoundary key={dog.id}>
-            <DogCardOptimized
-              dog={dog}
-              onClick={() => handleDogClick(dog)}
-              priority={index < 8}
-            />
-          </DogCardErrorBoundary>
-        ))}
-      </div>
+      <VirtualizedDesktopGrid
+        dogs={dogs}
+        className={className}
+        onDogClick={handleDogClick}
+      />
     );
   }
 

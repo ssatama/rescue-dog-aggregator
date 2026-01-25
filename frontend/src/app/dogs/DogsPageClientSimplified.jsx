@@ -1037,7 +1037,7 @@ export default function DogsPageClientSimplified({
 
             {/* Dogs Grid */}
             <div
-              className="relative flex-1 pb-8 -mx-4 px-4 md:mx-0 md:px-0 z-0 overflow-x-hidden"
+              className="relative flex-1 pb-8 -mx-4 px-4 md:mx-0 md:px-0 overflow-x-hidden"
               id="dogs-catalog"
             >
               {/* Loading state */}

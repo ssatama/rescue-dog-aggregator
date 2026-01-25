@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -28,16 +28,16 @@ import {
 } from "../../utils/dogHelpers";
 import { trackDogCardClick } from "@/lib/monitoring/breadcrumbs";
 
-const DogCardOptimized = React.memo(function DogCardOptimized({
-  dog,
-  priority = false,
-  animationDelay = 0,
-  compact = false,
-  embedded = false, // Ultra-compact mode for guide pages
-  isVirtualized = false,
-  position = 0,
-  listContext = "home",
-}) {
+const DogCardOptimized = React.memo(
+  function DogCardOptimized({
+    dog,
+    priority = false,
+    compact = false,
+    embedded = false,
+    isVirtualized = false,
+    position = 0,
+    listContext = "home",
+  }) {
   // Enhanced data processing using helper functions
   const name = dog?.name || "Unknown Dog";
   const breed = formatBreed(dog);
@@ -75,9 +75,56 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
 
   const standardizedSize = getStandardizedSize(dog);
 
-  // Calculate animation delay class (only for non-virtualized items)
-  const animationClass = !isVirtualized
-    ? `animate-fadeInUp animate-delay-${Math.min(animationDelay * 100, 400)}`
+  // Memoize share data to prevent string recreation on every render
+  const shareData = useMemo(
+    () => ({
+      url: `${typeof window !== "undefined" ? window.location.origin : ""}/dogs/${slug}`,
+      title: `Meet ${name}`,
+      text: `Check out ${name} from ${organizationName} - Looking for a loving home!`,
+    }),
+    [slug, name, organizationName]
+  );
+
+  // Memoize click handler to prevent recreation
+  const handleCardClick = useCallback(() => {
+    if (id && id !== "0" && name && name !== "Unknown Dog") {
+      try {
+        trackDogCardClick(id.toString(), name, position, listContext);
+      } catch (error) {
+        console.error("Failed to track dog card click:", error);
+      }
+    }
+  }, [id, name, position, listContext]);
+
+  // Track if initial mount is complete to defer animations
+  const [canAnimate, setCanAnimate] = useState(false);
+
+  useEffect(() => {
+    // Check for reduced motion preference
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion) {
+      return;
+    }
+
+    // Mark initial mount complete after first paint to defer animations
+    const frameId = requestAnimationFrame(() => {
+      setCanAnimate(true);
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  // Skip animation for:
+  // 1. Virtualized cards (controlled by parent)
+  // 2. Initial mount (prevent hydration TBT)
+  // 3. Cards at position 4+ (only first 4 cards animate)
+  const shouldAnimate = !isVirtualized && canAnimate && position < 4;
+
+  const animationClass = shouldAnimate
+    ? `animate-fadeInUp animate-delay-${Math.min(position * 100, 300)}`
     : "";
 
   // Ultra-compact embedded mode for guide pages
@@ -93,20 +140,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           href={`/dogs/${slug}`}
           className="block h-full"
           prefetch={priority ? true : false}
-          onClick={() => {
-            if (dog?.id && dog?.name) {
-              try {
-                trackDogCardClick(
-                  dog.id.toString(),
-                  dog.name,
-                  position,
-                  listContext,
-                );
-              } catch (error) {
-                console.error("Failed to track dog card click:", error);
-              }
-            }
-          }}
+          onClick={handleCardClick}
         >
           {/* Compact 16:9 image */}
           <div
@@ -172,21 +206,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           href={`/dogs/${slug}`}
           className="block w-32 md:w-full flex-shrink-0"
           prefetch={priority ? true : false}
-          onClick={() => {
-            // Track dog card click
-            if (dog?.id && dog?.name) {
-              try {
-                trackDogCardClick(
-                  dog.id.toString(),
-                  dog.name,
-                  position,
-                  listContext,
-                );
-              } catch (error) {
-                console.error("Failed to track dog card click:", error);
-              }
-            }
-          }}
+          onClick={handleCardClick}
         >
           <div
             className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50"
@@ -213,21 +233,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
             <Link
               href={`/dogs/${slug}`}
               prefetch={priority ? true : undefined}
-              onClick={() => {
-                // Track dog card click
-                if (dog?.id && dog?.name) {
-                  try {
-                    trackDogCardClick(
-                      dog.id.toString(),
-                      dog.name,
-                      position,
-                      listContext,
-                    );
-                  } catch (error) {
-                    console.error("Failed to track dog card click:", error);
-                  }
-                }
-              }}
+              onClick={handleCardClick}
             >
               <CardTitle className="text-base md:text-lg hover:underline">
                 {name}
@@ -235,9 +241,9 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
             </Link>
             <div className="flex items-center gap-1">
               <ShareButton
-                url={`${typeof window !== "undefined" ? window.location.origin : ""}/dogs/${slug}`}
-                title={`Meet ${name}`}
-                text={`Check out ${name} from ${organizationName} - Looking for a loving home!`}
+                url={shareData.url}
+                title={shareData.title}
+                text={shareData.text}
                 variant="ghost"
                 compact
               />
@@ -297,21 +303,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
             <Link
               href={`/dogs/${slug}`}
               prefetch={priority ? true : undefined}
-              onClick={() => {
-                // Track dog card click
-                if (dog?.id && dog?.name) {
-                  try {
-                    trackDogCardClick(
-                      dog.id.toString(),
-                      dog.name,
-                      position,
-                      listContext,
-                    );
-                  } catch (error) {
-                    console.error("Failed to track dog card click:", error);
-                  }
-                }
-              }}
+              onClick={handleCardClick}
             >
               Meet {name} →
             </Link>
@@ -338,21 +330,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
         href={`/dogs/${slug}`}
         className="block"
         prefetch={priority ? true : undefined}
-        onClick={() => {
-          // Track dog card click
-          if (dog?.id && dog?.name) {
-            try {
-              trackDogCardClick(
-                dog.id.toString(),
-                dog.name,
-                position,
-                listContext,
-              );
-            } catch (error) {
-              console.error("Failed to track dog card click:", error);
-            }
-          }
-        }}
+        onClick={handleCardClick}
       >
         <div
           className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50"
@@ -398,21 +376,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           <Link
             href={`/dogs/${slug}`}
             prefetch={priority ? true : undefined}
-            onClick={() => {
-              // Track dog card click
-              if (dog?.id && dog?.name) {
-                try {
-                  trackDogCardClick(
-                    dog.id.toString(),
-                    dog.name,
-                    position,
-                    listContext,
-                  );
-                } catch (error) {
-                  console.error("Failed to track dog card click:", error);
-                }
-              }
-            }}
+            onClick={handleCardClick}
           >
             <h3
               className="text-card-title hover:underline truncate"
@@ -423,9 +387,9 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           </Link>
           <div className="flex items-center gap-1">
             <ShareButton
-              url={`${typeof window !== "undefined" ? window.location.origin : ""}/dogs/${slug}`}
-              title={`Meet ${name}`}
-              text={`Check out ${name} from ${organizationName} - Looking for a loving home!`}
+              url={shareData.url}
+              title={shareData.title}
+              text={shareData.text}
               variant="ghost"
               compact
             />
@@ -546,21 +510,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           <Link
             href={`/dogs/${slug}`}
             prefetch={priority ? true : undefined}
-            onClick={() => {
-              // Track dog card click
-              if (dog?.id && dog?.name) {
-                try {
-                  trackDogCardClick(
-                    dog.id.toString(),
-                    dog.name,
-                    position,
-                    listContext,
-                  );
-                } catch (error) {
-                  console.error("Failed to track dog card click:", error);
-                }
-              }
-            }}
+            onClick={handleCardClick}
           >
             Meet {name} →
           </Link>
@@ -568,6 +518,15 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
       </CardFooter>
     </Card>
   );
-});
+  },
+  (prevProps, nextProps) =>
+    prevProps.dog?.id === nextProps.dog?.id &&
+    prevProps.priority === nextProps.priority &&
+    prevProps.compact === nextProps.compact &&
+    prevProps.embedded === nextProps.embedded &&
+    prevProps.isVirtualized === nextProps.isVirtualized &&
+    prevProps.position === nextProps.position &&
+    prevProps.listContext === nextProps.listContext
+);
 
 export default DogCardOptimized;
