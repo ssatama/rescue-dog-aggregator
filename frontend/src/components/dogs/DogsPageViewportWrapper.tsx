@@ -90,6 +90,11 @@ function VirtualizedDesktopGrid({
     estimateSize: () => ROW_HEIGHT,
     overscan: OVERSCAN,
     scrollMargin,
+    measureElement: (element) => {
+      if (!element) return ROW_HEIGHT;
+      const height = element.getBoundingClientRect().height;
+      return height > 0 ? height : ROW_HEIGHT;
+    },
   });
 
   // Update scroll margin when the list position changes
@@ -114,10 +119,11 @@ function VirtualizedDesktopGrid({
           return (
             <div
               key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
               className="absolute w-full grid grid-cols-4 gap-4"
               style={{
                 transform: `translateY(${virtualRow.start - scrollMargin}px)`,
-                height: `${virtualRow.size}px`,
               }}
             >
               {rowDogs.map((dog, i) => (
