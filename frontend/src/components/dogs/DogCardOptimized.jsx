@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -97,9 +97,35 @@ const DogCardOptimized = React.memo(
     }
   }, [id, name, position, listContext]);
 
-  // Calculate animation delay class (only for non-virtualized items)
-  const animationClass = !isVirtualized
-    ? `animate-fadeInUp animate-delay-${Math.min(animationDelay * 100, 400)}`
+  // Track if initial mount is complete to defer animations
+  const [canAnimate, setCanAnimate] = useState(false);
+
+  useEffect(() => {
+    // Check for reduced motion preference
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion) {
+      return;
+    }
+
+    // Mark initial mount complete after first paint to defer animations
+    const frameId = requestAnimationFrame(() => {
+      setCanAnimate(true);
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  // Skip animation for:
+  // 1. Virtualized cards (controlled by parent)
+  // 2. Initial mount (prevent hydration TBT)
+  // 3. Cards beyond position 4 (stagger limit)
+  const shouldAnimate = !isVirtualized && canAnimate && position < 4;
+
+  const animationClass = shouldAnimate
+    ? `animate-fadeInUp animate-delay-${Math.min(position * 100, 300)}`
     : "";
 
   // Ultra-compact embedded mode for guide pages
