@@ -32,8 +32,8 @@ export default function TrustSection({ initialStatistics = null }) {
           const data = await getStatistics();
           setStatistics(data);
         } catch (err) {
-          reportError("Error fetching trust section statistics", {
-            error: err.message,
+          reportError(err, {
+            context: "TrustSection.fetchStatistics",
           });
           setError("Unable to load statistics. Please try again later.");
         } finally {

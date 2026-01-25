@@ -30,9 +30,8 @@ class DogDetailErrorBoundary extends React.Component {
     });
 
     // Log error for monitoring
-    reportError("DogDetailErrorBoundary caught error", {
-      error: error.message,
-      stack: error.stack,
+    reportError(error, {
+      context: "DogDetailErrorBoundary",
       componentStack: errorInfo.componentStack,
       retryCount: this.state.retryCount,
       dogSlug: this.props.dogSlug,

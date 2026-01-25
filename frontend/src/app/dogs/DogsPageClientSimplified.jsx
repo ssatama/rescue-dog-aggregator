@@ -143,6 +143,7 @@ export default function DogsPageClientSimplified({
   });
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isFilterTransition, setIsFilterTransition] = useState(false);
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(initialDogs.length === ITEMS_PER_PAGE);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -368,12 +369,14 @@ export default function DogsPageClientSimplified({
       const requests = [];
       for (let p = 1; p <= targetPage; p++) {
         requests.push(
-          getAnimals({
-            limit: ITEMS_PER_PAGE,
-            offset: (p - 1) * ITEMS_PER_PAGE,
-            ...baseParams,
-            signal: abortController.signal,
-          }),
+          getAnimals(
+            {
+              limit: ITEMS_PER_PAGE,
+              offset: (p - 1) * ITEMS_PER_PAGE,
+              ...baseParams,
+            },
+            { signal: abortController.signal },
+          ),
         );
       }
 
@@ -566,15 +569,15 @@ export default function DogsPageClientSimplified({
       // When filters change, reset to page 1 and clear scroll
       updateURL(newFilters, 1, false);
 
-      // Reset and reload with new filters
+      // Show loading overlay but keep existing dogs visible to prevent shimmer
       startTransition(() => {
-        setDogs([]);
         setPage(1);
         setHasMore(true);
         scrollPositionRef.current = 0;
+        setIsFilterTransition(true);
       });
 
-      // Fetch with new filters
+      // Fetch with new filters - dogs will be replaced when data arrives
       fetchDogsWithFiltersRef.current?.(newFilters, 1);
     },
     [filters, updateURL],
@@ -597,12 +600,12 @@ export default function DogsPageClientSimplified({
         limit: ITEMS_PER_PAGE,
         offset: (pageNum - 1) * ITEMS_PER_PAGE,
         ...buildAPIParams(currentFilters),
-        signal: abortController.signal,
       };
+      const fetchOptions = { signal: abortController.signal };
 
       const [newDogs, counts] = await Promise.all([
-        getAnimals(params),
-        getFilterCounts(params),
+        getAnimals(params, fetchOptions),
+        getFilterCounts(params, fetchOptions),
       ]);
 
       startTransition(() => {
@@ -615,12 +618,17 @@ export default function DogsPageClientSimplified({
         setHasMore(newDogs.length === ITEMS_PER_PAGE);
         setFilterCounts(counts);
         setPage(pageNum);
+        setIsFilterTransition(false);
       });
     } catch (err) {
-      // Ignore aborted requests
-      if (err.name === 'AbortError') return;
+      // Ignore aborted requests but still reset transition state
+      if (err.name === 'AbortError') {
+        setIsFilterTransition(false);
+        return;
+      }
       reportError(err, { context: "fetchDogsWithFilters", pageNum });
       setError("Failed to load dogs");
+      setIsFilterTransition(false);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -665,7 +673,6 @@ export default function DogsPageClientSimplified({
         limit: ITEMS_PER_PAGE,
         offset,
         ...buildAPIParams(filters),
-        signal: abortController.signal,
       };
 
       if (process.env.NODE_ENV === 'development') {
@@ -675,7 +682,7 @@ export default function DogsPageClientSimplified({
         });
       }
 
-      const newDogs = await getAnimals(params);
+      const newDogs = await getAnimals(params, { signal: abortController.signal });
 
       if (process.env.NODE_ENV === 'development') {
         console.log('[loadMoreDogs] Fetched dogs', {
@@ -1049,19 +1056,29 @@ export default function DogsPageClientSimplified({
                 </div>
               )}
 
-              {/* Dogs list */}
+              {/* Dogs list with filter transition overlay */}
               {dogs.length > 0 && (
-                <DogsPageViewportWrapper
-                  dogs={dogs}
-                  loading={loading}
-                  loadingMore={loadingMore}
-                  onOpenFilter={() => setIsSheetOpen(true)}
-                  onResetFilters={handleResetFilters}
-                  onLoadMore={loadMoreDogs}
-                  hasMore={hasMore}
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                />
+                <div className="relative">
+                  {isFilterTransition && (
+                    <div className="absolute inset-0 bg-background/60 dark:bg-gray-900/60 z-10 flex items-start justify-center pt-20 backdrop-blur-[1px]">
+                      <div className="flex items-center gap-2 bg-background dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg">
+                        <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
+                        <span className="text-sm text-muted-foreground">Updating results...</span>
+                      </div>
+                    </div>
+                  )}
+                  <DogsPageViewportWrapper
+                    dogs={dogs}
+                    loading={loading}
+                    loadingMore={loadingMore}
+                    onOpenFilter={() => setIsSheetOpen(true)}
+                    onResetFilters={handleResetFilters}
+                    onLoadMore={loadMoreDogs}
+                    hasMore={hasMore}
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                  />
+                </div>
               )}
 
               {/* Empty state */}

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "../../test-utils";
+import { render, screen, waitFor } from "../../test-utils";
 import DogCard from "../../components/dogs/DogCardOptimized";
 import OrganizationCard from "../../components/organizations/OrganizationCard";
 import RelatedDogsCard from "../../components/dogs/RelatedDogsCard";
@@ -394,7 +394,7 @@ describe("Typography Consistency Tests", () => {
       expect(dogName).toHaveClass("text-card-title");
     });
 
-    it("should verify section typography classes are used by components", () => {
+    it("should verify section typography classes are used by components", async () => {
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -407,12 +407,12 @@ describe("Typography Consistency Tests", () => {
       render(<TrustSection />);
 
       // Wait for the component to render with fetched data
-      setTimeout(() => {
+      await waitFor(() => {
         const sectionHeading = screen.getByText(
           "Dogs available from these organizations:",
         );
         expect(sectionHeading).toHaveClass("text-section");
-      }, 100);
+      });
     });
   });
 

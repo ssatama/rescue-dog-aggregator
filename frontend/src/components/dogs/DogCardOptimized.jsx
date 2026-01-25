@@ -138,6 +138,7 @@ const DogCardOptimized = React.memo(
       >
         <Link
           href={`/dogs/${slug}`}
+          scroll={true}
           className="block h-full"
           prefetch={priority ? true : false}
           onClick={handleCardClick}
@@ -204,6 +205,7 @@ const DogCardOptimized = React.memo(
         {/* Compact mobile image */}
         <Link
           href={`/dogs/${slug}`}
+          scroll={true}
           className="block w-32 md:w-full flex-shrink-0"
           prefetch={priority ? true : false}
           onClick={handleCardClick}
@@ -232,6 +234,7 @@ const DogCardOptimized = React.memo(
           <div className="flex items-start justify-between mb-2">
             <Link
               href={`/dogs/${slug}`}
+              scroll={true}
               prefetch={priority ? true : undefined}
               onClick={handleCardClick}
             >
@@ -302,6 +305,7 @@ const DogCardOptimized = React.memo(
           >
             <Link
               href={`/dogs/${slug}`}
+              scroll={true}
               prefetch={priority ? true : undefined}
               onClick={handleCardClick}
             >
@@ -328,6 +332,7 @@ const DogCardOptimized = React.memo(
       {/* Image container */}
       <Link
         href={`/dogs/${slug}`}
+        scroll={true}
         className="block"
         prefetch={priority ? true : undefined}
         onClick={handleCardClick}
@@ -375,6 +380,7 @@ const DogCardOptimized = React.memo(
         <div className="flex items-start justify-between">
           <Link
             href={`/dogs/${slug}`}
+            scroll={true}
             prefetch={priority ? true : undefined}
             onClick={handleCardClick}
           >
@@ -509,6 +515,7 @@ const DogCardOptimized = React.memo(
         >
           <Link
             href={`/dogs/${slug}`}
+            scroll={true}
             prefetch={priority ? true : undefined}
             onClick={handleCardClick}
           >

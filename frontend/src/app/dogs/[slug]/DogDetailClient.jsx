@@ -270,6 +270,13 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
     };
   }, []);
 
+  // Scroll to top on navigation to ensure hero image is visible
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [dogSlug]);
+
   // Handle swipe hint visibility timing
   useEffect(() => {
     if (showSwipeHint && (prevDog || nextDog)) {

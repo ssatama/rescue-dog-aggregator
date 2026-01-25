@@ -18,12 +18,13 @@ export const AdoptionCTA: React.FC<AdoptionCTAProps> = ({
     // Always link to the dog detail page
     const dogDetailUrl = `/dogs/${dogId}`;
 
-    Sentry.captureEvent({
+    Sentry.addBreadcrumb({
       message: "swipe.adoption.clicked",
+      category: "swipe",
       level: "info",
-      extra: {
-        dog_id: dogId,
-        dog_name: dogName,
+      data: {
+        dogId,
+        dogName,
         organization: organizationName,
       },
     });

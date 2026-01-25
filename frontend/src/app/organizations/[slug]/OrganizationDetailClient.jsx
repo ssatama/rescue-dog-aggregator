@@ -164,8 +164,8 @@ export default function OrganizationDetailClient({ params = {} }) {
         setLoading(false);
         setLoadingMore(false);
       } catch (err) {
-        reportError("Error fetching organization dogs", {
-          error: err.message,
+        reportError(err, {
+          context: "OrganizationDetailClient.fetchDogs",
           organizationId: organization?.id,
         });
         setError(err);
@@ -238,8 +238,8 @@ export default function OrganizationDetailClient({ params = {} }) {
           setLoading(false);
         }
       } catch (err) {
-        reportError("Error fetching organization data", {
-          error: err.message,
+        reportError(err, {
+          context: "OrganizationDetailClient.fetchOrganizationData",
           organizationSlug,
         });
         setError(err);
