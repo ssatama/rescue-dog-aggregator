@@ -90,8 +90,11 @@ function VirtualizedDesktopGrid({
     estimateSize: () => ROW_HEIGHT,
     overscan: OVERSCAN,
     scrollMargin,
-    measureElement: (element) =>
-      element?.getBoundingClientRect().height ?? ROW_HEIGHT,
+    measureElement: (element) => {
+      if (!element) return ROW_HEIGHT;
+      const height = element.getBoundingClientRect().height;
+      return height > 0 ? height : ROW_HEIGHT;
+    },
   });
 
   // Update scroll margin when the list position changes

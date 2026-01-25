@@ -473,5 +473,39 @@ describe("DogsPageViewportWrapper", () => {
 
       expect(mockPush).toHaveBeenCalledWith("/dogs/max-golden-retriever-1");
     });
+
+    it("renders rows without fixed height style for dynamic measurement", async () => {
+      const { container } = render(<DogsPageViewportWrapper dogs={mockDogs} />);
+
+      await waitFor(() => {
+        const rows = container.querySelectorAll(".grid-cols-4");
+        rows.forEach((row) => {
+          expect((row as HTMLElement).style.height).toBeFalsy();
+        });
+      });
+    });
+
+    it("renders rows with data-index attribute for measurement tracking", async () => {
+      const { container } = render(<DogsPageViewportWrapper dogs={mockDogs} />);
+
+      await waitFor(() => {
+        const rows = container.querySelectorAll("[data-index]");
+        expect(rows.length).toBeGreaterThan(0);
+        rows.forEach((row, i) => {
+          expect(row).toHaveAttribute("data-index", String(i));
+        });
+      });
+    });
+
+    it("configures virtualizer with measureElement for dynamic row heights", () => {
+      const { useWindowVirtualizer } = require("@tanstack/react-virtual");
+      render(<DogsPageViewportWrapper dogs={mockDogs} />);
+
+      expect(useWindowVirtualizer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          measureElement: expect.any(Function),
+        }),
+      );
+    });
   });
 });
