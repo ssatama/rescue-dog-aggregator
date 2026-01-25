@@ -81,14 +81,26 @@ jest.mock("../DogCardOptimized", () => ({
 // Mock @tanstack/react-virtual
 jest.mock("@tanstack/react-virtual", () => ({
   useVirtualizer: jest.fn(({ count }) => ({
-    getTotalSize: () => count * 520,
+    getTotalSize: () => count * 620,
     getVirtualItems: () =>
       Array.from({ length: Math.min(count, 3) }, (_, index) => ({
         key: `row-${index}`,
         index,
-        start: index * 520,
-        size: 520,
+        start: index * 620,
+        size: 620,
       })),
+  })),
+  useWindowVirtualizer: jest.fn(({ count }) => ({
+    getTotalSize: () => count * 620,
+    getVirtualItems: () =>
+      Array.from({ length: Math.min(count, 3) }, (_, index) => ({
+        key: `row-${index}`,
+        index,
+        start: index * 620,
+        size: 620,
+      })),
+    options: { scrollMargin: 0 },
+    measure: jest.fn(),
   })),
 }));
 
@@ -247,9 +259,8 @@ describe("DogsPageViewportWrapper", () => {
         <DogsPageViewportWrapper dogs={mockDogs} className="custom-class" />,
       );
 
-      // The outer container is now the virtualized scroll container
+      // The outer container now uses window scrolling (no overflow-auto)
       const scrollContainer = container.firstChild as HTMLElement;
-      expect(scrollContainer).toHaveClass("overflow-auto");
       expect(scrollContainer).toHaveClass("custom-class");
 
       // The inner grid structure

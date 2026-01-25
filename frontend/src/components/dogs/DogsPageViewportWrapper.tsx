@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import dynamic from "next/dynamic";
 import { useViewport } from "@/hooks/useViewport";
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { type Dog } from "@/types/dog";
 import DogDetailModalSkeleton from "@/components/ui/DogDetailModalSkeleton";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 
 // Type declaration for the JavaScript component
 interface DogCardOptimizedProps {
@@ -74,56 +74,33 @@ interface VirtualizedDesktopGridProps {
   dogs: Dog[];
   className?: string;
   onDogClick: (dog: Dog) => void;
-  onLoadMore?: () => void;
-  hasMore?: boolean;
-  loadingMore?: boolean;
 }
 
 function VirtualizedDesktopGrid({
   dogs,
   className = "",
   onDogClick,
-  onLoadMore,
-  hasMore = false,
-  loadingMore = false,
 }: VirtualizedDesktopGridProps) {
-  const parentRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollMargin, setScrollMargin] = React.useState(0);
   const rowCount = Math.ceil(dogs.length / DESKTOP_COLUMNS);
 
-  const rowVirtualizer = useVirtualizer({
+  const rowVirtualizer = useWindowVirtualizer({
     count: rowCount,
-    getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_HEIGHT,
     overscan: OVERSCAN,
+    scrollMargin,
   });
 
-  // IntersectionObserver for infinite scroll
-  useEffect(() => {
-    if (!onLoadMore || !hasMore || loadingMore) return;
-
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
-          onLoadMore();
-        }
-      },
-      { root: parentRef.current, rootMargin: "200px" }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [onLoadMore, hasMore, loadingMore]);
+  // Update scroll margin when the list position changes
+  useLayoutEffect(() => {
+    if (listRef.current) {
+      setScrollMargin(listRef.current.offsetTop);
+    }
+  }, []);
 
   return (
-    <div
-      ref={parentRef}
-      className={`h-[calc(100vh-200px)] overflow-auto ${className}`}
-      style={{ contain: "strict" }}
-    >
+    <div ref={listRef} className={className}>
       <div
         style={{
           height: `${rowVirtualizer.getTotalSize()}px`,
@@ -139,7 +116,7 @@ function VirtualizedDesktopGrid({
               key={virtualRow.key}
               className="absolute w-full grid grid-cols-4 gap-4"
               style={{
-                transform: `translateY(${virtualRow.start}px)`,
+                transform: `translateY(${virtualRow.start - scrollMargin}px)`,
                 height: `${virtualRow.size}px`,
               }}
             >
@@ -158,13 +135,6 @@ function VirtualizedDesktopGrid({
           );
         })}
       </div>
-      {/* Sentinel for infinite scroll detection */}
-      <div ref={sentinelRef} className="h-1" aria-hidden="true" />
-      {loadingMore && (
-        <div className="flex justify-center py-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100" />
-        </div>
-      )}
     </div>
   );
 }
@@ -243,16 +213,13 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
     );
   }
 
-  // DESKTOP: Virtualized grid for improved TBT
+  // DESKTOP: Virtualized grid for improved TBT (uses window scrolling)
   if (isDesktop) {
     return (
       <VirtualizedDesktopGrid
         dogs={dogs}
         className={className}
         onDogClick={handleDogClick}
-        onLoadMore={onLoadMore}
-        hasMore={hasMore}
-        loadingMore={loadingMore}
       />
     );
   }
