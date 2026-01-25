@@ -7,7 +7,7 @@ import * as Sentry from "@sentry/nextjs";
 jest.mock("@sentry/nextjs");
 
 describe("AdoptionCTA", () => {
-  const mockCaptureEvent = jest.mocked(Sentry.captureEvent);
+  const mockAddBreadcrumb = jest.mocked(Sentry.addBreadcrumb);
   const mockWindowOpen = jest.fn();
 
   beforeEach(() => {
@@ -54,12 +54,13 @@ describe("AdoptionCTA", () => {
     });
     fireEvent.click(button);
 
-    expect(mockCaptureEvent).toHaveBeenCalledWith({
+    expect(mockAddBreadcrumb).toHaveBeenCalledWith({
       message: "swipe.adoption.clicked",
+      category: "swipe",
       level: "info",
-      extra: {
-        dog_id: 1,
-        dog_name: "Buddy",
+      data: {
+        dogId: 1,
+        dogName: "Buddy",
         organization: "Happy Paws",
       },
     });

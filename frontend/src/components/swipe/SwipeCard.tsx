@@ -33,9 +33,11 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
       await addFavorite(Number(dog.id), dog.name);
 
-      Sentry.captureEvent({
+      Sentry.addBreadcrumb({
         message: "swipe.card.favorited_via_button",
-        extra: {
+        category: "swipe",
+        level: "info",
+        data: {
           dogId: dog.id,
           dogName: dog.name,
         },

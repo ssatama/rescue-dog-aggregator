@@ -72,9 +72,11 @@ export const FilterModal: React.FC<FilterModalProps> = ({
           onFiltersChange={(newFilters) => {
             onFiltersChange(newFilters);
             onClose();
-            Sentry.captureEvent({
+            Sentry.addBreadcrumb({
               message: "swipe.filter.changed",
-              extra: {
+              category: "swipe",
+              level: "info",
+              data: {
                 filters: newFilters,
               },
             });

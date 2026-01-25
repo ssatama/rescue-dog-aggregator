@@ -127,16 +127,15 @@ export default function SwipePageClient({
     if (direction === "right") {
       swipeMetrics.trackFavoriteAdded(dog.id.toString(), "swipe");
 
-      Sentry.captureEvent({
+      Sentry.addBreadcrumb({
         message: "swipe.favorite.added",
+        category: "swipe",
         level: "info",
-        contexts: {
-          dog: {
-            id: dog.id,
-            name: dog.name,
-            breed: dog.breed,
-            source: "swipe_gesture",
-          },
+        data: {
+          dogId: dog.id,
+          dogName: dog.name,
+          breed: dog.breed,
+          source: "swipe_gesture",
         },
       });
     }
