@@ -180,33 +180,7 @@ COMMENT ON INDEX idx_organizations_active_country IS
    Supports active organization filtering by country with covering index for ID.
    Expected 40-50% improvement for organization JOINs.';
 
--- STEP 3: Enhanced JSON property indexes for location filtering
--- Composite index for location-based filtering
--- Supports: WHERE status = 'available' AND properties->>'location_country' = ?
-CREATE INDEX IF NOT EXISTS idx_animals_location_composite 
-  ON animals (status, (properties->>'location_country'), (properties->>'location_region'))
-  WHERE status = 'available' 
-    AND properties->>'location_country' IS NOT NULL;
-
-COMMENT ON INDEX idx_animals_location_composite IS 
-  'Composite index for location-based filtering with status.
-   Supports country and region filtering for available animals.
-   Expected 50-70% improvement for location-filtered queries.';
-
--- STEP 4: Size and breed filtering optimization
--- Enhanced size filtering index
-CREATE INDEX IF NOT EXISTS idx_animals_size_breed_status 
-  ON animals (status, standardized_size, breed_group, created_at DESC)
-  WHERE status = 'available' 
-    AND standardized_size IS NOT NULL 
-    AND breed_group IS NOT NULL;
-
-COMMENT ON INDEX idx_animals_size_breed_status IS 
-  'Composite index for size and breed filtering with recency sorting.
-   Supports multiple filter combinations commonly used in search.
-   Expected 30-50% improvement for filtered search queries.';
-
--- STEP 5: Analytics and counting optimizations
+-- STEP 3: Analytics and counting optimizations
 -- Comprehensive covering index for analytics queries
 CREATE INDEX IF NOT EXISTS idx_animals_analytics_covering 
   ON animals (status, organization_id, standardized_size, breed_group, sex, 
@@ -217,23 +191,6 @@ COMMENT ON INDEX idx_animals_analytics_covering IS
   'Covering index for analytics and count queries.
    Includes all commonly filtered columns to avoid table lookups.
    Expected 70-90% improvement for dashboard analytics queries.';
-
--- STEP 6: Search performance optimization
--- Enhanced full-text search index with ranking
-CREATE INDEX IF NOT EXISTS idx_animals_search_enhanced 
-  ON animals USING gin (
-    to_tsvector('english', 
-      COALESCE(name, '') || ' ' || 
-      COALESCE(breed, '') || ' ' || 
-      COALESCE(properties->>'description', '')
-    )
-  )
-  WHERE status = 'available';
-
-COMMENT ON INDEX idx_animals_search_enhanced IS 
-  'Enhanced GIN index for full-text search including descriptions.
-   Supports search across name, breed, and description fields.
-   Expected 40-60% improvement for search query performance.';
 
 -- ============================================================================
 -- LEGACY INDEXES (Maintained for backward compatibility)
@@ -250,13 +207,6 @@ CREATE INDEX IF NOT EXISTS idx_animals_animal_type ON animals(animal_type);
 CREATE INDEX IF NOT EXISTS idx_animals_standardized_breed ON animals(standardized_breed);
 CREATE INDEX IF NOT EXISTS idx_animals_standardized_size ON animals(standardized_size);
 
--- Legacy text search indexes (supplemented by enhanced search above)
-CREATE INDEX IF NOT EXISTS idx_animals_name_gin ON animals USING gin(to_tsvector('english', name));
-CREATE INDEX IF NOT EXISTS idx_animals_breed_gin ON animals USING gin(to_tsvector('english', breed));
-
--- JSON properties index
-CREATE INDEX IF NOT EXISTS idx_animals_properties ON animals USING gin(properties);
-
 -- Service regions indexes
 CREATE INDEX IF NOT EXISTS idx_service_regions_organization ON service_regions(organization_id);
 CREATE INDEX IF NOT EXISTS idx_service_regions_country ON service_regions(country);
@@ -270,10 +220,6 @@ CREATE INDEX IF NOT EXISTS idx_animals_availability_confidence ON animals(availa
 CREATE INDEX IF NOT EXISTS idx_animals_adoption_check
 ON animals(organization_id, consecutive_scrapes_missing, status)
 WHERE status NOT IN ('adopted', 'reserved');
-
-CREATE INDEX IF NOT EXISTS idx_animals_adoption_checked_at
-ON animals(adoption_checked_at)
-WHERE adoption_checked_at IS NOT NULL;
 
 -- Image URL indexes
 CREATE INDEX IF NOT EXISTS idx_animals_original_image_url ON animals(original_image_url);
