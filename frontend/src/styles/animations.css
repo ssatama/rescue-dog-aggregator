@@ -24,6 +24,13 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Disable content-visibility for small grids (e.g., homepage featured dogs)
+   to prevent layout miscalculation on client-side back navigation */
+.dog-card--no-contain {
+  content-visibility: visible;
+  contain-intrinsic-size: none;
+}
+
 .dog-card:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);

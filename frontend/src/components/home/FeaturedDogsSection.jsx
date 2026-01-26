@@ -31,6 +31,7 @@ export default function FeaturedDogsSection({ dogs, totalCount }) {
               key={dog.id}
               dog={dog}
               priority={index < 3}
+              disableContainment
             />
           ))}
         </div>
