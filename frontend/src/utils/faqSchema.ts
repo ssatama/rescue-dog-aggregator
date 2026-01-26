@@ -3,20 +3,9 @@
  * Generates FAQPage schema for dog detail pages to enable rich results
  */
 
-interface DogProfilerData {
-  good_with_children?: "yes" | "no" | "maybe" | "unknown";
-  good_with_dogs?: "yes" | "no" | "maybe" | "unknown";
-  good_with_cats?: "yes" | "no" | "maybe" | "unknown";
-  energy_level?: "low" | "medium" | "high" | "very_high";
-  experience_level?: "first_time_ok" | "some_experience" | "experienced_only";
-  home_type?: "apartment_ok" | "house_preferred" | "house_required";
-  exercise_needs?: "minimal" | "moderate" | "high";
-}
+import type { Dog, DogProfilerData } from "../types/dog";
 
-interface DogData {
-  name: string;
-  dog_profiler_data?: DogProfilerData;
-}
+type DogData = Pick<Dog, "name" | "dog_profiler_data">;
 
 interface FAQItem {
   "@type": "Question";
@@ -33,7 +22,7 @@ interface FAQSchema {
   mainEntity: FAQItem[];
 }
 
-type CompatibilityValue = "yes" | "no" | "maybe" | "unknown";
+type CompatibilityValue = NonNullable<DogProfilerData["good_with_children"]>;
 
 const formatCompatibilityAnswer = (
   name: string,

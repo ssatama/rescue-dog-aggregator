@@ -5,25 +5,11 @@
  */
 
 import React from "react";
+import type { Dog } from "../../types/dog";
 import { generateFAQSchema } from "../../utils/faqSchema";
 
-interface DogProfilerData {
-  good_with_children?: "yes" | "no" | "maybe" | "unknown";
-  good_with_dogs?: "yes" | "no" | "maybe" | "unknown";
-  good_with_cats?: "yes" | "no" | "maybe" | "unknown";
-  energy_level?: "low" | "medium" | "high" | "very_high";
-  experience_level?: "first_time_ok" | "some_experience" | "experienced_only";
-  home_type?: "apartment_ok" | "house_preferred" | "house_required";
-  exercise_needs?: "minimal" | "moderate" | "high";
-}
-
-interface DogData {
-  name: string;
-  dog_profiler_data?: DogProfilerData;
-}
-
 interface DogFAQSchemaProps {
-  dog: DogData;
+  dog: Pick<Dog, "name" | "dog_profiler_data">;
 }
 
 /**
