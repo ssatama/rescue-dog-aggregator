@@ -213,7 +213,7 @@ uv run pytest -m 'not slow and not browser and not external' --maxfail=3
 cd frontend
 pnpm tsc --noEmit
 pnpm lint
-pnpm test -- --passWithNoTests --watchAll=false
+pnpm jest --passWithNoTests --watchAll=false
 ```
 
 **Do not commit if any command fails.**
@@ -239,10 +239,16 @@ pnpm test -- --passWithNoTests --watchAll=false
 
 ```bash
 cd frontend
-pnpm test                 # Unit tests
-pnpm build               # Build verification
-pnpm tsc --noEmit        # Type check
+pnpm test                                        # All unit tests (watch mode)
+pnpm jest --watchAll=false                       # All tests (CI mode, no watch)
+pnpm jest --testPathPatterns "DogSchema"         # Tests matching file pattern
+pnpm jest --testNamePattern "renders JSON-LD"    # Tests matching test name
+pnpm build                                       # Build verification
+pnpm tsc --noEmit                                # Type check
 ```
+
+**Important:** Use `pnpm jest` directly (not `pnpm test --`) when passing options.
+Jest 30+ uses `--testPathPatterns` (plural) for file patterns.
 
 ### Backend
 
@@ -301,7 +307,7 @@ rm -rf .venv && uv sync
 
 # Single test
 uv run pytest tests/api/test_swipe.py::test_name -v
-pnpm test -- --testNamePattern="PersonalityTraits"
+pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
 ```
 
 ## API Endpoints

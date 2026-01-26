@@ -9,7 +9,8 @@ if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
     require("../../../services/serverAnimalsService").getAnimalBySlug;
 }
 import { Suspense } from "react";
-import { generatePetSchema, generateJsonLdScript } from "../../../utils/schema";
+import DogSchema from "../../../components/seo/DogSchema";
+import DogFAQSchema from "../../../components/seo/DogFAQSchema";
 import {
   generateSEODescription,
   generateFallbackDescription,
@@ -67,8 +68,6 @@ export async function generateMetadata(props) {
     // Fallback only for dogs without quality descriptions (avoid poor SEO)
     const description = seoDescription || generateFallbackDescription(dog);
 
-    // Generate Pet schema for structured data
-    const petSchema = generatePetSchema(dog);
 
     // Helper function to truncate description for different platforms
     const truncateDescription = (text, maxLength) => {
@@ -160,13 +159,6 @@ export async function generateMetadata(props) {
       metadata.twitter.images = [fallbackImage];
     }
 
-    // Add structured data as JSON-LD in the head
-    if (petSchema) {
-      metadata.other = {
-        "script:ld+json": generateJsonLdScript(petSchema),
-      };
-    }
-
     return metadata;
   } catch (error) {
     return {
@@ -237,6 +229,9 @@ async function DogDetailPageAsync(props) {
 
   return (
     <>
+      {/* JSON-LD structured data for SEO */}
+      {initialDog && <DogSchema dog={initialDog} />}
+      {initialDog && <DogFAQSchema dog={initialDog} />}
       {/* Preload hero image for LCP optimization */}
       {heroImageUrl && <ImagePreload src={heroImageUrl} />}
       <Suspense fallback={<DogDetailSkeleton />}>

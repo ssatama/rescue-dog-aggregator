@@ -93,14 +93,9 @@ describe("SEO Meta Tags", () => {
         },
       ]);
 
-      // Check structured data
-      expect(metadata.other["script:ld+json"]).toBeDefined();
-      const structuredData = JSON.parse(metadata.other["script:ld+json"]);
-      expect(structuredData["@type"]).toBe("Product");
-      expect(structuredData.additionalType).toBe(
-        "http://dbpedia.org/ontology/Dog",
-      );
-      expect(structuredData.name).toBe("Buddy - Labrador Retriever");
+      // Note: JSON-LD structured data is now rendered via DogSchema component, not metadata.other
+      // See DogSchema.test.tsx for structured data tests
+      expect(metadata.other).toBeUndefined();
     });
 
     test("should generate meta tags for dog without description", async () => {
