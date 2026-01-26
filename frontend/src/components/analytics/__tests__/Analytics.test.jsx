@@ -2,7 +2,7 @@ import { render } from "../../../test-utils";
 import Analytics from "../Analytics";
 
 // Mock Vercel Analytics
-jest.mock("@vercel/analytics/react", () => ({
+jest.mock("@vercel/analytics/next", () => ({
   Analytics: function MockAnalytics() {
     return <div data-testid="vercel-analytics" />;
   },

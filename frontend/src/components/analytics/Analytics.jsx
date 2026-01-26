@@ -1,9 +1,15 @@
 "use client";
 
-import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
+
+function handleBeforeSend(event) {
+  if (typeof window !== "undefined" && localStorage.getItem("va-disable")) {
+    return null;
+  }
+  return event;
+}
 
 export default function Analytics() {
-  // Only render analytics in production environments
   const isProduction = process.env.NODE_ENV === "production";
   const isVercelEnvironment =
     process.env.VERCEL_ENV === "production" ||
@@ -13,5 +19,5 @@ export default function Analytics() {
     return null;
   }
 
-  return <VercelAnalytics />;
+  return <VercelAnalytics beforeSend={handleBeforeSend} />;
 }
