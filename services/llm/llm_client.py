@@ -69,12 +69,11 @@ class LLMClient:
         with sentry_sdk.start_span(
             op="ai.chat_completions",
             name=f"openrouter:{model}",
-            attributes={
-                "ai.model_id": model,
-                "ai.temperature": temperature,
-                "ai.max_tokens": max_tokens,
-            },
         ) as span:
+            span.set_data("ai.model_id", model)
+            span.set_data("ai.temperature", temperature)
+            span.set_data("ai.max_tokens", max_tokens)
+
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     "https://openrouter.ai/api/v1/chat/completions",
@@ -97,17 +96,17 @@ class LLMClient:
                 if response.status_code != 200:
                     error_data = response.json()
                     logger.error(f"API Error: {error_data}")
-                    span.set_status("error")
-                    span.set_attribute("ai.error", str(error_data))
+                    span.set_data("status", "error")
+                    span.set_data("ai.error", str(error_data))
                     response.raise_for_status()
 
                 result = response.json()
 
                 # Add usage data to span if available
                 if "usage" in result:
-                    span.set_attribute("ai.prompt_tokens", result["usage"].get("prompt_tokens", 0))
-                    span.set_attribute("ai.completion_tokens", result["usage"].get("completion_tokens", 0))
-                    span.set_attribute("ai.total_tokens", result["usage"].get("total_tokens", 0))
+                    span.set_data("ai.prompt_tokens", result["usage"].get("prompt_tokens", 0))
+                    span.set_data("ai.completion_tokens", result["usage"].get("completion_tokens", 0))
+                    span.set_data("ai.total_tokens", result["usage"].get("total_tokens", 0))
 
                 return result
 
@@ -252,13 +251,12 @@ class LLMClient:
         with sentry_sdk.start_span(
             op="ai.vision",
             name=f"openrouter:{model}",
-            attributes={
-                "ai.model_id": model,
-                "ai.temperature": temperature,
-                "ai.max_tokens": max_tokens,
-                "ai.has_image": True,
-            },
-        ):
+        ) as span:
+            span.set_data("ai.model_id", model)
+            span.set_data("ai.temperature", temperature)
+            span.set_data("ai.max_tokens", max_tokens)
+            span.set_data("ai.has_image", True)
+
             # Format messages for vision API
             messages = [
                 {

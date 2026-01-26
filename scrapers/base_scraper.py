@@ -1392,9 +1392,9 @@ class BaseScraper(ABC):
 
         except ImportError as e:
             self.logger.warning(f"AdoptionDetectionService not available: {e}")
-        except (ValueError, TypeError, RuntimeError, AttributeError, KeyError) as e:
-            # Catch common runtime errors but not system errors (KeyboardInterrupt, SystemExit)
-            # This is intentionally broad since adoption checking is non-critical
+        except Exception as e:
+            # Catch all exceptions but not BaseException (SystemExit, KeyboardInterrupt)
+            # Adoption checking is non-critical - log and continue
             self.logger.error(f"Error during adoption checking: {e}")
             capture_scraper_error(
                 error=e,
