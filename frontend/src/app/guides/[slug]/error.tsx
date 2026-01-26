@@ -2,7 +2,7 @@
 
 import { RouteErrorBoundary } from "@/components/error/RouteErrorBoundary";
 
-export default function SwipeError({
+export default function GuideDetailError({
   error,
   reset,
 }: {
@@ -13,8 +13,8 @@ export default function SwipeError({
     <RouteErrorBoundary
       error={error}
       reset={reset}
-      feature="swipe"
-      message="We couldn't load the swipe page. Please try again."
+      feature="guide-detail"
+      message="We couldn't load this guide. Please try again."
     />
   );
 }

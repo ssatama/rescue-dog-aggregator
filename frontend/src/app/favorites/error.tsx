@@ -2,7 +2,7 @@
 
 import { RouteErrorBoundary } from "@/components/error/RouteErrorBoundary";
 
-export default function SwipeError({
+export default function FavoritesError({
   error,
   reset,
 }: {
@@ -13,8 +13,8 @@ export default function SwipeError({
     <RouteErrorBoundary
       error={error}
       reset={reset}
-      feature="swipe"
-      message="We couldn't load the swipe page. Please try again."
+      feature="favorites"
+      message="We couldn't load your favorites. Please try again."
     />
   );
 }

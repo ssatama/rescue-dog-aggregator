@@ -2,7 +2,7 @@
 
 import { RouteErrorBoundary } from "@/components/error/RouteErrorBoundary";
 
-export default function SwipeError({
+export default function DogsError({
   error,
   reset,
 }: {
@@ -13,8 +13,8 @@ export default function SwipeError({
     <RouteErrorBoundary
       error={error}
       reset={reset}
-      feature="swipe"
-      message="We couldn't load the swipe page. Please try again."
+      feature="dogs-catalog"
+      message="We couldn't load the dogs catalog. Please try again."
     />
   );
 }

@@ -47,8 +47,9 @@ export const reportError = (error, context = {}) => {
     // In production, report to Sentry
     try {
       // Preserve original error object to maintain stack traces
+      // Use Error.cause to preserve the original error for debugging
       const errorToReport =
-        error instanceof Error ? error : new Error(String(error));
+        error instanceof Error ? error : new Error(String(error), { cause: error });
 
       Sentry.captureException(errorToReport, {
         extra: context,

@@ -144,24 +144,33 @@ async def pydantic_validation_exception_handler(request, exc):
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
-    """Capture ALL unhandled exceptions in Sentry."""
+    """Safety net for unhandled exceptions - explicitly captures to Sentry.
+
+    While FastApiIntegration captures most exceptions, this handler ensures
+    any that slip through are still captured with request context.
+    """
     import sentry_sdk
 
-    # Capture the exception in Sentry
-    sentry_sdk.capture_exception(exc)
+    with sentry_sdk.new_scope() as scope:
+        scope.set_tag("error.type", "unhandled")
+        scope.set_tag("handler", "global_exception")
+        scope.set_context(
+            "request",
+            {
+                "method": request.method,
+                "url": str(request.url),
+                "path": request.url.path,
+            },
+        )
+        sentry_sdk.capture_exception(exc, scope=scope)
 
-    # Log it
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
 
-    # For test endpoints in non-production, preserve the original error message
     from fastapi.responses import JSONResponse
 
-    # Check if this is a test endpoint and we're not in production
     if ENVIRONMENT != "production" and "/sentry-test/" in str(request.url):
-        # Preserve the original error message for test endpoints
         return JSONResponse(status_code=500, content={"detail": str(exc)})
 
-    # Return a generic error response for production and non-test endpoints
     return JSONResponse(status_code=500, content={"detail": "Internal server error occurred"})
 
 

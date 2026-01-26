@@ -5,6 +5,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+import sentry_sdk
+
 
 class LLMEnrichmentHandler:
     """Handles LLM-based enrichment of animal data.
@@ -80,9 +82,17 @@ class LLMEnrichmentHandler:
             return self._process_enrichment_batch(animals_for_enrichment, llm_org_id)
         except ImportError as e:
             self.logger.warning(f"LLM profiler modules not available: {e}")
+            with sentry_sdk.new_scope() as scope:
+                scope.set_tag("scraper.organization", self.organization_name)
+                scope.set_tag("error.type", "import_error")
+                if self.organization_id:
+                    scope.set_tag("scraper.org_id", str(self.organization_id))
+                sentry_sdk.capture_exception(e, scope=scope)
             return False
         except Exception as e:
             self.logger.error(f"Error during LLM enrichment post-processing: {e}")
+            # Capture exception to Sentry before alerting
+            sentry_sdk.capture_exception(e)
             self._alert_failure(
                 batch_size=len(animals_for_enrichment),
                 failed_count=len(animals_for_enrichment),

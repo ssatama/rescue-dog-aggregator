@@ -1,18 +1,39 @@
 import logging
 import os
+import re
 from contextlib import contextmanager
 from typing import Any
 
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
-from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
 logger = logging.getLogger(__name__)
 
+# Patterns for noisy transactions to filter out
+NOISY_TRANSACTION_PATTERNS = [
+    re.compile(r"^(GET |HEAD |POST )?/?health$"),
+    re.compile(r"^(GET |HEAD |POST )?/?api/monitoring(/health)?$"),
+    re.compile(r"^(GET |HEAD |POST )?/?monitoring$"),
+    re.compile(r"^(GET |HEAD |POST )?/?sentry-test/"),
+]
+
 
 def scrub_sensitive_data(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any] | None:
+    """Scrub sensitive data from Sentry events and filter low-value errors."""
+    # Filter out HTTP 404 errors only - check exception type to avoid filtering legitimate errors
+    # that happen to contain "404" or "Not Found" in their message
+    if event.get("exception"):
+        values = event["exception"].get("values", [])
+        for value in values:
+            exc_type = value.get("type", "")
+            exc_value = str(value.get("value", ""))
+            # Only filter actual HTTP 404 exceptions, not arbitrary errors containing "404"
+            http_exception_types = ("HTTPException", "StarletteHTTPException", "NotFoundError")
+            if exc_type in http_exception_types and ("404" in exc_value or "Not Found" in exc_value):
+                return None
+
     if "request" in event and "headers" in event["request"]:
         sensitive_headers = ["authorization", "cookie", "x-api-key"]
         for header in sensitive_headers:
@@ -34,16 +55,10 @@ def filter_transactions(event: dict[str, Any], hint: dict[str, Any]) -> dict[str
     """Filter out noisy transactions from performance monitoring."""
     transaction_name = event.get("transaction", "")
 
-    # Skip health check and internal monitoring routes
-    noisy_endpoints = [
-        "/health",
-        "/api/monitoring/health",
-        "GET /health",
-        "GET /api/monitoring/health",
-    ]
-
-    if transaction_name in noisy_endpoints:
-        return None
+    # Use regex patterns to filter noisy endpoints (handles HEAD, trailing slashes, etc.)
+    for pattern in NOISY_TRANSACTION_PATTERNS:
+        if pattern.match(transaction_name):
+            return None
 
     return event
 
@@ -68,13 +83,14 @@ def init_sentry(app_environment: str) -> None:
         integrations=[
             StarletteIntegration(
                 transaction_style="endpoint",
-                failed_request_status_codes=set(range(500, 600)),
+                failed_request_status_codes={401, 403, 429, *range(500, 600)},
+                middleware_spans=True,
             ),
             FastApiIntegration(
                 transaction_style="endpoint",
-                failed_request_status_codes=set(range(500, 600)),
+                failed_request_status_codes={401, 403, 429, *range(500, 600)},
+                middleware_spans=True,
             ),
-            SqlalchemyIntegration(),
             LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
         ],
         traces_sample_rate=1.0,  # 100% sampling in production (low traffic)
@@ -90,21 +106,20 @@ def init_sentry(app_environment: str) -> None:
         enable_tracing=True,
     )
 
-    with sentry_sdk.configure_scope() as scope:
-        scope.set_tag("service", "backend-api")
-        scope.set_tag("runtime", "python")
-        scope.set_tag("environment", "production")
+    sentry_sdk.set_tag("service", "backend-api")
+    sentry_sdk.set_tag("runtime", "python")
+    sentry_sdk.set_tag("environment", "production")
 
 
 def handle_database_error(error: Exception, operation: str) -> None:
-    with sentry_sdk.push_scope() as scope:
+    with sentry_sdk.new_scope() as scope:
         scope.set_tag("database.operation", operation)
         scope.set_context("database", {"operation": operation, "error_type": type(error).__name__})
-        sentry_sdk.capture_exception(error)
+        sentry_sdk.capture_exception(error, scope=scope)
 
 
 def handle_api_error(error: Exception, endpoint: str, method: str) -> None:
-    with sentry_sdk.push_scope() as scope:
+    with sentry_sdk.new_scope() as scope:
         scope.set_tag("api.endpoint", endpoint)
         scope.set_tag("api.method", method)
         scope.set_context(
@@ -115,7 +130,7 @@ def handle_api_error(error: Exception, endpoint: str, method: str) -> None:
                 "error_type": type(error).__name__,
             },
         )
-        sentry_sdk.capture_exception(error)
+        sentry_sdk.capture_exception(error, scope=scope)
 
 
 def track_slow_query(query: str, duration_ms: float, threshold_ms: float = 3000) -> None:
@@ -131,10 +146,10 @@ def track_slow_query(query: str, duration_ms: float, threshold_ms: float = 3000)
             },
         )
 
-        with sentry_sdk.push_scope() as scope:
+        with sentry_sdk.new_scope() as scope:
             scope.set_tag("slow_query", "true")
             scope.set_extra("query_duration_ms", duration_ms)
-            sentry_sdk.capture_message(f"Slow database query: {duration_ms:.0f}ms", level="warning")
+            sentry_sdk.capture_message(f"Slow database query: {duration_ms:.0f}ms", level="warning", scope=scope)
 
 
 @contextmanager

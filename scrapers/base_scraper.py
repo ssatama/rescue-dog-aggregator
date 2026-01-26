@@ -1393,6 +1393,13 @@ class BaseScraper(ABC):
         except ImportError as e:
             self.logger.warning(f"AdoptionDetectionService not available: {e}")
         except Exception as e:
+            # Catch all exceptions but not BaseException (SystemExit, KeyboardInterrupt)
+            # Adoption checking is non-critical - log and continue
             self.logger.error(f"Error during adoption checking: {e}")
-            # Don't fail the scrape if adoption checking fails
-            pass
+            capture_scraper_error(
+                error=e,
+                org_name=self.get_organization_name(),
+                org_id=self.organization_id,
+                scrape_log_id=getattr(self, "scrape_log_id", None),
+                phase="adoption_detection",
+            )

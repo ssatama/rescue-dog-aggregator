@@ -13,62 +13,72 @@ const isProduction = environment === "production";
 // ONLY initialize Sentry in production
 if (isProduction) {
   Sentry.init({
-  dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
+    dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  // Environment configuration
-  environment,
+    // Environment configuration
+    environment,
 
-  // Release tracking
-  release: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
+    // Release tracking
+    release: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
 
-  // Performance monitoring - 100% sampling for low-traffic site (15 visitors/day)
-  tracesSampleRate: 1.0,
+    // Performance monitoring - 100% sampling for low-traffic site (15 visitors/day)
+    tracesSampleRate: 1.0,
 
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
+    // Session replay not applicable on edge - explicitly set to 0
+    replaysSessionSampleRate: 0,
+    replaysOnErrorSampleRate: 0,
 
-  // Debug mode disabled (non-debug bundle in use)
-  // debug: isDevelopment,
+    // Enable logs to be sent to Sentry
+    enableLogs: true,
 
-  // Ignore certain errors
-  ignoreErrors: [
-    "ResizeObserver loop limit exceeded",
-    "Non-Error promise rejection captured",
-  ],
+    // Explicit security setting
+    sendDefaultPii: false,
 
-  // Data scrubbing
-  beforeSend(event, hint) {
-    // In development, always send events
-    if (isDevelopment) {
+    // Breadcrumb configuration
+    maxBreadcrumbs: 50,
+
+    // Debug mode disabled (non-debug bundle in use)
+    // debug: isDevelopment,
+
+    // Ignore certain errors
+    ignoreErrors: [
+      "ResizeObserver loop limit exceeded",
+      "Non-Error promise rejection captured",
+    ],
+
+    // Data scrubbing
+    beforeSend(event, hint) {
+      // In development, always send events
+      if (isDevelopment) {
+        return event;
+      }
+
+      // Add edge context
+      event.contexts = {
+        ...event.contexts,
+        runtime: {
+          name: "edge",
+        },
+      };
+
+      // Add edge tags
+      event.tags = {
+        ...event.tags,
+        "edge.region": process.env.VERCEL_REGION || "unknown",
+        "deployment.type": process.env.VERCEL ? "vercel" : "local",
+      };
+
       return event;
-    }
-
-    // Add edge context
-    event.contexts = {
-      ...event.contexts,
-      runtime: {
-        name: "edge",
-      },
-    };
-
-    // Add edge tags
-    event.tags = {
-      ...event.tags,
-      "edge.region": process.env.VERCEL_REGION || "unknown",
-      "deployment.type": process.env.VERCEL ? "vercel" : "local",
-    };
-
-    return event;
-  },
-
-  // Set initial scope
-  initialScope: {
-    tags: {
-      component: "edge",
-      runtime: "edge",
     },
-  },
-});
+
+    // Set initial scope
+    initialScope: {
+      tags: {
+        component: "edge",
+        runtime: "edge",
+      },
+    },
+  });
 } else {
   console.log(`Sentry disabled for ${environment} environment - only enabled in production`);
 }
