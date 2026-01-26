@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname;
 
@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   } catch (error) {
     Sentry.captureException(error, {
-      extra: { pathname: request.nextUrl.pathname, context: "middleware" },
+      extra: { pathname: request.nextUrl.pathname, context: "proxy" },
     });
     return NextResponse.next();
   }
