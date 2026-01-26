@@ -95,15 +95,6 @@ const nextConfig = {
           },
         ],
       },
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-Robots-Tag',
-            value: 'all',
-          },
-        ],
-      },
     ];
   },
 

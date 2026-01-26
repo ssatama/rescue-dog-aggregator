@@ -41,10 +41,13 @@ export const DogFAQSchema: React.FC<DogFAQSchemaProps> = ({ dog }) => {
     return null;
   }
 
+  // Escape < to prevent script tag injection (defense-in-depth for JSON-LD)
+  const jsonLd = JSON.stringify(schema, null, 2).replace(/</g, "\\u003c");
+
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema, null, 2) }}
+      dangerouslySetInnerHTML={{ __html: jsonLd }}
     />
   );
 };

@@ -55,7 +55,8 @@ export const DogSchema: React.FC<DogSchemaProps> = ({ dog }) => {
     return null;
   }
 
-  const jsonLdScript = generateJsonLdScript(schema);
+  // Escape < to prevent script tag injection (defense-in-depth for JSON-LD)
+  const jsonLdScript = generateJsonLdScript(schema).replace(/</g, "\\u003c");
 
   return (
     <script
