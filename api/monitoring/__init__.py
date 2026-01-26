@@ -22,11 +22,16 @@ NOISY_TRANSACTION_PATTERNS = [
 
 def scrub_sensitive_data(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any] | None:
     """Scrub sensitive data from Sentry events and filter low-value errors."""
-    # Filter out 404 errors - too noisy for production monitoring
+    # Filter out HTTP 404 errors only - check exception type to avoid filtering legitimate errors
+    # that happen to contain "404" or "Not Found" in their message
     if event.get("exception"):
         values = event["exception"].get("values", [])
         for value in values:
-            if "404" in str(value.get("value", "")) or "Not Found" in str(value.get("value", "")):
+            exc_type = value.get("type", "")
+            exc_value = str(value.get("value", ""))
+            # Only filter actual HTTP 404 exceptions, not arbitrary errors containing "404"
+            http_exception_types = ("HTTPException", "StarletteHTTPException", "NotFoundError")
+            if exc_type in http_exception_types and ("404" in exc_value or "Not Found" in exc_value):
                 return None
 
     if "request" in event and "headers" in event["request"]:

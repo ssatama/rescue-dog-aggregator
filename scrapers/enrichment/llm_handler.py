@@ -82,6 +82,8 @@ class LLMEnrichmentHandler:
             return self._process_enrichment_batch(animals_for_enrichment, llm_org_id)
         except ImportError as e:
             self.logger.warning(f"LLM profiler modules not available: {e}")
+            # Capture to Sentry - missing modules in production is a deployment issue
+            sentry_sdk.capture_exception(e)
             return False
         except Exception as e:
             self.logger.error(f"Error during LLM enrichment post-processing: {e}")

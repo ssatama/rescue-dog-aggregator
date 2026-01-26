@@ -1,5 +1,5 @@
 import os
-from unittest.mock import ANY, MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import sentry_sdk
@@ -100,6 +100,37 @@ class TestSentryConfiguration:
         assert scrubbed["extra"]["password_hash"] == "[REDACTED]"
         assert scrubbed["extra"]["api_token"] == "[REDACTED]"
         assert scrubbed["extra"]["normal_field"] == "value"
+
+    def test_404_filtering_only_filters_http_exceptions(self):
+        """Test that 404 filtering only drops HTTP exceptions, not arbitrary errors."""
+        from api.monitoring import scrub_sensitive_data
+
+        # HTTP 404 exception should be filtered (return None)
+        http_404_event = {"exception": {"values": [{"type": "HTTPException", "value": "404: Not Found"}]}}
+        assert scrub_sensitive_data(http_404_event, {}) is None
+
+        # StarletteHTTPException should also be filtered
+        starlette_404_event = {"exception": {"values": [{"type": "StarletteHTTPException", "value": "404 Not Found"}]}}
+        assert scrub_sensitive_data(starlette_404_event, {}) is None
+
+    def test_404_filtering_does_not_drop_legitimate_errors(self):
+        """Test that errors containing '404' but not HTTP exceptions are NOT filtered."""
+        from api.monitoring import scrub_sensitive_data
+
+        # ValueError with "404" in message should NOT be filtered
+        value_error_event = {"exception": {"values": [{"type": "ValueError", "value": "User with ID 404 not found"}]}}
+        result = scrub_sensitive_data(value_error_event, {})
+        assert result is not None
+
+        # Database error with "Not Found" should NOT be filtered
+        db_error_event = {"exception": {"values": [{"type": "DatabaseError", "value": "Record not found in table users"}]}}
+        result = scrub_sensitive_data(db_error_event, {})
+        assert result is not None
+
+        # FileNotFoundError should NOT be filtered (different exception type)
+        file_error_event = {"exception": {"values": [{"type": "FileNotFoundError", "value": "Config file not found"}]}}
+        result = scrub_sensitive_data(file_error_event, {})
+        assert result is not None
 
     def test_transaction_style_is_endpoint(self):
         from api.monitoring import init_sentry

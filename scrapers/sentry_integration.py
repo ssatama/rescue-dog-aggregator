@@ -378,12 +378,9 @@ def scrape_transaction(org_name: str, org_id: int | None = None):
 
         try:
             yield transaction
-            # Check if alerts were fired (partial failures)
-            had_alerts = transaction._data.get("had_alerts", False) if hasattr(transaction, "_data") else False
-            if had_alerts:
-                transaction.set_status("degraded")  # Partial success
-            else:
-                transaction.set_status("ok")
+            # Set status to "ok" - partial failures are tracked via separate alerts
+            # (Removed internal _data access that was fragile and SDK-version dependent)
+            transaction.set_status("ok")
         except Exception as e:
             transaction.set_status("internal_error")
             transaction.set_data("error", str(e))

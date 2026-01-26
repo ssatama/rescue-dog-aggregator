@@ -1392,9 +1392,10 @@ class BaseScraper(ABC):
 
         except ImportError as e:
             self.logger.warning(f"AdoptionDetectionService not available: {e}")
-        except Exception as e:
+        except (ValueError, TypeError, RuntimeError, AttributeError, KeyError) as e:
+            # Catch common runtime errors but not system errors (KeyboardInterrupt, SystemExit)
+            # This is intentionally broad since adoption checking is non-critical
             self.logger.error(f"Error during adoption checking: {e}")
-            # Capture adoption detection errors to Sentry
             capture_scraper_error(
                 error=e,
                 org_name=self.get_organization_name(),
@@ -1402,5 +1403,3 @@ class BaseScraper(ABC):
                 scrape_log_id=getattr(self, "scrape_log_id", None),
                 phase="adoption_detection",
             )
-            # Don't fail the scrape if adoption checking fails
-            pass
