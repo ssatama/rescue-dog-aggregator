@@ -106,7 +106,6 @@ def init_sentry(app_environment: str) -> None:
         enable_tracing=True,
     )
 
-    # Use direct API calls instead of deprecated configure_scope()
     sentry_sdk.set_tag("service", "backend-api")
     sentry_sdk.set_tag("runtime", "python")
     sentry_sdk.set_tag("environment", "production")

@@ -131,8 +131,9 @@ def handle_database_error(error: Exception, operation: str) -> None:
     import sentry_sdk
 
     # Capture to Sentry with context
+    error_type = "database" if isinstance(error, psycopg2.Error) else type(error).__name__.lower()
     with sentry_sdk.new_scope() as scope:
-        scope.set_tag("error.type", "database")
+        scope.set_tag("error.type", error_type)
         scope.set_tag("operation", operation)
         scope.set_context(
             "database",

@@ -65,7 +65,6 @@ class LLMClient:
             httpx.HTTPStatusError: If API returns error status
             json.JSONDecodeError: If response is not valid JSON
         """
-        # Wrap LLM API call in Sentry span for performance monitoring
         with sentry_sdk.start_span(
             op="ai.chat_completions",
             name=f"openrouter:{model}",
@@ -247,7 +246,6 @@ class LLMClient:
             httpx.HTTPStatusError: If API returns error status
             json.JSONDecodeError: If response is not valid JSON
         """
-        # Wrap vision API call in Sentry span for performance monitoring
         with sentry_sdk.start_span(
             op="ai.vision",
             name=f"openrouter:{model}",

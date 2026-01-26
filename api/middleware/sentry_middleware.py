@@ -1,8 +1,4 @@
-"""Sentry middleware for timeout detection.
-
-Note: SentryPerformanceMiddleware was removed as dead code -
-FastApiIntegration handles performance tracking automatically.
-"""
+"""Sentry middleware for timeout detection."""
 
 import logging
 import os

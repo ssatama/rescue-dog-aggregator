@@ -87,7 +87,7 @@ def init_scraper_sentry(environment: str = "production") -> bool:
             LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
         ],
         traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,  # Fix 4.2: Add scraper profiling
+        profiles_sample_rate=1.0,
         attach_stacktrace=True,
         send_default_pii=False,
         before_send=scrub_sensitive_data,
@@ -97,7 +97,6 @@ def init_scraper_sentry(environment: str = "production") -> bool:
         enable_tracing=True,
     )
 
-    # Use direct API calls instead of deprecated configure_scope()
     sentry_sdk.set_tag("service", "scraper-cron")
     sentry_sdk.set_tag("runtime", "python")
     sentry_sdk.set_tag("environment", environment)
@@ -114,6 +113,28 @@ def _classify_error(error: Exception) -> tuple[str, str]:
     """
     error_type = type(error).__name__
     error_str = str(error).lower()
+
+    # Auth errors (check early - 401/403 are critical security events)
+    if any(auth in error_type.lower() for auth in ["unauthorized", "forbidden", "auth"]):
+        return "auth", "critical"
+    if any(auth in error_str for auth in ["401", "403", "unauthorized", "forbidden"]):
+        return "auth", "critical"
+
+    # Rate limit errors (check before network - 429 is a specific issue)
+    if "429" in error_str or "too many requests" in error_str or "throttle" in error_str:
+        return "rate_limit", "high"
+
+    # Browser/Playwright errors (common in scrapers)
+    if any(browser in error_type.lower() for browser in ["playwright", "browser", "page"]):
+        return "browser", "high"
+    if any(browser in error_str for browser in ["playwright", "browser", "navigation"]):
+        return "browser", "high"
+
+    # Resource errors (memory, etc.)
+    if "memoryerror" in error_type.lower() or "resourceexhausted" in error_type.lower():
+        return "resource", "critical"
+    if "memory" in error_str or "out of memory" in error_str:
+        return "resource", "critical"
 
     # Network errors
     if any(net in error_type.lower() for net in ["connection", "timeout", "network", "http"]):
