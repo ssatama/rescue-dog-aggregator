@@ -5,6 +5,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+import sentry_sdk
+
 
 class LLMEnrichmentHandler:
     """Handles LLM-based enrichment of animal data.
@@ -83,6 +85,8 @@ class LLMEnrichmentHandler:
             return False
         except Exception as e:
             self.logger.error(f"Error during LLM enrichment post-processing: {e}")
+            # Capture exception to Sentry before alerting
+            sentry_sdk.capture_exception(e)
             self._alert_failure(
                 batch_size=len(animals_for_enrichment),
                 failed_count=len(animals_for_enrichment),

@@ -14,6 +14,7 @@ import os
 from typing import Any
 
 import httpx
+import sentry_sdk
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -64,31 +65,51 @@ class LLMClient:
             httpx.HTTPStatusError: If API returns error status
             json.JSONDecodeError: If response is not valid JSON
         """
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://rescuedogs.me",
-                    "X-Title": "Rescue Dog Aggregator",
-                },
-                json={
-                    "model": model,
-                    "messages": messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                },
-                timeout=timeout,
-            )
+        # Wrap LLM API call in Sentry span for performance monitoring
+        with sentry_sdk.start_span(
+            op="ai.chat_completions",
+            name=f"openrouter:{model}",
+            attributes={
+                "ai.model_id": model,
+                "ai.temperature": temperature,
+                "ai.max_tokens": max_tokens,
+            },
+        ) as span:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://rescuedogs.me",
+                        "X-Title": "Rescue Dog Aggregator",
+                    },
+                    json={
+                        "model": model,
+                        "messages": messages,
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                    },
+                    timeout=timeout,
+                )
 
-            # Check for errors
-            if response.status_code != 200:
-                error_data = response.json()
-                logger.error(f"API Error: {error_data}")
-                response.raise_for_status()
+                # Check for errors
+                if response.status_code != 200:
+                    error_data = response.json()
+                    logger.error(f"API Error: {error_data}")
+                    span.set_status("error")
+                    span.set_attribute("ai.error", str(error_data))
+                    response.raise_for_status()
 
-            return response.json()
+                result = response.json()
+
+                # Add usage data to span if available
+                if "usage" in result:
+                    span.set_attribute("ai.prompt_tokens", result["usage"].get("prompt_tokens", 0))
+                    span.set_attribute("ai.completion_tokens", result["usage"].get("completion_tokens", 0))
+                    span.set_attribute("ai.total_tokens", result["usage"].get("total_tokens", 0))
+
+                return result
 
     def extract_content_from_response(self, response_data: dict[str, Any]) -> str:
         """
@@ -227,22 +248,33 @@ class LLMClient:
             httpx.HTTPStatusError: If API returns error status
             json.JSONDecodeError: If response is not valid JSON
         """
-        # Format messages for vision API
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": image_url}},
-                ],
-            }
-        ]
+        # Wrap vision API call in Sentry span for performance monitoring
+        with sentry_sdk.start_span(
+            op="ai.vision",
+            name=f"openrouter:{model}",
+            attributes={
+                "ai.model_id": model,
+                "ai.temperature": temperature,
+                "ai.max_tokens": max_tokens,
+                "ai.has_image": True,
+            },
+        ):
+            # Format messages for vision API
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}},
+                    ],
+                }
+            ]
 
-        # Delegate to existing call_api_and_parse for consistency
-        return await self.call_api_and_parse(
-            messages=messages,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=timeout,
-        )
+            # Delegate to existing call_api_and_parse for consistency
+            return await self.call_api_and_parse(
+                messages=messages,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=timeout,
+            )

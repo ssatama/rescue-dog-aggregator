@@ -131,7 +131,7 @@ def handle_database_error(error: Exception, operation: str) -> None:
     import sentry_sdk
 
     # Capture to Sentry with context
-    with sentry_sdk.push_scope() as scope:
+    with sentry_sdk.new_scope() as scope:
         scope.set_tag("error.type", "database")
         scope.set_tag("operation", operation)
         scope.set_context(
@@ -142,7 +142,7 @@ def handle_database_error(error: Exception, operation: str) -> None:
                 "error_message": str(error),
             },
         )
-        sentry_sdk.capture_exception(error)
+        sentry_sdk.capture_exception(error, scope=scope)
 
     if isinstance(error, psycopg2.Error):
         logger.error(f"Database error during {operation}: {error}")
@@ -163,7 +163,7 @@ def handle_validation_error(error: Exception, context: str) -> None:
     import sentry_sdk
 
     # Capture to Sentry with context
-    with sentry_sdk.push_scope() as scope:
+    with sentry_sdk.new_scope() as scope:
         scope.set_tag("error.type", "validation")
         scope.set_tag("context", context)
         scope.set_context(
@@ -174,7 +174,7 @@ def handle_validation_error(error: Exception, context: str) -> None:
                 "error_message": str(error),
             },
         )
-        sentry_sdk.capture_exception(error)
+        sentry_sdk.capture_exception(error, scope=scope)
 
     if isinstance(error, PydanticValidationError):
         logger.error(f"Validation error in {context}: {error}")
@@ -201,7 +201,7 @@ def handle_llm_error(error: Exception, operation: str) -> None:
     # Capture to Sentry with rich context
     import sentry_sdk
 
-    with sentry_sdk.push_scope() as scope:
+    with sentry_sdk.new_scope() as scope:
         scope.set_tag("error.type", "llm_service")
         scope.set_tag("operation", operation)
         scope.set_context(
@@ -212,7 +212,7 @@ def handle_llm_error(error: Exception, operation: str) -> None:
                 "error_message": str(error),
             },
         )
-        sentry_sdk.capture_exception(error)
+        sentry_sdk.capture_exception(error, scope=scope)
 
     # Categorize errors and provide safe client responses
     if isinstance(error, httpx.HTTPStatusError):

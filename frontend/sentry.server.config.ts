@@ -23,14 +23,24 @@ if (isProduction) {
     // Performance monitoring - 100% sampling for low-traffic site (15 visitors/day)
     tracesSampleRate: 1.0,
 
+    // Session replay not applicable on server - explicitly set to 0
+    replaysSessionSampleRate: 0,
+    replaysOnErrorSampleRate: 0,
+
     // Enable logs to be sent to Sentry (only errors in production)
     enableLogs: true,
+
+    // Explicit security setting
+    sendDefaultPii: false,
 
     // Debug mode disabled (non-debug bundle in use)
     // debug: isDevelopment,
 
-    // Integrations (profiling only available in Node.js runtime)
-    integrations: [],
+    // Integrations for server-side
+    integrations: [
+      Sentry.httpIntegration(),
+      Sentry.nativeNodeFetchIntegration(),
+    ],
 
     // Ignore certain errors
     ignoreErrors: [
@@ -38,6 +48,9 @@ if (isProduction) {
       "ResizeObserver loop limit exceeded",
       "Non-Error promise rejection captured",
     ],
+
+    // Breadcrumb configuration
+    maxBreadcrumbs: 50,
 
     // Data scrubbing
     beforeSend(event, hint) {

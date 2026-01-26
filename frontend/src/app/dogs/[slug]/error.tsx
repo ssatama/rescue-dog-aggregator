@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 
-export default function SwipeError({
+export default function DogDetailError({
   error,
   reset,
 }: {
@@ -12,7 +12,7 @@ export default function SwipeError({
 }) {
   useEffect(() => {
     Sentry.captureException(error, {
-      tags: { feature: "swipe", errorType: "server-component" },
+      tags: { feature: "dog-detail", errorType: "server-component" },
       extra: { digest: error.digest },
     });
   }, [error]);
@@ -24,7 +24,7 @@ export default function SwipeError({
           Something went wrong
         </h2>
         <p className="text-gray-600 mb-4">
-          We couldn&apos;t load the swipe page. Please try again.
+          We couldn&apos;t load this dog&apos;s profile. Please try again.
         </p>
         <button
           onClick={reset}

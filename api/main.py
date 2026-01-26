@@ -144,13 +144,12 @@ async def pydantic_validation_exception_handler(request, exc):
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
-    """Capture ALL unhandled exceptions in Sentry."""
-    import sentry_sdk
+    """Capture ALL unhandled exceptions in Sentry.
 
-    # Capture the exception in Sentry
-    sentry_sdk.capture_exception(exc)
-
-    # Log it
+    Note: FastApiIntegration automatically captures unhandled exceptions,
+    so we only log here - no manual capture_exception() to avoid duplicates.
+    """
+    # Log it (Sentry LoggingIntegration will capture ERROR level logs)
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
 
     # For test endpoints in non-production, preserve the original error message

@@ -1,10 +1,9 @@
 import os
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import ANY, MagicMock, Mock, patch
 
 import pytest
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
 
@@ -12,8 +11,10 @@ class TestSentryConfiguration:
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
         yield
-        if sentry_sdk.Hub.current.client:
-            sentry_sdk.Hub.current.bind_client(None)
+        # Use modern Sentry API instead of deprecated Hub
+        client = sentry_sdk.get_client()
+        if client.is_active():
+            sentry_sdk.get_global_scope().clear()
 
     def test_sentry_initialization_with_correct_integrations(self):
         from api.monitoring import init_sentry
@@ -30,7 +31,7 @@ class TestSentryConfiguration:
 
                 assert StarletteIntegration in integration_types
                 assert FastApiIntegration in integration_types
-                assert SqlalchemyIntegration in integration_types
+                # SqlalchemyIntegration removed - codebase uses psycopg2 directly
 
     def test_sentry_environment_configuration(self):
         from api.monitoring import init_sentry
@@ -138,7 +139,9 @@ class TestSentryConfiguration:
                         break
 
                 assert fastapi_integration is not None
-                assert fastapi_integration.failed_request_status_codes == set(range(500, 600))
+                # Updated to include 401, 403, 429 in addition to 5xx
+                expected_codes = {401, 403, 429, *range(500, 600)}
+                assert fastapi_integration.failed_request_status_codes == expected_codes
 
     def test_sentry_not_initialized_in_non_production(self):
         """Test that Sentry is NOT initialized in non-production environments."""
@@ -173,7 +176,10 @@ class TestSentryErrorHandling:
         error = OperationalError("Connection failed", None, None)
         handle_database_error(error, "test_operation")
 
-        mock_sentry.assert_called_once_with(error)
+        # Verify capture_exception was called with the error (scope is passed as kwarg)
+        mock_sentry.assert_called_once()
+        call_args = mock_sentry.call_args
+        assert call_args[0][0] is error  # First positional arg is the error
 
     def test_api_endpoint_error_captured(self, mock_sentry):
         from api.monitoring import handle_api_error
@@ -181,7 +187,10 @@ class TestSentryErrorHandling:
         error = ValueError("Invalid input")
         handle_api_error(error, "/api/test", "GET")
 
-        mock_sentry.assert_called_once_with(error)
+        # Verify capture_exception was called with the error (scope is passed as kwarg)
+        mock_sentry.assert_called_once()
+        call_args = mock_sentry.call_args
+        assert call_args[0][0] is error  # First positional arg is the error
 
 
 class TestPerformanceMonitoring:

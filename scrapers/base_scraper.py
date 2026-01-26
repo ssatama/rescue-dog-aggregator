@@ -1394,5 +1394,13 @@ class BaseScraper(ABC):
             self.logger.warning(f"AdoptionDetectionService not available: {e}")
         except Exception as e:
             self.logger.error(f"Error during adoption checking: {e}")
+            # Capture adoption detection errors to Sentry
+            capture_scraper_error(
+                error=e,
+                org_name=self.get_organization_name(),
+                org_id=self.organization_id,
+                scrape_log_id=getattr(self, "scrape_log_id", None),
+                phase="adoption_detection",
+            )
             # Don't fail the scrape if adoption checking fails
             pass

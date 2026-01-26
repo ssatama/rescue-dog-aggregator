@@ -23,19 +23,20 @@ const environment =
 
 const isDevelopment = environment === "development";
 const isProduction = environment === "production";
+const isPreview = environment === "preview";
 
 // Only log in development mode
 if (isDevelopment) {
   console.log("[Sentry] Client instrumentation file loaded");
 }
 
-// ONLY initialize Sentry in production
+// Initialize Sentry in production and preview environments
 if (
-  isProduction &&
+  (isProduction || isPreview) &&
   typeof window !== "undefined" &&
   !window.__sentryInitialized
 ) {
-  // Prevent multiple initializations in production
+  // Prevent multiple initializations
   window.__sentryInitialized = true;
 
   // Only log initialization in development mode
@@ -89,11 +90,7 @@ if (
       Sentry.browserTracingIntegration(),
     ],
 
-    // Transport options
-    transportOptions: {
-      // Use tunnel to bypass ad-blockers
-      tunnel: "/monitoring",
-    },
+    // Note: tunnelRoute in next.config.js handles tunnel - no transportOptions needed
 
     // Debug mode disabled (non-debug bundle in use)
     // debug: isDevelopment,
@@ -263,7 +260,6 @@ if (
   );
 }
 
-// Export for router transition tracking - no-op in non-production
-export const onRouterTransitionStart = isProduction
-  ? Sentry.captureRouterTransitionStart
-  : () => {};
+// Export for router transition tracking - always export the function
+// Sentry SDK handles non-production gracefully internally
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
