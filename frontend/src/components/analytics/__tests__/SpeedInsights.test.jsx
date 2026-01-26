@@ -2,7 +2,7 @@ import { render } from "../../../test-utils";
 import SpeedInsights from "../SpeedInsights";
 
 // Mock Vercel Speed Insights
-jest.mock("@vercel/speed-insights/react", () => ({
+jest.mock("@vercel/speed-insights/next", () => ({
   SpeedInsights: function MockSpeedInsights() {
     return <div data-testid="vercel-speed-insights" />;
   },
