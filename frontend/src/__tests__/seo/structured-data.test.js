@@ -40,60 +40,16 @@ describe("Structured Data Integration", () => {
       },
     };
 
-    test("should include Pet schema in metadata", async () => {
+    test("should not include JSON-LD in metadata (rendered via component instead)", async () => {
       getAnimalBySlug.mockResolvedValue(mockDog);
 
       const metadata = await generateDogMetadata({
         params: { slug: "buddy-labrador-retriever-1" },
       });
 
-      expect(metadata.other).toBeDefined();
-      expect(metadata.other["script:ld+json"]).toBeDefined();
-
-      // Parse the JSON-LD to verify it's valid
-      const structuredData = JSON.parse(metadata.other["script:ld+json"]);
-
-      expect(structuredData).toEqual({
-        "@context": "https://schema.org",
-        "@type": "Product",
-        additionalType: "http://dbpedia.org/ontology/Dog",
-        name: "Buddy - Labrador Retriever",
-        description: "Friendly dog looking for a loving home.",
-        image: "https://images.rescuedogs.me/buddy.jpg",
-        isBasedOn: {
-          "@type": "WebPage",
-          name: "Happy Paws Rescue",
-        },
-        offers: {
-          "@type": "Offer",
-          availability: "https://schema.org/InStock",
-          price: "500",
-          priceCurrency: "EUR",
-          priceValidUntil: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-        },
-        additionalProperty: [
-          {
-            "@type": "PropertyValue",
-            name: "Age",
-            value: "Adult",
-          },
-          {
-            "@type": "PropertyValue",
-            name: "Breed",
-            value: "Labrador Retriever",
-          },
-          {
-            "@type": "PropertyValue",
-            name: "Gender",
-            value: "Male",
-          },
-          {
-            "@type": "PropertyValue",
-            name: "Location",
-            value: "San Francisco, USA",
-          },
-        ],
-      });
+      // JSON-LD is now rendered via DogSchema component, not metadata.other
+      expect(metadata.other).toBeUndefined();
+      expect(metadata.title).toContain("Buddy");
     });
 
     test("should include canonical URL in metadata", async () => {
@@ -139,7 +95,7 @@ describe("Structured Data Integration", () => {
       expect(metadata.other).toBeUndefined();
     });
 
-    test("should handle missing optional dog fields in schema", async () => {
+    test("should handle missing optional dog fields in metadata", async () => {
       const minimalDog = {
         id: 2,
         slug: "luna-poodle-2",
@@ -155,29 +111,9 @@ describe("Structured Data Integration", () => {
         params: { slug: "luna-poodle-2" },
       });
 
-      expect(metadata.other).toBeDefined();
-
-      const structuredData = JSON.parse(metadata.other["script:ld+json"]);
-      expect(structuredData["@type"]).toBe("Product");
-      expect(structuredData.additionalType).toBe(
-        "http://dbpedia.org/ontology/Dog",
-      );
-      expect(structuredData.name).toBe("Luna");
-
-      // Check that additionalProperty may or may not exist for minimal data
-      const properties = structuredData.additionalProperty || [];
-
-      if (structuredData.additionalProperty) {
-        expect(Array.isArray(structuredData.additionalProperty)).toBe(true);
-      }
-
-      // Should not have Breed property for minimal dog data
-      const breedProperty = properties.find((prop) => prop.name === "Breed");
-      expect(breedProperty).toBeUndefined();
-
-      // Should not have Age property for minimal dog data
-      const ageProperty = properties.find((prop) => prop.name === "Age");
-      expect(ageProperty).toBeUndefined();
+      // JSON-LD is now rendered via DogSchema component, not metadata.other
+      expect(metadata.other).toBeUndefined();
+      expect(metadata.title).toContain("Luna");
     });
   });
 

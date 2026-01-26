@@ -39,6 +39,21 @@ const nextConfig = {
     return [];
   },
 
+  async redirects() {
+    return [
+      {
+        source: '/en-:locale(AT|BE|BG|CH|CY|CZ|DE|DK|EE|ES|FI|FR|GB|GR|HR|HU|IE|IT|LT|LU|LV|MT|NL|NO|PL|PT|RO|SE|SI|SK)/:path*',
+        destination: '/:path*',
+        permanent: true,
+      },
+      {
+        source: '/en-:locale(AT|BE|BG|CH|CY|CZ|DE|DK|EE|ES|FI|FR|GB|GR|HR|HU|IE|IT|LT|LU|LV|MT|NL|NO|PL|PT|RO|SE|SI|SK)',
+        destination: '/',
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {
@@ -63,7 +78,7 @@ const nextConfig = {
           },
           {
             key: 'X-Robots-Tag',
-            value: 'all',
+            value: 'noindex',
           },
         ],
       },
