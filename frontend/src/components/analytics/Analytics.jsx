@@ -1,9 +1,10 @@
 "use client";
 
 import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
+import { safeStorage } from "@/utils/safeStorage";
 
 function handleBeforeSend(event) {
-  if (typeof window !== "undefined" && localStorage.getItem("va-disable")) {
+  if (typeof window !== "undefined" && safeStorage.get("va-disable")) {
     return null;
   }
   return event;
