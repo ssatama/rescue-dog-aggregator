@@ -3,8 +3,8 @@
 
 if [ "$SERVICE_TYPE" = "cron" ]; then
     echo "Starting scraper cron service..."
-    exec python management/railway_scraper_cron.py
+    exec uv run python management/railway_scraper_cron.py
 else
     echo "Starting API service..."
-    exec uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8080} --forwarded-allow-ips='*'
+    exec uv run uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8080} --forwarded-allow-ips='*'
 fi
