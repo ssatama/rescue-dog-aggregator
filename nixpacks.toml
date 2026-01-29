@@ -2,13 +2,12 @@
 # Project uses uv + pyproject.toml (not requirements.txt)
 
 [phases.setup]
-nixPkgs = ["python312", "postgresql_16.dev", "gcc"]
+nixPkgs = ["python312", "uv", "postgresql_16.dev", "gcc"]
 
 [phases.install]
 dependsOn = ["setup"]
 cmds = [
-    "python -m pip install uv",
-    "uv sync --no-dev --frozen"
+    "uv sync --frozen --no-dev"
 ]
 
 [start]
