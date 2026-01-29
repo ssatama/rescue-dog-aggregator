@@ -7,7 +7,7 @@ nixPkgs = ["python312", "postgresql_16.dev", "gcc"]
 [phases.install]
 dependsOn = ["setup"]
 cmds = [
-    "pip install uv",
+    "python -m pip install uv",
     "uv sync --no-dev --frozen"
 ]
 
