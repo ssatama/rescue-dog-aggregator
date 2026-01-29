@@ -28,21 +28,43 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 **CRITICAL**: Use sub-agents to reduce context usage and improve efficiency.
 
-## MCP Tools for Claude Code
+## Overall Guidelines
 
-**Priority order for efficiency:**
+### 1. Think Before Coding
 
-1. **Serena MCP**: Study codebase with symbolic tools (avoid reading entire files)
+**"Don't assume. Don't hide confusion. Surface tradeoffs."**
 
-   - `get_symbols_overview`, `find_symbol`, `search_for_pattern`
-   - `check_onboarding_performed`, `list_memories`, `read_memory`
+- State assumptions explicitly and ask if uncertain
+- Present multiple interpretations rather than choosing silently
+- Advocate for simpler approaches when they exist
+- Stop to clarify anything confusing
 
-2. **Morph MCP**: Fast, precise code edits (preferred over Edit tool)
+### 2. Simplicity First
 
-   - `edit_file`, `tiny_edit_file` for line-based changes
+**"Minimum code that solves the problem. Nothing speculative."**
 
-3. **Postgres MCP**: Query prod database directly
-   - `query` tool for SELECT statements
+- Write only what was requested—no extra features, unnecessary abstractions, unrequested configurability
+- No error handling for impossible scenarios
+- If code could be 50 lines instead of 200, rewrite it
+- Ask: would a senior engineer call this overcomplicated?
+
+### 3. Surgical Changes
+
+**"Touch only what you must. Clean up only your own mess."**
+
+- Don't "improve" adjacent code or refactor unbroken functionality
+- Match existing style even if you'd prefer differently
+- Remove imports/variables that _your_ changes made unused, but don't delete pre-existing dead code
+- Every changed line should directly trace to the user's request
+
+### 4. Goal-Driven Execution
+
+**"Define success criteria. Loop until verified."**
+
+- Transform vague tasks into verifiable goals
+- For multi-step tasks, outline a brief plan with verification steps
+- Strong success criteria enable independent iteration without constant clarification
+- Don't mark complete until verification passes
 
 ## CRITICAL: Planning-First Workflow
 
@@ -58,16 +80,17 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 ### Quick Links
 
-| Guideline | Scope | Priority Order |
-|-----------|-------|----------------|
-| [Python Guidelines](docs/guidelines/PYTHON_GUIDELINES.md) | Backend, scrapers, services | Reliability > Simplicity > Performance > Maintainability |
-| [TypeScript Guidelines](docs/guidelines/TYPESCRIPT_GUIDELINES.md) | Frontend types, API calls | Reliability > Simplicity > Performance > Maintainability |
-| [React Guidelines](docs/guidelines/REACT_GUIDELINES.md) | Components, hooks, Next.js | Performance > Reliability > Simplicity > Maintainability |
-| [Web Design Guidelines](docs/guidelines/WEB_DESIGN_GUIDELINES.md) | UI/UX, accessibility | Accessibility > Usability > Performance > Polish |
+| Guideline                                                         | Scope                       | Priority Order                                           |
+| ----------------------------------------------------------------- | --------------------------- | -------------------------------------------------------- |
+| [Python Guidelines](docs/guidelines/PYTHON_GUIDELINES.md)         | Backend, scrapers, services | Reliability > Simplicity > Performance > Maintainability |
+| [TypeScript Guidelines](docs/guidelines/TYPESCRIPT_GUIDELINES.md) | Frontend types, API calls   | Reliability > Simplicity > Performance > Maintainability |
+| [React Guidelines](docs/guidelines/REACT_GUIDELINES.md)           | Components, hooks, Next.js  | Performance > Reliability > Simplicity > Maintainability |
+| [Web Design Guidelines](docs/guidelines/WEB_DESIGN_GUIDELINES.md) | UI/UX, accessibility        | Accessibility > Usability > Performance > Polish         |
 
 ### Non-Negotiable Rules (PR Blockers)
 
 **Python:**
+
 - Python 3.12+ with modern syntax (`list[str]` not `List[str]`, `X | None` not `Optional[X]`)
 - Type hints on ALL functions
 - `ruff check` and `ruff format` must pass
@@ -75,6 +98,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Async context managers for resources
 
 **TypeScript:**
+
 - `strict: true` - never disable
 - No `any` - use `unknown` + Zod validation
 - No `@ts-ignore` - use `@ts-expect-error` with explanation if needed
@@ -82,6 +106,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - `import type` for type-only imports
 
 **React/Next.js:**
+
 - No sequential awaits for independent operations - use `Promise.all()`
 - No barrel file imports - import directly or use `optimizePackageImports`
 - Heavy components use `next/dynamic` with `ssr: false`
@@ -90,6 +115,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - **No `Link` or Client Components in lists with 20+ items**
 
 **Web Design:**
+
 - Icon-only buttons need `aria-label`
 - Interactive elements need keyboard support
 - Never remove focus outline without replacement
@@ -129,6 +155,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 ### 4. Tone and Behavior
 
+- **NEVER run `git restore`, `git checkout --`, or discard file changes without explicitly asking first.** Assume local changes are intentional work-in-progress. Discarding without permission leads to lost work.
 - Criticism is welcome. Please tell me when I am wrong or mistaken, or even when you think I might be wrong or mistaken.
 - Please tell me if there is a better approach than the one I am taking.
 - Please tell me if there is a relevant standard or convention that I appear to be unaware of.
@@ -220,18 +247,18 @@ pnpm jest --passWithNoTests --watchAll=false
 
 ### CI Requirements Table
 
-| Gate | Commits | PRs | Pre-merge |
-|------|---------|-----|-----------|
-| Backend lint (ruff) | ✅ | ✅ | ✅ |
-| Backend unit tests | ✅ | ✅ | ✅ |
-| Backend integration tests | - | ✅ | ✅ |
-| Backend comprehensive tests | - | - | ✅ |
-| Frontend type check (tsc) | ✅ | ✅ | ✅ |
-| Frontend lint (eslint) | ✅ | ✅ | ✅ |
-| Frontend unit tests | ✅ | ✅ | ✅ |
-| Frontend build | - | ✅ | ✅ |
-| Security scan | - | ⚠️ warn | ⚠️ warn |
-| Guidelines compliance | ✅ | ✅ | ✅ |
+| Gate                        | Commits | PRs     | Pre-merge |
+| --------------------------- | ------- | ------- | --------- |
+| Backend lint (ruff)         | ✅      | ✅      | ✅        |
+| Backend unit tests          | ✅      | ✅      | ✅        |
+| Backend integration tests   | -       | ✅      | ✅        |
+| Backend comprehensive tests | -       | -       | ✅        |
+| Frontend type check (tsc)   | ✅      | ✅      | ✅        |
+| Frontend lint (eslint)      | ✅      | ✅      | ✅        |
+| Frontend unit tests         | ✅      | ✅      | ✅        |
+| Frontend build              | -       | ✅      | ✅        |
+| Security scan               | -       | ⚠️ warn | ⚠️ warn   |
+| Guidelines compliance       | ✅      | ✅      | ✅        |
 
 ## Testing Commands
 
@@ -260,16 +287,16 @@ uv run pytest                                     # Tier 3: Full suite
 
 ### Pytest Markers (8 essential)
 
-| Marker | Purpose |
-|--------|---------|
-| `unit` | Pure logic, no I/O (<10ms) |
-| `integration` | Internal services (10-100ms) |
-| `slow` | Complex setup (>1s) |
-| `database` | Requires DB access |
-| `browser` | Requires Playwright/Selenium |
-| `external` | Requires external APIs |
-| `security` | Security validation |
-| `requires_migrations` | Production-like migrations |
+| Marker                | Purpose                      |
+| --------------------- | ---------------------------- |
+| `unit`                | Pure logic, no I/O (<10ms)   |
+| `integration`         | Internal services (10-100ms) |
+| `slow`                | Complex setup (>1s)          |
+| `database`            | Requires DB access           |
+| `browser`             | Requires Playwright/Selenium |
+| `external`            | Requires external APIs       |
+| `security`            | Security validation          |
+| `requires_migrations` | Production-like migrations   |
 
 ## Config Management
 
