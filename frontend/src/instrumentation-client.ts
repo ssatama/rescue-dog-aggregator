@@ -113,6 +113,7 @@ if (
       /e\[n\]\.call/,
       /e\[n\] is not a function/,
       /undefined is not an object.*e\[n\]/,
+      /module factory is not available/i,
     ],
 
     // Data scrubbing and filtering

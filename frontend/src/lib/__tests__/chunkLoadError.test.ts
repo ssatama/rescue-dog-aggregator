@@ -66,6 +66,13 @@ describe("isChunkLoadError", () => {
     );
     expect(isChunkLoadError(error)).toBe(true);
   });
+
+  it("returns true for Turbopack module factory not available error", () => {
+    const error = new Error(
+      "Module 240145 was instantiated because it was required from module 625992, but the module factory is not available.",
+    );
+    expect(isChunkLoadError(error)).toBe(true);
+  });
 });
 
 describe("isPromiseRejectionChunkError", () => {

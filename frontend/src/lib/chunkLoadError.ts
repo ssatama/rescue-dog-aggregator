@@ -18,6 +18,7 @@ const CHUNK_ERROR_PATTERNS = [
   /undefined is not an object.*e\[n\]/,
   /Cannot read propert.*of undefined.*webpack/i,
   /\(evaluating 'e\[n\]/,
+  /module factory is not available/i,
 ] as const;
 
 const CHUNK_ERROR_NAMES = [
