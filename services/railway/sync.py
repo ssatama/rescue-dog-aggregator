@@ -265,9 +265,7 @@ def _reset_animals_sequence(conn) -> None:
     can fall behind, causing duplicate key errors on subsequent inserts.
     """
     try:
-        conn.execute(
-            text("SELECT setval(pg_get_serial_sequence('animals', 'id'), (SELECT MAX(id) FROM animals))")
-        )
+        conn.execute(text("SELECT setval(pg_get_serial_sequence('animals', 'id'), (SELECT MAX(id) FROM animals))"))
         logger.info("Reset animals primary key sequence after sync")
     except Exception as e:
         logger.error(f"Failed to reset animals sequence: {e}")
