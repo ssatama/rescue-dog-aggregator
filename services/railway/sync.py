@@ -248,11 +248,27 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
                 logger.info(f"Synced batch: {total_synced}/{len(animals)} animals")
 
         logger.info(f"Successfully synced {total_synced} animals to Railway")
+
+        _reset_animals_sequence(railway_conn)
+
         return True
 
     except Exception as e:
         logger.error(f"Failed to sync animals to Railway: {e}")
         return False
+
+
+def _reset_animals_sequence(conn) -> None:
+    """Reset the animals primary key sequence to match the current max ID.
+
+    After syncing animals with explicit IDs, the auto-increment sequence
+    can fall behind, causing duplicate key errors on subsequent inserts.
+    """
+    try:
+        conn.execute(text("SELECT setval(pg_get_serial_sequence('animals', 'id'), (SELECT MAX(id) FROM animals))"))
+        logger.info("Reset animals primary key sequence after sync")
+    except Exception as e:
+        logger.error(f"Failed to reset animals sequence: {e}")
 
 
 def _validate_table_schemas() -> bool:
@@ -742,6 +758,9 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
             logger.info(f"Prepared batch: {total_synced}/{len(animals)} animals for Railway sync")
 
         logger.info(f"Successfully prepared {total_synced} animals for Railway sync")
+
+        _reset_animals_sequence(session)
+
         return True
 
     except Exception as e:
