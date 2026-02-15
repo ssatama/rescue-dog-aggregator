@@ -13,13 +13,13 @@ describe("organizationsService", () => {
   it("getOrganizations calls GET /api/organizations", async () => {
     get.mockResolvedValue([{ id: 1, name: "Org A" }]);
     await getOrganizations();
-    expect(get).toHaveBeenCalledWith("/api/organizations");
+    expect(get).toHaveBeenCalledWith("/api/organizations", {}, expect.objectContaining({}));
   });
 
   it("getOrganizationById calls GET /api/organizations/:id", async () => {
     get.mockResolvedValue({ id: 2, name: "Org B" });
     await getOrganizationById(2);
-    expect(get).toHaveBeenCalledWith("/api/organizations/2");
+    expect(get).toHaveBeenCalledWith("/api/organizations/2", {}, expect.objectContaining({}));
   });
 
   it("getOrganizationDogs calls GET /api/animals with org filter + animal_type", async () => {

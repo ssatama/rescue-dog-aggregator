@@ -116,15 +116,20 @@ export default function EuropeMap() {
       }
 
       // Group organizations by country (immutable pattern)
-      const grouped = orgs.reduce((acc, org) => {
+      const grouped = orgs.reduce<OrganizationData>((acc, org) => {
         if (org.country) {
+          const mapped: Organization = {
+            id: org.id ?? 0,
+            name: org.name,
+            country: org.country,
+          };
           return {
             ...acc,
-            [org.country]: [...(acc[org.country] || []), org],
+            [org.country]: [...(acc[org.country] || []), mapped],
           };
         }
         return acc;
-      }, {} as OrganizationData);
+      }, {});
       setOrgsByCountry(grouped);
     } catch (error) {
       console.error("Failed to load organization data", error);

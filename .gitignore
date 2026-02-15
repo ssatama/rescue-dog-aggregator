@@ -210,5 +210,6 @@ migrations/railway/versions/
 queries/debug/
 
 docs/feature_implementation/
+docs/ROADMAP.md
 .vercel
 .env*.local

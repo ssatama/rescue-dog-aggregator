@@ -29,7 +29,7 @@ describe("getStatistics", () => {
 
       const result = await getStatistics();
 
-      expect(get).toHaveBeenCalledWith("/api/animals/statistics");
+      expect(get).toHaveBeenCalledWith("/api/animals/statistics", {}, expect.objectContaining({}));
       expect(logger.log).toHaveBeenCalledWith("Fetching statistics");
       expect(result).toEqual(mockStatistics);
     });

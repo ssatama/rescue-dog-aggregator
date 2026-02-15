@@ -1,6 +1,7 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSwipeable, SwipeableHandlers, SwipeEventData } from "react-swipeable";
+import type { ApiDog } from "../../types/apiDog";
 import { getAnimals } from "../../services/animalsService";
 import { useSwipeNavigation, navigationCache } from "../useSwipeNavigation";
 
@@ -466,9 +467,9 @@ describe("useSwipeNavigation", () => {
       mockGetAnimals.mockResolvedValueOnce([
         null,
         undefined,
-        { id: 1, slug: "dog-3", name: "Charlie", breed: "Beagle" }, // Valid dog
-        { invalidData: true }, // Invalid dog
-      ]);
+        { id: 1, slug: "dog-3", name: "Charlie", breed: "Beagle" },
+        { invalidData: true },
+      ] as unknown as ApiDog[]);
 
       const { result } = renderHook(() => useSwipeNavigation(defaultProps));
 

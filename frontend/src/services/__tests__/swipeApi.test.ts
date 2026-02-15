@@ -194,7 +194,7 @@ describe("swipeApi", () => {
         dogs: [
           {
             ...mockBackendResponse.dogs[0],
-            image_url: null,
+            image_url: undefined,
             image: "fallback.jpg",
           },
           {

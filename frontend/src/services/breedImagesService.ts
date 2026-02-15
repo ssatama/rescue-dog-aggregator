@@ -1,16 +1,42 @@
+import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
+import {
+  BreedWithImagesSchema,
+  BreedStatsSchema,
+} from "../schemas/animals";
 
-// Use centralized API URL configuration
 const API_URL = getApiUrl();
 
-export async function getBreedsWithImages(params = {}) {
+interface BreedImageParams {
+  breedType?: string;
+  breedGroup?: string;
+  minCount?: number | string;
+  limit?: number | string;
+}
+
+interface BreedGroupDisplay {
+  name: string;
+  icon: string;
+  description: string;
+  count: number;
+  top_breeds: Array<{
+    name: string;
+    slug: string;
+    count: number;
+    image_url: string | null;
+  }>;
+}
+
+export async function getBreedsWithImages(
+  params: BreedImageParams = {},
+): Promise<z.infer<typeof BreedWithImagesSchema>[]> {
   const queryParams = new URLSearchParams();
 
   if (params.breedType) queryParams.append("breed_type", params.breedType);
   if (params.breedGroup) queryParams.append("breed_group", params.breedGroup);
   if (params.minCount !== undefined)
-    queryParams.append("min_count", params.minCount);
-  if (params.limit) queryParams.append("limit", params.limit);
+    queryParams.append("min_count", String(params.minCount));
+  if (params.limit) queryParams.append("limit", String(params.limit));
 
   const queryString = queryParams.toString();
   const url = `${API_URL}/api/animals/breeds/with-images${queryString ? `?${queryString}` : ""}`;
@@ -20,61 +46,69 @@ export async function getBreedsWithImages(params = {}) {
       headers: {
         "Content-Type": "application/json",
       },
-      next: { revalidate: 300 }, // 5 minute cache
-    });
+      next: { revalidate: 300 },
+    } as RequestInit);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch breeds with images: ${response.status}`);
     }
 
-    return await response.json();
+    const data: unknown = await response.json();
+    return z.array(BreedWithImagesSchema).parse(data);
   } catch (error) {
     console.error("Error fetching breeds with images:", error);
     return [];
   }
 }
 
-export async function getMixedBreedData() {
-  return getBreedsWithImages({
+export async function getMixedBreedData(): Promise<z.infer<
+  typeof BreedWithImagesSchema
+> | null> {
+  const breeds = await getBreedsWithImages({
     breedType: "mixed",
     limit: 1,
-  }).then((breeds) => breeds[0] || null);
+  });
+  return breeds[0] || null;
 }
 
-export async function getPopularBreedsWithImages(limit = 8) {
+export async function getPopularBreedsWithImages(
+  limit: number = 8,
+): Promise<z.infer<typeof BreedWithImagesSchema>[]> {
   return getBreedsWithImages({
     minCount: 5,
     limit,
   });
 }
 
-export async function getBreedGroupsWithTopBreeds() {
+export async function getBreedGroupsWithTopBreeds(): Promise<
+  BreedGroupDisplay[]
+> {
   try {
-    // First get breed stats
     const statsUrl = `${API_URL}/api/animals/breeds/stats`;
     const statsResponse = await fetch(statsUrl, {
       headers: { "Content-Type": "application/json" },
       next: { revalidate: 300 },
-    });
+    } as RequestInit);
 
     if (!statsResponse.ok) {
       console.error(`Failed to fetch breed stats: ${statsResponse.status}`);
       return [];
     }
 
-    const stats = await statsResponse.json();
+    const rawStats: unknown = await statsResponse.json();
+    const stats = BreedStatsSchema.parse(rawStats);
 
-    // Then get breeds with images - use fallback if this fails
-    let breedsWithImages = [];
+    let breedsWithImages: z.infer<typeof BreedWithImagesSchema>[] = [];
     try {
       const breedsWithImagesUrl = `${API_URL}/api/animals/breeds/with-images?min_count=2&limit=50`;
       const imagesResponse = await fetch(breedsWithImagesUrl, {
         headers: { "Content-Type": "application/json" },
         next: { revalidate: 300 },
-      });
+      } as RequestInit);
 
       if (imagesResponse.ok) {
-        breedsWithImages = await imagesResponse.json();
+        const rawImages: unknown = await imagesResponse.json();
+        breedsWithImages = z.array(BreedWithImagesSchema).parse(rawImages);
       }
     } catch (imageError) {
       console.warn(
@@ -83,17 +117,48 @@ export async function getBreedGroupsWithTopBreeds() {
       );
     }
 
-    // Create a map of breed images
-    const breedImageMap = {};
+    const breedImageMap: Record<string, string> = {};
     breedsWithImages.forEach((breed) => {
       if (breed.sample_dogs && breed.sample_dogs.length > 0) {
-        breedImageMap[breed.primary_breed] =
-          breed.sample_dogs[0].primary_image_url;
+        const imageUrl = breed.sample_dogs[0].primary_image_url;
+        if (imageUrl) {
+          breedImageMap[breed.primary_breed] = imageUrl;
+        }
       }
     });
 
-    // Transform breed groups with their top breeds
-    // Filter out Unknown, Mixed, and groups with too few dogs to display meaningfully
+    const groupConfigs: Record<
+      string,
+      { icon: string; description: string }
+    > = {
+      Hound: {
+        icon: "\u{1F415}",
+        description: "Bred for hunting by sight or scent",
+      },
+      Sporting: {
+        icon: "\u{1F9AE}",
+        description: "Active dogs bred for hunting and retrieving",
+      },
+      Herding: {
+        icon: "\u{1F411}",
+        description: "Intelligent breeds that control livestock",
+      },
+      Working: {
+        icon: "\u{1F4AA}",
+        description: "Strong dogs bred for guarding and rescue",
+      },
+      Terrier: { icon: "\u{1F9B4}", description: "Feisty & determined" },
+      Toy: { icon: "\u{1F380}", description: "Small companions" },
+      "Non-Sporting": {
+        icon: "\u{1F43E}",
+        description: "Diverse group of companion dogs",
+      },
+      Mixed: {
+        icon: "\u{2764}\u{FE0F}",
+        description: "Unique personalities from diverse backgrounds",
+      },
+    };
+
     const breedGroups = (stats.breed_groups || [])
       .filter(
         (group) =>
@@ -101,10 +166,9 @@ export async function getBreedGroupsWithTopBreeds() {
           group.name !== "Mixed" &&
           group.count >= 5,
       )
-      .sort((a, b) => b.count - a.count)
+      .toSorted((a, b) => b.count - a.count)
       .slice(0, 8)
       .map((group) => {
-        // Get top breeds for this group from qualifying_breeds with images
         const groupBreeds = (stats.qualifying_breeds || [])
           .filter((breed) => breed.breed_group === group.name)
           .slice(0, 5)
@@ -115,37 +179,8 @@ export async function getBreedGroupsWithTopBreeds() {
             image_url: breedImageMap[breed.primary_breed] || null,
           }));
 
-        const groupConfigs = {
-          Hound: {
-            icon: "🐕",
-            description: "Bred for hunting by sight or scent",
-          },
-          Sporting: {
-            icon: "🦮",
-            description: "Active dogs bred for hunting and retrieving",
-          },
-          Herding: {
-            icon: "🐑",
-            description: "Intelligent breeds that control livestock",
-          },
-          Working: {
-            icon: "💪",
-            description: "Strong dogs bred for guarding and rescue",
-          },
-          Terrier: { icon: "🦴", description: "Feisty & determined" },
-          Toy: { icon: "🎀", description: "Small companions" },
-          "Non-Sporting": {
-            icon: "🐾",
-            description: "Diverse group of companion dogs",
-          },
-          Mixed: {
-            icon: "❤️",
-            description: "Unique personalities from diverse backgrounds",
-          },
-        };
-
         const config = groupConfigs[group.name] || {
-          icon: "🐶",
+          icon: "\u{1F436}",
           description: "Wonderful dogs waiting for homes",
         };
 
@@ -165,11 +200,13 @@ export async function getBreedGroupsWithTopBreeds() {
   }
 }
 
-export async function getBreedsWithImagesForHomePage(params = {}) {
+export async function getBreedsWithImagesForHomePage(
+  params: BreedImageParams = {},
+): Promise<z.infer<typeof BreedWithImagesSchema>[] | null> {
   const queryParams = new URLSearchParams();
 
-  if (params.minCount) queryParams.append("min_count", params.minCount);
-  if (params.limit) queryParams.append("limit", params.limit);
+  if (params.minCount) queryParams.append("min_count", String(params.minCount));
+  if (params.limit) queryParams.append("limit", String(params.limit));
 
   const queryString = queryParams.toString();
   const url = `${API_URL}/api/animals/breeds/with-images${queryString ? `?${queryString}` : ""}`;
@@ -180,14 +217,15 @@ export async function getBreedsWithImagesForHomePage(params = {}) {
         "Content-Type": "application/json",
       },
       next: { revalidate: 300 },
-    });
+    } as RequestInit);
 
     if (!response.ok) {
       console.error(`Failed to fetch breeds with images: ${response.status}`);
       return null;
     }
 
-    return await response.json();
+    const data: unknown = await response.json();
+    return z.array(BreedWithImagesSchema).parse(data);
   } catch (error) {
     console.error("Error fetching breeds with images:", error);
     return null;

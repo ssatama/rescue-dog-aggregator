@@ -9,6 +9,7 @@ import { swipeMetrics } from "../../utils/swipeMetrics";
 import { get } from "../../utils/api";
 import * as Sentry from "@sentry/nextjs";
 import { type Dog } from "../../types/dog";
+import type { ApiDog } from "../../types/apiDog";
 import { transformApiDogsToDogs } from "../../utils/dogTransformer";
 import { safeStorage } from "../../utils/safeStorage";
 import SwipeContainerSkeleton from "../../components/ui/SwipeContainerSkeleton";
@@ -100,7 +101,7 @@ export default function SwipePageClient({
     async (queryString: string): Promise<Dog[]> => {
       try {
         const params = Object.fromEntries(new URLSearchParams(queryString));
-        const data = await get("/api/dogs/swipe", params);
+        const data = await get<{ dogs?: ApiDog[] }>("/api/dogs/swipe", params);
 
         const transformedDogs = transformApiDogsToDogs(data.dogs || []);
         return transformedDogs;

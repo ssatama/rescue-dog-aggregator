@@ -42,7 +42,7 @@ export function useEnhancedOrganizations(initialData?: Organization[]) {
   return useQuery({
     queryKey: organizationKeys.enhanced(),
     queryFn: getEnhancedOrganizations,
-    initialData,
+    initialData: initialData as Awaited<ReturnType<typeof getEnhancedOrganizations>> | undefined,
     // With SSR, we have fresh data, so set a longer stale time
     staleTime: 5 * 60 * 1000, // 5 minutes
     // Keep data in cache for 30 minutes
