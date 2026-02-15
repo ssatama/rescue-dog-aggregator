@@ -49,7 +49,7 @@ describe("animalsService", () => {
         status: "available",
         animal_type: "dog",
       }),
-      {}, // Add empty options object as third parameter
+      expect.objectContaining({}),
     );
 
     // Check the result
@@ -64,7 +64,7 @@ describe("animalsService", () => {
     const result = await getAnimalById(1);
 
     // Check that get was called correctly
-    expect(get).toHaveBeenCalledWith("/api/animals/1");
+    expect(get).toHaveBeenCalledWith("/api/animals/1", {}, expect.objectContaining({}));
   });
 
   test("getAnimalsByStandardizedBreed delegates correctly", async () => {
@@ -78,9 +78,9 @@ describe("animalsService", () => {
         standardized_breed: "Poodle",
         limit: 4,
         animal_type: "dog",
-        status: "available", // Add this since getAnimals adds it
+        status: "available",
       }),
-      {}, // Add empty options object as third parameter
+      expect.objectContaining({}),
     );
   });
 
@@ -88,10 +88,10 @@ describe("animalsService", () => {
     get.mockResolvedValue([{}]);
     // custom limit
     await getRandomAnimals(5);
-    expect(get).toHaveBeenCalledWith("/api/animals/random", { limit: 5 });
+    expect(get).toHaveBeenCalledWith("/api/animals/random", { limit: 5 }, expect.objectContaining({}));
     // default limit = 3
     await getRandomAnimals();
-    expect(get).toHaveBeenLastCalledWith("/api/animals/random", { limit: 3 });
+    expect(get).toHaveBeenLastCalledWith("/api/animals/random", { limit: 3 }, expect.objectContaining({}));
   });
 });
 
@@ -110,7 +110,7 @@ describe("animalsService endpoints", () => {
         status: "adopted",
         animal_type: "dog",
       }),
-      {},
+      expect.objectContaining({}),
     );
 
     expect(result).toEqual([{ id: 1, name: "Test Animal" }]);
@@ -131,7 +131,7 @@ describe("animalsService endpoints", () => {
         animal_type: "dog",
         page: 1,
       }),
-      {},
+      expect.objectContaining({}),
     );
 
     expect(result).toEqual([{ id: 1, name: "Test Animal" }]);
@@ -150,7 +150,7 @@ describe("animalsService endpoints", () => {
       expect.objectContaining({
         animal_type: "dog",
       }),
-      {},
+      expect.objectContaining({}),
     );
 
     // Verify status is not in the params
@@ -168,7 +168,7 @@ describe("animalsService endpoints", () => {
     expect(get).toHaveBeenCalledWith(
       "/api/animals",
       expect.objectContaining({ status: "available" }),
-      {},
+      expect.objectContaining({}),
     );
 
     // Test adopted status
@@ -176,7 +176,7 @@ describe("animalsService endpoints", () => {
     expect(get).toHaveBeenCalledWith(
       "/api/animals",
       expect.objectContaining({ status: "adopted" }),
-      {},
+      expect.objectContaining({}),
     );
 
     // Test reserved status
@@ -184,7 +184,7 @@ describe("animalsService endpoints", () => {
     expect(get).toHaveBeenCalledWith(
       "/api/animals",
       expect.objectContaining({ status: "reserved" }),
-      {},
+      expect.objectContaining({}),
     );
 
     // Test unknown status
@@ -192,7 +192,7 @@ describe("animalsService endpoints", () => {
     expect(get).toHaveBeenCalledWith(
       "/api/animals",
       expect.objectContaining({ status: "unknown" }),
-      {},
+      expect.objectContaining({}),
     );
   });
 });

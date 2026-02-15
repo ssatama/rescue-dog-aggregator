@@ -22,7 +22,10 @@ jest.mock("../../utils/api", () => ({
 jest.mock("../../utils/logger", () => ({
   logger: {
     log: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
   },
+  reportError: jest.fn(),
 }));
 
 const { get } = require("../../utils/api");
@@ -167,14 +170,14 @@ describe("Service Layer Separation - Critical Validation", () => {
           status: "available",
           animal_type: "dog",
         }),
-        {}, // Add empty options object as third parameter
+        expect.any(Object),
       );
       expect(get).toHaveBeenCalledWith(
         "/api/animals",
         expect.not.objectContaining({
           sitemap_quality_filter: true,
         }),
-        {},
+        expect.any(Object),
       );
 
       jest.clearAllMocks();
@@ -190,7 +193,7 @@ describe("Service Layer Separation - Critical Validation", () => {
           status: "available",
           // Phase 2A: No longer sends sitemap_quality_filter parameter
         }),
-        {},
+        expect.any(Object),
       );
       // Verify sitemap_quality_filter is NOT sent
       expect(get).toHaveBeenCalledWith(
@@ -198,7 +201,7 @@ describe("Service Layer Separation - Critical Validation", () => {
         expect.not.objectContaining({
           sitemap_quality_filter: true,
         }),
-        {},
+        expect.any(Object),
       );
     });
   });
@@ -298,7 +301,6 @@ describe("Service Layer Separation - Critical Validation", () => {
       get.mockRejectedValue(new Error("API Error"));
 
       let allAnimalsError = null;
-      let sitemapAnimalsError = null;
 
       try {
         await getAllAnimals({});
@@ -306,15 +308,12 @@ describe("Service Layer Separation - Critical Validation", () => {
         allAnimalsError = error;
       }
 
-      try {
-        await getAllAnimalsForSitemap();
-      } catch (error) {
-        sitemapAnimalsError = error;
-      }
-
-      // Functions should propagate API errors (this is expected behavior)
+      // getAllAnimals propagates API errors
       expect(allAnimalsError).toBeInstanceOf(Error);
-      expect(sitemapAnimalsError).toBeInstanceOf(Error);
+
+      // getAllAnimalsForSitemap catches errors internally and returns empty array
+      const sitemapAnimals = await getAllAnimalsForSitemap();
+      expect(sitemapAnimals).toEqual([]);
     });
 
     test("CRITICAL: Functions complete within reasonable time", async () => {

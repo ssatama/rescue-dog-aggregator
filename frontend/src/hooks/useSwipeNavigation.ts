@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSwipeable } from "react-swipeable";
 import { getAnimals } from "../services/animalsService";
+import type { ApiDog } from "../types/apiDog";
 import type { Dog } from "../types/dog";
+import { transformApiDogsToDogs } from "../utils/dogTransformer";
 
 // Types
 interface UseSwipeNavigationProps {
@@ -151,11 +153,11 @@ export function useSwipeNavigation({
 
       if (!mountedRef.current) return;
 
-      // Ensure we have a valid array of dogs with valid objects
-      const responseArray = Array.isArray(response) ? response : [];
-      const allDogs = responseArray.filter(
+      const responseArray: ApiDog[] = Array.isArray(response) ? response : [];
+      const validApiDogs = responseArray.filter(
         (dog) => dog && typeof dog === "object" && dog.slug,
       );
+      const allDogs = transformApiDogsToDogs(validApiDogs);
       const currentIndex = findCurrentDogIndex(allDogs, currentDogSlug);
 
       if (currentIndex === -1) {

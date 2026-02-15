@@ -98,20 +98,21 @@ export default function SwipeOnboarding({
 
     const fetchAvailableCountries = async () => {
       try {
-        const data = await get("/api/dogs/available-countries");
-
         interface CountryResponse {
           code: string;
           name: string;
           dog_count?: number;
           dogCount?: number;
         }
-        const countriesWithCounts = (data.countries || data).map(
+        const data = await get<{ countries?: CountryResponse[] } | CountryResponse[]>("/api/dogs/available-countries");
+
+        const countriesArray = Array.isArray(data) ? data : (data.countries || []);
+        const countriesWithCounts = countriesArray.map(
           (country: CountryResponse) => ({
             value: country.code,
             label: country.name,
             flag: COUNTRY_FLAGS[country.code] || "\u{1F3F3}\u{FE0F}",
-            count: country.dog_count || country.dogCount,
+            count: country.dog_count || country.dogCount || 0,
           }),
         );
 
@@ -134,7 +135,7 @@ export default function SwipeOnboarding({
     const fetchSizeCounts = async () => {
       try {
         const sizePromises = SIZES.map(async (size) => {
-          const data = await get("/api/dogs/swipe", {
+          const data = await get<{ total?: number }>("/api/dogs/swipe", {
             adoptable_to_country: selectedCountry,
             "size[]": size.value,
             limit: 1,

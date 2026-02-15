@@ -31,7 +31,11 @@ describe("Enhanced Organizations Service", () => {
 
       const result = await getOrganizationStatistics(1);
 
-      expect(api.get).toHaveBeenCalledWith("/api/organizations/1/statistics");
+      expect(api.get).toHaveBeenCalledWith(
+        "/api/organizations/1/statistics",
+        {},
+        expect.objectContaining({ schema: expect.anything() }),
+      );
       expect(result).toEqual(mockStats);
     });
 
@@ -48,7 +52,11 @@ describe("Enhanced Organizations Service", () => {
 
       await getOrganizationStatistics("2");
 
-      expect(api.get).toHaveBeenCalledWith("/api/organizations/2/statistics");
+      expect(api.get).toHaveBeenCalledWith(
+        "/api/organizations/2/statistics",
+        {},
+        expect.objectContaining({ schema: expect.anything() }),
+      );
     });
   });
 

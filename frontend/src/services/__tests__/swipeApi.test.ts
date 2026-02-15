@@ -194,7 +194,7 @@ describe("swipeApi", () => {
         dogs: [
           {
             ...mockBackendResponse.dogs[0],
-            image_url: null,
+            image_url: undefined,
             image: "fallback.jpg",
           },
           {
@@ -283,6 +283,15 @@ describe("swipeApi", () => {
       const result = await fetchSwipeDogs({});
 
       expect(result).toEqual([]);
+    });
+
+    it("should throw when response has invalid structure", async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ invalid: "structure" }),
+      });
+
+      await expect(fetchSwipeDogs({})).rejects.toThrow();
     });
 
     it("should use environment variable for API URL when available", async () => {

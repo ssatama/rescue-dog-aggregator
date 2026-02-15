@@ -1,3 +1,5 @@
+import { SwipeResponseSchema } from "../schemas/animals";
+
 interface SwipeFilters {
   country?: string;
   sizes?: string[];
@@ -18,38 +20,13 @@ export interface SwipeDog {
   slug: string;
   description?: string;
   traits?: string[];
-  energy_level?: number;
+  energy_level?: number | string;
   special_characteristic?: string;
   quality_score?: number;
   created_at?: string;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-interface ApiDogResponse {
-  id: number;
-  name: string;
-  breed?: string;
-  age?: string;
-  age_min_months?: number;
-  age_max_months?: number;
-  image_url?: string;
-  primary_image_url?: string;
-  main_image?: string;
-  image?: string;
-  organization_name?: string;
-  organization?: { name?: string } | string;
-  location?: string;
-  slug: string;
-  tagline?: string;
-  description?: string;
-  personality_traits?: string[];
-  energy_level?: number;
-  unique_quirk?: string;
-  special_characteristic?: string;
-  quality_score?: number;
-  created_at?: string;
-}
 
 export async function fetchSwipeDogs(
   filters: SwipeFilters,
@@ -75,10 +52,10 @@ export async function fetchSwipeDogs(
     throw new Error(`Failed to fetch dogs: ${response.statusText}`);
   }
 
-  const data = await response.json();
+  const raw: unknown = await response.json();
+  const data = SwipeResponseSchema.parse(raw);
 
-  // Transform backend response to match frontend interface
-  return data.dogs.map((dog: ApiDogResponse) => ({
+  return data.dogs.map((dog) => ({
     id: dog.id,
     name: dog.name,
     breed: dog.breed,

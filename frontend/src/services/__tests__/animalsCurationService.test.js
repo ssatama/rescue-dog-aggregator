@@ -85,7 +85,7 @@ describe("getAnimalsByCuration", () => {
         limit: 4,
         animal_type: "dog",
         status: "available",
-      });
+      }, expect.objectContaining({}));
     });
 
     test("calls API with correct parameters for diverse curation", async () => {
@@ -98,7 +98,7 @@ describe("getAnimalsByCuration", () => {
         limit: 4,
         animal_type: "dog",
         status: "available",
-      });
+      }, expect.objectContaining({}));
     });
 
     test("uses default limit of 4 when not specified", async () => {
@@ -111,7 +111,7 @@ describe("getAnimalsByCuration", () => {
         limit: 4,
         animal_type: "dog",
         status: "available",
-      });
+      }, expect.objectContaining({}));
     });
 
     test("accepts custom limit parameter", async () => {
@@ -124,7 +124,7 @@ describe("getAnimalsByCuration", () => {
         limit: 8,
         animal_type: "dog",
         status: "available",
-      });
+      }, expect.objectContaining({}));
     });
 
     test("always includes animal_type as dog", async () => {

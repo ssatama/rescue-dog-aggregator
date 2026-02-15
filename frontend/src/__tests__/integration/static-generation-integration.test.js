@@ -70,7 +70,7 @@ describe("Static Site Generation Integration", () => {
         status: "available",
         animal_type: "dog",
       }),
-      {}, // Add empty options object as third parameter
+      expect.any(Object),
     );
 
     // Explicitly verify sitemap_quality_filter is NOT sent
@@ -79,7 +79,7 @@ describe("Static Site Generation Integration", () => {
       expect.not.objectContaining({
         sitemap_quality_filter: true,
       }),
-      {}, // Add empty options object as third parameter
+      expect.any(Object),
     );
   });
 

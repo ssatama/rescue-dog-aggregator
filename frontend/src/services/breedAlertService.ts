@@ -2,7 +2,22 @@ import { getApiUrl } from "../utils/apiConfig";
 
 const API_URL = getApiUrl();
 
-export async function saveBreedAlert(alertData) {
+interface BreedAlertData {
+  breed: string;
+  filters?: Record<string, unknown>;
+  email?: string;
+}
+
+interface BreedAlert {
+  id: string;
+  breed: string;
+  filters?: Record<string, unknown>;
+  created_at: string;
+}
+
+export async function saveBreedAlert(
+  alertData: BreedAlertData,
+): Promise<unknown> {
   try {
     const response = await fetch(`${API_URL}/api/breed-alerts`, {
       method: "POST",
@@ -12,7 +27,7 @@ export async function saveBreedAlert(alertData) {
       body: JSON.stringify({
         breed: alertData.breed,
         filters: alertData.filters,
-        email: alertData.email, // Will be added when user auth is implemented
+        email: alertData.email,
         created_at: new Date().toISOString(),
       }),
     });
@@ -30,30 +45,26 @@ export async function saveBreedAlert(alertData) {
 
 const BREED_ALERTS_KEY = "rescue-dog-breed-alerts";
 
-export function saveBreedAlertLocally(alertData) {
+export function saveBreedAlertLocally(alertData: BreedAlertData): BreedAlert {
   try {
     const existingAlerts = getLocalBreedAlerts();
-    const newAlert = {
+    const newAlert: BreedAlert = {
       id: Date.now().toString(),
       breed: alertData.breed,
       filters: alertData.filters,
       created_at: new Date().toISOString(),
     };
 
-    // Check if alert already exists for this breed
     const existingIndex = existingAlerts.findIndex(
       (alert) => alert.breed === alertData.breed,
     );
 
-    if (existingIndex >= 0) {
-      // Update existing alert
-      existingAlerts[existingIndex] = newAlert;
-    } else {
-      // Add new alert
-      existingAlerts.push(newAlert);
-    }
+    const updatedAlerts =
+      existingIndex >= 0
+        ? existingAlerts.map((alert, i) => (i === existingIndex ? newAlert : alert))
+        : [...existingAlerts, newAlert];
 
-    localStorage.setItem(BREED_ALERTS_KEY, JSON.stringify(existingAlerts));
+    localStorage.setItem(BREED_ALERTS_KEY, JSON.stringify(updatedAlerts));
     return newAlert;
   } catch (error) {
     console.error("Error saving breed alert locally:", error);
@@ -61,7 +72,7 @@ export function saveBreedAlertLocally(alertData) {
   }
 }
 
-export function getLocalBreedAlerts() {
+export function getLocalBreedAlerts(): BreedAlert[] {
   try {
     const alerts = localStorage.getItem(BREED_ALERTS_KEY);
     return alerts ? JSON.parse(alerts) : [];
@@ -71,21 +82,18 @@ export function getLocalBreedAlerts() {
   }
 }
 
-export function hasBreedAlert(breed) {
+export function hasBreedAlert(breed: string): boolean {
   const alerts = getLocalBreedAlerts();
   return alerts.some((alert) => alert.breed === breed);
 }
 
-export async function saveBreedAlertWithFallback(alertData) {
+export async function saveBreedAlertWithFallback(
+  alertData: BreedAlertData,
+): Promise<BreedAlert> {
   try {
-    // Try API first (when implemented)
-    // return await saveBreedAlert(alertData);
-
-    // For now, use local storage
-    return saveBreedAlertLocally(alertData);
+    await saveBreedAlert(alertData);
   } catch (error) {
-    // Fallback to local storage if API fails
-    console.warn("API save failed, falling back to local storage:", error);
-    return saveBreedAlertLocally(alertData);
+    console.warn("API save failed, falling back to local storage only:", error);
   }
+  return saveBreedAlertLocally(alertData);
 }

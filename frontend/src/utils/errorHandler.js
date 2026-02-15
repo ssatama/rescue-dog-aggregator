@@ -154,52 +154,6 @@ export function formatErrorMessage(parsedError) {
 }
 
 /**
- * Create retry handler with exponential backoff
- * @param {Function} fn - Function to retry
- * @param {Number} maxAttempts - Maximum retry attempts
- * @param {Function} onRetry - Callback for retry attempts
- * @returns {Function} Wrapped function with retry logic
- */
-export function withRetry(fn, maxAttempts = 3, onRetry = null) {
-  return async (...args) => {
-    let lastError;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        return await fn(...args);
-      } catch (error) {
-        lastError = error;
-        const parsedError = parseApiError(error);
-
-        // Don't retry if not retryable
-        if (!parsedError.retryable) {
-          throw error;
-        }
-
-        // Don't retry if this is the last attempt
-        if (attempt === maxAttempts) {
-          break;
-        }
-
-        // Calculate retry delay
-        const baseDelay = parsedError.retryAfter || 5;
-        const delay = baseDelay * Math.pow(2, attempt - 1) * 1000; // Exponential backoff in ms
-
-        // Call retry callback if provided
-        if (onRetry) {
-          onRetry(attempt, maxAttempts, delay / 1000);
-        }
-
-        // Wait before retrying
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
-
-    throw lastError;
-  };
-}
-
-/**
  * Get user-friendly title for error type
  * @param {String} errorType - Error type from parsed error
  * @returns {String} User-friendly title

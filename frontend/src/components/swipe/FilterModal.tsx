@@ -35,7 +35,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       }
       params.limit = 1;
 
-      const data = await get("/api/dogs/swipe", params);
+      const data = await get<{ total?: number }>("/api/dogs/swipe", params);
       if (data && typeof data.total === "number") {
         return data.total;
       }
