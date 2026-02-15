@@ -189,8 +189,8 @@ describe("useSwipeNavigation", () => {
         { timeout: 3000 },
       );
 
-      expect(result.current.prevDog).toEqual(mockDogs[1]); // Bella
-      expect(result.current.nextDog).toEqual(mockDogs[3]); // Luna
+      expect(result.current.prevDog).toMatchObject({ id: mockDogs[1].id, slug: mockDogs[1].slug, name: mockDogs[1].name }); // Bella
+      expect(result.current.nextDog).toMatchObject({ id: mockDogs[3].id, slug: mockDogs[3].slug, name: mockDogs[3].name }); // Luna
     });
   });
 
@@ -408,7 +408,7 @@ describe("useSwipeNavigation", () => {
       });
 
       expect(result.current.prevDog).toBeNull();
-      expect(result.current.nextDog).toEqual(mockDogs[1]);
+      expect(result.current.nextDog).toMatchObject({ id: mockDogs[1].id, slug: mockDogs[1].slug, name: mockDogs[1].name });
     });
 
     it("should handle edge cases - last dog", async () => {
@@ -422,7 +422,7 @@ describe("useSwipeNavigation", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.prevDog).toEqual(mockDogs[5]);
+      expect(result.current.prevDog).toMatchObject({ id: mockDogs[5].id, slug: mockDogs[5].slug, name: mockDogs[5].name });
       expect(result.current.nextDog).toBeNull();
     });
   });

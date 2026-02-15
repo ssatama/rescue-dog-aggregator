@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { PaginatedResponseSchema } from "./common";
 
 export const ApiDogProfilerDataSchema = z
   .object({
@@ -118,8 +117,6 @@ export const ApiDogSchema = z
   })
   .passthrough();
 
-export const PaginatedAnimalsSchema = PaginatedResponseSchema(ApiDogSchema);
-
 export const QualifyingBreedSchema = z
   .object({
     primary_breed: z.string(),
@@ -194,7 +191,7 @@ export const SwipeApiDogSchema = z
     tagline: z.string().optional(),
     description: z.string().optional(),
     personality_traits: z.array(z.string()).optional(),
-    energy_level: z.number().optional(),
+    energy_level: z.union([z.number(), z.string()]).optional(),
     unique_quirk: z.string().optional(),
     special_characteristic: z.string().optional(),
     quality_score: z.number().optional(),
@@ -202,12 +199,14 @@ export const SwipeApiDogSchema = z
   })
   .passthrough();
 
-export const SwipeResponseSchema = z.object({
-  dogs: z.array(SwipeApiDogSchema),
-  hasMore: z.boolean().optional(),
-  nextOffset: z.number().optional(),
-  total: z.number().optional(),
-});
+export const SwipeResponseSchema = z
+  .object({
+    dogs: z.array(SwipeApiDogSchema),
+    hasMore: z.boolean().optional(),
+    nextOffset: z.number().optional(),
+    total: z.number().optional(),
+  })
+  .passthrough();
 
 export type ApiDogParsed = z.infer<typeof ApiDogSchema>;
 export type BreedStats = z.infer<typeof BreedStatsSchema>;

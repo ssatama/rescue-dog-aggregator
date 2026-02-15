@@ -1,23 +1,5 @@
 import { z } from "zod";
 
-export const PaginatedResponseSchema = <T extends z.ZodType>(itemSchema: T) =>
-  z
-    .object({
-      results: z.array(itemSchema),
-      count: z.number().optional(),
-      next: z.string().nullable().optional(),
-      previous: z.string().nullable().optional(),
-    })
-    .passthrough();
-
-export const ErrorResponseSchema = z
-  .object({
-    detail: z.string(),
-    status_code: z.number().optional(),
-    correlation_id: z.string().optional(),
-  })
-  .passthrough();
-
 export const FilterCountSchema = z
   .object({
     value: z.union([z.string(), z.number(), z.boolean()]),

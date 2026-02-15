@@ -285,6 +285,15 @@ describe("swipeApi", () => {
       expect(result).toEqual([]);
     });
 
+    it("should throw when response has invalid structure", async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ invalid: "structure" }),
+      });
+
+      await expect(fetchSwipeDogs({})).rejects.toThrow();
+    });
+
     it("should use environment variable for API URL when available", async () => {
       const originalEnv = process.env.NEXT_PUBLIC_API_URL;
       process.env.NEXT_PUBLIC_API_URL = "https://api.rescuedogs.me";

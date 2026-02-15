@@ -1,6 +1,6 @@
 import type { ApiDog } from "../types/apiDog";
 import { getAnimals } from "./animalsService";
-import { logger } from "../utils/logger";
+import { logger, reportError } from "../utils/logger";
 
 export async function getRelatedDogs(
   organizationId: number | string,
@@ -25,6 +25,7 @@ export async function getRelatedDogs(
     return relatedDogs;
   } catch (error) {
     logger.error("Error fetching related dogs:", error);
+    reportError(error, { context: "getRelatedDogs", organizationId, currentDogId });
     throw error;
   }
 }

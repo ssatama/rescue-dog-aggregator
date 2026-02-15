@@ -401,6 +401,7 @@ export async function getBreedFilterCounts(
     });
   } catch (error) {
     logger.error(`Error fetching breed filter counts for ${breedSlug}:`, error);
+    reportError(error, { context: "getBreedFilterCounts", breedSlug });
     return null;
   }
 }

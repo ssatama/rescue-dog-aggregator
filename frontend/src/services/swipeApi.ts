@@ -20,7 +20,7 @@ export interface SwipeDog {
   slug: string;
   description?: string;
   traits?: string[];
-  energy_level?: number;
+  energy_level?: number | string;
   special_characteristic?: string;
   quality_score?: number;
   created_at?: string;

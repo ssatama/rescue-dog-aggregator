@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
+import { logger, reportError } from "../utils/logger";
 import {
   BreedWithImagesSchema,
   BreedStatsSchema,
@@ -56,7 +57,8 @@ export async function getBreedsWithImages(
     const data: unknown = await response.json();
     return z.array(BreedWithImagesSchema).parse(data);
   } catch (error) {
-    console.error("Error fetching breeds with images:", error);
+    logger.error("Error fetching breeds with images:", error);
+    reportError(error, { context: "getBreedsWithImages" });
     return [];
   }
 }
@@ -91,7 +93,7 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
     } as RequestInit);
 
     if (!statsResponse.ok) {
-      console.error(`Failed to fetch breed stats: ${statsResponse.status}`);
+      logger.error(`Failed to fetch breed stats: ${statsResponse.status}`);
       return [];
     }
 
@@ -111,7 +113,7 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
         breedsWithImages = z.array(BreedWithImagesSchema).parse(rawImages);
       }
     } catch (imageError) {
-      console.warn(
+      logger.warn(
         "Could not fetch breed images, continuing without them:",
         imageError,
       );
@@ -195,7 +197,8 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
 
     return breedGroups;
   } catch (error) {
-    console.error("Error fetching breed groups:", error);
+    logger.error("Error fetching breed groups:", error);
+    reportError(error, { context: "getBreedGroupsWithTopBreeds" });
     return [];
   }
 }
@@ -220,14 +223,15 @@ export async function getBreedsWithImagesForHomePage(
     } as RequestInit);
 
     if (!response.ok) {
-      console.error(`Failed to fetch breeds with images: ${response.status}`);
+      logger.error(`Failed to fetch breeds with images: ${response.status}`);
       return null;
     }
 
     const data: unknown = await response.json();
     return z.array(BreedWithImagesSchema).parse(data);
   } catch (error) {
-    console.error("Error fetching breeds with images:", error);
+    logger.error("Error fetching breeds with images:", error);
+    reportError(error, { context: "getBreedsWithImagesForHomePage" });
     return null;
   }
 }

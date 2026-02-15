@@ -1,11 +1,16 @@
 import { z } from "zod";
-import type { ApiOrganization } from "../types/apiDog";
+import type { ApiDog, ApiOrganization } from "../types/apiDog";
 import { get } from "../utils/api";
 import { trackAPIPerformance } from "../utils/performanceMonitor";
+import { ApiDogSchema } from "../schemas/animals";
 import {
   ApiOrganizationSchema,
   EnhancedOrganizationSchema,
+  OrganizationStatsSchema,
 } from "../schemas/organizations";
+
+type EnhancedOrganizationParsed = z.infer<typeof EnhancedOrganizationSchema>;
+type OrganizationStats = z.infer<typeof OrganizationStatsSchema>;
 
 export async function getOrganizations(): Promise<ApiOrganization[]> {
   return get<ApiOrganization[]>("/api/organizations", {}, {
@@ -32,18 +37,22 @@ export async function getOrganizationBySlug(
 export async function getOrganizationDogs(
   idOrSlug: number | string,
   params: Record<string, unknown> = {},
-): Promise<unknown> {
-  return get("/api/animals", {
+): Promise<ApiDog[]> {
+  return get<ApiDog[]>("/api/animals", {
     ...params,
     organization_id: idOrSlug,
     animal_type: "dog",
+  }, {
+    schema: z.array(ApiDogSchema),
   });
 }
 
 export async function getOrganizationStatistics(
   idOrSlug: number | string,
-): Promise<unknown> {
-  return get(`/api/organizations/${idOrSlug}/statistics`);
+): Promise<OrganizationStats> {
+  return get(`/api/organizations/${idOrSlug}/statistics`, {}, {
+    schema: OrganizationStatsSchema,
+  });
 }
 
 export async function getOrganizationRecentDogs(
@@ -75,35 +84,23 @@ interface EnhancedOrg {
   [key: string]: unknown;
 }
 
-function normalizeEnhancedOrg(org: Record<string, unknown>): EnhancedOrg {
-  const recentDogs = (
-    (org.recent_dogs as Array<Record<string, unknown>>) || []
-  ).map((dog) => ({
+function normalizeEnhancedOrg(org: EnhancedOrganizationParsed): EnhancedOrg {
+  const recentDogs = (org.recent_dogs || []).map((dog) => ({
     ...dog,
-    thumbnail_url:
-      (dog.thumbnail_url as string) || (dog.image_url as string),
-    primary_image_url:
-      (dog.primary_image_url as string) || (dog.image_url as string),
+    thumbnail_url: dog.thumbnail_url || dog.image_url,
+    primary_image_url: dog.primary_image_url || dog.image_url,
   }));
 
   return {
     ...org,
     recent_dogs: recentDogs,
-    total_dogs: (org.total_dogs as number) || 0,
-    new_this_week: (org.new_this_week as number) || 0,
-    website_url:
-      (org.website_url as string) || (org.websiteUrl as string),
-    logo_url: (org.logo_url as string) || (org.logoUrl as string),
-    social_media:
-      (org.social_media as Record<string, unknown>) ||
-      (org.socialMedia as Record<string, unknown>) ||
-      {},
-    service_regions:
-      (org.service_regions as string[]) ||
-      (org.serviceRegions as string[]) ||
-      [],
-    ships_to:
-      (org.ships_to as string[]) || (org.shipsTo as string[]) || [],
+    total_dogs: org.total_dogs || 0,
+    new_this_week: org.new_this_week || 0,
+    website_url: org.website_url || org.websiteUrl,
+    logo_url: org.logo_url || org.logoUrl,
+    social_media: org.social_media || org.socialMedia || {},
+    service_regions: org.service_regions || org.serviceRegions || [],
+    ships_to: org.ships_to || org.shipsTo || [],
   };
 }
 
@@ -122,9 +119,7 @@ export async function getEnhancedOrganizations(): Promise<EnhancedOrg[]> {
     }
 
     const organizations: unknown = await response.json();
-    const parsed = z.array(EnhancedOrganizationSchema).parse(
-      Array.isArray(organizations) ? organizations : [],
-    );
+    const parsed = z.array(EnhancedOrganizationSchema).parse(organizations);
 
     return parsed.map(normalizeEnhancedOrg);
   } catch (error) {
@@ -169,9 +164,7 @@ export async function getEnhancedOrganizationsSSR(): Promise<EnhancedOrg[]> {
       trackAPIPerformance("/api/organizations/enhanced", startTime);
     }
 
-    const parsed = z.array(EnhancedOrganizationSchema).parse(
-      Array.isArray(organizations) ? organizations : [],
-    );
+    const parsed = z.array(EnhancedOrganizationSchema).parse(organizations);
 
     const enhancedOrganizations = parsed.map(normalizeEnhancedOrg);
 

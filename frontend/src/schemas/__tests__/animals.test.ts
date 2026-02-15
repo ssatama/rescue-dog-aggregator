@@ -178,6 +178,36 @@ describe("SwipeResponseSchema", () => {
   });
 });
 
+describe("SwipeResponseSchema passthrough", () => {
+  it("passes through extra fields not in schema", () => {
+    const input = {
+      dogs: [{ id: 1, name: "Rex", slug: "rex-1" }],
+      hasMore: true,
+      nextOffset: 10,
+      total: 50,
+      extra_field: "should_survive",
+    };
+    const result = SwipeResponseSchema.parse(input);
+    expect((result as Record<string, unknown>).extra_field).toBe("should_survive");
+  });
+});
+
+describe("SwipeApiDogSchema.energy_level", () => {
+  it("accepts number energy_level", () => {
+    const result = SwipeResponseSchema.parse({
+      dogs: [{ id: 1, name: "Rex", slug: "rex-1", energy_level: 4 }],
+    });
+    expect(result.dogs[0].energy_level).toBe(4);
+  });
+
+  it("accepts string energy_level", () => {
+    const result = SwipeResponseSchema.parse({
+      dogs: [{ id: 1, name: "Rex", slug: "rex-1", energy_level: "high" }],
+    });
+    expect(result.dogs[0].energy_level).toBe("high");
+  });
+});
+
 describe("FilterCountsResponseSchema", () => {
   it("parses valid filter counts", () => {
     const result = FilterCountsResponseSchema.parse({

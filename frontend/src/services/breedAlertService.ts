@@ -59,13 +59,12 @@ export function saveBreedAlertLocally(alertData: BreedAlertData): BreedAlert {
       (alert) => alert.breed === alertData.breed,
     );
 
-    if (existingIndex >= 0) {
-      existingAlerts[existingIndex] = newAlert;
-    } else {
-      existingAlerts.push(newAlert);
-    }
+    const updatedAlerts =
+      existingIndex >= 0
+        ? existingAlerts.map((alert, i) => (i === existingIndex ? newAlert : alert))
+        : [...existingAlerts, newAlert];
 
-    localStorage.setItem(BREED_ALERTS_KEY, JSON.stringify(existingAlerts));
+    localStorage.setItem(BREED_ALERTS_KEY, JSON.stringify(updatedAlerts));
     return newAlert;
   } catch (error) {
     console.error("Error saving breed alert locally:", error);
@@ -92,9 +91,9 @@ export async function saveBreedAlertWithFallback(
   alertData: BreedAlertData,
 ): Promise<BreedAlert> {
   try {
-    return saveBreedAlertLocally(alertData);
+    await saveBreedAlert(alertData);
   } catch (error) {
-    console.warn("API save failed, falling back to local storage:", error);
-    return saveBreedAlertLocally(alertData);
+    console.warn("API save failed, falling back to local storage only:", error);
   }
+  return saveBreedAlertLocally(alertData);
 }

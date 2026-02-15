@@ -26,10 +26,14 @@ describe("organizationsService", () => {
     const params = { limit: 5, offset: 0 };
     get.mockResolvedValue([{ id: 10, name: "Dog X" }]);
     await getOrganizationDogs(7, params);
-    expect(get).toHaveBeenCalledWith("/api/animals", {
-      ...params,
-      organization_id: 7,
-      animal_type: "dog",
-    });
+    expect(get).toHaveBeenCalledWith(
+      "/api/animals",
+      {
+        ...params,
+        organization_id: 7,
+        animal_type: "dog",
+      },
+      expect.objectContaining({ schema: expect.anything() }),
+    );
   });
 });

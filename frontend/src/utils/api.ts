@@ -126,14 +126,18 @@ export function get<T = unknown>(
 
   const { schema, ...fetchOptions } = options;
 
-  const result = fetchApi(url, fetchOptions).then((data) => {
+  return fetchApi(url, fetchOptions).then((data) => {
     if (schema) {
-      return schema.parse(data) as T;
+      const result = schema.safeParse(data);
+      if (result.success) {
+        return result.data;
+      }
+      logger.error(`[API] Zod validation failed for ${url}`, result.error.issues);
+      reportError(result.error, { endpoint: url });
+      throw result.error;
     }
     return data as T;
   });
-
-  return result;
 }
 
 export function post<T = unknown>(
