@@ -7,6 +7,7 @@ This module provides basic API key authentication to protect monitoring
 and administrative endpoints from unauthorized access.
 """
 
+import hmac
 import os
 
 from fastapi import Header, HTTPException
@@ -26,5 +27,5 @@ async def verify_admin_key(x_api_key: str = Header(None)):
     admin_key = os.getenv("ADMIN_API_KEY")
     if not admin_key:
         raise HTTPException(status_code=500, detail="Admin API key not configured")
-    if not x_api_key or x_api_key != admin_key:
+    if not x_api_key or not hmac.compare_digest(x_api_key, admin_key):
         raise HTTPException(status_code=401, detail="Unauthorized - Invalid API key")

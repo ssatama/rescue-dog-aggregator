@@ -84,3 +84,13 @@ class TestLLMEndpointAuth:
         detail = response.json().get("detail", "").lower()
         assert ADMIN_KEY not in detail
         assert "admin_api_key" not in detail
+
+    def test_missing_admin_key_returns_500(self):
+        with patch.dict(os.environ, {}, clear=True):
+            bare_client = TestClient(app, raise_server_exceptions=False)
+            response = bare_client.post(
+                "/api/llm/enrich",
+                json={"animal_id": 1, "processing_type": "description_cleaning"},
+            )
+        assert response.status_code == 500
+        assert "Admin API key not configured" in response.json()["detail"]
