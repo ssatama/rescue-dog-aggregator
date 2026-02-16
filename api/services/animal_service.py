@@ -1336,6 +1336,19 @@ class AnimalService:
             conditions.append("a.dog_profiler_data->>'experience_level' = %s")
             params.append(filters.experience_level)
 
+        # Compatibility filters (boolean query params -> JSONB string matching)
+        if filters.good_with_kids is True:
+            conditions.append("a.dog_profiler_data->>'good_with_children' IN (%s, %s)")
+            params.extend(["yes", "older_children"])
+
+        if filters.good_with_dogs is True:
+            conditions.append("a.dog_profiler_data->>'good_with_dogs' = %s")
+            params.append("yes")
+
+        if filters.good_with_cats is True:
+            conditions.append("a.dog_profiler_data->>'good_with_cats' IN (%s, %s)")
+            params.extend(["yes", "with_training"])
+
         # Build WHERE clause
         where_clause = " AND ".join(conditions)
 
@@ -1520,6 +1533,19 @@ class AnimalService:
         if filters.experience_level:
             conditions.append("a.dog_profiler_data->>'experience_level' = %s")
             params.append(filters.experience_level)
+
+        # Compatibility filters (boolean query params -> JSONB string matching)
+        if filters.good_with_kids is True:
+            conditions.append("a.dog_profiler_data->>'good_with_children' IN (%s, %s)")
+            params.extend(["yes", "older_children"])
+
+        if filters.good_with_dogs is True:
+            conditions.append("a.dog_profiler_data->>'good_with_dogs' = %s")
+            params.append("yes")
+
+        if filters.good_with_cats is True:
+            conditions.append("a.dog_profiler_data->>'good_with_cats' IN (%s, %s)")
+            params.extend(["yes", "with_training"])
 
         return conditions, params
 
