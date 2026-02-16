@@ -66,23 +66,26 @@ class TestLLMClientAsyncioTimeout:
 
     @pytest.mark.asyncio
     async def test_timeout_buffer_is_five_seconds(self, llm_client, mock_response_data):
-        """The asyncio.timeout should be timeout + 5.0 seconds."""
-        recorded_deadline = None
+        """The asyncio.timeout should be called with timeout + 5.0 seconds."""
+        recorded_delay = None
+        original_timeout = asyncio.timeout
 
-        async def capture_deadline(*args, **kwargs):
-            nonlocal recorded_deadline
-            try:
-                deadline = asyncio.current_task().cancel_scope.deadline  # noqa: F841
-            except AttributeError:
-                pass
-            return mock_response_data
+        def capturing_timeout(delay):
+            nonlocal recorded_delay
+            recorded_delay = delay
+            return original_timeout(delay)
 
-        with patch.object(llm_client, "call_openrouter_api", side_effect=capture_deadline):
-            result = await llm_client.call_api_and_parse(
+        with (
+            patch("services.llm.llm_client.asyncio.timeout", side_effect=capturing_timeout),
+            patch.object(llm_client, "call_openrouter_api", new_callable=AsyncMock) as mock_api,
+        ):
+            mock_api.return_value = mock_response_data
+            await llm_client.call_api_and_parse(
                 messages=[{"role": "user", "content": "test"}],
                 timeout=10.0,
             )
-            assert result["key"] == "value"
+
+        assert recorded_delay == 15.0
 
     @pytest.mark.asyncio
     async def test_vision_api_inherits_timeout(self, llm_client, mock_response_data):

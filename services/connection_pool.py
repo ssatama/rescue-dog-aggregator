@@ -13,6 +13,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 
 import psycopg2
+import psycopg2.extensions
 import psycopg2.pool
 
 
@@ -81,7 +82,7 @@ class ConnectionPoolService:
             self.logger.error(f"Failed to create connection pool: {e}")
             raise
 
-    def _check_connection_health(self, conn) -> bool:
+    def _check_connection_health(self, conn: psycopg2.extensions.connection | None) -> bool:
         """Check if a connection is still alive and usable."""
         if conn is None or conn.closed:
             return False
@@ -90,6 +91,8 @@ class ConnectionPoolService:
             with conn.cursor() as cursor:
                 cursor.execute("SELECT 1")
                 cursor.fetchone()
+            if not conn.autocommit:
+                conn.rollback()
             return True
         except (psycopg2.OperationalError, psycopg2.InterfaceError):
             return False
@@ -122,6 +125,10 @@ class ConnectionPoolService:
                 self.pool.putconn(connection, close=True)
             except Exception as e:
                 self.logger.error(f"Failed to close stale connection: {e}")
+                try:
+                    connection.close()
+                except Exception:
+                    pass
 
         raise RuntimeError(f"Could not acquire healthy connection after {max_attempts} attempts")
 
