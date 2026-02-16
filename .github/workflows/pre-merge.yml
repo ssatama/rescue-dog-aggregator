@@ -150,9 +150,7 @@ jobs:
         run: uv run pytest tests/security/ -v --tb=short || echo "::warning::Security tests failed"
 
       - name: Check dependencies for vulnerabilities
-        run: |
-          uv pip install pip-audit
-          uv run pip-audit --output security-report.json --format json || echo "::warning::Security vulnerabilities found"
+        run: uv run pip-audit --output security-report.json --format json || echo "::warning::Security vulnerabilities found"
 
       - name: Upload security report
         uses: actions/upload-artifact@v6
