@@ -127,7 +127,8 @@ class PetsInTurkeyScraper(BaseScraper):
                     self.session_manager.record_found_animal(dog["external_id"])
 
             # Set filtering stats (no DB filtering here - extraction failures tracked separately)
-            self.set_filtering_stats(len(dogs_data), 0)
+            self.total_animals_before_filter = len(dogs_data)
+            self.total_animals_skipped = 0
 
         except Exception as e:
             self.logger.error(f"Error collecting dog data: {e}")

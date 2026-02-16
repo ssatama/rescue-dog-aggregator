@@ -80,17 +80,17 @@ class TestMisisRescueRetryMechanism:
     def test_invalid_name_detection(self):
         """Test detection of invalid names from connection errors."""
         # Should detect "This Site Cant Be Reached" as invalid
-        assert self.scraper._is_invalid_name("This Site Cant Be Reached")
+        assert not self.scraper.animal_validator.is_valid_name("This Site Cant Be Reached")
 
         # Should detect other error patterns
-        assert self.scraper._is_invalid_name("Error 404")
-        assert self.scraper._is_invalid_name("Connection Failed")
-        assert self.scraper._is_invalid_name("Page Not Found")
+        assert not self.scraper.animal_validator.is_valid_name("Error 404")
+        assert not self.scraper.animal_validator.is_valid_name("Connection Failed")
+        assert not self.scraper.animal_validator.is_valid_name("Page Not Found")
 
         # Should accept valid names
-        assert not self.scraper._is_invalid_name("Lilly")
-        assert not self.scraper._is_invalid_name("Max")
-        assert not self.scraper._is_invalid_name("Stella")
+        assert self.scraper.animal_validator.is_valid_name("Lilly")
+        assert self.scraper.animal_validator.is_valid_name("Max")
+        assert self.scraper.animal_validator.is_valid_name("Stella")
 
     def test_data_validation_rejects_invalid_names(self):
         """Test that _validate_dog_data rejects invalid names."""

@@ -416,7 +416,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             # World-class logging: Animal list stats handled by centralized system
 
             # Pre-generate external_ids for stale detection
-            # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+            # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
             # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
             for animal in animals_list:
                 if animal.get("name") and "external_id" not in animal:
@@ -426,11 +426,13 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
             # Filter existing animals if skip is enabled
             if self.skip_existing_animals:
-                filtered_animals = self._filter_existing_animals(animals_list)
+                filtered_animals = self.filtering_service.filter_existing_animals(animals_list)
+                self._sync_filtering_stats()
                 urls_to_process = [a["url"] for a in filtered_animals]
             else:
                 urls_to_process = [animal["url"] for animal in animals_list]
-                self.set_filtering_stats(len(animals_list), 0)
+                self.total_animals_before_filter = len(animals_list)
+                self.total_animals_skipped = 0
 
             # Process URLs in batches with parallel processing
             if urls_to_process:
