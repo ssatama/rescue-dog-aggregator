@@ -8,7 +8,12 @@ Following CLAUDE.md principles:
 - No sensitive information leakage
 """
 
+import os
+from unittest.mock import patch
+
 import pytest
+
+ADMIN_KEY = "test-admin-key-for-llm-security-tests"
 
 
 @pytest.mark.security
@@ -17,9 +22,16 @@ import pytest
 class TestLLMSecurityBasics:
     """Test basic security patterns in LLM routes without complex mocking."""
 
-    # Use the client fixture from conftest.py instead of creating our own
+    @pytest.fixture(autouse=True)
+    def _set_admin_key(self):
+        with patch.dict(os.environ, {"ADMIN_API_KEY": ADMIN_KEY}):
+            yield
 
-    def test_input_validation_secure_messages(self, client):
+    @pytest.fixture
+    def auth_headers(self):
+        return {"X-API-Key": ADMIN_KEY}
+
+    def test_input_validation_secure_messages(self, client, auth_headers):
         """Test that input validation provides secure, user-friendly messages."""
         test_cases = [
             # Negative animal ID
@@ -93,9 +105,9 @@ class TestLLMSecurityBasics:
         for case in test_cases:
             with client as test_client:
                 if case["method"] == "post":
-                    response = test_client.post(case["endpoint"], json=case["data"])
+                    response = test_client.post(case["endpoint"], json=case["data"], headers=auth_headers)
                 else:
-                    response = test_client.get(case["endpoint"], params=case["data"])
+                    response = test_client.get(case["endpoint"], params=case["data"], headers=auth_headers)
 
                 # Check status code
                 assert response.status_code == case["expected_status"], f"Expected {case['expected_status']}, got {response.status_code} for {case['endpoint']}"
@@ -111,11 +123,12 @@ class TestLLMSecurityBasics:
                 for sensitive in case["should_not_contain"]:
                     assert sensitive.lower() not in detail, f"Sensitive term '{sensitive}' found in error for {case['endpoint']}: {detail}"
 
-    def test_nonexistent_animal_secure_message(self, client):
+    def test_nonexistent_animal_secure_message(self, client, auth_headers):
         """Test that nonexistent animal requests provide secure messages."""
         response = client.post(
             "/api/llm/enrich",
             json={"animal_id": 999999, "processing_type": "description_cleaning"},
+            headers=auth_headers,
         )  # Very unlikely to exist
 
         assert response.status_code == 404
@@ -129,9 +142,9 @@ class TestLLMSecurityBasics:
         for term in sensitive_terms:
             assert term.lower() not in detail.lower()
 
-    def test_stats_endpoint_input_validation(self, client):
+    def test_stats_endpoint_input_validation(self, client, auth_headers):
         """Test that stats endpoint validates organization_id securely."""
-        response = client.get("/api/llm/stats?organization_id=-5")
+        response = client.get("/api/llm/stats?organization_id=-5", headers=auth_headers)
 
         assert response.status_code == 400
         response_data = response.json()
@@ -142,7 +155,7 @@ class TestLLMSecurityBasics:
         assert "query parameter" not in detail.lower()
         assert "validation" not in detail.lower()
 
-    def test_error_response_consistency(self, client):
+    def test_error_response_consistency(self, client, auth_headers):
         """Test that all error responses have consistent, secure structure."""
         error_endpoints = [
             (
@@ -157,7 +170,7 @@ class TestLLMSecurityBasics:
         ]
 
         for endpoint, data in error_endpoints:
-            response = client.post(endpoint, json=data)
+            response = client.post(endpoint, json=data, headers=auth_headers)
 
             # All should return client errors (4xx)
             assert 400 <= response.status_code < 500, f"Expected 4xx status for {endpoint}, got {response.status_code}"
@@ -207,10 +220,10 @@ class TestLLMSecurityBasics:
             for pattern in sensitive_patterns:
                 assert pattern not in detail_lower, f"Sensitive pattern '{pattern}' found in {endpoint} error: {detail_lower}"
 
-    def test_clean_description_endpoint_security(self, client):
+    def test_clean_description_endpoint_security(self, client, auth_headers):
         """Test clean-description endpoint for secure error handling."""
         # Test with empty text parameter
-        response = client.post("/api/llm/clean-description?text=")
+        response = client.post("/api/llm/clean-description?text=", headers=auth_headers)
 
         assert response.status_code == 400
         response_data = response.json()
@@ -218,7 +231,7 @@ class TestLLMSecurityBasics:
 
         # Test with oversized text
         large_text = "A" * 11000
-        response = client.post(f"/api/llm/clean-description?text={large_text}")
+        response = client.post(f"/api/llm/clean-description?text={large_text}", headers=auth_headers)
 
         assert response.status_code == 400
         response_data = response.json()
@@ -226,9 +239,9 @@ class TestLLMSecurityBasics:
         # Should not echo back the large text
         assert len(response_data["detail"]) < 200
 
-    def test_processing_type_validation(self, client):
+    def test_processing_type_validation(self, client, auth_headers):
         """Test that invalid processing types are handled securely."""
-        response = client.post("/api/llm/enrich", json={"animal_id": 1, "processing_type": "invalid_type"})
+        response = client.post("/api/llm/enrich", json={"animal_id": 1, "processing_type": "invalid_type"}, headers=auth_headers)
 
         # This should be caught by Pydantic validation
         assert response.status_code == 422
@@ -245,7 +258,7 @@ class TestLLMSecurityBasics:
         for term in sensitive_terms:
             assert term.lower() not in detail.lower()
 
-    def test_sql_injection_prevention(self, client):
+    def test_sql_injection_prevention(self, client, auth_headers):
         """Test that SQL injection attempts are properly blocked."""
         # Test various SQL injection patterns in organization_id
         injection_attempts = [
@@ -257,7 +270,7 @@ class TestLLMSecurityBasics:
         ]
 
         for injection in injection_attempts:
-            response = client.get(f"/api/llm/stats?organization_id={injection}")
+            response = client.get(f"/api/llm/stats?organization_id={injection}", headers=auth_headers)
 
             # Should be blocked at validation level (either 400 or 422)
             assert response.status_code in [400, 422]
@@ -271,9 +284,9 @@ class TestLLMSecurityBasics:
             # Note: Pydantic may echo back invalid input in validation errors,
             # but this happens before our code processes it, so it's still secure
 
-    def test_response_headers_security(self, client):
+    def test_response_headers_security(self, client, auth_headers):
         """Test that responses don't include sensitive headers."""
-        response = client.post("/api/llm/translate", json={"text": "hello", "target_language": "es"})
+        response = client.post("/api/llm/translate", json={"text": "hello", "target_language": "es"}, headers=auth_headers)
 
         # Check that sensitive headers are not present
         sensitive_headers = [
@@ -288,7 +301,7 @@ class TestLLMSecurityBasics:
         for header in sensitive_headers:
             assert header.lower() not in [h.lower() for h in response.headers.keys()], f"Sensitive header '{header}' found in response headers"
 
-    def test_concurrent_request_limits(self, client):
+    def test_concurrent_request_limits(self, client, auth_headers):
         """Test that the API handles multiple requests without exposing internals."""
         # Make multiple concurrent requests to check for race condition errors
         responses = []
@@ -299,6 +312,7 @@ class TestLLMSecurityBasics:
                     "animal_id": 999999 + i,
                     "processing_type": "description_cleaning",
                 },
+                headers=auth_headers,
             )  # Nonexistent animals
             responses.append(response)
 
