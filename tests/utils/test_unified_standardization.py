@@ -4,7 +4,6 @@ from utils.unified_standardization import UnifiedStandardizer
 
 
 @pytest.mark.slow
-@pytest.mark.slow
 class TestUnifiedStandardizer:
     """Test suite for the unified standardization module that consolidates all breed, age, and size standardization."""
 

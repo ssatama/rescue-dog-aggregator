@@ -9,7 +9,6 @@ from api.main import app
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.database
 class TestDatabaseErrorHandling:
     # Use the client fixture from conftest.py instead of creating our own
     # Docstring moved above
