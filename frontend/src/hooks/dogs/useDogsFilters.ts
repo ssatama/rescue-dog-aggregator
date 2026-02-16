@@ -21,9 +21,6 @@ interface UseDogsFiltersParams {
 
 interface UseDogsFiltersReturn {
   filters: Filters;
-  urlPage: number;
-  urlScroll: number;
-  localBreedInput: string;
   buildAPIParams: (filters: Filters) => Record<string, string>;
   updateURL: DebouncedState<(filters: Filters, page?: number, preserveScroll?: boolean) => void>;
   activeFilterCount: number;
@@ -71,14 +68,6 @@ export default function useDogsFilters({
       "Any country",
     availableRegionFilter: searchParams.get("available_region") || "Any region",
   }), [searchParams, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, validateOrganizationId]);
-
-  const urlPage = parseInt(searchParams.get("page") || "1", 10);
-  const urlScroll = parseInt(searchParams.get("scroll") || "0", 10);
-
-  const localBreedInput = useMemo(
-    () => (filters.breedFilter === "Any breed" ? "" : filters.breedFilter),
-    [filters.breedFilter]
-  );
 
   const updateURL = useDebouncedCallback(
     (newFilters: Filters, newPage = 1, preserveScroll = false) => {
@@ -148,19 +137,24 @@ export default function useDogsFilters({
       !filters.availableCountryFilter ||
       filters.availableCountryFilter === "Any country"
     ) {
-      // Schedule reset as microtask to avoid synchronous setState in effect body
-      void Promise.resolve().then(() => setAvailableRegions(["Any region"]));
+      queueMicrotask(() => setAvailableRegions(["Any region"]));
       return;
     }
 
+    let cancelled = false;
+
     getAvailableRegions(filters.availableCountryFilter)
       .then((regions) => {
-        setAvailableRegions(["Any region", ...regions]);
+        if (!cancelled) setAvailableRegions(["Any region", ...regions]);
       })
       .catch((err: unknown) => {
-        reportError(err, { context: "getAvailableRegions", country: filters.availableCountryFilter });
-        setAvailableRegions(["Any region"]);
+        if (!cancelled) {
+          reportError(err, { context: "getAvailableRegions", country: filters.availableCountryFilter });
+          setAvailableRegions(["Any region"]);
+        }
       });
+
+    return () => { cancelled = true; };
   }, [filters.availableCountryFilter]);
 
   useEffect(() => {
@@ -171,9 +165,6 @@ export default function useDogsFilters({
 
   return {
     filters,
-    urlPage,
-    urlScroll,
-    localBreedInput,
     buildAPIParams,
     updateURL,
     activeFilterCount,

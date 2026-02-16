@@ -17,7 +17,8 @@ export default function useScrollRestoration({
   searchParams,
   pathname,
 }: UseScrollRestorationParams): UseScrollRestorationReturn {
-  const urlScroll = parseInt(searchParams.get("scroll") || "0", 10);
+  const rawUrlScroll = parseInt(searchParams.get("scroll") || "0", 10);
+  const urlScroll = Number.isNaN(rawUrlScroll) ? 0 : rawUrlScroll;
   const scrollPositionRef = useRef(urlScroll);
   const isRestoringScroll = useRef(false);
 
@@ -52,10 +53,11 @@ export default function useScrollRestoration({
   useEffect(() => {
     if (urlScroll > 0) {
       isRestoringScroll.current = true;
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         window.scrollTo(0, urlScroll);
         isRestoringScroll.current = false;
       }, 100);
+      return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Mount-only: urlScroll is captured at mount time intentionally
   }, []);

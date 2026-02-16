@@ -3,7 +3,6 @@
 import React, {
   useState,
   useCallback,
-  startTransition,
   useMemo,
 } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -59,14 +58,14 @@ export default function DogsPageClientSimplified({
     [rawSearchParams],
   );
 
-  const scroll = useScrollRestoration({ searchParams, pathname });
+  const { scrollPositionRef, saveScrollPosition } = useScrollRestoration({ searchParams, pathname });
 
   const filterState = useDogsFilters({
     metadata,
     initialParams,
     searchParams,
     pathname,
-    scrollPositionRef: scroll.scrollPositionRef,
+    scrollPositionRef: scrollPositionRef,
   });
 
   const pagination = useDogsPagination({
@@ -74,7 +73,7 @@ export default function DogsPageClientSimplified({
     initialParams,
     filters: filterState.filters,
     buildAPIParams: filterState.buildAPIParams,
-    scrollPositionRef: scroll.scrollPositionRef,
+    scrollPositionRef: scrollPositionRef,
     searchParams,
     pathname,
   });
@@ -83,45 +82,17 @@ export default function DogsPageClientSimplified({
 
   const handleFilterChange = useCallback(
     (filterKey: string | Record<string, string>, value?: string) => {
-      pagination.abortCurrentFetch();
-
-      let newFilters: Filters;
-
-      if (typeof filterKey === "object" && filterKey !== null) {
-        newFilters = { ...filterState.filters, ...filterKey };
-      } else {
-        newFilters = { ...filterState.filters, [filterKey]: value };
-      }
+      const newFilters: Filters = typeof filterKey === "object"
+        ? { ...filterState.filters, ...filterKey }
+        : { ...filterState.filters, [filterKey]: value };
 
       filterState.updateURL(newFilters, 1, false);
-
-      startTransition(() => {
-        pagination.setPage(1);
-        pagination.setHasMore(true);
-        scroll.scrollPositionRef.current = 0;
-        pagination.setIsFilterTransition(true);
-      });
-
-      pagination.fetchDogsWithFilters(newFilters, 1);
+      pagination.resetForNewFilters(newFilters, scrollPositionRef);
     },
-    [filterState, pagination, scroll.scrollPositionRef],
+    [filterState, pagination, scrollPositionRef],
   );
 
-  const handleBreedSuggestionSelect = useCallback(
-    (breed: string) => {
-      handleFilterChange("breedFilter", breed);
-    },
-    [handleFilterChange],
-  );
-
-  const handleBreedSearch = useCallback(
-    (breed: string) => {
-      handleFilterChange("breedFilter", breed);
-    },
-    [handleFilterChange],
-  );
-
-  const handleBreedValueChange = useCallback(
+  const handleBreedChange = useCallback(
     (breed: string) => {
       handleFilterChange("breedFilter", breed);
     },
@@ -147,20 +118,11 @@ export default function DogsPageClientSimplified({
     };
 
     filterState.updateURL?.cancel?.();
-    scroll.saveScrollPosition?.cancel?.();
-
+    saveScrollPosition?.cancel?.();
     router.replace("/dogs", { scroll: false });
-
-    startTransition(() => {
-      pagination.setDogs([]);
-      pagination.setPage(1);
-      pagination.setHasMore(true);
-      pagination.setError(null);
-      scroll.scrollPositionRef.current = 0;
-    });
-
-    pagination.fetchDogsWithFilters(defaultFilters, 1);
-  }, [router, filterState.updateURL, scroll.saveScrollPosition, scroll.scrollPositionRef, pagination]);
+    scrollPositionRef.current = 0;
+    pagination.resetAll(defaultFilters);
+  }, [router, filterState, saveScrollPosition, scrollPositionRef, pagination]);
 
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Find Dogs" }];
 
@@ -288,10 +250,10 @@ export default function DogsPageClientSimplified({
               }
               // Breed (using actual filter state like Name filter)
               standardizedBreedFilter={filterState.filters.breedFilter}
-              setStandardizedBreedFilter={handleBreedSuggestionSelect}
-              handleBreedSearch={handleBreedSearch}
+              setStandardizedBreedFilter={handleBreedChange}
+              handleBreedSearch={handleBreedChange}
               handleBreedClear={handleBreedClear}
-              handleBreedValueChange={handleBreedValueChange}
+              handleBreedValueChange={handleBreedChange}
               standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
               // Pet Details
               sexFilter={filterState.filters.sexFilter}
@@ -445,10 +407,10 @@ export default function DogsPageClientSimplified({
         }
         // Breed (using actual filter state like Name filter)
         standardizedBreedFilter={filterState.filters.breedFilter}
-        setStandardizedBreedFilter={handleBreedSuggestionSelect}
-        handleBreedSearch={handleBreedSearch}
+        setStandardizedBreedFilter={handleBreedChange}
+        handleBreedSearch={handleBreedChange}
         handleBreedClear={handleBreedClear}
-        handleBreedValueChange={handleBreedValueChange}
+        handleBreedValueChange={handleBreedChange}
         standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
         // Pet Details
         sexFilter={filterState.filters.sexFilter}

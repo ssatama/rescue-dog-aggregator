@@ -5,8 +5,6 @@ import {
   useRef,
   useMemo,
   startTransition,
-  type Dispatch,
-  type SetStateAction,
   type MutableRefObject,
 } from "react";
 import { getAnimals, getFilterCounts } from "../../services/animalsService";
@@ -14,22 +12,6 @@ import { reportError } from "../../utils/logger";
 import type { Dog, Filters, DogsPageInitialParams, FilterCountsResponse } from "../../types/dogsPage";
 
 const ITEMS_PER_PAGE = 20;
-
-const assertNoDuplicateDogIds = (dogs: ReadonlyArray<{ id: number | string }>, context = '') => {
-  if (process.env.NODE_ENV === 'development') {
-    const ids = dogs.map(d => d.id);
-    const uniqueIds = new Set(ids);
-    if (ids.length !== uniqueIds.size) {
-      const duplicates = ids.filter((id, i) => ids.indexOf(id) !== i);
-      console.error(`DUPLICATE DOG IDS ${context}`, {
-        totalDogs: ids.length,
-        uniqueDogs: uniqueIds.size,
-        duplicateIds: [...new Set(duplicates)],
-        allIds: ids,
-      });
-    }
-  }
-};
 
 interface UseDogsPaginationParams {
   initialDogs: Dog[];
@@ -50,14 +32,11 @@ interface UseDogsPaginationReturn {
   error: string | null;
   filterCounts: FilterCountsResponse | null;
   isFilterTransition: boolean;
-  setIsFilterTransition: Dispatch<SetStateAction<boolean>>;
-  setDogs: Dispatch<SetStateAction<Dog[]>>;
-  setPage: Dispatch<SetStateAction<number>>;
-  setHasMore: Dispatch<SetStateAction<boolean>>;
-  setError: Dispatch<SetStateAction<string | null>>;
   fetchDogsWithFilters: (filters: Filters, pageNum?: number, shouldAppend?: boolean) => Promise<void>;
   loadMoreDogs: () => Promise<void>;
   abortCurrentFetch: () => void;
+  resetForNewFilters: (newFilters: Filters, scrollRef: MutableRefObject<number>) => void;
+  resetAll: (defaultFilters: Filters) => void;
 }
 
 export default function useDogsPagination({
@@ -69,7 +48,8 @@ export default function useDogsPagination({
   searchParams,
   pathname,
 }: UseDogsPaginationParams): UseDogsPaginationReturn {
-  const urlPage = parseInt(searchParams.get("page") || "1", 10);
+  const rawUrlPage = parseInt(searchParams.get("page") || "1", 10);
+  const urlPage = Number.isNaN(rawUrlPage) ? 1 : rawUrlPage;
 
   const [dogs, setDogs] = useState<Dog[]>(() => {
     if (typeof window === 'undefined') return initialDogs;
@@ -110,15 +90,6 @@ export default function useDogsPagination({
   }, [searchParams]);
 
   const hydrateDeepLinkPages = async (targetPage: number, currentFilters: Filters): Promise<void> => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[hydrateDeepLinkPages] START', {
-        targetPage,
-        currentFilters,
-        currentDogs: dogs.length,
-        isPaginating: isPaginatingRef.current,
-      });
-    }
-
     isPaginatingRef.current = true;
     setLoading(true);
     setLoadingMore(false);
@@ -129,7 +100,7 @@ export default function useDogsPagination({
 
     try {
       const baseParams = buildAPIParams(currentFilters);
-      const countsPromise = getFilterCounts(baseParams);
+      const countsPromise = getFilterCounts(baseParams, { signal: abortController.signal });
 
       const requests = [];
       for (let p = 1; p <= targetPage; p++) {
@@ -145,32 +116,8 @@ export default function useDogsPagination({
         );
       }
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[hydrateDeepLinkPages] Fetching pages 1 to', targetPage);
-      }
-
       const allPages = await Promise.all(requests);
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[hydrateDeepLinkPages] All pages fetched', {
-          pageCount: allPages.length,
-          pagesData: allPages.map((page, i) => ({
-            pageNum: i + 1,
-            dogCount: page.length,
-            dogIds: page.map(d => d.id),
-          })),
-        });
-      }
-
       const allDogs = allPages.flat();
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[hydrateDeepLinkPages] Dogs accumulated', {
-          totalDogs: allDogs.length,
-          dogIds: allDogs.map(d => d.id),
-        });
-        assertNoDuplicateDogIds(allDogs, '[hydrateDeepLinkPages] All dogs');
-      }
 
       startTransition(() => {
         setDogs(allDogs as Dog[]);
@@ -179,8 +126,14 @@ export default function useDogsPagination({
         setHasMore(lastPage.length === ITEMS_PER_PAGE);
       });
 
-      const counts = await countsPromise;
-      setFilterCounts(counts);
+      try {
+        const counts = await countsPromise;
+        setFilterCounts(counts);
+      } catch (countsErr) {
+        if (!(countsErr instanceof Error && countsErr.name === 'AbortError')) {
+          reportError(countsErr, { context: "hydrateDeepLinkPages:filterCounts" });
+        }
+      }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
       reportError(err, { context: "hydrateDeepLinkPages", targetPage });
@@ -190,13 +143,6 @@ export default function useDogsPagination({
       isPaginatingRef.current = false;
       if (currentAbortControllerRef.current === abortController) {
         currentAbortControllerRef.current = null;
-      }
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[hydrateDeepLinkPages] END', {
-          finalDogCount: dogs.length,
-          isPaginating: isPaginatingRef.current,
-        });
       }
     }
   };
@@ -254,16 +200,29 @@ export default function useDogsPagination({
 
   fetchDogsWithFiltersRef.current = fetchDogsWithFilters;
 
+  const resetForNewFilters = useCallback((newFilters: Filters, scrollRef: MutableRefObject<number>) => {
+    abortCurrentFetch();
+    startTransition(() => {
+      setPage(1);
+      setHasMore(true);
+      scrollRef.current = 0;
+      setIsFilterTransition(true);
+    });
+    fetchDogsWithFilters(newFilters, 1);
+  }, [abortCurrentFetch, fetchDogsWithFilters]);
+
+  const resetAll = useCallback((defaultFilters: Filters) => {
+    startTransition(() => {
+      setDogs([]);
+      setPage(1);
+      setHasMore(true);
+      setError(null);
+    });
+    fetchDogsWithFilters(defaultFilters, 1);
+  }, [fetchDogsWithFilters]);
+
   const loadMoreDogs = useCallback(async () => {
     if (loadingMore || !hasMore || isPaginatingRef.current) return;
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[loadMoreDogs] START', {
-        scrollY: window.scrollY,
-        isPaginating: isPaginatingRef.current,
-        currentPage: page,
-      });
-    }
 
     isPaginatingRef.current = true;
     setLoadingMore(true);
@@ -281,36 +240,10 @@ export default function useDogsPagination({
         ...buildAPIParams(filters),
       };
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[loadMoreDogs] Fetching page', {
-          nextPage,
-          offset,
-        });
-      }
-
       const newDogs = await getAnimals(apiParams, { signal: abortController.signal });
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[loadMoreDogs] Fetched dogs', {
-          newDogsCount: newDogs.length,
-          scrollY: window.scrollY,
-        });
-      }
-
       startTransition(() => {
-        setDogs((prev) => {
-          const updated = [...prev, ...(newDogs as Dog[])];
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[loadMoreDogs] setDogs updating', {
-              prevLength: prev.length,
-              newDogsLength: newDogs.length,
-              updatedLength: updated.length,
-              scrollY: window.scrollY,
-            });
-            assertNoDuplicateDogIds(updated, '[loadMoreDogs] After append');
-          }
-          return updated;
-        });
+        setDogs((prev) => [...prev, ...(newDogs as Dog[])]);
         setHasMore(newDogs.length === ITEMS_PER_PAGE);
         setPage(nextPage);
 
@@ -329,15 +262,6 @@ export default function useDogsPagination({
           : pathname;
 
         window.history.replaceState(null, "", newURL);
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[loadMoreDogs] Updated URL directly', {
-            nextPage,
-            newURL,
-            scrollY: window.scrollY,
-            isPaginating: isPaginatingRef.current,
-          });
-        }
       });
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
@@ -348,13 +272,6 @@ export default function useDogsPagination({
       isPaginatingRef.current = false;
       if (currentAbortControllerRef.current === abortController) {
         currentAbortControllerRef.current = null;
-      }
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[loadMoreDogs] END', {
-          scrollY: window.scrollY,
-          isPaginating: isPaginatingRef.current,
-        });
       }
     }
   }, [page, hasMore, filters, loadingMore, pathname, searchParams, buildAPIParams, scrollPositionRef]);
@@ -385,44 +302,18 @@ export default function useDogsPagination({
 
   // SearchParams change effect
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[searchParams useEffect] FIRED', {
-        isInitialMount: isInitialMount.current,
-        isPaginating: isPaginatingRef.current,
-        queryKey,
-        lastQueryKey: lastQueryKey.current,
-        searchParams: searchParams.toString(),
-      });
-    }
-
     if (isInitialMount.current) {
       isInitialMount.current = false;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[searchParams useEffect] SKIPPED - initial mount');
-      }
       return;
     }
 
-    if (isPaginatingRef.current) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[searchParams useEffect] SKIPPED - isPaginating=true');
-      }
-      return;
-    }
+    if (isPaginatingRef.current) return;
 
-    if (queryKey === lastQueryKey.current) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[searchParams useEffect] SKIPPED - query unchanged');
-      }
-      return;
-    }
+    if (queryKey === lastQueryKey.current) return;
     lastQueryKey.current = queryKey;
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[searchParams useEffect] PROCEEDING with fetch');
-    }
-
-    const newPage = parseInt(searchParams.get("page") || "1", 10);
+    const rawNewPage = parseInt(searchParams.get("page") || "1", 10);
+    const newPage = Number.isNaN(rawNewPage) ? 1 : rawNewPage;
 
     if (currentAbortControllerRef.current) {
       currentAbortControllerRef.current.abort();
@@ -445,13 +336,10 @@ export default function useDogsPagination({
     error,
     filterCounts,
     isFilterTransition,
-    setIsFilterTransition,
-    setDogs,
-    setPage,
-    setHasMore,
-    setError,
     fetchDogsWithFilters,
     loadMoreDogs,
     abortCurrentFetch,
+    resetForNewFilters,
+    resetAll,
   };
 }

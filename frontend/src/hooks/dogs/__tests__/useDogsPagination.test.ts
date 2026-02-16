@@ -102,6 +102,12 @@ describe("useDogsPagination", () => {
       const { result } = renderPagination({ searchParams });
       expect(result.current.page).toBe(3);
     });
+
+    it("should default page to 1 for NaN page param", () => {
+      const searchParams = new URLSearchParams("page=abc");
+      const { result } = renderPagination({ searchParams });
+      expect(result.current.page).toBe(1);
+    });
   });
 
   describe("initial load", () => {
@@ -213,6 +219,21 @@ describe("useDogsPagination", () => {
         expect(result.current.error).toBe("Failed to load dogs");
       });
     });
+
+    it("should not set error for AbortError", async () => {
+      const abortError = new DOMException("The operation was aborted", "AbortError");
+      (animalsService.getAnimals as jest.Mock).mockRejectedValue(abortError);
+      (animalsService.getFilterCounts as jest.Mock).mockRejectedValue(abortError);
+
+      const { result } = renderPagination();
+
+      // Give it time to process - AbortError should be silently handled
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 50));
+      });
+
+      expect(result.current.error).toBeNull();
+    });
   });
 
   describe("loadMoreDogs", () => {
@@ -293,6 +314,61 @@ describe("useDogsPagination", () => {
       // No additional API calls
       expect((animalsService.getAnimals as jest.Mock).mock.calls.length).toBe(callsBefore);
     });
+
+    it("should set error on loadMoreDogs failure", async () => {
+      const page1 = makeDogs(20);
+
+      (animalsService.getAnimals as jest.Mock)
+        .mockResolvedValueOnce(page1)
+        .mockRejectedValueOnce(new Error("Network error"));
+      (animalsService.getFilterCounts as jest.Mock).mockResolvedValue({});
+
+      const { result } = renderPagination({ initialDogs: page1 });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+        expect(result.current.dogs).toHaveLength(20);
+      });
+
+      await act(async () => {
+        await result.current.loadMoreDogs();
+      });
+
+      expect(result.current.error).toBe("Failed to load more dogs");
+      expect(result.current.loadingMore).toBe(false);
+    });
+
+    it("should update URL via history.replaceState after loadMore", async () => {
+      const replaceStateSpy = jest.spyOn(window.history, "replaceState");
+      const page1 = makeDogs(20);
+      const page2 = makeDogs(10, 21);
+
+      (animalsService.getAnimals as jest.Mock)
+        .mockResolvedValueOnce(page1)
+        .mockResolvedValueOnce(page2);
+      (animalsService.getFilterCounts as jest.Mock).mockResolvedValue({});
+
+      const { result } = renderPagination({ initialDogs: page1 });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+        expect(result.current.dogs).toHaveLength(20);
+      });
+
+      replaceStateSpy.mockClear();
+
+      await act(async () => {
+        await result.current.loadMoreDogs();
+      });
+
+      expect(replaceStateSpy).toHaveBeenCalledWith(
+        null,
+        "",
+        expect.stringContaining("page=2"),
+      );
+
+      replaceStateSpy.mockRestore();
+    });
   });
 
   describe("abort", () => {
@@ -340,17 +416,11 @@ describe("useDogsPagination", () => {
   });
 
   describe("isFilterTransition", () => {
-    it("should expose setIsFilterTransition", () => {
+    it("should be false by default", () => {
       const page1 = makeDogs(20);
       const { result } = renderPagination({ initialDogs: page1 });
 
       expect(result.current.isFilterTransition).toBe(false);
-
-      act(() => {
-        result.current.setIsFilterTransition(true);
-      });
-
-      expect(result.current.isFilterTransition).toBe(true);
     });
   });
 });

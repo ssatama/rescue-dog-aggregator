@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import useDogsFilters from "../useDogsFilters";
 import { buildAPIParams } from "../useDogsFilters";
 import * as animalsService from "../../../services/animalsService";
+import * as logger from "../../../utils/logger";
 import type { Filters, DogsPageMetadata, DogsPageInitialParams } from "../../../types/dogsPage";
 
 jest.mock("next/navigation", () => ({
@@ -119,43 +120,6 @@ describe("useDogsFilters", () => {
       const { result } = renderDogsFilters(searchParams);
 
       expect(result.current.filters.organizationFilter).toBe("1");
-    });
-  });
-
-  describe("URL page and scroll parsing", () => {
-    it("should parse page from URL defaulting to 1", () => {
-      const { result } = renderDogsFilters();
-      expect(result.current.urlPage).toBe(1);
-    });
-
-    it("should parse page from URL", () => {
-      const searchParams = new URLSearchParams("page=3");
-      const { result } = renderDogsFilters(searchParams);
-      expect(result.current.urlPage).toBe(3);
-    });
-
-    it("should parse scroll from URL defaulting to 0", () => {
-      const { result } = renderDogsFilters();
-      expect(result.current.urlScroll).toBe(0);
-    });
-
-    it("should parse scroll from URL", () => {
-      const searchParams = new URLSearchParams("scroll=500");
-      const { result } = renderDogsFilters(searchParams);
-      expect(result.current.urlScroll).toBe(500);
-    });
-  });
-
-  describe("localBreedInput", () => {
-    it("should return empty string for 'Any breed'", () => {
-      const { result } = renderDogsFilters();
-      expect(result.current.localBreedInput).toBe("");
-    });
-
-    it("should return breed name when filter is set", () => {
-      const searchParams = new URLSearchParams("breed=Labrador");
-      const { result } = renderDogsFilters(searchParams);
-      expect(result.current.localBreedInput).toBe("Labrador");
     });
   });
 
@@ -290,6 +254,50 @@ describe("useDogsFilters", () => {
 
       jest.useRealTimers();
     });
+
+    it("should include scroll param when preserveScroll is true and scroll > 0", () => {
+      jest.useFakeTimers();
+      const scrollPositionRef = { current: 500 };
+      const { result } = renderHook(() =>
+        useDogsFilters({
+          metadata: defaultMetadata,
+          initialParams: defaultInitialParams,
+          searchParams: new URLSearchParams(),
+          pathname: "/dogs",
+          scrollPositionRef,
+        }),
+      );
+
+      act(() => {
+        result.current.updateURL(
+          {
+            searchQuery: "",
+            sizeFilter: "Any size",
+            ageFilter: "Any age",
+            sexFilter: "Any",
+            organizationFilter: "any",
+            breedFilter: "Any breed",
+            breedGroupFilter: "Any group",
+            locationCountryFilter: "Any country",
+            availableCountryFilter: "Any country",
+            availableRegionFilter: "Any region",
+          },
+          1,
+          true,
+        );
+      });
+
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+
+      expect(mockRouter.push).toHaveBeenCalledWith(
+        expect.stringContaining("scroll=500"),
+        { scroll: false },
+      );
+
+      jest.useRealTimers();
+    });
   });
 
   describe("activeFilterCount", () => {
@@ -330,6 +338,24 @@ describe("useDogsFilters", () => {
       const { result } = renderDogsFilters();
       expect(result.current.availableRegions).toEqual(["Any region"]);
       expect(animalsService.getAvailableRegions).not.toHaveBeenCalled();
+    });
+
+    it("should fall back to ['Any region'] on getAvailableRegions error", async () => {
+      (animalsService.getAvailableRegions as jest.Mock).mockRejectedValue(
+        new Error("Network error"),
+      );
+
+      const searchParams = new URLSearchParams("available_country=Finland");
+      const { result } = renderDogsFilters(searchParams);
+
+      await waitFor(() => {
+        expect(logger.reportError).toHaveBeenCalledWith(
+          expect.any(Error),
+          expect.objectContaining({ context: "getAvailableRegions", country: "Finland" }),
+        );
+      });
+
+      expect(result.current.availableRegions).toEqual(["Any region"]);
     });
   });
 });
