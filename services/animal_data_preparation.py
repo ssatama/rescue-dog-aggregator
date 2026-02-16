@@ -17,7 +17,7 @@ from utils.standardization import standardize_breed
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class PreparedAnimalData:
     """Standardized animal data ready for database insertion."""
 
@@ -134,7 +134,7 @@ def update_to_final_slug(
         cursor.execute("UPDATE animals SET slug = %s WHERE id = %s", (final_slug, animal_id))
         log.debug(f"Updated animal {animal_id} slug from temp to final: {final_slug}")
     except Exception as e:
-        log.warning(f"Failed to update final slug for animal {animal_id}: {e}")
+        log.error(f"Failed to update final slug for animal {animal_id}: {e}")
 
 
 def sanitize_properties(properties: dict | None) -> str | None:
@@ -148,17 +148,17 @@ def sanitize_properties(properties: dict | None) -> str | None:
     """
     if properties is None:
         return None
-    return json.dumps(_sanitize_for_postgres(properties))
+    return json.dumps(sanitize_for_postgres(properties))
 
 
-def _sanitize_for_postgres(value: Any) -> Any:
+def sanitize_for_postgres(value: Any) -> Any:
     """Remove null bytes from strings that PostgreSQL cannot store."""
     if isinstance(value, str):
         return value.replace("\x00", "").replace("\u0000", "")
     if isinstance(value, dict):
-        return {k: _sanitize_for_postgres(v) for k, v in value.items()}
+        return {k: sanitize_for_postgres(v) for k, v in value.items()}
     if isinstance(value, list):
-        return [_sanitize_for_postgres(item) for item in value]
+        return [sanitize_for_postgres(item) for item in value]
     return value
 
 
@@ -170,5 +170,6 @@ def _detect_language(text: str) -> str:
         if not text or len(text.strip()) < 10:
             return "en"
         return detect(text)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Language detection failed, defaulting to English: {e}")
         return "en"

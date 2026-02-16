@@ -22,9 +22,9 @@ from typing import Any
 import psycopg2
 
 from services.animal_data_preparation import (
-    _sanitize_for_postgres,
     generate_temp_slug,
     prepare_animal_data,
+    sanitize_for_postgres,
     sanitize_properties,
     update_to_final_slug,
 )
@@ -299,8 +299,8 @@ class DatabaseService:
             ) = current_data
 
             # Process the properties (sanitize to remove null bytes that PostgreSQL rejects)
-            current_properties_json = json.dumps(_sanitize_for_postgres(current_properties)) if current_properties else None
-            new_properties_json = json.dumps(_sanitize_for_postgres(animal_data.get("properties"))) if animal_data.get("properties") else None
+            current_properties_json = json.dumps(sanitize_for_postgres(current_properties)) if current_properties else None
+            new_properties_json = json.dumps(sanitize_for_postgres(animal_data.get("properties"))) if animal_data.get("properties") else None
 
             # Apply standardization for new values - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
             new_standardized_breed, new_breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))

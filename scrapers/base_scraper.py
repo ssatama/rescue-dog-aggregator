@@ -419,6 +419,10 @@ class BaseScraper(ABC):
 
     def save_animal(self, animal_data):
         """Save or update animal data in the database with R2 image upload."""
+        if not self.database_service:
+            self._log_service_unavailable("DatabaseService", "cannot save animals")
+            return None, "error"
+
         try:
             # Process animal data through standardization if enabled
             animal_data = self.process_animal(animal_data)
@@ -428,7 +432,7 @@ class BaseScraper(ABC):
                 self.validate_external_id(animal_data["external_id"])
 
             # Check if animal already exists by external_id and organization FIRST
-            existing_animal = self.database_service.get_existing_animal(animal_data.get("external_id"), animal_data.get("organization_id")) if self.database_service else None
+            existing_animal = self.database_service.get_existing_animal(animal_data.get("external_id"), animal_data.get("organization_id"))
 
             # Process primary image using ImageProcessingService if available
             # Skip if already processed (has original_image_url set from batch processing)
@@ -720,6 +724,8 @@ class BaseScraper(ABC):
                 # Mark animal as seen in current session for confidence tracking
                 if self.session_manager:
                     self.session_manager.mark_animal_as_seen(animal_id)
+                else:
+                    self._log_service_unavailable("SessionManager", "mark animal as seen disabled")
 
                 # Update counts
                 if action == "added":
@@ -799,12 +805,17 @@ class BaseScraper(ABC):
             # Fix for skip_existing_animals bug: Mark skipped animals as seen
             # before running stale data detection to prevent them from being
             # incorrectly marked as unavailable
-            if self.skip_existing_animals and self.session_manager:
-                self.session_manager.mark_skipped_animals_as_seen()
+            if self.skip_existing_animals:
+                if self.session_manager:
+                    self.session_manager.mark_skipped_animals_as_seen()
+                else:
+                    self._log_service_unavailable("SessionManager", "skipped animals marking disabled")
 
             # Update stale data detection for animals not seen in this scrape
             if self.session_manager:
                 self.session_manager.update_stale_data_detection()
+            else:
+                self._log_service_unavailable("SessionManager", "stale data detection disabled")
 
             # Phase 2.3: Check for adoptions after stale data detection
             self._check_adoptions_if_enabled()
@@ -914,7 +925,7 @@ class BaseScraper(ABC):
         self.total_animals_skipped = self.filtering_service.total_animals_skipped
 
     def _get_correct_animals_found_count(self, animals_data: list) -> int:
-        """Delegates to FilteringService. Deprecated - use filtering_service directly."""
+        """Return correct animals-found count, accounting for skip_existing_animals filtering."""
         self._sync_filtering_stats()
         if self.skip_existing_animals and self.total_animals_before_filter > 0:
             return self.total_animals_before_filter

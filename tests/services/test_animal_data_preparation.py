@@ -123,7 +123,7 @@ class TestUpdateToFinalSlug:
         conn = MagicMock()
         logger = MagicMock()
         update_to_final_slug(cursor, 42, {"name": "Max"}, "Lab", conn, logger)
-        logger.warning.assert_called_once()
+        logger.error.assert_called_once()
 
 
 @pytest.mark.unit
@@ -147,3 +147,19 @@ class TestSanitizeProperties:
     def test_empty_dict(self):
         result = sanitize_properties({})
         assert result == "{}"
+
+    def test_nested_dict_with_null_bytes(self):
+        import json
+
+        result = sanitize_properties({"outer": {"inner": "val\x00ue"}})
+        parsed = json.loads(result)
+        assert parsed["outer"]["inner"] == "value"
+        assert "\x00" not in result
+
+    def test_nested_list_with_null_bytes(self):
+        import json
+
+        result = sanitize_properties({"tags": ["good\x00boy", "play\u0000ful"]})
+        parsed = json.loads(result)
+        assert parsed["tags"] == ["goodboy", "playful"]
+        assert "\x00" not in result
