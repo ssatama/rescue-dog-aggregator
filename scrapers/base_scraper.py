@@ -703,6 +703,9 @@ class BaseScraper(ABC):
                 except Exception as e:
                     self.logger.warning(f"Batch image processing failed; per-animal processing will handle images: {e}")
 
+        if not self.session_manager:
+            self._log_service_unavailable("SessionManager", "mark animal as seen disabled")
+
         for i, animal_data in enumerate(animals_data):
             # Add organization_id and animal_type to the animal data
             animal_data["organization_id"] = self.organization_id
@@ -724,8 +727,6 @@ class BaseScraper(ABC):
                 # Mark animal as seen in current session for confidence tracking
                 if self.session_manager:
                     self.session_manager.mark_animal_as_seen(animal_id)
-                else:
-                    self._log_service_unavailable("SessionManager", "mark animal as seen disabled")
 
                 # Update counts
                 if action == "added":
