@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ValidationError
 
 from api.async_dependencies import get_async_db_connection, get_async_db_transaction
+from api.auth import verify_admin_key
 from api.exceptions import (
     STANDARD_RESPONSES,
     InvalidInputError,
@@ -27,7 +28,7 @@ from api.exceptions import (
 from services.llm.models import ProcessingType, TranslationRequest
 from services.llm_data_service import OpenRouterLLMDataService
 
-router = APIRouter(tags=["llm"], responses=STANDARD_RESPONSES)
+router = APIRouter(tags=["llm"], responses=STANDARD_RESPONSES, dependencies=[Depends(verify_admin_key)])
 
 logger = logging.getLogger(__name__)
 
