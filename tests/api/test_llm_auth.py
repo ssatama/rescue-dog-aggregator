@@ -74,8 +74,8 @@ class TestLLMEndpointAuth:
     def test_valid_key_passes_auth(self, authed_client):
         """With valid key, auth passes and request reaches validation logic."""
         response = authed_client.post(
-            "/api/llm/enrich",
-            json={"animal_id": -1, "processing_type": "description_cleaning"},
+            "/api/llm/translate",
+            json={"text": "  ", "target_language": "es"},
         )
         assert response.status_code == 400
 
