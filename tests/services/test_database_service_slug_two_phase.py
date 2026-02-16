@@ -201,7 +201,7 @@ class TestDatabaseServiceTwoPhaseSlugGeneration:
         # The temp slug ensures the NOT NULL constraint is satisfied
         pass  # TODO: Implement after clarifying requirements
 
-    @patch("services.database_service.generate_unique_animal_slug")
+    @patch("services.animal_data_preparation.generate_unique_animal_slug")
     def test_create_animal_slug_generation_parameters(self, mock_slug_generator):
         """Test that slug generation is called with correct parameters in both phases."""
         # Setup

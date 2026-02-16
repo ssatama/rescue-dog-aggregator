@@ -201,12 +201,14 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     continue
 
             # Apply skip_existing_animals filtering
-            # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+            # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
             # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
             if self.skip_existing_animals and basic_dogs_data:
-                basic_dogs_data = self._filter_existing_animals(basic_dogs_data)
+                basic_dogs_data = self.filtering_service.filter_existing_animals(basic_dogs_data)
+                self._sync_filtering_stats()
             else:
-                self.set_filtering_stats(len(basic_dogs_data), 0)
+                self.total_animals_before_filter = len(basic_dogs_data)
+                self.total_animals_skipped = 0
 
             # Second pass: Process the filtered dogs with detail page enhancement
             processed_count = 0
@@ -295,12 +297,14 @@ class DaisyFamilyRescueScraper(BaseScraper):
                         continue
 
                 # Apply skip_existing_animals filtering
-                # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+                # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
                 # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
                 if self.skip_existing_animals and basic_dogs_data:
-                    basic_dogs_data = self._filter_existing_animals(basic_dogs_data)
+                    basic_dogs_data = self.filtering_service.filter_existing_animals(basic_dogs_data)
+                    self._sync_filtering_stats()
                 else:
-                    self.set_filtering_stats(len(basic_dogs_data), 0)
+                    self.total_animals_before_filter = len(basic_dogs_data)
+                    self.total_animals_skipped = 0
 
                 # Second pass: Process the filtered dogs with detail page enhancement
                 processed_count = 0

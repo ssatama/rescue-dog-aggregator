@@ -36,9 +36,6 @@ class TestBaseScraperImageValidation:
         save_animal_mock = Mock(return_value=(1, "added"))
         scraper.save_animal = save_animal_mock
 
-        # Mock mark_animal_as_seen
-        scraper.mark_animal_as_seen = Mock()
-
         # Mock logger to verify warnings
         scraper.logger = Mock()
 
@@ -150,9 +147,8 @@ class TestBaseScraperImageValidation:
         )
 
         # Mock methods needed for save_animal
-        scraper.get_existing_animal = Mock(return_value=None)
-        scraper.create_animal = Mock(return_value=(1, "added"))
-        scraper.mark_animal_as_seen = Mock()
+        mock_db.get_existing_animal = Mock(return_value=None)
+        mock_db.create_animal = Mock(return_value=(1, "added"))
         scraper.logger = Mock()
 
         # Initialize progress_tracker (normally done in _run_with_connection)
@@ -173,7 +169,7 @@ class TestBaseScraperImageValidation:
         stats = scraper._process_animals_data(animals_data)
 
         # Verify create_animal was never called (dog was rejected)
-        scraper.create_animal.assert_not_called()
+        mock_db.create_animal.assert_not_called()
 
         # Verify stats show no animals were processed
         assert stats["animals_added"] == 0

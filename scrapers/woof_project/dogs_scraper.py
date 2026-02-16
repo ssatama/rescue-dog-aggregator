@@ -60,7 +60,7 @@ class WoofProjectScraper(BaseScraper):
         # World-class logging: Available dogs count handled by centralized system
 
         # Pre-generate external_ids for stale detection
-        # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+        # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
         # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
         for dog in available_dogs:
             if dog.get("url") and "external_id" not in dog:
@@ -69,9 +69,11 @@ class WoofProjectScraper(BaseScraper):
 
         # Apply skip_existing_animals filtering
         if self.skip_existing_animals and available_dogs:
-            dogs_to_process = self._filter_existing_animals(available_dogs)
+            dogs_to_process = self.filtering_service.filter_existing_animals(available_dogs)
+            self._sync_filtering_stats()
         else:
-            self.set_filtering_stats(len(available_dogs), 0)
+            self.total_animals_before_filter = len(available_dogs)
+            self.total_animals_skipped = 0
             dogs_to_process = available_dogs
 
         # Collect detailed data for each dog

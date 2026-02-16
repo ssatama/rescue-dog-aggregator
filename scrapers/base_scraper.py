@@ -1,24 +1,22 @@
 # scrapers/base_scraper.py
 
-import asyncio
 import logging
 import os
 import sys
 import time
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import psycopg2
 from langdetect import detect
 
-if TYPE_CHECKING:
-    from playwright.async_api import Page
-
 # Import config
 from config import DB_CONFIG, enable_world_class_scraper_logging
+
+# Import services and utilities
+from scrapers.browser_manager import ScraperBrowserManager
 
 # Import centralized constants
 from scrapers.constants import (
@@ -26,8 +24,6 @@ from scrapers.constants import (
     MAX_R2_FAILURE_RATE,
     SMALL_BATCH_THRESHOLD,
 )
-
-# Import services and utilities
 from scrapers.enrichment.llm_handler import LLMEnrichmentHandler
 from scrapers.filtering.filtering_service import FilteringService
 
@@ -41,11 +37,6 @@ from scrapers.sentry_integration import (
 )
 from scrapers.validation.animal_validator import AnimalValidator
 from services.null_objects import NullMetricsCollector
-from services.playwright_browser_service import (
-    PlaywrightOptions,
-    PlaywrightResult,
-    get_playwright_service,
-)
 from services.progress_tracker import ProgressTracker
 from utils.config_loader import ConfigLoader
 from utils.config_models import OrganizationConfig
@@ -170,6 +161,16 @@ class BaseScraper(ABC):
         )
 
         self.image_processing_service = image_processing_service
+
+        # Browser retry manager (extracted from BaseScraper)
+        self.browser_manager = ScraperBrowserManager(
+            logger=self.logger,
+            metrics_collector=self.metrics_collector,
+            rate_limit_delay=self.rate_limit_delay,
+            max_retries=self.max_retries,
+            retry_backoff_factor=self.retry_backoff_factor,
+            animal_validator=self.animal_validator,
+        )
 
         # Track animals for filtering stats
         self.total_animals_before_filter = 0
@@ -418,6 +419,10 @@ class BaseScraper(ABC):
 
     def save_animal(self, animal_data):
         """Save or update animal data in the database with R2 image upload."""
+        if not self.database_service:
+            self._log_service_unavailable("DatabaseService", "cannot save animals")
+            return None, "error"
+
         try:
             # Process animal data through standardization if enabled
             animal_data = self.process_animal(animal_data)
@@ -427,7 +432,7 @@ class BaseScraper(ABC):
                 self.validate_external_id(animal_data["external_id"])
 
             # Check if animal already exists by external_id and organization FIRST
-            existing_animal = self.get_existing_animal(animal_data.get("external_id"), animal_data.get("organization_id"))
+            existing_animal = self.database_service.get_existing_animal(animal_data.get("external_id"), animal_data.get("organization_id"))
 
             # Process primary image using ImageProcessingService if available
             # Skip if already processed (has original_image_url set from batch processing)
@@ -439,26 +444,16 @@ class BaseScraper(ABC):
                     animal_data["original_image_url"] = animal_data["primary_image_url"]
 
             if existing_animal:
-                animal_id, action = self.update_animal(existing_animal[0], animal_data)
+                animal_id, action = self.database_service.update_animal(existing_animal[0], animal_data)
                 # Don't enrich updates - only new animals get LLM profiling
                 # This avoids unnecessary API calls for unchanged data
                 return animal_id, action
             else:
-                animal_id, action = self.create_animal(animal_data)
+                animal_id, action = self.database_service.create_animal(animal_data)
                 # New animals always get profiled
                 if animal_id:
                     self.animals_for_llm_enrichment.append({"id": animal_id, "data": animal_data, "action": "create"})
                 return animal_id, action
-        except AttributeError as e:
-            # Handle missing methods in test environment
-            if "get_existing_animal" in str(e):
-                self.logger.warning("get_existing_animal method not implemented in test environment")
-                return 1, "test"
-            elif "create_animal" in str(e):
-                self.logger.warning("create_animal method not implemented in test environment")
-                return 1, "test"
-            else:
-                raise e
         except Exception as e:
             self.logger.error(f"Error in save_animal: {e}")
             return None, "error"
@@ -555,7 +550,7 @@ class BaseScraper(ABC):
 
                 # Phase 5: LLM Enrichment (if enabled)
                 add_scrape_breadcrumb("Starting LLM enrichment phase")
-                self._post_process_llm_enrichment()
+                self.llm_handler.enrich_animals(self.animals_for_llm_enrichment)
 
                 # Phase 6: Metrics & Logging
                 self._log_completion_metrics(animals_data, processing_stats)
@@ -595,7 +590,16 @@ class BaseScraper(ABC):
             return False
 
         # Start scrape session for stale data tracking
-        if not self.start_scrape_session():
+        session_started = False
+        if self.session_manager:
+            session_started = self.session_manager.start_scrape_session()
+            if session_started:
+                self.current_scrape_session = self.session_manager.get_current_session()
+        else:
+            self.current_scrape_session = datetime.now()
+            self._log_service_unavailable("SessionManager", "using basic session tracking")
+            session_started = True
+        if not session_started:
             central_logger.error("❌ Failed to start scrape session")
             # Still continue with scraping, but log the issue
             self.complete_scrape_log(
@@ -699,6 +703,9 @@ class BaseScraper(ABC):
                 except Exception as e:
                     self.logger.warning(f"Batch image processing failed; per-animal processing will handle images: {e}")
 
+        if not self.session_manager:
+            self._log_service_unavailable("SessionManager", "mark animal as seen disabled")
+
         for i, animal_data in enumerate(animals_data):
             # Add organization_id and animal_type to the animal data
             animal_data["organization_id"] = self.organization_id
@@ -718,7 +725,8 @@ class BaseScraper(ABC):
 
             if animal_id:
                 # Mark animal as seen in current session for confidence tracking
-                self.mark_animal_as_seen(animal_id)
+                if self.session_manager:
+                    self.session_manager.mark_animal_as_seen(animal_id)
 
                 # Update counts
                 if action == "added":
@@ -799,10 +807,16 @@ class BaseScraper(ABC):
             # before running stale data detection to prevent them from being
             # incorrectly marked as unavailable
             if self.skip_existing_animals:
-                self.mark_skipped_animals_as_seen()
+                if self.session_manager:
+                    self.session_manager.mark_skipped_animals_as_seen()
+                else:
+                    self._log_service_unavailable("SessionManager", "skipped animals marking disabled")
 
             # Update stale data detection for animals not seen in this scrape
-            self.update_stale_data_detection()
+            if self.session_manager:
+                self.session_manager.update_stale_data_detection()
+            else:
+                self._log_service_unavailable("SessionManager", "stale data detection disabled")
 
             # Phase 2.3: Check for adoptions after stale data detection
             self._check_adoptions_if_enabled()
@@ -890,71 +904,8 @@ class BaseScraper(ABC):
         pass
 
     def _scrape_with_retry(self, scrape_method, *args, **kwargs):
-        """Execute scraping method with retry logic for connection errors.
-
-        Args:
-            scrape_method: Method to call for scraping
-            *args, **kwargs: Arguments to pass to scrape_method
-
-        Returns:
-            Result from scrape_method or None if all retries exhausted
-        """
-        # Import browser-specific exceptions based on USE_PLAYWRIGHT flag
-        use_playwright = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
-
-        if use_playwright:
-            # For Playwright, we catch generic exceptions since async errors
-            # are already handled in the Playwright methods themselves
-            browser_exceptions = (Exception,)
-        else:
-            from selenium.common.exceptions import TimeoutException, WebDriverException
-
-            browser_exceptions = (TimeoutException, WebDriverException, ValueError)
-
-        for attempt in range(self.max_retries):
-            try:
-                result = scrape_method(*args, **kwargs)
-
-                # Validate result doesn't contain error data
-                if result and isinstance(result, dict):
-                    name = result.get("name", "")
-                    if self._is_invalid_name(name):
-                        self.logger.warning(f"Invalid name detected: {name}, treating as failure")
-                        raise ValueError(f"Invalid animal name: {name}")
-
-                # Track successful retry if this wasn't the first attempt
-                if attempt > 0:
-                    self.metrics_collector.track_retry(success=True)
-
-                return result
-
-            except browser_exceptions as e:
-                self.metrics_collector.track_retry(success=False)
-                self.logger.warning(f"Scraping attempt {attempt + 1}/{self.max_retries} failed: {e}")
-
-                if attempt < self.max_retries - 1:  # Not the last attempt
-                    # Exponential backoff
-                    delay = self.rate_limit_delay * (self.retry_backoff_factor**attempt)
-                    self.logger.info(f"Retrying in {delay}s...")
-                    time.sleep(delay)
-                else:
-                    self.logger.error(f"All {self.max_retries} attempts failed for {args}")
-
-        return None
-
-    def _is_invalid_name(self, name: str) -> bool:
-        """Check if extracted name indicates a scraping error or invalid data.
-
-        Delegates to AnimalValidator. Deprecated - use animal_validator.is_valid_name() directly.
-        """
-        return not self.animal_validator.is_valid_name(name)
-
-    def _normalize_animal_name(self, name: str) -> str:
-        """Normalize animal name by fixing encoding issues and HTML entities.
-
-        Delegates to AnimalValidator. Deprecated - use animal_validator.normalize_name() directly.
-        """
-        return self.animal_validator.normalize_name(name)
+        """Deprecated: delegates to self.browser_manager.scrape_with_retry()."""
+        return self.browser_manager.scrape_with_retry(scrape_method, *args, **kwargs)
 
     def _validate_animal_data(self, animal_data: dict[str, Any]) -> bool:
         """Validate animal data dictionary for required fields and invalid names.
@@ -969,119 +920,27 @@ class BaseScraper(ABC):
 
         return is_valid
 
-    def _get_existing_animal_urls(self) -> set:
-        """Delegates to FilteringService. Deprecated - use filtering_service directly."""
-        return self.filtering_service.get_existing_animal_urls()
-
-    def _filter_existing_urls(self, all_urls: list[str]) -> list[str]:
-        """Delegates to FilteringService. Deprecated - use filtering_service directly."""
-        return self.filtering_service.filter_existing_urls(all_urls)
-
-    def _filter_existing_animals(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Delegates to FilteringService. Deprecated - use filtering_service directly."""
-        result = self.filtering_service.filter_existing_animals(animals)
-        self._sync_filtering_stats()
-        return result
-
     def _sync_filtering_stats(self):
-        """Sync filtering stats from FilteringService for backward compatibility."""
+        """Sync filtering stats from FilteringService to base scraper attributes."""
         self.total_animals_before_filter = self.filtering_service.total_animals_before_filter
         self.total_animals_skipped = self.filtering_service.total_animals_skipped
 
-    def set_filtering_stats(self, total_before_filter: int, total_skipped: int):
-        """Set statistics about skip_existing_animals filtering. Deprecated."""
-        self.total_animals_before_filter = total_before_filter
-        self.total_animals_skipped = total_skipped
-        self.logger.info(f"Filtering stats: {total_before_filter} found, {total_skipped} skipped, {total_before_filter - total_skipped} to process")
-
     def _get_correct_animals_found_count(self, animals_data: list) -> int:
-        """Delegates to FilteringService. Deprecated - use filtering_service directly."""
+        """Return correct animals-found count, accounting for skip_existing_animals filtering."""
         self._sync_filtering_stats()
         if self.skip_existing_animals and self.total_animals_before_filter > 0:
             return self.total_animals_before_filter
         return len(animals_data)
 
-    # =========================================================================
-    # Playwright Browser Retry Helpers
-    # =========================================================================
-
     @asynccontextmanager
-    async def _with_browser_retry(
-        self,
-        options: PlaywrightOptions | None = None,
-        max_retries: int = 3,
-        base_delay: float = 2.0,
-    ) -> AsyncIterator[PlaywrightResult]:
-        """Browser context manager with retry on connection/navigation failures.
+    async def _with_browser_retry(self, options=None, max_retries=3, base_delay=2.0):
+        """Deprecated: delegates to self.browser_manager.with_browser_retry()."""
+        async with self.browser_manager.with_browser_retry(options, max_retries, base_delay) as result:
+            yield result
 
-        Use this instead of playwright_service.get_browser() directly to get
-        automatic retry handling for transient Browserless connection failures.
-
-        Args:
-            options: Playwright browser options
-            max_retries: Maximum number of retry attempts
-            base_delay: Base delay in seconds (doubled each retry)
-
-        Yields:
-            PlaywrightResult with browser, context, page, and metadata
-        """
-        playwright_service = get_playwright_service()
-        opts = options or PlaywrightOptions()
-
-        last_error: Exception | None = None
-        for attempt in range(max_retries):
-            try:
-                async with playwright_service.get_browser(opts) as result:
-                    yield result
-                    return  # Success - exit retry loop
-            except Exception as e:
-                last_error = e
-                if attempt < max_retries - 1:
-                    delay = base_delay * (2**attempt)
-                    self.logger.warning(f"Browser operation failed (attempt {attempt + 1}/{max_retries}), retrying in {delay}s: {e}")
-                    await asyncio.sleep(delay)
-                else:
-                    self.logger.error(f"Browser operation failed after {max_retries} attempts: {e}")
-
-        if last_error:
-            raise last_error
-
-    async def _navigate_with_retry(
-        self,
-        page: "Page",
-        url: str,
-        max_retries: int = 3,
-        wait_until: str = "domcontentloaded",
-        timeout: int = 60000,
-    ) -> bool:
-        """Navigate to URL with retry logic for transient failures.
-
-        Use this for page.goto() calls that may fail due to network issues.
-        Returns False instead of raising on final failure.
-
-        Args:
-            page: Playwright page object
-            url: URL to navigate to
-            max_retries: Maximum number of retry attempts
-            wait_until: Playwright wait_until option
-            timeout: Navigation timeout in milliseconds
-
-        Returns:
-            True if navigation succeeded, False otherwise
-        """
-        for attempt in range(max_retries):
-            try:
-                await page.goto(url, wait_until=wait_until, timeout=timeout)
-                return True
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    delay = 2**attempt
-                    self.logger.warning(f"Navigation to {url} failed (attempt {attempt + 1}/{max_retries}), retrying in {delay}s: {e}")
-                    await asyncio.sleep(delay)
-                else:
-                    self.logger.error(f"Navigation to {url} failed after {max_retries} attempts: {e}")
-                    return False
-        return False
+    async def _navigate_with_retry(self, page, url, max_retries=3, wait_until="domcontentloaded", timeout=60000):
+        """Deprecated: delegates to self.browser_manager.navigate_with_retry()."""
+        return await self.browser_manager.navigate_with_retry(page, url, max_retries, wait_until, timeout)
 
     def get_organization_name(self) -> str:
         """Get organization name for logging."""
@@ -1100,88 +959,6 @@ class BaseScraper(ABC):
         """Sleep for the configured rate limit delay."""
         if self.rate_limit_delay > 0:
             time.sleep(self.rate_limit_delay)
-
-    def get_existing_animal(self, external_id, organization_id):
-        """Check if an animal already exists in the database."""
-        # Use injected DatabaseService if available
-        if self.database_service:
-            return self.database_service.get_existing_animal(external_id, organization_id)
-
-        self._log_service_unavailable("DatabaseService", "cannot check existing animals")
-        return None
-
-    def create_animal(self, animal_data):
-        """Create a new animal in the database."""
-        # Use injected DatabaseService if available
-        if self.database_service:
-            return self.database_service.create_animal(animal_data)
-
-        self._log_service_unavailable("DatabaseService", "cannot create animals")
-        return None, "error"
-
-    def update_animal(self, animal_id, animal_data):
-        """Update an existing animal in the database."""
-        # Use injected DatabaseService if available
-        if self.database_service:
-            return self.database_service.update_animal(animal_id, animal_data)
-
-        self._log_service_unavailable("DatabaseService", "cannot update animals")
-        return None, "error"
-
-    def start_scrape_session(self):
-        """Start a new scrape session for tracking stale data."""
-        # Use injected SessionManager if available
-        if self.session_manager:
-            result = self.session_manager.start_scrape_session()
-            if result:
-                self.current_scrape_session = self.session_manager.get_current_session()
-            return result
-
-        self.current_scrape_session = datetime.now()
-        self._log_service_unavailable("SessionManager", "using basic session tracking")
-        return True
-
-    def mark_animal_as_seen(self, animal_id):
-        """Mark an animal as seen in the current scrape session."""
-        if self.session_manager:
-            return self.session_manager.mark_animal_as_seen(animal_id)
-
-        self._log_service_unavailable("SessionManager", "mark animal as seen disabled")
-        return False
-
-    def update_stale_data_detection(self):
-        """Update stale data detection for animals not seen in current scrape."""
-        # Use injected SessionManager if available
-        if self.session_manager:
-            return self.session_manager.update_stale_data_detection()
-
-        self._log_service_unavailable("SessionManager", "stale data detection disabled")
-        return False
-
-    def mark_animals_unavailable(self, threshold=4):
-        """Mark animals as unavailable after consecutive missed scrapes."""
-        if self.session_manager:
-            return self.session_manager.mark_animals_unavailable(threshold)
-
-        self._log_service_unavailable("SessionManager", "mark animals unavailable disabled")
-        return 0
-
-    def restore_available_animal(self, animal_id):
-        """Restore an animal to available status when it reappears."""
-        if self.session_manager:
-            return self.session_manager.restore_available_animal(animal_id)
-
-        self._log_service_unavailable("SessionManager", "restore animal disabled")
-        return False
-
-    def mark_skipped_animals_as_seen(self):
-        """Mark animals that were skipped due to skip_existing_animals as seen."""
-        # Use injected SessionManager if available
-        if self.session_manager:
-            return self.session_manager.mark_skipped_animals_as_seen()
-
-        self._log_service_unavailable("SessionManager", "skipped animals marking disabled")
-        return 0
 
     def _record_all_found_external_ids(self, animals_data):
         """Record all external_ids from discovered animals for accurate stale detection.
@@ -1206,14 +983,6 @@ class BaseScraper(ABC):
 
         if recorded_count > 0:
             self.logger.debug(f"Recorded {recorded_count} external IDs as found for stale detection")
-
-    def get_stale_animals_summary(self):
-        """Get summary of animals by availability confidence and status."""
-        if self.session_manager:
-            return self.session_manager.get_stale_animals_summary()
-
-        self._log_service_unavailable("SessionManager", "stale animals summary disabled")
-        return {}
 
     def detect_catastrophic_failure(self, animals_found, absolute_minimum=3):
         """Detect catastrophic scraper failures (zero or extremely low animal counts).
@@ -1330,14 +1099,6 @@ class BaseScraper(ABC):
         """
         self.metrics_collector.log_detailed_metrics(metrics)
         return True
-
-    def _is_significant_update(self, existing_animal):
-        """Delegates to LLMEnrichmentHandler. Deprecated - use llm_handler directly."""
-        return self.llm_handler.is_significant_update(existing_animal)
-
-    def _post_process_llm_enrichment(self):
-        """Delegates to LLMEnrichmentHandler. Deprecated - use llm_handler directly."""
-        self.llm_handler.enrich_animals(self.animals_for_llm_enrichment)
 
     def _check_adoptions_if_enabled(self):
         """Check for dog adoptions if enabled in organization config.

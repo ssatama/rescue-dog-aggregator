@@ -16,30 +16,20 @@ Following CLAUDE.md principles:
 
 import json
 import logging
-import time
 from datetime import datetime
 from typing import Any
 
 import psycopg2
 
+from services.animal_data_preparation import (
+    generate_temp_slug,
+    prepare_animal_data,
+    sanitize_for_postgres,
+    sanitize_properties,
+    update_to_final_slug,
+)
 from utils.optimized_standardization import parse_age_text, standardize_size_value
-from utils.slug_generator import generate_unique_animal_slug
 from utils.standardization import standardize_breed
-
-
-def _sanitize_for_postgres(value: Any) -> Any:
-    """Remove null bytes from strings that PostgreSQL cannot store.
-
-    PostgreSQL rejects \\u0000 (null bytes) in text/JSON fields.
-    This recursively sanitizes strings in dicts, lists, and plain values.
-    """
-    if isinstance(value, str):
-        return value.replace("\x00", "").replace("\u0000", "")
-    if isinstance(value, dict):
-        return {k: _sanitize_for_postgres(v) for k, v in value.items()}
-    if isinstance(value, list):
-        return [_sanitize_for_postgres(item) for item in value]
-    return value
 
 
 class DatabaseService:
@@ -178,7 +168,7 @@ class DatabaseService:
             return None, "error"
 
     def _create_animal_with_connection(self, conn, animal_data: dict[str, Any]) -> tuple[int | None, str]:
-        """Create animal using provided connection (pure function).
+        """Create animal using provided connection.
 
         Args:
             conn: Database connection to use
@@ -187,59 +177,10 @@ class DatabaseService:
         Returns:
             Tuple of (animal_id, "added") if successful, (None, "error") if failed
         """
+        prepared = prepare_animal_data(animal_data)
+        animal_slug = generate_temp_slug(animal_data, prepared.standardized_breed, conn)
+
         cursor = conn.cursor()
-
-        # Detect language from animal data
-        description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"
-        language = self._detect_language(description_text)
-
-        # Apply standardization - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
-        standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
-
-        # Use pre-calculated age values if available (from scraper standardization)
-        # Otherwise fall back to parsing age_text
-        if "age_min_months" in animal_data and "age_max_months" in animal_data:
-            age_months_min = animal_data.get("age_min_months")
-            age_months_max = animal_data.get("age_max_months")
-        else:
-            age_info = parse_age_text(animal_data.get("age_text", ""))
-            age_months_min = age_info.min_months
-            age_months_max = age_info.max_months
-
-        # Use size estimate if no size provided
-        final_size = animal_data.get("size") or animal_data.get("standardized_size")
-        final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))
-
-        # NEW: Use unified standardization fields if available, fall back to old logic
-        # The UnifiedStandardizer provides these fields, use them if present
-        final_standardized_breed = animal_data.get("standardized_breed") or standardized_breed
-        final_breed_group = animal_data.get("breed_category") or breed_group
-
-        # NEW breed enhancement fields from UnifiedStandardizer
-        breed_type = animal_data.get("breed_type")
-        primary_breed = animal_data.get("primary_breed")
-        secondary_breed = animal_data.get("secondary_breed")
-        breed_slug = animal_data.get("breed_slug")
-        breed_confidence = animal_data.get("breed_confidence")
-
-        # Generate temporary unique slug for animal (Phase 1: before ID is available)
-        try:
-            temp_slug = generate_unique_animal_slug(
-                name=animal_data.get("name"),
-                breed=animal_data.get("breed"),
-                standardized_breed=final_standardized_breed,
-                animal_id=None,
-                connection=conn,  # ID not available during creation
-            )
-            # Add temp suffix to distinguish from final slug
-            animal_slug = f"{temp_slug}-temp"
-        except Exception as e:
-            self.logger.error(f"Failed to generate temp slug for animal: {e}")
-            # Use a fallback slug based on external_id or timestamp
-            fallback_slug = f"animal-{animal_data.get('external_id', str(int(time.time())))}-temp"
-            animal_slug = fallback_slug[:250]  # Ensure it fits in database
-
-        # Prepare values for insertion
         current_time = datetime.now()
 
         cursor.execute(
@@ -268,52 +209,34 @@ class DatabaseService:
                 animal_data.get("adoption_url"),
                 animal_data.get("status", "available"),
                 animal_data.get("breed"),
-                final_standardized_breed,
-                final_breed_group,
+                prepared.standardized_breed,
+                prepared.breed_group,
                 animal_data.get("age_text"),
-                age_months_min,
-                age_months_max,
+                prepared.age_months_min,
+                prepared.age_months_max,
                 animal_data.get("sex"),
-                final_size,
-                final_standardized_size,
-                language,
-                (json.dumps(_sanitize_for_postgres(animal_data.get("properties"))) if animal_data.get("properties") else None),
-                animal_slug,  # slug
-                current_time,  # created_at
-                current_time,  # updated_at
-                current_time,  # last_scraped_at
-                current_time,  # last_seen_at
-                0,  # consecutive_scrapes_missing
-                "high",  # availability_confidence
-                True,  # active - explicitly set to true for new animals
-                breed_type,  # breed_type
-                primary_breed,  # primary_breed
-                secondary_breed,  # secondary_breed
-                breed_slug,  # breed_slug
-                str(breed_confidence) if breed_confidence is not None else None,  # breed_confidence (convert to string for database)
+                prepared.final_size,
+                prepared.final_standardized_size,
+                prepared.language,
+                sanitize_properties(animal_data.get("properties")),
+                animal_slug,
+                current_time,
+                current_time,
+                current_time,
+                current_time,
+                0,
+                "high",
+                True,
+                prepared.breed_type,
+                prepared.primary_breed,
+                prepared.secondary_breed,
+                prepared.breed_slug,
+                str(prepared.breed_confidence) if prepared.breed_confidence is not None else None,
             ),
         )
 
         animal_id = cursor.fetchone()[0]
-
-        # Phase 2: Generate final slug with animal ID and update
-        try:
-            final_slug = generate_unique_animal_slug(
-                name=animal_data.get("name"),
-                breed=animal_data.get("breed"),
-                standardized_breed=final_standardized_breed,
-                animal_id=animal_id,
-                connection=conn,  # ID now available
-            )
-
-            # Update the animal with the final slug containing ID
-            cursor.execute("UPDATE animals SET slug = %s WHERE id = %s", (final_slug, animal_id))
-
-            self.logger.debug(f"Updated animal {animal_id} slug from temp to final: {final_slug}")
-
-        except Exception as e:
-            self.logger.warning(f"Failed to update final slug for animal {animal_id}: {e}")
-            # Continue with temp slug rather than failing the entire operation
+        update_to_final_slug(cursor, animal_id, animal_data, prepared.standardized_breed, conn, self.logger)
 
         conn.commit()
         cursor.close()
@@ -376,8 +299,8 @@ class DatabaseService:
             ) = current_data
 
             # Process the properties (sanitize to remove null bytes that PostgreSQL rejects)
-            current_properties_json = json.dumps(_sanitize_for_postgres(current_properties)) if current_properties else None
-            new_properties_json = json.dumps(_sanitize_for_postgres(animal_data.get("properties"))) if animal_data.get("properties") else None
+            current_properties_json = json.dumps(sanitize_for_postgres(current_properties), sort_keys=True) if current_properties else None
+            new_properties_json = json.dumps(sanitize_for_postgres(animal_data.get("properties")), sort_keys=True) if animal_data.get("properties") else None
 
             # Apply standardization for new values - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
             new_standardized_breed, new_breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
@@ -616,25 +539,6 @@ class DatabaseService:
             if self.conn:
                 self.conn.rollback()
             return False
-
-    def _detect_language(self, text: str) -> str:
-        """Detect language of text (simplified implementation).
-
-        Args:
-            text: Text to analyze
-
-        Returns:
-            Language code
-        """
-        # Import here to avoid dependency issues in tests
-        try:
-            from langdetect import detect
-
-            if not text or len(text.strip()) < 10:
-                return "en"
-            return detect(text)
-        except Exception:
-            return "en"
 
     def get_existing_animal_urls(self, organization_id: int) -> set:
         """Get set of existing animal URLs for this organization.

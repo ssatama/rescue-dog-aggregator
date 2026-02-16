@@ -76,7 +76,7 @@ class ManyTearsRescueScraper(BaseScraper):
     def _get_filtered_animals(self) -> list[dict[str, Any]]:
         """Get list of animals and apply skip_existing_animals filtering.
 
-        Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+        Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
         BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly.
 
         Returns:
@@ -89,9 +89,11 @@ class ManyTearsRescueScraper(BaseScraper):
             self.logger.warning("No animals found to process")
             return []
 
-        # Use BaseScraper method that records external_ids BEFORE filtering
+        # Use filtering_service method that records external_ids BEFORE filtering
         # This is critical for mark_skipped_animals_as_seen() to work correctly
-        return self._filter_existing_animals(animals)
+        result = self.filtering_service.filter_existing_animals(animals)
+        self._sync_filtering_stats()
+        return result
 
     def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Process animals with reduced parallelism to avoid resource exhaustion.

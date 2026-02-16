@@ -106,7 +106,7 @@ class MisisRescueScraper(BaseScraper):
                 all_urls.append(full_url)
 
             # Create animal objects with external_id for stale detection
-            # Uses BaseScraper._filter_existing_animals() which records ALL external_ids
+            # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
             # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
             animals = []
             for url in all_urls:
@@ -114,10 +114,12 @@ class MisisRescueScraper(BaseScraper):
 
             # Apply skip_existing_animals filtering
             if self.skip_existing_animals:
-                filtered_animals = self._filter_existing_animals(animals)
+                filtered_animals = self.filtering_service.filter_existing_animals(animals)
+                self._sync_filtering_stats()
                 urls_to_process = [a["adoption_url"] for a in filtered_animals]
             else:
-                self.set_filtering_stats(len(all_urls), 0)
+                self.total_animals_before_filter = len(all_urls)
+                self.total_animals_skipped = 0
                 urls_to_process = all_urls
 
             # Process URLs in batches with retry mechanism (MisisRescue-specific)

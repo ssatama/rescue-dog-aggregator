@@ -59,8 +59,10 @@ class TestBaseScraperWithImageProcessingService:
 
         # Mock the database operations that save_animal calls
         scraper.conn = Mock()
-        scraper.get_existing_animal = Mock(return_value=None)
-        scraper.create_animal = Mock(return_value=(123, "added"))
+        mock_db_service = Mock()
+        mock_db_service.get_existing_animal.return_value = None
+        mock_db_service.create_animal.return_value = (123, "added")
+        scraper.database_service = mock_db_service
 
         # This should call the ImageProcessingService
         _result = scraper.save_animal(animal_data)
@@ -110,8 +112,10 @@ class TestBaseScraperWithImageProcessingService:
 
         # Mock database operations
         scraper.conn = Mock()
-        scraper.get_existing_animal = Mock(return_value=None)
-        scraper.create_animal = Mock(return_value=(123, "added"))
+        mock_db_service = Mock()
+        mock_db_service.get_existing_animal.return_value = None
+        mock_db_service.create_animal.return_value = (123, "added")
+        scraper.database_service = mock_db_service
 
         # Should work fine without image service
         result = scraper.save_animal(animal_data)
@@ -161,8 +165,10 @@ class TestBaseScraperWithImageProcessingService:
             "primary_image_url": "https://example.com/test.jpg",
         }
         scraper.conn = Mock()
-        scraper.get_existing_animal = Mock(return_value=None)
-        scraper.create_animal = Mock(return_value=(123, "added"))
+        mock_db_service = Mock()
+        mock_db_service.get_existing_animal.return_value = None
+        mock_db_service.create_animal.return_value = (123, "added")
+        scraper.database_service = mock_db_service
 
         # This should trigger the service unavailable logging
         scraper.save_animal(animal_data)

@@ -129,63 +129,63 @@ class TestNameValidationAndNormalization:
 
     def test_rejects_pure_numeric_names(self, scraper):
         """Test that pure numeric names like '251' are rejected."""
-        assert scraper._is_invalid_name("251")
-        assert scraper._is_invalid_name("123")
-        assert scraper._is_invalid_name("  456  ")
+        assert not scraper.animal_validator.is_valid_name("251")
+        assert not scraper.animal_validator.is_valid_name("123")
+        assert not scraper.animal_validator.is_valid_name("  456  ")
 
     def test_accepts_names_with_numbers(self, scraper):
         """Test that names with numbers but also letters are accepted."""
-        assert not scraper._is_invalid_name("Max 2")
-        assert not scraper._is_invalid_name("K9 Rex")
-        assert not scraper._is_invalid_name("Lucky13")
+        assert scraper.animal_validator.is_valid_name("Max 2")
+        assert scraper.animal_validator.is_valid_name("K9 Rex")
+        assert scraper.animal_validator.is_valid_name("Lucky13")
 
     def test_rejects_names_with_too_many_digits(self, scraper):
         """Test that names with >60% digits are rejected."""
-        assert scraper._is_invalid_name("123dog456")  # 66% digits (6/9)
-        assert scraper._is_invalid_name("1234ab")  # 66% digits (4/6)
+        assert not scraper.animal_validator.is_valid_name("123dog456")  # 66% digits (6/9)
+        assert not scraper.animal_validator.is_valid_name("1234ab")  # 66% digits (4/6)
 
         # These should be accepted (<=60% digits)
-        assert not scraper._is_invalid_name("251abc")  # 50% digits (3/6)
-        assert not scraper._is_invalid_name("Max 2")  # 20% digits (1/5)
+        assert scraper.animal_validator.is_valid_name("251abc")  # 50% digits (3/6)
+        assert scraper.animal_validator.is_valid_name("Max 2")  # 20% digits (1/5)
 
     def test_rejects_too_short_names(self, scraper):
         """Test that names < 2 characters are rejected."""
-        assert scraper._is_invalid_name("A")
-        assert scraper._is_invalid_name(" ")
-        assert scraper._is_invalid_name("")
+        assert not scraper.animal_validator.is_valid_name("A")
+        assert not scraper.animal_validator.is_valid_name(" ")
+        assert not scraper.animal_validator.is_valid_name("")
 
     def test_normalizes_utf8_double_encoding(self, scraper):
         """Test that UTF-8 double-encoding is fixed (Ã« → ë)."""
-        result = scraper._normalize_animal_name("BrontÃ«")
+        result = scraper.animal_validator.normalize_name("BrontÃ«")
         assert result == "Brontë"
 
-        result = scraper._normalize_animal_name("RenÃ©e")
+        result = scraper.animal_validator.normalize_name("RenÃ©e")
         assert result == "Renée"
 
     def test_normalizes_html_entities(self, scraper):
         """Test that HTML entities are decoded."""
-        result = scraper._normalize_animal_name("Max &amp; Ruby")
+        result = scraper.animal_validator.normalize_name("Max &amp; Ruby")
         assert result == "Max & Ruby"
 
-        result = scraper._normalize_animal_name("&quot;Buddy&quot;")
+        result = scraper.animal_validator.normalize_name("&quot;Buddy&quot;")
         assert result == '"Buddy"'
 
     def test_normalizes_unicode_combining_characters(self, scraper):
         """Test that Unicode combining characters are normalized."""
         # e + combining acute → é (NFC normalization)
-        result = scraper._normalize_animal_name("Rene\u0301e")  # e + combining acute
+        result = scraper.animal_validator.normalize_name("Rene\u0301e")  # e + combining acute
         assert result == "Renée"
 
     def test_normalization_handles_invalid_input(self, scraper):
         """Test that normalization handles edge cases gracefully."""
         # None should return None
-        assert scraper._normalize_animal_name(None) is None
+        assert scraper.animal_validator.normalize_name(None) is None
 
         # Empty string should return empty string (will be caught by validation)
-        assert scraper._normalize_animal_name("") == ""
+        assert scraper.animal_validator.normalize_name("") == ""
 
         # Non-string input should return unchanged
-        assert scraper._normalize_animal_name(123) == 123
+        assert scraper.animal_validator.normalize_name(123) == 123
 
     def test_validation_normalizes_and_updates_name(self, scraper):
         """Test that validation normalizes and updates the name in animal_data."""
@@ -226,60 +226,60 @@ class TestNameValidationAndNormalization:
 
     def test_rejects_connection_error_patterns(self, scraper):
         """Test that connection error messages are rejected."""
-        assert scraper._is_invalid_name("This site can't be reached")
-        assert scraper._is_invalid_name("Connection failed")
-        assert scraper._is_invalid_name("DNS_PROBE_FINISHED_NXDOMAIN")
-        assert scraper._is_invalid_name("ERR_NAME_NOT_RESOLVED")
-        assert scraper._is_invalid_name("ERR_CONNECTION_REFUSED")
+        assert not scraper.animal_validator.is_valid_name("This site can't be reached")
+        assert not scraper.animal_validator.is_valid_name("Connection failed")
+        assert not scraper.animal_validator.is_valid_name("DNS_PROBE_FINISHED_NXDOMAIN")
+        assert not scraper.animal_validator.is_valid_name("ERR_NAME_NOT_RESOLVED")
+        assert not scraper.animal_validator.is_valid_name("ERR_CONNECTION_REFUSED")
 
     def test_rejects_http_error_patterns(self, scraper):
         """Test that HTTP error messages are rejected."""
-        assert scraper._is_invalid_name("Page not found")
-        assert scraper._is_invalid_name("Error 404")
-        assert scraper._is_invalid_name("Error 500")
-        assert scraper._is_invalid_name("Access denied")
+        assert not scraper.animal_validator.is_valid_name("Page not found")
+        assert not scraper.animal_validator.is_valid_name("Error 404")
+        assert not scraper.animal_validator.is_valid_name("Error 500")
+        assert not scraper.animal_validator.is_valid_name("Access denied")
 
     def test_rejects_gift_card_patterns(self, scraper):
         """Test that gift card/promotional content is rejected."""
-        assert scraper._is_invalid_name("Gift Card")
-        assert scraper._is_invalid_name("$50 Voucher")
-        assert scraper._is_invalid_name("Coupon Code")
-        assert scraper._is_invalid_name("Promo code discount")
+        assert not scraper.animal_validator.is_valid_name("Gift Card")
+        assert not scraper.animal_validator.is_valid_name("$50 Voucher")
+        assert not scraper.animal_validator.is_valid_name("Coupon Code")
+        assert not scraper.animal_validator.is_valid_name("Promo code discount")
 
     def test_rejects_url_patterns(self, scraper):
         """Test that URLs embedded as names are rejected."""
-        assert scraper._is_invalid_name("https://example.com/dog")
-        assert scraper._is_invalid_name("http://rescue.org")
-        assert scraper._is_invalid_name("www.dogs.com")
+        assert not scraper.animal_validator.is_valid_name("https://example.com/dog")
+        assert not scraper.animal_validator.is_valid_name("http://rescue.org")
+        assert not scraper.animal_validator.is_valid_name("www.dogs.com")
 
     def test_rejects_price_patterns(self, scraper):
         """Test that price values are rejected."""
-        assert scraper._is_invalid_name("$50")
-        assert scraper._is_invalid_name("€100")
-        assert scraper._is_invalid_name("£25")
-        assert scraper._is_invalid_name("50€")
+        assert not scraper.animal_validator.is_valid_name("$50")
+        assert not scraper.animal_validator.is_valid_name("€100")
+        assert not scraper.animal_validator.is_valid_name("£25")
+        assert not scraper.animal_validator.is_valid_name("50€")
 
     def test_accepts_two_character_names(self, scraper):
         """Test that legitimate 2-character dog names are accepted."""
-        assert not scraper._is_invalid_name("Bo")
-        assert not scraper._is_invalid_name("Jo")
-        assert not scraper._is_invalid_name("BJ")
-        assert not scraper._is_invalid_name("DJ")
-        assert not scraper._is_invalid_name("Al")
+        assert scraper.animal_validator.is_valid_name("Bo")
+        assert scraper.animal_validator.is_valid_name("Jo")
+        assert scraper.animal_validator.is_valid_name("BJ")
+        assert scraper.animal_validator.is_valid_name("DJ")
+        assert scraper.animal_validator.is_valid_name("Al")
 
     def test_accepts_names_with_trailing_numbers(self, scraper):
         """Test that legitimate dog names with numbers are accepted."""
-        assert not scraper._is_invalid_name("Max3")
-        assert not scraper._is_invalid_name("Rex2")
-        assert not scraper._is_invalid_name("Luna 2023")
-        assert not scraper._is_invalid_name("MAX3")
-        assert not scraper._is_invalid_name("REX2")
+        assert scraper.animal_validator.is_valid_name("Max3")
+        assert scraper.animal_validator.is_valid_name("Rex2")
+        assert scraper.animal_validator.is_valid_name("Luna 2023")
+        assert scraper.animal_validator.is_valid_name("MAX3")
+        assert scraper.animal_validator.is_valid_name("REX2")
 
     def test_rejects_actual_promo_codes(self, scraper):
         """Test that real promo codes are still rejected."""
-        assert scraper._is_invalid_name("SAVE20")
-        assert scraper._is_invalid_name("GET50OFF")
-        assert scraper._is_invalid_name("FREE100")
-        assert scraper._is_invalid_name("CODE123")
-        assert scraper._is_invalid_name("DISCOUNT50")
-        assert scraper._is_invalid_name("SALE50")
+        assert not scraper.animal_validator.is_valid_name("SAVE20")
+        assert not scraper.animal_validator.is_valid_name("GET50OFF")
+        assert not scraper.animal_validator.is_valid_name("FREE100")
+        assert not scraper.animal_validator.is_valid_name("CODE123")
+        assert not scraper.animal_validator.is_valid_name("DISCOUNT50")
+        assert not scraper.animal_validator.is_valid_name("SALE50")
