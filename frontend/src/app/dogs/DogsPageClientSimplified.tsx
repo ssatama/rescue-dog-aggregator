@@ -29,6 +29,12 @@ import { Badge } from "@/components/ui/badge";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
 import { useDebouncedCallback } from "use-debounce";
+import type {
+  DogsPageClientSimplifiedProps,
+  Filters,
+  Dog,
+  FilterCountsResponse,
+} from "../../types/dogsPage";
 
 // Lazy load filter components for better initial load
 const DesktopFilters = dynamic(
@@ -61,7 +67,7 @@ const DEBOUNCE_URL_UPDATE_MS = 500;
 const DEBOUNCE_SCROLL_SAVE_MS = 300;
 
 // Development-only assertion helper for detecting duplicate dog IDs
-const assertNoDuplicateDogIds = (dogs, context = '') => {
+const assertNoDuplicateDogIds = (dogs: ReadonlyArray<{ id: number | string }>, context = '') => {
   if (process.env.NODE_ENV === 'development') {
     const ids = dogs.map(d => d.id);
     const uniqueIds = new Set(ids);
@@ -84,13 +90,17 @@ export default function DogsPageClientSimplified({
   hideHero = false,
   hideBreadcrumbs = false,
   wrapWithLayout = true,
-}) {
+}: DogsPageClientSimplifiedProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const pathname = usePathname() ?? "";
+  const rawSearchParams = useSearchParams();
+  const searchParams = useMemo(
+    () => rawSearchParams ?? new URLSearchParams(),
+    [rawSearchParams],
+  );
 
   // Validate organization_id parameter against available organizations
-  const validateOrganizationId = useCallback((orgId) => {
+  const validateOrganizationId = useCallback((orgId: string | null): string => {
     if (!orgId || orgId === "any") return "any";
 
     const organizations = metadata?.organizations || [];
@@ -102,7 +112,7 @@ export default function DogsPageClientSimplified({
   }, [metadata?.organizations]);
 
   // Parse filters from URL including page and scroll - memoized to prevent recreation on every render
-  const filters = useMemo(() => ({
+  const filters: Filters = useMemo(() => ({
     searchQuery: searchParams.get("search") || "",
     sizeFilter: searchParams.get("size") || "Any size",
     ageFilter:
@@ -129,7 +139,7 @@ export default function DogsPageClientSimplified({
   const urlScroll = parseInt(searchParams.get("scroll") || "0", 10);
 
   // State management with smart initialization to prevent SSR cache conflicts
-  const [dogs, setDogs] = useState(() => {
+  const [dogs, setDogs] = useState<Dog[]>(() => {
     // Smart initialization: only trust initialDogs for page=1 with no filters
     if (typeof window === 'undefined') return initialDogs; // SSR
 
@@ -144,11 +154,11 @@ export default function DogsPageClientSimplified({
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [isFilterTransition, setIsFilterTransition] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(initialDogs.length === ITEMS_PER_PAGE);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [filterCounts, setFilterCounts] = useState(null);
-  const [availableRegions, setAvailableRegions] = useState(["Any region"]);
+  const [filterCounts, setFilterCounts] = useState<FilterCountsResponse | null>(null);
+  const [availableRegions, setAvailableRegions] = useState<string[]>(["Any region"]);
   const [page, setPage] = useState(urlPage);
   const scrollPositionRef = useRef(urlScroll);
   const isRestoringScroll = useRef(false);
@@ -157,15 +167,15 @@ export default function DogsPageClientSimplified({
   const isPaginatingRef = useRef(false);
 
   // Track current AbortController for cleanup
-  const currentAbortControllerRef = useRef(null);
+  const currentAbortControllerRef = useRef<AbortController | null>(null);
 
   // CRITICAL FIX: Prevent searchParams useEffect from running on initial mount
   // Mount useEffect already handles initial data loading
   const isInitialMount = useRef(true);
 
   // Refs for stable function references in effects
-  const fetchDogsWithFiltersRef = useRef(null);
-  const hydrateDeepLinkPagesRef = useRef(null);
+  const fetchDogsWithFiltersRef = useRef<((filters: Filters, pageNum?: number, shouldAppend?: boolean) => Promise<void>) | null>(null);
+  const hydrateDeepLinkPagesRef = useRef<((targetPage: number, currentFilters: Filters) => Promise<void>) | null>(null);
 
   // Local breed input state for fallback handling
   const localBreedInput = useMemo(
@@ -218,11 +228,11 @@ export default function DogsPageClientSimplified({
 
   // Update URL with filters and page (debounced)
   const updateURL = useDebouncedCallback(
-    (newFilters, newPage = 1, preserveScroll = false) => {
+    (newFilters: Filters, newPage = 1, preserveScroll = false) => {
       const params = new URLSearchParams();
 
       // Map filter names to URL parameters - handle special cases
-      const urlKeyMap = {
+      const urlKeyMap: Record<string, string> = {
         searchQuery: "search",
         organizationFilter: "organization_id",
         locationCountryFilter: "location_country",
@@ -278,57 +288,57 @@ export default function DogsPageClientSimplified({
   );
 
   // Build API params from filters
-  const buildAPIParams = (filters) => {
-    const params = {};
+  const buildAPIParams = (filterValues: Filters): Record<string, string> => {
+    const params: Record<string, string> = {};
 
     // Guard all filter values - only send to API if non-empty and not "Any..." defaults
-    const searchQuery = (filters.searchQuery || "").trim();
+    const searchQuery = (filterValues.searchQuery || "").trim();
     if (searchQuery) {
       params.search = searchQuery;
     }
 
-    const size = (filters.sizeFilter || "").trim();
+    const size = (filterValues.sizeFilter || "").trim();
     if (size && size !== "Any size") {
       params.standardized_size = size;
     }
 
-    const age = (filters.ageFilter || "").trim();
+    const age = (filterValues.ageFilter || "").trim();
     if (age && age !== "Any age") {
       params.age_category = age;
     }
 
-    const sex = (filters.sexFilter || "").trim();
+    const sex = (filterValues.sexFilter || "").trim();
     if (sex && sex !== "Any") {
       params.sex = sex;
     }
 
-    const orgId = (filters.organizationFilter || "").toString().trim();
+    const orgId = (filterValues.organizationFilter || "").toString().trim();
     if (orgId && orgId !== "any") {
       params.organization_id = orgId;
     }
 
     // CRITICAL FIX: Guard breed to prevent empty string being sent to API
-    const breed = (filters.breedFilter || "").trim();
+    const breed = (filterValues.breedFilter || "").trim();
     if (breed && breed !== "Any breed") {
       params.standardized_breed = breed;
     }
 
-    const breedGroup = (filters.breedGroupFilter || "").trim();
+    const breedGroup = (filterValues.breedGroupFilter || "").trim();
     if (breedGroup && breedGroup !== "Any group") {
       params.breed_group = breedGroup;
     }
 
-    const locationCountry = (filters.locationCountryFilter || "").trim();
+    const locationCountry = (filterValues.locationCountryFilter || "").trim();
     if (locationCountry && locationCountry !== "Any country") {
       params.location_country = locationCountry;
     }
 
-    const availableCountry = (filters.availableCountryFilter || "").trim();
+    const availableCountry = (filterValues.availableCountryFilter || "").trim();
     if (availableCountry && availableCountry !== "Any country") {
       params.available_country = availableCountry;
     }
 
-    const availableRegion = (filters.availableRegionFilter || "").trim();
+    const availableRegion = (filterValues.availableRegionFilter || "").trim();
     if (availableRegion && availableRegion !== "Any region") {
       params.available_region = availableRegion;
     }
@@ -338,7 +348,7 @@ export default function DogsPageClientSimplified({
 
   // CRITICAL FIX: Hydrate deep links by loading pages 1..targetPage
   // When URL has page=4, load ALL dogs from pages 1-4 so user can scroll through everything
-  const hydrateDeepLinkPages = async (targetPage, currentFilters) => {
+  const hydrateDeepLinkPages = async (targetPage: number, currentFilters: Filters): Promise<void> => {
     if (process.env.NODE_ENV === 'development') {
       console.log('[hydrateDeepLinkPages] START', {
         targetPage,
@@ -410,7 +420,7 @@ export default function DogsPageClientSimplified({
 
       // Single setState with all accumulated dogs - no race condition
       startTransition(() => {
-        setDogs(allDogs);
+        setDogs(allDogs as Dog[]);
         setPage(targetPage);
         const lastPage = allPages[allPages.length - 1] || [];
         setHasMore(lastPage.length === ITEMS_PER_PAGE);
@@ -420,7 +430,7 @@ export default function DogsPageClientSimplified({
       setFilterCounts(counts);
     } catch (err) {
       // Ignore aborted requests
-      if (err.name === 'AbortError') return;
+      if (err instanceof Error && err.name === 'AbortError') return;
       reportError(err, { context: "hydrateDeepLinkPages", targetPage });
       setError("Failed to load dogs");
     } finally {
@@ -474,14 +484,14 @@ export default function DogsPageClientSimplified({
   // CRITICAL FIX: Listen to URL changes and refetch when searchParams change
   // This ensures reset and browser back/forward navigation trigger fresh fetches
   const lastQueryKey = useRef("");
-  
+
   // Memoize query key computation to avoid recalculating on every render
   const queryKey = useMemo(() => {
     const sp = new URLSearchParams(searchParams.toString());
     sp.delete("scroll");
     return sp.toString();
   }, [searchParams]);
-  
+
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       console.log('[searchParams useEffect] FIRED', {
@@ -548,7 +558,7 @@ export default function DogsPageClientSimplified({
 
   // Handle filter changes - support both single and batch updates
   const handleFilterChange = useCallback(
-    (filterKey, value) => {
+    (filterKey: string | Record<string, string>, value?: string) => {
       // Abort any ongoing request before starting a new filter search
       if (currentAbortControllerRef.current) {
         currentAbortControllerRef.current.abort();
@@ -556,7 +566,7 @@ export default function DogsPageClientSimplified({
       }
 
       // Check if filterKey is an object (batch update)
-      let newFilters;
+      let newFilters: Filters;
 
       if (typeof filterKey === "object" && filterKey !== null) {
         // Batch update - filterKey is actually an object with multiple filter updates
@@ -586,7 +596,7 @@ export default function DogsPageClientSimplified({
   // CRITICAL FIX: Fetch dogs with current filters and page
   // Added shouldAppend parameter to explicitly control append vs replace behavior
   // Wrapped in useCallback to provide stable reference for dependency arrays
-  const fetchDogsWithFilters = useCallback(async (currentFilters, pageNum = 1, shouldAppend = false) => {
+  const fetchDogsWithFilters = useCallback(async (currentFilters: Filters, pageNum = 1, shouldAppend = false): Promise<void> => {
     setLoading(pageNum === 1 && !shouldAppend);
     setLoadingMore(pageNum > 1 || shouldAppend);
     setError(null);
@@ -611,9 +621,9 @@ export default function DogsPageClientSimplified({
       startTransition(() => {
         // CRITICAL FIX: Append or replace based on explicit parameter
         if (shouldAppend) {
-          setDogs((prev) => [...prev, ...newDogs]);
+          setDogs((prev) => [...prev, ...(newDogs as Dog[])]);
         } else {
-          setDogs(newDogs);
+          setDogs(newDogs as Dog[]);
         }
         setHasMore(newDogs.length === ITEMS_PER_PAGE);
         setFilterCounts(counts);
@@ -622,7 +632,7 @@ export default function DogsPageClientSimplified({
       });
     } catch (err) {
       // Ignore aborted requests but still reset transition state
-      if (err.name === 'AbortError') {
+      if (err instanceof Error && err.name === 'AbortError') {
         setIsFilterTransition(false);
         return;
       }
@@ -669,7 +679,7 @@ export default function DogsPageClientSimplified({
       const nextPage = page + 1;
       const offset = (nextPage - 1) * ITEMS_PER_PAGE;
 
-      const params = {
+      const apiParams = {
         limit: ITEMS_PER_PAGE,
         offset,
         ...buildAPIParams(filters),
@@ -682,7 +692,7 @@ export default function DogsPageClientSimplified({
         });
       }
 
-      const newDogs = await getAnimals(params, { signal: abortController.signal });
+      const newDogs = await getAnimals(apiParams, { signal: abortController.signal });
 
       if (process.env.NODE_ENV === 'development') {
         console.log('[loadMoreDogs] Fetched dogs', {
@@ -693,7 +703,7 @@ export default function DogsPageClientSimplified({
 
       startTransition(() => {
         setDogs((prev) => {
-          const updated = [...prev, ...newDogs];
+          const updated = [...prev, ...(newDogs as Dog[])];
           if (process.env.NODE_ENV === 'development') {
             console.log('[loadMoreDogs] setDogs updating', {
               prevLength: prev.length,
@@ -710,19 +720,19 @@ export default function DogsPageClientSimplified({
 
         // BUG B FIX: Use window.history.replaceState directly instead of debounced updateURL
         // This avoids triggering searchParams useEffect which would refetch and cause position jump
-        const params = new URLSearchParams(searchParams.toString());
+        const urlParams = new URLSearchParams(searchParams.toString());
         if (nextPage > 1) {
-          params.set("page", nextPage.toString());
+          urlParams.set("page", nextPage.toString());
         } else {
-          params.delete("page");
+          urlParams.delete("page");
         }
         // Preserve scroll position in URL
         if (scrollPositionRef.current > 0) {
-          params.set("scroll", scrollPositionRef.current.toString());
+          urlParams.set("scroll", scrollPositionRef.current.toString());
         }
 
-        const newURL = params.toString()
-          ? `${pathname}?${params.toString()}`
+        const newURL = urlParams.toString()
+          ? `${pathname}?${urlParams.toString()}`
           : pathname;
 
         window.history.replaceState(null, "", newURL);
@@ -738,7 +748,7 @@ export default function DogsPageClientSimplified({
       });
     } catch (err) {
       // Ignore aborted requests
-      if (err.name === 'AbortError') return;
+      if (err instanceof Error && err.name === 'AbortError') return;
       reportError(err, { context: "loadMoreDogs", page });
       setError("Failed to load more dogs");
     } finally {
@@ -769,7 +779,7 @@ export default function DogsPageClientSimplified({
         .then((regions) => {
           setAvailableRegions(["Any region", ...regions]);
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           reportError(err, { context: "getAvailableRegions", country: filters.availableCountryFilter });
           setAvailableRegions(["Any region"]);
         });
@@ -780,7 +790,7 @@ export default function DogsPageClientSimplified({
 
   // Local breed handlers to prevent heavy parent logic interference during typing
   const handleBreedSuggestionSelect = useCallback(
-    (breed) => {
+    (breed: string) => {
       // Only trigger heavy parent logic when user actually selects a suggestion
       handleFilterChange("breedFilter", breed);
     },
@@ -788,7 +798,7 @@ export default function DogsPageClientSimplified({
   );
 
   const handleBreedSearch = useCallback(
-    (breed) => {
+    (breed: string) => {
       // Only trigger heavy parent logic when user performs explicit search (Enter key)
       handleFilterChange("breedFilter", breed);
     },
@@ -797,7 +807,7 @@ export default function DogsPageClientSimplified({
 
   // Handler for real-time typing that updates filter immediately like Name filter
   const handleBreedValueChange = useCallback(
-    (breed) => {
+    (breed: string) => {
       // Update actual filter, localBreedInput will be derived automatically
       handleFilterChange("breedFilter", breed);
     },
@@ -811,7 +821,7 @@ export default function DogsPageClientSimplified({
   // Proper reset filters handler that clears state and forces fresh fetch
   const handleResetFilters = useCallback(() => {
     // Define default/empty filters
-    const defaultFilters = {
+    const defaultFilters: Filters = {
       searchQuery: "",
       sizeFilter: "Any size",
       ageFilter: "Any age",
@@ -856,7 +866,7 @@ export default function DogsPageClientSimplified({
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Find Dogs" }];
 
   const activeFilterCount = Object.entries(filters).filter(
-    ([key, value]) =>
+    ([_key, value]) =>
       value && !value.includes("Any") && value !== "any" && value !== "",
   ).length;
 
@@ -968,13 +978,13 @@ export default function DogsPageClientSimplified({
             <DesktopFilters
               // Search
               searchQuery={filters.searchQuery}
-              handleSearchChange={(value) =>
+              handleSearchChange={(value: string) =>
                 handleFilterChange("searchQuery", value)
               }
               clearSearch={() => handleFilterChange("searchQuery", "")}
               // Organization
               organizationFilter={filters.organizationFilter}
-              setOrganizationFilter={(value) =>
+              setOrganizationFilter={(value: string) =>
                 handleFilterChange("organizationFilter", value)
               }
               organizations={
@@ -991,10 +1001,10 @@ export default function DogsPageClientSimplified({
               standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
               // Pet Details
               sexFilter={filters.sexFilter}
-              setSexFilter={(value) => handleFilterChange("sexFilter", value)}
+              setSexFilter={(value: string) => handleFilterChange("sexFilter", value)}
               sexOptions={["Any", "Male", "Female"]}
               sizeFilter={filters.sizeFilter}
-              setSizeFilter={(value) => handleFilterChange("sizeFilter", value)}
+              setSizeFilter={(value: string) => handleFilterChange("sizeFilter", value)}
               sizeOptions={[
                 "Any size",
                 "Tiny",
@@ -1004,25 +1014,25 @@ export default function DogsPageClientSimplified({
                 "Extra Large",
               ]}
               ageCategoryFilter={filters.ageFilter}
-              setAgeCategoryFilter={(value) =>
+              setAgeCategoryFilter={(value: string) =>
                 handleFilterChange("ageFilter", value)
               }
               ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
               // Location
               locationCountryFilter={filters.locationCountryFilter}
-              setLocationCountryFilter={(value) =>
+              setLocationCountryFilter={(value: string) =>
                 handleFilterChange("locationCountryFilter", value)
               }
               locationCountries={metadata?.locationCountries || ["Any country"]}
               availableCountryFilter={filters.availableCountryFilter}
-              setAvailableCountryFilter={(value) =>
+              setAvailableCountryFilter={(value: string) =>
                 handleFilterChange("availableCountryFilter", value)
               }
               availableCountries={
                 metadata?.availableCountries || ["Any country"]
               }
               availableRegionFilter={filters.availableRegionFilter}
-              setAvailableRegionFilter={(value) =>
+              setAvailableRegionFilter={(value: string) =>
                 handleFilterChange("availableRegionFilter", value)
               }
               availableRegions={availableRegions}
@@ -1129,11 +1139,11 @@ export default function DogsPageClientSimplified({
         onClose={() => setIsSheetOpen(false)}
         // Search
         searchQuery={filters.searchQuery}
-        handleSearchChange={(value) => handleFilterChange("searchQuery", value)}
+        handleSearchChange={(value: string) => handleFilterChange("searchQuery", value)}
         clearSearch={() => handleFilterChange("searchQuery", "")}
         // Organization
         organizationFilter={filters.organizationFilter}
-        setOrganizationFilter={(value) =>
+        setOrganizationFilter={(value: string) =>
           handleFilterChange("organizationFilter", value)
         }
         organizations={
@@ -1148,10 +1158,10 @@ export default function DogsPageClientSimplified({
         standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
         // Pet Details
         sexFilter={filters.sexFilter}
-        setSexFilter={(value) => handleFilterChange("sexFilter", value)}
+        setSexFilter={(value: string) => handleFilterChange("sexFilter", value)}
         sexOptions={["Any", "Male", "Female"]}
         sizeFilter={filters.sizeFilter}
-        setSizeFilter={(value) => handleFilterChange("sizeFilter", value)}
+        setSizeFilter={(value: string) => handleFilterChange("sizeFilter", value)}
         sizeOptions={[
           "Any size",
           "Tiny",
@@ -1161,24 +1171,14 @@ export default function DogsPageClientSimplified({
           "Extra Large",
         ]}
         ageCategoryFilter={filters.ageFilter}
-        setAgeCategoryFilter={(value) => handleFilterChange("ageFilter", value)}
+        setAgeCategoryFilter={(value: string) => handleFilterChange("ageFilter", value)}
         ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
         // Location
-        locationCountryFilter={filters.locationCountryFilter}
-        setLocationCountryFilter={(value) =>
-          handleFilterChange("locationCountryFilter", value)
-        }
-        locationCountries={metadata?.locationCountries || ["Any country"]}
         availableCountryFilter={filters.availableCountryFilter}
-        setAvailableCountryFilter={(value) =>
+        setAvailableCountryFilter={(value: string) =>
           handleFilterChange("availableCountryFilter", value)
         }
         availableCountries={metadata?.availableCountries || ["Any country"]}
-        availableRegionFilter={filters.availableRegionFilter}
-        setAvailableRegionFilter={(value) =>
-          handleFilterChange("availableRegionFilter", value)
-        }
-        availableRegions={availableRegions}
         // Filter management
         resetFilters={handleResetFilters}
         // Dynamic filter counts
