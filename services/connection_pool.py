@@ -81,22 +81,49 @@ class ConnectionPoolService:
             self.logger.error(f"Failed to create connection pool: {e}")
             raise
 
-    def get_connection(self):
-        """Get connection from pool.
+    def _check_connection_health(self, conn) -> bool:
+        """Check if a connection is still alive and usable."""
+        if conn is None or conn.closed:
+            return False
+
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+            return True
+        except (psycopg2.OperationalError, psycopg2.InterfaceError):
+            return False
+
+    def get_connection(self, max_attempts: int = 3):
+        """Get a healthy connection from pool with retry on stale connections.
+
+        Args:
+            max_attempts: Maximum number of attempts to acquire a healthy connection
 
         Returns:
             Database connection from pool
 
         Raises:
-            psycopg2.PoolError: If pool is exhausted
+            RuntimeError: If all attempts return stale connections
+            psycopg2.pool.PoolError: If pool is exhausted
         """
-        try:
+        for attempt in range(max_attempts):
             connection = self.pool.getconn()
-            self.logger.debug("Connection acquired from pool")
-            return connection
-        except Exception as e:
-            self.logger.error(f"Failed to get connection from pool: {e}")
-            raise
+
+            if self._check_connection_health(connection):
+                if attempt > 0:
+                    self.logger.info(f"Healthy connection acquired after {attempt + 1} attempts")
+                else:
+                    self.logger.debug("Connection acquired from pool")
+                return connection
+
+            self.logger.warning(f"Stale connection detected, closing and retrying (attempt {attempt + 1}/{max_attempts})")
+            try:
+                self.pool.putconn(connection, close=True)
+            except Exception as e:
+                self.logger.error(f"Failed to close stale connection: {e}")
+
+        raise RuntimeError(f"Could not acquire healthy connection after {max_attempts} attempts")
 
     def return_connection(self, connection, close: bool = False):
         """Return connection to pool.

@@ -8,6 +8,7 @@ Following CLAUDE.md principles:
 - Small file (<200 lines)
 """
 
+import asyncio
 import json
 import logging
 import os
@@ -198,26 +199,27 @@ class LLMClient:
             httpx.HTTPStatusError: If API returns error status
             json.JSONDecodeError: If response is not valid JSON
         """
-        # Make API call
-        response_data = await self.call_openrouter_api(
-            messages=messages,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=timeout,
-        )
+        async with asyncio.timeout(timeout + 5.0):
+            # Make API call
+            response_data = await self.call_openrouter_api(
+                messages=messages,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=timeout,
+            )
 
-        # Extract content
-        content = self.extract_content_from_response(response_data)
+            # Extract content
+            content = self.extract_content_from_response(response_data)
 
-        # Parse JSON and add metadata
-        result = self.parse_json_response(content, model)
+            # Parse JSON and add metadata
+            result = self.parse_json_response(content, model)
 
-        # Add model from original response if not already present
-        if "model_used" not in result and "model" in response_data:
-            result["model_used"] = response_data["model"]
+            # Add model from original response if not already present
+            if "model_used" not in result and "model" in response_data:
+                result["model_used"] = response_data["model"]
 
-        return result
+            return result
 
     async def call_vision_api(
         self,
