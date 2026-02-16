@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ApiDog, ApiOrganization } from "../types/apiDog";
-import { get } from "../utils/api";
+import { get, stripNulls } from "../utils/api";
 import { trackAPIPerformance } from "../utils/performanceMonitor";
 import { ApiDogSchema } from "../schemas/animals";
 import {
@@ -119,7 +119,7 @@ export async function getEnhancedOrganizations(): Promise<EnhancedOrg[]> {
     }
 
     const organizations: unknown = await response.json();
-    const parsed = z.array(EnhancedOrganizationSchema).parse(organizations);
+    const parsed = z.array(EnhancedOrganizationSchema).parse(stripNulls(organizations));
 
     return parsed.map(normalizeEnhancedOrg);
   } catch (error) {
@@ -164,7 +164,7 @@ export async function getEnhancedOrganizationsSSR(): Promise<EnhancedOrg[]> {
       trackAPIPerformance("/api/organizations/enhanced", startTime);
     }
 
-    const parsed = z.array(EnhancedOrganizationSchema).parse(organizations);
+    const parsed = z.array(EnhancedOrganizationSchema).parse(stripNulls(organizations));
 
     const enhancedOrganizations = parsed.map(normalizeEnhancedOrg);
 

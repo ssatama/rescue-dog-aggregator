@@ -12,10 +12,10 @@ export interface ApiDogProfilerData {
   favoriteActivities?: string[];
   uniqueQuirk?: string;
   energyLevel?: "low" | "medium" | "high" | "very_high";
-  trainability?: "easy" | "moderate" | "challenging";
+  trainability?: "easy" | "moderate" | "challenging" | "very_challenging";
   experienceLevel?: "first_time_ok" | "some_experience" | "experienced_only";
-  sociability?: "reserved" | "moderate" | "social" | "very_social";
-  confidence?: "shy" | "moderate" | "confident";
+  sociability?: "reserved" | "moderate" | "social" | "very_social" | "independent" | "needs_work" | "selective";
+  confidence?: "shy" | "moderate" | "confident" | "very_confident" | "very_shy";
   homeType?: "apartment_ok" | "house_preferred" | "house_required";
   exerciseNeeds?: "minimal" | "moderate" | "high";
   groomingNeeds?: "minimal" | "weekly" | "frequent";

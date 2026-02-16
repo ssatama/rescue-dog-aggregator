@@ -7,8 +7,13 @@ import {
 } from "../organizationsService";
 import * as api from "../../utils/api";
 
-// Mock the API utility
-jest.mock("../../utils/api");
+// Mock the API utility, preserving stripNulls
+jest.mock("../../utils/api", () => ({
+  ...jest.requireActual("../../utils/api"),
+  get: jest.fn(),
+  post: jest.fn(),
+  fetchApi: jest.fn(),
+}));
 
 // Mock fetch for getEnhancedOrganizations since it uses fetch directly
 global.fetch = jest.fn();

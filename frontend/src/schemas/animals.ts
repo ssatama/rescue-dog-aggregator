@@ -12,14 +12,26 @@ export const ApiDogProfilerDataSchema = z
     energyLevel: z
       .enum(["low", "medium", "high", "very_high"])
       .optional(),
-    trainability: z.enum(["easy", "moderate", "challenging"]).optional(),
+    trainability: z
+      .enum(["easy", "moderate", "challenging", "very_challenging"])
+      .optional(),
     experienceLevel: z
       .enum(["first_time_ok", "some_experience", "experienced_only"])
       .optional(),
     sociability: z
-      .enum(["reserved", "moderate", "social", "very_social"])
+      .enum([
+        "reserved",
+        "moderate",
+        "social",
+        "very_social",
+        "independent",
+        "needs_work",
+        "selective",
+      ])
       .optional(),
-    confidence: z.enum(["shy", "moderate", "confident"]).optional(),
+    confidence: z
+      .enum(["shy", "moderate", "confident", "very_confident", "very_shy"])
+      .optional(),
     homeType: z
       .enum(["apartment_ok", "house_preferred", "house_required"])
       .optional(),
@@ -160,8 +172,8 @@ export const BreedWithImagesSchema = z
       .array(
         z
           .object({
-            id: z.union([z.number(), z.string()]),
             name: z.string().optional(),
+            slug: z.string().optional(),
             primary_image_url: z.string().optional(),
           })
           .passthrough(),

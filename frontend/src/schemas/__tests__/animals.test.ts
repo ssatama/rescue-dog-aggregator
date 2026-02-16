@@ -3,9 +3,11 @@ import {
   ApiDogSchema,
   ApiDogProfilerDataSchema,
   BreedStatsSchema,
+  BreedWithImagesSchema,
   SwipeResponseSchema,
 } from "../animals";
 import { FilterCountsResponseSchema } from "../common";
+import { stripNulls } from "../../utils/api";
 
 describe("ApiDogSchema", () => {
   const validDog = {
@@ -88,30 +90,99 @@ describe("ApiDogSchema", () => {
     const withCamelCase = ApiDogSchema.parse({
       id: 1,
       name: "Rex",
-      dogProfilerData: { energyLevel: "high", trainability: "easy" },
+      dogProfilerData: { trainability: "easy" },
     });
-    expect(withCamelCase.dogProfilerData?.energyLevel).toBe("high");
+    expect(withCamelCase.dogProfilerData?.trainability).toBe("easy");
 
     const withSnakeCase = ApiDogSchema.parse({
       id: 1,
       name: "Rex",
-      dog_profiler_data: { energyLevel: "medium" },
+      dog_profiler_data: { confidence: "shy" },
     });
-    expect(withSnakeCase.dog_profiler_data?.energyLevel).toBe("medium");
+    expect(withSnakeCase.dog_profiler_data?.confidence).toBe("shy");
+  });
+
+  it("handles null values after stripNulls preprocessing", () => {
+    const apiResponse = {
+      id: 1,
+      name: "Rex",
+      secondary_breed: null,
+      breed: null,
+      primary_breed: null,
+      age: null,
+      description: null,
+      primary_image_url: null,
+      dog_profiler_data: null,
+    };
+    const result = ApiDogSchema.parse(stripNulls(apiResponse));
+    expect(result.secondary_breed).toBeUndefined();
+    expect(result.breed).toBeUndefined();
+    expect(result.dog_profiler_data).toBeUndefined();
+  });
+
+  it("handles realistic API response with null secondary_breed and profiler data", () => {
+    const apiResponse = {
+      id: 7344,
+      name: "Hari",
+      breed: "Labrador Retriever",
+      primary_breed: "Labrador Retriever",
+      standardized_breed: "Labrador Retriever",
+      secondary_breed: null,
+      mixed_breed: false,
+      slug: "hari-labrador-retriever-7344",
+      status: "available",
+      dog_profiler_data: {
+        confidence: "very_confident",
+        sociability: "independent",
+        trainability: "very_challenging",
+      },
+    };
+    const result = ApiDogSchema.parse(stripNulls(apiResponse));
+    expect(result.secondary_breed).toBeUndefined();
+    expect(result.dog_profiler_data?.confidence).toBe("very_confident");
+    expect(result.dog_profiler_data?.sociability).toBe("independent");
+    expect(result.dog_profiler_data?.trainability).toBe("very_challenging");
   });
 });
 
 describe("ApiDogProfilerDataSchema", () => {
   it("parses valid profiler data", () => {
     const result = ApiDogProfilerDataSchema.parse({
-      energyLevel: "high",
       trainability: "moderate",
-      goodWithDogs: "yes",
-      goodWithCats: "maybe",
-      qualityScore: 0.85,
+      confidence: "confident",
+      sociability: "social",
     });
-    expect(result.energyLevel).toBe("high");
-    expect(result.qualityScore).toBe(0.85);
+    expect(result.trainability).toBe("moderate");
+    expect(result.confidence).toBe("confident");
+  });
+
+  it("accepts expanded enum values from production data", () => {
+    const result = ApiDogProfilerDataSchema.parse({
+      confidence: "very_confident",
+      sociability: "independent",
+      trainability: "very_challenging",
+    });
+    expect(result.confidence).toBe("very_confident");
+    expect(result.sociability).toBe("independent");
+    expect(result.trainability).toBe("very_challenging");
+  });
+
+  it("accepts all confidence values", () => {
+    for (const val of ["shy", "moderate", "confident", "very_confident", "very_shy"]) {
+      expect(() => ApiDogProfilerDataSchema.parse({ confidence: val })).not.toThrow();
+    }
+  });
+
+  it("accepts all sociability values", () => {
+    for (const val of ["reserved", "moderate", "social", "very_social", "independent", "needs_work", "selective"]) {
+      expect(() => ApiDogProfilerDataSchema.parse({ sociability: val })).not.toThrow();
+    }
+  });
+
+  it("accepts all trainability values", () => {
+    for (const val of ["easy", "moderate", "challenging", "very_challenging"]) {
+      expect(() => ApiDogProfilerDataSchema.parse({ trainability: val })).not.toThrow();
+    }
   });
 
   it("rejects invalid enum values", () => {
@@ -153,6 +224,51 @@ describe("BreedStatsSchema", () => {
     expect(() =>
       BreedStatsSchema.parse({ breed_groups: [] }),
     ).toThrow(ZodError);
+  });
+});
+
+describe("BreedWithImagesSchema", () => {
+  it("parses realistic breed with images response (no id in sample_dogs)", () => {
+    const apiResponse = {
+      primary_breed: "Labrador Retriever",
+      breed_slug: "labrador-retriever",
+      breed_type: "purebred",
+      count: 45,
+      sample_dogs: [
+        {
+          name: "Buddy",
+          slug: "buddy-labrador-123",
+          primary_image_url: "https://example.com/buddy.jpg",
+          age_text: "3 years",
+          age_group: "Adult",
+          sex: "Male",
+          personality_traits: ["Friendly", "Loyal"],
+        },
+        {
+          name: "Max",
+          slug: "max-labrador-456",
+          primary_image_url: null,
+          age_text: "1 year",
+          age_group: "Young",
+          sex: "Male",
+          personality_traits: [],
+        },
+      ],
+    };
+    const result = BreedWithImagesSchema.parse(stripNulls(apiResponse));
+    expect(result.primary_breed).toBe("Labrador Retriever");
+    expect(result.sample_dogs).toHaveLength(2);
+    expect(result.sample_dogs?.[0].name).toBe("Buddy");
+    expect(result.sample_dogs?.[1].primary_image_url).toBeUndefined();
+  });
+
+  it("accepts breed without sample_dogs", () => {
+    const result = BreedWithImagesSchema.parse({
+      primary_breed: "Poodle",
+      breed_slug: "poodle",
+      count: 10,
+    });
+    expect(result.sample_dogs).toBeUndefined();
   });
 });
 
