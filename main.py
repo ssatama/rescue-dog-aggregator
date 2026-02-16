@@ -41,14 +41,13 @@ def run_all_scrapers():
 def setup_database():
     """Run the database setup script."""
     try:
-        from database.db_setup import initialize_database, setup_initial_data
+        from database.db_setup import initialize_database
 
         print("Setting up database...")
-        success = initialize_database()
+        conn = initialize_database()
 
-        if success:
-            print("Setting up initial data...")
-            setup_initial_data()
+        if conn:
+            conn.close()
             print("Database setup completed successfully")
             return True
         else:

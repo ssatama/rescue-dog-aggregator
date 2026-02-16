@@ -59,8 +59,7 @@ CREATE TABLE IF NOT EXISTS animals (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_scraped_at TIMESTAMP,
-    source_last_updated TIMESTAMP,
-    
+
     -- Stale data tracking columns
     last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     consecutive_scrapes_missing INTEGER DEFAULT 0,
@@ -90,7 +89,10 @@ CREATE TABLE IF NOT EXISTS animals (
     primary_breed VARCHAR(255),
     secondary_breed VARCHAR(255),
     breed_slug VARCHAR(255),
-    
+
+    -- Blur placeholder for image loading
+    blur_data_url TEXT,
+
     -- Unique constraint to prevent duplicates
     UNIQUE (external_id, organization_id),
 
@@ -141,95 +143,80 @@ CREATE TABLE IF NOT EXISTS service_regions (
 );
 
 -- ============================================================================
--- DATABASE MIGRATION TRACKING TABLE
+-- INDEXES (synced with production 2026-02-16)
 -- ============================================================================
 
--- Migration tracking table to keep track of applied migrations
-CREATE TABLE IF NOT EXISTS schema_migrations (
-    id SERIAL PRIMARY KEY,
-    version VARCHAR(50) NOT NULL UNIQUE,
-    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    description TEXT
-);
-
--- ============================================================================
--- PERFORMANCE INDEXES (From Migration 010)
--- ============================================================================
-
--- STEP 1: Enhanced composite index for homepage queries
--- Optimized for homepage queries: WHERE status = 'available' ORDER BY availability_confidence, created_at DESC
--- Expected performance improvement: 60-80% faster homepage queries
-CREATE INDEX IF NOT EXISTS idx_animals_homepage_optimized 
+-- Animals: composite/partial indexes for query optimization
+CREATE INDEX IF NOT EXISTS idx_animals_homepage_optimized
   ON animals (status, availability_confidence, created_at DESC)
   WHERE status = 'available';
-
-COMMENT ON INDEX idx_animals_homepage_optimized IS 
-  'Optimized composite index for homepage queries: status + availability_confidence + created_at DESC. 
-   Supports filtering available animals with quality ranking and recency sorting.
-   Expected 60-80% performance improvement for homepage queries.';
-
--- STEP 2: Organization join optimization  
--- Enhanced organization filtering index for homepage JOINs
--- Supports: WHERE organizations.active = true AND organizations.country = ?
-CREATE INDEX IF NOT EXISTS idx_organizations_active_country 
-  ON organizations (active, country, id)
-  WHERE active = true;
-
-COMMENT ON INDEX idx_organizations_active_country IS 
-  'Composite index for organization filtering in homepage queries.
-   Supports active organization filtering by country with covering index for ID.
-   Expected 40-50% improvement for organization JOINs.';
-
--- STEP 3: Analytics and counting optimizations
--- Comprehensive covering index for analytics queries
-CREATE INDEX IF NOT EXISTS idx_animals_analytics_covering 
-  ON animals (status, organization_id, standardized_size, breed_group, sex, 
+CREATE INDEX IF NOT EXISTS idx_animals_analytics_covering
+  ON animals (status, organization_id, standardized_size, breed_group, sex,
               availability_confidence, created_at)
   WHERE status = 'available';
+CREATE INDEX IF NOT EXISTS idx_animals_adoption_check
+  ON animals (organization_id, consecutive_scrapes_missing, status)
+  WHERE status NOT IN ('adopted', 'reserved');
+CREATE INDEX IF NOT EXISTS idx_animals_org_status
+  ON animals (organization_id, status)
+  WHERE status = 'available';
+CREATE INDEX IF NOT EXISTS idx_animals_org_status_created
+  ON animals (organization_id, status, created_at DESC)
+  WHERE status = 'available';
+CREATE INDEX IF NOT EXISTS idx_animals_breed_group_status
+  ON animals (breed_group, status)
+  WHERE status = 'available' AND breed_group IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_animals_age_range_optimized
+  ON animals (age_min_months, age_max_months)
+  WHERE status = 'available' AND age_min_months IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_animals_created_desc
+  ON animals (created_at DESC)
+  WHERE status = 'available';
+CREATE INDEX IF NOT EXISTS idx_breed_group_active
+  ON animals (breed_group)
+  WHERE active = true AND breed_group <> 'Unknown';
 
-COMMENT ON INDEX idx_animals_analytics_covering IS 
-  'Covering index for analytics and count queries.
-   Includes all commonly filtered columns to avoid table lookups.
-   Expected 70-90% improvement for dashboard analytics queries.';
-
--- ============================================================================
--- LEGACY INDEXES (Maintained for backward compatibility)
--- ============================================================================
-
--- Basic indexes for core functionality
+-- Animals: single-column indexes
 CREATE INDEX IF NOT EXISTS idx_animals_organization ON animals(organization_id);
 CREATE INDEX IF NOT EXISTS idx_animals_status ON animals(status);
 CREATE INDEX IF NOT EXISTS idx_animals_breed ON animals(breed);
 CREATE INDEX IF NOT EXISTS idx_animals_breed_group ON animals(breed_group);
+CREATE INDEX IF NOT EXISTS idx_animals_breed_slug ON animals(breed_slug);
+CREATE INDEX IF NOT EXISTS idx_animals_primary_breed ON animals(primary_breed);
 CREATE INDEX IF NOT EXISTS idx_animals_sex ON animals(sex);
 CREATE INDEX IF NOT EXISTS idx_animals_size ON animals(size);
 CREATE INDEX IF NOT EXISTS idx_animals_animal_type ON animals(animal_type);
 CREATE INDEX IF NOT EXISTS idx_animals_standardized_breed ON animals(standardized_breed);
 CREATE INDEX IF NOT EXISTS idx_animals_standardized_size ON animals(standardized_size);
+CREATE INDEX IF NOT EXISTS idx_animals_availability_confidence ON animals(availability_confidence);
+CREATE INDEX IF NOT EXISTS idx_animals_last_seen_at ON animals(last_seen_at);
+CREATE INDEX IF NOT EXISTS idx_animals_consecutive_missing ON animals(consecutive_scrapes_missing);
+CREATE INDEX IF NOT EXISTS idx_animals_original_image_url ON animals(original_image_url);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_animals_slug ON animals(slug);
+
+-- Organizations indexes
+CREATE INDEX IF NOT EXISTS idx_organizations_active_country
+  ON organizations (active, country, id)
+  WHERE active = true;
+CREATE INDEX IF NOT EXISTS idx_organizations_config_id ON organizations(config_id);
+CREATE INDEX IF NOT EXISTS idx_organizations_country ON organizations(country);
+CREATE INDEX IF NOT EXISTS idx_organizations_service_regions ON organizations USING gin(service_regions);
+CREATE INDEX IF NOT EXISTS idx_organizations_ships_to ON organizations USING gin(ships_to);
+CREATE INDEX IF NOT EXISTS idx_organizations_total_dogs ON organizations(total_dogs);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
 
 -- Service regions indexes
 CREATE INDEX IF NOT EXISTS idx_service_regions_organization ON service_regions(organization_id);
 CREATE INDEX IF NOT EXISTS idx_service_regions_country ON service_regions(country);
 
--- Stale data tracking indexes
-CREATE INDEX IF NOT EXISTS idx_animals_last_seen_at ON animals(last_seen_at);
-CREATE INDEX IF NOT EXISTS idx_animals_consecutive_missing ON animals(consecutive_scrapes_missing);
-CREATE INDEX IF NOT EXISTS idx_animals_availability_confidence ON animals(availability_confidence);
-
--- Adoption tracking indexes (added in migration 013)
-CREATE INDEX IF NOT EXISTS idx_animals_adoption_check
-ON animals(organization_id, consecutive_scrapes_missing, status)
-WHERE status NOT IN ('adopted', 'reserved');
-
--- Image URL indexes
-CREATE INDEX IF NOT EXISTS idx_animals_original_image_url ON animals(original_image_url);
+-- Animal images indexes
 CREATE INDEX IF NOT EXISTS idx_animal_images_original_image_url ON animal_images(original_image_url);
 
 -- Scrape logs indexes
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_detailed_metrics ON scrape_logs USING gin(detailed_metrics);
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_duration ON scrape_logs(duration_seconds);
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_quality_score ON scrape_logs(data_quality_score);
-
--- SEO slug indexes
-CREATE UNIQUE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_animals_slug ON animals(slug);
+CREATE INDEX IF NOT EXISTS idx_scrape_logs_org_recent ON scrape_logs(organization_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_scrape_logs_status
+  ON scrape_logs (status, completed_at DESC)
+  WHERE status IN ('success', 'failure');
