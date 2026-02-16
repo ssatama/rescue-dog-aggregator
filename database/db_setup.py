@@ -76,8 +76,8 @@ def create_tables(conn):
         raise
 
 
-def create_performance_indexes(conn):
-    """Create all performance indexes from schema.sql and update table statistics."""
+def update_table_statistics(conn):
+    """Update PostgreSQL table statistics for query optimization."""
     try:
         cursor = conn.cursor()
 
@@ -93,7 +93,7 @@ def create_performance_indexes(conn):
         cursor.close()
         return True
 
-    except Exception as e:
+    except psycopg2.Error as e:
         print(f"Error updating table statistics: {e}")
         conn.rollback()
         cursor.close()
@@ -108,7 +108,8 @@ def initialize_database():
         schema_ok = create_tables(conn)
 
         if schema_ok:
-            create_performance_indexes(conn)
+            if not update_table_statistics(conn):
+                print("Warning: Table statistics update failed. Database is usable but may have suboptimal query performance.")
             print("Database schema is ready.")
             return conn
         else:
@@ -132,3 +133,4 @@ if __name__ == "__main__":
         conn.close()
     else:
         print("Database setup process failed.")
+        sys.exit(1)

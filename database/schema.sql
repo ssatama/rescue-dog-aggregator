@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS animals (
     consecutive_scrapes_missing INTEGER DEFAULT 0,
     availability_confidence VARCHAR(10) DEFAULT 'high' CHECK (availability_confidence IN ('high', 'medium', 'low')),
 
-    -- Adoption tracking columns (added in migration 013)
+    -- Adoption tracking columns
     adoption_check_data JSONB,
     adoption_checked_at TIMESTAMP,
 
@@ -96,20 +96,7 @@ CREATE TABLE IF NOT EXISTS animals (
     -- Unique constraint to prevent duplicates
     UNIQUE (external_id, organization_id),
 
-    -- Status constraint (added in migration 013)
     CONSTRAINT animals_status_check CHECK (status IN ('available', 'unknown', 'adopted', 'reserved'))
-);
-
--- Animal Images
-CREATE TABLE IF NOT EXISTS animal_images (
-    id SERIAL PRIMARY KEY,
-    animal_id INTEGER NOT NULL REFERENCES animals(id) ON DELETE CASCADE,
-    image_url TEXT NOT NULL,
-    is_primary BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- Add column to store original image URLs for fallback
-    original_image_url TEXT
 );
 
 -- Scrape Logs
@@ -208,9 +195,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
 -- Service regions indexes
 CREATE INDEX IF NOT EXISTS idx_service_regions_organization ON service_regions(organization_id);
 CREATE INDEX IF NOT EXISTS idx_service_regions_country ON service_regions(country);
-
--- Animal images indexes
-CREATE INDEX IF NOT EXISTS idx_animal_images_original_image_url ON animal_images(original_image_url);
 
 -- Scrape logs indexes
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_detailed_metrics ON scrape_logs USING gin(detailed_metrics);

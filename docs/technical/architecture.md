@@ -95,7 +95,6 @@ created_at, updated_at
 
 ### Additional Tables
 
-- `animal_images`: Separate image storage
 - `breed_standards`: Breed classification rules
 - `size_standards`: Size normalization rules
 - `dog_photo_analysis`: AI photo analysis results
@@ -103,7 +102,6 @@ created_at, updated_at
 - `scrape_logs`: Scraper execution history
 - `scrape_sessions`: Scraping session metadata
 - `service_regions`: Geographic service areas
-- `schema_migrations`: Alembic version tracking
 
 ## API Routes
 

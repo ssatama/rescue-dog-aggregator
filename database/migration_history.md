@@ -19,7 +19,6 @@ It contains all tables, columns, constraints, and indexes synced with production
 
 - **organizations** — rescue organizations with metadata and configuration
 - **animals** — dogs available for adoption with standardized fields
-- **animal_images** — multiple images per animal
 - **scrape_logs** — detailed scraping metrics and monitoring
 - **service_regions** — geographic service areas per organization
 
