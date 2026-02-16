@@ -463,7 +463,7 @@ class EnhancedAnimalService:
             value_lower = value.lower().strip()
 
             # True values
-            if value_lower in ["true", "yes", "1", "y", "t"]:
+            if value_lower in ["true", "yes", "1", "y", "t", "older_children", "with_training"]:
                 return True
 
             # False values
