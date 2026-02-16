@@ -5,8 +5,12 @@ import {
   BreedStatsSchema,
   BreedWithImagesSchema,
   SwipeResponseSchema,
+  StatisticsSchema,
+  CountryStatsResponseSchema,
+  EnhancedDogContentItemSchema,
 } from "../animals";
 import { FilterCountsResponseSchema } from "../common";
+import { SwipeCountrySchema } from "../swipe";
 import { stripNulls } from "../../utils/api";
 
 describe("ApiDogSchema", () => {
@@ -325,22 +329,156 @@ describe("SwipeApiDogSchema.energy_level", () => {
 });
 
 describe("FilterCountsResponseSchema", () => {
-  it("parses valid filter counts", () => {
+  it("parses valid filter counts with _options field names", () => {
     const result = FilterCountsResponseSchema.parse({
-      sex: [
+      sex_options: [
         { value: "Male", count: 500 },
         { value: "Female", count: 480 },
       ],
-      standardized_size: [
+      size_options: [
         { value: "Large", count: 300, label: "Large" },
       ],
+      age_options: [
+        { value: "Puppy", count: 100, label: "Puppy" },
+      ],
+      breed_options: [
+        { value: "Labrador", count: 50, label: "Labrador" },
+      ],
+      organization_options: [
+        { value: 1, count: 200, label: "Happy Paws" },
+      ],
+      location_country_options: [
+        { value: "Finland", count: 150, label: "Finland" },
+      ],
+      available_country_options: [
+        { value: "Sweden", count: 80, label: "Sweden" },
+      ],
+      available_region_options: [
+        { value: "Uusimaa", count: 40, label: "Uusimaa" },
+      ],
     });
-    expect(result.sex).toHaveLength(2);
-    expect(result.standardized_size?.[0].count).toBe(300);
+    expect(result.sex_options).toHaveLength(2);
+    expect(result.size_options?.[0].count).toBe(300);
+    expect(result.age_options?.[0].value).toBe("Puppy");
+    expect(result.breed_options).toHaveLength(1);
+    expect(result.organization_options?.[0].label).toBe("Happy Paws");
   });
 
   it("accepts empty object", () => {
     const result = FilterCountsResponseSchema.parse({});
     expect(result).toBeDefined();
+  });
+
+  it("passes through extra fields", () => {
+    const result = FilterCountsResponseSchema.parse({
+      sex_options: [],
+      unknown_field: "extra",
+    });
+    expect((result as Record<string, unknown>).unknown_field).toBe("extra");
+  });
+});
+
+describe("StatisticsSchema", () => {
+  it("parses valid statistics with countries array", () => {
+    const result = StatisticsSchema.parse({
+      total_dogs: 1500,
+      total_organizations: 12,
+      countries: [
+        { country: "Finland", count: 500 },
+        { country: "Spain", count: 300 },
+      ],
+      organizations: [
+        { id: 1, name: "Happy Paws", slug: "happy-paws", dog_count: 100 },
+      ],
+    });
+    expect(result.total_dogs).toBe(1500);
+    expect(result.total_organizations).toBe(12);
+    expect(result.countries).toHaveLength(2);
+  });
+
+  it("rejects missing total_dogs", () => {
+    expect(() =>
+      StatisticsSchema.parse({ total_organizations: 5 }),
+    ).toThrow(ZodError);
+  });
+});
+
+describe("CountryStatsResponseSchema", () => {
+  it("parses valid country stats", () => {
+    const result = CountryStatsResponseSchema.parse({
+      total: 1500,
+      countries: [
+        { code: "FI", name: "Finland", count: 500, organizations: 3 },
+        { code: "ES", name: "Spain", count: 300, organizations: 5 },
+      ],
+    });
+    expect(result.total).toBe(1500);
+    expect(result.countries).toHaveLength(2);
+    expect(result.countries[0].code).toBe("FI");
+  });
+
+  it("rejects missing countries array", () => {
+    expect(() =>
+      CountryStatsResponseSchema.parse({ total: 100 }),
+    ).toThrow(ZodError);
+  });
+});
+
+describe("EnhancedDogContentItemSchema", () => {
+  it("parses valid enhanced content", () => {
+    const result = EnhancedDogContentItemSchema.parse({
+      id: 123,
+      description: "A playful dog",
+      tagline: "Your best friend",
+      has_enhanced_data: true,
+    });
+    expect(result.id).toBe(123);
+    expect(result.has_enhanced_data).toBe(true);
+  });
+
+  it("accepts empty object", () => {
+    const result = EnhancedDogContentItemSchema.parse({});
+    expect(result).toBeDefined();
+  });
+
+  it("handles null values after stripNulls", () => {
+    const raw = {
+      id: 123,
+      description: null,
+      tagline: null,
+      has_enhanced_data: false,
+    };
+    const result = EnhancedDogContentItemSchema.parse(stripNulls(raw));
+    expect(result.description).toBeUndefined();
+    expect(result.tagline).toBeUndefined();
+    expect(result.has_enhanced_data).toBe(false);
+  });
+});
+
+describe("SwipeCountrySchema", () => {
+  it("parses valid swipe country with camelCase dogCount", () => {
+    const result = SwipeCountrySchema.parse({
+      code: "GB",
+      name: "United Kingdom",
+      dogCount: 150,
+    });
+    expect(result.code).toBe("GB");
+    expect(result.dogCount).toBe(150);
+  });
+
+  it("rejects missing code", () => {
+    expect(() =>
+      SwipeCountrySchema.parse({ name: "UK", dogCount: 10 }),
+    ).toThrow(ZodError);
+  });
+
+  it("passes through extra fields", () => {
+    const result = SwipeCountrySchema.parse({
+      code: "DE",
+      name: "Germany",
+      dogCount: 50,
+      extra: "value",
+    });
+    expect((result as Record<string, unknown>).extra).toBe("value");
   });
 });
