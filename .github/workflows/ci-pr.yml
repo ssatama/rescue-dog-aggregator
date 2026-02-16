@@ -58,7 +58,6 @@ jobs:
         uses: ./.github/actions/setup-postgres-db
         with:
           db-name: test_rescue_dogs
-          run-migrations: "true"
 
       - name: Run tests
         env:

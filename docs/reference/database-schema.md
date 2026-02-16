@@ -92,22 +92,21 @@ Main table storing animal (primarily dog) listings with availability tracking an
 | `standardized_size` | VARCHAR(50) | | Normalized size (small, medium, large, extra-large) |
 | `language` | VARCHAR(10) | DEFAULT 'en' | Content language |
 | `properties` | JSONB | | Additional metadata and characteristics |
-| `enriched_description` | TEXT | | LLM-enhanced description |
 | `dog_profiler_data` | JSONB | | AI-generated personality profile |
 | `translations` | JSONB | | Multi-language translations |
-| `llm_processed_at` | TIMESTAMP | | When LLM processing occurred |
-| `llm_model_used` | VARCHAR(100) | | Model used for enrichment |
 | `llm_processing_flags` | JSONB | DEFAULT '{}' | Processing status flags |
 | `last_seen_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Last time animal was found during scraping |
 | `consecutive_scrapes_missing` | INTEGER | DEFAULT 0 | Count of consecutive scrapes where animal was not found |
 | `availability_confidence` | VARCHAR(10) | DEFAULT 'high', CHECK IN ('high','medium','low') | Confidence level |
-| `last_session_id` | INTEGER | FK → scrape_sessions(id) | Last scrape session reference |
+| `adoption_check_data` | JSONB | | Adoption detection results |
+| `adoption_checked_at` | TIMESTAMP | | When adoption check was last run |
 | `active` | BOOLEAN | NOT NULL, DEFAULT TRUE | Whether animal is active in system |
-| `slug` | VARCHAR(255) | NOT NULL, UNIQUE | URL-friendly identifier |
+| `slug` | VARCHAR(255) | UNIQUE | URL-friendly identifier |
+| `breed_slug` | VARCHAR(255) | | URL-friendly breed identifier |
+| `blur_data_url` | TEXT | | Blur placeholder for image loading |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | When the animal was first added |
 | `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Last modification timestamp |
 | `last_scraped_at` | TIMESTAMP | | Last scraping attempt |
-| `source_last_updated` | TIMESTAMP | | When source data was last updated |
 
 **Unique Constraints:**
 - `(external_id, organization_id)` - Prevents duplicate animals from same organization
@@ -155,7 +154,7 @@ Main table storing animal (primarily dog) listings with availability tracking an
 ```
 
 ### ~~animal_images~~ (REMOVED)
-This table was removed in migration 005. Image URLs are now stored directly in the animals table (`primary_image_url` and `original_image_url` fields).
+Removed in favor of direct URL storage in the animals table (`primary_image_url` and `original_image_url` fields).
 
 ### scrape_logs
 Comprehensive logging of scraping operations with quality metrics.
@@ -206,48 +205,20 @@ Geographic service areas for organizations (normalized relationship).
 **Unique Constraints:**
 - `(organization_id, country)` - One entry per country per organization
 
-### llm_processing_logs
-Tracks LLM processing operations for enrichment and analysis.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | SERIAL | PRIMARY KEY | Unique log identifier |
-| `animal_id` | INTEGER | FK → animals(id) ON DELETE CASCADE | Reference to processed animal |
-| `processing_type` | VARCHAR(50) | NOT NULL | Type of processing (enrichment, translation, profiling) |
-| `status` | VARCHAR(20) | NOT NULL | Processing status (success, error, pending) |
-| `model_used` | VARCHAR(100) | | LLM model identifier |
-| `tokens_used` | INTEGER | | Number of tokens consumed |
-| `processing_time_ms` | INTEGER | | Processing duration in milliseconds |
-| `error_message` | TEXT | | Error details if processing failed |
-| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | When processing occurred |
-
-### schema_migrations
-Tracks database migrations for version control.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | SERIAL | PRIMARY KEY | Unique migration identifier |
-| `version` | VARCHAR(50) | NOT NULL, UNIQUE | Migration version number |
-| `applied_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | When migration was applied |
-| `description` | TEXT | | Migration description |
-
 ## Relationships
 
 The schema implements the following key relationships:
 
 ```
 organizations (1) ──── (many) animals
-organizations (1) ──── (many) service_regions  
+organizations (1) ──── (many) service_regions
 organizations (1) ──── (many) scrape_logs
-animals (1) ──── (many) llm_processing_logs
-animals (many) ──── (1) scrape_sessions (via last_session_id)
 ```
 
 **Key Constraints:**
 - `animals.external_id + organization_id` must be unique (prevents duplicates)
 - `service_regions.organization_id + country` must be unique
 - All foreign key relationships are enforced with referential integrity
-- CASCADE DELETE on `llm_processing_logs.animal_id` ensures cleanup when animals are removed
 
 ## Indexing Strategy
 
@@ -349,34 +320,16 @@ WHERE detailed_metrics->>'parsing_errors'::int > 5;
 
 ## Recent Schema Evolution
 
-### 2025 Updates
-- **LLM Integration** (Migration 005):
-  - Added `enriched_description`, `dog_profiler_data`, `translations` fields
-  - New `llm_processing_logs` table for tracking AI operations
-  - Enhanced breed classification with confidence scoring
-  
-- **Performance Optimization** (Migrations 006-010):
-  - Added 50+ strategic indexes for query optimization
-  - Composite indexes for homepage queries (60-80% improvement)
-  - Covering indexes for analytics (70-90% improvement)
-  - Enhanced full-text search with trigram support
+### 2025-2026 Updates
+- **LLM Integration**: `dog_profiler_data`, `translations`, `llm_processing_flags` fields for AI enrichment
+- **Breed Standardization**: `breed_confidence`, `breed_type`, `primary_breed`, `secondary_breed`, `breed_slug`
+- **Adoption Tracking**: `adoption_check_data`, `adoption_checked_at`, status constraint
+- **Image Optimization**: `blur_data_url` for placeholder loading, `original_image_url` for fallback
+- **Performance**: 50+ strategic indexes for query optimization (composite, partial, GIN)
 
-- **Data Quality Improvements**:
-  - Removed `animal_images` table in favor of direct URL storage
-  - Added breed confidence and type classification
-  - Enhanced availability tracking with session references
-
-### Migration Files
-```
-database/migrations/
-├── 005_add_llm_enrichment_fields.sql     # LLM integration
-├── 005_drop_animal_images_table.sql      # Table removal
-├── 006_add_llm_performance_indexes.sql   # LLM indexes
-├── 007_add_performance_indexes.sql       # General performance
-├── 008_optimize_indexes.sql              # Index optimization
-├── 009_security_and_index_fixes.sql     # Security improvements
-└── 010_performance_indexes.sql           # Homepage optimization
-```
+### Migration Strategy
+- **Dev/CI**: `database/schema.sql` is the single source of truth (see `database/migration_history.md`)
+- **Production**: Alembic in `migrations/railway/`
 
 ### Performance Metrics
 - **Homepage Load**: 200ms → 40ms (80% improvement)
