@@ -68,6 +68,8 @@ export function formatTrainability(
       return "Moderate";
     case "challenging":
       return "Challenging";
+    case "very_challenging":
+      return "Very Challenging";
     default:
       return level.charAt(0).toUpperCase() + level.slice(1).replace(/_/g, " ");
   }
@@ -130,6 +132,12 @@ export function formatSociability(
       return "Social";
     case "very_social":
       return "Very Social";
+    case "independent":
+      return "Independent";
+    case "needs_work":
+      return "Needs Work";
+    case "selective":
+      return "Selective";
     default:
       return level.charAt(0).toUpperCase() + level.slice(1).replace(/_/g, " ");
   }
@@ -150,6 +158,10 @@ export function formatConfidence(
       return "Moderate";
     case "confident":
       return "Confident";
+    case "very_confident":
+      return "Very Confident";
+    case "very_shy":
+      return "Very Shy";
     default:
       return level.charAt(0).toUpperCase() + level.slice(1).replace(/_/g, " ");
   }

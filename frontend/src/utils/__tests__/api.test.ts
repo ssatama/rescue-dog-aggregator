@@ -134,6 +134,22 @@ describe("get() with Zod schema validation", () => {
     );
   });
 
+  it("strips null values before schema validation", async () => {
+    const schema = z.object({
+      id: z.number(),
+      breed: z.string().optional(),
+    });
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ id: 1, breed: null }),
+    });
+
+    const result = await get("/api/test", {}, { schema });
+
+    expect(result).toEqual({ id: 1 });
+    expect(reportError).not.toHaveBeenCalled();
+  });
+
   it("returns raw data when no schema is provided", async () => {
     const rawData = { anything: "goes", nested: { data: true } };
     (global.fetch as jest.Mock).mockResolvedValue({

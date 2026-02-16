@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ApiDog, ApiOrganization } from "../types/apiDog";
 import { get, stripNulls } from "../utils/api";
+import { reportError } from "../utils/logger";
 import { trackAPIPerformance } from "../utils/performanceMonitor";
 import { ApiDogSchema } from "../schemas/animals";
 import {
@@ -126,6 +127,7 @@ export async function getEnhancedOrganizations(): Promise<EnhancedOrg[]> {
     if (process.env.NODE_ENV !== "production") {
       console.error("Failed to fetch enhanced organizations:", error);
     }
+    reportError(error, { context: "getEnhancedOrganizations" });
     throw error;
   }
 }
@@ -180,6 +182,7 @@ export async function getEnhancedOrganizationsSSR(): Promise<EnhancedOrg[]> {
       apiUrl: process.env.NEXT_PUBLIC_API_URL,
       timestamp: new Date().toISOString(),
     });
+    reportError(error, { context: "getEnhancedOrganizationsSSR" });
     return [];
   }
 }

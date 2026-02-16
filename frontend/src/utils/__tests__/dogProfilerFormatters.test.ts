@@ -42,6 +42,7 @@ describe("dogProfilerFormatters", () => {
       expect(formatTrainability("easy")).toBe("Easy");
       expect(formatTrainability("moderate")).toBe("Moderate");
       expect(formatTrainability("challenging")).toBe("Challenging");
+      expect(formatTrainability("very_challenging")).toBe("Very Challenging");
       expect(formatTrainability(null)).toBeNull();
       expect(formatTrainability(undefined)).toBeNull();
     });
@@ -74,6 +75,9 @@ describe("dogProfilerFormatters", () => {
       expect(formatSociability("moderate")).toBe("Moderate");
       expect(formatSociability("social")).toBe("Social");
       expect(formatSociability("very_social")).toBe("Very Social");
+      expect(formatSociability("independent")).toBe("Independent");
+      expect(formatSociability("needs_work")).toBe("Needs Work");
+      expect(formatSociability("selective")).toBe("Selective");
       expect(formatSociability(null)).toBeNull();
       expect(formatSociability(undefined)).toBeNull();
     });
@@ -84,6 +88,8 @@ describe("dogProfilerFormatters", () => {
       expect(formatConfidence("shy")).toBe("Shy");
       expect(formatConfidence("moderate")).toBe("Moderate");
       expect(formatConfidence("confident")).toBe("Confident");
+      expect(formatConfidence("very_confident")).toBe("Very Confident");
+      expect(formatConfidence("very_shy")).toBe("Very Shy");
       expect(formatConfidence(null)).toBeNull();
       expect(formatConfidence(undefined)).toBeNull();
     });

@@ -118,6 +118,7 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
         "Could not fetch breed images, continuing without them:",
         imageError,
       );
+      reportError(imageError, { context: "getBreedGroupsWithTopBreeds:images" });
     }
 
     const breedImageMap: Record<string, string> = {};
