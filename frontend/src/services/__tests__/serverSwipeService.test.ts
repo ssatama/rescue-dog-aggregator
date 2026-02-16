@@ -14,6 +14,11 @@ jest.mock("../../utils/dogTransformer", () => ({
   transformApiDogsToDogs: jest.fn((dogs) => dogs),
 }));
 
+jest.mock("../../utils/logger", () => ({
+  logger: { log: jest.fn(), error: jest.fn(), warn: jest.fn() },
+  reportError: jest.fn(),
+}));
+
 describe("serverSwipeService", () => {
   describe("searchParamsToFilters", () => {
     it("should parse country from search params", () => {
@@ -157,8 +162,8 @@ describe("serverSwipeService", () => {
 
     it("should fetch and transform dogs successfully", async () => {
       const mockDogs = [
-        { id: 1, name: "Buddy", breed: "Labrador" },
-        { id: 2, name: "Max", breed: "Poodle" },
+        { id: 1, name: "Buddy", slug: "buddy-1", breed: "Labrador" },
+        { id: 2, name: "Max", slug: "max-2", breed: "Poodle" },
       ];
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -220,7 +225,7 @@ describe("serverSwipeService", () => {
       expect(result.total).toBe(0);
     });
 
-    it("should handle missing dogs array in response", async () => {
+    it("should handle missing dogs array in response via fallback", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ total: 0 }),
@@ -229,6 +234,19 @@ describe("serverSwipeService", () => {
       const result = await getSwipeDogs({ country: "GB" });
 
       expect(result.dogs).toEqual([]);
+      expect(result.total).toBe(0);
+    });
+
+    it("should handle malformed response via validation fallback", async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => "not an object",
+      });
+
+      const result = await getSwipeDogs({ country: "GB" });
+
+      expect(result.dogs).toEqual([]);
+      expect(result.total).toBe(0);
     });
   });
 
@@ -245,8 +263,8 @@ describe("serverSwipeService", () => {
 
     it("should fetch countries with countries wrapper", async () => {
       const mockCountries = [
-        { code: "GB", name: "United Kingdom", dog_count: 100 },
-        { code: "DE", name: "Germany", dog_count: 50 },
+        { code: "GB", name: "United Kingdom", dogCount: 100 },
+        { code: "DE", name: "Germany", dogCount: 50 },
       ];
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -284,7 +302,7 @@ describe("serverSwipeService", () => {
 
     it("should use fallback flag for unknown country code", async () => {
       const mockCountries = [
-        { code: "XX", name: "Unknown Country", dog_count: 10 },
+        { code: "XX", name: "Unknown Country", dogCount: 10 },
       ];
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -295,6 +313,17 @@ describe("serverSwipeService", () => {
       const result = await getAvailableCountries();
 
       expect(result[0].flag).toBeDefined();
+    });
+
+    it("should return empty array on malformed response", async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => "not valid data",
+      });
+
+      const result = await getAvailableCountries();
+
+      expect(result).toEqual([]);
     });
 
     it("should return empty array on HTTP error", async () => {

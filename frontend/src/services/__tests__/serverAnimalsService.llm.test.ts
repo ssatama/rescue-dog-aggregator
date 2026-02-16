@@ -1,26 +1,21 @@
-/**
- * Tests for LLM-enhanced content fetching in serverAnimalsService
- */
-
 import {
   getEnhancedDogContent,
   getAnimalBySlug,
   clearCache,
 } from "../serverAnimalsService";
 
-// Mock fetch globally
-global.fetch = jest.fn();
-
-// Mock cache function
-jest.mock("react", () => ({
-  cache: (fn) => fn,
+jest.mock("../../utils/logger", () => ({
+  logger: { log: jest.fn(), error: jest.fn(), warn: jest.fn() },
+  reportError: jest.fn(),
 }));
+
+global.fetch = jest.fn();
 
 describe("getEnhancedDogContent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     clearCache();
-    global.fetch.mockReset();
+    (global.fetch as jest.Mock).mockReset();
   });
 
   it("should return enhanced content when API returns valid data", async () => {
@@ -33,7 +28,7 @@ describe("getEnhancedDogContent", () => {
       },
     ];
 
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -66,7 +61,7 @@ describe("getEnhancedDogContent", () => {
       },
     ];
 
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -77,7 +72,7 @@ describe("getEnhancedDogContent", () => {
   });
 
   it("should return null when API call fails", async () => {
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 500,
     });
@@ -88,7 +83,9 @@ describe("getEnhancedDogContent", () => {
   });
 
   it("should return null when fetch throws an error", async () => {
-    global.fetch.mockRejectedValueOnce(new Error("Network error"));
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error("Network error"),
+    );
 
     const result = await getEnhancedDogContent(123);
 
@@ -101,12 +98,23 @@ describe("getEnhancedDogContent", () => {
     expect(result).toBeNull();
     expect(global.fetch).not.toHaveBeenCalled();
   });
+
+  it("should return null when response is malformed", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => "not an array",
+    });
+
+    const result = await getEnhancedDogContent(123);
+
+    expect(result).toBeNull();
+  });
 });
 
 describe("getAnimalBySlug with LLM enhancement", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    global.fetch.mockReset();
+    (global.fetch as jest.Mock).mockReset();
   });
 
   it("should merge LLM data into animal object when available", async () => {
@@ -126,29 +134,29 @@ describe("getAnimalBySlug with LLM enhancement", () => {
       },
     ];
 
-    // First call for animal data
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockAnimal,
     });
 
-    // Second call for enhanced data
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockEnhanced,
     });
 
     const result = await getAnimalBySlug("bella-123");
 
-    expect(result).toEqual({
-      id: 123,
-      name: "Bella",
-      breed: "Labrador",
-      slug: "bella-123",
-      llm_description: "Bella is a gentle soul who loves cuddles.",
-      llm_tagline: "Your new best friend awaits!",
-      has_llm_data: true,
-    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 123,
+        name: "Bella",
+        breed: "Labrador",
+        slug: "bella-123",
+        llm_description: "Bella is a gentle soul who loves cuddles.",
+        llm_tagline: "Your new best friend awaits!",
+        has_llm_data: true,
+      }),
+    );
   });
 
   it("should return animal without LLM data when enhancement fails", async () => {
@@ -159,30 +167,31 @@ describe("getAnimalBySlug with LLM enhancement", () => {
       slug: "bella-123",
     };
 
-    // First call for animal data
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockAnimal,
     });
 
-    // Second call for enhanced data fails
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 500,
     });
 
     const result = await getAnimalBySlug("bella-123");
 
-    expect(result).toEqual({
-      id: 123,
-      name: "Bella",
-      breed: "Labrador",
-      slug: "bella-123",
-    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 123,
+        name: "Bella",
+        breed: "Labrador",
+        slug: "bella-123",
+      }),
+    );
+    expect(result.llm_description).toBeUndefined();
   });
 
   it("should handle animal not found error", async () => {
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 404,
     });

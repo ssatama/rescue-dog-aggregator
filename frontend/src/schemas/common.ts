@@ -10,13 +10,14 @@ export const FilterCountSchema = z
 
 export const FilterCountsResponseSchema = z
   .object({
-    sex: z.array(FilterCountSchema).optional(),
-    standardized_size: z.array(FilterCountSchema).optional(),
-    age_category: z.array(FilterCountSchema).optional(),
-    breed_group: z.array(FilterCountSchema).optional(),
-    location_country: z.array(FilterCountSchema).optional(),
-    available_to_country: z.array(FilterCountSchema).optional(),
-    organization_id: z.array(FilterCountSchema).optional(),
+    sex_options: z.array(FilterCountSchema).optional(),
+    size_options: z.array(FilterCountSchema).optional(),
+    age_options: z.array(FilterCountSchema).optional(),
+    breed_options: z.array(FilterCountSchema).optional(),
+    organization_options: z.array(FilterCountSchema).optional(),
+    location_country_options: z.array(FilterCountSchema).optional(),
+    available_country_options: z.array(FilterCountSchema).optional(),
+    available_region_options: z.array(FilterCountSchema).optional(),
   })
   .passthrough();
 

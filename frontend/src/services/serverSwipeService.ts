@@ -1,8 +1,13 @@
+import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
 import type { Dog } from "../types/dog";
 import type { SwipeFilters } from "../hooks/useSwipeFilters";
 import { transformApiDogsToDogs } from "../utils/dogTransformer";
 import { getCountryFlag } from "../utils/countryUtils";
+import { stripNulls } from "../utils/api";
+import { SwipeResponseSchema } from "../schemas/animals";
+import { SwipeCountrySchema } from "../schemas/swipe";
+import { logger, reportError } from "../utils/logger";
 import * as Sentry from "@sentry/nextjs";
 
 const API_URL = getApiUrl();
@@ -57,15 +62,18 @@ export async function getSwipeDogs(
       throw new Error(`Failed to fetch swipe dogs: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    const transformedDogs = transformApiDogsToDogs(data.dogs || []);
+    const raw: unknown = await response.json();
+    const data = SwipeResponseSchema.parse(stripNulls(raw));
+     
+    const transformedDogs = transformApiDogsToDogs((data.dogs || []) as any[]);
 
     return {
       dogs: transformedDogs,
       total: data.total || transformedDogs.length,
     };
   } catch (error) {
-    console.error("Error fetching swipe dogs:", error);
+    logger.error("Error fetching swipe dogs:", error);
+    reportError(error, { url, filters });
     Sentry.withScope((scope) => {
       scope.setTag("feature", "swipe");
       scope.setTag("operation", "getSwipeDogs");
@@ -96,27 +104,30 @@ export async function getAvailableCountries(): Promise<CountryOption[]> {
       );
     }
 
-    const data = await response.json();
-
-    interface CountryResponse {
-      code: string;
-      name: string;
-      dog_count?: number;
-      dogCount?: number;
+    const raw: unknown = await response.json();
+    let rawArray: unknown;
+    if (Array.isArray(raw)) {
+      rawArray = raw;
+    } else if (raw !== null && typeof raw === "object" && "countries" in raw) {
+      rawArray = (raw as Record<string, unknown>).countries;
+    } else {
+      rawArray = raw;
     }
+    const validated = z.array(SwipeCountrySchema).parse(stripNulls(rawArray));
 
-    const countries: CountryOption[] = (data.countries || data).map(
-      (country: CountryResponse) => ({
+    const countries: CountryOption[] = validated.map(
+      (country) => ({
         value: country.code,
         label: country.name,
         flag: getCountryFlag(country.code) || "\u{1F3F3}\u{FE0F}",
-        count: country.dog_count || country.dogCount || 0,
+        count: country.dogCount || 0,
       }),
     );
 
     return countries;
   } catch (error) {
-    console.error("Error fetching available countries:", error);
+    logger.error("Error fetching available countries:", error);
+    reportError(error, { url });
     Sentry.withScope((scope) => {
       scope.setTag("feature", "swipe");
       scope.setTag("operation", "getAvailableCountries");
