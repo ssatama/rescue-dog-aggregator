@@ -278,7 +278,6 @@ class TestEnhancedAnimalService:
     @pytest.mark.unit
     def test_calculate_completeness_score(self, service):
         """Test completeness score calculation."""
-        # Full data - missing good_with_strangers (5 points)
         full_data = {
             "description": "Test description",
             "tagline": "Test tagline",
@@ -286,13 +285,13 @@ class TestEnhancedAnimalService:
             "energy_level": "high",
             "trainability": "high",
             "experience_level": "beginner",
-            "good_with_kids": True,
-            "good_with_dogs": True,
-            "good_with_cats": False,
+            "good_with_children": "yes",
+            "good_with_dogs": "yes",
+            "good_with_cats": "no",
             "ideal_home": "Test home",
         }
         score = service._calculate_completeness_score(full_data)
-        assert score == 95.0  # Missing good_with_strangers (5 points)
+        assert score == 100.0
 
         # Partial data
         partial_data = {"description": "Test description", "tagline": "Test tagline"}
