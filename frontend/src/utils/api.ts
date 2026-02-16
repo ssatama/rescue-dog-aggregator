@@ -3,6 +3,17 @@ import { logger, reportError } from "./logger";
 import { parseApiError, formatErrorMessage } from "./errorHandler";
 import { getApiUrl } from "./apiConfig";
 
+export function stripNulls(value: unknown): unknown {
+  if (value === null) return undefined;
+  if (Array.isArray(value)) return value.map(stripNulls);
+  if (typeof value === "object" && value !== null) {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, stripNulls(v)]),
+    );
+  }
+  return value;
+}
+
 const API_BASE_URL = getApiUrl();
 
 interface ParsedApiError {
@@ -128,7 +139,8 @@ export function get<T = unknown>(
 
   return fetchApi(url, fetchOptions).then((data) => {
     if (schema) {
-      const result = schema.safeParse(data);
+      const cleaned = stripNulls(data);
+      const result = schema.safeParse(cleaned);
       if (result.success) {
         return result.data;
       }

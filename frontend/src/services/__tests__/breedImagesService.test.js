@@ -22,7 +22,6 @@ describe("breedImagesService", () => {
         count: 1462,
         sample_dogs: [
           {
-            id: 101,
             name: "Luna",
             slug: "luna-123",
             primary_image_url: "https://example.com/luna.jpg",
@@ -40,7 +39,6 @@ describe("breedImagesService", () => {
         count: 120,
         sample_dogs: [
           {
-            id: 102,
             name: "Shadow",
             slug: "shadow-111",
             primary_image_url: "https://example.com/shadow.jpg",
@@ -234,9 +232,9 @@ describe("breedImagesService", () => {
         {
           ...mockBreedsData[0],
           sample_dogs: [
-            { id: 201, name: "Dog1", slug: "dog1", primary_image_url: "url1.jpg" },
-            { id: 202, name: "Dog2", slug: "dog2", primary_image_url: "url2.jpg" },
-            { id: 203, name: "Dog3", slug: "dog3", primary_image_url: "url3.jpg" },
+            { name: "Dog1", slug: "dog1", primary_image_url: "url1.jpg" },
+            { name: "Dog2", slug: "dog2", primary_image_url: "url2.jpg" },
+            { name: "Dog3", slug: "dog3", primary_image_url: "url3.jpg" },
           ],
         },
       ];

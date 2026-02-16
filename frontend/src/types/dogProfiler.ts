@@ -7,10 +7,10 @@ export interface DogProfilerData {
   favorite_activities?: string[];
   unique_quirk?: string;
   energy_level?: "low" | "medium" | "high" | "very_high";
-  trainability?: "easy" | "moderate" | "challenging";
+  trainability?: "easy" | "moderate" | "challenging" | "very_challenging";
   experience_level?: "first_time_ok" | "some_experience" | "experienced_only";
-  sociability?: "reserved" | "moderate" | "social" | "very_social";
-  confidence?: "shy" | "moderate" | "confident";
+  sociability?: "reserved" | "moderate" | "social" | "very_social" | "independent" | "needs_work" | "selective";
+  confidence?: "shy" | "moderate" | "confident" | "very_confident" | "very_shy";
   home_type?: "apartment_ok" | "house_preferred" | "house_required";
   exercise_needs?: "minimal" | "moderate" | "high";
   grooming_needs?: "minimal" | "weekly" | "frequent";

@@ -1,5 +1,5 @@
 import { z, ZodError } from "zod";
-import { get } from "../api";
+import { get, stripNulls } from "../api";
 
 jest.mock("../logger", () => ({
   logger: {
@@ -19,6 +19,54 @@ global.fetch = jest.fn();
 const TestSchema = z.object({
   id: z.number(),
   name: z.string(),
+});
+
+describe("stripNulls", () => {
+  it("converts null to undefined", () => {
+    expect(stripNulls(null)).toBeUndefined();
+  });
+
+  it("preserves non-null primitives", () => {
+    expect(stripNulls("hello")).toBe("hello");
+    expect(stripNulls(42)).toBe(42);
+    expect(stripNulls(true)).toBe(true);
+    expect(stripNulls(undefined)).toBeUndefined();
+  });
+
+  it("strips nulls from objects", () => {
+    const input = { name: "Rex", breed: null, age: "3 years" };
+    expect(stripNulls(input)).toEqual({ name: "Rex", breed: undefined, age: "3 years" });
+  });
+
+  it("strips nulls from nested objects", () => {
+    const input = {
+      id: 1,
+      dog_profiler_data: { confidence: "shy", sociability: null },
+      secondary_breed: null,
+    };
+    expect(stripNulls(input)).toEqual({
+      id: 1,
+      dog_profiler_data: { confidence: "shy", sociability: undefined },
+      secondary_breed: undefined,
+    });
+  });
+
+  it("strips nulls from arrays", () => {
+    const input = [{ id: 1, breed: null }, { id: 2, breed: "Labrador" }];
+    expect(stripNulls(input)).toEqual([
+      { id: 1, breed: undefined },
+      { id: 2, breed: "Labrador" },
+    ]);
+  });
+
+  it("handles API response with null-stripped data passing Zod validation", () => {
+    const schema = z.object({
+      id: z.number(),
+      secondary_breed: z.string().optional(),
+    });
+    const apiData = { id: 1, secondary_breed: null };
+    expect(() => schema.parse(stripNulls(apiData))).not.toThrow();
+  });
 });
 
 describe("get() with Zod schema validation", () => {
@@ -84,6 +132,22 @@ describe("get() with Zod schema validation", () => {
       expect.stringContaining("Zod validation failed"),
       expect.anything(),
     );
+  });
+
+  it("strips null values before schema validation", async () => {
+    const schema = z.object({
+      id: z.number(),
+      breed: z.string().optional(),
+    });
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ id: 1, breed: null }),
+    });
+
+    const result = await get("/api/test", {}, { schema });
+
+    expect(result).toEqual({ id: 1 });
+    expect(reportError).not.toHaveBeenCalled();
   });
 
   it("returns raw data when no schema is provided", async () => {

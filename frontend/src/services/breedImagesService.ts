@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
 import { logger, reportError } from "../utils/logger";
+import { stripNulls } from "../utils/api";
 import {
   BreedWithImagesSchema,
   BreedStatsSchema,
@@ -55,7 +56,7 @@ export async function getBreedsWithImages(
     }
 
     const data: unknown = await response.json();
-    return z.array(BreedWithImagesSchema).parse(data);
+    return z.array(BreedWithImagesSchema).parse(stripNulls(data));
   } catch (error) {
     logger.error("Error fetching breeds with images:", error);
     reportError(error, { context: "getBreedsWithImages" });
@@ -98,7 +99,7 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
     }
 
     const rawStats: unknown = await statsResponse.json();
-    const stats = BreedStatsSchema.parse(rawStats);
+    const stats = BreedStatsSchema.parse(stripNulls(rawStats));
 
     let breedsWithImages: z.infer<typeof BreedWithImagesSchema>[] = [];
     try {
@@ -110,13 +111,14 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
 
       if (imagesResponse.ok) {
         const rawImages: unknown = await imagesResponse.json();
-        breedsWithImages = z.array(BreedWithImagesSchema).parse(rawImages);
+        breedsWithImages = z.array(BreedWithImagesSchema).parse(stripNulls(rawImages));
       }
     } catch (imageError) {
       logger.warn(
         "Could not fetch breed images, continuing without them:",
         imageError,
       );
+      reportError(imageError, { context: "getBreedGroupsWithTopBreeds:images" });
     }
 
     const breedImageMap: Record<string, string> = {};
@@ -228,7 +230,7 @@ export async function getBreedsWithImagesForHomePage(
     }
 
     const data: unknown = await response.json();
-    return z.array(BreedWithImagesSchema).parse(data);
+    return z.array(BreedWithImagesSchema).parse(stripNulls(data));
   } catch (error) {
     logger.error("Error fetching breeds with images:", error);
     reportError(error, { context: "getBreedsWithImagesForHomePage" });

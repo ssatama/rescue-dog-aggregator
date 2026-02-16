@@ -1,4 +1,5 @@
 import { SwipeResponseSchema } from "../schemas/animals";
+import { stripNulls } from "../utils/api";
 
 interface SwipeFilters {
   country?: string;
@@ -53,7 +54,7 @@ export async function fetchSwipeDogs(
   }
 
   const raw: unknown = await response.json();
-  const data = SwipeResponseSchema.parse(raw);
+  const data = SwipeResponseSchema.parse(stripNulls(raw));
 
   return data.dogs.map((dog) => ({
     id: dog.id,

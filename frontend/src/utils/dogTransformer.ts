@@ -57,9 +57,9 @@ export function transformApiDogToDog(apiDog: ApiDog): Dog {
 
   // Normalize image fields - ensure both primary_image_url and main_image are set
   const primaryImage =
-    apiDog.primary_image_url || apiDog.image || apiDog.main_image;
+    apiDog.primary_image_url || apiDog.image || apiDog.main_image || undefined;
   const mainImage =
-    apiDog.main_image || apiDog.primary_image_url || apiDog.image;
+    apiDog.main_image || apiDog.primary_image_url || apiDog.image || undefined;
 
   return {
     ...apiDog,
