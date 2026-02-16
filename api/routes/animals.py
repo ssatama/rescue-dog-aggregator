@@ -12,6 +12,7 @@ from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import BreedStatsResponse, FilterCountsResponse
 from api.services import AnimalService
+from api.utils.sql_utils import escape_like_pattern
 
 logger = logging.getLogger(__name__)
 
@@ -326,8 +327,9 @@ async def get_search_suggestions(
         """
 
         # Create search patterns for SQL LIKE queries
-        starts_with_pattern = f"{q}%"
-        contains_pattern = f"%{q}%"
+        escaped_q = escape_like_pattern(q)
+        starts_with_pattern = f"{escaped_q}%"
+        contains_pattern = f"%{escaped_q}%"
 
         params = [
             starts_with_pattern,  # Order by - starts with (highest priority)
@@ -423,8 +425,9 @@ async def get_breed_suggestions(
         """
 
         # Create search patterns
-        starts_with_pattern = f"{q}%"
-        contains_pattern = f"%{q}%"
+        escaped_q = escape_like_pattern(q)
+        starts_with_pattern = f"{escaped_q}%"
+        contains_pattern = f"%{escaped_q}%"
 
         params = [
             starts_with_pattern,  # Order by - starts with (highest priority)

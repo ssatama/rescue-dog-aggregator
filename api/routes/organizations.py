@@ -13,6 +13,7 @@ from api.exceptions import APIException, handle_database_error, handle_validatio
 from api.models.organization import Organization
 from api.models.requests import OrganizationFilterRequest
 from api.utils.json_parser import parse_json_field
+from api.utils.sql_utils import escape_like_pattern
 
 router = APIRouter()
 
@@ -54,7 +55,7 @@ def get_organizations(
 
         if filters.search:
             conditions.append("o.name ILIKE %s")
-            params.append(f"%{filters.search}%")
+            params.append(f"%{escape_like_pattern(filters.search)}%")
 
         # Add WHERE clause if conditions exist
         if conditions:
