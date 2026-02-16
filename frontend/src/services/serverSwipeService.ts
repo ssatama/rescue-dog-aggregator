@@ -105,7 +105,14 @@ export async function getAvailableCountries(): Promise<CountryOption[]> {
     }
 
     const raw: unknown = await response.json();
-    const rawArray = Array.isArray(raw) ? raw : (raw as Record<string, unknown>).countries || raw;
+    let rawArray: unknown;
+    if (Array.isArray(raw)) {
+      rawArray = raw;
+    } else if (raw !== null && typeof raw === "object" && "countries" in raw) {
+      rawArray = (raw as Record<string, unknown>).countries;
+    } else {
+      rawArray = raw;
+    }
     const validated = z.array(SwipeCountrySchema).parse(stripNulls(rawArray));
 
     const countries: CountryOption[] = validated.map(

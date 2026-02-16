@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
 import { stripNulls } from "../utils/api";
-import { logger } from "../utils/logger";
+import { logger, reportError } from "../utils/logger";
+import * as Sentry from "@sentry/nextjs";
 import {
   ApiDogSchema,
   ApiOrganizationEmbeddedSchema,
@@ -11,7 +12,7 @@ import {
   EnhancedDogContentItemSchema,
 } from "../schemas/animals";
 import { FilterCountsResponseSchema } from "../schemas/common";
-import type { BreedStats } from "../schemas/animals";
+import type { BreedStats, ApiDogParsed } from "../schemas/animals";
 import type { FilterCountsResponse } from "../schemas/common";
 
 interface CacheEntry {
@@ -155,6 +156,12 @@ export const getAnimals = cache(
       return z.array(ApiDogSchema).parse(stripNulls(raw));
     } catch (error) {
       logger.error("Error fetching animals:", error);
+      reportError(error, { url, context: "getAnimals" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getAnimals");
+        Sentry.captureException(error);
+      });
       return [];
     }
   },
@@ -178,6 +185,12 @@ export const getStandardizedBreeds = cache(
       return z.array(z.string()).parse(raw);
     } catch (error) {
       logger.error("Error fetching breeds:", error);
+      reportError(error, { context: "getStandardizedBreeds" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getStandardizedBreeds");
+        Sentry.captureException(error);
+      });
       return [];
     }
   },
@@ -206,6 +219,12 @@ export const getLocationCountries = cache(
       return z.array(z.string()).parse(raw);
     } catch (error) {
       logger.error("Error fetching location countries:", error);
+      reportError(error, { context: "getLocationCountries" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getLocationCountries");
+        Sentry.captureException(error);
+      });
       return [];
     }
   },
@@ -234,6 +253,12 @@ export const getAvailableCountries = cache(
       return z.array(z.string()).parse(raw);
     } catch (error) {
       logger.error("Error fetching available countries:", error);
+      reportError(error, { context: "getAvailableCountries" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getAvailableCountries");
+        Sentry.captureException(error);
+      });
       return [];
     }
   },
@@ -264,6 +289,12 @@ export const getAvailableRegions = cache(
       return z.array(z.string()).parse(raw);
     } catch (error) {
       logger.error("Error fetching regions:", error);
+      reportError(error, { context: "getAvailableRegions", country });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getAvailableRegions");
+        Sentry.captureException(error);
+      });
       return [];
     }
   },
@@ -289,6 +320,12 @@ export const getOrganizations = cache(
       return z.array(ApiOrganizationEmbeddedSchema).parse(stripNulls(raw));
     } catch (error) {
       logger.error("Error fetching organizations:", error);
+      reportError(error, { context: "getOrganizations" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getOrganizations");
+        Sentry.captureException(error);
+      });
       return [];
     }
   },
@@ -301,7 +338,7 @@ export const getFilterCounts = cache(
     const queryParams = new URLSearchParams();
 
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== "") {
+      if (value !== "") {
         queryParams.append(key, value);
       }
     });
@@ -327,6 +364,12 @@ export const getFilterCounts = cache(
       return FilterCountsResponseSchema.parse(stripNulls(raw));
     } catch (error) {
       logger.error("Error fetching filter counts:", error);
+      reportError(error, { context: "getFilterCounts" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getFilterCounts");
+        Sentry.captureException(error);
+      });
       return null;
     }
   },
@@ -350,6 +393,12 @@ export const getStatistics = cache(
       return StatisticsSchema.parse(stripNulls(raw));
     } catch (error) {
       logger.error("Error fetching statistics:", error);
+      reportError(error, { context: "getStatistics" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getStatistics");
+        Sentry.captureException(error);
+      });
       return {
         total_dogs: 0,
         total_organizations: 0,
@@ -383,6 +432,12 @@ export const getBreedStats = cache(
       return BreedStatsSchema.parse(stripNulls(raw));
     } catch (error) {
       logger.error("Error fetching breed stats:", error);
+      reportError(error, { context: "getBreedStats" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getBreedStats");
+        Sentry.captureException(error);
+      });
       return {
         total_dogs: 0,
         unique_breeds: 0,
@@ -397,6 +452,7 @@ export const getBreedStats = cache(
 );
 
 export const getAnimalsByCuration = cache(
+   
    
   async (curationType: string, limit = 4): Promise<any[]> => {
     try {
@@ -427,6 +483,12 @@ export const getAnimalsByCuration = cache(
       return z.array(ApiDogSchema).parse(stripNulls(raw));
     } catch (error) {
       logger.error(`Error fetching ${curationType} animals:`, error);
+      reportError(error, { curationType, context: "getAnimalsByCuration" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getAnimalsByCuration");
+        Sentry.captureException(error);
+      });
       return [];
     }
   },
@@ -459,7 +521,12 @@ export const getHomePageData = cache(
       };
     } catch (error) {
       logger.error("Error fetching home page data:", error);
-
+      reportError(error, { context: "getHomePageData" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getHomePageData");
+        Sentry.captureException(error);
+      });
       return {
         statistics: {
           total_dogs: 0,
@@ -514,6 +581,12 @@ export const getAllMetadata = cache(
       };
     } catch (error) {
       logger.error("Error fetching metadata:", error);
+      reportError(error, { context: "getAllMetadata" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getAllMetadata");
+        Sentry.captureException(error);
+      });
       return {
         standardizedBreeds: ["Any breed"],
         locationCountries: ["Any country"],
@@ -528,6 +601,7 @@ export const getAllAnimals = cache(
   async (
     params: { limit?: string | number; offset?: string | number } = {},
      
+   
   ): Promise<any[]> => {
     try {
       const queryParams = new URLSearchParams();
@@ -559,6 +633,12 @@ export const getAllAnimals = cache(
       return z.array(ApiDogSchema).parse(stripNulls(raw));
     } catch (error) {
       logger.error("Error fetching all animals:", error);
+      reportError(error, { context: "getAllAnimals" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getAllAnimals");
+        Sentry.captureException(error);
+      });
       return [];
     }
   },
@@ -586,14 +666,14 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any> => {
       });
 
        
+       
       const dogsArray = allMixedDogs as any[];
 
       const organizationSet = new Set<unknown>();
       const countrySet = new Set<string>();
 
       if (breedStats?.qualifying_breeds) {
-         
-        breedStats.qualifying_breeds.forEach((breed: any) => {
+        breedStats.qualifying_breeds.forEach((breed) => {
           if (breed.breed_group === "Mixed" || breed.breed_type === "mixed") {
             if (breed.organizations) {
               breed.organizations.forEach((org: unknown) =>
@@ -631,7 +711,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any> => {
       let maxAge = 0;
 
        
-      dogsArray.forEach((dog: any) => {
+      dogsArray.forEach((dog) => {
         if (dog.organization_id) {
           organizationSet.add(dog.organization_id);
         }
@@ -738,7 +818,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any> => {
 
       const experienceMap = new Map<string, number>();
        
-      dogsArray.forEach((dog: any) => {
+      dogsArray.forEach((dog) => {
         if (dog.properties?.experience_level) {
           const level = dog.properties.experience_level as string;
           experienceMap.set(level, (experienceMap.get(level) || 0) + 1);
@@ -760,7 +840,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any> => {
         Senior: 0,
       };
        
-      dogsArray.forEach((dog: any) => {
+      dogsArray.forEach((dog) => {
         if (dog.age_category) {
           ageCategories[dog.age_category] =
             (ageCategories[dog.age_category] || 0) + 1;
@@ -778,15 +858,10 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any> => {
             : `${avgAgeYears} years`;
 
        
-      const mixedGroupAny = mixedGroup as any;
       const organizationsCount =
-        organizationSet.size > 0
-          ? organizationSet.size
-          : mixedGroupAny?.organizations?.length || 10;
+        organizationSet.size > 0 ? organizationSet.size : 10;
       const countriesCount =
-        countrySet.size > 0
-          ? countrySet.size
-          : mixedGroupAny?.countries?.length || 2;
+        countrySet.size > 0 ? countrySet.size : 2;
 
       return {
         primary_breed: "Mixed Breed",
@@ -814,7 +889,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any> => {
 
     const breedStats = await getBreedStats();
      
-    const breedData = (breedStats.qualifying_breeds as any[])?.find(
+    const breedData = breedStats.qualifying_breeds?.find(
       (breed) => breed.breed_slug === slug,
     );
 
@@ -894,26 +969,29 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any> => {
     };
   } catch (error) {
     logger.error(`Error fetching breed data for ${slug}:`, error);
+    reportError(error, { context: "getBreedBySlug", slug });
+    Sentry.withScope((scope) => {
+      scope.setTag("feature", "animals");
+      scope.setTag("operation", "getBreedBySlug");
+      scope.setContext("request", { slug });
+      Sentry.captureException(error);
+    });
     throw error;
   }
 });
 
-interface BreedDogFilters {
-  limit?: number | string;
-  offset?: number | string;
-  [key: string]: unknown;
-}
+type BreedDogFilters = Partial<AnimalQueryParams>;
 
 export const getBreedDogs = cache(
   async (
     breedSlug: string,
     filters: BreedDogFilters = {},
      
+   
   ): Promise<any[]> => {
     try {
       const breedStats = await getBreedStats();
-       
-      const breedData = (breedStats.qualifying_breeds as any[])?.find(
+      const breedData = breedStats.qualifying_breeds?.find(
         (breed) => breed.breed_slug === breedSlug,
       );
 
@@ -931,6 +1009,13 @@ export const getBreedDogs = cache(
       return getAnimals(params);
     } catch (error) {
       logger.error(`Error fetching breed dogs for ${breedSlug}:`, error);
+      reportError(error, { context: "getBreedDogs", breedSlug });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getBreedDogs");
+        scope.setContext("request", { breedSlug });
+        Sentry.captureException(error);
+      });
       return [];
     }
   },
@@ -941,7 +1026,7 @@ export const getBreedFilterCounts = cache(
     try {
       const breedStats = await getBreedStats();
        
-      const breedData = (breedStats.qualifying_breeds as any[])?.find(
+      const breedData = breedStats.qualifying_breeds?.find(
         (breed) => breed.breed_slug === breedSlug,
       );
 
@@ -957,6 +1042,13 @@ export const getBreedFilterCounts = cache(
         `Error fetching breed filter counts for ${breedSlug}:`,
         error,
       );
+      reportError(error, { context: "getBreedFilterCounts", breedSlug });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getBreedFilterCounts");
+        scope.setContext("request", { breedSlug });
+        Sentry.captureException(error);
+      });
       return null;
     }
   },
@@ -999,11 +1091,12 @@ export const getEnhancedDogContent = cache(
 
       if (
         enhanced?.has_enhanced_data &&
-        (enhanced.description || enhanced.tagline)
+        enhanced.description &&
+        enhanced.tagline
       ) {
         return {
-          description: enhanced.description!,
-          tagline: enhanced.tagline!,
+          description: enhanced.description,
+          tagline: enhanced.tagline,
         };
       }
 
@@ -1013,13 +1106,26 @@ export const getEnhancedDogContent = cache(
         `Error fetching enhanced content for animal ${animalId}:`,
         error,
       );
+      reportError(error, { context: "getEnhancedDogContent", animalId });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getEnhancedDogContent");
+        scope.setContext("request", { animalId });
+        Sentry.captureException(error);
+      });
       return null;
     }
   },
 );
 
  
-export const getAnimalBySlug = cache(async (slug: string): Promise<any> => {
+type ApiDogWithLlm = ApiDogParsed & {
+  llm_description?: string;
+  llm_tagline?: string;
+  has_llm_data?: boolean;
+};
+
+export const getAnimalBySlug = cache(async (slug: string): Promise<ApiDogWithLlm> => {
   if (!slug) {
     throw new Error("Slug is required");
   }
@@ -1048,20 +1154,28 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<any> => {
     try {
       const enhanced = await getEnhancedDogContent(animal.id);
       if (enhanced) {
-         
-        const animalWithLlm = animal as any;
-        animalWithLlm.llm_description = enhanced.description;
-        animalWithLlm.llm_tagline = enhanced.tagline;
-        animalWithLlm.has_llm_data = true;
-        return animalWithLlm;
+        return {
+          ...animal,
+          llm_description: enhanced.description,
+          llm_tagline: enhanced.tagline,
+          has_llm_data: true,
+        };
       }
     } catch (enhancedError) {
       logger.warn(`Enhanced content unavailable for ${slug}:`, enhancedError);
+      reportError(enhancedError, { context: "getAnimalBySlug.enhanced", slug });
     }
 
     return animal;
   } catch (error) {
     logger.error(`Error fetching animal ${slug}:`, error);
+    reportError(error, { context: "getAnimalBySlug", slug });
+    Sentry.withScope((scope) => {
+      scope.setTag("feature", "animals");
+      scope.setTag("operation", "getAnimalBySlug");
+      scope.setContext("request", { slug });
+      Sentry.captureException(error);
+    });
     throw error;
   }
 });
@@ -1089,6 +1203,12 @@ export const getCountryStats = cache(
       return CountryStatsResponseSchema.parse(stripNulls(raw));
     } catch (error) {
       logger.error("Error fetching country stats:", error);
+      reportError(error, { context: "getCountryStats" });
+      Sentry.withScope((scope) => {
+        scope.setTag("feature", "animals");
+        scope.setTag("operation", "getCountryStats");
+        Sentry.captureException(error);
+      });
       return {
         total: 0,
         countries: [],
@@ -1144,6 +1264,12 @@ export const getAgeStats = cache(async (): Promise<AgeStats> => {
     };
   } catch (error) {
     logger.error("Error fetching age stats:", error);
+    reportError(error, { context: "getAgeStats" });
+    Sentry.withScope((scope) => {
+      scope.setTag("feature", "animals");
+      scope.setTag("operation", "getAgeStats");
+      Sentry.captureException(error);
+    });
     return {
       total: 0,
       ageCategories: [

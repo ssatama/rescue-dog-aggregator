@@ -5,8 +5,19 @@ import {
   getStatistics,
   getCountryStats,
   getAvailableRegions,
+  getBreedStats,
+  getAgeStats,
+  getAnimalsByCuration,
   clearCache,
 } from "../serverAnimalsService";
+import { reportError } from "../../utils/logger";
+
+jest.mock("@sentry/nextjs", () => ({
+  withScope: jest.fn((callback) =>
+    callback({ setTag: jest.fn(), setContext: jest.fn() }),
+  ),
+  captureException: jest.fn(),
+}));
 
 jest.mock("../../utils/logger", () => ({
   logger: { log: jest.fn(), error: jest.fn(), warn: jest.fn() },
@@ -201,6 +212,119 @@ describe("Server Animals Service", () => {
       const result = await getAvailableRegions("Any country");
       expect(result).toEqual([]);
       expect(fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getBreedStats", () => {
+    it("should validate and return breed stats", async () => {
+      const mockResponse = {
+        total_dogs: 1500,
+        unique_breeds: 50,
+        breed_groups: [{ name: "Sporting", count: 200 }],
+        qualifying_breeds: [
+          { primary_breed: "Labrador", breed_slug: "labrador", count: 100 },
+        ],
+        purebred_count: 800,
+        crossbreed_count: 700,
+      };
+
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await getBreedStats();
+      expect(result.total_dogs).toBe(1500);
+      expect(result.qualifying_breeds).toHaveLength(1);
+    });
+
+    it("should return fallback with error flag on failure", async () => {
+      (fetch as jest.Mock).mockRejectedValueOnce(new Error("Fail"));
+
+      const result = await getBreedStats();
+      expect(result.total_dogs).toBe(0);
+    });
+  });
+
+  describe("getAgeStats", () => {
+    it("should parse age categories from filter counts", async () => {
+      const mockResponse = {
+        age_options: [
+          { value: "Puppy", count: 50 },
+          { value: "Young", count: 100 },
+          { value: "Adult", count: 200 },
+          { value: "Senior", count: 30 },
+        ],
+      };
+
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await getAgeStats();
+      expect(result.total).toBe(80);
+      expect(result.ageCategories).toHaveLength(2);
+      expect(result.ageCategories[0]).toEqual({
+        slug: "puppies",
+        apiValue: "Puppy",
+        count: 50,
+      });
+      expect(result.ageCategories[1]).toEqual({
+        slug: "senior",
+        apiValue: "Senior",
+        count: 30,
+      });
+    });
+
+    it("should return fallback on failure", async () => {
+      (fetch as jest.Mock).mockRejectedValueOnce(new Error("Fail"));
+
+      const result = await getAgeStats();
+      expect(result.total).toBe(0);
+      expect(result.ageCategories).toHaveLength(2);
+    });
+  });
+
+  describe("getAnimalsByCuration", () => {
+    it("should fetch animals with curation type parameter", async () => {
+      const mockResponse = [{ id: 1, name: "Dog 1" }];
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await getAnimalsByCuration("recent", 4);
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("curation_type=recent"),
+        expect.anything(),
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("limit=4"),
+        expect.anything(),
+      );
+      expect(result).toHaveLength(1);
+    });
+
+    it("should return empty array on failure", async () => {
+      (fetch as jest.Mock).mockRejectedValueOnce(new Error("Fail"));
+
+      const result = await getAnimalsByCuration("recent");
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("error reporting", () => {
+    it("should call reportError when fetch fails", async () => {
+      (fetch as jest.Mock).mockRejectedValueOnce(new Error("API Error"));
+
+      await getAnimals();
+
+      expect(reportError).toHaveBeenCalledWith(
+        expect.any(Error),
+        expect.objectContaining({ context: "getAnimals" }),
+      );
     });
   });
 });

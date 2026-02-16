@@ -133,8 +133,13 @@ export const QualifyingBreedSchema = z
   .object({
     primary_breed: z.string(),
     breed_slug: z.string(),
+    breed_type: z.string().optional(),
     breed_group: z.string().optional(),
     count: z.number(),
+    organizations: z.array(z.string()).optional(),
+    organization_count: z.number().optional(),
+    countries: z.array(z.string()).optional(),
+    country_count: z.number().optional(),
   })
   .passthrough();
 
