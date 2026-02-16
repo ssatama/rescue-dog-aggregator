@@ -15,7 +15,6 @@ from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 
 @pytest.mark.unit
 class TestCompatibilityFilterValidation:
-
     @pytest.mark.parametrize("field", ["good_with_kids", "good_with_dogs", "good_with_cats"])
     def test_accepts_true(self, field):
         request = AnimalFilterRequest(**{field: True})
@@ -57,7 +56,6 @@ class TestCompatibilityFilterValidation:
 
 @pytest.mark.unit
 class TestCompatibilityFilterCountRequestValidation:
-
     @pytest.mark.parametrize("field", ["good_with_kids", "good_with_dogs", "good_with_cats"])
     def test_accepts_true(self, field):
         request = AnimalFilterCountRequest(**{field: True})
@@ -71,7 +69,6 @@ class TestCompatibilityFilterCountRequestValidation:
 
 @pytest.mark.unit
 class TestCompatibilityFilterCombinations:
-
     def test_combine_all_compatibility_filters(self):
         request = AnimalFilterRequest(
             good_with_kids=True,
@@ -115,7 +112,6 @@ class TestCompatibilityFilterCombinations:
 
 @pytest.mark.unit
 class TestCompatibilityFilterSQLConditions:
-
     def _get_service_with_mock_cursor(self):
         from unittest.mock import MagicMock
 
@@ -177,7 +173,6 @@ class TestCompatibilityFilterSQLConditions:
 @pytest.mark.slow
 @pytest.mark.database
 class TestCompatibilityFilterAPI:
-
     @pytest.mark.parametrize("field", ["good_with_kids", "good_with_dogs", "good_with_cats"])
     def test_filter_true_returns_200(self, client, field):
         response = client.get(f"/api/animals?{field}=true")
@@ -189,31 +184,19 @@ class TestCompatibilityFilterAPI:
         assert response.status_code == 200
 
     def test_combined_compatibility_filters(self, client):
-        response = client.get(
-            "/api/animals?good_with_kids=true&good_with_dogs=true&good_with_cats=true"
-        )
+        response = client.get("/api/animals?good_with_kids=true&good_with_dogs=true&good_with_cats=true")
         assert response.status_code == 200
 
     def test_compatibility_with_traditional_filters(self, client):
-        response = client.get(
-            "/api/animals?good_with_kids=true&sex=Male&age_category=Adult&limit=5"
-        )
+        response = client.get("/api/animals?good_with_kids=true&sex=Male&age_category=Adult&limit=5")
         assert response.status_code == 200
 
     def test_compatibility_with_profiler_filters(self, client):
-        response = client.get(
-            "/api/animals?good_with_kids=true&energy_level=low&home_type=apartment_ok"
-        )
+        response = client.get("/api/animals?good_with_kids=true&energy_level=low&home_type=apartment_ok")
         assert response.status_code == 200
 
     def test_mcp_server_style_request(self, client):
-        response = client.get(
-            "/api/animals?status=available"
-            "&availability_confidence=high,medium"
-            "&good_with_kids=true"
-            "&good_with_cats=true"
-            "&limit=5"
-        )
+        response = client.get("/api/animals?status=available&availability_confidence=high,medium&good_with_kids=true&good_with_cats=true&limit=5")
         assert response.status_code == 200
         data = response.json()
         assert len(data) <= 5
