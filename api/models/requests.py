@@ -95,6 +95,20 @@ class AnimalFilterRequest(BaseModel):
         description="Filter by experience level (first_time_ok, some_experience, experienced_only)",
     )
 
+    # Compatibility filters (LLM-enriched dog_profiler_data JSONB)
+    good_with_kids: bool | None = Field(
+        default=None,
+        description="Filter to dogs good with children (true = compatible only)",
+    )
+    good_with_dogs: bool | None = Field(
+        default=None,
+        description="Filter to dogs good with other dogs (true = compatible only)",
+    )
+    good_with_cats: bool | None = Field(
+        default=None,
+        description="Filter to dogs good with cats (true = compatible only)",
+    )
+
     # Curation
     curation_type: str = Field(
         default="random",
@@ -260,6 +274,20 @@ class AnimalFilterCountRequest(BaseModel):
     experience_level: str | None = Field(
         default=None,
         description="Filter by experience level (first_time_ok, some_experience, experienced_only)",
+    )
+
+    # Compatibility filters (LLM-enriched dog_profiler_data JSONB)
+    good_with_kids: bool | None = Field(
+        default=None,
+        description="Filter to dogs good with children (true = compatible only)",
+    )
+    good_with_dogs: bool | None = Field(
+        default=None,
+        description="Filter to dogs good with other dogs (true = compatible only)",
+    )
+    good_with_cats: bool | None = Field(
+        default=None,
+        description="Filter to dogs good with cats (true = compatible only)",
     )
 
     @field_validator("breed_type")

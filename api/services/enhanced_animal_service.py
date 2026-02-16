@@ -305,14 +305,18 @@ class EnhancedAnimalService:
             self._track_response_time(start_time)
             return {}
 
+        # Map API attribute names to JSONB keys where they differ
+        api_to_jsonb_key = {"good_with_kids": "good_with_children"}
+
         # Build dynamic attribute extraction
         attr_extracts = []
         for attr in safe_attributes:
+            jsonb_key = api_to_jsonb_key.get(attr, attr)
             # Handle array fields differently
             if attr in ["personality_traits", "special_needs"]:
-                attr_extracts.append(f"dog_profiler_data->'{attr}' as {attr}")
+                attr_extracts.append(f"dog_profiler_data->'{jsonb_key}' as {attr}")
             else:
-                attr_extracts.append(f"dog_profiler_data->>'{attr}' as {attr}")
+                attr_extracts.append(f"dog_profiler_data->>'{jsonb_key}' as {attr}")
 
         query = f"""
             SELECT
@@ -372,7 +376,7 @@ class EnhancedAnimalService:
                     experience_level=profiler_data.get("experience_level"),
                     grooming_needs=profiler_data.get("grooming_needs"),
                     exercise_needs=profiler_data.get("exercise_needs"),
-                    good_with_kids=self._normalize_boolean(profiler_data.get("good_with_kids")),
+                    good_with_kids=self._normalize_boolean(profiler_data.get("good_with_children")),
                     good_with_dogs=self._normalize_boolean(profiler_data.get("good_with_dogs")),
                     good_with_cats=self._normalize_boolean(profiler_data.get("good_with_cats")),
                     good_with_strangers=self._normalize_boolean(profiler_data.get("good_with_strangers")),
@@ -421,7 +425,7 @@ class EnhancedAnimalService:
             "energy_level": 10,
             "trainability": 10,
             "experience_level": 10,
-            "good_with_kids": 5,
+            "good_with_children": 5,
             "good_with_dogs": 5,
             "good_with_cats": 5,
             "ideal_home": 5,
@@ -459,7 +463,7 @@ class EnhancedAnimalService:
             value_lower = value.lower().strip()
 
             # True values
-            if value_lower in ["true", "yes", "1", "y", "t"]:
+            if value_lower in ["true", "yes", "1", "y", "t", "older_children", "with_training"]:
                 return True
 
             # False values

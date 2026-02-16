@@ -44,9 +44,9 @@ class TestEnhancedAnimalsAPI:
             "energy_level": "high",
             "trainability": "high",
             "experience_level": "beginner",
-            "good_with_kids": True,
-            "good_with_dogs": True,
-            "good_with_cats": False,
+            "good_with_children": "yes",
+            "good_with_dogs": "yes",
+            "good_with_cats": "no",
             "ideal_home": "Active family with a yard",
             "profiled_at": "2024-01-15T10:00:00",
             "model_used": "gemini-2.5-flash",
@@ -81,6 +81,9 @@ class TestEnhancedAnimalsAPI:
         assert data["enhanced_data_available"] is True
         assert data["enhanced_attributes"]["description"] == sample_enhanced_data["description"]
         assert data["enhanced_attributes"]["tagline"] == sample_enhanced_data["tagline"]
+        assert data["enhanced_attributes"]["good_with_kids"] is True
+        assert data["enhanced_attributes"]["good_with_dogs"] is True
+        assert data["enhanced_attributes"]["good_with_cats"] is False
         assert data["data_completeness_score"] > 0
 
     @pytest.mark.unit
@@ -232,6 +235,31 @@ class TestEnhancedAnimalsAPI:
         assert "trainability" in data["data"]["124"]
 
     @pytest.mark.unit
+    def test_get_attributes_maps_good_with_kids_to_jsonb_key(self, mock_cursor):
+        """Test that good_with_kids attribute maps to good_with_children JSONB key."""
+        mock_cursor.fetchall.return_value = [
+            {"id": 123, "good_with_kids": "yes"},
+        ]
+
+        app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
+        client = TestClient(app)
+
+        response = client.post(
+            "/api/animals/enhanced/attributes",
+            json={
+                "animal_ids": [123],
+                "attributes": ["good_with_kids"],
+            },
+        )
+
+        app.dependency_overrides.clear()
+
+        assert response.status_code == 200
+        executed_sql = mock_cursor.execute.call_args[0][0]
+        assert "good_with_children" in executed_sql
+        assert "'good_with_children' as good_with_kids" in executed_sql
+
+    @pytest.mark.unit
     def test_enhanced_stats_endpoint(self, mock_cursor):
         """Test statistics endpoint for coverage metrics."""
         mock_cursor.fetchone.return_value = {
@@ -278,7 +306,6 @@ class TestEnhancedAnimalService:
     @pytest.mark.unit
     def test_calculate_completeness_score(self, service):
         """Test completeness score calculation."""
-        # Full data - missing good_with_strangers (5 points)
         full_data = {
             "description": "Test description",
             "tagline": "Test tagline",
@@ -286,13 +313,13 @@ class TestEnhancedAnimalService:
             "energy_level": "high",
             "trainability": "high",
             "experience_level": "beginner",
-            "good_with_kids": True,
-            "good_with_dogs": True,
-            "good_with_cats": False,
+            "good_with_children": "yes",
+            "good_with_dogs": "yes",
+            "good_with_cats": "no",
             "ideal_home": "Test home",
         }
         score = service._calculate_completeness_score(full_data)
-        assert score == 95.0  # Missing good_with_strangers (5 points)
+        assert score == 100.0
 
         # Partial data
         partial_data = {"description": "Test description", "tagline": "Test tagline"}
