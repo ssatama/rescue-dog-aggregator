@@ -490,9 +490,6 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
         setStandardizedBreedFilter={(breed: string) =>
           setFilters((prev) => ({ ...prev, breed }))
         }
-        handleBreedSearch={() => {}}
-        handleBreedClear={() => {}}
-        handleBreedValueChange={() => {}}
         standardizedBreeds={availableBreeds || []}
         useSimpleBreedDropdown={true}
         sexFilter={filters.sex || "Any"}

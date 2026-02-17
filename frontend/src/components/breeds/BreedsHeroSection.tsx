@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Heart, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BreedsHeroSectionProps } from "@/types/breeds";
+import { BREED_PASTEL_COLORS, capitalizeFirst } from "@/utils/breedDisplayUtils";
 
 export default function BreedsHeroSection({ mixedBreedData, totalDogs }: BreedsHeroSectionProps) {
   const mixedBreedCount = mixedBreedData?.count || 0;
@@ -19,34 +20,6 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }: BreedsH
       return `${(count / 1000).toFixed(1).replace(".0", "")}K`;
     }
     return count.toString();
-  };
-
-  const PASTEL_COLORS: Array<{ bg: string; text: string }> = [
-    {
-      bg: "bg-blue-100 dark:bg-blue-900/30",
-      text: "text-blue-800 dark:text-blue-300",
-    },
-    {
-      bg: "bg-green-100 dark:bg-green-900/30",
-      text: "text-green-800 dark:text-green-300",
-    },
-    {
-      bg: "bg-purple-100 dark:bg-purple-900/30",
-      text: "text-purple-800 dark:text-purple-300",
-    },
-    {
-      bg: "bg-yellow-100 dark:bg-yellow-900/30",
-      text: "text-yellow-800 dark:text-yellow-300",
-    },
-    {
-      bg: "bg-pink-100 dark:bg-pink-900/30",
-      text: "text-pink-800 dark:text-pink-300",
-    },
-  ];
-
-  const capitalizeFirst = (str: string): string => {
-    if (!str) return "";
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   };
 
   return (
@@ -104,7 +77,7 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }: BreedsH
                 <div className="relative h-40 md:h-48 mb-2 rounded-md overflow-hidden">
                   <Image
                     src={dog.primary_image_url!}
-                    alt={dog.name}
+                    alt={dog.name ?? "Rescue dog"}
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 50vw, 20vw"
@@ -119,7 +92,7 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }: BreedsH
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {dog.personality_traits?.slice(0, 2).map((trait: string, idx: number) => {
-                    const colors = PASTEL_COLORS[idx % PASTEL_COLORS.length];
+                    const colors = BREED_PASTEL_COLORS[idx % BREED_PASTEL_COLORS.length];
                     return (
                       <span
                         key={trait}

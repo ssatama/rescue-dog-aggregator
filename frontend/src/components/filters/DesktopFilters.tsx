@@ -28,12 +28,12 @@ export default function DesktopFilters({
   organizations,
 
   showBreed = true,
-  standardizedBreedFilter,
+  standardizedBreedFilter = "",
   setStandardizedBreedFilter,
   handleBreedSearch,
   handleBreedClear: handleBreedClearFromParent,
   handleBreedValueChange,
-  standardizedBreeds,
+  standardizedBreeds = [],
 
   sexFilter,
   setSexFilter,
@@ -109,7 +109,7 @@ export default function DesktopFilters({
     if (handleBreedClearFromParent) {
       handleBreedClearFromParent();
     } else {
-      setStandardizedBreedFilter("Any breed");
+      setStandardizedBreedFilter?.("Any breed");
     }
   }, [handleBreedClearFromParent, setStandardizedBreedFilter]);
 
@@ -492,7 +492,7 @@ export default function DesktopFilters({
                       : standardizedBreedFilter
                   }
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                    setStandardizedBreedFilter(
+                    setStandardizedBreedFilter?.(
                       e.target.value === "any" ? "Any breed" : e.target.value,
                     )
                   }
@@ -527,7 +527,7 @@ export default function DesktopFilters({
                   if (handleBreedSearch) {
                     handleBreedSearch(breed);
                   } else {
-                    setStandardizedBreedFilter(breed);
+                    setStandardizedBreedFilter?.(breed);
                   }
                 }}
                 onClear={handleBreedClear}

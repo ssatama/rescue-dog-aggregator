@@ -21,18 +21,6 @@ interface NetworkStrategy {
   skipOptimizations: boolean;
 }
 
-// Navigator connection API type
-interface NetworkInformation extends EventTarget {
-  effectiveType?: string;
-  downlink?: number;
-  rtt?: number;
-  saveData?: boolean;
-}
-
-interface NavigatorWithConnection extends Navigator {
-  connection?: NetworkInformation;
-}
-
 // Base configuration constants
 const BASE_RETRY_DELAY = 1000; // 1 second base delay between retries
 
@@ -133,10 +121,9 @@ export function useAdvancedImage(
     };
 
     if (typeof window !== "undefined" && "connection" in navigator) {
-      const nav = navigator as NavigatorWithConnection;
-      nav.connection?.addEventListener("change", handleNetworkChange);
+      navigator.connection?.addEventListener("change", handleNetworkChange);
       return () => {
-        nav.connection?.removeEventListener("change", handleNetworkChange);
+        navigator.connection?.removeEventListener("change", handleNetworkChange);
       };
     }
   }, [type]);

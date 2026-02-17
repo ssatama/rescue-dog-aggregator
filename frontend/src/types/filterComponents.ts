@@ -20,12 +20,12 @@ export interface SharedFilterProps {
   setOrganizationFilter: (value: string) => void;
   organizations: OrganizationMetadata[];
 
-  standardizedBreedFilter: string;
-  setStandardizedBreedFilter: (value: string) => void;
-  handleBreedSearch: (value: string) => void;
-  handleBreedClear: () => void;
-  handleBreedValueChange: (value: string) => void;
-  standardizedBreeds: string[];
+  standardizedBreedFilter?: string;
+  setStandardizedBreedFilter?: (value: string) => void;
+  handleBreedSearch?: (value: string) => void;
+  handleBreedClear?: () => void;
+  handleBreedValueChange?: (value: string) => void;
+  standardizedBreeds?: string[];
 
   sexFilter: string;
   setSexFilter: (value: string) => void;

@@ -1,5 +1,6 @@
 import React from "react";
 import type { DogProfilerData } from "../../../types/dogProfiler";
+import { capitalizeFirst } from "../../../utils/breedDisplayUtils";
 
 /**
  * ActivitiesQuirks component displays favorite activities and unique quirks
@@ -41,12 +42,6 @@ const ACTIVITY_COLORS = [
     text: "text-indigo-800 dark:text-indigo-300",
   },
 ] as const;
-
-// Pure functions for data transformation
-const capitalizeFirst = (str: string): string => {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
 
 const getColorForIndex = (index: number) =>
   ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];

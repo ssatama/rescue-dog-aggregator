@@ -11,11 +11,7 @@ import BreedsHeroSection from "@/components/breeds/BreedsHeroSection";
 import PopularBreedsSection from "@/components/breeds/PopularBreedsSection";
 import BreedGroupsSection from "@/components/breeds/BreedGroupsSection";
 import { Dog, Heart, Home } from "lucide-react";
-import type {
-  BreedsHubClientProps,
-  BreedData,
-  PopularBreedsSectionProps,
-} from "@/types/breeds";
+import type { BreedsHubClientProps } from "@/types/breeds";
 import type { ReactNode } from "react";
 
 interface BreedTypeCard {
@@ -95,7 +91,7 @@ export default function BreedsHubClient({
 
       {mixedBreedData && (
         <BreedsHeroSection
-          mixedBreedData={mixedBreedData as unknown as BreedData}
+          mixedBreedData={mixedBreedData}
           totalDogs={breedStats?.total_dogs || 0}
         />
       )}
@@ -104,9 +100,7 @@ export default function BreedsHubClient({
         <div className="container mx-auto px-4 py-8">
           {popularBreedsWithImages && popularBreedsWithImages.length > 0 && (
             <PopularBreedsSection
-              popularBreeds={
-                popularBreedsWithImages as unknown as PopularBreedsSectionProps["popularBreeds"]
-              }
+              popularBreeds={popularBreedsWithImages}
             />
           )}
 

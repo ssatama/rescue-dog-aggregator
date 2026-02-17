@@ -16,13 +16,6 @@ import { isSlowConnection, getNetworkInfo } from "../../utils/networkUtils";
 import type { DogSectionProps } from "@/types/homeComponents";
 import type { Dog } from "@/types/dog";
 
-interface NavigatorWithConnection extends Navigator {
-  connection?: EventTarget & {
-    addEventListener(type: string, listener: EventListener): void;
-    removeEventListener(type: string, listener: EventListener): void;
-  };
-}
-
 // Dynamically import MobileCarousel for code splitting
 const MobileCarousel = React.lazy(() => import("../ui/MobileCarousel"));
 
@@ -153,10 +146,9 @@ const DogSection = React.memo(function DogSection({
     window.addEventListener("resize", checkMobile);
 
     // Listen for network changes if available
-    const nav = navigator as NavigatorWithConnection;
-    if (nav.connection?.addEventListener) {
+    if (navigator.connection?.addEventListener) {
       try {
-        nav.connection.addEventListener("change", checkNetwork);
+        navigator.connection.addEventListener("change", checkNetwork);
       } catch (error: unknown) {
         // Handle environments where addEventListener is not available (e.g., some mobile browsers)
         logger.debug(
@@ -168,9 +160,9 @@ const DogSection = React.memo(function DogSection({
 
     return () => {
       window.removeEventListener("resize", checkMobile);
-      if (nav.connection?.removeEventListener) {
+      if (navigator.connection?.removeEventListener) {
         try {
-          nav.connection.removeEventListener("change", checkNetwork);
+          navigator.connection.removeEventListener("change", checkNetwork);
         } catch (error: unknown) {
           // Handle cleanup errors in environments with limited API support
           logger.debug(

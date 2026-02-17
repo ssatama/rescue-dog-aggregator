@@ -1,5 +1,6 @@
 import React from "react";
 import type { DogProfilerData } from "../../../types/dogProfiler";
+import { capitalizeFirst } from "../../../utils/breedDisplayUtils";
 
 /**
  * PersonalityTraits component displays personality traits as colored badge pills
@@ -22,12 +23,6 @@ const PASTEL_COLORS = [
   { bg: "bg-yellow-100", text: "text-yellow-800" },
   { bg: "bg-pink-100", text: "text-pink-800" },
 ] as const;
-
-// Pure functions for data transformation
-const capitalizeFirst = (str: string): string => {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
 
 const getColorForIndex = (index: number) =>
   PASTEL_COLORS[index % PASTEL_COLORS.length];

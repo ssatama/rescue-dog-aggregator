@@ -130,18 +130,12 @@ export interface BreedGroupsSectionProps {
 }
 
 export interface BreedsHeroSectionProps {
-  mixedBreedData: BreedData | null;
+  mixedBreedData: BreedWithImages | null;
   totalDogs: number;
 }
 
 export interface PopularBreedsSectionProps {
-  popularBreeds: Array<
-    BreedWithImages & {
-      breed_group?: string;
-      breed_type?: string;
-      sample_dogs?: SampleDog[];
-    }
-  >;
+  popularBreeds: BreedWithImages[];
 }
 
 export interface BreedStructuredDataProps {

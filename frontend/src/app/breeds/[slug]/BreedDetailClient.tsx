@@ -543,12 +543,6 @@ export default function BreedDetailClient({
             handleMobileFilterChange("organizationFilter", value)
           }
           organizations={filterOptions.organizations}
-          standardizedBreedFilter=""
-          setStandardizedBreedFilter={() => {}}
-          handleBreedSearch={() => {}}
-          handleBreedClear={() => {}}
-          handleBreedValueChange={() => {}}
-          standardizedBreeds={[]}
           sexFilter={filters.sexFilter}
           setSexFilter={(value: string) =>
             handleMobileFilterChange("sexFilter", value)
