@@ -12,6 +12,15 @@ import { getAnimalsByCuration } from "../../services/animalsService";
 import { reportError, logger } from "../../utils/logger";
 import { preloadImages } from "../../utils/imageUtils";
 import { isSlowConnection, getNetworkInfo } from "../../utils/networkUtils";
+import type { DogSectionProps } from "@/types/homeComponents";
+import type { Dog } from "@/types/dog";
+
+interface NavigatorWithConnection extends Navigator {
+  connection?: EventTarget & {
+    addEventListener(type: string, listener: EventListener): void;
+    removeEventListener(type: string, listener: EventListener): void;
+  };
+}
 
 // Dynamically import MobileCarousel for code splitting
 const MobileCarousel = React.lazy(() => import("../ui/MobileCarousel"));
@@ -49,14 +58,14 @@ const DogSection = React.memo(function DogSection({
   viewAllHref,
   initialDogs = null,
   priority = false,
-}) {
-  const [dogs, setDogs] = useState(initialDogs || []);
-  const [loading, setLoading] = useState(!initialDogs);
-  const [error, setError] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isSlowNet, setIsSlowNet] = useState(false);
-  const [loadStartTime, setLoadStartTime] = useState(null);
+}: DogSectionProps) {
+  const [dogs, setDogs] = useState<Dog[]>(initialDogs || []);
+  const [loading, setLoading] = useState<boolean>(!initialDogs);
+  const [error, setError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
+  const [isSlowNet, setIsSlowNet] = useState<boolean>(false);
+  const [loadStartTime, setLoadStartTime] = useState<number | null>(null);
 
   const fetchDogs = useCallback(async () => {
     try {
@@ -70,7 +79,7 @@ const DogSection = React.memo(function DogSection({
         performance.mark("dog-section-start");
       }
 
-      const data = await getAnimalsByCuration(curationType, 4);
+      const data = await getAnimalsByCuration(curationType, 4) as Dog[];
 
       // Batch state updates - use startTransition only in production
       if (process.env.NODE_ENV === "test") {
@@ -111,12 +120,12 @@ const DogSection = React.memo(function DogSection({
       if (data && data.length > 0) {
         const imageUrls = data
           .map((dog) => dog.primary_image_url)
-          .filter(Boolean);
+          .filter((url): url is string => Boolean(url));
         preloadImages(imageUrls);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       reportError(`Error fetching ${curationType} dogs`, {
-        error: err.message,
+        error: (err as Error).message,
       });
       // Set error state directly for better test reliability
       setError(`Could not load dogs. Please try again later.`);
@@ -143,36 +152,29 @@ const DogSection = React.memo(function DogSection({
     window.addEventListener("resize", checkMobile);
 
     // Listen for network changes if available
-    if (
-      typeof navigator !== "undefined" &&
-      navigator.connection &&
-      navigator.connection.addEventListener
-    ) {
+    const nav = navigator as NavigatorWithConnection;
+    if (nav.connection?.addEventListener) {
       try {
-        navigator.connection.addEventListener("change", checkNetwork);
+        nav.connection.addEventListener("change", checkNetwork);
       } catch (error) {
         // Handle environments where addEventListener is not available (e.g., some mobile browsers)
         logger.debug(
           "Network connection addEventListener not supported:",
-          error.message,
+          (error as Error).message,
         );
       }
     }
 
     return () => {
       window.removeEventListener("resize", checkMobile);
-      if (
-        typeof navigator !== "undefined" &&
-        navigator.connection &&
-        navigator.connection.removeEventListener
-      ) {
+      if (nav.connection?.removeEventListener) {
         try {
-          navigator.connection.removeEventListener("change", checkNetwork);
+          nav.connection.removeEventListener("change", checkNetwork);
         } catch (error) {
           // Handle cleanup errors in environments with limited API support
           logger.debug(
             "Network connection removeEventListener cleanup failed:",
-            error.message,
+            (error as Error).message,
           );
         }
       }
@@ -188,7 +190,7 @@ const DogSection = React.memo(function DogSection({
   }, [curationType, fetchDogs, initialDogs]);
 
   // Handle slide change
-  const handleSlideChange = (slideIndex) => {
+  const handleSlideChange = (slideIndex: number) => {
     setCurrentSlide(slideIndex);
   };
 

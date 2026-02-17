@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "./button";
+import type { ContactButtonProps } from "@/types/dogComponents";
 
 const ContactButton = ({
   email = "rescuedogsme@gmail.com",
   buttonText = "Contact Us",
   size = "lg",
   className = "",
-}) => {
+}: ContactButtonProps) => {
   const [showCopied, setShowCopied] = useState(false);
-  const timeoutRef = useRef(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -21,7 +22,7 @@ const ContactButton = ({
     };
   }, []);
 
-  const handleClick = async (e) => {
+  const handleClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
 
     // Clear any existing timeout

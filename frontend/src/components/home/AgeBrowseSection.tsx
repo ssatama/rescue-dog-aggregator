@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { Sparkles, Heart, ArrowRight } from "lucide-react";
 import { AGE_CATEGORIES, getAgeCategoriesArray } from "@/utils/ageData";
+import type { AgeBrowseSectionProps } from "@/types/homeComponents";
 
 /**
  * AgeBrowseSection - A distinctive, emotionally resonant section for browsing dogs by age
  * Features playful animations for puppies and warm, dignified styling for seniors
  */
-export default function AgeBrowseSection({ ageStats = [] }) {
+export default function AgeBrowseSection({ ageStats = [] }: AgeBrowseSectionProps) {
   const categories = getAgeCategoriesArray();
 
   const categoriesWithStats = categories.map((category) => {

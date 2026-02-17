@@ -10,12 +10,13 @@ import {
   formatShipsToList,
   getCountryName,
 } from "../../utils/countries";
+import type { OrganizationHeroProps } from "@/types/organizationComponents";
 
 /**
  * Hero section for individual organization pages
  * Features warm gradient background, logo, location info, and statistics
  */
-export default function OrganizationHero({ organization }) {
+export default function OrganizationHero({ organization }: OrganizationHeroProps) {
   // State for expandable description on mobile - must be before early return
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
@@ -36,7 +37,7 @@ export default function OrganizationHero({ organization }) {
   }
 
   // Generate organization initials for logo fallback
-  const getInitials = (name) => {
+  const getInitials = (name: string): string => {
     if (!name) return "??";
     const words = name.split(" ");
     if (words.length === 1) return words[0].charAt(0).toUpperCase();

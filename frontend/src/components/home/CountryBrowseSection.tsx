@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { COUNTRIES, getCountriesArray } from "@/utils/countryData";
+import type { CountryBrowseSectionProps } from "@/types/homeComponents";
 
 /**
  * CountryBrowseSection - Desktop homepage section showing top countries by dog count
  * Displays the top 4 countries with the most dogs available for adoption
  */
-export default function CountryBrowseSection({ countryStats = [] }) {
+export default function CountryBrowseSection({ countryStats = [] }: CountryBrowseSectionProps) {
   const countriesData = getCountriesArray();
 
   // Merge country metadata with stats, sort by count, take top 4

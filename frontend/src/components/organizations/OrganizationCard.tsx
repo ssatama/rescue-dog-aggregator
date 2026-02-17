@@ -16,9 +16,10 @@ import {
   formatShipsToList,
   getCountryFlag,
 } from "../../utils/countries";
+import type { OrganizationCardProps, OrganizationCardSize } from "@/types/organizationComponents";
 
 const OrganizationCard = memo(
-  function OrganizationCard({ organization, size = "large" }) {
+  function OrganizationCard({ organization, size = "large" }: OrganizationCardProps) {
     // Extract organization data with enhanced fields
     const name = organization?.name || "Sample Organization";
     const websiteUrl = organization?.website_url || "#";
@@ -37,7 +38,7 @@ const OrganizationCard = memo(
     const recentDogs = organization?.recent_dogs || [];
 
     // Helper function to generate organization initials
-    const getInitials = (orgName) => {
+    const getInitials = (orgName: string): string => {
       if (!orgName) return "?";
       const words = orgName.split(" ");
       if (words.length === 1) return words[0].charAt(0).toUpperCase();
@@ -104,7 +105,7 @@ const OrganizationCard = memo(
         onClick={() => (window.location.href = `/organizations/${slug}`)}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => {
+        onKeyDown={(e: React.KeyboardEvent) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             window.location.href = `/organizations/${slug}`;
@@ -290,7 +291,7 @@ const OrganizationCard = memo(
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 rounded"
-                onClick={(e) => e.stopPropagation()} // Prevent navigation when clicking button
+                onClick={(e: React.MouseEvent) => e.stopPropagation()} // Prevent navigation when clicking button
               >
                 Visit Website
               </a>
@@ -317,7 +318,7 @@ const OrganizationCard = memo(
       </Card>
     );
   },
-  (prevProps, nextProps) => {
+  (prevProps: OrganizationCardProps, nextProps: OrganizationCardProps) => {
     // Custom comparison for React.memo - only re-render if these props change
     return (
       prevProps.size === nextProps.size &&

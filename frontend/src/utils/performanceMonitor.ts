@@ -41,15 +41,9 @@ function getDeviceType(): "mobile" | "tablet" | "desktop" {
   return "desktop";
 }
 
-interface NavigatorWithConnection extends Navigator {
-  connection?: {
-    effectiveType?: string;
-  };
-}
-
 function getConnectionType(): string | undefined {
-  const nav = navigator as NavigatorWithConnection;
-  return nav.connection?.effectiveType;
+  const connection = (navigator as Navigator & { connection?: { effectiveType?: string } }).connection;
+  return connection?.effectiveType;
 }
 
 function sendToAnalytics(data: PerformanceData) {

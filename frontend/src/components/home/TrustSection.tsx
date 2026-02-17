@@ -9,18 +9,14 @@ import OrganizationCard from "../organizations/OrganizationCard";
 import { TrustStatsSkeleton } from "../ui/LoadingSkeleton";
 import { reportError } from "../../utils/logger";
 import { Button } from "@/components/ui/button";
+import type { TrustSectionProps, StatisticsData, StatisticsOrganization } from "@/types/homeComponents";
+import type { OrganizationCardData } from "@/types/organizationComponents";
 
-/**
- * Trust section displaying platform statistics and organization links
- * Shows total dogs, organizations, countries with expandable organization list
- * @param {Object} props - Component props
- * @param {Object} props.initialStatistics - Pre-fetched statistics data from SSR
- */
-export default function TrustSection({ initialStatistics = null }) {
+export default function TrustSection({ initialStatistics = null }: TrustSectionProps) {
   const router = useRouter();
-  const [statistics, setStatistics] = useState(initialStatistics);
-  const [loading, setLoading] = useState(!initialStatistics);
-  const [error, setError] = useState(null);
+  const [statistics, setStatistics] = useState<StatisticsData | null>(initialStatistics);
+  const [loading, setLoading] = useState<boolean>(!initialStatistics);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Only fetch if we don't have initial data
@@ -30,7 +26,7 @@ export default function TrustSection({ initialStatistics = null }) {
           setLoading(true);
           setError(null);
           const data = await getStatistics();
-          setStatistics(data);
+          setStatistics(data as StatisticsData);
         } catch (err) {
           reportError(err, {
             context: "TrustSection.fetchStatistics",
@@ -96,7 +92,7 @@ export default function TrustSection({ initialStatistics = null }) {
   const total_countries = countries.length;
 
   // Show top 8 organizations for grid display with field mapping
-  const topOrganizations = organizations.slice(0, 8).map((org) => ({
+  const topOrganizations = (organizations as StatisticsOrganization[]).slice(0, 8).map((org: StatisticsOrganization) => ({
     ...org,
     // Map statistics API fields to OrganizationCard expected fields
     total_dogs: org.dog_count || org.total_dogs || 0,
@@ -109,7 +105,7 @@ export default function TrustSection({ initialStatistics = null }) {
     logo_url: org.logo_url || null,
     country: org.country || null,
     city: org.city || null,
-  }));
+  })) as OrganizationCardData[];
   const remainingCount = organizations.length - 8;
 
   return (
