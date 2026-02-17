@@ -89,7 +89,7 @@ export default function ClientHomePage({
         {/* Trust Band - Organization Logos */}
         <ErrorBoundary fallbackMessage="Unable to load organization logos. Please refresh the page.">
           <Suspense fallback={<div className="h-32 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg" />}>
-            <TrustBand initialOrganizations={initialOrganizations as Array<{ id: number; name: string; logo_url?: string }>} />
+            <TrustBand initialOrganizations={initialOrganizations} />
           </Suspense>
         </ErrorBoundary>
 

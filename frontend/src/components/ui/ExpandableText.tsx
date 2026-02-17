@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useId } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { ExpandableTextProps } from "@/types/dogComponents";
+import type { ExpandableTextProps } from "@/types/uiComponents";
 
 export default function ExpandableText({ text, lines = 4, className = "" }: ExpandableTextProps) {
   const [isExpanded, setIsExpanded] = useState(false);

@@ -3,7 +3,7 @@
 import React from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ErrorBoundaryProps, ErrorBoundaryState } from "@/types/dogComponents";
+import type { ErrorBoundaryProps, ErrorBoundaryState } from "@/types/uiComponents";
 
 export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {

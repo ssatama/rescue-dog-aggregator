@@ -9,6 +9,7 @@ import DogCardSkeletonOptimized from "../ui/DogCardSkeletonOptimized";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getAnimalsByCuration } from "../../services/animalsService";
+import { transformApiDogsToDogs } from "../../utils/dogTransformer";
 import { reportError, logger } from "../../utils/logger";
 import { preloadImages } from "../../utils/imageUtils";
 import { isSlowConnection, getNetworkInfo } from "../../utils/networkUtils";
@@ -60,11 +61,11 @@ const DogSection = React.memo(function DogSection({
   priority = false,
 }: DogSectionProps) {
   const [dogs, setDogs] = useState<Dog[]>(initialDogs || []);
-  const [loading, setLoading] = useState<boolean>(!initialDogs);
+  const [loading, setLoading] = useState(!initialDogs);
   const [error, setError] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [currentSlide, setCurrentSlide] = useState<number>(0);
-  const [isSlowNet, setIsSlowNet] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isSlowNet, setIsSlowNet] = useState(false);
   const [loadStartTime, setLoadStartTime] = useState<number | null>(null);
 
   const fetchDogs = useCallback(async () => {
@@ -79,7 +80,7 @@ const DogSection = React.memo(function DogSection({
         performance.mark("dog-section-start");
       }
 
-      const data = await getAnimalsByCuration(curationType, 4) as Dog[];
+      const data = transformApiDogsToDogs(await getAnimalsByCuration(curationType, 4));
 
       // Batch state updates - use startTransition only in production
       if (process.env.NODE_ENV === "test") {
@@ -125,7 +126,7 @@ const DogSection = React.memo(function DogSection({
       }
     } catch (err: unknown) {
       reportError(`Error fetching ${curationType} dogs`, {
-        error: (err as Error).message,
+        error: err instanceof Error ? err.message : String(err),
       });
       // Set error state directly for better test reliability
       setError(`Could not load dogs. Please try again later.`);
@@ -156,11 +157,11 @@ const DogSection = React.memo(function DogSection({
     if (nav.connection?.addEventListener) {
       try {
         nav.connection.addEventListener("change", checkNetwork);
-      } catch (error) {
+      } catch (error: unknown) {
         // Handle environments where addEventListener is not available (e.g., some mobile browsers)
         logger.debug(
           "Network connection addEventListener not supported:",
-          (error as Error).message,
+          error instanceof Error ? error.message : String(error),
         );
       }
     }
@@ -170,11 +171,11 @@ const DogSection = React.memo(function DogSection({
       if (nav.connection?.removeEventListener) {
         try {
           nav.connection.removeEventListener("change", checkNetwork);
-        } catch (error) {
+        } catch (error: unknown) {
           // Handle cleanup errors in environments with limited API support
           logger.debug(
             "Network connection removeEventListener cleanup failed:",
-            (error as Error).message,
+            error instanceof Error ? error.message : String(error),
           );
         }
       }

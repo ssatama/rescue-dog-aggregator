@@ -9,13 +9,14 @@ import OrganizationCard from "../organizations/OrganizationCard";
 import { TrustStatsSkeleton } from "../ui/LoadingSkeleton";
 import { reportError } from "../../utils/logger";
 import { Button } from "@/components/ui/button";
-import type { TrustSectionProps, StatisticsData, StatisticsOrganization } from "@/types/homeComponents";
+import type { TrustSectionProps } from "@/types/homeComponents";
 import type { OrganizationCardData } from "@/types/organizationComponents";
+import type { Statistics } from "@/schemas/animals";
 
 export default function TrustSection({ initialStatistics = null }: TrustSectionProps) {
   const router = useRouter();
-  const [statistics, setStatistics] = useState<StatisticsData | null>(initialStatistics);
-  const [loading, setLoading] = useState<boolean>(!initialStatistics);
+  const [statistics, setStatistics] = useState<Statistics | null>(initialStatistics);
+  const [loading, setLoading] = useState(!initialStatistics);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,8 +27,8 @@ export default function TrustSection({ initialStatistics = null }: TrustSectionP
           setLoading(true);
           setError(null);
           const data = await getStatistics();
-          setStatistics(data as StatisticsData);
-        } catch (err) {
+          setStatistics(data);
+        } catch (err: unknown) {
           reportError(err, {
             context: "TrustSection.fetchStatistics",
           });
@@ -92,20 +93,18 @@ export default function TrustSection({ initialStatistics = null }: TrustSectionP
   const total_countries = countries.length;
 
   // Show top 8 organizations for grid display with field mapping
-  const topOrganizations = (organizations as StatisticsOrganization[]).slice(0, 8).map((org: StatisticsOrganization) => ({
+  const topOrganizations: OrganizationCardData[] = organizations.slice(0, 8).map((org) => ({
     ...org,
-    // Map statistics API fields to OrganizationCard expected fields
     total_dogs: org.dog_count || org.total_dogs || 0,
-    // Ensure other required fields exist with defaults
     ships_to: org.ships_to || [],
     service_regions: org.service_regions || [],
     recent_dogs: org.recent_dogs || [],
     new_this_week: org.new_this_week || 0,
     social_media: org.social_media || {},
-    logo_url: org.logo_url || null,
-    country: org.country || null,
-    city: org.city || null,
-  })) as OrganizationCardData[];
+    logo_url: org.logo_url ?? undefined,
+    country: org.country ?? undefined,
+    city: org.city ?? undefined,
+  }));
   const remainingCount = organizations.length - 8;
 
   return (

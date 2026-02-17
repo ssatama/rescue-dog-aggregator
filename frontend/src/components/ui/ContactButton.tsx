@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "./button";
-import type { ContactButtonProps } from "@/types/dogComponents";
+import type { ContactButtonProps } from "@/types/uiComponents";
 
 const ContactButton = ({
   email = "rescuedogsme@gmail.com",

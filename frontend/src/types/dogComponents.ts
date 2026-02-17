@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import type { Dog, DogStatus } from "./dog";
 import type { EmptyStateVariant } from "../components/ui/EmptyState";
+import type { ErrorBoundaryState } from "./uiComponents";
 
+export type { ErrorBoundaryProps, ErrorBoundaryState, ExpandableTextProps, ContactButtonProps } from "./uiComponents";
 export type { DogStatus };
 export type ListContext = "home" | "search" | "org-page" | "favorites" | "breed-page";
 export type LoadingType = "initial" | "filter" | "pagination";
@@ -66,10 +68,7 @@ export interface DogCardErrorBoundaryProps {
   children: ReactNode;
 }
 
-export interface DogCardErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-}
+export type DogCardErrorBoundaryState = ErrorBoundaryState;
 
 export interface DogDetailErrorBoundaryProps {
   dogSlug?: string;
@@ -87,31 +86,4 @@ export interface DogSectionErrorBoundaryProps {
   children: ReactNode;
 }
 
-export interface DogSectionErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-}
-
-export interface ErrorBoundaryProps {
-  children: ReactNode;
-  fallbackMessage?: string;
-  onReset?: () => void;
-}
-
-export interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-}
-
-export interface ExpandableTextProps {
-  text: string;
-  lines?: number;
-  className?: string;
-}
-
-export interface ContactButtonProps {
-  email?: string;
-  buttonText?: string;
-  size?: "default" | "sm" | "lg" | "icon";
-  className?: string;
-}
+export type DogSectionErrorBoundaryState = ErrorBoundaryState;

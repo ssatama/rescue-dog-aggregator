@@ -8,15 +8,16 @@ import AnimatedCounter from "../ui/AnimatedCounter";
 import HeroDogPreviewCard from "./HeroDogPreviewCard";
 import { getStatistics } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
-import type { HeroSectionProps, StatisticsData } from "@/types/homeComponents";
+import type { HeroSectionProps } from "@/types/homeComponents";
+import type { Statistics } from "@/schemas/animals";
 
 export default function HeroSection({
   initialStatistics = null,
   previewDogs = [],
   priority = false,
 }: HeroSectionProps) {
-  const [statistics, setStatistics] = useState<StatisticsData | null>(initialStatistics);
-  const [loading, setLoading] = useState<boolean>(!initialStatistics);
+  const [statistics, setStatistics] = useState<Statistics | null>(initialStatistics);
+  const [loading, setLoading] = useState(!initialStatistics);
   const [error, setError] = useState<string | null>(null);
 
   const fetchStatistics = async () => {
@@ -24,8 +25,8 @@ export default function HeroSection({
       setLoading(true);
       setError(null);
       const stats = await getStatistics();
-      setStatistics(stats as StatisticsData);
-    } catch (err) {
+      setStatistics(stats);
+    } catch (err: unknown) {
       reportError(err, { context: "HeroSection.fetchStatistics" });
       setError("Unable to load statistics. Please try again later.");
     } finally {

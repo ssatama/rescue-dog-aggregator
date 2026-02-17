@@ -3,9 +3,9 @@
 import Image from "next/image";
 
 interface Organization {
-  id: number;
+  id: number | string;
   name: string;
-  logo_url?: string;
+  logo_url?: string | null;
 }
 
 interface TrustBandProps {

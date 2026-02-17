@@ -169,6 +169,8 @@ const VALID_CURATION_TYPES = [
   "random",
 ] as const;
 
+export type CurationType = (typeof VALID_CURATION_TYPES)[number];
+
 export async function getAnimalsByCuration(
   curationType: string,
   limit: number = 4,
