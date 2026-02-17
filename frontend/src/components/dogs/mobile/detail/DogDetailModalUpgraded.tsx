@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useFavorites } from "@/hooks/useFavorites";
 import { type Dog } from "@/types/dog";
 import { getAgeCategory } from "@/utils/dogHelpers";
+import { capitalizeFirst } from "@/utils/breedDisplayUtils";
 
 interface DogDetailModalUpgradedProps {
   dog: Dog | null;
@@ -65,11 +66,6 @@ const infoCardColors = {
   size: "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700",
 };
 
-// Utility function to capitalize first letter
-const capitalizeFirst = (str: string | undefined): string => {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
 
 // Activity colors matching main page
 const ACTIVITY_COLORS = [

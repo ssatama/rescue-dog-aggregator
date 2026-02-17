@@ -886,7 +886,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                       >
                         {dog.organization ? (
                           <OrganizationCard
-                            organization={dog.organization}
+                            organization={{ ...dog.organization, id: dog.organization.id ?? 0 }}
                             size="medium"
                           />
                         ) : (

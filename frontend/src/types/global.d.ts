@@ -5,7 +5,7 @@ interface NetworkInformation extends EventTarget {
   saveData?: boolean;
 }
 
-interface NavigatorWithConnection extends Navigator {
+interface Navigator {
   connection?: NetworkInformation;
 }
 

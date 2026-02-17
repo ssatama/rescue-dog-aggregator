@@ -121,10 +121,9 @@ export function useAdvancedImage(
     };
 
     if (typeof window !== "undefined" && "connection" in navigator) {
-      const nav = navigator as NavigatorWithConnection;
-      nav.connection?.addEventListener("change", handleNetworkChange);
+      navigator.connection?.addEventListener("change", handleNetworkChange);
       return () => {
-        nav.connection?.removeEventListener("change", handleNetworkChange);
+        navigator.connection?.removeEventListener("change", handleNetworkChange);
       };
     }
   }, [type]);

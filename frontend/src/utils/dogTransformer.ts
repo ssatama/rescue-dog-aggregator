@@ -66,10 +66,8 @@ export function transformApiDogToDog(apiDog: ApiDog): Dog {
     // Ensure organization is kept as object
     organization:
       typeof apiDog.organization === "string"
-        ? { id: 0, name: apiDog.organization }
-        : apiDog.organization
-          ? { ...apiDog.organization, id: apiDog.organization.id ?? 0 }
-          : undefined,
+        ? { name: apiDog.organization }
+        : apiDog.organization,
     // Normalize image fields for consistent access
     primary_image_url: primaryImage,
     main_image: mainImage,
