@@ -7,6 +7,8 @@ export default function BreedStructuredData({
 }: BreedStructuredDataProps) {
   if (!breedData) return null;
 
+  const descriptionText =
+    typeof breedData.description === "string" ? breedData.description : null;
   const desc: BreedDescription | null =
     typeof breedData.description === "object" ? breedData.description ?? null : null;
 
@@ -52,6 +54,7 @@ export default function BreedStructuredData({
         description:
           desc?.tagline ||
           desc?.overview ||
+          descriptionText ||
           `Learn about ${breedData.primary_breed} dogs available for adoption`,
         author: {
           "@type": "Organization",
@@ -108,6 +111,7 @@ export default function BreedStructuredData({
           "@type": "Answer",
           text:
             desc?.temperament ||
+            descriptionText ||
             `${breedData.primary_breed || "Mixed breed"} dogs have unique personalities. Each dog's temperament is assessed by rescue organizations to help match them with suitable homes.`,
         },
       },
@@ -118,6 +122,7 @@ export default function BreedStructuredData({
           "@type": "Answer",
           text:
             desc?.family ||
+            descriptionText ||
             `Many ${breedData.primary_breed || "mixed breed"} dogs can be excellent with children when properly socialized. Each dog's compatibility with children is evaluated individually by rescue organizations.`,
         },
       },

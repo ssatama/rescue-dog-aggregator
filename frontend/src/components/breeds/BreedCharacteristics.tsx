@@ -78,7 +78,7 @@ export default function BreedCharacteristics({ breedDescription }: BreedCharacte
                       {item.value}
                     </p>
                   ) : (
-                    renderStars(item.value as number)
+                    renderStars(typeof item.value === "number" ? item.value : 0)
                   )}
                 </div>
               </div>

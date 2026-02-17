@@ -39,10 +39,10 @@ export default function MobileOptimizedGallery({
     const isRightSwipe = distance < -minSwipeDistance;
 
     if (isLeftSwipe && currentIndex < images.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+      setCurrentIndex((prev) => prev + 1);
     }
     if (isRightSwipe && currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+      setCurrentIndex((prev) => prev - 1);
     }
   };
 
@@ -138,7 +138,7 @@ export default function MobileOptimizedGallery({
       {images.length > 4 && (
         <div className="hidden lg:flex justify-between mt-4">
           <button
-            onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+            onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
             disabled={currentIndex === 0}
             className="p-2 rounded-full bg-white shadow-md hover:shadow-lg disabled:opacity-50 min-h-[44px] min-w-[44px]"
             aria-label="Previous image"
@@ -147,7 +147,7 @@ export default function MobileOptimizedGallery({
           </button>
           <button
             onClick={() =>
-              setCurrentIndex(Math.min(images.length - 1, currentIndex + 1))
+              setCurrentIndex((prev) => Math.min(images.length - 1, prev + 1))
             }
             disabled={currentIndex === images.length - 1}
             className="p-2 rounded-full bg-white shadow-md hover:shadow-lg disabled:opacity-50 min-h-[44px] min-w-[44px]"

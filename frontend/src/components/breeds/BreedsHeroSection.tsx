@@ -10,7 +10,9 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }: BreedsH
   const mixedBreedCount = mixedBreedData?.count || 0;
   const percentage =
     totalDogs > 0 ? Math.round((mixedBreedCount / totalDogs) * 100) : 0;
-  const sampleDogs = mixedBreedData?.sample_dogs || [];
+  const sampleDogs = (mixedBreedData?.sample_dogs || []).filter(
+    (dog) => dog.primary_image_url,
+  );
 
   const formatCount = (count: number): string => {
     if (count >= 1000) {
@@ -99,18 +101,16 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }: BreedsH
                 key={dog.slug}
                 className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg transform transition-transform hover:scale-105"
               >
-                {dog.primary_image_url && (
-                  <div className="relative h-40 md:h-48 mb-2 rounded-md overflow-hidden">
-                    <Image
-                      src={dog.primary_image_url}
-                      alt={dog.name ?? "Dog"}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 50vw, 20vw"
-                      priority={index < 2}
-                    />
-                  </div>
-                )}
+                <div className="relative h-40 md:h-48 mb-2 rounded-md overflow-hidden">
+                  <Image
+                    src={dog.primary_image_url!}
+                    alt={dog.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, 20vw"
+                    priority={index < 2}
+                  />
+                </div>
                 <h3 className="text-gray-800 dark:text-gray-100 font-semibold text-lg mb-1">
                   {dog.name}
                 </h3>

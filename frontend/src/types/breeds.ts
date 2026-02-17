@@ -66,7 +66,7 @@ export interface BreedData {
 export interface SampleDog {
   name: string;
   slug: string;
-  primary_image_url: string;
+  primary_image_url?: string;
   age_group?: string;
   age_text?: string;
   sex?: string;
@@ -127,24 +127,8 @@ export interface BreedGroupsSectionProps {
   breedGroups: BreedGroupDisplay[];
 }
 
-export interface HeroSampleDog {
-  name?: string;
-  slug?: string;
-  primary_image_url?: string;
-  age_group?: string;
-  age_text?: string;
-  sex?: string;
-  personality_traits?: string[];
-}
-
-export interface HeroBreedData {
-  primary_breed: string;
-  count?: number;
-  sample_dogs?: HeroSampleDog[];
-}
-
 export interface BreedsHeroSectionProps {
-  mixedBreedData: HeroBreedData | null;
+  mixedBreedData: BreedData | null;
   totalDogs: number;
 }
 
@@ -153,9 +137,7 @@ export interface PopularBreedsSectionProps {
     BreedWithImages & {
       breed_group?: string;
       breed_type?: string;
-      sample_dogs?: Array<
-        SampleDog & { personality_traits?: string[] }
-      >;
+      sample_dogs?: SampleDog[];
     }
   >;
 }

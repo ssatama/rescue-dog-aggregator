@@ -56,8 +56,8 @@ const BreedAlertButton = forwardRef<HTMLButtonElement, BreedAlertButtonProps>(
 
       try {
         // Track breed alert save event
-        if (typeof window !== "undefined" && (window as Window & { gtag?: (...args: unknown[]) => void }).gtag) {
-          (window as Window & { gtag: (...args: unknown[]) => void }).gtag("event", "breed_alert_save", {
+        if (typeof window !== "undefined" && window.gtag) {
+          window.gtag("event", "breed_alert_save", {
             breed: breedData.primary_breed,
             breed_group: breedData.breed_group,
             dog_count: breedData.count,

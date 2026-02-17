@@ -221,11 +221,13 @@ export function BreedInfo({ breedData, className = "" }: BreedInfoProps) {
 
       <BreedStatistics breedData={breedData} />
 
-      <div>
-        <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-          {typeof breedData.description === "string" ? breedData.description : breedData.description?.overview}
-        </p>
-      </div>
+      {(typeof breedData.description === "string" ? breedData.description : breedData.description?.overview) && (
+        <div>
+          <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+            {typeof breedData.description === "string" ? breedData.description : breedData.description?.overview}
+          </p>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3">
         <Button
