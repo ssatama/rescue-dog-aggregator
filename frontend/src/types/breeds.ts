@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { BreedGroupDisplay } from "../services/breedImagesService";
-import type { BreedWithImages } from "../schemas/animals";
+import type { BreedWithImages, BreedStats } from "../schemas/animals";
+import type { ApiDog } from "./apiDog";
+import type { FilterCountsResponse } from "../schemas/common";
 
 export type { BreedGroupDisplay } from "../services/breedImagesService";
 
@@ -116,7 +118,7 @@ export interface GalleryImage {
 export interface BreedFilterBarProps {
   breedData: BreedData;
   filters: BreedFilters;
-  filterCounts: BreedFilterCounts | null;
+  filterCounts: FilterCountsResponse | null;
   onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
   onOpenMobileFilters: () => void;
@@ -155,4 +157,38 @@ export interface StatItem {
   color: string;
   description: string;
   isCustom?: boolean;
+}
+
+export interface BreedPageData extends BreedData {
+  topDogs?: SampleDog[];
+  top_locations?: string[];
+  available_countries?: string[];
+  purebred_count?: number;
+  crossbreed_count?: number;
+}
+
+export type BreedDetailFilterKey =
+  | "searchQuery"
+  | "sizeFilter"
+  | "ageFilter"
+  | "sexFilter"
+  | "organizationFilter"
+  | "availableCountryFilter";
+
+export type BreedDetailFilters = Record<BreedDetailFilterKey, string>;
+
+export interface BreedDetailClientProps {
+  initialBreedData: BreedPageData;
+  initialDogs: ApiDog[];
+}
+
+export interface BreedsHubClientProps {
+  initialBreedStats: BreedStats & {
+    purebred_count?: number;
+    crossbreed_count?: number;
+    unique_breeds?: number;
+  };
+  mixedBreedData: BreedWithImages | null;
+  popularBreedsWithImages: BreedWithImages[];
+  breedGroups: BreedGroupDisplay[];
 }

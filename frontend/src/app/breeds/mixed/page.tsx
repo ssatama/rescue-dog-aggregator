@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import BreedDetailClient from "../[slug]/BreedDetailClient";
@@ -6,14 +7,20 @@ import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
   getBreedBySlug,
   getAnimals,
-  getBreedStats,
 } from "@/services/serverAnimalsService";
 
 export const revalidate = 3600;
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   try {
     const breedData = await getBreedBySlug("mixed");
+
+    if (!breedData) {
+      return {
+        title: "Mixed Breed Rescue Dogs for Adoption",
+        description: "Find unique mixed breed rescue dogs for adoption.",
+      };
+    }
 
     const avgAge = breedData.average_age
       ? `Average age ${Math.round(breedData.average_age)} years. `
@@ -49,9 +56,11 @@ export async function generateMetadata() {
         description: seoDescription,
         images:
           breedData.topDogs
-            ?.filter((d) => d.primary_image_url)
+            ?.filter(
+              (d: { primary_image_url?: string }) => d.primary_image_url,
+            )
             .slice(0, 4)
-            .map((d) => ({
+            .map((d: { primary_image_url?: string; name?: string }) => ({
               url: d.primary_image_url,
               width: 800,
               height: 600,
@@ -65,9 +74,13 @@ export async function generateMetadata() {
         description: `Unique personalities from diverse backgrounds. Find your perfect mixed breed rescue dog.`,
         images:
           breedData.topDogs
-            ?.filter((d) => d.primary_image_url)
+            ?.filter(
+              (d: { primary_image_url?: string }) => d.primary_image_url,
+            )
             .slice(0, 1)
-            .map((d) => d.primary_image_url) || [],
+            .map(
+              (d: { primary_image_url?: string }) => d.primary_image_url,
+            ) || [],
       },
       alternates: {
         canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/breeds/mixed`,
@@ -82,59 +95,57 @@ export async function generateMetadata() {
   }
 }
 
-export default async function MixedBreedsPage(props) {
-  try {
-    const params = await props.params;
+async function fetchMixedBreedData() {
+  const breedData = await getBreedBySlug("mixed");
 
-    // Get mixed breed data using the enhanced getBreedBySlug function
-    const breedData = await getBreedBySlug("mixed");
+  if (!breedData) {
+    return null;
+  }
 
-    if (!breedData) {
-      notFound();
-    }
+  const initialDogs = await getAnimals({
+    breed_group: "Mixed",
+    limit: 12,
+    offset: 0,
+  });
 
-    // Get initial dogs for mixed breeds
-    const initialDogsResponse = await getAnimals({
-      breed_group: "Mixed",
-      limit: 12,
-      offset: 0,
-    });
+  const enrichedBreedData = {
+    ...breedData,
+    description: {
+      tagline: "Unique personalities from diverse genetic backgrounds",
+      overview:
+        "Mixed breed dogs combine the best traits of multiple breeds, resulting in unique personalities and often healthier genetics.",
+      temperament:
+        "Mixed breeds have diverse temperaments shaped by their unique genetic combinations and individual experiences.",
+      family:
+        "Many mixed breeds make excellent family pets, with their compatibility depending on individual personality and socialization.",
+    },
+  };
 
-    const initialDogs = initialDogsResponse?.results || [];
+  return { breedData, initialDogs, enrichedBreedData };
+}
 
-    // Enrich breed data for structured data
-    const enrichedBreedData = {
-      ...breedData,
-      description: {
-        tagline: "Unique personalities from diverse genetic backgrounds",
-        overview:
-          "Mixed breed dogs combine the best traits of multiple breeds, resulting in unique personalities and often healthier genetics.",
-        temperament:
-          "Mixed breeds have diverse temperaments shaped by their unique genetic combinations and individual experiences.",
-        family:
-          "Many mixed breeds make excellent family pets, with their compatibility depending on individual personality and socialization.",
-      },
-    };
+export default async function MixedBreedsPage() {
+  const data = await fetchMixedBreedData();
 
-    // Use the same BreedDetailClient component as other breed pages
-    return (
-      <>
-        <BreedStructuredData
-          breedData={enrichedBreedData}
-          dogs={initialDogs}
-          pageType="detail"
-        />
-        <Suspense fallback={<BreedDetailSkeleton />}>
-          <BreedDetailClient
-            initialBreedData={breedData}
-            initialDogs={initialDogs}
-            initialParams={{}}
-          />
-        </Suspense>
-      </>
-    );
-  } catch (error) {
-    console.error("Error loading mixed breeds page:", error);
+  if (!data) {
     notFound();
   }
+
+  const { breedData, initialDogs, enrichedBreedData } = data;
+
+  return (
+    <>
+      <BreedStructuredData
+        breedData={enrichedBreedData}
+        dogs={initialDogs}
+        pageType="detail"
+      />
+      <Suspense fallback={<BreedDetailSkeleton />}>
+        <BreedDetailClient
+          initialBreedData={breedData}
+          initialDogs={initialDogs}
+        />
+      </Suspense>
+    </>
+  );
 }
