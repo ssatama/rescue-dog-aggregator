@@ -8,22 +8,22 @@ const statusConfigs: Record<
   available: {
     label: "Available",
     className: "bg-green-100 text-green-800 border-green-200",
-    icon: "\u2705",
+    icon: "✅",
   },
   unknown: {
     label: "Checking availability...",
     className: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    icon: "\uD83D\uDD0D",
+    icon: "🔍",
   },
   adopted: {
     label: "Found their forever home!",
     className: "bg-purple-100 text-purple-800 border-purple-200",
-    icon: "\uD83C\uDF89",
+    icon: "🎉",
   },
   reserved: {
     label: "Reserved - Adoption pending",
     className: "bg-blue-100 text-blue-800 border-blue-200",
-    icon: "\u23F3",
+    icon: "⏳",
   },
 };
 

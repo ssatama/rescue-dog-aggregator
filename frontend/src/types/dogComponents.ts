@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import type { Dog } from "./dog";
+import type { Dog, DogStatus } from "./dog";
 import type { EmptyStateVariant } from "../components/ui/EmptyState";
 
+export type { DogStatus };
 export type ListContext = "home" | "search" | "org-page" | "favorites" | "breed-page";
 export type LoadingType = "initial" | "filter" | "pagination";
-export type DogStatus = "available" | "unknown" | "adopted" | "reserved";
 
 export interface DogCardOptimizedProps {
   dog: Dog;
@@ -58,10 +58,7 @@ export interface RelatedDogsCardProps {
 export interface RelatedDogsSectionProps {
   organizationId: number | string;
   currentDogId: number | string;
-  organization?: {
-    id?: number;
-    name?: string;
-  };
+  organization?: Pick<NonNullable<Dog["organization"]>, "id" | "name">;
 }
 
 export interface DogCardErrorBoundaryProps {

@@ -22,13 +22,11 @@ class DogCardErrorBoundary extends React.Component<
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(_error: Error): Partial<DogCardErrorBoundaryState> {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): Partial<DogCardErrorBoundaryState> {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    this.setState({ error });
-
     reportError(error, {
       context: "DogCard render error",
       componentStack: errorInfo.componentStack,

@@ -1,6 +1,7 @@
 import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { reportError } from "../../utils/logger";
 import type {
   DogSectionErrorBoundaryProps,
   DogSectionErrorBoundaryState,
@@ -20,13 +21,10 @@ class DogSectionErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("DogSection Error:", error, errorInfo);
-    }
-
-    if (typeof window !== "undefined" && window.reportError) {
-      window.reportError(error);
-    }
+    reportError(error, {
+      context: "DogSectionErrorBoundary",
+      componentStack: errorInfo.componentStack,
+    });
   }
 
   handleRetry = (): void => {

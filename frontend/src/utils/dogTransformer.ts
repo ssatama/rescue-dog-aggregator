@@ -1,4 +1,4 @@
-import { type Dog, type DogProfilerData } from "../types/dog";
+import { type Dog, type DogProfilerData, type DogStatus } from "../types/dog";
 import { type ApiDog, type ApiDogProfilerData } from "../types/apiDog";
 
 /**
@@ -79,6 +79,7 @@ export function transformApiDogToDog(apiDog: ApiDog): Dog {
       apiDog.personality_traits ||
       [],
     description: transformedProfilerData?.description || apiDog.description,
+    status: apiDog.status as DogStatus | undefined,
   };
 }
 

@@ -22,16 +22,11 @@ class DogDetailErrorBoundary extends React.Component<
     };
   }
 
-  static getDerivedStateFromError(_error: Error): Partial<DogDetailErrorBoundaryState> {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): Partial<DogDetailErrorBoundaryState> {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    this.setState({
-      error,
-      errorInfo,
-    });
-
     reportError(error, {
       context: "DogDetailErrorBoundary",
       componentStack: errorInfo.componentStack,
@@ -170,9 +165,9 @@ class DogDetailErrorBoundary extends React.Component<
               While you&apos;re here:
             </h3>
             <ul className="text-sm text-orange-800 dark:text-orange-200 space-y-1">
-              <li>{"\u2022"} Browse other available dogs</li>
-              <li>{"\u2022"} Search by breed or location</li>
-              <li>{"\u2022"} Learn about our rescue partners</li>
+              <li>• Browse other available dogs</li>
+              <li>• Search by breed or location</li>
+              <li>• Learn about our rescue partners</li>
             </ul>
           </div>
         </div>

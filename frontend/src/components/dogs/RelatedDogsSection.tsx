@@ -6,6 +6,7 @@ import { getRelatedDogs } from "../../services/relatedDogsService";
 import { sanitizeText } from "../../utils/security";
 import { reportError } from "../../utils/logger";
 import { useScrollAnimation } from "../../hooks/useScrollAnimation";
+import { transformApiDogsToDogs } from "../../utils/dogTransformer";
 import type { Dog } from "@/types/dog";
 import type { RelatedDogsSectionProps } from "@/types/dogComponents";
 
@@ -24,7 +25,7 @@ const RelatedDogsSection = memo(
       threshold: 0.1,
       rootMargin: "50px",
       triggerOnce: true,
-    }) as [React.RefObject<HTMLDivElement | null>, boolean];
+    });
 
     const fetchRelatedDogs = useCallback(async () => {
       if (!organizationId || !currentDogId) {
@@ -36,7 +37,7 @@ const RelatedDogsSection = memo(
         setLoading(true);
         setError(false);
         const dogs = await getRelatedDogs(organizationId, currentDogId);
-        setRelatedDogs(dogs as Dog[]);
+        setRelatedDogs(transformApiDogsToDogs(dogs));
       } catch (err) {
         reportError(err, {
           context: "RelatedDogsSection.fetchRelatedDogs",
@@ -168,7 +169,7 @@ const RelatedDogsSection = memo(
                 href={`/dogs?organization_id=${organizationId}`}
                 className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-300"
               >
-                View all available dogs {"\u2192"}
+                View all available dogs →
               </Link>
             </div>
           </>
@@ -187,7 +188,7 @@ const RelatedDogsSection = memo(
               href={`/dogs?organization_id=${organizationId}`}
               className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-300"
             >
-              View all available dogs {"\u2192"}
+              View all available dogs →
             </Link>
           </div>
         )}
