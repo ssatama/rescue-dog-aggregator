@@ -9,33 +9,34 @@ import React, {
   useRef,
 } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-
 import { Button } from "@/components/ui/button";
-import { Filter, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import { getAnimals, getFilterCounts } from "@/services/animalsService";
 import { getBreedDescription } from "@/utils/breedDescriptions";
 import { useDebouncedCallback } from "use-debounce";
 import BreedFilterBar from "@/components/breeds/BreedFilterBar";
-import {
-  getBreedEmptyStateConfig,
-  getBreedFilterOptions,
-} from "@/utils/breedFilterUtils";
+import { getBreedFilterOptions } from "@/utils/breedFilterUtils";
 import EmptyState from "@/components/ui/EmptyState";
 import PersonalityBarChart from "@/components/breeds/PersonalityBarChart";
 import CommonTraits from "@/components/breeds/CommonTraits";
 import ExperienceLevelChart from "@/components/breeds/ExperienceLevelChart";
 import ExpandableText from "@/components/ui/ExpandableText";
-import { FallbackImage } from "@/components/ui/FallbackImage";
 import BreedDogsViewportWrapper from "@/components/breeds/BreedDogsViewportWrapper";
+import type { ApiDog } from "@/types/apiDog";
+import type { Dog } from "@/types/dog";
+import type {
+  BreedDetailClientProps,
+  BreedDetailFilters,
+  BreedFilterCounts,
+  BreedPageData,
+} from "@/types/breeds";
+import type { FilterCountsResponse } from "@/schemas/common";
 
-// Lazy load filter component
 const MobileFilterDrawer = dynamic(
   () => import("@/components/filters/MobileFilterDrawer"),
   {
@@ -44,136 +45,144 @@ const MobileFilterDrawer = dynamic(
   },
 );
 
-const ITEMS_PER_PAGE = 12; // Smaller page size for breed pages
+const ITEMS_PER_PAGE = 12;
+
+const SIZE_MAPPING: Record<string, string> = {
+  Tiny: "Tiny",
+  Small: "Small",
+  Medium: "Medium",
+  Large: "Large",
+  "Extra Large": "XLarge",
+};
+
+const PARAM_MAPPING: Record<string, string> = {
+  searchQuery: "search",
+  sizeFilter: "size",
+  ageFilter: "age",
+  sexFilter: "sex",
+  organizationFilter: "organization_id",
+  availableCountryFilter: "available_to_country",
+};
+
+const DEFAULT_FILTERS: BreedDetailFilters = {
+  searchQuery: "",
+  sizeFilter: "Any size",
+  ageFilter: "Any age",
+  sexFilter: "Any",
+  organizationFilter: "any",
+  availableCountryFilter: "Any country",
+};
+
+function isDefaultFilterValue(value: string): boolean {
+  return (
+    !value ||
+    value === "Any" ||
+    value === "Any size" ||
+    value === "Any age" ||
+    value === "Any country" ||
+    value === "any" ||
+    value === ""
+  );
+}
+
+function buildURLFromFilters(
+  filters: BreedDetailFilters,
+  pathname: string,
+): string {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(filters)) {
+    const paramKey = PARAM_MAPPING[key] || key;
+    if (!isDefaultFilterValue(value)) {
+      params.set(paramKey, value);
+    }
+  }
+
+  return params.toString() ? `${pathname}?${params.toString()}` : pathname;
+}
 
 export default function BreedDetailClient({
   initialBreedData,
   initialDogs,
-  initialParams,
-}) {
+}: BreedDetailClientProps) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const searchParams = useSearchParams();
-  const [breedData, setBreedData] = useState(initialBreedData);
+  const [breedData] = useState<BreedPageData>(initialBreedData);
 
-  // Parse filters from URL with memoization to prevent unnecessary re-renders
   const filters = useMemo(
-    () => ({
-      searchQuery: searchParams.get("search") || "",
-      sizeFilter: searchParams.get("size") || "Any size",
-      ageFilter: searchParams.get("age") || "Any age",
-      sexFilter: searchParams.get("sex") || "Any",
-      organizationFilter: searchParams.get("organization_id") || "any",
+    (): BreedDetailFilters => ({
+      searchQuery: searchParams?.get("search") || "",
+      sizeFilter: searchParams?.get("size") || "Any size",
+      ageFilter: searchParams?.get("age") || "Any age",
+      sexFilter: searchParams?.get("sex") || "Any",
+      organizationFilter: searchParams?.get("organization_id") || "any",
       availableCountryFilter:
-        searchParams.get("available_to_country") || "Any country",
-      // Note: breed filter is locked to current breed
+        searchParams?.get("available_to_country") || "Any country",
     }),
     [searchParams],
   );
 
-  // State for dogs grid and pagination
-  const [dogs, setDogs] = useState(initialDogs?.results || initialDogs || []);
+  const [dogs, setDogs] = useState<ApiDog[]>(initialDogs || []);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(
-    (initialDogs?.results || initialDogs || []).length === ITEMS_PER_PAGE,
+    (initialDogs || []).length === ITEMS_PER_PAGE,
   );
   const [page, setPage] = useState(1);
-  const [filterCounts, setFilterCounts] = useState(null);
+  const [filterCounts, setFilterCounts] = useState<BreedFilterCounts | null>(
+    null,
+  );
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
-  const [error, setError] = useState(null);
-  const breedAlertButtonRef = React.useRef(null);
+  const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
-  const abortControllerRef = useRef(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Build API params from filters with breed-specific filtering
   const buildAPIParams = useCallback(
-    (filters) => {
-      const params = {};
+    (currentFilters: BreedDetailFilters): Record<string, string | number> => {
+      const params: Record<string, string | number> = {};
 
-      // Handle mixed breeds differently - filter by breed_group instead of breed
       if (
         breedData.breed_slug === "mixed" ||
         breedData.breed_type === "mixed"
       ) {
         params.breed_group = "Mixed";
       } else {
-        params.breed = breedData.primary_breed; // Filter by specific breed
+        params.breed = breedData.primary_breed;
       }
 
-      // Size mapping from UI labels to API values
-      const sizeMapping = {
-        Tiny: "Tiny",
-        Small: "Small",
-        Medium: "Medium",
-        Large: "Large",
-        "Extra Large": "XLarge",
-      };
-
-      if (filters.searchQuery) params.search = filters.searchQuery;
-      if (filters.sizeFilter !== "Any size")
+      if (currentFilters.searchQuery)
+        params.search = currentFilters.searchQuery;
+      if (currentFilters.sizeFilter !== "Any size")
         params.standardized_size =
-          sizeMapping[filters.sizeFilter] || filters.sizeFilter;
-      if (filters.ageFilter !== "Any age")
-        params.age_category = filters.ageFilter;
-      if (filters.sexFilter !== "Any") params.sex = filters.sexFilter;
-      if (filters.organizationFilter !== "any")
-        params.organization_id = filters.organizationFilter;
-      if (filters.availableCountryFilter !== "Any country")
-        params.available_to_country = filters.availableCountryFilter;
+          SIZE_MAPPING[currentFilters.sizeFilter] || currentFilters.sizeFilter;
+      if (currentFilters.ageFilter !== "Any age")
+        params.age_category = currentFilters.ageFilter;
+      if (currentFilters.sexFilter !== "Any")
+        params.sex = currentFilters.sexFilter;
+      if (currentFilters.organizationFilter !== "any")
+        params.organization_id = currentFilters.organizationFilter;
+      if (currentFilters.availableCountryFilter !== "Any country")
+        params.available_to_country = currentFilters.availableCountryFilter;
 
       return params;
     },
     [breedData.breed_slug, breedData.breed_type, breedData.primary_breed],
   );
 
-  // URL update with debouncing (same pattern as DogsPageClientSimplified)
-  const updateURL = useDebouncedCallback((newFilters) => {
-    const params = new URLSearchParams();
-
-    // Explicit mapping to correct URL param keys
-    const paramMapping = {
-      searchQuery: "search",
-      sizeFilter: "size",
-      ageFilter: "age",
-      sexFilter: "sex",
-      organizationFilter: "organization_id",
-      availableCountryFilter: "available_to_country",
-    };
-
-    Object.entries(newFilters).forEach(([key, value]) => {
-      const paramKey = paramMapping[key] || key;
-      if (
-        value &&
-        value !== "Any" &&
-        value !== "Any size" &&
-        value !== "Any age" &&
-        value !== "Any country" &&
-        value !== "any"
-      ) {
-        params.set(paramKey, value);
-      }
-    });
-
-    const newURL = params.toString()
-      ? `${pathname}?${params.toString()}`
-      : pathname;
-    router.push(newURL, { scroll: false });
+  const updateURL = useDebouncedCallback((newFilters: BreedDetailFilters) => {
+    router.push(buildURLFromFilters(newFilters, pathname), { scroll: false });
   }, 500);
 
-  // Fetch dogs with current filters and handle race conditions
   const fetchDogsWithFilters = useCallback(
-    async (currentFilters) => {
+    async (currentFilters: BreedDetailFilters) => {
       const requestId = ++requestIdRef.current;
 
-      // Cancel any in-flight requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
       abortControllerRef.current = new AbortController();
 
-      // Only show loading spinner on initial page load (when dogs array is empty)
-      // Keep current dogs visible during filter changes to prevent flashing
       const isInitialLoad = dogs.length === 0;
       if (isInitialLoad) {
         setLoading(true);
@@ -188,29 +197,29 @@ export default function BreedDetailClient({
         };
 
         const [response, counts] = await Promise.all([
-          getAnimals(params, { signal: abortControllerRef.current.signal }),
+          getAnimals(params, {
+            signal: abortControllerRef.current.signal,
+          }),
           getFilterCounts(params, {
             signal: abortControllerRef.current.signal,
           }),
         ]);
 
-        // Ignore stale responses
         if (requestId !== requestIdRef.current) return;
 
-        const newDogs = response?.results || response || [];
+        const newDogs = Array.isArray(response) ? response : [];
 
         startTransition(() => {
           setDogs(newDogs);
           setHasMore(newDogs.length === ITEMS_PER_PAGE);
-          setFilterCounts(counts);
+          setFilterCounts(counts as unknown as BreedFilterCounts);
           setPage(1);
           if (isInitialLoad) {
             setLoading(false);
           }
         });
-      } catch (err) {
-        // Ignore abort errors
-        if (err.name === "AbortError") return;
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === "AbortError") return;
 
         if (process.env.NODE_ENV === "development") {
           console.error("Failed to load dogs:", err);
@@ -226,16 +235,13 @@ export default function BreedDetailClient({
     [buildAPIParams, dogs.length],
   );
 
-  // Debounced version of fetchDogsWithFilters
   const debouncedFetchDogs = useDebouncedCallback(fetchDogsWithFilters, 300);
 
-  // Filter change handler
   const handleFilterChange = useCallback(
-    (filterKey, value) => {
+    (filterKey: string, value: string) => {
       const newFilters = { ...filters, [filterKey]: value };
       updateURL(newFilters);
 
-      // Reset pagination state but keep existing dogs to prevent flash
       startTransition(() => {
         setPage(1);
         setHasMore(true);
@@ -246,74 +252,33 @@ export default function BreedDetailClient({
     [filters, updateURL, debouncedFetchDogs],
   );
 
-  // Immediate filter change handler for mobile drawer (no debouncing)
   const handleMobileFilterChange = useCallback(
-    (filterKeyOrBatch, value) => {
-      let newFilters;
+    (filterKeyOrBatch: string | Record<string, string>, value?: string) => {
+      let newFilters: BreedDetailFilters;
 
-      // Handle batch updates (e.g., from "All" button)
       if (typeof filterKeyOrBatch === "object") {
-        // Map PremiumMobileCatalog keys to BreedDetailClient keys
-        const mappedBatch = {};
-        Object.entries(filterKeyOrBatch).forEach(([key, val]) => {
-          if (key === "sexFilter") {
-            mappedBatch.sexFilter = val;
-          } else if (key === "ageFilter") {
-            mappedBatch.ageFilter = val;
-          } else {
-            mappedBatch[key] = val;
-          }
-        });
+        const mappedBatch: Record<string, string> = {};
+        for (const [key, val] of Object.entries(filterKeyOrBatch)) {
+          mappedBatch[key] = val;
+        }
         newFilters = { ...filters, ...mappedBatch };
       } else {
-        // Single filter update
-        newFilters = { ...filters, [filterKeyOrBatch]: value };
+        newFilters = { ...filters, [filterKeyOrBatch]: value ?? "" };
       }
 
-      // Update URL immediately without debounce
-      const params = new URLSearchParams();
-      const paramMapping = {
-        searchQuery: "search",
-        sizeFilter: "size",
-        ageFilter: "age",
-        sexFilter: "sex",
-        organizationFilter: "organization_id",
-        availableCountryFilter: "available_to_country",
-      };
+      router.push(buildURLFromFilters(newFilters, pathname), { scroll: false });
 
-      Object.entries(newFilters).forEach(([key, value]) => {
-        const paramKey = paramMapping[key] || key;
-        if (
-          value &&
-          value !== "Any" &&
-          value !== "Any size" &&
-          value !== "Any age" &&
-          value !== "Any country" &&
-          value !== "any"
-        ) {
-          params.set(paramKey, value);
-        }
-      });
-
-      const newURL = params.toString()
-        ? `${pathname}?${params.toString()}`
-        : pathname;
-      router.push(newURL, { scroll: false });
-
-      // Fetch immediately
       fetchDogsWithFilters(newFilters);
     },
     [filters, pathname, router, fetchDogsWithFilters],
   );
 
-  // Load more dogs with race condition protection
   const loadMoreDogs = useCallback(async () => {
     if (loadingMore || !hasMore) return;
 
     setLoadingMore(true);
     setError(null);
 
-    // Snapshot filters to detect changes during request
     const filtersSnapshot = JSON.stringify(filters);
 
     try {
@@ -327,9 +292,8 @@ export default function BreedDetailClient({
       };
 
       const response = await getAnimals(params);
-      const newDogs = response?.results || response || [];
+      const newDogs = Array.isArray(response) ? response : [];
 
-      // Discard response if filters changed during request
       if (filtersSnapshot !== JSON.stringify(filters)) {
         if (process.env.NODE_ENV === "development") {
           console.log("Filters changed during load more, discarding response");
@@ -352,16 +316,12 @@ export default function BreedDetailClient({
     }
   }, [page, hasMore, filters, loadingMore, buildAPIParams]);
 
-  // CRITICAL FIX: Proper reset filters handler
   const handleResetFilters = useCallback(() => {
-    // Cancel debounced updates to avoid stale URL pushes
     if (updateURL.cancel) updateURL.cancel();
     if (debouncedFetchDogs.cancel) debouncedFetchDogs.cancel();
 
-    // Navigate to clean URL using replace (no extra history entry)
     router.replace(pathname, { scroll: false });
 
-    // Reset component state immediately
     startTransition(() => {
       setDogs([]);
       setPage(1);
@@ -369,21 +329,9 @@ export default function BreedDetailClient({
       setError(null);
     });
 
-    // Default filters for breed page
-    const defaultFilters = {
-      searchQuery: "",
-      sizeFilter: "Any size",
-      ageFilter: "Any age",
-      sexFilter: "Any",
-      organizationFilter: "any",
-      availableCountryFilter: "Any country",
-    };
-
-    // Force fresh fetch with default filters
-    fetchDogsWithFilters(defaultFilters);
+    fetchDogsWithFilters(DEFAULT_FILTERS);
   }, [router, pathname, updateURL, debouncedFetchDogs, fetchDogsWithFilters]);
 
-  // Cleanup effect: cancel debouncers on unmount
   useEffect(() => {
     return () => {
       if (updateURL.cancel) updateURL.cancel();
@@ -392,7 +340,6 @@ export default function BreedDetailClient({
     };
   }, [updateURL, debouncedFetchDogs]);
 
-  // Stable refs for mount-only effect
   const fetchDogsWithFiltersRef = useRef(fetchDogsWithFilters);
   fetchDogsWithFiltersRef.current = fetchDogsWithFilters;
   const filtersRef = useRef(filters);
@@ -400,18 +347,16 @@ export default function BreedDetailClient({
   const buildAPIParamsRef = useRef(buildAPIParams);
   buildAPIParamsRef.current = buildAPIParams;
 
-  // Initial load with filter counts - only on mount
   useEffect(() => {
     if (!initialDogs || initialDogs.length === 0) {
       fetchDogsWithFiltersRef.current(filtersRef.current);
     } else {
-      // Just fetch counts if we have initial dogs
       const params = buildAPIParamsRef.current(filtersRef.current);
       getFilterCounts(params)
         .then((counts) => {
-          setFilterCounts(counts);
+          setFilterCounts(counts as unknown as BreedFilterCounts);
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           if (process.env.NODE_ENV === "development") {
             console.error("Failed to load filter counts:", err);
           }
@@ -419,7 +364,6 @@ export default function BreedDetailClient({
     }
   }, [initialDogs]);
 
-  // Cleanup debounced callbacks on unmount
   useEffect(() => {
     return () => {
       debouncedFetchDogs.cancel?.();
@@ -427,9 +371,8 @@ export default function BreedDetailClient({
     };
   }, [debouncedFetchDogs, updateURL]);
 
-  // Calculate active filter count
-  const activeFilterCount = Object.entries(filters).filter(
-    ([key, value]) =>
+  const activeFilterCount = Object.values(filters).filter(
+    (value) =>
       value &&
       !value.includes("Any") &&
       !value.includes("All") &&
@@ -449,7 +392,6 @@ export default function BreedDetailClient({
     },
   ];
 
-  // Get breed-specific filter options
   const filterOptions = React.useMemo(
     () => getBreedFilterOptions(breedData, { organizations: [] }),
     [breedData],
@@ -462,7 +404,7 @@ export default function BreedDetailClient({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 lg:mb-12 mt-4 lg:mt-6">
           <BreedPhotoGallery
-            dogs={breedData.topDogs}
+            dogs={(breedData.topDogs ?? []) as never[]}
             breedName={breedData.primary_breed}
             className="w-full order-2 lg:order-1"
           />
@@ -470,7 +412,6 @@ export default function BreedDetailClient({
           <BreedInfo breedData={breedData} className="order-1 lg:order-2" />
         </div>
 
-        {/* Breed Description Section */}
         {(() => {
           const description = getBreedDescription(breedData.primary_breed);
           return description ? (
@@ -487,23 +428,19 @@ export default function BreedDetailClient({
           ) : null;
         })()}
 
-        {/* Personality Profile with Horizontal Bar Charts */}
         <PersonalityBarChart breedData={breedData} />
 
-        {/* Common Traits Section */}
         {breedData.personality_traits &&
           breedData.personality_traits.length > 0 && (
             <CommonTraits personalityTraits={breedData.personality_traits} />
           )}
 
-        {/* Experience Level with Visual Bars */}
         {breedData.experience_distribution && (
           <ExperienceLevelChart
             experienceDistribution={breedData.experience_distribution}
           />
         )}
 
-        {/* Breed filter bar for quick filters */}
         <BreedFilterBar
           breedData={breedData}
           filters={filters}
@@ -514,7 +451,6 @@ export default function BreedDetailClient({
           activeFilterCount={activeFilterCount}
         />
 
-        {/* Main content area with DogsGrid - no sidebar */}
         <div>
           {error && (
             <div
@@ -541,7 +477,7 @@ export default function BreedDetailClient({
           ) : (
             <div id="dogs-grid">
               <BreedDogsViewportWrapper
-                dogs={dogs}
+                dogs={dogs as unknown as Dog[]}
                 loading={loading && dogs.length === 0}
                 loadingMore={loadingMore}
                 onLoadMore={loadMoreDogs}
@@ -553,7 +489,6 @@ export default function BreedDetailClient({
             </div>
           )}
 
-          {/* Load more button - Hidden on mobile since PremiumMobileCatalog handles it */}
           {hasMore && !loading && dogs.length > 0 && (
             <div className="hidden lg:flex justify-center mt-8">
               <Button
@@ -575,51 +510,50 @@ export default function BreedDetailClient({
           )}
         </div>
 
-        {/* Mobile filter drawer */}
         <MobileFilterDrawer
           isOpen={isFilterDrawerOpen}
           onClose={() => {
             setIsFilterDrawerOpen(false);
-            // Scroll to dogs grid after closing
             setTimeout(() => {
               document.getElementById("dogs-grid")?.scrollIntoView({
                 behavior: "smooth",
                 block: "start",
               });
-            }, 300); // Wait for drawer animation to complete
+            }, 300);
           }}
-          // Filter config to hide breed selector on breed page
           filterConfig={{
             showAge: true,
             showBreed: false,
-            showSort: false,
             showSize: true,
             showSex: true,
             showShipsTo: true,
             showOrganization: true,
             showSearch: true,
           }}
-          // Search
+          totalDogsCount={dogs.length}
           searchQuery={filters.searchQuery}
-          handleSearchChange={(value) =>
+          handleSearchChange={(value: string) =>
             handleMobileFilterChange("searchQuery", value)
           }
           clearSearch={() => handleMobileFilterChange("searchQuery", "")}
-          // Organization
           organizationFilter={filters.organizationFilter}
-          setOrganizationFilter={(value) =>
+          setOrganizationFilter={(value: string) =>
             handleMobileFilterChange("organizationFilter", value)
           }
           organizations={filterOptions.organizations}
-          // Hide breed filter since it's locked
-          showBreed={false}
-          standardizedBreeds={[]} // Pass empty array since we're not showing breed filter
-          // Pet Details
+          standardizedBreedFilter=""
+          setStandardizedBreedFilter={() => {}}
+          handleBreedSearch={() => {}}
+          handleBreedClear={() => {}}
+          handleBreedValueChange={() => {}}
+          standardizedBreeds={[]}
           sexFilter={filters.sexFilter}
-          setSexFilter={(value) => handleMobileFilterChange("sexFilter", value)}
+          setSexFilter={(value: string) =>
+            handleMobileFilterChange("sexFilter", value)
+          }
           sexOptions={["Any", "Male", "Female"]}
           sizeFilter={filters.sizeFilter}
-          setSizeFilter={(value) =>
+          setSizeFilter={(value: string) =>
             handleMobileFilterChange("sizeFilter", value)
           }
           sizeOptions={[
@@ -631,20 +565,17 @@ export default function BreedDetailClient({
             "Extra Large",
           ]}
           ageCategoryFilter={filters.ageFilter}
-          setAgeCategoryFilter={(value) =>
+          setAgeCategoryFilter={(value: string) =>
             handleMobileFilterChange("ageFilter", value)
           }
           ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
-          // Location
           availableCountryFilter={filters.availableCountryFilter}
-          setAvailableCountryFilter={(value) =>
+          setAvailableCountryFilter={(value: string) =>
             handleMobileFilterChange("availableCountryFilter", value)
           }
           availableCountries={["Any country"]}
-          // Filter management
           resetFilters={handleResetFilters}
-          // Dynamic filter counts
-          filterCounts={filterCounts}
+          filterCounts={filterCounts as never}
         />
       </div>
     </Layout>

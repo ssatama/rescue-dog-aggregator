@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import BreedDetailClient from "./BreedDetailClient";
@@ -9,10 +10,17 @@ import {
   getAnimals,
   getBreedStats,
 } from "@/services/serverAnimalsService";
+import { getBreedDescription } from "@/utils/breedDescriptions";
+
+interface BreedPageProps {
+  params: Promise<{ slug: string }>;
+}
 
 export const revalidate = 3600;
 
-export async function generateMetadata(props) {
+export async function generateMetadata(
+  props: BreedPageProps,
+): Promise<Metadata> {
   try {
     const params = await props.params;
     const breedData = await getBreedBySlug(params.slug);
@@ -24,25 +32,18 @@ export async function generateMetadata(props) {
       };
     }
 
-    // Import breed descriptions for enhanced SEO
-    const { default: breedDescriptions } = await import(
-      "@/utils/breedDescriptions"
-    );
-    const breedKey = breedData.primary_breed.toLowerCase().replace(/\s+/g, "_");
-    const description = breedDescriptions[breedKey];
+    const description = getBreedDescription(breedData.primary_breed);
 
-    // Enhanced SEO description with location and age information
     const avgAge = breedData.average_age
       ? `Average age ${Math.round(breedData.average_age)} years. `
       : "";
     const locations =
       breedData.top_locations?.slice(0, 3).join(", ") || "multiple locations";
 
-    const seoDescription = description?.tagline
-      ? `${description.tagline} ${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}Adoptable in ${locations}.`
+    const seoDescription = description
+      ? `${description.substring(0, 80)}… ${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}Adoptable in ${locations}.`
       : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. ${avgAge}View photos, profiles, and apply from verified rescues in ${locations}.`;
 
-    // Build comprehensive keywords
     const keywords = [
       `${breedData.primary_breed} rescue`,
       `${breedData.primary_breed} adoption`,
@@ -62,16 +63,18 @@ export async function generateMetadata(props) {
 
     return {
       title: `${breedData.primary_breed} Rescue Dogs for Adoption | ${breedData.count} Available Near You`,
-      description: seoDescription.substring(0, 160), // Keep under 160 chars
+      description: seoDescription.substring(0, 160),
       keywords,
       openGraph: {
         title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
         description: seoDescription,
         images:
           breedData.topDogs
-            ?.filter((d) => d.primary_image_url)
+            ?.filter(
+              (d: { primary_image_url?: string }) => d.primary_image_url,
+            )
             .slice(0, 4)
-            .map((d) => ({
+            .map((d: { primary_image_url?: string; name?: string }) => ({
               url: d.primary_image_url,
               width: 800,
               height: 600,
@@ -85,9 +88,13 @@ export async function generateMetadata(props) {
         description: seoDescription.substring(0, 120),
         images:
           breedData.topDogs
-            ?.filter((d) => d.primary_image_url)
+            ?.filter(
+              (d: { primary_image_url?: string }) => d.primary_image_url,
+            )
             .slice(0, 1)
-            .map((d) => d.primary_image_url) || [],
+            .map(
+              (d: { primary_image_url?: string }) => d.primary_image_url,
+            ) || [],
       },
       alternates: {
         canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/breeds/${params.slug}`,
@@ -102,13 +109,12 @@ export async function generateMetadata(props) {
   }
 }
 
-export async function generateStaticParams() {
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
   try {
     const breedStats = await getBreedStats();
     return (
       breedStats.qualifying_breeds
         ?.filter((breed) => {
-          // Exclude mixed breeds from static generation
           const isMixed =
             breed.breed_type === "mixed" ||
             breed.breed_group === "Mixed" ||
@@ -125,56 +131,59 @@ export async function generateStaticParams() {
   }
 }
 
-export default async function BreedDetailPage(props) {
+async function fetchBreedPageData(slug: string) {
   try {
-    const params = await props.params;
-
-    // Mixed breed redirects are now handled by middleware
-
-    const breedData = await getBreedBySlug(params.slug);
+    const breedData = await getBreedBySlug(slug);
 
     if (!breedData) {
-      notFound();
+      return null;
     }
 
-    const initialDogsResponse = await getAnimals({
+    const initialDogs = await getAnimals({
       breed: breedData.primary_breed,
       limit: 12,
       offset: 0,
     });
 
-    const initialDogs = initialDogsResponse?.results || [];
-
-    // Import breed descriptions for structured data
-    const { default: breedDescriptions } = await import(
-      "@/utils/breedDescriptions"
-    );
-    const breedKey = breedData.primary_breed.toLowerCase().replace(/\s+/g, "_");
+    const breedDescription = getBreedDescription(breedData.primary_breed);
     const enrichedBreedData = {
       ...breedData,
-      description: breedDescriptions[breedKey] || breedData.description,
+      description: breedDescription || breedData.description,
     };
 
-    return (
-      <>
-        <BreedStructuredData
-          breedData={enrichedBreedData}
-          dogs={initialDogs}
-          pageType="detail"
-        />
-        <ErrorBoundary fallbackMessage="Unable to load breed details. Please try refreshing the page.">
-          <Suspense fallback={<BreedDetailSkeleton />}>
-            <BreedDetailClient
-              initialBreedData={breedData}
-              initialDogs={initialDogs}
-              initialParams={{}}
-            />
-          </Suspense>
-        </ErrorBoundary>
-      </>
-    );
+    return { breedData, initialDogs, enrichedBreedData };
   } catch (error) {
     console.error("Error loading breed page:", error);
+    return null;
+  }
+}
+
+export default async function BreedDetailPage(props: BreedPageProps) {
+  const params = await props.params;
+  const data = await fetchBreedPageData(params.slug);
+
+  if (!data) {
     notFound();
   }
+
+  const { breedData, initialDogs, enrichedBreedData } = data;
+
+  return (
+    <>
+      <BreedStructuredData
+        breedData={enrichedBreedData}
+        dogs={initialDogs}
+        pageType="detail"
+      />
+      <ErrorBoundary fallbackMessage="Unable to load breed details. Please try refreshing the page.">
+        <Suspense fallback={<BreedDetailSkeleton />}>
+          <BreedDetailClient
+            initialBreedData={breedData}
+            initialDogs={initialDogs}
+            initialParams={{}}
+          />
+        </Suspense>
+      </ErrorBoundary>
+    </>
+  );
 }

@@ -1,25 +1,37 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import EmptyState from "@/components/ui/EmptyState";
 import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import BreedsHeroSection from "@/components/breeds/BreedsHeroSection";
 import PopularBreedsSection from "@/components/breeds/PopularBreedsSection";
 import BreedGroupsSection from "@/components/breeds/BreedGroupsSection";
-import { ChevronRight, Dog, Heart, Home } from "lucide-react";
+import { Dog, Heart, Home } from "lucide-react";
+import type {
+  BreedsHubClientProps,
+  BreedData,
+  PopularBreedsSectionProps,
+} from "@/types/breeds";
+import type { ReactNode } from "react";
+
+interface BreedTypeCard {
+  title: string;
+  count: number;
+  href: string;
+  icon: ReactNode;
+  description: string;
+}
 
 export default function BreedsHubClient({
   initialBreedStats,
   mixedBreedData,
   popularBreedsWithImages,
   breedGroups,
-}) {
+}: BreedsHubClientProps) {
   const breedStats = initialBreedStats;
   const router = useRouter();
 
@@ -27,8 +39,7 @@ export default function BreedsHubClient({
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Breeds" }];
 
   // Breed type cards configuration (3 cards as specified in PRD)
-  const breedTypeCards = useMemo(() => {
-    // Ensure breed_groups is always an array for safe .find() operations
+  const breedTypeCards = useMemo((): BreedTypeCard[] => {
     const breedGroupsArray = Array.isArray(breedStats?.breed_groups)
       ? breedStats.breed_groups
       : [];
@@ -65,8 +76,10 @@ export default function BreedsHubClient({
           <EmptyState
             title="Unable to load breed data"
             description="We're having trouble loading breed information. Please try again later."
-            actionLabel="Go to Homepage"
-            onAction={() => router.push("/")}
+            actionButton={{
+              text: "Go to Homepage",
+              onClick: () => router.push("/"),
+            }}
           />
         </div>
       </Layout>
@@ -80,19 +93,21 @@ export default function BreedsHubClient({
         <Breadcrumbs items={breadcrumbItems} />
       </div>
 
-      {/* Hero Section with Mixed Breed Dogs */}
       {mixedBreedData && (
         <BreedsHeroSection
-          mixedBreedData={mixedBreedData}
+          mixedBreedData={mixedBreedData as unknown as BreedData}
           totalDogs={breedStats?.total_dogs || 0}
         />
       )}
 
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-4 py-8">
-          {/* Popular Individual Breeds Section with Images */}
           {popularBreedsWithImages && popularBreedsWithImages.length > 0 && (
-            <PopularBreedsSection popularBreeds={popularBreedsWithImages} />
+            <PopularBreedsSection
+              popularBreeds={
+                popularBreedsWithImages as unknown as PopularBreedsSectionProps["popularBreeds"]
+              }
+            />
           )}
 
           {/* Expandable Breed Groups with Top Breeds */}

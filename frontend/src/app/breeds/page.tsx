@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import type { BreedData } from "@/types/breeds";
 import BreedsHubClient from "./BreedsHubClient";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { getBreedStats } from "@/services/serverAnimalsService";
@@ -8,9 +10,9 @@ import {
 } from "@/services/breedImagesService";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 
-export const revalidate = 300; // 5-minute revalidation
+export const revalidate = 300;
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const breedStats = await getBreedStats();
   const totalDogs = Number(breedStats?.total_dogs || 2717);
   const uniqueBreeds = Number(breedStats?.unique_breeds || 259);
@@ -48,7 +50,10 @@ export default async function BreedsPage() {
   // The loading state would be handled by Next.js loading.jsx if needed
   return (
     <>
-      <BreedStructuredData breedData={breedStats} pageType="hub" />
+      <BreedStructuredData
+        breedData={breedStats as unknown as BreedData}
+        pageType="hub"
+      />
       <ErrorBoundary fallbackMessage="Unable to load breeds page. Please try refreshing the page.">
         <BreedsHubClient
           initialBreedStats={breedStats}
