@@ -5,11 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import type { BreedGroupsSectionProps } from "@/types/breeds";
 
-export default function BreedGroupsSection({ breedGroups }) {
+export default function BreedGroupsSection({ breedGroups }: BreedGroupsSectionProps) {
   const [expanded, setExpanded] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Listen for expand all event from Popular Breeds section
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function BreedGroupsSection({ breedGroups }) {
   // Show 4 groups initially, all when expanded
   const displayGroups = expanded ? breedGroups : breedGroups.slice(0, 4);
 
-  const toggleGroup = (groupName) => {
+  const toggleGroup = (groupName: string): void => {
     const newExpanded = new Set(expandedGroups);
     if (newExpanded.has(groupName)) {
       newExpanded.delete(groupName);
@@ -46,8 +46,8 @@ export default function BreedGroupsSection({ breedGroups }) {
     setExpandedGroups(newExpanded);
   };
 
-  const getGroupStyles = (groupName) => {
-    const styles = {
+  const getGroupStyles = (groupName: string): { bg: string; border: string; text: string; icon: string } => {
+    const styles: Record<string, { bg: string; border: string; text: string; icon: string }> = {
       "Hound Group": {
         bg: "bg-orange-50 dark:bg-orange-950 hover:bg-orange-100 dark:hover:bg-orange-900",
         border: "border-orange-200 dark:border-orange-800",

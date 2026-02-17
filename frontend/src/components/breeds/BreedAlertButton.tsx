@@ -7,8 +7,17 @@ import {
   saveBreedAlertWithFallback,
   hasBreedAlert,
 } from "@/services/breedAlertService";
+import type { BreedData } from "@/types/breeds";
 
-const BreedAlertButton = forwardRef(
+interface BreedAlertButtonProps {
+  breedData: BreedData;
+  filters?: Record<string, unknown>;
+  className?: string;
+  variant?: "outline" | "default" | "secondary" | "ghost" | "link" | "destructive";
+  size?: "default" | "sm" | "lg" | "icon";
+}
+
+const BreedAlertButton = forwardRef<HTMLButtonElement, BreedAlertButtonProps>(
   (
     {
       breedData,
@@ -23,7 +32,7 @@ const BreedAlertButton = forwardRef(
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
-    const timeoutRef = useRef();
+    const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
     // Check if breed alert already exists on mount
     useEffect(() => {
@@ -39,7 +48,7 @@ const BreedAlertButton = forwardRef(
       };
     }, []);
 
-    const handleSaveAlert = async () => {
+    const handleSaveAlert = async (): Promise<void> => {
       if (isLoading || isSaved) return;
 
       setIsLoading(true);
@@ -47,8 +56,8 @@ const BreedAlertButton = forwardRef(
 
       try {
         // Track breed alert save event
-        if (typeof window !== "undefined" && window.gtag) {
-          window.gtag("event", "breed_alert_save", {
+        if (typeof window !== "undefined" && (window as Window & { gtag?: (...args: unknown[]) => void }).gtag) {
+          (window as Window & { gtag: (...args: unknown[]) => void }).gtag("event", "breed_alert_save", {
             breed: breedData.primary_breed,
             breed_group: breedData.breed_group,
             dog_count: breedData.count,
@@ -87,7 +96,7 @@ const BreedAlertButton = forwardRef(
       }
     };
 
-    const getButtonContent = () => {
+    const getButtonContent = (): React.JSX.Element => {
       if (isLoading) {
         return (
           <>
@@ -123,7 +132,7 @@ const BreedAlertButton = forwardRef(
       );
     };
 
-    const getButtonVariant = () => {
+    const getButtonVariant = (): "default" | "secondary" | "outline" | "ghost" | "link" | "destructive" => {
       if (showSuccess) return "default";
       if (isSaved) return "secondary";
       return variant;

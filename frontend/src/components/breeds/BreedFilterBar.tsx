@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Filter, X } from "lucide-react";
+import type { BreedFilterBarProps } from "@/types/breeds";
 
 export default function BreedFilterBar({
   breedData,
@@ -13,16 +13,14 @@ export default function BreedFilterBar({
   onClearFilters,
   onOpenMobileFilters,
   activeFilterCount,
-}) {
-  // Default values for each filter type to avoid constructing invalid "Any ..." strings
-  const defaultValues = {
+}: BreedFilterBarProps) {
+  const defaultValues: Record<string, string> = {
     ageFilter: "Any age",
     sizeFilter: "Any size",
     sexFilter: "Any",
   };
 
-  const quickFilters = [
-    // Sex filters first
+  const quickFilters: Array<{ key: string; label: string; options: Array<{ value: string; label: string; count?: number }> }> = [
     {
       key: "sexFilter",
       label: "Sex",

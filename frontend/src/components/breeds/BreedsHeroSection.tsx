@@ -1,27 +1,25 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import type { BreedsHeroSectionProps } from "@/types/breeds";
 
-export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
+export default function BreedsHeroSection({ mixedBreedData, totalDogs }: BreedsHeroSectionProps) {
   const mixedBreedCount = mixedBreedData?.count || 0;
   const percentage =
     totalDogs > 0 ? Math.round((mixedBreedCount / totalDogs) * 100) : 0;
   const sampleDogs = mixedBreedData?.sample_dogs || [];
 
-  const formatCount = (count) => {
+  const formatCount = (count: number): string => {
     if (count >= 1000) {
       return `${(count / 1000).toFixed(1).replace(".0", "")}K`;
     }
     return count.toString();
   };
 
-  // Pastel colors for personality traits
-  const PASTEL_COLORS = [
+  const PASTEL_COLORS: Array<{ bg: string; text: string }> = [
     {
       bg: "bg-blue-100 dark:bg-blue-900/30",
       text: "text-blue-800 dark:text-blue-300",
@@ -44,7 +42,7 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
     },
   ];
 
-  const capitalizeFirst = (str) => {
+  const capitalizeFirst = (str: string): string => {
     if (!str) return "";
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   };
@@ -101,16 +99,18 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
                 key={dog.slug}
                 className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg transform transition-transform hover:scale-105"
               >
-                <div className="relative h-40 md:h-48 mb-2 rounded-md overflow-hidden">
-                  <Image
-                    src={dog.primary_image_url}
-                    alt={dog.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 50vw, 20vw"
-                    priority={index < 2}
-                  />
-                </div>
+                {dog.primary_image_url && (
+                  <div className="relative h-40 md:h-48 mb-2 rounded-md overflow-hidden">
+                    <Image
+                      src={dog.primary_image_url}
+                      alt={dog.name ?? "Dog"}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 50vw, 20vw"
+                      priority={index < 2}
+                    />
+                  </div>
+                )}
                 <h3 className="text-gray-800 dark:text-gray-100 font-semibold text-lg mb-1">
                   {dog.name}
                 </h3>
@@ -118,7 +118,7 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
                   {dog.age_group || dog.age_text} • {dog.sex}
                 </p>
                 <div className="flex flex-wrap gap-1">
-                  {dog.personality_traits?.slice(0, 2).map((trait, idx) => {
+                  {dog.personality_traits?.slice(0, 2).map((trait: string, idx: number) => {
                     const colors = PASTEL_COLORS[idx % PASTEL_COLORS.length];
                     return (
                       <span

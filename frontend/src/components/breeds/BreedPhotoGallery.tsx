@@ -1,20 +1,34 @@
 "use client";
 
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { FallbackImage } from "../ui/FallbackImage";
 import Link from "next/link";
+
+interface CarouselDog {
+  id: number | string;
+  name: string;
+  slug: string;
+  primary_image_url: string;
+}
+
+interface BreedMobileCarouselProps {
+  dogs: CarouselDog[];
+  breedName: string;
+  imageErrors: Record<string, boolean>;
+  handleImageError: (dogId: string | number) => void;
+}
 
 function BreedMobileCarousel({
   dogs,
   breedName,
   imageErrors,
   handleImageError,
-}) {
+}: BreedMobileCarouselProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const carouselRef = useRef(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const displayedDogs = dogs?.slice(0, 6) || [];
 
-  const scrollToSlide = (index) => {
+  const scrollToSlide = (index: number): void => {
     if (carouselRef.current) {
       const slideWidth = carouselRef.current.offsetWidth * 0.7; // 70vw
       const gap = 12; // gap-3 = 0.75rem = 12px
@@ -27,7 +41,7 @@ function BreedMobileCarousel({
     }
   };
 
-  const handleScroll = () => {
+  const handleScroll = (): void => {
     if (carouselRef.current) {
       const scrollLeft = carouselRef.current.scrollLeft;
       const slideWidth = carouselRef.current.offsetWidth * 0.7;
@@ -102,10 +116,16 @@ function BreedMobileCarousel({
   );
 }
 
-export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
-  const [imageErrors, setImageErrors] = useState({});
+interface BreedPhotoGalleryProps {
+  dogs: CarouselDog[];
+  breedName: string;
+  className?: string;
+}
 
-  const handleImageError = (dogId) => {
+export default function BreedPhotoGallery({ dogs, breedName, className = "" }: BreedPhotoGalleryProps) {
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  const handleImageError = (dogId: string | number): void => {
     setImageErrors((prev) => ({ ...prev, [dogId]: true }));
   };
 
@@ -174,7 +194,7 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
     );
   }
 
-  const getMasonryLayout = () => {
+  const getMasonryLayout = (): React.JSX.Element[] | undefined => {
     // Predefined aspect ratios to create masonry effect
     const aspectRatios = [
       "aspect-[4/5]", // Tall rectangle

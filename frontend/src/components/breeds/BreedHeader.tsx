@@ -1,8 +1,14 @@
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Dog, MapPin, Users } from "lucide-react";
+import type { BreedData, BreedDescription } from "@/types/breeds";
 
-export default function BreedHeader({ breedData, breedDescription }) {
+interface BreedHeaderProps {
+  breedData: BreedData;
+  breedDescription: BreedDescription | null;
+}
+
+export default function BreedHeader({ breedData, breedDescription }: BreedHeaderProps) {
   return (
     <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-2xl p-8 mb-8">
       <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -37,7 +43,7 @@ export default function BreedHeader({ breedData, breedDescription }) {
               <Users className="h-4 w-4" />
               {breedData.organizations?.length || 0} rescues
             </Badge>
-            {breedData.countries?.length > 0 && (
+            {breedData.countries && breedData.countries.length > 0 && (
               <Badge
                 variant="outline"
                 className="flex items-center gap-1 px-3 py-1"

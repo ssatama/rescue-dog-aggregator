@@ -1,12 +1,18 @@
+import type { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Scissors, Heart, Brain, Home } from "lucide-react";
+import type { BreedDescription } from "@/types/breeds";
 
-export default function BreedCareInfo({ breedDescription }) {
+interface BreedCareInfoProps {
+  breedDescription: BreedDescription | null;
+}
+
+export default function BreedCareInfo({ breedDescription }: BreedCareInfoProps) {
   if (!breedDescription?.care_info) return null;
 
   const careInfo = breedDescription.care_info;
 
-  const sections = [
+  const sections: Array<{ icon: ReactNode; title: string; content: string | undefined }> = [
     {
       icon: <Scissors className="h-5 w-5 text-purple-500" />,
       title: "Grooming",

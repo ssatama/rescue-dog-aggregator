@@ -1,29 +1,37 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import type { TouchEvent } from "react";
 import LazyImage from "@/components/ui/LazyImage";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { GalleryImage } from "@/types/breeds";
+
+interface MobileOptimizedGalleryProps {
+  images?: GalleryImage[];
+  title?: string;
+}
 
 export default function MobileOptimizedGallery({
   images = [],
   title = "Photo Gallery",
-}) {
+}: MobileOptimizedGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-  const scrollRef = useRef(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
 
-  const onTouchStart = (e) => {
+  const onTouchStart = (e: TouchEvent<HTMLDivElement>): void => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
   };
 
-  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+  const onTouchMove = (e: TouchEvent<HTMLDivElement>): void =>
+    setTouchEnd(e.targetTouches[0].clientX);
 
-  const onTouchEnd = () => {
+  const onTouchEnd = (): void => {
     if (!touchStart || !touchEnd) return;
 
     const distance = touchStart - touchEnd;
@@ -39,7 +47,7 @@ export default function MobileOptimizedGallery({
   };
 
   const scrollToIndex = useCallback(
-    (index) => {
+    (index: number) => {
       if (scrollRef.current) {
         const scrollWidth = scrollRef.current.scrollWidth;
         const scrollPosition = (scrollWidth / images.length) * index;
@@ -80,9 +88,8 @@ export default function MobileOptimizedGallery({
                 <LazyImage
                   src={image.url}
                   alt={image.alt || `Gallery image ${index + 1}`}
-                  fill
                   sizes="(max-width: 640px) 85vw, 45vw"
-                  className="object-cover"
+                  className="object-cover w-full h-full absolute inset-0"
                 />
               </div>
             </div>
@@ -120,9 +127,8 @@ export default function MobileOptimizedGallery({
             <LazyImage
               src={image.url}
               alt={image.alt || `Gallery image ${index + 1}`}
-              fill
               sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, 50vw"
-              className="object-cover transition-transform group-hover:scale-105"
+              className="object-cover transition-transform group-hover:scale-105 w-full h-full absolute inset-0"
             />
           </div>
         ))}
