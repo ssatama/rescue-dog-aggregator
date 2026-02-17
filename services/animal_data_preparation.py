@@ -165,8 +165,9 @@ def sanitize_for_postgres(value: Any) -> Any:
 def _detect_language(text: str) -> str:
     """Detect language of text, defaulting to English."""
     try:
-        from langdetect import detect
+        from langdetect import DetectorFactory, detect
 
+        DetectorFactory.seed = 0
         if not text or len(text.strip()) < 10:
             return "en"
         return detect(text)
