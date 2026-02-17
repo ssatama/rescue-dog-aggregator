@@ -233,6 +233,8 @@ export const BreedWithImagesSchema = z
   .object({
     primary_breed: z.string(),
     breed_slug: z.string().optional(),
+    breed_group: z.string().optional(),
+    breed_type: z.string().optional(),
     count: z.number().optional(),
     sample_dogs: z
       .array(
@@ -241,6 +243,10 @@ export const BreedWithImagesSchema = z
             name: z.string().optional(),
             slug: z.string().optional(),
             primary_image_url: z.string().optional(),
+            age_group: z.string().optional(),
+            age_text: z.string().optional(),
+            sex: z.string().optional(),
+            personality_traits: z.array(z.string()).optional(),
           })
           .passthrough(),
       )

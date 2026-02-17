@@ -21,6 +21,7 @@ const mockDogs = [
     size: "large",
     organization_name: "Happy Paws Rescue",
     organization: {
+      id: 1,
       name: "Happy Paws Rescue",
       country: "DE",
     },
@@ -37,6 +38,7 @@ const mockDogs = [
     size: "medium",
     organization_name: "Save a Soul Rescue",
     organization: {
+      id: 2,
       name: "Save a Soul Rescue",
       country: "GB",
     },
@@ -53,6 +55,7 @@ const mockDogs = [
     size: "large",
     organization_name: "Furry Friends",
     organization: {
+      id: 3,
       name: "Furry Friends",
       country: "NL",
     },
@@ -69,6 +72,7 @@ const mockDogs = [
     size: "medium",
     organization_name: "Happy Paws Rescue",
     organization: {
+      id: 1,
       name: "Happy Paws Rescue",
       country: "DE",
     },

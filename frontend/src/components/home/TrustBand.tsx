@@ -1,15 +1,10 @@
 // frontend/src/components/home/TrustBand.tsx
 
 import Image from "next/image";
-
-interface Organization {
-  id: number | string;
-  name: string;
-  logo_url?: string | null;
-}
+import type { OrganizationCardData } from "@/types/organizationComponents";
 
 interface TrustBandProps {
-  initialOrganizations?: Organization[];
+  initialOrganizations?: OrganizationCardData[];
 }
 
 export default function TrustBand({ initialOrganizations = [] }: TrustBandProps) {

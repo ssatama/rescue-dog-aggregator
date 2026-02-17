@@ -20,7 +20,7 @@ describe("SwipeCard", () => {
     breed: "Golden Retriever",
     age: "2 years",
     primary_image_url: "https://example.com/buddy.jpg",
-    organization: { name: "Happy Paws Rescue" },
+    organization: { id: 1, name: "Happy Paws Rescue" },
     location: "San Francisco, CA",
     slug: "buddy-golden",
     description: "A friendly and energetic companion",

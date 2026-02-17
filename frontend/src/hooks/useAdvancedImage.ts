@@ -21,18 +21,6 @@ interface NetworkStrategy {
   skipOptimizations: boolean;
 }
 
-// Navigator connection API type
-interface NetworkInformation extends EventTarget {
-  effectiveType?: string;
-  downlink?: number;
-  rtt?: number;
-  saveData?: boolean;
-}
-
-interface NavigatorWithConnection extends Navigator {
-  connection?: NetworkInformation;
-}
-
 // Base configuration constants
 const BASE_RETRY_DELAY = 1000; // 1 second base delay between retries
 

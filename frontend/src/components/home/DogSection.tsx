@@ -16,13 +16,6 @@ import { isSlowConnection, getNetworkInfo } from "../../utils/networkUtils";
 import type { DogSectionProps } from "@/types/homeComponents";
 import type { Dog } from "@/types/dog";
 
-interface NavigatorWithConnection extends Navigator {
-  connection?: EventTarget & {
-    addEventListener(type: string, listener: EventListener): void;
-    removeEventListener(type: string, listener: EventListener): void;
-  };
-}
-
 // Dynamically import MobileCarousel for code splitting
 const MobileCarousel = React.lazy(() => import("../ui/MobileCarousel"));
 

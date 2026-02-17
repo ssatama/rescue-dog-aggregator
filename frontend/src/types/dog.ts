@@ -35,7 +35,7 @@ export interface Dog {
   organization_id?: number | string;
   organization_name?: string;
   organization?: {
-    id?: number;
+    id: number;
     name: string;
     country?: string;
     config_id?: string;

@@ -124,12 +124,12 @@ export default function MobileFilterDrawer({
   setOrganizationFilter,
   organizations,
 
-  standardizedBreedFilter,
+  standardizedBreedFilter = "",
   setStandardizedBreedFilter,
   handleBreedSearch,
   handleBreedClear: handleBreedClearFromParent,
   handleBreedValueChange,
-  standardizedBreeds,
+  standardizedBreeds = [],
 
   sexFilter,
   setSexFilter,
@@ -244,7 +244,7 @@ export default function MobileFilterDrawer({
     if (handleBreedClearFromParent) {
       handleBreedClearFromParent();
     } else {
-      setStandardizedBreedFilter("Any breed");
+      setStandardizedBreedFilter?.("Any breed");
     }
   }, [handleBreedClearFromParent, setStandardizedBreedFilter]);
 
@@ -717,7 +717,7 @@ export default function MobileFilterDrawer({
                             : standardizedBreedFilter
                         }
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                          setStandardizedBreedFilter(
+                          setStandardizedBreedFilter?.(
                             e.target.value === "any"
                               ? "Any breed"
                               : e.target.value,
@@ -744,7 +744,7 @@ export default function MobileFilterDrawer({
                             : standardizedBreedFilter
                         }
                         onValueChange={(value: string) =>
-                          setStandardizedBreedFilter(value)
+                          setStandardizedBreedFilter?.(value)
                         }
                       >
                         <SelectTrigger className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200 h-12">
@@ -780,7 +780,7 @@ export default function MobileFilterDrawer({
                           if (handleBreedSearch) {
                             handleBreedSearch(breed);
                           } else {
-                            setStandardizedBreedFilter(breed);
+                            setStandardizedBreedFilter?.(breed);
                           }
                         }}
                         onClear={handleBreedClear}

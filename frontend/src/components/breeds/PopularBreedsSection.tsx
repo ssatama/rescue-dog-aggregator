@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { ChevronRight } from "lucide-react";
 import type { PopularBreedsSectionProps } from "@/types/breeds";
+import { BREED_PASTEL_COLORS, capitalizeFirst } from "@/utils/breedDisplayUtils";
 
 export default function PopularBreedsSection({ popularBreeds }: PopularBreedsSectionProps) {
   if (!popularBreeds || popularBreeds.length === 0) {
@@ -22,34 +23,6 @@ export default function PopularBreedsSection({ popularBreeds }: PopularBreedsSec
         breed.breed_group !== "Unknown",
     )
     .slice(0, 4);
-
-  const PASTEL_COLORS: Array<{ bg: string; text: string }> = [
-    {
-      bg: "bg-blue-100 dark:bg-blue-900/30",
-      text: "text-blue-800 dark:text-blue-300",
-    },
-    {
-      bg: "bg-green-100 dark:bg-green-900/30",
-      text: "text-green-800 dark:text-green-300",
-    },
-    {
-      bg: "bg-purple-100 dark:bg-purple-900/30",
-      text: "text-purple-800 dark:text-purple-300",
-    },
-    {
-      bg: "bg-yellow-100 dark:bg-yellow-900/30",
-      text: "text-yellow-800 dark:text-yellow-300",
-    },
-    {
-      bg: "bg-pink-100 dark:bg-pink-900/30",
-      text: "text-pink-800 dark:text-pink-300",
-    },
-  ];
-
-  const capitalizeFirst = (str: string): string => {
-    if (!str) return "";
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-  };
 
   const handleBrowseAllClick = (): void => {
     // Dispatch event to expand all breed groups
@@ -136,7 +109,7 @@ export default function PopularBreedsSection({ popularBreeds }: PopularBreedsSec
                       <div className="flex flex-wrap gap-1">
                         {traits.slice(0, 3).map((trait, index) => {
                           const colors =
-                            PASTEL_COLORS[index % PASTEL_COLORS.length];
+                            BREED_PASTEL_COLORS[index % BREED_PASTEL_COLORS.length];
                           return (
                             <span
                               key={trait}

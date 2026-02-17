@@ -227,13 +227,3 @@ export function trackAPIPerformance(endpoint: string, startTime: number) {
       duration < 200 ? "good" : duration < 1000 ? "needs-improvement" : "poor",
   });
 }
-
-declare global {
-  interface Window {
-    gtag?: (
-      command: string,
-      action: string,
-      params?: Record<string, string | number | boolean | undefined>,
-    ) => void;
-  }
-}

@@ -12,7 +12,7 @@ interface FAQQuestion {
   answer: string;
 }
 
-interface FAQSection {
+interface FAQSectionData {
   id: string;
   title: string;
   emoji: string;
@@ -20,7 +20,7 @@ interface FAQSection {
   questions: FAQQuestion[];
 }
 
-const FAQ_SECTIONS: FAQSection[] = [
+const FAQ_SECTIONS: FAQSectionData[] = [
   {
     id: "about",
     title: "About the Platform",
@@ -179,12 +179,12 @@ function FAQItem({ question, answer, isOpen, onToggle }: FAQItemProps): React.JS
 }
 
 interface FAQSectionProps {
-  section: FAQSection;
+  section: FAQSectionData;
   openItems: string[];
   toggleItem: (itemId: string) => void;
 }
 
-function FAQSectionComponent({ section, openItems, toggleItem }: FAQSectionProps): React.JSX.Element {
+function FAQSection({ section, openItems, toggleItem }: FAQSectionProps): React.JSX.Element {
   return (
     <section className="scroll-mt-24" id={section.id}>
       <div className="flex items-center gap-3 mb-6">
@@ -300,7 +300,7 @@ export default function FAQPage(): React.JSX.Element {
         </div>
         <div className="space-y-12 sm:space-y-16">
           {FAQ_SECTIONS.map((section) => (
-            <FAQSectionComponent
+            <FAQSection
               key={section.id}
               section={section}
               openItems={openItems}
