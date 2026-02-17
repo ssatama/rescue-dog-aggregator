@@ -1,10 +1,11 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
+import type { DogCardSkeletonOptimizedProps } from "@/types/dogComponents";
 
 const DogCardSkeletonOptimized = React.memo(function DogCardSkeletonOptimized({
   compact = false,
   priority = false,
-}) {
+}: DogCardSkeletonOptimizedProps): React.ReactElement {
   const baseClasses = "animate-pulse bg-muted/50 skeleton-element";
 
   if (compact) {

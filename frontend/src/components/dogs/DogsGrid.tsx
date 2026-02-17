@@ -3,11 +3,8 @@ import DogCardOptimized from "./DogCardOptimized";
 import DogCardErrorBoundary from "../error/DogCardErrorBoundary";
 import DogCardSkeletonOptimized from "../ui/DogCardSkeletonOptimized";
 import EmptyState from "../ui/EmptyState";
+import type { DogsGridProps } from "@/types/dogComponents";
 
-/**
- * Responsive grid component for displaying dog cards
- * Implements CSS Grid with auto-fill and responsive breakpoints
- */
 const DogsGrid = React.memo(function DogsGrid({
   dogs = [],
   loading = false,
@@ -16,13 +13,11 @@ const DogsGrid = React.memo(function DogsGrid({
   emptyStateVariant = "noDogsOrganization",
   onClearFilters,
   onBrowseOrganizations,
-  loadingType = "initial", // 'initial' | 'filter' | 'pagination'
-  listContext = "home", // 'search' | 'org-page' | 'home' | 'favorites'
+  loadingType = "initial",
+  listContext = "home",
   ...props
-}) {
-  // Handle loading state with skeleton cards
+}: DogsGridProps): React.ReactElement {
   if (loading) {
-    // Different loading animations based on type
     const animationClass =
       loadingType === "filter"
         ? "animate-in fade-in duration-200"
@@ -47,7 +42,6 @@ const DogsGrid = React.memo(function DogsGrid({
     );
   }
 
-  // Handle empty state
   if (!dogs || dogs.length === 0) {
     return (
       <EmptyState
@@ -59,7 +53,6 @@ const DogsGrid = React.memo(function DogsGrid({
     );
   }
 
-  // Render dogs grid
   return (
     <div
       data-testid="dogs-grid"
@@ -68,7 +61,6 @@ const DogsGrid = React.memo(function DogsGrid({
       {...props}
     >
       {dogs.map((dog, index) => {
-        // Skip invalid dogs gracefully
         if (!dog || !dog.id) {
           return null;
         }
@@ -77,8 +69,7 @@ const DogsGrid = React.memo(function DogsGrid({
           <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
             <DogCardOptimized
               dog={dog}
-              animationDelay={index}
-              priority={index < 4} // Prioritize loading for first 4 images
+              priority={index < 4}
               position={index}
               listContext={listContext}
             />

@@ -1,6 +1,3 @@
-/**
- * Error Boundary specifically for Dog Cards
- */
 import React from "react";
 import {
   Card,
@@ -11,18 +8,25 @@ import {
 import { Button } from "@/components/ui/button";
 import { Icon } from "../ui/Icon";
 import { reportError } from "../../utils/logger";
+import type {
+  DogCardErrorBoundaryProps,
+  DogCardErrorBoundaryState,
+} from "@/types/dogComponents";
 
-class DogCardErrorBoundary extends React.Component {
-  constructor(props) {
+class DogCardErrorBoundary extends React.Component<
+  DogCardErrorBoundaryProps,
+  DogCardErrorBoundaryState
+> {
+  constructor(props: DogCardErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(_error: Error): Partial<DogCardErrorBoundaryState> {
     return { hasError: true };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     this.setState({ error });
 
     reportError(error, {
@@ -32,11 +36,11 @@ class DogCardErrorBoundary extends React.Component {
     });
   }
 
-  handleRetry = () => {
+  handleRetry = (): void => {
     this.setState({ hasError: false, error: null });
   };
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       return (
         <Card

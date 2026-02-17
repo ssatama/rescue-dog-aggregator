@@ -1,18 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import DogCardOptimizedComponent from "@/components/dogs/DogCardOptimized";
+import DogCardOptimized from "@/components/dogs/DogCardOptimized";
 import DogCardSkeletonOptimized from "@/components/dogs/DogCardSkeletonOptimized";
 import { getAnimals } from "@/services/serverAnimalsService";
 import type { Dog } from "@/types/dog";
-
-// Type-safe wrapper for JSX component
-const DogCardOptimized = DogCardOptimizedComponent as React.ComponentType<{
-  dog: Dog;
-  priority?: boolean;
-  compact?: boolean;
-  embedded?: boolean;
-}>;
 
 interface AnimalApiParams {
   limit: number;

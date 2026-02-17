@@ -1,39 +1,26 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { sanitizeText, sanitizeHtml } from "../../utils/security";
+import type { DogDescriptionProps } from "@/types/dogComponents";
 
-/**
- * Enhanced description component for dog detail pages.
- * Handles short descriptions, empty descriptions, and long descriptions with read more functionality.
- *
- * @param {Object} props - Component properties
- * @param {string} props.description - The dog's description text
- * @param {string} props.dogName - The dog's name for personalized messaging
- * @param {string} props.organizationName - The rescue organization name
- * @param {string} props.className - Additional CSS classes
- */
 export default function DogDescription({
   description = "",
   dogName = "",
   organizationName = "",
   className = "",
-}) {
+}: DogDescriptionProps): React.ReactElement {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Safely get plain text length for decision making
-  const getPlainTextLength = useCallback((htmlString) => {
+  const getPlainTextLength = useCallback((htmlString: string): number => {
     if (!htmlString || typeof htmlString !== "string") return 0;
     if (typeof window === "undefined") {
-      // Server-side: rough estimation by removing common HTML tags
       return htmlString.replace(/<[^>]*>/g, "").length;
     }
 
-    // Create a temporary element to strip HTML tags for character counting
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = htmlString;
     return (tempDiv.textContent || tempDiv.innerText || "").length;
   }, []);
 
-  // Memoized description analysis
   const descriptionMeta = useMemo(() => {
     const cleanDescription = description?.trim() || "";
     const plainTextLength = getPlainTextLength(cleanDescription);
@@ -47,7 +34,6 @@ export default function DogDescription({
     };
   }, [description, getPlainTextLength]);
 
-  // Generate enhanced content for short descriptions
   const enhancedContent = useMemo(() => {
     if (!descriptionMeta.isShort) return null;
 
@@ -59,7 +45,6 @@ export default function DogDescription({
     return `Want to learn more about ${safeDogName}? Contact ${safeOrgName} for more details about personality, needs, and adoption requirements.`;
   }, [descriptionMeta.isShort, dogName, organizationName]);
 
-  // Generate fallback content for empty descriptions
   const fallbackContent = useMemo(() => {
     if (!descriptionMeta.isEmpty) return null;
 
@@ -71,7 +56,6 @@ export default function DogDescription({
     return `${safeDogName} is looking for a loving forever home. Contact ${safeOrgName} to learn more about this wonderful dog's personality, needs, and how you can provide the perfect home.`;
   }, [descriptionMeta.isEmpty, dogName, organizationName]);
 
-  // Generate truncated description for long content
   const truncatedDescription = useMemo(() => {
     if (!descriptionMeta.isLong) return descriptionMeta.cleanDescription;
 
@@ -80,9 +64,7 @@ export default function DogDescription({
     );
     if (plainTextLength <= 200) return descriptionMeta.cleanDescription;
 
-    // Find a good breaking point near 200 characters
     if (typeof window === "undefined") {
-      // Server-side: simple truncation with HTML tag removal
       const plainText = descriptionMeta.cleanDescription.replace(
         /<[^>]*>/g,
         "",
@@ -108,20 +90,16 @@ export default function DogDescription({
     getPlainTextLength,
   ]);
 
-  // Handle read more toggle with optimized focus management
-  const handleToggle = useCallback((event) => {
+  const handleToggle = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setIsExpanded((prev) => !prev);
 
-    // Maintain focus on the button after toggle for accessibility
     if (event?.target) {
-      // Use requestAnimationFrame to ensure DOM updates are complete
       requestAnimationFrame(() => {
-        event.target.focus();
+        (event.target as HTMLElement).focus();
       });
     }
   }, []);
 
-  // Determine what content to display with memoization for performance
   const displayContent = useMemo(() => {
     if (descriptionMeta.isEmpty) {
       return fallbackContent;
@@ -143,7 +121,6 @@ export default function DogDescription({
     isExpanded,
   ]);
 
-  // Memoized content rendering for better performance
   const contentRenderer = useMemo(() => {
     const baseClasses =
       "text-base leading-relaxed text-gray-700 dark:text-gray-300 transition-all duration-300 ease-in-out";

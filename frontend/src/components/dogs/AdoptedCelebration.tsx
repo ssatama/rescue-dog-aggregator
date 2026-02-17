@@ -1,12 +1,15 @@
 import React from "react";
+import type { AdoptedCelebrationProps } from "@/types/dogComponents";
 
-export default function AdoptedCelebration({ dogName }) {
+export default function AdoptedCelebration({
+  dogName,
+}: AdoptedCelebrationProps): React.ReactElement {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 p-8 shadow-2xl mb-8">
       {/* Main content */}
       <div className="relative z-10 text-center">
         {/* Celebration emojis */}
-        <div className="mb-4 text-5xl">🎉 🐕 ❤️ 🏠 ✨</div>
+        <div className="mb-4 text-5xl">{"\uD83C\uDF89 \uD83D\uDC15 \u2764\uFE0F \uD83C\uDFE0 \u2728"}</div>
 
         {/* Main congratulatory text */}
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -19,7 +22,7 @@ export default function AdoptedCelebration({ dogName }) {
             {dogName
               ? `${dogName} has found their forever home!`
               : "This wonderful dog has been adopted!"}{" "}
-            🏡
+            {"\uD83C\uDFE1"}
           </h2>
           <p className="text-lg md:text-xl text-purple-100">
             This amazing pup is now living their best life with a loving family!
@@ -31,15 +34,15 @@ export default function AdoptedCelebration({ dogName }) {
           <p>
             We keep this page active to celebrate our success stories and
             inspire more adoptions. Every rescue dog finding their forever home
-            is worth celebrating! 🐾
+            is worth celebrating! {"\uD83D\uDC3E"}
           </p>
         </div>
 
         {/* Decorative elements */}
-        <div className="absolute top-4 left-4 text-3xl opacity-50">🎊</div>
-        <div className="absolute top-4 right-4 text-3xl opacity-50">🎈</div>
-        <div className="absolute bottom-4 left-8 text-2xl opacity-50">⭐</div>
-        <div className="absolute bottom-4 right-8 text-2xl opacity-50">💫</div>
+        <div className="absolute top-4 left-4 text-3xl opacity-50">{"\uD83C\uDF8A"}</div>
+        <div className="absolute top-4 right-4 text-3xl opacity-50">{"\uD83C\uDF88"}</div>
+        <div className="absolute bottom-4 left-8 text-2xl opacity-50">{"\u2B50"}</div>
+        <div className="absolute bottom-4 right-8 text-2xl opacity-50">{"\uD83D\uDCAB"}</div>
       </div>
 
       {/* Gradient overlay for depth */}

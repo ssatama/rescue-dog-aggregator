@@ -57,6 +57,11 @@ export interface Dog {
   adoption_url?: string;
   adoption_fee_euros?: number;
 
+  // Status and display
+  status?: string;
+  blur_data_url?: string;
+  breed_group?: string;
+
   // Personality and traits
   personality_traits?: string[];
 

@@ -27,6 +27,25 @@ import {
   getPersonalityTraits,
 } from "../../utils/dogHelpers";
 import { trackDogCardClick } from "@/lib/monitoring/breadcrumbs";
+import type { DogCardOptimizedProps } from "@/types/dogComponents";
+import type { Dog } from "@/types/dog";
+
+interface GenderData {
+  text: string;
+  icon: string;
+}
+
+interface CompatibilityItem {
+  icon: string;
+  text: string;
+  color: string;
+}
+
+interface CompatibilityData {
+  withDogs: CompatibilityItem;
+  withCats: CompatibilityItem;
+  withChildren: CompatibilityItem;
+}
 
 const DogCardOptimized = React.memo(
   function DogCardOptimized({
@@ -38,33 +57,29 @@ const DogCardOptimized = React.memo(
     position = 0,
     listContext = "home",
     disableContainment = false,
-  }) {
-  // Enhanced data processing using helper functions
+  }: DogCardOptimizedProps): React.ReactElement {
   const name = dog?.name || "Unknown Dog";
   const breed = formatBreed(dog);
-  const breedGroup = sanitizeText(dog?.breed_group);
+  const breedGroup = sanitizeText(dog?.breed_group as string);
 
   const id = dog?.id || "0";
   const slug = dog?.slug || `unknown-dog-${id}`;
-  const status = sanitizeText(dog?.status || "unknown");
+  const status = sanitizeText(dog?.status as string || "unknown");
 
-  // Enhanced data using helper functions
-  const formattedAge = formatAge(dog);
-  const ageCategory = getAgeCategory(dog);
-  const genderData = formatGender(dog);
-  const organizationName = getOrganizationName(dog);
-  const shipsToCountries = getShipsToCountries(dog);
-  const showNewBadge = isRecentDog(dog);
+  const formattedAge = formatAge(dog) as string;
+  const ageCategory = getAgeCategory(dog) as string;
+  const genderData = formatGender(dog) as GenderData;
+  const organizationName = getOrganizationName(dog) as string;
+  const shipsToCountries = getShipsToCountries(dog) as string[];
+  const showNewBadge = isRecentDog(dog) as boolean;
 
-  // New uncertainty indicators and enhanced data
-  const experienceLevel = formatExperienceLevel(dog);
-  const compatibility = formatCompatibility(dog);
-  const personalityTraits = getPersonalityTraits(dog);
+  const experienceLevel = formatExperienceLevel(dog) as string | null;
+  const compatibility = formatCompatibility(dog) as CompatibilityData;
+  const personalityTraits = getPersonalityTraits(dog) as string[];
 
-  // Helper function to get standardized size for data attribute
-  const getStandardizedSize = (dog) => {
+  const getStandardizedSize = (dog: Dog): string => {
     const size = dog?.standardized_size || dog?.size || "";
-    const sizeMapping = {
+    const sizeMapping: Record<string, string> = {
       Tiny: "Tiny",
       Small: "Small",
       Medium: "Medium",
@@ -76,7 +91,6 @@ const DogCardOptimized = React.memo(
 
   const standardizedSize = getStandardizedSize(dog);
 
-  // Memoize share data to prevent string recreation on every render
   const shareData = useMemo(
     () => ({
       url: `${typeof window !== "undefined" ? window.location.origin : ""}/dogs/${slug}`,
@@ -86,22 +100,19 @@ const DogCardOptimized = React.memo(
     [slug, name, organizationName]
   );
 
-  // Memoize click handler to prevent recreation
   const handleCardClick = useCallback(() => {
     if (id && id !== "0" && name && name !== "Unknown Dog") {
       try {
-        trackDogCardClick(id.toString(), name, position, listContext);
+        trackDogCardClick(id.toString(), name, position, listContext as "home" | "search" | "org-page" | "favorites");
       } catch (error) {
         console.error("Failed to track dog card click:", error);
       }
     }
   }, [id, name, position, listContext]);
 
-  // Track if initial mount is complete to defer animations
   const [canAnimate, setCanAnimate] = useState(false);
 
   useEffect(() => {
-    // Check for reduced motion preference
     const prefersReducedMotion =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -110,7 +121,6 @@ const DogCardOptimized = React.memo(
       return;
     }
 
-    // Mark initial mount complete after first paint to defer animations
     const frameId = requestAnimationFrame(() => {
       setCanAnimate(true);
     });
@@ -118,17 +128,12 @@ const DogCardOptimized = React.memo(
     return () => cancelAnimationFrame(frameId);
   }, []);
 
-  // Skip animation for:
-  // 1. Virtualized cards (controlled by parent)
-  // 2. Initial mount (prevent hydration TBT)
-  // 3. Cards at position 4+ (only first 4 cards animate)
   const shouldAnimate = !isVirtualized && canAnimate && position < 4;
 
   const animationClass = shouldAnimate
     ? `animate-fadeInUp animate-delay-${Math.min(position * 100, 300)}`
     : "";
 
-  // Ultra-compact embedded mode for guide pages
   if (embedded) {
     return (
       <Card
@@ -173,7 +178,7 @@ const DogCardOptimized = React.memo(
               {breed && <p className="truncate">{breed}</p>}
               <p className="flex items-center gap-2">
                 {formattedAge && ageCategory !== "Unknown" && (
-                  <span>🎂 {ageCategory}</span>
+                  <span>{"\uD83C\uDF82"} {ageCategory}</span>
                 )}
                 <span>
                   {genderData.icon} {genderData.text}
@@ -186,7 +191,7 @@ const DogCardOptimized = React.memo(
 
             <Button variant="outline" size="sm" className="w-full mt-2" asChild>
               <span className="inline-flex items-center justify-center">
-                Meet {name} →
+                Meet {name} {"\u2192"}
               </span>
             </Button>
           </div>
@@ -195,7 +200,6 @@ const DogCardOptimized = React.memo(
     );
   }
 
-  // Compact mobile list view for better space utilization
   if (compact) {
     return (
       <Card
@@ -252,7 +256,7 @@ const DogCardOptimized = React.memo(
                 compact
               />
               <FavoriteButton
-                dogId={dog.id}
+                dogId={dog.id as number}
                 dogName={dog.name}
                 orgSlug={dog.organization?.slug}
                 compact
@@ -264,7 +268,7 @@ const DogCardOptimized = React.memo(
           <div className="space-y-1 text-sm text-muted-foreground">
             {formattedAge && ageCategory !== "Unknown" && (
               <p className="flex items-center gap-1">
-                <span>🎂</span>
+                <span>{"\uD83C\uDF82"}</span>
                 <span>{ageCategory}</span>
               </p>
             )}
@@ -277,17 +281,17 @@ const DogCardOptimized = React.memo(
             {/* Experience level for mobile */}
             {experienceLevel && (
               <p className="text-xs text-blue-600 dark:text-blue-400">
-                👥 {experienceLevel}
+                {"\uD83D\uDC65"} {experienceLevel}
               </p>
             )}
 
             {/* Quick compatibility indicators for mobile */}
             <div className="flex items-center gap-2 text-xs">
               <span className={`${compatibility.withDogs.color}`}>
-                🐕 {compatibility.withDogs.text}
+                {"\uD83D\uDC15"} {compatibility.withDogs.text}
               </span>
               <span className={`${compatibility.withCats.color}`}>
-                🐱 {compatibility.withCats.text}
+                {"\uD83D\uDC31"} {compatibility.withCats.text}
               </span>
             </div>
           </div>
@@ -310,7 +314,7 @@ const DogCardOptimized = React.memo(
               prefetch={priority ? true : undefined}
               onClick={handleCardClick}
             >
-              Meet {name} →
+              Meet {name} {"\u2192"}
             </Link>
           </Button>
         </div>
@@ -401,7 +405,7 @@ const DogCardOptimized = React.memo(
               compact
             />
             <FavoriteButton
-              dogId={dog.id}
+              dogId={dog.id as number}
               dogName={dog.name}
               orgSlug={dog.organization?.slug}
             />
@@ -417,7 +421,7 @@ const DogCardOptimized = React.memo(
         >
           {formattedAge && ageCategory !== "Unknown" && (
             <>
-              <span data-testid="age-category">🎂 {ageCategory}</span>
+              <span data-testid="age-category">{"\uD83C\uDF82"} {ageCategory}</span>
             </>
           )}
           <span data-testid="gender-display">
@@ -448,7 +452,7 @@ const DogCardOptimized = React.memo(
         <div className="pt-1 min-h-[24px]" data-testid="experience-display">
           {experienceLevel ? (
             <p className="text-xs text-blue-600 dark:text-blue-400">
-              👥 {experienceLevel}
+              {"\uD83D\uDC65"} {experienceLevel}
             </p>
           ) : null}
         </div>
@@ -457,19 +461,19 @@ const DogCardOptimized = React.memo(
         <div className="pt-1 space-y-1 min-h-[28px]" data-testid="compatibility-display">
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="flex items-center gap-1">
-              <span>🐕</span>
+              <span>{"\uD83D\uDC15"}</span>
               <span className={compatibility.withDogs.color}>
                 {compatibility.withDogs.text}
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <span>🐱</span>
+              <span>{"\uD83D\uDC31"}</span>
               <span className={compatibility.withCats.color}>
                 {compatibility.withCats.text}
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <span>👶</span>
+              <span>{"\uD83D\uDC76"}</span>
               <span className={compatibility.withChildren.color}>
                 {compatibility.withChildren.text}
               </span>
@@ -481,7 +485,7 @@ const DogCardOptimized = React.memo(
         <div className="pt-1 min-h-[32px]" data-testid="traits-display">
           {personalityTraits.length > 0 ? (
             <div className="flex flex-wrap gap-1">
-              {personalityTraits.map((trait, index) => (
+              {personalityTraits.map((trait: string, index: number) => (
                 <span
                   key={index}
                   title={trait}
@@ -520,7 +524,7 @@ const DogCardOptimized = React.memo(
             prefetch={priority ? true : undefined}
             onClick={handleCardClick}
           >
-            Meet {name} →
+            Meet {name} {"\u2192"}
           </Link>
         </Button>
       </CardFooter>

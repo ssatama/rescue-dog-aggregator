@@ -1,15 +1,18 @@
-/**
- * Enhanced error boundary specifically for dog detail pages
- * Provides graceful error handling with retry options and user-friendly messages
- */
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { reportError } from "../../utils/logger";
+import type {
+  DogDetailErrorBoundaryProps,
+  DogDetailErrorBoundaryState,
+} from "@/types/dogComponents";
 
-class DogDetailErrorBoundary extends React.Component {
-  constructor(props) {
+class DogDetailErrorBoundary extends React.Component<
+  DogDetailErrorBoundaryProps,
+  DogDetailErrorBoundaryState
+> {
+  constructor(props: DogDetailErrorBoundaryProps) {
     super(props);
     this.state = {
       hasError: false,
@@ -19,17 +22,16 @@ class DogDetailErrorBoundary extends React.Component {
     };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(_error: Error): Partial<DogDetailErrorBoundaryState> {
     return { hasError: true };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     this.setState({
       error,
       errorInfo,
     });
 
-    // Log error for monitoring
     reportError(error, {
       context: "DogDetailErrorBoundary",
       componentStack: errorInfo.componentStack,
@@ -38,7 +40,7 @@ class DogDetailErrorBoundary extends React.Component {
     });
   }
 
-  handleRetry = () => {
+  handleRetry = (): void => {
     this.setState((prevState) => ({
       hasError: false,
       error: null,
@@ -47,13 +49,13 @@ class DogDetailErrorBoundary extends React.Component {
     }));
   };
 
-  handleGoBack = () => {
+  handleGoBack = (): void => {
     if (typeof window !== "undefined") {
       window.history.back();
     }
   };
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       const { retryCount } = this.state;
       const canRetry = retryCount < 3;
@@ -168,9 +170,9 @@ class DogDetailErrorBoundary extends React.Component {
               While you&apos;re here:
             </h3>
             <ul className="text-sm text-orange-800 dark:text-orange-200 space-y-1">
-              <li>• Browse other available dogs</li>
-              <li>• Search by breed or location</li>
-              <li>• Learn about our rescue partners</li>
+              <li>{"\u2022"} Browse other available dogs</li>
+              <li>{"\u2022"} Search by breed or location</li>
+              <li>{"\u2022"} Learn about our rescue partners</li>
             </ul>
           </div>
         </div>
