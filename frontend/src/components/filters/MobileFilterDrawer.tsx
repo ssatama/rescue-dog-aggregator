@@ -16,7 +16,7 @@ import {
   getSearchSuggestions,
   getBreedSuggestions,
 } from "@/services/animalsService";
-import type { MobileFilterDrawerProps } from "@/types/filterComponents";
+import type { MobileFilterDrawerProps, FilterConfig } from "@/types/filterComponents";
 import type { FilterCount } from "@/schemas/common";
 
 interface MobileFilterSectionProps {
@@ -102,10 +102,9 @@ function MobileFilterSection({
   );
 }
 
-const DEFAULT_FILTER_CONFIG = {
+const DEFAULT_FILTER_CONFIG: FilterConfig = {
   showAge: true,
   showBreed: true,
-  showSort: true,
   showSize: true,
   showSex: true,
   showShipsTo: true,
@@ -231,7 +230,7 @@ export default function MobileFilterDrawer({
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
-        onClose?.();
+        onClose();
       }
     };
 
@@ -252,7 +251,7 @@ export default function MobileFilterDrawer({
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
       if (e.target === e.currentTarget) {
-        onClose?.();
+        onClose();
       }
     },
     [onClose],
@@ -867,7 +866,7 @@ export default function MobileFilterDrawer({
                   </div>
                 )}
 
-                {/* 7. Search Bar - MOVED TO BOTTOM */}
+                {/* 7. Search Bar */}
                 {filterConfig.showSearch && (
                   <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="mb-2">

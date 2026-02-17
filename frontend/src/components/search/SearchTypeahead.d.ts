@@ -31,11 +31,12 @@ interface SearchTypeaheadProps {
   enableHistory?: boolean;
   "data-testid"?: string;
   "aria-label"?: string;
-  [key: string]: unknown;
 }
 
 declare const SearchTypeahead: React.ForwardRefExoticComponent<
-  SearchTypeaheadProps & React.RefAttributes<HTMLInputElement>
+  SearchTypeaheadProps &
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, keyof SearchTypeaheadProps> &
+    React.RefAttributes<HTMLInputElement>
 >;
 
 export default SearchTypeahead;

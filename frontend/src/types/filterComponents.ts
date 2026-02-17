@@ -4,7 +4,6 @@ import type { FilterCountsResponse } from "../schemas/common";
 export interface FilterConfig {
   showAge: boolean;
   showBreed: boolean;
-  showSort: boolean;
   showSize: boolean;
   showSex: boolean;
   showShipsTo: boolean;

@@ -73,8 +73,6 @@ export default function DogFilters({
 
   const handleFilterChange = useCallback(
     (filterType: string, value: string) => {
-      if (!onFiltersChange) return;
-
       const newFilters = {
         ...filters,
         [filterType]: value,
@@ -92,7 +90,8 @@ export default function DogFilters({
         console.error("Failed to track filter change:", error);
       }
 
-      const params = new URLSearchParams(rawSearchParams?.toString());
+      if (!rawSearchParams) return;
+      const params = new URLSearchParams(rawSearchParams.toString());
       if (value && value !== "All" && value !== "") {
         params.set(filterType, value);
       } else {
@@ -105,7 +104,7 @@ export default function DogFilters({
 
   const handleClearAll = useCallback(() => {
     const defaultFilters = getDefaultFilters();
-    onFiltersChange?.(defaultFilters);
+    onFiltersChange(defaultFilters);
 
     router.push(window.location.pathname, { scroll: false });
   }, [onFiltersChange, router]);
