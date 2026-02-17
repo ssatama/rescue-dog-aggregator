@@ -62,11 +62,11 @@ describe("CountryStructuredData", () => {
     });
   });
 
-  describe("detail page type", () => {
-    it("renders CollectionPage schema for detail", () => {
+  describe("country page type", () => {
+    it("renders CollectionPage schema for country", () => {
       const { container } = render(
         <CountryStructuredData
-          pageType="detail"
+          pageType="country"
           country={mockCountry}
           dogCount={3000}
         />
@@ -83,7 +83,7 @@ describe("CountryStructuredData", () => {
     it("includes correct dog count for detail", () => {
       const { container } = render(
         <CountryStructuredData
-          pageType="detail"
+          pageType="country"
           country={mockCountry}
           dogCount={3000}
         />
@@ -97,7 +97,7 @@ describe("CountryStructuredData", () => {
     it("includes country description", () => {
       const { container } = render(
         <CountryStructuredData
-          pageType="detail"
+          pageType="country"
           country={mockCountry}
           dogCount={3000}
         />
@@ -111,7 +111,7 @@ describe("CountryStructuredData", () => {
     it("includes about with Country type", () => {
       const { container } = render(
         <CountryStructuredData
-          pageType="detail"
+          pageType="country"
           country={mockCountry}
           dogCount={3000}
         />
@@ -126,7 +126,7 @@ describe("CountryStructuredData", () => {
     it("includes lowercase country code in URL", () => {
       const { container } = render(
         <CountryStructuredData
-          pageType="detail"
+          pageType="country"
           country={mockCountry}
           dogCount={3000}
         />

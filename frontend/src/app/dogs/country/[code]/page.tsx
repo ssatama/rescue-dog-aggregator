@@ -104,7 +104,7 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
         <CountryDogsClient
           country={country}
           initialDogs={initialDogs}
-          metadata={metadata as unknown as Record<string, unknown>}
+          metadata={metadata}
           allCountries={COUNTRIES}
           totalCount={countryCount}
         />

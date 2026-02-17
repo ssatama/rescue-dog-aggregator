@@ -100,6 +100,12 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
     async (retryCount: number = 0) => {
       if (!mountedRef.current) return; // Prevent state updates if unmounted
 
+      if (!dogSlug) {
+        setError(true);
+        setLoading(false);
+        return;
+      }
+
       const fetchStartTime = Date.now();
       const maxRetries = 3;
 
@@ -119,7 +125,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
 
         // Race between API call and timeout
         const data = await Promise.race([
-          getAnimalBySlug(dogSlug as string),
+          getAnimalBySlug(dogSlug),
           timeoutPromise,
         ]);
 
@@ -744,8 +750,8 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                         <DogDescription
                           description={
                             dog?.llm_description ||
-                            (dog?.properties?.description as string | undefined) ||
-                            (dog?.properties?.raw_description as string | undefined) ||
+                            (typeof dog?.properties?.description === "string" ? dog.properties.description : undefined) ||
+                            (typeof dog?.properties?.raw_description === "string" ? dog.properties.raw_description : undefined) ||
                             ""
                           }
                           dogName={dog.name}

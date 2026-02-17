@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import type { BreadcrumbsProps } from "@/types/searchComponents";
+import type { BreadcrumbsProps } from "@/types/uiComponents";
 import { generateBreadcrumbSchema } from "../../utils/schema";
 
 export default function Breadcrumbs({ items }: BreadcrumbsProps): React.ReactElement | null {

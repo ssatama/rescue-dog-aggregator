@@ -40,12 +40,3 @@ export interface SearchTypeaheadRef {
   getValue: () => string;
   setValue: (value: string) => void;
 }
-
-export interface BreadcrumbItem {
-  name: string;
-  url?: string;
-}
-
-export interface BreadcrumbsProps {
-  items: BreadcrumbItem[];
-}

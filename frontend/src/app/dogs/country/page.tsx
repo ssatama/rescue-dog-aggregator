@@ -47,8 +47,6 @@ export default async function CountriesPage(): Promise<React.JSX.Element> {
   return (
     <>
       <CountryStructuredData
-        country={{ code: "", name: "", shortName: "", flag: "", tagline: "", description: "", gradient: "" }}
-        dogCount={0}
         stats={countryStats}
         pageType="index"
       />

@@ -69,7 +69,7 @@ export default async function PuppiesPage(): Promise<React.JSX.Element> {
         <PuppiesClient
           ageCategory={puppyCategory}
           initialDogs={initialDogs}
-          metadata={metadata as unknown as Record<string, unknown>}
+          metadata={metadata}
           totalCount={totalCount}
         />
       </Suspense>

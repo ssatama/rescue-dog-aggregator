@@ -24,7 +24,7 @@ const getInitialTheme = (): Theme => {
   const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
-  return (savedTheme as Theme) || systemTheme;
+  return savedTheme === "light" || savedTheme === "dark" ? savedTheme : systemTheme;
 };
 
 const emptySubscribe = () => () => {};

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import type { Dog } from "../../../types/dog";
+import { reportError } from "../../../utils/logger";
 
 type DogWithLlm = Dog & {
   llm_tagline?: string;
@@ -74,13 +75,15 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
 
     const description = seoDescription || generateFallbackDescription(dog);
 
-    const truncateDescription = (text: string | null, maxLength: number): string | null => {
-      if (!text || text.length <= maxLength) return text;
+    const truncateDescription = (text: string | null, maxLength: number): string | undefined => {
+      if (!text) return undefined;
+      if (text.length <= maxLength) return text;
       return text.substring(0, maxLength - 3) + "...";
     };
 
-    const truncateTitle = (text: string | null, maxLength: number): string | null => {
-      if (!text || text.length <= maxLength) return text;
+    const truncateTitle = (text: string | null, maxLength: number): string | undefined => {
+      if (!text) return undefined;
+      if (text.length <= maxLength) return text;
       return text.substring(0, maxLength - 3) + "...";
     };
 
@@ -106,7 +109,17 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
       type: "image/jpeg",
     };
 
-    const metadata: Record<string, unknown> = {
+    const ogImages = dog.primary_image_url
+      ? [{
+          url: dog.primary_image_url,
+          alt: `Photo of ${dog.name}, a ${dog.standardized_breed || dog.breed || "dog"} available for adoption`,
+          width: 1200,
+          height: 630,
+          type: "image/jpeg" as const,
+        }]
+      : [fallbackImage];
+
+    const metadata: Metadata = {
       title,
       description,
       alternates: {
@@ -119,16 +132,15 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
         locale: "en_US",
         siteName: "Rescue Dog Aggregator",
         url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/dogs/${resolvedParams.slug}`,
-        article: {
-          ...(dog.created_at && { publishedTime: dog.created_at }),
-          section: "Pet Adoption",
-          tag: [
-            "rescue dogs",
-            "pet adoption",
-            ...(dog.standardized_breed ? [dog.standardized_breed] : []),
-            ...(dog.organization?.city ? [dog.organization.city] : []),
-          ].filter(Boolean),
-        },
+        images: ogImages,
+        ...(dog.created_at && { publishedTime: dog.created_at }),
+        section: "Pet Adoption",
+        tags: [
+          "rescue dogs",
+          "pet adoption",
+          ...(dog.standardized_breed ? [dog.standardized_breed] : []),
+          ...(dog.organization?.city ? [dog.organization.city] : []),
+        ].filter(Boolean),
       },
       twitter: {
         card: twitterCard,
@@ -136,24 +148,13 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
         creator: "@rescuedogsme",
         title: twitterTitle,
         description: twitterDescription,
+        images: ogImages,
       },
     };
 
-    const ogImages = dog.primary_image_url
-      ? [{
-          url: dog.primary_image_url,
-          alt: `Photo of ${dog.name}, a ${dog.standardized_breed || dog.breed || "dog"} available for adoption`,
-          width: 1200,
-          height: 630,
-          type: "image/jpeg",
-        }]
-      : [fallbackImage];
-
-    (metadata.openGraph as Record<string, unknown>).images = ogImages;
-    (metadata.twitter as Record<string, unknown>).images = ogImages;
-
-    return metadata as Metadata;
-  } catch {
+    return metadata;
+  } catch (error) {
+    reportError(error, { context: "generateMetadata", component: "DogDetailPage" });
     return {
       title: "Dog Not Found | Rescue Dog Aggregator",
       description:
@@ -166,10 +167,6 @@ const isTestEnvironment =
   typeof process !== "undefined" && process.env.NODE_ENV === "test";
 
 function DogDetailPage(_props: DogDetailPageProps): React.JSX.Element {
-  if (isTestEnvironment) {
-    return <DogDetailClient />;
-  }
-
   return <DogDetailClient />;
 }
 
@@ -265,8 +262,8 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
     console.log(`[generateStaticParams] Pre-rendering ${prioritizedDogs.length} high-priority dog pages`);
 
     return prioritizedDogs
-      .filter((dog: DogForSitemap) => dog?.slug)
-      .map((dog: DogForSitemap) => ({ slug: dog.slug! }));
+      .filter((dog: DogForSitemap): dog is DogForSitemap & { slug: string } => typeof dog?.slug === "string" && dog.slug !== "")
+      .map((dog: DogForSitemap & { slug: string }) => ({ slug: dog.slug }));
 
   } catch (error) {
     console.error('[generateStaticParams] Error:', error);

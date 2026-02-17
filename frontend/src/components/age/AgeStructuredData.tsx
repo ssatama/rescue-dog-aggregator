@@ -1,12 +1,13 @@
 import type { AgeStructuredDataProps } from "@/types/pageComponents";
 
-export default function AgeStructuredData({ ageCategory, dogCount, stats, pageType = "category" }: AgeStructuredDataProps): React.ReactElement {
+export default function AgeStructuredData(props: AgeStructuredDataProps): React.ReactElement {
   const baseUrl = "https://www.rescuedogs.me";
 
   // Hub/index page schema
-  if (pageType === "index" && stats) {
-    const puppyCount = stats?.ageCategories?.find(c => c.slug === "puppies")?.count || 0;
-    const seniorCount = stats?.ageCategories?.find(c => c.slug === "senior")?.count || 0;
+  if (props.pageType === "index") {
+    const { stats } = props;
+    const puppyCount = stats.ageCategories?.find(c => c.slug === "puppies")?.count || 0;
+    const seniorCount = stats.ageCategories?.find(c => c.slug === "senior")?.count || 0;
     const totalDogs = puppyCount + seniorCount;
 
     const schema = {
@@ -46,6 +47,7 @@ export default function AgeStructuredData({ ageCategory, dogCount, stats, pageTy
   }
 
   // Single age category page schema
+  const { ageCategory, dogCount } = props;
   const schema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",

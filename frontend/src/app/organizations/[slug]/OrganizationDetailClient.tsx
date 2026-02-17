@@ -42,10 +42,10 @@ interface OrgFilters {
   sort: string;
 }
 
-export default function OrganizationDetailClient({ params = {} }: OrganizationDetailClientProps) {
+export default function OrganizationDetailClient(_props: OrganizationDetailClientProps) {
   const urlParams = useParams();
   const searchParams = useSearchParams();
-  const organizationSlug = params?.slug || urlParams?.slug;
+  const organizationSlug = urlParams?.slug;
 
   const [organization, setOrganization] = useState<OrganizationWithDetails | null>(null);
   const [dogs, setDogs] = useState<ApiDog[]>([]);

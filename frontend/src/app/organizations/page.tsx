@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { OrganizationCardData } from "../../types/organizationComponents";
 import OrganizationsClient from "./OrganizationsClient";
 import { getEnhancedOrganizationsSSR } from "../../services/organizationsService";
+import { reportError } from "../../utils/logger";
 
 export const revalidate = 300;
 
@@ -10,8 +11,8 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const organizations = await getEnhancedOrganizationsSSR();
     orgCount = organizations?.length || 13;
-  } catch {
-    // Use fallback count
+  } catch (error) {
+    reportError(error, { context: "generateMetadata", component: "OrganizationsPage" });
   }
 
   const collectionSchema = {

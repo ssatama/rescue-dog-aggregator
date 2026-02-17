@@ -7,6 +7,7 @@ import {
   generateOrganizationSchema,
   generateJsonLdScript,
 } from "../../../utils/schema";
+import { reportError } from "../../../utils/logger";
 import OrganizationDetailClient from "./OrganizationDetailClient";
 
 interface OrganizationWithDetails {
@@ -46,7 +47,7 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
 
     const openGraphType = "website";
 
-    const metadata: Record<string, unknown> = {
+    const metadata: Metadata = {
       title,
       description,
       alternates: {
@@ -66,7 +67,7 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
               alt: `${organization.name} logo`,
               width: 400,
               height: 400,
-              type: "image/png",
+              type: "image/png" as const,
             },
           ],
         }),
@@ -77,16 +78,16 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
         title: `${organization.name} - Dog Rescue Organization`,
         description: `Learn about ${organization.name} and their available dogs for adoption.`,
       },
+      ...(organizationSchema && {
+        other: {
+          "script:ld+json": generateJsonLdScript(organizationSchema),
+        },
+      }),
     };
 
-    if (organizationSchema) {
-      metadata.other = {
-        "script:ld+json": generateJsonLdScript(organizationSchema),
-      };
-    }
-
-    return metadata as Metadata;
-  } catch {
+    return metadata;
+  } catch (error) {
+    reportError(error, { context: "generateMetadata", component: "OrganizationDetailPage" });
     return {
       title: "Organization Not Found | Rescue Dog Aggregator",
       description:
@@ -99,10 +100,6 @@ const isTestEnvironment =
   typeof process !== "undefined" && process.env.NODE_ENV === "test";
 
 function OrganizationDetailPage(_props: OrganizationDetailPageProps): React.JSX.Element {
-  if (isTestEnvironment) {
-    return <OrganizationDetailClient />;
-  }
-
   return <OrganizationDetailClient />;
 }
 
@@ -136,7 +133,8 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
       .map((org) => ({
         slug: org.slug,
       }));
-  } catch {
+  } catch (error) {
+    reportError(error, { context: "generateStaticParams", component: "OrganizationDetailPage" });
     return [];
   }
 }

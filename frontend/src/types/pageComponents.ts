@@ -1,4 +1,5 @@
 import type { Dog } from "./dog";
+import type { DogsPageMetadata } from "./dogsPage";
 import type { OrganizationCardData } from "./organizationComponents";
 
 export interface DogDetailClientProps {
@@ -6,9 +7,7 @@ export interface DogDetailClientProps {
   initialDog?: Dog | null;
 }
 
-export interface OrganizationDetailClientProps {
-  params?: { slug?: string };
-}
+export interface OrganizationDetailClientProps {}
 
 export interface OrganizationsClientProps {
   initialData?: OrganizationCardData[];
@@ -72,7 +71,7 @@ export interface CountriesHubClientProps {
 export interface AgeCategoryClientProps {
   ageCategory: AgeCategory;
   initialDogs: Dog[];
-  metadata: Record<string, unknown>;
+  metadata: DogsPageMetadata;
   totalCount: number;
 }
 
@@ -82,7 +81,7 @@ export type SeniorDogsClientProps = AgeCategoryClientProps;
 export interface CountryDogsClientProps {
   country: CountryData;
   initialDogs: Dog[];
-  metadata: Record<string, unknown>;
+  metadata: DogsPageMetadata;
   allCountries: Record<string, CountryData>;
   totalCount: number;
 }
@@ -96,18 +95,10 @@ export interface CountryQuickNavProps {
   allCountries: Record<string, CountryData>;
 }
 
-export type AgeStructuredDataPageType = "category" | "index";
+export type AgeStructuredDataProps =
+  | { pageType: "index"; stats: AgeHubStats; ageCategory?: AgeCategory; dogCount?: number }
+  | { pageType?: "category"; ageCategory: AgeCategory; dogCount: number; stats?: AgeHubStats };
 
-export interface AgeStructuredDataProps {
-  ageCategory: AgeCategory;
-  dogCount: number;
-  stats?: AgeHubStats;
-  pageType?: AgeStructuredDataPageType;
-}
-
-export interface CountryStructuredDataProps {
-  country: CountryData;
-  dogCount: number;
-  stats?: CountriesHubStats;
-  pageType?: "index" | "country";
-}
+export type CountryStructuredDataProps =
+  | { pageType: "index"; stats: CountriesHubStats; country?: CountryData; dogCount?: number }
+  | { pageType?: "country"; country: CountryData; dogCount: number; stats?: CountriesHubStats };

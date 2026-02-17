@@ -121,17 +121,15 @@ describe("Enhanced SEO Meta Tags - Phase 3A", () => {
       expect(metadata.openGraph.type).toBe("article");
       expect(metadata.openGraph.siteName).toBe("Rescue Dog Aggregator");
 
-      // Article-specific tags for dog listings
-      expect(metadata.openGraph.article).toEqual({
-        publishedTime: mockDog.created_at,
-        section: "Pet Adoption",
-        tag: [
-          "rescue dogs",
-          "pet adoption",
-          "Labrador Retriever",
-          "San Francisco",
-        ],
-      });
+      // Article-specific tags for dog listings (flat on openGraph per Next.js Metadata spec)
+      expect(metadata.openGraph.publishedTime).toBe(mockDog.created_at);
+      expect(metadata.openGraph.section).toBe("Pet Adoption");
+      expect(metadata.openGraph.tags).toEqual([
+        "rescue dogs",
+        "pet adoption",
+        "Labrador Retriever",
+        "San Francisco",
+      ]);
 
       // Enhanced image metadata
       if (Array.isArray(metadata.openGraph.images)) {
@@ -250,8 +248,8 @@ describe("Enhanced SEO Meta Tags - Phase 3A", () => {
       expect(metadata.twitter.description.length).toBeLessThanOrEqual(200);
 
       // Should include relevant hashtags in structured way
-      expect(metadata.openGraph.article?.tag).toContain("Mixed Breed");
-      expect(metadata.openGraph.article?.tag).toContain("Austin");
+      expect(metadata.openGraph.tags).toContain("Mixed Breed");
+      expect(metadata.openGraph.tags).toContain("Austin");
     });
 
     test("should optimize description length for different platforms", async () => {

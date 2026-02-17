@@ -15,7 +15,15 @@ jest.mock("../../../../services/animalsService", () => ({
   getAnimals: jest.fn(() => Promise.resolve({ data: [] })), // For useSwipeNavigation hook
 }));
 
-// next/navigation is mocked globally in jest.setup.js
+// Override useParams to provide slug for DogDetailClient
+const mockUseParams = jest.fn(() => ({ slug: "buddy-labrador-mix" }));
+jest.mock("next/navigation", () => ({
+  ...jest.requireActual("next/navigation"),
+  useParams: () => mockUseParams(),
+  usePathname: () => "/dogs/buddy-labrador-mix",
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
+}));
 
 // Mock UI components to focus on schema testing
 jest.mock("../../../../components/ui/Loading", () => {
@@ -148,6 +156,7 @@ describe("DogDetailClient - Schema Integration", () => {
       status: "available",
     };
 
+    mockUseParams.mockReturnValue({ slug: "luna-rescue-dog" });
     getAnimalBySlug.mockResolvedValue(minimalDog);
 
     const { container } = render(<DogDetailClient />);
