@@ -1,6 +1,10 @@
-import React from "react";
+import type { ExperienceDistribution } from "@/types/breeds";
 
-const ExperienceLevelChart = ({ experienceDistribution }) => {
+interface ExperienceLevelChartProps {
+  experienceDistribution: ExperienceDistribution | null;
+}
+
+const ExperienceLevelChart = ({ experienceDistribution }: ExperienceLevelChartProps) => {
   if (!experienceDistribution) {
     return null;
   }
@@ -14,7 +18,7 @@ const ExperienceLevelChart = ({ experienceDistribution }) => {
     return null;
   }
 
-  const calculatePercentage = (value) => Math.round((value / total) * 100);
+  const calculatePercentage = (value: number): number => Math.round((value / total) * 100);
 
   const levels = [
     {

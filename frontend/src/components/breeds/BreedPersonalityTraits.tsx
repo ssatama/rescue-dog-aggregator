@@ -1,6 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 
-export default function BreedPersonalityTraits({ traits = [] }) {
+interface BreedPersonalityTraitsProps {
+  traits?: string[];
+}
+
+export default function BreedPersonalityTraits({ traits = [] }: BreedPersonalityTraitsProps) {
   if (!traits || traits.length === 0) return null;
 
   return (
@@ -9,7 +13,7 @@ export default function BreedPersonalityTraits({ traits = [] }) {
       <div className="flex flex-wrap gap-2">
         {traits.map((trait, index) => (
           <Badge
-            key={index}
+            key={`${trait}-${index}`}
             variant="secondary"
             className="px-4 py-2 text-sm font-medium bg-primary/10 hover:bg-primary/20 transition-colors"
           >

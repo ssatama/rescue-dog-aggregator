@@ -1,12 +1,18 @@
+import type { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Heart, Zap, Brain, Users, Ruler, Activity } from "lucide-react";
+import type { BreedDescription } from "@/types/breeds";
 
-export default function BreedCharacteristics({ breedDescription }) {
+interface BreedCharacteristicsProps {
+  breedDescription: BreedDescription | null;
+}
+
+export default function BreedCharacteristics({ breedDescription }: BreedCharacteristicsProps) {
   if (!breedDescription?.characteristics) return null;
 
   const characteristics = breedDescription.characteristics;
 
-  const renderStars = (value) => {
+  const renderStars = (value: number) => {
     const stars = Math.min(5, Math.max(0, value));
     return (
       <div className="flex gap-1">
@@ -22,7 +28,7 @@ export default function BreedCharacteristics({ breedDescription }) {
     );
   };
 
-  const characteristicItems = [
+  const characteristicItems: Array<{ icon: ReactNode; label: string; value: number | string | undefined; isText?: boolean }> = [
     {
       icon: <Heart className="h-5 w-5 text-red-500" />,
       label: "Affection Level",
@@ -72,7 +78,7 @@ export default function BreedCharacteristics({ breedDescription }) {
                       {item.value}
                     </p>
                   ) : (
-                    renderStars(item.value)
+                    renderStars(typeof item.value === "number" ? item.value : 0)
                   )}
                 </div>
               </div>

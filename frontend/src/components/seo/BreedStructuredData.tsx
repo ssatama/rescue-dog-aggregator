@@ -1,14 +1,16 @@
-/**
- * Structured data component for breed pages
- * Implements multiple schema types for rich snippets and enhanced SERP features
- */
+import type { BreedStructuredDataProps, BreedDescription } from "@/types/breeds";
 
 export default function BreedStructuredData({
   breedData,
   dogs,
   pageType = "detail",
-}) {
+}: BreedStructuredDataProps) {
   if (!breedData) return null;
+
+  const descriptionText =
+    typeof breedData.description === "string" ? breedData.description : null;
+  const desc: BreedDescription | null =
+    typeof breedData.description === "object" ? breedData.description ?? null : null;
 
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
@@ -50,8 +52,9 @@ export default function BreedStructuredData({
         "@type": "Article",
         headline: `${breedData.primary_breed || "Mixed Breed"} Dogs: Breed Information & Adoption Guide`,
         description:
-          breedData.description?.tagline ||
-          breedData.description?.overview ||
+          desc?.tagline ||
+          desc?.overview ||
+          descriptionText ||
           `Learn about ${breedData.primary_breed} dogs available for adoption`,
         author: {
           "@type": "Organization",
@@ -107,7 +110,8 @@ export default function BreedStructuredData({
         acceptedAnswer: {
           "@type": "Answer",
           text:
-            breedData.description?.temperament ||
+            desc?.temperament ||
+            descriptionText ||
             `${breedData.primary_breed || "Mixed breed"} dogs have unique personalities. Each dog's temperament is assessed by rescue organizations to help match them with suitable homes.`,
         },
       },
@@ -117,7 +121,8 @@ export default function BreedStructuredData({
         acceptedAnswer: {
           "@type": "Answer",
           text:
-            breedData.description?.family ||
+            desc?.family ||
+            descriptionText ||
             `Many ${breedData.primary_breed || "mixed breed"} dogs can be excellent with children when properly socialized. Each dog's compatibility with children is evaluated individually by rescue organizations.`,
         },
       },

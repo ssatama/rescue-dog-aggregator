@@ -16,7 +16,7 @@ interface BreedImageParams {
   limit?: number | string;
 }
 
-interface BreedGroupDisplay {
+export interface BreedGroupDisplay {
   name: string;
   icon: string;
   description: string;

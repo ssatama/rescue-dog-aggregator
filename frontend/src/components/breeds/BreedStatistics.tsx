@@ -2,11 +2,17 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { BreedData, StatItem } from "@/types/breeds";
 
-export default function BreedStatistics({ breedData, className = "" }) {
+interface BreedStatisticsProps {
+  breedData: BreedData | null;
+  className?: string;
+}
+
+export default function BreedStatistics({ breedData, className = "" }: BreedStatisticsProps) {
   if (!breedData) return null;
 
-  const getAgeDisplay = () => {
+  const getAgeDisplay = (): string => {
     if (!breedData.average_age_months) {
       return "N/A";
     }
@@ -27,7 +33,7 @@ export default function BreedStatistics({ breedData, className = "" }) {
     }
   };
 
-  const getSexDistributionDisplay = () => {
+  const getSexDistributionDisplay = (): { male: number; female: number; malePercentage: number; femalePercentage: number; total: number } | null => {
     if (!breedData.sex_distribution) return null;
 
     const { male = 0, female = 0 } = breedData.sex_distribution;
@@ -49,7 +55,7 @@ export default function BreedStatistics({ breedData, className = "" }) {
 
   const sexData = getSexDistributionDisplay();
 
-  const stats = [
+  const stats: StatItem[] = [
     {
       label: "Available Dogs",
       value: breedData.count || 0,
@@ -120,8 +126,8 @@ export default function BreedStatistics({ breedData, className = "" }) {
     });
   }
 
-  const getStatColors = (color) => {
-    const colors = {
+  const getStatColors = (color: string): string => {
+    const colors: Record<string, string> = {
       orange: "bg-orange-50 border-orange-200 text-orange-700",
       blue: "bg-blue-50 border-blue-200 text-blue-700",
       green: "bg-green-50 border-green-200 text-green-700",
@@ -130,7 +136,7 @@ export default function BreedStatistics({ breedData, className = "" }) {
     return colors[color] || colors.blue;
   };
 
-  const StatCard = ({ stat, index }) => (
+  const StatCard = ({ stat, index }: { stat: StatItem; index: number }) => (
     <div
       className={`stat-card p-4 rounded-lg border-2 transition-all duration-300 hover:scale-105 hover:shadow-md ${getStatColors(
         stat.color,
@@ -180,8 +186,13 @@ export default function BreedStatistics({ breedData, className = "" }) {
   );
 }
 
-export function BreedInfo({ breedData, className = "" }) {
-  const handleScrollToDogs = () => {
+interface BreedInfoProps {
+  breedData: BreedData;
+  className?: string;
+}
+
+export function BreedInfo({ breedData, className = "" }: BreedInfoProps) {
+  const handleScrollToDogs = (): void => {
     document
       .getElementById("dogs-grid")
       ?.scrollIntoView({ behavior: "smooth" });
@@ -210,11 +221,13 @@ export function BreedInfo({ breedData, className = "" }) {
 
       <BreedStatistics breedData={breedData} />
 
-      <div>
-        <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-          {breedData.description}
-        </p>
-      </div>
+      {(typeof breedData.description === "string" ? breedData.description : breedData.description?.overview) && (
+        <div>
+          <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+            {typeof breedData.description === "string" ? breedData.description : breedData.description?.overview}
+          </p>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3">
         <Button

@@ -1,16 +1,16 @@
-import React from "react";
+interface CommonTraitsProps {
+  personalityTraits: string[];
+}
 
-const CommonTraits = ({ personalityTraits }) => {
+const CommonTraits = ({ personalityTraits }: CommonTraitsProps) => {
   if (!personalityTraits || personalityTraits.length === 0) {
     return null;
   }
 
-  // Color scheme matching the mockup
-  const getTraitColor = (trait) => {
+  const getTraitColor = (trait: string): { bg: string; text: string } => {
     const lowerTrait = trait.toLowerCase();
 
-    // Map traits to specific colors based on the mockup
-    const colorMap = {
+    const colorMap: Record<string, { bg: string; text: string }> = {
       gentle: { bg: "bg-purple-100", text: "text-purple-800" },
       calm: { bg: "bg-blue-100", text: "text-blue-800" },
       affectionate: { bg: "bg-pink-100", text: "text-pink-800" },
@@ -22,13 +22,11 @@ const CommonTraits = ({ personalityTraits }) => {
       lazy: { bg: "bg-green-100", text: "text-green-800" },
     };
 
-    // Return specific color if mapped, otherwise cycle through default colors
     if (colorMap[lowerTrait]) {
       return colorMap[lowerTrait];
     }
 
-    // Default color cycling for unmapped traits
-    const defaultColors = [
+    const defaultColors: Array<{ bg: string; text: string }> = [
       { bg: "bg-blue-100", text: "text-blue-800" },
       { bg: "bg-green-100", text: "text-green-800" },
       { bg: "bg-purple-100", text: "text-purple-800" },

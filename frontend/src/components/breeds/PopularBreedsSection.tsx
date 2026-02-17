@@ -4,8 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { ChevronRight } from "lucide-react";
+import type { PopularBreedsSectionProps } from "@/types/breeds";
 
-export default function PopularBreedsSection({ popularBreeds }) {
+export default function PopularBreedsSection({ popularBreeds }: PopularBreedsSectionProps) {
   if (!popularBreeds || popularBreeds.length === 0) {
     return null;
   }
@@ -22,8 +23,7 @@ export default function PopularBreedsSection({ popularBreeds }) {
     )
     .slice(0, 4);
 
-  // Pastel colors for personality traits
-  const PASTEL_COLORS = [
+  const PASTEL_COLORS: Array<{ bg: string; text: string }> = [
     {
       bg: "bg-blue-100 dark:bg-blue-900/30",
       text: "text-blue-800 dark:text-blue-300",
@@ -46,12 +46,12 @@ export default function PopularBreedsSection({ popularBreeds }) {
     },
   ];
 
-  const capitalizeFirst = (str) => {
+  const capitalizeFirst = (str: string): string => {
     if (!str) return "";
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   };
 
-  const handleBrowseAllClick = () => {
+  const handleBrowseAllClick = (): void => {
     // Dispatch event to expand all breed groups
     window.dispatchEvent(new CustomEvent("expandAllBreedGroups"));
 

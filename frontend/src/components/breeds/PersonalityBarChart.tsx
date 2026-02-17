@@ -1,7 +1,10 @@
-import React from "react";
+import type { BreedData, PersonalityMetric } from "@/types/breeds";
 
-const PersonalityBarChart = ({ breedData }) => {
-  // Use real data from API if available, otherwise use fallback
+interface PersonalityBarChartProps {
+  breedData: BreedData;
+}
+
+const PersonalityBarChart = ({ breedData }: PersonalityBarChartProps) => {
   const personalityMetrics = breedData.personality_metrics || {
     energy_level: { percentage: 50, label: "No data" },
     affection: { percentage: 50, label: "No data" },
@@ -9,14 +12,13 @@ const PersonalityBarChart = ({ breedData }) => {
     independence: { percentage: 50, label: "No data" },
   };
 
-  const metricLabels = {
+  const metricLabels: Record<string, string> = {
     energy_level: "Energy Level",
     affection: "Affection",
     trainability: "Trainability",
     independence: "Independence",
   };
 
-  // Only render if we have personality metrics data
   if (!breedData.personality_metrics) {
     return null;
   }
