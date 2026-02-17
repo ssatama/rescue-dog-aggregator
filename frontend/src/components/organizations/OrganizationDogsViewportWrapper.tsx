@@ -38,10 +38,10 @@ interface OrganizationDogsViewportWrapperProps {
     value?: string,
   ) => void;
   onOpenFilter?: () => void;
-  emptyStateVariant?: string;
+  emptyStateVariant?: import("@/components/ui/EmptyState").EmptyStateVariant;
   onClearFilters?: () => void;
   onBrowseOrganizations?: () => void;
-  listContext?: string;
+  listContext?: import("@/types/dogComponents").ListContext;
 }
 
 /**

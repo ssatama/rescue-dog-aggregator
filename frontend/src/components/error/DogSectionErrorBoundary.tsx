@@ -1,37 +1,37 @@
 import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { reportError } from "../../utils/logger";
+import type {
+  DogSectionErrorBoundaryProps,
+  DogSectionErrorBoundaryState,
+} from "@/types/dogComponents";
 
-class DogSectionErrorBoundary extends React.Component {
-  constructor(props) {
+class DogSectionErrorBoundary extends React.Component<
+  DogSectionErrorBoundaryProps,
+  DogSectionErrorBoundaryState
+> {
+  constructor(props: DogSectionErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): Partial<DogSectionErrorBoundaryState> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
-    // Only log in development
-    if (process.env.NODE_ENV !== "production") {
-      console.error("DogSection Error:", error, errorInfo);
-    }
-
-    // Report error to logging service
-    if (typeof window !== "undefined" && window.reportError) {
-      window.reportError(error, {
-        context: "DogSectionErrorBoundary",
-        componentStack: errorInfo.componentStack,
-      });
-    }
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    reportError(error, {
+      context: "DogSectionErrorBoundary",
+      componentStack: errorInfo.componentStack,
+    });
   }
 
-  handleRetry = () => {
+  handleRetry = (): void => {
     this.setState({ hasError: false, error: null });
   };
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       return (
         <section className="my-12 md:my-20">

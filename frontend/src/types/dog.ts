@@ -1,5 +1,7 @@
 import type { DogProfilerData } from "./dogProfiler";
 
+export type DogStatus = "available" | "unknown" | "adopted" | "reserved";
+
 /**
  * Base Dog interface used across the application
  * This is the canonical Dog type that should be imported everywhere
@@ -56,6 +58,11 @@ export interface Dog {
   // Adoption info
   adoption_url?: string;
   adoption_fee_euros?: number;
+
+  // Status and display
+  status?: DogStatus;
+  blur_data_url?: string;
+  breed_group?: string;
 
   // Personality and traits
   personality_traits?: string[];

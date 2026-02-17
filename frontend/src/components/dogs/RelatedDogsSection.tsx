@@ -1,21 +1,3 @@
-/**
- * RelatedDogsSection - Lazy-loaded section showing related dogs from the same organization
- *
- * Features:
- * - Lazy loading with IntersectionObserver (only loads when visible)
- * - Comprehensive loading states with skeleton animation
- * - Error handling with user-friendly fallbacks
- * - Performance optimized with React.memo on child components
- *
- * Performance Benefits:
- * - Reduces initial page load time by deferring API calls
- * - Improves perceived performance with skeleton states
- * - Prevents unnecessary network requests for invisible content
- *
- * @param {number} organizationId - ID of the organization to fetch related dogs from
- * @param {string} currentDogId - ID of current dog (excluded from results)
- * @param {Object} organization - Organization object with name and other details
- */
 "use client";
 import React, { useState, useEffect, useCallback, memo } from "react";
 import Link from "next/link";
@@ -24,16 +6,21 @@ import { getRelatedDogs } from "../../services/relatedDogsService";
 import { sanitizeText } from "../../utils/security";
 import { reportError } from "../../utils/logger";
 import { useScrollAnimation } from "../../hooks/useScrollAnimation";
+import { transformApiDogsToDogs } from "../../utils/dogTransformer";
+import type { Dog } from "@/types/dog";
+import type { RelatedDogsSectionProps } from "@/types/dogComponents";
 
-// Memoized RelatedDogsSection to prevent unnecessary re-renders
 const RelatedDogsSection = memo(
-  function RelatedDogsSection({ organizationId, currentDogId, organization }) {
-    const [relatedDogs, setRelatedDogs] = useState([]);
-    const [loading, setLoading] = useState(false); // Start as false for lazy loading
+  function RelatedDogsSection({
+    organizationId,
+    currentDogId,
+    organization,
+  }: RelatedDogsSectionProps): React.ReactElement | null {
+    const [relatedDogs, setRelatedDogs] = useState<Dog[]>([]);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
     const [hasStartedLoading, setHasStartedLoading] = useState(false);
 
-    // Use intersection observer for lazy loading
     const [sectionRef, isVisible] = useScrollAnimation({
       threshold: 0.1,
       rootMargin: "50px",
@@ -41,7 +28,6 @@ const RelatedDogsSection = memo(
     });
 
     const fetchRelatedDogs = useCallback(async () => {
-      // Don't fetch if required parameters are missing
       if (!organizationId || !currentDogId) {
         setLoading(false);
         return;
@@ -51,7 +37,7 @@ const RelatedDogsSection = memo(
         setLoading(true);
         setError(false);
         const dogs = await getRelatedDogs(organizationId, currentDogId);
-        setRelatedDogs(dogs);
+        setRelatedDogs(transformApiDogsToDogs(dogs));
       } catch (err) {
         reportError(err, {
           context: "RelatedDogsSection.fetchRelatedDogs",
@@ -64,7 +50,6 @@ const RelatedDogsSection = memo(
       }
     }, [organizationId, currentDogId]);
 
-    // Trigger loading when section becomes visible
     useEffect(() => {
       if (isVisible && !hasStartedLoading) {
         setHasStartedLoading(true);
@@ -72,13 +57,12 @@ const RelatedDogsSection = memo(
       }
     }, [isVisible, hasStartedLoading, fetchRelatedDogs]);
 
-    // Don't render section if required parameters are missing
     if (!organizationId || !currentDogId) {
       return null;
     }
 
     const organizationName = organization?.name || "this rescue";
-    const limitedRelatedDogs = relatedDogs.slice(0, 3); // Limit to 3 dogs max
+    const limitedRelatedDogs = relatedDogs.slice(0, 3);
 
     return (
       <div ref={sectionRef} className="mb-8">
@@ -169,12 +153,11 @@ const RelatedDogsSection = memo(
               data-testid="related-dogs-grid"
               className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"
             >
-              {limitedRelatedDogs.map((dog, index) => (
+              {limitedRelatedDogs.map((dog) => (
                 <DogCardOptimized
                   key={dog.id}
                   dog={dog}
                   priority={false}
-                  animationDelay={index}
                   compact={false}
                 />
               ))}
@@ -213,7 +196,6 @@ const RelatedDogsSection = memo(
     );
   },
   (prevProps, nextProps) => {
-    // Custom comparison function for better performance
     return (
       prevProps.organizationId === nextProps.organizationId &&
       prevProps.currentDogId === nextProps.currentDogId &&

@@ -1,6 +1,10 @@
 import React from "react";
+import type { DogStatus, DogStatusBadgeProps } from "@/types/dogComponents";
 
-const statusConfigs = {
+const statusConfigs: Record<
+  DogStatus,
+  { label: string; className: string; icon: string }
+> = {
   available: {
     label: "Available",
     className: "bg-green-100 text-green-800 border-green-200",
@@ -26,7 +30,7 @@ const statusConfigs = {
 export default function DogStatusBadge({
   status = "available",
   className = "",
-}) {
+}: DogStatusBadgeProps): React.ReactElement {
   const config = statusConfigs[status] || statusConfigs.available;
 
   return (

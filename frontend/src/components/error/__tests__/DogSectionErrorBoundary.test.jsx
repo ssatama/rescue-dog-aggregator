@@ -2,6 +2,10 @@ import React from "react";
 import { render, screen, fireEvent } from "../../../test-utils";
 import DogSectionErrorBoundary from "../DogSectionErrorBoundary";
 
+jest.mock("../../../utils/logger", () => ({
+  reportError: jest.fn(),
+}));
+
 // Component that throws an error for testing
 const ThrowError = ({ shouldThrow }) => {
   if (shouldThrow) {
@@ -18,6 +22,10 @@ describe("DogSectionErrorBoundary", () => {
   });
   afterAll(() => {
     console.error = originalError;
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   test("renders children when there is no error", () => {
@@ -62,6 +70,23 @@ describe("DogSectionErrorBoundary", () => {
     expect(() => {
       fireEvent.click(retryButton);
     }).not.toThrow();
+  });
+
+  test("should log error details for monitoring", () => {
+    const { reportError } = require("../../../utils/logger");
+
+    render(
+      <DogSectionErrorBoundary>
+        <ThrowError shouldThrow={true} />
+      </DogSectionErrorBoundary>,
+    );
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        context: "DogSectionErrorBoundary",
+      }),
+    );
   });
 
   test("has proper accessibility attributes", () => {

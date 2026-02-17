@@ -2,10 +2,13 @@
 import React, { memo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "../ui/NextImage";
-import { getThumbnailImage, handleImageError } from "../../utils/imageUtils";
-import { sanitizeText } from "../../utils/security";
+import { getThumbnailImage } from "../../utils/imageUtils";
+import type { Dog } from "@/types/dog";
+import type { RelatedDogsCardProps } from "@/types/dogComponents";
 
-const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
+const RelatedDogsCard = memo(function RelatedDogsCard({
+  dog,
+}: RelatedDogsCardProps): React.ReactElement {
   const router = useRouter();
 
   const handleCardClick = useCallback(() => {
@@ -14,7 +17,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
   }, [router, dog.id, dog.slug]);
 
   const handleKeyDown = useCallback(
-    (e) => {
+    (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         handleCardClick();
@@ -23,7 +26,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
     [handleCardClick],
   );
 
-  const formatAge = (dog) => {
+  const formatAge = (dog: Dog): string => {
     if (dog.age_min_months) {
       if (dog.age_min_months < 12) {
         return `${dog.age_min_months} month${dog.age_min_months === 1 ? "" : "s"}`;
@@ -40,7 +43,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
     return dog.age_text || "Age unknown";
   };
 
-  const formatBreed = (dog) => {
+  const formatBreed = (dog: Dog): string => {
     return dog.standardized_breed || dog.breed || "Mixed breed";
   };
 

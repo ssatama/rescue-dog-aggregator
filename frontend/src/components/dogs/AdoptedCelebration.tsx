@@ -1,6 +1,9 @@
 import React from "react";
+import type { AdoptedCelebrationProps } from "@/types/dogComponents";
 
-export default function AdoptedCelebration({ dogName }) {
+export default function AdoptedCelebration({
+  dogName,
+}: AdoptedCelebrationProps): React.ReactElement {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 p-8 shadow-2xl mb-8">
       {/* Main content */}

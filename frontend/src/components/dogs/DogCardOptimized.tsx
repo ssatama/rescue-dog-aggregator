@@ -27,6 +27,8 @@ import {
   getPersonalityTraits,
 } from "../../utils/dogHelpers";
 import { trackDogCardClick } from "@/lib/monitoring/breadcrumbs";
+import type { DogCardOptimizedProps } from "@/types/dogComponents";
+import type { Dog } from "@/types/dog";
 
 const DogCardOptimized = React.memo(
   function DogCardOptimized({
@@ -38,8 +40,7 @@ const DogCardOptimized = React.memo(
     position = 0,
     listContext = "home",
     disableContainment = false,
-  }) {
-  // Enhanced data processing using helper functions
+  }: DogCardOptimizedProps): React.ReactElement {
   const name = dog?.name || "Unknown Dog";
   const breed = formatBreed(dog);
   const breedGroup = sanitizeText(dog?.breed_group);
@@ -48,7 +49,6 @@ const DogCardOptimized = React.memo(
   const slug = dog?.slug || `unknown-dog-${id}`;
   const status = sanitizeText(dog?.status || "unknown");
 
-  // Enhanced data using helper functions
   const formattedAge = formatAge(dog);
   const ageCategory = getAgeCategory(dog);
   const genderData = formatGender(dog);
@@ -56,15 +56,13 @@ const DogCardOptimized = React.memo(
   const shipsToCountries = getShipsToCountries(dog);
   const showNewBadge = isRecentDog(dog);
 
-  // New uncertainty indicators and enhanced data
   const experienceLevel = formatExperienceLevel(dog);
   const compatibility = formatCompatibility(dog);
   const personalityTraits = getPersonalityTraits(dog);
 
-  // Helper function to get standardized size for data attribute
-  const getStandardizedSize = (dog) => {
+  const getStandardizedSize = (dog: Dog): string => {
     const size = dog?.standardized_size || dog?.size || "";
-    const sizeMapping = {
+    const sizeMapping: Record<string, string> = {
       Tiny: "Tiny",
       Small: "Small",
       Medium: "Medium",
@@ -76,7 +74,6 @@ const DogCardOptimized = React.memo(
 
   const standardizedSize = getStandardizedSize(dog);
 
-  // Memoize share data to prevent string recreation on every render
   const shareData = useMemo(
     () => ({
       url: `${typeof window !== "undefined" ? window.location.origin : ""}/dogs/${slug}`,
@@ -86,7 +83,6 @@ const DogCardOptimized = React.memo(
     [slug, name, organizationName]
   );
 
-  // Memoize click handler to prevent recreation
   const handleCardClick = useCallback(() => {
     if (id && id !== "0" && name && name !== "Unknown Dog") {
       try {
@@ -97,11 +93,9 @@ const DogCardOptimized = React.memo(
     }
   }, [id, name, position, listContext]);
 
-  // Track if initial mount is complete to defer animations
   const [canAnimate, setCanAnimate] = useState(false);
 
   useEffect(() => {
-    // Check for reduced motion preference
     const prefersReducedMotion =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -110,7 +104,6 @@ const DogCardOptimized = React.memo(
       return;
     }
 
-    // Mark initial mount complete after first paint to defer animations
     const frameId = requestAnimationFrame(() => {
       setCanAnimate(true);
     });
@@ -118,17 +111,12 @@ const DogCardOptimized = React.memo(
     return () => cancelAnimationFrame(frameId);
   }, []);
 
-  // Skip animation for:
-  // 1. Virtualized cards (controlled by parent)
-  // 2. Initial mount (prevent hydration TBT)
-  // 3. Cards at position 4+ (only first 4 cards animate)
   const shouldAnimate = !isVirtualized && canAnimate && position < 4;
 
   const animationClass = shouldAnimate
     ? `animate-fadeInUp animate-delay-${Math.min(position * 100, 300)}`
     : "";
 
-  // Ultra-compact embedded mode for guide pages
   if (embedded) {
     return (
       <Card
@@ -195,7 +183,6 @@ const DogCardOptimized = React.memo(
     );
   }
 
-  // Compact mobile list view for better space utilization
   if (compact) {
     return (
       <Card
@@ -252,7 +239,7 @@ const DogCardOptimized = React.memo(
                 compact
               />
               <FavoriteButton
-                dogId={dog.id}
+                dogId={Number(dog.id)}
                 dogName={dog.name}
                 orgSlug={dog.organization?.slug}
                 compact
@@ -401,7 +388,7 @@ const DogCardOptimized = React.memo(
               compact
             />
             <FavoriteButton
-              dogId={dog.id}
+              dogId={Number(dog.id)}
               dogName={dog.name}
               orgSlug={dog.organization?.slug}
             />

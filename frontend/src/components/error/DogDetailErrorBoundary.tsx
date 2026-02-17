@@ -1,15 +1,18 @@
-/**
- * Enhanced error boundary specifically for dog detail pages
- * Provides graceful error handling with retry options and user-friendly messages
- */
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { reportError } from "../../utils/logger";
+import type {
+  DogDetailErrorBoundaryProps,
+  DogDetailErrorBoundaryState,
+} from "@/types/dogComponents";
 
-class DogDetailErrorBoundary extends React.Component {
-  constructor(props) {
+class DogDetailErrorBoundary extends React.Component<
+  DogDetailErrorBoundaryProps,
+  DogDetailErrorBoundaryState
+> {
+  constructor(props: DogDetailErrorBoundaryProps) {
     super(props);
     this.state = {
       hasError: false,
@@ -19,17 +22,11 @@ class DogDetailErrorBoundary extends React.Component {
     };
   }
 
-  static getDerivedStateFromError(error) {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): Partial<DogDetailErrorBoundaryState> {
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
-    this.setState({
-      error,
-      errorInfo,
-    });
-
-    // Log error for monitoring
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     reportError(error, {
       context: "DogDetailErrorBoundary",
       componentStack: errorInfo.componentStack,
@@ -38,7 +35,7 @@ class DogDetailErrorBoundary extends React.Component {
     });
   }
 
-  handleRetry = () => {
+  handleRetry = (): void => {
     this.setState((prevState) => ({
       hasError: false,
       error: null,
@@ -47,13 +44,13 @@ class DogDetailErrorBoundary extends React.Component {
     }));
   };
 
-  handleGoBack = () => {
+  handleGoBack = (): void => {
     if (typeof window !== "undefined") {
       window.history.back();
     }
   };
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       const { retryCount } = this.state;
       const canRetry = retryCount < 3;
