@@ -72,6 +72,97 @@ class TestTranslationFunctions:
             result = translate_breed(text)
             assert result == expected, f"Expected {expected}, got {result} for text: {text}"
 
+    @pytest.mark.unit
+    def test_normalize_name_removes_parenthetical_text(self):
+        test_cases = [
+            ("Strolch (vermittlungshilfe)", "Strolch"),
+            ("Vera (gnadenplatz)", "Vera"),
+            ("Moon (genannt coco)", "Moon"),
+            ("Yin (jetzt enie)", "Yin"),
+            ("Whiskey (gnadenplatz)", "Whiskey"),
+            ("Monter (wahrscheinlich älter als angegeben)", "Monter"),
+        ]
+
+        for input_name, expected in test_cases:
+            result = normalize_name(input_name)
+            assert result == expected, f"Expected {expected}, got {result} for: {input_name}"
+
+    @pytest.mark.unit
+    def test_normalize_name_handles_quotes(self):
+        test_cases = [
+            ('Mo\'nique "vermittlungshilfe"', "Mo'nique"),
+            ('Bo "vermittlungshilfe"', "Bo"),
+            ('Test "some text"', "Test"),
+        ]
+
+        for input_name, expected in test_cases:
+            result = normalize_name(input_name)
+            assert result == expected, f"Expected {expected}, got {result} for: {input_name}"
+
+    @pytest.mark.unit
+    def test_normalize_name_handles_ampersand(self):
+        assert normalize_name("Benji & dali") == "Benji & Dali"
+        assert normalize_name("max & moritz") == "Max & Moritz"
+
+    @pytest.mark.unit
+    def test_translate_age_date_patterns(self):
+        test_cases = [
+            ("01.2024 (1 Jahr alt)", "1 year old"),
+            ("09.2020 (4 Jahre alt)", "4 years old"),
+            ("06.2025 (2 Monate alt)", "2 months old"),
+            ("02.2022 (3 Jahre alt)", "3 years old"),
+            ("11.2024 (9 Monate alt)", "9 months old"),
+            ("12.2024 (8 Monate alt)", "8 months old"),
+        ]
+
+        for text, expected in test_cases:
+            result = translate_age(text)
+            assert result == expected, f"Expected {expected}, got {result} for: {text}"
+
+    @pytest.mark.unit
+    def test_translate_age_simple_patterns(self):
+        test_cases = [
+            ("1 Monat alt", "1 month old"),
+            ("1 Jahr", "1 year"),
+            ("5 Monate", "5 months"),
+        ]
+
+        for text, expected in test_cases:
+            result = translate_age(text)
+            assert result == expected, f"Expected {expected}, got {result} for: {text}"
+
+    @pytest.mark.unit
+    def test_translate_age_unknown_and_empty(self):
+        assert translate_age("Unbekannt") is None
+        assert translate_age("unbekannt") is None
+        assert translate_age("") is None
+        assert translate_age(None) is None
+
+    @pytest.mark.unit
+    def test_translate_breed_extended(self):
+        test_cases = [
+            ("Mischlinge", "Mixed Breed"),
+            ("Bodeguero Mix", "Bodeguero Andaluz Mix"),
+            ("Mastin", "Spanish Mastiff"),
+            ("Spanischer Windhund", "Spanish Greyhound"),
+            ("Perdiguero de Burgos", "Burgos Pointer"),
+            ("Braco Aleman Mix", "German Shorthaired Pointer Mix"),
+            ("Bracken-Mix", "Hound-Mix"),
+            ("Schäferhund Mischling", "German Shepherd Mix"),
+            ("Herdenschutzhund", "Livestock Guardian Dog"),
+            ("Jagdhund Mix", "Hunting Dog Mix"),
+            ("Podenco-Mischling", "Podenco Mix"),
+        ]
+
+        for text, expected in test_cases:
+            result = translate_breed(text)
+            assert result == expected, f"Expected {expected}, got {result} for: {text}"
+
+    @pytest.mark.unit
+    def test_translate_gender_none_and_empty(self):
+        assert translate_gender(None) is None
+        assert translate_gender("") is None
+
 
 class TestScraperCoreFunctions:
     @pytest.fixture
@@ -183,31 +274,6 @@ class TestScraperCoreFunctions:
             result = scraper.get_page_url(page)
             expected = f"{base_url}page/{page}/"
             assert result == expected, f"Expected {expected}, got {result}"
-
-    @pytest.mark.unit
-    def test_data_structure_validation(self):
-        sample_data = {
-            "name": "Sasha",
-            "external_id": "sasha-123",
-            "age_text": "2 Jahre",
-            "sex": "Hündin",
-            "breed": "Mischling",
-            "primary_image_url": "https://example.com/image.jpg",
-            "adoption_url": "https://tierschutzverein-europa.de/tiervermittlung/sasha-123/",
-        }
-
-        required_fields = [
-            "name",
-            "external_id",
-            "age_text",
-            "sex",
-            "breed",
-            "primary_image_url",
-            "adoption_url",
-        ]
-        for field in required_fields:
-            assert field in sample_data, f"Required field {field} missing"
-            assert sample_data[field], f"Required field {field} is empty"
 
     @pytest.mark.unit
     def test_get_animal_list_extracts_dogs_from_listing(self, scraper, listing_html):

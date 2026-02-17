@@ -884,3 +884,177 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             self.assertEqual(dog_data["age_text"], "01/01/2023")
             self.assertEqual(dog_data["sex"], "Male")
             self.assertEqual(dog_data["primary_image_url"], "https://example.com/image.jpg")
+
+    def test_clean_dog_name_handles_various_formats(self):
+        self.assertEqual(self.scraper._clean_dog_name("pepper"), "Pepper")
+        self.assertEqual(self.scraper._clean_dog_name("SUMMER"), "Summer")
+        self.assertEqual(self.scraper._clean_dog_name("mixed case"), "Mixed Case")
+        self.assertEqual(self.scraper._clean_dog_name("king ii"), "King II")
+        self.assertEqual(self.scraper._clean_dog_name("duke iii"), "Duke III")
+        self.assertEqual(self.scraper._clean_dog_name("prince iv"), "Prince IV")
+
+    def test_extract_dog_name_from_url_detailed(self):
+        self.assertEqual(
+            self.scraper._extract_dog_name_from_url("https://santerpawsbulgarianrescue.com/dog/mary-jane-watson/"),
+            "Mary Jane Watson",
+        )
+
+    @patch("requests.get")
+    def test_description_extraction_handles_div_tags(self, mock_get):
+        mock_html = """
+        <html>
+        <body>
+            <h2>About</h2>
+            <div>
+                <div>This is a description in DIV tags instead of P tags.</div>
+                <div>She needs a loving home with experienced owners.</div>
+            </div>
+        </body>
+        </html>
+        """
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = mock_html
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+
+        expected = "This is a description in DIV tags instead of P tags. She needs a loving home with experienced owners."
+        self.assertEqual(result["description"], expected)
+        self.assertEqual(result["properties"]["description"], expected)
+
+    @patch("requests.get")
+    def test_description_extraction_handles_mixed_tags(self, mock_get):
+        mock_html = """
+        <html>
+        <body>
+            <h2>About</h2>
+            <div>
+                <p>This paragraph is in P tags.</p>
+                <div>This content is in DIV tags.</div>
+                <p>Another paragraph in P tags.</p>
+            </div>
+        </body>
+        </html>
+        """
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = mock_html
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+
+        expected = "This paragraph is in P tags. This content is in DIV tags. Another paragraph in P tags."
+        self.assertEqual(result["description"], expected)
+
+    @patch("requests.get")
+    def test_image_urls_empty_array_when_no_image(self, mock_get):
+        mock_html = """
+        <html>
+        <body>
+            <h2>About</h2>
+            <div><p>Dog with no image.</p></div>
+        </body>
+        </html>
+        """
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = mock_html
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+
+        self.assertIn("image_urls", result)
+        self.assertEqual(result["image_urls"], [])
+        self.assertIsNone(result["primary_image_url"])
+
+    @patch("requests.get")
+    def test_image_urls_populated_when_images_exist(self, mock_get):
+        mock_html = """
+        <html>
+        <body>
+            <figure>
+                <img src="https://santerpawsbulgarianrescue.com/wp-content/uploads/2024/test-dog.jpg" alt="Test Dog">
+            </figure>
+        </body>
+        </html>
+        """
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = mock_html
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+
+        self.assertIn("image_urls", result)
+        self.assertEqual(len(result["image_urls"]), 1)
+        self.assertEqual(
+            result["image_urls"][0],
+            "https://santerpawsbulgarianrescue.com/wp-content/uploads/2024/test-dog.jpg",
+        )
+        self.assertEqual(
+            result["primary_image_url"],
+            "https://santerpawsbulgarianrescue.com/wp-content/uploads/2024/test-dog.jpg",
+        )
+
+    @patch("requests.get")
+    def test_zero_nulls_compliance_with_sensible_defaults(self, mock_get):
+        mock_html = """
+        <html>
+        <body>
+            <h2>About</h2>
+            <div><p>Basic description only.</p></div>
+        </body>
+        </html>
+        """
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = mock_html
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+
+        self.assertEqual(result["breed"], "Unknown")
+        self.assertEqual(result["standardized_size"], "Medium")
+        self.assertEqual(result["description"], "Basic description only.")
+        self.assertIn(result.get("age"), [None, "Unknown"])
+        self.assertIsNone(result.get("gender"))
+
+    @patch("requests.get")
+    def test_information_section_handles_missing_breed(self, mock_get):
+        mock_html = """
+        <html>
+        <body>
+            <h2>Information</h2>
+            <div>
+                <div>
+                    <div>D.O.B</div>
+                    <div>01/01/2020</div>
+                    <div>Size</div>
+                    <div>Small</div>
+                    <div>Sex</div>
+                    <div>Female</div>
+                    <div>Breed</div>
+                    <div>Status</div>
+                    <div>available</div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = mock_html
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
+
+        self.assertEqual(result["standardized_size"], "Small")
+        self.assertEqual(result["gender"], "female")
+        self.assertEqual(result["breed"], "Mixed Breed")

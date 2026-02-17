@@ -498,12 +498,7 @@ class TestFurryRescueItalyScraper(ScraperTestBase):
         scraper._merge_animal_details(animal, details)
 
         size = animal.get("size")
-        standardized = animal.get("standardized_size")
-        if size:
-            assert size == "Medium", f"Expected 'Medium', got '{size}'"
-        if standardized is None:
-            result = scraper.standardizer.apply_full_standardization(size="Medium")
-            assert result["standardized_size"] == "Medium", f"Expected 'Medium', got '{result['standardized_size']}'"
+        assert size == "Medium", f"Expected 'Medium', got '{size}'"
 
     def test_thor_large_size_detection(self, scraper):
         html = """
@@ -556,8 +551,7 @@ class TestFurryRescueItalyScraper(ScraperTestBase):
         assert animal["name"] == "Berry"
         assert animal.get("breed") in ["Mix", "Mixed Breed"]
         assert animal.get("sex") == "Male"
-        if animal.get("size"):
-            assert animal.get("size") == "Medium"
+        assert animal.get("size") == "Medium"
         assert animal.get("standardized_size") == "Medium"
 
         age_text = animal.get("age_text", "")

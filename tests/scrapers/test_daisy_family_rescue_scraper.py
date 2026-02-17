@@ -195,13 +195,17 @@ weiblich, kastriert"""
             mock_service.create_driver.return_value = mock_browser_result
             mock_driver.find_elements.return_value = []
 
-            try:
-                scraper._extract_with_selenium()
-            except Exception:
-                pass
+            with (
+                patch("scrapers.daisy_family_rescue.dogs_scraper.WebDriverWait") as mock_wait,
+                patch.object(scraper, "_handle_lazy_loading"),
+                patch.object(scraper, "_filter_dogs_by_section", return_value=[]),
+            ):
+                mock_wait.return_value.until.return_value = True
+                result = scraper._extract_with_selenium()
 
             mock_browser_service.assert_called_once()
             mock_service.create_driver.assert_called_once()
+            assert result == []
 
     @pytest.mark.unit
     def test_parse_name_and_location(self, scraper):
@@ -642,25 +646,6 @@ class TestDaisyFamilyRescueScraperIntegration:
 
         rate_delay = scraper.get_rate_limit_delay()
         assert rate_delay == 0.1
-
-        sample_data = [
-            {
-                "name": "Test Dog",
-                "breed": "Mixed Breed",
-                "age_text": "2 years",
-                "external_id": "test-123",
-                "sex": "Male",
-                "primary_image_url": "https://example.com/image.jpg",
-                "adoption_url": "https://example.com/adopt",
-            }
-        ]
-
-        mock_metrics_collector = Mock()
-        mock_metrics_collector.assess_data_quality.return_value = 0.9
-        scraper.metrics_collector = mock_metrics_collector
-
-        quality_score = scraper.metrics_collector.assess_data_quality(sample_data)
-        assert 0.8 <= quality_score <= 1.0, f"Quality score should be high: {quality_score}"
 
     @pytest.mark.integration
     def test_configuration_driven_initialization(self):

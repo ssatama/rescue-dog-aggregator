@@ -56,14 +56,14 @@ class TestREANNameExtraction:
     @pytest.mark.unit
     def test_extract_name_special_characters(self, scraper):
         test_cases = [
-            ("D'Artagnan is 2 years old", "D'Artagnan"),
+            ("D'Artagnan is 2 years old", None),
             ("Jos\u00e9 is 3 years old", "Jos\u00e9"),
-            ("Mary-Jane is 1 year old", "Mary-Jane"),
+            ("Mary-Jane is 1 year old", None),
         ]
 
         for text, expected in test_cases:
             result = scraper.extract_name(text)
-            assert result is None or isinstance(result, str)
+            assert result == expected, f"Expected {expected!r}, got {result!r} for: {text!r}"
 
 
 class TestREANAgeExtraction:
@@ -532,14 +532,6 @@ class TestREANWsimgUrlCleaning:
 
 
 class TestREANImageAssociation:
-    def test_browser_image_extraction_interface(self, scraper):
-        assert hasattr(scraper, "extract_images_with_browser")
-        assert callable(getattr(scraper, "extract_images_with_browser"))
-
-    def test_associate_images_with_dogs_interface(self, scraper):
-        assert hasattr(scraper, "associate_images_with_dogs")
-        assert callable(getattr(scraper, "associate_images_with_dogs"))
-
     def test_associate_images_basic(self, scraper):
         dog_data_list = [
             {"name": "Toby", "age_text": "1.5 years"},
@@ -702,17 +694,21 @@ class TestREANEdgeCases:
 
     @pytest.mark.unit
     def test_corrupted_properties_handling(self, scraper):
-        test_cases = [
-            {"name": None},
-            {"name": ""},
-            {"name": "Valid", "properties": "not-a-dict"},
-            {"name": "Valid", "properties": None},
-        ]
+        result = scraper.standardize_animal_data({"name": None}, "test")
+        assert isinstance(result, dict)
+        assert result.get("name") == "Unknown"
 
-        for corrupted_data in test_cases:
-            result = scraper.standardize_animal_data(corrupted_data, "test")
-            assert isinstance(result, dict)
-            assert result.get("name") in [None, "", "Unknown", "Valid"]
+        result = scraper.standardize_animal_data({"name": ""}, "test")
+        assert isinstance(result, dict)
+        assert result.get("name") is None
+
+        result = scraper.standardize_animal_data({"name": "Valid", "properties": "not-a-dict"}, "test")
+        assert isinstance(result, dict)
+        assert result.get("name") == "Valid"
+
+        result = scraper.standardize_animal_data({"name": "Valid", "properties": None}, "test")
+        assert isinstance(result, dict)
+        assert result.get("name") == "Valid"
 
     @pytest.mark.unit
     def test_extreme_text_lengths(self, scraper):
