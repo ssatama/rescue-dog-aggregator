@@ -103,8 +103,8 @@ describe("Social Sharing Optimization - Phase 3B", () => {
         expect(metadata.twitter.title).toBeDefined();
       }
       expect(metadata.description).toBeDefined();
-      if (metadata.openGraph && metadata.openGraph.article) {
-        expect(metadata.openGraph.article).toBeDefined();
+      if (metadata.openGraph && metadata.openGraph.section) {
+        expect(metadata.openGraph.section).toBeDefined();
       }
     });
   });
@@ -178,13 +178,10 @@ describe("Social Sharing Optimization - Phase 3B", () => {
       expect(metadata.openGraph.images[0]).toHaveProperty("height", 630);
       expect(metadata.openGraph.images[0]).toHaveProperty("type", "image/jpeg");
 
-      // Should have article metadata for better categorization
-      expect(metadata.openGraph.article).toHaveProperty(
-        "section",
-        "Pet Adoption",
-      );
-      expect(metadata.openGraph.article.tag).toContain("Border Collie");
-      expect(metadata.openGraph.article.tag).toContain("Seattle");
+      // Should have article metadata for better categorization (flat on openGraph per Next.js Metadata spec)
+      expect(metadata.openGraph.section).toBe("Pet Adoption");
+      expect(metadata.openGraph.tags).toContain("Border Collie");
+      expect(metadata.openGraph.tags).toContain("Seattle");
     });
   });
 

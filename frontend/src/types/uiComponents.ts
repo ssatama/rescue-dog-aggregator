@@ -23,3 +23,12 @@ export interface ContactButtonProps {
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
 }
+
+export interface BreadcrumbItem {
+  name: string;
+  url?: string;
+}
+
+export interface BreadcrumbsProps {
+  items: BreadcrumbItem[];
+}

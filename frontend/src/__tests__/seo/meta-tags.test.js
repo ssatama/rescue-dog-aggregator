@@ -251,7 +251,7 @@ describe("SEO Meta Tags", () => {
     });
 
     test("should have proper meta tags for about page", async () => {
-      const { metadata } = await import("../../app/about/page.jsx");
+      const { metadata } = await import("../../app/about/page");
 
       expect(metadata.title).toBe("About Us | European Rescue Dog Platform - Rescue Dogs");
       expect(metadata.description).toContain("Learn about our mission");

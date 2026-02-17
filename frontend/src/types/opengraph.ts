@@ -55,35 +55,3 @@ export interface PageMetadata {
   robots?: string;
   viewport?: string;
 }
-
-// Helper function to validate OpenGraph type
-export function isValidOpenGraphType(type: string): type is OpenGraphType {
-  const validTypes: OpenGraphType[] = [
-    "website",
-    "article",
-    "profile",
-    "book",
-    "video.movie",
-    "video.episode",
-    "video.tv_show",
-    "video.other",
-    "music.song",
-    "music.album",
-    "music.playlist",
-    "music.radio_station",
-  ];
-
-  return validTypes.includes(type as OpenGraphType);
-}
-
-// Helper function to validate Twitter Card type
-export function isValidTwitterCardType(type: string): type is TwitterCardType {
-  const validTypes: TwitterCardType[] = [
-    "summary",
-    "summary_large_image",
-    "app",
-    "player",
-  ];
-
-  return validTypes.includes(type as TwitterCardType);
-}
