@@ -15,6 +15,13 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const breedData = await getBreedBySlug("mixed");
 
+    if (!breedData) {
+      return {
+        title: "Mixed Breed Rescue Dogs for Adoption",
+        description: "Find unique mixed breed rescue dogs for adoption.",
+      };
+    }
+
     const avgAge = breedData.average_age
       ? `Average age ${Math.round(breedData.average_age)} years. `
       : "";
@@ -89,37 +96,32 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function fetchMixedBreedData() {
-  try {
-    const breedData = await getBreedBySlug("mixed");
+  const breedData = await getBreedBySlug("mixed");
 
-    if (!breedData) {
-      return null;
-    }
-
-    const initialDogs = await getAnimals({
-      breed_group: "Mixed",
-      limit: 12,
-      offset: 0,
-    });
-
-    const enrichedBreedData = {
-      ...breedData,
-      description: {
-        tagline: "Unique personalities from diverse genetic backgrounds",
-        overview:
-          "Mixed breed dogs combine the best traits of multiple breeds, resulting in unique personalities and often healthier genetics.",
-        temperament:
-          "Mixed breeds have diverse temperaments shaped by their unique genetic combinations and individual experiences.",
-        family:
-          "Many mixed breeds make excellent family pets, with their compatibility depending on individual personality and socialization.",
-      },
-    };
-
-    return { breedData, initialDogs, enrichedBreedData };
-  } catch (error) {
-    console.error("Error loading mixed breeds page:", error);
+  if (!breedData) {
     return null;
   }
+
+  const initialDogs = await getAnimals({
+    breed_group: "Mixed",
+    limit: 12,
+    offset: 0,
+  });
+
+  const enrichedBreedData = {
+    ...breedData,
+    description: {
+      tagline: "Unique personalities from diverse genetic backgrounds",
+      overview:
+        "Mixed breed dogs combine the best traits of multiple breeds, resulting in unique personalities and often healthier genetics.",
+      temperament:
+        "Mixed breeds have diverse temperaments shaped by their unique genetic combinations and individual experiences.",
+      family:
+        "Many mixed breeds make excellent family pets, with their compatibility depending on individual personality and socialization.",
+    },
+  };
+
+  return { breedData, initialDogs, enrichedBreedData };
 }
 
 export default async function MixedBreedsPage() {
@@ -142,7 +144,6 @@ export default async function MixedBreedsPage() {
         <BreedDetailClient
           initialBreedData={breedData}
           initialDogs={initialDogs}
-          initialParams={{}}
         />
       </Suspense>
     </>

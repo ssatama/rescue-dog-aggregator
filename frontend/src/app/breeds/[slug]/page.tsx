@@ -132,30 +132,25 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
 }
 
 async function fetchBreedPageData(slug: string) {
-  try {
-    const breedData = await getBreedBySlug(slug);
+  const breedData = await getBreedBySlug(slug);
 
-    if (!breedData) {
-      return null;
-    }
-
-    const initialDogs = await getAnimals({
-      breed: breedData.primary_breed,
-      limit: 12,
-      offset: 0,
-    });
-
-    const breedDescription = getBreedDescription(breedData.primary_breed);
-    const enrichedBreedData = {
-      ...breedData,
-      description: breedDescription || breedData.description,
-    };
-
-    return { breedData, initialDogs, enrichedBreedData };
-  } catch (error) {
-    console.error("Error loading breed page:", error);
+  if (!breedData) {
     return null;
   }
+
+  const initialDogs = await getAnimals({
+    breed: breedData.primary_breed,
+    limit: 12,
+    offset: 0,
+  });
+
+  const breedDescription = getBreedDescription(breedData.primary_breed);
+  const enrichedBreedData = {
+    ...breedData,
+    description: breedDescription || breedData.description,
+  };
+
+  return { breedData, initialDogs, enrichedBreedData };
 }
 
 export default async function BreedDetailPage(props: BreedPageProps) {
@@ -180,7 +175,6 @@ export default async function BreedDetailPage(props: BreedPageProps) {
           <BreedDetailClient
             initialBreedData={breedData}
             initialDogs={initialDogs}
-            initialParams={{}}
           />
         </Suspense>
       </ErrorBoundary>

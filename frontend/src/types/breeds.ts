@@ -118,7 +118,7 @@ export interface GalleryImage {
 export interface BreedFilterBarProps {
   breedData: BreedData;
   filters: BreedFilters;
-  filterCounts: BreedFilterCounts | null;
+  filterCounts: FilterCountsResponse | null;
   onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
   onOpenMobileFilters: () => void;
@@ -165,23 +165,21 @@ export interface BreedPageData extends BreedData {
   available_countries?: string[];
   purebred_count?: number;
   crossbreed_count?: number;
-  error?: string;
 }
 
-export interface BreedDetailFilters {
-  searchQuery: string;
-  sizeFilter: string;
-  ageFilter: string;
-  sexFilter: string;
-  organizationFilter: string;
-  availableCountryFilter: string;
-  [key: string]: string;
-}
+export type BreedDetailFilterKey =
+  | "searchQuery"
+  | "sizeFilter"
+  | "ageFilter"
+  | "sexFilter"
+  | "organizationFilter"
+  | "availableCountryFilter";
+
+export type BreedDetailFilters = Record<BreedDetailFilterKey, string>;
 
 export interface BreedDetailClientProps {
   initialBreedData: BreedPageData;
   initialDogs: ApiDog[];
-  initialParams: Record<string, string>;
 }
 
 export interface BreedsHubClientProps {
@@ -189,7 +187,6 @@ export interface BreedsHubClientProps {
     purebred_count?: number;
     crossbreed_count?: number;
     unique_breeds?: number;
-    error?: string;
   };
   mixedBreedData: BreedWithImages | null;
   popularBreedsWithImages: BreedWithImages[];

@@ -10,6 +10,7 @@ export const FilterCountSchema = z
 
 export const FilterCountsResponseSchema = z
   .object({
+    total_count: z.number().optional(),
     sex_options: z.array(FilterCountSchema).optional(),
     size_options: z.array(FilterCountSchema).optional(),
     age_options: z.array(FilterCountSchema).optional(),

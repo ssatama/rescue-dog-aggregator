@@ -18,6 +18,7 @@ import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import { getAnimals, getFilterCounts } from "@/services/animalsService";
 import { getBreedDescription } from "@/utils/breedDescriptions";
+import { reportError } from "@/utils/logger";
 import { useDebouncedCallback } from "use-debounce";
 import BreedFilterBar from "@/components/breeds/BreedFilterBar";
 import { getBreedFilterOptions } from "@/utils/breedFilterUtils";
@@ -31,9 +32,10 @@ import type { ApiDog } from "@/types/apiDog";
 import type { Dog } from "@/types/dog";
 import type {
   BreedDetailClientProps,
+  BreedDetailFilterKey,
   BreedDetailFilters,
-  BreedFilterCounts,
   BreedPageData,
+  SampleDog,
 } from "@/types/breeds";
 import type { FilterCountsResponse } from "@/schemas/common";
 
@@ -55,7 +57,7 @@ const SIZE_MAPPING: Record<string, string> = {
   "Extra Large": "XLarge",
 };
 
-const PARAM_MAPPING: Record<string, string> = {
+const PARAM_MAPPING: Record<BreedDetailFilterKey, string> = {
   searchQuery: "search",
   sizeFilter: "size",
   ageFilter: "age",
@@ -91,7 +93,7 @@ function buildURLFromFilters(
 ): string {
   const params = new URLSearchParams();
 
-  for (const [key, value] of Object.entries(filters)) {
+  for (const [key, value] of Object.entries(filters) as [BreedDetailFilterKey, string][]) {
     const paramKey = PARAM_MAPPING[key] || key;
     if (!isDefaultFilterValue(value)) {
       params.set(paramKey, value);
@@ -130,7 +132,7 @@ export default function BreedDetailClient({
     (initialDogs || []).length === ITEMS_PER_PAGE,
   );
   const [page, setPage] = useState(1);
-  const [filterCounts, setFilterCounts] = useState<BreedFilterCounts | null>(
+  const [filterCounts, setFilterCounts] = useState<FilterCountsResponse | null>(
     null,
   );
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
@@ -212,7 +214,7 @@ export default function BreedDetailClient({
         startTransition(() => {
           setDogs(newDogs);
           setHasMore(newDogs.length === ITEMS_PER_PAGE);
-          setFilterCounts(counts as unknown as BreedFilterCounts);
+          setFilterCounts(counts);
           setPage(1);
           if (isInitialLoad) {
             setLoading(false);
@@ -221,9 +223,7 @@ export default function BreedDetailClient({
       } catch (err: unknown) {
         if (err instanceof Error && err.name === "AbortError") return;
 
-        if (process.env.NODE_ENV === "development") {
-          console.error("Failed to load dogs:", err);
-        }
+        reportError(err, { context: "fetchDogsWithFilters" });
         if (requestId === requestIdRef.current) {
           setError("Could not load dogs. Please try again.");
           if (isInitialLoad) {
@@ -257,13 +257,9 @@ export default function BreedDetailClient({
       let newFilters: BreedDetailFilters;
 
       if (typeof filterKeyOrBatch === "object") {
-        const mappedBatch: Record<string, string> = {};
-        for (const [key, val] of Object.entries(filterKeyOrBatch)) {
-          mappedBatch[key] = val;
-        }
-        newFilters = { ...filters, ...mappedBatch };
+        newFilters = { ...filters, ...filterKeyOrBatch as Partial<BreedDetailFilters> };
       } else {
-        newFilters = { ...filters, [filterKeyOrBatch]: value ?? "" };
+        newFilters = { ...filters, [filterKeyOrBatch]: value ?? "" } as BreedDetailFilters;
       }
 
       router.push(buildURLFromFilters(newFilters, pathname), { scroll: false });
@@ -306,10 +302,8 @@ export default function BreedDetailClient({
         setHasMore(newDogs.length === ITEMS_PER_PAGE);
         setPage(nextPage);
       });
-    } catch (err) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Failed to load more dogs:", err);
-      }
+    } catch (err: unknown) {
+      reportError(err, { context: "loadMoreDogs" });
       setError("Could not load more dogs. Please try again.");
     } finally {
       setLoadingMore(false);
@@ -354,12 +348,10 @@ export default function BreedDetailClient({
       const params = buildAPIParamsRef.current(filtersRef.current);
       getFilterCounts(params)
         .then((counts) => {
-          setFilterCounts(counts as unknown as BreedFilterCounts);
+          setFilterCounts(counts);
         })
         .catch((err: unknown) => {
-          if (process.env.NODE_ENV === "development") {
-            console.error("Failed to load filter counts:", err);
-          }
+          reportError(err, { context: "getFilterCounts" });
         });
     }
   }, [initialDogs]);
@@ -404,7 +396,17 @@ export default function BreedDetailClient({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 lg:mb-12 mt-4 lg:mt-6">
           <BreedPhotoGallery
-            dogs={(breedData.topDogs ?? []) as never[]}
+            dogs={(breedData.topDogs ?? [])
+              .filter(
+                (dog): dog is SampleDog & { primary_image_url: string } =>
+                  Boolean(dog.primary_image_url),
+              )
+              .map((dog, index) => ({
+                id: dog.slug || index,
+                name: dog.name,
+                slug: dog.slug,
+                primary_image_url: dog.primary_image_url,
+              }))}
             breedName={breedData.primary_breed}
             className="w-full order-2 lg:order-1"
           />
@@ -575,7 +577,7 @@ export default function BreedDetailClient({
           }
           availableCountries={["Any country"]}
           resetFilters={handleResetFilters}
-          filterCounts={filterCounts as never}
+          filterCounts={filterCounts}
         />
       </div>
     </Layout>

@@ -69,7 +69,7 @@ export default function BreedsHubClient({
     ];
   }, [breedStats]);
 
-  if (!breedStats || breedStats.error) {
+  if (!breedStats) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-8">
