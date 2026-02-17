@@ -32,6 +32,7 @@ export interface Dog {
   weight?: string;
 
   // Organization info
+  organization_id?: number | string;
   organization_name?: string;
   organization?: {
     id?: number;
@@ -54,6 +55,7 @@ export interface Dog {
   description?: string;
   summary?: string;
   llm_description?: string;
+  llm_tagline?: string;
 
   // Adoption info
   adoption_url?: string;
