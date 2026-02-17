@@ -1,10 +1,3 @@
-"""Tests for ManyTearsRescueScraper class.
-
-Note: This file focuses on behavior-based testing rather than implementation details.
-The comprehensive functional test in test_manytearsrescue_detail_extraction.py
-validates real data extraction from 5 dogs with complete descriptions.
-"""
-
 from unittest.mock import Mock, patch
 
 import pytest
@@ -15,10 +8,7 @@ from scrapers.manytearsrescue.manytearsrescue_scraper import ManyTearsRescueScra
 @pytest.mark.slow
 @pytest.mark.browser
 class TestManyTearsRescueScraper:
-    """Test cases for ManyTearsRescueScraper basic functionality."""
-
     def test_scraper_initialization_with_config(self):
-        """Test scraper can be initialized with config_id."""
         with (
             patch("scrapers.base_scraper.ConfigLoader"),
             patch("scrapers.base_scraper.create_default_sync_service"),
@@ -29,7 +19,6 @@ class TestManyTearsRescueScraper:
             assert hasattr(scraper, "get_animal_list")
 
     def test_scraper_inherits_from_base_scraper(self):
-        """Test that ManyTearsRescueScraper properly inherits from BaseScraper."""
         from scrapers.base_scraper import BaseScraper
 
         with (
@@ -41,7 +30,6 @@ class TestManyTearsRescueScraper:
 
     @patch("scrapers.manytearsrescue.manytearsrescue_scraper.get_browser_service")
     def test_selenium_driver_cleanup_on_exception(self, mock_browser_service):
-        """Test WebDriver is properly cleaned up even when exceptions occur."""
         mock_service = Mock()
         mock_browser_service.return_value = mock_service
         mock_driver = Mock()
@@ -56,15 +44,13 @@ class TestManyTearsRescueScraper:
         ):
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
 
-            # Should handle exception gracefully and clean up driver
             result = scraper.get_animal_list()
 
-            assert isinstance(result, list)  # Should return empty list on error
+            assert isinstance(result, list)
             mock_driver.quit.assert_called_once()
 
     @patch("scrapers.manytearsrescue.manytearsrescue_scraper.get_browser_service")
     def test_collect_data_follows_template_method_pattern(self, mock_browser_service):
-        """Test collect_data follows template method pattern by calling get_animal_list."""
         mock_service = Mock()
         mock_browser_service.return_value = mock_service
         mock_driver = Mock()
@@ -79,7 +65,6 @@ class TestManyTearsRescueScraper:
         ):
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
 
-            # Mock get_animal_list to verify it's called
             with patch.object(scraper, "get_animal_list", return_value=[]) as mock_get_animals:
                 result = scraper.collect_data()
 
@@ -87,7 +72,6 @@ class TestManyTearsRescueScraper:
                 assert isinstance(result, list)
 
     def test_service_injection_constructor_accepts_optional_services(self):
-        """Test constructor accepts optional service dependencies."""
         from services.null_objects import NullMetricsCollector
 
         mock_metrics = NullMetricsCollector()
@@ -99,5 +83,4 @@ class TestManyTearsRescueScraper:
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue", metrics_collector=mock_metrics)
 
             assert scraper is not None
-            # Verify dependency injection works
             assert scraper.metrics_collector is not None
