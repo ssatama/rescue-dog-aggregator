@@ -142,8 +142,17 @@ class TestBuildOrganizationObject:
         org = build_organization_object(row)
         assert org["id"] == 1
         assert org["name"] == "Test Rescue"
+        assert org["slug"] == "test-rescue"
+        assert org["city"] == "Helsinki"
+        assert org["country"] == "Finland"
+        assert org["website_url"] == "https://test.com"
         assert org["social_media"] == {"facebook": "https://fb.com/test"}
         assert org["ships_to"] == ["Finland", "Sweden"]
+
+    def test_missing_required_field_raises_key_error(self):
+        row = {"org_name": "Test", "organization_id": 1}
+        with pytest.raises(KeyError):
+            build_organization_object(row)
 
     def test_returns_none_when_no_org_name(self):
         row = {"org_name": None, "organization_id": 1}

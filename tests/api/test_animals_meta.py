@@ -5,7 +5,6 @@ import pytest
 
 @pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.slow
 class TestAnimalsMeta:
     @pytest.mark.parametrize(
         "endpoint, key",

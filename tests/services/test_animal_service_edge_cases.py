@@ -39,11 +39,20 @@ class TestAnimalServiceSorting:
         names = [a["name"] for a in animals]
         assert names == sorted(names)
 
-    def test_sort_by_newest_returns_results(self, client):
+    def test_sort_by_name_desc(self, client):
+        response = client.get("/api/animals/?sort=name-desc&limit=100")
+        assert response.status_code == 200
+        animals = response.json()
+        names = [a["name"] for a in animals]
+        assert names == sorted(names, reverse=True)
+
+    def test_sort_by_newest_returns_newest_first(self, client):
         response = client.get("/api/animals/?sort=newest&limit=100")
         assert response.status_code == 200
         animals = response.json()
         assert len(animals) == 12
+        created_dates = [a["created_at"] for a in animals]
+        assert created_dates == sorted(created_dates, reverse=True)
 
 
 @pytest.mark.slow

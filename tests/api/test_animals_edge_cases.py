@@ -10,21 +10,6 @@ LARGE_IDS = {9001, 9003, 9004, 9009, 9011}
 MEDIUM_IDS = {9002, 9005, 9006, 9007, 9010}
 SMALL_IDS = {9008, 9012}
 
-BREED_BY_ID = {
-    9001: "Golden Retriever",
-    9002: "Mixed Breed",
-    9003: "German Shepherd",
-    9004: "Labrador Retriever",
-    9005: "Beagle",
-    9006: "Poodle",
-    9007: "Bulldog",
-    9008: "Chihuahua",
-    9009: "Rottweiler",
-    9010: "Border Collie",
-    9011: "Siberian Husky",
-    9012: "Yorkshire Terrier",
-}
-
 
 @pytest.mark.slow
 @pytest.mark.database
@@ -127,37 +112,40 @@ class TestFilterValidation:
 @pytest.mark.slow
 @pytest.mark.database
 class TestSearchSafety:
-    def test_search_with_percent_returns_200(self, client: TestClient):
-        encoded = urllib.parse.quote("%wildcard%")
+    def test_search_with_percent_returns_no_results(self, client: TestClient):
+        encoded = urllib.parse.quote("%")
         response = client.get(f"/api/animals?search={encoded}")
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
+        data = response.json()
+        assert data == [], "Literal '%' search should not match any dog names"
 
-    def test_search_with_underscore_returns_200(self, client: TestClient):
-        encoded = urllib.parse.quote("test_dog")
+    def test_search_with_underscore_returns_no_results(self, client: TestClient):
+        encoded = urllib.parse.quote("_")
         response = client.get(f"/api/animals?search={encoded}")
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
+        data = response.json()
+        assert data == [], "Literal '_' search should not match any dog names"
 
-    def test_search_with_backslash_returns_200(self, client: TestClient):
+    def test_search_with_backslash_returns_no_results(self, client: TestClient):
         encoded = urllib.parse.quote("test\\dog")
         response = client.get(f"/api/animals?search={encoded}")
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
+        data = response.json()
+        assert data == [], "Backslash search should not match any dog names"
 
     def test_search_with_combined_sql_wildcards(self, client: TestClient):
         encoded = urllib.parse.quote("%_\\%_")
         response = client.get(f"/api/animals?search={encoded}")
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
+        data = response.json()
+        assert data == [], "Combined SQL wildcards should not match any dog names"
 
     def test_search_by_name_finds_matching_dog(self, client: TestClient):
         response = client.get("/api/animals?search=Beagle")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) >= 1
-        matching_ids = {animal["id"] for animal in data}
-        assert 9005 in matching_ids
+        assert len(data) == 1
+        assert data[0]["id"] == 9005
 
 
 @pytest.mark.slow

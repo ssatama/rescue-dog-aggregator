@@ -35,25 +35,29 @@ class TestOrganizationSearchFiltering:
         encoded = urllib.parse.quote("%")
         response = client.get(f"/api/organizations/?search={encoded}")
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
+        data = response.json()
+        assert data == [], "Literal '%' search should not match any org names"
 
     def test_search_with_sql_underscore_wildcard(self, client):
         encoded = urllib.parse.quote("_")
         response = client.get(f"/api/organizations/?search={encoded}")
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
+        data = response.json()
+        assert data == [], "Literal '_' search should not match any org names"
 
     def test_search_with_combined_sql_wildcards(self, client):
         encoded = urllib.parse.quote("%__%")
         response = client.get(f"/api/organizations/?search={encoded}")
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
+        data = response.json()
+        assert data == [], "Combined SQL wildcards should not match any org names"
 
     def test_search_with_backslash(self, client):
         encoded = urllib.parse.quote("\\")
         response = client.get(f"/api/organizations/?search={encoded}")
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
+        data = response.json()
+        assert data == [], "Backslash search should not match any org names"
 
     def test_search_matching_org_name(self, client):
         response = client.get("/api/organizations/?search=Mock")
@@ -90,7 +94,7 @@ class TestOrganizationListValidation:
         response = client.get("/api/organizations/?limit=1")
         assert response.status_code == 200
         orgs = response.json()
-        assert len(orgs) <= 1
+        assert len(orgs) == 1
 
 
 @pytest.mark.slow

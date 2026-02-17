@@ -1,4 +1,9 @@
+import os
+from unittest.mock import patch
+
 import pytest
+
+ADMIN_KEY = "test-admin-key-for-monitoring"
 
 
 @pytest.mark.slow
@@ -16,13 +21,15 @@ class TestMonitoringAuthRequirements:
 
     @pytest.mark.parametrize("endpoint", PROTECTED_ENDPOINTS)
     def test_no_auth_rejected(self, api_client_no_auth, endpoint):
-        response = api_client_no_auth.get(endpoint)
-        assert response.status_code in [401, 500], f"{endpoint} returned {response.status_code}, expected 401 or 500"
+        with patch.dict(os.environ, {"ADMIN_API_KEY": ADMIN_KEY}):
+            response = api_client_no_auth.get(endpoint)
+        assert response.status_code == 401, f"{endpoint} returned {response.status_code}, expected 401"
 
     @pytest.mark.parametrize("endpoint", PROTECTED_ENDPOINTS)
     def test_invalid_api_key_rejected(self, api_client_no_auth, endpoint):
-        response = api_client_no_auth.get(endpoint, headers={"X-API-Key": "completely-wrong-key"})
-        assert response.status_code in [401, 500], f"{endpoint} returned {response.status_code} with invalid key"
+        with patch.dict(os.environ, {"ADMIN_API_KEY": ADMIN_KEY}):
+            response = api_client_no_auth.get(endpoint, headers={"X-API-Key": "completely-wrong-key"})
+        assert response.status_code == 401, f"{endpoint} returned {response.status_code} with invalid key"
 
 
 @pytest.mark.slow
@@ -37,9 +44,9 @@ class TestHealthCheckPublicAccess:
         assert response.status_code == 200
         data = response.json()
         db_status = data["database"]
-        if db_status["status"] == "connected":
-            assert isinstance(db_status["response_time_ms"], (int, float))
-            assert db_status["response_time_ms"] >= 0
+        assert db_status["status"] == "connected", "Database should be connected in test environment"
+        assert isinstance(db_status["response_time_ms"], (int, float))
+        assert db_status["response_time_ms"] >= 0
 
     def test_health_status_is_valid_enum(self, client):
         response = client.get("/health")
