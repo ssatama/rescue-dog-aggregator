@@ -439,6 +439,8 @@ export default function DogsPageClientSimplified({
         resetFilters={handleResetFilters}
         // Dynamic filter counts
         filterCounts={pagination.filterCounts}
+        // Total dogs count for "Apply Filters (N dogs)" button
+        totalDogsCount={pagination.dogs.length}
       />
     </>
   );

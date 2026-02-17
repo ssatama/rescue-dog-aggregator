@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -16,26 +15,33 @@ import {
   getSearchSuggestions,
   getBreedSuggestions,
 } from "@/services/animalsService";
+import type { DesktopFiltersProps } from "@/types/filterComponents";
+import type { FilterCount } from "@/schemas/common";
 
-/**
- * Enhanced FilterSection component with custom collapse animations
- */
+interface FilterSectionProps {
+  id: string;
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+  count?: number;
+}
+
 function FilterSection({
   id,
   title,
   defaultOpen = false,
   children,
   count = 0,
-}) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+}: FilterSectionProps) {
+  const [isOpen, setIsOpen] = useState<boolean>(defaultOpen);
 
-  const handleToggle = useCallback((e) => {
-    e.preventDefault(); // Prevent default details toggle
+  const handleToggle = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
     setIsOpen((prev) => !prev);
   }, []);
 
   const handleKeyDown = useCallback(
-    (e) => {
+    (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         handleToggle(e);
@@ -94,23 +100,16 @@ function FilterSection({
   );
 }
 
-/**
- * Desktop floating filter panel for the dog catalog page
- * Features collapsible sections, enhanced UI controls, and backdrop blur
- */
 export default function DesktopFilters({
-  // Search
   searchQuery,
   handleSearchChange,
   clearSearch,
 
-  // Organization
   organizationFilter,
   setOrganizationFilter,
   organizations,
 
-  // Breed
-  showBreed = true, // Default to true for backward compatibility
+  showBreed = true,
   standardizedBreedFilter,
   setStandardizedBreedFilter,
   handleBreedSearch,
@@ -118,7 +117,6 @@ export default function DesktopFilters({
   handleBreedValueChange,
   standardizedBreeds,
 
-  // Pet Details
   sexFilter,
   setSexFilter,
   sexOptions,
@@ -131,7 +129,6 @@ export default function DesktopFilters({
   setAgeCategoryFilter,
   ageOptions,
 
-  // Location
   locationCountryFilter,
   setLocationCountryFilter,
   locationCountries,
@@ -144,27 +141,20 @@ export default function DesktopFilters({
   setAvailableRegionFilter,
   availableRegions,
 
-  // Filter management
   resetFilters,
 
-  // Dynamic filter counts
   filterCounts,
-}) {
-  // Removed local state for breed input - SearchTypeahead manages its own state
-
-  // Helper function to merge static options with dynamic counts
+}: DesktopFiltersProps) {
   const getOptionsWithCounts = useCallback(
-    (staticOptions, dynamicOptions, filterType) => {
+    (staticOptions: string[], dynamicOptions: FilterCount[] | undefined, filterType: string): string[] => {
       if (!filterCounts || !dynamicOptions) return staticOptions;
 
       return staticOptions.filter((option) => {
-        if (option.includes("Any")) return true; // Always include "Any" options
+        if (option.includes("Any")) return true;
 
-        // Find matching dynamic option
         const dynamicOption = dynamicOptions.find((dynOpt) => {
           if (filterType === "size") {
-            // Map static size options to dynamic values
-            const sizeMapping = {
+            const sizeMapping: Record<string, string> = {
               Tiny: "Tiny",
               Small: "Small",
               Medium: "Medium",
@@ -182,7 +172,6 @@ export default function DesktopFilters({
     [filterCounts],
   );
 
-  // Dynamic options with counts (only show options that have results)
   const dynamicSizeOptions = useMemo(
     () => getOptionsWithCounts(sizeOptions, filterCounts?.size_options, "size"),
     [filterCounts?.size_options, getOptionsWithCounts, sizeOptions],
@@ -198,9 +187,7 @@ export default function DesktopFilters({
     [filterCounts?.sex_options, getOptionsWithCounts, sexOptions],
   );
 
-  // Optimized handlers with useCallback
   const handleBreedClear = useCallback(() => {
-    // Use parent-provided handler if available, otherwise fallback to direct setter
     if (handleBreedClearFromParent) {
       handleBreedClearFromParent();
     } else {
@@ -208,40 +195,20 @@ export default function DesktopFilters({
     }
   }, [handleBreedClearFromParent, setStandardizedBreedFilter]);
 
-  // Removed filteredBreeds - SearchTypeahead handles its own filtering
-
-  // Calculate active filter count
-  const activeFilterCount = useMemo(() => {
+  const activeFilterCount = useMemo((): number => {
     let count = 0;
 
-    // Search query
     if (searchQuery && searchQuery.trim() !== "") count++;
-
-    // Organization filter
     if (organizationFilter && organizationFilter !== "any") count++;
-
-    // Breed filter
     if (standardizedBreedFilter && standardizedBreedFilter !== "Any breed")
       count++;
-
-    // Sex filter
     if (sexFilter && sexFilter !== "Any") count++;
-
-    // Size filter
     if (sizeFilter && sizeFilter !== "Any size") count++;
-
-    // Age filter
     if (ageCategoryFilter && ageCategoryFilter !== "Any age") count++;
-
-    // Location country filter
     if (locationCountryFilter && locationCountryFilter !== "Any country")
       count++;
-
-    // Available country filter
     if (availableCountryFilter && availableCountryFilter !== "Any country")
       count++;
-
-    // Available region filter
     if (availableRegionFilter && availableRegionFilter !== "Any region")
       count++;
 
@@ -258,7 +225,6 @@ export default function DesktopFilters({
     availableRegionFilter,
   ]);
 
-  // Calculate section-specific filter counts
   const sectionCounts = useMemo(() => {
     const counts = {
       organization: 0,
@@ -269,25 +235,14 @@ export default function DesktopFilters({
       sex: 0,
     };
 
-    // Organization section
     if (organizationFilter && organizationFilter !== "any")
       counts.organization++;
-
-    // Breed section
     if (standardizedBreedFilter && standardizedBreedFilter !== "Any breed")
       counts.breed++;
-
-    // Ships to Country section
     if (availableCountryFilter && availableCountryFilter !== "Any country")
       counts.shipsToCountry++;
-
-    // Age section
     if (ageCategoryFilter && ageCategoryFilter !== "Any age") counts.age++;
-
-    // Size section
     if (sizeFilter && sizeFilter !== "Any size") counts.size++;
-
-    // Sex section
     if (sexFilter && sexFilter !== "Any") counts.sex++;
 
     return counts;
@@ -354,9 +309,6 @@ export default function DesktopFilters({
 
         {/* Filters container with collapsible sections */}
         <div data-testid="filters-container" className="space-y-6">
-          {/* === DROPDOWN FILTERS SECTION === */}
-          {/* Required order: Adoptable to Country → Size → Age → Sex → Breed → Organization */}
-
           {/* 1. Adoptable to Country Section - PRIMARY FILTER */}
           <div
             className={`space-y-3 ${sectionCounts.shipsToCountry > 0 ? "filter-section-active" : ""}`}
@@ -377,7 +329,7 @@ export default function DesktopFilters({
               <select
                 data-testid="location-filter"
                 value={availableCountryFilter}
-                onChange={(e) => setAvailableCountryFilter(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAvailableCountryFilter(e.target.value)}
               >
                 {availableCountries.map((country) => (
                   <option key={country} value={country}>
@@ -405,8 +357,6 @@ export default function DesktopFilters({
             </Select>
           </div>
 
-          {/* === BUTTON/LOLLIPOP FILTERS SECTION === */}
-
           {/* 2. Size Filter - PHYSICAL CONSTRAINT */}
           <div
             className={`space-y-3 ${sectionCounts.size > 0 ? "filter-section-active" : ""}`}
@@ -427,7 +377,7 @@ export default function DesktopFilters({
               <select
                 data-testid="size-filter"
                 value={sizeFilter === "Any size" ? "any" : sizeFilter}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setSizeFilter(
                     e.target.value === "any" ? "Any size" : e.target.value,
                   )
@@ -492,7 +442,7 @@ export default function DesktopFilters({
                 value={
                   ageCategoryFilter === "Any age" ? "any" : ageCategoryFilter
                 }
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setAgeCategoryFilter(
                     e.target.value === "any" ? "Any age" : e.target.value,
                   )
@@ -555,7 +505,7 @@ export default function DesktopFilters({
               <select
                 data-testid="sex-filter"
                 value={sexFilter === "Any" ? "any" : sexFilter}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setSexFilter(
                     e.target.value === "any" ? "Any" : e.target.value,
                   )
@@ -623,7 +573,7 @@ export default function DesktopFilters({
                       ? "any"
                       : standardizedBreedFilter
                   }
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                     setStandardizedBreedFilter(
                       e.target.value === "any" ? "Any breed" : e.target.value,
                     )
@@ -650,14 +600,12 @@ export default function DesktopFilters({
                     : standardizedBreedFilter
                 }
                 onValueChange={handleBreedValueChange}
-                onSuggestionSelect={(breed) => {
-                  // Use parent-provided handler if available, otherwise fallback to direct setter
+                onSuggestionSelect={(breed: string) => {
                   if (setStandardizedBreedFilter) {
                     setStandardizedBreedFilter(breed);
                   }
                 }}
-                onSearch={(breed) => {
-                  // Use parent-provided handler if available, otherwise fallback to direct setter
+                onSearch={(breed: string) => {
                   if (handleBreedSearch) {
                     handleBreedSearch(breed);
                   } else {
@@ -699,7 +647,7 @@ export default function DesktopFilters({
               <select
                 data-testid="organization-filter"
                 value={organizationFilter || "any"}
-                onChange={(e) => setOrganizationFilter(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setOrganizationFilter(e.target.value)}
               >
                 {organizations.map((org) => (
                   <option

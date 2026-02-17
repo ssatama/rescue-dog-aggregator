@@ -1,4 +1,14 @@
+"use client";
+
 import React from "react";
+
+interface FilterChipProps {
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+  count?: number;
+  className?: string;
+}
 
 const FilterChip = ({
   label,
@@ -6,7 +16,7 @@ const FilterChip = ({
   onClick,
   count,
   className = "",
-}) => {
+}: FilterChipProps) => {
   return (
     <button
       onClick={onClick}

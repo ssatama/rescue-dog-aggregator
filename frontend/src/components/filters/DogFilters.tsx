@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "../ui/Icon";
 import SearchTypeahead from "@/components/search/SearchTypeahead";
@@ -26,25 +25,32 @@ import {
   trackSortChange,
 } from "@/lib/monitoring/breadcrumbs";
 
-/**
- * DogFilters component for filtering and sorting dogs
- * @param {Object} props - Component props
- * @param {Object} props.filters - Current filter values
- * @param {Function} props.onFiltersChange - Callback when filters change
- * @param {Array} props.availableBreeds - Available breed options
- * @param {Array} props.availableShipsTo - Available ships-to options (optional)
- * @param {number} props.totalCount - Total number of filtered results
- * @param {boolean} props.hasActiveFilters - Whether any filters are active
- * @param {boolean} props.showShipsToFilter - Whether to show ships-to filter (default: true)
- * @param {boolean} props.showSortFilter - Whether to show sort filter (default: true)
- * @param {Function} props.onMobileFilterClick - Callback for mobile filter button click
- * @param {Function} props.fetchBreedSuggestions - Custom breed suggestions function (optional)
- * @param {Function} props.handleBreedValueChange - Handler for typing in breed field (no API calls)
- * @param {Function} props.handleBreedSuggestionSelect - Handler for selecting a breed suggestion
- * @param {Function} props.handleBreedSearch - Handler for explicit breed search (Enter key)
- * @param {Function} props.handleBreedClear - Handler for clearing breed filter
- * @param {boolean} props.useSimpleBreedDropdown - Use simple Select dropdown instead of SearchTypeahead (default: false)
- */
+interface DogFilterValues {
+  age?: string;
+  breed?: string;
+  sex?: string;
+  shipsTo?: string;
+  sort?: string;
+}
+
+interface DogFiltersProps {
+  filters: DogFilterValues;
+  onFiltersChange: (filters: DogFilterValues) => void;
+  availableBreeds?: string[];
+  availableShipsTo?: string[];
+  totalCount?: number;
+  hasActiveFilters?: boolean;
+  showShipsToFilter?: boolean;
+  showSortFilter?: boolean;
+  onMobileFilterClick?: () => void;
+  fetchBreedSuggestions?: (query: string) => Promise<string[]>;
+  handleBreedValueChange?: (value: string) => void;
+  handleBreedSuggestionSelect?: (value: string) => void;
+  handleBreedSearch?: (value: string) => void;
+  handleBreedClear?: () => void;
+  useSimpleBreedDropdown?: boolean;
+}
+
 export default function DogFilters({
   filters,
   onFiltersChange,
@@ -61,12 +67,12 @@ export default function DogFilters({
   handleBreedSearch,
   handleBreedClear,
   useSimpleBreedDropdown = false,
-}) {
+}: DogFiltersProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const rawSearchParams = useSearchParams();
 
   const handleFilterChange = useCallback(
-    (filterType, value) => {
+    (filterType: string, value: string) => {
       if (!onFiltersChange) return;
 
       const newFilters = {
@@ -76,22 +82,17 @@ export default function DogFilters({
 
       onFiltersChange(newFilters);
 
-      // Track filter changes
       try {
         if (filterType === "sort") {
           trackSortChange(value || "newest");
         } else {
-          // For filter tracking, we'll need result count which we don't have here
-          // We'll track with 0 as a placeholder - the actual implementation might need
-          // to be adjusted based on how result counting is handled
           trackFilterChange(filterType, value, totalCount || 0);
         }
       } catch (error) {
         console.error("Failed to track filter change:", error);
       }
 
-      // Update URL params for shareable views
-      const params = new URLSearchParams(searchParams);
+      const params = new URLSearchParams(rawSearchParams?.toString());
       if (value && value !== "All" && value !== "") {
         params.set(filterType, value);
       } else {
@@ -99,22 +100,20 @@ export default function DogFilters({
       }
       router.push(`?${params.toString()}`, { scroll: false });
     },
-    [filters, onFiltersChange, router, searchParams, totalCount],
+    [filters, onFiltersChange, router, rawSearchParams, totalCount],
   );
 
   const handleClearAll = useCallback(() => {
     const defaultFilters = getDefaultFilters();
     onFiltersChange?.(defaultFilters);
 
-    // Clear URL params
     router.push(window.location.pathname, { scroll: false });
   }, [onFiltersChange, router]);
 
   const ageOptions = getAgeFilterOptions();
   const sortOptions = getSortFilterOptions();
 
-  // Count active filters for badge
-  const activeFilterCount = React.useMemo(() => {
+  const activeFilterCount = useMemo((): number => {
     if (!filters) return 0;
     let count = 0;
     if (filters.age && filters.age !== "All") count++;
@@ -183,7 +182,6 @@ export default function DogFilters({
 
           {/* Results Count and Clear All */}
           <div className="flex items-center gap-4">
-            {/* Hide count on mobile to avoid crowding with mobile filter button */}
             {totalCount > 0 && (
               <span className="hidden lg:inline text-sm text-gray-600">
                 {totalCount} dogs
@@ -217,7 +215,7 @@ export default function DogFilters({
             </label>
             <Select
               value={filters?.age || "All"}
-              onValueChange={(value) => handleFilterChange("age", value)}
+              onValueChange={(value: string) => handleFilterChange("age", value)}
             >
               <SelectTrigger
                 id="age-filter"
@@ -229,7 +227,7 @@ export default function DogFilters({
                 <SelectValue placeholder="Age" />
               </SelectTrigger>
               <SelectContent>
-                {ageOptions.map((option) => (
+                {ageOptions.map((option: { value: string; label: string }) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -248,7 +246,7 @@ export default function DogFilters({
             {useSimpleBreedDropdown ? (
               <Select
                 value={filters?.breed || "Any breed"}
-                onValueChange={(value) =>
+                onValueChange={(value: string) =>
                   handleFilterChange(
                     "breed",
                     value === "Any breed" ? "" : value,
@@ -282,21 +280,21 @@ export default function DogFilters({
                 value={filters?.breed || ""}
                 onValueChange={
                   handleBreedValueChange ||
-                  ((value) => {
+                  ((value: string) => {
                     handleFilterChange("breed", value);
                   })
                 }
                 onSuggestionSelect={
                   handleBreedSuggestionSelect
                     ? handleBreedSuggestionSelect
-                    : (value) => {
+                    : (value: string) => {
                         handleFilterChange("breed", value);
                       }
                 }
                 onSearch={
                   handleBreedSearch
                     ? handleBreedSearch
-                    : (value) => {
+                    : (value: string) => {
                         handleFilterChange("breed", value);
                       }
                 }
@@ -330,7 +328,7 @@ export default function DogFilters({
               </label>
               <Select
                 value={filters?.shipsTo || "All"}
-                onValueChange={(value) => handleFilterChange("shipsTo", value)}
+                onValueChange={(value: string) => handleFilterChange("shipsTo", value)}
               >
                 <SelectTrigger
                   id="ships-to-filter"
@@ -360,7 +358,7 @@ export default function DogFilters({
             </label>
             <Select
               value={filters?.sort || "newest"}
-              onValueChange={(value) => handleFilterChange("sort", value)}
+              onValueChange={(value: string) => handleFilterChange("sort", value)}
             >
               <SelectTrigger
                 id="sort-filter"
@@ -372,7 +370,7 @@ export default function DogFilters({
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                {sortOptions.map((option) => (
+                {sortOptions.map((option: { value: string; label: string }) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
