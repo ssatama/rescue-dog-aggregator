@@ -11,7 +11,6 @@ from utils.standardization import (
 
 
 @pytest.mark.slow
-@pytest.mark.slow
 class TestBreedStandardization:
     def test_exact_breed_match(self):
         """Test exact matches against the breed mapping dictionary."""
@@ -68,7 +67,6 @@ class TestBreedStandardization:
         assert standardize_breed(None) == ("Unknown", "Unknown", None)
 
 
-@pytest.mark.slow
 @pytest.mark.slow
 class TestAgeStandardization:
     def test_years_format(self):
@@ -247,7 +245,6 @@ class TestAgeStandardization:
 
 
 @pytest.mark.slow
-@pytest.mark.slow
 class TestSizeEstimation:
     def test_size_from_known_breed(self):
         """Test size estimation from known breeds."""
@@ -268,7 +265,6 @@ class TestSizeEstimation:
         assert get_size_from_breed("Some Random Breed") is None
 
 
-@pytest.mark.slow
 @pytest.mark.slow
 class TestFullStandardization:
     def test_apply_standardization_complete_data(self):

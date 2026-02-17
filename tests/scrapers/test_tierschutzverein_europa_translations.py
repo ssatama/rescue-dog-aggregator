@@ -16,7 +16,6 @@ from utils.standardization import standardize_age, standardize_breed
 
 
 @pytest.mark.database
-@pytest.mark.database
 @pytest.mark.integration
 @pytest.mark.slow
 class TestGenderTranslation:

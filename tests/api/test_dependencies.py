@@ -14,7 +14,6 @@ from api.dependencies import get_database_connection, get_db_cursor
 
 
 @pytest.mark.database
-@pytest.mark.database
 @pytest.mark.slow
 class TestGetDbCursor:
     """Test suite for get_db_cursor dependency."""

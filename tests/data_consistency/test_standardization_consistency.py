@@ -10,7 +10,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 
 @pytest.mark.slow
-@pytest.mark.slow
 class TestDataConsistency:
     """Test data standardization consistency."""
 
