@@ -442,10 +442,7 @@ class TestREANImageExtraction:
 
         images = scraper.extract_images_from_html(html_content)
         assert len(images) == 3
-        assert all(
-            urlparse(url).hostname and urlparse(url).hostname.endswith(".wsimg.com")
-            for url in images
-        )
+        assert all(urlparse(url).hostname and urlparse(url).hostname.endswith(".wsimg.com") for url in images)
 
     @pytest.mark.unit
     def test_image_url_validation(self, scraper):
