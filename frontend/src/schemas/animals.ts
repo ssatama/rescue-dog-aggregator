@@ -166,12 +166,41 @@ export const CountryStatItemSchema = z
   })
   .passthrough();
 
+export const StatisticsOrganizationSchema = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+    slug: z.string().optional(),
+    dog_count: z.number().optional(),
+    total_dogs: z.number().optional(),
+    ships_to: z.array(z.string()).optional(),
+    service_regions: z.array(z.string()).optional(),
+    recent_dogs: z
+      .array(
+        z
+          .object({
+            id: z.union([z.number(), z.string()]),
+            name: z.string(),
+            thumbnail_url: z.string().optional(),
+            primary_image_url: z.string().optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    new_this_week: z.number().optional(),
+    social_media: z.record(z.string(), z.string()).optional(),
+    logo_url: z.string().nullable().optional(),
+    country: z.string().nullable().optional(),
+    city: z.string().nullable().optional(),
+  })
+  .passthrough();
+
 export const StatisticsSchema = z
   .object({
     total_dogs: z.number(),
     total_organizations: z.number(),
     countries: z.array(CountryStatItemSchema).optional(),
-    organizations: z.array(z.unknown()).optional(),
+    organizations: z.array(StatisticsOrganizationSchema).optional(),
   })
   .passthrough();
 
@@ -260,6 +289,9 @@ export const SwipeResponseSchema = z
 export type ApiDogParsed = z.infer<typeof ApiDogSchema>;
 export type BreedStats = z.infer<typeof BreedStatsSchema>;
 export type Statistics = z.infer<typeof StatisticsSchema>;
+export type StatisticsOrganization = z.infer<
+  typeof StatisticsOrganizationSchema
+>;
 export type BreedWithImages = z.infer<typeof BreedWithImagesSchema>;
 export type CountryStatsResponse = z.infer<typeof CountryStatsResponseSchema>;
 export type EnhancedDogContentItem = z.infer<

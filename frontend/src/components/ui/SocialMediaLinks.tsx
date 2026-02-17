@@ -7,6 +7,8 @@ export interface SocialMediaLinksProps {
   socialMedia: Record<string, string>;
   /** Additional CSS classes */
   className?: string;
+  /** Icon size variant */
+  size?: string;
 }
 
 interface SocialIconProps {

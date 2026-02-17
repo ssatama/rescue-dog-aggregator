@@ -1,5 +1,3 @@
-// frontend/src/components/home/HeroSection.jsx
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,22 +8,17 @@ import AnimatedCounter from "../ui/AnimatedCounter";
 import HeroDogPreviewCard from "./HeroDogPreviewCard";
 import { getStatistics } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
+import type { HeroSectionProps } from "@/types/homeComponents";
+import type { Statistics } from "@/schemas/animals";
 
-/**
- * Hero section with animated statistics and call-to-action buttons
- * @param {Object} props - Component props
- * @param {Object} props.initialStatistics - Pre-fetched statistics data from SSR
- * @param {Array} props.previewDogs - Dogs to show in hero preview cards
- * @param {boolean} props.priority - Whether this section should load with priority
- */
 export default function HeroSection({
   initialStatistics = null,
   previewDogs = [],
   priority = false,
-}) {
-  const [statistics, setStatistics] = useState(initialStatistics);
+}: HeroSectionProps) {
+  const [statistics, setStatistics] = useState<Statistics | null>(initialStatistics);
   const [loading, setLoading] = useState(!initialStatistics);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchStatistics = async () => {
     try {
@@ -33,7 +26,7 @@ export default function HeroSection({
       setError(null);
       const stats = await getStatistics();
       setStatistics(stats);
-    } catch (err) {
+    } catch (err: unknown) {
       reportError(err, { context: "HeroSection.fetchStatistics" });
       setError("Unable to load statistics. Please try again later.");
     } finally {
@@ -190,7 +183,7 @@ export default function HeroSection({
                     <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors cursor-pointer">
                       <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
                         <AnimatedCounter
-                          value={statistics.countries.length}
+                          value={statistics.countries?.length ?? 0}
                           label="Countries"
                           className="block"
                         />
@@ -238,7 +231,7 @@ export default function HeroSection({
                   Current statistics about rescue dogs available for adoption:{" "}
                   {statistics.total_dogs} dogs from{" "}
                   {statistics.total_organizations} organizations across{" "}
-                  {statistics.countries.length} countries.
+                  {statistics.countries?.length ?? 0} countries.
                 </div>
               </div>
             )}

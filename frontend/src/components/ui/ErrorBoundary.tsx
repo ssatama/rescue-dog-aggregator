@@ -3,18 +3,19 @@
 import React from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { ErrorBoundaryProps, ErrorBoundaryState } from "@/types/uiComponents";
 
-export default class ErrorBoundary extends React.Component {
-  constructor(props) {
+export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     if (process.env.NODE_ENV === "development") {
       console.error("ErrorBoundary caught:", error, errorInfo);
     }

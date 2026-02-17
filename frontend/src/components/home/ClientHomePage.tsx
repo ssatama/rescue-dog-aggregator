@@ -7,6 +7,7 @@ import FeaturedDogsSection from "./FeaturedDogsSection";
 import Loading from "../ui/Loading";
 import ErrorBoundary from "../ui/ErrorBoundary";
 import { transformMobileHomePageData } from "../../utils/homePageTransformers";
+import type { ClientHomePageProps } from "@/types/homeComponents";
 
 // Lazy load mobile version - only loaded on mobile devices
 const MobileHomePage = lazy(() => import("../mobile/MobileHomePage"));
@@ -25,14 +26,14 @@ export default function ClientHomePage({
   initialOrganizations = [],
   initialCountryStats = [],
   initialAgeStats = [],
-}) {
+}: ClientHomePageProps) {
   // Prepare data for mobile version
   const mobileInitialData = React.useMemo(
     () =>
       transformMobileHomePageData({
-        initialRecentDogs,
-        initialStatistics,
-        breedsWithImages: initialBreedsWithImages,
+        initialRecentDogs: initialRecentDogs || [],
+        initialStatistics: initialStatistics || { total_dogs: 0, total_organizations: 0 },
+        breedsWithImages: initialBreedsWithImages || [],
         countryStats: initialCountryStats,
         ageStats: initialAgeStats,
       }),
@@ -44,7 +45,7 @@ export default function ClientHomePage({
       {/* Mobile Version - Shown only on mobile devices */}
       <div className="sm:hidden">
         <ErrorBoundary fallbackMessage="Unable to load mobile homepage. Please refresh the page.">
-          <Suspense fallback={<Loading className="h-screen" />}>
+          <Suspense fallback={<div className="h-screen"><Loading /></div>}>
             <MobileHomePage initialData={mobileInitialData} />
           </Suspense>
         </ErrorBoundary>

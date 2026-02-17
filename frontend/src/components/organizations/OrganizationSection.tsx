@@ -2,10 +2,11 @@ import React, { memo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { sanitizeText } from "../../utils/security";
+import type { OrganizationSectionProps } from "@/types/organizationComponents";
 
 // Memoized OrganizationSection to prevent re-renders
 const OrganizationSection = memo(
-  function OrganizationSection({ organization, organizationId }) {
+  function OrganizationSection({ organization, organizationId }: OrganizationSectionProps) {
     if (!organization) {
       return null;
     }
@@ -123,7 +124,7 @@ const OrganizationSection = memo(
       </div>
     );
   },
-  (prevProps, nextProps) => {
+  (prevProps: OrganizationSectionProps, nextProps: OrganizationSectionProps) => {
     // Only re-render if organization data changes
     return (
       prevProps.organizationId === nextProps.organizationId &&

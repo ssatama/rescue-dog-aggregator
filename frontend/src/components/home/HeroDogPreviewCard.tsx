@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import type { HeroDogPreviewCardProps } from "@/types/homeComponents";
 
 const rotations = ["-3deg", "2deg", "-1.5deg"];
 
-export default function HeroDogPreviewCard({ dog, index = 0, priority = false }) {
+export default function HeroDogPreviewCard({ dog, index = 0, priority = false }: HeroDogPreviewCardProps) {
   const slug = dog.slug || `dog-${dog.id}`;
   const imageUrl = dog.primary_image_url || "/placeholder_dog.svg";
   const rotation = rotations[index % rotations.length];
