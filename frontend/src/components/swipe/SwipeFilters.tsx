@@ -211,15 +211,6 @@ export default function SwipeFilters({
             </option>
           ))}
         </select>
-        {selectedCountry && (
-          <div
-            className={`mt-2 text-sm ${
-              isDarkMode ? "text-gray-300" : "text-gray-600"
-            }`}
-          >
-            {selectedCountry.flag} {selectedCountry.label}
-          </div>
-        )}
       </div>
 
       <div>
