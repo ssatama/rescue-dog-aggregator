@@ -29,7 +29,6 @@ const functionIds = new WeakMap<(...args: any[]) => any, number>();
 
 export const clearCache = (): void => {
   cacheMap.clear();
-  functionCounter = 0;
 };
 
  

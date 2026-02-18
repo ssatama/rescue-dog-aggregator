@@ -9,6 +9,7 @@ import {
   getBreedGroupsWithTopBreeds,
 } from "@/services/breedImagesService";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
+import { logger, reportError } from "@/utils/logger";
 
 export const revalidate = 300;
 
@@ -47,25 +48,35 @@ async function fetchBreedsData() {
   return { breedStats, mixedBreedData, popularBreeds, breedGroups };
 }
 
+function isEmptyBreedsData(data: Awaited<ReturnType<typeof fetchBreedsData>>): boolean {
+  const breedStatsError = "error" in data.breedStats && data.breedStats.error === true;
+  return (
+    breedStatsError ||
+    (!data.mixedBreedData &&
+      data.popularBreeds.length === 0 &&
+      data.breedGroups.length === 0)
+  );
+}
+
 export default async function BreedsPage() {
-  let { breedStats, mixedBreedData, popularBreeds, breedGroups } =
-    await fetchBreedsData();
+  const initialData = await fetchBreedsData();
 
   // Retry once if all sections empty (cold-start resilience)
-  const allEmpty =
-    !mixedBreedData &&
-    popularBreeds.length === 0 &&
-    breedGroups.length === 0;
+  const data = isEmptyBreedsData(initialData)
+    ? (logger.warn("Breeds page: all sections empty, retrying (cold-start resilience)"),
+      clearCache(),
+      await new Promise((r) => setTimeout(r, 2000)),
+      await fetchBreedsData())
+    : initialData;
 
-  if (allEmpty) {
-    clearCache();
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    ({ breedStats, mixedBreedData, popularBreeds, breedGroups } =
-      await fetchBreedsData());
+  if (isEmptyBreedsData(data) && isEmptyBreedsData(initialData)) {
+    reportError(new Error("Breeds page: retry also returned empty data"), {
+      context: "BreedsPage",
+    });
   }
 
-  // Since data is fetched before rendering, Suspense won't trigger
-  // The loading state would be handled by Next.js loading.jsx if needed
+  const { breedStats, mixedBreedData, popularBreeds, breedGroups } = data;
+
   return (
     <>
       <BreedStructuredData
