@@ -1,7 +1,15 @@
-// Country configuration for Country Hub Pages
-// Maps country codes to metadata for SEO and display
+export interface CountryConfig {
+  code: string;
+  name: string;
+  shortName: string;
+  flag: string;
+  gradient: string;
+  accentColor: string;
+  tagline: string;
+  description: string;
+}
 
-export const COUNTRIES = {
+export const COUNTRIES: Record<string, CountryConfig> = {
   UK: {
     code: "UK",
     name: "United Kingdom",
@@ -86,9 +94,9 @@ export const COUNTRIES = {
   },
 };
 
-export const getCountryByCode = (code) =>
-  COUNTRIES[code?.toUpperCase()] || null;
+export const getCountryByCode = (code: string | null | undefined): CountryConfig | null =>
+  COUNTRIES[code?.toUpperCase() ?? ""] || null;
 
-export const getAllCountryCodes = () => Object.keys(COUNTRIES);
+export const getAllCountryCodes = (): string[] => Object.keys(COUNTRIES);
 
-export const getCountriesArray = () => Object.values(COUNTRIES);
+export const getCountriesArray = (): CountryConfig[] => Object.values(COUNTRIES);

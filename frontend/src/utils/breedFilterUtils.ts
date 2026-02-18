@@ -1,19 +1,54 @@
-export function getBreedFilterConfig(breedData) {
+interface BreedData {
+  primary_breed?: string;
+  organizations?: (number | string)[];
+  available_countries?: string[];
+}
+
+interface FilterMetadata {
+  organizations?: { id: number | string; name: string }[];
+}
+
+interface FilterConfig {
+  showAge: boolean;
+  showBreed: boolean;
+  showSort: boolean;
+  showSize: boolean;
+  showSex: boolean;
+  showShipsTo: boolean;
+  showOrganization: boolean;
+  showSearch: boolean;
+}
+
+interface FilterOptions {
+  sexOptions: string[];
+  sizeOptions: string[];
+  ageOptions: string[];
+  organizations: { id: number | string; name: string }[];
+  availableCountries: string[];
+}
+
+interface EmptyStateConfig {
+  title: string;
+  description: string;
+  actionLabel: string;
+  variant: string;
+}
+
+export function getBreedFilterConfig(_breedData: BreedData): FilterConfig {
   return {
     showAge: true,
-    showBreed: false, // Hide breed filter since we're already on a breed page
-    showSort: false, // Simplified sorting for breed pages
+    showBreed: false,
+    showSort: false,
     showSize: true,
     showSex: true,
     showShipsTo: true,
     showOrganization: true,
-    showSearch: true, // Allow searching within breed (names, descriptions)
+    showSearch: true,
   };
 }
 
-export function getBreedFilterOptions(breedData, metadata) {
+export function getBreedFilterOptions(breedData: BreedData, metadata?: FilterMetadata): FilterOptions {
   return {
-    // Standard options but filtered for breed context
     sexOptions: ["Any", "Male", "Female"],
     sizeOptions: [
       "Any size",
@@ -25,17 +60,15 @@ export function getBreedFilterOptions(breedData, metadata) {
     ],
     ageOptions: ["Any age", "Puppy", "Young", "Adult", "Senior"],
 
-    // Organizations that have this specific breed
     organizations: metadata?.organizations?.filter((org) =>
       breedData.organizations?.includes(org.id),
     ) || [{ id: "any", name: "Any Organization" }],
 
-    // Countries where this breed is available
     availableCountries: breedData.available_countries || ["Any country"],
   };
 }
 
-export function getBreedEmptyStateConfig(breedData, hasFilters) {
+export function getBreedEmptyStateConfig(breedData: BreedData, hasFilters: boolean): EmptyStateConfig {
   if (hasFilters) {
     return {
       title: `No ${breedData.primary_breed}s match your filters`,

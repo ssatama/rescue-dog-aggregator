@@ -1,4 +1,21 @@
-export const AGE_CATEGORIES = {
+export interface AgeCategoryConfig {
+  slug: string;
+  name: string;
+  shortName: string;
+  apiValue: string;
+  icon: string;
+  gradient: string;
+  darkGradient: string;
+  accentColor: string;
+  emoji: string;
+  tagline: string;
+  description: string;
+  ageRange: string;
+  ageMonths: { min: number; max?: number };
+  seoKeywords: string;
+}
+
+export const AGE_CATEGORIES: Record<string, AgeCategoryConfig> = {
   puppies: {
     slug: "puppies",
     name: "Puppies",
@@ -37,16 +54,16 @@ export const AGE_CATEGORIES = {
   },
 };
 
-export const getAgeCategoryBySlug = (slug) =>
-  AGE_CATEGORIES[slug?.toLowerCase()] || null;
+export const getAgeCategoryBySlug = (slug: string | null | undefined): AgeCategoryConfig | null =>
+  AGE_CATEGORIES[slug?.toLowerCase() ?? ""] || null;
 
-export const getAllAgeSlugs = () => Object.keys(AGE_CATEGORIES);
+export const getAllAgeSlugs = (): string[] => Object.keys(AGE_CATEGORIES);
 
-export const getAgeCategoriesArray = () => Object.values(AGE_CATEGORIES);
+export const getAgeCategoriesArray = (): AgeCategoryConfig[] => Object.values(AGE_CATEGORIES);
 
-export const getOtherAgeCategory = (currentSlug) => {
+export const getOtherAgeCategory = (currentSlug: string | null | undefined): AgeCategoryConfig | null => {
   const normalizedSlug = currentSlug?.toLowerCase();
-  if (!AGE_CATEGORIES[normalizedSlug]) {
+  if (!normalizedSlug || !AGE_CATEGORIES[normalizedSlug]) {
     return null;
   }
   const slugs = getAllAgeSlugs();

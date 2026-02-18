@@ -1,18 +1,9 @@
-/**
- * Schema.org structured data generation utilities
- * Pure functions for generating SEO-optimized structured data markup
- */
+import type { Dog } from "@/types/dog";
 
-// Base URL for canonical URLs - should be from environment variable
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
 
-/**
- * Determine Schema.org availability based on dog status
- * @param {string} status - Dog status (available, adopted, reserved, unknown)
- * @returns {string} Schema.org availability URL
- */
-export const getAvailability = (status) => {
+export const getAvailability = (status: string | undefined): string => {
   switch (status) {
     case "available":
       return "https://schema.org/InStock";
@@ -26,31 +17,38 @@ export const getAvailability = (status) => {
   }
 };
 
-/**
- * Generate Schema.org Pet markup for dog detail pages
- * @param {Object} dog - Dog data object from database
- * @returns {Object|null} Schema.org Pet markup or null if invalid
- */
-export const generatePetSchema = (dog) => {
+interface DogForSchema extends Omit<Partial<Dog>, "organization"> {
+  organization?: {
+    id?: number | string;
+    name?: string;
+    city?: string;
+    country?: string;
+    config_id?: string;
+    slug?: string;
+    website_url?: string;
+    adoption_fees?: {
+      usual_fee?: number | null;
+      currency?: string;
+    };
+  };
+}
+
+export const generatePetSchema = (dog: DogForSchema | null | undefined): Record<string, unknown> | null => {
   if (!dog || !dog.name) {
     return null;
   }
 
-  // Build description - prioritize LLM description if available
-  let description;
+  let description: string | undefined;
   if (dog.llm_description) {
-    // Use LLM-generated description as primary
     description = dog.llm_description;
   } else {
-    // Fall back to combining existing description sources
     const descriptions = [dog.description, dog.properties?.description].filter(
       Boolean,
     );
     description = descriptions.length > 0 ? descriptions.join(" ") : undefined;
   }
 
-  // Format gender with proper capitalization
-  const formatGender = (sex) => {
+  const formatGender = (sex: string | undefined): string | undefined => {
     if (!sex) return undefined;
     const normalized = sex.toLowerCase();
     if (normalized === "male" || normalized === "m") return "Male";
@@ -58,34 +56,34 @@ export const generatePetSchema = (dog) => {
     return undefined;
   };
 
-  // Build location object if organization data available
-  const buildLocation = () => {
+  const buildLocation = (): Record<string, unknown> | undefined => {
     if (!dog.organization) return undefined;
 
-    const location = {
+    const location: Record<string, unknown> = {
       "@type": "Place",
       name: dog.organization.name,
     };
 
     if (dog.organization.city || dog.organization.country) {
-      location.address = {
+      const address: Record<string, string> = {
         "@type": "PostalAddress",
       };
 
       if (dog.organization.city) {
-        location.address.addressLocality = dog.organization.city;
+        address.addressLocality = dog.organization.city;
       }
 
       if (dog.organization.country) {
-        location.address.addressCountry = dog.organization.country;
+        address.addressCountry = dog.organization.country;
       }
+
+      location.address = address;
     }
 
     return location;
   };
 
-  // Build location string for additionalProperty
-  const buildLocationString = () => {
+  const buildLocationString = (): string | undefined => {
     if (!dog.organization) return undefined;
 
     const locationParts = [
@@ -96,35 +94,29 @@ export const generatePetSchema = (dog) => {
     return locationParts.length > 0 ? locationParts.join(", ") : undefined;
   };
 
-  // Build name with tagline or breed
-  const buildName = () => {
+  const buildName = (): string => {
     if (dog.llm_tagline) {
-      // Use LLM tagline if available
       return `${dog.name}: ${dog.llm_tagline}`;
     }
-    // Fall back to breed
     const breed = dog.standardized_breed || dog.breed;
-    return breed ? `${dog.name} - ${breed}` : dog.name;
+    return breed ? `${dog.name} - ${breed}` : dog.name!;
   };
 
-  const schema = {
+  const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     additionalType: "http://dbpedia.org/ontology/Dog",
     name: buildName(),
   };
 
-  // Add description if available
   if (description) {
     schema.description = description;
   }
 
-  // Add image if available
   if (dog.primary_image_url) {
     schema.image = dog.primary_image_url;
   }
 
-  // Add adoption offer information with dynamic pricing and status
   const hasValidFees =
     dog.organization?.adoption_fees &&
     dog.organization.adoption_fees.usual_fee != null &&
@@ -134,15 +126,14 @@ export const generatePetSchema = (dog) => {
   if (hasValidFees) {
     schema.offers = {
       "@type": "Offer",
-      price: dog.organization.adoption_fees.usual_fee.toString(),
-      priceCurrency: dog.organization.adoption_fees.currency,
+      price: dog.organization!.adoption_fees!.usual_fee!.toString(),
+      priceCurrency: dog.organization!.adoption_fees!.currency,
       availability: getAvailability(dog.status),
       priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
         .toISOString()
-        .split("T")[0], // Valid for 1 year
+        .split("T")[0],
     };
   } else {
-    // Fallback if no fee data available or invalid data
     schema.offers = {
       "@type": "Offer",
       price: "500",
@@ -154,7 +145,6 @@ export const generatePetSchema = (dog) => {
     };
   }
 
-  // Add source attribution
   if (dog.organization) {
     schema.isBasedOn = {
       "@type": "WebPage",
@@ -163,8 +153,7 @@ export const generatePetSchema = (dog) => {
     };
   }
 
-  // Build additionalProperty array
-  const additionalProperty = [];
+  const additionalProperty: Record<string, unknown>[] = [];
 
   if (dog.age_text) {
     additionalProperty.push({
@@ -209,24 +198,29 @@ export const generatePetSchema = (dog) => {
   return schema;
 };
 
-/**
- * Generate Schema.org Organization markup for rescue organizations
- * @param {Object} organization - Organization data object from database
- * @returns {Object|null} Schema.org Organization markup or null if invalid
- */
-export const generateOrganizationSchema = (organization) => {
+interface OrganizationData {
+  name: string;
+  description?: string;
+  website_url?: string;
+  logo_url?: string;
+  established_year?: number;
+  city?: string;
+  country?: string;
+  total_dogs?: number;
+}
+
+export const generateOrganizationSchema = (organization: OrganizationData | null | undefined): Record<string, unknown> | null => {
   if (!organization || !organization.name) {
     return null;
   }
 
-  const schema = {
+  const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": ["LocalBusiness", "AnimalShelter"],
     name: organization.name,
     knowsAbout: "Dog rescue and adoption services",
   };
 
-  // Add optional fields only if they exist
   if (organization.description) {
     schema.description = organization.description;
   }
@@ -243,21 +237,21 @@ export const generateOrganizationSchema = (organization) => {
     schema.foundingDate = organization.established_year.toString();
   }
 
-  // Build address if location data available
   if (organization.city || organization.country) {
-    schema.address = {
+    const address: Record<string, string> = {
       "@type": "PostalAddress",
     };
 
     if (organization.city) {
-      schema.address.addressLocality = organization.city;
+      address.addressLocality = organization.city;
     }
 
     if (organization.country) {
-      schema.address.addressCountry = organization.country;
+      address.addressCountry = organization.country;
     }
 
-    // Add service area
+    schema.address = address;
+
     const serviceAreaParts = [organization.city, organization.country].filter(
       Boolean,
     );
@@ -269,7 +263,6 @@ export const generateOrganizationSchema = (organization) => {
     }
   }
 
-  // Add additional property for available dogs count
   if (organization.total_dogs && organization.total_dogs > 0) {
     schema.additionalProperty = {
       "@type": "PropertyValue",
@@ -281,12 +274,16 @@ export const generateOrganizationSchema = (organization) => {
   return schema;
 };
 
-/**
- * Generate Schema.org BreadcrumbList markup for navigation
- * @param {Object} breadcrumbData - Object with items array containing name and url
- * @returns {Object|null} Schema.org BreadcrumbList markup or null if invalid
- */
-export const generateBreadcrumbSchema = (breadcrumbData) => {
+interface BreadcrumbItem {
+  name: string;
+  url?: string;
+}
+
+interface BreadcrumbData {
+  items: BreadcrumbItem[];
+}
+
+export const generateBreadcrumbSchema = (breadcrumbData: BreadcrumbData | null | undefined): Record<string, unknown> | null => {
   if (
     !breadcrumbData ||
     !breadcrumbData.items ||
@@ -296,13 +293,12 @@ export const generateBreadcrumbSchema = (breadcrumbData) => {
   }
 
   const itemListElement = breadcrumbData.items.map((item, index) => {
-    const listItem = {
+    const listItem: Record<string, unknown> = {
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
     };
 
-    // Add item URL if provided (current page typically doesn't have URL)
     if (item.url) {
       listItem.item = `${BASE_URL}${item.url}`;
     }
@@ -317,13 +313,7 @@ export const generateBreadcrumbSchema = (breadcrumbData) => {
   };
 };
 
-/**
- * Validate schema data against basic requirements
- * @param {string} schemaType - Type of schema to validate ('Pet', 'Organization', 'JsonLD')
- * @param {Object} data - Schema data to validate
- * @returns {boolean} True if valid, false otherwise
- */
-export const validateSchemaData = (schemaType, data) => {
+export const validateSchemaData = (schemaType: string, data: Record<string, unknown> | null | undefined): boolean => {
   if (!data || typeof data !== "object") {
     return false;
   }
@@ -347,12 +337,7 @@ export const validateSchemaData = (schemaType, data) => {
   }
 };
 
-/**
- * Generate JSON-LD script tag content for embedding in HTML head
- * @param {Object} schema - Schema.org markup object
- * @returns {string} JSON-LD script content
- */
-export const generateJsonLdScript = (schema) => {
+export const generateJsonLdScript = (schema: Record<string, unknown> | null | undefined): string => {
   if (!schema) {
     return "";
   }
@@ -360,14 +345,9 @@ export const generateJsonLdScript = (schema) => {
   return JSON.stringify(schema, null, 2);
 };
 
-/**
- * Combine multiple schemas into a single JSON-LD script
- * @param {Array<Object>} schemas - Array of schema objects
- * @returns {string} Combined JSON-LD script content
- */
-export const combineSchemas = (schemas) => {
+export const combineSchemas = (schemas: (Record<string, unknown> | null | undefined)[]): string => {
   const validSchemas = schemas.filter(
-    (schema) => schema && typeof schema === "object",
+    (schema): schema is Record<string, unknown> => schema != null && typeof schema === "object",
   );
 
   if (validSchemas.length === 0) {
@@ -378,6 +358,5 @@ export const combineSchemas = (schemas) => {
     return generateJsonLdScript(validSchemas[0]);
   }
 
-  // Multiple schemas need to be wrapped in an array
   return JSON.stringify(validSchemas, null, 2);
 };

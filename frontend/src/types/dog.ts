@@ -38,6 +38,8 @@ export interface Dog {
     id?: number;
     name: string;
     country?: string;
+    city?: string;
+    ships_to?: string[];
     config_id?: string;
     slug?: string;
   };

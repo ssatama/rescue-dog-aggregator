@@ -1,9 +1,6 @@
-// Service Worker registration with environment-specific handling
-
-export const registerServiceWorker = () => {
+export const registerServiceWorker = (): void => {
   if (typeof window === "undefined") return;
 
-  // Skip service worker in development unless explicitly enabled
   if (
     process.env.NODE_ENV === "development" &&
     !process.env.NEXT_PUBLIC_ENABLE_SW_DEV
@@ -22,19 +19,18 @@ export const registerServiceWorker = () => {
         .then((registration) => {
           console.log("[SW] Registration successful:", registration.scope);
 
-          // Check for updates periodically
           setInterval(() => {
             registration.update();
-          }, 60000); // Check every minute
+          }, 60000);
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.error("[SW] Registration failed:", error);
         });
     });
   }
 };
 
-export const unregisterServiceWorker = () => {
+export const unregisterServiceWorker = (): void => {
   if (typeof window === "undefined") return;
 
   if ("serviceWorker" in navigator) {
@@ -48,8 +44,7 @@ export const unregisterServiceWorker = () => {
   }
 };
 
-// Clear all caches (useful for debugging)
-export const clearAllCaches = async () => {
+export const clearAllCaches = async (): Promise<void> => {
   if (typeof window === "undefined") return;
 
   if ("caches" in window) {

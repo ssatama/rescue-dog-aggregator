@@ -1,15 +1,26 @@
-// src/utils/errorHandler.js
-
 import { logger } from "./logger";
 
-/**
- * Parse structured error response from API
- * @param {Object} error - Error object from API or fetch
- * @returns {Object} Parsed error with user-friendly message and retry info
- */
-export function parseApiError(error) {
-  // Default error structure
-  const defaultError = {
+interface ParsedApiError {
+  message: string;
+  code: string;
+  type: string;
+  retryable: boolean;
+  retryAfter: number | null;
+  retryAttempt?: number | null;
+  maxRetries?: number | null;
+  correlationId: string | null;
+  detail?: string | null;
+  timestamp?: string;
+}
+
+interface ApiErrorInput {
+  message?: string;
+  status?: number;
+  data?: unknown;
+}
+
+export function parseApiError(error: ApiErrorInput): ParsedApiError {
+  const defaultError: ParsedApiError = {
     message: "An unexpected error occurred",
     code: "UNKNOWN_ERROR",
     type: "internal_error",
@@ -19,7 +30,6 @@ export function parseApiError(error) {
   };
 
   try {
-    // Handle network errors
     if (error.message && error.message.includes("Failed to fetch")) {
       return {
         ...defaultError,
@@ -32,54 +42,52 @@ export function parseApiError(error) {
       };
     }
 
-    // Handle structured error responses from our API
-    if (error.data && error.data.error) {
-      const apiError = error.data.error;
+    const data = error.data as Record<string, unknown> | null | undefined;
+
+    if (data && data.error && typeof data.error === "object") {
+      const apiError = data.error as Record<string, unknown>;
+      const retry = apiError.retry as Record<string, unknown> | undefined;
 
       return {
-        message: apiError.message || defaultError.message,
-        code: apiError.code || defaultError.code,
-        type: apiError.type || defaultError.type,
-        retryable: apiError.retry?.suggested || false,
-        retryAfter: apiError.retry?.after_seconds || null,
-        retryAttempt: apiError.retry?.attempt || null,
-        maxRetries: apiError.retry?.max_attempts || null,
-        correlationId: apiError.correlation_id || null,
-        detail: apiError.detail || null,
-        timestamp: apiError.timestamp || new Date().toISOString(),
+        message: (apiError.message as string) || defaultError.message,
+        code: (apiError.code as string) || defaultError.code,
+        type: (apiError.type as string) || defaultError.type,
+        retryable: (retry?.suggested as boolean) || false,
+        retryAfter: (retry?.after_seconds as number) || null,
+        retryAttempt: (retry?.attempt as number) || null,
+        maxRetries: (retry?.max_attempts as number) || null,
+        correlationId: (apiError.correlation_id as string) || null,
+        detail: typeof apiError.detail === "string" ? apiError.detail : null,
+        timestamp: (apiError.timestamp as string) || new Date().toISOString(),
       };
     }
 
-    // Handle legacy error format (backward compatibility)
-    if (error.data && typeof error.data === "object") {
-      // Check if it's the new structured format without the error wrapper
-      if (error.data.type && error.data.code) {
+    if (data && typeof data === "object") {
+      if (data.type && data.code) {
+        const retry = data.retry as Record<string, unknown> | undefined;
         return {
-          message: error.data.message || defaultError.message,
-          code: error.data.code || defaultError.code,
-          type: error.data.type || defaultError.type,
-          retryable: error.data.retry?.suggested || false,
-          retryAfter: error.data.retry?.after_seconds || null,
-          correlationId: error.data.correlation_id || null,
-          detail: error.data.detail || null,
+          message: (data.message as string) || defaultError.message,
+          code: (data.code as string) || defaultError.code,
+          type: (data.type as string) || defaultError.type,
+          retryable: (retry?.suggested as boolean) || false,
+          retryAfter: (retry?.after_seconds as number) || null,
+          correlationId: (data.correlation_id as string) || null,
+          detail: typeof data.detail === "string" ? data.detail : null,
         };
       }
 
-      // Old format with just detail
-      if (error.data.detail) {
-        // Check if detail is actually our structured error
-        if (typeof error.data.detail === "object" && error.data.detail.type) {
-          return parseApiError({ data: { error: error.data.detail } });
+      if (data.detail) {
+        if (typeof data.detail === "object" && (data.detail as Record<string, unknown>).type) {
+          return parseApiError({ data: { error: data.detail } });
         }
 
         return {
           ...defaultError,
-          message: error.data.detail,
+          message: typeof data.detail === "string" ? data.detail : defaultError.message,
         };
       }
     }
 
-    // Handle status-based errors
     if (error.status) {
       switch (error.status) {
         case 404:
@@ -117,7 +125,6 @@ export function parseApiError(error) {
       }
     }
 
-    // Fallback to error message
     if (error.message) {
       return {
         ...defaultError,
@@ -132,20 +139,13 @@ export function parseApiError(error) {
   }
 }
 
-/**
- * Format error message for user display
- * @param {Object} parsedError - Parsed error from parseApiError
- * @returns {String} User-friendly error message
- */
-export function formatErrorMessage(parsedError) {
+export function formatErrorMessage(parsedError: ParsedApiError): string {
   let message = parsedError.message;
 
-  // Add retry information if available
   if (parsedError.retryable && parsedError.retryAfter) {
     message += ` (Retrying in ${parsedError.retryAfter} seconds)`;
   }
 
-  // Add attempt information if available
   if (parsedError.retryAttempt && parsedError.maxRetries) {
     message += ` [Attempt ${parsedError.retryAttempt}/${parsedError.maxRetries}]`;
   }
@@ -153,13 +153,8 @@ export function formatErrorMessage(parsedError) {
   return message;
 }
 
-/**
- * Get user-friendly title for error type
- * @param {String} errorType - Error type from parsed error
- * @returns {String} User-friendly title
- */
-function getErrorTitle(errorType) {
-  const titles = {
+function getErrorTitle(errorType: string): string {
+  const titles: Record<string, string> = {
     network: "Connection Error",
     database_connection: "Database Connection Error",
     pool_initialization: "Service Starting Up",

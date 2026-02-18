@@ -1,9 +1,4 @@
-/**
- * Breed descriptions utility
- * Provides concise breed descriptions (100-150 words) for breed detail pages
- */
-
-const BREED_DESCRIPTIONS = {
+const BREED_DESCRIPTIONS: Record<string, string> = {
   Galgo: `Spanish Greyhounds are gentle, affectionate sighthounds known for their calm nature and surprising laziness despite their athletic build. These "45 mph couch potatoes" prefer short exercise bursts followed by long naps on soft surfaces. Most rescue Galgos are retired hunting dogs who adapt beautifully to apartment living and quiet home environments. They're typically excellent with other dogs but retain strong prey drive toward small animals like cats and rabbits. Their thin skin and lean build require soft bedding, warm coats in cold weather, and protection from rough surfaces. These sensitive souls bond deeply with their families but can be initially reserved with strangers. They're naturally quiet, clean housemates who rarely bark and make minimal demands on their owners. Their gentle, intuitive nature makes them exceptional therapy dogs. Ideal for patient adopters seeking a low-maintenance, affectionate companion who appreciates calm energy and understands their independent yet loving personality.`,
 
   Podenco: `Podencos are ancient Spanish hunting dogs with keen intelligence, athletic builds, and distinctive upright ears that give them an alert, fox-like expression. These energetic, independent spirits were bred to hunt rabbits across Mediterranean terrain, making them excellent jumpers and climbers who need tall, secure fencing. They're deeply loyal to their families but can be initially reserved with strangers, requiring patient socialization. Their high prey drive and escape-artist tendencies make them best suited for experienced owners who understand sighthound behavior. Despite their hunting heritage, they can be wonderfully affectionate indoor companions when given adequate physical and mental stimulation. These versatile dogs come in various sizes from small to large, all sharing the breed's unique charm and intelligence. Their short coat is remarkably low-maintenance, requiring only occasional brushing. With consistent positive training and proper outlets for their energy, they become devoted, entertaining companions who bring joy and mischief to their families.`,
@@ -56,7 +51,6 @@ const BREED_DESCRIPTIONS = {
 
   Spaniel: `Spaniels are a diverse group of sporting dogs originally bred for flushing and retrieving game birds, known for their gentle mouths, keen noses, and eager-to-please attitudes. While spaniel breeds vary in size from the compact Cocker to the larger English Springer, they share common traits of affectionate, loyal temperaments and strong desires to work alongside their human partners. These intelligent, trainable dogs typically excel at various activities from hunting and agility to therapy work, adapting their energy levels to match their families' lifestyles. Most spaniels are naturally gentle with children and get along well with other pets when properly socialized, making them excellent family companions. They generally need moderate to high exercise depending on the specific breed, enjoying activities like fetch, swimming, and long walks. Their beautiful coats require regular grooming to prevent matting. These devoted dogs form deep bonds with their families, making them ideal companions for breed seekers.`,
 
-  // Mixed breed variations from API
   Mix: `Mix dogs are wonderful companions that combine traits from multiple breeds, creating unique personalities and appearances. These special dogs often display the best qualities of their component breeds while moderating extreme traits, resulting in well-balanced temperaments. Their genetic diversity frequently leads to fewer inherited health issues through hybrid vigor. Every mix is different, with characteristics ranging from calm to energetic, small to large, making them adaptable to various lifestyles. They excel at whatever role they're given, from loyal lap dogs to active adventure companions. Mixed dogs are often grateful, devoted pets who seem to understand they've been given a second chance. Their unpredictable adult traits make them delightful surprises, keeping families engaged as their personalities develop. These resilient dogs prove that exceptional companionship doesn't require a pedigree, offering unconditional love and loyalty while bringing joy and unique character to their families.`,
 
   Unknown: `Dogs of unknown breed heritage are special companions whose backgrounds may be unclear, but whose capacity for love and loyalty is unmistakable. These mysterious dogs often surprise their families with unique combinations of traits, making each one a delightful discovery. Without breed expectations, they're free to develop their own distinct personalities based on their individual experiences and environment. Many unknown breed dogs are incredibly adaptable and resilient, having learned to make the most of whatever circumstances they face. Their unpredictable size, coat type, and temperament make them exciting additions to families who enjoy surprises and are open to discovering their dog's unique qualities over time. These dogs often display remarkable intelligence and problem-solving abilities, possibly due to their diverse genetic backgrounds. What they lack in pedigree documentation, they more than make up for in gratitude, devotion, and the special bond that forms when families choose love over labels.`,
@@ -80,23 +74,15 @@ const BREED_DESCRIPTIONS = {
   "Staffordshire Bull Terrier Mix": `Staffordshire Bull Terrier mixes combine the Staffie's legendary devotion to family and gentle nature with children, along with traits from other breeds that often create well-balanced, loving companions. These crosses typically inherit the Staffordshire Bull Terrier's muscular build and affectionate temperament while potentially having varied characteristics depending on their mixed heritage. They're usually medium-sized dogs with the breed's characteristic patience with children and strong family bonds, often maintaining the "nanny dog" reputation. Most Staffie mixes are intelligent, eager to please, and respond well to positive training methods while retaining the breed's natural confidence and determination. They need regular exercise and mental stimulation but often have the Staffie's adaptability to various living situations when their needs are met. Their coats are typically low-maintenance, and they often inherit the breed's natural cleanliness. These devoted dogs excel as family companions bringing together Staffie loyalty with mixed breeding benefits.`,
 };
 
-/**
- * Get breed description for a specific breed
- * @param {string} breedName - Name of the breed
- * @returns {string|null} - Breed description or null if not found
- */
-export function getBreedDescription(breedName) {
+export function getBreedDescription(breedName: string | null | undefined): string | null {
   if (!breedName) return null;
 
-  // Normalize breed name (trim and handle case)
   const normalizedBreed = breedName.trim();
 
-  // Try exact match first
   if (BREED_DESCRIPTIONS[normalizedBreed]) {
     return BREED_DESCRIPTIONS[normalizedBreed];
   }
 
-  // Try case-insensitive match
   const breedKey = Object.keys(BREED_DESCRIPTIONS).find(
     (key) => key.toLowerCase() === normalizedBreed.toLowerCase(),
   );
@@ -104,20 +90,11 @@ export function getBreedDescription(breedName) {
   return breedKey ? BREED_DESCRIPTIONS[breedKey] : null;
 }
 
-/**
- * Get all available breed descriptions
- * @returns {Object} - Object with all breed descriptions
- */
-export function getAllBreedDescriptions() {
+export function getAllBreedDescriptions(): Record<string, string> {
   return { ...BREED_DESCRIPTIONS };
 }
 
-/**
- * Check if a breed has a description available
- * @param {string} breedName - Name of the breed
- * @returns {boolean} - True if description exists
- */
-export function hasBreedDescription(breedName) {
+export function hasBreedDescription(breedName: string | null | undefined): boolean {
   return getBreedDescription(breedName) !== null;
 }
 

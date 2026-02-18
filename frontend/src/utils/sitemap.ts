@@ -1,57 +1,67 @@
-/**
- * Dynamic sitemap generation utilities
- * Pure functions for generating SEO-optimized XML sitemaps
- */
-
 import { getAllAnimalsForSitemap } from "../services/animalsService";
 import { getAllOrganizations } from "../services/organizationsService";
 
-/**
- * Get base URL dynamically for sitemap generation
- * @returns {string} Base URL for sitemap URLs
- */
-const getBaseUrl = () =>
+const getBaseUrl = (): string =>
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
-/**
- * Calculate dynamic priority for dog pages based on content quality attributes
- * Higher priority for dogs with better content (LLM descriptions, images, recent listings)
- * Lower priority for adopted dogs (preserves backlink equity but saves crawl budget)
- * @param {Object} dog - Dog data object
- * @returns {number} Priority value between 0.3 and 1.0
- */
-const calculateDogPriority = (dog) => {
-  // Adopted and unknown status dogs get reduced priority to save crawl budget
-  // They still appear in sitemap to preserve backlink equity
-  // Unknown = dogs not seen in recent scrapes (consecutive_scrapes_missing >= 3)
+
+interface SitemapDog {
+  id: number | string;
+  slug?: string;
+  name?: string;
+  breed?: string;
+  status?: string;
+  primary_image_url?: string;
+  created_at?: string;
+  updated_at?: string;
+  description?: string;
+  llm_description?: string;
+  llm_tagline?: string;
+  dog_profiler_data?: {
+    description?: string;
+    tagline?: string;
+  };
+}
+
+interface SitemapOrganization {
+  id?: number | string;
+  slug?: string;
+  updated_at?: string;
+}
+
+interface SitemapEntry {
+  url: string;
+  lastmod?: string;
+  changefreq?: string;
+  priority?: number;
+}
+
+interface SitemapMetadata {
+  filename: string;
+  lastmod?: string;
+}
+
+const calculateDogPriority = (dog: SitemapDog): number => {
   if (dog.status === "adopted" || dog.status === "unknown") {
     return 0.5;
   }
 
-  let priority = 0.3; // Base priority for all dogs
+  let priority = 0.3;
 
-  // Check for LLM-enhanced content (highest priority signal)
-  // Dogs with LLM descriptions are our best content
   const hasLLMDescription =
-    dog.properties?.dog_profiler_data?.description ||
     dog.llm_description ||
     dog.dog_profiler_data?.description;
 
   const hasLLMTagline =
-    dog.properties?.dog_profiler_data?.tagline ||
     dog.llm_tagline ||
     dog.dog_profiler_data?.tagline;
 
   if (hasLLMDescription || hasLLMTagline) {
-    // +0.4 for having LLM-generated content (our highest quality content)
     priority += 0.4;
   } else {
-    // Fallback to checking regular description quality
-    // +0.1 to +0.3 for non-LLM description quality
-    if (dog.properties && dog.properties.description) {
-      const description = dog.properties.description;
+    if (dog.description) {
+      const description = dog.description;
       const descLength = description.length;
 
-      // Check if it's not just boilerplate
       const isBoilerplate =
         description.includes("No description available") ||
         description.includes("Contact us for more information") ||
@@ -59,22 +69,20 @@ const calculateDogPriority = (dog) => {
 
       if (!isBoilerplate) {
         if (descLength > 200) {
-          priority += 0.3; // Long, detailed description
+          priority += 0.3;
         } else if (descLength > 50) {
-          priority += 0.2; // Medium description
+          priority += 0.2;
         } else if (descLength > 0) {
-          priority += 0.1; // Short but present description
+          priority += 0.1;
         }
       }
     }
   }
 
-  // +0.2 for having a primary image
   if (dog.primary_image_url) {
     priority += 0.2;
   }
 
-  // +0.1 for recent listings (last 30 days)
   if (dog.created_at) {
     const createdDate = new Date(dog.created_at);
     const thirtyDaysAgo = new Date();
@@ -85,26 +93,13 @@ const calculateDogPriority = (dog) => {
     }
   }
 
-  // Ensure priority stays within valid range
-  // Dogs with LLM content can reach 1.0 priority
-  // Round to 1 decimal place to avoid floating point precision issues
   return Math.min(Math.round(priority * 10) / 10, 1.0);
 };
 
-// Sitemap limits per Google standards
 const MAX_URLS_PER_SITEMAP = 50000;
-const MAX_SITEMAP_SIZE_MB = 50; // 50MB uncompressed
+const MAX_SITEMAP_SIZE_MB = 50;
 
-/**
- * Format and validate a single sitemap entry
- * @param {Object} entry - Sitemap entry data
- * @param {string} entry.url - Full URL for the page
- * @param {string} [entry.lastmod] - ISO 8601 format date
- * @param {string} [entry.changefreq] - How frequently the page changes
- * @param {number} [entry.priority] - Priority relative to other pages (0.0-1.0)
- * @returns {Object} Validated sitemap entry
- */
-export const formatSitemapEntry = (entry) => {
+export const formatSitemapEntry = (entry: SitemapEntry): SitemapEntry => {
   if (!entry || typeof entry !== "object") {
     throw new Error("Sitemap entry must be an object");
   }
@@ -113,14 +108,12 @@ export const formatSitemapEntry = (entry) => {
     throw new Error("Sitemap entry must have a valid URL");
   }
 
-  // Validate URL format
   try {
     new URL(entry.url);
   } catch {
     throw new Error("Sitemap entry URL must be a valid URL");
   }
 
-  // Validate priority if provided
   if (entry.priority !== undefined) {
     if (
       typeof entry.priority !== "number" ||
@@ -131,7 +124,6 @@ export const formatSitemapEntry = (entry) => {
     }
   }
 
-  // Validate changefreq if provided
   if (entry.changefreq !== undefined) {
     const validFreqs = [
       "always",
@@ -147,11 +139,10 @@ export const formatSitemapEntry = (entry) => {
     }
   }
 
-  const validatedEntry = {
+  const validatedEntry: SitemapEntry = {
     url: entry.url,
   };
 
-  // Add optional fields only if they exist
   if (entry.lastmod) {
     validatedEntry.lastmod = entry.lastmod;
   }
@@ -167,84 +158,41 @@ export const formatSitemapEntry = (entry) => {
   return validatedEntry;
 };
 
-/**
- * Generate static page entries for the sitemap
- * @returns {Array<Object>} Array of static page sitemap entries
- */
-const generateStaticPages = () => {
+const generateStaticPages = (): SitemapEntry[] => {
   const baseUrl = getBaseUrl();
-  const staticPages = [
-    {
-      url: `${baseUrl}/`,
-      changefreq: "weekly",
-      priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/dogs`,
-      changefreq: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/dogs/age`,
-      changefreq: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/dogs/puppies`,
-      changefreq: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/dogs/senior`,
-      changefreq: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/organizations`,
-      changefreq: "monthly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/about`,
-      changefreq: "monthly",
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      changefreq: "yearly",
-      priority: 0.3,
-    },
+  const staticPages: SitemapEntry[] = [
+    { url: `${baseUrl}/`, changefreq: "weekly", priority: 1.0 },
+    { url: `${baseUrl}/dogs`, changefreq: "weekly", priority: 0.9 },
+    { url: `${baseUrl}/dogs/age`, changefreq: "daily", priority: 0.8 },
+    { url: `${baseUrl}/dogs/puppies`, changefreq: "daily", priority: 0.8 },
+    { url: `${baseUrl}/dogs/senior`, changefreq: "daily", priority: 0.8 },
+    { url: `${baseUrl}/organizations`, changefreq: "monthly", priority: 0.9 },
+    { url: `${baseUrl}/about`, changefreq: "monthly", priority: 0.6 },
+    { url: `${baseUrl}/privacy`, changefreq: "yearly", priority: 0.3 },
   ];
 
   return staticPages.map(formatSitemapEntry);
 };
 
-/**
- * Generate dog page entries for the sitemap
- * @param {Array<Object>} dogs - Array of dog objects from API
- * @returns {Array<Object>} Array of dog page sitemap entries
- */
-const generateDogPages = (dogs) => {
+const generateDogPages = (dogs: SitemapDog[]): SitemapEntry[] => {
   if (!Array.isArray(dogs)) {
     return [];
   }
 
   const baseUrl = getBaseUrl();
   return dogs.map((dog) => {
-    const entry = {
+    const entry: SitemapEntry = {
       url: `${baseUrl}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`,
-      changefreq: "monthly", // Dog info rarely changes unless rescues update
-      priority: calculateDogPriority(dog), // PHASE 2A: Dynamic priority calculation
+      changefreq: "monthly",
+      priority: calculateDogPriority(dog),
     };
 
-    // Add lastmod using created_at (when dog was first posted) instead of updated_at
     if (dog.created_at) {
       const formattedDate = formatDateForSitemap(dog.created_at);
       if (formattedDate) {
         entry.lastmod = formattedDate;
       }
     } else if (dog.updated_at) {
-      // Fallback to updated_at if created_at is not available
       const formattedDate = formatDateForSitemap(dog.updated_at);
       if (formattedDate) {
         entry.lastmod = formattedDate;
@@ -255,25 +203,19 @@ const generateDogPages = (dogs) => {
   });
 };
 
-/**
- * Generate organization page entries for the sitemap
- * @param {Array<Object>} organizations - Array of organization objects from API
- * @returns {Array<Object>} Array of organization page sitemap entries
- */
-const generateOrganizationPages = (organizations) => {
+const generateOrganizationPages = (organizations: SitemapOrganization[]): SitemapEntry[] => {
   if (!Array.isArray(organizations)) {
     return [];
   }
 
   const baseUrl = getBaseUrl();
   return organizations.map((org) => {
-    const entry = {
+    const entry: SitemapEntry = {
       url: `${baseUrl}/organizations/${org.slug || `unknown-org-${org.id}`}`,
-      changefreq: "monthly", // Organizations rarely change
+      changefreq: "monthly",
       priority: 0.7,
     };
 
-    // Add lastmod if available
     if (org.updated_at) {
       const formattedDate = formatDateForSitemap(org.updated_at);
       if (formattedDate) {
@@ -285,17 +227,11 @@ const generateOrganizationPages = (organizations) => {
   });
 };
 
-/**
- * Convert sitemap entries to XML format
- * @param {Array<Object>} entries - Array of validated sitemap entries
- * @returns {string} XML sitemap content
- */
-const entriesToXml = (entries) => {
+const entriesToXml = (entries: SitemapEntry[]): string => {
   if (!Array.isArray(entries)) {
     entries = [];
   }
 
-  // Limit entries to sitemap standard
   const limitedEntries = entries.slice(0, MAX_URLS_PER_SITEMAP);
 
   const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
@@ -316,13 +252,9 @@ const entriesToXml = (entries) => {
     }
 
     if (entry.priority !== undefined) {
-      // Format priority to avoid floating point precision issues (e.g., 0.9999999999)
       const formattedPriority = entry.priority.toFixed(1);
       urlXml += `    <priority>${formattedPriority}</priority>\n`;
     }
-
-    // Note: hreflang alternates removed as site doesn't support internationalization
-    // Adding non-existent locale URLs would create 404 errors for search crawlers
 
     urlXml += "  </url>";
     return urlXml;
@@ -331,49 +263,34 @@ const entriesToXml = (entries) => {
   return [xmlHeader, urlsetOpen, ...urlElements, urlsetClose].join("\n");
 };
 
-/**
- * Format date for XML sitemap (W3C Datetime format)
- * @param {string} dateString - Date string from API
- * @returns {string|null} Formatted date for sitemap or null if invalid
- */
-export const formatDateForSitemap = (dateString) => {
+export const formatDateForSitemap = (dateString: string | null | undefined): string | null => {
   if (!dateString) return null;
 
   try {
-    let date;
+    let date: Date;
 
-    // Handle API dates that don't have timezone info - assume UTC
     if (
       dateString.includes("T") &&
       !dateString.includes("Z") &&
       !dateString.includes("+") &&
       !dateString.includes("-", 10)
     ) {
-      // Add Z to indicate UTC for timezone-less ISO strings
       date = new Date(dateString + "Z");
     } else {
       date = new Date(dateString);
     }
 
-    // Check if date is valid
     if (isNaN(date.getTime())) {
       return null;
     }
 
-    // Convert to W3C Datetime format (ISO 8601 with timezone)
-    // Remove milliseconds and add +00:00 timezone
     return date.toISOString().replace(/\.\d{3}Z$/, "+00:00");
-  } catch (error) {
+  } catch {
     return null;
   }
 };
 
-/**
- * Escape XML special characters
- * @param {string} str - String to escape
- * @returns {string} XML-escaped string
- */
-const escapeXml = (str) => {
+const escapeXml = (str: string): string => {
   if (typeof str !== "string") {
     return "";
   }
@@ -386,14 +303,7 @@ const escapeXml = (str) => {
     .replace(/'/g, "&#x27;");
 };
 
-/**
- * Generate sitemap index XML listing all available sitemaps
- * If no sitemaps array provided, uses default list of all sitemaps
- * @param {Array<Object>} [sitemaps] - Optional array of sitemap metadata objects with {filename, lastmod?}
- * @returns {string} XML sitemap index content
- */
-export const generateSitemapIndex = (sitemaps) => {
-  // Use default sitemap list if none provided
+export const generateSitemapIndex = (sitemaps?: SitemapMetadata[]): string => {
   if (!sitemaps || sitemaps.length === 0) {
     const lastmod = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
     sitemaps = [
@@ -426,29 +336,21 @@ export const generateSitemapIndex = (sitemaps) => {
   return [xmlHeader, indexOpen, ...sitemapEntries, indexClose].join("\n");
 };
 
-/**
- * Split entries into multiple sitemaps if needed
- * @param {Array<Object>} entries - All sitemap entries
- * @returns {Array<Object>} Array of sitemap chunks
- */
-const splitIntoSitemaps = (entries) => {
-  const sitemaps = [];
-  let currentSitemap = [];
+const splitIntoSitemaps = (entries: SitemapEntry[]): SitemapEntry[][] => {
+  const sitemaps: SitemapEntry[][] = [];
+  let currentSitemap: SitemapEntry[] = [];
   let currentSize = 0;
 
-  // Estimate 200 bytes per URL entry
   const BYTES_PER_ENTRY = 200;
   const MAX_SIZE_BYTES = MAX_SITEMAP_SIZE_MB * 1024 * 1024;
 
   for (const entry of entries) {
     const entrySize = BYTES_PER_ENTRY;
 
-    // Check if adding this entry would exceed limits
     if (
       currentSitemap.length >= MAX_URLS_PER_SITEMAP ||
       currentSize + entrySize > MAX_SIZE_BYTES
     ) {
-      // Start a new sitemap
       if (currentSitemap.length > 0) {
         sitemaps.push(currentSitemap);
         currentSitemap = [];
@@ -460,7 +362,6 @@ const splitIntoSitemaps = (entries) => {
     currentSize += entrySize;
   }
 
-  // Add the last sitemap if it has entries
   if (currentSitemap.length > 0) {
     sitemaps.push(currentSitemap);
   }
@@ -468,20 +369,12 @@ const splitIntoSitemaps = (entries) => {
   return sitemaps;
 };
 
-/**
- * Generate complete XML sitemap with all content
- * @returns {Promise<string>} Complete XML sitemap content
- */
-export const generateSitemap = async () => {
+export const generateSitemap = async (): Promise<string> => {
   try {
-    // Collect all sitemap entries
-    const allEntries = [];
+    const allEntries: SitemapEntry[] = [];
 
-    // Add static pages
     allEntries.push(...generateStaticPages());
 
-    // Fetch and add dynamic content
-    // Note: Dog pages are in sitemap-dogs.xml to avoid duplication
     try {
       const organizations = await getAllOrganizations();
       allEntries.push(...generateOrganizationPages(organizations));
@@ -489,12 +382,11 @@ export const generateSitemap = async () => {
       if (process.env.NODE_ENV !== "production") {
         console.warn(
           "Failed to fetch organizations for sitemap:",
-          error.message,
+          error instanceof Error ? error.message : String(error),
         );
       }
     }
 
-    // Add breed pages
     try {
       const breedPages = await generateBreedPages();
       allEntries.push(...breedPages);
@@ -502,29 +394,23 @@ export const generateSitemap = async () => {
       if (process.env.NODE_ENV !== "production") {
         console.warn(
           "Failed to generate breed pages for sitemap:",
-          error.message,
+          error instanceof Error ? error.message : String(error),
         );
       }
     }
 
-    // Convert to XML
     return entriesToXml(allEntries);
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
       console.error("Error generating sitemap:", error);
     }
 
-    // Fallback: return sitemap with static pages only
     const staticEntries = generateStaticPages();
     return entriesToXml(staticEntries);
   }
 };
 
-/**
- * Generate dog-specific sitemap
- * @returns {Promise<string>} XML sitemap for dogs
- */
-export const generateDogSitemap = async () => {
+export const generateDogSitemap = async (): Promise<string> => {
   try {
     const dogs = await getAllAnimalsForSitemap();
     const dogEntries = generateDogPages(dogs);
@@ -537,11 +423,7 @@ export const generateDogSitemap = async () => {
   }
 };
 
-/**
- * Generate organization-specific sitemap
- * @returns {Promise<string>} XML sitemap for organizations
- */
-export const generateOrganizationSitemap = async () => {
+export const generateOrganizationSitemap = async (): Promise<string> => {
   try {
     const organizations = await getAllOrganizations();
     const orgEntries = generateOrganizationPages(organizations);
@@ -554,23 +436,17 @@ export const generateOrganizationSitemap = async () => {
   }
 };
 
-/**
- * Generate country-specific sitemap for country hub pages
- * @returns {Promise<string>} XML sitemap for countries
- */
-export const generateCountrySitemap = async () => {
+export const generateCountrySitemap = async (): Promise<string> => {
   const baseUrl = getBaseUrl();
   const countries = ["uk", "de", "sr", "ba", "bg", "it", "tr", "cy"];
 
   try {
     const countryEntries = [
-      // Index page
       formatSitemapEntry({
         url: `${baseUrl}/dogs/country`,
         changefreq: "daily",
         priority: 0.8,
       }),
-      // Individual country pages
       ...countries.map((code) =>
         formatSitemapEntry({
           url: `${baseUrl}/dogs/country/${code}`,
@@ -589,11 +465,7 @@ export const generateCountrySitemap = async () => {
   }
 };
 
-/**
- * Generate image sitemap for better image SEO
- * @returns {Promise<string>} XML image sitemap
- */
-export const generateImageSitemap = async () => {
+export const generateImageSitemap = async (): Promise<string> => {
   const baseUrl = getBaseUrl();
   const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
   const urlsetOpen =
@@ -603,20 +475,19 @@ export const generateImageSitemap = async () => {
   try {
     const dogs = await getAllAnimalsForSitemap();
 
-    // Filter dogs with images and create image entries
     const imageEntries = dogs
       .filter((dog) => dog.primary_image_url)
       .map((dog) => {
         const dogUrl = `${baseUrl}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`;
         const imageTitle = `${dog.name} - ${dog.breed || "Mixed Breed"} for Adoption`;
-        const imageCaption = dog.properties?.description
-          ? dog.properties.description.substring(0, 200)
+        const imageCaption = dog.description
+          ? dog.description.substring(0, 200)
           : `Meet ${dog.name}, available for adoption`;
 
         return `  <url>
     <loc>${escapeXml(dogUrl)}</loc>
     <image:image>
-      <image:loc>${escapeXml(dog.primary_image_url)}</image:loc>
+      <image:loc>${escapeXml(dog.primary_image_url!)}</image:loc>
       <image:title>${escapeXml(imageTitle)}</image:title>
       <image:caption>${escapeXml(imageCaption)}</image:caption>
     </image:image>
@@ -632,16 +503,20 @@ export const generateImageSitemap = async () => {
   }
 };
 
-/**
- * Generate breed page entries for the sitemap
- * @returns {Promise<Array<Object>>} Array of breed page sitemap entries
- */
-const generateBreedPages = async () => {
+interface BreedStatsBreed {
+  breed_type?: string;
+  breed_group?: string;
+  primary_breed?: string;
+  breed_slug?: string;
+  count?: number | string;
+  last_updated?: string;
+}
+
+const generateBreedPages = async (): Promise<SitemapEntry[]> => {
   const baseUrl = getBaseUrl();
-  const breedPages = [];
+  const breedPages: SitemapEntry[] = [];
 
   try {
-    // Add main breeds hub page
     breedPages.push(
       formatSitemapEntry({
         url: `${baseUrl}/breeds`,
@@ -650,7 +525,6 @@ const generateBreedPages = async () => {
       }),
     );
 
-    // Add mixed breeds consolidated page
     breedPages.push(
       formatSitemapEntry({
         url: `${baseUrl}/breeds/mixed`,
@@ -659,21 +533,18 @@ const generateBreedPages = async () => {
       }),
     );
 
-    // Fetch breed stats to get qualifying breeds
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me"}/api/animals/breeds/stats`,
     );
 
     if (response.ok) {
-      const breedStats = await response.json();
+      const breedStats: { qualifying_breeds?: BreedStatsBreed[] } = await response.json();
 
-      // Add individual breed pages (excluding mixed breed variants)
       if (
         breedStats.qualifying_breeds &&
         Array.isArray(breedStats.qualifying_breeds)
       ) {
         const purebreds = breedStats.qualifying_breeds.filter((breed) => {
-          // Exclude mixed breed variants that would redirect
           const isMixed =
             breed.breed_type === "mixed" ||
             breed.breed_group === "Mixed" ||
@@ -682,7 +553,6 @@ const generateBreedPages = async () => {
         });
 
         purebreds.forEach((breed) => {
-          // Calculate priority based on dog count (0.7 to 0.9 range)
           const counts = purebreds.map((b) => Number(b.count) || 0);
           const maxCount = counts.length ? Math.max(...counts) : 1;
           const normalizedCount =
@@ -692,13 +562,12 @@ const generateBreedPages = async () => {
             Math.max(0.7, 0.7 + normalizedCount * 0.2),
           );
 
-          const entry = {
+          const entry: SitemapEntry = {
             url: `${baseUrl}/breeds/${breed.breed_slug}`,
             changefreq: "weekly",
-            priority: Math.round(priority * 10) / 10, // Round to 1 decimal
+            priority: Math.round(priority * 10) / 10,
           };
 
-          // Add lastmod if breed has been recently updated
           if (breed.last_updated) {
             const formattedDate = formatDateForSitemap(breed.last_updated);
             if (formattedDate) {
@@ -712,20 +581,26 @@ const generateBreedPages = async () => {
     }
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
-      console.warn("Failed to fetch breed stats for sitemap:", error.message);
+      console.warn("Failed to fetch breed stats for sitemap:", error instanceof Error ? error.message : String(error));
     }
   }
 
   return breedPages;
 };
 
-/**
- * Get sitemap statistics for monitoring
- * @returns {Promise<Object>} Sitemap generation stats
- */
-export const getSitemapStats = async () => {
+interface SitemapStats {
+  totalUrls: number;
+  staticPages: number;
+  dogPages: number;
+  organizationPages: number;
+  breedPages: number;
+  lastGenerated: string;
+  error?: string;
+}
+
+export const getSitemapStats = async (): Promise<SitemapStats> => {
   try {
-    const [dogs, organizations, breedPages] = await Promise.allSettled([
+    const [dogs, organizations, breedPagesResult] = await Promise.allSettled([
       getAllAnimalsForSitemap(),
       getAllOrganizations(),
       generateBreedPages(),
@@ -735,7 +610,7 @@ export const getSitemapStats = async () => {
     const orgCount =
       organizations.status === "fulfilled" ? organizations.value.length : 0;
     const breedCount =
-      breedPages.status === "fulfilled" ? breedPages.value.length : 0;
+      breedPagesResult.status === "fulfilled" ? breedPagesResult.value.length : 0;
     const staticCount = generateStaticPages().length;
 
     return {
@@ -754,7 +629,7 @@ export const getSitemapStats = async () => {
       organizationPages: 0,
       breedPages: 0,
       lastGenerated: new Date().toISOString(),
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 };

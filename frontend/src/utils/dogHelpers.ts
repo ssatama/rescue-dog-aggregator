@@ -1,14 +1,8 @@
-/**
- * Dog-related helper functions and utilities
- */
+import type { Dog } from "@/types/dog";
 
-/**
- * Format dog age from age_min_months or age_text with uncertainty indicators
- * @param {Object} dog - Dog object with age_min_months, age_max_months, or age_text
- * @returns {string} Formatted age string with uncertainty indicators where appropriate
- */
-export const formatAge = (dog) => {
-  // Handle age ranges (age_min_months + age_max_months) - show as estimated
+type DogInput = Partial<Dog>;
+
+export const formatAge = (dog: DogInput | null | undefined): string => {
   if (
     dog?.age_min_months &&
     dog?.age_max_months &&
@@ -18,10 +12,8 @@ export const formatAge = (dog) => {
     const maxYears = Math.floor(dog.age_max_months / 12);
 
     if (minYears === maxYears) {
-      // Same year range, show as estimated
       return `~${minYears} year${minYears === 1 ? "" : "s"} (est.)`;
     } else {
-      // Different years, show average as estimated
       const avgMonths = Math.round(
         (dog.age_min_months + dog.age_max_months) / 2,
       );
@@ -30,7 +22,6 @@ export const formatAge = (dog) => {
     }
   }
 
-  // Handle exact age from age_min_months (more precise)
   if (dog?.age_min_months) {
     if (dog.age_min_months < 12) {
       return `${dog.age_min_months} month${dog.age_min_months === 1 ? "" : "s"}`;
@@ -45,10 +36,8 @@ export const formatAge = (dog) => {
     }
   }
 
-  // Handle age_text - add uncertainty indicator for ranges
   if (dog?.age_text) {
     const ageText = dog.age_text.trim();
-    // Check if it's a range like "5-7 years" or "2-3 months"
     const rangeMatch = ageText.match(/(\d+)\s*-\s*(\d+)\s*(year|month)s?/i);
     if (rangeMatch) {
       const [, min, max, unit] = rangeMatch;
@@ -61,41 +50,29 @@ export const formatAge = (dog) => {
   return "Age unknown";
 };
 
-/**
- * Categorize dog age into life stages
- * @param {Object} dog - Dog object with age_min_months or age_text
- * @returns {string} Age category: 'Puppy', 'Young', 'Adult', 'Senior', or 'Unknown'
- */
-export const getAgeCategory = (dog) => {
-  // Prefer age_min_months when available (most accurate)
-  // Note: age_min_months = 0 means unknown age, not newborn
+export const getAgeCategory = (dog: DogInput | null | undefined): string => {
   if (dog?.age_min_months && dog.age_min_months > 0) {
     const months = dog.age_min_months;
 
     if (months < 12) {
       return "Puppy";
     } else if (months < 36) {
-      // Less than 3 years
       return "Young";
     } else if (months < 96) {
-      // Less than 8 years (matches backend standardization)
       return "Adult";
     } else {
       return "Senior";
     }
   }
 
-  // Fall back to standardized age_text when age_min_months not available
   if (dog?.age_text) {
     const ageText = dog.age_text.toLowerCase();
 
-    // Handle standardized age categories
     if (ageText === "puppy") return "Puppy";
     if (ageText === "young") return "Young";
     if (ageText === "adult") return "Adult";
     if (ageText === "senior") return "Senior";
 
-    // Handle age ranges like "5-7 years" or "2-3 months"
     const rangeMatch = ageText.match(/(\d+)\s*-\s*(\d+)\s*(year|month)s?/i);
     if (rangeMatch) {
       const [, min, max, unit] = rangeMatch;
@@ -119,12 +96,7 @@ export const getAgeCategory = (dog) => {
   return "Unknown";
 };
 
-/**
- * Format dog breed, preferring primary_breed over standardized_breed over breed
- * @param {Object} dog - Dog object with breed information
- * @returns {string|null} Formatted breed or null if unknown
- */
-export const formatBreed = (dog) => {
+export const formatBreed = (dog: DogInput | null | undefined): string | null => {
   const rawBreed = dog?.primary_breed || dog?.standardized_breed || dog?.breed;
   if (
     !rawBreed ||
@@ -136,12 +108,7 @@ export const formatBreed = (dog) => {
   return rawBreed;
 };
 
-/**
- * Format dog gender with appropriate icon
- * @param {Object} dog - Dog object with sex field
- * @returns {Object} Object with text and icon for gender
- */
-export const formatGender = (dog) => {
+export const formatGender = (dog: DogInput | null | undefined): { text: string; icon: string } => {
   const sex = dog?.sex?.toLowerCase();
 
   switch (sex) {
@@ -156,12 +123,7 @@ export const formatGender = (dog) => {
   }
 };
 
-/**
- * Check if dog was added recently (within last 7 days)
- * @param {Object} dog - Dog object with created_at field
- * @returns {boolean} True if dog is recent
- */
-export const isRecentDog = (dog) => {
+export const isRecentDog = (dog: DogInput | null | undefined): boolean => {
   if (!dog?.created_at) return false;
 
   try {
@@ -170,34 +132,19 @@ export const isRecentDog = (dog) => {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     return createdDate > sevenDaysAgo;
   } catch {
-    return false; // Invalid date
+    return false;
   }
 };
 
-/**
- * Get organization name from dog object
- * @param {Object} dog - Dog object with nested organization
- * @returns {string} Organization name or fallback
- */
-export const getOrganizationName = (dog) => {
+export const getOrganizationName = (dog: DogInput | null | undefined): string => {
   return dog?.organization?.name || "Unknown Organization";
 };
 
-/**
- * Get shipping countries from dog's organization
- * @param {Object} dog - Dog object with nested organization
- * @returns {Array} Array of country codes the organization ships to
- */
-export const getShipsToCountries = (dog) => {
+export const getShipsToCountries = (dog: DogInput | null | undefined): string[] => {
   return dog?.organization?.ships_to || [];
 };
 
-/**
- * Format size display for dog cards
- * @param {Object} dog - Dog object with size information
- * @returns {string|null} Formatted size or null if unknown
- */
-export const formatSize = (dog) => {
+export const formatSize = (dog: DogInput | null | undefined): string | null => {
   const size = dog?.standardized_size || dog?.size;
   if (!size || size === "Unknown" || size.toLowerCase() === "unknown") {
     return null;
@@ -205,12 +152,7 @@ export const formatSize = (dog) => {
   return size;
 };
 
-/**
- * Format experience level with more specificity
- * @param {Object} dog - Dog object with dog_profiler_data
- * @returns {string|null} Formatted experience level or null if not available
- */
-export const formatExperienceLevel = (dog) => {
+export const formatExperienceLevel = (dog: DogInput | null | undefined): string | null => {
   const experienceLevel = dog?.dog_profiler_data?.experience_level;
 
   switch (experienceLevel) {
@@ -225,16 +167,21 @@ export const formatExperienceLevel = (dog) => {
   }
 };
 
-/**
- * Format compatibility display for dog cards
- * @param {Object} dog - Dog object with dog_profiler_data
- * @returns {Object} Compatibility object with formatted displays
- */
-export const formatCompatibility = (dog) => {
+interface CompatibilityDisplay {
+  icon: string;
+  text: string;
+  color: string;
+}
+
+export const formatCompatibility = (dog: DogInput | null | undefined): {
+  withDogs: CompatibilityDisplay;
+  withCats: CompatibilityDisplay;
+  withChildren: CompatibilityDisplay;
+} => {
   const profilerData = dog?.dog_profiler_data;
   const props = dog?.properties || {};
 
-  const getCompatibilityDisplay = (value) => {
+  const getCompatibilityDisplay = (value: string): CompatibilityDisplay => {
     switch (value) {
       case "yes":
         return { icon: "✓", text: "Good", color: "text-green-600" };
@@ -247,10 +194,9 @@ export const formatCompatibility = (dog) => {
     }
   };
 
-  // Get compatibility from profiler data first, then fallback to properties
-  const getCompatValue = (profilerKey, propKey) => {
-    if (profilerData && profilerData[profilerKey]) {
-      return profilerData[profilerKey];
+  const getCompatValue = (profilerKey: string, propKey: string): string => {
+    if (profilerData && (profilerData as Record<string, unknown>)[profilerKey]) {
+      return (profilerData as Record<string, unknown>)[profilerKey] as string;
     }
     if (props[propKey] === true || props[propKey] === "yes") return "yes";
     if (props[propKey] === false || props[propKey] === "no") return "no";
@@ -271,14 +217,9 @@ export const formatCompatibility = (dog) => {
   };
 };
 
-/**
- * Get formatted personality traits for display
- * @param {Object} dog - Dog object with dog_profiler_data
- * @returns {Array} Array of personality traits or empty array
- */
-export const getPersonalityTraits = (dog) => {
+export const getPersonalityTraits = (dog: DogInput | null | undefined): string[] => {
   if (dog?.dog_profiler_data?.personality_traits) {
-    return dog.dog_profiler_data.personality_traits.slice(0, 3); // Limit to first 3 for display
+    return dog.dog_profiler_data.personality_traits.slice(0, 3);
   }
   return [];
 };

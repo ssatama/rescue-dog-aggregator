@@ -1,25 +1,4 @@
-/**
- * @fileoverview Image Utilities for Cloudflare R2 and Image Transformations
- *
- * This module provides comprehensive image optimization and transformation utilities
- * for the rescue dog aggregator frontend. It handles:
- * - Cloudflare R2 image transformations using the new Cloudflare Images API
- * - Security validation to prevent path traversal attacks
- * - Performance optimizations including memoization and network-aware quality
- * - Error handling and fallback strategies
- * - Image preloading and smart positioning
- *
- * Architecture:
- * - Uses Cloudflare's modern parameter format (w=X,h=Y,fit=Z,quality=N)
- * - Implements comprehensive security validation before URL processing
- * - Provides memoized transformation functions for performance
- * - Includes monitoring and analytics for image loading performance
- *
- * @author Claude Code
- * @version 2.0.0 - Cloudflare Images Migration
- * @since 1.0.0
- */
-
+import type React from "react";
 import { logger } from "./logger";
 import {
   getAdaptiveImageQuality,
@@ -27,26 +6,21 @@ import {
   isSlowConnection,
 } from "./networkUtils";
 
-// Configuration constants
 const R2_CUSTOM_DOMAIN =
   process.env.NEXT_PUBLIC_R2_CUSTOM_DOMAIN || "images.rescuedogs.me";
-const USE_R2_IMAGES = true; // Enable R2 transformations using Cloudflare Image Resizing
+const USE_R2_IMAGES = true;
 const PLACEHOLDER_IMAGE = "/placeholder_dog.svg";
 
-/**
- * Helper function to determine whether to use transformed or original URL
- * @private
- * @param {string} originalUrl - The original image URL
- * @param {string} transformedUrl - The transformed image URL
- * @returns {string} The URL to use based on configuration
- */
-function getOriginalOrTransformed(originalUrl, transformedUrl) {
+function getOriginalOrTransformed(originalUrl: string, transformedUrl: string): string {
   return USE_R2_IMAGES ? transformedUrl : originalUrl;
 }
 
-// LRU Cache Implementation for Image URL Memoization
-// Prevents unbounded memory growth while maintaining performance
-class LRUCache {
+class LRUCache<K, V> {
+  private maxSize: number;
+  private cache: Map<K, V>;
+  private hits: number;
+  private misses: number;
+
   constructor(maxSize = 1000) {
     this.maxSize = maxSize;
     this.cache = new Map();
@@ -54,10 +28,9 @@ class LRUCache {
     this.misses = 0;
   }
 
-  get(key) {
+  get(key: K): V | undefined {
     if (this.cache.has(key)) {
-      // Move to end (most recently used)
-      const value = this.cache.get(key);
+      const value = this.cache.get(key)!;
       this.cache.delete(key);
       this.cache.set(key, value);
       this.hits++;
@@ -67,33 +40,33 @@ class LRUCache {
     return undefined;
   }
 
-  set(key, value) {
+  set(key: K, value: V): void {
     if (this.cache.has(key)) {
-      // Update existing key (move to end)
       this.cache.delete(key);
     } else if (this.cache.size >= this.maxSize) {
-      // Remove least recently used (first item)
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
     this.cache.set(key, value);
   }
 
-  has(key) {
+  has(key: K): boolean {
     return this.cache.has(key);
   }
 
-  clear() {
+  clear(): void {
     this.cache.clear();
     this.hits = 0;
     this.misses = 0;
   }
 
-  get size() {
+  get size(): number {
     return this.cache.size;
   }
 
-  getStats() {
+  getStats(): { size: number; maxSize: number; hits: number; misses: number; hitRate: number; has: (key: K) => boolean } {
     const totalRequests = this.hits + this.misses;
     return {
       size: this.size,
@@ -101,35 +74,34 @@ class LRUCache {
       hits: this.hits,
       misses: this.misses,
       hitRate: totalRequests > 0 ? this.hits / totalRequests : 0,
-      has: (key) => this.has(key),
+      has: (key: K) => this.has(key),
     };
   }
 }
 
-// Memoization cache for performance optimization with LRU eviction
-const imageUrlCache = new LRUCache(1000);
+const imageUrlCache = new LRUCache<string, string>(1000);
 
-// URL Registry for consistent preload/usage coordination
-// Stores URLs with consistent cache-busting parameters across session
 class ImageUrlRegistry {
+  private registry: Map<string, string>;
+  private sessionTimestamp: number;
+
   constructor() {
     this.registry = new Map();
-    this.sessionTimestamp = Date.now(); // Single timestamp per session
+    this.sessionTimestamp = Date.now();
   }
 
-  generateKey(originalUrl, context) {
+  generateKey(originalUrl: string, context: string): string {
     return `${originalUrl}:${context}`;
   }
 
-  registerUrl(originalUrl, context, bustCache = false) {
+  registerUrl(originalUrl: string, context: string, bustCache = false): string {
     const key = this.generateKey(originalUrl, context);
 
     if (this.registry.has(key)) {
-      return this.registry.get(key);
+      return this.registry.get(key)!;
     }
 
-    // Generate the base optimized URL
-    let baseUrl;
+    let baseUrl: string;
     switch (context) {
       case "hero":
         baseUrl = getDetailHeroImage(originalUrl);
@@ -144,55 +116,43 @@ class ImageUrlRegistry {
         baseUrl = getOptimizedImage(originalUrl, context);
     }
 
-    // Apply consistent cache-busting if requested
     const finalUrl = bustCache ? this.addSessionCacheBusting(baseUrl) : baseUrl;
 
-    // Store in registry for consistent retrieval
     this.registry.set(key, finalUrl);
     return finalUrl;
   }
 
-  addSessionCacheBusting(url) {
+  addSessionCacheBusting(url: string): string {
     if (!url || typeof url !== "string") return url;
 
     try {
       const urlObj = new URL(url);
-      // Use session timestamp for consistency across calls
       urlObj.searchParams.set("cb", this.sessionTimestamp.toString());
       return urlObj.toString();
     } catch {
-      // If URL parsing fails, use simpler approach
       const separator = url.includes("?") ? "&" : "?";
       return `${url}${separator}cb=${this.sessionTimestamp}`;
     }
   }
 
-  getUrl(originalUrl, context) {
+  getUrl(originalUrl: string, context: string): string | undefined {
     const key = this.generateKey(originalUrl, context);
     return this.registry.get(key);
   }
 
-  clearRegistry() {
+  clearRegistry(): void {
     this.registry.clear();
     this.sessionTimestamp = Date.now();
   }
 }
 
-// Global registry instance
 const urlRegistry = new ImageUrlRegistry();
 
-/**
- * Unified image URL generation for consistent preload/usage coordination
- * @param {string} originalUrl - The original image URL
- * @param {string} context - Image context (hero, catalog, thumbnail)
- * @param {boolean} bustCache - Whether to apply cache-busting
- * @returns {string} Consistent URL that can be used for both preload and usage
- */
 export function getUnifiedImageUrl(
-  originalUrl,
+  originalUrl: string | null | undefined,
   context = "catalog",
   bustCache = false,
-) {
+): string {
   if (!originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
@@ -200,23 +160,17 @@ export function getUnifiedImageUrl(
   return urlRegistry.registerUrl(originalUrl, context, bustCache);
 }
 
-/**
- * Validate image URL for security
- * @param {string} url - Image URL to validate
- * @returns {boolean} True if URL is safe
- */
-export function validateImageUrl(url) {
+export function validateImageUrl(url: string | null | undefined): boolean {
   if (!url || typeof url !== "string") {
     return false;
   }
 
-  // Check original URL string for traversal patterns BEFORE URL normalization
   const dangerousPatterns = [
     "../",
     "..\\",
     "..\\\\",
     "/./",
-    "/\\", // Only match at path boundaries to avoid false positives with organization names
+    "/\\",
     "%2E%2E/",
     "%2E%2E%2F",
     "%2E%2E%5C",
@@ -227,7 +181,7 @@ export function validateImageUrl(url) {
     "windows\\system32",
     "winnt\\system32",
     "%2E%2F",
-    "%2E%5C", // encoded ./ and .\
+    "%2E%5C",
   ];
 
   for (const pattern of dangerousPatterns) {
@@ -239,12 +193,10 @@ export function validateImageUrl(url) {
   try {
     const urlObj = new URL(url);
 
-    // Only allow R2 URLs
     if (!urlObj.hostname.includes(R2_CUSTOM_DOMAIN)) {
       return false;
     }
 
-    // Check the normalized path as well
     const path = urlObj.pathname;
     const decodedPath = decodeURIComponent(path);
 
@@ -254,7 +206,6 @@ export function validateImageUrl(url) {
       }
     }
 
-    // Special check for current directory reference at path boundaries
     if (path === "/." || path.includes("/./")) {
       return false;
     }
@@ -265,19 +216,12 @@ export function validateImageUrl(url) {
   }
 }
 
-/**
- * Create transformation parameters in Cloudflare format
- * @param {string} preset - Preset name (catalog, hero, thumbnail, mobile)
- * @param {Object} options - Custom options override
- * @param {boolean} isSlowConnection - Whether connection is slow
- * @returns {string} Cloudflare transformation parameters
- */
 export function createTransformationParams(
   preset = "catalog",
-  options = {},
-  isSlowConnection = false,
-) {
-  const presets = {
+  options: Record<string, unknown> = {},
+  isSlowConn = false,
+): string {
+  const presets: Record<string, { width: number; height: number; fit: string; quality: string | number }> = {
     catalog: { width: 400, height: 300, fit: "cover", quality: "auto" },
     hero: { width: 800, height: 600, fit: "contain", quality: "auto" },
     thumbnail: { width: 200, height: 200, fit: "cover", quality: 60 },
@@ -287,26 +231,14 @@ export function createTransformationParams(
   const config = presets[preset] || presets.catalog;
   const finalConfig = { ...config, ...options };
 
-  // Adjust quality for slow connections
-  if (isSlowConnection && finalConfig.quality === "auto") {
+  if (isSlowConn && finalConfig.quality === "auto") {
     finalConfig.quality = 60;
   }
 
   return `w=${finalConfig.width},h=${finalConfig.height},fit=${finalConfig.fit},quality=${finalConfig.quality}`;
 }
 
-/**
- * Build secure Cloudflare transformation URL
- * @param {string} imageUrl - Original image URL
- * @param {string} params - Transformation parameters
- * @returns {string} Secure Cloudflare URL
- */
-/**
- * Check if a URL already contains CDN transformation parameters
- * @param {string} url - URL to check
- * @returns {boolean} True if URL contains /cdn-cgi/image/ transformation
- */
-export function hasExistingTransformation(url) {
+export function hasExistingTransformation(url: string | null | undefined): boolean {
   if (!url || typeof url !== "string") {
     return false;
   }
@@ -314,33 +246,22 @@ export function hasExistingTransformation(url) {
   return url.includes("/cdn-cgi/image/");
 }
 
-/**
- * Extract the original image path from a transformed URL
- * @param {string} url - Transformed URL with /cdn-cgi/image/ parameters
- * @returns {string} Original URL without transformations
- */
-export function extractOriginalPath(url) {
+export function extractOriginalPath(url: string | null | undefined): string {
   if (!url || typeof url !== "string") {
-    return url;
+    return url ?? "";
   }
 
-  // If not an R2 URL or doesn't have transformation, return as-is
   if (!isR2Url(url) || !hasExistingTransformation(url)) {
     return url;
   }
 
-  // Handle multiple transformations by iteratively removing them
   let currentUrl = url;
 
-  // Keep extracting until no more transformations
   while (hasExistingTransformation(currentUrl)) {
-    // Extract the part after the transformation parameters
-    // Pattern: https://domain.com/cdn-cgi/image/w=X,h=Y,fit=Z/path/to/image.jpg
     const cdnPattern = /\/cdn-cgi\/image\/[^/]+\//;
     const match = currentUrl.match(cdnPattern);
 
     if (match) {
-      // Replace the cdn-cgi transformation part with just the domain
       const domain = currentUrl.substring(
         0,
         currentUrl.indexOf("/cdn-cgi/image/"),
@@ -350,8 +271,6 @@ export function extractOriginalPath(url) {
       );
       currentUrl = `${domain}/${imagePath}`;
     } else {
-      // If pattern doesn't match but hasExistingTransformation returned true,
-      // there might be a malformed URL - break to prevent infinite loop
       break;
     }
   }
@@ -359,24 +278,19 @@ export function extractOriginalPath(url) {
   return currentUrl;
 }
 
-export function buildSecureCloudflareUrl(imageUrl, params) {
-  // Handle null/undefined/empty URLs gracefully
+export function buildSecureCloudflareUrl(imageUrl: string | null | undefined, params: string | null | undefined): string {
   if (!imageUrl || typeof imageUrl !== "string") {
     return PLACEHOLDER_IMAGE;
   }
 
-  // Handle non-R2 URLs by returning original
   if (!isR2Url(imageUrl)) {
     return imageUrl;
   }
 
-  // Check if URL already has transformations - prevent double transformation
   if (hasExistingTransformation(imageUrl)) {
-    // Return the existing transformed URL as-is to prevent double transformations
     return imageUrl;
   }
 
-  // Validate URL for security - return original URL as fallback for invalid URLs
   if (!validateImageUrl(imageUrl)) {
     logger.warn("Invalid image URL provided, returning original URL", {
       url: imageUrl,
@@ -385,9 +299,7 @@ export function buildSecureCloudflareUrl(imageUrl, params) {
     return imageUrl;
   }
 
-  // Validate parameters for security - return original URL for invalid parameters
   if (params && typeof params === "string") {
-    // Allow only specific Cloudflare parameters
     const allowedParams =
       /^[wh]=\d+|fit=(cover|contain|crop|scale-down|fill|pad)|quality=(auto|\d+)$/;
     const paramsList = params.split(",");
@@ -407,7 +319,6 @@ export function buildSecureCloudflareUrl(imageUrl, params) {
       }
     }
 
-    // Check for dangerous characters
     if (
       params.includes(";") ||
       params.includes("&") ||
@@ -423,7 +334,6 @@ export function buildSecureCloudflareUrl(imageUrl, params) {
     }
   }
 
-  // Handle missing, null, or non-string parameters
   if (!params || typeof params !== "string" || params.trim() === "") {
     return imageUrl;
   }
@@ -435,78 +345,71 @@ export function buildSecureCloudflareUrl(imageUrl, params) {
     logger.warn("Failed to build Cloudflare URL, returning original", {
       url: imageUrl,
       params,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       context: "buildSecureCloudflareUrl",
     });
     return imageUrl;
   }
 }
 
-/**
- * Get optimized image with memoization
- * @param {string} url - Original image URL
- * @param {string} preset - Preset name
- * @param {Object} options - Custom options
- * @param {boolean} isSlowConnection - Whether connection is slow
- * @returns {string} Optimized image URL
- */
-export function getOptimizedImage(
-  url,
-  preset = "catalog",
-  options = {},
-  isSlowConnection = false,
-) {
-  if (!url) {
-    return PLACEHOLDER_IMAGE;
-  }
-
-  if (!isR2Url(url)) {
-    return url;
-  }
-
-  // Create cache key
-  const cacheKey = `${url}:${preset}:${JSON.stringify(options)}:${isSlowConnection}`;
-
-  // Check cache first (with LRU update)
-  const cachedResult = imageUrlCache.get(cacheKey);
-  if (cachedResult !== undefined) {
-    return cachedResult;
-  }
-
-  try {
-    const params = createTransformationParams(
-      preset,
-      options,
-      isSlowConnection,
-    );
-    const result = buildSecureCloudflareUrl(url, params);
-
-    // Cache result with automatic LRU eviction
-    imageUrlCache.set(cacheKey, result);
-
-    return result;
-  } catch (error) {
-    logger.warn("Failed to create optimized image URL", {
-      url,
-      error: error.message,
-    });
-    return url;
-  }
+interface GetOptimizedImageFn {
+  (url: string | null | undefined, preset?: string, options?: Record<string, unknown>, isSlowConn?: boolean): string;
+  clearCache: () => void;
+  getCacheStats: () => ReturnType<LRUCache<string, string>["getStats"]>;
 }
 
-// Add cache management methods for testing and monitoring
-getOptimizedImage.clearCache = () => {
-  imageUrlCache.clear();
-};
+export const getOptimizedImage: GetOptimizedImageFn = Object.assign(
+  function getOptimizedImage(
+    url: string | null | undefined,
+    preset = "catalog",
+    options: Record<string, unknown> = {},
+    isSlowConn = false,
+  ): string {
+    if (!url) {
+      return PLACEHOLDER_IMAGE;
+    }
 
-getOptimizedImage.getCacheStats = () => {
-  return imageUrlCache.getStats();
-};
+    if (!isR2Url(url)) {
+      return url;
+    }
 
-/**
- * Validate R2 configuration on startup
- */
-function validateR2Config() {
+    const cacheKey = `${url}:${preset}:${JSON.stringify(options)}:${isSlowConn}`;
+
+    const cachedResult = imageUrlCache.get(cacheKey);
+    if (cachedResult !== undefined) {
+      return cachedResult;
+    }
+
+    try {
+      const params = createTransformationParams(
+        preset,
+        options,
+        isSlowConn,
+      );
+      const result = buildSecureCloudflareUrl(url, params);
+
+      imageUrlCache.set(cacheKey, result);
+
+      return result;
+    } catch (error) {
+      logger.warn("Failed to create optimized image URL", {
+        url,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return url;
+    }
+  },
+  {
+    clearCache: () => {
+      imageUrlCache.clear();
+    },
+    getCacheStats: () => {
+      return imageUrlCache.getStats();
+    },
+  },
+);
+
+function validateR2Config(): boolean {
   if (!R2_CUSTOM_DOMAIN) {
     if (process.env.NODE_ENV !== "production") {
       console.error("❌ NEXT_PUBLIC_R2_CUSTOM_DOMAIN is not configured!");
@@ -514,7 +417,6 @@ function validateR2Config() {
     return false;
   }
 
-  // Validate domain format
   if (!R2_CUSTOM_DOMAIN.match(/^[a-zA-Z0-9.-]+$/)) {
     if (process.env.NODE_ENV !== "production") {
       console.error("❌ R2 custom domain contains invalid characters");
@@ -525,38 +427,22 @@ function validateR2Config() {
   return true;
 }
 
-// Run validation in development
 if (process.env.NODE_ENV === "development") {
   validateR2Config();
 }
 
-/**
- * Check if URL is from R2 custom domain
- */
-export function isR2Url(url) {
+export function isR2Url(url: string | null | undefined): boolean {
   return !!(url && url.includes(R2_CUSTOM_DOMAIN));
 }
 
-/**
- * Build Cloudflare Images transformation URL
- * @param {string} imageUrl - Original R2 image URL
- * @param {string} transformations - Transformation string (e.g., 'w_320,h_240,c_fill,q_70')
- * @returns {string} Cloudflare Images URL with transformations
- */
-function buildCloudflareImagesUrl(imageUrl, transformations) {
-  if (!imageUrl || !transformations) return imageUrl;
+function buildCloudflareImagesUrl(imageUrl: string | null | undefined, transformations: string | null | undefined): string {
+  if (!imageUrl || !transformations) return imageUrl ?? "";
 
-  // Handle complex R2 URLs with proper domain extraction
   const imagePath = imageUrl.replace(`https://${R2_CUSTOM_DOMAIN}/`, "");
   return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/${transformations}/${imagePath}`;
 }
 
-/**
- * Get mobile-optimized image URL with network-aware quality
- * @param {string} url - Original image URL
- * @returns {string} Mobile-optimized image URL
- */
-export function getMobileOptimizedImage(url) {
+export function getMobileOptimizedImage(url: string | null | undefined): string {
   if (!url || !isR2Url(url)) {
     return url || PLACEHOLDER_IMAGE;
   }
@@ -572,16 +458,13 @@ export function getMobileOptimizedImage(url) {
   } catch (error) {
     logger.warn("Failed to create mobile optimized image URL", {
       url,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     });
     return url;
   }
 }
 
-/**
- * Get optimized image URL for home page featured dog cards (4:3 aspect ratio)
- */
-export function getHomeCardImage(originalUrl) {
+export function getHomeCardImage(originalUrl: string | null | undefined): string {
   if (!originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
@@ -589,11 +472,7 @@ export function getHomeCardImage(originalUrl) {
   return getOptimizedImage(originalUrl, "catalog", {}, isSlowConnection());
 }
 
-/**
- * Get optimized image URL for catalog grid cards with responsive breakpoints
- * Enhanced for mobile performance and retina displays
- */
-export function getCatalogCardImage(originalUrl) {
+export function getCatalogCardImage(originalUrl: string | null | undefined): string {
   if (!originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
@@ -601,11 +480,7 @@ export function getCatalogCardImage(originalUrl) {
   return getOptimizedImage(originalUrl, "catalog", {}, isSlowConnection());
 }
 
-/**
- * Get optimized image URL for dog detail hero images with responsive breakpoints
- * Optimized for mobile-first loading with progressive enhancement
- */
-export function getDetailHeroImage(originalUrl) {
+export function getDetailHeroImage(originalUrl: string | null | undefined): string {
   if (!originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
@@ -613,11 +488,7 @@ export function getDetailHeroImage(originalUrl) {
   return getOptimizedImage(originalUrl, "hero", {}, isSlowConnection());
 }
 
-/**
- * Get network-adaptive optimized image URL for dog detail hero images
- * Automatically adjusts dimensions and quality based on network conditions
- */
-export function getDetailHeroImageAdaptive(originalUrl) {
+export function getDetailHeroImageAdaptive(originalUrl: string | null | undefined): string {
   if (!originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
@@ -633,11 +504,7 @@ export function getDetailHeroImageAdaptive(originalUrl) {
   );
 }
 
-/**
- * Get optimized image URL for gallery thumbnails with performance optimization
- * Optimized for fast loading and bandwidth efficiency
- */
-export function getThumbnailImage(originalUrl) {
+export function getThumbnailImage(originalUrl: string | null | undefined): string {
   if (!originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
@@ -645,12 +512,8 @@ export function getThumbnailImage(originalUrl) {
   return getOptimizedImage(originalUrl, "thumbnail", {}, isSlowConnection());
 }
 
-/**
- * Enhanced error handling with monitoring and progressive fallback
- */
-export function handleImageError(event, originalUrl, context = "unknown") {
-  // Defensive check for event and target
-  if (!event || !event.target) {
+export function handleImageError(event: Event | React.SyntheticEvent<HTMLImageElement>, originalUrl: string | null | undefined, context = "unknown"): void {
+  if (!event || !(event.target as HTMLImageElement)) {
     if (process.env.NODE_ENV !== "production") {
       console.error(
         "handleImageError called with invalid event object:",
@@ -660,61 +523,69 @@ export function handleImageError(event, originalUrl, context = "unknown") {
     return;
   }
 
-  const currentSrc = event.target.src;
+  const target = event.target as HTMLImageElement;
+  const currentSrc = target.src;
 
-  // Track image loading failures for monitoring
   trackImageError(currentSrc, originalUrl, context);
 
-  // Progressive fallback strategy
   if (isR2Url(currentSrc) && originalUrl && !isR2Url(originalUrl)) {
-    // Try original URL if R2 transformation failed
     logger.warn("R2 image failed, trying original:", originalUrl);
-    event.target.src = originalUrl;
-    event.target.onerror = (e) =>
-      handleImageError(e, originalUrl, `${context}-fallback`);
+    target.src = originalUrl;
+    target.onerror = (e) =>
+      handleImageError(e as Event, originalUrl, `${context}-fallback`);
     return;
   }
 
-  // If current URL contains transformations, try without transformations
   if (isR2Url(currentSrc) && currentSrc.includes("/cdn-cgi/image/")) {
     const parts = currentSrc.split("/cdn-cgi/image/");
     if (parts.length > 1) {
-      // Remove transformation parameters
       const baseUrl = parts[0] + "/";
       const imagePath = parts[1].split("/").slice(1).join("/");
       const simpleUrl = baseUrl + imagePath;
 
       if (simpleUrl !== currentSrc) {
         logger.warn("Trying image without transformations:", simpleUrl);
-        event.target.src = simpleUrl;
-        event.target.onerror = (e) =>
-          handleImageError(e, originalUrl, `${context}-notransform`);
+        target.src = simpleUrl;
+        target.onerror = (e) =>
+          handleImageError(e as Event, originalUrl, `${context}-notransform`);
         return;
       }
     }
   }
 
-  // Final fallback to placeholder
   if (currentSrc !== PLACEHOLDER_IMAGE) {
     logger.error("All image loading attempts failed, using placeholder");
-    event.target.src = PLACEHOLDER_IMAGE;
+    target.src = PLACEHOLDER_IMAGE;
   }
 
-  // Prevent infinite error loops
-  event.target.onerror = null;
+  target.onerror = null;
 }
 
-/**
- * Track image loading errors and performance for monitoring
- */
-let imageErrorStats = {
+interface ImageErrorStats {
+  total: number;
+  r2: number;
+  external: number;
+  lastErrors: { timestamp: string; failedUrl: string; originalUrl: string | null | undefined; context: string; userAgent: string }[];
+}
+
+interface ImageLoadStats {
+  total: number;
+  heroImages: number;
+  catalogImages: number;
+  averageLoadTime: number;
+  loadTimes: number[];
+  networkConditions: { effectiveType?: string; downlink?: number; saveData?: boolean; timestamp: number }[];
+  retryAttempts: number;
+}
+
+let imageErrorStats: ImageErrorStats = {
   total: 0,
   r2: 0,
   external: 0,
   lastErrors: [],
 };
 
-let imageLoadStats = {
+let imageLoadStats: ImageLoadStats = {
   total: 0,
   heroImages: 0,
   catalogImages: 0,
@@ -724,7 +595,7 @@ let imageLoadStats = {
   retryAttempts: 0,
 };
 
-function trackImageError(failedUrl, originalUrl, context) {
+function trackImageError(failedUrl: string, originalUrl: string | null | undefined, context: string): void {
   imageErrorStats.total++;
 
   if (isR2Url(failedUrl)) {
@@ -744,12 +615,10 @@ function trackImageError(failedUrl, originalUrl, context) {
 
   imageErrorStats.lastErrors.push(errorInfo);
 
-  // Keep only last 10 errors
   if (imageErrorStats.lastErrors.length > 10) {
     imageErrorStats.lastErrors.shift();
   }
 
-  // Log error in development with more details
   if (process.env.NODE_ENV !== "production") {
     console.warn("Image loading error details:", {
       failedUrl,
@@ -759,66 +628,48 @@ function trackImageError(failedUrl, originalUrl, context) {
     });
   }
 
-  // In production, you might want to send this to an analytics service
   if (
     process.env.NODE_ENV === "production" &&
     imageErrorStats.total % 10 === 0
   ) {
-    // Report every 10th error to avoid spam
     reportImageErrorBatch();
   }
 }
 
-/**
- * Get image loading error statistics
- */
-export function getImageErrorStats() {
+export function getImageErrorStats(): ImageErrorStats {
   return { ...imageErrorStats };
 }
 
-/**
- * Track successful image load for performance monitoring
- * @param {string} imageUrl - The image URL that loaded successfully
- * @param {number} loadTime - Load time in milliseconds
- * @param {string} context - Image context ('hero', 'catalog', 'thumbnail')
- * @param {number} retryCount - Number of retries that occurred
- */
 export function trackImageLoad(
-  imageUrl,
-  loadTime,
+  imageUrl: string,
+  loadTime: number,
   context = "unknown",
   retryCount = 0,
-) {
+): void {
   imageLoadStats.total++;
   imageLoadStats.retryAttempts += retryCount;
 
-  // Track by context
   if (context === "hero") {
     imageLoadStats.heroImages++;
   } else if (context === "catalog") {
     imageLoadStats.catalogImages++;
   }
 
-  // Track load times with rolling window (max 100 items)
   if (loadTime > 0) {
     imageLoadStats.loadTimes.push(loadTime);
 
-    // Enforce rolling window size limit - prevent memory leak
     const MAX_LOAD_TIMES = 100;
     if (imageLoadStats.loadTimes.length > MAX_LOAD_TIMES) {
-      // Remove oldest measurements to maintain rolling window
       const itemsToRemove = imageLoadStats.loadTimes.length - MAX_LOAD_TIMES;
       imageLoadStats.loadTimes.splice(0, itemsToRemove);
     }
 
-    // Update rolling average from current window
     const sum = imageLoadStats.loadTimes.reduce((a, b) => a + b, 0);
     imageLoadStats.averageLoadTime = Math.round(
       sum / imageLoadStats.loadTimes.length,
     );
   }
 
-  // Track network conditions with rolling window (max 50 items)
   if (typeof navigator !== "undefined" && navigator.connection) {
     const networkInfo = {
       effectiveType: navigator.connection.effectiveType,
@@ -829,10 +680,8 @@ export function trackImageLoad(
 
     imageLoadStats.networkConditions.push(networkInfo);
 
-    // Enforce rolling window size limit - prevent memory leak
     const MAX_NETWORK_CONDITIONS = 50;
     if (imageLoadStats.networkConditions.length > MAX_NETWORK_CONDITIONS) {
-      // Remove oldest measurements to maintain rolling window
       const itemsToRemove =
         imageLoadStats.networkConditions.length - MAX_NETWORK_CONDITIONS;
       imageLoadStats.networkConditions.splice(0, itemsToRemove);
@@ -840,10 +689,7 @@ export function trackImageLoad(
   }
 }
 
-/**
- * Get image loading performance statistics
- */
-export function getImageLoadStats() {
+export function getImageLoadStats(): ImageLoadStats & { errorStats: ImageErrorStats; memoryUsage: Record<string, number> } {
   return {
     ...imageLoadStats,
     errorStats: { ...imageErrorStats },
@@ -856,10 +702,7 @@ export function getImageLoadStats() {
   };
 }
 
-/**
- * Reset image error statistics
- */
-export function resetImageErrorStats() {
+export function resetImageErrorStats(): void {
   imageErrorStats = {
     total: 0,
     r2: 0,
@@ -868,10 +711,7 @@ export function resetImageErrorStats() {
   };
 }
 
-/**
- * Reset image loading statistics
- */
-export function resetImageLoadStats() {
+export function resetImageLoadStats(): void {
   imageLoadStats = {
     total: 0,
     heroImages: 0,
@@ -883,14 +723,9 @@ export function resetImageLoadStats() {
   };
 }
 
-/**
- * Report image errors to monitoring service (placeholder for production)
- */
-function reportImageErrorBatch() {
+function reportImageErrorBatch(): void {
   if (typeof window === "undefined") return;
 
-  // In a real implementation, you would send this to your analytics/monitoring service
-  // For now, just log aggregate stats in development only
   if (process.env.NODE_ENV !== "production") {
     console.warn("Image loading error rate:", {
       total: imageErrorStats.total,
@@ -901,29 +736,17 @@ function reportImageErrorBatch() {
   }
 }
 
-/**
- * Get smart object positioning based on image characteristics
- * @param {string} imageUrl - Image URL to analyze
- * @param {string} context - Context where image is used ('card', 'hero', 'thumbnail')
- * @returns {string} CSS object-position value
- */
-export function getSmartObjectPosition(imageUrl, context = "card") {
-  // Default positioning strategies based on context
-  const positionStrategies = {
-    card: "center 40%", // Focus on upper body/face for cards
-    hero: "center center", // Centered for hero images
-    thumbnail: "center center", // Centered for small thumbnails
+export function getSmartObjectPosition(imageUrl: string | null | undefined, context = "card"): string {
+  const positionStrategies: Record<string, string> = {
+    card: "center 40%",
+    hero: "center center",
+    thumbnail: "center center",
   };
 
-  // For now, return context-based positioning
-  // Future enhancement: analyze image dimensions or add manual hints
   return positionStrategies[context] || "center center";
 }
 
-/**
- * Enhanced card image with smart positioning for standing dogs - Updated for 4:3 ratio
- */
-export function getCatalogCardImageWithPosition(originalUrl) {
+export function getCatalogCardImageWithPosition(originalUrl: string | null | undefined): { src: string; position: string } {
   if (!originalUrl) {
     return { src: PLACEHOLDER_IMAGE, position: "center center" };
   }
@@ -934,44 +757,32 @@ export function getCatalogCardImageWithPosition(originalUrl) {
   return { src, position };
 }
 
-/**
- * Add cache-busting parameter to image URL for fresh navigation
- */
-export function addCacheBusting(url, context = "navigation") {
-  if (!url || typeof url !== "string") return url;
+export function addCacheBusting(url: string | null | undefined, context = "navigation"): string {
+  if (!url || typeof url !== "string") return url ?? "";
 
   try {
     const urlObj = new URL(url);
-    // Use a timestamp for cache busting
     urlObj.searchParams.set("cb", Date.now().toString());
     return urlObj.toString();
   } catch {
-    // If URL parsing fails, use simpler approach
     const separator = url.includes("?") ? "&" : "?";
     return `${url}${separator}cb=${Date.now()}`;
   }
 }
 
-/**
- * Enhanced hero image with smart positioning and preloading
- * Optimized for Core Web Vitals (LCP) performance with network adaptivity
- */
-export function getDetailHeroImageWithPosition(originalUrl, bustCache = false) {
+export function getDetailHeroImageWithPosition(originalUrl: string | null | undefined, bustCache = false): { src: string; position: string } {
   if (!originalUrl) {
     return { src: PLACEHOLDER_IMAGE, position: "center center" };
   }
 
-  // Use unified URL generation for consistent preload/usage coordination
   const src = getUnifiedImageUrl(originalUrl, "hero", bustCache);
   const position = getSmartObjectPosition(originalUrl, "hero");
 
-  // Preload hero image for better LCP scores only on fast connections
   if (
     typeof window !== "undefined" &&
     originalUrl &&
     process.env.NODE_ENV === "production"
   ) {
-    // Only preload on fast connections to avoid wasting bandwidth
     if (!isSlowConnection()) {
       preloadImages([src], "hero");
     }
@@ -980,16 +791,9 @@ export function getDetailHeroImageWithPosition(originalUrl, bustCache = false) {
   return { src, position };
 }
 
-/**
- * Preload critical images to improve perceived performance
- * Enhanced with responsive image preloading and error handling
- * @param {Array<string>} imageUrls - Array of image URLs to preload
- * @param {string} context - Context for optimization ('hero', 'card', 'thumbnail')
- */
-export function preloadImages(imageUrls, context = "card") {
+export function preloadImages(imageUrls: string[], context = "card"): void {
   if (!Array.isArray(imageUrls)) return;
 
-  // Limit concurrent preloads on mobile for memory optimization
   const isMobile =
     typeof window !== "undefined" &&
     window.matchMedia("(max-width: 768px)").matches;
@@ -1005,12 +809,9 @@ export function preloadImages(imageUrls, context = "card") {
       link.rel = "preload";
       link.as = "image";
 
-      // Use unified URL generation for consistent preload/usage coordination
-      // For hero context, apply cache-busting to match component usage
       const shouldBustCache = context === "hero";
       link.href = getUnifiedImageUrl(url, context, shouldBustCache);
 
-      // Add responsive image attributes for better performance
       if (context === "hero") {
         link.setAttribute(
           "imagesizes",
@@ -1019,8 +820,7 @@ export function preloadImages(imageUrls, context = "card") {
       }
 
       document.head.appendChild(link);
-    } catch (error) {
-      // Silently handle preload errors in production
+    } catch {
       if (process.env.NODE_ENV === "development") {
         // Development-only logging
       }
