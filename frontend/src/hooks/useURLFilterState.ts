@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
-import { FILTER_DEFAULTS } from "@/constants/filters";
+import { FILTER_DEFAULTS, isDefaultFilterValue } from "@/constants/filters";
 
 interface URLFilters {
   searchQuery: string;
@@ -148,10 +148,9 @@ export function useURLFilterState(): UseURLFilterStateReturn {
   );
 
   const activeFilterCount = useMemo(() => {
-    return Object.entries(filters).filter(([key, value]) => {
-      if (key === "searchQuery") return value !== "";
-      return value && !value.includes("Any") && value !== "any";
-    }).length;
+    return Object.entries(filters).filter(
+      ([_key, value]) => !isDefaultFilterValue(value),
+    ).length;
   }, [filters]);
 
   return {

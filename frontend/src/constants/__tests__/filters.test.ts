@@ -13,7 +13,6 @@ describe("FILTER_DEFAULTS", () => {
     expect(FILTER_DEFAULTS.COUNTRY).toBe("Any country")
     expect(FILTER_DEFAULTS.REGION).toBe("Any region")
     expect(FILTER_DEFAULTS.ORGANIZATION).toBe("any")
-    expect(FILTER_DEFAULTS.ORGANIZATION_LABEL).toBe("All Organizations")
     expect(FILTER_DEFAULTS.ALL).toBe("All")
     expect(FILTER_DEFAULTS.GROUP).toBe("Any group")
   })
@@ -29,7 +28,7 @@ describe("SIZE_API_MAPPING", () => {
   })
 
   it("returns undefined for unknown sizes", () => {
-    expect(SIZE_API_MAPPING["Huge"]).toBeUndefined()
+    expect(SIZE_API_MAPPING["Huge" as keyof typeof SIZE_API_MAPPING]).toBeUndefined()
   })
 })
 

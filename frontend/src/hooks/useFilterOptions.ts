@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react"
-import { FILTER_DEFAULTS, SIZE_API_MAPPING } from "@/constants/filters"
+import { FILTER_DEFAULTS, SIZE_API_MAPPING, isDefaultFilterValue } from "@/constants/filters"
 import type { FilterCount, FilterCountsResponse } from "@/schemas/common"
 
 interface FilterValues {
@@ -55,11 +55,11 @@ export function useFilterOptions({
       if (!filterCounts || !dynamicOptions) return staticOptions
 
       return staticOptions.filter((option) => {
-        if (option.includes("Any")) return true
+        if (isDefaultFilterValue(option)) return true
 
         const dynamicOption = dynamicOptions.find((dynOpt) => {
           if (filterType === "size") {
-            return dynOpt.value === SIZE_API_MAPPING[option]
+            return dynOpt.value === SIZE_API_MAPPING[option as keyof typeof SIZE_API_MAPPING]
           }
           return dynOpt.value === option || dynOpt.label === option
         })

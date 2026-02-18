@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useDebouncedCallback, type DebouncedState } from "use-debounce";
 import { getAvailableRegions } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
-import { FILTER_DEFAULTS } from "@/constants/filters";
+import { FILTER_DEFAULTS, isDefaultFilterValue } from "@/constants/filters";
 import type {
   Filters,
   DogsPageMetadata,
@@ -127,8 +127,7 @@ export default function useDogsFilters({
   );
 
   const activeFilterCount = Object.entries(filters).filter(
-    ([_key, value]) =>
-      value && !value.includes("Any") && value !== FILTER_DEFAULTS.ORGANIZATION && value !== "",
+    ([_key, value]) => !isDefaultFilterValue(value),
   ).length;
 
   const [availableRegions, setAvailableRegions] = useState<string[]>([FILTER_DEFAULTS.REGION]);

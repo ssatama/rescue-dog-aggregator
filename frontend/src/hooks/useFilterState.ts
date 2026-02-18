@@ -50,7 +50,7 @@ const defaultFilters: FilterValues = {
 };
 
 const mapUiSizeToStandardized = (uiSize: string): string | null => {
-  return SIZE_API_MAPPING[uiSize] || null;
+  return SIZE_API_MAPPING[uiSize as keyof typeof SIZE_API_MAPPING] || null;
 };
 
 export function useFilterState(): UseFilterStateReturn {

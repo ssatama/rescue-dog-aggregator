@@ -6,18 +6,17 @@ export const FILTER_DEFAULTS = {
   COUNTRY: "Any country",
   REGION: "Any region",
   ORGANIZATION: "any",
-  ORGANIZATION_LABEL: "All Organizations",
   ALL: "All",
   GROUP: "Any group",
 } as const
 
-export const SIZE_API_MAPPING: Record<string, string> = {
+export const SIZE_API_MAPPING = {
   Tiny: "Tiny",
   Small: "Small",
   Medium: "Medium",
   Large: "Large",
   "Extra Large": "XLarge",
-}
+} as const
 
 const DEFAULT_VALUES = new Set<string>(Object.values(FILTER_DEFAULTS))
 
