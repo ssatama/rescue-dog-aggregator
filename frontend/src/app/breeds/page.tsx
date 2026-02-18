@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { BreedData } from "@/types/breeds";
+
 import BreedsHubClient from "./BreedsHubClient";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { getBreedStats } from "@/services/serverAnimalsService";
@@ -51,7 +51,16 @@ export default async function BreedsPage() {
   return (
     <>
       <BreedStructuredData
-        breedData={breedStats as unknown as BreedData}
+        breedData={{
+          primary_breed: "All Breeds",
+          count: breedStats?.total_dogs ?? 0,
+          unique_breeds: breedStats?.total_breeds,
+          qualifying_breeds: breedStats?.qualifying_breeds?.map((b) => ({
+            primary_breed: b.primary_breed,
+            breed_slug: b.breed_slug,
+            count: b.count,
+          })),
+        }}
         pageType="hub"
       />
       <ErrorBoundary fallbackMessage="Unable to load breeds page. Please try refreshing the page.">

@@ -249,7 +249,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
                     dog={dog}
                     index={index}
                     priority={index < 2}
-                    isFavorite={isFavorited(Number(dog.id))}
+                    isFavorite={isFavorited(dog.id)}
                     onFavoriteToggle={handleToggleFavorite}
                     onClick={() => handleDogClick(dog)}
                   />

@@ -1,7 +1,6 @@
-// Shared test setup for DogCard tests
+import type { Dog } from "@/types/dog";
 
-// Common mock dog data fixtures
-export const mockDog = {
+export const mockDog: Dog = {
   id: 1,
   slug: "buddy-labrador-retriever-1",
   name: "Buddy",
@@ -22,13 +21,13 @@ export const mockDog = {
   },
 };
 
-export const incompleteDataDog = {
+export const incompleteDataDog: Dog = {
   id: 2,
   name: "Max",
   status: "available",
 };
 
-export const dogWithUnknownBreed = {
+export const dogWithUnknownBreed: Dog = {
   id: 3,
   name: "Luna",
   standardized_breed: "Unknown",
@@ -36,7 +35,7 @@ export const dogWithUnknownBreed = {
   status: "available",
 };
 
-export const recentDog = (daysAgo = 2) => {
+export const recentDog = (daysAgo: number = 2): Dog => {
   const date = new Date();
   date.setDate(date.getDate() - daysAgo);
   return {
@@ -49,7 +48,7 @@ export const recentDog = (daysAgo = 2) => {
   };
 };
 
-export const dogWithShipping = {
+export const dogWithShipping: Dog = {
   id: 1,
   name: "Buddy",
   status: "available",
@@ -59,7 +58,7 @@ export const dogWithShipping = {
   },
 };
 
-export const dogWithCompatibility = {
+export const dogWithCompatibility: Dog = {
   id: 1,
   name: "Buddy",
   status: "available",
@@ -70,7 +69,7 @@ export const dogWithCompatibility = {
   },
 };
 
-export const dogWithTraits = {
+export const dogWithTraits: Dog = {
   id: 1,
   name: "Buddy",
   status: "available",
@@ -79,7 +78,7 @@ export const dogWithTraits = {
   },
 };
 
-export const dogWithExperience = {
+export const dogWithExperience: Dog = {
   id: 1,
   name: "Buddy",
   status: "available",

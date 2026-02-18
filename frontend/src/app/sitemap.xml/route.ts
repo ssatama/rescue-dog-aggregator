@@ -1,7 +1,3 @@
-/**
- * Dynamic sitemap.xml generation with unstable_noStore to bypass Full Route Cache
- */
-
 import { unstable_noStore as noStore } from "next/cache";
 import { generateSitemap } from "../../utils/sitemap";
 
@@ -9,8 +5,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
-export async function GET() {
-  // Bypass Next.js Full Route Cache completely
+export async function GET(): Promise<Response> {
   noStore();
 
   try {
@@ -20,12 +15,11 @@ export async function GET() {
       status: 200,
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "public, max-age=3600, s-maxage=86400", // 1 hour client, 24 hours CDN
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
         Vary: "Accept-Encoding",
       },
     });
-  } catch (error) {
-    // Return minimal sitemap on error
+  } catch {
     const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>

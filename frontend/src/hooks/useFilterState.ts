@@ -1,10 +1,42 @@
-/**
- * Hook for consolidated filter state management
- * Phase 2 Implementation for Performance Optimization
- */
 import { useState, useCallback, useMemo } from "react";
 
-const defaultFilters = {
+interface FilterValues {
+  standardizedBreedFilter: string;
+  sexFilter: string;
+  sizeFilter: string;
+  ageCategoryFilter: string;
+  searchQuery: string;
+  locationCountryFilter: string;
+  availableCountryFilter: string;
+  availableRegionFilter: string;
+  organizationFilter: string;
+}
+
+type FilterKey = keyof FilterValues;
+
+type FilterType =
+  | "search"
+  | "breed"
+  | "organization"
+  | "sex"
+  | "size"
+  | "age"
+  | "location_country"
+  | "available_country"
+  | "available_region";
+
+interface UseFilterStateReturn {
+  filters: FilterValues;
+  updateFilter: (filterKey: FilterKey, value: string) => void;
+  updateFilters: (newFilters: Partial<FilterValues>) => void;
+  resetFilters: () => void;
+  clearFilter: (filterType: FilterType) => void;
+  activeFilterCount: number;
+  resetTrigger: number;
+  apiParams: Record<string, string>;
+}
+
+const defaultFilters: FilterValues = {
   standardizedBreedFilter: "Any breed",
   sexFilter: "Any",
   sizeFilter: "Any size",
@@ -16,14 +48,23 @@ const defaultFilters = {
   organizationFilter: "any",
 };
 
-export function useFilterState() {
-  const [filters, setFilters] = useState(defaultFilters);
+const mapUiSizeToStandardized = (uiSize: string): string | null => {
+  const mapping: Record<string, string> = {
+    Tiny: "Tiny",
+    Small: "Small",
+    Medium: "Medium",
+    Large: "Large",
+    "Extra Large": "XLarge",
+  };
+  return mapping[uiSize] || null;
+};
+
+export function useFilterState(): UseFilterStateReturn {
+  const [filters, setFilters] = useState<FilterValues>(defaultFilters);
   const [resetTrigger, setResetTrigger] = useState(0);
 
-  // Individual filter setters with optimized updates
-  const updateFilter = useCallback((filterKey, value) => {
+  const updateFilter = useCallback((filterKey: FilterKey, value: string) => {
     setFilters((prev) => {
-      // Only update if value actually changed
       if (prev[filterKey] === value) return prev;
 
       return {
@@ -33,24 +74,21 @@ export function useFilterState() {
     });
   }, []);
 
-  // Batch filter updates for better performance
-  const updateFilters = useCallback((newFilters) => {
+  const updateFilters = useCallback((newFilters: Partial<FilterValues>) => {
     setFilters((prev) => ({
       ...prev,
       ...newFilters,
     }));
   }, []);
 
-  // Reset all filters
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
     setResetTrigger((prev) => prev + 1);
   }, []);
 
-  // Clear individual filter
   const clearFilter = useCallback(
-    (filterType) => {
-      const filterMap = {
+    (filterType: FilterType) => {
+      const filterMap: Record<FilterType, FilterKey> = {
         search: "searchQuery",
         breed: "standardizedBreedFilter",
         organization: "organizationFilter",
@@ -70,7 +108,6 @@ export function useFilterState() {
     [updateFilter],
   );
 
-  // Calculate active filter count efficiently
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.searchQuery) count++;
@@ -85,9 +122,8 @@ export function useFilterState() {
     return count;
   }, [filters]);
 
-  // Generate filter parameters for API calls
   const apiParams = useMemo(() => {
-    const params = {
+    const params: Record<string, string | null> = {
       search: filters.searchQuery || null,
       standardized_breed:
         filters.standardizedBreedFilter === "Any breed"
@@ -117,9 +153,10 @@ export function useFilterState() {
           : filters.availableRegionFilter,
     };
 
-    // Filter out null values
     return Object.fromEntries(
-      Object.entries(params).filter(([_, v]) => v != null),
+      Object.entries(params).filter(
+        (entry): entry is [string, string] => entry[1] != null,
+      ),
     );
   }, [filters]);
 
@@ -134,15 +171,3 @@ export function useFilterState() {
     apiParams,
   };
 }
-
-// Helper function to map UI size to standardized size
-const mapUiSizeToStandardized = (uiSize) => {
-  const mapping = {
-    Tiny: "Tiny",
-    Small: "Small",
-    Medium: "Medium",
-    Large: "Large",
-    "Extra Large": "XLarge",
-  };
-  return mapping[uiSize] || null;
-};

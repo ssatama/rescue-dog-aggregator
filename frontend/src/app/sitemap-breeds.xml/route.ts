@@ -1,14 +1,33 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
-export async function GET() {
+interface BreedSitemapUrl {
+  url: string;
+  lastModified: string;
+  changeFrequency: string;
+  priority: number;
+}
+
+interface BreedStat {
+  breed_type?: string;
+  breed_group?: string;
+  primary_breed?: string;
+  breed_slug?: string;
+  count?: number;
+}
+
+interface BreedStatsResponse {
+  qualifying_breeds?: BreedStat[];
+}
+
+export async function GET(): Promise<Response> {
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
   const apiUrl =
     process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me";
   const now = new Date().toISOString();
 
-  const urls = [];
+  const urls: BreedSitemapUrl[] = [];
 
   urls.push({
     url: `${baseUrl}/breeds`,
@@ -28,27 +47,34 @@ export async function GET() {
     const response = await fetch(`${apiUrl}/api/animals/breeds/stats`);
 
     if (response.ok) {
-      const breedStats = await response.json();
+      const breedStats: BreedStatsResponse = await response.json();
 
       if (
         breedStats.qualifying_breeds &&
         Array.isArray(breedStats.qualifying_breeds)
       ) {
-        const indexableBreeds = breedStats.qualifying_breeds.filter((breed) => {
-          const isMixed =
-            breed.breed_type === "mixed" ||
-            breed.breed_group === "Mixed" ||
-            breed.primary_breed?.toLowerCase().includes("mix");
-          return !isMixed && breed.breed_slug;
-        });
+        const indexableBreeds = breedStats.qualifying_breeds.filter(
+          (breed: BreedStat) => {
+            const isMixed =
+              breed.breed_type === "mixed" ||
+              breed.breed_group === "Mixed" ||
+              breed.primary_breed?.toLowerCase().includes("mix");
+            return !isMixed && breed.breed_slug;
+          },
+        );
 
-        const counts = indexableBreeds.map((b) => Number(b.count) || 0);
+        const counts = indexableBreeds.map(
+          (b: BreedStat) => Number(b.count) || 0,
+        );
         const maxCount = counts.length ? Math.max(...counts) : 1;
 
-        indexableBreeds.forEach((breed) => {
+        indexableBreeds.forEach((breed: BreedStat) => {
           const normalizedCount =
             maxCount > 0 ? (Number(breed.count) || 0) / maxCount : 0;
-          const priority = Math.min(0.9, Math.max(0.7, 0.7 + normalizedCount * 0.2));
+          const priority = Math.min(
+            0.9,
+            Math.max(0.7, 0.7 + normalizedCount * 0.2),
+          );
 
           urls.push({
             url: `${baseUrl}/breeds/${breed.breed_slug}`,
@@ -59,7 +85,7 @@ export async function GET() {
         });
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching breed stats for sitemap:", error);
   }
 
@@ -67,7 +93,7 @@ export async function GET() {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${urls
     .map(
-      ({ url, lastModified, changeFrequency, priority }) => `
+      ({ url, lastModified, changeFrequency, priority }: BreedSitemapUrl) => `
   <url>
     <loc>${url}</loc>
     <lastmod>${lastModified}</lastmod>

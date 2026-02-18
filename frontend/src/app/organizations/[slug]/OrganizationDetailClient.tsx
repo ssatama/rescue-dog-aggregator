@@ -73,8 +73,10 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
 
   // Since we're now filtering on the backend, use dogs directly
   // But keep useFilteredDogs for availableBreeds extraction
+  // ApiDog.organization can be string | object, while Dog.organization is always object
+  // This structural mismatch requires a cast until ApiDog/Dog types are unified
   const { availableBreeds } = useFilteredDogs(
-    dogs,
+    dogs as unknown as Partial<Dog>[],
     { age: "All", breed: "", sort: "newest" },
     false,
   ) as { availableBreeds: string[] };

@@ -14,15 +14,18 @@ import { generateFavoritesUrl, parseSharedUrl } from "../utils/sharing";
 interface FavoritesContextType {
   favorites: number[];
   count: number;
-  isFavorited: (dogId: number) => boolean;
-  addFavorite: (dogId: number, dogName?: string) => Promise<void>;
-  removeFavorite: (dogId: number, dogName?: string) => Promise<void>;
-  toggleFavorite: (dogId: number, dogName?: string) => Promise<void>;
+  isFavorited: (dogId: number | string) => boolean;
+  addFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
+  removeFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
+  toggleFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
   clearFavorites: () => void;
   getShareableUrl: () => string;
   loadFromUrl: (url: string) => void;
   isLoading: boolean;
 }
+
+const toNumericId = (dogId: number | string): number =>
+  typeof dogId === "string" ? parseInt(dogId, 10) : dogId;
 
 const STORAGE_VERSION = "v1";
 const STORAGE_KEY = `rescue-dogs-favorites:${STORAGE_VERSION}`;
@@ -237,21 +240,20 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isFavorited = useCallback(
-    (dogId: number): boolean => {
-      return favorites.includes(dogId);
+    (dogId: number | string): boolean => {
+      return favorites.includes(toNumericId(dogId));
     },
     [favorites],
   );
 
   const addFavorite = useCallback(
-    async (dogId: number, dogName?: string): Promise<void> => {
+    async (dogId: number | string, dogName?: string): Promise<void> => {
+      const numId = toNumericId(dogId);
       setFavorites((prev) => {
-        // Check if already favorited
-        if (prev.includes(dogId)) {
+        if (prev.includes(numId)) {
           return prev;
         }
 
-        // Check max favorites limit
         if (prev.length >= MAX_FAVORITES) {
           if (process.env.NODE_ENV === "development") {
             console.warn(`Maximum favorites limit (${MAX_FAVORITES}) reached`);
@@ -263,10 +265,9 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
           return prev;
         }
 
-        const newFavorites = [...prev, dogId];
+        const newFavorites = [...prev, numId];
         saveToLocalStorage(newFavorites);
 
-        // Show success toast
         const message = dogName
           ? `${dogName} added to favorites`
           : "Added to favorites";
@@ -279,9 +280,10 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   );
 
   const removeFavorite = useCallback(
-    async (dogId: number, dogName?: string): Promise<void> => {
+    async (dogId: number | string, dogName?: string): Promise<void> => {
+      const numId = toNumericId(dogId);
       setFavorites((prev) => {
-        const newFavorites = prev.filter((id) => id !== dogId);
+        const newFavorites = prev.filter((id) => id !== numId);
         saveToLocalStorage(newFavorites);
 
         // Show remove toast
@@ -297,7 +299,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   );
 
   const toggleFavorite = useCallback(
-    async (dogId: number, dogName?: string): Promise<void> => {
+    async (dogId: number | string, dogName?: string): Promise<void> => {
       if (isFavorited(dogId)) {
         await removeFavorite(dogId, dogName);
       } else {

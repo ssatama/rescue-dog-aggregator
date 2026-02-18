@@ -237,7 +237,7 @@ describe("SEO Meta Tags", () => {
   describe("Static Meta Tags", () => {
     test("should have default meta tags in root layout", async () => {
       // Import the layout metadata
-      const { metadata } = await import("../../app/layout.js");
+      const { metadata } = await import("../../app/layout");
 
       expect(metadata.title).toBe(
         "Rescue Dog Aggregator - Find Your Perfect Rescue Dog",
