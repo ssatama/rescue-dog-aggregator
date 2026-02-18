@@ -46,7 +46,15 @@ export async function GET(): Promise<Response> {
   try {
     const response = await fetch(`${apiUrl}/api/animals/breeds/stats`);
 
-    if (response.ok) {
+    if (!response.ok) {
+      console.error("Non-OK response fetching breed stats for sitemap:", {
+        status: response.status,
+        statusText: response.statusText,
+        timestamp: new Date().toISOString(),
+        route: "/sitemap-breeds.xml",
+        type: "sitemap_generation_error",
+      });
+    } else {
       const breedStats: BreedStatsResponse = await response.json();
 
       if (
@@ -86,7 +94,17 @@ export async function GET(): Promise<Response> {
       }
     }
   } catch (error: unknown) {
-    console.error("Error fetching breed stats for sitemap:", error);
+    const errorDetails =
+      error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : { message: String(error) };
+
+    console.error("Error fetching breed stats for sitemap:", {
+      ...errorDetails,
+      timestamp: new Date().toISOString(),
+      route: "/sitemap-breeds.xml",
+      type: "sitemap_generation_error",
+    });
   }
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
