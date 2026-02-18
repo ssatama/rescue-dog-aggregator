@@ -14,7 +14,6 @@ jest.mock("react-error-boundary", () => ({
 }));
 
 // Create stable references to avoid infinite re-renders
-const mockFavorites = [1, 2];
 const mockClearFavorites = jest.fn();
 const mockGetShareableUrl = jest.fn(() => "/favorites?shared=123");
 const mockLoadFromUrl = jest.fn();
@@ -23,21 +22,24 @@ const mockAddFavorite = jest.fn();
 const mockRemoveFavorite = jest.fn();
 const mockToggleFavorite = jest.fn();
 
+// Mutable mock state - can be overridden per test
+let mockUseFavoritesReturn = {
+  favorites: [1, 2] as number[],
+  count: 2,
+  clearFavorites: mockClearFavorites,
+  getShareableUrl: mockGetShareableUrl,
+  loadFromUrl: mockLoadFromUrl,
+  isFavorited: mockIsFavorited,
+  addFavorite: mockAddFavorite,
+  removeFavorite: mockRemoveFavorite,
+  toggleFavorite: mockToggleFavorite,
+  isLoading: false,
+  isHydrated: true,
+};
+
 // Mock the hooks and components
 jest.mock("../../../hooks/useFavorites", () => ({
-  useFavorites: () => ({
-    favorites: mockFavorites,
-    count: 2,
-    clearFavorites: mockClearFavorites,
-    getShareableUrl: mockGetShareableUrl,
-    loadFromUrl: mockLoadFromUrl,
-    isFavorited: mockIsFavorited,
-    addFavorite: mockAddFavorite,
-    removeFavorite: mockRemoveFavorite,
-    toggleFavorite: mockToggleFavorite,
-    isLoading: false,
-    isHydrated: true,
-  }),
+  useFavorites: () => mockUseFavoritesReturn,
 }));
 
 jest.mock("../../../contexts/ToastContext", () => ({
@@ -109,6 +111,20 @@ global.fetch = jest.fn();
 describe("FavoritesPage with FilterPanel", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset mock state
+    mockUseFavoritesReturn = {
+      favorites: [1, 2],
+      count: 2,
+      clearFavorites: mockClearFavorites,
+      getShareableUrl: mockGetShareableUrl,
+      loadFromUrl: mockLoadFromUrl,
+      isFavorited: mockIsFavorited,
+      addFavorite: mockAddFavorite,
+      removeFavorite: mockRemoveFavorite,
+      toggleFavorite: mockToggleFavorite,
+      isLoading: false,
+      isHydrated: true,
+    };
     // Mock process.env
     process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000";
 
@@ -164,5 +180,19 @@ describe("FavoritesPage with FilterPanel", () => {
     await waitFor(() => {
       expect(screen.getByText("🔍 Filter")).toBeInTheDocument();
     });
+  });
+
+  test("shows loading state when favorites not yet hydrated from localStorage", () => {
+    mockUseFavoritesReturn = {
+      ...mockUseFavoritesReturn,
+      favorites: [],
+      count: 0,
+      isHydrated: false,
+    };
+
+    render(<FavoritesPage />);
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.queryByText("Start Building Your Collection")).not.toBeInTheDocument();
   });
 });

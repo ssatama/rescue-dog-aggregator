@@ -67,7 +67,7 @@ export default async function DogsPageOptimized(props: DogsPageProps): Promise<R
     return v || undefined;
   };
 
-  const params = {
+  const apiParams = {
     limit: 20,
     offset: 0,
     search: toStr(searchParams?.search),
@@ -82,9 +82,15 @@ export default async function DogsPageOptimized(props: DogsPageProps): Promise<R
     available_to_region: toStr(searchParams?.available_region),
   };
 
+  const initialParams = {
+    age_category: toStr(searchParams?.age),
+    location_country: toStr(searchParams?.location_country),
+    available_country: toStr(searchParams?.available_country),
+  };
+
   // Fetch initial data server-side (cached and deduplicated)
   const [initialDogs, metadata] = await Promise.all([
-    getAnimals(params),
+    getAnimals(apiParams),
     getAllMetadata(),
   ]);
 
@@ -93,7 +99,7 @@ export default async function DogsPageOptimized(props: DogsPageProps): Promise<R
       <DogsPageClientSimplified
         initialDogs={initialDogs}
         metadata={metadata}
-        initialParams={params}
+        initialParams={initialParams}
       />
     </Suspense>
   );
