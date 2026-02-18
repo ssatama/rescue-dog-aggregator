@@ -34,9 +34,21 @@ export const clearCache = (): void => {
  
 type AsyncFn = (...args: any[]) => Promise<any>;
 
-const cache = <T extends AsyncFn>(fn: T): T => {
+const cache = <T extends AsyncFn>(
+  fn: T,
+  errorFallback?: Awaited<ReturnType<T>>,
+): T => {
   if (process.env.NODE_ENV === "test") {
-    return fn;
+    if (errorFallback === undefined) return fn;
+    const withFallback = (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+      try {
+        return await fn(...args);
+      } catch (error) {
+        reportError(error, { context: "cache-test-fallback" });
+        return errorFallback as ReturnType<T>;
+      }
+    }) as T;
+    return withFallback;
   }
 
   if (!functionIds.has(fn)) {
@@ -52,31 +64,30 @@ const cache = <T extends AsyncFn>(fn: T): T => {
       return entry.data as ReturnType<T>;
     }
 
-    const result = await fn(...args);
-
-    const isErrorResult =
-      result != null &&
-      typeof result === "object" &&
-      !Array.isArray(result) &&
-      (result as Record<string, unknown>).error === true;
-
-    if (!isErrorResult) {
+    try {
+      const result = await fn(...args);
       cacheMap.set(key, {
         data: result,
         timestamp: Date.now(),
       });
-    }
 
-    if (cacheMap.size > 100) {
-      const now = Date.now();
-      for (const [k, v] of cacheMap.entries()) {
-        if (now - v.timestamp > CACHE_TTL) {
-          cacheMap.delete(k);
+      if (cacheMap.size > 100) {
+        const now = Date.now();
+        for (const [k, v] of cacheMap.entries()) {
+          if (now - v.timestamp > CACHE_TTL) {
+            cacheMap.delete(k);
+          }
         }
       }
-    }
 
-    return result;
+      return result;
+    } catch (error) {
+      if (errorFallback !== undefined) {
+        reportError(error, { context: `cache-fn-${functionId}` });
+        return errorFallback as ReturnType<T>;
+      }
+      throw error;
+    }
   }) as T;
 
   return cached;
@@ -145,131 +156,91 @@ export const getAnimals = cache(
 
     const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
 
-    try {
-      const response = await fetch(url, {
-        next: {
-          revalidate: 300,
-          tags: ["animals"],
-        },
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+    const response = await fetch(url, {
+      next: {
+        revalidate: 300,
+        tags: ["animals"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch animals: ${response.statusText}`);
-      }
-
-      const raw: unknown = await response.json();
-      return z.array(ApiDogSchema).parse(stripNulls(raw));
-    } catch (error) {
-      logger.error("Error fetching animals:", error);
-      reportError(error, { url, context: "getAnimals" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getAnimals");
-        Sentry.captureException(error);
-      });
-      return [];
+    if (!response.ok) {
+      throw new Error(`Failed to fetch animals: ${response.statusText}`);
     }
+
+    const raw: unknown = await response.json();
+    return z.array(ApiDogSchema).parse(stripNulls(raw));
   },
+  [],
 );
 
 export const getStandardizedBreeds = cache(
   async (): Promise<string[]> => {
-    try {
-      const response = await fetch(`${API_URL}/api/animals/meta/breeds/`, {
-        next: {
-          revalidate: 3600,
-          tags: ["breeds"],
-        },
-      });
+    const response = await fetch(`${API_URL}/api/animals/meta/breeds/`, {
+      next: {
+        revalidate: 3600,
+        tags: ["breeds"],
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch breeds: ${response.statusText}`);
-      }
-
-      const raw: unknown = await response.json();
-      return z.array(z.string()).parse(raw);
-    } catch (error) {
-      logger.error("Error fetching breeds:", error);
-      reportError(error, { context: "getStandardizedBreeds" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getStandardizedBreeds");
-        Sentry.captureException(error);
-      });
-      return [];
+    if (!response.ok) {
+      throw new Error(`Failed to fetch breeds: ${response.statusText}`);
     }
+
+    const raw: unknown = await response.json();
+    return z.array(z.string()).parse(raw);
   },
+  [],
 );
 
 export const getLocationCountries = cache(
   async (): Promise<string[]> => {
-    try {
-      const response = await fetch(
-        `${API_URL}/api/animals/meta/location_countries`,
-        {
-          next: {
-            revalidate: 3600,
-            tags: ["location-countries"],
-          },
+    const response = await fetch(
+      `${API_URL}/api/animals/meta/location_countries`,
+      {
+        next: {
+          revalidate: 3600,
+          tags: ["location-countries"],
         },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch location countries: ${response.statusText}`,
       );
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch location countries: ${response.statusText}`,
-        );
-      }
-
-      const raw: unknown = await response.json();
-      return z.array(z.string()).parse(raw);
-    } catch (error) {
-      logger.error("Error fetching location countries:", error);
-      reportError(error, { context: "getLocationCountries" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getLocationCountries");
-        Sentry.captureException(error);
-      });
-      return [];
     }
+
+    const raw: unknown = await response.json();
+    return z.array(z.string()).parse(raw);
   },
+  [],
 );
 
 export const getAvailableCountries = cache(
   async (): Promise<string[]> => {
-    try {
-      const response = await fetch(
-        `${API_URL}/api/animals/meta/available_countries`,
-        {
-          next: {
-            revalidate: 3600,
-            tags: ["available-countries"],
-          },
+    const response = await fetch(
+      `${API_URL}/api/animals/meta/available_countries`,
+      {
+        next: {
+          revalidate: 3600,
+          tags: ["available-countries"],
         },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch available countries: ${response.statusText}`,
       );
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch available countries: ${response.statusText}`,
-        );
-      }
-
-      const raw: unknown = await response.json();
-      return z.array(z.string()).parse(raw);
-    } catch (error) {
-      logger.error("Error fetching available countries:", error);
-      reportError(error, { context: "getAvailableCountries" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getAvailableCountries");
-        Sentry.captureException(error);
-      });
-      return [];
     }
+
+    const raw: unknown = await response.json();
+    return z.array(z.string()).parse(raw);
   },
+  [],
 );
 
 export const getAvailableRegions = cache(
@@ -278,65 +249,45 @@ export const getAvailableRegions = cache(
       return [];
     }
 
-    try {
-      const response = await fetch(
-        `${API_URL}/api/animals/meta/available_regions?country=${encodeURIComponent(country)}`,
-        {
-          next: {
-            revalidate: 3600,
-            tags: ["available-regions", country],
-          },
+    const response = await fetch(
+      `${API_URL}/api/animals/meta/available_regions?country=${encodeURIComponent(country)}`,
+      {
+        next: {
+          revalidate: 3600,
+          tags: ["available-regions", country],
         },
-      );
+      },
+    );
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch regions: ${response.statusText}`);
-      }
-
-      const raw: unknown = await response.json();
-      return z.array(z.string()).parse(raw);
-    } catch (error) {
-      logger.error("Error fetching regions:", error);
-      reportError(error, { context: "getAvailableRegions", country });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getAvailableRegions");
-        Sentry.captureException(error);
-      });
-      return [];
+    if (!response.ok) {
+      throw new Error(`Failed to fetch regions: ${response.statusText}`);
     }
+
+    const raw: unknown = await response.json();
+    return z.array(z.string()).parse(raw);
   },
+  [],
 );
 
 export const getOrganizations = cache(
   async (): Promise<z.infer<typeof ApiOrganizationEmbeddedSchema>[]> => {
-    try {
-      const response = await fetch(`${API_URL}/api/organizations/`, {
-        next: {
-          revalidate: 3600,
-          tags: ["organizations"],
-        },
-      });
+    const response = await fetch(`${API_URL}/api/organizations/`, {
+      next: {
+        revalidate: 3600,
+        tags: ["organizations"],
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch organizations: ${response.statusText}`,
-        );
-      }
-
-      const raw: unknown = await response.json();
-      return z.array(ApiOrganizationEmbeddedSchema).parse(stripNulls(raw));
-    } catch (error) {
-      logger.error("Error fetching organizations:", error);
-      reportError(error, { context: "getOrganizations" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getOrganizations");
-        Sentry.captureException(error);
-      });
-      return [];
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch organizations: ${response.statusText}`,
+      );
     }
+
+    const raw: unknown = await response.json();
+    return z.array(ApiOrganizationEmbeddedSchema).parse(stripNulls(raw));
   },
+  [],
 );
 
 export const getFilterCounts = cache(
@@ -351,155 +302,110 @@ export const getFilterCounts = cache(
       }
     });
 
-    try {
-      const response = await fetch(
-        `${API_URL}/api/animals/meta/filter_counts?${queryParams.toString()}`,
-        {
-          next: {
-            revalidate: 60,
-            tags: ["filter-counts"],
-          },
+    const response = await fetch(
+      `${API_URL}/api/animals/meta/filter_counts?${queryParams.toString()}`,
+      {
+        next: {
+          revalidate: 60,
+          tags: ["filter-counts"],
         },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch filter counts: ${response.statusText}`,
       );
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch filter counts: ${response.statusText}`,
-        );
-      }
-
-      const raw: unknown = await response.json();
-      return FilterCountsResponseSchema.parse(stripNulls(raw));
-    } catch (error) {
-      logger.error("Error fetching filter counts:", error);
-      reportError(error, { context: "getFilterCounts" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getFilterCounts");
-        Sentry.captureException(error);
-      });
-      return null;
     }
+
+    const raw: unknown = await response.json();
+    return FilterCountsResponseSchema.parse(stripNulls(raw));
   },
+  null,
 );
 
 export const getStatistics = cache(
   async (): Promise<z.infer<typeof StatisticsSchema>> => {
-    try {
-      const response = await fetch(`${API_URL}/api/animals/statistics`, {
-        next: {
-          revalidate: 300,
-          tags: ["statistics"],
-        },
-      });
+    const response = await fetch(`${API_URL}/api/animals/statistics`, {
+      next: {
+        revalidate: 300,
+        tags: ["statistics"],
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch statistics: ${response.statusText}`);
-      }
-
-      const raw: unknown = await response.json();
-      return StatisticsSchema.parse(stripNulls(raw));
-    } catch (error) {
-      logger.error("Error fetching statistics:", error);
-      reportError(error, { context: "getStatistics" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getStatistics");
-        Sentry.captureException(error);
-      });
-      return {
-        total_dogs: 0,
-        total_organizations: 0,
-        countries: [],
-        organizations: [],
-      };
+    if (!response.ok) {
+      throw new Error(`Failed to fetch statistics: ${response.statusText}`);
     }
+
+    const raw: unknown = await response.json();
+    return StatisticsSchema.parse(stripNulls(raw));
   },
+  { total_dogs: 0, total_organizations: 0, countries: [], organizations: [] },
 );
 
 export const getBreedStats = cache(
   async (): Promise<BreedStats> => {
-    try {
-      const response = await fetch(`${API_URL}/api/animals/breeds/stats`, {
-        next: {
-          revalidate: 3600,
-          tags: ["breed-stats"],
-        },
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+    const response = await fetch(`${API_URL}/api/animals/breeds/stats`, {
+      next: {
+        revalidate: 3600,
+        tags: ["breed-stats"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch breed stats: ${response.statusText}`,
-        );
-      }
-
-      const raw: unknown = await response.json();
-      return BreedStatsSchema.parse(stripNulls(raw));
-    } catch (error) {
-      logger.error("Error fetching breed stats:", error);
-      reportError(error, { context: "getBreedStats" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getBreedStats");
-        Sentry.captureException(error);
-      });
-      return {
-        total_dogs: 0,
-        unique_breeds: 0,
-        breed_groups: [],
-        qualifying_breeds: [],
-        purebred_count: 0,
-        crossbreed_count: 0,
-        error: true,
-      } as BreedStats;
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch breed stats: ${response.statusText}`,
+      );
     }
+
+    const raw: unknown = await response.json();
+    return BreedStatsSchema.parse(stripNulls(raw));
   },
+  {
+    total_dogs: 0,
+    unique_breeds: 0,
+    breed_groups: [],
+    qualifying_breeds: [],
+    purebred_count: 0,
+    crossbreed_count: 0,
+    error: true,
+  } as BreedStats,
 );
 
 export const getAnimalsByCuration = cache(
-   
-   
+
+
   async (curationType: string, limit = 4): Promise<any[]> => {
-    try {
-      const queryParams = new URLSearchParams({
-        curation_type: curationType,
-        limit: limit.toString(),
-        animal_type: "dog",
-        status: "available",
-      });
+    const queryParams = new URLSearchParams({
+      curation_type: curationType,
+      limit: limit.toString(),
+      animal_type: "dog",
+      status: "available",
+    });
 
-      const response = await fetch(
-        `${API_URL}/api/animals/?${queryParams.toString()}`,
-        {
-          next: {
-            revalidate: 300,
-            tags: ["animals", `curation-${curationType}`],
-          },
+    const response = await fetch(
+      `${API_URL}/api/animals/?${queryParams.toString()}`,
+      {
+        next: {
+          revalidate: 300,
+          tags: ["animals", `curation-${curationType}`],
         },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch ${curationType} animals: ${response.statusText}`,
       );
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch ${curationType} animals: ${response.statusText}`,
-        );
-      }
-
-      const raw: unknown = await response.json();
-      return z.array(ApiDogSchema).parse(stripNulls(raw));
-    } catch (error) {
-      logger.error(`Error fetching ${curationType} animals:`, error);
-      reportError(error, { curationType, context: "getAnimalsByCuration" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getAnimalsByCuration");
-        Sentry.captureException(error);
-      });
-      return [];
     }
+
+    const raw: unknown = await response.json();
+    return z.array(ApiDogSchema).parse(stripNulls(raw));
   },
+  [],
 );
 
 interface HomePageData {
@@ -514,40 +420,30 @@ interface HomePageData {
 
 export const getHomePageData = cache(
   async (): Promise<HomePageData> => {
-    try {
-      const [statistics, recentDogs, diverseDogs] = await Promise.all([
-        getStatistics(),
-        getAnimalsByCuration("recent", 8),
-        getAnimalsByCuration("diverse", 4),
-      ]);
+    const [statistics, recentDogs, diverseDogs] = await Promise.all([
+      getStatistics(),
+      getAnimalsByCuration("recent", 8),
+      getAnimalsByCuration("diverse", 4),
+    ]);
 
-      return {
-        statistics,
-        recentDogs,
-        diverseDogs,
-        fetchedAt: new Date().toISOString(),
-      };
-    } catch (error) {
-      logger.error("Error fetching home page data:", error);
-      reportError(error, { context: "getHomePageData" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getHomePageData");
-        Sentry.captureException(error);
-      });
-      return {
-        statistics: {
-          total_dogs: 0,
-          total_organizations: 0,
-          countries: [],
-          organizations: [],
-        },
-        recentDogs: [],
-        diverseDogs: [],
-        fetchedAt: new Date().toISOString(),
-        error: true,
-      };
-    }
+    return {
+      statistics,
+      recentDogs,
+      diverseDogs,
+      fetchedAt: new Date().toISOString(),
+    };
+  },
+  {
+    statistics: {
+      total_dogs: 0,
+      total_organizations: 0,
+      countries: [],
+      organizations: [],
+    },
+    recentDogs: [],
+    diverseDogs: [],
+    fetchedAt: new Date().toISOString(),
+    error: true,
   },
 );
 
@@ -561,95 +457,75 @@ interface AllMetadata {
 
 export const getAllMetadata = cache(
   async (): Promise<AllMetadata> => {
-    try {
-      const [breeds, locationCountries, availableCountries, organizations] =
-        await Promise.all([
-          getStandardizedBreeds(),
-          getLocationCountries(),
-          getAvailableCountries(),
-          getOrganizations(),
-        ]);
+    const [breeds, locationCountries, availableCountries, organizations] =
+      await Promise.all([
+        getStandardizedBreeds(),
+        getLocationCountries(),
+        getAvailableCountries(),
+        getOrganizations(),
+      ]);
 
-      return {
-        standardizedBreeds: breeds
-          ? ["Any breed", ...breeds.filter((b: string) => b !== "Any breed")]
-          : ["Any breed"],
-        locationCountries: locationCountries
-          ? ["Any country", ...locationCountries]
-          : ["Any country"],
-        availableCountries: availableCountries
-          ? ["Any country", ...availableCountries]
-          : ["Any country"],
-        organizations: organizations
-          ? [
-              { id: null, name: "Any organization" },
-              ...(Array.isArray(organizations) ? organizations : []),
-            ]
-          : [{ id: null, name: "Any organization" }],
-      };
-    } catch (error) {
-      logger.error("Error fetching metadata:", error);
-      reportError(error, { context: "getAllMetadata" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getAllMetadata");
-        Sentry.captureException(error);
-      });
-      return {
-        standardizedBreeds: ["Any breed"],
-        locationCountries: ["Any country"],
-        availableCountries: ["Any country"],
-        organizations: [{ id: null, name: "Any organization" }],
-      };
-    }
+    return {
+      standardizedBreeds: breeds
+        ? ["Any breed", ...breeds.filter((b: string) => b !== "Any breed")]
+        : ["Any breed"],
+      locationCountries: locationCountries
+        ? ["Any country", ...locationCountries]
+        : ["Any country"],
+      availableCountries: availableCountries
+        ? ["Any country", ...availableCountries]
+        : ["Any country"],
+      organizations: organizations
+        ? [
+            { id: null, name: "Any organization" },
+            ...(Array.isArray(organizations) ? organizations : []),
+          ]
+        : [{ id: null, name: "Any organization" }],
+    };
+  },
+  {
+    standardizedBreeds: ["Any breed"],
+    locationCountries: ["Any country"],
+    availableCountries: ["Any country"],
+    organizations: [{ id: null, name: "Any organization" }],
   },
 );
 
 export const getAllAnimals = cache(
   async (
     params: { limit?: string | number; offset?: string | number } = {},
-     
-   
+
+
   ): Promise<any[]> => {
-    try {
-      const queryParams = new URLSearchParams();
+    const queryParams = new URLSearchParams();
 
-      if (params.limit) queryParams.append("limit", String(params.limit));
-      else queryParams.append("limit", "1000");
+    if (params.limit) queryParams.append("limit", String(params.limit));
+    else queryParams.append("limit", "1000");
 
-      if (params.offset) queryParams.append("offset", String(params.offset));
+    if (params.offset) queryParams.append("offset", String(params.offset));
 
-      const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
+    const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
 
-      const response = await fetch(url, {
-        next: {
-          revalidate: 3600,
-          tags: ["all-animals"],
-        },
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+    const response = await fetch(url, {
+      next: {
+        revalidate: 3600,
+        tags: ["all-animals"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch all animals: ${response.statusText}`,
-        );
-      }
-
-      const raw: unknown = await response.json();
-      return z.array(ApiDogSchema).parse(stripNulls(raw));
-    } catch (error) {
-      logger.error("Error fetching all animals:", error);
-      reportError(error, { context: "getAllAnimals" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getAllAnimals");
-        Sentry.captureException(error);
-      });
-      return [];
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch all animals: ${response.statusText}`,
+      );
     }
+
+    const raw: unknown = await response.json();
+    return z.array(ApiDogSchema).parse(stripNulls(raw));
   },
+  [],
 );
 
  
@@ -995,39 +871,28 @@ export const getBreedDogs = cache(
   async (
     breedSlug: string,
     filters: BreedDogFilters = {},
-     
-   
+
+
   ): Promise<any[]> => {
-    try {
-      const breedStats = await getBreedStats();
-      const breedData = breedStats.qualifying_breeds?.find(
-        (breed) => breed.breed_slug === breedSlug,
-      );
+    const breedStats = await getBreedStats();
+    const breedData = breedStats.qualifying_breeds?.find(
+      (breed) => breed.breed_slug === breedSlug,
+    );
 
-      if (!breedData) {
-        throw new Error(`Breed not found: ${breedSlug}`);
-      }
-
-      const params: AnimalQueryParams = {
-        breed: breedData.primary_breed,
-        limit: filters.limit || 12,
-        offset: filters.offset || 0,
-        ...filters,
-      };
-
-      return getAnimals(params);
-    } catch (error) {
-      logger.error(`Error fetching breed dogs for ${breedSlug}:`, error);
-      reportError(error, { context: "getBreedDogs", breedSlug });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getBreedDogs");
-        scope.setContext("request", { breedSlug });
-        Sentry.captureException(error);
-      });
-      return [];
+    if (!breedData) {
+      throw new Error(`Breed not found: ${breedSlug}`);
     }
+
+    const params: AnimalQueryParams = {
+      breed: breedData.primary_breed,
+      limit: filters.limit || 12,
+      offset: filters.offset || 0,
+      ...filters,
+    };
+
+    return getAnimals(params);
   },
+  [],
 );
 
 export const getBreedFilterCounts = cache(
@@ -1192,39 +1057,26 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<ApiDogWithLlm
 
 export const getCountryStats = cache(
   async (): Promise<z.infer<typeof CountryStatsResponseSchema>> => {
-    try {
-      const response = await fetch(`${API_URL}/api/animals/stats/by-country`, {
-        next: {
-          revalidate: 300,
-          tags: ["country-stats"],
-        },
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+    const response = await fetch(`${API_URL}/api/animals/stats/by-country`, {
+      next: {
+        revalidate: 300,
+        tags: ["country-stats"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch country stats: ${response.statusText}`,
-        );
-      }
-
-      const raw: unknown = await response.json();
-      return CountryStatsResponseSchema.parse(stripNulls(raw));
-    } catch (error) {
-      logger.error("Error fetching country stats:", error);
-      reportError(error, { context: "getCountryStats" });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getCountryStats");
-        Sentry.captureException(error);
-      });
-      return {
-        total: 0,
-        countries: [],
-      };
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch country stats: ${response.statusText}`,
+      );
     }
+
+    const raw: unknown = await response.json();
+    return CountryStatsResponseSchema.parse(stripNulls(raw));
   },
+  { total: 0, countries: [] },
 );
 
 interface AgeCategory {
@@ -1238,8 +1090,8 @@ interface AgeStats {
   ageCategories: AgeCategory[];
 }
 
-export const getAgeStats = cache(async (): Promise<AgeStats> => {
-  try {
+export const getAgeStats = cache(
+  async (): Promise<AgeStats> => {
     const response = await fetch(`${API_URL}/api/animals/meta/filter_counts`, {
       next: {
         revalidate: 300,
@@ -1272,20 +1124,12 @@ export const getAgeStats = cache(async (): Promise<AgeStats> => {
       total,
       ageCategories,
     };
-  } catch (error) {
-    logger.error("Error fetching age stats:", error);
-    reportError(error, { context: "getAgeStats" });
-    Sentry.withScope((scope) => {
-      scope.setTag("feature", "animals");
-      scope.setTag("operation", "getAgeStats");
-      Sentry.captureException(error);
-    });
-    return {
-      total: 0,
-      ageCategories: [
-        { slug: "puppies", apiValue: "Puppy", count: 0 },
-        { slug: "senior", apiValue: "Senior", count: 0 },
-      ],
-    };
-  }
-});
+  },
+  {
+    total: 0,
+    ageCategories: [
+      { slug: "puppies", apiValue: "Puppy", count: 0 },
+      { slug: "senior", apiValue: "Senior", count: 0 },
+    ],
+  },
+);
