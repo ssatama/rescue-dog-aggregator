@@ -36,6 +36,7 @@ jest.mock("../../../hooks/useFavorites", () => ({
     removeFavorite: mockRemoveFavorite,
     toggleFavorite: mockToggleFavorite,
     isLoading: false,
+    isHydrated: true,
   }),
 }));
 

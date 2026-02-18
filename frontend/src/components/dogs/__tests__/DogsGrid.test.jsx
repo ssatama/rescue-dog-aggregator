@@ -50,16 +50,13 @@ describe("DogsGrid Component", () => {
       expect(screen.getByTestId("dog-card-3")).toBeInTheDocument();
     });
 
-    test("applies correct grid classes with updated responsive breakpoints", () => {
+    test("applies correct grid classes with auto-fill responsive layout", () => {
       render(<DogsGrid dogs={mockDogs} />);
 
       const gridContainer = screen.getByTestId("dogs-grid");
       expect(gridContainer).toHaveClass("grid");
-      expect(gridContainer).toHaveClass("grid-cols-1");
-      expect(gridContainer).toHaveClass("sm:grid-cols-2");
-      expect(gridContainer).toHaveClass("lg:grid-cols-3");
-      // Should NOT have lg:grid-cols-4 anymore
-      expect(gridContainer).not.toHaveClass("lg:grid-cols-4");
+      expect(gridContainer).toHaveClass("justify-center");
+      expect(gridContainer).toHaveClass("grid-cols-[repeat(auto-fill,minmax(min(100%,300px),340px))]");
     });
 
     test("applies correct gap spacing with updated desktop spacing", () => {

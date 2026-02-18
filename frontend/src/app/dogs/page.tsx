@@ -78,8 +78,8 @@ export default async function DogsPageOptimized(props: DogsPageProps): Promise<R
     breed: toStr(searchParams?.breed),
     breed_group: toStr(searchParams?.breed_group),
     location_country: toStr(searchParams?.location_country),
-    available_country: toStr(searchParams?.available_country),
-    available_region: toStr(searchParams?.available_region),
+    available_to_country: toStr(searchParams?.available_country),
+    available_to_region: toStr(searchParams?.available_region),
   };
 
   // Fetch initial data server-side (cached and deduplicated)

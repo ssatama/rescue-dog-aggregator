@@ -217,12 +217,12 @@ function buildAPIParams(filterValues: Filters): Record<string, string> {
 
   const availableCountry = (filterValues.availableCountryFilter || "").trim();
   if (availableCountry && availableCountry !== FILTER_DEFAULTS.COUNTRY) {
-    params.available_country = availableCountry;
+    params.available_to_country = availableCountry;
   }
 
   const availableRegion = (filterValues.availableRegionFilter || "").trim();
   if (availableRegion && availableRegion !== FILTER_DEFAULTS.REGION) {
-    params.available_region = availableRegion;
+    params.available_to_region = availableRegion;
   }
 
   return params;

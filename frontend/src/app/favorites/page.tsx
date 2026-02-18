@@ -83,7 +83,7 @@ interface Insights {
 }
 
 function FavoritesPageContent() {
-  const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl } =
+  const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl, isHydrated } =
     useFavorites();
   const { showToast } = useToast();
   const [dogs, setDogs] = useState<Dog[]>([]);
@@ -345,7 +345,7 @@ function FavoritesPageContent() {
     return () => clearTimeout(timer);
   }, [filteredDogs, showInsights, getBasicInsights]);
 
-  if (isLoading) {
+  if (isLoading || !isHydrated) {
     return (
       <Layout>
         <Loading />
@@ -490,7 +490,7 @@ function FavoritesPageContent() {
         </div>
 
         {/* Dogs grid - use filtered dogs */}
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 max-w-5xl">
           {filteredDogs.length === 0 && dogs.length > 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 dark:text-gray-400 mb-4">
