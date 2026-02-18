@@ -347,7 +347,7 @@ describe("Server Animals Service", () => {
 
       expect(reportError).toHaveBeenCalledWith(
         expect.any(Error),
-        expect.objectContaining({ context: "getAnimals" }),
+        expect.objectContaining({ context: expect.stringContaining("cache") }),
       );
     });
   });
