@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Dog } from "@/types/dog";
+import type { Filters } from "../utils/dogFilters";
 import {
   applyAllFilters,
   extractAvailableBreeds,
@@ -7,13 +8,6 @@ import {
   extractAvailableShipsTo,
   hasActiveFilters as checkActiveFilters,
 } from "../utils/dogFilters";
-
-interface Filters {
-  age?: string;
-  breed?: string;
-  shipsTo?: string;
-  sort?: string;
-}
 
 interface UseFilteredDogsReturn {
   filteredDogs: Partial<Dog>[];

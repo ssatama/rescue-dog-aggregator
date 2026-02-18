@@ -20,14 +20,12 @@ export function usePageTransition(
     return () => clearTimeout(timer);
   }, [delay]);
 
-  const durationClass =
-    duration === 200
-      ? "duration-200"
-      : duration === 300
-        ? "duration-300"
-        : duration === 500
-          ? "duration-500"
-          : "duration-300";
+  const durationMap: Record<number, string> = {
+    200: "duration-200",
+    300: "duration-300",
+    500: "duration-500",
+  };
+  const durationClass = durationMap[duration] || "duration-300";
 
   const className = `transition-opacity ${durationClass} ${isVisible ? "opacity-100" : "opacity-0"}`;
 

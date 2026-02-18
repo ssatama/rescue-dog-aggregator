@@ -19,7 +19,19 @@ export async function GET(): Promise<Response> {
         Vary: "Accept-Encoding",
       },
     });
-  } catch {
+  } catch (error: unknown) {
+    const errorDetails =
+      error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : { message: String(error) };
+
+    console.error("Error generating sitemap:", {
+      ...errorDetails,
+      timestamp: new Date().toISOString(),
+      route: "/sitemap.xml",
+      type: "sitemap_generation_error",
+    });
+
     const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>

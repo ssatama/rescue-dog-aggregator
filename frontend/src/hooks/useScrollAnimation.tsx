@@ -124,10 +124,11 @@ export const useReducedMotion = (): boolean => {
           mediaQuery.removeListener?.(handleChange);
         }
       };
-    } catch {
+    } catch (error: unknown) {
       if (process.env.NODE_ENV !== "production") {
         console.warn(
-          "matchMedia not supported, animations will be enabled",
+          "matchMedia setup failed, animations will be enabled:",
+          error,
         );
       }
     }

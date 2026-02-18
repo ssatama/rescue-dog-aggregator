@@ -153,18 +153,3 @@ export function formatErrorMessage(parsedError: ParsedApiError): string {
   return message;
 }
 
-function getErrorTitle(errorType: string): string {
-  const titles: Record<string, string> = {
-    network: "Connection Error",
-    database_connection: "Database Connection Error",
-    pool_initialization: "Service Starting Up",
-    query_error: "Data Error",
-    validation_error: "Invalid Request",
-    not_found: "Not Found",
-    internal_error: "Something Went Wrong",
-    server_error: "Server Error",
-    service_unavailable: "Service Unavailable",
-  };
-
-  return titles[errorType] || "Error";
-}

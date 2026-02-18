@@ -24,8 +24,15 @@ interface FavoritesContextType {
   isLoading: boolean;
 }
 
-const toNumericId = (dogId: number | string): number =>
-  typeof dogId === "string" ? parseInt(dogId, 10) : dogId;
+const toNumericId = (dogId: number | string): number => {
+  if (typeof dogId === "number") return dogId;
+  const parsed = parseInt(dogId, 10);
+  if (Number.isNaN(parsed)) {
+    console.error(`[Favorites] Invalid non-numeric dog ID: ${dogId}`);
+    return -1;
+  }
+  return parsed;
+};
 
 const STORAGE_VERSION = "v1";
 const STORAGE_KEY = `rescue-dogs-favorites:${STORAGE_VERSION}`;

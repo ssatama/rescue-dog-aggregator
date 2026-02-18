@@ -194,26 +194,22 @@ export const formatCompatibility = (dog: DogInput | null | undefined): {
     }
   };
 
-  const getCompatValue = (profilerKey: string, propKey: string): string => {
-    if (profilerData && (profilerData as Record<string, unknown>)[profilerKey]) {
-      return (profilerData as Record<string, unknown>)[profilerKey] as string;
+  type CompatField = "good_with_dogs" | "good_with_cats" | "good_with_children";
+
+  const getCompatValue = (field: CompatField): string => {
+    if (profilerData?.[field]) {
+      return profilerData[field];
     }
-    if (props[propKey] === true || props[propKey] === "yes") return "yes";
-    if (props[propKey] === false || props[propKey] === "no") return "no";
-    if (props[propKey] === "maybe") return "maybe";
+    if (props[field] === true || props[field] === "yes") return "yes";
+    if (props[field] === false || props[field] === "no") return "no";
+    if (props[field] === "maybe") return "maybe";
     return "unknown";
   };
 
   return {
-    withDogs: getCompatibilityDisplay(
-      getCompatValue("good_with_dogs", "good_with_dogs"),
-    ),
-    withCats: getCompatibilityDisplay(
-      getCompatValue("good_with_cats", "good_with_cats"),
-    ),
-    withChildren: getCompatibilityDisplay(
-      getCompatValue("good_with_children", "good_with_children"),
-    ),
+    withDogs: getCompatibilityDisplay(getCompatValue("good_with_dogs")),
+    withCats: getCompatibilityDisplay(getCompatValue("good_with_cats")),
+    withChildren: getCompatibilityDisplay(getCompatValue("good_with_children")),
   };
 };
 
