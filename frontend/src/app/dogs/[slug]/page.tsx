@@ -164,9 +164,9 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
   } catch (error) {
     reportError(error, { context: "generateMetadata", component: "DogDetailPage" });
     return {
-      title: "Dog Not Found | Rescue Dog Aggregator",
+      title: "Error Loading Dog | Rescue Dog Aggregator",
       description:
-        "The requested dog could not be found. Browse our available dogs for adoption.",
+        "We encountered an error loading this dog's details. Please try again later.",
     };
   }
 }
@@ -197,11 +197,12 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
       initialDog = await getAnimalBySlug(resolvedParams.slug);
     } catch (error) {
       fetchError = true;
-      console.error("[DogDetailPageAsync] Error fetching dog data:", error);
+      reportError(error, { context: "DogDetailPageAsync", slug: resolvedParams.slug });
     }
   }
 
-  if (!initialDog && !fetchError) {
+  const fetchAttempted = !!(getAnimalBySlug && resolvedParams.slug);
+  if (!initialDog && fetchAttempted && !fetchError) {
     notFound();
   }
 

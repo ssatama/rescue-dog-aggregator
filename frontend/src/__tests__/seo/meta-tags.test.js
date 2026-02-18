@@ -130,9 +130,9 @@ describe("SEO Meta Tags", () => {
       });
 
       expect(metadata).toEqual({
-        title: "Dog Not Found | Rescue Dog Aggregator",
+        title: "Error Loading Dog | Rescue Dog Aggregator",
         description:
-          "The requested dog could not be found. Browse our available dogs for adoption.",
+          "We encountered an error loading this dog's details. Please try again later.",
       });
     });
   });

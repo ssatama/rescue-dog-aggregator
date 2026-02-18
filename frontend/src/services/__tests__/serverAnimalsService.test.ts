@@ -6,6 +6,7 @@ import {
   getCountryStats,
   getAvailableRegions,
   getBreedStats,
+  getBreedBySlug,
   getAgeStats,
   getAnimalsByCuration,
   clearCache,
@@ -312,6 +313,29 @@ describe("Server Animals Service", () => {
 
       const result = await getAnimalsByCuration("recent");
       expect(result).toEqual([]);
+    });
+  });
+
+  describe("getBreedBySlug", () => {
+    it("should return null when breed slug is not in qualifying breeds", async () => {
+      const mockBreedStats = {
+        total_dogs: 100,
+        unique_breeds: 5,
+        breed_groups: [],
+        qualifying_breeds: [
+          { primary_breed: "Labrador", breed_slug: "labrador", count: 50 },
+        ],
+        purebred_count: 50,
+        crossbreed_count: 50,
+      };
+
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockBreedStats,
+      });
+
+      const result = await getBreedBySlug("non-existent-breed");
+      expect(result).toBeNull();
     });
   });
 
