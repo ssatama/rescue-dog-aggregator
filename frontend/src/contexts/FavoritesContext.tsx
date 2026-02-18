@@ -22,6 +22,7 @@ interface FavoritesContextType {
   getShareableUrl: () => string;
   loadFromUrl: (url: string) => void;
   isLoading: boolean;
+  isHydrated: boolean;
 }
 
 const toNumericId = (dogId: number | string): number => {
@@ -45,6 +46,7 @@ const FavoritesContext = createContext<FavoritesContextType | undefined>(
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [favorites, setFavorites] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { showToast } = useToast();
   const [toastMessage, setToastMessage] = useState<{
@@ -135,6 +137,8 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         type: "error",
         message: "Favorites data was corrupted and has been reset",
       });
+    } finally {
+      setIsHydrated(true);
     }
   }, []); // This only runs on mount, no dependencies needed
 
@@ -391,6 +395,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     getShareableUrl,
     loadFromUrl,
     isLoading,
+    isHydrated,
   };
 
   return (

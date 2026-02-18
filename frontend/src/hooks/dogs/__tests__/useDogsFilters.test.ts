@@ -164,8 +164,8 @@ describe("useDogsFilters", () => {
         standardized_breed: "Labrador",
         breed_group: "Sporting",
         location_country: "Germany",
-        available_country: "Finland",
-        available_region: "Uusimaa",
+        available_to_country: "Finland",
+        available_to_region: "Uusimaa",
       });
     });
 

@@ -291,6 +291,19 @@ describe("SwipeResponseSchema", () => {
     expect(result.dogs[0].name).toBe("Rex");
   });
 
+  it("parses swipe response without slug (backend may omit it)", () => {
+    const result = SwipeResponseSchema.parse({
+      dogs: [
+        { id: 1, name: "Rex" },
+        { id: 2, name: "Buddy" },
+      ],
+      total: 2,
+    });
+    expect(result.dogs).toHaveLength(2);
+    expect(result.dogs[0].slug).toBeUndefined();
+    expect(result.dogs[1].name).toBe("Buddy");
+  });
+
   it("rejects non-array dogs field", () => {
     expect(() =>
       SwipeResponseSchema.parse({ dogs: "not-an-array" }),

@@ -271,7 +271,7 @@ export const SwipeApiDogSchema = z
       .union([z.object({ name: z.string().optional() }).passthrough(), z.string()])
       .optional(),
     location: z.string().optional(),
-    slug: z.string(),
+    slug: z.string().optional(),
     tagline: z.string().optional(),
     description: z.string().optional(),
     personality_traits: z.array(z.string()).optional(),

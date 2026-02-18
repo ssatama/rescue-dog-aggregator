@@ -18,7 +18,7 @@ export interface SwipeDog {
   image?: string;
   organization?: string;
   location?: string;
-  slug: string;
+  slug?: string;
   description?: string;
   traits?: string[];
   energy_level?: number | string;
