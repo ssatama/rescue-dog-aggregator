@@ -1,53 +1,44 @@
-/**
- * Development-only logging utility
- * Provides conditional logging that only outputs in development environment
- */
-
 import * as Sentry from "@sentry/nextjs";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
 export const logger = {
-  log: (...args) => {
+  log: (...args: unknown[]): void => {
     if (isDevelopment) {
       console.log(...args);
     }
   },
 
-  error: (...args) => {
+  error: (...args: unknown[]): void => {
     if (isDevelopment) {
       console.error(...args);
     }
   },
 
-  warn: (...args) => {
+  warn: (...args: unknown[]): void => {
     if (isDevelopment) {
       console.warn(...args);
     }
   },
 
-  info: (...args) => {
+  info: (...args: unknown[]): void => {
     if (isDevelopment) {
       console.info(...args);
     }
   },
 
-  debug: (...args) => {
+  debug: (...args: unknown[]): void => {
     if (isDevelopment) {
       console.debug(...args);
     }
   },
 };
 
-// Production error reporting with Sentry integration
-export const reportError = (error, context = {}) => {
+export const reportError = (error: unknown, context: Record<string, unknown> = {}): void => {
   if (isDevelopment) {
     console.error("Error:", error, "Context:", context);
   } else {
-    // In production, report to Sentry
     try {
-      // Preserve original error object to maintain stack traces
-      // Use Error.cause to preserve the original error for debugging
       const errorToReport =
         error instanceof Error ? error : new Error(String(error), { cause: error });
 
@@ -60,7 +51,6 @@ export const reportError = (error, context = {}) => {
         },
       });
     } catch (sentryError) {
-      // Fallback to console if Sentry fails
       console.error("Sentry reporting failed:", sentryError);
       console.error("Original error:", error, "Context:", context);
     }

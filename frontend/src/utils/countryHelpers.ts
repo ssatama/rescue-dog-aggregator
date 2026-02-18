@@ -1,8 +1,4 @@
-/**
- * Country code to name mapping utilities
- */
-
-const COUNTRY_NAMES = {
+const COUNTRY_NAMES: Record<string, string> = {
   TR: "Turkey",
   DE: "Germany",
   US: "United States",
@@ -49,12 +45,7 @@ const COUNTRY_NAMES = {
   MX: "Mexico",
 };
 
-/**
- * Get country name from country code
- * @param {string} countryCode - Two-letter country code
- * @returns {string} Country name or the code if not found
- */
-export const getCountryName = (countryCode) => {
+export const getCountryName = (countryCode: string | null | undefined): string => {
   if (!countryCode || typeof countryCode !== "string") {
     return countryCode || "Unknown";
   }

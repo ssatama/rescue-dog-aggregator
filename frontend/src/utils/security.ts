@@ -1,7 +1,3 @@
-/**
- * Security utilities for content sanitization and XSS prevention
- */
-
 import DOMPurify from "dompurify";
 
 const DOMPURIFY_CONFIG = {
@@ -21,14 +17,12 @@ const DOMPURIFY_CONFIG = {
   ALLOWED_ATTR: ["href", "target", "rel", "src", "alt"],
 };
 
-export function sanitizeHtml(html) {
+export function sanitizeHtml(html: string): string {
   if (typeof html !== "string") return "";
 
   if (typeof window === "undefined") {
-    // Server-side: strip all tags using iterative approach
-    // This prevents bypass attacks with nested/malformed tags like <scri<script>pt>
     let result = html;
-    let prev;
+    let prev: string;
     do {
       prev = result;
       result = result.replace(/<[^>]*>?/g, "");
@@ -39,11 +33,10 @@ export function sanitizeHtml(html) {
   return DOMPurify.sanitize(html, DOMPURIFY_CONFIG);
 }
 
-// Escape HTML entities to prevent XSS
-export function sanitizeText(text) {
+export function sanitizeText(text: string | null | undefined): string {
   if (typeof text !== "string") return "";
 
-  const entityMap = {
+  const entityMap: Record<string, string> = {
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
@@ -54,23 +47,39 @@ export function sanitizeText(text) {
   return text.replace(/[&<>"']/g, (s) => entityMap[s]);
 }
 
-// Validate URLs to prevent dangerous protocols
-export function validateUrl(url) {
+export function validateUrl(url: string | null | undefined): boolean {
   if (!url || typeof url !== "string") return false;
 
   try {
     const urlObj = new URL(url);
     const allowedProtocols = ["http:", "https:", "mailto:", "tel:"];
     return allowedProtocols.includes(urlObj.protocol.toLowerCase());
-  } catch (error) {
+  } catch {
     return false;
   }
 }
 
-// Safe link renderer that validates URLs
-export function createSafeLink(url, text, options = {}) {
+interface SafeLinkOptions {
+  target?: string;
+  rel?: string;
+  className?: string;
+}
+
+interface SafeLinkResult {
+  href: string;
+  text: string;
+  target: string;
+  rel: string;
+  className: string;
+}
+
+export function createSafeLink(
+  url: string,
+  text: string,
+  options: SafeLinkOptions = {},
+): string | SafeLinkResult {
   if (!validateUrl(url)) {
-    return text; // Return just text if URL is invalid
+    return text;
   }
 
   const {
@@ -90,8 +99,7 @@ export function createSafeLink(url, text, options = {}) {
   };
 }
 
-// Sanitize user input data
-export function sanitizeUserInput(input) {
+export function sanitizeUserInput(input: unknown): unknown {
   if (typeof input === "string") {
     return sanitizeText(input.trim());
   }
@@ -101,7 +109,7 @@ export function sanitizeUserInput(input) {
   }
 
   if (input && typeof input === "object") {
-    const sanitized = {};
+    const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(input)) {
       sanitized[sanitizeText(key)] = sanitizeUserInput(value);
     }
@@ -111,13 +119,11 @@ export function sanitizeUserInput(input) {
   return input;
 }
 
-// Safe external URL validation with strict protocol checking
-export function safeExternalUrl(url) {
+export function safeExternalUrl(url: string | null | undefined): string | null {
   if (!url || typeof url !== "string") return null;
 
   try {
     const urlObj = new URL(url);
-    // Only allow http and https for external URLs
     const allowedProtocols = ["http:", "https:"];
 
     if (!allowedProtocols.includes(urlObj.protocol.toLowerCase())) {
@@ -127,7 +133,6 @@ export function safeExternalUrl(url) {
       return null;
     }
 
-    // Additional checks for malicious URLs
     if (
       urlObj.hostname === "localhost" ||
       urlObj.hostname.startsWith("127.") ||
@@ -138,16 +143,15 @@ export function safeExternalUrl(url) {
     }
 
     return url;
-  } catch (error) {
+  } catch {
     console.warn(`[Security] Invalid URL format: ${url}`);
     return null;
   }
 }
 
-// Content Security Policy helpers
-export const CSP_DIRECTIVES = {
+export const CSP_DIRECTIVES: Record<string, string[]> = {
   defaultSrc: ["'self'"],
-  scriptSrc: ["'self'", "'unsafe-inline'"], // Note: unsafe-inline should be removed in production
+  scriptSrc: ["'self'", "'unsafe-inline'"],
   styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
   fontSrc: ["'self'", "fonts.gstatic.com"],
   imgSrc: ["'self'", "data:", "https:", "blob:"],
@@ -158,7 +162,7 @@ export const CSP_DIRECTIVES = {
   formAction: ["'self'"],
 };
 
-export function generateCSPHeader() {
+export function generateCSPHeader(): string {
   return Object.entries(CSP_DIRECTIVES)
     .map(([directive, sources]) => {
       const camelToKebab = directive.replace(

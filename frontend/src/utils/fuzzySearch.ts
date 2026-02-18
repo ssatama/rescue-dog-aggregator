@@ -1,11 +1,5 @@
-/**
- * Calculates Levenshtein distance for fuzzy matching
- * @param {string} str1 - First string to compare
- * @param {string} str2 - Second string to compare
- * @returns {number} The Levenshtein distance between the two strings
- */
-export function levenshteinDistance(str1, str2) {
-  const matrix = Array(str2.length + 1)
+export function levenshteinDistance(str1: string, str2: string): number {
+  const matrix: number[][] = Array(str2.length + 1)
     .fill(null)
     .map(() => Array(str1.length + 1).fill(null));
 
@@ -26,14 +20,7 @@ export function levenshteinDistance(str1, str2) {
   return matrix[str2.length][str1.length];
 }
 
-/**
- * Enhanced fuzzy search with word-level matching for better breed suggestions
- * @param {string} query - The search query
- * @param {string[]} items - Array of items to search through
- * @param {number} maxResults - Maximum number of results to return (default: 5)
- * @returns {string[]} Array of matching items sorted by relevance
- */
-export function fuzzySearch(query, items, maxResults = 5) {
+export function fuzzySearch(query: string, items: string[], maxResults = 5): string[] {
   if (!query || query.length === 0) return [];
 
   const scored = items
@@ -42,25 +29,20 @@ export function fuzzySearch(query, items, maxResults = 5) {
       const normalizedItem = item.toLowerCase();
       const normalizedQuery = query.toLowerCase();
 
-      // Exact match gets highest score
       if (normalizedItem === normalizedQuery) return { item, score: 100 };
 
-      // Check if any word in the item starts with the query (for multi-word breeds)
       const words = normalizedItem.split(/\s+/);
       const queryWords = normalizedQuery.split(/\s+/);
 
-      // Check if any word in the breed starts with the query
       for (const word of words) {
         if (word.startsWith(normalizedQuery)) {
           return { item, score: 95 - normalizedQuery.length };
         }
       }
 
-      // Check if the full string starts with query
       if (normalizedItem.startsWith(normalizedQuery))
         return { item, score: 90 - normalizedQuery.length };
 
-      // Check if query matches beginning of multi-word search
       if (queryWords.length > 1) {
         const matches = queryWords.every((qWord) =>
           words.some((word) => word.startsWith(qWord)),
@@ -68,11 +50,9 @@ export function fuzzySearch(query, items, maxResults = 5) {
         if (matches) return { item, score: 85 };
       }
 
-      // Contains query gets medium score
       if (normalizedItem.includes(normalizedQuery))
         return { item, score: 70 - normalizedQuery.length };
 
-      // Fuzzy match based on Levenshtein distance
       const distance = levenshteinDistance(normalizedQuery, normalizedItem);
       const maxLength = Math.max(normalizedQuery.length, normalizedItem.length);
       if (distance <= maxLength * 0.4) {
@@ -81,25 +61,18 @@ export function fuzzySearch(query, items, maxResults = 5) {
 
       return null;
     })
-    .filter(Boolean)
+    .filter((s): s is { item: string; score: number } => s !== null)
     .sort((a, b) => b.score - a.score)
     .slice(0, maxResults);
 
   return scored.map((s) => s.item);
 }
 
-/**
- * Generates "Did you mean?" suggestions
- * @param {string} query - The search query
- * @param {string[]} items - Array of items to generate suggestions from
- * @param {number} maxSuggestions - Maximum number of suggestions to return (default: 3)
- * @returns {string[]} Array of suggested corrections
- */
 export function generateDidYouMeanSuggestions(
-  query,
-  items,
+  query: string,
+  items: string[],
   maxSuggestions = 3,
-) {
+): string[] {
   if (!query || query.length < 3) return [];
 
   const suggestions = items

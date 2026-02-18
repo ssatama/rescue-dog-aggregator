@@ -2,7 +2,7 @@ import type { Dog } from "./dog";
 import type { FilterCountsResponse } from "../schemas/common";
 
 export interface OrganizationMetadata {
-  id: number | null;
+  id: number | string | null;
   name: string;
   slug?: string;
 }

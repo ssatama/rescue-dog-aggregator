@@ -1,16 +1,11 @@
-// src/utils/countryUtils.js
-
-/**
- * Country code to flag emoji mapping for enhanced organization cards
- */
-export const COUNTRY_FLAGS = {
+export const COUNTRY_FLAGS: Record<string, string> = {
   TR: "🇹🇷",
   DE: "🇩🇪",
   NL: "🇳🇱",
   BE: "🇧🇪",
   FR: "🇫🇷",
   UK: "🇬🇧",
-  GB: "🇬🇧", // Alternative for UK
+  GB: "🇬🇧",
   AT: "🇦🇹",
   CH: "🇨🇭",
   RO: "🇷🇴",
@@ -28,10 +23,7 @@ export const COUNTRY_FLAGS = {
   SK: "🇸🇰",
 };
 
-/**
- * Country code to full name mapping
- */
-export const COUNTRY_NAMES = {
+export const COUNTRY_NAMES: Record<string, string> = {
   TR: "Turkey",
   DE: "Germany",
   NL: "Netherlands",
@@ -56,33 +48,17 @@ export const COUNTRY_NAMES = {
   SK: "Slovakia",
 };
 
-/**
- * Get flag emoji for a country code
- * @param {string} countryCode - ISO country code
- * @returns {string} Flag emoji or country code if no flag available
- */
-export function getCountryFlag(countryCode) {
+export function getCountryFlag(countryCode: string | null | undefined): string {
   if (!countryCode) return "";
   return COUNTRY_FLAGS[countryCode.toUpperCase()] || countryCode;
 }
 
-/**
- * Get country name for a country code
- * @param {string} countryCode - ISO country code
- * @returns {string} Country name or country code if no name available
- */
-export function getCountryName(countryCode) {
+export function getCountryName(countryCode: string | null | undefined): string {
   if (!countryCode) return "";
   return COUNTRY_NAMES[countryCode.toUpperCase()] || countryCode;
 }
 
-/**
- * Format ships-to countries with flags and overflow handling
- * @param {string[]} countries - Array of country codes
- * @param {number} maxShow - Maximum number of flags to show before "+X more"
- * @returns {string} Formatted string with flags and overflow
- */
-export function formatShipsTo(countries, maxShow = 3) {
+export function formatShipsTo(countries: string[] | null | undefined, maxShow = 3): string {
   if (!countries || !Array.isArray(countries) || countries.length === 0) {
     return "";
   }
@@ -98,52 +74,35 @@ export function formatShipsTo(countries, maxShow = 3) {
   return `${flags} +${remaining} more`;
 }
 
-/**
- * Format service regions (where dogs are located) with flags and names
- * @param {string[]} countries - Array of country codes
- * @param {boolean} showNames - Whether to include country names
- * @param {boolean} abbreviate - Whether to use abbreviated format for mobile
- * @returns {string} Formatted string with flags and optionally names
- */
 export function formatServiceRegions(
-  countries,
+  countries: string[] | null | undefined,
   showNames = true,
   abbreviate = false,
-) {
+): string {
   if (!countries || !Array.isArray(countries) || countries.length === 0) {
     return "";
   }
 
   if (abbreviate) {
-    // Mobile format: flags + abbreviated codes
     return countries
       .map((code) => `${getCountryFlag(code)} ${code}`)
       .join(", ");
   }
 
   if (showNames) {
-    // Desktop format: flags + full names
     return countries
       .map((code) => `${getCountryFlag(code)} ${getCountryName(code)}`)
       .join(", ");
   }
 
-  // Flags only
   return countries.map((code) => getCountryFlag(code)).join(" ");
 }
 
-/**
- * Format based-in location with flag and country name
- * @param {string} countryCode - ISO country code
- * @param {string} cityName - City name (optional)
- * @param {boolean} abbreviate - Whether to use abbreviated format for mobile
- * @returns {string} Formatted location string
- */
 export function formatBasedIn(
-  countryCode,
-  cityName = null,
+  countryCode: string | null | undefined,
+  cityName: string | null = null,
   abbreviate = false,
-) {
+): string {
   if (!countryCode) return "";
 
   const flag = getCountryFlag(countryCode);
@@ -160,20 +119,11 @@ export function formatBasedIn(
     : `${flag} ${countryName}`;
 }
 
-/**
- * Validate if a country code exists in our mapping
- * @param {string} countryCode - ISO country code to validate
- * @returns {boolean} True if country code is recognized
- */
-export function isValidCountryCode(countryCode) {
+export function isValidCountryCode(countryCode: string | null | undefined): boolean {
   if (!countryCode) return false;
   return countryCode.toUpperCase() in COUNTRY_FLAGS;
 }
 
-/**
- * Get all supported country codes
- * @returns {string[]} Array of all supported country codes
- */
-export function getSupportedCountryCodes() {
+export function getSupportedCountryCodes(): string[] {
   return Object.keys(COUNTRY_FLAGS);
 }
