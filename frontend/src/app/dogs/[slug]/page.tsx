@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Dog } from "../../../types/dog";
 import { reportError } from "../../../utils/logger";
@@ -17,7 +18,7 @@ type DogWithLlm = Dog & {
   };
 };
 
-let getAnimalBySlug: ((slug: string) => Promise<DogWithLlm>) | undefined;
+let getAnimalBySlug: ((slug: string) => Promise<DogWithLlm | null>) | undefined;
 if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
   getAnimalBySlug = require("../../../services/animalsService").getAnimalBySlug;
 } else {
@@ -52,7 +53,7 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
 
     const resolvedParams = await props.params;
 
-    let dog: DogWithLlm | undefined;
+    let dog: DogWithLlm | null | undefined;
     if (getAnimalBySlug) {
       dog = await getAnimalBySlug(resolvedParams.slug);
     } else {
@@ -64,6 +65,13 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
         primary_image_url: null,
         organization: { city: "City", country: "Country" },
       } as unknown as DogWithLlm;
+    }
+
+    if (!dog) {
+      return {
+        title: "Dog Not Found | Rescue Dog Aggregator",
+        description: "The requested dog could not be found. Browse our available dogs for adoption.",
+      };
     }
 
     const titleBase = dog.llm_tagline
@@ -183,12 +191,18 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
   }
 
   let initialDog: DogWithLlm | null = null;
+  let fetchError = false;
   if (getAnimalBySlug && resolvedParams.slug) {
     try {
       initialDog = await getAnimalBySlug(resolvedParams.slug);
     } catch (error) {
+      fetchError = true;
       console.error("[DogDetailPageAsync] Error fetching dog data:", error);
     }
+  }
+
+  if (!initialDog && !fetchError) {
+    notFound();
   }
 
   let heroImageUrl: string | null = null;
