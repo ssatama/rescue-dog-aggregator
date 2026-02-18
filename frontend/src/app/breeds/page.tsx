@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import BreedsHubClient from "./BreedsHubClient";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
-import { getBreedStats } from "@/services/serverAnimalsService";
+import { getBreedStats, clearCache } from "@/services/serverAnimalsService";
 import {
   getMixedBreedData,
   getPopularBreedsWithImages,
@@ -36,8 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function BreedsPage() {
-  // Fetch all data in parallel
+async function fetchBreedsData() {
   const [breedStats, mixedBreedData, popularBreeds, breedGroups] =
     await Promise.all([
       getBreedStats(),
@@ -45,6 +44,25 @@ export default async function BreedsPage() {
       getPopularBreedsWithImages(8),
       getBreedGroupsWithTopBreeds(),
     ]);
+  return { breedStats, mixedBreedData, popularBreeds, breedGroups };
+}
+
+export default async function BreedsPage() {
+  let { breedStats, mixedBreedData, popularBreeds, breedGroups } =
+    await fetchBreedsData();
+
+  // Retry once if all sections empty (cold-start resilience)
+  const allEmpty =
+    !mixedBreedData &&
+    popularBreeds.length === 0 &&
+    breedGroups.length === 0;
+
+  if (allEmpty) {
+    clearCache();
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    ({ breedStats, mixedBreedData, popularBreeds, breedGroups } =
+      await fetchBreedsData());
+  }
 
   // Since data is fetched before rendering, Suspense won't trigger
   // The loading state would be handled by Next.js loading.jsx if needed

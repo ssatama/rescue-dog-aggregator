@@ -54,10 +54,19 @@ const cache = <T extends AsyncFn>(fn: T): T => {
     }
 
     const result = await fn(...args);
-    cacheMap.set(key, {
-      data: result,
-      timestamp: Date.now(),
-    });
+
+    const isErrorResult =
+      result != null &&
+      typeof result === "object" &&
+      !Array.isArray(result) &&
+      (result as Record<string, unknown>).error === true;
+
+    if (!isErrorResult) {
+      cacheMap.set(key, {
+        data: result,
+        timestamp: Date.now(),
+      });
+    }
 
     if (cacheMap.size > 100) {
       const now = Date.now();
