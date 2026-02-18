@@ -45,7 +45,12 @@ const cache = <T extends AsyncFn>(
         return await fn(...args);
       } catch (error) {
         reportError(error, { context: "cache-test-fallback" });
-        return errorFallback as ReturnType<T>;
+        const cloned = Array.isArray(errorFallback)
+          ? ([...errorFallback] as ReturnType<T>)
+          : typeof errorFallback === "object" && errorFallback !== null
+            ? ({ ...errorFallback } as ReturnType<T>)
+            : (errorFallback as ReturnType<T>);
+        return cloned;
       }
     }) as T;
     return withFallback;
@@ -84,7 +89,12 @@ const cache = <T extends AsyncFn>(
     } catch (error) {
       if (errorFallback !== undefined) {
         reportError(error, { context: `cache-fn-${functionId}` });
-        return errorFallback as ReturnType<T>;
+        const cloned = Array.isArray(errorFallback)
+          ? ([...errorFallback] as ReturnType<T>)
+          : typeof errorFallback === "object" && errorFallback !== null
+            ? ({ ...errorFallback } as ReturnType<T>)
+            : (errorFallback as ReturnType<T>);
+        return cloned;
       }
       throw error;
     }
@@ -418,34 +428,20 @@ interface HomePageData {
   error?: boolean;
 }
 
-export const getHomePageData = cache(
-  async (): Promise<HomePageData> => {
-    const [statistics, recentDogs, diverseDogs] = await Promise.all([
-      getStatistics(),
-      getAnimalsByCuration("recent", 8),
-      getAnimalsByCuration("diverse", 4),
-    ]);
+export async function getHomePageData(): Promise<HomePageData> {
+  const [statistics, recentDogs, diverseDogs] = await Promise.all([
+    getStatistics(),
+    getAnimalsByCuration("recent", 8),
+    getAnimalsByCuration("diverse", 4),
+  ]);
 
-    return {
-      statistics,
-      recentDogs,
-      diverseDogs,
-      fetchedAt: new Date().toISOString(),
-    };
-  },
-  {
-    statistics: {
-      total_dogs: 0,
-      total_organizations: 0,
-      countries: [],
-      organizations: [],
-    },
-    recentDogs: [],
-    diverseDogs: [],
+  return {
+    statistics,
+    recentDogs,
+    diverseDogs,
     fetchedAt: new Date().toISOString(),
-    error: true,
-  },
-);
+  };
+}
 
 interface AllMetadata {
   standardizedBreeds: string[];
@@ -455,41 +451,33 @@ interface AllMetadata {
   organizations: any[];
 }
 
-export const getAllMetadata = cache(
-  async (): Promise<AllMetadata> => {
-    const [breeds, locationCountries, availableCountries, organizations] =
-      await Promise.all([
-        getStandardizedBreeds(),
-        getLocationCountries(),
-        getAvailableCountries(),
-        getOrganizations(),
-      ]);
+export async function getAllMetadata(): Promise<AllMetadata> {
+  const [breeds, locationCountries, availableCountries, organizations] =
+    await Promise.all([
+      getStandardizedBreeds(),
+      getLocationCountries(),
+      getAvailableCountries(),
+      getOrganizations(),
+    ]);
 
-    return {
-      standardizedBreeds: breeds
-        ? ["Any breed", ...breeds.filter((b: string) => b !== "Any breed")]
-        : ["Any breed"],
-      locationCountries: locationCountries
-        ? ["Any country", ...locationCountries]
-        : ["Any country"],
-      availableCountries: availableCountries
-        ? ["Any country", ...availableCountries]
-        : ["Any country"],
-      organizations: organizations
-        ? [
-            { id: null, name: "Any organization" },
-            ...(Array.isArray(organizations) ? organizations : []),
-          ]
-        : [{ id: null, name: "Any organization" }],
-    };
-  },
-  {
-    standardizedBreeds: ["Any breed"],
-    locationCountries: ["Any country"],
-    availableCountries: ["Any country"],
-    organizations: [{ id: null, name: "Any organization" }],
-  },
-);
+  return {
+    standardizedBreeds: breeds
+      ? ["Any breed", ...breeds.filter((b: string) => b !== "Any breed")]
+      : ["Any breed"],
+    locationCountries: locationCountries
+      ? ["Any country", ...locationCountries]
+      : ["Any country"],
+    availableCountries: availableCountries
+      ? ["Any country", ...availableCountries]
+      : ["Any country"],
+    organizations: organizations
+      ? [
+          { id: null, name: "Any organization" },
+          ...(Array.isArray(organizations) ? organizations : []),
+        ]
+      : [{ id: null, name: "Any organization" }],
+  };
+}
 
 export const getAllAnimals = cache(
   async (
