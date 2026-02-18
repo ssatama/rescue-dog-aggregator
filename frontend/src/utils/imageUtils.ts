@@ -17,6 +17,7 @@ class LRUCache<K, V> {
   private hits: number;
   private misses: number;
 
+
   constructor(maxSize = 1000) {
     this.maxSize = maxSize;
     this.cache = new Map();
