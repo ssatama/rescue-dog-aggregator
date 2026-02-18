@@ -91,7 +91,7 @@ describe("Structured Data Integration", () => {
 
       const metadata = await generateDogMetadata({ params: { slug: "999" } });
 
-      expect(metadata.title).toBe("Dog Not Found | Rescue Dog Aggregator");
+      expect(metadata.title).toBe("Error Loading Dog | Rescue Dog Aggregator");
       expect(metadata.other).toBeUndefined();
     });
 

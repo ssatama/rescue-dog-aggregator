@@ -645,7 +645,7 @@ export const getAllAnimals = cache(
 );
 
  
-export const getBreedBySlug = cache(async (slug: string): Promise<any> => {
+export const getBreedBySlug = cache(async (slug: string): Promise<any | null> => {
   try {
     if (slug === "mixed") {
       const breedStats = await getBreedStats();
@@ -894,7 +894,8 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any> => {
     );
 
     if (!breedData) {
-      throw new Error(`Breed not found: ${slug}`);
+      logger.warn(`Breed not found in qualifying breeds: ${slug}`);
+      return null;
     }
 
     const topDogs = await getAnimals({
@@ -1125,7 +1126,7 @@ type ApiDogWithLlm = ApiDogParsed & {
   has_llm_data?: boolean;
 };
 
-export const getAnimalBySlug = cache(async (slug: string): Promise<ApiDogWithLlm> => {
+export const getAnimalBySlug = cache(async (slug: string): Promise<ApiDogWithLlm | null> => {
   if (!slug) {
     throw new Error("Slug is required");
   }
@@ -1143,9 +1144,10 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<ApiDogWithLlm
 
     if (!response.ok) {
       if (response.status === 404) {
-        throw new Error("Animal not found");
+        logger.log(`Animal not found (404): ${slug}`);
+        return null;
       }
-      throw new Error(`Failed to fetch animal: ${response.statusText}`);
+      throw new Error(`Failed to fetch animal: HTTP ${response.status}`);
     }
 
     const raw: unknown = await response.json();

@@ -187,17 +187,28 @@ describe("getAnimalBySlug with LLM enhancement", () => {
         slug: "bella-123",
       }),
     );
-    expect(result.llm_description).toBeUndefined();
+    expect(result).not.toBeNull();
+    expect(result!.llm_description).toBeUndefined();
   });
 
-  it("should handle animal not found error", async () => {
+  it("should return null for animal not found", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 404,
     });
 
-    await expect(getAnimalBySlug("non-existent")).rejects.toThrow(
-      "Animal not found",
+    const result = await getAnimalBySlug("non-existent");
+    expect(result).toBeNull();
+  });
+
+  it("should throw for non-404 HTTP errors", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    });
+
+    await expect(getAnimalBySlug("some-slug")).rejects.toThrow(
+      "Failed to fetch animal: HTTP 500",
     );
   });
 });
