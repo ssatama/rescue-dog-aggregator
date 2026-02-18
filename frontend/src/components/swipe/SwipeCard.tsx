@@ -65,152 +65,114 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
   // Get breed, preferring primary_breed
   const breed = dog.primary_breed || dog.breed;
 
+  const subtitle = [ageCategory !== "Unknown" ? ageCategory : null, breed]
+    .filter(Boolean)
+    .join(" • ");
+
   return (
-    <div
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-xl dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col"
-      style={{ borderRadius: "12px" }}
-    >
-      {/* NEW Badge for recent dogs */}
-      {dog.created_at &&
-        new Date().getTime() - new Date(dog.created_at).getTime() <
-          7 * 24 * 60 * 60 * 1000 && (
-          <div className="absolute top-4 left-4 z-10">
-            <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-lg">
-              NEW
-            </span>
-          </div>
-        )}
-
-      {/* Quick Action Buttons */}
-      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 flex gap-2">
-        <div onClick={(e) => e.stopPropagation()}>
-          <ShareButton
-            url={`${typeof window !== "undefined" ? window.location.origin : "https://www.rescuedogs.me"}/dog/${dog.id}`}
-            title={`Check out ${dog.name} for adoption!`}
-            text={
-              dog.description ||
-              `${dog.name} is a ${ageCategory || ""} ${breed || ""} looking for a forever home!`
-            }
-            compact={true}
-            variant="ghost"
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur shadow-lg hover:scale-110 transition-transform text-gray-700 dark:text-gray-200"
-          />
-        </div>
-        <button
-          onClick={handleFavorite}
-          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform ${isLiked ? "scale-125" : ""}`}
-          aria-label="Add to favorites"
-        >
-          <span
-            className={`text-lg sm:text-xl ${showHeartAnimation ? "animate-ping" : ""}`}
-          >
-            {isLiked ? "❤️" : "🤍"}
-          </span>
-        </button>
-      </div>
-
-      {/* Main Image - Mobile optimized with 4:3 aspect ratio */}
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-[var(--shadow-orange-lg)] dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col border border-orange-100/60 dark:border-gray-700">
+      {/* Image Section — Hero */}
       <div
-        className="relative aspect-[4/3] min-h-[200px] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 overflow-hidden rounded-t-xl flex-shrink-0"
+        className="relative aspect-[3/4] min-h-[280px] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 overflow-hidden flex-shrink-0"
         data-testid="image-container"
       >
         <FallbackImage
           src={dog.primary_image_url || "/placeholder_dog.svg"}
           alt={`${dog.name} - Available for adoption`}
           fill
-          className="object-cover md:object-contain"
+          className="object-cover"
           sizes={IMAGE_SIZES.SWIPE_CARD}
           priority={!isStacked}
           fallbackSrc="/placeholder_dog.svg"
         />
-      </div>
 
-      {/* Essential Info with Enriched Data */}
-      <div className="p-6 flex flex-col space-y-4 dark:bg-gray-800 overflow-y-auto flex-1 min-h-[280px]">
-        {/* Primary info: Name, Age, Breed - fixed height for consistency */}
-        <div className="min-h-[56px]">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 line-clamp-1">
+        {/* Gradient overlay for name */}
+        <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
+
+        {/* Name and breed overlaid on image */}
+        <div className="absolute bottom-0 left-0 right-0 p-5 z-[5]">
+          <h3 className="text-2xl font-bold text-white drop-shadow-md line-clamp-1">
             {dog.name}
           </h3>
-          {(ageCategory && ageCategory !== "Unknown") || breed ? (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-1">
-              {[ageCategory !== "Unknown" ? ageCategory : null, breed]
-                .filter(Boolean)
-                .join(" • ")}
-            </p>
-          ) : (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 invisible">
-              &nbsp;
-            </p>
-          )}
-        </div>
-
-        {/* Tagline - fixed height with line clamp */}
-        <div className="min-h-[40px]">
-          {tagline ? (
-            <p className="italic text-gray-700 dark:text-gray-300 text-sm line-clamp-2">
-              {tagline}
+          {subtitle ? (
+            <p className="text-sm text-white/80 mt-0.5 line-clamp-1 drop-shadow-sm">
+              {subtitle}
             </p>
           ) : null}
         </div>
 
-        {/* Top 3 Personality Traits with consistent colors - fixed height */}
-        <div className="min-h-[36px]">
-          {personalityTraits.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {personalityTraits.slice(0, 3).map((trait: string, idx: number) => (
-                <span
-                  key={idx}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium ${getPersonalityTraitColor(trait)}`}
-                >
-                  {trait.charAt(0).toUpperCase() + trait.slice(1)}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        {/* Energy Level Indicator - Visual bars - fixed height */}
-        <div className="min-h-[24px]">
-          {dog.dog_profiler_data?.energy_level ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                Energy:
+        {/* NEW Badge for recent dogs */}
+        {dog.created_at &&
+          new Date().getTime() - new Date(dog.created_at).getTime() <
+            7 * 24 * 60 * 60 * 1000 && (
+            <div className="absolute top-4 left-4 z-10">
+              <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-lg">
+                NEW
               </span>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((level) => (
-                  <div
-                    key={level}
-                    className={`h-2 w-6 rounded-full ${
-                      level <=
-                      (dog.dog_profiler_data?.energy_level === "low"
-                        ? 1
-                        : dog.dog_profiler_data?.energy_level === "medium"
-                          ? 3
-                          : dog.dog_profiler_data?.energy_level === "high"
-                            ? 4
-                            : dog.dog_profiler_data?.energy_level === "very_high"
-                              ? 5
-                              : 0)
-                        ? "bg-orange-500"
-                        : "bg-gray-200 dark:bg-gray-700"
-                    }`}
-                  />
-                ))}
-              </div>
             </div>
-          ) : null}
-        </div>
+          )}
 
-        {/* What Makes Me Special - fixed height */}
-        <div className="mt-auto pt-2 border-t border-gray-100 dark:border-gray-700 min-h-[48px]">
-          {uniqueQuirk ? (
-            <p className="text-xs text-gray-700 dark:text-gray-300 flex items-start gap-2">
-              <span className="text-base">✨</span>
+        {/* Quick Action Buttons */}
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 flex gap-2">
+          <div onClick={(e) => e.stopPropagation()}>
+            <ShareButton
+              url={`${typeof window !== "undefined" ? window.location.origin : "https://www.rescuedogs.me"}/dog/${dog.id}`}
+              title={`Check out ${dog.name} for adoption!`}
+              text={
+                dog.description ||
+                `${dog.name} is a ${ageCategory || ""} ${breed || ""} looking for a forever home!`
+              }
+              compact={true}
+              variant="ghost"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur shadow-lg hover:scale-110 transition-transform text-gray-700 dark:text-gray-200"
+            />
+          </div>
+          <button
+            onClick={handleFavorite}
+            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform ${isLiked ? "scale-125" : ""}`}
+            aria-label="Add to favorites"
+          >
+            <span
+              className={`text-lg sm:text-xl ${showHeartAnimation ? "animate-ping" : ""}`}
+            >
+              {isLiked ? "❤️" : "🤍"}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Content Section — Compact */}
+      <div className="p-4 flex flex-col gap-3 dark:bg-gray-800 overflow-y-auto flex-1">
+        {/* Tagline in Caveat handwritten font */}
+        {tagline ? (
+          <p className="font-[family-name:var(--font-caveat)] text-lg text-gray-700 dark:text-gray-300 line-clamp-2 leading-snug">
+            {tagline}
+          </p>
+        ) : null}
+
+        {/* Top 3 Personality Traits */}
+        {personalityTraits.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {personalityTraits.slice(0, 3).map((trait: string, idx: number) => (
+              <span
+                key={idx}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium ${getPersonalityTraitColor(trait)}`}
+              >
+                {trait.charAt(0).toUpperCase() + trait.slice(1)}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        {/* What Makes Me Special */}
+        {uniqueQuirk ? (
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+            <p className="text-xs text-gray-600 dark:text-gray-300 flex items-start gap-2">
+              <span className="text-base flex-shrink-0">✨</span>
               <span className="line-clamp-2">{uniqueQuirk}</span>
             </p>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

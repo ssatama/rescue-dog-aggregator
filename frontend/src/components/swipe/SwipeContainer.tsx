@@ -10,6 +10,7 @@ import React, {
 import { useFavorites } from "../../hooks/useFavorites";
 import * as Sentry from "@sentry/nextjs";
 import { X, PawPrint } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { SwipeCard } from "./SwipeCard";
 import SwipeOnboarding from "./SwipeOnboarding";
 import { FilterModal } from "./FilterModal";
@@ -49,6 +50,7 @@ export function SwipeContainer({
   availableCountries,
 }: SwipeContainerProps) {
   const { theme } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
   const { addFavorite, isFavorited } = useFavorites();
   const {
     filters,
@@ -550,7 +552,7 @@ export function SwipeContainer({
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 bg-gradient-to-b from-orange-50/30 to-white dark:bg-gray-900">
+      <div className="flex flex-col items-center justify-center h-full p-8 bg-[#FDFBF7] dark:bg-gray-950">
         <div className="animate-pulse">
           <div className="w-80 h-96 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-4"></div>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
@@ -571,7 +573,7 @@ export function SwipeContainer({
           onFiltersChange={setFilters}
           isDarkMode={theme === "dark"}
         />
-        <div className="flex flex-col items-center justify-center h-full p-8 bg-gradient-to-b from-orange-50/30 to-white dark:bg-gray-900">
+        <div className="flex flex-col items-center justify-center h-full p-8 bg-[#FDFBF7] dark:bg-gray-950">
           <div className="text-center">
             <div className="text-6xl mb-4">🐕</div>
             <h3 className="text-2xl font-bold mb-2 dark:text-gray-100">
@@ -595,7 +597,7 @@ export function SwipeContainer({
   // If we're at the end but loading more, show a loading state
   if (currentIndex >= dogs.length && isLoadingMore) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 bg-gradient-to-b from-orange-50/30 to-white dark:bg-gray-900">
+      <div className="flex flex-col items-center justify-center h-full p-8 bg-[#FDFBF7] dark:bg-gray-950">
         <div className="animate-pulse">
           <div className="w-80 h-96 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-4"></div>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
@@ -620,9 +622,9 @@ export function SwipeContainer({
         isDarkMode={theme === "dark"}
       />
 
-      <div className="relative flex flex-col min-h-[100dvh] overflow-y-auto bg-gradient-to-b from-orange-50/30 to-white dark:bg-gray-900">
+      <div className="relative flex flex-col min-h-[100dvh] overflow-y-auto bg-[#FDFBF7] dark:bg-gray-950">
         {/* Header with Filter Bar and Exit Button */}
-        <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white dark:bg-gray-800 border-b dark:border-gray-700 relative">
+        <div className="flex-shrink-0 p-4 flex justify-between items-center bg-[#FDFBF7]/80 dark:bg-gray-950/80 backdrop-blur-sm relative">
           {/* Exit button - absolute positioned */}
           <button
             onClick={() => {
@@ -670,7 +672,7 @@ export function SwipeContainer({
                     setIsLoading(false);
                   }
                 }}
-                className="px-3 py-2 text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg transition-colors"
                 title="Start fresh with all dogs"
               >
                 Reset
@@ -681,7 +683,7 @@ export function SwipeContainer({
                   e.stopPropagation();
                   setShowFilters(true);
                 }}
-                className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="px-4 py-2 text-sm bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors"
               >
                 + Filters
               </button>
@@ -694,26 +696,29 @@ export function SwipeContainer({
           <div
             className="relative w-full flex flex-col max-w-[calc(100vw-1rem)] sm:max-w-[min(500px,calc(100vw-1.5rem))] md:max-w-[min(600px,calc(100vw-2rem))] lg:max-w-[700px] xl:max-w-[600px] 2xl:max-w-[650px] min-h-[300px]"
           >
-            <div
+            <motion.div
               key={`dog-${currentDog.id}`}
               className="relative touch-none"
               onClick={handleCardTap}
               style={{ touchAction: "pan-y" }}
+              initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
             >
               <SwipeCard dog={currentDog} />
-            </div>
+            </motion.div>
 
             {/* Progress Indicator */}
             <div className="flex flex-col items-center mt-4 mb-2">
               {/* Progress dots */}
-              <div className="flex gap-1 mb-2">
+              <div className="flex gap-1.5 mb-2">
                 {Array.from({ length: Math.min(dogs.length, 10) }).map(
                   (_, idx) => (
                     <div
                       key={idx}
-                      className={`rounded-full w-2 h-2 transition-[transform,background-color] duration-200 ${
+                      className={`rounded-full w-2.5 h-2.5 transition-[transform,background-color,box-shadow] duration-200 ${
                         idx === currentIndex % 10
-                          ? "bg-orange-500 scale-150"
+                          ? "bg-orange-500 scale-[1.75] shadow-[0_0_6px_rgba(249,115,22,0.4)]"
                           : idx < currentIndex % 10
                             ? "bg-orange-300 scale-100"
                             : "bg-gray-300 dark:bg-gray-600 scale-100"
@@ -728,30 +733,24 @@ export function SwipeContainer({
               </p>
             </div>
 
-            {/* Paw Navigation - responsive sizes */}
-            <div className="flex justify-center gap-4 sm:gap-8 mt-2 sm:mt-4 pb-[env(safe-area-inset-bottom)]">
+            {/* Paw Navigation */}
+            <div className="flex justify-center gap-6 sm:gap-10 mt-2 sm:mt-4 pb-[env(safe-area-inset-bottom)]">
               <button
                 onClick={goToPrevious}
                 disabled={currentIndex === 0}
-                className="paw-btn paw-left w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg dark:shadow-xl dark:shadow-black/50 border-2 border-gray-300 dark:border-gray-500 flex flex-col items-center justify-center hover:scale-110 hover:bg-gray-50 dark:hover:bg-gray-600 transition-[transform,background-color,opacity] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="paw-btn paw-left w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-[transform,background-color,opacity,box-shadow] duration-200 bg-orange-500 dark:bg-orange-600 text-white shadow-[var(--shadow-orange-md)] hover:bg-orange-600 dark:hover:bg-orange-500 hover:scale-105 disabled:bg-gray-100 disabled:dark:bg-gray-800 disabled:text-gray-300 disabled:dark:text-gray-600 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:scale-100"
                 aria-label="Previous dog"
               >
-                <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 dark:text-orange-400 transform rotate-180" />
-                <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 font-medium mt-1">
-                  Back
-                </span>
+                <PawPrint className="w-6 h-6 sm:w-7 sm:h-7 transform rotate-180" />
               </button>
 
               <button
                 onClick={goToNext}
                 disabled={currentIndex === dogs.length - 1}
-                className="paw-btn paw-right w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg dark:shadow-xl dark:shadow-black/50 border-2 border-gray-300 dark:border-gray-500 flex flex-col items-center justify-center hover:scale-110 hover:bg-gray-50 dark:hover:bg-gray-600 transition-[transform,background-color,opacity] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="paw-btn paw-right w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-[transform,background-color,opacity,box-shadow] duration-200 bg-orange-500 dark:bg-orange-600 text-white shadow-[var(--shadow-orange-md)] hover:bg-orange-600 dark:hover:bg-orange-500 hover:scale-105 disabled:bg-gray-100 disabled:dark:bg-gray-800 disabled:text-gray-300 disabled:dark:text-gray-600 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:scale-100"
                 aria-label="Next dog"
               >
-                <PawPrint className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 dark:text-orange-400" />
-                <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 font-medium mt-1">
-                  Next
-                </span>
+                <PawPrint className="w-6 h-6 sm:w-7 sm:h-7" />
               </button>
             </div>
           </div>

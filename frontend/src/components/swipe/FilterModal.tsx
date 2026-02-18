@@ -47,14 +47,15 @@ export const FilterModal: React.FC<FilterModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 ${isDarkMode ? "bg-black/70" : "bg-black/50"} flex items-center justify-center p-4 z-[9999]`}
+      className={`fixed inset-0 ${isDarkMode ? "bg-black/60" : "bg-black/30"} flex items-center justify-center p-4 z-[9999] backdrop-blur-[2px]`}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
-        className={`${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} rounded-2xl max-w-md w-full`}
+        className={`${isDarkMode ? "bg-gray-900" : "bg-[#FDFBF7]"} rounded-2xl max-w-md w-full shadow-2xl`}
       >
-        <div
-          className={`p-4 border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"} flex justify-between items-center`}
-        >
+        <div className="p-5 pb-2 flex justify-between items-center">
           <h2
             className={`text-xl font-bold ${isDarkMode ? "text-gray-100" : "text-gray-900"}`}
           >
@@ -62,9 +63,16 @@ export const FilterModal: React.FC<FilterModalProps> = ({
           </h2>
           <button
             onClick={onClose}
-            className={`${isDarkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"} text-2xl`}
+            className={`p-1.5 rounded-full transition-colors ${
+              isDarkMode
+                ? "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            }`}
+            aria-label="Close filter modal"
           >
-            ✕
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
         <SwipeFiltersComponent

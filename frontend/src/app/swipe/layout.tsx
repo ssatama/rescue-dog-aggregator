@@ -17,5 +17,5 @@ export default function SwipeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="min-h-screen bg-gray-50">{children}</div>;
+  return <div className="min-h-screen bg-[#FDFBF7] dark:bg-gray-950">{children}</div>;
 }
