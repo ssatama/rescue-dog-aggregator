@@ -1,4 +1,5 @@
 import type { Dog } from "@/types/dog";
+import { FILTER_DEFAULTS } from "@/constants/filters";
 
 interface DogWithAgeFields extends Partial<Dog> {
   ageMinMonths?: number;
@@ -19,7 +20,7 @@ interface FilterOption {
 
 export const filterByAge = (dogs: DogWithAgeFields[], ageFilter: string | undefined): DogWithAgeFields[] => {
   if (!dogs || !Array.isArray(dogs)) return [];
-  if (!ageFilter || ageFilter === "All") return dogs;
+  if (!ageFilter || ageFilter === FILTER_DEFAULTS.ALL) return dogs;
 
   const filtered = dogs.filter((dog) => {
     if (!dog) return false;
@@ -76,7 +77,7 @@ export const filterByBreed = (dogs: Partial<Dog>[], breedFilter: string | undefi
 
 export const filterByLocation = (dogs: Partial<Dog>[], locationFilter: string | undefined): Partial<Dog>[] => {
   if (!dogs || !Array.isArray(dogs)) return [];
-  if (!locationFilter || locationFilter === "All") return dogs;
+  if (!locationFilter || locationFilter === FILTER_DEFAULTS.ALL) return dogs;
 
   return dogs.filter((dog) => {
     if (!dog || !dog.organization) return false;
@@ -88,7 +89,7 @@ export const filterByLocation = (dogs: Partial<Dog>[], locationFilter: string | 
 
 export const filterByShipsTo = (dogs: Partial<Dog>[], shipsToFilter: string | undefined): Partial<Dog>[] => {
   if (!dogs || !Array.isArray(dogs)) return [];
-  if (!shipsToFilter || shipsToFilter === "All") return dogs;
+  if (!shipsToFilter || shipsToFilter === FILTER_DEFAULTS.ALL) return dogs;
 
   return dogs.filter((dog) => {
     if (!dog || !dog.organization) return false;
@@ -206,16 +207,16 @@ export const hasActiveFilters = (filters: Filters | undefined, includeShipsTo = 
   if (!filters) return false;
 
   return (
-    (!!filters.age && filters.age !== "All") ||
+    (!!filters.age && filters.age !== FILTER_DEFAULTS.ALL) ||
     (!!filters.breed && filters.breed.trim() !== "") ||
-    (includeShipsTo && !!filters.shipsTo && filters.shipsTo !== "All")
+    (includeShipsTo && !!filters.shipsTo && filters.shipsTo !== FILTER_DEFAULTS.ALL)
   );
 };
 
 export const getDefaultFilters = (): Filters => ({
-  age: "All",
+  age: FILTER_DEFAULTS.ALL,
   breed: "",
-  shipsTo: "All",
+  shipsTo: FILTER_DEFAULTS.ALL,
   sort: "newest",
 });
 

@@ -10,15 +10,6 @@ import {
 import { reportError } from "../../../utils/logger";
 import OrganizationDetailClient from "./OrganizationDetailClient";
 
-interface OrganizationWithDetails {
-  name: string;
-  slug?: string;
-  description?: string;
-  city?: string;
-  country?: string;
-  logo_url?: string;
-}
-
 interface OrganizationDetailPageProps {
   params: Promise<{ slug: string }>;
 }
@@ -26,7 +17,7 @@ interface OrganizationDetailPageProps {
 export async function generateMetadata(props: OrganizationDetailPageProps): Promise<Metadata> {
   try {
     const resolvedParams = await props.params;
-    const organization = await getOrganizationBySlug(resolvedParams.slug) as unknown as OrganizationWithDetails;
+    const organization = await getOrganizationBySlug(resolvedParams.slug);
 
     const title = `${organization.name} - Dog Rescue Organization | Rescue Dog Aggregator`;
 

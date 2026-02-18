@@ -20,6 +20,7 @@ import {
   getDefaultFilters,
 } from "@/utils/dogFilters";
 import { getCountryName } from "@/utils/countryHelpers";
+import { FILTER_DEFAULTS } from "@/constants/filters";
 import {
   trackFilterChange,
   trackSortChange,
@@ -92,7 +93,7 @@ export default function DogFilters({
 
       if (!rawSearchParams) return;
       const params = new URLSearchParams(rawSearchParams.toString());
-      if (value && value !== "All" && value !== "") {
+      if (value && value !== FILTER_DEFAULTS.ALL && value !== "") {
         params.set(filterType, value);
       } else {
         params.delete(filterType);
@@ -115,10 +116,10 @@ export default function DogFilters({
   const activeFilterCount = useMemo((): number => {
     if (!filters) return 0;
     let count = 0;
-    if (filters.age && filters.age !== "All") count++;
+    if (filters.age && filters.age !== FILTER_DEFAULTS.ALL) count++;
     if (filters.breed && filters.breed.trim() !== "") count++;
-    if (filters.sex && filters.sex !== "Any") count++;
-    if (showShipsToFilter && filters.shipsTo && filters.shipsTo !== "All")
+    if (filters.sex && filters.sex !== FILTER_DEFAULTS.SEX) count++;
+    if (showShipsToFilter && filters.shipsTo && filters.shipsTo !== FILTER_DEFAULTS.ALL)
       count++;
     return count;
   }, [filters, showShipsToFilter]);
@@ -213,7 +214,7 @@ export default function DogFilters({
               Filter by age
             </label>
             <Select
-              value={filters?.age || "All"}
+              value={filters?.age || FILTER_DEFAULTS.ALL}
               onValueChange={(value: string) => handleFilterChange("age", value)}
             >
               <SelectTrigger
@@ -244,11 +245,11 @@ export default function DogFilters({
             ) : null}
             {useSimpleBreedDropdown ? (
               <Select
-                value={filters?.breed || "Any breed"}
+                value={filters?.breed || FILTER_DEFAULTS.BREED}
                 onValueChange={(value: string) =>
                   handleFilterChange(
                     "breed",
-                    value === "Any breed" ? "" : value,
+                    value === FILTER_DEFAULTS.BREED ? "" : value,
                   )
                 }
               >
@@ -262,9 +263,9 @@ export default function DogFilters({
                   <SelectValue placeholder="Breed" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Any breed">Any breed</SelectItem>
+                  <SelectItem value={FILTER_DEFAULTS.BREED}>{FILTER_DEFAULTS.BREED}</SelectItem>
                   {availableBreeds
-                    .filter((breed) => breed && breed !== "Any breed")
+                    .filter((breed) => breed && breed !== FILTER_DEFAULTS.BREED)
                     .map((breed) => (
                       <SelectItem key={breed} value={breed}>
                         {breed}
@@ -326,7 +327,7 @@ export default function DogFilters({
                 Filter by ships to
               </label>
               <Select
-                value={filters?.shipsTo || "All"}
+                value={filters?.shipsTo || FILTER_DEFAULTS.ALL}
                 onValueChange={(value: string) => handleFilterChange("shipsTo", value)}
               >
                 <SelectTrigger
@@ -339,7 +340,7 @@ export default function DogFilters({
                   <SelectValue placeholder="Adoptable to" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Countries</SelectItem>
+                  <SelectItem value={FILTER_DEFAULTS.ALL}>All Countries</SelectItem>
                   {availableShipsTo.map((country) => (
                     <SelectItem key={country} value={country}>
                       {getCountryName(country)} ({country})

@@ -43,6 +43,7 @@ export interface ApiOrganization {
   id?: number;
   name: string;
   slug?: string;
+  description?: string;
   logo_url?: string;
   website_url?: string;
   country?: string;

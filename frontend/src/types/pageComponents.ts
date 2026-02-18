@@ -1,6 +1,7 @@
 import type { Dog } from "./dog";
 import type { DogsPageMetadata } from "./dogsPage";
 import type { OrganizationCardData } from "./organizationComponents";
+import type { CountryStatsResponse } from "@/schemas/animals";
 
 export interface DogDetailClientProps {
   params?: { slug?: string };
@@ -52,17 +53,7 @@ export interface CountryData {
   organizations?: number;
 }
 
-export interface CountryStats {
-  code: string;
-  name: string;
-  count: number;
-  organizations: number;
-}
-
-export interface CountriesHubStats {
-  total: number;
-  countries: CountryStats[];
-}
+export type CountriesHubStats = CountryStatsResponse;
 
 export interface CountriesHubClientProps {
   initialStats: CountriesHubStats;

@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
+import { FILTER_DEFAULTS, isDefaultFilterValue } from "@/constants/filters";
 
 interface URLFilters {
   searchQuery: string;
@@ -28,14 +29,14 @@ interface UseURLFilterStateReturn {
 
 const defaultValues: Record<URLFilterKey, string> = {
   searchQuery: "",
-  sizeFilter: "Any size",
-  ageFilter: "Any age",
-  sexFilter: "Any",
-  organizationFilter: "any",
-  breedFilter: "Any breed",
-  locationCountryFilter: "Any country",
-  availableCountryFilter: "Any country",
-  availableRegionFilter: "Any region",
+  sizeFilter: FILTER_DEFAULTS.SIZE,
+  ageFilter: FILTER_DEFAULTS.AGE,
+  sexFilter: FILTER_DEFAULTS.SEX,
+  organizationFilter: FILTER_DEFAULTS.ORGANIZATION,
+  breedFilter: FILTER_DEFAULTS.BREED,
+  locationCountryFilter: FILTER_DEFAULTS.COUNTRY,
+  availableCountryFilter: FILTER_DEFAULTS.COUNTRY,
+  availableRegionFilter: FILTER_DEFAULTS.REGION,
 };
 
 export function useURLFilterState(): UseURLFilterStateReturn {
@@ -46,17 +47,17 @@ export function useURLFilterState(): UseURLFilterStateReturn {
   const filters = useMemo<URLFilters>(
     () => ({
       searchQuery: searchParams?.get("search") || "",
-      sizeFilter: searchParams?.get("size") || "Any size",
-      ageFilter: searchParams?.get("age") || "Any age",
-      sexFilter: searchParams?.get("sex") || "Any",
-      organizationFilter: searchParams?.get("organization_id") || "any",
-      breedFilter: searchParams?.get("breed") || "Any breed",
+      sizeFilter: searchParams?.get("size") || FILTER_DEFAULTS.SIZE,
+      ageFilter: searchParams?.get("age") || FILTER_DEFAULTS.AGE,
+      sexFilter: searchParams?.get("sex") || FILTER_DEFAULTS.SEX,
+      organizationFilter: searchParams?.get("organization_id") || FILTER_DEFAULTS.ORGANIZATION,
+      breedFilter: searchParams?.get("breed") || FILTER_DEFAULTS.BREED,
       locationCountryFilter:
-        searchParams?.get("location_country") || "Any country",
+        searchParams?.get("location_country") || FILTER_DEFAULTS.COUNTRY,
       availableCountryFilter:
-        searchParams?.get("available_country") || "Any country",
+        searchParams?.get("available_country") || FILTER_DEFAULTS.COUNTRY,
       availableRegionFilter:
-        searchParams?.get("available_region") || "Any region",
+        searchParams?.get("available_region") || FILTER_DEFAULTS.REGION,
     }),
     [searchParams],
   );
@@ -65,18 +66,18 @@ export function useURLFilterState(): UseURLFilterStateReturn {
     const params: Record<string, string> = {};
 
     if (filters.searchQuery) params.search = filters.searchQuery;
-    if (filters.sizeFilter !== "Any size") params.size = filters.sizeFilter;
-    if (filters.ageFilter !== "Any age") params.age = filters.ageFilter;
-    if (filters.sexFilter !== "Any") params.sex = filters.sexFilter;
-    if (filters.organizationFilter !== "any")
+    if (filters.sizeFilter !== FILTER_DEFAULTS.SIZE) params.size = filters.sizeFilter;
+    if (filters.ageFilter !== FILTER_DEFAULTS.AGE) params.age = filters.ageFilter;
+    if (filters.sexFilter !== FILTER_DEFAULTS.SEX) params.sex = filters.sexFilter;
+    if (filters.organizationFilter !== FILTER_DEFAULTS.ORGANIZATION)
       params.organization_id = filters.organizationFilter;
-    if (filters.breedFilter !== "Any breed")
+    if (filters.breedFilter !== FILTER_DEFAULTS.BREED)
       params.standardized_breed = filters.breedFilter;
-    if (filters.locationCountryFilter !== "Any country")
+    if (filters.locationCountryFilter !== FILTER_DEFAULTS.COUNTRY)
       params.location_country = filters.locationCountryFilter;
-    if (filters.availableCountryFilter !== "Any country")
+    if (filters.availableCountryFilter !== FILTER_DEFAULTS.COUNTRY)
       params.available_country = filters.availableCountryFilter;
-    if (filters.availableRegionFilter !== "Any region")
+    if (filters.availableRegionFilter !== FILTER_DEFAULTS.REGION)
       params.available_region = filters.availableRegionFilter;
 
     return params;
@@ -95,13 +96,13 @@ export function useURLFilterState(): UseURLFilterStateReturn {
 
         if (
           value &&
-          value !== "Any" &&
-          value !== "Any size" &&
-          value !== "Any age" &&
-          value !== "Any breed" &&
-          value !== "Any country" &&
-          value !== "Any region" &&
-          value !== "any" &&
+          value !== FILTER_DEFAULTS.SEX &&
+          value !== FILTER_DEFAULTS.SIZE &&
+          value !== FILTER_DEFAULTS.AGE &&
+          value !== FILTER_DEFAULTS.BREED &&
+          value !== FILTER_DEFAULTS.COUNTRY &&
+          value !== FILTER_DEFAULTS.REGION &&
+          value !== FILTER_DEFAULTS.ORGANIZATION &&
           value !== ""
         ) {
           params.set(paramKey, value);
@@ -147,10 +148,9 @@ export function useURLFilterState(): UseURLFilterStateReturn {
   );
 
   const activeFilterCount = useMemo(() => {
-    return Object.entries(filters).filter(([key, value]) => {
-      if (key === "searchQuery") return value !== "";
-      return value && !value.includes("Any") && value !== "any";
-    }).length;
+    return Object.entries(filters).filter(
+      ([_key, value]) => !isDefaultFilterValue(value),
+    ).length;
   }, [filters]);
 
   return {

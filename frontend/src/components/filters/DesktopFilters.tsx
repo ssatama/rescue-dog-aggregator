@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useCallback } from "react";
+import React, { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -15,8 +15,9 @@ import {
   getSearchSuggestions,
   getBreedSuggestions,
 } from "@/services/animalsService";
+import { FILTER_DEFAULTS } from "@/constants/filters";
+import { useFilterOptions } from "@/hooks/useFilterOptions";
 import type { DesktopFiltersProps } from "@/types/filterComponents";
-import type { FilterCount } from "@/schemas/common";
 
 export default function DesktopFilters({
   searchQuery,
@@ -63,115 +64,37 @@ export default function DesktopFilters({
 
   filterCounts,
 }: DesktopFiltersProps) {
-  const getOptionsWithCounts = useCallback(
-    (staticOptions: string[], dynamicOptions: FilterCount[] | undefined, filterType: string): string[] => {
-      if (!filterCounts || !dynamicOptions) return staticOptions;
-
-      return staticOptions.filter((option) => {
-        if (option.includes("Any")) return true;
-
-        const dynamicOption = dynamicOptions.find((dynOpt) => {
-          if (filterType === "size") {
-            const sizeMapping: Record<string, string> = {
-              Tiny: "Tiny",
-              Small: "Small",
-              Medium: "Medium",
-              Large: "Large",
-              "Extra Large": "XLarge",
-            };
-            return dynOpt.value === sizeMapping[option];
-          }
-          return dynOpt.value === option || dynOpt.label === option;
-        });
-
-        return dynamicOption && dynamicOption.count > 0;
-      });
+  const {
+    dynamicSizeOptions,
+    dynamicAgeOptions,
+    dynamicSexOptions,
+    sectionCounts,
+    activeFilterCount,
+  } = useFilterOptions({
+    filterValues: {
+      searchQuery,
+      organizationFilter,
+      standardizedBreedFilter,
+      sexFilter,
+      sizeFilter,
+      ageCategoryFilter,
+      locationCountryFilter,
+      availableCountryFilter,
+      availableRegionFilter,
     },
-    [filterCounts],
-  );
-
-  const dynamicSizeOptions = useMemo(
-    () => getOptionsWithCounts(sizeOptions, filterCounts?.size_options, "size"),
-    [filterCounts?.size_options, getOptionsWithCounts, sizeOptions],
-  );
-
-  const dynamicAgeOptions = useMemo(
-    () => getOptionsWithCounts(ageOptions, filterCounts?.age_options, "age"),
-    [filterCounts?.age_options, getOptionsWithCounts, ageOptions],
-  );
-
-  const dynamicSexOptions = useMemo(
-    () => getOptionsWithCounts(sexOptions, filterCounts?.sex_options, "sex"),
-    [filterCounts?.sex_options, getOptionsWithCounts, sexOptions],
-  );
+    filterCounts,
+    sizeOptions,
+    ageOptions,
+    sexOptions,
+  });
 
   const handleBreedClear = useCallback(() => {
     if (handleBreedClearFromParent) {
       handleBreedClearFromParent();
     } else {
-      setStandardizedBreedFilter?.("Any breed");
+      setStandardizedBreedFilter?.(FILTER_DEFAULTS.BREED);
     }
   }, [handleBreedClearFromParent, setStandardizedBreedFilter]);
-
-  const activeFilterCount = useMemo((): number => {
-    let count = 0;
-
-    if (searchQuery && searchQuery.trim() !== "") count++;
-    if (organizationFilter && organizationFilter !== "any") count++;
-    if (standardizedBreedFilter && standardizedBreedFilter !== "Any breed")
-      count++;
-    if (sexFilter && sexFilter !== "Any") count++;
-    if (sizeFilter && sizeFilter !== "Any size") count++;
-    if (ageCategoryFilter && ageCategoryFilter !== "Any age") count++;
-    if (locationCountryFilter && locationCountryFilter !== "Any country")
-      count++;
-    if (availableCountryFilter && availableCountryFilter !== "Any country")
-      count++;
-    if (availableRegionFilter && availableRegionFilter !== "Any region")
-      count++;
-
-    return count;
-  }, [
-    searchQuery,
-    organizationFilter,
-    standardizedBreedFilter,
-    sexFilter,
-    sizeFilter,
-    ageCategoryFilter,
-    locationCountryFilter,
-    availableCountryFilter,
-    availableRegionFilter,
-  ]);
-
-  const sectionCounts = useMemo(() => {
-    const counts = {
-      organization: 0,
-      breed: 0,
-      shipsToCountry: 0,
-      age: 0,
-      size: 0,
-      sex: 0,
-    };
-
-    if (organizationFilter && organizationFilter !== "any")
-      counts.organization++;
-    if (standardizedBreedFilter && standardizedBreedFilter !== "Any breed")
-      counts.breed++;
-    if (availableCountryFilter && availableCountryFilter !== "Any country")
-      counts.shipsToCountry++;
-    if (ageCategoryFilter && ageCategoryFilter !== "Any age") counts.age++;
-    if (sizeFilter && sizeFilter !== "Any size") counts.size++;
-    if (sexFilter && sexFilter !== "Any") counts.sex++;
-
-    return counts;
-  }, [
-    organizationFilter,
-    standardizedBreedFilter,
-    availableCountryFilter,
-    ageCategoryFilter,
-    sizeFilter,
-    sexFilter,
-  ]);
 
   return (
     <aside
@@ -294,16 +217,16 @@ export default function DesktopFilters({
             <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
               <select
                 data-testid="size-filter"
-                value={sizeFilter === "Any size" ? "any" : sizeFilter}
+                value={sizeFilter === FILTER_DEFAULTS.SIZE ? "any" : sizeFilter}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setSizeFilter(
-                    e.target.value === "any" ? "Any size" : e.target.value,
+                    e.target.value === "any" ? FILTER_DEFAULTS.SIZE : e.target.value,
                   )
                 }
               >
-                <option value="any">Any size</option>
+                <option value="any">{FILTER_DEFAULTS.SIZE}</option>
                 {dynamicSizeOptions
-                  .filter((size) => size !== "Any size")
+                  .filter((size) => size !== FILTER_DEFAULTS.SIZE)
                   .map((size) => (
                     <option key={size} value={size}>
                       {size}
@@ -358,17 +281,17 @@ export default function DesktopFilters({
               <select
                 data-testid="age-filter"
                 value={
-                  ageCategoryFilter === "Any age" ? "any" : ageCategoryFilter
+                  ageCategoryFilter === FILTER_DEFAULTS.AGE ? "any" : ageCategoryFilter
                 }
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setAgeCategoryFilter(
-                    e.target.value === "any" ? "Any age" : e.target.value,
+                    e.target.value === "any" ? FILTER_DEFAULTS.AGE : e.target.value,
                   )
                 }
               >
-                <option value="any">Any age</option>
+                <option value="any">{FILTER_DEFAULTS.AGE}</option>
                 {dynamicAgeOptions
-                  .filter((age) => age !== "Any age")
+                  .filter((age) => age !== FILTER_DEFAULTS.AGE)
                   .map((age) => (
                     <option key={age} value={age}>
                       {age}
@@ -422,16 +345,16 @@ export default function DesktopFilters({
             <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
               <select
                 data-testid="sex-filter"
-                value={sexFilter === "Any" ? "any" : sexFilter}
+                value={sexFilter === FILTER_DEFAULTS.SEX ? "any" : sexFilter}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setSexFilter(
-                    e.target.value === "any" ? "Any" : e.target.value,
+                    e.target.value === "any" ? FILTER_DEFAULTS.SEX : e.target.value,
                   )
                 }
               >
-                <option value="any">Any</option>
+                <option value="any">{FILTER_DEFAULTS.SEX}</option>
                 {dynamicSexOptions
-                  .filter((sex) => sex !== "Any")
+                  .filter((sex) => sex !== FILTER_DEFAULTS.SEX)
                   .map((sex) => (
                     <option key={sex} value={sex}>
                       {sex}
@@ -487,19 +410,19 @@ export default function DesktopFilters({
                 <select
                   data-testid="breed-filter"
                   value={
-                    standardizedBreedFilter === "Any breed"
+                    standardizedBreedFilter === FILTER_DEFAULTS.BREED
                       ? "any"
                       : standardizedBreedFilter
                   }
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                     setStandardizedBreedFilter?.(
-                      e.target.value === "any" ? "Any breed" : e.target.value,
+                      e.target.value === "any" ? FILTER_DEFAULTS.BREED : e.target.value,
                     )
                   }
                 >
-                  <option value="any">Any breed</option>
+                  <option value="any">{FILTER_DEFAULTS.BREED}</option>
                   {standardizedBreeds
-                    ?.filter((breed) => breed !== "Any breed")
+                    ?.filter((breed) => breed !== FILTER_DEFAULTS.BREED)
                     .map((breed) => (
                       <option key={breed} value={breed}>
                         {breed}
@@ -513,7 +436,7 @@ export default function DesktopFilters({
                 data-testid="breed-search-input"
                 placeholder="Search breeds..."
                 value={
-                  standardizedBreedFilter === "Any breed"
+                  standardizedBreedFilter === FILTER_DEFAULTS.BREED
                     ? ""
                     : standardizedBreedFilter
                 }
@@ -564,13 +487,13 @@ export default function DesktopFilters({
             <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
               <select
                 data-testid="organization-filter"
-                value={organizationFilter || "any"}
+                value={organizationFilter || FILTER_DEFAULTS.ORGANIZATION}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setOrganizationFilter(e.target.value)}
               >
                 {organizations.map((org) => (
                   <option
-                    key={org.id ?? "any"}
-                    value={org.id != null ? org.id.toString() : "any"}
+                    key={org.id ?? FILTER_DEFAULTS.ORGANIZATION}
+                    value={org.id != null ? org.id.toString() : FILTER_DEFAULTS.ORGANIZATION}
                   >
                     {org.name}
                   </option>
@@ -579,12 +502,12 @@ export default function DesktopFilters({
             </div>
 
             <Select
-              value={organizationFilter || "any"}
+              value={organizationFilter || FILTER_DEFAULTS.ORGANIZATION}
               onValueChange={setOrganizationFilter}
             >
               <SelectTrigger className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200">
                 <SelectValue>
-                  {organizationFilter === "any" || !organizationFilter
+                  {organizationFilter === FILTER_DEFAULTS.ORGANIZATION || !organizationFilter
                     ? "Any Organization"
                     : organizations.find(
                         (org) => org.id?.toString() === organizationFilter,
@@ -594,8 +517,8 @@ export default function DesktopFilters({
               <SelectContent>
                 {organizations.map((org) => (
                   <SelectItem
-                    key={org.id ?? "any"}
-                    value={org.id != null ? org.id.toString() : "any"}
+                    key={org.id ?? FILTER_DEFAULTS.ORGANIZATION}
+                    value={org.id != null ? org.id.toString() : FILTER_DEFAULTS.ORGANIZATION}
                   >
                     {org.name}
                   </SelectItem>
