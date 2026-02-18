@@ -16,8 +16,9 @@ import {
   getSearchSuggestions,
   getBreedSuggestions,
 } from "@/services/animalsService";
+import { FILTER_DEFAULTS } from "@/constants/filters";
+import { useFilterOptions } from "@/hooks/useFilterOptions";
 import type { MobileFilterDrawerProps, FilterConfig } from "@/types/filterComponents";
-import type { FilterCount } from "@/schemas/common";
 
 interface MobileFilterSectionProps {
   id: string;
@@ -157,47 +158,26 @@ export default function MobileFilterDrawer({
 
   totalDogsCount,
 }: MobileFilterDrawerProps) {
-  const getOptionsWithCounts = useCallback(
-    (staticOptions: string[], dynamicOptions: FilterCount[] | undefined, filterType: string): string[] => {
-      if (!filterCounts || !dynamicOptions) return staticOptions;
-
-      return staticOptions.filter((option) => {
-        if (option.includes("Any")) return true;
-
-        const dynamicOption = dynamicOptions.find((dynOpt) => {
-          if (filterType === "size") {
-            const sizeMapping: Record<string, string> = {
-              Tiny: "Tiny",
-              Small: "Small",
-              Medium: "Medium",
-              Large: "Large",
-              "Extra Large": "XLarge",
-            };
-            return dynOpt.value === sizeMapping[option];
-          }
-          return dynOpt.value === option || dynOpt.label === option;
-        });
-
-        return dynamicOption && dynamicOption.count > 0;
-      });
+  const {
+    dynamicSizeOptions,
+    dynamicAgeOptions,
+    dynamicSexOptions,
+    sectionCounts,
+  } = useFilterOptions({
+    filterValues: {
+      searchQuery,
+      organizationFilter,
+      standardizedBreedFilter,
+      sexFilter,
+      sizeFilter,
+      ageCategoryFilter,
+      availableCountryFilter,
     },
-    [filterCounts],
-  );
-
-  const dynamicSizeOptions = useMemo(
-    () => getOptionsWithCounts(sizeOptions, filterCounts?.size_options, "size"),
-    [filterCounts?.size_options, getOptionsWithCounts, sizeOptions],
-  );
-
-  const dynamicAgeOptions = useMemo(
-    () => getOptionsWithCounts(ageOptions, filterCounts?.age_options, "age"),
-    [filterCounts?.age_options, getOptionsWithCounts, ageOptions],
-  );
-
-  const dynamicSexOptions = useMemo(
-    () => getOptionsWithCounts(sexOptions, filterCounts?.sex_options, "sex"),
-    [filterCounts?.sex_options, getOptionsWithCounts, sexOptions],
-  );
+    filterCounts,
+    sizeOptions,
+    ageOptions,
+    sexOptions,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -244,7 +224,7 @@ export default function MobileFilterDrawer({
     if (handleBreedClearFromParent) {
       handleBreedClearFromParent();
     } else {
-      setStandardizedBreedFilter?.("Any breed");
+      setStandardizedBreedFilter?.(FILTER_DEFAULTS.BREED);
     }
   }, [handleBreedClearFromParent, setStandardizedBreedFilter]);
 
@@ -259,78 +239,15 @@ export default function MobileFilterDrawer({
 
   const activeFilterCount = useMemo((): number => {
     let count = 0;
-
-    if (filterConfig.showSearch && searchQuery && searchQuery.trim() !== "")
-      count++;
-    if (
-      filterConfig.showOrganization &&
-      organizationFilter &&
-      organizationFilter !== "any"
-    )
-      count++;
-    if (
-      filterConfig.showBreed &&
-      standardizedBreedFilter &&
-      standardizedBreedFilter !== "Any breed"
-    )
-      count++;
-    if (filterConfig.showSex && sexFilter && sexFilter !== "Any") count++;
-    if (filterConfig.showSize && sizeFilter && sizeFilter !== "Any size")
-      count++;
-    if (
-      filterConfig.showAge &&
-      ageCategoryFilter &&
-      ageCategoryFilter !== "Any age"
-    )
-      count++;
-    if (
-      filterConfig.showShipsTo &&
-      availableCountryFilter &&
-      availableCountryFilter !== "Any country"
-    )
-      count++;
-
+    if (filterConfig.showSearch && searchQuery && searchQuery.trim() !== "") count++;
+    if (filterConfig.showOrganization) count += sectionCounts.organization;
+    if (filterConfig.showBreed) count += sectionCounts.breed;
+    if (filterConfig.showSex) count += sectionCounts.sex;
+    if (filterConfig.showSize) count += sectionCounts.size;
+    if (filterConfig.showAge) count += sectionCounts.age;
+    if (filterConfig.showShipsTo) count += sectionCounts.shipsToCountry;
     return count;
-  }, [
-    filterConfig,
-    searchQuery,
-    organizationFilter,
-    standardizedBreedFilter,
-    sexFilter,
-    sizeFilter,
-    ageCategoryFilter,
-    availableCountryFilter,
-  ]);
-
-  const sectionCounts = useMemo(() => {
-    const counts = {
-      organization: 0,
-      breed: 0,
-      shipsToCountry: 0,
-      age: 0,
-      size: 0,
-      sex: 0,
-    };
-
-    if (organizationFilter && organizationFilter !== "any")
-      counts.organization++;
-    if (standardizedBreedFilter && standardizedBreedFilter !== "Any breed")
-      counts.breed++;
-    if (availableCountryFilter && availableCountryFilter !== "Any country")
-      counts.shipsToCountry++;
-    if (ageCategoryFilter && ageCategoryFilter !== "Any age") counts.age++;
-    if (sizeFilter && sizeFilter !== "Any size") counts.size++;
-    if (sexFilter && sexFilter !== "Any") counts.sex++;
-
-    return counts;
-  }, [
-    organizationFilter,
-    standardizedBreedFilter,
-    availableCountryFilter,
-    ageCategoryFilter,
-    sizeFilter,
-    sexFilter,
-  ]);
+  }, [filterConfig, searchQuery, sectionCounts]);
 
   if (!isOpen) {
     return null;
@@ -502,18 +419,18 @@ export default function MobileFilterDrawer({
                     <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
                       <select
                         data-testid="size-filter"
-                        value={sizeFilter === "Any size" ? "any" : sizeFilter}
+                        value={sizeFilter === FILTER_DEFAULTS.SIZE ? "any" : sizeFilter}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           setSizeFilter(
                             e.target.value === "any"
-                              ? "Any size"
+                              ? FILTER_DEFAULTS.SIZE
                               : e.target.value,
                           )
                         }
                       >
-                        <option value="any">Any size</option>
+                        <option value="any">{FILTER_DEFAULTS.SIZE}</option>
                         {dynamicSizeOptions
-                          .filter((size) => size !== "Any size")
+                          .filter((size) => size !== FILTER_DEFAULTS.SIZE)
                           .map((size) => (
                             <option key={size} value={size}>
                               {size}
@@ -572,21 +489,21 @@ export default function MobileFilterDrawer({
                       <select
                         data-testid="age-filter"
                         value={
-                          ageCategoryFilter === "Any age"
+                          ageCategoryFilter === FILTER_DEFAULTS.AGE
                             ? "any"
                             : ageCategoryFilter
                         }
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           setAgeCategoryFilter(
                             e.target.value === "any"
-                              ? "Any age"
+                              ? FILTER_DEFAULTS.AGE
                               : e.target.value,
                           )
                         }
                       >
-                        <option value="any">Any age</option>
+                        <option value="any">{FILTER_DEFAULTS.AGE}</option>
                         {dynamicAgeOptions
-                          .filter((age) => age !== "Any age")
+                          .filter((age) => age !== FILTER_DEFAULTS.AGE)
                           .map((age) => (
                             <option key={age} value={age}>
                               {age}
@@ -644,16 +561,16 @@ export default function MobileFilterDrawer({
                     <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
                       <select
                         data-testid="sex-filter"
-                        value={sexFilter === "Any" ? "any" : sexFilter}
+                        value={sexFilter === FILTER_DEFAULTS.SEX ? "any" : sexFilter}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           setSexFilter(
-                            e.target.value === "any" ? "Any" : e.target.value,
+                            e.target.value === "any" ? FILTER_DEFAULTS.SEX : e.target.value,
                           )
                         }
                       >
-                        <option value="any">Any</option>
+                        <option value="any">{FILTER_DEFAULTS.SEX}</option>
                         {dynamicSexOptions
-                          .filter((sex) => sex !== "Any")
+                          .filter((sex) => sex !== FILTER_DEFAULTS.SEX)
                           .map((sex) => (
                             <option key={sex} value={sex}>
                               {sex}
@@ -712,21 +629,21 @@ export default function MobileFilterDrawer({
                       <select
                         data-testid="breed-filter"
                         value={
-                          standardizedBreedFilter === "Any breed"
+                          standardizedBreedFilter === FILTER_DEFAULTS.BREED
                             ? "any"
                             : standardizedBreedFilter
                         }
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           setStandardizedBreedFilter?.(
                             e.target.value === "any"
-                              ? "Any breed"
+                              ? FILTER_DEFAULTS.BREED
                               : e.target.value,
                           )
                         }
                       >
-                        <option value="any">Any breed</option>
+                        <option value="any">{FILTER_DEFAULTS.BREED}</option>
                         {standardizedBreeds
-                          .filter((breed) => breed !== "Any breed")
+                          .filter((breed) => breed !== FILTER_DEFAULTS.BREED)
                           .map((breed) => (
                             <option key={breed} value={breed}>
                               {breed}
@@ -739,8 +656,8 @@ export default function MobileFilterDrawer({
                     {useSimpleBreedDropdown ? (
                       <Select
                         value={
-                          standardizedBreedFilter === "Any breed"
-                            ? "Any breed"
+                          standardizedBreedFilter === FILTER_DEFAULTS.BREED
+                            ? FILTER_DEFAULTS.BREED
                             : standardizedBreedFilter
                         }
                         onValueChange={(value: string) =>
@@ -751,9 +668,9 @@ export default function MobileFilterDrawer({
                           <SelectValue placeholder="Select breed" />
                         </SelectTrigger>
                         <SelectContent className="max-h-48">
-                          <SelectItem value="Any breed">Any breed</SelectItem>
+                          <SelectItem value={FILTER_DEFAULTS.BREED}>{FILTER_DEFAULTS.BREED}</SelectItem>
                           {standardizedBreeds
-                            .filter((breed) => breed !== "Any breed")
+                            .filter((breed) => breed !== FILTER_DEFAULTS.BREED)
                             .map((breed) => (
                               <SelectItem key={breed} value={breed}>
                                 {breed}
@@ -766,7 +683,7 @@ export default function MobileFilterDrawer({
                         data-testid="breed-search-input"
                         placeholder="Search breeds..."
                         value={
-                          standardizedBreedFilter === "Any breed"
+                          standardizedBreedFilter === FILTER_DEFAULTS.BREED
                             ? ""
                             : standardizedBreedFilter
                         }
@@ -821,13 +738,13 @@ export default function MobileFilterDrawer({
                     <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
                       <select
                         data-testid="organization-filter"
-                        value={organizationFilter || "any"}
+                        value={organizationFilter || FILTER_DEFAULTS.ORGANIZATION}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setOrganizationFilter(e.target.value)}
                       >
                         {organizations.map((org) => (
                           <option
-                            key={org.id ?? "any"}
-                            value={org.id != null ? org.id.toString() : "any"}
+                            key={org.id ?? FILTER_DEFAULTS.ORGANIZATION}
+                            value={org.id != null ? org.id.toString() : FILTER_DEFAULTS.ORGANIZATION}
                           >
                             {org.name}
                           </option>
@@ -836,7 +753,7 @@ export default function MobileFilterDrawer({
                     </div>
 
                     <Select
-                      value={organizationFilter || "any"}
+                      value={organizationFilter || FILTER_DEFAULTS.ORGANIZATION}
                       onValueChange={setOrganizationFilter}
                     >
                       <SelectTrigger
@@ -844,7 +761,7 @@ export default function MobileFilterDrawer({
                         style={{ minHeight: "48px" }}
                       >
                         <SelectValue>
-                          {organizationFilter === "any" || !organizationFilter
+                          {organizationFilter === FILTER_DEFAULTS.ORGANIZATION || !organizationFilter
                             ? "Any Organization"
                             : organizations.find(
                                 (org) =>
@@ -855,8 +772,8 @@ export default function MobileFilterDrawer({
                       <SelectContent>
                         {organizations.map((org) => (
                           <SelectItem
-                            key={org.id ?? "any"}
-                            value={org.id != null ? org.id.toString() : "any"}
+                            key={org.id ?? FILTER_DEFAULTS.ORGANIZATION}
+                            value={org.id != null ? org.id.toString() : FILTER_DEFAULTS.ORGANIZATION}
                           >
                             {org.name}
                           </SelectItem>

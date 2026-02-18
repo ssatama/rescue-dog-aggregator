@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import type { CountriesHubStats } from "@/types/pageComponents";
 import CountriesHubClient from "./CountriesHubClient";
 import CountryStructuredData from "@/components/countries/CountryStructuredData";
 import { getCountryStats } from "@/services/serverAnimalsService";
@@ -42,7 +41,7 @@ function LoadingFallback(): React.JSX.Element {
 }
 
 export default async function CountriesPage(): Promise<React.JSX.Element> {
-  const countryStats = await getCountryStats() as unknown as CountriesHubStats;
+  const countryStats = await getCountryStats();
 
   return (
     <>

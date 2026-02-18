@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useDebouncedCallback, type DebouncedState } from "use-debounce";
 import { getAvailableRegions } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
+import { FILTER_DEFAULTS } from "@/constants/filters";
 import type {
   Filters,
   DogsPageMetadata,
@@ -37,36 +38,36 @@ export default function useDogsFilters({
   const router = useRouter();
 
   const validateOrganizationId = useCallback((orgId: string | null): string => {
-    if (!orgId || orgId === "any") return "any";
+    if (!orgId || orgId === FILTER_DEFAULTS.ORGANIZATION) return FILTER_DEFAULTS.ORGANIZATION;
 
     const organizations = metadata?.organizations || [];
     const isValidOrg = organizations.some(
       (org) => org.id?.toString() === orgId || org.id === parseInt(orgId, 10),
     );
 
-    return isValidOrg ? orgId : "any";
+    return isValidOrg ? orgId : FILTER_DEFAULTS.ORGANIZATION;
   }, [metadata?.organizations]);
 
   const filters: Filters = useMemo(() => ({
     searchQuery: searchParams.get("search") || "",
-    sizeFilter: searchParams.get("size") || "Any size",
+    sizeFilter: searchParams.get("size") || FILTER_DEFAULTS.SIZE,
     ageFilter:
-      searchParams.get("age") || initialParams?.age_category || "Any age",
-    sexFilter: searchParams.get("sex") || "Any",
+      searchParams.get("age") || initialParams?.age_category || FILTER_DEFAULTS.AGE,
+    sexFilter: searchParams.get("sex") || FILTER_DEFAULTS.SEX,
     organizationFilter: validateOrganizationId(
       searchParams.get("organization_id"),
     ),
-    breedFilter: searchParams.get("breed") || "Any breed",
-    breedGroupFilter: searchParams.get("breed_group") || "Any group",
+    breedFilter: searchParams.get("breed") || FILTER_DEFAULTS.BREED,
+    breedGroupFilter: searchParams.get("breed_group") || FILTER_DEFAULTS.GROUP,
     locationCountryFilter:
       searchParams.get("location_country") ||
       initialParams?.location_country ||
-      "Any country",
+      FILTER_DEFAULTS.COUNTRY,
     availableCountryFilter:
       searchParams.get("available_country") ||
       initialParams?.available_country ||
-      "Any country",
-    availableRegionFilter: searchParams.get("available_region") || "Any region",
+      FILTER_DEFAULTS.COUNTRY,
+    availableRegionFilter: searchParams.get("available_region") || FILTER_DEFAULTS.REGION,
   }), [searchParams, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, validateOrganizationId]);
 
   const updateURL = useDebouncedCallback(
@@ -96,14 +97,14 @@ export default function useDogsFilters({
 
         if (
           value &&
-          value !== "Any" &&
-          value !== "Any size" &&
-          value !== "Any age" &&
-          value !== "Any breed" &&
-          value !== "Any country" &&
-          value !== "Any region" &&
-          value !== "Any group" &&
-          value !== "any"
+          value !== FILTER_DEFAULTS.SEX &&
+          value !== FILTER_DEFAULTS.SIZE &&
+          value !== FILTER_DEFAULTS.AGE &&
+          value !== FILTER_DEFAULTS.BREED &&
+          value !== FILTER_DEFAULTS.COUNTRY &&
+          value !== FILTER_DEFAULTS.REGION &&
+          value !== FILTER_DEFAULTS.GROUP &&
+          value !== FILTER_DEFAULTS.ORGANIZATION
         ) {
           params.set(paramKey, value);
         }
@@ -127,17 +128,17 @@ export default function useDogsFilters({
 
   const activeFilterCount = Object.entries(filters).filter(
     ([_key, value]) =>
-      value && !value.includes("Any") && value !== "any" && value !== "",
+      value && !value.includes("Any") && value !== FILTER_DEFAULTS.ORGANIZATION && value !== "",
   ).length;
 
-  const [availableRegions, setAvailableRegions] = useState<string[]>(["Any region"]);
+  const [availableRegions, setAvailableRegions] = useState<string[]>([FILTER_DEFAULTS.REGION]);
 
   useEffect(() => {
     if (
       !filters.availableCountryFilter ||
-      filters.availableCountryFilter === "Any country"
+      filters.availableCountryFilter === FILTER_DEFAULTS.COUNTRY
     ) {
-      queueMicrotask(() => setAvailableRegions(["Any region"]));
+      queueMicrotask(() => setAvailableRegions([FILTER_DEFAULTS.REGION]));
       return;
     }
 
@@ -145,12 +146,12 @@ export default function useDogsFilters({
 
     getAvailableRegions(filters.availableCountryFilter)
       .then((regions) => {
-        if (!cancelled) setAvailableRegions(["Any region", ...regions]);
+        if (!cancelled) setAvailableRegions([FILTER_DEFAULTS.REGION, ...regions]);
       })
       .catch((err: unknown) => {
         if (!cancelled) {
           reportError(err, { context: "getAvailableRegions", country: filters.availableCountryFilter });
-          setAvailableRegions(["Any region"]);
+          setAvailableRegions([FILTER_DEFAULTS.REGION]);
         }
       });
 
@@ -181,47 +182,47 @@ function buildAPIParams(filterValues: Filters): Record<string, string> {
   }
 
   const size = (filterValues.sizeFilter || "").trim();
-  if (size && size !== "Any size") {
+  if (size && size !== FILTER_DEFAULTS.SIZE) {
     params.standardized_size = size;
   }
 
   const age = (filterValues.ageFilter || "").trim();
-  if (age && age !== "Any age") {
+  if (age && age !== FILTER_DEFAULTS.AGE) {
     params.age_category = age;
   }
 
   const sex = (filterValues.sexFilter || "").trim();
-  if (sex && sex !== "Any") {
+  if (sex && sex !== FILTER_DEFAULTS.SEX) {
     params.sex = sex;
   }
 
   const orgId = (filterValues.organizationFilter || "").toString().trim();
-  if (orgId && orgId !== "any") {
+  if (orgId && orgId !== FILTER_DEFAULTS.ORGANIZATION) {
     params.organization_id = orgId;
   }
 
   const breed = (filterValues.breedFilter || "").trim();
-  if (breed && breed !== "Any breed") {
+  if (breed && breed !== FILTER_DEFAULTS.BREED) {
     params.standardized_breed = breed;
   }
 
   const breedGroup = (filterValues.breedGroupFilter || "").trim();
-  if (breedGroup && breedGroup !== "Any group") {
+  if (breedGroup && breedGroup !== FILTER_DEFAULTS.GROUP) {
     params.breed_group = breedGroup;
   }
 
   const locationCountry = (filterValues.locationCountryFilter || "").trim();
-  if (locationCountry && locationCountry !== "Any country") {
+  if (locationCountry && locationCountry !== FILTER_DEFAULTS.COUNTRY) {
     params.location_country = locationCountry;
   }
 
   const availableCountry = (filterValues.availableCountryFilter || "").trim();
-  if (availableCountry && availableCountry !== "Any country") {
+  if (availableCountry && availableCountry !== FILTER_DEFAULTS.COUNTRY) {
     params.available_country = availableCountry;
   }
 
   const availableRegion = (filterValues.availableRegionFilter || "").trim();
-  if (availableRegion && availableRegion !== "Any region") {
+  if (availableRegion && availableRegion !== FILTER_DEFAULTS.REGION) {
     params.available_region = availableRegion;
   }
 

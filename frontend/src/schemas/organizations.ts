@@ -5,6 +5,7 @@ export const ApiOrganizationSchema = z
     id: z.number().optional(),
     name: z.string(),
     slug: z.string().optional(),
+    description: z.string().optional(),
     logo_url: z.string().optional(),
     website_url: z.string().optional(),
     country: z.string().optional(),

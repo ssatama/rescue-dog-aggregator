@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { CountriesHubClientProps, CountryData } from "@/types/pageComponents";
 import { COUNTRIES, getAllCountryCodes } from "@/utils/countryData";
 
-function CountryCard({ country }: { country: CountryData & { count: number; organizations: number } }) {
+function CountryCard({ country }: { country: CountryData & { count: number; organizations?: number } }) {
   return (
     <Link href={`/dogs/country/${country.code.toLowerCase()}`}>
       <Card className="group relative overflow-hidden h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-transparent hover:border-orange-300 dark:hover:border-orange-600">
@@ -37,7 +37,7 @@ function CountryCard({ country }: { country: CountryData & { count: number; orga
               </span>
               <span className="text-muted-foreground">dogs</span>
             </div>
-            {country.organizations > 0 && (
+            {(country.organizations ?? 0) > 0 && (
               <div className="flex items-center gap-1.5 text-sm">
                 <Building2 className="h-4 w-4 text-orange-500" />
                 <span className="font-semibold">{country.organizations}</span>
