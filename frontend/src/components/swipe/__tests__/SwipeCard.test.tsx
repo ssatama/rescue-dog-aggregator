@@ -65,7 +65,7 @@ describe("SwipeCard", () => {
     expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
   });
 
-  it("should display energy level when dog_profiler_data has energy_level", () => {
+  it("should not display energy level (removed from card in redesign, preserved in detail modal)", () => {
     const dogWithEnergy = {
       ...mockDog,
       dog_profiler_data: {
@@ -75,7 +75,7 @@ describe("SwipeCard", () => {
     };
     renderWithProvider(<SwipeCard dog={dogWithEnergy} />);
 
-    expect(screen.getByText("Energy:")).toBeInTheDocument();
+    expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
   });
 
   it("should show unique quirk", () => {
@@ -150,19 +150,19 @@ describe("SwipeCard", () => {
     expect(screen.queryByText("🦴")).not.toBeInTheDocument();
   });
 
-  it("should apply proper styling with rounded corners and shadow", () => {
+  it("should apply proper styling with rounded corners and warm shadow", () => {
     const { container } = renderWithProvider(<SwipeCard dog={mockDog} />);
 
-    const card = container.querySelector(".rounded-xl");
+    const card = container.querySelector(".rounded-2xl");
     expect(card).toBeInTheDocument();
-    expect(card).toHaveClass("shadow-xl");
+    expect(card).toHaveClass("shadow-[var(--shadow-orange-lg)]");
   });
 
-  it("should have 4:3 aspect ratio for image container", () => {
+  it("should have 3:4 portrait aspect ratio for image-hero layout", () => {
     renderWithProvider(<SwipeCard dog={mockDog} />);
 
     const imageContainer = screen.getByTestId("image-container");
-    expect(imageContainer).toHaveClass("aspect-[4/3]");
+    expect(imageContainer).toHaveClass("aspect-[3/4]");
   });
 
   describe("CLS Prevention", () => {
@@ -170,29 +170,31 @@ describe("SwipeCard", () => {
       renderWithProvider(<SwipeCard dog={mockDog} />);
 
       const imageContainer = screen.getByTestId("image-container");
-      expect(imageContainer).toHaveClass("min-h-[200px]");
+      expect(imageContainer).toHaveClass("min-h-[280px]");
     });
 
-    it("should render content area with min-height", () => {
+    it("should render content area with flex layout", () => {
       renderWithProvider(<SwipeCard dog={mockDog} />);
 
       const imageContainer = screen.getByTestId("image-container");
       const contentArea = imageContainer.nextElementSibling;
-      expect(contentArea).toHaveClass("min-h-[280px]");
+      expect(contentArea).toHaveClass("flex-1");
+      expect(contentArea).toHaveClass("flex");
     });
 
-    it("should render invisible placeholder when no age/breed info", () => {
+    it("should overlay name on image via gradient when no age/breed info", () => {
       const minimalDog = {
         id: 2,
         name: "Max",
         slug: "max",
       };
-      const { container } = renderWithProvider(<SwipeCard dog={minimalDog} />);
+      renderWithProvider(<SwipeCard dog={minimalDog} />);
 
-      // Invisible placeholder paragraph reserves space when age/breed is missing
-      const invisiblePlaceholder = container.querySelector("p.invisible");
-      expect(invisiblePlaceholder).toBeInTheDocument();
-      expect(invisiblePlaceholder).toHaveClass("mt-1");
+      // Name is now overlaid on the image gradient, not in the content section
+      const imageContainer = screen.getByTestId("image-container");
+      const nameHeading = imageContainer.querySelector("h3");
+      expect(nameHeading).toBeInTheDocument();
+      expect(nameHeading).toHaveTextContent("Max");
     });
   });
 

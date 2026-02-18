@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { PawPrint } from "lucide-react";
 import { SwipeFilters } from "../../hooks/useSwipeFilters";
 import { safeStorage } from "../../utils/safeStorage";
 import { get } from "../../utils/api";
@@ -213,23 +214,25 @@ export default function SwipeOnboarding({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-[#FDFBF7] dark:bg-gray-950 flex items-center justify-center z-50 overflow-y-auto"
       role="dialog"
       aria-label="Swipe feature onboarding"
     >
-      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="max-w-lg w-full px-6 py-12">
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
               key="step1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="p-6 animate-in"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
             >
-              <div className="text-center mb-6">
-                <div className="text-6xl mb-4">🌍</div>
-                <h2 className="text-2xl font-bold mb-2 dark:text-gray-100">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-orange-100 dark:bg-orange-900/30 rounded-full mb-5">
+                  <PawPrint className="w-10 h-10 text-orange-500 dark:text-orange-400" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
                   Where can you adopt?
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
@@ -246,7 +249,6 @@ export default function SwipeOnboarding({
                   </div>
                 ) : (
                   <>
-                    {/* Show top 5 countries or selected + top 4 */}
                     {(() => {
                       const topCountries = countries.slice(0, 5);
                       const displayCountries = showAllCountries
@@ -263,11 +265,11 @@ export default function SwipeOnboarding({
                             }
                           }}
                           className={`
-                            w-full p-4 rounded-lg border-2 transition-all text-left
+                            w-full p-4 rounded-xl border-2 transition-all text-left
                             ${
                               selectedCountry === country.value
-                                ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 selected"
-                                : "border-gray-200 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-500"
+                                ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 border-l-4 border-l-orange-500"
+                                : "border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-500 bg-white dark:bg-gray-800/50"
                             }
                           `}
                           aria-label={country.label}
@@ -277,7 +279,7 @@ export default function SwipeOnboarding({
                               <span className="text-2xl mr-3">
                                 {country.flag}
                               </span>
-                              <span className="font-medium dark:text-gray-100">
+                              <span className="font-medium text-gray-900 dark:text-gray-100">
                                 {country.label}
                               </span>
                             </div>
@@ -290,7 +292,6 @@ export default function SwipeOnboarding({
                       ));
                     })()}
 
-                    {/* Show more/less button if there are more than 5 countries */}
                     {countries.length > 5 && (
                       <button
                         onClick={() => setShowAllCountries(!showAllCountries)}
@@ -346,10 +347,10 @@ export default function SwipeOnboarding({
                 onClick={handleContinue}
                 disabled={!selectedCountry}
                 className={`
-                  w-full mt-6 py-3 rounded-lg font-medium transition-all
+                  w-full mt-6 py-3.5 rounded-xl font-medium transition-all text-base
                   ${
                     selectedCountry
-                      ? "bg-orange-500 text-white hover:bg-orange-600"
+                      ? "bg-orange-500 text-white hover:bg-orange-600 shadow-[var(--shadow-orange-md)]"
                       : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                   }
                 `}
@@ -358,14 +359,15 @@ export default function SwipeOnboarding({
                 Continue
               </button>
 
+              {/* Step dots */}
               <div
-                className="mt-4 text-center"
+                className="mt-6 flex items-center justify-center gap-2"
                 role="status"
                 aria-live="polite"
+                aria-label="Step 1 of 2"
               >
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Step 1 of 2
-                </span>
+                <div className="w-3 h-3 rounded-full bg-orange-500" />
+                <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600" />
               </div>
             </motion.div>
           )}
@@ -373,15 +375,16 @@ export default function SwipeOnboarding({
           {step === 2 && (
             <motion.div
               key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="p-6 animate-in relative"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="relative"
             >
               {/* Back button */}
               <button
                 onClick={() => setStep(1)}
-                className="absolute top-4 left-4 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                className="absolute top-0 left-0 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                 aria-label="Go back"
               >
                 <svg
@@ -399,12 +402,12 @@ export default function SwipeOnboarding({
                 </svg>
               </button>
 
-              <div className="text-center mb-6 mt-8">
-                <h2 className="text-2xl font-bold mb-2 dark:text-gray-100">
-                  Size preference? (optional)
+              <div className="text-center mb-8 mt-10">
+                <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+                  Size preference?
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Select your preferred dog sizes
+                  Select your preferred dog sizes (optional)
                 </p>
               </div>
 
@@ -419,17 +422,17 @@ export default function SwipeOnboarding({
                       }
                     }}
                     className={`
-                      p-4 rounded-lg border-2 transition-all relative
+                      p-4 rounded-xl border-2 transition-all relative
                       ${
                         selectedSizes.includes(size.value)
-                          ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 selected"
-                          : "border-gray-200 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-500"
+                          ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
+                          : "border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-500 bg-white dark:bg-gray-800/50"
                       }
                     `}
                     aria-label={size.label}
                   >
                     <div className="text-2xl mb-1">{size.icon}</div>
-                    <div className="font-medium dark:text-gray-100">
+                    <div className="font-medium text-gray-900 dark:text-gray-100">
                       {size.label}
                     </div>
                     {size.count !== undefined && (
@@ -443,7 +446,7 @@ export default function SwipeOnboarding({
 
               <button
                 onClick={handleComplete}
-                className="w-full py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-all"
+                className="w-full py-3.5 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition-all text-base shadow-[var(--shadow-orange-md)]"
                 aria-label="Start Browsing"
               >
                 Start Browsing
@@ -451,20 +454,21 @@ export default function SwipeOnboarding({
 
               <button
                 onClick={handleSkipSizes}
-                className="w-full mt-3 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all"
+                className="w-full mt-3 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all"
                 aria-label="All sizes"
               >
                 Skip - All sizes
               </button>
 
+              {/* Step dots */}
               <div
-                className="mt-4 text-center"
+                className="mt-6 flex items-center justify-center gap-2"
                 role="status"
                 aria-live="polite"
+                aria-label="Step 2 of 2"
               >
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Step 2 of 2
-                </span>
+                <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600" />
+                <div className="w-3 h-3 rounded-full bg-orange-500" />
               </div>
             </motion.div>
           )}

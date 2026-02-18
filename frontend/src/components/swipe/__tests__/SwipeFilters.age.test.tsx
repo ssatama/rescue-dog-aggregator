@@ -31,7 +31,7 @@ describe("SwipeFilters - Age Filter", () => {
 
     // Click to select
     fireEvent.click(puppyButton);
-    expect(puppyButton).toHaveClass("selected");
+    expect(puppyButton).toHaveClass("border-orange-500");
 
     // Need to click Apply button to trigger onFiltersChange
     const applyButton = screen.getByRole("button", { name: /Apply Filters/i });
@@ -45,7 +45,7 @@ describe("SwipeFilters - Age Filter", () => {
 
     // Click to deselect
     fireEvent.click(puppyButton);
-    expect(puppyButton).not.toHaveClass("selected");
+    expect(puppyButton).not.toHaveClass("border-orange-500");
 
     // Click Apply again
     fireEvent.click(applyButton);
@@ -66,8 +66,8 @@ describe("SwipeFilters - Age Filter", () => {
     fireEvent.click(puppyButton);
     fireEvent.click(adultButton);
 
-    expect(puppyButton).toHaveClass("selected");
-    expect(adultButton).toHaveClass("selected");
+    expect(puppyButton).toHaveClass("border-orange-500");
+    expect(adultButton).toHaveClass("border-orange-500");
 
     // Need to click Apply button to trigger onFiltersChange
     const applyButton = screen.getByRole("button", { name: /Apply Filters/i });
@@ -80,26 +80,23 @@ describe("SwipeFilters - Age Filter", () => {
     );
   });
 
-  it("should show clear ages button when ages are selected", () => {
+  it("should show clear button when ages are selected", () => {
     render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
 
     const puppyButton = screen.getByRole("button", { name: /puppy/i });
 
-    // Initially, no clear button
-    expect(screen.queryByText("Clear ages")).not.toBeInTheDocument();
-
     // Select an age
     fireEvent.click(puppyButton);
 
-    // Clear button should appear
-    const clearButton = screen.getByText("Clear ages");
+    // Clear button should appear (labeled "Clear" with aria-label "Clear ages")
+    const clearButton = screen.getByRole("button", { name: /Clear ages/i });
     expect(clearButton).toBeInTheDocument();
 
     // Click clear
     fireEvent.click(clearButton);
 
     // Ages should be cleared
-    expect(puppyButton).not.toHaveClass("selected");
+    expect(puppyButton).not.toHaveClass("border-orange-500");
 
     // Need to click Apply button to trigger onFiltersChange
     const applyButton = screen.getByRole("button", { name: /Apply Filters/i });
@@ -140,8 +137,8 @@ describe("SwipeFilters - Age Filter", () => {
     const adultButton = screen.getByRole("button", { name: /adult/i });
     const seniorButton = screen.getByRole("button", { name: /senior/i });
 
-    expect(adultButton).toHaveClass("selected");
-    expect(seniorButton).toHaveClass("selected");
+    expect(adultButton).toHaveClass("border-orange-500");
+    expect(seniorButton).toHaveClass("border-orange-500");
   });
 
   it("should display selected ages in compact mode", () => {

@@ -78,8 +78,8 @@ describe("SwipeFilters", () => {
       fireEvent.click(mediumButton);
 
       await waitFor(() => {
-        expect(smallButton).toHaveClass("selected");
-        expect(mediumButton).toHaveClass("selected");
+        expect(smallButton).toHaveClass("border-orange-500");
+        expect(mediumButton).toHaveClass("border-orange-500");
       });
     });
 
@@ -119,11 +119,11 @@ describe("SwipeFilters", () => {
 
       // Select
       fireEvent.click(smallButton);
-      expect(smallButton).toHaveClass("selected");
+      expect(smallButton).toHaveClass("border-orange-500");
 
       // Deselect
       fireEvent.click(smallButton);
-      expect(smallButton).not.toHaveClass("selected");
+      expect(smallButton).not.toHaveClass("border-orange-500");
     });
   });
 
@@ -164,8 +164,8 @@ describe("SwipeFilters", () => {
 
       const mediumButton = screen.getByRole("button", { name: /Medium/i });
       const largeButton = screen.getByRole("button", { name: /Large/i });
-      expect(mediumButton).toHaveClass("selected");
-      expect(largeButton).toHaveClass("selected");
+      expect(mediumButton).toHaveClass("border-orange-500");
+      expect(largeButton).toHaveClass("border-orange-500");
     });
 
     it("should NOT call onFiltersChange automatically on mount (requires Apply click)", () => {
@@ -187,19 +187,15 @@ describe("SwipeFilters", () => {
   });
 
   describe("Visual Feedback", () => {
-    it("should show selected country with flag emoji", () => {
+    it("should show selected country with flag emoji in dropdown", () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
 
       const countrySelect = screen.getByLabelText("Country");
       fireEvent.change(countrySelect, { target: { value: "DE" } });
 
-      // Check for all elements with the flag emoji (option and display div)
+      // Country shown in dropdown option
       const elementsWithFlag = screen.getAllByText(/🇩🇪 Germany/);
-      expect(elementsWithFlag).toHaveLength(2); // One in dropdown, one in display
-
-      // The display div should be the second one and have the right classes
-      const displayDiv = elementsWithFlag[1];
-      expect(displayDiv).toHaveClass("mt-2", "text-sm", "text-gray-600");
+      expect(elementsWithFlag.length).toBeGreaterThanOrEqual(1);
     });
 
     it("should highlight selected size filters", async () => {
@@ -279,8 +275,8 @@ describe("SwipeFilters", () => {
       const clearButton = screen.getByRole("button", { name: /Clear sizes/i });
       fireEvent.click(clearButton);
 
-      expect(smallButton).not.toHaveClass("selected");
-      expect(mediumButton).not.toHaveClass("selected");
+      expect(smallButton).not.toHaveClass("border-orange-500");
+      expect(mediumButton).not.toHaveClass("border-orange-500");
 
       // Verify onFiltersChange is NOT called until Apply is clicked
       expect(mockOnFiltersChange).not.toHaveBeenCalled();

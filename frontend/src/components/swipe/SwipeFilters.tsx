@@ -151,40 +151,26 @@ export default function SwipeFilters({
   const selectedCountry = COUNTRIES.find((c) => c.value === filters.country);
 
   if (compact) {
+    const pillClass = isDarkMode
+      ? "bg-orange-950/20 border border-orange-800/40 text-orange-300"
+      : "bg-[#FDFBF7] border border-orange-200/80 text-orange-800";
+
     return (
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center flex-wrap">
         {selectedCountry && (
-          <span
-            className={`px-3 py-1 rounded-full text-sm ${
-              isDarkMode
-                ? "bg-orange-900/30 text-orange-300"
-                : "bg-orange-100 text-orange-800"
-            }`}
-          >
+          <span className={`px-3 py-1 rounded-full text-sm ${pillClass}`}>
             {selectedCountry.flag} {selectedCountry.label}
           </span>
         )}
         {filters.sizes.length > 0 && (
-          <span
-            className={`px-3 py-1 rounded-full text-sm ${
-              isDarkMode
-                ? "bg-orange-900/30 text-orange-300"
-                : "bg-orange-100 text-orange-800"
-            }`}
-          >
+          <span className={`px-3 py-1 rounded-full text-sm ${pillClass}`}>
             {filters.sizes
               .map((s) => SIZES.find((size) => size.value === s)?.label)
               .join(" & ")}
           </span>
         )}
         {filters.ages.length > 0 && (
-          <span
-            className={`px-3 py-1 rounded-full text-sm ${
-              isDarkMode
-                ? "bg-orange-900/30 text-orange-300"
-                : "bg-orange-100 text-orange-800"
-            }`}
-          >
+          <span className={`px-3 py-1 rounded-full text-sm ${pillClass}`}>
             {filters.ages
               .map((a) => AGES.find((age) => age.value === a)?.label)
               .join(" & ")}
@@ -195,9 +181,7 @@ export default function SwipeFilters({
   }
 
   return (
-    <div
-      className={`space-y-4 p-4 ${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"}`}
-    >
+    <div className="space-y-5 p-5">
       <div>
         <label
           htmlFor="country-select"
@@ -213,10 +197,10 @@ export default function SwipeFilters({
           value={filters.country}
           onChange={handleCountryChange}
           required
-          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+          className={`w-full px-3 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-colors ${
             isDarkMode
-              ? "bg-gray-700 border-gray-600 text-gray-100"
-              : "bg-white border-gray-300 text-gray-900"
+              ? "bg-gray-800/50 border-gray-700 text-gray-100"
+              : "bg-white border-gray-200 text-gray-900"
           }`}
           aria-label="Country"
         >
@@ -227,15 +211,6 @@ export default function SwipeFilters({
             </option>
           ))}
         </select>
-        {selectedCountry && (
-          <div
-            className={`mt-2 text-sm ${
-              isDarkMode ? "text-gray-300" : "text-gray-600"
-            }`}
-          >
-            {selectedCountry.flag} {selectedCountry.label}
-          </div>
-        )}
       </div>
 
       <div>
@@ -251,14 +226,10 @@ export default function SwipeFilters({
           {filters.sizes.length > 0 && (
             <button
               onClick={clearSizes}
-              className={`text-sm transition-colors ${
-                isDarkMode
-                  ? "text-gray-400 hover:text-gray-200"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className="text-sm text-orange-500 hover:text-orange-600 transition-colors"
               aria-label="Clear sizes"
             >
-              Clear sizes
+              Clear
             </button>
           )}
         </div>
@@ -270,15 +241,15 @@ export default function SwipeFilters({
                 key={size.value}
                 onClick={() => toggleSize(size.value)}
                 className={`
-                  px-4 py-2 rounded-lg border-2 transition-all
+                  px-4 py-2.5 rounded-xl border transition-all
                   ${
                     isSelected
                       ? isDarkMode
-                        ? "border-orange-500 bg-orange-900/20 text-gray-100 selected"
-                        : "border-orange-500 bg-orange-100 text-gray-900 selected"
+                        ? "border-orange-500 bg-orange-900/20 text-gray-100"
+                        : "border-orange-500 bg-orange-50 text-gray-900"
                       : isDarkMode
-                        ? "border-gray-600 bg-gray-700 text-gray-100 hover:border-orange-300"
-                        : "border-gray-300 bg-white text-gray-900 hover:border-orange-300"
+                        ? "border-gray-700 bg-gray-800/50 text-gray-100 hover:border-orange-500"
+                        : "border-gray-200 bg-white text-gray-900 hover:border-orange-300"
                   }
                 `}
                 aria-label={size.label}
@@ -303,14 +274,10 @@ export default function SwipeFilters({
           {filters.ages.length > 0 && (
             <button
               onClick={clearAges}
-              className={`text-sm transition-colors ${
-                isDarkMode
-                  ? "text-gray-400 hover:text-gray-200"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className="text-sm text-orange-500 hover:text-orange-600 transition-colors"
               aria-label="Clear ages"
             >
-              Clear ages
+              Clear
             </button>
           )}
         </div>
@@ -322,15 +289,15 @@ export default function SwipeFilters({
                 key={age.value}
                 onClick={() => toggleAge(age.value)}
                 className={`
-                  px-4 py-2 rounded-lg border-2 transition-all
+                  px-4 py-2.5 rounded-xl border transition-all
                   ${
                     isSelected
                       ? isDarkMode
-                        ? "border-orange-500 bg-orange-900/20 text-gray-100 selected"
-                        : "border-orange-500 bg-orange-100 text-gray-900 selected"
+                        ? "border-orange-500 bg-orange-900/20 text-gray-100"
+                        : "border-orange-500 bg-orange-50 text-gray-900"
                       : isDarkMode
-                        ? "border-gray-600 bg-gray-700 text-gray-100 hover:border-orange-300"
-                        : "border-gray-300 bg-white text-gray-900 hover:border-orange-300"
+                        ? "border-gray-700 bg-gray-800/50 text-gray-100 hover:border-orange-500"
+                        : "border-gray-200 bg-white text-gray-900 hover:border-orange-300"
                   }
                 `}
                 aria-label={age.label}
@@ -375,16 +342,16 @@ export default function SwipeFilters({
 
       {/* Apply and Cancel buttons */}
       {!compact && (
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-3 pt-2">
           <button
             onClick={() => onFiltersChange(filters)}
             disabled={previewCount === 0}
-            className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${
               previewCount === 0
                 ? isDarkMode
                   ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-orange-500 text-white hover:bg-orange-600"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-orange-500 text-white hover:bg-orange-600 shadow-[var(--shadow-orange-md)]"
             }`}
             aria-label="Apply filters"
           >
@@ -393,10 +360,10 @@ export default function SwipeFilters({
           {onCancel && (
             <button
               onClick={onCancel}
-              className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-3 rounded-xl transition-colors ${
                 isDarkMode
-                  ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
-                  : "bg-gray-300 text-gray-700 hover:bg-gray-400"
+                  ? "text-gray-400 hover:text-gray-200"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
               aria-label="Cancel"
             >
