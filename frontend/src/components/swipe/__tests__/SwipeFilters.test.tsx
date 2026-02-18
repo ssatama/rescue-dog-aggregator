@@ -78,8 +78,8 @@ describe("SwipeFilters", () => {
       fireEvent.click(mediumButton);
 
       await waitFor(() => {
-        expect(smallButton).toHaveClass("selected");
-        expect(mediumButton).toHaveClass("selected");
+        expect(smallButton).toHaveClass("border-orange-500");
+        expect(mediumButton).toHaveClass("border-orange-500");
       });
     });
 
@@ -119,11 +119,11 @@ describe("SwipeFilters", () => {
 
       // Select
       fireEvent.click(smallButton);
-      expect(smallButton).toHaveClass("selected");
+      expect(smallButton).toHaveClass("border-orange-500");
 
       // Deselect
       fireEvent.click(smallButton);
-      expect(smallButton).not.toHaveClass("selected");
+      expect(smallButton).not.toHaveClass("border-orange-500");
     });
   });
 
@@ -164,8 +164,8 @@ describe("SwipeFilters", () => {
 
       const mediumButton = screen.getByRole("button", { name: /Medium/i });
       const largeButton = screen.getByRole("button", { name: /Large/i });
-      expect(mediumButton).toHaveClass("selected");
-      expect(largeButton).toHaveClass("selected");
+      expect(mediumButton).toHaveClass("border-orange-500");
+      expect(largeButton).toHaveClass("border-orange-500");
     });
 
     it("should NOT call onFiltersChange automatically on mount (requires Apply click)", () => {
@@ -279,8 +279,8 @@ describe("SwipeFilters", () => {
       const clearButton = screen.getByRole("button", { name: /Clear sizes/i });
       fireEvent.click(clearButton);
 
-      expect(smallButton).not.toHaveClass("selected");
-      expect(mediumButton).not.toHaveClass("selected");
+      expect(smallButton).not.toHaveClass("border-orange-500");
+      expect(mediumButton).not.toHaveClass("border-orange-500");
 
       // Verify onFiltersChange is NOT called until Apply is clicked
       expect(mockOnFiltersChange).not.toHaveBeenCalled();

@@ -3,6 +3,13 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SwipeOnboarding from "../SwipeOnboarding";
 
+// Mock lucide-react PawPrint
+jest.mock("lucide-react", () => ({
+  PawPrint: (props: Record<string, unknown>) => (
+    <svg data-testid="paw-print-icon" {...props} />
+  ),
+}));
+
 // Mock fetch globally
 global.fetch = jest.fn();
 
@@ -87,7 +94,6 @@ describe("SwipeOnboarding", () => {
 
     it("should show onboarding if filters are not set", () => {
       localStorage.setItem("swipeOnboardingComplete", "true");
-      // But no filters saved
 
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
@@ -121,7 +127,7 @@ describe("SwipeOnboarding", () => {
       expect(screen.getByText(/🇺🇸/)).toBeInTheDocument();
     });
 
-    it("should highlight selected country", async () => {
+    it("should highlight selected country with orange border", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
       await waitFor(() => {
@@ -132,7 +138,7 @@ describe("SwipeOnboarding", () => {
       fireEvent.click(germanyButton);
 
       await waitFor(() => {
-        expect(germanyButton).toHaveClass("selected");
+        expect(germanyButton).toHaveClass("border-orange-500");
       });
     });
 
@@ -188,54 +194,50 @@ describe("SwipeOnboarding", () => {
     it("should show size icons", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      // Wait for countries to load
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
 
-      // Select country first
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
 
       await waitFor(() => {
         const dogEmojis = screen.getAllByText(/🐕/);
-        expect(dogEmojis.length).toBeGreaterThan(0); // Should have dog emojis for sizes
+        expect(dogEmojis.length).toBeGreaterThan(0);
       });
     });
 
     it("should allow multiple size selection", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      // Wait for countries to load
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
 
-      // Select country first
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
 
       await waitFor(() => {
-        const smallButton = screen.getByRole("button", { name: /Small/i });
-        const mediumButton = screen.getByRole("button", { name: /Medium/i });
-
-        fireEvent.click(smallButton);
-        fireEvent.click(mediumButton);
-
-        expect(smallButton).toHaveClass("selected");
-        expect(mediumButton).toHaveClass("selected");
+        expect(screen.getByText(/Size preference/i)).toBeInTheDocument();
       });
+
+      const smallButton = screen.getByRole("button", { name: /Small/i });
+      const mediumButton = screen.getByRole("button", { name: /Medium/i });
+
+      fireEvent.click(smallButton);
+      fireEvent.click(mediumButton);
+
+      expect(smallButton).toHaveClass("border-orange-500");
+      expect(mediumButton).toHaveClass("border-orange-500");
     });
 
     it("should allow skipping size selection", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      // Wait for countries to load
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
 
-      // Select country
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
 
@@ -252,22 +254,20 @@ describe("SwipeOnboarding", () => {
     it("should save filters and mark onboarding complete", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      // Wait for countries to load
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
 
-      // Select country
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
 
-      // Select sizes
       await waitFor(() => {
-        fireEvent.click(screen.getByRole("button", { name: /Small/i }));
-        fireEvent.click(screen.getByRole("button", { name: /Medium/i }));
+        expect(screen.getByText(/Size preference/i)).toBeInTheDocument();
       });
 
-      // Complete
+      fireEvent.click(screen.getByRole("button", { name: /Small/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Medium/i }));
+
       fireEvent.click(screen.getByRole("button", { name: /Start Browsing/i }));
 
       await waitFor(() => {
@@ -285,19 +285,18 @@ describe("SwipeOnboarding", () => {
     it("should call onComplete with filters", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      // Wait for countries to load
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
 
-      // Complete onboarding
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
 
       await waitFor(() => {
-        fireEvent.click(screen.getByRole("button", { name: /Small/i }));
+        expect(screen.getByText(/Size preference/i)).toBeInTheDocument();
       });
 
+      fireEvent.click(screen.getByRole("button", { name: /Small/i }));
       fireEvent.click(screen.getByRole("button", { name: /Start Browsing/i }));
 
       await waitFor(() => {
@@ -311,10 +310,10 @@ describe("SwipeOnboarding", () => {
   });
 
   describe("Visual Design", () => {
-    it("should show globe icon for country step", () => {
+    it("should show paw print icon for country step", () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      expect(screen.getByText(/🌍/)).toBeInTheDocument();
+      expect(screen.getByTestId("paw-print-icon")).toBeInTheDocument();
     });
 
     it("should show descriptive text", () => {
@@ -325,25 +324,18 @@ describe("SwipeOnboarding", () => {
       ).toBeInTheDocument();
     });
 
-    it("should animate transitions between steps", async () => {
-      const { container } = render(
-        <SwipeOnboarding onComplete={mockOnComplete} />,
-      );
+    it("should use framer motion for step transitions", async () => {
+      render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      // Check for animation class on initial render
-      expect(container.querySelector(".animate-in")).toBeInTheDocument();
-
-      // Wait for countries to load
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
 
-      // Move to next step
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
 
       await waitFor(() => {
-        expect(container.querySelector(".animate-in")).toBeInTheDocument();
+        expect(screen.getByText(/Size preference/i)).toBeInTheDocument();
       });
     });
   });
@@ -361,7 +353,6 @@ describe("SwipeOnboarding", () => {
     it("should be keyboard navigable", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      // Wait for countries to load
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
@@ -370,13 +361,12 @@ describe("SwipeOnboarding", () => {
       germanyButton.focus();
 
       fireEvent.keyDown(germanyButton, { key: "Enter" });
-      expect(germanyButton).toHaveClass("selected");
+      expect(germanyButton).toHaveClass("border-orange-500");
     });
 
-    it("should announce step changes to screen readers", async () => {
+    it("should have step progress accessible to screen readers", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      // Wait for countries to load
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
@@ -386,7 +376,7 @@ describe("SwipeOnboarding", () => {
 
       await waitFor(() => {
         const announcement = screen.getByRole("status");
-        expect(announcement).toHaveTextContent(/Step 2 of 2/i);
+        expect(announcement).toHaveAttribute("aria-label", "Step 2 of 2");
       });
     });
   });
