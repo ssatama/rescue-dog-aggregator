@@ -31,7 +31,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       setIsLiked(true);
       setShowHeartAnimation(true);
 
-      await addFavorite(Number(dog.id), dog.name);
+      await addFavorite(dog.id, dog.name);
 
       Sentry.addBreadcrumb({
         message: "swipe.card.favorited_via_button",

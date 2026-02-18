@@ -1,42 +1,35 @@
-/**
- * Dynamic organization sitemap route for Next.js 15 App Router
- * Generates XML sitemap specifically for organization pages
- */
-
 import { generateOrganizationSitemap } from "../../utils/sitemap";
 
-/**
- * GET handler for organization sitemap
- * @returns {Response} XML sitemap response
- */
-export async function GET() {
+export async function GET(): Promise<Response> {
   try {
     const sitemap = await generateOrganizationSitemap();
 
     return new Response(sitemap, {
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "public, max-age=3600, s-maxage=86400", // 1 hour client, 24 hours CDN
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
       },
     });
-  } catch (error) {
-    // Enhanced error logging with context
+  } catch (error: unknown) {
+    const errorDetails =
+      error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : { message: String(error) };
+
     console.error("Error generating organization sitemap:", {
-      message: error.message,
-      stack: error.stack,
+      ...errorDetails,
       timestamp: new Date().toISOString(),
       route: "/sitemap-organizations.xml",
       type: "sitemap_generation_error",
     });
 
-    // Return empty sitemap on error
     const emptySitemap =
       '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>';
 
     return new Response(emptySitemap, {
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "public, max-age=300", // 5 minutes on error
+        "Cache-Control": "public, max-age=300",
       },
     });
   }

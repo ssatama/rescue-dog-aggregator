@@ -586,7 +586,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                             {/* Favorite Button */}
                             <div className="flex items-center">
                               <FavoriteButton
-                                dogId={Number(dog.id)}
+                                dogId={dog.id}
                                 dogName={dog.name}
                                 orgSlug={dog.organization?.slug}
                                 className="p-3 rounded-full hover:bg-gray-100 transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"

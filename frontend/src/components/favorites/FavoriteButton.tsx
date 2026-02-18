@@ -6,7 +6,7 @@ import { useFavorites } from "../../hooks/useFavorites";
 import { trackFavoriteToggle } from "@/lib/monitoring/breadcrumbs";
 
 interface FavoriteButtonProps {
-  dogId: number;
+  dogId: number | string;
   dogName?: string;
   className?: string;
   compact?: boolean;

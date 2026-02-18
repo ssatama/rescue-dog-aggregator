@@ -239,7 +239,7 @@ const DogCardOptimized = React.memo(
                 compact
               />
               <FavoriteButton
-                dogId={Number(dog.id)}
+                dogId={dog.id}
                 dogName={dog.name}
                 orgSlug={dog.organization?.slug}
                 compact
@@ -388,7 +388,7 @@ const DogCardOptimized = React.memo(
               compact
             />
             <FavoriteButton
-              dogId={Number(dog.id)}
+              dogId={dog.id}
               dogName={dog.name}
               orgSlug={dog.organization?.slug}
             />

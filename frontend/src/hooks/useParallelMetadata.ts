@@ -1,7 +1,3 @@
-/**
- * Hook for parallel metadata API calls
- * TDD Implementation for Performance Optimization
- */
 import { useState, useCallback, useEffect, useRef } from "react";
 import {
   getStandardizedBreeds,
@@ -12,8 +8,28 @@ import { getOrganizations } from "../services/organizationsService";
 import { reportError } from "../utils/logger";
 import { useMetadataCache } from "./useMetadataCache";
 
-export function useParallelMetadata() {
-  const [metadata, setMetadata] = useState({
+interface OrganizationOption {
+  id: number | string | null;
+  name: string;
+}
+
+interface Metadata {
+  standardizedBreeds: string[];
+  locationCountries: string[];
+  availableCountries: string[];
+  organizations: OrganizationOption[];
+}
+
+interface UseParallelMetadataReturn {
+  metadata: Metadata;
+  metadataLoading: boolean;
+  metadataError: string | null;
+  refetchMetadata: () => Promise<void>;
+  clearMetadataCache: () => void;
+}
+
+export function useParallelMetadata(): UseParallelMetadataReturn {
+  const [metadata, setMetadata] = useState<Metadata>({
     standardizedBreeds: ["Any breed"],
     locationCountries: ["Any country"],
     availableCountries: ["Any country"],
@@ -21,10 +37,9 @@ export function useParallelMetadata() {
   });
 
   const [metadataLoading, setMetadataLoading] = useState(true);
-  const [metadataError, setMetadataError] = useState(null);
+  const [metadataError, setMetadataError] = useState<string | null>(null);
 
-  // Create cached API functions
-  const breedsCache = useMetadataCache("breeds", getStandardizedBreeds);
+  const breedsCache = useMetadataCache("breeds", () => getStandardizedBreeds());
   const locationCountriesCache = useMetadataCache(
     "location-countries",
     getLocationCountries,
@@ -43,7 +58,6 @@ export function useParallelMetadata() {
     setMetadataError(null);
 
     try {
-      // Execute all API calls in parallel for maximum performance
       const [breeds, locationCountries, availableCountries, organizations] =
         await Promise.all([
           breedsCache.fetchData(),
@@ -52,9 +66,8 @@ export function useParallelMetadata() {
           organizationsCache.fetchData(),
         ]);
 
-      // Process and set the metadata
       const processedBreeds = breeds
-        ? ["Any breed", ...breeds.filter((b) => b !== "Any breed")]
+        ? ["Any breed", ...breeds.filter((b: string) => b !== "Any breed")]
         : ["Any breed"];
       const processedLocationCountries = locationCountries
         ? ["Any country", ...locationCountries]
@@ -64,10 +77,12 @@ export function useParallelMetadata() {
         : ["Any country"];
       const processedOrganizations = organizations
         ? [
-            { id: null, name: "Any organization" },
-            ...(Array.isArray(organizations) ? organizations : []),
+            { id: null, name: "Any organization" } as OrganizationOption,
+            ...(Array.isArray(organizations)
+              ? (organizations as OrganizationOption[])
+              : []),
           ]
-        : [{ id: null, name: "Any organization" }];
+        : [{ id: null, name: "Any organization" } as OrganizationOption];
 
       setMetadata({
         standardizedBreeds: processedBreeds,
@@ -88,11 +103,9 @@ export function useParallelMetadata() {
     organizationsCache,
   ]);
 
-  // Stable ref for mount-only effect
   const fetchAllMetadataRef = useRef(fetchAllMetadata);
   fetchAllMetadataRef.current = fetchAllMetadata;
 
-  // Fetch metadata on mount only
   useEffect(() => {
     fetchAllMetadataRef.current();
   }, []);

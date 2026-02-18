@@ -195,9 +195,9 @@ export function preloadImagesAdaptive(urls: string[], context = "catalog"): void
       }
 
       document.head.appendChild(link);
-    } catch {
+    } catch (error: unknown) {
       if (process.env.NODE_ENV !== "production") {
-        console.warn("Preload failed for:", url);
+        console.warn("Preload failed for:", url, error);
       }
     }
   });

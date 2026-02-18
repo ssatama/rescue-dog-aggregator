@@ -1,7 +1,7 @@
-export default function Loading(): React.JSX.Element {
+export default function Loading({ className }: { className?: string }): React.JSX.Element {
   return (
     <div
-      className="flex justify-center items-center min-h-[200px]"
+      className={className || "flex justify-center items-center min-h-[200px]"}
       data-testid="loading"
       role="status"
       aria-live="polite"

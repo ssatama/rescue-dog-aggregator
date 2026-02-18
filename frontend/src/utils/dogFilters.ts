@@ -5,7 +5,7 @@ interface DogWithAgeFields extends Partial<Dog> {
   ageMaxMonths?: number;
 }
 
-interface Filters {
+export interface Filters {
   age?: string;
   breed?: string;
   shipsTo?: string;
@@ -81,7 +81,7 @@ export const filterByLocation = (dogs: Partial<Dog>[], locationFilter: string | 
   return dogs.filter((dog) => {
     if (!dog || !dog.organization) return false;
 
-    const serviceRegions = (dog.organization as Record<string, unknown>).service_regions as string[] | undefined || [];
+    const serviceRegions = dog.organization.service_regions || [];
     return serviceRegions.includes(locationFilter);
   });
 };
@@ -170,7 +170,7 @@ export const extractAvailableLocations = (dogs: Partial<Dog>[]): string[] => {
 
   dogs.forEach((dog) => {
     if (dog && dog.organization) {
-      const serviceRegions = (dog.organization as Record<string, unknown>).service_regions as string[] | undefined;
+      const serviceRegions = dog.organization.service_regions;
       if (serviceRegions) {
         serviceRegions.forEach((region) => {
           if (region) {

@@ -40,6 +40,7 @@ export interface Dog {
     country?: string;
     city?: string;
     ships_to?: string[];
+    service_regions?: string[];
     config_id?: string;
     slug?: string;
   };

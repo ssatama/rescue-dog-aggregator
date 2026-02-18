@@ -1,12 +1,24 @@
-/**
- * Hook for progressive loading with IntersectionObserver
- * Enables lazy loading of content when it becomes visible in viewport
- */
 import { useState, useEffect, useRef, useCallback } from "react";
+import type { RefObject } from "react";
 
-export default function useProgressiveLoading(options = {}) {
+interface ProgressiveLoadingOptions {
+  rootMargin?: string;
+  threshold?: number;
+  loadDelay?: number;
+  onVisible?: (() => void) | null;
+}
+
+interface ProgressiveLoadingReturn {
+  ref: RefObject<HTMLElement | null>;
+  isVisible: boolean;
+  isLoaded: boolean;
+}
+
+export default function useProgressiveLoading(
+  options: ProgressiveLoadingOptions = {},
+): ProgressiveLoadingReturn {
   const {
-    rootMargin = "50px", // Load slightly before entering viewport
+    rootMargin = "50px",
     threshold = 0.01,
     loadDelay = 0,
     onVisible = null,
@@ -14,17 +26,18 @@ export default function useProgressiveLoading(options = {}) {
 
   const [isVisible, setIsVisible] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const ref = useRef(null);
-  const observerRef = useRef(null);
-  const handleIntersectionRef = useRef(null);
+  const ref = useRef<HTMLElement | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const handleIntersectionRef = useRef<
+    ((entries: IntersectionObserverEntry[]) => void) | null
+  >(null);
 
   const handleIntersection = useCallback(
-    (entries) => {
+    (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting && !isVisible) {
           setIsVisible(true);
 
-          // Load content after optional delay
           if (loadDelay > 0) {
             setTimeout(() => {
               setIsLoaded(true);
@@ -35,7 +48,6 @@ export default function useProgressiveLoading(options = {}) {
             onVisible?.();
           }
 
-          // Unobserve after becoming visible
           if (observerRef.current && ref.current) {
             observerRef.current.unobserve(ref.current);
           }
@@ -45,7 +57,6 @@ export default function useProgressiveLoading(options = {}) {
     [isVisible, loadDelay, onVisible],
   );
 
-  // Update the ref inside useEffect to avoid updating ref during render
   useEffect(() => {
     handleIntersectionRef.current = handleIntersection;
   }, [handleIntersection]);
@@ -53,19 +64,16 @@ export default function useProgressiveLoading(options = {}) {
   useEffect(() => {
     if (!ref.current) return;
 
-    // Create intersection observer with stable ref callback
     observerRef.current = new IntersectionObserver(
-      (entries) => handleIntersectionRef.current(entries),
+      (entries) => handleIntersectionRef.current?.(entries),
       {
         rootMargin,
         threshold,
       },
     );
 
-    // Start observing
     observerRef.current.observe(ref.current);
 
-    // Cleanup
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();

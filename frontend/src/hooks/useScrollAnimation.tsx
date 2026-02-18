@@ -1,35 +1,25 @@
-/**
- * Custom hook for scroll-based animations using Intersection Observer
- *
- * Features:
- * - Smooth fade-in animations when elements enter viewport
- * - Configurable threshold, margins, and delays
- * - Accessibility support (respects prefers-reduced-motion)
- * - Performance optimized with triggerOnce option
- * - Production-safe error handling
- *
- * Usage:
- * ```javascript
- * const [ref, isVisible] = useScrollAnimation({
- *   threshold: 0.1,
- *   rootMargin: '50px',
- *   triggerOnce: true,
- *   delay: 300
- * });
- * ```
- *
- * @param {Object} options - Configuration options
- * @param {number} options.threshold - Percentage of element that must be visible (0-1)
- * @param {string} options.rootMargin - Root margin for intersection observer
- * @param {boolean} options.triggerOnce - Whether to trigger only once or on every intersection
- * @param {number} options.delay - Delay before animation starts (ms)
- * @returns {Array} [ref, isVisible] - Ref to attach to element and visibility state
- */
+import type React from "react";
 import { useEffect, useRef, useState } from "react";
 
-export const useScrollAnimation = (options = {}) => {
+interface ScrollAnimationOptions {
+  threshold?: number;
+  rootMargin?: string;
+  triggerOnce?: boolean;
+  delay?: number;
+}
+
+declare global {
+  interface Window {
+    __PLAYWRIGHT__?: boolean;
+    __PUPPETEER__?: boolean;
+  }
+}
+
+export const useScrollAnimation = (
+  options: ScrollAnimationOptions = {},
+): [React.RefObject<HTMLDivElement | null>, boolean] => {
   const [isVisible, setIsVisible] = useState(false);
-  const elementRef = useRef();
+  const elementRef = useRef<HTMLDivElement | null>(null);
 
   const {
     threshold = 0.1,
@@ -45,9 +35,7 @@ export const useScrollAnimation = (options = {}) => {
       return;
     }
 
-    // Check if IntersectionObserver is available
     if (!window.IntersectionObserver) {
-      // Fallback: set visible immediately in test environment
       if (process.env.NODE_ENV === "test") {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Fallback for test env without IntersectionObserver
         setIsVisible(true);
@@ -55,8 +43,6 @@ export const useScrollAnimation = (options = {}) => {
       return;
     }
 
-    // Additional fallback for E2E test environments where IntersectionObserver might not work properly
-    // Detect if we're in a headless browser or test environment by checking for common test indicators
     const isTestEnvironment =
       process.env.NODE_ENV === "test" ||
       typeof window.navigator?.webdriver !== "undefined" ||
@@ -66,7 +52,6 @@ export const useScrollAnimation = (options = {}) => {
       window.__PUPPETEER__;
 
     if (isTestEnvironment) {
-      // In test environments, immediately set visible to avoid lazy loading issues
       setIsVisible(true);
       return;
     }
@@ -107,29 +92,28 @@ export const useScrollAnimation = (options = {}) => {
   return [elementRef, isVisible];
 };
 
-// Prefers-reduced-motion utility
-export const useReducedMotion = () => {
+export const useReducedMotion = (): boolean => {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
-    // Check if we're in a browser environment and matchMedia is available
     if (typeof window === "undefined" || !window.matchMedia) {
       return;
     }
 
     try {
-      const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const mediaQuery = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      );
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Reading browser media query on mount
       setPrefersReducedMotion(mediaQuery.matches);
 
-      const handleChange = (event) => {
+      const handleChange = (event: MediaQueryListEvent): void => {
         setPrefersReducedMotion(event.matches);
       };
 
       if (mediaQuery.addEventListener) {
         mediaQuery.addEventListener("change", handleChange);
       } else {
-        // Fallback for older browsers
         mediaQuery.addListener?.(handleChange);
       }
 
@@ -140,10 +124,12 @@ export const useReducedMotion = () => {
           mediaQuery.removeListener?.(handleChange);
         }
       };
-    } catch (error) {
-      // Fallback if matchMedia fails - only log in development
+    } catch (error: unknown) {
       if (process.env.NODE_ENV !== "production") {
-        console.warn("matchMedia not supported, animations will be enabled");
+        console.warn(
+          "matchMedia setup failed, animations will be enabled:",
+          error,
+        );
       }
     }
   }, []);
@@ -151,24 +137,34 @@ export const useReducedMotion = () => {
   return prefersReducedMotion;
 };
 
-// Component wrapper for scroll animations
+interface ScrollAnimationWrapperProps {
+  children: React.ReactNode;
+  className?: string;
+  animationType?: "fade-in" | "slide-up";
+  delay?: number;
+  threshold?: number;
+  rootMargin?: string;
+  triggerOnce?: boolean;
+  [key: string]: unknown;
+}
+
 export const ScrollAnimationWrapper = ({
   children,
   className = "",
   animationType = "fade-in",
   delay = 0,
   ...props
-}) => {
+}: ScrollAnimationWrapperProps): React.ReactElement => {
   const { threshold, rootMargin, triggerOnce, ...restProps } = props;
   const [ref, isVisible] = useScrollAnimation({
-    threshold,
-    rootMargin,
-    triggerOnce,
+    threshold: threshold as number | undefined,
+    rootMargin: rootMargin as string | undefined,
+    triggerOnce: triggerOnce as boolean | undefined,
     delay,
   });
   const prefersReducedMotion = useReducedMotion();
 
-  const getAnimationClass = () => {
+  const getAnimationClass = (): string => {
     if (prefersReducedMotion) return "";
 
     if (!isVisible) {

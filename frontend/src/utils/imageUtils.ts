@@ -11,15 +11,12 @@ const R2_CUSTOM_DOMAIN =
 const USE_R2_IMAGES = true;
 const PLACEHOLDER_IMAGE = "/placeholder_dog.svg";
 
-function getOriginalOrTransformed(originalUrl: string, transformedUrl: string): string {
-  return USE_R2_IMAGES ? transformedUrl : originalUrl;
-}
-
 class LRUCache<K, V> {
   private maxSize: number;
   private cache: Map<K, V>;
   private hits: number;
   private misses: number;
+
 
   constructor(maxSize = 1000) {
     this.maxSize = maxSize;
@@ -820,9 +817,9 @@ export function preloadImages(imageUrls: string[], context = "card"): void {
       }
 
       document.head.appendChild(link);
-    } catch {
-      if (process.env.NODE_ENV === "development") {
-        // Development-only logging
+    } catch (error: unknown) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("Preload failed for:", url, error);
       }
     }
   });

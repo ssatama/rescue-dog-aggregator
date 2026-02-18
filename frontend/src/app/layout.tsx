@@ -1,4 +1,4 @@
-// src/app/layout.js
+import type { Metadata } from "next";
 import "./globals.css";
 import { Inter, Caveat } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -11,7 +11,6 @@ import SentryInitializer from "@/components/SentryInitializer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
 
-// Use Inter variable font with all required weights
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -19,7 +18,6 @@ const inter = Inter({
   display: "swap",
 });
 
-// Handwritten font for polaroid-style dog name cards
 const caveat = Caveat({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -27,11 +25,11 @@ const caveat = Caveat({
   display: "swap",
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NODE_ENV === 'production'
-      ? 'https://www.rescuedogs.me'
-      : (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')
+    process.env.NODE_ENV === "production"
+      ? "https://www.rescuedogs.me"
+      : (process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"),
   ),
   title: "Rescue Dog Aggregator - Find Your Perfect Rescue Dog",
   description:
@@ -90,42 +88,46 @@ export const metadata = {
       "max-snippet": -1,
     },
   },
-  // Note: Next.js 15.2+ supports metadata.jsonLd for native JSON-LD
-  // Current implementation uses metadata.other which is stable and works well
-  // Future enhancement: migrate to metadata.jsonLd when it's fully stable
   other: {
     "application/ld+json": JSON.stringify({
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "Rescue Dog Aggregator",
-      "url": "https://www.rescuedogs.me",
-      "description": "Find adoptable rescue dogs from 13 organizations across 9 countries. Browse 3,000+ dogs available for adoption.",
-      "potentialAction": {
+      name: "Rescue Dog Aggregator",
+      url: "https://www.rescuedogs.me",
+      description:
+        "Find adoptable rescue dogs from 13 organizations across 9 countries. Browse 3,000+ dogs available for adoption.",
+      potentialAction: {
         "@type": "SearchAction",
-        "target": {
+        target: {
           "@type": "EntryPoint",
-          "urlTemplate": "https://www.rescuedogs.me/dogs?search={search_term_string}"
+          urlTemplate:
+            "https://www.rescuedogs.me/dogs?search={search_term_string}",
         },
-        "query-input": "required name=search_term_string"
+        "query-input": "required name=search_term_string",
       },
-      "publisher": {
+      publisher: {
         "@type": "Organization",
-        "name": "Rescue Dog Aggregator",
-        "logo": {
+        name: "Rescue Dog Aggregator",
+        logo: {
           "@type": "ImageObject",
-          "url": "https://www.rescuedogs.me/logo.png",
-          "width": 512,
-          "height": 512
-        }
+          url: "https://www.rescuedogs.me/logo.png",
+          width: 512,
+          height: 512,
+        },
       },
-      "inLanguage": "en-US",
-      "copyrightYear": 2025,
-      "keywords": "rescue dogs, dog adoption, pet rescue, animal shelter, adopt a dog"
-    })
-  }
+      inLanguage: "en-US",
+      copyrightYear: 2025,
+      keywords:
+        "rescue dogs, dog adoption, pet rescue, animal shelter, adopt a dog",
+    }),
+  },
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element {
   return (
     <html lang="en" className={`${inter.variable} ${caveat.variable}`}>
       <body

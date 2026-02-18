@@ -20,17 +20,6 @@ interface BreedWithImages {
   sample_dogs?: { primary_image_url?: string }[];
 }
 
-interface TransformedBreed {
-  name: string;
-  breed_name: string;
-  slug: string;
-  description: string;
-  count: number;
-  available_count: number;
-  image_url: string | null;
-  imageUrl: string | null;
-}
-
 interface MobileHomePageData {
   dogs: Dog[];
   statistics: {
@@ -56,13 +45,12 @@ export function transformMobileHomePageData({
   countryStats?: { code: string; count: number }[];
   ageStats?: { slug: string; count: number }[];
 }): MobileHomePageData {
-  const dogsInput = initialRecentDogs as RecentDogsResponse | Dog[] | null | undefined;
-  const list = Array.isArray((dogsInput as RecentDogsResponse)?.dogs)
-    ? (dogsInput as RecentDogsResponse).dogs!
-    : Array.isArray((dogsInput as RecentDogsResponse)?.results)
-      ? (dogsInput as RecentDogsResponse).results!
-      : Array.isArray(dogsInput)
-        ? dogsInput
+  const list = Array.isArray(initialRecentDogs)
+    ? initialRecentDogs
+    : Array.isArray(initialRecentDogs?.dogs)
+      ? initialRecentDogs.dogs
+      : Array.isArray(initialRecentDogs?.results)
+        ? initialRecentDogs.results
         : [];
 
   const mobileDogs = list.slice(0, 8).map((d) => ({ ...d, id: String(d.id) }));
