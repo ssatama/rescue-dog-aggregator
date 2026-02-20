@@ -341,26 +341,38 @@ describe("Server Animals Service", () => {
   });
 
   describe("getAnimalBySlug", () => {
-    it("should return null on HTTP 522 server error", async () => {
+    it("should throw on HTTP 522 server error", async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 522,
         statusText: "Connection Timed Out",
       });
 
-      const result = await getAnimalBySlug("test-dog-123");
-      expect(result).toBeNull();
+      await expect(getAnimalBySlug("test-dog-123")).rejects.toThrow(
+        "Failed to fetch animal: HTTP 522",
+      );
     });
 
-    it("should return null on HTTP 500 server error", async () => {
+    it("should throw on HTTP 500 server error", async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: "Internal Server Error",
       });
 
-      const result = await getAnimalBySlug("test-dog-123");
-      expect(result).toBeNull();
+      await expect(getAnimalBySlug("test-dog-123")).rejects.toThrow(
+        "Failed to fetch animal: HTTP 500",
+      );
+    });
+
+    it("should log warning before throwing on 5xx", async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(getAnimalBySlug("test-dog-123")).rejects.toThrow();
     });
 
     it("should return null on HTTP 404", async () => {
@@ -388,12 +400,20 @@ describe("Server Animals Service", () => {
   });
 
   describe("getBreedBySlug error handling", () => {
-    it("should return null when fetch throws an error", async () => {
-      (fetch as jest.Mock).mockRejectedValueOnce(
-        new Error("Network failure"),
-      );
+    it("should return null when breed not found in stats", async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          total_dogs: 0,
+          unique_breeds: 0,
+          breed_groups: [],
+          qualifying_breeds: [],
+          purebred_count: 0,
+          crossbreed_count: 0,
+        }),
+      });
 
-      const result = await getBreedBySlug("bulldog");
+      const result = await getBreedBySlug("nonexistent-breed");
       expect(result).toBeNull();
     });
   });

@@ -201,13 +201,14 @@ describe("getAnimalBySlug with LLM enhancement", () => {
     expect(result).toBeNull();
   });
 
-  it("should return null for server errors (5xx)", async () => {
+  it("should throw for non-404 HTTP errors", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 500,
     });
 
-    const result = await getAnimalBySlug("some-slug");
-    expect(result).toBeNull();
+    await expect(getAnimalBySlug("some-slug")).rejects.toThrow(
+      "Failed to fetch animal: HTTP 500",
+    );
   });
 });

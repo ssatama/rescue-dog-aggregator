@@ -194,6 +194,7 @@ class DogProfilerPipeline:
                 for field, default in required_defaults.items():
                     if field not in profile_data["confidence_scores"]:
                         profile_data["confidence_scores"][field] = default
+                        logger.warning(f"Backfilled missing confidence score '{field}' with default {default} for dog {dog_id} ({dog_name})")
 
             # Add source references if not present
             if "source_references" not in profile_data:
