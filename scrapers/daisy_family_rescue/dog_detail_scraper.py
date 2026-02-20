@@ -88,9 +88,15 @@ class DaisyFamilyRescueDogDetailScraper:
         return browser_result.driver
 
     def extract_dog_details(self, dog_url: str, logger=None) -> dict[str, Any] | None:
-        """Extract detailed information from a single dog's detail page."""
+        """Extract detailed information from a single dog's detail page (sync caller)."""
         if USE_PLAYWRIGHT:
             return asyncio.run(self._extract_dog_details_playwright(dog_url, logger))
+        return self._extract_dog_details_selenium(dog_url, logger)
+
+    async def async_extract_dog_details(self, dog_url: str, logger=None) -> dict[str, Any] | None:
+        """Extract detailed information (async caller — avoids nested asyncio.run())."""
+        if USE_PLAYWRIGHT:
+            return await self._extract_dog_details_playwright(dog_url, logger)
         return self._extract_dog_details_selenium(dog_url, logger)
 
     def _extract_dog_details_selenium(self, dog_url: str, logger=None) -> dict[str, Any] | None:

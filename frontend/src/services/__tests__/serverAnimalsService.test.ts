@@ -9,6 +9,7 @@ import {
   getBreedBySlug,
   getAgeStats,
   getAnimalsByCuration,
+  getAnimalBySlug,
   clearCache,
 } from "../serverAnimalsService";
 import { reportError } from "../../utils/logger";
@@ -335,6 +336,64 @@ describe("Server Animals Service", () => {
       });
 
       const result = await getBreedBySlug("non-existent-breed");
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("getAnimalBySlug", () => {
+    it("should return null on HTTP 522 server error", async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 522,
+        statusText: "Connection Timed Out",
+      });
+
+      const result = await getAnimalBySlug("test-dog-123");
+      expect(result).toBeNull();
+    });
+
+    it("should return null on HTTP 500 server error", async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      const result = await getAnimalBySlug("test-dog-123");
+      expect(result).toBeNull();
+    });
+
+    it("should return null on HTTP 404", async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+
+      const result = await getAnimalBySlug("nonexistent-dog");
+      expect(result).toBeNull();
+    });
+
+    it("should throw on HTTP 400 client error", async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: "Bad Request",
+      });
+
+      await expect(getAnimalBySlug("bad-request")).rejects.toThrow(
+        "Failed to fetch animal: HTTP 400",
+      );
+    });
+  });
+
+  describe("getBreedBySlug error handling", () => {
+    it("should return null when fetch throws an error", async () => {
+      (fetch as jest.Mock).mockRejectedValueOnce(
+        new Error("Network failure"),
+      );
+
+      const result = await getBreedBySlug("bulldog");
       expect(result).toBeNull();
     });
   });

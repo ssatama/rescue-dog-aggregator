@@ -849,7 +849,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
       scope.setContext("request", { slug });
       Sentry.captureException(error);
     });
-    throw error;
+    return null;
   }
 });
 
@@ -1006,6 +1006,16 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<ApiDogWithLlm
     if (!response.ok) {
       if (response.status === 404) {
         logger.log(`Animal not found (404): ${slug}`);
+        return null;
+      }
+      if (response.status >= 500) {
+        logger.warn(
+          `Server error fetching animal ${slug}: HTTP ${response.status}`,
+        );
+        reportError(new Error(`Server error: HTTP ${response.status}`), {
+          context: "getAnimalBySlug",
+          slug,
+        });
         return null;
       }
       throw new Error(`Failed to fetch animal: HTTP ${response.status}`);

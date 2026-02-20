@@ -1,5 +1,5 @@
 import time
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
@@ -564,7 +564,8 @@ class TestDaisyFamilyRescueScraperIntegration:
         assert "North Macedonia" in props["origin_translated"]
 
     @pytest.mark.integration
-    def test_detail_scraper_integration(self, scraper):
+    @pytest.mark.asyncio
+    async def test_detail_scraper_integration(self, scraper):
         basic_dog_data = {
             "name": "Test Dog",
             "external_id": "hund-test",
@@ -584,10 +585,10 @@ class TestDaisyFamilyRescueScraperIntegration:
             },
         }
 
-        with patch.object(DaisyFamilyRescueDogDetailScraper, "extract_dog_details") as mock_extract:
+        with patch.object(DaisyFamilyRescueDogDetailScraper, "async_extract_dog_details", new_callable=AsyncMock) as mock_extract:
             mock_extract.return_value = mock_detailed_data
 
-            enhanced_data = scraper._enhance_with_detail_page(basic_dog_data)
+            enhanced_data = await scraper._enhance_with_detail_page(basic_dog_data)
 
             assert enhanced_data["name"] == "Test Dog"
             assert enhanced_data["breed"] == "Mischling"
@@ -600,7 +601,8 @@ class TestDaisyFamilyRescueScraperIntegration:
             assert props["height_cm"] == 45
 
     @pytest.mark.integration
-    def test_detail_scraper_error_handling(self, scraper):
+    @pytest.mark.asyncio
+    async def test_detail_scraper_error_handling(self, scraper):
         basic_dog_data = {
             "name": "Test Dog",
             "external_id": "hund-test",
@@ -608,10 +610,10 @@ class TestDaisyFamilyRescueScraperIntegration:
             "properties": {"source": "daisyfamilyrescue.de"},
         }
 
-        with patch.object(DaisyFamilyRescueDogDetailScraper, "extract_dog_details") as mock_extract:
+        with patch.object(DaisyFamilyRescueDogDetailScraper, "async_extract_dog_details", new_callable=AsyncMock) as mock_extract:
             mock_extract.side_effect = Exception("Connection error")
 
-            result = scraper._enhance_with_detail_page(basic_dog_data)
+            result = await scraper._enhance_with_detail_page(basic_dog_data)
             assert result == basic_dog_data
 
     @pytest.mark.integration
