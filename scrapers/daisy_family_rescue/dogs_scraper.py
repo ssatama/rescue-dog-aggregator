@@ -215,7 +215,8 @@ class DaisyFamilyRescueScraper(BaseScraper):
             for dog_data in basic_dogs_data:
                 try:
                     # Enhance with detailed information from dog's detail page
-                    enhanced_data = self._enhance_with_detail_page(dog_data)
+                    # Selenium path: safe to use asyncio.run (no existing event loop)
+                    enhanced_data = asyncio.run(self._enhance_with_detail_page(dog_data))
                     if enhanced_data:
                         all_dogs.append(enhanced_data)
                         processed_count += 1
@@ -310,7 +311,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 processed_count = 0
                 for dog_data in basic_dogs_data:
                     try:
-                        enhanced_data = self._enhance_with_detail_page(dog_data)
+                        enhanced_data = await self._enhance_with_detail_page(dog_data)
                         if enhanced_data:
                             all_dogs.append(enhanced_data)
                             processed_count += 1
@@ -464,11 +465,13 @@ class DaisyFamilyRescueScraper(BaseScraper):
             self.logger.warning(f"Error extracting image: {e}")
         return None
 
-    def _enhance_with_detail_page(self, basic_dog_data: dict[str, Any]) -> dict[str, Any] | None:
+    async def _enhance_with_detail_page(self, basic_dog_data: dict[str, Any]) -> dict[str, Any] | None:
         """Enhance basic dog data with detailed information from the dog's detail page.
 
         Uses DaisyFamilyRescueDogDetailScraper to extract comprehensive information
         from individual dog profile pages, including Steckbrief data.
+
+        Async to avoid nested asyncio.run() when called from _extract_with_playwright.
         """
         adoption_url = basic_dog_data.get("adoption_url")
         if not adoption_url:
@@ -480,8 +483,8 @@ class DaisyFamilyRescueScraper(BaseScraper):
             if self.detail_scraper is None:
                 self.detail_scraper = DaisyFamilyRescueDogDetailScraper()
 
-            # Extract detailed information with rate limiting
-            detailed_data = self.detail_scraper.extract_dog_details(adoption_url, self.logger)
+            # Extract detailed information — use async to avoid nested event loops
+            detailed_data = await self.detail_scraper.async_extract_dog_details(adoption_url, self.logger)
 
             # Apply rate limiting between detail page requests
             self.respect_rate_limit()

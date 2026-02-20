@@ -281,6 +281,12 @@ class AnimalRescueBosniaScraper(BaseScraper):
             # Apply unified standardization
             return self.process_animal(result)
 
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                self.logger.warning(f"Dog page not found (likely adopted): {url}")
+                return None
+            self.logger.error(f"HTTP error scraping animal details from {url}: {e}")
+            return None
         except Exception as e:
             self.logger.error(f"Error scraping animal details from {url}: {e}")
             return None

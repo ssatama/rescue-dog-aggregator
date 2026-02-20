@@ -1008,6 +1008,11 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<ApiDogWithLlm
         logger.log(`Animal not found (404): ${slug}`);
         return null;
       }
+      if (response.status >= 500) {
+        logger.warn(
+          `Server error fetching animal ${slug}: HTTP ${response.status}`,
+        );
+      }
       throw new Error(`Failed to fetch animal: HTTP ${response.status}`);
     }
 

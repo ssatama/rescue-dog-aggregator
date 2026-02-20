@@ -1,6 +1,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 
 from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import (
     AnimalRescueBosniaScraper,
@@ -261,3 +262,39 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
 
         assert result["standardized_size"] is not None
         assert result["standardized_size"] == "Large"
+
+    @patch("requests.get")
+    def test_detail_page_404_logs_warning_not_error(self, mock_get, scraper, caplog):
+        """404 on a dog detail page (adopted dog) should log warning, not error."""
+        mock_response = Mock()
+        mock_response.status_code = 404
+        mock_response.raise_for_status = Mock(side_effect=requests.exceptions.HTTPError(response=mock_response))
+        mock_get.return_value = mock_response
+
+        import logging
+
+        with caplog.at_level(logging.WARNING):
+            result = scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/ryan/")
+
+        assert result is None
+        warning_msgs = [r for r in caplog.records if r.levelno == logging.WARNING]
+        error_msgs = [r for r in caplog.records if r.levelno == logging.ERROR]
+        assert any("likely adopted" in r.message for r in warning_msgs)
+        assert not error_msgs
+
+    @patch("requests.get")
+    def test_detail_page_500_logs_error(self, mock_get, scraper, caplog):
+        """500 on a dog detail page should still log as error."""
+        mock_response = Mock()
+        mock_response.status_code = 500
+        mock_response.raise_for_status = Mock(side_effect=requests.exceptions.HTTPError(response=mock_response))
+        mock_get.return_value = mock_response
+
+        import logging
+
+        with caplog.at_level(logging.ERROR):
+            result = scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/broken/")
+
+        assert result is None
+        error_msgs = [r for r in caplog.records if r.levelno == logging.ERROR]
+        assert any("HTTP error" in r.message for r in error_msgs)
