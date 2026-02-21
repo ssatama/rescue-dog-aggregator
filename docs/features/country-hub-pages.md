@@ -37,15 +37,15 @@ Country Hub Pages are SEO-optimized landing pages that allow users to browse res
 ### Frontend Components
 
 #### Page Components
-- `frontend/src/app/dogs/country/page.jsx` - Hub page (server component)
-- `frontend/src/app/dogs/country/[code]/page.jsx` - Country detail page (server component)
-- `frontend/src/app/dogs/country/CountriesHubClient.jsx` - Client component for hub
-- `frontend/src/app/dogs/country/[code]/CountryDogsClient.jsx` - Client component for detail
+- `frontend/src/app/dogs/country/page.tsx` - Hub page (server component)
+- `frontend/src/app/dogs/country/[code]/page.tsx` - Country detail page (server component)
+- `frontend/src/app/dogs/country/CountriesHubClient.tsx` - Client component for hub
+- `frontend/src/app/dogs/country/[code]/CountryDogsClient.tsx` - Client component for detail
 
 #### Shared Components
 - `CountryQuickNav` - Horizontal pill navigation / mobile dropdown for switching countries
 - `CountryStructuredData` - JSON-LD structured data for SEO
-- `countryData.js` - Country configuration (names, flags, gradients, taglines)
+- `countryData.ts` - Country configuration (names, flags, gradients, taglines)
 
 ### Backend API
 
@@ -78,11 +78,11 @@ Country Hub Pages are SEO-optimized landing pages that allow users to browse res
 ### Data Flow
 
 ```
-1. Server Component (page.jsx)
+1. Server Component (page.tsx)
    └── Fetches: getCountryStats(), getAnimals(), getAllMetadata()
    └── Passes data to Client Component
 
-2. Client Component (CountryDogsClient.jsx)
+2. Client Component (CountryDogsClient.tsx)
    └── Renders hero with country info
    └── Renders CountryQuickNav for navigation
    └── Renders DogsPageClientSimplified with country filter
@@ -157,7 +157,7 @@ Pages are:
 
 ## Configuration
 
-Country data is centralized in `frontend/src/utils/countryData.js`:
+Country data is centralized in `frontend/src/utils/countryData.ts`:
 
 ```javascript
 export const COUNTRIES = {
@@ -182,10 +182,10 @@ To add a new country:
 ## Testing
 
 Test files cover:
-- `CountryDogsClient.test.jsx` - Country detail page rendering
-- `CountriesHubClient.test.jsx` - Hub page rendering and navigation
-- `CountryQuickNav.test.jsx` - Navigation component behavior
-- `CountryStructuredData.test.jsx` - Schema.org markup
+- `CountryDogsClient.test.tsx` - Country detail page rendering
+- `CountriesHubClient.test.tsx` - Hub page rendering and navigation
+- `CountryQuickNav.test.tsx` - Navigation component behavior
+- `CountryStructuredData.test.tsx` - Schema.org markup
 - `countryData.test.js` - Utility functions
 
 ## Related Files
@@ -193,16 +193,16 @@ Test files cover:
 ```
 frontend/
 ├── src/app/dogs/country/
-│   ├── page.jsx                    # Hub server component
-│   ├── CountriesHubClient.jsx      # Hub client component
+│   ├── page.tsx                    # Hub server component
+│   ├── CountriesHubClient.tsx      # Hub client component
 │   ├── [code]/
-│   │   ├── page.jsx               # Detail server component
-│   │   └── CountryDogsClient.jsx  # Detail client component
+│   │   ├── page.tsx               # Detail server component
+│   │   └── CountryDogsClient.tsx  # Detail client component
 ├── src/components/countries/
-│   ├── CountryQuickNav.jsx        # Navigation component
-│   └── CountryStructuredData.jsx  # SEO structured data
+│   ├── CountryQuickNav.tsx        # Navigation component
+│   └── CountryStructuredData.tsx  # SEO structured data
 ├── src/utils/
-│   └── countryData.js             # Country configuration
+│   └── countryData.ts             # Country configuration
 ├── src/services/
 │   └── serverAnimalsService.js    # getCountryStats() API
 

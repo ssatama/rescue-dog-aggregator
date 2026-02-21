@@ -48,7 +48,7 @@
 
 - **Core Web Vitals**: 95+ scores
 - **Sub-200ms** API responses
-- **Image optimization** with Cloudinary/R2
+- **Image optimization** with Cloudflare R2
 - **Bundle splitting** and lazy loading
 - **CDN distribution** for static assets
 
@@ -85,8 +85,8 @@
 
 ### 🎯 Testing Coverage
 
-- **434+ backend tests** (pytest)
-- **1,249+ frontend tests** (Jest)
+- **125 backend test files** (pytest)
+- **270 frontend test files** (Jest)
 - **E2E critical paths** (Playwright)
 - **Security testing** suite
 - **Performance benchmarks**

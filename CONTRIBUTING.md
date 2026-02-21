@@ -69,8 +69,8 @@ cd frontend
 pnpm install
 
 # Verify setup
-uv run pytest tests/ -m "not slow" --tb=no -q  # Backend tests (168 test files)
-cd frontend && pnpm test                        # Frontend tests (276 test files)
+uv run pytest tests/ -m "not slow" --tb=no -q  # Backend tests (125 test files)
+cd frontend && pnpm test                        # Frontend tests (270 test files)
 ```
 
 ## Development Workflow
@@ -136,11 +136,11 @@ test(scrapers): add tests for unified DOM extraction
 
 1. **Run all tests**:
    ```bash
-   # Backend tests (REQUIRED - 168 test files)
+   # Backend tests (REQUIRED - 125 test files)
    uv run pytest tests/ -m "not slow" -v      # Fast tests for development
    uv run pytest tests/ -m "unit or fast" -v  # Unit + fast tests
 
-   # Frontend tests (REQUIRED - 276 test files)
+   # Frontend tests (REQUIRED - 270 test files)
    cd frontend
    pnpm test
 
@@ -211,22 +211,11 @@ Any additional information, dependencies, or migration steps.
 
 **Example:**
 ```python
-from typing import List, Optional
-
 def get_animals_by_organization(
-    organization_id: int, 
-    limit: Optional[int] = 20
-) -> List[Dict[str, Any]]:
-    """
-    Fetch animals from a specific organization.
-    
-    Args:
-        organization_id: ID of the organization
-        limit: Maximum number of animals to return
-        
-    Returns:
-        List of animal dictionaries
-    """
+    organization_id: int,
+    limit: int | None = 20,
+) -> list[dict[str, Any]]:
+    """Fetch animals from a specific organization."""
     # Implementation here
     pass
 ```
@@ -313,7 +302,7 @@ We follow TDD principles:
 ### Backend Testing
 
 ```bash
-# Fast test suite (recommended for development - 168 test files)
+# Fast test suite (recommended for development - 125 test files)
 uv run pytest tests/ -m "not slow" -v      # Excludes slow tests
 uv run pytest tests/ -m "unit or fast" -v  # Unit + fast tests
 
@@ -344,7 +333,7 @@ uv run pytest tests/ -v
 ```bash
 cd frontend
 
-# All tests (276 test files)
+# All tests (270 test files)
 pnpm test
 
 # Specific test categories

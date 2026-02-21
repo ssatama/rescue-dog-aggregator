@@ -18,7 +18,7 @@ uv run pytest tests/ -v                                # Full suite
 # By Category
 uv run pytest tests/ -m "api" -v                       # API endpoints
 uv run pytest tests/ -m "database" -v                  # Database integration
-uv run pytest tests/ -m "selenium" -v                  # Browser automation
+uv run pytest tests/ -m "browser" -v                   # Browser automation (Playwright)
 ```
 
 ### Frontend (Next.js/Jest)
@@ -46,9 +46,9 @@ database        # Data integrity and queries
 integration     # Full workflow testing
 
 # Specialized
-browser/selenium     # WebDriver automation
-network_dependent    # External service dependencies
-complex_setup       # Extensive mocking requirements
+browser              # Playwright browser automation
+external             # External service dependencies
+security             # Security validation
 ```
 
 ### TDD Example - Backend

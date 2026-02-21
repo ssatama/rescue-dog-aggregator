@@ -66,15 +66,22 @@ The swipe feature is the core engagement mechanism of RescueDogs.me, providing a
 
 #### Component Structure
 ```
-frontend/app/swipe/
+frontend/src/app/swipe/
 ├── page.tsx                      # Mobile routing & redirect
-├── SwipeContainerWithFilters.tsx # Main orchestration
+frontend/src/components/swipe/
+├── SwipeContainer.tsx            # Main orchestration
+├── SwipeStack.tsx                # Card stack management
 ├── SwipeCard.tsx                 # Individual dog card
 ├── SwipeFilters.tsx              # Filter selection UI
-├── SwipeDetails.tsx              # Expanded dog info
+├── FilterModal.tsx               # Filter modal overlay
+├── ImageCarousel.tsx             # Dog image carousel
+├── PersonalityTraits.tsx         # Personality display
+├── EnergyIndicator.tsx           # Energy level indicator
+├── AdoptionCTA.tsx               # Adoption call to action
 ├── SwipeOnboarding.tsx           # First-time experience
 ├── SwipeActions.tsx              # Like/pass buttons
 ├── SwipeEmpty.tsx                # Empty state
+├── SwipeLoader.tsx               # Loading state
 └── SwipeErrorBoundary.tsx        # Error handling
 ```
 

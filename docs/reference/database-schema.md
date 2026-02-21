@@ -13,7 +13,7 @@ The database is designed around a central challenge: **normalizing heterogeneous
 - **LLM Enhancement**: AI-powered enrichment fields for improved descriptions and profiling
 - **Global Test Isolation**: Comprehensive fixtures prevent test data contamination
 
-This design accommodates the reality that source data is inconsistent while providing a clean, queryable interface for the application across 13+ active organizations with 2,500+ dogs.
+This design accommodates the reality that source data is inconsistent while providing a clean, queryable interface for the application across 12 active organizations with 1,500+ active dogs.
 
 ## Core Tables
 

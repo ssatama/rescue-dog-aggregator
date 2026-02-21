@@ -323,9 +323,9 @@ pytest -m "not slow and not browser" --maxfail=3  # Tier 2: CI (5-8 min)
 pytest                                         # Tier 3: Full (10-15 min)
 
 # Frontend (Jest + Playwright)
-npm test                                       # Unit tests
-npm run build                                  # Build verification
-npx playwright test                            # E2E tests
+pnpm jest --watchAll=false                     # Unit tests
+pnpm build                                     # Build verification
+pnpm exec playwright test                      # E2E tests
 ```
 
 ### Test Markers
@@ -541,7 +541,7 @@ Refer to `CLAUDE.md` for comprehensive list. Key ones:
 
 ```bash
 # Development
-uv run python run_api.py                 # Start backend (port 8000)
+uv run uvicorn api.main:app --reload     # Start backend (port 8000)
 cd frontend && pnpm dev                  # Start frontend (port 3000)
 
 # Testing

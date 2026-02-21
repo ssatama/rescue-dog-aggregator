@@ -19,7 +19,7 @@ psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals;"
 ### Running the Application
 ```bash
 # Start backend (from root)
-uv run python run_api.py
+uv run uvicorn api.main:app --reload
 
 # Start frontend (separate terminal)
 cd frontend && pnpm dev
@@ -175,8 +175,8 @@ uv run pytest -m performance -v
 # Check metrics
 curl http://localhost:8000/api/metrics
 
-# Memory profiling
-uv run python -m memory_profiler run_api.py
+# Check health
+curl http://localhost:8000/api/monitoring/health
 ```
 
 ## Development Workflow

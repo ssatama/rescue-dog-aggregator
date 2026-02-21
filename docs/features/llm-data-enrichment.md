@@ -405,8 +405,8 @@ pytest tests/api/test_llm_security_simple.py -v
 
 ```bash
 # Component tests
-npm test -- PersonalityTraits
-npm test -- dogProfilerAnalyzer
+pnpm jest --testPathPatterns "PersonalityTraits" --watchAll=false
+pnpm jest --testPathPatterns "dogProfilerAnalyzer" --watchAll=false
 ```
 
 ## Future Enhancements
