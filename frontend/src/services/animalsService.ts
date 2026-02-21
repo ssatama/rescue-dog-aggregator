@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ApiDog } from "../types/apiDog";
+import type { Dog } from "../types/dog";
 import { get } from "../utils/api";
 import { logger, reportError } from "../utils/logger";
 import {
@@ -8,6 +9,10 @@ import {
   StatisticsSchema,
 } from "../schemas/animals";
 import { FilterCountsResponseSchema } from "../schemas/common";
+import {
+  transformApiDogToDog,
+  transformApiDogsToDogs,
+} from "../utils/dogTransformer";
 
 type AnimalParams = Record<string, unknown>;
 
@@ -39,7 +44,7 @@ function cleanFilterParams(params: AnimalParams): AnimalParams {
 export async function getAnimals(
   params: AnimalParams = {},
   options: RequestInit = {},
-): Promise<ApiDog[]> {
+): Promise<Dog[]> {
   logger.log("Fetching animals with params:", params);
   const cleanParams = cleanFilterParams(params);
 
@@ -48,30 +53,33 @@ export async function getAnimals(
   }
 
   logger.log("Cleaned params for API:", cleanParams);
-  return get<ApiDog[]>("/api/animals", cleanParams, {
+  const raw = await get<ApiDog[]>("/api/animals", cleanParams, {
     ...options,
     schema: z.array(ApiDogSchema),
   });
+  return transformApiDogsToDogs(raw);
 }
 
-export async function getAnimalById(id: string | number): Promise<ApiDog> {
+export async function getAnimalById(id: string | number): Promise<Dog> {
   logger.log(`Fetching animal by ID: ${id}`);
-  return get<ApiDog>(`/api/animals/${id}`, {}, {
+  const raw = await get<ApiDog>(`/api/animals/${id}`, {}, {
     schema: ApiDogSchema,
   });
+  return transformApiDogToDog(raw);
 }
 
-export async function getAnimalBySlug(slug: string): Promise<ApiDog> {
+export async function getAnimalBySlug(slug: string): Promise<Dog> {
   logger.log(`Fetching animal by slug: ${slug}`);
-  return get<ApiDog>(`/api/animals/${slug}`, {}, {
+  const raw = await get<ApiDog>(`/api/animals/${slug}`, {}, {
     schema: ApiDogSchema,
   });
+  return transformApiDogToDog(raw);
 }
 
 export async function getAnimalsByStandardizedBreed(
   standardizedBreed: string,
   additionalParams: AnimalParams = {},
-): Promise<ApiDog[]> {
+): Promise<Dog[]> {
   const params = {
     ...additionalParams,
     standardized_breed: standardizedBreed,
@@ -83,11 +91,12 @@ export async function getAnimalsByStandardizedBreed(
 
 export const getRandomAnimals = async (
   limit: number = 3,
-): Promise<ApiDog[]> => {
+): Promise<Dog[]> => {
   logger.log(`Fetching ${limit} random animals`);
-  return get<ApiDog[]>("/api/animals/random", { limit }, {
+  const raw = await get<ApiDog[]>("/api/animals/random", { limit }, {
     schema: z.array(ApiDogSchema),
   });
+  return transformApiDogsToDogs(raw);
 };
 
 export async function getStandardizedBreeds(
@@ -174,7 +183,7 @@ export type CurationType = (typeof VALID_CURATION_TYPES)[number];
 export async function getAnimalsByCuration(
   curationType: string,
   limit: number = 4,
-): Promise<ApiDog[]> {
+): Promise<Dog[]> {
   if (!curationType) {
     throw new Error("Curation type is required");
   }
@@ -206,14 +215,15 @@ export async function getAnimalsByCuration(
 
   logger.log("API call parameters:", params);
 
-  return get<ApiDog[]>("/api/animals", params, {
+  const raw = await get<ApiDog[]>("/api/animals", params, {
     schema: z.array(ApiDogSchema),
   });
+  return transformApiDogsToDogs(raw);
 }
 
 export async function getAllAnimals(
   params: AnimalParams = {},
-): Promise<ApiDog[]> {
+): Promise<Dog[]> {
   logger.log("Fetching all animals");
   return getAnimals({
     ...params,
@@ -223,10 +233,10 @@ export async function getAllAnimals(
 
 export async function getAllAnimalsForSitemap(
   params: AnimalParams = {},
-): Promise<ApiDog[]> {
+): Promise<Dog[]> {
   logger.log("Fetching all animals for sitemap with pagination");
 
-  const allAnimals: ApiDog[] = [];
+  const allAnimals: Dog[] = [];
   const limit = 1000;
   let offset = 0;
   let hasMore = true;
@@ -340,7 +350,7 @@ interface BreedFilters {
 export async function getBreedDogs(
   breedSlug: string,
   filters: BreedFilters = {},
-): Promise<ApiDog[] | { results: ApiDog[]; total: number }> {
+): Promise<Dog[] | { results: Dog[]; total: number }> {
   logger.log(`Fetching dogs for breed: ${breedSlug}`, filters);
 
   try {
@@ -369,9 +379,10 @@ export async function getBreedDogs(
     if (filters.good_with_cats) params.good_with_cats = true;
     if (filters.good_with_dogs) params.good_with_dogs = true;
 
-    return get<ApiDog[]>("/api/animals", params, {
+    const raw = await get<ApiDog[]>("/api/animals", params, {
       schema: z.array(ApiDogSchema),
     });
+    return transformApiDogsToDogs(raw);
   } catch (error) {
     logger.error(`Error fetching breed dogs for ${breedSlug}:`, error);
     reportError(error, { context: "getBreedDogs", breedSlug });

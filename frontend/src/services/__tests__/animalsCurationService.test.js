@@ -209,7 +209,7 @@ describe("getAnimalsByCuration", () => {
       const result = await getAnimalsByCuration("recent", 4);
 
       expect(Array.isArray(result)).toBe(true);
-      expect(result).toEqual(mockDogs);
+      expect(result).toMatchObject(mockDogs);
       expect(result).toHaveLength(4);
     });
 
@@ -228,7 +228,7 @@ describe("getAnimalsByCuration", () => {
 
       const result = await getAnimalsByCuration("recent", 4);
 
-      expect(result).toEqual(partialDogs);
+      expect(result).toMatchObject(partialDogs);
       expect(result).toHaveLength(2);
     });
   });
@@ -344,7 +344,7 @@ describe("getAnimalsByCuration", () => {
 
       const result = await getAnimalsByCuration("recent", 2);
 
-      expect(result).toEqual(dogsWithMissingFields);
+      expect(result).toMatchObject(dogsWithMissingFields);
       expect(result).toHaveLength(2);
     });
   });

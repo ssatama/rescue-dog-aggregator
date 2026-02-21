@@ -21,6 +21,7 @@ export interface Dog {
   // Age information
   age?: string;
   age_text?: string;
+  age_category?: string;
   age_months?: number;
   age_min_months?: number;
   age_max_months?: number;
@@ -47,6 +48,8 @@ export interface Dog {
 
   // Location and shipping
   location?: string;
+  country?: string;
+  available_country?: string;
   ships_to?: string[];
 
   // Images

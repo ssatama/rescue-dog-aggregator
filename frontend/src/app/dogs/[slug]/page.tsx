@@ -2,28 +2,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Dog } from "../../../types/dog";
+import type { DogWithLlm } from "../../../services/serverAnimalsService";
 import { reportError } from "../../../utils/logger";
 
-type DogWithLlm = Dog & {
-  llm_tagline?: string;
-  llm_description?: string;
-  has_llm_data?: boolean;
-  organization?: {
-    id?: number;
-    name: string;
-    country?: string;
-    city?: string;
-    slug?: string;
-    config_id?: string;
-  };
-};
-
-let getAnimalBySlug: ((slug: string) => Promise<DogWithLlm | null>) | undefined;
-if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
-  getAnimalBySlug = require("../../../services/animalsService").getAnimalBySlug;
-} else {
-  getAnimalBySlug =
-    require("../../../services/serverAnimalsService").getAnimalBySlug;
+async function fetchAnimalBySlug(slug: string): Promise<DogWithLlm | null> {
+  if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
+    const { getAnimalBySlug } = await import("../../../services/animalsService");
+    return getAnimalBySlug(slug) as Promise<DogWithLlm | null>;
+  }
+  const { getAnimalBySlug } = await import("../../../services/serverAnimalsService");
+  return getAnimalBySlug(slug);
 }
 import DogSchema from "../../../components/seo/DogSchema";
 import DogFAQSchema from "../../../components/seo/DogFAQSchema";
@@ -54,18 +42,7 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
     const resolvedParams = await props.params;
 
     let dog: DogWithLlm | null | undefined;
-    if (getAnimalBySlug) {
-      dog = await getAnimalBySlug(resolvedParams.slug);
-    } else {
-      dog = {
-        name: "Dog",
-        standardized_breed: "Mixed",
-        breed: "Mixed",
-        created_at: new Date().toISOString(),
-        primary_image_url: null,
-        organization: { city: "City", country: "Country" },
-      } as unknown as DogWithLlm;
-    }
+    dog = await fetchAnimalBySlug(resolvedParams.slug);
 
     if (!dog) {
       return {
@@ -192,16 +169,16 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
 
   let initialDog: DogWithLlm | null = null;
   let fetchError = false;
-  if (getAnimalBySlug && resolvedParams.slug) {
+  if (resolvedParams.slug) {
     try {
-      initialDog = await getAnimalBySlug(resolvedParams.slug);
+      initialDog = await fetchAnimalBySlug(resolvedParams.slug);
     } catch (error) {
       fetchError = true;
       reportError(error, { context: "DogDetailPageAsync", slug: resolvedParams.slug });
     }
   }
 
-  const fetchAttempted = !!(getAnimalBySlug && resolvedParams.slug);
+  const fetchAttempted = !!resolvedParams.slug;
   if (!initialDog && fetchAttempted && !fetchError) {
     notFound();
   }
@@ -236,12 +213,14 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
     }
 
     if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
-      const { getAllAnimals } = require("../../../services/animalsService");
+      const { getAllAnimals } = await import("../../../services/animalsService");
       const dogs = await getAllAnimals();
-      return dogs.filter((dog: { slug?: string }) => dog?.slug).map((dog: { slug: string }) => ({ slug: dog.slug }));
+      return dogs
+        .filter((dog): dog is Dog & { slug: string } => typeof dog.slug === "string")
+        .map((dog) => ({ slug: dog.slug }));
     }
 
-    const { getAllAnimalsForSitemap } = require("../../../services/animalsService");
+    const { getAllAnimalsForSitemap } = await import("../../../services/animalsService");
     const dogs = await getAllAnimalsForSitemap();
 
     const isRecent = (dateStr: string | null): boolean => {
@@ -252,16 +231,8 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
       return date > thirtyDaysAgo;
     };
 
-    interface DogForSitemap {
-      slug?: string;
-      llm_description?: string;
-      dog_profiler_data?: { description?: string };
-      primary_image_url?: string;
-      created_at?: string;
-    }
-
     const prioritizedDogs = dogs
-      .map((dog: DogForSitemap) => {
+      .map((dog) => {
         const hasLLMContent = !!(dog.llm_description || dog.dog_profiler_data?.description);
         const hasImage = !!dog.primary_image_url;
         const isRecentDog = isRecent(dog.created_at || null);
@@ -271,14 +242,14 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
           priority: (hasLLMContent ? 10 : 0) + (hasImage ? 5 : 0) + (isRecentDog ? 3 : 0)
         };
       })
-      .sort((a: { priority: number }, b: { priority: number }) => b.priority - a.priority)
+      .sort((a, b) => b.priority - a.priority)
       .slice(0, 500);
 
     console.log(`[generateStaticParams] Pre-rendering ${prioritizedDogs.length} high-priority dog pages`);
 
     return prioritizedDogs
-      .filter((dog: DogForSitemap): dog is DogForSitemap & { slug: string } => typeof dog?.slug === "string" && dog.slug !== "")
-      .map((dog: DogForSitemap & { slug: string }) => ({ slug: dog.slug }));
+      .filter((dog): dog is typeof dog & { slug: string } => typeof dog.slug === "string" && dog.slug !== "")
+      .map((dog) => ({ slug: dog.slug }));
 
   } catch (error) {
     console.error('[generateStaticParams] Error:', error);

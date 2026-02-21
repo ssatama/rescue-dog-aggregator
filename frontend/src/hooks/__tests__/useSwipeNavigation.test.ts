@@ -2,6 +2,7 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSwipeable, SwipeableHandlers, SwipeEventData } from "react-swipeable";
 import type { ApiDog } from "../../types/apiDog";
+import type { Dog } from "../../types/dog";
 import { getAnimals } from "../../services/animalsService";
 import { useSwipeNavigation, navigationCache } from "../useSwipeNavigation";
 
@@ -469,7 +470,7 @@ describe("useSwipeNavigation", () => {
         undefined,
         { id: 1, slug: "dog-3", name: "Charlie", breed: "Beagle" },
         { invalidData: true },
-      ] as unknown as ApiDog[]);
+      ] as unknown as Dog[]);
 
       const { result } = renderHook(() => useSwipeNavigation(defaultProps));
 

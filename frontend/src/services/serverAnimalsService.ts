@@ -12,8 +12,13 @@ import {
   EnhancedDogContentItemSchema,
 } from "../schemas/animals";
 import { FilterCountsResponseSchema } from "../schemas/common";
-import type { BreedStats, ApiDogParsed } from "../schemas/animals";
+import type { BreedStats } from "../schemas/animals";
 import type { FilterCountsResponse } from "../schemas/common";
+import type { Dog } from "../types/dog";
+import {
+  transformApiDogToDog,
+  transformApiDogsToDogs,
+} from "../utils/dogTransformer";
 
 interface CacheEntry {
   data: unknown;
@@ -129,8 +134,8 @@ interface AnimalQueryParams {
 }
 
 export const getAnimals = cache(
-   
-  async (params: AnimalQueryParams = {}): Promise<any[]> => {
+
+  async (params: AnimalQueryParams = {}): Promise<Dog[]> => {
     const queryParams = new URLSearchParams();
 
     if (params.limit) queryParams.append("limit", String(params.limit));
@@ -181,7 +186,8 @@ export const getAnimals = cache(
     }
 
     const raw: unknown = await response.json();
-    return z.array(ApiDogSchema).parse(stripNulls(raw));
+    const parsed = z.array(ApiDogSchema).parse(stripNulls(raw));
+    return transformApiDogsToDogs(parsed);
   },
   [],
 );
@@ -388,7 +394,7 @@ export const getBreedStats = cache(
 export const getAnimalsByCuration = cache(
 
 
-  async (curationType: string, limit = 4): Promise<any[]> => {
+  async (curationType: string, limit = 4): Promise<Dog[]> => {
     const queryParams = new URLSearchParams({
       curation_type: curationType,
       limit: limit.toString(),
@@ -413,17 +419,16 @@ export const getAnimalsByCuration = cache(
     }
 
     const raw: unknown = await response.json();
-    return z.array(ApiDogSchema).parse(stripNulls(raw));
+    const parsed = z.array(ApiDogSchema).parse(stripNulls(raw));
+    return transformApiDogsToDogs(parsed);
   },
   [],
 );
 
 interface HomePageData {
   statistics: z.infer<typeof StatisticsSchema>;
-   
-  recentDogs: any[];
-   
-  diverseDogs: any[];
+  recentDogs: Dog[];
+  diverseDogs: Dog[];
   fetchedAt: string;
   error?: boolean;
 }
@@ -484,7 +489,7 @@ export const getAllAnimals = cache(
     params: { limit?: string | number; offset?: string | number } = {},
 
 
-  ): Promise<any[]> => {
+  ): Promise<Dog[]> => {
     const queryParams = new URLSearchParams();
 
     if (params.limit) queryParams.append("limit", String(params.limit));
@@ -511,7 +516,8 @@ export const getAllAnimals = cache(
     }
 
     const raw: unknown = await response.json();
-    return z.array(ApiDogSchema).parse(stripNulls(raw));
+    const parsed = z.array(ApiDogSchema).parse(stripNulls(raw));
+    return transformApiDogsToDogs(parsed);
   },
   [],
 );
@@ -537,9 +543,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
         limit: 200,
       });
 
-       
-       
-      const dogsArray = allMixedDogs as any[];
+      const dogsArray = allMixedDogs;
 
       const organizationSet = new Set<unknown>();
       const countrySet = new Set<string>();
@@ -608,10 +612,10 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
           ["energy_level", "affection", "trainability", "independence"].forEach(
             (trait) => {
               if (
-                dog.properties[trait] !== undefined &&
-                dog.properties[trait] !== null
+                dog.properties?.[trait] !== undefined &&
+                dog.properties?.[trait] !== null
               ) {
-                const value = Number(dog.properties[trait]);
+                const value = Number(dog.properties?.[trait]);
                 if (!isNaN(value) && value >= 0 && value <= 100) {
                   personalityAggregation[trait] += value;
                   personalityCount[trait]++;
@@ -980,14 +984,13 @@ export const getEnhancedDogContent = cache(
   },
 );
 
- 
-type ApiDogWithLlm = ApiDogParsed & {
+export type DogWithLlm = Dog & {
   llm_description?: string;
   llm_tagline?: string;
   has_llm_data?: boolean;
 };
 
-export const getAnimalBySlug = cache(async (slug: string): Promise<ApiDogWithLlm | null> => {
+export const getAnimalBySlug = cache(async (slug: string): Promise<DogWithLlm | null> => {
   if (!slug) {
     throw new Error("Slug is required");
   }
@@ -1017,10 +1020,11 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<ApiDogWithLlm
     }
 
     const raw: unknown = await response.json();
-    const animal = ApiDogSchema.parse(stripNulls(raw));
+    const parsed = ApiDogSchema.parse(stripNulls(raw));
+    const animal = transformApiDogToDog(parsed);
 
     try {
-      const enhanced = await getEnhancedDogContent(animal.id);
+      const enhanced = await getEnhancedDogContent(parsed.id);
       if (enhanced) {
         return {
           ...animal,

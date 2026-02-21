@@ -53,7 +53,7 @@ describe("animalsService", () => {
     );
 
     // Check the result
-    expect(result).toEqual([{ id: 1, name: "Test Animal" }]);
+    expect(result).toMatchObject([{ id: 1, name: "Test Animal" }]);
   });
 
   test("getAnimalById calls API with correct ID", async () => {
@@ -113,7 +113,7 @@ describe("animalsService endpoints", () => {
       expect.objectContaining({}),
     );
 
-    expect(result).toEqual([{ id: 1, name: "Test Animal" }]);
+    expect(result).toMatchObject([{ id: 1, name: "Test Animal" }]);
   });
 
   test("getAnimals defaults to available status when not provided", async () => {
@@ -134,7 +134,7 @@ describe("animalsService endpoints", () => {
       expect.objectContaining({}),
     );
 
-    expect(result).toEqual([{ id: 1, name: "Test Animal" }]);
+    expect(result).toMatchObject([{ id: 1, name: "Test Animal" }]);
   });
 
   test("getAnimals allows null status to fetch all dogs", async () => {
@@ -157,7 +157,7 @@ describe("animalsService endpoints", () => {
     const callParams = get.mock.calls[0][1];
     expect(callParams).not.toHaveProperty("status");
 
-    expect(result).toEqual([{ id: 1, name: "Test Animal" }]);
+    expect(result).toMatchObject([{ id: 1, name: "Test Animal" }]);
   });
 
   test("getAnimals supports all status values", async () => {

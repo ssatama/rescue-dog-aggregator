@@ -22,7 +22,7 @@ import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
 import OrganizationDogsViewportWrapper from "../../../components/organizations/OrganizationDogsViewportWrapper";
 import DogsGrid from "../../../components/dogs/DogsGrid";
 import type { OrganizationDetailClientProps } from "@/types/pageComponents";
-import type { ApiOrganization, ApiDog } from "@/types/apiDog";
+import type { ApiOrganization } from "@/types/apiDog";
 import type { Dog } from "@/types/dog";
 
 interface OrganizationWithDetails extends ApiOrganization {
@@ -48,7 +48,7 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
   const organizationSlug = urlParams?.slug;
 
   const [organization, setOrganization] = useState<OrganizationWithDetails | null>(null);
-  const [dogs, setDogs] = useState<ApiDog[]>([]);
+  const [dogs, setDogs] = useState<Dog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -71,12 +71,8 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
     };
   });
 
-  // Since we're now filtering on the backend, use dogs directly
-  // But keep useFilteredDogs for availableBreeds extraction
-  // ApiDog.organization can be string | object, while Dog.organization is always object
-  // This structural mismatch requires a cast until ApiDog/Dog types are unified
   const { availableBreeds } = useFilteredDogs(
-    dogs as unknown as Partial<Dog>[],
+    dogs,
     { age: "All", breed: "", sort: "newest" },
     false,
   ) as { availableBreeds: string[] };
@@ -433,7 +429,7 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
           {/* Dogs Grid with filtered results */}
           <div className="mt-6">
             <OrganizationDogsViewportWrapper
-              dogs={filteredDogs as unknown as Dog[]}
+              dogs={filteredDogs}
               loading={loading && dogs.length === 0}
               loadingMore={loadingMore}
               onLoadMore={handleLoadMore}

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
+import type { ApiDog } from "../types/apiDog";
 import type { Dog } from "../types/dog";
 import type { SwipeFilters } from "../hooks/useSwipeFilters";
 import { transformApiDogsToDogs } from "../utils/dogTransformer";
@@ -65,7 +66,7 @@ export async function getSwipeDogs(
     const raw: unknown = await response.json();
     const data = SwipeResponseSchema.parse(stripNulls(raw));
      
-    const transformedDogs = transformApiDogsToDogs((data.dogs || []) as any[]);
+    const transformedDogs = transformApiDogsToDogs((data.dogs || []) as ApiDog[]);
 
     return {
       dogs: transformedDogs,

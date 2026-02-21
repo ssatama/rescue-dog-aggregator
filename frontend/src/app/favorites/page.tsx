@@ -20,6 +20,7 @@ import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
 import type { Dog } from "../../types/dog";
+import { transformApiDogToDog } from "../../utils/dogTransformer";
 import FilterPanelSkeleton from "../../components/ui/FilterPanelSkeleton";
 import CompareSkeleton from "../../components/ui/CompareSkeleton";
 
@@ -157,9 +158,11 @@ function FavoritesPageContent() {
 
         const batchResults = await Promise.all(batchPromises);
         const allResults = batchResults.flat();
-        const validDogs = allResults.filter((dog) => dog !== null);
+        const validDogs = allResults
+          .filter((dog) => dog !== null)
+          .map((dog) => transformApiDogToDog(dog));
         setDogs(validDogs);
-        setFilteredDogs(validDogs); // Initialize filtered dogs
+        setFilteredDogs(validDogs);
       } catch (err) {
         if (process.env.NODE_ENV === "development") {
           console.error("Failed to fetch favorite dogs:", err);
@@ -320,11 +323,8 @@ function FavoritesPageContent() {
     // Use setTimeout to avoid blocking the UI
     const timer = setTimeout(() => {
       try {
-        // Use statically imported function
-        // Cast to DogWithProfiler[] since favorites are always fetched from API with numeric IDs
-        // The Dog type has a union id type (number | string), but DogWithProfiler requires number
         const enhancedInsights = getEnhancedInsights(
-          filteredDogs as unknown as import("@/types/dogProfiler").DogWithProfiler[],
+          filteredDogs as import("@/types/dogProfiler").DogWithProfiler[],
         );
         const basicInsights = getBasicInsights(filteredDogs);
 
