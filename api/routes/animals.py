@@ -563,6 +563,8 @@ async def get_animals_batch(
         return animal_service.get_animals_by_ids(ids)
     except psycopg2.Error as db_err:
         handle_database_error(db_err, "get_animals_batch")
+    except APIException:
+        raise
     except Exception as e:
         logger.exception(f"Error in batch fetch for {len(ids)} animals: {e}")
         raise APIException(

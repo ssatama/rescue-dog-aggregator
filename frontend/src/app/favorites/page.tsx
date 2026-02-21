@@ -139,17 +139,24 @@ function FavoritesPageContent() {
           batches.push(favorites.slice(i, i + batchSize));
         }
 
+        let failedBatches = 0;
         const batchResults = await Promise.all(
           batches.map((batchIds) =>
             getAnimalsByIds(batchIds).catch((error) => {
+              failedBatches++;
               reportError(error, { context: "favorites-batch-fetch", batchSize: batchIds.length });
               return [] as Dog[];
             }),
           ),
         );
         const validDogs = batchResults.flat();
-        setDogs(validDogs);
-        setFilteredDogs(validDogs);
+
+        if (validDogs.length === 0 && failedBatches > 0) {
+          setError("Failed to load your favorite dogs. Please try again.");
+        } else {
+          setDogs(validDogs);
+          setFilteredDogs(validDogs);
+        }
       } catch (err) {
         reportError(err, { context: "fetchFavoriteDogs", favoriteCount: favorites.length });
         setError("Failed to load your favorite dogs. Please try again.");

@@ -477,7 +477,7 @@ class AnimalService:
             return self._build_animals_response(animal_rows)
 
         except Exception as e:
-            logger.error(f"Error in batch fetch for {len(animal_ids)} animals: {e}")
+            logger.exception(f"Error in batch fetch for {len(animal_ids)} animals: {e}")
             raise APIException(
                 status_code=500,
                 detail="Failed to batch fetch animals",

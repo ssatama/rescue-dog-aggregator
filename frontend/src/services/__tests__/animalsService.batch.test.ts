@@ -45,6 +45,11 @@ describe("getAnimalsByIds", () => {
     expect(result).toEqual([]);
   });
 
+  test("propagates API errors to caller", async () => {
+    mockedGet.mockRejectedValue(new Error("Network error"));
+    await expect(getAnimalsByIds([1, 2])).rejects.toThrow("Network error");
+  });
+
   test("transforms API response through dogTransformer", async () => {
     mockedGet.mockResolvedValue([
       { id: 1, name: "Buddy", organization: "Test Rescue" },

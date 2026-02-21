@@ -16,6 +16,11 @@ class TestBatchEndpointValidation:
         response = client.get("/api/animals/batch?ids=0")
         assert response.status_code == 422
 
+    def test_over_100_ids_returns_422(self, client: TestClient):
+        ids_param = "&".join(f"ids={i}" for i in range(1, 102))
+        response = client.get(f"/api/animals/batch?{ids_param}")
+        assert response.status_code == 422
+
 
 @pytest.mark.slow
 @pytest.mark.database
