@@ -23,14 +23,3 @@ def create_animal_service(cursor: RealDictCursor) -> AnimalService:
         Configured AnimalService instance
     """
     return AnimalService(cursor)
-
-
-class ServiceFactory:
-    """Factory class for creating service instances."""
-
-    def __init__(self, cursor: RealDictCursor):
-        self.cursor = cursor
-
-    def create_animal_service(self) -> AnimalService:
-        """Create an AnimalService instance."""
-        return create_animal_service(self.cursor)
