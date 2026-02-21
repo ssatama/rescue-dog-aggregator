@@ -108,7 +108,7 @@ describe("NextImage", () => {
       render(<NextImage alt="Test" />);
 
       const image = screen.getByTestId("optimized-image");
-      expect(image).toHaveAttribute("src", "/images/dog-placeholder.svg");
+      expect(image).toHaveAttribute("src", "/placeholder_dog.svg");
     });
   });
 
@@ -199,7 +199,7 @@ describe("NextImage", () => {
       fireEvent.error(image);
 
       await waitFor(() => {
-        expect(image).toHaveAttribute("src", "/images/dog-placeholder.svg");
+        expect(image).toHaveAttribute("src", "/placeholder_dog.svg");
       });
 
       expect(onError).toHaveBeenCalled();
@@ -215,14 +215,14 @@ describe("NextImage", () => {
       fireEvent.error(image);
 
       await waitFor(() => {
-        expect(image).toHaveAttribute("src", "/images/dog-placeholder.svg");
+        expect(image).toHaveAttribute("src", "/placeholder_dog.svg");
       });
 
       // Second error on fallback - should not trigger another switch
       fireEvent.error(image);
 
       await waitFor(() => {
-        expect(image).toHaveAttribute("src", "/images/dog-placeholder.svg");
+        expect(image).toHaveAttribute("src", "/placeholder_dog.svg");
         expect(onError).toHaveBeenCalledTimes(1); // Only called once
       });
     });

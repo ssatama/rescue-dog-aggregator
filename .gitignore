@@ -100,6 +100,11 @@ experimental_test_*.py
 .vercel
 frontend/.vercel
 
+# === Root-level artifacts (not part of the project) ===
+/package.json
+/package-lock.json
+run-zen-mcp.sh
+
 # === Project-specific ===
 screenshots/
 reports/

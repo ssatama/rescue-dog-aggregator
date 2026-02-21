@@ -142,7 +142,7 @@ describe("ResponsiveDogImage Component", () => {
     render(<ResponsiveDogImage dog={dogWithoutImage} />);
     const imgElement = screen.getByAltText("Luna");
     expect(imgElement).toBeInTheDocument();
-    expect(imgElement.src).toContain("dog-placeholder.svg");
+    expect(imgElement.src).toContain("placeholder_dog.svg");
   });
 
   it("supports custom sizes prop for responsive breakpoints", () => {
