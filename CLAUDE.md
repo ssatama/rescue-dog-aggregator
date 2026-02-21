@@ -14,7 +14,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Monitoring: Sentry (dev/prod)
 - Package Management: **uv** (backend), **pnpm** (frontend)
 - Linting: **ruff** (replaces black/isort/flake8)
-- Current: 168 backend test files, 285 frontend test files, 1,500+ active dogs
+- Current: 125 backend test files, 270 frontend test files, 1,500+ active dogs
 
 ## Status
 

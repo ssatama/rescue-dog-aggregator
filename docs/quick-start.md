@@ -19,7 +19,7 @@ psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals;"
 ### Running the Application
 ```bash
 # Start backend (from root)
-uv run python run_api.py
+uv run uvicorn api.main:app --reload
 
 # Start frontend (separate terminal)
 cd frontend && pnpm dev
@@ -40,7 +40,7 @@ cd frontend && pnpm test
 
 # Single test file
 uv run pytest tests/api/test_swipe_endpoint.py -v
-pnpm test -- SwipeDetails.test.tsx
+pnpm jest --testPathPatterns "SwipeContainer" --watchAll=false
 ```
 
 ### Comprehensive Testing
@@ -172,11 +172,8 @@ pnpm add -D @types/[package-name]
 # Run performance tests
 uv run pytest -m performance -v
 
-# Check metrics
-curl http://localhost:8000/api/metrics
-
-# Memory profiling
-uv run python -m memory_profiler run_api.py
+# Check health
+curl http://localhost:8000/health
 ```
 
 ## Development Workflow

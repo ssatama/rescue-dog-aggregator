@@ -9,7 +9,7 @@ An open-source platform that aggregates rescue dog listings from multiple Europe
 | Active Dogs   | 1,500+                                |
 | Organizations | 12 active                             |
 | AI Profiling  | 97%+ success rate                     |
-| Test Coverage | 168 backend + 276 frontend test files |
+| Test Coverage | 125 backend + 270 frontend test files |
 
 ---
 
@@ -104,8 +104,8 @@ frontend/src/
 ├── components/         # Feature-organized UI (22 dirs)
 rescuedogs-mcp-server/  # MCP server for Claude integration
 configs/organizations/  # YAML configs (13 orgs)
-tests/                  # 168 backend test files
-frontend/__tests__/     # 276 frontend test files
+tests/                  # 125 backend test files
+frontend/src/           # 270 frontend test files (colocated)
 migrations/             # Alembic database migrations
 management/             # CLI tools (19 scripts)
 ```
