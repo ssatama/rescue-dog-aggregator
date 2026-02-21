@@ -2,7 +2,7 @@ import { getGuide, getAllGuideSlugs, getAllGuides } from "@/lib/guides";
 import { GuideContent } from "@/components/guides/GuideContent";
 import { GuideSchema } from "@/components/guides/GuideSchema";
 import { ReadingProgress } from "@/components/guides/ReadingProgress";
-import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
+import { BreadcrumbSchema } from "@/components/seo";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { notFound } from "next/navigation";

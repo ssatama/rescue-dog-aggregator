@@ -1,51 +1,50 @@
 import { getAllGuides } from "@/lib/guides";
 import { GuideCard } from "@/components/guides/GuideCard";
-import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
+import { BreadcrumbSchema } from "@/components/seo";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const collectionSchema = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Adoption Guides",
-    description:
-      "Comprehensive guides to help you navigate rescue dog adoption from European organizations.",
-    url: "https://www.rescuedogs.me/guides",
-  };
+const collectionSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Adoption Guides",
+  description:
+    "Comprehensive guides to help you navigate rescue dog adoption from European organizations.",
+  url: "https://www.rescuedogs.me/guides",
+};
 
-  return {
-    title: "Adoption Guides | Rescue Dog Aggregator",
+export const metadata: Metadata = {
+  title: "Adoption Guides | Rescue Dog Aggregator",
+  description:
+    "Comprehensive guides to help you navigate rescue dog adoption from European organizations. From first-time owner preparation to understanding costs and cross-border logistics.",
+  alternates: {
+    canonical: "https://www.rescuedogs.me/guides",
+  },
+  openGraph: {
+    title: "Adoption Guides",
     description:
-      "Comprehensive guides to help you navigate rescue dog adoption from European organizations. From first-time owner preparation to understanding costs and cross-border logistics.",
-    alternates: {
-      canonical: "https://www.rescuedogs.me/guides",
-    },
-    openGraph: {
-      title: "Adoption Guides",
-      description:
-        "Comprehensive guides to rescue dog adoption from European organizations.",
-      images: ["/og-image.png"],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "Adoption Guides",
-      description:
-        "Comprehensive guides to rescue dog adoption from European organizations.",
-    },
-    other: {
-      "application/ld+json": JSON.stringify(collectionSchema),
-    },
-  };
-}
+      "Comprehensive guides to rescue dog adoption from European organizations.",
+    images: ["/og-image.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Adoption Guides",
+    description:
+      "Comprehensive guides to rescue dog adoption from European organizations.",
+  },
+};
 
 export default async function GuidesPage() {
   const guides = await getAllGuides();
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      />
       <BreadcrumbSchema
         items={[
           { name: "Home", url: "https://www.rescuedogs.me" },

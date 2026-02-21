@@ -224,10 +224,15 @@ export default function DogsPageClientSimplified({
             </h1>
             <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
               Browse adoptable dogs from{" "}
-              {(metadata?.organizations?.length ?? 1) - 1} verified rescue
-              organizations across{" "}
-              {(metadata?.locationCountries?.length ?? 1) - 1} countries. Filter
-              by breed, size, age, and location to find your perfect companion.
+              {metadata?.organizations?.filter(
+                (org: { id: number | string | null }) => org.id !== null,
+              ).length || "multiple"}{" "}
+              verified rescue organizations across{" "}
+              {metadata?.locationCountries?.filter(
+                (c: string) => c !== "Any country",
+              ).length || "multiple"}{" "}
+              countries. Filter by breed, size, age, and location to find your
+              perfect companion.
             </p>
           </div>
         )}
