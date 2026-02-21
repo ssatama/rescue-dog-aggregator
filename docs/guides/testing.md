@@ -28,7 +28,7 @@ cd frontend
 pnpm test                                         # All tests
 pnpm test -- --watch                             # TDD watch mode
 pnpm test -- --coverage                          # Coverage report
-pnpm test -- --testPathPattern=accessibility     # Specific category
+pnpm jest --testPathPatterns "accessibility" --watchAll=false  # Specific category
 ```
 
 ## Backend Testing

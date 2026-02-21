@@ -40,7 +40,7 @@ cd frontend && pnpm test
 
 # Single test file
 uv run pytest tests/api/test_swipe_endpoint.py -v
-pnpm test -- SwipeDetails.test.tsx
+pnpm jest --testPathPatterns "SwipeContainer" --watchAll=false
 ```
 
 ### Comprehensive Testing
@@ -172,11 +172,8 @@ pnpm add -D @types/[package-name]
 # Run performance tests
 uv run pytest -m performance -v
 
-# Check metrics
-curl http://localhost:8000/api/metrics
-
 # Check health
-curl http://localhost:8000/api/monitoring/health
+curl http://localhost:8000/health
 ```
 
 ## Development Workflow

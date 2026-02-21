@@ -182,10 +182,10 @@ To add a new country:
 ## Testing
 
 Test files cover:
-- `CountryDogsClient.test.tsx` - Country detail page rendering
-- `CountriesHubClient.test.tsx` - Hub page rendering and navigation
-- `CountryQuickNav.test.tsx` - Navigation component behavior
-- `CountryStructuredData.test.tsx` - Schema.org markup
+- `CountryDogsClient.test.jsx` - Country detail page rendering
+- `CountriesHubClient.test.jsx` - Hub page rendering and navigation
+- `CountryQuickNav.test.jsx` - Navigation component behavior
+- `CountryStructuredData.test.jsx` - Schema.org markup
 - `countryData.test.js` - Utility functions
 
 ## Related Files
@@ -204,7 +204,7 @@ frontend/
 ├── src/utils/
 │   └── countryData.ts             # Country configuration
 ├── src/services/
-│   └── serverAnimalsService.js    # getCountryStats() API
+│   └── serverAnimalsService.ts    # getCountryStats() API
 
 api/routes/
 └── animals.py                      # /stats/by-country endpoint

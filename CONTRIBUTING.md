@@ -211,13 +211,14 @@ Any additional information, dependencies, or migration steps.
 
 **Example:**
 ```python
+from typing import Any
+
 def get_animals_by_organization(
     organization_id: int,
     limit: int | None = 20,
 ) -> list[dict[str, Any]]:
     """Fetch animals from a specific organization."""
-    # Implementation here
-    pass
+    ...
 ```
 
 **Required Patterns:**
@@ -337,9 +338,9 @@ cd frontend
 pnpm test
 
 # Specific test categories
-pnpm test -- --testPathPattern="performance"     # Performance tests
-pnpm test -- --testPathPattern="accessibility"   # Accessibility tests
-pnpm test -- --testPathPattern="cross-browser"   # Cross-browser tests
+pnpm jest --testPathPatterns "performance" --watchAll=false     # Performance tests
+pnpm jest --testPathPatterns "accessibility" --watchAll=false   # Accessibility tests
+pnpm jest --testPathPatterns "cross-browser" --watchAll=false   # Cross-browser tests
 
 # Coverage report
 pnpm test -- --coverage

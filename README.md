@@ -105,7 +105,7 @@ frontend/src/
 rescuedogs-mcp-server/  # MCP server for Claude integration
 configs/organizations/  # YAML configs (13 orgs)
 tests/                  # 125 backend test files
-frontend/src/__tests__/ # 270 frontend test files
+frontend/src/           # 270 frontend test files (colocated)
 migrations/             # Alembic database migrations
 management/             # CLI tools (19 scripts)
 ```
