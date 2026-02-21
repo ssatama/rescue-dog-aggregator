@@ -441,6 +441,50 @@ class AnimalService:
                 error_code="INTERNAL_ERROR",
             )
 
+    def get_animals_by_ids(self, animal_ids: list[int]) -> list[Animal]:
+        """Get multiple animals by their IDs, for batch retrieval (e.g. favorites)."""
+        if not animal_ids:
+            return []
+
+        try:
+            query = """
+                SELECT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                       a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
+                       a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
+                       a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
+                       a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
+                       a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
+                       a.dog_profiler_data,
+                       o.name as org_name,
+                       o.slug as org_slug,
+                       o.city as org_city,
+                       o.country as org_country,
+                       o.website_url as org_website_url,
+                       o.logo_url as org_logo_url,
+                       o.social_media as org_social_media,
+                       o.ships_to as org_ships_to
+                FROM animals a
+                LEFT JOIN organizations o ON a.organization_id = o.id
+                WHERE a.id = ANY(%s)
+                  AND a.animal_type = 'dog'
+                  AND o.active = TRUE
+                ORDER BY a.name ASC
+            """
+
+            self.cursor.execute(query, [animal_ids])
+            animal_rows = self.cursor.fetchall()
+            logger.info(f"Batch fetch: requested {len(animal_ids)} IDs, found {len(animal_rows)} animals")
+
+            return self._build_animals_response(animal_rows)
+
+        except Exception as e:
+            logger.exception(f"Error in batch fetch for {len(animal_ids)} animals: {e}")
+            raise APIException(
+                status_code=500,
+                detail="Failed to batch fetch animals",
+                error_code="INTERNAL_ERROR",
+            )
+
     def _build_single_animal_response(self, row: dict) -> Animal:
         """Build a single animal response with adoption data if available."""
         # Parse properties JSON field properly

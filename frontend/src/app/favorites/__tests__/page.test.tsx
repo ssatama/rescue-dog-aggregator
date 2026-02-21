@@ -105,8 +105,11 @@ jest.mock("../../../components/favorites/CompareMode", () => {
   };
 });
 
-// Mock fetch
-global.fetch = jest.fn();
+// Mock the animalsService batch fetch
+const mockGetAnimalsByIds = jest.fn();
+jest.mock("../../../services/animalsService", () => ({
+  getAnimalsByIds: (...args: unknown[]) => mockGetAnimalsByIds(...args),
+}));
 
 describe("FavoritesPage with FilterPanel", () => {
   beforeEach(() => {
@@ -125,53 +128,27 @@ describe("FavoritesPage with FilterPanel", () => {
       isLoading: false,
       isHydrated: true,
     };
-    // Mock process.env
-    process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000";
 
-    (global.fetch as jest.Mock).mockImplementation((url) => {
-      // Handle both with and without base URL
-      if (
-        url.includes("/api/animals/id/1") ||
-        url === "http://localhost:8000/api/animals/id/1"
-      ) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              id: 1,
-              name: "Buddy",
-              breed: "Golden Retriever",
-              age_months: 24,
-              size: "large",
-              organization_name: "Happy Paws",
-              url: "https://example.com/adopt/buddy",
-            }),
-        });
-      }
-      if (
-        url.includes("/api/animals/id/2") ||
-        url === "http://localhost:8000/api/animals/id/2"
-      ) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              id: 2,
-              name: "Luna",
-              breed: "Labrador",
-              age_months: 36,
-              size: "medium",
-              organization_name: "Save a Soul",
-              url: "https://example.com/adopt/luna",
-            }),
-        });
-      }
-      console.log("Unhandled fetch URL:", url);
-      return Promise.resolve({
-        ok: false,
-        json: () => Promise.resolve({ error: "Not found" }),
-      });
-    });
+    mockGetAnimalsByIds.mockResolvedValue([
+      {
+        id: 1,
+        name: "Buddy",
+        breed: "Golden Retriever",
+        age_months: 24,
+        size: "large",
+        organization_name: "Happy Paws",
+        url: "https://example.com/adopt/buddy",
+      },
+      {
+        id: 2,
+        name: "Luna",
+        breed: "Labrador",
+        age_months: 36,
+        size: "medium",
+        organization_name: "Save a Soul",
+        url: "https://example.com/adopt/luna",
+      },
+    ]);
   });
 
   test("renders FilterPanel component", async () => {

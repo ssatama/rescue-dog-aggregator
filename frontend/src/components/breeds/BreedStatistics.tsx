@@ -221,10 +221,10 @@ export function BreedInfo({ breedData, className = "" }: BreedInfoProps) {
 
       <BreedStatistics breedData={breedData} />
 
-      {(typeof breedData.description === "string" ? breedData.description : breedData.description?.overview) && (
+      {breedData.description && (
         <div>
           <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-            {typeof breedData.description === "string" ? breedData.description : breedData.description?.overview}
+            {breedData.description}
           </p>
         </div>
       )}

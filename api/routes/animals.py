@@ -7,7 +7,7 @@ from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
 
 from api.dependencies import get_pooled_db_cursor
-from api.exceptions import APIException, handle_database_error, handle_validation_error
+from api.exceptions import APIException, InvalidInputError, handle_database_error, handle_validation_error
 from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import BreedStatsResponse, FilterCountsResponse
@@ -545,6 +545,31 @@ async def get_random_animals(
         raise APIException(
             status_code=500,
             detail="Failed to fetch random animals",
+            error_code="INTERNAL_ERROR",
+        )
+
+
+@router.get("/batch", response_model=list[Animal], summary="Batch Fetch Animals by IDs")
+async def get_animals_batch(
+    ids: list[int] = Query(..., min_length=1, max_length=100, description="Animal IDs to fetch (max 100)"),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
+):
+    """Batch fetch animals by IDs. Used by favorites page to avoid N+1 requests."""
+    if any(aid <= 0 for aid in ids):
+        raise InvalidInputError("All animal IDs must be positive integers")
+
+    try:
+        animal_service = AnimalService(cursor)
+        return animal_service.get_animals_by_ids(ids)
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_animals_batch")
+    except APIException:
+        raise
+    except Exception as e:
+        logger.exception(f"Error in batch fetch for {len(ids)} animals: {e}")
+        raise APIException(
+            status_code=500,
+            detail="Failed to batch fetch animals",
             error_code="INTERNAL_ERROR",
         )
 

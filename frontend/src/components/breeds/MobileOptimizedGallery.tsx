@@ -89,7 +89,7 @@ export default function MobileOptimizedGallery({
                   src={image.url}
                   alt={image.alt || `Gallery image ${index + 1}`}
                   sizes="(max-width: 640px) 85vw, 45vw"
-                  className="object-cover w-full h-full absolute inset-0"
+                  fill
                 />
               </div>
             </div>
@@ -128,7 +128,8 @@ export default function MobileOptimizedGallery({
               src={image.url}
               alt={image.alt || `Gallery image ${index + 1}`}
               sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, 50vw"
-              className="object-cover transition-transform group-hover:scale-105 w-full h-full absolute inset-0"
+              className="transition-transform group-hover:scale-105"
+              fill
             />
           </div>
         ))}
