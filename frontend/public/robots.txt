@@ -51,6 +51,9 @@ Allow: /
 User-agent: CCBot
 Allow: /
 
+User-agent: Google-Extended
+Allow: /
+
 # === ALL OTHER LEGITIMATE CRAWLERS ===
 # Allow everything by default, only block sensitive paths
 User-agent: *

@@ -106,7 +106,7 @@ describe("GuideSchema", () => {
     expect(schema.publisher.name).toBe("Rescue Dog Aggregator");
     expect(schema.publisher.logo).toBeDefined();
     expect(schema.publisher.logo["@type"]).toBe("ImageObject");
-    expect(schema.publisher.logo.url).toBe("https://rescuedogs.me/logo.jpeg");
+    expect(schema.publisher.logo.url).toBe("https://www.rescuedogs.me/logo.jpeg");
   });
 
   it("includes mainEntityOfPage with guide URL", () => {
@@ -119,7 +119,7 @@ describe("GuideSchema", () => {
     expect(schema.mainEntityOfPage).toBeDefined();
     expect(schema.mainEntityOfPage["@type"]).toBe("WebPage");
     expect(schema.mainEntityOfPage["@id"]).toBe(
-      "https://rescuedogs.me/guides/test-guide",
+      "https://www.rescuedogs.me/guides/test-guide",
     );
   });
 
