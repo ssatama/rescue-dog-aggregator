@@ -25,14 +25,8 @@ import {
   trackFilterChange,
   trackSortChange,
 } from "@/lib/monitoring/breadcrumbs";
-
-interface DogFilterValues {
-  age?: string;
-  breed?: string;
-  sex?: string;
-  shipsTo?: string;
-  sort?: string;
-}
+import type { DogFilterValues } from "@/types/filterComponents";
+import { logger } from "@/utils/logger";
 
 interface DogFiltersProps {
   filters: DogFilterValues;
@@ -73,7 +67,7 @@ export default function DogFilters({
   const rawSearchParams = useSearchParams();
 
   const handleFilterChange = useCallback(
-    (filterType: string, value: string) => {
+    (filterType: keyof DogFilterValues, value: string) => {
       const newFilters = {
         ...filters,
         [filterType]: value,
@@ -88,7 +82,7 @@ export default function DogFilters({
           trackFilterChange(filterType, value, totalCount || 0);
         }
       } catch (error) {
-        console.error("Failed to track filter change:", error);
+        logger.error("Failed to track filter change:", error);
       }
 
       if (!rawSearchParams) return;

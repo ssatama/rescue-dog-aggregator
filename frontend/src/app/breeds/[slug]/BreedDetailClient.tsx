@@ -18,7 +18,7 @@ import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import { getAnimals, getFilterCounts } from "@/services/animalsService";
 import { getBreedDescription } from "@/utils/breedDescriptions";
-import { reportError } from "@/utils/logger";
+import { logger, reportError } from "@/utils/logger";
 import { useDebouncedCallback } from "use-debounce";
 import BreedFilterBar from "@/components/breeds/BreedFilterBar";
 import { getBreedFilterOptions } from "@/utils/breedFilterUtils";
@@ -291,7 +291,7 @@ export default function BreedDetailClient({
 
       if (filtersSnapshot !== JSON.stringify(filters)) {
         if (process.env.NODE_ENV === "development") {
-          console.log("Filters changed during load more, discarding response");
+          logger.log("Filters changed during load more, discarding response");
         }
         return;
       }

@@ -75,8 +75,7 @@ describe("ServiceWorkerRegistration Component", () => {
       process.env.NODE_ENV = originalEnv;
     });
 
-    test("should register service worker in development for debugging", async () => {
-      // Mock development environment
+    test("should register service worker in development", async () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = "development";
 
@@ -93,8 +92,8 @@ describe("ServiceWorkerRegistration Component", () => {
         expect(mockRegister).toHaveBeenCalledWith("/sw.js");
       });
 
-      // In development, console.log should be called for debugging
-      expect(console.log).toHaveBeenCalled();
+      // Dev logging is handled by logger utility (gated at module load time)
+      // No direct console.log calls in the component
 
       process.env.NODE_ENV = originalEnv;
     });

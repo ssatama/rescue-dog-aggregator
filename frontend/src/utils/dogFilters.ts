@@ -6,11 +6,14 @@ interface DogWithAgeFields extends Partial<Dog> {
   ageMaxMonths?: number;
 }
 
-export interface Filters {
-  age?: string;
+export type AgeCategory = "All" | "Puppy" | "Young" | "Adult" | "Senior" | "Unknown";
+export type SortOption = "newest" | "name-asc" | "name-desc" | "oldest";
+
+export interface DogFilterParams {
+  age?: AgeCategory;
   breed?: string;
   shipsTo?: string;
-  sort?: string;
+  sort?: SortOption;
 }
 
 interface FilterOption {
@@ -129,7 +132,7 @@ export const sortDogs = (dogs: Partial<Dog>[], sortBy: string | undefined): Part
   }
 };
 
-export const applyAllFilters = (dogs: DogWithAgeFields[], filters: Filters | undefined, includeShipsTo = true): DogWithAgeFields[] => {
+export const applyAllFilters = (dogs: DogWithAgeFields[], filters: DogFilterParams | undefined, includeShipsTo = true): DogWithAgeFields[] => {
   if (!dogs || !Array.isArray(dogs)) return [];
   if (!filters) return dogs;
 
@@ -203,7 +206,7 @@ export const extractAvailableShipsTo = (dogs: Partial<Dog>[]): string[] => {
   return Array.from(shipsTo).sort();
 };
 
-export const hasActiveFilters = (filters: Filters | undefined, includeShipsTo = true): boolean => {
+export const hasActiveFilters = (filters: DogFilterParams | undefined, includeShipsTo = true): boolean => {
   if (!filters) return false;
 
   return (
@@ -213,7 +216,7 @@ export const hasActiveFilters = (filters: Filters | undefined, includeShipsTo = 
   );
 };
 
-export const getDefaultFilters = (): Filters => ({
+export const getDefaultFilters = (): DogFilterParams => ({
   age: FILTER_DEFAULTS.ALL,
   breed: "",
   shipsTo: FILTER_DEFAULTS.ALL,

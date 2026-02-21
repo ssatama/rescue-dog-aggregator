@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { Dog } from "@/types/dog";
-import type { Filters } from "../utils/dogFilters";
+import type { DogFilterParams } from "../utils/dogFilters";
 import {
   applyAllFilters,
   extractAvailableBreeds,
@@ -20,7 +20,7 @@ interface UseFilteredDogsReturn {
 
 const useFilteredDogs = (
   dogs: Partial<Dog>[],
-  filters: Filters | undefined,
+  filters: DogFilterParams | undefined,
   includeShipsTo = true,
 ): UseFilteredDogsReturn => {
   const filteredDogs = useMemo(() => {

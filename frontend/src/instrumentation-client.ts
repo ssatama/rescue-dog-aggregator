@@ -7,6 +7,7 @@ import {
   isChunkLoadError,
   setupChunkErrorHandler,
 } from "@/lib/chunkLoadError";
+import { logger } from "@/utils/logger";
 
 // Extend Window interface for Sentry initialization tracking
 declare global {
@@ -25,10 +26,7 @@ const isDevelopment = environment === "development";
 const isProduction = environment === "production";
 const isPreview = environment === "preview";
 
-// Only log in development mode
-if (isDevelopment) {
-  console.log("[Sentry] Client instrumentation file loaded");
-}
+logger.log("[Sentry] Client instrumentation file loaded");
 
 // Initialize Sentry in production and preview environments
 if (
@@ -39,10 +37,7 @@ if (
   // Prevent multiple initializations
   window.__sentryInitialized = true;
 
-  // Only log initialization in development mode
-  if (isDevelopment) {
-    console.log("[Sentry] Initializing Sentry in client-side mode");
-  }
+  logger.log("[Sentry] Initializing Sentry in client-side mode");
 
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -255,8 +250,8 @@ if (
 
   // Setup chunk error handler for auto-reload on stale chunks
   setupChunkErrorHandler();
-} else if (!isProduction && isDevelopment) {
-  console.log(
+} else {
+  logger.log(
     `[Sentry] Disabled for ${environment} environment - only enabled in production`,
   );
 }

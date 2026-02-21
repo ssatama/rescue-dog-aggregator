@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useAdvancedImage } from "../../hooks/useAdvancedImage";
 import { useReducedMotion } from "../../hooks/useScrollAnimation";
 import { getDetailHeroImageWithPosition } from "../../utils/imageUtils";
+import { logger, reportError } from "../../utils/logger";
 
 export interface HeroImageWithBlurredBackgroundProps {
   /** Image source URL */
@@ -40,7 +41,8 @@ const HeroImageWithBlurredBackground = memo(
       try {
         return getDetailHeroImageWithPosition(src, true);
       } catch (error) {
-        console.error("[HeroImageWithBlurredBackground] Priority image computation failed:", error);
+        logger.error("[HeroImageWithBlurredBackground] Priority image computation failed:", error);
+        reportError(error, { context: "HeroImage.priorityComputation", src });
         return { src, position: "center center" };
       }
     }, [priority, src]);
@@ -60,29 +62,6 @@ const HeroImageWithBlurredBackground = memo(
       useGradientFallback,
       type: "hero",
     });
-
-    // DIAGNOSTIC: Log state changes in development
-    React.useEffect(() => {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[HeroImageWithBlurredBackground] State update:", {
-          imageLoaded,
-          hasError,
-          isLoading,
-          isRetrying,
-          retryCount,
-          currentSrc,
-          originalSrc: src,
-        });
-      }
-    }, [
-      imageLoaded,
-      hasError,
-      isLoading,
-      isRetrying,
-      retryCount,
-      currentSrc,
-      src,
-    ]);
 
     // Determine loading message based on state
     const loadingMessage = React.useMemo(() => {

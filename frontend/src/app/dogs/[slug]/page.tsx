@@ -245,8 +245,6 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
       .sort((a, b) => b.priority - a.priority)
       .slice(0, 500);
 
-    console.log(`[generateStaticParams] Pre-rendering ${prioritizedDogs.length} high-priority dog pages`);
-
     return prioritizedDogs
       .filter((dog): dog is typeof dog & { slug: string } => typeof dog.slug === "string" && dog.slug !== "")
       .map((dog) => ({ slug: dog.slug }));

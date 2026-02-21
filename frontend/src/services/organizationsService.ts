@@ -173,9 +173,6 @@ export async function getEnhancedOrganizationsSSR(): Promise<EnhancedOrg[]> {
 
     const enhancedOrganizations = parsed.map(normalizeEnhancedOrg);
 
-    console.log(
-      `SSR: Successfully loaded ${enhancedOrganizations.length} organizations`,
-    );
     return enhancedOrganizations;
   } catch (error) {
     const err = error as Error;

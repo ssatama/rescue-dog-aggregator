@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
+import { logger, reportError } from "../utils/logger";
 
 const registerServiceWorker = async (): Promise<void> => {
   try {
     const registration = await navigator.serviceWorker.register("/sw.js");
-    const isDevelopment = process.env.NODE_ENV === "development";
 
-    if (isDevelopment) {
-      console.log("[SW] Service Worker registered successfully");
-    }
+    logger.log("[SW] Service Worker registered successfully");
 
     registration.addEventListener("updatefound", () => {
       const newWorker = registration.installing;
@@ -20,9 +18,7 @@ const registerServiceWorker = async (): Promise<void> => {
           newWorker.state === "installed" &&
           navigator.serviceWorker.controller
         ) {
-          if (isDevelopment) {
-            console.log("[SW] New Service Worker available");
-          }
+          logger.log("[SW] New Service Worker available");
 
           if (registration.waiting) {
             registration.waiting.postMessage({ action: "skipWaiting" });
@@ -50,21 +46,15 @@ const registerServiceWorker = async (): Promise<void> => {
       60 * 60 * 1000,
     );
   } catch (error: unknown) {
-    const isDevelopment = process.env.NODE_ENV === "development";
-    if (isDevelopment) {
-      console.error("[SW] Service Worker registration failed:", error);
-    }
+    logger.error("[SW] Service Worker registration failed:", error);
+    reportError(error, { context: "ServiceWorkerRegistration" });
   }
 };
 
 export default function ServiceWorkerRegistration(): null {
   useEffect(() => {
-    const isDevelopment = process.env.NODE_ENV === "development";
-
     if (!("serviceWorker" in navigator)) {
-      if (isDevelopment) {
-        console.log("[SW] Service Workers not supported");
-      }
+      logger.log("[SW] Service Workers not supported");
       return;
     }
 

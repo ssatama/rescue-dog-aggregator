@@ -474,24 +474,6 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                       </div>
 
                       {(() => {
-                        // Development logging only (disabled in tests to prevent noise)
-                        if (
-                          process.env.NODE_ENV === "development" &&
-                          typeof jest === "undefined"
-                        ) {
-                          console.log(
-                            "[DogDetail] Navigation: rendering hero section",
-                            {
-                              pathname,
-                              dogSlug,
-                              hasDog: !!dog,
-                              hasImageUrl: !!dog?.primary_image_url,
-                              imageUrl: dog?.primary_image_url,
-                              timestamp: Date.now(),
-                            },
-                          );
-                        }
-
                         if (!dog || !dog.primary_image_url) {
                           return (
                             <div className="w-full aspect-[16/9] bg-gray-100 rounded-lg flex items-center justify-center">
@@ -501,22 +483,6 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                                 </p>
                               </div>
                             </div>
-                          );
-                        }
-
-                        // DIAGNOSTIC: Log image URL being passed to component (disabled in tests to prevent noise)
-                        if (
-                          process.env.NODE_ENV === "development" &&
-                          typeof jest === "undefined"
-                        ) {
-                          console.log(
-                            "[DogDetailClient] About to render HeroImageWithBlurredBackground:",
-                            {
-                              dogSlug: dog.slug,
-                              dogName: dog.name,
-                              imageUrl: dog.primary_image_url,
-                              timestamp: Date.now(),
-                            },
                           );
                         }
 

@@ -1,5 +1,18 @@
 import type { OrganizationMetadata } from "./dogsPage";
 import type { FilterCountsResponse } from "../schemas/common";
+import type { DogFilterParams } from "../utils/dogFilters";
+
+export interface DogFilterValues extends DogFilterParams {
+  sex?: string;
+}
+
+export interface FilterSectionProps {
+  id: string;
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+  count?: number;
+}
 
 export interface FilterConfig {
   showAge: boolean;
