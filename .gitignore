@@ -1,215 +1,115 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Node modules - NEVER commit these
-node_modules/
-package-lock.json
-
-# Only allow package.json in specific directories
-/package.json
-/package-lock.json
-
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-
-# Virtual environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-exploration/.ipynb_checkpoints/
-
-# Local data files (ignore all files in data/, but keep the directory via .gitkeep)
-data/*
-!data/.gitkeep
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Railway migration config (contains database URL)
-migrations/railway/alembic.ini
-
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Testing artifacts
-.coverage
-coverage/
-htmlcov/
-.pytest_cache/
-test-results/
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Frontend build artifacts
-frontend/.next/
-frontend/out/
-frontend/build/
-frontend/node_modules/
-
-# Otherwise ignored files
-screenshots/
-
-# === macOS ===
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# === Exploration/Testing Artifacts ===
-exploration/
-exploration_backup/
-notebooks/exploration*
-# Only exclude temporary exploration test files, NOT the actual test suite
-exploration/test_*.py
-temp_test_*.py
-experimental_test_*.py
-*_exploration_test_*.py
-container_*.txt
-*_parser_*.json
-final_correct_parser_*.json
-
-# === Temporary Files ===
-*.tmp
-*.temp
-*.log
-*.cache
-
-# === Development Artifacts ===
-.vscode/settings.json.user
-.vscode/launch.json
-.idea/
-
-docs/design-artifacts/
-*.swp
-*.swo
-
-# === Python Cache ===
+# === Python ===
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
 *.egg
+*.egg-info/
+.Python
+.installed.cfg
 MANIFEST
-qr.png
+
 # === Virtual Environments ===
 venv/
 env/
 ENV/
-env.bak/
-venv.bak/
+.venv/
+
+# === Node ===
+node_modules/
+package-lock.json
+frontend/node_modules/
+
+# === Build Artifacts ===
+dist/
+build/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# === Environment Variables ===
+.env
+.env.*
+.env*.local
+!.env.sample
+!.env.example
+!frontend/.env.example
+
+# === Railway/Alembic ===
+migrations/railway/alembic.ini
+migrations/railway/versions/
 
 # === Testing ===
 .pytest_cache/
 .coverage
 htmlcov/
+coverage/
+coverage.xml
 .tox/
 .nox/
-coverage.xml
-*.cover
 .hypothesis/
+test-results/
+frontend/playwright-report/
+frontend/e2e-failures.txt
 
-# === Jupyter ===
-.ipynb_checkpoints
-*.ipynb
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+*.swo
 
-# === Environment Variables ===
-.env
-.env.*
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-# Additional environment file patterns
-*.env
-.environment
-config.ini
-secrets.json
+# === macOS ===
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# === Logs ===
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Data ===
+data/*
+!data/.gitkeep
+
+# === Exploration/Temp ===
+exploration/
+exploration_backup/
+*.tmp
+*.temp
+*.cache
+temp_test_*.py
+experimental_test_*.py
 
 # === Database ===
 *.db
 *.sqlite
 *.sqlite3
 
-# === Frontend ===
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/build/
-frontend/.env.local
-frontend/.vercel
-frontend/playwright-report/
-frontend/e2e-failures.txt
-
-# === Logs ===
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# MCP tools (if using local installation)
-.claude/tools/node_modules/
-.claude/tools/package-lock.json
-.claude/logs/
+# === AI Agent Artifacts ===
 .claude/
-
-# MCP artifacts
-screenshots/
-test-results/
-
 .gemini/
+.serena/
 .mypy_cache/
-.serena/
-run-zen-mcp.sh
 .mcp.json
+
+# === Deployment ===
+.vercel
+frontend/.vercel
+
+# === Root-level artifacts (not part of the project) ===
+/package.json
+/package-lock.json
+run-zen-mcp.sh
+
+# === Project-specific ===
+screenshots/
 reports/
-migrations/railway/versions/
-
-# AI agent memory files
-.serena/
-
-# Debug SQL queries (local debugging tools)
-queries/debug/
-
+docs/design-artifacts/
 docs/feature_implementation/
 docs/ROADMAP.md
-.vercel
-.env*.local
+queries/debug/
+qr.png

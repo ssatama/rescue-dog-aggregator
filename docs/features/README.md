@@ -4,7 +4,7 @@
 
 ### 🔍 Advanced Search & Filtering
 
-- **Real-time search** across 8+ rescue organizations
+- **Real-time search** across 12+ rescue organizations
 - **Multi-criteria filtering**: age, size, breed, location, organization
 - **Smart defaults**: Available dogs with high confidence
 - **Mobile-optimized** filter panel with smooth animations
@@ -18,7 +18,7 @@
 
 ### 🌐 Multi-Organization Support
 
-- **8 integrated organizations** and growing
+- **12 integrated organizations** and growing
 - **Configuration-driven** onboarding (YAML)
 - **Automatic weekly updates** via cron
 - **Organization-specific** detail pages

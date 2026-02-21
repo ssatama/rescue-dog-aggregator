@@ -108,12 +108,12 @@ uv run alembic -c migrations/railway/alembic.ini current
 ```bash
 # Backend required vars
 export DATABASE_URL="postgresql://user:pass@localhost/rescue_dogs"
-export CLOUDINARY_URL="cloudinary://..."
-export REDIS_URL="redis://localhost:6379"
+export OPENROUTER_API_KEY="your_openrouter_key"
+export ADMIN_API_KEY="your_admin_key"
 
 # Frontend required vars
 export NEXT_PUBLIC_API_URL="https://api.yourdomain.com"
-export NEXT_PUBLIC_GOOGLE_ANALYTICS_ID="GA-..."
+export NEXT_PUBLIC_R2_DOMAIN="your-r2-domain.com"
 ```
 
 #### Production Build Timeout
@@ -180,9 +180,6 @@ export REDIS_URL="redis://localhost:6379"
 
 #### High Memory Usage
 ```bash
-# Check for memory leaks
-uv run python -m memory_profiler scrapers/run_all.py
-
 # Limit concurrent scrapers
 uv run python management/config_commands.py run --max-concurrent=2
 ```

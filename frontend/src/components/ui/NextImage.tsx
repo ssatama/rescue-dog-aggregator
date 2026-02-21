@@ -50,7 +50,7 @@ const NextImage = React.memo(function NextImage({
   objectPosition = "center 30%",
   placeholder = "blur",
   quality = undefined,
-  fallbackSrc = "/images/dog-placeholder.svg",
+  fallbackSrc = "/placeholder_dog.svg",
   onError = undefined,
   blurDataURL: providedBlurDataURL = undefined,
   ...props
