@@ -70,9 +70,17 @@ export default function OrganizationsClient({
 
         <h1 className="text-title text-gray-900 mb-4">Rescue Organizations</h1>
         <p className="text-body text-gray-600 mb-8">
-          These organizations work tirelessly to rescue and rehome dogs. By
-          adopting through them, you&apos;re supporting their mission to save more
-          animals.
+          {organizations.length} verified rescue organizations working
+          tirelessly across{" "}
+          {
+            new Set(
+              organizations
+                .map((org) => org.country)
+                .filter(Boolean),
+            ).size
+          }{" "}
+          countries to rescue and rehome dogs. By adopting through them,
+          you&apos;re supporting their mission to save more animals.
         </p>
 
         {/* Error state */}

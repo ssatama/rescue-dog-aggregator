@@ -1,6 +1,8 @@
 import { getGuide, getAllGuideSlugs, getAllGuides } from "@/lib/guides";
 import { GuideContent } from "@/components/guides/GuideContent";
+import { GuideSchema } from "@/components/guides/GuideSchema";
 import { ReadingProgress } from "@/components/guides/ReadingProgress";
+import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { notFound } from "next/navigation";
@@ -54,7 +56,7 @@ export async function generateMetadata({
     },
 
     alternates: {
-      canonical: `https://rescuedogs.me/guides/${slug}`,
+      canonical: `https://www.rescuedogs.me/guides/${slug}`,
     },
   };
 }
@@ -86,6 +88,14 @@ export default async function GuidePage({
 
   return (
     <>
+      <GuideSchema guide={guide} />
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: "https://www.rescuedogs.me" },
+          { name: "Guides", url: "https://www.rescuedogs.me/guides" },
+          { name: guide.frontmatter.title },
+        ]}
+      />
       <Header />
       <ReadingProgress />
       <GuideContent

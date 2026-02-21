@@ -22,12 +22,12 @@ export function GuideSchema({ guide }: GuideSchemaProps) {
       name: "Rescue Dog Aggregator",
       logo: {
         "@type": "ImageObject",
-        url: "https://rescuedogs.me/logo.jpeg",
+        url: "https://www.rescuedogs.me/logo.jpeg",
       },
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://rescuedogs.me/guides/${guide.slug}`,
+      "@id": `https://www.rescuedogs.me/guides/${guide.slug}`,
     },
   };
 

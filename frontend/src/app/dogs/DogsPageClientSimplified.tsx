@@ -223,7 +223,11 @@ export default function DogsPageClientSimplified({
               Find Your New Best Friend
             </h1>
             <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-              Browse adoptable dogs from trusted rescue organizations
+              Browse adoptable dogs from{" "}
+              {(metadata?.organizations?.length ?? 1) - 1} verified rescue
+              organizations across{" "}
+              {(metadata?.locationCountries?.length ?? 1) - 1} countries. Filter
+              by breed, size, age, and location to find your perfect companion.
             </p>
           </div>
         )}
