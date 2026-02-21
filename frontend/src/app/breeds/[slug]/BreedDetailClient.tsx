@@ -28,7 +28,6 @@ import CommonTraits from "@/components/breeds/CommonTraits";
 import ExperienceLevelChart from "@/components/breeds/ExperienceLevelChart";
 import ExpandableText from "@/components/ui/ExpandableText";
 import BreedDogsViewportWrapper from "@/components/breeds/BreedDogsViewportWrapper";
-import type { ApiDog } from "@/types/apiDog";
 import type { Dog } from "@/types/dog";
 import type {
   BreedDetailClientProps,
@@ -125,7 +124,7 @@ export default function BreedDetailClient({
     [searchParams],
   );
 
-  const [dogs, setDogs] = useState<ApiDog[]>(initialDogs || []);
+  const [dogs, setDogs] = useState<Dog[]>(initialDogs || []);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(
@@ -479,7 +478,7 @@ export default function BreedDetailClient({
           ) : (
             <div id="dogs-grid">
               <BreedDogsViewportWrapper
-                dogs={dogs as unknown as Dog[]}
+                dogs={dogs}
                 loading={loading && dogs.length === 0}
                 loadingMore={loadingMore}
                 onLoadMore={loadMoreDogs}

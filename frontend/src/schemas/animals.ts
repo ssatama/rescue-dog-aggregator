@@ -292,7 +292,6 @@ export const SwipeResponseSchema = z
   })
   .passthrough();
 
-export type ApiDogParsed = z.infer<typeof ApiDogSchema>;
 export type BreedStats = z.infer<typeof BreedStatsSchema>;
 export type Statistics = z.infer<typeof StatisticsSchema>;
 export type StatisticsOrganization = z.infer<

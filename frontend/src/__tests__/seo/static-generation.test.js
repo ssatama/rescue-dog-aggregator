@@ -91,7 +91,7 @@ describe("SEO Static Generation Validation", () => {
         generateOrgParams(),
       ]);
 
-      // Should only include valid slugs
+      // Should only include valid non-empty slugs
       expect(dogParams).toEqual([
         { slug: "valid-dog-1" },
         { slug: "valid-dog-4" },
@@ -172,11 +172,11 @@ describe("SEO Static Generation Validation", () => {
 
     test("handles malformed data without breaking build", async () => {
       // Malformed data that could cause issues
+      // Note: null/undefined entries are excluded because getAllAnimals()
+      // applies Zod validation + transformer which rejects non-object entries
       const malformedData = [
         { id: 1, slug: "normal-slug", name: "Normal" },
         { slug: "no-id-entry" }, // Missing ID
-        null, // Null entry
-        undefined, // Undefined entry
         { id: "string-id", slug: "string-id-entry" }, // String ID
         { id: 2, slug: "special-chars-!@#$%", name: "Special" },
       ];

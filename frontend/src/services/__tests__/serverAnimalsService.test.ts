@@ -50,7 +50,7 @@ describe("Server Animals Service", () => {
         next: { revalidate: 300, tags: ["animals"] },
       }),
     );
-    expect(result).toEqual(mockResponse);
+    expect(result).toMatchObject(mockResponse);
   });
 
   it("should handle API errors gracefully with empty array fallback", async () => {

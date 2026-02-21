@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { BreedGroupDisplay } from "../services/breedImagesService";
 import type { BreedWithImages, BreedStats } from "../schemas/animals";
-import type { ApiDog } from "./apiDog";
+import type { Dog } from "./dog";
 import type { FilterCountsResponse } from "../schemas/common";
 
 export type { BreedGroupDisplay } from "../services/breedImagesService";
@@ -84,7 +84,7 @@ export interface ExperienceDistribution {
 export interface BreedDog {
   id: number | string;
   name: string;
-  slug: string;
+  slug?: string;
   breed?: string;
   primary_image_url?: string;
   organization?: { name?: string };
@@ -173,7 +173,7 @@ export type BreedDetailFilters = Record<BreedDetailFilterKey, string>;
 
 export interface BreedDetailClientProps {
   initialBreedData: BreedPageData;
-  initialDogs: ApiDog[];
+  initialDogs: Dog[];
 }
 
 export interface BreedsHubClientProps {

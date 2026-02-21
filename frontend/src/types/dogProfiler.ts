@@ -35,7 +35,7 @@ export interface DogProfilerData {
 }
 
 export interface DogWithProfiler {
-  id: number;
+  id: number | string;
   external_id?: string;
   name: string;
   breed?: string;

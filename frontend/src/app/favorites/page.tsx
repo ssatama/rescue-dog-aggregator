@@ -20,6 +20,10 @@ import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
 import type { Dog } from "../../types/dog";
+import { transformApiDogToDog } from "../../utils/dogTransformer";
+import { ApiDogSchema } from "../../schemas/animals";
+import { stripNulls } from "../../utils/api";
+import { reportError } from "../../utils/logger";
 import FilterPanelSkeleton from "../../components/ui/FilterPanelSkeleton";
 import CompareSkeleton from "../../components/ui/CompareSkeleton";
 
@@ -149,21 +153,33 @@ function FavoritesPageContent() {
           // fetch(`${apiUrl}/api/animals/batch?ids=${batchIds.join(',')}`)
           const promises = batchIds.map((id) =>
             fetch(`${apiUrl}/api/animals/id/${id}`)
-              .then((res) => (res.ok ? res.json() : null))
-              .catch(() => null),
+              .then((res) => {
+                if (!res.ok) return null;
+                return res.json();
+              })
+              .then((json) => {
+                if (!json) return null;
+                const result = ApiDogSchema.safeParse(stripNulls(json));
+                if (!result.success) {
+                  reportError(result.error, { context: "favorites-fetch", dogId: id });
+                  return null;
+                }
+                return transformApiDogToDog(result.data);
+              })
+              .catch((error) => {
+                reportError(error, { context: "favorites-fetch", dogId: id });
+                return null;
+              }),
           );
           return Promise.all(promises);
         });
 
         const batchResults = await Promise.all(batchPromises);
-        const allResults = batchResults.flat();
-        const validDogs = allResults.filter((dog) => dog !== null);
+        const validDogs = batchResults.flat().filter((dog): dog is Dog => dog !== null);
         setDogs(validDogs);
-        setFilteredDogs(validDogs); // Initialize filtered dogs
+        setFilteredDogs(validDogs);
       } catch (err) {
-        if (process.env.NODE_ENV === "development") {
-          console.error("Failed to fetch favorite dogs:", err);
-        }
+        reportError(err, { context: "fetchFavoriteDogs", favoriteCount: favorites.length });
         setError("Failed to load your favorite dogs. Please try again.");
       } finally {
         setIsLoading(false);
@@ -320,11 +336,8 @@ function FavoritesPageContent() {
     // Use setTimeout to avoid blocking the UI
     const timer = setTimeout(() => {
       try {
-        // Use statically imported function
-        // Cast to DogWithProfiler[] since favorites are always fetched from API with numeric IDs
-        // The Dog type has a union id type (number | string), but DogWithProfiler requires number
         const enhancedInsights = getEnhancedInsights(
-          filteredDogs as unknown as import("@/types/dogProfiler").DogWithProfiler[],
+          filteredDogs as import("@/types/dogProfiler").DogWithProfiler[],
         );
         const basicInsights = getBasicInsights(filteredDogs);
 
