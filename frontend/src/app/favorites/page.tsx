@@ -21,6 +21,9 @@ import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
 import type { Dog } from "../../types/dog";
 import { transformApiDogToDog } from "../../utils/dogTransformer";
+import { ApiDogSchema } from "../../schemas/animals";
+import { stripNulls } from "../../utils/api";
+import { reportError } from "../../utils/logger";
 import FilterPanelSkeleton from "../../components/ui/FilterPanelSkeleton";
 import CompareSkeleton from "../../components/ui/CompareSkeleton";
 
@@ -150,23 +153,33 @@ function FavoritesPageContent() {
           // fetch(`${apiUrl}/api/animals/batch?ids=${batchIds.join(',')}`)
           const promises = batchIds.map((id) =>
             fetch(`${apiUrl}/api/animals/id/${id}`)
-              .then((res) => (res.ok ? res.json() : null))
-              .catch(() => null),
+              .then((res) => {
+                if (!res.ok) return null;
+                return res.json();
+              })
+              .then((json) => {
+                if (!json) return null;
+                const result = ApiDogSchema.safeParse(stripNulls(json));
+                if (!result.success) {
+                  reportError(result.error, { context: "favorites-fetch", dogId: id });
+                  return null;
+                }
+                return transformApiDogToDog(result.data);
+              })
+              .catch((error) => {
+                reportError(error, { context: "favorites-fetch", dogId: id });
+                return null;
+              }),
           );
           return Promise.all(promises);
         });
 
         const batchResults = await Promise.all(batchPromises);
-        const allResults = batchResults.flat();
-        const validDogs = allResults
-          .filter((dog) => dog !== null)
-          .map((dog) => transformApiDogToDog(dog));
+        const validDogs = batchResults.flat().filter((dog): dog is Dog => dog !== null);
         setDogs(validDogs);
         setFilteredDogs(validDogs);
       } catch (err) {
-        if (process.env.NODE_ENV === "development") {
-          console.error("Failed to fetch favorite dogs:", err);
-        }
+        reportError(err, { context: "fetchFavoriteDogs", favoriteCount: favorites.length });
         setError("Failed to load your favorite dogs. Please try again.");
       } finally {
         setIsLoading(false);

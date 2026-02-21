@@ -91,11 +91,9 @@ describe("SEO Static Generation Validation", () => {
         generateOrgParams(),
       ]);
 
-      // Should include entries with string slugs (including empty string)
-      // The test-path filter only checks typeof slug === "string"
+      // Should only include valid non-empty slugs
       expect(dogParams).toEqual([
         { slug: "valid-dog-1" },
-        { slug: "" },
         { slug: "valid-dog-4" },
       ]);
 

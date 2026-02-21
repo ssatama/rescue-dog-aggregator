@@ -4,15 +4,6 @@ import { Suspense } from "react";
 import type { Dog } from "../../../types/dog";
 import type { DogWithLlm } from "../../../services/serverAnimalsService";
 import { reportError } from "../../../utils/logger";
-
-async function fetchAnimalBySlug(slug: string): Promise<DogWithLlm | null> {
-  if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
-    const { getAnimalBySlug } = await import("../../../services/animalsService");
-    return getAnimalBySlug(slug) as Promise<DogWithLlm | null>;
-  }
-  const { getAnimalBySlug } = await import("../../../services/serverAnimalsService");
-  return getAnimalBySlug(slug);
-}
 import DogSchema from "../../../components/seo/DogSchema";
 import DogFAQSchema from "../../../components/seo/DogFAQSchema";
 import {
@@ -23,6 +14,15 @@ import { getDetailHeroImageWithPosition } from "../../../utils/imageUtils";
 import DogDetailClient from "./DogDetailClient";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
 import ImagePreload from "../../../components/seo/ImagePreload";
+
+async function fetchAnimalBySlug(slug: string): Promise<DogWithLlm | null> {
+  if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
+    const { getAnimalBySlug } = await import("../../../services/animalsService");
+    return getAnimalBySlug(slug) as Promise<DogWithLlm | null>;
+  }
+  const { getAnimalBySlug } = await import("../../../services/serverAnimalsService");
+  return getAnimalBySlug(slug);
+}
 
 interface DogDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -216,7 +216,7 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
       const { getAllAnimals } = await import("../../../services/animalsService");
       const dogs = await getAllAnimals();
       return dogs
-        .filter((dog): dog is Dog & { slug: string } => typeof dog.slug === "string")
+        .filter((dog): dog is Dog & { slug: string } => typeof dog.slug === "string" && dog.slug !== "")
         .map((dog) => ({ slug: dog.slug }));
     }
 
