@@ -25,14 +25,7 @@ import {
   trackFilterChange,
   trackSortChange,
 } from "@/lib/monitoring/breadcrumbs";
-
-interface DogFilterValues {
-  age?: string;
-  breed?: string;
-  sex?: string;
-  shipsTo?: string;
-  sort?: string;
-}
+import type { DogFilterValues } from "@/types/filterComponents";
 
 interface DogFiltersProps {
   filters: DogFilterValues;

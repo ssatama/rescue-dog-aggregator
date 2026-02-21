@@ -1,6 +1,14 @@
 import type { OrganizationMetadata } from "./dogsPage";
 import type { FilterCountsResponse } from "../schemas/common";
 
+export interface DogFilterValues {
+  age?: string;
+  breed?: string;
+  sex?: string;
+  shipsTo?: string;
+  sort?: string;
+}
+
 export interface FilterConfig {
   showAge: boolean;
   showBreed: boolean;
@@ -66,3 +74,5 @@ export interface MobileFilterDrawerProps extends SharedFilterProps {
   useSimpleBreedDropdown?: boolean;
   totalDogsCount: number;
 }
+
+export type { FilterSectionProps } from "../components/filters/FilterSection";
