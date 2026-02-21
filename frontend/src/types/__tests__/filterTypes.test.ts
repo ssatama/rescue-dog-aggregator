@@ -1,6 +1,6 @@
 import type { Filters } from "../dogsPage";
 import type { DogFilterValues } from "../filterComponents";
-import type { DogFilterParams } from "../../utils/dogFilters";
+import type { DogFilterParams, AgeCategory, SortOption } from "../../utils/dogFilters";
 
 describe("Filter type hierarchy", () => {
   test("DogFilterParams keys are a subset of page-level Filters keys", () => {
@@ -50,6 +50,22 @@ describe("Filter type hierarchy", () => {
     const params: DogFilterParams = values;
 
     expect(params.age).toBe("Adult");
+  });
+
+  test("AgeCategory union constrains age values", () => {
+    const validAge: AgeCategory = "Puppy";
+    const allAges: AgeCategory[] = ["All", "Puppy", "Young", "Adult", "Senior", "Unknown"];
+
+    expect(validAge).toBe("Puppy");
+    expect(allAges).toHaveLength(6);
+  });
+
+  test("SortOption union constrains sort values", () => {
+    const validSort: SortOption = "newest";
+    const allSorts: SortOption[] = ["newest", "name-asc", "name-desc", "oldest"];
+
+    expect(validSort).toBe("newest");
+    expect(allSorts).toHaveLength(4);
   });
 
   test("all DogFilterParams fields are optional", () => {

@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger, reportError } from "./logger";
 
 export const registerServiceWorker = (): void => {
   if (typeof window === "undefined") return;
@@ -27,6 +27,7 @@ export const registerServiceWorker = (): void => {
         })
         .catch((error: unknown) => {
           logger.error("[SW] Registration failed:", error);
+          reportError(error, { context: "registerServiceWorker" });
         });
     });
   }

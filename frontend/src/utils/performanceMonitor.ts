@@ -47,14 +47,11 @@ function getConnectionType(): string | undefined {
 }
 
 function sendToAnalytics(data: PerformanceData) {
-  // Log locally for development
-  if (process.env.NODE_ENV === "development") {
-    const emoji =
-      data.rating === "good" ? "✅" : data.rating === "poor" ? "❌" : "⚠️";
-    logger.log(
-      `${emoji} ${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`,
-    );
-  }
+  const emoji =
+    data.rating === "good" ? "✅" : data.rating === "poor" ? "❌" : "⚠️";
+  logger.log(
+    `${emoji} ${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`,
+  );
 
   // Send to analytics service
   if (typeof window !== "undefined" && window.gtag) {

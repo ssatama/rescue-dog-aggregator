@@ -1,12 +1,17 @@
 import type { OrganizationMetadata } from "./dogsPage";
 import type { FilterCountsResponse } from "../schemas/common";
+import type { DogFilterParams } from "../utils/dogFilters";
 
-export interface DogFilterValues {
-  age?: string;
-  breed?: string;
+export interface DogFilterValues extends DogFilterParams {
   sex?: string;
-  shipsTo?: string;
-  sort?: string;
+}
+
+export interface FilterSectionProps {
+  id: string;
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+  count?: number;
 }
 
 export interface FilterConfig {
@@ -74,5 +79,3 @@ export interface MobileFilterDrawerProps extends SharedFilterProps {
   useSimpleBreedDropdown?: boolean;
   totalDogsCount: number;
 }
-
-export type { FilterSectionProps } from "../components/filters/FilterSection";

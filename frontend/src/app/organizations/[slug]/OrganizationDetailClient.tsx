@@ -9,6 +9,7 @@ import OrganizationHero from "../../../components/organizations/OrganizationHero
 import MobileFilterDrawer from "../../../components/filters/MobileFilterDrawer";
 import useFilteredDogs from "../../../hooks/useFilteredDogs";
 import { getDefaultFilters } from "../../../utils/dogFilters";
+import type { AgeCategory, SortOption } from "../../../utils/dogFilters";
 import { Button } from "../../../components/ui/button";
 import {
   getOrganizationBySlug,
@@ -36,10 +37,10 @@ interface OrganizationWithDetails extends ApiOrganization {
 }
 
 interface OrgFilters {
-  age: string;
+  age: AgeCategory;
   breed: string;
   sex: string;
-  sort: string;
+  sort: SortOption;
 }
 
 export default function OrganizationDetailClient(_props: OrganizationDetailClientProps) {
@@ -62,12 +63,12 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
   // Filter state management (age, breed, sex, sort for organization pages)
   const [filters, setFilters] = useState<OrgFilters>(() => {
     // Initialize filters from URL parameters or defaults (no shipsTo for org pages)
-    const defaultFilters = getDefaultFilters() as { age: string; breed: string; shipsTo: string; sort: string };
+    const defaultFilters = getDefaultFilters();
     return {
-      age: searchParams?.get("age") || defaultFilters.age,
-      breed: searchParams?.get("breed") || defaultFilters.breed,
+      age: (searchParams?.get("age") as AgeCategory) || defaultFilters.age || "All",
+      breed: searchParams?.get("breed") || defaultFilters.breed || "",
       sex: searchParams?.get("sex") || "Any",
-      sort: searchParams?.get("sort") || "newest", // Default back to "newest" - PostgreSQL issue resolved
+      sort: (searchParams?.get("sort") as SortOption) || defaultFilters.sort || "newest",
     };
   });
 
@@ -96,12 +97,12 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
   };
 
   const handleClearAllFilters = () => {
-    const defaultFilters = getDefaultFilters() as { age: string; breed: string; shipsTo: string; sort: string };
+    const defaultFilters = getDefaultFilters();
     setFilters({
-      age: defaultFilters.age,
-      breed: defaultFilters.breed,
+      age: defaultFilters.age || "All",
+      breed: defaultFilters.breed || "",
       sex: "Any",
-      sort: "newest", // Default back to "newest" - PostgreSQL issue resolved
+      sort: defaultFilters.sort || "newest",
     });
   };
 
@@ -497,7 +498,7 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
         setSizeFilter={() => {}}
         sizeOptions={["Any size"]}
         ageCategoryFilter={filters.age || "Any age"}
-        setAgeCategoryFilter={(age: string) => setFilters((prev) => ({ ...prev, age }))}
+        setAgeCategoryFilter={(age: string) => setFilters((prev) => ({ ...prev, age: age as AgeCategory }))}
         ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
         availableCountryFilter="Any country"
         setAvailableCountryFilter={() => {}}

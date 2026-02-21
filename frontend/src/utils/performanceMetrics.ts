@@ -41,10 +41,7 @@ export class SwipePerformanceTracker {
   }
 
   logMetrics(): void {
-    if (
-      typeof window !== "undefined" &&
-      process.env.NODE_ENV === "development"
-    ) {
+    if (typeof window !== "undefined") {
       logger.log("Performance Metrics:", {
         renderTime: `${this.measureRenderTime().toFixed(2)}ms`,
         imageLoadTime: `${this.measureImageLoadTime().toFixed(2)}ms`,

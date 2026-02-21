@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { logger } from "../utils/logger";
+import { logger, reportError } from "../utils/logger";
 
 const registerServiceWorker = async (): Promise<void> => {
   try {
@@ -47,6 +47,7 @@ const registerServiceWorker = async (): Promise<void> => {
     );
   } catch (error: unknown) {
     logger.error("[SW] Service Worker registration failed:", error);
+    reportError(error, { context: "ServiceWorkerRegistration" });
   }
 };
 

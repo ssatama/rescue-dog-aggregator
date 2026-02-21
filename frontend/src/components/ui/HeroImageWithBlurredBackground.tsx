@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useAdvancedImage } from "../../hooks/useAdvancedImage";
 import { useReducedMotion } from "../../hooks/useScrollAnimation";
 import { getDetailHeroImageWithPosition } from "../../utils/imageUtils";
-import { logger } from "../../utils/logger";
+import { logger, reportError } from "../../utils/logger";
 
 export interface HeroImageWithBlurredBackgroundProps {
   /** Image source URL */
@@ -42,6 +42,7 @@ const HeroImageWithBlurredBackground = memo(
         return getDetailHeroImageWithPosition(src, true);
       } catch (error) {
         logger.error("[HeroImageWithBlurredBackground] Priority image computation failed:", error);
+        reportError(error, { context: "HeroImage.priorityComputation", src });
         return { src, position: "center center" };
       }
     }, [priority, src]);

@@ -6,11 +6,14 @@ interface DogWithAgeFields extends Partial<Dog> {
   ageMaxMonths?: number;
 }
 
+export type AgeCategory = "All" | "Puppy" | "Young" | "Adult" | "Senior" | "Unknown";
+export type SortOption = "newest" | "name-asc" | "name-desc" | "oldest";
+
 export interface DogFilterParams {
-  age?: string;
+  age?: AgeCategory;
   breed?: string;
   shipsTo?: string;
-  sort?: string;
+  sort?: SortOption;
 }
 
 interface FilterOption {

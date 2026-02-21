@@ -2,14 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Icon } from "../ui/Icon";
-
-export interface FilterSectionProps {
-  id: string;
-  title: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-  count?: number;
-}
+import type { FilterSectionProps } from "@/types/filterComponents";
 
 export default function FilterSection({
   id,
