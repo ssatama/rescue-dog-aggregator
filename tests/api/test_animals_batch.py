@@ -2,7 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-@pytest.mark.unit
+@pytest.mark.slow
+@pytest.mark.database
 class TestBatchEndpointValidation:
     def test_no_ids_returns_422(self, client: TestClient):
         response = client.get("/api/animals/batch")
