@@ -448,7 +448,7 @@ class AnimalService:
 
         try:
             query = """
-                SELECT DISTINCT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                SELECT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
                        a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
                        a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
                        a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
@@ -468,6 +468,7 @@ class AnimalService:
                 WHERE a.id = ANY(%s)
                   AND a.animal_type = 'dog'
                   AND o.active = TRUE
+                ORDER BY a.name ASC
             """
 
             self.cursor.execute(query, [animal_ids])

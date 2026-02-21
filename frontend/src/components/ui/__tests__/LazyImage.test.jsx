@@ -73,7 +73,7 @@ describe("LazyImage", () => {
   });
 
   describe("Fill Mode", () => {
-    it("applies fill styles to image when fill prop is true", () => {
+    it("applies fill styles to image and container when fill prop is true", () => {
       render(
         <LazyImage
           src="https://example.com/image.jpg"
@@ -89,6 +89,11 @@ describe("LazyImage", () => {
       expect(image).toHaveClass("w-full");
       expect(image).toHaveClass("h-full");
       expect(image).toHaveClass("object-cover");
+
+      const container = image.closest("div");
+      expect(container).toHaveClass("relative");
+      expect(container).toHaveClass("w-full");
+      expect(container).toHaveClass("h-full");
     });
 
     it("does not apply fill styles when fill prop is false", () => {

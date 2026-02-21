@@ -8,13 +8,13 @@ class TestBatchEndpointValidation:
         response = client.get("/api/animals/batch")
         assert response.status_code == 422
 
-    def test_negative_id_returns_422(self, client: TestClient):
+    def test_negative_id_returns_400(self, client: TestClient):
         response = client.get("/api/animals/batch?ids=-1")
-        assert response.status_code == 422
+        assert response.status_code == 400
 
-    def test_zero_id_returns_422(self, client: TestClient):
+    def test_zero_id_returns_400(self, client: TestClient):
         response = client.get("/api/animals/batch?ids=0")
-        assert response.status_code == 422
+        assert response.status_code == 400
 
     def test_over_100_ids_returns_422(self, client: TestClient):
         ids_param = "&".join(f"ids={i}" for i in range(1, 102))

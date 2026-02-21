@@ -7,7 +7,7 @@ from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
 
 from api.dependencies import get_pooled_db_cursor
-from api.exceptions import APIException, handle_database_error, handle_validation_error
+from api.exceptions import APIException, InvalidInputError, handle_database_error, handle_validation_error
 from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import BreedStatsResponse, FilterCountsResponse
@@ -556,7 +556,7 @@ async def get_animals_batch(
 ):
     """Batch fetch animals by IDs. Used by favorites page to avoid N+1 requests."""
     if any(aid <= 0 for aid in ids):
-        raise HTTPException(status_code=422, detail="All animal IDs must be positive integers")
+        raise InvalidInputError("All animal IDs must be positive integers")
 
     try:
         animal_service = AnimalService(cursor)
