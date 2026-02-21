@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 export interface PerformanceMetrics {
   renderTime: number;
   imageLoadTime: number;
@@ -43,7 +45,7 @@ export class SwipePerformanceTracker {
       typeof window !== "undefined" &&
       process.env.NODE_ENV === "development"
     ) {
-      console.log("🚀 Performance Metrics:", {
+      logger.log("Performance Metrics:", {
         renderTime: `${this.measureRenderTime().toFixed(2)}ms`,
         imageLoadTime: `${this.measureImageLoadTime().toFixed(2)}ms`,
         interactionTime: `${this.measureInteractionTime().toFixed(2)}ms`,

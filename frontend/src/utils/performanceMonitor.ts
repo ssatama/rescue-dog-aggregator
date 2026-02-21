@@ -51,7 +51,7 @@ function sendToAnalytics(data: PerformanceData) {
   if (process.env.NODE_ENV === "development") {
     const emoji =
       data.rating === "good" ? "✅" : data.rating === "poor" ? "❌" : "⚠️";
-    console.log(
+    logger.log(
       `${emoji} ${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`,
     );
   }
