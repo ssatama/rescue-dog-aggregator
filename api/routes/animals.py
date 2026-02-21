@@ -549,6 +549,29 @@ async def get_random_animals(
         )
 
 
+@router.get("/batch", response_model=list[Animal], summary="Batch Fetch Animals by IDs")
+async def get_animals_batch(
+    ids: list[int] = Query(..., min_length=1, max_length=100, description="Animal IDs to fetch (max 100)"),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
+):
+    """Batch fetch animals by IDs. Used by favorites page to avoid N+1 requests."""
+    if any(aid <= 0 for aid in ids):
+        raise HTTPException(status_code=422, detail="All animal IDs must be positive integers")
+
+    try:
+        animal_service = AnimalService(cursor)
+        return animal_service.get_animals_by_ids(ids)
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_animals_batch")
+    except Exception as e:
+        logger.exception(f"Error in batch fetch for {len(ids)} animals: {e}")
+        raise APIException(
+            status_code=500,
+            detail="Failed to batch fetch animals",
+            error_code="INTERNAL_ERROR",
+        )
+
+
 # --- Single Animal Detail (New Slug-Based Route) ---
 @router.get("/{animal_slug}", response_model=Animal)
 async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(get_pooled_db_cursor)):

@@ -72,6 +72,39 @@ describe("LazyImage", () => {
     });
   });
 
+  describe("Fill Mode", () => {
+    it("applies fill styles to image when fill prop is true", () => {
+      render(
+        <LazyImage
+          src="https://example.com/image.jpg"
+          alt="Fill image"
+          fill
+          priority={true}
+        />,
+      );
+
+      const image = screen.getByAltText("Fill image");
+      expect(image).toHaveClass("absolute");
+      expect(image).toHaveClass("inset-0");
+      expect(image).toHaveClass("w-full");
+      expect(image).toHaveClass("h-full");
+      expect(image).toHaveClass("object-cover");
+    });
+
+    it("does not apply fill styles when fill prop is false", () => {
+      render(
+        <LazyImage
+          src="https://example.com/image.jpg"
+          alt="No fill image"
+          priority={true}
+        />,
+      );
+
+      const image = screen.getByAltText("No fill image");
+      expect(image).not.toHaveClass("object-cover");
+    });
+  });
+
   describe("Dark Mode Support", () => {
     beforeEach(() => {
       document.documentElement.classList.add("dark");

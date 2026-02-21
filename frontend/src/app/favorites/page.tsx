@@ -20,9 +20,7 @@ import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
 import type { Dog } from "../../types/dog";
-import { transformApiDogToDog } from "../../utils/dogTransformer";
-import { ApiDogSchema } from "../../schemas/animals";
-import { stripNulls } from "../../utils/api";
+import { getAnimalsByIds } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
 import FilterPanelSkeleton from "../../components/ui/FilterPanelSkeleton";
 import CompareSkeleton from "../../components/ui/CompareSkeleton";
@@ -135,47 +133,21 @@ function FavoritesPageContent() {
       setError(null);
 
       try {
-        // Batch fetch favorite dogs data to avoid N+1 queries
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-        // Create batches of 20 IDs to avoid URL length limits
         const batchSize = 20;
-        const batches = [];
+        const batches: number[][] = [];
         for (let i = 0; i < favorites.length; i += batchSize) {
           batches.push(favorites.slice(i, i + batchSize));
         }
 
-        // Fetch each batch in parallel
-        const batchPromises = batches.map(async (batchIds) => {
-          // For now, still use individual fetches but in controlled batches
-          // TODO: When batch endpoint is available, replace with:
-          // fetch(`${apiUrl}/api/animals/batch?ids=${batchIds.join(',')}`)
-          const promises = batchIds.map((id) =>
-            fetch(`${apiUrl}/api/animals/id/${id}`)
-              .then((res) => {
-                if (!res.ok) return null;
-                return res.json();
-              })
-              .then((json) => {
-                if (!json) return null;
-                const result = ApiDogSchema.safeParse(stripNulls(json));
-                if (!result.success) {
-                  reportError(result.error, { context: "favorites-fetch", dogId: id });
-                  return null;
-                }
-                return transformApiDogToDog(result.data);
-              })
-              .catch((error) => {
-                reportError(error, { context: "favorites-fetch", dogId: id });
-                return null;
-              }),
-          );
-          return Promise.all(promises);
-        });
-
-        const batchResults = await Promise.all(batchPromises);
-        const validDogs = batchResults.flat().filter((dog): dog is Dog => dog !== null);
+        const batchResults = await Promise.all(
+          batches.map((batchIds) =>
+            getAnimalsByIds(batchIds).catch((error) => {
+              reportError(error, { context: "favorites-batch-fetch", batchSize: batchIds.length });
+              return [] as Dog[];
+            }),
+          ),
+        );
+        const validDogs = batchResults.flat();
         setDogs(validDogs);
         setFilteredDogs(validDogs);
       } catch (err) {

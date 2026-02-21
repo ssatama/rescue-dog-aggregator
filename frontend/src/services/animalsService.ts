@@ -60,6 +60,15 @@ export async function getAnimals(
   return transformApiDogsToDogs(raw);
 }
 
+export async function getAnimalsByIds(ids: number[]): Promise<Dog[]> {
+  if (ids.length === 0) return [];
+  logger.log(`Batch fetching ${ids.length} animals by IDs`);
+  const raw = await get<ApiDog[]>("/api/animals/batch", { ids }, {
+    schema: z.array(ApiDogSchema),
+  });
+  return transformApiDogsToDogs(raw);
+}
+
 export async function getAnimalById(id: string | number): Promise<Dog> {
   logger.log(`Fetching animal by ID: ${id}`);
   const raw = await get<ApiDog>(`/api/animals/${id}`, {}, {

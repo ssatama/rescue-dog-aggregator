@@ -24,6 +24,8 @@ export interface LazyImageProps
   priority?: boolean;
   /** Responsive image sizes attribute for optimal loading */
   sizes?: string;
+  /** Fill the parent container (applies absolute positioning and object-cover) */
+  fill?: boolean;
 }
 
 export const LazyImage: React.FC<LazyImageProps> = ({
@@ -36,8 +38,11 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   enableProgressiveLoading = false,
   priority = false,
   sizes = undefined,
+  fill = false,
   ...domProps
 }) => {
+  const fillStyles = fill ? "absolute inset-0 w-full h-full object-cover" : "";
+  const containerFillStyles = fill ? "relative w-full h-full" : "relative";
   const {
     isLoaded,
     isInView,
@@ -102,7 +107,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   }
 
   return (
-    <div ref={imgRef} className="relative">
+    <div ref={imgRef} className={containerFillStyles}>
       {/* Stage 1: Default placeholder until we have any image loaded */}
       {!blurPlaceholderLoaded &&
         !lowQualityLoaded &&
@@ -119,7 +124,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
               <img
                 src={blurPlaceholderSrc}
                 alt={alt}
-                className={`${className} ${blurPlaceholderLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-100`}
+                className={`${className} ${fillStyles} ${blurPlaceholderLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-100`}
                 loading="lazy"
                 sizes={sizes}
                 onLoad={handlers.onBlurPlaceholderLoad}
@@ -133,7 +138,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
             <img
               src={lowQualitySrc}
               alt={alt}
-              className={`${className} ${lowQualityLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-200 ${blurPlaceholderLoaded || lowQualityLoaded ? "absolute inset-0" : ""}`}
+              className={`${className} ${fillStyles} ${lowQualityLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-200 ${blurPlaceholderLoaded || lowQualityLoaded ? "absolute inset-0" : ""}`}
               loading="lazy"
               sizes={sizes}
               onLoad={handlers.onLowQualityLoad}
@@ -146,7 +151,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
           <img
             src={src}
             alt={alt}
-            className={`${className} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300 ${enableProgressiveLoading && (blurPlaceholderLoaded || lowQualityLoaded) && !isLoaded ? "absolute inset-0" : ""}`}
+            className={`${className} ${fillStyles} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300 ${enableProgressiveLoading && (blurPlaceholderLoaded || lowQualityLoaded) && !isLoaded ? "absolute inset-0" : ""}`}
             loading="lazy"
             sizes={sizes}
             onLoad={handlers.onLoad}

@@ -46,7 +46,7 @@ export interface BreedData {
   breed_type?: string;
   count: number;
   slug?: string;
-  description?: BreedDescription | string;
+  description?: string;
   average_age?: number;
   average_age_months?: number;
   sex_distribution?: { male: number; female: number };
