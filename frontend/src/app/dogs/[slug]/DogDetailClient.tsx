@@ -9,7 +9,6 @@ import {
 import Link from "next/link";
 import type { DogDetailClientProps } from "@/types/pageComponents";
 import type { Dog } from "@/types/dog";
-import Layout from "../../../components/layout/Layout";
 import Loading from "../../../components/ui/Loading";
 import { Button } from "../../../components/ui/button";
 import { getAnimalBySlug } from "../../../services/animalsService";
@@ -342,71 +341,65 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
   }, [nextDog, searchParams, router]);
 
   if (loading) {
-    return (
-      <Layout>
-        <DogDetailSkeleton />
-      </Layout>
-    );
+    return <DogDetailSkeleton />;
   }
 
   if (error || !dog) {
     return (
-      <Layout>
-        <div className="max-w-4xl mx-auto p-4">
-          <Alert variant="destructive">
-            <AlertTitle className="flex items-center">
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="currentColor"
-                viewBox="0 0 20 20"
+      <div className="max-w-4xl mx-auto p-4">
+        <Alert variant="destructive">
+          <AlertTitle className="flex items-center">
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Dog Not Found
+          </AlertTitle>
+          <AlertDescription>
+            <p className="mb-4">
+              Sorry, we couldn&apos;t find the dog you&apos;re looking for.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={handleRetry}
+                variant="outline"
+                size="sm"
+                className="flex items-center px-4 py-2 transition-all duration-300 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Dog Not Found
-            </AlertTitle>
-            <AlertDescription>
-              <p className="mb-4">
-                Sorry, we couldn&apos;t find the dog you&apos;re looking for.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  onClick={handleRetry}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center px-4 py-2 transition-all duration-300 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
                 >
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Try Again
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="transition-all duration-300 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-                >
-                  <Link href="/dogs" className="px-4 py-2">
-                    Return to dogs listing
-                  </Link>
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </div>
-      </Layout>
+                  <path
+                    fillRule="evenodd"
+                    d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Try Again
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="transition-all duration-300 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+              >
+                <Link href="/dogs" className="px-4 py-2">
+                  Return to dogs listing
+                </Link>
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
@@ -422,7 +415,6 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
         {/* SEO: Schema.org structured data for search engines */}
         <DogSchema dog={dog} />
         <BreadcrumbSchema items={breadcrumbItems} />
-        <Layout>
           <div
             data-testid="dog-detail-container"
             className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
@@ -901,7 +893,6 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
               </div>
             </div>
           </div>
-        </Layout>
       </DogDetailErrorBoundary>
     </ToastProvider>
   );

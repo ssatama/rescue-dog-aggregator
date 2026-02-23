@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import PuppiesClient from "./PuppiesClient";
+import Layout from "@/components/layout/Layout";
 import AgeStructuredData from "@/components/age/AgeStructuredData";
 import { getAnimals, getAllMetadata, getAgeStats } from "@/services/serverAnimalsService";
 import { AGE_CATEGORIES } from "@/utils/ageData";
@@ -63,7 +64,7 @@ export default async function PuppiesPage(): Promise<React.JSX.Element> {
   const totalCount = puppyCategoryStat?.count || 0;
 
   return (
-    <>
+    <Layout>
       <AgeStructuredData ageCategory={puppyCategory} dogCount={totalCount} />
       <Suspense fallback={<LoadingFallback />}>
         <PuppiesClient
@@ -73,6 +74,6 @@ export default async function PuppiesPage(): Promise<React.JSX.Element> {
           totalCount={totalCount}
         />
       </Suspense>
-    </>
+    </Layout>
   );
 }

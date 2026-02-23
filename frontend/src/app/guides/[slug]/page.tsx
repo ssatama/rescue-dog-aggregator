@@ -3,8 +3,7 @@ import { GuideContent } from "@/components/guides/GuideContent";
 import { GuideSchema } from "@/components/guides/GuideSchema";
 import { ReadingProgress } from "@/components/guides/ReadingProgress";
 import { BreadcrumbSchema } from "@/components/seo";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import Layout from "@/components/layout/Layout";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Guide } from "@/types/guide";
@@ -87,7 +86,7 @@ export default async function GuidePage({
   }
 
   return (
-    <>
+    <Layout>
       <GuideSchema guide={guide} />
       <BreadcrumbSchema
         items={[
@@ -96,14 +95,12 @@ export default async function GuidePage({
           { name: guide.frontmatter.title },
         ]}
       />
-      <Header />
       <ReadingProgress />
       <GuideContent
         guide={guide}
         fullPage={true}
         relatedGuides={relatedGuides}
       />
-      <Footer />
-    </>
+    </Layout>
   );
 }

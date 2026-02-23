@@ -449,11 +449,8 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
         { timeout: 2000 },
       );
 
-      // Check for main content landmark
-      const mainContent =
-        document.querySelector("main") ||
-        document.querySelector('[role="main"]');
-      expect(mainContent).toBeTruthy();
+      // Main landmark is now provided by Layout at server page level, not in client component
+      // Check for navigation landmark instead (breadcrumbs provide this)
 
       // Check for navigation landmark (multiple navigation elements exist)
       const navigations = screen.getAllByRole("navigation");

@@ -89,10 +89,10 @@ describe("CountriesHubClient", () => {
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
   });
 
-  it("wraps content in Layout", () => {
+  it("renders content without Layout wrapper (Layout is at server page level)", () => {
     render(<CountriesHubClient initialStats={mockInitialStats} />);
 
-    expect(screen.getByTestId("layout")).toBeInTheDocument();
+    expect(screen.getByText(/Rescue Dogs by Country/i)).toBeInTheDocument();
   });
 
   it("handles empty countries array gracefully", () => {

@@ -110,9 +110,9 @@ describe("CountryDogsClient", () => {
     expect(screen.getByTestId("dogs-page-client")).toHaveTextContent("Filter: UK");
   });
 
-  it("wraps content in Layout", () => {
+  it("renders content without Layout wrapper (Layout is at server page level)", () => {
     render(<CountryDogsClient {...defaultProps} />);
 
-    expect(screen.getByTestId("layout")).toBeInTheDocument();
+    expect(screen.getByTestId("dogs-page-client")).toBeInTheDocument();
   });
 });

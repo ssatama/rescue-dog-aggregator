@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import CountryDogsClient from "./CountryDogsClient";
+import Layout from "@/components/layout/Layout";
 import CountryStructuredData from "@/components/countries/CountryStructuredData";
 import {
   getAnimals,
@@ -94,7 +95,7 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
     countryStats?.countries?.find((c: { code: string }) => c.code === country.code)?.count || 0;
 
   return (
-    <>
+    <Layout>
       <CountryStructuredData
         country={country}
         dogCount={countryCount}
@@ -109,6 +110,6 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
           totalCount={countryCount}
         />
       </Suspense>
-    </>
+    </Layout>
   );
 }

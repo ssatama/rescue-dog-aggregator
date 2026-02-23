@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import BreedDetailClient from "./BreedDetailClient";
+import Layout from "@/components/layout/Layout";
 import BreedDetailSkeleton from "@/components/ui/BreedDetailSkeleton";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
@@ -164,7 +165,7 @@ export default async function BreedDetailPage(props: BreedPageProps) {
   const { breedData, initialDogs, enrichedBreedData } = data;
 
   return (
-    <>
+    <Layout>
       <BreedStructuredData
         breedData={enrichedBreedData}
         dogs={initialDogs}
@@ -178,6 +179,6 @@ export default async function BreedDetailPage(props: BreedPageProps) {
           />
         </Suspense>
       </ErrorBoundary>
-    </>
+    </Layout>
   );
 }

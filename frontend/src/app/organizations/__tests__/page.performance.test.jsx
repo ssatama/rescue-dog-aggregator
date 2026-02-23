@@ -8,6 +8,12 @@ jest.mock("../../../services/organizationsService", () => ({
   getEnhancedOrganizationsSSR: jest.fn(),
 }));
 
+jest.mock("../../../components/layout/Layout", () => {
+  return function MockLayout({ children }) {
+    return <div data-testid="layout">{children}</div>;
+  };
+});
+
 jest.mock("../OrganizationsClient", () => {
   return function MockOrganizationsClient({ initialData }) {
     return (

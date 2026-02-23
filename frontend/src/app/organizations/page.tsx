@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { OrganizationCardData } from "../../types/organizationComponents";
 import OrganizationsClient from "./OrganizationsClient";
+import Layout from "../../components/layout/Layout";
 import { getEnhancedOrganizationsSSR } from "../../services/organizationsService";
 import { reportError } from "../../utils/logger";
 
@@ -69,8 +70,10 @@ export default async function OrganizationsPage(): Promise<React.JSX.Element> {
   }
 
   return (
-    <OrganizationsClient
-      initialData={organizations}
-    />
+    <Layout>
+      <OrganizationsClient
+        initialData={organizations}
+      />
+    </Layout>
   );
 }

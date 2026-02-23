@@ -1,6 +1,5 @@
 "use client";
 
-import Layout from "../../components/layout/Layout";
 import OrganizationCard from "../../components/organizations/OrganizationCard";
 import OrganizationCardSkeleton from "../../components/ui/OrganizationCardSkeleton";
 import EmptyState from "../../components/ui/EmptyState";
@@ -66,7 +65,7 @@ export default function OrganizationsClient({
   ];
 
   return (
-    <Layout>
+    <>
       {/* SEO: Breadcrumb structured data */}
       <BreadcrumbSchema items={breadcrumbItems} />
 
@@ -132,6 +131,6 @@ export default function OrganizationsClient({
           <EmptyState variant="noOrganizations" onRefresh={() => refetch()} />
         )}
       </div>
-    </Layout>
+    </>
   );
 }

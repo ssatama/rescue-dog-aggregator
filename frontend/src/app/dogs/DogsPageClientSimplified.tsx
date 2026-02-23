@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
-import Layout from "../../components/layout/Layout";
 import DogCardSkeletonOptimized from "../../components/ui/DogCardSkeletonOptimized";
 import DogsPageViewportWrapper from "../../components/dogs/DogsPageViewportWrapper";
 import EmptyState from "../../components/ui/EmptyState";
@@ -48,7 +47,6 @@ export default function DogsPageClientSimplified({
   initialParams = {},
   hideHero = false,
   hideBreadcrumbs = false,
-  wrapWithLayout = true,
 }: DogsPageClientSimplifiedProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -156,9 +154,9 @@ export default function DogsPageClientSimplified({
 
           {/* Mobile Page Title with Filter Button */}
           <div className="px-4 pb-3 bg-background dark:bg-gray-900 flex justify-between items-center">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <div className="text-xl font-bold text-gray-900 dark:text-white">
               Find Your New Best Friend
-            </h1>
+            </div>
 
             {/* Enhanced Filter Button - inline with title */}
             <Button
@@ -454,5 +452,5 @@ export default function DogsPageClientSimplified({
     </>
   );
 
-  return wrapWithLayout ? <Layout>{content}</Layout> : content;
+  return content;
 }

@@ -8,6 +8,7 @@ import {
   generateJsonLdScript,
 } from "../../../utils/schema";
 import { reportError } from "../../../utils/logger";
+import Layout from "../../../components/layout/Layout";
 import OrganizationDetailClient from "./OrganizationDetailClient";
 
 interface OrganizationDetailPageProps {
@@ -91,7 +92,7 @@ const isTestEnvironment =
   typeof process !== "undefined" && process.env.NODE_ENV === "test";
 
 function OrganizationDetailPage(_props: OrganizationDetailPageProps): React.JSX.Element {
-  return <OrganizationDetailClient />;
+  return <Layout><OrganizationDetailClient /></Layout>;
 }
 
 async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): Promise<React.JSX.Element> {
@@ -105,7 +106,7 @@ async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): 
     }
   }
 
-  return <OrganizationDetailClient />;
+  return <Layout><OrganizationDetailClient /></Layout>;
 }
 
 export const revalidate = 86400;

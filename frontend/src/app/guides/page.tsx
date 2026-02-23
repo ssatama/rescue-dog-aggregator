@@ -1,8 +1,7 @@
 import { getAllGuides } from "@/lib/guides";
 import { GuideCard } from "@/components/guides/GuideCard";
 import { BreadcrumbSchema } from "@/components/seo";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import Layout from "@/components/layout/Layout";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -40,7 +39,7 @@ export default async function GuidesPage() {
   const guides = await getAllGuides();
 
   return (
-    <>
+    <Layout>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
@@ -51,7 +50,6 @@ export default async function GuidesPage() {
           { name: "Guides" },
         ]}
       />
-      <Header />
 
       <div className="container mx-auto px-4 py-12">
         {/* Breadcrumbs */}
@@ -92,8 +90,6 @@ export default async function GuidesPage() {
           ))}
         </div>
       </div>
-
-      <Footer />
-    </>
+    </Layout>
   );
 }

@@ -10,7 +10,6 @@ import React, {
 } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
-import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -389,8 +388,7 @@ export default function BreedDetailClient({
   );
 
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Breadcrumbs items={breadcrumbItems} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 lg:mb-12 mt-4 lg:mt-6">
@@ -572,7 +570,6 @@ export default function BreedDetailClient({
           resetFilters={handleResetFilters}
           filterCounts={filterCounts}
         />
-      </div>
-    </Layout>
+    </div>
   );
 }

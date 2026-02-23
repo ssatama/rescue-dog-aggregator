@@ -1,12 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import FAQPage from "../page";
+import FaqClient from "../FaqClient";
 import { metadata } from "../layout";
-
-jest.mock("../../../components/layout/Layout", () => {
-  return function MockLayout({ children }) {
-    return <div data-testid="layout">{children}</div>;
-  };
-});
 
 jest.mock("../../../components/ui/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }) {
@@ -58,7 +52,7 @@ describe("FAQ Page", () => {
 
   describe("Page Content", () => {
     beforeEach(() => {
-      render(<FAQPage />);
+      render(<FaqClient />);
     });
 
     test("renders page title", () => {
@@ -147,7 +141,7 @@ describe("FAQ Page", () => {
 
   describe("FAQ Questions", () => {
     beforeEach(() => {
-      render(<FAQPage />);
+      render(<FaqClient />);
     });
 
     test("renders commercial platform question", () => {
@@ -183,7 +177,7 @@ describe("FAQ Page", () => {
 
   describe("Accordion Functionality", () => {
     beforeEach(() => {
-      render(<FAQPage />);
+      render(<FaqClient />);
     });
 
     test("all FAQ items are collapsed by default", () => {
@@ -276,7 +270,7 @@ describe("FAQ Page", () => {
 
   describe("FAQ Schema", () => {
     test("renders FAQPage JSON-LD schema", () => {
-      render(<FAQPage />);
+      render(<FaqClient />);
       const scripts = document.querySelectorAll(
         'script[type="application/ld+json"]'
       );
@@ -292,7 +286,7 @@ describe("FAQ Page", () => {
     });
 
     test("FAQPage schema contains all questions", () => {
-      render(<FAQPage />);
+      render(<FaqClient />);
       const scripts = document.querySelectorAll(
         'script[type="application/ld+json"]'
       );
@@ -319,7 +313,7 @@ describe("FAQ Page", () => {
 
   describe("Accessibility", () => {
     beforeEach(() => {
-      render(<FAQPage />);
+      render(<FaqClient />);
     });
 
     test("has single h1 heading", () => {

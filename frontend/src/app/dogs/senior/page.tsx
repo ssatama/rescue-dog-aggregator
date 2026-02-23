@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import SeniorDogsClient from "./SeniorDogsClient";
+import Layout from "@/components/layout/Layout";
 import AgeStructuredData from "@/components/age/AgeStructuredData";
 import { getAnimals, getAllMetadata, getAgeStats } from "@/services/serverAnimalsService";
 import { AGE_CATEGORIES } from "@/utils/ageData";
@@ -63,7 +64,7 @@ export default async function SeniorDogsPage(): Promise<React.JSX.Element> {
   const totalCount = seniorCategoryStat?.count || 0;
 
   return (
-    <>
+    <Layout>
       <AgeStructuredData ageCategory={seniorCategory} dogCount={totalCount} />
       <Suspense fallback={<LoadingFallback />}>
         <SeniorDogsClient
@@ -73,6 +74,6 @@ export default async function SeniorDogsPage(): Promise<React.JSX.Element> {
           totalCount={totalCount}
         />
       </Suspense>
-    </>
+    </Layout>
   );
 }

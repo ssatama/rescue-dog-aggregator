@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Layout from "../../../components/layout/Layout";
 import DogFilters from "../../../components/filters/DogFilters";
 import OrganizationHero from "../../../components/organizations/OrganizationHero";
 import MobileFilterDrawer from "../../../components/filters/MobileFilterDrawer";
@@ -272,7 +271,7 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
   // Loading state
   if (loading) {
     return (
-      <Layout>
+      <>
         <div className="max-w-7xl mx-auto p-4">
           {/* Hero skeleton */}
           <div className="bg-gradient-to-r from-amber-100 dark:from-amber-900/20 to-orange-200 dark:to-orange-900/30 rounded-lg p-8 mb-8">
@@ -295,14 +294,14 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
           {/* Dogs grid skeleton */}
           <DogsGrid loading={true} skeletonCount={8} />
         </div>
-      </Layout>
+      </>
     );
   }
 
   // Error state
   if (error || !organization) {
     return (
-      <Layout>
+      <>
         <div className="max-w-7xl mx-auto p-4">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg p-6 text-center">
             <h1 className="text-2xl font-bold text-red-500 dark:text-red-400 mb-4">
@@ -319,7 +318,7 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
             </Link>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -330,7 +329,7 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
   ];
 
   return (
-    <Layout>
+    <>
       {/* SEO: Schema.org structured data for search engines */}
       {organization && (
         <>
@@ -507,6 +506,6 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
         filterCounts={null}
         totalDogsCount={totalDogs}
       />
-    </Layout>
+    </>
   );
 }

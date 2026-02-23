@@ -1,7 +1,6 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import AgeQuickNav from "@/components/age/AgeQuickNav";
 import type { SeniorDogsClientProps } from "@/types/pageComponents";
@@ -20,7 +19,7 @@ export default function SeniorDogsClient({
   ];
 
   return (
-    <Layout>
+    <>
       <div className="container mx-auto px-4 pt-4">
         <Breadcrumbs items={breadcrumbItems} />
       </div>
@@ -83,8 +82,7 @@ export default function SeniorDogsClient({
         initialParams={{ age_category: ageCategory.apiValue }}
         hideHero={true}
         hideBreadcrumbs={true}
-        wrapWithLayout={false}
       />
-    </Layout>
+    </>
   );
 }

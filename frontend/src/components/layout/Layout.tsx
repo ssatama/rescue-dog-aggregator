@@ -1,4 +1,3 @@
-"use client";
 import Header from "./Header";
 import Footer from "./Footer";
 import { ErrorBoundary } from "../ErrorBoundary";

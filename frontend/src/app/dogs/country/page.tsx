@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import CountriesHubClient from "./CountriesHubClient";
+import Layout from "@/components/layout/Layout";
 import CountryStructuredData from "@/components/countries/CountryStructuredData";
 import { getCountryStats } from "@/services/serverAnimalsService";
 
@@ -44,7 +45,7 @@ export default async function CountriesPage(): Promise<React.JSX.Element> {
   const countryStats = await getCountryStats();
 
   return (
-    <>
+    <Layout>
       <CountryStructuredData
         stats={countryStats}
         pageType="index"
@@ -52,6 +53,6 @@ export default async function CountriesPage(): Promise<React.JSX.Element> {
       <Suspense fallback={<LoadingFallback />}>
         <CountriesHubClient initialStats={countryStats} />
       </Suspense>
-    </>
+    </Layout>
   );
 }

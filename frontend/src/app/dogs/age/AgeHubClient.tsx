@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Sparkles, Heart, ArrowRight, Calendar } from "lucide-react";
-import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,7 +78,7 @@ export default function AgeHubClient({ initialStats }: AgeHubClientProps) {
   const totalDogs = (puppies?.count || 0) + (seniors?.count || 0);
 
   return (
-    <Layout>
+    <>
       <div className="container mx-auto px-4 pt-4">
         <Breadcrumbs items={breadcrumbItems} />
       </div>
@@ -166,6 +165,6 @@ export default function AgeHubClient({ initialStats }: AgeHubClientProps) {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }
