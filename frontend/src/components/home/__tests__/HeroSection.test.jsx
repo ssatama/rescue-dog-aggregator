@@ -145,6 +145,11 @@ describe("HeroSection", () => {
 
       expect(screen.getAllByText("0")).toHaveLength(3);
       expect(screen.getByText("Browse all dogs →")).toBeInTheDocument();
+
+      // Subtitle should show marketing fallback values, not "0 dogs"
+      const subtitle = screen.getByTestId("hero-subtitle");
+      expect(subtitle).toHaveTextContent("Browse 3,186 dogs");
+      expect(subtitle).toHaveTextContent("from 13 rescue organizations");
     });
   });
 

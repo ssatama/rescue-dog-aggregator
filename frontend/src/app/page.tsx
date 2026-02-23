@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { OrganizationCardData } from "../types/organizationComponents";
 import Layout from "../components/layout/Layout";
+import ErrorBoundary from "../components/ui/ErrorBoundary";
 import HeroSection from "../components/home/HeroSection";
 import ClientHomePage from "../components/home/ClientHomePage";
 import { getHomePageData, getCountryStats, getAgeStats } from "../services/serverAnimalsService";
@@ -47,7 +48,8 @@ export default async function Home(): Promise<React.JSX.Element> {
     statistics: {
       total_dogs: 0,
       total_organizations: 0,
-      total_countries: 0,
+      countries: [],
+      organizations: [],
     },
     recentDogs: [],
     diverseDogs: [],
@@ -100,10 +102,12 @@ export default async function Home(): Promise<React.JSX.Element> {
         <link rel="preload" as="image" href={firstDogImage} />
       )}
       <div className="hidden sm:block">
-        <HeroSection
-          statistics={heroStats}
-          previewDogs={heroPreviewDogs}
-        />
+        <ErrorBoundary fallbackMessage="Unable to load hero section. Please refresh the page.">
+          <HeroSection
+            statistics={heroStats}
+            previewDogs={heroPreviewDogs}
+          />
+        </ErrorBoundary>
       </div>
       <ClientHomePage
         initialStatistics={statistics}

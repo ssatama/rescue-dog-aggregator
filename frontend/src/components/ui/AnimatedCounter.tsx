@@ -28,6 +28,8 @@ export default function AnimatedCounter({
   const [hasAnimated, setHasAnimated] = useState(false);
   const elementRef = useRef<HTMLSpanElement>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const prevValueRef = useRef(value);
+  const isFirstMount = useRef(true);
 
   // Check for reduced motion preference
   const prefersReducedMotion =
@@ -42,6 +44,14 @@ export default function AnimatedCounter({
   // Start animation
   const startAnimation = useCallback((): void => {
     if (hasAnimated || prefersReducedMotion) {
+      setDisplayValue(Math.max(0, Math.round(value)));
+      setHasAnimated(true);
+      return;
+    }
+
+    // On first mount, skip the 0→N animation to avoid SSR flash (value→0→value)
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
       setDisplayValue(Math.max(0, Math.round(value)));
       setHasAnimated(true);
       return;
@@ -118,7 +128,6 @@ export default function AnimatedCounter({
   }, [startAnimation, hasAnimated]);
 
   // Reset animation when value changes so it re-animates on next intersection
-  const prevValueRef = useRef(value);
   useEffect(() => {
     if (prevValueRef.current !== value) {
       prevValueRef.current = value;

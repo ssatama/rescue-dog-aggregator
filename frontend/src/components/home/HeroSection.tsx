@@ -33,8 +33,15 @@ export default function HeroSection({
               data-testid="hero-subtitle"
               className="text-body text-muted-foreground mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Browse {statistics.total_dogs?.toLocaleString() || "3,186"} dogs
-              aggregated from {statistics.total_organizations || "13"} rescue
+              Browse{" "}
+              {statistics.total_dogs > 0
+                ? statistics.total_dogs.toLocaleString()
+                : "3,186"}{" "}
+              dogs aggregated from{" "}
+              {statistics.total_organizations > 0
+                ? statistics.total_organizations
+                : "13"}{" "}
+              rescue
               organizations across Europe & UK. Adopt Don&apos;t Shop.
             </p>
 
