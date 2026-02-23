@@ -81,7 +81,7 @@ interface Insights {
   totalCount?: number;
 }
 
-function FavoritesPageContent() {
+function FavoritesPageContent(): React.JSX.Element {
   const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl, isHydrated } =
     useFavorites();
   const { showToast } = useToast();
@@ -90,18 +90,6 @@ function FavoritesPageContent() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showCompareMode, setShowCompareMode] = useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-
-  // Detect mobile viewport - use md breakpoint (768px) for consistency
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // Load favorites from URL on mount
   useEffect(() => {
@@ -172,12 +160,6 @@ function FavoritesPageContent() {
     }
   }, [favorites]);
 
-  const handleClearAll = () => {
-    if (window.confirm("Are you sure you want to remove all favorites?")) {
-      clearFavorites();
-    }
-  };
-
   const handleFilter = useCallback(
     (filtered: Dog[], isUserInitiated = false) => {
       setFilteredDogs(filtered);
@@ -193,7 +175,6 @@ function FavoritesPageContent() {
   const [insights, setInsights] = useState<Insights | null>(null);
   const [insightsLoading, setInsightsLoading] = useState<boolean>(false);
   const showInsights = filteredDogs.length >= 2;
-  const hasLLMData = filteredDogs.some((dog) => dog.dog_profiler_data);
 
   // Basic insights function (existing logic)
   const getBasicInsights = useCallback((dogList: Dog[]): Insights | null => {
@@ -505,7 +486,7 @@ function FavoritesPageContent() {
   );
 }
 
-export default function FavoritesClient() {
+export default function FavoritesClient(): React.JSX.Element {
   return (
     <ErrorBoundary
       fallback={
@@ -521,9 +502,7 @@ export default function FavoritesClient() {
         </div>
       }
       onError={(error) => {
-        if (process.env.NODE_ENV === "development") {
-          console.error("Favorites page error:", error);
-        }
+        reportError(error, { context: "FavoritesClient-ErrorBoundary" });
       }}
     >
       <FavoritesPageContent />

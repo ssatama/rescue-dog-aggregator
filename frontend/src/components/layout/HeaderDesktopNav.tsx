@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-export default function HeaderDesktopNav() {
+export default function HeaderDesktopNav(): React.JSX.Element {
   const pathname = usePathname();
 
   const getLinkClasses = (href: string): string => {

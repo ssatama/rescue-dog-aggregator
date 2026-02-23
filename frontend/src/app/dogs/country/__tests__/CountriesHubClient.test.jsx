@@ -8,13 +8,6 @@ jest.mock("next/link", () => {
   };
 });
 
-// Mock Layout component
-jest.mock("@/components/layout/Layout", () => {
-  return function MockLayout({ children }) {
-    return <div data-testid="layout">{children}</div>;
-  };
-});
-
 // Mock Breadcrumbs component
 jest.mock("@/components/ui/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }) {
@@ -89,10 +82,10 @@ describe("CountriesHubClient", () => {
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
   });
 
-  it("renders content without Layout wrapper (Layout is at server page level)", () => {
+  it("does not render Layout wrapper (Layout is at server page level)", () => {
     render(<CountriesHubClient initialStats={mockInitialStats} />);
 
-    expect(screen.getByText(/Rescue Dogs by Country/i)).toBeInTheDocument();
+    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
   });
 
   it("handles empty countries array gracefully", () => {

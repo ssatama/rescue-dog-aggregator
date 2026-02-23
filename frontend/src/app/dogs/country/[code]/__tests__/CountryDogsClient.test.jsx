@@ -1,13 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import CountryDogsClient from "../CountryDogsClient";
 
-// Mock Layout component
-jest.mock("@/components/layout/Layout", () => {
-  return function MockLayout({ children }) {
-    return <div data-testid="layout">{children}</div>;
-  };
-});
-
 // Mock Breadcrumbs component
 jest.mock("@/components/ui/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }) {
@@ -110,9 +103,9 @@ describe("CountryDogsClient", () => {
     expect(screen.getByTestId("dogs-page-client")).toHaveTextContent("Filter: UK");
   });
 
-  it("renders content without Layout wrapper (Layout is at server page level)", () => {
+  it("does not render Layout wrapper (Layout is at server page level)", () => {
     render(<CountryDogsClient {...defaultProps} />);
 
-    expect(screen.getByTestId("dogs-page-client")).toBeInTheDocument();
+    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
   });
 });
