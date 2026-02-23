@@ -5,13 +5,8 @@
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import FavoritesPage from "../page";
+import FavoritesClient from "../FavoritesClient";
 import type { Dog } from "@/types/dog";
-
-// Mock react-error-boundary
-jest.mock("react-error-boundary", () => ({
-  ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
-}));
 
 // Create stable references to avoid infinite re-renders
 const mockClearFavorites = jest.fn();
@@ -47,12 +42,6 @@ jest.mock("../../../contexts/ToastContext", () => ({
     showToast: jest.fn(),
   }),
 }));
-
-jest.mock("../../../components/layout/Layout", () => {
-  return function Layout({ children }: { children: React.ReactNode }) {
-    return <div>{children}</div>;
-  };
-});
 
 jest.mock("../../../components/dogs/DogCardOptimized", () => {
   return function DogCardOptimized({ dog }: { dog: Dog }) {
@@ -152,7 +141,7 @@ describe("FavoritesPage with FilterPanel", () => {
   });
 
   test("renders FilterPanel component", async () => {
-    render(<FavoritesPage />);
+    render(<FavoritesClient />);
 
     await waitFor(() => {
       expect(screen.getByText("🔍 Filter")).toBeInTheDocument();
@@ -167,7 +156,7 @@ describe("FavoritesPage with FilterPanel", () => {
       isHydrated: false,
     };
 
-    render(<FavoritesPage />);
+    render(<FavoritesClient />);
 
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.queryByText("Start Building Your Collection")).not.toBeInTheDocument();

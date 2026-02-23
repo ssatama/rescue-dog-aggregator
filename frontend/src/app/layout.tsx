@@ -130,6 +130,10 @@ export default function RootLayout({
 }): React.JSX.Element {
   return (
     <html lang="en" className={`${inter.variable} ${caveat.variable}`}>
+      <head>
+        <link rel="preconnect" href="https://images.rescuedogs.me" />
+        <link rel="dns-prefetch" href="https://images.rescuedogs.me" />
+      </head>
       <body
         className={`${inter.className} min-h-screen bg-background font-sans`}
       >

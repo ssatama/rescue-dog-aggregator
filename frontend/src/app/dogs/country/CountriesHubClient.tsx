@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { MapPin, Dog, Building2, ArrowRight } from "lucide-react";
-import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -80,7 +79,7 @@ export default function CountriesHubClient({ initialStats }: CountriesHubClientP
   const totalDogs = initialStats?.total || 0;
 
   return (
-    <Layout>
+    <>
       <div className="container mx-auto px-4 pt-4">
         <Breadcrumbs items={breadcrumbItems} />
       </div>
@@ -160,6 +159,6 @@ export default function CountriesHubClient({ initialStats }: CountriesHubClientP
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

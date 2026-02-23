@@ -1,6 +1,5 @@
 "use client";
 
-import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import CountryQuickNav from "@/components/countries/CountryQuickNav";
 import type { CountryDogsClientProps } from "@/types/pageComponents";
@@ -23,7 +22,7 @@ export default function CountryDogsClient({
   const totalDogs = totalCount || 0;
 
   return (
-    <Layout>
+    <>
       <div className="container mx-auto px-4 pt-4">
         <Breadcrumbs items={breadcrumbItems} />
       </div>
@@ -65,8 +64,7 @@ export default function CountryDogsClient({
         initialParams={{ location_country: country.code }}
         hideHero={true}
         hideBreadcrumbs={true}
-        wrapWithLayout={false}
       />
-    </Layout>
+    </>
   );
 }

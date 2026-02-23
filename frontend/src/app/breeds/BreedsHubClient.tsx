@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
-import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import BreedsHeroSection from "@/components/breeds/BreedsHeroSection";
 import PopularBreedsSection from "@/components/breeds/PopularBreedsSection";
@@ -67,7 +66,7 @@ export default function BreedsHubClient({
 
   if (!breedStats) {
     return (
-      <Layout>
+      <>
         <div className="container mx-auto px-4 py-8">
           <EmptyState
             title="Unable to load breed data"
@@ -78,12 +77,12 @@ export default function BreedsHubClient({
             }}
           />
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       {/* Breadcrumb Navigation */}
       <div className="container mx-auto px-4 pt-4">
         <Breadcrumbs items={breadcrumbItems} />
@@ -129,6 +128,6 @@ export default function BreedsHubClient({
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

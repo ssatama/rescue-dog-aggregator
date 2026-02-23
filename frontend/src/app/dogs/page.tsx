@@ -6,6 +6,7 @@ import {
 } from "../../services/serverAnimalsService";
 import DogsPageClientSimplified from "./DogsPageClientSimplified";
 import DogCardSkeletonOptimized from "../../components/ui/DogCardSkeletonOptimized";
+import Layout from "../../components/layout/Layout";
 import "../../styles/animations.css";
 
 interface DogsPageProps {
@@ -95,12 +96,14 @@ export default async function DogsPageOptimized(props: DogsPageProps): Promise<R
   ]);
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <DogsPageClientSimplified
-        initialDogs={initialDogs}
-        metadata={metadata}
-        initialParams={initialParams}
-      />
-    </Suspense>
+    <Layout>
+      <Suspense fallback={<LoadingFallback />}>
+        <DogsPageClientSimplified
+          initialDogs={initialDogs}
+          metadata={metadata}
+          initialParams={initialParams}
+        />
+      </Suspense>
+    </Layout>
   );
 }

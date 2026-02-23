@@ -39,7 +39,6 @@ export interface DogsPageClientSimplifiedProps {
   initialParams?: DogsPageInitialParams;
   hideHero?: boolean;
   hideBreadcrumbs?: boolean;
-  wrapWithLayout?: boolean;
 }
 
 export type { Dog, FilterCountsResponse };

@@ -128,28 +128,6 @@ jest.mock("../../components/dogs/RelatedDogsSection", () => {
   };
 });
 
-jest.mock("../../components/layout/Layout", () => {
-  return function MockLayout({ children }) {
-    return (
-      <div
-        className="flex flex-col min-h-screen bg-background text-foreground"
-        data-testid="layout"
-      >
-        <header data-testid="header">
-          <nav aria-label="Main navigation">
-            <div>Navigation</div>
-          </nav>
-        </header>
-        <main id="main-content" className="flex-grow px-4 py-8">
-          {children}
-        </main>
-        <footer data-testid="footer">
-          <div>Footer</div>
-        </footer>
-      </div>
-    );
-  };
-});
 
 jest.mock("../../hooks/useScrollAnimation", () => ({
   ScrollAnimationWrapper: ({ children }) => <div>{children}</div>,
@@ -449,11 +427,8 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
         { timeout: 2000 },
       );
 
-      // Check for main content landmark
-      const mainContent =
-        document.querySelector("main") ||
-        document.querySelector('[role="main"]');
-      expect(mainContent).toBeTruthy();
+      // Main landmark (<main>) is provided by Layout at the server page level,
+      // not available when testing client components in isolation
 
       // Check for navigation landmark (multiple navigation elements exist)
       const navigations = screen.getAllByRole("navigation");

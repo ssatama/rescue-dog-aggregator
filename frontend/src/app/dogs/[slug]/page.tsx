@@ -14,6 +14,7 @@ import { getDetailHeroImageWithPosition } from "../../../utils/imageUtils";
 import DogDetailClient from "./DogDetailClient";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
 import ImagePreload from "../../../components/seo/ImagePreload";
+import Layout from "../../../components/layout/Layout";
 
 async function fetchAnimalBySlug(slug: string): Promise<DogWithLlm | null> {
   if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
@@ -152,7 +153,7 @@ const isTestEnvironment =
   typeof process !== "undefined" && process.env.NODE_ENV === "test";
 
 function DogDetailPage(_props: DogDetailPageProps): React.JSX.Element {
-  return <DogDetailClient />;
+  return <Layout><DogDetailClient /></Layout>;
 }
 
 async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.Element> {
@@ -193,14 +194,14 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
   }
 
   return (
-    <>
+    <Layout>
       {initialDog && <DogSchema dog={initialDog} />}
       {initialDog && <DogFAQSchema dog={initialDog} />}
       {heroImageUrl && <ImagePreload src={heroImageUrl} />}
       <Suspense fallback={<DogDetailSkeleton />}>
         <DogDetailClient initialDog={initialDog} />
       </Suspense>
-    </>
+    </Layout>
   );
 }
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import BreedsHubClient from "./BreedsHubClient";
+import Layout from "@/components/layout/Layout";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { getBreedStats, clearCache } from "@/services/serverAnimalsService";
 import {
@@ -78,7 +79,7 @@ export default async function BreedsPage() {
   const { breedStats, mixedBreedData, popularBreeds, breedGroups } = data;
 
   return (
-    <>
+    <Layout>
       <BreedStructuredData
         breedData={{
           primary_breed: "All Breeds",
@@ -100,6 +101,6 @@ export default async function BreedsPage() {
           breedGroups={breedGroups}
         />
       </ErrorBoundary>
-    </>
+    </Layout>
   );
 }

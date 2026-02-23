@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import AgeHubClient from "./AgeHubClient";
+import Layout from "@/components/layout/Layout";
 import AgeStructuredData from "@/components/age/AgeStructuredData";
 import { getAgeStats } from "@/services/serverAnimalsService";
 
@@ -45,11 +46,11 @@ export default async function AgeHubPage(): Promise<React.JSX.Element> {
   const ageStats = await getAgeStats();
 
   return (
-    <>
+    <Layout>
       <AgeStructuredData stats={ageStats} pageType="index" />
       <Suspense fallback={<LoadingFallback />}>
         <AgeHubClient initialStats={ageStats} />
       </Suspense>
-    </>
+    </Layout>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import AgeQuickNav from "@/components/age/AgeQuickNav";
 import type { PuppiesClientProps } from "@/types/pageComponents";
@@ -20,7 +19,7 @@ export default function PuppiesClient({
   ];
 
   return (
-    <Layout>
+    <>
       <div className="container mx-auto px-4 pt-4">
         <Breadcrumbs items={breadcrumbItems} />
       </div>
@@ -75,8 +74,7 @@ export default function PuppiesClient({
         initialParams={{ age_category: ageCategory.apiValue }}
         hideHero={true}
         hideBreadcrumbs={true}
-        wrapWithLayout={false}
       />
-    </Layout>
+    </>
   );
 }
