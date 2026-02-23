@@ -1,12 +1,8 @@
 // frontend/src/components/home/__tests__/HeroSection.test.jsx
 
 import React from "react";
-import { render, screen, waitFor, fireEvent } from "../../../test-utils";
+import { render, screen } from "../../../test-utils";
 import HeroSection from "../HeroSection";
-import { getStatistics } from "../../../services/animalsService";
-
-// Mock the statistics service
-jest.mock("../../../services/animalsService");
 
 // Mock AnimatedCounter component
 jest.mock("../../ui/AnimatedCounter", () => {
@@ -33,11 +29,6 @@ jest.mock("next/link", () => {
     );
   };
 });
-
-// Mock logger
-jest.mock("../../../utils/logger", () => ({
-  reportError: jest.fn(),
-}));
 
 // Mock next/image for testing
 jest.mock("next/image", () => {
@@ -85,157 +76,64 @@ describe("HeroSection", () => {
     { id: 3, name: "Luna", slug: "luna-789", primary_image_url: "/test3.jpg" },
   ];
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  describe("Successful data rendering", () => {
+    test("should display statistics from props", () => {
+      render(<HeroSection statistics={mockStatistics} />);
 
-  describe("Loading states", () => {
-    test("should show loading skeleton while fetching statistics", () => {
-      getStatistics.mockReturnValue(new Promise(() => {})); // Never resolves
+      expect(screen.getByTestId("statistics-content")).toBeInTheDocument();
 
-      render(<HeroSection />);
-
-      expect(screen.getByTestId("hero-section")).toBeInTheDocument();
-      expect(screen.getByTestId("statistics-loading")).toBeInTheDocument();
-      expect(
-        screen.queryByTestId("statistics-content"),
-      ).not.toBeInTheDocument();
-    });
-
-    test("should show shimmer animation during loading", () => {
-      getStatistics.mockReturnValue(new Promise(() => {}));
-
-      render(<HeroSection />);
-
-      const loadingElements = screen.getAllByTestId("stat-loading");
-      expect(loadingElements).toHaveLength(3); // Dogs, Organizations, Countries
-
-      loadingElements.forEach((element) => {
-        expect(element).toHaveClass("animate-shimmer");
-      });
-    });
-  });
-
-  describe("Successful data loading", () => {
-    test("should display statistics when loaded", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("statistics-content")).toBeInTheDocument();
-      });
-
-      // Check animated counters are rendered with correct values
       const counters = screen.getAllByTestId("animated-counter");
       expect(counters).toHaveLength(3);
 
-      // Verify the main statistics
       expect(screen.getByText("412")).toBeInTheDocument();
       expect(screen.getByText("3")).toBeInTheDocument();
-      expect(screen.getByText("2")).toBeInTheDocument(); // Countries count
+      expect(screen.getByText("2")).toBeInTheDocument();
     });
 
-    test("should display correct labels for statistics", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
+    test("should display correct labels for statistics", () => {
+      render(<HeroSection statistics={mockStatistics} />);
 
-      render(<HeroSection />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Dogs need homes")).toBeInTheDocument();
-        expect(screen.getByText("Rescue organizations")).toBeInTheDocument();
-        expect(screen.getByText("Countries")).toBeInTheDocument();
-      });
+      expect(screen.getByText("Dogs need homes")).toBeInTheDocument();
+      expect(screen.getByText("Rescue organizations")).toBeInTheDocument();
+      expect(screen.getByText("Countries")).toBeInTheDocument();
     });
 
-    test("should render 3 dog preview cards when previewDogs provided", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
+    test("should render 3 dog preview cards when previewDogs provided", () => {
+      render(
+        <HeroSection
+          statistics={mockStatistics}
+          previewDogs={mockPreviewDogs}
+        />,
+      );
 
-      render(<HeroSection previewDogs={mockPreviewDogs} />);
-
-      await waitFor(() => {
-        const dogCards = screen.getAllByTestId("hero-dog-preview-card");
-        expect(dogCards).toHaveLength(3);
-        expect(screen.getByText("Bella")).toBeInTheDocument();
-        expect(screen.getByText("Max")).toBeInTheDocument();
-        expect(screen.getByText("Luna")).toBeInTheDocument();
-      });
+      const dogCards = screen.getAllByTestId("hero-dog-preview-card");
+      expect(dogCards).toHaveLength(3);
+      expect(screen.getByText("Bella")).toBeInTheDocument();
+      expect(screen.getByText("Max")).toBeInTheDocument();
+      expect(screen.getByText("Luna")).toBeInTheDocument();
     });
 
-    test("should render fallback link when no dogs provided", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
+    test("should render fallback link when no dogs provided", () => {
+      render(<HeroSection statistics={mockStatistics} previewDogs={[]} />);
 
-      render(<HeroSection previewDogs={[]} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Browse all dogs →")).toBeInTheDocument();
-        expect(
-          screen.queryByTestId("hero-dog-preview-card"),
-        ).not.toBeInTheDocument();
-      });
+      expect(screen.getByText("Browse all dogs →")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("hero-dog-preview-card"),
+      ).not.toBeInTheDocument();
     });
 
-    test("should handle fewer than 3 dogs gracefully", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
+    test("should handle fewer than 3 dogs gracefully", () => {
       const twoDogs = mockPreviewDogs.slice(0, 2);
 
-      render(<HeroSection previewDogs={twoDogs} />);
+      render(
+        <HeroSection statistics={mockStatistics} previewDogs={twoDogs} />,
+      );
 
-      await waitFor(() => {
-        const dogCards = screen.getAllByTestId("hero-dog-preview-card");
-        expect(dogCards).toHaveLength(2);
-      });
-    });
-  });
-
-  describe("Error handling", () => {
-    test("should show error message when statistics fetch fails", async () => {
-      getStatistics.mockRejectedValue(new Error("Network error"));
-
-      render(<HeroSection />);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("statistics-error")).toBeInTheDocument();
-        expect(
-          screen.getByText(/Unable to load statistics/),
-        ).toBeInTheDocument();
-      });
+      const dogCards = screen.getAllByTestId("hero-dog-preview-card");
+      expect(dogCards).toHaveLength(2);
     });
 
-    test("should show retry button on error", async () => {
-      getStatistics.mockRejectedValue(new Error("Network error"));
-
-      render(<HeroSection />);
-
-      await waitFor(() => {
-        const retryButton = screen.getByTestId("retry-button");
-        expect(retryButton).toBeInTheDocument();
-        expect(retryButton).toHaveTextContent("Try again");
-      });
-    });
-
-    test("should retry fetching statistics when retry button clicked", async () => {
-      getStatistics
-        .mockRejectedValueOnce(new Error("Network error"))
-        .mockResolvedValueOnce(mockStatistics);
-
-      render(<HeroSection />);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("statistics-error")).toBeInTheDocument();
-      });
-
-      const retryButton = screen.getByTestId("retry-button");
-      fireEvent.click(retryButton);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("statistics-content")).toBeInTheDocument();
-      });
-
-      expect(getStatistics).toHaveBeenCalledTimes(2);
-    });
-
-    test("should handle empty statistics gracefully", async () => {
+    test("should handle empty statistics gracefully", () => {
       const emptyStats = {
         total_dogs: 0,
         total_organizations: 0,
@@ -243,64 +141,44 @@ describe("HeroSection", () => {
         organizations: [],
       };
 
-      getStatistics.mockResolvedValue(emptyStats);
+      render(<HeroSection statistics={emptyStats} previewDogs={[]} />);
 
-      render(<HeroSection previewDogs={[]} />);
+      expect(screen.getAllByText("0")).toHaveLength(3);
+      expect(screen.getByText("Browse all dogs →")).toBeInTheDocument();
 
-      await waitFor(() => {
-        expect(screen.getAllByText("0")).toHaveLength(3); // Three counters showing 0
-        expect(screen.getByText("Browse all dogs →")).toBeInTheDocument();
-      });
+      // Subtitle should show marketing fallback values, not "0 dogs"
+      const subtitle = screen.getByTestId("hero-subtitle");
+      expect(subtitle).toHaveTextContent("Browse 3,186 dogs");
+      expect(subtitle).toHaveTextContent("from 13 rescue organizations");
     });
   });
 
   describe("Visual design", () => {
     test("should have hero gradient background", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
+      render(<HeroSection statistics={mockStatistics} />);
 
       const heroSection = screen.getByTestId("hero-section");
       expect(heroSection).toHaveClass("hero-gradient");
     });
 
     test("should render new headline", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
+      render(<HeroSection statistics={mockStatistics} />);
 
       const heroTitle = screen.getByTestId("hero-title");
       expect(heroTitle).toHaveTextContent("Find Your Perfect Rescue Dog");
     });
 
-    test("should render new subtitle with dynamic counts", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
-
-      await waitFor(() => {
-        const heroSubtitle = screen.getByTestId("hero-subtitle");
-        expect(heroSubtitle).toHaveTextContent(
-          "Browse 412 dogs aggregated from 3 rescue organizations across Europe & UK. Adopt Don't Shop.",
-        );
-      });
-    });
-
-    test("should render subtitle with fallback counts when statistics not loaded", () => {
-      getStatistics.mockReturnValue(new Promise(() => {})); // Never resolves
-
-      render(<HeroSection />);
+    test("should render subtitle with dynamic counts from statistics prop", () => {
+      render(<HeroSection statistics={mockStatistics} />);
 
       const heroSubtitle = screen.getByTestId("hero-subtitle");
       expect(heroSubtitle).toHaveTextContent(
-        "Browse 3,186 dogs aggregated from 13 rescue organizations across Europe & UK. Adopt Don't Shop.",
+        "Browse 412 dogs aggregated from 3 rescue organizations across Europe & UK. Adopt Don't Shop.",
       );
     });
 
     test("should have responsive typography", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
+      render(<HeroSection statistics={mockStatistics} />);
 
       const heroTitle = screen.getByTestId("hero-title");
       expect(heroTitle).toHaveClass("text-hero");
@@ -310,15 +188,12 @@ describe("HeroSection", () => {
     });
 
     test("should display CTA buttons with correct text", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
+      render(<HeroSection statistics={mockStatistics} />);
 
       const primaryCta = screen.getByTestId("hero-primary-cta");
       expect(primaryCta).toBeInTheDocument();
       expect(primaryCta).toHaveTextContent("Browse All Dogs");
 
-      // Check that the button is inside a link with correct href
       const linkElement = primaryCta.closest("a");
       expect(linkElement).toHaveAttribute("href", "/dogs");
 
@@ -329,49 +204,37 @@ describe("HeroSection", () => {
     });
 
     test("should have only 2 CTA buttons", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
+      render(<HeroSection statistics={mockStatistics} />);
 
       const primaryCta = screen.getByTestId("hero-primary-cta");
       const secondaryCta = screen.getByTestId("hero-secondary-cta");
 
       expect(primaryCta).toBeInTheDocument();
       expect(secondaryCta).toBeInTheDocument();
-
-      // The third button (hero-swipe-cta) should not exist
       expect(screen.queryByTestId("hero-swipe-cta")).not.toBeInTheDocument();
     });
   });
 
   describe("Responsive design", () => {
-    test("should have mobile-first responsive classes", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
+    test("should have mobile-first responsive classes", () => {
+      render(<HeroSection statistics={mockStatistics} />);
 
       const container = screen.getByTestId("hero-container");
       expect(container).toHaveClass("px-4", "sm:px-6", "lg:px-8");
 
-      await waitFor(() => {
-        const statisticsGrid = screen.getByTestId("statistics-grid");
-        expect(statisticsGrid).toHaveClass("grid-cols-1", "md:grid-cols-3");
-      });
+      const statisticsGrid = screen.getByTestId("statistics-grid");
+      expect(statisticsGrid).toHaveClass("grid-cols-1", "md:grid-cols-3");
     });
 
     test("should stack elements properly on mobile", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
+      render(<HeroSection statistics={mockStatistics} />);
 
       const heroContent = screen.getByTestId("hero-content");
       expect(heroContent).toHaveClass("flex", "flex-col", "lg:flex-row");
     });
 
     test("should have proper spacing for different screen sizes", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
+      render(<HeroSection statistics={mockStatistics} />);
 
       const heroSection = screen.getByTestId("hero-section");
       expect(heroSection).toHaveClass("py-12", "md:py-20", "lg:py-24");
@@ -380,9 +243,7 @@ describe("HeroSection", () => {
 
   describe("Accessibility", () => {
     test("should have proper semantic structure", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
+      render(<HeroSection statistics={mockStatistics} />);
 
       const heroSection = screen.getByTestId("hero-section");
       expect(heroSection.tagName).toBe("SECTION");
@@ -391,35 +252,32 @@ describe("HeroSection", () => {
       expect(heroTitle.tagName).toBe("H1");
     });
 
-    test("should have proper ARIA labels for statistics", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
+    test("should have proper ARIA labels for statistics", () => {
+      render(<HeroSection statistics={mockStatistics} />);
 
-      render(<HeroSection />);
-
-      await waitFor(() => {
-        const counters = screen.getAllByTestId("animated-counter");
-        expect(counters[0]).toHaveAttribute(
-          "aria-label",
-          "Dogs need homes: 412",
-        );
-        expect(counters[1]).toHaveAttribute(
-          "aria-label",
-          "Rescue organizations: 3",
-        );
-        expect(counters[2]).toHaveAttribute("aria-label", "Countries: 2");
-      });
+      const counters = screen.getAllByTestId("animated-counter");
+      expect(counters[0]).toHaveAttribute(
+        "aria-label",
+        "Dogs need homes: 412",
+      );
+      expect(counters[1]).toHaveAttribute(
+        "aria-label",
+        "Rescue organizations: 3",
+      );
+      expect(counters[2]).toHaveAttribute("aria-label", "Countries: 2");
     });
 
-    test("should have descriptive text for screen readers", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
+    test("should have descriptive text for screen readers", () => {
+      render(
+        <HeroSection
+          statistics={mockStatistics}
+          previewDogs={mockPreviewDogs}
+        />,
+      );
 
-      render(<HeroSection previewDogs={mockPreviewDogs} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Ready for their forever home"),
-        ).toBeInTheDocument();
-      });
+      expect(
+        screen.getByText("Ready for their forever home"),
+      ).toBeInTheDocument();
 
       const srText = screen.getByTestId("statistics-description");
       expect(srText).toHaveClass("sr-only");
@@ -427,9 +285,7 @@ describe("HeroSection", () => {
     });
 
     test("should have keyboard accessible CTA buttons", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
+      render(<HeroSection statistics={mockStatistics} />);
 
       const buttons = screen.getAllByRole("link");
       buttons.forEach((button) => {
@@ -439,86 +295,41 @@ describe("HeroSection", () => {
     });
   });
 
-  describe("Performance", () => {
-    test("should call getStatistics only once on mount", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
-
-      expect(getStatistics).toHaveBeenCalledTimes(1);
-    });
-
-    test("should not re-fetch statistics on re-render with same props", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      const { rerender } = render(<HeroSection />);
-      rerender(<HeroSection />);
-
-      expect(getStatistics).toHaveBeenCalledTimes(1);
-    });
-
-    test("should cleanup effects on unmount", () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      const { unmount } = render(<HeroSection />);
-
-      // Should not throw errors on unmount
-      expect(() => unmount()).not.toThrow();
-    });
-  });
-
   describe("Integration", () => {
-    test("should work with all components together", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
+    test("should work with all components together", () => {
+      render(<HeroSection statistics={mockStatistics} />);
 
-      render(<HeroSection />);
-
-      // Should render all main sections
       expect(screen.getByTestId("hero-section")).toBeInTheDocument();
-
-      await waitFor(() => {
-        expect(screen.getByTestId("statistics-content")).toBeInTheDocument();
-        expect(screen.getByTestId("hero-primary-cta")).toBeInTheDocument();
-      });
+      expect(screen.getByTestId("statistics-content")).toBeInTheDocument();
+      expect(screen.getByTestId("hero-primary-cta")).toBeInTheDocument();
     });
 
-    test("should have correct CTA button links", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
+    test("should have correct CTA button links", () => {
+      render(<HeroSection statistics={mockStatistics} />);
 
-      render(<HeroSection />);
+      const primaryCTA = screen.getByTestId("hero-primary-cta");
+      expect(primaryCTA.closest("a")).toHaveAttribute("href", "/dogs");
+      expect(primaryCTA).toHaveTextContent("Browse All Dogs");
 
-      await waitFor(() => {
-        // Primary CTA should link to dogs page
-        const primaryCTA = screen.getByTestId("hero-primary-cta");
-        expect(primaryCTA.closest("a")).toHaveAttribute("href", "/dogs");
-        expect(primaryCTA).toHaveTextContent("Browse All Dogs");
-
-        // Secondary CTA should link to swipe page
-        const secondaryCTA = screen.getByTestId("hero-secondary-cta");
-        expect(secondaryCTA.closest("a")).toHaveAttribute("href", "/swipe");
-        expect(secondaryCTA).toHaveTextContent("Start Swiping");
-      });
+      const secondaryCTA = screen.getByTestId("hero-secondary-cta");
+      expect(secondaryCTA.closest("a")).toHaveAttribute("href", "/swipe");
+      expect(secondaryCTA).toHaveTextContent("Start Swiping");
     });
 
-    test("should pass correct props to AnimatedCounter components", async () => {
-      getStatistics.mockResolvedValue(mockStatistics);
+    test("should pass correct props to AnimatedCounter components", () => {
+      render(<HeroSection statistics={mockStatistics} />);
 
-      render(<HeroSection />);
+      const counters = screen.getAllByTestId("animated-counter");
 
-      await waitFor(() => {
-        const counters = screen.getAllByTestId("animated-counter");
-
-        // Check that AnimatedCounter receives correct props
-        expect(counters[0]).toHaveAttribute(
-          "aria-label",
-          "Dogs need homes: 412",
-        );
-        expect(counters[1]).toHaveAttribute(
-          "aria-label",
-          "Rescue organizations: 3",
-        );
-        expect(counters[2]).toHaveAttribute("aria-label", "Countries: 2");
-      });
+      expect(counters[0]).toHaveAttribute(
+        "aria-label",
+        "Dogs need homes: 412",
+      );
+      expect(counters[1]).toHaveAttribute(
+        "aria-label",
+        "Rescue organizations: 3",
+      );
+      expect(counters[2]).toHaveAttribute("aria-label", "Countries: 2");
     });
   });
 });

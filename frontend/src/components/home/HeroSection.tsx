@@ -1,46 +1,13 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/Icon";
 import AnimatedCounter from "../ui/AnimatedCounter";
 import HeroDogPreviewCard from "./HeroDogPreviewCard";
-import { getStatistics } from "../../services/animalsService";
-import { reportError } from "../../utils/logger";
 import type { HeroSectionProps } from "@/types/homeComponents";
-import type { Statistics } from "@/schemas/animals";
 
 export default function HeroSection({
-  initialStatistics = null,
+  statistics,
   previewDogs = [],
-  priority = false,
 }: HeroSectionProps) {
-  const [statistics, setStatistics] = useState<Statistics | null>(initialStatistics);
-  const [loading, setLoading] = useState(!initialStatistics);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchStatistics = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const stats = await getStatistics();
-      setStatistics(stats);
-    } catch (err: unknown) {
-      reportError(err, { context: "HeroSection.fetchStatistics" });
-      setError("Unable to load statistics. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // Only fetch if we don't have initial data
-    if (!initialStatistics) {
-      fetchStatistics();
-    }
-  }, [initialStatistics]);
-
   return (
     <section
       data-testid="hero-section"
@@ -66,8 +33,15 @@ export default function HeroSection({
               data-testid="hero-subtitle"
               className="text-body text-muted-foreground mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Browse {statistics?.total_dogs?.toLocaleString() || "3,186"} dogs
-              aggregated from {statistics?.total_organizations || "13"} rescue
+              Browse{" "}
+              {statistics.total_dogs > 0
+                ? statistics.total_dogs.toLocaleString()
+                : "3,186"}{" "}
+              dogs aggregated from{" "}
+              {statistics.total_organizations > 0
+                ? statistics.total_organizations
+                : "13"}{" "}
+              rescue
               organizations across Europe & UK. Adopt Don&apos;t Shop.
             </p>
 
@@ -101,140 +75,95 @@ export default function HeroSection({
 
           {/* Right Column - Statistics */}
           <div className="flex-1 w-full max-w-lg">
-            {loading && (
-              <div data-testid="statistics-loading" className="space-y-6">
-                <div
-                  data-testid="stat-loading"
-                  className="bg-card/50 dark:bg-gray-800/70 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
-                >
-                  <div className="h-12 bg-gradient-to-r from-muted to-muted/80 rounded mb-2"></div>
-                  <div className="h-4 bg-gradient-to-r from-muted to-muted/80 rounded w-3/4"></div>
-                </div>
-                <div
-                  data-testid="stat-loading"
-                  className="bg-card/50 dark:bg-gray-800/70 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
-                >
-                  <div className="h-12 bg-gradient-to-r from-muted to-muted/80 rounded mb-2"></div>
-                  <div className="h-4 bg-gradient-to-r from-muted to-muted/80 rounded w-3/4"></div>
-                </div>
-                <div
-                  data-testid="stat-loading"
-                  className="bg-card/50 dark:bg-gray-800/70 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
-                >
-                  <div className="h-12 bg-gradient-to-r from-muted to-muted/80 rounded mb-2"></div>
-                  <div className="h-4 bg-gradient-to-r from-muted to-muted/80 rounded w-3/4"></div>
-                </div>
-              </div>
-            )}
-
-            {error && (
+            <div data-testid="statistics-content" className="space-y-6">
               <div
-                data-testid="statistics-error"
-                className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center"
+                data-testid="statistics-grid"
+                className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
               >
-                <div className="text-muted-foreground mb-4">{error}</div>
-                <Button
-                  data-testid="retry-button"
-                  onClick={fetchStatistics}
-                  variant="outline"
-                  size="sm"
-                >
-                  Try again
-                </Button>
-              </div>
-            )}
+                {/* Dogs Count */}
+                <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
+                  <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
+                    <AnimatedCounter
+                      value={statistics.total_dogs}
+                      label="Dogs need homes"
+                      className="block"
+                    />
+                  </div>
+                  <div className="text-sm text-muted-foreground font-medium">
+                    Dogs need homes
+                  </div>
+                </div>
 
-            {statistics && !loading && !error && (
-              <div data-testid="statistics-content" className="space-y-6">
-                <div
-                  data-testid="statistics-grid"
-                  className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-                >
-                  {/* Dogs Count */}
-                  <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
+                {/* Organizations Count */}
+                <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
+                  <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
+                    <AnimatedCounter
+                      value={statistics.total_organizations}
+                      label="Rescue organizations"
+                      className="block"
+                    />
+                  </div>
+                  <div className="text-sm text-muted-foreground font-medium">
+                    Rescue organizations
+                  </div>
+                </div>
+
+                {/* Countries Count */}
+                <Link href="/dogs/country" className="group">
+                  <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors cursor-pointer">
                     <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
                       <AnimatedCounter
-                        value={statistics.total_dogs}
-                        label="Dogs need homes"
+                        value={statistics.countries?.length ?? 0}
+                        label="Countries"
                         className="block"
                       />
                     </div>
-                    <div className="text-sm text-muted-foreground font-medium">
-                      Dogs need homes
+                    <div className="text-sm text-muted-foreground font-medium group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                      Countries
                     </div>
                   </div>
-
-                  {/* Organizations Count */}
-                  <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
-                    <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
-                      <AnimatedCounter
-                        value={statistics.total_organizations}
-                        label="Rescue organizations"
-                        className="block"
-                      />
-                    </div>
-                    <div className="text-sm text-muted-foreground font-medium">
-                      Rescue organizations
-                    </div>
-                  </div>
-
-                  {/* Countries Count */}
-                  <Link href="/dogs/country" className="group">
-                    <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors cursor-pointer">
-                      <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
-                        <AnimatedCounter
-                          value={statistics.countries?.length ?? 0}
-                          label="Countries"
-                          className="block"
-                        />
-                      </div>
-                      <div className="text-sm text-muted-foreground font-medium group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                        Countries
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-
-                {/* Dog Preview Cards - Floating Polaroids */}
-                <div className="mt-4">
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-muted-foreground font-medium">
-                      Ready for their forever home
-                    </p>
-                  </div>
-
-                  {previewDogs.length > 0 ? (
-                    <div className="flex justify-center items-start gap-0 -space-x-3 py-4">
-                      {previewDogs.slice(0, 3).map((dog, index) => (
-                        <HeroDogPreviewCard
-                          key={dog.id}
-                          dog={dog}
-                          index={index}
-                          priority={index === 0}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground text-center py-4">
-                      <Link
-                        href="/dogs"
-                        className="text-orange-600 hover:text-orange-700 hover:underline transition-colors"
-                      >
-                        Browse all dogs →
-                      </Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* Screen Reader Description */}
-                <div data-testid="statistics-description" className="sr-only">
-                  Current statistics about rescue dogs available for adoption:{" "}
-                  {statistics.total_dogs} dogs from{" "}
-                  {statistics.total_organizations} organizations across{" "}
-                  {statistics.countries?.length ?? 0} countries.
-                </div>
+                </Link>
               </div>
-            )}
+
+              {/* Dog Preview Cards - Floating Polaroids */}
+              <div className="mt-4">
+                <div className="text-center mb-4">
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Ready for their forever home
+                  </p>
+                </div>
+
+                {previewDogs.length > 0 ? (
+                  <div className="flex justify-center items-start gap-0 -space-x-3 py-4">
+                    {previewDogs.slice(0, 3).map((dog, index) => (
+                      <HeroDogPreviewCard
+                        key={dog.id}
+                        dog={dog}
+                        index={index}
+                        priority={index === 0}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-4">
+                    <Link
+                      href="/dogs"
+                      className="text-orange-600 hover:text-orange-700 hover:underline transition-colors"
+                    >
+                      Browse all dogs →
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Screen Reader Description */}
+              <div data-testid="statistics-description" className="sr-only">
+                Current statistics about rescue dogs available for adoption:{" "}
+                {statistics.total_dogs} dogs from{" "}
+                {statistics.total_organizations} organizations across{" "}
+                {statistics.countries?.length ?? 0} countries.
+              </div>
+            </div>
           </div>
         </div>
       </div>

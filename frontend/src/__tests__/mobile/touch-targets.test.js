@@ -6,7 +6,6 @@ import DogCard from "../../components/dogs/DogCardOptimized";
 // Mock services and utilities
 jest.mock("../../services/animalsService", () => ({
   getAnimalsByCuration: jest.fn(),
-  getStatistics: jest.fn(),
 }));
 
 jest.mock("../../utils/imageUtils", () => ({
@@ -41,9 +40,6 @@ describe("Mobile Touch Targets Validation", () => {
     // Mock API responses
     require("../../services/animalsService").getAnimalsByCuration.mockResolvedValue(
       [mockDog],
-    );
-    require("../../services/animalsService").getStatistics.mockResolvedValue(
-      mockStats,
     );
 
     // Mock mobile viewport - need to match the actual query used in DogSection
@@ -170,10 +166,8 @@ describe("Mobile Touch Targets Validation", () => {
   };
 
   describe("Hero Section Touch Targets", () => {
-    test("primary CTA button should be ≥48px in all dimensions", async () => {
-      await act(async () => {
-        render(<HeroSection />);
-      });
+    test("primary CTA button should be ≥48px in all dimensions", () => {
+      render(<HeroSection statistics={mockStats} />);
 
       const ctaButton = screen.getByTestId("hero-primary-cta");
       expect(validateTouchTarget(ctaButton)).toBe(true);
@@ -183,10 +177,8 @@ describe("Mobile Touch Targets Validation", () => {
       expect(rect.height).toBeGreaterThanOrEqual(48);
     });
 
-    test("secondary CTA button should be ≥48px in all dimensions", async () => {
-      await act(async () => {
-        render(<HeroSection />);
-      });
+    test("secondary CTA button should be ≥48px in all dimensions", () => {
+      render(<HeroSection statistics={mockStats} />);
 
       const secondaryButton = screen.getByTestId("hero-secondary-cta");
       expect(validateTouchTarget(secondaryButton)).toBe(true);
@@ -196,10 +188,8 @@ describe("Mobile Touch Targets Validation", () => {
       expect(rect.height).toBeGreaterThanOrEqual(48);
     });
 
-    test("CTA buttons should have adequate spacing on mobile", async () => {
-      await act(async () => {
-        render(<HeroSection />);
-      });
+    test("CTA buttons should have adequate spacing on mobile", () => {
+      render(<HeroSection statistics={mockStats} />);
 
       const primaryButton = screen.getByTestId("hero-primary-cta");
       const secondaryButton = screen.getByTestId("hero-secondary-cta");
@@ -264,10 +254,8 @@ describe("Mobile Touch Targets Validation", () => {
   });
 
   describe("Accessibility and Focus States", () => {
-    test("all touch targets should have visible focus states", async () => {
-      await act(async () => {
-        render(<HeroSection />);
-      });
+    test("all touch targets should have visible focus states", () => {
+      render(<HeroSection statistics={mockStats} />);
 
       const ctaButton = screen.getByTestId("hero-primary-cta");
       ctaButton.focus();
@@ -301,7 +289,7 @@ describe("Mobile Touch Targets Validation", () => {
   });
 
   describe("High Contrast and Dark Mode Support", () => {
-    test("touch targets should maintain adequate contrast in high contrast mode", async () => {
+    test("touch targets should maintain adequate contrast in high contrast mode", () => {
       // Mock high contrast media query
       Object.defineProperty(window, "matchMedia", {
         writable: true,
@@ -311,9 +299,7 @@ describe("Mobile Touch Targets Validation", () => {
         })),
       });
 
-      await act(async () => {
-        render(<HeroSection />);
-      });
+      render(<HeroSection statistics={mockStats} />);
 
       const ctaButton = screen.getByTestId("hero-primary-cta");
       const styles = window.getComputedStyle(ctaButton);

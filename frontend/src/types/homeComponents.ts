@@ -25,9 +25,8 @@ export interface ClientHomePageProps {
 }
 
 export interface HeroSectionProps {
-  initialStatistics?: Statistics | null;
+  statistics: Statistics;
   previewDogs?: Dog[];
-  priority?: boolean;
 }
 
 export interface DogSectionProps {
