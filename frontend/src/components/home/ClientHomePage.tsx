@@ -1,7 +1,6 @@
 "use client";
 
 import React, { Suspense, lazy } from "react";
-import HeroSection from "./HeroSection";
 import PlatformCapabilities from "./PlatformCapabilities";
 import FeaturedDogsSection from "./FeaturedDogsSection";
 import Loading from "../ui/Loading";
@@ -53,12 +52,6 @@ export default function ClientHomePage({
 
       {/* Desktop Version - Hidden on mobile devices */}
       <div className="hidden sm:block">
-        <HeroSection
-          initialStatistics={initialStatistics}
-          previewDogs={initialRecentDogs?.slice(0, 3) || []}
-          priority={true}
-        />
-
         {/* Platform Capabilities Section - Three Ways to Find Your Dog */}
         <ErrorBoundary fallbackMessage="Unable to load platform capabilities section. Please refresh the page.">
           <PlatformCapabilities />

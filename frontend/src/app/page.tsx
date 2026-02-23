@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { OrganizationCardData } from "../types/organizationComponents";
 import Layout from "../components/layout/Layout";
+import HeroSection from "../components/home/HeroSection";
 import ClientHomePage from "../components/home/ClientHomePage";
 import { getHomePageData, getCountryStats, getAgeStats } from "../services/serverAnimalsService";
 import { getBreedsWithImagesForHomePage } from "../services/breedImagesService";
@@ -82,8 +83,28 @@ export default async function Home(): Promise<React.JSX.Element> {
   const countryStats = countryData?.countries || [];
   const ageStats = ageData?.ageCategories || [];
 
+  const fallbackStats = {
+    total_dogs: 0,
+    total_organizations: 0,
+    countries: [],
+    organizations: [],
+  };
+
+  const heroStats = statistics ?? fallbackStats;
+  const heroPreviewDogs = recentDogs?.slice(0, 3) ?? [];
+  const firstDogImage = heroPreviewDogs[0]?.primary_image_url;
+
   return (
     <Layout>
+      {firstDogImage && (
+        <link rel="preload" as="image" href={firstDogImage} />
+      )}
+      <div className="hidden sm:block">
+        <HeroSection
+          statistics={heroStats}
+          previewDogs={heroPreviewDogs}
+        />
+      </div>
       <ClientHomePage
         initialStatistics={statistics}
         initialRecentDogs={recentDogs}

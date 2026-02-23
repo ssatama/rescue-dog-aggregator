@@ -4,11 +4,11 @@ import { render, screen, waitFor } from "../test-utils";
 import HeroSection from "../components/home/HeroSection";
 import TrustSection from "../components/home/TrustSection";
 
-// Mock the statistics service
+// Mock the statistics service (still needed for TrustSection which fetches its own data)
 jest.mock("../services/animalsService");
 const { getStatistics } = require("../services/animalsService");
 
-// Mock other dependencies for HeroSection
+// Mock other dependencies
 jest.mock("../utils/logger", () => ({
   reportError: jest.fn(),
 }));
@@ -67,29 +67,25 @@ describe("Countries Statistics Consistency", () => {
   });
 
   test("HeroSection and TrustSection should display same countries count", async () => {
-    // Render both sections with same data
-    const { rerender } = render(<HeroSection />);
+    // Render HeroSection with statistics prop (server component pattern)
+    const { rerender } = render(
+      <HeroSection statistics={mockStatistics} />,
+    );
 
-    await waitFor(() => {
-      expect(screen.getByTestId("statistics-content")).toBeInTheDocument();
-    });
-
-    // Get countries count from HeroSection (should be 2)
+    // HeroSection renders synchronously now — no waitFor needed
     const heroCounters = screen.getAllByTestId("animated-counter");
     const heroCountriesCounter = heroCounters.find((counter) =>
       counter.getAttribute("aria-label")?.includes("Countries"),
     );
     expect(heroCountriesCounter).toHaveTextContent("2");
 
-    // Clear and render TrustSection
+    // Clear and render TrustSection (still a client component that fetches data)
     rerender(<TrustSection />);
 
-    // Wait for TrustSection to finish loading by checking for the actual stats element
     await waitFor(() => {
       expect(screen.getByTestId("countries-stat")).toBeInTheDocument();
     });
 
-    // Get countries count from TrustSection (should also be 2)
     expect(screen.getByTestId("countries-stat")).toHaveTextContent("2");
     expect(screen.getByText("Countries")).toBeInTheDocument();
   });
@@ -102,11 +98,9 @@ describe("Countries Statistics Consistency", () => {
 
     getStatistics.mockResolvedValue(emptyCountriesStats);
 
-    const { rerender } = render(<HeroSection />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("statistics-content")).toBeInTheDocument();
-    });
+    const { rerender } = render(
+      <HeroSection statistics={emptyCountriesStats} />,
+    );
 
     // HeroSection should show 0 countries
     const heroCounters = screen.getAllByTestId("animated-counter");
@@ -118,12 +112,10 @@ describe("Countries Statistics Consistency", () => {
     // TrustSection should also show 0 countries
     rerender(<TrustSection />);
 
-    // Wait for TrustSection to finish loading by checking for the actual stats element
     await waitFor(() => {
       expect(screen.getByTestId("countries-stat")).toBeInTheDocument();
     });
 
-    // Check countries stat directly
     expect(screen.getByTestId("countries-stat")).toHaveTextContent("0");
   });
 
@@ -135,11 +127,9 @@ describe("Countries Statistics Consistency", () => {
 
     getStatistics.mockResolvedValue(singleCountryStats);
 
-    const { rerender } = render(<HeroSection />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("statistics-content")).toBeInTheDocument();
-    });
+    const { rerender } = render(
+      <HeroSection statistics={singleCountryStats} />,
+    );
 
     // HeroSection should show 1 country
     const heroCounters = screen.getAllByTestId("animated-counter");
@@ -151,12 +141,10 @@ describe("Countries Statistics Consistency", () => {
     // TrustSection should also show 1 country
     rerender(<TrustSection />);
 
-    // Wait for TrustSection to finish loading by checking for the actual stats element
     await waitFor(() => {
       expect(screen.getByTestId("countries-stat")).toBeInTheDocument();
     });
 
-    // Check countries stat directly
     expect(screen.getByTestId("countries-stat")).toHaveTextContent("1");
   });
 });

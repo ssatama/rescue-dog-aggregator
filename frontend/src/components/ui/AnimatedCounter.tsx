@@ -24,7 +24,7 @@ export default function AnimatedCounter({
   label = "",
   className = "",
 }: AnimatedCounterProps) {
-  const [displayValue, setDisplayValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState(Math.max(0, Math.round(value)));
   const [hasAnimated, setHasAnimated] = useState(false);
   const elementRef = useRef<HTMLSpanElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -47,10 +47,9 @@ export default function AnimatedCounter({
       return;
     }
 
+    setDisplayValue(0);
     const startTime = Date.now();
-    const startValue = displayValue;
     const targetValue = Math.max(0, Math.round(value));
-    const totalChange = targetValue - startValue;
 
     const animate = (): void => {
       const elapsed = Date.now() - startTime;
@@ -58,7 +57,7 @@ export default function AnimatedCounter({
 
       // Apply easing function
       const easedProgress = easeOutCubic(progress);
-      const currentValue = Math.round(startValue + totalChange * easedProgress);
+      const currentValue = Math.round(targetValue * easedProgress);
 
       setDisplayValue(currentValue);
 
@@ -81,7 +80,7 @@ export default function AnimatedCounter({
     } else if (typeof global !== "undefined" && global.requestAnimationFrame) {
       animationFrameRef.current = global.requestAnimationFrame(animate);
     }
-  }, [hasAnimated, prefersReducedMotion, value, displayValue, duration]);
+  }, [hasAnimated, prefersReducedMotion, value, duration]);
 
   // Setup Intersection Observer
   useEffect(() => {
@@ -118,19 +117,19 @@ export default function AnimatedCounter({
     };
   }, [startAnimation, hasAnimated]);
 
-  // Reset animation when value changes
+  // Reset animation when value changes so it re-animates on next intersection
+  const prevValueRef = useRef(value);
   useEffect(() => {
-    if (hasAnimated && value !== displayValue) {
-      /* eslint-disable react-hooks/set-state-in-effect -- Syncing animation state with value prop change */
+    if (prevValueRef.current !== value) {
+      prevValueRef.current = value;
+      /* eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing animation state with value prop change */
       setHasAnimated(false);
-      setDisplayValue(0);
-      /* eslint-enable react-hooks/set-state-in-effect */
     }
-  }, [value, hasAnimated, displayValue]);
+  }, [value]);
 
   const ariaLabel = label
-    ? `${label}: ${displayValue}`
-    : displayValue.toString();
+    ? `${label}: ${Math.max(0, Math.round(value))}`
+    : Math.max(0, Math.round(value)).toString();
 
   return (
     <span
