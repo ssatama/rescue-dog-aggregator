@@ -136,9 +136,6 @@ describe("Enhanced SEO Meta Tags - Phase 3A", () => {
         expect(metadata.openGraph.images[0]).toEqual({
           url: mockDog.primary_image_url,
           alt: `Photo of ${mockDog.name}, a ${mockDog.standardized_breed} available for adoption`,
-          width: 1200,
-          height: 630,
-          type: "image/jpeg",
         });
       }
     });

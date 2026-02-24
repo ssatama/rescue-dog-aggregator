@@ -66,9 +66,6 @@ describe("SEO Meta Tags", () => {
         {
           url: "https://example.com/buddy.jpg",
           alt: "Photo of Buddy, a Labrador Retriever available for adoption",
-          width: 1200,
-          height: 630,
-          type: "image/jpeg",
         },
       ]);
       expect(metadata.openGraph.type).toBe("article");
@@ -87,9 +84,6 @@ describe("SEO Meta Tags", () => {
         {
           url: "https://example.com/buddy.jpg",
           alt: "Photo of Buddy, a Labrador Retriever available for adoption",
-          width: 1200,
-          height: 630,
-          type: "image/jpeg",
         },
       ]);
 

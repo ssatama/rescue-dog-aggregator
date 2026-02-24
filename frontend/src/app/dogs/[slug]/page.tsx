@@ -98,9 +98,6 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
       ? [{
           url: dog.primary_image_url,
           alt: `Photo of ${dog.name}, a ${dog.standardized_breed || dog.breed || "dog"} available for adoption`,
-          width: 1200,
-          height: 630,
-          type: "image/jpeg" as const,
         }]
       : [fallbackImage];
 

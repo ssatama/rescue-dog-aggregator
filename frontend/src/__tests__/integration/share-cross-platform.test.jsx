@@ -16,6 +16,7 @@ import {
   generateFavoritesUrl,
   parseSharedUrl,
   isMobile,
+  shareDog,
 } from "../../utils/sharing";
 
 // Mock the useShare hook with a variable to control return values
@@ -449,6 +450,51 @@ describe("Share Functionality Cross-Platform", () => {
       const url = generateFavoritesUrl(manyIds);
       expect(url.length).toBeLessThan(2500); // Well within browser limits
       expect(parseSharedUrl(url)).toEqual(manyIds);
+    });
+  });
+
+  describe("shareDog URL construction", () => {
+    beforeEach(() => {
+      delete navigator.share;
+      mockWriteText.mockResolvedValue(undefined);
+    });
+
+    test("generates slug-based URL when slug is provided", async () => {
+      const result = await shareDog({
+        name: "Luna",
+        slug: "luna-border-collie",
+        breed: "Border Collie",
+        organization_name: "Happy Paws",
+      });
+
+      expect(mockWriteText).toHaveBeenCalledWith(
+        expect.stringContaining("/dogs/luna-border-collie"),
+      );
+      expect(result.success).toBe(true);
+    });
+
+    test("falls back to /dogs when slug is missing", async () => {
+      const result = await shareDog({
+        name: "Rex",
+        breed: "Labrador",
+      });
+
+      expect(mockWriteText).toHaveBeenCalledWith(
+        expect.stringMatching(/\/dogs$/),
+      );
+      expect(result.success).toBe(true);
+    });
+
+    test("never generates old /dog/{id} URL pattern", async () => {
+      const result = await shareDog({
+        name: "Buddy",
+        slug: "buddy-golden",
+        breed: "Golden Retriever",
+      });
+
+      const calledUrl = mockWriteText.mock.calls[0][0];
+      expect(calledUrl).not.toMatch(/\/dog\/\d+/);
+      expect(result.success).toBe(true);
     });
   });
 });

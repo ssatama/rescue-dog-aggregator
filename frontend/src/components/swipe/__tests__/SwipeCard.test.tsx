@@ -5,6 +5,23 @@ import { SwipeCard } from "../SwipeCard";
 import { FavoritesProvider } from "../../../contexts/FavoritesContext";
 import { ToastProvider } from "../../../contexts/ToastContext";
 
+jest.mock("../../ui/ShareButton", () => {
+  return function MockShareButton({ url, title, text, compact }: { url?: string; title?: string; text?: string; compact?: boolean }) {
+    return (
+      <button
+        data-testid="share-button"
+        data-url={url}
+        data-title={title}
+        data-text={text}
+        data-compact={compact ? "true" : "false"}
+        aria-label="Share"
+      >
+        Share
+      </button>
+    );
+  };
+});
+
 const renderWithProvider = (component: React.ReactElement) => {
   return render(
     <ToastProvider>
@@ -198,23 +215,38 @@ describe("SwipeCard", () => {
     });
   });
 
-  it("should have accessible touch target sizes for action buttons", () => {
+  it("should have accessible touch target sizes for favorite button", () => {
     renderWithProvider(<SwipeCard dog={mockDog} />);
 
-    // Find the action buttons
     const favoriteButton = screen.getByLabelText("Add to favorites");
-    const shareButton = screen.getByLabelText("Share");
 
-    // Check that buttons have minimum 48px size (w-12 h-12 in Tailwind)
     expect(favoriteButton).toHaveClass("w-12");
     expect(favoriteButton).toHaveClass("h-12");
-    expect(shareButton).toHaveClass("w-12");
-    expect(shareButton).toHaveClass("h-12");
-
-    // On larger screens, they should be even bigger (sm:w-14 sm:h-14)
     expect(favoriteButton).toHaveClass("sm:w-14");
     expect(favoriteButton).toHaveClass("sm:h-14");
-    expect(shareButton).toHaveClass("sm:w-14");
-    expect(shareButton).toHaveClass("sm:h-14");
+  });
+
+  describe("Share URL construction", () => {
+    it("should pass slug-based URL to ShareButton", () => {
+      renderWithProvider(<SwipeCard dog={mockDog} />);
+
+      const shareButton = screen.getByTestId("share-button");
+      const url = shareButton.getAttribute("data-url");
+      expect(url).toContain("/dogs/buddy-golden");
+      expect(url).not.toMatch(/\/dog\/\d+/);
+    });
+
+    it("should fall back to /dogs when dog has no slug", () => {
+      const dogWithoutSlug = {
+        id: 3,
+        name: "Rex",
+      };
+
+      renderWithProvider(<SwipeCard dog={dogWithoutSlug} />);
+
+      const shareButton = screen.getByTestId("share-button");
+      const url = shareButton.getAttribute("data-url");
+      expect(url).toMatch(/\/dogs$/);
+    });
   });
 });
