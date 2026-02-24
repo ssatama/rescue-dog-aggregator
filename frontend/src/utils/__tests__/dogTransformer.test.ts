@@ -1,5 +1,5 @@
 import { transformApiDogToDog, transformApiDogsToDogs } from "../dogTransformer";
-import type { ApiDog } from "../../types/apiDog";
+import type { ApiDog, ApiDogProfilerData } from "../../types/apiDog";
 
 const makeApiDog = (overrides: Partial<ApiDog> = {}): ApiDog =>
   ({
@@ -115,6 +115,86 @@ describe("transformApiDogToDog", () => {
       const result = transformApiDogToDog(apiDog);
 
       expect(result.personality_traits).toEqual([]);
+    });
+
+    it("transforms snake_case profiler data from animals API", () => {
+      const apiDog = makeApiDog({
+        dog_profiler_data: {
+          name: "Rex",
+          tagline: "Loyal companion",
+          personality_traits: ["Loyal", "Calm"],
+          favorite_activities: ["Walks", "Napping"],
+          unique_quirk: "Snores loudly",
+          energy_level: "medium",
+          trainability: "easy",
+          experience_level: "first_time_ok",
+          good_with_dogs: "yes",
+          good_with_cats: "maybe",
+          good_with_children: "yes",
+          quality_score: 85,
+        } as unknown as ApiDogProfilerData,
+      });
+
+      const result = transformApiDogToDog(apiDog);
+
+      expect(result.dog_profiler_data?.personality_traits).toEqual([
+        "Loyal",
+        "Calm",
+      ]);
+      expect(result.dog_profiler_data?.favorite_activities).toEqual([
+        "Walks",
+        "Napping",
+      ]);
+      expect(result.dog_profiler_data?.unique_quirk).toBe("Snores loudly");
+      expect(result.dog_profiler_data?.energy_level).toBe("medium");
+      expect(result.dog_profiler_data?.trainability).toBe("easy");
+      expect(result.dog_profiler_data?.experience_level).toBe("first_time_ok");
+      expect(result.dog_profiler_data?.good_with_dogs).toBe("yes");
+      expect(result.dog_profiler_data?.good_with_cats).toBe("maybe");
+      expect(result.dog_profiler_data?.good_with_children).toBe("yes");
+      expect(result.dog_profiler_data?.quality_score).toBe(85);
+      expect(result.personality_traits).toEqual(["Loyal", "Calm"]);
+    });
+
+    it("handles mixed camelCase and snake_case profiler keys", () => {
+      const apiDog = makeApiDog({
+        dogProfilerData: {
+          name: "Mixed",
+          personalityTraits: ["Happy"],
+          favorite_activities: ["Swimming"],
+          energyLevel: "high",
+          good_with_dogs: "yes",
+        } as unknown as ApiDogProfilerData,
+      });
+
+      const result = transformApiDogToDog(apiDog);
+
+      expect(result.dog_profiler_data?.personality_traits).toEqual(["Happy"]);
+      expect(result.dog_profiler_data?.favorite_activities).toEqual([
+        "Swimming",
+      ]);
+      expect(result.dog_profiler_data?.energy_level).toBe("high");
+      expect(result.dog_profiler_data?.good_with_dogs).toBe("yes");
+    });
+
+    it("prefers dogProfilerData over dog_profiler_data when both exist", () => {
+      const apiDog = makeApiDog({
+        dogProfilerData: {
+          name: "CamelCase",
+          personalityTraits: ["From camelCase"],
+        },
+        dog_profiler_data: {
+          name: "snake_case",
+          personality_traits: ["From snake_case"],
+        } as unknown as ApiDogProfilerData,
+      });
+
+      const result = transformApiDogToDog(apiDog);
+
+      expect(result.dog_profiler_data?.name).toBe("CamelCase");
+      expect(result.dog_profiler_data?.personality_traits).toEqual([
+        "From camelCase",
+      ]);
     });
   });
 });
