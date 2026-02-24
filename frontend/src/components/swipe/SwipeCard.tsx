@@ -19,22 +19,29 @@ interface SwipeCardProps {
 }
 
 const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
-  const { addFavorite, isFavorited } = useFavorites();
+  const { toggleFavorite, isFavorited } = useFavorites();
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+
+  const isFav = isFavorited(dog.id);
 
   const handleFavorite = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       if (!dog.id) return;
 
-      setIsLiked(true);
-      setShowHeartAnimation(true);
+      const wasAlreadyFavorited = isFav;
 
-      await addFavorite(dog.id, dog.name);
+      await toggleFavorite(dog.id, dog.name);
+
+      if (!wasAlreadyFavorited) {
+        setShowHeartAnimation(true);
+        setTimeout(() => setShowHeartAnimation(false), 1000);
+      }
 
       Sentry.addBreadcrumb({
-        message: "swipe.card.favorited_via_button",
+        message: wasAlreadyFavorited
+          ? "swipe.card.unfavorited_via_button"
+          : "swipe.card.favorited_via_button",
         category: "swipe",
         level: "info",
         data: {
@@ -42,10 +49,8 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
           dogName: dog.name,
         },
       });
-
-      setTimeout(() => setShowHeartAnimation(false), 1000);
     },
-    [dog.id, dog.name, addFavorite],
+    [dog.id, dog.name, toggleFavorite, isFav],
   );
 
   // Access enriched LLM data
@@ -135,13 +140,14 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
           </div>
           <button
             onClick={handleFavorite}
-            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform ${isLiked ? "scale-125" : ""}`}
-            aria-label="Add to favorites"
+            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform ${isFav ? "scale-125" : ""}`}
+            aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+            aria-pressed={isFav}
           >
             <span
               className={`text-lg sm:text-xl ${showHeartAnimation ? "animate-ping" : ""}`}
             >
-              {isLiked ? "❤️" : "🤍"}
+              {isFav ? "❤️" : "🤍"}
             </span>
           </button>
         </div>

@@ -275,11 +275,13 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     }
   };
 
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://www.rescuedogs.me";
   const shareUrl = dog?.slug
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/dogs/${dog.slug}`
-    : typeof window !== "undefined"
-      ? window.location.href
-      : "";
+    ? `${origin}/dogs/${dog.slug}`
+    : `${origin}/dogs`;
 
   const toggleFavorite = async () => {
     if (!dog) return;
@@ -495,6 +497,8 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                       />
                       <button
                         onClick={toggleFavorite}
+                        aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+                        aria-pressed={isFav}
                         className={cn(
                           "w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-105 active:scale-95",
                           isFav

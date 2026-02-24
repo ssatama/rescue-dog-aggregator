@@ -333,15 +333,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const loadFromUrl = useCallback(
     (url: string): void => {
       try {
-        // Use the new parsing utility that handles all URL formats
         const parsed = parseSharedUrl(url);
 
         if (parsed.length === 0) {
-          // No favorites in URL
           return;
         }
 
-        // Validate parsed IDs
         const isValidDogIds = parsed.every(
           (id) =>
             typeof id === "number" &&
@@ -354,27 +351,31 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Invalid shared data: contains invalid dog IDs");
         }
 
-        // Limit the number of shared favorites to prevent abuse
-        if (parsed.length > MAX_FAVORITES) {
-          throw new Error(
-            `Too many shared favorites: ${parsed.length} exceeds limit of ${MAX_FAVORITES}`,
-          );
-        }
+        setFavorites((prev) => {
+          const merged = [...new Set([...prev, ...parsed])];
+          const capped = merged.slice(0, MAX_FAVORITES);
+          saveToLocalStorage(capped);
 
-        setFavorites(parsed);
-        saveToLocalStorage(parsed);
+          const newCount = capped.length - prev.length;
+          if (newCount > 0) {
+            setToastMessage({
+              type: "success",
+              message: `Added ${newCount} new dog${newCount !== 1 ? "s" : ""} to your favorites`,
+            });
+          } else {
+            setToastMessage({
+              type: "success",
+              message: "All shared dogs were already in your favorites",
+            });
+          }
 
-        // Show success feedback to user
-        setToastMessage({
-          type: "success",
-          message: `Loaded ${parsed.length} shared favorite${parsed.length !== 1 ? "s" : ""}`,
+          return capped;
         });
       } catch (error) {
         if (process.env.NODE_ENV === "development") {
           console.error("Failed to load favorites from URL:", error);
         }
 
-        // Show error feedback to user for invalid shared URLs
         setToastMessage({
           type: "error",
           message: "Invalid shared link. Please check the URL and try again.",

@@ -389,6 +389,10 @@ describe("Share Functionality Cross-Platform", () => {
   });
 
   describe("Favorites Context Integration", () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
     test("generates correct URL from favorites context", () => {
       const { result } = renderHook(() => useFavorites(), { wrapper });
 
@@ -402,27 +406,45 @@ describe("Share Functionality Cross-Platform", () => {
       expect(url).toContain("/favorites?ids=1,2,3");
     });
 
-    test("loads favorites from shared URL correctly", () => {
+    test("loads favorites from shared URL and merges with existing", () => {
       const { result } = renderHook(() => useFavorites(), { wrapper });
 
-      // Test new format
+      // Start fresh, load new format
       act(() => {
         result.current.loadFromUrl("/favorites?ids=10,20,30");
       });
       expect(result.current.favorites).toEqual([10, 20, 30]);
 
-      // Test compressed format
+      // Load compressed format — merges with existing [10,20,30]
       act(() => {
         result.current.loadFromUrl("/favorites?c=1-5");
       });
-      expect(result.current.favorites).toEqual([1, 2, 3, 4, 5]);
+      expect(result.current.favorites).toEqual([10, 20, 30, 1, 2, 3, 4, 5]);
 
-      // Test legacy format
+      // Clear and test legacy format in isolation
+      act(() => {
+        result.current.clearFavorites();
+      });
       const encoded = btoa(JSON.stringify([100, 200]));
       act(() => {
         result.current.loadFromUrl(`/favorites?shared=${encoded}`);
       });
       expect(result.current.favorites).toEqual([100, 200]);
+    });
+
+    test("does not duplicate existing favorites when loading from URL", () => {
+      const { result } = renderHook(() => useFavorites(), { wrapper });
+
+      act(() => {
+        result.current.addFavorite(10);
+        result.current.addFavorite(20);
+      });
+
+      act(() => {
+        result.current.loadFromUrl("/favorites?ids=10,20,30");
+      });
+      // 10 and 20 already existed, only 30 is new
+      expect(result.current.favorites).toEqual([10, 20, 30]);
     });
   });
 

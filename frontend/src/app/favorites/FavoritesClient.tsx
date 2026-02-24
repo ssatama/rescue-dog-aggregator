@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useFavorites } from "../../hooks/useFavorites";
@@ -82,7 +82,7 @@ interface Insights {
 }
 
 function FavoritesPageContent(): React.JSX.Element {
-  const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl, isHydrated } =
+  const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl, removeFavorite, isHydrated } =
     useFavorites();
   const { showToast } = useToast();
   const [dogs, setDogs] = useState<Dog[]>([]);
@@ -90,12 +90,12 @@ function FavoritesPageContent(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showCompareMode, setShowCompareMode] = useState<boolean>(false);
+  const prevFavoritesRef = useRef<number[]>([]);
 
   // Load favorites from URL on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
-      // Check for any sharing parameters (new or old format)
       const hasSharedParams =
         urlParams.has("shared") || urlParams.has("ids") || urlParams.has("c");
 
@@ -105,11 +105,27 @@ function FavoritesPageContent(): React.JSX.Element {
     }
   }, [loadFromUrl]);
 
-  // Fetch dog data for favorites
+  // Fetch dog data for favorites — only refetch when new IDs are added
   useEffect(() => {
+    const prevIds = new Set(prevFavoritesRef.current);
+    const currentIds = new Set(favorites);
+    const addedIds = favorites.filter((id) => !prevIds.has(id));
+    const removedIds = prevFavoritesRef.current.filter((id) => !currentIds.has(id));
+
+    prevFavoritesRef.current = favorites;
+
+    if (removedIds.length > 0 && addedIds.length === 0) {
+      // Optimistic removal — no refetch needed
+      const removedSet = new Set(removedIds);
+      setDogs((prev) => prev.filter((d) => !removedSet.has(d.id as number)));
+      setFilteredDogs((prev) => prev.filter((d) => !removedSet.has(d.id as number)));
+      return;
+    }
+
     async function fetchFavoriteDogs() {
       if (favorites.length === 0) {
         setDogs([]);
+        setFilteredDogs([]);
         setIsLoading(false);
         return;
       }
@@ -127,9 +143,9 @@ function FavoritesPageContent(): React.JSX.Element {
         let failedBatches = 0;
         const batchResults = await Promise.all(
           batches.map((batchIds) =>
-            getAnimalsByIds(batchIds).catch((error) => {
+            getAnimalsByIds(batchIds).catch((batchError) => {
               failedBatches++;
-              reportError(error, { context: "favorites-batch-fetch", batchSize: batchIds.length });
+              reportError(batchError, { context: "favorites-batch-fetch", batchSize: batchIds.length });
               return [] as Dog[];
             }),
           ),
@@ -141,6 +157,13 @@ function FavoritesPageContent(): React.JSX.Element {
         } else {
           setDogs(validDogs);
           setFilteredDogs(validDogs);
+
+          // Bug 4: Reconcile stale IDs (adopted/removed dogs)
+          const returnedIds = new Set(validDogs.map((d) => d.id as number));
+          const staleIds = favorites.filter((id) => !returnedIds.has(id));
+          for (const staleId of staleIds) {
+            removeFavorite(staleId);
+          }
         }
       } catch (err) {
         reportError(err, { context: "fetchFavoriteDogs", favoriteCount: favorites.length });
@@ -152,13 +175,12 @@ function FavoritesPageContent(): React.JSX.Element {
 
     fetchFavoriteDogs();
 
-    // Track favorites page view
     try {
       trackFavoritesPageView(favorites.length);
-    } catch (error) {
-      console.error("Failed to track favorites page view:", error);
+    } catch (trackError) {
+      console.error("Failed to track favorites page view:", trackError);
     }
-  }, [favorites]);
+  }, [favorites, removeFavorite]);
 
   const handleFilter = useCallback(
     (filtered: Dog[], isUserInitiated = false) => {
@@ -390,8 +412,8 @@ function FavoritesPageContent(): React.JSX.Element {
               Your Favorite Dogs
             </h1>
             <p className="text-center text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              You&rsquo;ve saved {count} potential companion
-              {count !== 1 ? "s" : ""}. Take your time to review and share with
+              You&rsquo;ve saved {dogs.length} potential companion
+              {dogs.length !== 1 ? "s" : ""}. Take your time to review and share with
               family.
             </p>
 
@@ -458,11 +480,9 @@ function FavoritesPageContent(): React.JSX.Element {
           {filteredDogs.length === 0 && dogs.length > 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                No dogs match your filters
+                No dogs match your filters. Use the filter panel above to adjust
+                your criteria.
               </p>
-              <Button variant="outline" onClick={() => setFilteredDogs(dogs)}>
-                Clear Filters
-              </Button>
             </div>
           ) : (
             <DogsGrid
