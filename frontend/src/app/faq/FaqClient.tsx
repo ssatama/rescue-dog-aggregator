@@ -132,18 +132,6 @@ const FAQ_SECTIONS: FAQSectionData[] = [
   },
 ];
 
-const ALL_FAQS = FAQ_SECTIONS.flatMap((section) => section.questions);
-
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: ALL_FAQS.map((faq) => ({
-    "@type": "Question",
-    name: faq.question,
-    acceptedAnswer: { "@type": "Answer", text: faq.answer },
-  })),
-};
-
 interface FAQItemProps {
   question: string;
   answer: string;
@@ -240,10 +228,6 @@ export default function FaqClient(): React.JSX.Element {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
       <BreadcrumbSchema items={breadcrumbItems} />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <Breadcrumbs items={breadcrumbItems} />

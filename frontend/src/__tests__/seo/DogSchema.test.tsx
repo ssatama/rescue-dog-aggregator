@@ -51,14 +51,31 @@ describe("DogSchema Component", () => {
     expect(schema.image).toBe("https://images.rescuedogs.me/buddy.jpg");
   });
 
-  test("includes offers with availability", () => {
-    const { container } = render(<DogSchema dog={mockDog} />);
+  test("includes offers with availability when adoption fees exist", () => {
+    const dogWithFees = {
+      ...mockDog,
+      organization: {
+        ...mockDog.organization,
+        adoption_fees: { usual_fee: 350, currency: "EUR" },
+      },
+    };
+    const { container } = render(<DogSchema dog={dogWithFees} />);
     const script = container.querySelector('script[type="application/ld+json"]');
     const schema = JSON.parse(script?.innerHTML || "{}");
 
     expect(schema.offers).toBeDefined();
     expect(schema.offers["@type"]).toBe("Offer");
+    expect(schema.offers.price).toBe("350");
+    expect(schema.offers.priceCurrency).toBe("EUR");
     expect(schema.offers.availability).toBe("https://schema.org/InStock");
+  });
+
+  test("omits offers when no adoption fees exist", () => {
+    const { container } = render(<DogSchema dog={mockDog} />);
+    const script = container.querySelector('script[type="application/ld+json"]');
+    const schema = JSON.parse(script?.innerHTML || "{}");
+
+    expect(schema.offers).toBeUndefined();
   });
 
   test("includes additional properties for age, breed, gender, location", () => {

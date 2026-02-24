@@ -87,16 +87,10 @@ describe("Schema.org Adoption Fee Functionality", () => {
     });
   });
 
-  test("should fall back to 500 EUR without adoption_fees", () => {
+  test("should omit offers without adoption_fees", () => {
     const schema = generatePetSchema(mockDogWithoutAdoptionFees);
 
-    expect(schema.offers).toEqual({
-      "@type": "Offer",
-      price: "500",
-      priceCurrency: "EUR",
-      availability: "https://schema.org/InStock",
-      priceValidUntil: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-    });
+    expect(schema.offers).toBeUndefined();
   });
 
   test("should handle different currencies correctly", () => {
@@ -130,7 +124,7 @@ describe("Schema.org Adoption Fee Functionality", () => {
     expect(timeDiff).toBeLessThan(oneDayInMs);
   });
 
-  test("should handle invalid adoption_fees data gracefully", () => {
+  test("should omit offers with invalid adoption_fees data", () => {
     const dogWithInvalidFees = {
       ...mockDogWithAdoptionFees,
       organization: {
@@ -144,14 +138,7 @@ describe("Schema.org Adoption Fee Functionality", () => {
 
     const schema = generatePetSchema(dogWithInvalidFees);
 
-    // Should fall back to default
-    expect(schema.offers).toEqual({
-      "@type": "Offer",
-      price: "500",
-      priceCurrency: "EUR",
-      availability: "https://schema.org/InStock",
-      priceValidUntil: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-    });
+    expect(schema.offers).toBeUndefined();
   });
 
   test("should convert numeric price to string", () => {

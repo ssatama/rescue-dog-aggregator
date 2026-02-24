@@ -22,7 +22,7 @@ export function Breadcrumb({ guideName }: BreadcrumbProps) {
       "@type": "ListItem",
       position: index + 1,
       name: item.label,
-      ...(item.href && { item: `https://rescuedogs.me${item.href}` }),
+      ...(item.href && { item: `https://www.rescuedogs.me${item.href}` }),
     })),
   };
 

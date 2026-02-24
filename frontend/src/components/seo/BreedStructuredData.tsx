@@ -7,8 +7,6 @@ export default function BreedStructuredData({
 }: BreedStructuredDataProps) {
   if (!breedData) return null;
 
-  const descriptionText = breedData.description ?? null;
-
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
 
@@ -41,86 +39,6 @@ export default function BreedStructuredData({
       item: `${baseUrl}/breeds/${breedData.breed_slug || "mixed"}`,
     });
   }
-
-  // Build Article schema for breed descriptions
-  const articleSchema = breedData.description
-    ? {
-        "@context": "https://schema.org",
-        "@type": "Article",
-        headline: `${breedData.primary_breed || "Mixed Breed"} Dogs: Breed Information & Adoption Guide`,
-        description:
-          descriptionText ||
-          `Learn about ${breedData.primary_breed} dogs available for adoption`,
-        author: {
-          "@type": "Organization",
-          name: "Rescue Dogs",
-          url: baseUrl,
-        },
-        publisher: {
-          "@type": "Organization",
-          name: "Rescue Dogs",
-          url: baseUrl,
-          logo: {
-            "@type": "ImageObject",
-            url: `${baseUrl}/logo.png`,
-          },
-        },
-        datePublished: new Date().toISOString(),
-        dateModified: new Date().toISOString(),
-        mainEntityOfPage: {
-          "@type": "WebPage",
-          "@id": `${baseUrl}/breeds/${breedData.breed_slug || "mixed"}`,
-        },
-      }
-    : null;
-
-  // Build AggregateRating schema using breed statistics
-  // NOTE: Removed fake ratings - will add back when real review data exists
-  const aggregateRating = null;
-
-  // Build FAQPage schema with common breed questions
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: `How many ${breedData.primary_breed || "mixed breed"} dogs are available for adoption?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Currently, there are ${breedData.count || 0} ${breedData.primary_breed || "mixed breed"} dogs available for adoption from verified rescue organizations.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `What is the average age of ${breedData.primary_breed || "mixed breed"} rescue dogs?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `The average age of ${breedData.primary_breed || "mixed breed"} dogs in our network is ${breedData.average_age ? `${breedData.average_age} years` : "varies, with dogs ranging from puppies to seniors"}.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `What is the temperament of ${breedData.primary_breed || "mixed breed"} dogs?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text:
-            descriptionText ||
-            `${breedData.primary_breed || "Mixed breed"} dogs have unique personalities. Each dog's temperament is assessed by rescue organizations to help match them with suitable homes.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `Are ${breedData.primary_breed || "mixed breed"} dogs good with children?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text:
-            descriptionText ||
-            `Many ${breedData.primary_breed || "mixed breed"} dogs can be excellent with children when properly socialized. Each dog's compatibility with children is evaluated individually by rescue organizations.`,
-        },
-      },
-    ],
-  };
 
   // Build CollectionPage schema for breeds hub
   const collectionSchema =
@@ -161,16 +79,6 @@ export default function BreedStructuredData({
                 dog.properties?.description ||
                 `Meet ${dog.name}, a ${dog.breed || "mixed breed"} dog available for adoption`,
               image: dog.primary_image_url,
-              offers: {
-                "@type": "Offer",
-                price: 0,
-                priceCurrency: "USD",
-                availability: "https://schema.org/InStock",
-                seller: {
-                  "@type": "Organization",
-                  name: dog.organization?.name || "Rescue Organization",
-                },
-              },
             },
           })),
         }
@@ -183,19 +91,11 @@ export default function BreedStructuredData({
     name: "Rescue Dogs Network",
     url: baseUrl,
     description: "Aggregating rescue dogs from multiple verified organizations",
-    sameAs: [
-      "https://www.facebook.com/rescuedogs",
-      "https://www.instagram.com/rescuedogs",
-      "https://twitter.com/rescuedogs",
-    ],
   };
 
   // Combine all schemas
   const schemas = [
     breadcrumbList,
-    articleSchema,
-    aggregateRating,
-    faqSchema,
     collectionSchema,
     itemListSchema,
     organizationSchema,
