@@ -1,4 +1,5 @@
 import { GET } from "../route";
+import { getAllGuides } from "@/lib/guides";
 
 // Mock guides utilities
 jest.mock("@/lib/guides", () => ({
@@ -22,6 +23,8 @@ jest.mock("@/lib/guides", () => ({
     ]),
   ),
 }));
+
+const mockGetAllGuides = getAllGuides as jest.MockedFunction<typeof getAllGuides>;
 
 // Test response type that has body as string (as returned by GET in test env)
 interface TestResponse {
@@ -134,5 +137,27 @@ describe("Sitemap Guides Route", () => {
 
     expect(urlCount).toBe(urlCloseCount);
     expect(urlCount).toBeGreaterThanOrEqual(4); // /guides + 3 guide pages
+  });
+
+  it("uses most recent guide lastUpdated for /guides listing page", async () => {
+    const response = await getTestResponse();
+    const text = getResponseText(response);
+
+    // 2025-08-10 is the most recent lastUpdated in mock data
+    expect(text).toMatch(
+      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/guides<\/loc>[\s\S]*?<lastmod>2025-08-10T00:00:00\+00:00<\/lastmod>/,
+    );
+  });
+
+  it("returns empty sitemap on getAllGuides failure", async () => {
+    mockGetAllGuides.mockRejectedValueOnce(new Error("Filesystem error"));
+
+    const response = await getTestResponse();
+    const text = getResponseText(response);
+
+    expect(text).toContain('<?xml version="1.0" encoding="UTF-8"?>');
+    expect(text).toContain("</urlset>");
+    // Should have no <url> entries
+    expect(text).not.toContain("<url>");
   });
 });

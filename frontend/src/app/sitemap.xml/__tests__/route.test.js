@@ -3,9 +3,8 @@
  * Following TDD approach for Next.js 15 app router implementation
  */
 
-// Mock the services
+// Mock the services (generateSitemap is now static-only, but mocks verify no API calls are made)
 jest.mock("../../../services/animalsService", () => ({
-  getAllAnimals: jest.fn(),
   getAllAnimalsForSitemap: jest.fn(),
 }));
 
@@ -13,10 +12,7 @@ jest.mock("../../../services/organizationsService", () => ({
   getAllOrganizations: jest.fn(),
 }));
 
-import {
-  getAllAnimals,
-  getAllAnimalsForSitemap,
-} from "../../../services/animalsService";
+import { getAllAnimalsForSitemap } from "../../../services/animalsService";
 import { getAllOrganizations } from "../../../services/organizationsService";
 
 // Mock Next.js Response
@@ -33,42 +29,7 @@ describe("Dynamic Sitemap Route", () => {
     delete process.env.NEXT_PUBLIC_SITE_URL;
   });
 
-  const mockDogs = [
-    {
-      id: 1,
-      slug: "buddy-mixed-breed-1",
-      name: "Buddy",
-      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-      updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 2,
-      slug: "luna-labrador-2",
-      name: "Luna",
-      created_at: "2025-07-13T10:30:15.123Z",
-      updated_at: "2025-07-13T10:30:15.123Z",
-    },
-  ];
-
-  const mockOrganizations = [
-    {
-      id: 1,
-      slug: "happy-paws-rescue-1",
-      name: "Happy Paws Rescue",
-      updated_at: "2025-07-12T15:22:45.567Z",
-    },
-    {
-      id: 2,
-      slug: "city-shelter-2",
-      name: "City Animal Shelter",
-      updated_at: "2025-07-11T09:15:30.890Z",
-    },
-  ];
-
-  test("should generate valid XML sitemap with all content", async () => {
-    getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
-    getAllOrganizations.mockResolvedValue(mockOrganizations);
-
+  test("should generate valid XML sitemap with static pages", async () => {
     const { GET } = await import("../route");
     const response = await GET();
 
@@ -112,9 +73,6 @@ describe("Dynamic Sitemap Route", () => {
   test("should use custom base URL from environment", async () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://staging.rescuedogs.me";
 
-    getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
-    getAllOrganizations.mockResolvedValue(mockOrganizations);
-
     const { GET } = await import("../route");
     const response = await GET();
 
@@ -128,9 +86,6 @@ describe("Dynamic Sitemap Route", () => {
   });
 
   test("should include proper HTTP headers", async () => {
-    getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
-    getAllOrganizations.mockResolvedValue(mockOrganizations);
-
     const { GET } = await import("../route");
     const response = await GET();
 
@@ -142,17 +97,16 @@ describe("Dynamic Sitemap Route", () => {
     );
   });
 
-  test("should handle API errors gracefully", async () => {
-    getAllAnimals.mockRejectedValue(new Error("Database connection failed"));
-    getAllOrganizations.mockRejectedValue(new Error("Service unavailable"));
-
+  test("should generate sitemap without any API dependency", async () => {
     const { GET } = await import("../route");
     const response = await GET();
 
-    // Should still return valid XML with static pages
+    // Main sitemap is purely static — no API calls needed
     expect(response.body).toContain('<?xml version="1.0" encoding="UTF-8"?>');
     expect(response.body).toContain("<loc>https://www.rescuedogs.me/</loc>");
     expect(response.status).toBe(200);
+    expect(getAllAnimalsForSitemap).not.toHaveBeenCalled();
+    expect(getAllOrganizations).not.toHaveBeenCalled();
   });
 
   test("should contain only static pages (no lastmod from dynamic data)", async () => {
@@ -169,9 +123,6 @@ describe("Dynamic Sitemap Route", () => {
   });
 
   test("should handle empty data gracefully", async () => {
-    getAllAnimalsForSitemap.mockResolvedValue([]);
-    getAllOrganizations.mockResolvedValue([]);
-
     const { GET } = await import("../route");
     const response = await GET();
 
@@ -199,9 +150,6 @@ describe("Dynamic Sitemap Route", () => {
   });
 
   test("should include priority and changefreq for SEO optimization", async () => {
-    getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
-    getAllOrganizations.mockResolvedValue(mockOrganizations);
-
     const { GET } = await import("../route");
     const response = await GET();
 

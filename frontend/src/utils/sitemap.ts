@@ -291,7 +291,7 @@ export const formatDateForSitemap = (dateString: string | null | undefined): str
   }
 };
 
-const escapeXml = (str: string): string => {
+export const escapeXml = (str: string): string => {
   if (typeof str !== "string") {
     return "";
   }
@@ -521,9 +521,10 @@ export const generateBreedPages = async (): Promise<SitemapEntry[]> => {
           return true;
         });
 
+        const counts = purebreds.map((b) => Number(b.count) || 0);
+        const maxCount = counts.length ? Math.max(...counts) : 1;
+
         purebreds.forEach((breed) => {
-          const counts = purebreds.map((b) => Number(b.count) || 0);
-          const maxCount = counts.length ? Math.max(...counts) : 1;
           const normalizedCount =
             maxCount > 0 ? (Number(breed.count) || 0) / maxCount : 0;
           const priority = Math.min(
@@ -534,7 +535,7 @@ export const generateBreedPages = async (): Promise<SitemapEntry[]> => {
           const entry: SitemapEntry = {
             url: `${baseUrl}/breeds/${breed.breed_slug}`,
             changefreq: "weekly",
-            priority: Math.round(priority * 10) / 10,
+            priority: Math.round(priority * 100) / 100,
           };
 
           if (breed.last_updated) {
