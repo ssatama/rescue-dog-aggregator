@@ -16,14 +16,6 @@ interface DogsPageProps {
 export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const collectionSchema = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Available Rescue Dogs",
-    description: "Browse rescue dogs available for adoption from verified European rescue organizations",
-    url: "https://www.rescuedogs.me/dogs",
-  };
-
   return {
     title: "Find Your New Best Friend | Rescue Dog Aggregator",
     description:
@@ -41,9 +33,6 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "Find Rescue Dogs",
       description: "Browse hundreds of rescue dogs looking for their forever homes.",
-    },
-    other: {
-      "application/ld+json": JSON.stringify(collectionSchema),
     },
   };
 }
@@ -95,8 +84,20 @@ export default async function DogsPageOptimized(props: DogsPageProps): Promise<R
     getAllMetadata(),
   ]);
 
+  const collectionJsonLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Available Rescue Dogs",
+    description: "Browse rescue dogs available for adoption from verified European rescue organizations",
+    url: "https://www.rescuedogs.me/dogs",
+  }).replace(/</g, "\\u003c");
+
   return (
     <Layout>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: collectionJsonLd }}
+      />
       <Suspense fallback={<LoadingFallback />}>
         <DogsPageClientSimplified
           initialDogs={initialDogs}

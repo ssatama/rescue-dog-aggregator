@@ -131,43 +131,16 @@ describe("Structured Data Integration", () => {
       established_year: 2010,
     };
 
-    test("should include Organization schema in metadata", async () => {
+    test("should not include JSON-LD in metadata (rendered via component instead)", async () => {
       getOrganizationBySlug.mockResolvedValue(mockOrganization);
 
       const metadata = await generateOrgMetadata({
         params: { slug: "happy-paws-rescue-1" },
       });
 
-      expect(metadata.other).toBeDefined();
-      expect(metadata.other["script:ld+json"]).toBeDefined();
-
-      // Parse the JSON-LD to verify it's valid
-      const structuredData = JSON.parse(metadata.other["script:ld+json"]);
-
-      expect(structuredData).toEqual({
-        "@context": "https://schema.org",
-        "@type": ["LocalBusiness", "AnimalShelter"],
-        name: "Happy Paws Rescue",
-        description: "Dedicated to rescuing and rehoming dogs in need.",
-        url: "https://happypaws.org",
-        logo: "https://images.rescuedogs.me/logo.png",
-        foundingDate: "2010",
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: "San Francisco",
-          addressCountry: "USA",
-        },
-        serviceArea: {
-          "@type": "Place",
-          name: "San Francisco, USA",
-        },
-        knowsAbout: "Dog rescue and adoption services",
-        additionalProperty: {
-          "@type": "PropertyValue",
-          name: "Available Dogs",
-          value: 25,
-        },
-      });
+      // JSON-LD is now rendered via OrganizationSchema component, not metadata.other
+      expect(metadata.other).toBeUndefined();
+      expect(metadata.title).toContain("Happy Paws Rescue");
     });
 
     test("should include canonical URL in organization metadata", async () => {
@@ -197,17 +170,9 @@ describe("Structured Data Integration", () => {
         params: { slug: "small-rescue-2" },
       });
 
-      expect(metadata.other).toBeDefined();
-
-      const structuredData = JSON.parse(metadata.other["script:ld+json"]);
-      expect(structuredData["@type"]).toEqual([
-        "LocalBusiness",
-        "AnimalShelter",
-      ]);
-      expect(structuredData.name).toBe("Small Rescue");
-      expect(structuredData.url).toBe("https://smallrescue.org");
-      expect(structuredData.address).toBeUndefined();
-      expect(structuredData.logo).toBeUndefined();
+      // JSON-LD is now rendered via OrganizationSchema component, not metadata.other
+      expect(metadata.other).toBeUndefined();
+      expect(metadata.title).toContain("Small Rescue");
     });
 
     test("should not include structured data for invalid organization", async () => {
