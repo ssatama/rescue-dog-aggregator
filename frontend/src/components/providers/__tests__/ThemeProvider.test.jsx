@@ -171,4 +171,59 @@ describe("ThemeProvider", () => {
     expect(screen.getByTestId("set-dark")).toBeInTheDocument();
     expect(screen.getByTestId("set-light")).toBeInTheDocument();
   });
+
+  test("falls back to system preference when localStorage has invalid value", async () => {
+    localStorage.setItem("theme", "invalid-value");
+
+    render(
+      <ThemeProvider>
+        <TestComponent />
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("current-theme")).toHaveTextContent("light");
+    });
+  });
+
+  test("falls back to light theme when localStorage throws", () => {
+    const getItemSpy = jest
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(() => {
+        throw new DOMException("Storage is disabled", "SecurityError");
+      });
+
+    render(
+      <ThemeProvider>
+        <TestComponent />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByTestId("current-theme")).toHaveTextContent("light");
+
+    getItemSpy.mockRestore();
+  });
+
+  test("applies theme visually even when localStorage.setItem throws", async () => {
+    const setItemSpy = jest
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new DOMException("Quota exceeded", "QuotaExceededError");
+      });
+
+    render(
+      <ThemeProvider>
+        <TestComponent />
+      </ThemeProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId("set-dark"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("current-theme")).toHaveTextContent("dark");
+      expect(document.documentElement.classList.contains("dark")).toBe(true);
+    });
+
+    setItemSpy.mockRestore();
+  });
 });
