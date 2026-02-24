@@ -9,17 +9,10 @@ interface SitemapDog {
   slug?: string;
   name?: string;
   breed?: string;
-  status?: string;
   primary_image_url?: string;
   created_at?: string;
   updated_at?: string;
   description?: string;
-  llm_description?: string;
-  llm_tagline?: string;
-  dog_profiler_data?: {
-    description?: string;
-    tagline?: string;
-  };
 }
 
 interface SitemapOrganization {
@@ -31,8 +24,6 @@ interface SitemapOrganization {
 interface SitemapEntry {
   url: string;
   lastmod?: string;
-  changefreq?: string;
-  priority?: number;
 }
 
 interface SitemapMetadata {
@@ -40,64 +31,7 @@ interface SitemapMetadata {
   lastmod?: string;
 }
 
-const calculateDogPriority = (dog: SitemapDog): number => {
-  if (dog.status === "adopted" || dog.status === "unknown") {
-    return 0.5;
-  }
-
-  let priority = 0.3;
-
-  const hasLLMDescription =
-    dog.llm_description ||
-    dog.dog_profiler_data?.description;
-
-  const hasLLMTagline =
-    dog.llm_tagline ||
-    dog.dog_profiler_data?.tagline;
-
-  if (hasLLMDescription || hasLLMTagline) {
-    priority += 0.4;
-  } else {
-    if (dog.description) {
-      const description = dog.description;
-      const descLength = description.length;
-
-      const isBoilerplate =
-        description.includes("No description available") ||
-        description.includes("Contact us for more information") ||
-        description.length < 30;
-
-      if (!isBoilerplate) {
-        if (descLength > 200) {
-          priority += 0.3;
-        } else if (descLength > 50) {
-          priority += 0.2;
-        } else if (descLength > 0) {
-          priority += 0.1;
-        }
-      }
-    }
-  }
-
-  if (dog.primary_image_url) {
-    priority += 0.2;
-  }
-
-  if (dog.created_at) {
-    const createdDate = new Date(dog.created_at);
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    if (createdDate > thirtyDaysAgo) {
-      priority += 0.1;
-    }
-  }
-
-  return Math.min(Math.round(priority * 10) / 10, 1.0);
-};
-
 const MAX_URLS_PER_SITEMAP = 50000;
-const MAX_SITEMAP_SIZE_MB = 50;
 
 export const formatSitemapEntry = (entry: SitemapEntry): SitemapEntry => {
   if (!entry || typeof entry !== "object") {
@@ -114,31 +48,6 @@ export const formatSitemapEntry = (entry: SitemapEntry): SitemapEntry => {
     throw new Error("Sitemap entry URL must be a valid URL");
   }
 
-  if (entry.priority !== undefined) {
-    if (
-      typeof entry.priority !== "number" ||
-      entry.priority < 0 ||
-      entry.priority > 1
-    ) {
-      throw new Error("Priority must be a number between 0.0 and 1.0");
-    }
-  }
-
-  if (entry.changefreq !== undefined) {
-    const validFreqs = [
-      "always",
-      "hourly",
-      "daily",
-      "weekly",
-      "monthly",
-      "yearly",
-      "never",
-    ];
-    if (!validFreqs.includes(entry.changefreq)) {
-      throw new Error(`changefreq must be one of: ${validFreqs.join(", ")}`);
-    }
-  }
-
   const validatedEntry: SitemapEntry = {
     url: entry.url,
   };
@@ -147,29 +56,21 @@ export const formatSitemapEntry = (entry: SitemapEntry): SitemapEntry => {
     validatedEntry.lastmod = entry.lastmod;
   }
 
-  if (entry.changefreq) {
-    validatedEntry.changefreq = entry.changefreq;
-  }
-
-  if (entry.priority !== undefined) {
-    validatedEntry.priority = entry.priority;
-  }
-
   return validatedEntry;
 };
 
 const generateStaticPages = (): SitemapEntry[] => {
   const baseUrl = getBaseUrl();
   const staticPages: SitemapEntry[] = [
-    { url: `${baseUrl}/`, changefreq: "weekly", priority: 1.0 },
-    { url: `${baseUrl}/dogs`, changefreq: "weekly", priority: 0.9 },
-    { url: `${baseUrl}/dogs/age`, changefreq: "daily", priority: 0.8 },
-    { url: `${baseUrl}/dogs/puppies`, changefreq: "daily", priority: 0.8 },
-    { url: `${baseUrl}/dogs/senior`, changefreq: "daily", priority: 0.8 },
-    { url: `${baseUrl}/organizations`, changefreq: "monthly", priority: 0.9 },
-    { url: `${baseUrl}/about`, changefreq: "monthly", priority: 0.6 },
-    { url: `${baseUrl}/faq`, changefreq: "monthly", priority: 0.7 },
-    { url: `${baseUrl}/privacy`, changefreq: "yearly", priority: 0.3 },
+    { url: `${baseUrl}/` },
+    { url: `${baseUrl}/dogs` },
+    { url: `${baseUrl}/dogs/age` },
+    { url: `${baseUrl}/dogs/puppies` },
+    { url: `${baseUrl}/dogs/senior` },
+    { url: `${baseUrl}/organizations` },
+    { url: `${baseUrl}/about` },
+    { url: `${baseUrl}/faq` },
+    { url: `${baseUrl}/privacy` },
   ];
 
   return staticPages.map(formatSitemapEntry);
@@ -184,8 +85,6 @@ const generateDogPages = (dogs: SitemapDog[]): SitemapEntry[] => {
   return dogs.map((dog) => {
     const entry: SitemapEntry = {
       url: `${baseUrl}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`,
-      changefreq: "monthly",
-      priority: calculateDogPriority(dog),
     };
 
     if (dog.created_at) {
@@ -213,8 +112,6 @@ const generateOrganizationPages = (organizations: SitemapOrganization[]): Sitema
   return organizations.map((org) => {
     const entry: SitemapEntry = {
       url: `${baseUrl}/organizations/${org.slug || `unknown-org-${org.id}`}`,
-      changefreq: "monthly",
-      priority: 0.7,
     };
 
     if (org.updated_at) {
@@ -246,15 +143,6 @@ const entriesToXml = (entries: SitemapEntry[]): string => {
 
     if (entry.lastmod) {
       urlXml += `    <lastmod>${escapeXml(entry.lastmod)}</lastmod>\n`;
-    }
-
-    if (entry.changefreq) {
-      urlXml += `    <changefreq>${escapeXml(entry.changefreq)}</changefreq>\n`;
-    }
-
-    if (entry.priority !== undefined) {
-      const formattedPriority = entry.priority.toFixed(1);
-      urlXml += `    <priority>${formattedPriority}</priority>\n`;
     }
 
     urlXml += "  </url>";
@@ -337,39 +225,6 @@ export const generateSitemapIndex = (sitemaps?: SitemapMetadata[]): string => {
   return [xmlHeader, indexOpen, ...sitemapEntries, indexClose].join("\n");
 };
 
-const splitIntoSitemaps = (entries: SitemapEntry[]): SitemapEntry[][] => {
-  const sitemaps: SitemapEntry[][] = [];
-  let currentSitemap: SitemapEntry[] = [];
-  let currentSize = 0;
-
-  const BYTES_PER_ENTRY = 200;
-  const MAX_SIZE_BYTES = MAX_SITEMAP_SIZE_MB * 1024 * 1024;
-
-  for (const entry of entries) {
-    const entrySize = BYTES_PER_ENTRY;
-
-    if (
-      currentSitemap.length >= MAX_URLS_PER_SITEMAP ||
-      currentSize + entrySize > MAX_SIZE_BYTES
-    ) {
-      if (currentSitemap.length > 0) {
-        sitemaps.push(currentSitemap);
-        currentSitemap = [];
-        currentSize = 0;
-      }
-    }
-
-    currentSitemap.push(entry);
-    currentSize += entrySize;
-  }
-
-  if (currentSitemap.length > 0) {
-    sitemaps.push(currentSitemap);
-  }
-
-  return sitemaps;
-};
-
 export const generateSitemap = async (): Promise<string> => {
   const staticEntries = generateStaticPages();
   return entriesToXml(staticEntries);
@@ -409,14 +264,10 @@ export const generateCountrySitemap = async (): Promise<string> => {
     const countryEntries = [
       formatSitemapEntry({
         url: `${baseUrl}/dogs/country`,
-        changefreq: "daily",
-        priority: 0.8,
       }),
       ...countries.map((code) =>
         formatSitemapEntry({
           url: `${baseUrl}/dogs/country/${code}`,
-          changefreq: "daily",
-          priority: 0.7,
         })
       ),
     ];
@@ -473,7 +324,6 @@ interface BreedStatsBreed {
   breed_group?: string;
   primary_breed?: string;
   breed_slug?: string;
-  count?: number | string;
   last_updated?: string;
 }
 
@@ -485,16 +335,12 @@ export const generateBreedPages = async (): Promise<SitemapEntry[]> => {
     breedPages.push(
       formatSitemapEntry({
         url: `${baseUrl}/breeds`,
-        changefreq: "weekly",
-        priority: 0.9,
       }),
     );
 
     breedPages.push(
       formatSitemapEntry({
         url: `${baseUrl}/breeds/mixed`,
-        changefreq: "weekly",
-        priority: 0.85,
       }),
     );
 
@@ -521,21 +367,9 @@ export const generateBreedPages = async (): Promise<SitemapEntry[]> => {
           return true;
         });
 
-        const counts = purebreds.map((b) => Number(b.count) || 0);
-        const maxCount = counts.length ? Math.max(...counts) : 1;
-
         purebreds.forEach((breed) => {
-          const normalizedCount =
-            maxCount > 0 ? (Number(breed.count) || 0) / maxCount : 0;
-          const priority = Math.min(
-            0.9,
-            Math.max(0.7, 0.7 + normalizedCount * 0.2),
-          );
-
           const entry: SitemapEntry = {
             url: `${baseUrl}/breeds/${breed.breed_slug}`,
-            changefreq: "weekly",
-            priority: Math.round(priority * 100) / 100,
           };
 
           if (breed.last_updated) {

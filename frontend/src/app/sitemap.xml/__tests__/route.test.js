@@ -149,23 +149,11 @@ describe("Dynamic Sitemap Route", () => {
     expect(getAllOrganizations).not.toHaveBeenCalled();
   });
 
-  test("should include priority and changefreq for SEO optimization", async () => {
+  test("should not include priority or changefreq tags (Google ignores both)", async () => {
     const { GET } = await import("../route");
     const response = await GET();
 
-    // Homepage should have highest priority
-    expect(response.body).toMatch(
-      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/<\/loc>[\s\S]*?<priority>1\.0<\/priority>[\s\S]*?<\/url>/,
-    );
-
-    // /dogs listing page should have high priority
-    expect(response.body).toMatch(
-      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/dogs<\/loc>[\s\S]*?<priority>0\.9<\/priority>[\s\S]*?<\/url>/,
-    );
-
-    // Should include updated realistic changefreq values
-    expect(response.body).toContain("<changefreq>weekly</changefreq>");
-    expect(response.body).toContain("<changefreq>monthly</changefreq>");
-    // No more daily frequency - removed for realistic SEO
+    expect(response.body).not.toContain("<priority>");
+    expect(response.body).not.toContain("<changefreq>");
   });
 });

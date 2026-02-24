@@ -4,8 +4,6 @@ export const revalidate = 3600;
 interface BreedSitemapUrl {
   url: string;
   lastModified: string;
-  changeFrequency: string;
-  priority: number;
 }
 
 interface BreedStat {
@@ -32,15 +30,11 @@ export async function GET(): Promise<Response> {
   urls.push({
     url: `${baseUrl}/breeds`,
     lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.9,
   });
 
   urls.push({
     url: `${baseUrl}/breeds/mixed`,
     lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.85,
   });
 
   try {
@@ -75,24 +69,10 @@ export async function GET(): Promise<Response> {
           },
         );
 
-        const counts = indexableBreeds.map(
-          (b: BreedStat) => Number(b.count) || 0,
-        );
-        const maxCount = counts.length ? Math.max(...counts) : 1;
-
         indexableBreeds.forEach((breed: BreedStat) => {
-          const normalizedCount =
-            maxCount > 0 ? (Number(breed.count) || 0) / maxCount : 0;
-          const priority = Math.min(
-            0.9,
-            Math.max(0.7, 0.7 + normalizedCount * 0.2),
-          );
-
           urls.push({
             url: `${baseUrl}/breeds/${breed.breed_slug}`,
             lastModified: now,
-            changeFrequency: "weekly",
-            priority: Math.round(priority * 100) / 100,
           });
         });
       }
@@ -115,12 +95,10 @@ export async function GET(): Promise<Response> {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${urls
     .map(
-      ({ url, lastModified, changeFrequency, priority }: BreedSitemapUrl) => `
+      ({ url, lastModified }: BreedSitemapUrl) => `
   <url>
     <loc>${url}</loc>
     <lastmod>${lastModified}</lastmod>
-    <changefreq>${changeFrequency}</changefreq>
-    <priority>${priority}</priority>
   </url>`,
     )
     .join("")}

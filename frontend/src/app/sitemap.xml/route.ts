@@ -36,8 +36,6 @@ export async function GET(): Promise<Response> {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
   </url>
 </urlset>`;
 

@@ -78,11 +78,31 @@ export default async function GuidesPage() {
         </nav>
 
         <h1 className="text-4xl font-bold mb-4">Adoption Guides</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-3xl">
-          Comprehensive guides to help you navigate rescue dog adoption from
-          European organizations. From first-time owner preparation to
-          understanding costs and cross-border logistics.
-        </p>
+        <div className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-3xl space-y-4">
+          <p>
+            Whether you are considering adopting a rescue dog for the first time
+            or adding another companion to your family, these guides walk you
+            through every step of the process, from initial research to your
+            first months together.
+          </p>
+          <p>
+            Millions of dogs across Southern and Eastern Europe face life in
+            overcrowded shelters or on the streets. Our guides explain why
+            international rescue adoption works, what it involves, and how to
+            approach it responsibly. Each guide draws on real data from the
+            rescue organizations listed on our platform.
+          </p>
+          <p>
+            You will find practical guidance on assessing your readiness as an
+            owner, navigating cross-border adoption logistics including Pet
+            Travel Scheme requirements and health certifications, budgeting for
+            adoption fees and ongoing veterinary care, and preparing your home
+            for a new arrival. These resources are designed for prospective
+            adopters in the UK and across Europe, covering the specific
+            regulations, timelines, and costs involved in rescuing a dog from
+            abroad.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
           {guides.map((guide, index) => (

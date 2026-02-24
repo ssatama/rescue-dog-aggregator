@@ -174,6 +174,7 @@ export type BreedDetailFilters = Record<BreedDetailFilterKey, string>;
 export interface BreedDetailClientProps {
   initialBreedData: BreedPageData;
   initialDogs: Dog[];
+  lastUpdated?: string;
 }
 
 export interface BreedsHubClientProps {

@@ -104,6 +104,7 @@ function buildURLFromFilters(
 export default function BreedDetailClient({
   initialBreedData,
   initialDogs,
+  lastUpdated,
 }: BreedDetailClientProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -408,7 +409,7 @@ export default function BreedDetailClient({
             className="w-full order-2 lg:order-1"
           />
 
-          <BreedInfo breedData={breedData} className="order-1 lg:order-2" />
+          <BreedInfo breedData={breedData} lastUpdated={lastUpdated} className="order-1 lg:order-2" />
         </div>
 
         {(() => {
