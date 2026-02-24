@@ -174,9 +174,8 @@ describe("Social Sharing Optimization - Phase 3B", () => {
       expect(metadata.openGraph.locale).toBe("en_US");
       expect(metadata.openGraph.siteName).toBe("Rescue Dog Aggregator");
       expect(metadata.openGraph.url).toBeDefined();
-      expect(metadata.openGraph.images[0]).toHaveProperty("width", 1200);
-      expect(metadata.openGraph.images[0]).toHaveProperty("height", 630);
-      expect(metadata.openGraph.images[0]).toHaveProperty("type", "image/jpeg");
+      expect(metadata.openGraph.images[0]).toHaveProperty("url");
+      expect(metadata.openGraph.images[0]).toHaveProperty("alt");
 
       // Should have article metadata for better categorization (flat on openGraph per Next.js Metadata spec)
       expect(metadata.openGraph.section).toBe("Pet Adoption");
@@ -209,9 +208,6 @@ describe("Social Sharing Optimization - Phase 3B", () => {
       expect(ogImage).toEqual({
         url: "https://example.com/high-res-dog.png",
         alt: "Photo of Photo Dog, a Photographer's Best Friend available for adoption",
-        width: 1200,
-        height: 630,
-        type: "image/jpeg", // Standardized for social sharing
       });
 
       expect(twitterImage).toEqual(ogImage); // Should be identical

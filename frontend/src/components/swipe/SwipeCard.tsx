@@ -116,7 +116,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 flex gap-2">
           <div onClick={(e) => e.stopPropagation()}>
             <ShareButton
-              url={`${typeof window !== "undefined" ? window.location.origin : "https://www.rescuedogs.me"}/dog/${dog.id}`}
+              url={dog.slug ? `${typeof window !== "undefined" ? window.location.origin : "https://www.rescuedogs.me"}/dogs/${dog.slug}` : `${typeof window !== "undefined" ? window.location.origin : "https://www.rescuedogs.me"}/dogs`}
               title={`Check out ${dog.name} for adoption!`}
               text={
                 dog.description ||

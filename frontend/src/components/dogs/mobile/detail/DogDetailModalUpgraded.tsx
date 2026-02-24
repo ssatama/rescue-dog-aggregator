@@ -276,12 +276,14 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   };
 
   const handleShare = () => {
-    // Use the ShareButton logic or native share
     if (navigator.share && dog) {
+      const dogUrl = dog.slug
+        ? `${window.location.origin}/dogs/${dog.slug}`
+        : window.location.href;
       navigator.share({
         title: `Meet ${dog.name}`,
         text: `Check out ${dog.name}, a ${dog.age_text || dog.age} ${dog.breed} looking for a loving home!`,
-        url: window.location.href,
+        url: dogUrl,
       });
     }
   };
