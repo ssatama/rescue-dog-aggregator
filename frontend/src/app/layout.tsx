@@ -9,12 +9,7 @@ import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
-import dynamic from "next/dynamic";
-
-const SentryInitializer = dynamic(
-  () => import("@/components/SentryInitializer"),
-  { ssr: false },
-);
+import SentryInitializer from "@/components/SentryInitializer";
 
 const inter = Inter({
   subsets: ["latin"],
