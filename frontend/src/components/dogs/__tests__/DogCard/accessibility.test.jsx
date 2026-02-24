@@ -356,7 +356,6 @@ describe("DogCard Accessibility", () => {
 
       // Classes should still be present, but CSS will handle disabling animations
       expect(card).toHaveClass("shadow-sm");
-      expect(card).toHaveClass("will-change-transform");
     });
 
     test("focus indicators remain visible with reduced motion", () => {

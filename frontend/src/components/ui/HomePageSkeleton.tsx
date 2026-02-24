@@ -10,7 +10,6 @@ function HeroSkeleton() {
     <div data-testid="hero-skeleton" className="py-12 md:py-20 lg:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-          {/* Left Column - Text and CTA */}
           <div className="flex-1 text-center lg:text-left">
             <div className="h-12 md:h-16 w-3/4 mx-auto lg:mx-0 bg-gray-200 rounded-lg animate-pulse mb-6" />
             <div className="h-6 md:h-8 w-2/3 mx-auto lg:mx-0 bg-gray-200 rounded animate-pulse mb-8" />
@@ -20,7 +19,6 @@ function HeroSkeleton() {
             </div>
           </div>
 
-          {/* Right Column - Statistics */}
           <div className="flex-1 w-full max-w-lg">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {[1, 2, 3].map((i) => (
