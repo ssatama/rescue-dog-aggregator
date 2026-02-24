@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, Dog } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { useReducedMotion } from "@/hooks";
 
 interface BreedData {
   name: string;
@@ -57,6 +58,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
   loading = false,
 }) => {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -185,10 +187,10 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, x: 100 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.3 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -100 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3 }}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.2}

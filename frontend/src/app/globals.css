@@ -213,6 +213,14 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-gentle, .animate-pulse-slow,
+  .animate-float-slow, .animate-float-medium, .animate-float-fast,
+  .animate-bounce-gentle {
+    animation: none !important;
+  }
+}
+
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
