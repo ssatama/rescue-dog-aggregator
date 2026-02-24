@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type {
   Theme,
   ThemeContextValue,
@@ -18,28 +12,22 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: () => {},
 });
 
+// Must match inline theme script in layout.tsx <head>
 const getInitialTheme = (): Theme => {
   if (typeof window === "undefined") return "light";
-  const savedTheme = localStorage.getItem("theme");
-  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-  return savedTheme === "light" || savedTheme === "dark" ? savedTheme : systemTheme;
-};
-
-const emptySubscribe = () => () => {};
-
-const useMounted = () => {
-  return useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false,
-  );
+  try {
+    const savedTheme = localStorage.getItem("theme");
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+    return savedTheme === "light" || savedTheme === "dark" ? savedTheme : systemTheme;
+  } catch {
+    return "light";
+  }
 };
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
-  const mounted = useMounted();
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -47,12 +35,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   const updateTheme = (newTheme: Theme): void => {
     setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
+    try {
+      localStorage.setItem("theme", newTheme);
+    } catch {
+      // Storage unavailable; theme applies for this session only
+    }
   };
-
-  // Prevent hydration mismatch
-  if (!mounted) return null;
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme: updateTheme }}>

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, ComponentPropsWithoutRef } from "react";
-import { MDXRemote } from "next-mdx-remote";
+import dynamic from "next/dynamic";
 import Image from "next/image";
-import { Guide } from "@/types/guide";
+import type { Guide } from "@/types/guide";
 import { DogGrid } from "./DogGrid";
 import { Callout } from "./Callout";
 import { Stats } from "./Stats";
@@ -13,6 +13,8 @@ import { RelatedGuides } from "./RelatedGuides";
 import { FontSizeProvider } from "@/contexts/FontSizeContext";
 import { FontSizeControl } from "./FontSizeControl";
 import { Breadcrumb } from "./Breadcrumb";
+
+const MDXRenderer = dynamic(() => import("./MDXRenderer"), { ssr: false });
 
 interface GuideContentProps {
   guide: Guide;
@@ -167,7 +169,7 @@ export function GuideContent({
               style={{ fontSize: "var(--guide-font-size, 16px)" }}
             >
               {serializedContent && (
-                <MDXRemote {...serializedContent} components={components} />
+                <MDXRenderer {...serializedContent} components={components} />
               )}
             </div>
 
