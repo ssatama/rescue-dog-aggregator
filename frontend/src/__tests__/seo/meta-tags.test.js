@@ -189,14 +189,8 @@ describe("SEO Meta Tags", () => {
         "Learn about Happy Paws Rescue and their available dogs for adoption.",
       );
 
-      // Check structured data
-      expect(metadata.other["script:ld+json"]).toBeDefined();
-      const structuredData = JSON.parse(metadata.other["script:ld+json"]);
-      expect(structuredData["@type"]).toEqual([
-        "LocalBusiness",
-        "AnimalShelter",
-      ]);
-      expect(structuredData.name).toBe("Happy Paws Rescue");
+      // JSON-LD is now rendered via OrganizationSchema component, not metadata.other
+      expect(metadata.other).toBeUndefined();
     });
 
     test("should only allow valid OpenGraph types", async () => {

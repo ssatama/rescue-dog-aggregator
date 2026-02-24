@@ -7,24 +7,7 @@ import { reportError } from "../../utils/logger";
 
 export const revalidate = 300;
 
-export async function generateMetadata(): Promise<Metadata> {
-  let orgCount = 13;
-  try {
-    const organizations = await getEnhancedOrganizationsSSR();
-    orgCount = organizations?.length || 13;
-  } catch (error) {
-    reportError(error, { context: "generateMetadata", component: "OrganizationsPage" });
-  }
-
-  const collectionSchema = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Rescue Organizations",
-    description: "Browse trusted dog rescue organizations across Europe",
-    url: "https://www.rescuedogs.me/organizations",
-    numberOfItems: orgCount,
-  };
-
+export function generateMetadata(): Metadata {
   return {
     title: "Rescue Organizations | Find Dog Rescue Centers",
     description:
@@ -54,9 +37,6 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Rescue Organizations | Dog Rescue Centers",
       description: "Browse trusted dog rescue organizations across Europe.",
     },
-    other: {
-      "application/ld+json": JSON.stringify(collectionSchema),
-    },
   };
 }
 
@@ -66,11 +46,24 @@ export default async function OrganizationsPage(): Promise<React.JSX.Element> {
   try {
     organizations = await getEnhancedOrganizationsSSR() as unknown as OrganizationCardData[];
   } catch (error) {
-    console.error("Failed to fetch organizations server-side:", error);
+    reportError(error, { context: "OrganizationsPage", operation: "getEnhancedOrganizationsSSR" });
   }
+
+  const collectionJsonLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Rescue Organizations",
+    description: "Browse trusted dog rescue organizations across Europe",
+    url: "https://www.rescuedogs.me/organizations",
+    numberOfItems: organizations.length || 13,
+  }).replace(/</g, "\\u003c");
 
   return (
     <Layout>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: collectionJsonLd }}
+      />
       <OrganizationsClient
         initialData={organizations}
       />

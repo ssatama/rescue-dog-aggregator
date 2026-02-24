@@ -3,10 +3,6 @@ import {
   getOrganizationBySlug,
   getAllOrganizations,
 } from "../../../services/organizationsService";
-import {
-  generateOrganizationSchema,
-  generateJsonLdScript,
-} from "../../../utils/schema";
 import { reportError } from "../../../utils/logger";
 import Layout from "../../../components/layout/Layout";
 import OrganizationDetailClient from "./OrganizationDetailClient";
@@ -34,8 +30,6 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
         .join(", ");
       description += ` Located in ${location}.`;
     }
-
-    const organizationSchema = generateOrganizationSchema(organization);
 
     const openGraphType = "website";
 
@@ -70,11 +64,6 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
         title: `${organization.name} - Dog Rescue Organization`,
         description: `Learn about ${organization.name} and their available dogs for adoption.`,
       },
-      ...(organizationSchema && {
-        other: {
-          "script:ld+json": generateJsonLdScript(organizationSchema),
-        },
-      }),
     };
 
     return metadata;
