@@ -35,6 +35,12 @@ jest.mock("next/image", () => ({
   ),
 }));
 
+// Mock useReducedMotion
+let mockReducedMotion = false;
+jest.mock("@/hooks", () => ({
+  useReducedMotion: () => mockReducedMotion,
+}));
+
 // Mock MobileFilterDrawer
 interface MockFilterDrawerProps {
   isOpen: boolean;
@@ -333,6 +339,32 @@ describe("MobileAvailableNow", () => {
       "pb-3",
       "pt-4",
     );
+  });
+
+  describe("Reduced Motion", () => {
+    beforeEach(() => {
+      mockReducedMotion = true;
+    });
+
+    afterEach(() => {
+      mockReducedMotion = false;
+    });
+
+    it("renders dog cards without entrance animation when reduced motion is preferred", () => {
+      render(<MobileAvailableNow dogs={mockDogs.slice(0, 2)} />);
+
+      expect(screen.getByText("Max, Young")).toBeInTheDocument();
+      expect(screen.getByText("Luna, Adult")).toBeInTheDocument();
+
+      const grid = screen.getByTestId("dogs-grid");
+      const cards = Array.from(grid.children);
+
+      cards.forEach((card) => {
+        const style = card.getAttribute("style") || "";
+        expect(style).not.toContain("opacity: 0");
+        expect(style).not.toContain("translateY");
+      });
+    });
   });
 
   it("shows extra traits count when more than 2", () => {

@@ -35,6 +35,12 @@ jest.mock("lucide-react", () => ({
   Dog: () => <span data-testid="dog-icon">🐕</span>,
 }));
 
+// Mock useReducedMotion
+let mockReducedMotion = false;
+jest.mock("@/hooks", () => ({
+  useReducedMotion: () => mockReducedMotion,
+}));
+
 // Mock framer-motion
 interface MockMotionDivProps {
   children?: React.ReactNode;
@@ -342,6 +348,38 @@ describe("MobileBreedSpotlight", () => {
     expect(
       screen.getByRole("button", { name: /explore german shepherds/i }),
     ).toBeInTheDocument();
+  });
+
+  describe("Reduced Motion", () => {
+    beforeEach(() => {
+      mockReducedMotion = true;
+    });
+
+    afterEach(() => {
+      mockReducedMotion = false;
+    });
+
+    it("renders carousel correctly with reduced motion enabled", () => {
+      render(<MobileBreedSpotlight breeds={mockBreeds} />);
+
+      expect(screen.getByText("Breed Spotlight")).toBeInTheDocument();
+      expect(screen.getByText("Labrador Retriever")).toBeInTheDocument();
+      expect(screen.getByText("20 available")).toBeInTheDocument();
+    });
+
+    it("auto-advances carousel with reduced motion enabled", async () => {
+      render(<MobileBreedSpotlight breeds={mockBreeds} />);
+
+      expect(screen.getByText("Labrador Retriever")).toBeInTheDocument();
+
+      act(() => {
+        jest.advanceTimersByTime(8000);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText("Golden Retriever")).toBeInTheDocument();
+      });
+    });
   });
 
   it("does not show description when not provided", () => {
