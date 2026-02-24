@@ -1,4 +1,4 @@
-import { getAllGuideSlugs } from "@/lib/guides";
+import { getAllGuides } from "@/lib/guides";
 
 function escapeXml(unsafe: string): string {
   return unsafe
@@ -9,23 +9,34 @@ function escapeXml(unsafe: string): string {
     .replace(/'/g, "&apos;");
 }
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    return new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
+  }
+  return date.toISOString().replace(/\.\d{3}Z$/, "+00:00");
+}
+
 export async function GET() {
-  const slugs = getAllGuideSlugs();
+  const guides = await getAllGuides();
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
-  const now = new Date().toISOString();
 
-  const urls = slugs.map((slug) => ({
-    url: `${baseUrl}/guides/${escapeXml(slug)}`,
-    lastModified: now,
+  const urls = guides.map((guide) => ({
+    url: `${baseUrl}/guides/${escapeXml(guide.slug)}`,
+    lastModified: formatDate(guide.frontmatter.lastUpdated),
     changeFrequency: "monthly",
     priority: 0.8,
   }));
 
-  // Add guides listing page
+  const mostRecentDate = guides.reduce((latest, guide) => {
+    const date = new Date(guide.frontmatter.lastUpdated);
+    return date > latest ? date : latest;
+  }, new Date(0));
+
   urls.unshift({
     url: `${baseUrl}/guides`,
-    lastModified: now,
+    lastModified: formatDate(mostRecentDate.toISOString()),
     changeFrequency: "monthly",
     priority: 0.9,
   });

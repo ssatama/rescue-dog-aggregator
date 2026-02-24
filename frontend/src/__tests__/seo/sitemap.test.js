@@ -13,10 +13,7 @@ jest.mock("../../services/organizationsService", () => ({
   getAllOrganizations: jest.fn(),
 }));
 
-import {
-  getAllAnimals,
-  getAllAnimalsForSitemap,
-} from "../../services/animalsService";
+import { getAllAnimalsForSitemap } from "../../services/animalsService";
 import { getAllOrganizations } from "../../services/organizationsService";
 
 // Import the sitemap generation function (to be implemented)
@@ -146,10 +143,7 @@ describe("Dynamic Sitemap Generation", () => {
   });
 
   describe("generateSitemap", () => {
-    test("should generate complete sitemap with all content types", async () => {
-      getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
-      getAllOrganizations.mockResolvedValue(mockOrganizations);
-
+    test("should generate complete sitemap with static pages", async () => {
       const sitemap = await generateSitemap();
 
       expect(sitemap).toContain('<?xml version="1.0" encoding="UTF-8"?>');
@@ -160,54 +154,12 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should NOT include individual dog pages (dogs are in sitemap-dogs.xml)", async () => {
-      // Mock dogs to verify they don't appear in main sitemap
-      const mockDogsAllQualities = [
-        {
-          id: 1,
-          slug: "buddy-with-description",
-          name: "Buddy",
-          created_at: "2024-01-15T10:00:00Z",
-          properties: {
-            description:
-              "This is a wonderful dog with a very detailed description that would pass quality filtering. The dog has been well cared for and is looking for a loving home with an active family who can provide lots of exercise and attention.",
-          },
-          organization: { name: "Happy Paws" },
-        },
-        {
-          id: 2,
-          slug: "luna-short-description",
-          name: "Luna",
-          created_at: "2024-01-16T11:00:00Z",
-          properties: {
-            description: "Sweet dog.", // Very short description
-          },
-          organization: { name: "City Shelter" },
-        },
-        {
-          id: 3,
-          slug: "max-no-description",
-          name: "Max",
-          created_at: "2024-01-17T12:00:00Z",
-          properties: {}, // No description at all
-          organization: { name: "Rescue Center" },
-        },
-      ];
-
-      getAllAnimalsForSitemap.mockResolvedValue(mockDogsAllQualities);
-      getAllOrganizations.mockResolvedValue([]);
-
       const sitemap = await generateSitemap();
 
-      // Individual dog pages should NOT be in main sitemap (they're in sitemap-dogs.xml to avoid duplication)
-      expect(sitemap).not.toContain(
-        "<loc>https://www.rescuedogs.me/dogs/buddy-with-description</loc>",
-      );
-      expect(sitemap).not.toContain(
-        "<loc>https://www.rescuedogs.me/dogs/luna-short-description</loc>",
-      );
-      expect(sitemap).not.toContain(
-        "<loc>https://www.rescuedogs.me/dogs/max-no-description</loc>",
-      );
+      // Static filter pages like /dogs/age, /dogs/puppies, /dogs/senior are expected
+      // But individual dog detail pages (with slugs like buddy-mixed-breed-1) should NOT appear
+      expect(sitemap).not.toContain("/dogs/buddy-mixed-breed-1");
+      expect(sitemap).not.toContain("/dogs/luna-labrador-retriever-2");
 
       // But /dogs listing page should be included
       expect(sitemap).toContain(
@@ -216,9 +168,6 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should have appropriate priorities for different page types", async () => {
-      getAllAnimalsForSitemap.mockResolvedValue([]);
-      getAllOrganizations.mockResolvedValue(mockOrganizations);
-
       const sitemap = await generateSitemap();
 
       // Homepage should have highest priority
@@ -238,9 +187,6 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should include static pages with correct priorities", async () => {
-      getAllAnimalsForSitemap.mockResolvedValue([]);
-      getAllOrganizations.mockResolvedValue([]);
-
       const sitemap = await generateSitemap();
 
       // Homepage should have highest priority
@@ -259,9 +205,6 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should NOT include /search route (non-existent page)", async () => {
-      getAllAnimalsForSitemap.mockResolvedValue([]);
-      getAllOrganizations.mockResolvedValue([]);
-
       const sitemap = await generateSitemap();
 
       // /search route should not be in sitemap as it doesn't exist in app structure
@@ -271,9 +214,6 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should NOT include individual dog pages (to avoid duplication with sitemap-dogs.xml)", async () => {
-      getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
-      getAllOrganizations.mockResolvedValue([]);
-
       const sitemap = await generateSitemap();
 
       // Should NOT include individual dog pages in main sitemap
@@ -290,33 +230,27 @@ describe("Dynamic Sitemap Generation", () => {
       );
     });
 
-    test("should include all organization pages", async () => {
+    test("should NOT include organization pages (they belong in sitemap-organizations.xml)", async () => {
       getAllAnimalsForSitemap.mockResolvedValue([]);
       getAllOrganizations.mockResolvedValue(mockOrganizations);
 
       const sitemap = await generateSitemap();
 
-      // Should include individual organization pages
-      expect(sitemap).toContain(
+      // Individual organization pages should NOT be in main sitemap
+      expect(sitemap).not.toContain(
         "<loc>https://www.rescuedogs.me/organizations/happy-paws-rescue-1</loc>",
       );
-      expect(sitemap).toContain(
+      expect(sitemap).not.toContain(
         "<loc>https://www.rescuedogs.me/organizations/city-animal-shelter-2</loc>",
       );
 
-      // Should include lastmod dates from organization data (formatted for XML sitemap)
-      expect(sitemap).toContain("<lastmod>2024-01-10T09:00:00+00:00</lastmod>");
-      expect(sitemap).toContain("<lastmod>2024-01-12T14:00:00+00:00</lastmod>");
-
-      // Organization pages should have medium-high priority and monthly updates
-      expect(sitemap).toContain("<changefreq>monthly</changefreq>");
-      expect(sitemap).toContain("<priority>0.7</priority>");
+      // The /organizations listing page should still be present
+      expect(sitemap).toContain(
+        "<loc>https://www.rescuedogs.me/organizations</loc>",
+      );
     });
 
     test("should handle empty data gracefully", async () => {
-      getAllAnimalsForSitemap.mockResolvedValue([]);
-      getAllOrganizations.mockResolvedValue([]);
-
       const sitemap = await generateSitemap();
 
       // Should still include static pages
@@ -331,21 +265,19 @@ describe("Dynamic Sitemap Generation", () => {
       expect(sitemap).toContain("</urlset>");
     });
 
-    test("should handle API errors gracefully", async () => {
-      getAllAnimals.mockRejectedValue(new Error("Database error"));
-      getAllOrganizations.mockRejectedValue(new Error("Database error"));
-
+    test("should generate sitemap with static pages only (no API calls)", async () => {
       const sitemap = await generateSitemap();
 
-      // Should still generate sitemap with static pages only
+      // Should generate sitemap with static pages
       expect(sitemap).toContain("<loc>https://www.rescuedogs.me/</loc>");
       expect(sitemap).toContain("</urlset>");
+
+      // generateSitemap should not call any APIs
+      expect(getAllAnimalsForSitemap).not.toHaveBeenCalled();
+      expect(getAllOrganizations).not.toHaveBeenCalled();
     });
 
     test("should validate generated XML format", async () => {
-      getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
-      getAllOrganizations.mockResolvedValue(mockOrganizations);
-
       const sitemap = await generateSitemap();
 
       // Basic XML structure validation
@@ -365,7 +297,6 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should respect URL limits for large datasets", async () => {
-      // Generate large dataset
       const largeDogList = Array.from({ length: 60000 }, (_, i) => ({
         id: i + 1,
         name: `Dog ${i + 1}`,
@@ -373,35 +304,23 @@ describe("Dynamic Sitemap Generation", () => {
       }));
 
       getAllAnimalsForSitemap.mockResolvedValue(largeDogList);
-      getAllOrganizations.mockResolvedValue([]);
 
-      const sitemap = await generateSitemap();
+      const sitemap = await generateDogSitemap();
 
       // Should limit URLs to 50,000 (sitemap standard limit)
       const urlCount = (sitemap.match(/<url>/g) || []).length;
       expect(urlCount).toBeLessThanOrEqual(50000);
     });
 
-    test("should include proper encoding for special characters", async () => {
-      const orgsWithSpecialChars = [
-        {
-          id: 1,
-          slug: "rescue-org-1",
-          name: "Happy Paws & Friends",
-          updated_at: "2024-01-15T10:00:00Z",
-        },
-      ];
-
-      getAllAnimalsForSitemap.mockResolvedValue([]);
-      getAllOrganizations.mockResolvedValue(orgsWithSpecialChars);
-
+    test("should include /faq page", async () => {
       const sitemap = await generateSitemap();
 
-      // Should properly encode URLs and handle special characters in organization names
       expect(sitemap).toContain(
-        "<loc>https://www.rescuedogs.me/organizations/rescue-org-1</loc>",
+        "<loc>https://www.rescuedogs.me/faq</loc>",
       );
-      expect(sitemap).not.toContain("&María"); // Should not contain unescaped ampersands
+      expect(sitemap).toMatch(
+        /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/faq<\/loc>[\s\S]*?<priority>0\.7<\/priority>/
+      );
     });
   });
 
@@ -598,34 +517,38 @@ describe("Dynamic Sitemap Generation", () => {
     });
   });
 
-  describe("generateOrganizationPages with real API date format", () => {
-    test("should format organization dates correctly with real API microsecond format", async () => {
-      // Mock organizations with the actual API date format (microseconds, no timezone)
-      const mockOrgsWithRealDates = [
-        {
-          id: 1,
-          name: "Happy Paws Rescue",
-          updated_at: "2025-07-11T20:13:59.641485", // Real API format
-        },
-        {
-          id: 2,
-          name: "City Animal Shelter",
-          updated_at: "2025-07-10T15:30:45.123456", // Real API format
-        },
-      ];
+  describe("breed slug deduplication", () => {
+    test("should deduplicate breed slugs in generateBreedPages", async () => {
+      // Mock fetch to return duplicate breed slugs
+      const mockBreedStats = {
+        qualifying_breeds: [
+          { breed_slug: "labrador-retriever", breed_type: "purebred", count: 50, last_updated: "2025-01-01T00:00:00Z" },
+          { breed_slug: "labrador-retriever", breed_type: "purebred", breed_group: "Sporting", count: 30, last_updated: "2025-01-02T00:00:00Z" },
+          { breed_slug: "german-shepherd", breed_type: "purebred", count: 40, last_updated: "2025-01-01T00:00:00Z" },
+          { breed_slug: "german-shepherd", breed_type: "purebred", breed_group: "Herding", count: 20, last_updated: "2025-01-02T00:00:00Z" },
+          { breed_slug: "golden-retriever", breed_type: "purebred", count: 35, last_updated: "2025-01-01T00:00:00Z" },
+        ],
+      };
 
-      getAllAnimalsForSitemap.mockResolvedValue([]);
-      getAllOrganizations.mockResolvedValue(mockOrgsWithRealDates);
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockBreedStats),
+      });
 
-      const sitemap = await generateSitemap();
+      const { generateBreedPages } = require("../../utils/sitemap");
+      const pages = await generateBreedPages();
 
-      // Should contain properly formatted lastmod dates
-      expect(sitemap).toContain("<lastmod>2025-07-11T20:13:59+00:00</lastmod>");
-      expect(sitemap).toContain("<lastmod>2025-07-10T15:30:45+00:00</lastmod>");
+      const breedUrls = pages
+        .map((p) => p.url)
+        .filter((url) => url !== "https://www.rescuedogs.me/breeds" && url !== "https://www.rescuedogs.me/breeds/mixed");
 
-      // Should not contain the raw API date format
-      expect(sitemap).not.toContain("2025-07-11T20:13:59.641485");
-      expect(sitemap).not.toContain("2025-07-10T15:30:45.123456");
+      // Should have 3 unique breeds, not 5
+      expect(breedUrls).toHaveLength(3);
+      expect(breedUrls).toContain("https://www.rescuedogs.me/breeds/labrador-retriever");
+      expect(breedUrls).toContain("https://www.rescuedogs.me/breeds/german-shepherd");
+      expect(breedUrls).toContain("https://www.rescuedogs.me/breeds/golden-retriever");
+
+      delete global.fetch;
     });
   });
 

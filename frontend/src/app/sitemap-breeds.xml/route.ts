@@ -25,7 +25,7 @@ export async function GET(): Promise<Response> {
     process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
   const apiUrl =
     process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me";
-  const now = new Date().toISOString();
+  const now = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
 
   const urls: BreedSitemapUrl[] = [];
 
@@ -61,13 +61,17 @@ export async function GET(): Promise<Response> {
         breedStats.qualifying_breeds &&
         Array.isArray(breedStats.qualifying_breeds)
       ) {
+        const seenSlugs = new Set<string>();
         const indexableBreeds = breedStats.qualifying_breeds.filter(
           (breed: BreedStat) => {
             const isMixed =
               breed.breed_type === "mixed" ||
               breed.breed_group === "Mixed" ||
               breed.primary_breed?.toLowerCase().includes("mix");
-            return !isMixed && breed.breed_slug;
+            if (isMixed || !breed.breed_slug) return false;
+            if (seenSlugs.has(breed.breed_slug)) return false;
+            seenSlugs.add(breed.breed_slug);
+            return true;
           },
         );
 

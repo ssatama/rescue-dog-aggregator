@@ -2,11 +2,25 @@ import { GET } from "../route";
 
 // Mock guides utilities
 jest.mock("@/lib/guides", () => ({
-  getAllGuideSlugs: jest.fn(() => [
-    "test-guide-1",
-    "test-guide-2",
-    "european-rescue-guide",
-  ]),
+  getAllGuides: jest.fn(() =>
+    Promise.resolve([
+      {
+        slug: "test-guide-1",
+        frontmatter: { lastUpdated: "2025-06-15" },
+        content: "",
+      },
+      {
+        slug: "test-guide-2",
+        frontmatter: { lastUpdated: "2025-07-01" },
+        content: "",
+      },
+      {
+        slug: "european-rescue-guide",
+        frontmatter: { lastUpdated: "2025-08-10" },
+        content: "",
+      },
+    ]),
+  ),
 }));
 
 // Test response type that has body as string (as returned by GET in test env)

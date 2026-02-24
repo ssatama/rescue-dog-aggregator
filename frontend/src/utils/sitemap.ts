@@ -168,6 +168,7 @@ const generateStaticPages = (): SitemapEntry[] => {
     { url: `${baseUrl}/dogs/senior`, changefreq: "daily", priority: 0.8 },
     { url: `${baseUrl}/organizations`, changefreq: "monthly", priority: 0.9 },
     { url: `${baseUrl}/about`, changefreq: "monthly", priority: 0.6 },
+    { url: `${baseUrl}/faq`, changefreq: "monthly", priority: 0.7 },
     { url: `${baseUrl}/privacy`, changefreq: "yearly", priority: 0.3 },
   ];
 
@@ -370,44 +371,8 @@ const splitIntoSitemaps = (entries: SitemapEntry[]): SitemapEntry[][] => {
 };
 
 export const generateSitemap = async (): Promise<string> => {
-  try {
-    const allEntries: SitemapEntry[] = [];
-
-    allEntries.push(...generateStaticPages());
-
-    try {
-      const organizations = await getAllOrganizations();
-      allEntries.push(...generateOrganizationPages(organizations));
-    } catch (error) {
-      if (process.env.NODE_ENV !== "production") {
-        console.warn(
-          "Failed to fetch organizations for sitemap:",
-          error instanceof Error ? error.message : String(error),
-        );
-      }
-    }
-
-    try {
-      const breedPages = await generateBreedPages();
-      allEntries.push(...breedPages);
-    } catch (error) {
-      if (process.env.NODE_ENV !== "production") {
-        console.warn(
-          "Failed to generate breed pages for sitemap:",
-          error instanceof Error ? error.message : String(error),
-        );
-      }
-    }
-
-    return entriesToXml(allEntries);
-  } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("Error generating sitemap:", error);
-    }
-
-    const staticEntries = generateStaticPages();
-    return entriesToXml(staticEntries);
-  }
+  const staticEntries = generateStaticPages();
+  return entriesToXml(staticEntries);
 };
 
 export const generateDogSitemap = async (): Promise<string> => {
@@ -512,7 +477,7 @@ interface BreedStatsBreed {
   last_updated?: string;
 }
 
-const generateBreedPages = async (): Promise<SitemapEntry[]> => {
+export const generateBreedPages = async (): Promise<SitemapEntry[]> => {
   const baseUrl = getBaseUrl();
   const breedPages: SitemapEntry[] = [];
 
@@ -544,12 +509,16 @@ const generateBreedPages = async (): Promise<SitemapEntry[]> => {
         breedStats.qualifying_breeds &&
         Array.isArray(breedStats.qualifying_breeds)
       ) {
+        const seenSlugs = new Set<string>();
         const purebreds = breedStats.qualifying_breeds.filter((breed) => {
           const isMixed =
             breed.breed_type === "mixed" ||
             breed.breed_group === "Mixed" ||
             breed.primary_breed?.toLowerCase().includes("mix");
-          return !isMixed && breed.breed_slug;
+          if (isMixed || !breed.breed_slug) return false;
+          if (seenSlugs.has(breed.breed_slug)) return false;
+          seenSlugs.add(breed.breed_slug);
+          return true;
         });
 
         purebreds.forEach((breed) => {

@@ -93,15 +93,15 @@ describe("Dynamic Sitemap Route", () => {
       "<loc>https://www.rescuedogs.me/dogs</loc>",
     );
 
-    // Should include organization pages
-    expect(response.body).toContain(
+    // Should NOT include individual organization pages (they're in sitemap-organizations.xml)
+    expect(response.body).not.toContain(
       "<loc>https://www.rescuedogs.me/organizations/happy-paws-rescue-1</loc>",
     );
-    expect(response.body).toContain(
+    expect(response.body).not.toContain(
       "<loc>https://www.rescuedogs.me/organizations/city-shelter-2</loc>",
     );
 
-    // Should include static pages
+    // Should include the /organizations listing page
     expect(response.body).toContain(
       "<loc>https://www.rescuedogs.me/organizations</loc>",
     );
@@ -155,20 +155,16 @@ describe("Dynamic Sitemap Route", () => {
     expect(response.status).toBe(200);
   });
 
-  test("should include lastmod dates when available", async () => {
-    getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
-    getAllOrganizations.mockResolvedValue(mockOrganizations);
-
+  test("should contain only static pages (no lastmod from dynamic data)", async () => {
     const { GET } = await import("../route");
     const response = await GET();
 
-    // Should include formatted lastmod dates for organizations
-    expect(response.body).toMatch(
-      /<lastmod>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00<\/lastmod>/,
-    );
-    // Organization dates should be present
+    // Main sitemap now contains only static pages, which have no lastmod
+    expect(response.body).not.toContain("<lastmod>");
+
+    // Should include /faq page
     expect(response.body).toContain(
-      "<lastmod>2025-07-12T15:22:45+00:00</lastmod>",
+      "<loc>https://www.rescuedogs.me/faq</loc>",
     );
   });
 
@@ -189,30 +185,17 @@ describe("Dynamic Sitemap Route", () => {
     );
   });
 
-  test("should filter out invalid slugs", async () => {
-    const orgsWithInvalidSlugs = [
-      { id: 1, slug: "valid-org-1", name: "Valid Org" },
-      { id: 2, slug: null, name: "No Slug Org" },
-      { id: 3, slug: "", name: "Empty Slug Org" },
-    ];
-
-    getAllAnimalsForSitemap.mockResolvedValue([]);
-    getAllOrganizations.mockResolvedValue(orgsWithInvalidSlugs);
-
+  test("should not make API calls (static pages only)", async () => {
     const { GET } = await import("../route");
     const response = await GET();
 
-    // Should include valid organization
-    expect(response.body).toContain(
-      "<loc>https://www.rescuedogs.me/organizations/valid-org-1</loc>",
-    );
-    // Should NOT include invalid slugs
-    expect(response.body).not.toContain(
-      "<loc>https://www.rescuedogs.me/organizations/null</loc>",
-    );
-    expect(response.body).not.toContain(
-      "<loc>https://www.rescuedogs.me/organizations/</loc>",
-    );
+    // Should return valid XML with static pages
+    expect(response.body).toContain("<loc>https://www.rescuedogs.me/</loc>");
+    expect(response.body).toContain("<loc>https://www.rescuedogs.me/dogs</loc>");
+
+    // Should not have called any API services
+    expect(getAllAnimalsForSitemap).not.toHaveBeenCalled();
+    expect(getAllOrganizations).not.toHaveBeenCalled();
   });
 
   test("should include priority and changefreq for SEO optimization", async () => {
