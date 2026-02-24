@@ -78,8 +78,9 @@ describe('Next.js Configuration', () => {
       globalHeaders = headerEntries.find(entry => entry.source === '/(.*)');
     });
 
-    test('should include a global route for security headers', () => {
+    test('should include a global route with exactly 4 security headers', () => {
       expect(globalHeaders).toBeDefined();
+      expect(globalHeaders.headers).toHaveLength(4);
     });
 
     test('should set X-Content-Type-Options to nosniff', () => {
