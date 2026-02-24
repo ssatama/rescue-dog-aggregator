@@ -256,7 +256,6 @@ export async function shareFavorites(
  */
 export async function shareDog(
   dog: {
-    id: number;
     name: string;
     slug?: string;
     breed?: string;

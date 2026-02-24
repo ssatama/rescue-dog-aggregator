@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
-  Share2,
   MapPin,
   Calendar,
   Users,
@@ -23,6 +22,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { type Dog } from "@/types/dog";
 import { getAgeCategory } from "@/utils/dogHelpers";
 import { capitalizeFirst } from "@/utils/breedDisplayUtils";
+import ShareButton from "@/components/ui/ShareButton";
 
 interface DogDetailModalUpgradedProps {
   dog: Dog | null;
@@ -275,18 +275,11 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     }
   };
 
-  const handleShare = () => {
-    if (navigator.share && dog) {
-      const dogUrl = dog.slug
-        ? `${window.location.origin}/dogs/${dog.slug}`
-        : window.location.href;
-      navigator.share({
-        title: `Meet ${dog.name}`,
-        text: `Check out ${dog.name}, a ${dog.age_text || dog.age} ${dog.breed} looking for a loving home!`,
-        url: dogUrl,
-      });
-    }
-  };
+  const shareUrl = dog?.slug
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/dogs/${dog.slug}`
+    : typeof window !== "undefined"
+      ? window.location.href
+      : "";
 
   const toggleFavorite = async () => {
     if (!dog) return;
@@ -492,12 +485,14 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
 
                     {/* Action Buttons */}
                     <div className="absolute top-3 right-3 flex gap-2">
-                      <button
-                        onClick={handleShare}
+                      <ShareButton
+                        url={shareUrl}
+                        title={dog ? `Meet ${dog.name}` : ""}
+                        text={dog ? `Check out ${dog.name}, a ${dog.age_text || dog.age} ${dog.breed} looking for a loving home!` : ""}
+                        compact
+                        variant="ghost"
                         className="w-10 h-10 bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
-                      >
-                        <Share2 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                      </button>
+                      />
                       <button
                         onClick={toggleFavorite}
                         className={cn(
