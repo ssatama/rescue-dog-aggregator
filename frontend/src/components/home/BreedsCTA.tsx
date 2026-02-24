@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks";
 
 interface TraitData {
   name: string;
@@ -31,6 +32,7 @@ const topBreeds = [
 
 export function BreedsCTA() {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   const [viewportSize, setViewportSize] = useState<
     "mobile" | "tablet" | "desktop"
   >("desktop");
@@ -110,9 +112,9 @@ export function BreedsCTA() {
                     <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                       <motion.div
                         className={`h-full ${trait.color}`}
-                        initial={{ width: 0 }}
+                        initial={shouldReduceMotion ? false : { width: 0 }}
                         animate={{ width: `${trait.percentage}%` }}
-                        transition={{ duration: 1, delay: 0.2 }}
+                        transition={shouldReduceMotion ? { duration: 0 } : { duration: 1, delay: 0.2 }}
                       />
                     </div>
                   </div>
@@ -179,9 +181,9 @@ export function BreedsCTA() {
       <div className="max-w-6xl mx-auto">
         <motion.div
           className="text-center mb-10"
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.6 }}
         >
           <div className="inline-flex items-center gap-2 mb-4">
             <span className="animate-pulse bg-red-500 dark:bg-red-600 text-white text-sm px-3 py-1 rounded-full font-bold">
@@ -208,10 +210,10 @@ export function BreedsCTA() {
               key={trait.name}
               data-testid={`trait-card-${index}`}
               className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg dark:shadow-gray-900/20 hover:shadow-xl dark:hover:shadow-gray-900/30 transition-shadow duration-300"
-              initial={{ opacity: 0, x: -20 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              whileHover={{ scale: 1.05 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.5, delay: index * 0.1 }}
+              whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
             >
               <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3">
                 {trait.name}
@@ -225,9 +227,9 @@ export function BreedsCTA() {
                   <motion.div
                     data-testid={`trait-bar-${trait.name.toLowerCase()}`}
                     className={`h-full ${trait.color}`}
-                    initial={{ width: 0 }}
+                    initial={shouldReduceMotion ? false : { width: 0 }}
                     animate={{ width: `${trait.percentage}%` }}
-                    transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
+                    transition={shouldReduceMotion ? { duration: 0 } : { duration: 1, delay: 0.5 + index * 0.1 }}
                   />
                 </div>
               </div>
@@ -240,9 +242,9 @@ export function BreedsCTA() {
 
         <motion.div
           className="text-center"
-          initial={{ opacity: 0 }}
+          initial={shouldReduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.6, delay: 0.8 }}
         >
           <button
             onClick={handleCTAClick}

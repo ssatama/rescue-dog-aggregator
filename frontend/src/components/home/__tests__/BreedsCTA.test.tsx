@@ -11,6 +11,11 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
+let mockReducedMotion = false;
+jest.mock("@/hooks", () => ({
+  useReducedMotion: () => mockReducedMotion,
+}));
+
 describe("BreedsCTA", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -237,6 +242,48 @@ describe("BreedsCTA", () => {
         name: /Explore Breeds and Personalities - Discover personality insights/i,
       });
       expect(ctaButton).toHaveClass("text-white", "bg-orange-600");
+    });
+  });
+
+  describe("Reduced Motion", () => {
+    beforeEach(() => {
+      mockReducedMotion = true;
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 1024,
+      });
+    });
+
+    afterEach(() => {
+      mockReducedMotion = false;
+    });
+
+    it("trait bars skip initial zero-width state when reduced motion is preferred", () => {
+      const { container } = render(<BreedsCTA />);
+
+      const traitBars = container.querySelectorAll(
+        "[data-testid^='trait-bar']",
+      );
+      expect(traitBars).toHaveLength(4);
+
+      traitBars.forEach((bar) => {
+        expect(bar).not.toHaveStyle({ width: "0px" });
+      });
+    });
+
+    it("renders all content and trait cards with reduced motion", () => {
+      render(<BreedsCTA />);
+
+      expect(
+        screen.getByText("Discover Your Perfect Match by Personality"),
+      ).toBeInTheDocument();
+      expect(screen.getAllByTestId(/trait-card/)).toHaveLength(4);
+      expect(
+        screen.getByRole("button", {
+          name: /Explore Breeds and Personalities/i,
+        }),
+      ).toBeInTheDocument();
     });
   });
 

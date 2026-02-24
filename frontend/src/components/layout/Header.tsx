@@ -35,7 +35,7 @@ export default function Header() {
                   className="rounded-full object-cover md:w-20 md:h-20 w-16 h-16"
                   priority
                 />
-                <span className="sr-only md:not-sr-only">
+                <span className="sr-only lg:not-sr-only">
                   Rescue Dog Aggregator
                 </span>
               </Link>
@@ -45,7 +45,7 @@ export default function Header() {
             <HeaderDesktopNav />
 
             {/* Mobile: Only show theme toggle (no hamburger menu) */}
-            <div className="md:hidden flex items-center gap-2">
+            <div className="lg:hidden flex items-center gap-2">
               <ThemeToggle />
             </div>
           </div>

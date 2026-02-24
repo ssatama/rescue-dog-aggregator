@@ -45,7 +45,7 @@ export default function HeaderDesktopNav(): React.JSX.Element {
   };
 
   return (
-    <div className="hidden md:flex gap-4 items-center relative z-10">
+    <div className="hidden lg:flex gap-4 items-center relative z-10">
       {/* Dogs Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger

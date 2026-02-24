@@ -6,6 +6,7 @@ import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useReducedMotion } from "@/hooks";
 import {
   formatBreed,
   getPersonalityTraits,
@@ -57,9 +58,10 @@ const DogCard = React.memo<{
   const extraTraitsCount = Math.max(0, traits.length - 2);
   const ageGroup = getAgeCategory(dog);
   const formattedBreed = formatBreed(dog);
+  const shouldReduceMotion = useReducedMotion();
 
-  // Skip animation for priority images to improve LCP
-  const shouldAnimate = !priority;
+  // Skip animation for priority images or reduced motion preference
+  const shouldAnimate = !priority && !shouldReduceMotion;
 
   return (
     <motion.div

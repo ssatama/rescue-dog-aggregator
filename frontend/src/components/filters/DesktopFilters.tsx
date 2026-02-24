@@ -145,6 +145,7 @@ export default function DesktopFilters({
             historyKey="dog-search-history"
             className="w-full"
             inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
+            aria-label="Search dogs by name or breed"
           />
         </div>
 
@@ -185,7 +186,10 @@ export default function DesktopFilters({
               value={availableCountryFilter}
               onValueChange={setAvailableCountryFilter}
             >
-              <SelectTrigger className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200">
+              <SelectTrigger
+                className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
+                aria-label="Filter by adoptable country"
+              >
                 <SelectValue placeholder="Select country" />
               </SelectTrigger>
               <SelectContent className="max-h-48">

@@ -301,6 +301,7 @@ export default function MobileFilterDrawer({
                         <SelectTrigger
                           className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
                           style={{ minHeight: "48px" }}
+                          aria-label="Filter by adoptable country"
                         >
                           <SelectValue placeholder="Select country" />
                         </SelectTrigger>
@@ -725,6 +726,7 @@ export default function MobileFilterDrawer({
                       size="lg"
                       className="w-full"
                       inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                      aria-label="Search dogs by name or breed"
                     />
                   </div>
                 )}

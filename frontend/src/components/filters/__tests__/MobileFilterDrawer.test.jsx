@@ -66,4 +66,23 @@ describe("MobileFilterDrawer Component", () => {
 
     expect(screen.queryByText("Filters")).not.toBeInTheDocument();
   });
+
+  test("search input has aria-label for accessibility", () => {
+    render(<MobileFilterDrawer {...mockProps} />);
+
+    const searchInput = screen.getByTestId("search-input");
+    expect(searchInput).toHaveAttribute(
+      "aria-label",
+      "Search dogs by name or breed",
+    );
+  });
+
+  test("country filter select trigger has aria-label for accessibility", () => {
+    render(<MobileFilterDrawer {...mockProps} />);
+
+    const countryTrigger = screen.getByRole("combobox", {
+      name: "Filter by adoptable country",
+    });
+    expect(countryTrigger).toBeInTheDocument();
+  });
 });
