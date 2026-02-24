@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type {
   Theme,
   ThemeContextValue,
@@ -27,19 +21,8 @@ const getInitialTheme = (): Theme => {
   return savedTheme === "light" || savedTheme === "dark" ? savedTheme : systemTheme;
 };
 
-const emptySubscribe = () => () => {};
-
-const useMounted = () => {
-  return useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false,
-  );
-};
-
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
-  const mounted = useMounted();
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -50,9 +33,6 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
   };
-
-  // Prevent hydration mismatch
-  if (!mounted) return null;
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme: updateTheme }}>

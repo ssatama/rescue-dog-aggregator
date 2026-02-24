@@ -160,14 +160,15 @@ describe("ThemeProvider", () => {
     });
   });
 
-  test("prevents hydration mismatch by returning null before mount", () => {
-    const { container } = render(
+  test("renders children immediately without waiting for mount", () => {
+    render(
       <ThemeProvider>
         <TestComponent />
       </ThemeProvider>,
     );
 
-    // The provider should handle hydration, so we expect content to eventually appear
-    expect(container.firstChild).toBeTruthy();
+    expect(screen.getByTestId("current-theme")).toHaveTextContent("light");
+    expect(screen.getByTestId("set-dark")).toBeInTheDocument();
+    expect(screen.getByTestId("set-light")).toBeInTheDocument();
   });
 });
