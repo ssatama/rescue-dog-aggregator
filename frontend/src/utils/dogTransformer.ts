@@ -1,49 +1,20 @@
 import { type Dog, type DogProfilerData, type DogStatus } from "../types/dog";
-import { type ApiDog, type ApiDogProfilerData } from "../types/apiDog";
+import type { ApiDog, ApiDogProfilerData } from "../types/apiDog";
 
-/**
- * Transforms API dog profiler data (camelCase) to frontend format (snake_case)
- */
+function toSnakeCase(key: string): string {
+  return key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+}
+
 function transformProfilerData(
   apiData: ApiDogProfilerData | undefined,
 ): DogProfilerData | undefined {
   if (!apiData) return undefined;
 
-  return {
-    name: apiData.name,
-    breed: apiData.breed,
-    tagline: apiData.tagline,
-    description: apiData.description,
-    personality_traits: apiData.personalityTraits,
-    favorite_activities: apiData.favoriteActivities,
-    unique_quirk: apiData.uniqueQuirk,
-    energy_level: apiData.energyLevel,
-    trainability: apiData.trainability,
-    experience_level: apiData.experienceLevel,
-    sociability: apiData.sociability,
-    confidence: apiData.confidence,
-    home_type: apiData.homeType,
-    exercise_needs: apiData.exerciseNeeds,
-    grooming_needs: apiData.groomingNeeds,
-    yard_required: apiData.yardRequired,
-    good_with_dogs: apiData.goodWithDogs,
-    good_with_cats: apiData.goodWithCats,
-    good_with_children: apiData.goodWithChildren,
-    medical_needs: apiData.medicalNeeds,
-    special_needs: apiData.specialNeeds,
-    neutered: apiData.neutered,
-    vaccinated: apiData.vaccinated,
-    ready_to_travel: apiData.readyToTravel,
-    adoption_fee_euros: apiData.adoptionFeeEuros,
-    confidence_scores: apiData.confidenceScores,
-    quality_score: apiData.qualityScore,
-    model_used: apiData.modelUsed,
-    profiled_at: apiData.profiledAt,
-    profiler_version: apiData.profilerVersion,
-    prompt_version: apiData.promptVersion,
-    processing_time_ms: apiData.processingTimeMs,
-    source_references: apiData.sourceReferences,
-  };
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(apiData)) {
+    result[toSnakeCase(key)] = value;
+  }
+  return result as DogProfilerData;
 }
 
 /**
