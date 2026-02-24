@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import BreedStatistics from "../BreedStatistics";
+import BreedStatistics, { BreedInfo } from "../BreedStatistics";
 
 describe("BreedStatistics", () => {
   const mockBreedData = {
@@ -136,5 +136,50 @@ describe("BreedStatistics", () => {
       expect(screen.getByText("Avg. Age")).toBeInTheDocument();
       expect(screen.getByText("3 years")).toBeInTheDocument();
     });
+  });
+});
+
+describe("BreedInfo", () => {
+  const mockBreedData = {
+    primary_breed: "Golden Retriever",
+    breed_slug: "golden-retriever",
+    count: 42,
+    average_age_months: 36,
+    sex_distribution: { male: 25, female: 17 },
+  };
+
+  it("should render 'Data updated' with formatted date when lastUpdated is a valid ISO string", () => {
+    render(
+      <BreedInfo breedData={mockBreedData} lastUpdated="2026-02-24T10:30:00.000Z" />,
+    );
+
+    const timeElement = screen.getByText("24 Feb 2026");
+    expect(timeElement).toBeInTheDocument();
+    expect(timeElement.tagName).toBe("TIME");
+    expect(timeElement).toHaveAttribute("dateTime", "2026-02-24T10:30:00.000Z");
+    expect(screen.getByText(/Data updated/)).toBeInTheDocument();
+  });
+
+  it("should not render 'Data updated' when lastUpdated is undefined", () => {
+    render(<BreedInfo breedData={mockBreedData} />);
+
+    expect(screen.queryByText(/Data updated/)).not.toBeInTheDocument();
+  });
+
+  it("should not render 'Data updated' when lastUpdated is an invalid date string", () => {
+    render(
+      <BreedInfo breedData={mockBreedData} lastUpdated="not-a-date" />,
+    );
+
+    expect(screen.queryByText(/Data updated/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Invalid Date")).not.toBeInTheDocument();
+  });
+
+  it("should render breed name as h1", () => {
+    render(<BreedInfo breedData={mockBreedData} />);
+
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Golden Retriever",
+    );
   });
 });

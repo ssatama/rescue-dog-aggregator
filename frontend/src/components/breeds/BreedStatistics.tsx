@@ -218,7 +218,7 @@ export function BreedInfo({ breedData, lastUpdated, className = "" }: BreedInfoP
             </Badge>
           )}
         </div>
-        {lastUpdated && (
+        {lastUpdated && !isNaN(new Date(lastUpdated).getTime()) && (
           <p className="text-xs text-gray-400 dark:text-gray-500">
             Data updated{" "}
             <time dateTime={lastUpdated}>

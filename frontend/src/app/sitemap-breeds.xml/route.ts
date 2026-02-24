@@ -11,7 +11,6 @@ interface BreedStat {
   breed_group?: string;
   primary_breed?: string;
   breed_slug?: string;
-  count?: number;
 }
 
 interface BreedStatsResponse {
