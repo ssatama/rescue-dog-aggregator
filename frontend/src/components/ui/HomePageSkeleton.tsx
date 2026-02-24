@@ -7,21 +7,44 @@ interface HomePageSkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
 
 function HeroSkeleton() {
   return (
-    <div data-testid="hero-skeleton" className="py-12 md:py-20">
-      <div className="max-w-4xl mx-auto text-center px-4">
-        <div className="h-12 md:h-16 w-3/4 mx-auto bg-gray-200 rounded-lg animate-pulse mb-6" />
-        <div className="h-6 md:h-8 w-2/3 mx-auto bg-gray-200 rounded animate-pulse mb-8" />
-        <div className="flex justify-center gap-8 mb-8">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="text-center">
-              <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mb-2 mx-auto" />
-              <div className="h-4 w-20 bg-gray-200 rounded animate-pulse mx-auto" />
+    <div data-testid="hero-skeleton" className="py-12 md:py-20 lg:py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+          {/* Left Column - Text and CTA */}
+          <div className="flex-1 text-center lg:text-left">
+            <div className="h-12 md:h-16 w-3/4 mx-auto lg:mx-0 bg-gray-200 rounded-lg animate-pulse mb-6" />
+            <div className="h-6 md:h-8 w-2/3 mx-auto lg:mx-0 bg-gray-200 rounded animate-pulse mb-8" />
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <div className="h-12 w-36 bg-gray-200 rounded-lg animate-pulse" />
+              <div className="h-12 w-36 bg-gray-200 rounded-lg animate-pulse" />
             </div>
-          ))}
-        </div>
-        <div className="flex justify-center gap-4">
-          <div className="h-12 w-36 bg-gray-200 rounded-lg animate-pulse" />
-          <div className="h-12 w-36 bg-gray-200 rounded-lg animate-pulse" />
+          </div>
+
+          {/* Right Column - Statistics */}
+          <div className="flex-1 w-full max-w-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-gray-100 rounded-lg p-6 text-center"
+                >
+                  <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mb-2 mx-auto" />
+                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse mx-auto" />
+                </div>
+              ))}
+            </div>
+            <div className="text-center mb-4">
+              <div className="h-4 w-40 bg-gray-200 rounded animate-pulse mx-auto" />
+            </div>
+            <div className="flex justify-center items-start gap-0 -space-x-3 py-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="w-28 h-36 bg-gray-200 rounded-lg animate-pulse"
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

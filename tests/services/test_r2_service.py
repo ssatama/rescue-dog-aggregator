@@ -557,6 +557,9 @@ class TestR2ServiceSecurity:
                 assert metadata["animal_name"] == animal_name
                 assert metadata["organization"] == organization_name
 
+                # Verify cache headers for CDN performance
+                assert extra_args["CacheControl"] == "public, max-age=86400, s-maxage=604800"
+
     def test_upload_image_content_type_validation(self):
         """Test that upload validates content types for security"""
         malicious_content_types = [

@@ -314,7 +314,7 @@ const DogCardOptimized = React.memo(
       data-sex={genderData.text.toLowerCase()}
       data-status={status}
       data-priority={priority ? "true" : "false"}
-      className={`rounded-xl bg-card text-card-foreground shadow-sm dark:shadow-lg dark:shadow-purple-500/5 will-change-transform dog-card ${disableContainment ? "dog-card--no-contain" : ""} content-fade-in group transition-[transform,box-shadow] duration-300 hover:shadow-xl overflow-hidden flex flex-col h-full ${animationClass}`}
+      className={`rounded-xl bg-card text-card-foreground shadow-sm dark:shadow-lg dark:shadow-purple-500/5 dog-card ${disableContainment ? "dog-card--no-contain" : ""} content-fade-in group transition-[transform,box-shadow] duration-300 hover:shadow-xl overflow-hidden flex flex-col h-full ${animationClass}`}
       style={{ borderRadius: "12px" }}
     >
       {/* Image container */}
