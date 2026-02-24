@@ -45,7 +45,7 @@ export const OrganizationSchema: React.FC<OrganizationSchemaProps> = ({
     return null;
   }
 
-  const jsonLdScript = generateJsonLdScript(schema);
+  const jsonLdScript = generateJsonLdScript(schema).replace(/</g, "\\u003c");
 
   return (
     <script

@@ -3,6 +3,7 @@ import type { OrganizationCardData } from "../../types/organizationComponents";
 import OrganizationsClient from "./OrganizationsClient";
 import Layout from "../../components/layout/Layout";
 import { getEnhancedOrganizationsSSR } from "../../services/organizationsService";
+import { reportError } from "../../utils/logger";
 
 export const revalidate = 300;
 
@@ -45,7 +46,7 @@ export default async function OrganizationsPage(): Promise<React.JSX.Element> {
   try {
     organizations = await getEnhancedOrganizationsSSR() as unknown as OrganizationCardData[];
   } catch (error) {
-    console.error("Failed to fetch organizations server-side:", error);
+    reportError(error, { context: "OrganizationsPage", operation: "getEnhancedOrganizationsSSR" });
   }
 
   const collectionJsonLd = JSON.stringify({
