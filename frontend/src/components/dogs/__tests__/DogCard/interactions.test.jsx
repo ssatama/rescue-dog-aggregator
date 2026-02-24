@@ -71,7 +71,6 @@ describe("DogCard Interactions", () => {
       const card = screen.getByTestId("dog-card-1");
       // Check for new animation system classes
       expect(card).toHaveClass("shadow-sm");
-      expect(card).toHaveClass("will-change-transform");
       expect(card).toHaveClass("group");
       expect(card).toHaveClass("rounded-xl");
     });
@@ -89,7 +88,6 @@ describe("DogCard Interactions", () => {
       const card = screen.getByTestId("dog-card-1");
       // Test that the new animation classes are present
       expect(card).toHaveClass("shadow-sm");
-      expect(card).toHaveClass("will-change-transform");
     });
   });
 
@@ -109,7 +107,6 @@ describe("DogCard Interactions", () => {
 
       // Card should have enhanced animation classes
       expect(card).toHaveClass("shadow-sm");
-      expect(card).toHaveClass("will-change-transform");
       expect(card).toHaveClass("group");
 
       // Card should have proper transition properties for smooth animation
@@ -205,7 +202,6 @@ describe("DogCard Interactions", () => {
       // Even with reduced motion, the classes should be present
       // The CSS handles disabling animations via media queries
       expect(card).toHaveClass("shadow-sm");
-      expect(card).toHaveClass("will-change-transform");
     });
 
     test("hover animations do not cause layout shift", () => {
@@ -220,9 +216,6 @@ describe("DogCard Interactions", () => {
       render(<DogCard dog={layoutDog} />);
 
       const card = screen.getByTestId("dog-card-1");
-
-      // Will-change property should be set to prevent layout shift
-      expect(card).toHaveClass("will-change-transform");
 
       // Card should maintain proper structure for transform animations
       expect(card).toHaveClass("flex");

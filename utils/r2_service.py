@@ -295,6 +295,7 @@ class R2Service:
                 image_key,
                 ExtraArgs={
                     "ContentType": content_type,
+                    "CacheControl": "public, max-age=86400, s-maxage=604800",
                     "Metadata": {
                         "original_url": image_url,
                         "animal_name": safe_animal_name,

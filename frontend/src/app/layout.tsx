@@ -7,9 +7,9 @@ import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { Analytics, SpeedInsights } from "@/components/analytics";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
-import SentryInitializer from "@/components/SentryInitializer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
+import SentryInitializer from "@/components/SentryInitializer";
 
 const inter = Inter({
   subsets: ["latin"],
