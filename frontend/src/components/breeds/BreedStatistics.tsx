@@ -188,10 +188,11 @@ export default function BreedStatistics({ breedData, className = "" }: BreedStat
 
 interface BreedInfoProps {
   breedData: BreedData;
+  lastUpdated?: string;
   className?: string;
 }
 
-export function BreedInfo({ breedData, className = "" }: BreedInfoProps) {
+export function BreedInfo({ breedData, lastUpdated, className = "" }: BreedInfoProps) {
   const handleScrollToDogs = (): void => {
     document
       .getElementById("dogs-grid")
@@ -217,6 +218,18 @@ export function BreedInfo({ breedData, className = "" }: BreedInfoProps) {
             </Badge>
           )}
         </div>
+        {lastUpdated && !isNaN(new Date(lastUpdated).getTime()) && (
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Data updated{" "}
+            <time dateTime={lastUpdated}>
+              {new Date(lastUpdated).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </time>
+          </p>
+        )}
       </div>
 
       <BreedStatistics breedData={breedData} />

@@ -98,6 +98,14 @@ export default async function DogsPageOptimized(props: DogsPageProps): Promise<R
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: collectionJsonLd }}
       />
+      <section className="container mx-auto px-4 pt-6 lg:pt-8 pb-2">
+        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-2xl mx-auto text-center leading-relaxed">
+          Every dog listed here is available for adoption from a verified
+          European rescue organization. Our listings are updated multiple times
+          per week with new dogs from shelters and rescues across the continent.
+          Use the filters below to search by breed, size, age, sex, or location.
+        </p>
+      </section>
       <Suspense fallback={<LoadingFallback />}>
         <DogsPageClientSimplified
           initialDogs={initialDogs}

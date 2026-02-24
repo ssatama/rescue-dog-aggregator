@@ -176,6 +176,7 @@ export default async function BreedDetailPage(props: BreedPageProps) {
           <BreedDetailClient
             initialBreedData={breedData}
             initialDogs={initialDogs}
+            lastUpdated={new Date().toISOString()}
           />
         </Suspense>
       </ErrorBoundary>

@@ -99,32 +99,12 @@ describe("Sitemap Guides Route", () => {
     expect(lastmodCount).toBeGreaterThanOrEqual(4);
   });
 
-  it("includes changefreq for guides listing", async () => {
+  it("does not include changefreq or priority tags (Google ignores both)", async () => {
     const response = await getTestResponse();
     const text = getResponseText(response);
 
-    expect(text).toContain("<changefreq>monthly</changefreq>");
-  });
-
-  it("includes changefreq for guide pages", async () => {
-    const response = await getTestResponse();
-    const text = getResponseText(response);
-
-    expect(text).toContain("<changefreq>monthly</changefreq>");
-  });
-
-  it("includes priority for guides listing (0.9)", async () => {
-    const response = await getTestResponse();
-    const text = getResponseText(response);
-
-    expect(text).toContain("<priority>0.9</priority>");
-  });
-
-  it("includes priority for guide pages (0.8)", async () => {
-    const response = await getTestResponse();
-    const text = getResponseText(response);
-
-    expect(text).toContain("<priority>0.8</priority>");
+    expect(text).not.toContain("<changefreq>");
+    expect(text).not.toContain("<priority>");
   });
 
   it("returns well-formed XML", async () => {

@@ -18,8 +18,6 @@ export async function GET() {
       url: `${baseUrl}/guides/${escapeXml(guide.slug)}`,
       lastModified: formatDateForSitemap(guide.frontmatter.lastUpdated) ??
         nowFormatted(),
-      changeFrequency: "monthly",
-      priority: 0.8,
     }));
 
     const validDates = guides
@@ -34,20 +32,16 @@ export async function GET() {
       url: `${baseUrl}/guides`,
       lastModified: formatDateForSitemap(mostRecentDate.toISOString()) ??
         nowFormatted(),
-      changeFrequency: "monthly",
-      priority: 0.9,
     });
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${urls
       .map(
-        ({ url, lastModified, changeFrequency, priority }) => `
+        ({ url, lastModified }) => `
   <url>
     <loc>${escapeXml(url)}</loc>
     <lastmod>${lastModified}</lastmod>
-    <changefreq>${changeFrequency}</changefreq>
-    <priority>${priority}</priority>
   </url>`
       )
       .join("")}
