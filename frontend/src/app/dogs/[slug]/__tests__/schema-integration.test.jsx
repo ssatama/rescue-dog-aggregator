@@ -111,14 +111,8 @@ describe("DogDetailClient - Schema Integration", () => {
     );
     const schemaData = JSON.parse(schemaScript?.textContent || "{}");
 
-    // Check offers structure (fallback to 500 EUR since no adoption_fees in mock data)
-    expect(schemaData.offers).toEqual({
-      "@type": "Offer",
-      price: "500",
-      priceCurrency: "EUR",
-      availability: "https://schema.org/InStock",
-      priceValidUntil: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-    });
+    // No offers when mock dog has no adoption_fees data
+    expect(schemaData.offers).toBeUndefined();
 
     // Check source attribution
     expect(schemaData.isBasedOn).toEqual({

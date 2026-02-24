@@ -64,10 +64,10 @@ describe("Breadcrumb", () => {
     const structuredData = JSON.parse(script?.textContent || "{}");
 
     expect(structuredData.itemListElement[0].item).toBe(
-      "https://rescuedogs.me/",
+      "https://www.rescuedogs.me/",
     );
     expect(structuredData.itemListElement[1].item).toBe(
-      "https://rescuedogs.me/guides",
+      "https://www.rescuedogs.me/guides",
     );
     expect(structuredData.itemListElement[2].item).toBeUndefined(); // Current page has no URL
   });

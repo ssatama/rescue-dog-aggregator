@@ -5,7 +5,6 @@ import type { Dog } from "../../../types/dog";
 import type { DogWithLlm } from "../../../services/serverAnimalsService";
 import { reportError } from "../../../utils/logger";
 import DogSchema from "../../../components/seo/DogSchema";
-import DogFAQSchema from "../../../components/seo/DogFAQSchema";
 import {
   generateSEODescription,
   generateFallbackDescription,
@@ -196,7 +195,6 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
   return (
     <Layout>
       {initialDog && <DogSchema dog={initialDog} />}
-      {initialDog && <DogFAQSchema dog={initialDog} />}
       {heroImageUrl && <ImagePreload src={heroImageUrl} />}
       <Suspense fallback={<DogDetailSkeleton />}>
         <DogDetailClient initialDog={initialDog} />

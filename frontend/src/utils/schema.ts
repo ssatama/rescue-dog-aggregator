@@ -133,16 +133,6 @@ export const generatePetSchema = (dog: DogForSchema | null | undefined): Record<
         .toISOString()
         .split("T")[0],
     };
-  } else {
-    schema.offers = {
-      "@type": "Offer",
-      price: "500",
-      priceCurrency: "EUR",
-      availability: getAvailability(dog.status),
-      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-    };
   }
 
   if (dog.organization) {

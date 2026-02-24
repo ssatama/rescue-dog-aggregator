@@ -268,49 +268,6 @@ describe("FAQ Page", () => {
     });
   });
 
-  describe("FAQ Schema", () => {
-    test("renders FAQPage JSON-LD schema", () => {
-      render(<FaqClient />);
-      const scripts = document.querySelectorAll(
-        'script[type="application/ld+json"]'
-      );
-      const faqScript = Array.from(scripts).find((script) => {
-        try {
-          const data = JSON.parse(script.textContent);
-          return data["@type"] === "FAQPage";
-        } catch {
-          return false;
-        }
-      });
-      expect(faqScript).toBeTruthy();
-    });
-
-    test("FAQPage schema contains all questions", () => {
-      render(<FaqClient />);
-      const scripts = document.querySelectorAll(
-        'script[type="application/ld+json"]'
-      );
-      const faqScript = Array.from(scripts).find((script) => {
-        try {
-          const data = JSON.parse(script.textContent);
-          return data["@type"] === "FAQPage";
-        } catch {
-          return false;
-        }
-      });
-
-      const schema = JSON.parse(faqScript.textContent);
-      expect(schema.mainEntity).toBeDefined();
-      expect(schema.mainEntity.length).toBe(14);
-      schema.mainEntity.forEach((item) => {
-        expect(item["@type"]).toBe("Question");
-        expect(item.name).toBeDefined();
-        expect(item.acceptedAnswer).toBeDefined();
-        expect(item.acceptedAnswer["@type"]).toBe("Answer");
-      });
-    });
-  });
-
   describe("Accessibility", () => {
     beforeEach(() => {
       render(<FaqClient />);
