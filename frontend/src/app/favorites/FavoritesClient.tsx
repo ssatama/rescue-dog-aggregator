@@ -82,7 +82,7 @@ interface Insights {
 }
 
 function FavoritesPageContent(): React.JSX.Element {
-  const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl, removeFavorite, isHydrated } =
+  const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl, removeFavoritesBatch, isHydrated } =
     useFavorites();
   const { showToast } = useToast();
   const [dogs, setDogs] = useState<Dog[]>([]);
@@ -105,6 +105,16 @@ function FavoritesPageContent(): React.JSX.Element {
     }
   }, [loadFromUrl]);
 
+  // Track page view once on mount
+  useEffect(() => {
+    try {
+      trackFavoritesPageView(favorites.length);
+    } catch (trackError) {
+      reportError(trackError, { context: "trackFavoritesPageView" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Track only on mount
+  }, []);
+
   // Fetch dog data for favorites — only refetch when new IDs are added
   useEffect(() => {
     const prevIds = new Set(prevFavoritesRef.current);
@@ -115,10 +125,9 @@ function FavoritesPageContent(): React.JSX.Element {
     prevFavoritesRef.current = favorites;
 
     if (removedIds.length > 0 && addedIds.length === 0) {
-      // Optimistic removal — no refetch needed
       const removedSet = new Set(removedIds);
-      setDogs((prev) => prev.filter((d) => !removedSet.has(d.id as number)));
-      setFilteredDogs((prev) => prev.filter((d) => !removedSet.has(d.id as number)));
+      setDogs((prev) => prev.filter((d) => !removedSet.has(Number(d.id))));
+      setFilteredDogs((prev) => prev.filter((d) => !removedSet.has(Number(d.id))));
       return;
     }
 
@@ -158,11 +167,10 @@ function FavoritesPageContent(): React.JSX.Element {
           setDogs(validDogs);
           setFilteredDogs(validDogs);
 
-          // Bug 4: Reconcile stale IDs (adopted/removed dogs)
-          const returnedIds = new Set(validDogs.map((d) => d.id as number));
+          const returnedIds = new Set(validDogs.map((d) => Number(d.id)));
           const staleIds = favorites.filter((id) => !returnedIds.has(id));
-          for (const staleId of staleIds) {
-            removeFavorite(staleId);
+          if (staleIds.length > 0) {
+            removeFavoritesBatch(staleIds);
           }
         }
       } catch (err) {
@@ -174,13 +182,7 @@ function FavoritesPageContent(): React.JSX.Element {
     }
 
     fetchFavoriteDogs();
-
-    try {
-      trackFavoritesPageView(favorites.length);
-    } catch (trackError) {
-      console.error("Failed to track favorites page view:", trackError);
-    }
-  }, [favorites, removeFavorite]);
+  }, [favorites, removeFavoritesBatch]);
 
   const handleFilter = useCallback(
     (filtered: Dog[], isUserInitiated = false) => {

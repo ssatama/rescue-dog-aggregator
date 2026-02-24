@@ -17,6 +17,7 @@ interface FavoritesContextType {
   isFavorited: (dogId: number | string) => boolean;
   addFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
   removeFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
+  removeFavoritesBatch: (dogIds: number[]) => void;
   toggleFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
   clearFavorites: () => void;
   getShareableUrl: () => string;
@@ -309,6 +310,23 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     [saveToLocalStorage],
   );
 
+  const removeFavoritesBatch = useCallback(
+    (dogIds: number[]): void => {
+      if (dogIds.length === 0) return;
+      const idsToRemove = new Set(dogIds);
+      setFavorites((prev) => {
+        const newFavorites = prev.filter((id) => !idsToRemove.has(id));
+        saveToLocalStorage(newFavorites);
+        return newFavorites;
+      });
+      setToastMessage({
+        type: "remove",
+        message: `Removed ${dogIds.length} unavailable dog${dogIds.length !== 1 ? "s" : ""} from favorites`,
+      });
+    },
+    [saveToLocalStorage],
+  );
+
   const toggleFavorite = useCallback(
     async (dogId: number | string, dogName?: string): Promise<void> => {
       if (isFavorited(dogId)) {
@@ -351,26 +369,35 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Invalid shared data: contains invalid dog IDs");
         }
 
-        setFavorites((prev) => {
-          const merged = [...new Set([...prev, ...parsed])];
-          const capped = merged.slice(0, MAX_FAVORITES);
-          saveToLocalStorage(capped);
+        // Read current state from localStorage (source of truth) to merge
+        let current: number[] = [];
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) current = JSON.parse(raw) as number[];
+        } catch {
+          // If localStorage read fails, merge with empty
+        }
 
-          const newCount = capped.length - prev.length;
-          if (newCount > 0) {
-            setToastMessage({
-              type: "success",
-              message: `Added ${newCount} new dog${newCount !== 1 ? "s" : ""} to your favorites`,
-            });
-          } else {
-            setToastMessage({
-              type: "success",
-              message: "All shared dogs were already in your favorites",
-            });
-          }
+        const merged = [...new Set([...current, ...parsed])].slice(
+          0,
+          MAX_FAVORITES,
+        );
+        const newCount = merged.length - current.length;
 
-          return capped;
-        });
+        setFavorites(merged);
+        saveToLocalStorage(merged);
+
+        if (newCount > 0) {
+          setToastMessage({
+            type: "success",
+            message: `Added ${newCount} new dog${newCount !== 1 ? "s" : ""} to your favorites`,
+          });
+        } else {
+          setToastMessage({
+            type: "success",
+            message: "All shared dogs were already in your favorites",
+          });
+        }
       } catch (error) {
         if (process.env.NODE_ENV === "development") {
           console.error("Failed to load favorites from URL:", error);
@@ -391,6 +418,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     isFavorited,
     addFavorite,
     removeFavorite,
+    removeFavoritesBatch,
     toggleFavorite,
     clearFavorites,
     getShareableUrl,

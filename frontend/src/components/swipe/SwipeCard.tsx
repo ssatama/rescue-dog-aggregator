@@ -29,7 +29,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       e.stopPropagation();
       if (!dog.id) return;
 
-      const wasAlreadyFavorited = isFav;
+      const wasAlreadyFavorited = isFavorited(dog.id);
 
       await toggleFavorite(dog.id, dog.name);
 
@@ -50,7 +50,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         },
       });
     },
-    [dog.id, dog.name, toggleFavorite, isFav],
+    [dog.id, dog.name, toggleFavorite, isFavorited],
   );
 
   // Access enriched LLM data
