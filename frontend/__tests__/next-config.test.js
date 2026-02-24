@@ -68,4 +68,39 @@ describe('Next.js Configuration', () => {
       expect(['export', 'standalone', undefined]).toContain(nextConfig.output);
     }
   });
+
+  describe('Security Headers', () => {
+    let headerEntries;
+    let globalHeaders;
+
+    beforeEach(async () => {
+      headerEntries = await nextConfig.headers();
+      globalHeaders = headerEntries.find(entry => entry.source === '/(.*)');
+    });
+
+    test('should include a global route with exactly 4 security headers', () => {
+      expect(globalHeaders).toBeDefined();
+      expect(globalHeaders.headers).toHaveLength(4);
+    });
+
+    test('should set X-Content-Type-Options to nosniff', () => {
+      const header = globalHeaders.headers.find(h => h.key === 'X-Content-Type-Options');
+      expect(header).toEqual({ key: 'X-Content-Type-Options', value: 'nosniff' });
+    });
+
+    test('should set X-Frame-Options to DENY', () => {
+      const header = globalHeaders.headers.find(h => h.key === 'X-Frame-Options');
+      expect(header).toEqual({ key: 'X-Frame-Options', value: 'DENY' });
+    });
+
+    test('should set Referrer-Policy to strict-origin-when-cross-origin', () => {
+      const header = globalHeaders.headers.find(h => h.key === 'Referrer-Policy');
+      expect(header).toEqual({ key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' });
+    });
+
+    test('should set Permissions-Policy to disable camera, microphone, and geolocation', () => {
+      const header = globalHeaders.headers.find(h => h.key === 'Permissions-Policy');
+      expect(header).toEqual({ key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' });
+    });
+  });
 });
