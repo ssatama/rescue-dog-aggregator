@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useSyncExternalStore } from "react";
 import { useTheme } from "../providers/ThemeProvider";
 import { Icon } from "./Icon";
 import { cn } from "@/lib/utils";
+
+const emptySubscribe = (): (() => void) => () => {};
+const getClientSnapshot = (): boolean => true;
+const getServerSnapshot = (): boolean => false;
 
 interface ThemeToggleProps {
   className?: string;
@@ -11,29 +15,27 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const isLight = theme === "light";
+  const iconName = isLight ? "moon" : "sun";
+  const ariaLabel = mounted ? `Switch to ${isLight ? "dark" : "light"} mode` : "Toggle theme";
 
   return (
     <button
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+      onClick={() => setTheme(isLight ? "dark" : "light")}
       className={cn(
         "p-2 rounded-lg transition-colors",
         "hover:bg-gray-100 dark:hover:bg-gray-800",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600",
         className,
       )}
-      aria-label={mounted ? `Switch to ${theme === "light" ? "dark" : "light"} mode` : "Toggle theme"}
+      aria-label={ariaLabel}
     >
-      {!mounted ? (
-        <span className="w-5 h-5 block" />
-      ) : theme === "light" ? (
-        <Icon name="moon" className="w-5 h-5" />
+      {mounted ? (
+        <Icon name={iconName} className="w-5 h-5" />
       ) : (
-        <Icon name="sun" className="w-5 h-5" />
+        <span className="w-5 h-5 block" />
       )}
     </button>
   );

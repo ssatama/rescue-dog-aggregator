@@ -110,7 +110,7 @@ export default async function DogsPageOptimized(props: DogsPageProps): Promise<R
           Every dog listed here is available for adoption from a verified
           European rescue organization. Our listings are updated multiple times
           per week with new dogs from shelters and rescues across the continent.
-          Use the filters below to search by breed, size, age, sex, or location.
+          Use the filters to search by breed, size, age, sex, or location.
         </p>
       </section>
     </Layout>
