@@ -169,6 +169,44 @@ describe("useDogsFilters", () => {
       });
     });
 
+    it("should map 'Extra Large' size to 'XLarge' API value", () => {
+      const filters: Filters = {
+        searchQuery: "",
+        sizeFilter: "Extra Large",
+        ageFilter: "Any age",
+        sexFilter: "Any",
+        organizationFilter: "any",
+        breedFilter: "Any breed",
+        breedGroupFilter: "Any group",
+        locationCountryFilter: "Any country",
+        availableCountryFilter: "Any country",
+        availableRegionFilter: "Any region",
+      };
+
+      expect(buildAPIParams(filters)).toEqual({
+        standardized_size: "XLarge",
+      });
+    });
+
+    it("should pass through size values that exist in SIZE_API_MAPPING unchanged", () => {
+      const filters: Filters = {
+        searchQuery: "",
+        sizeFilter: "Small",
+        ageFilter: "Any age",
+        sexFilter: "Any",
+        organizationFilter: "any",
+        breedFilter: "Any breed",
+        breedGroupFilter: "Any group",
+        locationCountryFilter: "Any country",
+        availableCountryFilter: "Any country",
+        availableRegionFilter: "Any region",
+      };
+
+      expect(buildAPIParams(filters)).toEqual({
+        standardized_size: "Small",
+      });
+    });
+
     it("should trim whitespace from values", () => {
       const filters: Filters = {
         searchQuery: "  Rex  ",

@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useDebouncedCallback, type DebouncedState } from "use-debounce";
 import { getAvailableRegions } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
-import { FILTER_DEFAULTS, isDefaultFilterValue } from "@/constants/filters";
+import { FILTER_DEFAULTS, SIZE_API_MAPPING, isDefaultFilterValue } from "@/constants/filters";
 import type {
   Filters,
   DogsPageMetadata,
@@ -182,7 +182,7 @@ function buildAPIParams(filterValues: Filters): Record<string, string> {
 
   const size = (filterValues.sizeFilter || "").trim();
   if (size && size !== FILTER_DEFAULTS.SIZE) {
-    params.standardized_size = size;
+    params.standardized_size = SIZE_API_MAPPING[size as keyof typeof SIZE_API_MAPPING] || size;
   }
 
   const age = (filterValues.ageFilter || "").trim();

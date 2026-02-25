@@ -196,7 +196,7 @@ export default function MobileFilterDrawer({
               damping: 25,
               stiffness: 300,
             }}
-            className="fixed inset-0 bg-white dark:bg-gray-900 z-[60] overflow-hidden lg:hidden will-change-transform gpu-accelerated flex flex-col"
+            className="fixed inset-0 bg-white dark:bg-gray-900 z-[60] overflow-hidden lg:hidden flex flex-col"
             data-testid="mobile-filter-drawer"
             role="dialog"
             aria-label="Filter options"
