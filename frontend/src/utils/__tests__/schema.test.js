@@ -282,6 +282,24 @@ describe("Schema.org Breadcrumb Markup", () => {
     expect(lastItem.name).toBe("Happy Paws Rescue");
     expect(lastItem.item).toBeUndefined();
   });
+
+  test("should double-prefix when absolute URLs are passed (callers must use relative paths)", () => {
+    const breadcrumbData = {
+      items: [
+        { name: "Home", url: "https://www.rescuedogs.me" },
+        { name: "Guides", url: "https://www.rescuedogs.me/guides" },
+      ],
+    };
+
+    const schema = generateBreadcrumbSchema(breadcrumbData);
+
+    expect(schema.itemListElement[0].item).toBe(
+      "https://www.rescuedogs.mehttps://www.rescuedogs.me",
+    );
+    expect(schema.itemListElement[1].item).toBe(
+      "https://www.rescuedogs.mehttps://www.rescuedogs.me/guides",
+    );
+  });
 });
 
 describe("Schema Validation Utilities", () => {
