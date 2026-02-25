@@ -16,7 +16,6 @@ import {
 } from "../../../services/organizationsService";
 import { getBreedSuggestions } from "../../../services/animalsService";
 import { reportError } from "../../../utils/logger";
-import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
 import OrganizationDogsViewportWrapper from "../../../components/organizations/OrganizationDogsViewportWrapper";
@@ -50,7 +49,7 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
     initialOrganization as OrganizationWithDetails | null,
   );
   const [dogs, setDogs] = useState<Dog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialOrganization);
   const [error, setError] = useState<Error | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
@@ -58,7 +57,9 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [totalDogs, setTotalDogs] = useState(0);
+  const [totalDogs, setTotalDogs] = useState(
+    (initialOrganization as OrganizationWithDetails | null)?.total_dogs ?? 0,
+  );
 
   // Filter state management (age, breed, sex, sort for organization pages)
   // Read URL search params in useState initializer (client-only, avoids useSearchParams Suspense trigger)
@@ -347,15 +348,6 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
 
   return (
     <>
-      {/* SEO: Schema.org structured data for search engines */}
-      {organization && (
-        <>
-          <OrganizationSchema organization={organization} />
-          <BreadcrumbSchema items={breadcrumbItems} />
-        </>
-      )}
-
-      {/* New OrganizationHero Component */}
       <OrganizationHero organization={organization} />
 
       <div className="max-w-7xl mx-auto p-4">

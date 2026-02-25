@@ -63,16 +63,14 @@ export default function SwipeNavigationOverlay({ dogSlug }: SwipeNavigationOverl
 
   return (
     <>
-      {/* Swipe touch target - overlays the content area */}
       {hasNavigation && (
         <div
-          className="absolute inset-0 z-0"
+          className="absolute inset-0 z-[1]"
           {...handlers}
           aria-hidden="true"
         />
       )}
 
-      {/* Swipe hint for mobile */}
       {hasNavigation && (
         <div className="lg:hidden">
           <div
@@ -94,7 +92,6 @@ export default function SwipeNavigationOverlay({ dogSlug }: SwipeNavigationOverl
         </div>
       )}
 
-      {/* Desktop navigation arrows */}
       <NavigationArrows
         onPrev={handlePrevDog}
         onNext={handleNextDog}

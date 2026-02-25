@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import {
   useParams,
-  usePathname,
   useRouter,
 } from "next/navigation";
 import Link from "next/link";
@@ -50,7 +49,6 @@ import SwipeNavigationOverlay from "./SwipeNavigationOverlay";
 
 export default function DogDetailClient({ params = {}, initialDog = null }: DogDetailClientProps) {
   const urlParams = useParams();
-  const pathname = usePathname();
   const rawSlug = params?.slug || urlParams?.slug;
   const dogSlug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
   const [dog, setDog] = useState<Dog | null>(initialDog);
@@ -369,7 +367,6 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
               <div className="p-4 sm:p-6 relative">
-                {/* Swipe navigation overlay - isolated in its own Suspense to avoid blocking SSR */}
                 <Suspense fallback={null}>
                   <SwipeNavigationOverlay key={dogSlug} dogSlug={dogSlug ?? ""} />
                 </Suspense>
