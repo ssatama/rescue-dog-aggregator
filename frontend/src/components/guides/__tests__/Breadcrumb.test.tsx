@@ -42,47 +42,13 @@ describe("Breadcrumb", () => {
     expect(guidesLink).toHaveClass("text-orange-500");
   });
 
-  it("renders structured data script", () => {
+  it("does not render structured data script (handled by BreadcrumbSchema in page.tsx)", () => {
     const { container } = render(<Breadcrumb guideName="How to Adopt a Dog" />);
 
     const script = container.querySelector(
       'script[type="application/ld+json"]',
     );
-    expect(script).toBeInTheDocument();
-
-    const structuredData = JSON.parse(script?.textContent || "{}");
-    expect(structuredData["@type"]).toBe("BreadcrumbList");
-    expect(structuredData.itemListElement).toHaveLength(3);
-  });
-
-  it("includes correct URLs in structured data", () => {
-    const { container } = render(<Breadcrumb guideName="How to Adopt a Dog" />);
-
-    const script = container.querySelector(
-      'script[type="application/ld+json"]',
-    );
-    const structuredData = JSON.parse(script?.textContent || "{}");
-
-    expect(structuredData.itemListElement[0].item).toBe(
-      "https://www.rescuedogs.me/",
-    );
-    expect(structuredData.itemListElement[1].item).toBe(
-      "https://www.rescuedogs.me/guides",
-    );
-    expect(structuredData.itemListElement[2].item).toBeUndefined(); // Current page has no URL
-  });
-
-  it("sets correct positions in structured data", () => {
-    const { container } = render(<Breadcrumb guideName="How to Adopt a Dog" />);
-
-    const script = container.querySelector(
-      'script[type="application/ld+json"]',
-    );
-    const structuredData = JSON.parse(script?.textContent || "{}");
-
-    expect(structuredData.itemListElement[0].position).toBe(1);
-    expect(structuredData.itemListElement[1].position).toBe(2);
-    expect(structuredData.itemListElement[2].position).toBe(3);
+    expect(script).not.toBeInTheDocument();
   });
 
   it("renders ChevronRight separators between items", () => {

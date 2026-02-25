@@ -282,6 +282,24 @@ describe("Schema.org Breadcrumb Markup", () => {
     expect(lastItem.name).toBe("Happy Paws Rescue");
     expect(lastItem.item).toBeUndefined();
   });
+
+  test("should double-prefix when absolute URLs are passed (callers must use relative paths)", () => {
+    const breadcrumbData = {
+      items: [
+        { name: "Home", url: "https://www.rescuedogs.me" },
+        { name: "Guides", url: "https://www.rescuedogs.me/guides" },
+      ],
+    };
+
+    const schema = generateBreadcrumbSchema(breadcrumbData);
+
+    expect(schema.itemListElement[0].item).toBe(
+      "https://www.rescuedogs.mehttps://www.rescuedogs.me",
+    );
+    expect(schema.itemListElement[1].item).toBe(
+      "https://www.rescuedogs.mehttps://www.rescuedogs.me/guides",
+    );
+  });
 });
 
 describe("Schema Validation Utilities", () => {
@@ -336,28 +354,28 @@ describe("Status Availability Mapping", () => {
     expect(availability).toBe("https://schema.org/OutOfStock");
   });
 
-  test("should map reserved status to PreOrder", () => {
+  test("should map reserved status to LimitedAvailability", () => {
     const availability = getAvailability("reserved");
-    expect(availability).toBe("https://schema.org/PreOrder");
+    expect(availability).toBe("https://schema.org/LimitedAvailability");
   });
 
-  test("should map unknown status to InStoreOnly", () => {
+  test("should map unknown status to InStock", () => {
     const availability = getAvailability("unknown");
-    expect(availability).toBe("https://schema.org/InStoreOnly");
+    expect(availability).toBe("https://schema.org/InStock");
   });
 
   test("should handle undefined status", () => {
     const availability = getAvailability(undefined);
-    expect(availability).toBe("https://schema.org/InStoreOnly");
+    expect(availability).toBe("https://schema.org/InStock");
   });
 
   test("should handle null status", () => {
     const availability = getAvailability(null);
-    expect(availability).toBe("https://schema.org/InStoreOnly");
+    expect(availability).toBe("https://schema.org/InStock");
   });
 
   test("should handle invalid status values", () => {
     const availability = getAvailability("invalid");
-    expect(availability).toBe("https://schema.org/InStoreOnly");
+    expect(availability).toBe("https://schema.org/InStock");
   });
 });

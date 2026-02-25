@@ -46,7 +46,7 @@ export default async function GuidesPage() {
       />
       <BreadcrumbSchema
         items={[
-          { name: "Home", url: "https://www.rescuedogs.me" },
+          { name: "Home", url: "/" },
           { name: "Guides" },
         ]}
       />
