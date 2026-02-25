@@ -147,6 +147,17 @@ describe("Schema.org Pet Markup", () => {
     expect(schema.description).toBe("Main description. Additional details.");
   });
 
+  test("should include url when dog has slug", () => {
+    const dogWithSlug = { ...mockDog, slug: "buddy-labrador-retriever" };
+    const schema = generatePetSchema(dogWithSlug);
+    expect(schema.url).toBe("https://www.rescuedogs.me/dogs/buddy-labrador-retriever");
+  });
+
+  test("should not include url when dog has no slug", () => {
+    const schema = generatePetSchema(mockDog);
+    expect(schema.url).toBeUndefined();
+  });
+
   test("should handle null or undefined input", () => {
     expect(() => generatePetSchema(null)).not.toThrow();
     expect(() => generatePetSchema(undefined)).not.toThrow();
