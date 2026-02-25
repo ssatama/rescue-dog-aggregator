@@ -182,7 +182,10 @@ function buildAPIParams(filterValues: Filters): Record<string, string> {
 
   const size = (filterValues.sizeFilter || "").trim();
   if (size && size !== FILTER_DEFAULTS.SIZE) {
-    params.standardized_size = SIZE_API_MAPPING[size as keyof typeof SIZE_API_MAPPING] || size;
+    const mappedSize = SIZE_API_MAPPING[size as keyof typeof SIZE_API_MAPPING];
+    if (mappedSize) {
+      params.standardized_size = mappedSize;
+    }
   }
 
   const age = (filterValues.ageFilter || "").trim();

@@ -207,6 +207,23 @@ describe("useDogsFilters", () => {
       });
     });
 
+    it("should drop unmapped size values instead of sending them to the API", () => {
+      const filters: Filters = {
+        searchQuery: "",
+        sizeFilter: "Gigantic",
+        ageFilter: "Any age",
+        sexFilter: "Any",
+        organizationFilter: "any",
+        breedFilter: "Any breed",
+        breedGroupFilter: "Any group",
+        locationCountryFilter: "Any country",
+        availableCountryFilter: "Any country",
+        availableRegionFilter: "Any region",
+      };
+
+      expect(buildAPIParams(filters)).toEqual({});
+    });
+
     it("should trim whitespace from values", () => {
       const filters: Filters = {
         searchQuery: "  Rex  ",
