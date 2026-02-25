@@ -71,7 +71,6 @@ const generateStaticPages = (): SitemapEntry[] => {
     { url: `${baseUrl}/about` },
     { url: `${baseUrl}/faq` },
     { url: `${baseUrl}/privacy` },
-    { url: `${baseUrl}/swipe` },
   ];
 
   return staticPages.map(formatSitemapEntry);
