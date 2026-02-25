@@ -19,7 +19,6 @@
   transition:
     transform 0.2s ease-out,
     box-shadow 0.2s ease-out;
-  will-change: transform;
   backface-visibility: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -32,6 +31,7 @@
 }
 
 .dog-card:hover {
+  will-change: transform;
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
@@ -75,10 +75,10 @@
 /* Image hover effect */
 .dog-card-image {
   transition: transform 0.3s ease-out;
-  will-change: transform;
 }
 
 .dog-card:hover .dog-card-image {
+  will-change: transform;
   transform: scale(1.05);
 }
 

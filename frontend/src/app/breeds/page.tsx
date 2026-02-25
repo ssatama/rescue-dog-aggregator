@@ -66,7 +66,7 @@ export default async function BreedsPage() {
   const data = isEmptyBreedsData(initialData)
     ? (logger.warn("Breeds page: all sections empty, retrying (cold-start resilience)"),
       clearCache(),
-      await new Promise((r) => setTimeout(r, 2000)),
+      await new Promise((r) => setTimeout(r, 500)),
       await fetchBreedsData())
     : initialData;
 
