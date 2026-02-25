@@ -10,10 +10,10 @@ export const getAvailability = (status: string | undefined): string => {
     case "adopted":
       return "https://schema.org/OutOfStock";
     case "reserved":
-      return "https://schema.org/PreOrder";
+      return "https://schema.org/LimitedAvailability";
     case "unknown":
     default:
-      return "https://schema.org/InStoreOnly";
+      return "https://schema.org/InStock";
   }
 };
 

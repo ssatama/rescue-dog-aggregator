@@ -14,27 +14,8 @@ export function Breadcrumb({ guideName }: BreadcrumbProps) {
     { label: guideName, href: null },
   ];
 
-  // BreadcrumbList structured data for SEO
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: breadcrumbs.map((item, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: item.label,
-      ...(item.href && { item: `https://www.rescuedogs.me${item.href}` }),
-    })),
-  };
-
   return (
     <>
-      {/* Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, "\\u003c") }}
-      />
-
-      {/* Breadcrumb Navigation */}
       <nav aria-label="Breadcrumb" className="mb-6">
         <ol className="flex items-center gap-2 text-sm">
           {breadcrumbs.map((item, index) => {

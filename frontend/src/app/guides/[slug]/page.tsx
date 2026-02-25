@@ -90,8 +90,8 @@ export default async function GuidePage({
       <GuideSchema guide={guide} />
       <BreadcrumbSchema
         items={[
-          { name: "Home", url: "https://www.rescuedogs.me" },
-          { name: "Guides", url: "https://www.rescuedogs.me/guides" },
+          { name: "Home", url: "/" },
+          { name: "Guides", url: "/guides" },
           { name: guide.frontmatter.title },
         ]}
       />

@@ -336,28 +336,28 @@ describe("Status Availability Mapping", () => {
     expect(availability).toBe("https://schema.org/OutOfStock");
   });
 
-  test("should map reserved status to PreOrder", () => {
+  test("should map reserved status to LimitedAvailability", () => {
     const availability = getAvailability("reserved");
-    expect(availability).toBe("https://schema.org/PreOrder");
+    expect(availability).toBe("https://schema.org/LimitedAvailability");
   });
 
-  test("should map unknown status to InStoreOnly", () => {
+  test("should map unknown status to InStock", () => {
     const availability = getAvailability("unknown");
-    expect(availability).toBe("https://schema.org/InStoreOnly");
+    expect(availability).toBe("https://schema.org/InStock");
   });
 
   test("should handle undefined status", () => {
     const availability = getAvailability(undefined);
-    expect(availability).toBe("https://schema.org/InStoreOnly");
+    expect(availability).toBe("https://schema.org/InStock");
   });
 
   test("should handle null status", () => {
     const availability = getAvailability(null);
-    expect(availability).toBe("https://schema.org/InStoreOnly");
+    expect(availability).toBe("https://schema.org/InStock");
   });
 
   test("should handle invalid status values", () => {
     const availability = getAvailability("invalid");
-    expect(availability).toBe("https://schema.org/InStoreOnly");
+    expect(availability).toBe("https://schema.org/InStock");
   });
 });
