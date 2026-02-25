@@ -88,7 +88,7 @@ export default function BreedStructuredData({
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Rescue Dogs Network",
+    name: "Rescue Dog Aggregator",
     url: baseUrl,
     description: "Aggregating rescue dogs from multiple verified organizations",
   };
@@ -107,7 +107,7 @@ export default function BreedStructuredData({
         <script
           key={index}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }}
         />
       ))}
     </>

@@ -39,7 +39,7 @@ export const BreadcrumbSchema: React.FC<BreadcrumbSchemaProps> = ({
     return null;
   }
 
-  const jsonLdScript = generateJsonLdScript(schema);
+  const jsonLdScript = generateJsonLdScript(schema).replace(/</g, "\\u003c");
 
   return (
     <script

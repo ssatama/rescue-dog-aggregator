@@ -42,7 +42,7 @@ export default async function GuidesPage() {
     <Layout>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema).replace(/</g, "\\u003c") }}
       />
       <BreadcrumbSchema
         items={[

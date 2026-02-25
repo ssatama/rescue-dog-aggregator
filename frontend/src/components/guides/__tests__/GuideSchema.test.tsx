@@ -82,7 +82,7 @@ describe("GuideSchema", () => {
     expect(schema.dateModified).toBe("2025-10-03");
   });
 
-  it("includes author with Organization type", () => {
+  it("includes author with Person type", () => {
     const { container } = render(<GuideSchema guide={mockGuide} />);
     const scriptTag = container.querySelector(
       'script[type="application/ld+json"]',
@@ -90,7 +90,7 @@ describe("GuideSchema", () => {
     const schema = JSON.parse(scriptTag?.textContent || "{}");
 
     expect(schema.author).toBeDefined();
-    expect(schema.author["@type"]).toBe("Organization");
+    expect(schema.author["@type"]).toBe("Person");
     expect(schema.author.name).toBe("Test Author");
   });
 

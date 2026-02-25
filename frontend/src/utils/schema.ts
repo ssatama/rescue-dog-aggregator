@@ -109,6 +109,10 @@ export const generatePetSchema = (dog: DogForSchema | null | undefined): Record<
     name: buildName(),
   };
 
+  if (dog.slug) {
+    schema.url = `${BASE_URL}/dogs/${dog.slug}`;
+  }
+
   if (description) {
     schema.description = description;
   }

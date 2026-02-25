@@ -114,7 +114,7 @@ export default function RootLayout({
               name: "Rescue Dog Aggregator",
               url: "https://www.rescuedogs.me",
               description:
-                "Find adoptable rescue dogs from 13 organizations across 9 countries. Browse 3,000+ dogs available for adoption.",
+                "Find adoptable rescue dogs from verified organizations across Europe. Browse dogs available for adoption from shelters and rescues.",
               potentialAction: {
                 "@type": "SearchAction",
                 target: {
@@ -129,7 +129,7 @@ export default function RootLayout({
                 name: "Rescue Dog Aggregator",
                 logo: {
                   "@type": "ImageObject",
-                  url: "https://www.rescuedogs.me/logo.png",
+                  url: "https://www.rescuedogs.me/logo.jpeg",
                   width: 512,
                   height: 512,
                 },
