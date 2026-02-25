@@ -17,7 +17,7 @@ interface ProgressBarConfig {
 }
 
 // Pure function to get energy level configuration
-const getEnergyConfig = (level: EnergyLevel): ProgressBarConfig => {
+const getEnergyConfig = (level: EnergyLevel): ProgressBarConfig | undefined => {
   const configs: Record<EnergyLevel, ProgressBarConfig> = {
     low: { percentage: 25, color: "bg-green-500", label: "Low" },
     medium: { percentage: 50, color: "bg-yellow-500", label: "Medium" },
@@ -28,7 +28,7 @@ const getEnergyConfig = (level: EnergyLevel): ProgressBarConfig => {
 };
 
 // Pure function to get trainability configuration
-const getTrainabilityConfig = (level: TrainabilityLevel): ProgressBarConfig => {
+const getTrainabilityConfig = (level: TrainabilityLevel): ProgressBarConfig | undefined => {
   const configs: Record<TrainabilityLevel, ProgressBarConfig> = {
     easy: { percentage: 33, color: "bg-green-500", label: "Easy" },
     moderate: { percentage: 67, color: "bg-yellow-500", label: "Moderate" },
@@ -86,15 +86,19 @@ const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({
 
   // Check if we should show energy level
   // Show if data exists, unless confidence score is explicitly low
+  const energyConfig = energy_level
+    ? getEnergyConfig(energy_level as EnergyLevel)
+    : undefined;
+  const trainabilityConfig = trainability
+    ? getTrainabilityConfig(trainability as TrainabilityLevel)
+    : undefined;
+
   const shouldShowEnergy =
-    energy_level && !shouldHideDueToLowConfidence(confidence_scores?.energy_level);
+    energyConfig && !shouldHideDueToLowConfidence(confidence_scores?.energy_level);
 
-  // Check if we should show trainability
-  // Show if data exists, unless confidence score is explicitly low
   const shouldShowTrainability =
-    trainability && !shouldHideDueToLowConfidence(confidence_scores?.trainability);
+    trainabilityConfig && !shouldHideDueToLowConfidence(confidence_scores?.trainability);
 
-  // Return null if neither should be shown
   if (!shouldShowEnergy && !shouldShowTrainability) {
     return null;
   }
@@ -104,7 +108,7 @@ const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({
       {shouldShowEnergy && (
         <ProgressBar
           title="Energy Level"
-          config={getEnergyConfig(energy_level as EnergyLevel)}
+          config={energyConfig}
           testId="energy"
         />
       )}
@@ -112,7 +116,7 @@ const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({
       {shouldShowTrainability && (
         <ProgressBar
           title="Trainability"
-          config={getTrainabilityConfig(trainability as TrainabilityLevel)}
+          config={trainabilityConfig}
           testId="trainability"
         />
       )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import DogFilters from "../../../components/filters/DogFilters";
 import OrganizationHero from "../../../components/organizations/OrganizationHero";
@@ -16,7 +16,6 @@ import {
 } from "../../../services/organizationsService";
 import { getBreedSuggestions } from "../../../services/animalsService";
 import { reportError } from "../../../utils/logger";
-import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
 import OrganizationDogsViewportWrapper from "../../../components/organizations/OrganizationDogsViewportWrapper";
@@ -42,14 +41,15 @@ interface OrgFilters {
   sort: SortOption;
 }
 
-export default function OrganizationDetailClient(_props: OrganizationDetailClientProps) {
+export default function OrganizationDetailClient({ initialOrganization = null, initialSearchParams = {} }: OrganizationDetailClientProps) {
   const urlParams = useParams();
-  const searchParams = useSearchParams();
   const organizationSlug = urlParams?.slug;
 
-  const [organization, setOrganization] = useState<OrganizationWithDetails | null>(null);
+  const [organization, setOrganization] = useState<OrganizationWithDetails | null>(
+    initialOrganization as OrganizationWithDetails | null,
+  );
   const [dogs, setDogs] = useState<Dog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialOrganization);
   const [error, setError] = useState<Error | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
@@ -57,17 +57,34 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [totalDogs, setTotalDogs] = useState(0);
+  const [totalDogs, setTotalDogs] = useState(
+    (initialOrganization as OrganizationWithDetails | null)?.total_dogs ?? 0,
+  );
 
-  // Filter state management (age, breed, sex, sort for organization pages)
+  // Filter state from server-passed searchParams (avoids useSearchParams Suspense trigger and hydration mismatch)
   const [filters, setFilters] = useState<OrgFilters>(() => {
-    // Initialize filters from URL parameters or defaults (no shipsTo for org pages)
     const defaultFilters = getDefaultFilters();
+    const toStr = (v: string | string[] | undefined): string | undefined =>
+      Array.isArray(v) ? v[0] : v;
+
+    const urlAge = toStr(initialSearchParams.age);
+    const urlBreed = toStr(initialSearchParams.breed);
+    const urlSex = toStr(initialSearchParams.sex);
+    const urlSort = toStr(initialSearchParams.sort);
+
+    if (urlAge || urlBreed || urlSex || urlSort) {
+      return {
+        age: (urlAge as AgeCategory) || defaultFilters.age || "All",
+        breed: urlBreed || defaultFilters.breed || "",
+        sex: urlSex || "Any",
+        sort: (urlSort as SortOption) || defaultFilters.sort || "newest",
+      };
+    }
     return {
-      age: (searchParams?.get("age") as AgeCategory) || defaultFilters.age || "All",
-      breed: searchParams?.get("breed") || defaultFilters.breed || "",
-      sex: searchParams?.get("sex") || "Any",
-      sort: (searchParams?.get("sort") as SortOption) || defaultFilters.sort || "newest",
+      age: defaultFilters.age || "All",
+      breed: defaultFilters.breed || "",
+      sex: "Any",
+      sort: defaultFilters.sort || "newest",
     };
   });
 
@@ -330,15 +347,6 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
 
   return (
     <>
-      {/* SEO: Schema.org structured data for search engines */}
-      {organization && (
-        <>
-          <OrganizationSchema organization={organization} />
-          <BreadcrumbSchema items={breadcrumbItems} />
-        </>
-      )}
-
-      {/* New OrganizationHero Component */}
       <OrganizationHero organization={organization} />
 
       <div className="max-w-7xl mx-auto p-4">

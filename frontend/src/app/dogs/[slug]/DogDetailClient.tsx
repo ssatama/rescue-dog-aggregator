@@ -1,15 +1,12 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import {
   useParams,
-  usePathname,
-  useSearchParams,
   useRouter,
 } from "next/navigation";
 import Link from "next/link";
 import type { DogDetailClientProps } from "@/types/pageComponents";
 import type { Dog } from "@/types/dog";
-import Loading from "../../../components/ui/Loading";
 import { Button } from "../../../components/ui/button";
 import { getAnimalBySlug } from "../../../services/animalsService";
 import {
@@ -17,15 +14,8 @@ import {
   AlertDescription,
   AlertTitle,
 } from "../../../components/ui/alert";
-import { Badge } from "../../../components/ui/badge";
 import ShareButton from "../../../components/ui/ShareButton";
-import SocialMediaLinks from "../../../components/ui/SocialMediaLinks";
 import { FavoriteButton } from "../../../components/favorites/FavoriteButton";
-import {
-  getDetailHeroImageWithPosition,
-  getThumbnailImage,
-  handleImageError,
-} from "../../../utils/imageUtils";
 import HeroImageWithBlurredBackground from "../../../components/ui/HeroImageWithBlurredBackground";
 import OrganizationCard from "../../../components/organizations/OrganizationCard";
 import { ToastProvider } from "../../../contexts/ToastContext";
@@ -34,7 +24,6 @@ import DogDescription from "../../../components/dogs/DogDescription";
 import { reportError } from "../../../utils/logger";
 import {
   sanitizeText,
-  sanitizeHtml,
   safeExternalUrl,
 } from "../../../utils/security";
 import { getAgeCategory } from "../../../utils/dogHelpers";
@@ -43,7 +32,6 @@ import DogDetailErrorBoundary from "../../../components/error/DogDetailErrorBoun
 import { ScrollAnimationWrapper } from "../../../hooks/useScrollAnimation";
 import { DogSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
-import { useSwipeNavigation } from "../../../hooks/useSwipeNavigation";
 import {
   trackDogView,
   trackDogImageView,
@@ -54,45 +42,20 @@ import {
   EnergyTrainability,
   CompatibilityIcons,
   ActivitiesQuirks,
-  NavigationArrows,
 } from "../../../components/dogs/detail";
 import DogStatusBadge from "../../../components/dogs/DogStatusBadge";
 import AdoptedCelebration from "../../../components/dogs/AdoptedCelebration";
+import SwipeNavigationOverlay from "./SwipeNavigationOverlay";
 
 export default function DogDetailClient({ params = {}, initialDog = null }: DogDetailClientProps) {
   const urlParams = useParams();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const rawSlug = params?.slug || urlParams?.slug;
   const dogSlug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
   const [dog, setDog] = useState<Dog | null>(initialDog);
   const [loading, setLoading] = useState(!initialDog);
   const [error, setError] = useState(false);
   const [retryInProgress, setRetryInProgress] = useState(false);
-  const [showSwipeHint, setShowSwipeHint] = useState(true);
   const mountedRef = useRef<boolean>(true);
-
-  // Convert search params to object for swipe navigation
-  const searchParamsObj = useMemo(() => {
-    const paramsObj: Record<string, string> = {};
-    if (searchParams) {
-      for (const [key, value] of searchParams.entries()) {
-        paramsObj[key] = value;
-      }
-    }
-    return paramsObj;
-  }, [searchParams]);
-
-  // Swipe navigation setup
-  const {
-    handlers,
-    prevDog,
-    nextDog,
-    isLoading: navLoading,
-  } = useSwipeNavigation({
-    currentDogSlug: dogSlug ?? "",
-    searchParams: searchParamsObj,
-  });
 
   // Enhanced fetchDogData with comprehensive error handling and retry logic
   const fetchDogData = useCallback(
@@ -234,39 +197,12 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
     }
 
     // Otherwise fetch client-side
-    // Reset loading state for new navigation
     setLoading(true);
     setError(false);
     setDog(null);
 
-    // Check if document is ready before making API call
-    const makeApiCall = () => {
-      if (document.readyState === "complete") {
-        fetchDogData();
-      } else {
-        const handleLoad = () => {
-          fetchDogData();
-          window.removeEventListener("load", handleLoad);
-        };
+    fetchDogData();
 
-        window.addEventListener("load", handleLoad);
-
-        // Fallback timeout in case load event doesn't fire
-        const fallbackTimeout = setTimeout(() => {
-          fetchDogData();
-          window.removeEventListener("load", handleLoad);
-        }, 2000);
-
-        return () => {
-          window.removeEventListener("load", handleLoad);
-          clearTimeout(fallbackTimeout);
-        };
-      }
-    };
-
-    makeApiCall();
-
-    // Cleanup function to prevent memory leaks
     return () => {
       mountedRef.current = false;
     };
@@ -289,22 +225,6 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
     }
   }, [dogSlug]);
 
-  // Handle swipe hint visibility timing
-  useEffect(() => {
-    if (showSwipeHint && (prevDog || nextDog)) {
-      const timer = setTimeout(() => {
-        setShowSwipeHint(false);
-      }, 3500); // Hide after 3.5 seconds
-
-      return () => clearTimeout(timer);
-    }
-  }, [showSwipeHint, prevDog, nextDog]);
-
-  // Reset swipe hint visibility when navigating to a new dog
-  useEffect(() => {
-    setShowSwipeHint(true);
-  }, [dogSlug]);
-
   const formatAge = (dogData: Dog) => {
     // Use getAgeCategory to display age groups
     const ageCategory = getAgeCategory({
@@ -321,24 +241,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
     fetchDogData();
   }, [fetchDogData]);
 
-  // Navigation handlers for arrow navigation - use router for better performance
   const router = useRouter();
-
-  const handlePrevDog = useCallback(() => {
-    if (prevDog) {
-      const qs = searchParams?.toString() ?? "";
-      const url = `/dogs/${prevDog.slug}${qs ? `?${qs}` : ""}`;
-      router.push(url);
-    }
-  }, [prevDog, searchParams, router]);
-
-  const handleNextDog = useCallback(() => {
-    if (nextDog) {
-      const qs = searchParams?.toString() ?? "";
-      const url = `/dogs/${nextDog.slug}${qs ? `?${qs}` : ""}`;
-      router.push(url);
-    }
-  }, [nextDog, searchParams, router]);
 
   if (loading) {
     return <DogDetailSkeleton />;
@@ -436,34 +339,16 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
-              {/* Apply swipe handlers to the entire content area */}
-              <div className="p-4 sm:p-6" {...handlers}>
+              <div className="p-4 sm:p-6 relative">
+                <Suspense fallback={null}>
+                  <SwipeNavigationOverlay key={dogSlug} dogSlug={dogSlug ?? ""} />
+                </Suspense>
+
                 {/* Unified Single Column Responsive Layout */}
                 <div className="flex flex-col gap-8">
                   {/* Hero Image Section - Full Width */}
                   <div>
                     <div className="w-full relative" data-testid="hero-section">
-                      {/* Swipe hint for mobile only - fades out after 3.5 seconds */}
-                      <div className="lg:hidden">
-                        {(prevDog || nextDog) && (
-                          <div
-                            className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-10 transition-opacity duration-500 ${
-                              showSwipeHint
-                                ? "opacity-100"
-                                : "opacity-0 pointer-events-none"
-                            }`}
-                            role="status"
-                            aria-live="polite"
-                            aria-label="Swipe navigation hint"
-                          >
-                            <div className="bg-black/50 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2">
-                              {prevDog && <span aria-hidden="true">←</span>}
-                              <span>Swipe to browse</span>
-                              {nextDog && <span aria-hidden="true">→</span>}
-                            </div>
-                          </div>
-                        )}
-                      </div>
 
                       {(() => {
                         if (!dog || !dog.primary_image_url) {
@@ -882,14 +767,6 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                   </div>
                 </div>
 
-                {/* Navigation Arrows for Desktop */}
-                <NavigationArrows
-                  onPrev={handlePrevDog}
-                  onNext={handleNextDog}
-                  hasPrev={!!prevDog}
-                  hasNext={!!nextDog}
-                  isLoading={navLoading}
-                />
               </div>
             </div>
           </div>

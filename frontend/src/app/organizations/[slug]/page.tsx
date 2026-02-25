@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import {
   getOrganizationBySlug,
   getAllOrganizations,
@@ -6,9 +7,11 @@ import {
 import { reportError } from "../../../utils/logger";
 import Layout from "../../../components/layout/Layout";
 import OrganizationDetailClient from "./OrganizationDetailClient";
+import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
 
 interface OrganizationDetailPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export async function generateMetadata(props: OrganizationDetailPageProps): Promise<Metadata> {
@@ -86,16 +89,53 @@ function OrganizationDetailPage(_props: OrganizationDetailPageProps): React.JSX.
 
 async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): Promise<React.JSX.Element> {
   const { params } = props || {};
+  let resolvedParams: { slug?: string } = {};
 
   if (params) {
     try {
-      await params;
+      resolvedParams = await params;
     } catch {
       // Ignore params errors - Client component handles this via useParams()
     }
   }
 
-  return <Layout><OrganizationDetailClient /></Layout>;
+  let resolvedSearchParams: Record<string, string | string[] | undefined> = {};
+  if (props.searchParams) {
+    try {
+      resolvedSearchParams = await props.searchParams;
+    } catch {
+      // Ignore searchParams errors - Client component falls back to defaults
+    }
+  }
+
+  let initialOrganization = null;
+  if (resolvedParams.slug) {
+    try {
+      initialOrganization = await getOrganizationBySlug(resolvedParams.slug);
+    } catch (error) {
+      reportError(error, { context: "OrganizationDetailPageAsync", slug: resolvedParams.slug });
+    }
+  }
+
+  const breadcrumbItems = initialOrganization
+    ? [
+        { name: "Home", url: "/" },
+        { name: "Organizations", url: "/organizations" },
+        { name: initialOrganization.name },
+      ]
+    : null;
+
+  return (
+    <Layout>
+      {initialOrganization && initialOrganization.id != null && (
+        <OrganizationSchema organization={{ ...initialOrganization, id: initialOrganization.id }} />
+      )}
+      {breadcrumbItems && <BreadcrumbSchema items={breadcrumbItems} />}
+      <Suspense>
+        <OrganizationDetailClient initialOrganization={initialOrganization} initialSearchParams={resolvedSearchParams} />
+      </Suspense>
+    </Layout>
+  );
 }
 
 export const revalidate = 86400;

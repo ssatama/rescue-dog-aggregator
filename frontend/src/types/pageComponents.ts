@@ -1,6 +1,7 @@
 import type { Dog } from "./dog";
 import type { DogsPageMetadata } from "./dogsPage";
 import type { OrganizationCardData } from "./organizationComponents";
+import type { ApiOrganization } from "./apiDog";
 import type { CountryStatsResponse } from "@/schemas/animals";
 
 export interface DogDetailClientProps {
@@ -8,7 +9,10 @@ export interface DogDetailClientProps {
   initialDog?: Dog | null;
 }
 
-export interface OrganizationDetailClientProps {}
+export interface OrganizationDetailClientProps {
+  initialOrganization?: ApiOrganization | null;
+  initialSearchParams?: Record<string, string | string[] | undefined>;
+}
 
 export interface OrganizationsClientProps {
   initialData?: OrganizationCardData[];

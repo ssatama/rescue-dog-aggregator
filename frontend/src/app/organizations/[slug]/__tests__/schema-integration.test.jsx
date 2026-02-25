@@ -1,58 +1,9 @@
-/**
- * Tests for Schema.org integration in OrganizationDetailClient
- * Following TDD approach for SEO implementation - Phase 1B
- */
-
 import React from "react";
-import { render, screen, waitFor } from "../../../../test-utils";
+import { render } from "../../../../test-utils";
 import "@testing-library/jest-dom";
-import OrganizationDetailClient from "../OrganizationDetailClient";
-import {
-  getOrganizationBySlug,
-  getOrganizationDogs,
-} from "../../../../services/organizationsService";
+import { OrganizationSchema, BreadcrumbSchema } from "../../../../components/seo";
 
-// Mock the service
-jest.mock("../../../../services/organizationsService", () => ({
-  getOrganizationBySlug: jest.fn(),
-  getOrganizationDogs: jest.fn(),
-}));
-
-// Mock next/navigation
-jest.mock("next/navigation", () => ({
-  useParams: () => ({ slug: "happy-paws-rescue" }),
-  useRouter: () => ({ back: jest.fn() }),
-  usePathname: () => "/organizations/happy-paws-rescue",
-  useSearchParams: () => ({ get: () => null }),
-}));
-
-// Mock UI components to focus on schema testing
-jest.mock("../../../../components/ui/Loading", () => {
-  const MockLoading = () => <div data-testid="loading" />;
-  MockLoading.displayName = "MockLoading";
-  return MockLoading;
-});
-
-jest.mock("../../../../components/ui/DogDetailSkeleton", () => {
-  const MockDogDetailSkeleton = () => <div data-testid="loading" />;
-  MockDogDetailSkeleton.displayName = "MockDogDetailSkeleton";
-  return MockDogDetailSkeleton;
-});
-
-describe("OrganizationDetailClient - Schema Integration", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-
-    // Mock console methods for cleaner test output
-    jest.spyOn(console, "log").mockImplementation(() => {});
-    jest.spyOn(console, "warn").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    console.log.mockRestore();
-    console.warn.mockRestore();
-  });
-
+describe("Organization Schema Integration", () => {
   const mockOrganization = {
     id: 1,
     slug: "happy-paws-rescue",
@@ -67,18 +18,11 @@ describe("OrganizationDetailClient - Schema Integration", () => {
     status: "active",
   };
 
-  test("should render OrganizationSchema component with correct JSON-LD", async () => {
-    getOrganizationBySlug.mockResolvedValue(mockOrganization);
-    getOrganizationDogs.mockResolvedValue([]);
+  test("should render OrganizationSchema with correct JSON-LD", () => {
+    const { container } = render(
+      <OrganizationSchema organization={mockOrganization} />,
+    );
 
-    const { container } = render(<OrganizationDetailClient />);
-
-    // Wait for organization heading to appear (indicates data loaded)
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Happy Paws Rescue" })).toBeInTheDocument();
-    });
-
-    // Check for JSON-LD script tag with Organization schema
     const schemaScript = container.querySelector(
       'script[type="application/ld+json"]',
     );
@@ -90,23 +34,16 @@ describe("OrganizationDetailClient - Schema Integration", () => {
     expect(schemaData.name).toBe("Happy Paws Rescue");
   });
 
-  test("should include all expected organization properties in schema", async () => {
-    getOrganizationBySlug.mockResolvedValue(mockOrganization);
-    getOrganizationDogs.mockResolvedValue([]);
-
-    const { container } = render(<OrganizationDetailClient />);
-
-    // Wait for organization heading to appear (indicates data loaded)
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Happy Paws Rescue" })).toBeInTheDocument();
-    });
+  test("should include all expected organization properties in schema", () => {
+    const { container } = render(
+      <OrganizationSchema organization={mockOrganization} />,
+    );
 
     const schemaScript = container.querySelector(
       'script[type="application/ld+json"]',
     );
     const schemaData = JSON.parse(schemaScript?.textContent || "{}");
 
-    // Check core properties
     expect(schemaData.name).toBe("Happy Paws Rescue");
     expect(schemaData.description).toBe(
       "Dedicated to rescuing and rehoming dogs in need.",
@@ -116,63 +53,45 @@ describe("OrganizationDetailClient - Schema Integration", () => {
     expect(schemaData.knowsAbout).toBe("Dog rescue and adoption services");
   });
 
-  test("should render BreadcrumbSchema component with organization navigation", async () => {
-    getOrganizationBySlug.mockResolvedValue(mockOrganization);
-    getOrganizationDogs.mockResolvedValue([]);
+  test("should render BreadcrumbSchema with organization navigation", () => {
+    const breadcrumbItems = [
+      { name: "Home", url: "/" },
+      { name: "Organizations", url: "/organizations" },
+      { name: "Happy Paws Rescue" },
+    ];
 
-    const { container } = render(<OrganizationDetailClient />);
+    const { container } = render(
+      <BreadcrumbSchema items={breadcrumbItems} />,
+    );
 
-    // Wait for organization heading to appear (indicates data loaded)
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Happy Paws Rescue" })).toBeInTheDocument();
-    });
-
-    // Check for breadcrumb JSON-LD script tag
-    const schemaScripts = container.querySelectorAll(
+    const schemaScript = container.querySelector(
       'script[type="application/ld+json"]',
     );
-    expect(schemaScripts.length).toBeGreaterThan(1); // Should have both Organization and Breadcrumb schemas
+    expect(schemaScript).toBeInTheDocument();
 
-    // Find breadcrumb schema (will have @type: "BreadcrumbList")
-    let breadcrumbSchema = null;
-    schemaScripts.forEach((script) => {
-      const data = JSON.parse(script.textContent || "{}");
-      if (data["@type"] === "BreadcrumbList") {
-        breadcrumbSchema = data;
-      }
-    });
+    const schemaData = JSON.parse(schemaScript?.textContent || "{}");
+    expect(schemaData["@context"]).toBe("https://schema.org");
+    expect(schemaData["@type"]).toBe("BreadcrumbList");
+    expect(schemaData.itemListElement).toHaveLength(3);
 
-    expect(breadcrumbSchema).not.toBeNull();
-    expect(breadcrumbSchema["@context"]).toBe("https://schema.org");
-    expect(breadcrumbSchema.itemListElement).toHaveLength(3);
-
-    // Check breadcrumb items structure
-    const items = breadcrumbSchema.itemListElement;
+    const items = schemaData.itemListElement;
     expect(items[0].name).toBe("Home");
     expect(items[1].name).toBe("Organizations");
     expect(items[2].name).toBe("Happy Paws Rescue");
   });
 
-  test("should not render schema when organization is not loaded", async () => {
-    getOrganizationBySlug.mockRejectedValue(
-      new Error("Organization not found"),
+  test("should not render schema for null organization", () => {
+    const { container } = render(
+      <OrganizationSchema organization={null} />,
     );
 
-    const { container } = render(<OrganizationDetailClient />);
-
-    // Wait for error state (Organization Not Found message)
-    await waitFor(() => {
-      expect(screen.getByText("Organization Not Found")).toBeInTheDocument();
-    });
-
-    // Should not have schema script when organization fails to load
     const schemaScript = container.querySelector(
       'script[type="application/ld+json"]',
     );
     expect(schemaScript).toBeNull();
   });
 
-  test("should handle organizations with minimal data gracefully", async () => {
+  test("should handle organizations with minimal data gracefully", () => {
     const minimalOrganization = {
       id: 2,
       slug: "city-shelter",
@@ -180,15 +99,9 @@ describe("OrganizationDetailClient - Schema Integration", () => {
       status: "active",
     };
 
-    getOrganizationBySlug.mockResolvedValue(minimalOrganization);
-    getOrganizationDogs.mockResolvedValue([]);
-
-    const { container } = render(<OrganizationDetailClient />);
-
-    // Wait for organization heading to appear (indicates data loaded)
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "City Animal Shelter" })).toBeInTheDocument();
-    });
+    const { container } = render(
+      <OrganizationSchema organization={minimalOrganization} />,
+    );
 
     const schemaScript = container.querySelector(
       'script[type="application/ld+json"]',
