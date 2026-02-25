@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "Swipe Dogs | Find Your Perfect Match",
   description:
     "Swipe through rescue dogs one at a time to find your perfect match. Like Tinder, but for dog adoption!",
+  robots: { index: false, follow: true },
   openGraph: {
     title: "Swipe to Find Your Perfect Rescue Dog",
     description:
