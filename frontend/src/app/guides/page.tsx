@@ -52,37 +52,38 @@ export default async function GuidesPage() {
       />
 
       <div className="container mx-auto px-4 py-12">
-        {/* Breadcrumbs */}
-        <nav className="mb-6 text-sm" aria-label="Breadcrumb">
-          <ol className="flex items-center gap-2">
-            <li>
-              <Link
-                href="/"
-                className="text-orange-500 hover:text-orange-600 hover:underline transition-colors"
-              >
-                Home
-              </Link>
-            </li>
-            <li>
-              <span className="mx-2 text-gray-400">/</span>
-            </li>
-            <li>
-              <span
-                className="text-gray-900 dark:text-white font-medium"
-                aria-current="page"
-              >
-                Guides
-              </span>
-            </li>
-          </ol>
-        </nav>
+        <div className="max-w-6xl mx-auto">
+          <nav className="mb-6 text-sm" aria-label="Breadcrumb">
+            <ol className="flex items-center gap-2">
+              <li>
+                <Link
+                  href="/"
+                  className="text-orange-500 hover:text-orange-600 hover:underline transition-colors"
+                >
+                  Home
+                </Link>
+              </li>
+              <li>
+                <span className="mx-2 text-gray-400">/</span>
+              </li>
+              <li>
+                <span
+                  className="text-gray-900 dark:text-white font-medium"
+                  aria-current="page"
+                >
+                  Guides
+                </span>
+              </li>
+            </ol>
+          </nav>
 
-        <h1 className="text-4xl font-bold mb-4">Adoption Guides</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-3xl">
-          Comprehensive guides to help you navigate rescue dog adoption from
-          European organizations. From first-time owner preparation to
-          understanding costs and cross-border logistics.
-        </p>
+          <h1 className="text-4xl font-bold mb-4">Adoption Guides</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-3xl">
+            Comprehensive guides to help you navigate rescue dog adoption from
+            European organizations. From first-time owner preparation to
+            understanding costs and cross-border logistics.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
           {guides.map((guide, index) => (
@@ -90,7 +91,7 @@ export default async function GuidesPage() {
           ))}
         </div>
 
-        <div className="mt-16 max-w-3xl text-sm text-gray-500 dark:text-gray-400 space-y-3">
+        <div className="mt-16 max-w-3xl mx-auto text-sm text-gray-500 dark:text-gray-400 space-y-3">
           <p>
             Whether you are considering adopting a rescue dog for the first time
             or adding another companion to your family, these guides walk you
