@@ -197,39 +197,12 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
     }
 
     // Otherwise fetch client-side
-    // Reset loading state for new navigation
     setLoading(true);
     setError(false);
     setDog(null);
 
-    // Check if document is ready before making API call
-    const makeApiCall = () => {
-      if (document.readyState === "complete") {
-        fetchDogData();
-      } else {
-        const handleLoad = () => {
-          fetchDogData();
-          window.removeEventListener("load", handleLoad);
-        };
+    fetchDogData();
 
-        window.addEventListener("load", handleLoad);
-
-        // Fallback timeout in case load event doesn't fire
-        const fallbackTimeout = setTimeout(() => {
-          fetchDogData();
-          window.removeEventListener("load", handleLoad);
-        }, 2000);
-
-        return () => {
-          window.removeEventListener("load", handleLoad);
-          clearTimeout(fallbackTimeout);
-        };
-      }
-    };
-
-    makeApiCall();
-
-    // Cleanup function to prevent memory leaks
     return () => {
       mountedRef.current = false;
     };

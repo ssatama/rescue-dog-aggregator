@@ -11,6 +11,7 @@ import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
 
 interface OrganizationDetailPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export async function generateMetadata(props: OrganizationDetailPageProps): Promise<Metadata> {
@@ -98,6 +99,15 @@ async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): 
     }
   }
 
+  let resolvedSearchParams: Record<string, string | string[] | undefined> = {};
+  if (props.searchParams) {
+    try {
+      resolvedSearchParams = await props.searchParams;
+    } catch {
+      // Ignore searchParams errors - Client component falls back to defaults
+    }
+  }
+
   let initialOrganization = null;
   if (resolvedParams.slug) {
     try {
@@ -122,7 +132,7 @@ async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): 
       )}
       {breadcrumbItems && <BreadcrumbSchema items={breadcrumbItems} />}
       <Suspense>
-        <OrganizationDetailClient initialOrganization={initialOrganization} />
+        <OrganizationDetailClient initialOrganization={initialOrganization} initialSearchParams={resolvedSearchParams} />
       </Suspense>
     </Layout>
   );
