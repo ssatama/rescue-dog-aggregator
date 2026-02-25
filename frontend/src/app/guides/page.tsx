@@ -78,7 +78,19 @@ export default async function GuidesPage() {
         </nav>
 
         <h1 className="text-4xl font-bold mb-4">Adoption Guides</h1>
-        <div className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-3xl space-y-4">
+        <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-3xl">
+          Comprehensive guides to help you navigate rescue dog adoption from
+          European organizations. From first-time owner preparation to
+          understanding costs and cross-border logistics.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+          {guides.map((guide, index) => (
+            <GuideCard key={guide.slug} guide={guide} priority={index < 4} />
+          ))}
+        </div>
+
+        <div className="mt-16 max-w-3xl text-sm text-gray-500 dark:text-gray-400 space-y-3">
           <p>
             Whether you are considering adopting a rescue dog for the first time
             or adding another companion to your family, these guides walk you
@@ -102,12 +114,6 @@ export default async function GuidesPage() {
             regulations, timelines, and costs involved in rescuing a dog from
             abroad.
           </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-          {guides.map((guide, index) => (
-            <GuideCard key={guide.slug} guide={guide} priority={index < 4} />
-          ))}
         </div>
       </div>
     </Layout>
