@@ -17,6 +17,7 @@ interface FavoritesContextType {
   isFavorited: (dogId: number | string) => boolean;
   addFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
   removeFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
+  removeFavoritesBatch: (dogIds: number[]) => void;
   toggleFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
   clearFavorites: () => void;
   getShareableUrl: () => string;
@@ -309,6 +310,23 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     [saveToLocalStorage],
   );
 
+  const removeFavoritesBatch = useCallback(
+    (dogIds: number[]): void => {
+      if (dogIds.length === 0) return;
+      const idsToRemove = new Set(dogIds);
+      setFavorites((prev) => {
+        const newFavorites = prev.filter((id) => !idsToRemove.has(id));
+        saveToLocalStorage(newFavorites);
+        return newFavorites;
+      });
+      setToastMessage({
+        type: "remove",
+        message: `Removed ${dogIds.length} unavailable dog${dogIds.length !== 1 ? "s" : ""} from favorites`,
+      });
+    },
+    [saveToLocalStorage],
+  );
+
   const toggleFavorite = useCallback(
     async (dogId: number | string, dogName?: string): Promise<void> => {
       if (isFavorited(dogId)) {
@@ -333,15 +351,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const loadFromUrl = useCallback(
     (url: string): void => {
       try {
-        // Use the new parsing utility that handles all URL formats
         const parsed = parseSharedUrl(url);
 
         if (parsed.length === 0) {
-          // No favorites in URL
           return;
         }
 
-        // Validate parsed IDs
         const isValidDogIds = parsed.every(
           (id) =>
             typeof id === "number" &&
@@ -354,27 +369,40 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Invalid shared data: contains invalid dog IDs");
         }
 
-        // Limit the number of shared favorites to prevent abuse
-        if (parsed.length > MAX_FAVORITES) {
-          throw new Error(
-            `Too many shared favorites: ${parsed.length} exceeds limit of ${MAX_FAVORITES}`,
-          );
+        // Read current state from localStorage (source of truth) to merge
+        let current: number[] = [];
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) current = JSON.parse(raw) as number[];
+        } catch {
+          // If localStorage read fails, merge with empty
         }
 
-        setFavorites(parsed);
-        saveToLocalStorage(parsed);
+        const merged = [...new Set([...current, ...parsed])].slice(
+          0,
+          MAX_FAVORITES,
+        );
+        const newCount = merged.length - current.length;
 
-        // Show success feedback to user
-        setToastMessage({
-          type: "success",
-          message: `Loaded ${parsed.length} shared favorite${parsed.length !== 1 ? "s" : ""}`,
-        });
+        setFavorites(merged);
+        saveToLocalStorage(merged);
+
+        if (newCount > 0) {
+          setToastMessage({
+            type: "success",
+            message: `Added ${newCount} new dog${newCount !== 1 ? "s" : ""} to your favorites`,
+          });
+        } else {
+          setToastMessage({
+            type: "success",
+            message: "All shared dogs were already in your favorites",
+          });
+        }
       } catch (error) {
         if (process.env.NODE_ENV === "development") {
           console.error("Failed to load favorites from URL:", error);
         }
 
-        // Show error feedback to user for invalid shared URLs
         setToastMessage({
           type: "error",
           message: "Invalid shared link. Please check the URL and try again.",
@@ -390,6 +418,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     isFavorited,
     addFavorite,
     removeFavorite,
+    removeFavoritesBatch,
     toggleFavorite,
     clearFavorites,
     getShareableUrl,

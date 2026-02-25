@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useFavorites } from "../../hooks/useFavorites";
@@ -19,6 +19,7 @@ import { BreadcrumbSchema } from "../../components/seo";
 import type { Dog } from "../../types/dog";
 import { getAnimalsByIds } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
+import { useViewport } from "../../hooks/useViewport";
 import FilterPanelSkeleton from "../../components/ui/FilterPanelSkeleton";
 import CompareSkeleton from "../../components/ui/CompareSkeleton";
 
@@ -37,6 +38,11 @@ const CompareMode = dynamic(
     loading: () => <CompareSkeleton />,
     ssr: false,
   },
+);
+
+const PremiumMobileCatalog = dynamic(
+  () => import("../../components/dogs/mobile/catalog/PremiumMobileCatalog"),
+  { ssr: false },
 );
 
 // Type definitions - compatible with FavoritesInsights component
@@ -82,20 +88,22 @@ interface Insights {
 }
 
 function FavoritesPageContent(): React.JSX.Element {
-  const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl, isHydrated } =
+  const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl, removeFavoritesBatch, isHydrated } =
     useFavorites();
   const { showToast } = useToast();
+  const { isMobile, isTablet } = useViewport();
+  const isMobileView = isMobile || isTablet;
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [filteredDogs, setFilteredDogs] = useState<Dog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showCompareMode, setShowCompareMode] = useState<boolean>(false);
+  const prevFavoritesRef = useRef<number[]>([]);
 
   // Load favorites from URL on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
-      // Check for any sharing parameters (new or old format)
       const hasSharedParams =
         urlParams.has("shared") || urlParams.has("ids") || urlParams.has("c");
 
@@ -105,11 +113,36 @@ function FavoritesPageContent(): React.JSX.Element {
     }
   }, [loadFromUrl]);
 
-  // Fetch dog data for favorites
+  // Track page view once on mount
   useEffect(() => {
+    try {
+      trackFavoritesPageView(favorites.length);
+    } catch (trackError) {
+      reportError(trackError, { context: "trackFavoritesPageView" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Track only on mount
+  }, []);
+
+  // Fetch dog data for favorites — only refetch when new IDs are added
+  useEffect(() => {
+    const prevIds = new Set(prevFavoritesRef.current);
+    const currentIds = new Set(favorites);
+    const addedIds = favorites.filter((id) => !prevIds.has(id));
+    const removedIds = prevFavoritesRef.current.filter((id) => !currentIds.has(id));
+
+    prevFavoritesRef.current = favorites;
+
+    if (removedIds.length > 0 && addedIds.length === 0) {
+      const removedSet = new Set(removedIds);
+      setDogs((prev) => prev.filter((d) => !removedSet.has(Number(d.id))));
+      setFilteredDogs((prev) => prev.filter((d) => !removedSet.has(Number(d.id))));
+      return;
+    }
+
     async function fetchFavoriteDogs() {
       if (favorites.length === 0) {
         setDogs([]);
+        setFilteredDogs([]);
         setIsLoading(false);
         return;
       }
@@ -127,9 +160,9 @@ function FavoritesPageContent(): React.JSX.Element {
         let failedBatches = 0;
         const batchResults = await Promise.all(
           batches.map((batchIds) =>
-            getAnimalsByIds(batchIds).catch((error) => {
+            getAnimalsByIds(batchIds).catch((batchError) => {
               failedBatches++;
-              reportError(error, { context: "favorites-batch-fetch", batchSize: batchIds.length });
+              reportError(batchError, { context: "favorites-batch-fetch", batchSize: batchIds.length });
               return [] as Dog[];
             }),
           ),
@@ -141,6 +174,12 @@ function FavoritesPageContent(): React.JSX.Element {
         } else {
           setDogs(validDogs);
           setFilteredDogs(validDogs);
+
+          const returnedIds = new Set(validDogs.map((d) => Number(d.id)));
+          const staleIds = favorites.filter((id) => !returnedIds.has(id));
+          if (staleIds.length > 0) {
+            removeFavoritesBatch(staleIds);
+          }
         }
       } catch (err) {
         reportError(err, { context: "fetchFavoriteDogs", favoriteCount: favorites.length });
@@ -151,14 +190,7 @@ function FavoritesPageContent(): React.JSX.Element {
     }
 
     fetchFavoriteDogs();
-
-    // Track favorites page view
-    try {
-      trackFavoritesPageView(favorites.length);
-    } catch (error) {
-      console.error("Failed to track favorites page view:", error);
-    }
-  }, [favorites]);
+  }, [favorites, removeFavoritesBatch]);
 
   const handleFilter = useCallback(
     (filtered: Dog[], isUserInitiated = false) => {
@@ -390,8 +422,8 @@ function FavoritesPageContent(): React.JSX.Element {
               Your Favorite Dogs
             </h1>
             <p className="text-center text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              You&rsquo;ve saved {count} potential companion
-              {count !== 1 ? "s" : ""}. Take your time to review and share with
+              You&rsquo;ve saved {dogs.length} potential companion
+              {dogs.length !== 1 ? "s" : ""}. Take your time to review and share with
               family.
             </p>
 
@@ -453,26 +485,32 @@ function FavoritesPageContent(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Dogs grid - use filtered dogs */}
-        <div className="container mx-auto px-4 max-w-5xl">
-          {filteredDogs.length === 0 && dogs.length > 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                No dogs match your filters
-              </p>
-              <Button variant="outline" onClick={() => setFilteredDogs(dogs)}>
-                Clear Filters
-              </Button>
-            </div>
-          ) : (
-            <DogsGrid
-              dogs={filteredDogs}
-              loading={false}
-              className="animate-in fade-in duration-200"
-              listContext="favorites"
-            />
-          )}
-        </div>
+        {/* Dogs grid - mobile uses 2-col overlay cards, desktop uses standard grid */}
+        {isMobileView ? (
+          <PremiumMobileCatalog
+            dogs={filteredDogs}
+            loading={false}
+            totalCount={filteredDogs.length}
+          />
+        ) : (
+          <div className="container mx-auto px-4 max-w-5xl">
+            {filteredDogs.length === 0 && dogs.length > 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  No dogs match your filters. Use the filter panel above to adjust
+                  your criteria.
+                </p>
+              </div>
+            ) : (
+              <DogsGrid
+                dogs={filteredDogs}
+                loading={false}
+                className="animate-in fade-in duration-200"
+                listContext="favorites"
+              />
+            )}
+          </div>
+        )}
 
         {/* Compare Mode Modal - use filtered dogs */}
         {showCompareMode && (

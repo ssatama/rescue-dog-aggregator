@@ -226,6 +226,13 @@ describe("SwipeCard", () => {
     expect(favoriteButton).toHaveClass("sm:h-14");
   });
 
+  it("should have aria-pressed attribute on favorite button", () => {
+    renderWithProvider(<SwipeCard dog={mockDog} />);
+
+    const favoriteButton = screen.getByLabelText("Add to favorites");
+    expect(favoriteButton).toHaveAttribute("aria-pressed", "false");
+  });
+
   describe("Share URL construction", () => {
     it("should pass slug-based URL to ShareButton", () => {
       renderWithProvider(<SwipeCard dog={mockDog} />);
