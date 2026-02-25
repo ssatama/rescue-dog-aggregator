@@ -19,6 +19,7 @@ import { BreadcrumbSchema } from "../../components/seo";
 import type { Dog } from "../../types/dog";
 import { getAnimalsByIds } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
+import { useViewport } from "../../hooks/useViewport";
 import FilterPanelSkeleton from "../../components/ui/FilterPanelSkeleton";
 import CompareSkeleton from "../../components/ui/CompareSkeleton";
 
@@ -37,6 +38,11 @@ const CompareMode = dynamic(
     loading: () => <CompareSkeleton />,
     ssr: false,
   },
+);
+
+const PremiumMobileCatalog = dynamic(
+  () => import("../../components/dogs/mobile/catalog/PremiumMobileCatalog"),
+  { ssr: false },
 );
 
 // Type definitions - compatible with FavoritesInsights component
@@ -85,6 +91,8 @@ function FavoritesPageContent(): React.JSX.Element {
   const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl, removeFavoritesBatch, isHydrated } =
     useFavorites();
   const { showToast } = useToast();
+  const { isMobile, isTablet } = useViewport();
+  const isMobileView = isMobile || isTablet;
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [filteredDogs, setFilteredDogs] = useState<Dog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -477,24 +485,32 @@ function FavoritesPageContent(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Dogs grid - use filtered dogs */}
-        <div className="container mx-auto px-4 max-w-5xl">
-          {filteredDogs.length === 0 && dogs.length > 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                No dogs match your filters. Use the filter panel above to adjust
-                your criteria.
-              </p>
-            </div>
-          ) : (
-            <DogsGrid
-              dogs={filteredDogs}
-              loading={false}
-              className="animate-in fade-in duration-200"
-              listContext="favorites"
-            />
-          )}
-        </div>
+        {/* Dogs grid - mobile uses 2-col overlay cards, desktop uses standard grid */}
+        {isMobileView ? (
+          <PremiumMobileCatalog
+            dogs={filteredDogs}
+            loading={false}
+            totalCount={filteredDogs.length}
+          />
+        ) : (
+          <div className="container mx-auto px-4 max-w-5xl">
+            {filteredDogs.length === 0 && dogs.length > 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  No dogs match your filters. Use the filter panel above to adjust
+                  your criteria.
+                </p>
+              </div>
+            ) : (
+              <DogsGrid
+                dogs={filteredDogs}
+                loading={false}
+                className="animate-in fade-in duration-200"
+                listContext="favorites"
+              />
+            )}
+          </div>
+        )}
 
         {/* Compare Mode Modal - use filtered dogs */}
         {showCompareMode && (
