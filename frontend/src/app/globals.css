@@ -889,12 +889,6 @@
   will-change: transform;
 }
 
-@utility gpu-accelerated {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-}
-
 @utility scale-102 {
   /* Custom scale utilities for subtle animations - Session 3 Enhanced */
   transform: scale(1.02);

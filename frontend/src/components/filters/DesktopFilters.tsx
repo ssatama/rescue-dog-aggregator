@@ -251,6 +251,7 @@ export default function DesktopFilters({
                     data-testid={`size-button-${size}`}
                     variant="outline"
                     onClick={() => setSizeFilter(size)}
+                    aria-pressed={isActive}
                     className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
                       isActive
                         ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
@@ -316,6 +317,7 @@ export default function DesktopFilters({
                     data-testid={`age-button-${age}`}
                     variant="outline"
                     onClick={() => setAgeCategoryFilter(age)}
+                    aria-pressed={isActive}
                     className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
                       isActive
                         ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
@@ -379,6 +381,7 @@ export default function DesktopFilters({
                     data-testid={`sex-button-${sex}`}
                     variant="outline"
                     onClick={() => setSexFilter(sex)}
+                    aria-pressed={isActive}
                     className={`justify-center cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
                       isActive
                         ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
