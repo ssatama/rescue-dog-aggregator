@@ -1,6 +1,6 @@
 # Database Schema Reference
 
-This document provides complete documentation of the PostgreSQL database schema for the Rescue Dog Aggregator platform as of January 2025.
+This document provides complete documentation of the PostgreSQL database schema for the Rescue Dog Aggregator platform.
 
 ## Schema Overview
 
@@ -347,7 +347,7 @@ WHERE detailed_metrics->>'parsing_errors'::int > 5;
 
 For database setup and migration information, see:
 - [Database Migration History](../../database/migration_history.md)
-- [Installation Guide](../getting-started/installation.md)
-- [Railway Deployment Guide](../operations/production-deployment.md)
+- [Installation Guide](../guides/installation.md)
+- [Deployment Guide](../guides/deployment.md)
 
 The schema supports both development and production environments with identical structure and indexing strategies, enhanced test isolation, and comprehensive monitoring.

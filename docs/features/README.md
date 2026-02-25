@@ -86,7 +86,7 @@
 ### 🎯 Testing Coverage
 
 - **125 backend test files** (pytest)
-- **270 frontend test files** (Jest)
+- **267 frontend test files** (Jest)
 - **E2E critical paths** (Playwright)
 - **Security testing** suite
 - **Performance benchmarks**
@@ -97,7 +97,6 @@
 
 - **FastAPI** async framework
 - **PostgreSQL** with connection pooling
-- **Redis** caching layer
 - **Service-oriented** design patterns
 - **Dependency injection** for testability
 

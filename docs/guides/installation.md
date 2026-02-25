@@ -4,7 +4,7 @@
 
 Get the Rescue Dog Aggregator platform running locally in under 10 minutes. This guide covers system requirements, step-by-step installation, configuration, and troubleshooting.
 
-**Tech Stack**: Python/FastAPI backend, Next.js 16 frontend, PostgreSQL database, 168 backend test files, 276 frontend test files.
+**Tech Stack**: Python/FastAPI backend, Next.js 16 frontend, PostgreSQL database, 125 backend test files, 267 frontend test files.
 
 ## ⚡ Prerequisites
 
@@ -139,10 +139,10 @@ open http://localhost:3000  # Or visit in browser
 ### Test Suite Validation
 
 ```bash
-# Backend tests (168 test files)
+# Backend tests (125 test files)
 uv run pytest tests/ -m "not slow" -v
 
-# Frontend tests (276 test files)
+# Frontend tests (267 test files)
 cd frontend
 pnpm test
 
@@ -452,7 +452,7 @@ After successful installation:
 ## 💡 Key Features
 
 - **Configuration-Driven**: YAML-based organization management
-- **Test-Driven Development**: 168 backend tests, 276 frontend tests
+- **Test-Driven Development**: 125 backend tests, 267 frontend tests
 - **Modern Architecture**: Null Object Pattern, Context Managers, Template Methods
 - **Database Isolation**: Automatic test protection from production data
 - **Service Regions**: Geographic filtering and location-based search

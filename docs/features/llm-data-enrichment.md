@@ -10,7 +10,7 @@ The LLM Data Enrichment feature powers the intelligence behind www.rescuedogs.me
 - **Multi-language Support**: Processes descriptions in German, French, Spanish, and other languages
 - **Smart Matching**: Enables personality-based filtering and compatibility assessment
 - **Swipe Interface**: Powers the Tinder-like swipe feature with AI-generated insights
-- **Cost Efficiency**: Processes dogs at ~$0.005 each using Google Gemini 3 Flash
+- **Cost Efficiency**: Processes dogs at ~$0.005 each using Gemini 3 Flash via OpenRouter
 
 ## Architecture
 
@@ -129,7 +129,7 @@ Enriched profiles stored in PostgreSQL JSONB column:
   "special_needs": ["needs secure fencing", "may pull on leash"],
   "ideal_home": "Active family with yard and time for training",
   "profiled_at": "2024-08-20T10:30:00Z",
-  "model_used": "google/gemini-2.5-flash",
+  "model_used": "google/gemini-3-flash-preview",
   "quality_score": 92.5
 }
 ```
@@ -235,7 +235,7 @@ organizations:
     prompt_file: "tierschutzverein_europa.yaml"
     source_language: "de"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true
 ```
 
@@ -269,9 +269,9 @@ LLM_MODEL_OVERRIDE=openai/gpt-4-turbo  # Override default model
 
 - **Processing Success Rate**: 97%+ (with automatic retries)
 - **Quality Score Average**: 85-95% per profile
-- **Cost per Dog**: ~$0.005 (Gemini 3 Flash)
+- **Cost per Dog**: ~$0.005 (Gemini 3 Flash via OpenRouter)
 - **Processing Time**: 2-5 seconds per dog
-- **Batch Efficiency**: 5 dogs concurrent processing
+- **Batch Efficiency**: 5 dogs concurrent
 
 ### Retry Logic
 
@@ -283,7 +283,7 @@ RetryConfig(
     initial_delay=2.0,
     backoff_factor=2.0,
     fallback_models=[
-        "google/gemini-2.5-flash",
+        "google/gemini-3-flash-preview",
         "openai/gpt-4-turbo-preview"
     ]
 )
@@ -450,10 +450,9 @@ pnpm jest --testPathPatterns "dogProfilerAnalyzer" --watchAll=false
 
 ### Site Metrics
 
-- **4,500+ dogs** enriched with AI profiles
+- **1,500+ active dogs** enriched with AI profiles
 - **20+ daily users** using personality-based search
 - **97% profile coverage** for active dogs
-- **3x engagement** on dogs with enriched profiles
 
 ### User Benefits
 
@@ -470,5 +469,5 @@ The system's modular design allows easy addition of new organizations, continuou
 
 ---
 
-**Last Updated**: 2025-12-23
+**Last Updated**: 2026-02-25
 **Related Docs**: [Architecture Reference](../technical/architecture.md)

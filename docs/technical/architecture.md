@@ -6,7 +6,7 @@
 
 ```
 Production:    www.rescuedogs.me
-Data:          1,500+ active dogs | 12 active organizations (13 scrapers)
+Data:          1,500+ active dogs | 12 active organizations
 Backend:       Python 3.12+/FastAPI + PostgreSQL 15 + Alembic
 Frontend:      Next.js 16 App Router + React 19 + TypeScript 5
 MCP Server:    TypeScript + @modelcontextprotocol/sdk (npm: rescuedogs-mcp-server)
@@ -21,21 +21,21 @@ Linting:       ruff (Python) + ESLint (TypeScript)
 
 ```
 /api                    # FastAPI routes + middleware
-  /routes               # 8 route modules (animals, swipe, llm, etc.)
-/services               # 16 core services + llm/ subdirectory
+  /routes               # 7 route modules (animals, swipe, llm, etc.)
+/services               # 15 core services + llm/ subdirectory
   /llm                  # LLM profiling pipeline (20 files)
 /scrapers               # 13 organization scrapers + base classes
 /frontend/src
   /app                  # Next.js App Router pages
-  /components           # Feature-organized UI components (22 dirs)
+  /components           # Feature-organized UI components (21 dirs)
 /rescuedogs-mcp-server  # MCP server for Claude integration
   /src                  # TypeScript source (8 tools)
 /configs/organizations  # YAML configs (13 orgs, 12 active)
-/tests                  # 168 backend test files
-/frontend/__tests__     # 276 frontend test files
+/tests                  # 125 backend test files
+/frontend/src           # 267 frontend test files
 /migrations/versions    # Alembic migrations (dev)
 /migrations/railway     # Production migrations
-/management             # CLI tools (19 scripts)
+/management             # CLI tools (20 scripts)
 ```
 
 ## Core Data Models
@@ -105,7 +105,7 @@ created_at, updated_at
 
 ## API Routes
 
-### Core Endpoints (8 modules)
+### Core Endpoints (7 modules)
 
 ```
 /api/animals           # CRUD, search, filtering, stats (main data access)
@@ -119,7 +119,7 @@ created_at, updated_at
 
 ## Service Layer Pattern
 
-### Core Services (16 root files)
+### Core Services (15 root files)
 
 ```python
 database_service.py          # Connection pool, transactions, retries
@@ -129,15 +129,14 @@ browser_service.py           # Legacy browser service interface
 metrics_collector.py         # Performance + business metrics
 session_manager.py           # User sessions, preferences
 adoption_detection.py        # Detect adopted dogs via patterns
+animal_data_preparation.py   # Animal data prep for API responses
 image_processing_service.py  # Image validation, optimization
 image_processing.py          # Core image utilities
 progress_tracker.py          # Long-running operation tracking
-llm_profiler_service.py      # Main LLM orchestration
 llm_data_service.py          # LLM data access layer
 config.py                    # Service configuration
 models.py                    # Pydantic validation models
 null_objects.py              # Null Object pattern implementations
-__init__.py                  # Package exports
 ```
 
 ### LLM Pipeline (services/llm/, 20 files)
@@ -215,7 +214,6 @@ See `docs/technical/scraper-architecture.md` for detailed scraper documentation.
 /dogs/[id]            # Individual dog detail page
 /swipe                # Tinder-like discovery interface
 /favorites            # User's saved dogs
-/favorites/compare    # Side-by-side comparison
 /breeds               # Breed directory
 /breeds/[breed]       # Breed-specific listings
 /breeds/mixed         # Mixed breed section
@@ -237,24 +235,24 @@ See `docs/technical/scraper-architecture.md` for detailed scraper documentation.
 ```
 /components
   /about             # About page content
+  /age               # Age-related components
   /analytics         # Analytics tracking components
   /breeds            # BreedCard, BreedGrid, BreedFilter
+  /countries         # Country hub components
   /dogs              # DogCard, DogGrid, DogDetail, PersonalityTraits
   /error             # Error boundaries and displays
-  /favorites         # FavoriteButton, FavoritesList, CompareMode
+  /favorites         # FavoriteButton, FavoritesList
   /filters           # FilterBar, AdvancedFilters, SearchInput
   /guides            # Adoption guide content
   /home              # Homepage hero, stats, featured
   /layout            # Header, Footer, Navigation
   /mobile            # Mobile-specific components
-  /monitoring        # ErrorBoundary, SentryProvider
   /navigation        # Nav components, MobileMenu
   /organizations     # OrgCard, OrgGrid, OrgStats
   /providers         # Context providers (theme, favorites)
   /search            # Search components
   /seo               # MetaTags, StructuredData, OpenGraph
   /swipe             # SwipeCard, SwipeStack, SwipeControls
-  /test              # Test utilities
   /ui                # Button, Card, Modal, FallbackImage
 ```
 
@@ -382,10 +380,10 @@ python management/llm_commands.py generate-profiles   # Batch enrichment
 ### Current Metrics
 
 ```
-Dogs:           1,557 active
-Scrapers:       12 active organizations (13 total)
-Backend Tests:  168 test files
-Frontend Tests: 285 test files
+Dogs:           1,500+ active
+Scrapers:       12 active organizations
+Backend Tests:  125 test files
+Frontend Tests: 267 test files
 Daily Users:    20+
 
 API Response Times (p50/p95):
@@ -402,7 +400,7 @@ Database:
   Average query time: 12ms
 
 LLM Processing:
-  Cost: ~$0.0015/dog
+  Cost: ~$0.005/dog
   Success rate: 97%+
   Model: Gemini 3 Flash (primary)
 ```
@@ -514,7 +512,7 @@ The `rescuedogs-mcp-server` enables LLMs (Claude Code, Claude Desktop) to discov
 - **FastAPI**: Native async, automatic OpenAPI docs, Pydantic validation
 - **Next.js 16**: App Router performance, React Server Components, built-in SEO
 - **PostgreSQL**: JSONB flexibility, full-text search, strong ACID, asyncpg driver
-- **OpenRouter/Gemini 3 Flash**: Cost-effective ($0.0015/dog), fast (2-5s), high success (97%+)
+- **OpenRouter/Gemini 3 Flash**: Cost-effective (~$0.005/dog), fast (2-5s), high success (97%+)
 - **Service Pattern**: Testability, clear separation, future microservices path
 
 ### Technology Choices
@@ -608,6 +606,6 @@ NEXT_PUBLIC_R2_IMAGE_PATH=rescue_dogs
 
 ---
 
-**Last Updated**: 2026-01-24
-**Current Scale**: 1,500+ dogs | 12 active organizations | 168 backend tests | 276 frontend tests
+**Last Updated**: 2026-02-25
+**Current Scale**: 1,500+ dogs | 12 active organizations | 125 backend tests | 267 frontend tests
 **Production**: www.rescuedogs.me

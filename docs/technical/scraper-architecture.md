@@ -4,7 +4,7 @@
 
 The scraper system follows a **Template Method Pattern** with a base class (`BaseScraper`) providing common functionality and organization-specific scrapers implementing extraction logic for each rescue organization's website.
 
-**Current Status:** 13 scrapers, 12 active organizations, ~4,682 dogs aggregated.
+**Current Status:** 13 scrapers, 12 active organizations, 1,500+ active dogs.
 
 ## Architecture Diagram
 
@@ -901,5 +901,5 @@ Arbitrary organization-specific data stored in `properties` column:
 
 ---
 
-**Last Updated:** 2025-12-31
-**Current Scale:** 13 scrapers | 12 active organizations | ~4,682 dogs
+**Last Updated:** 2026-02-25
+**Current Scale:** 13 scrapers | 12 active organizations | 1,500+ active dogs

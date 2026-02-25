@@ -97,14 +97,17 @@ uv run python management/config_commands.py run pets-turkey
 # Check status
 git status
 
-# Stage changes
-git add -A
+# Create branch (never commit directly to main)
+git checkout -b fix/routing-issue
 
-# Commit with message
-git commit -m "fix: resolve API routing issue"
+# Stage specific files
+git add api/routes/animals.py tests/api/test_animals.py
 
-# Push to remote
-git push origin main
+# Commit with conventional format
+git commit -m "fix(api): resolve routing issue"
+
+# Push and create PR
+git push -u origin HEAD && gh pr create
 ```
 
 ## Debugging Commands
@@ -121,16 +124,13 @@ uv run python -c "from services.database_service import DatabaseService; print(D
 
 ## Production Operations
 ```bash
-# Deploy to production (automatic via GitHub)
-git push origin main
+# Deploy: merge PR to main triggers automatic deployment
+# Frontend: Vercel auto-deploys on main merge
+# Backend: Railway auto-deploys on main merge
 
 # Railway CLI operations
 railway logs
 railway run uv run python management/emergency_operations.py
-
-# Vercel operations
-vercel --prod
-vercel rollback
 ```
 
 ## Common Fix Patterns
@@ -223,7 +223,7 @@ export API_URL="http://localhost:8000"
 python --version  # Should be 3.12+
 
 # Check Node version  
-node --version  # Should be 18+
+node --version  # Should be 20+
 
 # Check database connection
 psql -d rescue_dogs -c "\conninfo"

@@ -92,10 +92,10 @@ pnpm install
 
 ### 4. Test Setup
 ```bash
-# Backend tests (168 test files)
+# Backend tests (125 test files)
 uv run pytest tests/ -m "unit or fast" -v
 
-# Frontend tests (276 test files)
+# Frontend tests (267 test files)
 cd frontend && pnpm test
 ```
 
@@ -192,13 +192,11 @@ print('LLM configured:', get_llm_config().openrouter_api_key is not None)
 # Edit crontab
 crontab -e
 
-# Run all 12 organizations every Monday at 2 AM
-0 2 * * 1 cd /path/to/rescue-dog-aggregator && uv run python management/config_commands.py run-all >> /var/log/scraper.log 2>&1
-
-# Or stagger individual organizations
-0 2 * * 1 cd /path/to/rescue-dog-aggregator && uv run python management/config_commands.py run pets-in-turkey >> /var/log/scraper.log 2>&1
-0 3 * * 1 cd /path/to/rescue-dog-aggregator && uv run python management/config_commands.py run rean >> /var/log/scraper.log 2>&1
-0 4 * * 1 cd /path/to/rescue-dog-aggregator && uv run python management/config_commands.py run tierschutzverein-europa >> /var/log/scraper.log 2>&1
+# Scrapers run on Railway cron (Tue/Thu/Sat at 6am UTC)
+# For local/manual runs:
+uv run python management/railway_scraper_cron.py           # Run all enabled
+uv run python management/railway_scraper_cron.py --org=dogstrust  # Single org
+uv run python management/railway_scraper_cron.py --dry-run # Preview
 ```
 
 ### 2. Log Rotation

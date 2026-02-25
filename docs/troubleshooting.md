@@ -199,7 +199,7 @@ pnpm analyze
 ```bash
 # Interactive shell
 uv run python -i
->>> from api.database import get_db_connection
+>>> from utils.db_connection import get_db_connection
 >>> conn = get_db_connection()
 >>> cursor = conn.cursor()
 >>> cursor.execute("SELECT COUNT(*) FROM animals")
