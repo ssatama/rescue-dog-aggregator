@@ -90,7 +90,7 @@ export default async function GuidesPage() {
           ))}
         </div>
 
-        <section className="mt-16 max-w-3xl text-sm text-gray-500 dark:text-gray-400 space-y-3">
+        <div className="mt-16 max-w-3xl text-sm text-gray-500 dark:text-gray-400 space-y-3">
           <p>
             Whether you are considering adopting a rescue dog for the first time
             or adding another companion to your family, these guides walk you
@@ -114,7 +114,7 @@ export default async function GuidesPage() {
             regulations, timelines, and costs involved in rescuing a dog from
             abroad.
           </p>
-        </section>
+        </div>
       </div>
     </Layout>
   );
