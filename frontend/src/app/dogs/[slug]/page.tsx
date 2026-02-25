@@ -219,29 +219,7 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
     const { getAllAnimalsForSitemap } = await import("../../../services/animalsService");
     const dogs = await getAllAnimalsForSitemap();
 
-    const isRecent = (dateStr: string | null): boolean => {
-      if (!dateStr) return false;
-      const date = new Date(dateStr);
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      return date > thirtyDaysAgo;
-    };
-
-    const prioritizedDogs = dogs
-      .map((dog) => {
-        const hasLLMContent = !!(dog.llm_description || dog.dog_profiler_data?.description);
-        const hasImage = !!dog.primary_image_url;
-        const isRecentDog = isRecent(dog.created_at || null);
-
-        return {
-          ...dog,
-          priority: (hasLLMContent ? 10 : 0) + (hasImage ? 5 : 0) + (isRecentDog ? 3 : 0)
-        };
-      })
-      .sort((a, b) => b.priority - a.priority)
-      .slice(0, 500);
-
-    return prioritizedDogs
+    return dogs
       .filter((dog): dog is typeof dog & { slug: string } => typeof dog.slug === "string" && dog.slug !== "")
       .map((dog) => ({ slug: dog.slug }));
 
