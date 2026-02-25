@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import DogFilters from "../../../components/filters/DogFilters";
 import OrganizationHero from "../../../components/organizations/OrganizationHero";
@@ -42,12 +42,13 @@ interface OrgFilters {
   sort: SortOption;
 }
 
-export default function OrganizationDetailClient(_props: OrganizationDetailClientProps) {
+export default function OrganizationDetailClient({ initialOrganization = null }: OrganizationDetailClientProps) {
   const urlParams = useParams();
-  const searchParams = useSearchParams();
   const organizationSlug = urlParams?.slug;
 
-  const [organization, setOrganization] = useState<OrganizationWithDetails | null>(null);
+  const [organization, setOrganization] = useState<OrganizationWithDetails | null>(
+    initialOrganization as OrganizationWithDetails | null,
+  );
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -60,14 +61,30 @@ export default function OrganizationDetailClient(_props: OrganizationDetailClien
   const [totalDogs, setTotalDogs] = useState(0);
 
   // Filter state management (age, breed, sex, sort for organization pages)
+  // Read URL search params in useState initializer (client-only, avoids useSearchParams Suspense trigger)
   const [filters, setFilters] = useState<OrgFilters>(() => {
-    // Initialize filters from URL parameters or defaults (no shipsTo for org pages)
     const defaultFilters = getDefaultFilters();
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlAge = params.get("age");
+      const urlBreed = params.get("breed");
+      const urlSex = params.get("sex");
+      const urlSort = params.get("sort");
+
+      if (urlAge || urlBreed || urlSex || urlSort) {
+        return {
+          age: (urlAge as AgeCategory) || defaultFilters.age || "All",
+          breed: urlBreed || defaultFilters.breed || "",
+          sex: urlSex || "Any",
+          sort: (urlSort as SortOption) || defaultFilters.sort || "newest",
+        };
+      }
+    }
     return {
-      age: (searchParams?.get("age") as AgeCategory) || defaultFilters.age || "All",
-      breed: searchParams?.get("breed") || defaultFilters.breed || "",
-      sex: searchParams?.get("sex") || "Any",
-      sort: (searchParams?.get("sort") as SortOption) || defaultFilters.sort || "newest",
+      age: defaultFilters.age || "All",
+      breed: defaultFilters.breed || "",
+      sex: "Any",
+      sort: defaultFilters.sort || "newest",
     };
   });
 
