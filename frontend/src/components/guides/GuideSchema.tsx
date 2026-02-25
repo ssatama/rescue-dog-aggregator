@@ -14,7 +14,7 @@ export function GuideSchema({ guide }: GuideSchemaProps) {
     datePublished: guide.frontmatter.lastUpdated,
     dateModified: guide.frontmatter.lastUpdated,
     author: {
-      "@type": "Organization",
+      "@type": "Person",
       name: guide.frontmatter.author,
     },
     publisher: {
@@ -34,7 +34,7 @@ export function GuideSchema({ guide }: GuideSchemaProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }}
     />
   );
 }
