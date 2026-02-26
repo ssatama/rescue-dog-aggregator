@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { Analytics, SpeedInsights } from "@/components/analytics";
-
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
@@ -106,6 +105,11 @@ export default function RootLayout({
           }}
         />
         <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister()})})}})()`,
+          }}
+        />
+        <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -156,7 +160,6 @@ export default function RootLayout({
               </ErrorBoundary>
               <Analytics />
               <SpeedInsights />
-
               <PerformanceMonitor />
               <SentryInitializer />
             </FavoritesProvider>
