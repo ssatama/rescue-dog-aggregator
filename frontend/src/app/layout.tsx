@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { Analytics, SpeedInsights } from "@/components/analytics";
-import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
@@ -156,7 +156,7 @@ export default function RootLayout({
               </ErrorBoundary>
               <Analytics />
               <SpeedInsights />
-              <ServiceWorkerRegistration />
+
               <PerformanceMonitor />
               <SentryInitializer />
             </FavoritesProvider>
