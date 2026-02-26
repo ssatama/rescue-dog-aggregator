@@ -61,7 +61,7 @@ const ExperienceLevelChart = ({ experienceDistribution }: ExperienceLevelChartPr
 
             <div className="w-full bg-gray-100 dark:bg-gray-700/50 rounded-full h-2.5">
               <div
-                className={`${level.color} h-2.5 rounded-full transition-all duration-500 ease-out`}
+                className={`${level.color} h-2.5 rounded-full transition-all duration-500 ease-out motion-reduce:transition-none`}
                 style={{ width: `${level.percentage}%` }}
               />
             </div>

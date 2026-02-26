@@ -8,6 +8,7 @@ import {
   getBreedBySlug,
   getAnimals,
 } from "@/services/serverAnimalsService";
+import { logger, reportError } from "@/utils/logger";
 
 export const revalidate = 3600;
 
@@ -57,10 +58,11 @@ export async function generateMetadata(): Promise<Metadata> {
         images:
           breedData.topDogs
             ?.filter(
-              (d: { primary_image_url?: string }) => d.primary_image_url,
+              (d): d is typeof d & { primary_image_url: string } =>
+                Boolean(d.primary_image_url),
             )
             .slice(0, 4)
-            .map((d: { primary_image_url?: string; name?: string }) => ({
+            .map((d) => ({
               url: d.primary_image_url,
               width: 800,
               height: 600,
@@ -75,19 +77,19 @@ export async function generateMetadata(): Promise<Metadata> {
         images:
           breedData.topDogs
             ?.filter(
-              (d: { primary_image_url?: string }) => d.primary_image_url,
+              (d): d is typeof d & { primary_image_url: string } =>
+                Boolean(d.primary_image_url),
             )
             .slice(0, 1)
-            .map(
-              (d: { primary_image_url?: string }) => d.primary_image_url,
-            ) || [],
+            .map((d) => d.primary_image_url) || [],
       },
       alternates: {
         canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/breeds/mixed`,
       },
     };
   } catch (error) {
-    console.error("Error generating metadata:", error);
+    reportError(error, { context: "mixed-generateMetadata" });
+    logger.error("Error generating metadata:", error);
     return {
       title: "Mixed Breed Rescue Dogs",
       description: "Find unique mixed breed rescue dogs for adoption",
@@ -108,20 +110,7 @@ async function fetchMixedBreedData() {
     offset: 0,
   });
 
-  const enrichedBreedData = {
-    ...breedData,
-    description: {
-      tagline: "Unique personalities from diverse genetic backgrounds",
-      overview:
-        "Mixed breed dogs combine the best traits of multiple breeds, resulting in unique personalities and often healthier genetics.",
-      temperament:
-        "Mixed breeds have diverse temperaments shaped by their unique genetic combinations and individual experiences.",
-      family:
-        "Many mixed breeds make excellent family pets, with their compatibility depending on individual personality and socialization.",
-    },
-  };
-
-  return { breedData, initialDogs, enrichedBreedData };
+  return { breedData, initialDogs };
 }
 
 export default async function MixedBreedsPage() {
@@ -131,12 +120,12 @@ export default async function MixedBreedsPage() {
     notFound();
   }
 
-  const { breedData, initialDogs, enrichedBreedData } = data;
+  const { breedData, initialDogs } = data;
 
   return (
     <>
       <BreedStructuredData
-        breedData={enrichedBreedData}
+        breedData={breedData}
         dogs={initialDogs}
         pageType="detail"
       />

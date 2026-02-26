@@ -511,8 +511,9 @@ export default function BreedDetailClient({
           onClose={() => {
             setIsFilterDrawerOpen(false);
             setTimeout(() => {
+              const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
               document.getElementById("dogs-grid")?.scrollIntoView({
-                behavior: "smooth",
+                behavior: reducedMotion ? "auto" : "smooth",
                 block: "start",
               });
             }, 300);

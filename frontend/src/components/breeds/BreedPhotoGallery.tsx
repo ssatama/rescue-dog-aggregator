@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { FallbackImage } from "../ui/FallbackImage";
 import Link from "next/link";
 
@@ -16,6 +16,18 @@ interface BreedMobileCarouselProps {
   breedName: string;
 }
 
+function getSlideWidth(container: HTMLDivElement): number {
+  const firstSlide = container.querySelector<HTMLElement>("[data-slide]");
+  return firstSlide?.offsetWidth ?? container.offsetWidth * 0.7;
+}
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 function BreedMobileCarousel({
   dogs,
   breedName,
@@ -23,38 +35,57 @@ function BreedMobileCarousel({
   const [currentSlide, setCurrentSlide] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   const displayedDogs = dogs?.slice(0, 6) || [];
+  const lastIndex = displayedDogs.length - 1;
 
-  const scrollToSlide = (index: number): void => {
-    if (carouselRef.current) {
-      const slideWidth = carouselRef.current.offsetWidth * 0.7;
-      const gap = 12;
-      const scrollPosition = index * (slideWidth + gap);
-      carouselRef.current.scrollTo({
-        left: scrollPosition,
-        behavior: "smooth",
-      });
-      setCurrentSlide(index);
+  const scrollToSlide = useCallback((index: number): void => {
+    if (!carouselRef.current) return;
+
+    const clamped = Math.max(0, Math.min(index, lastIndex));
+    const slideWidth = getSlideWidth(carouselRef.current);
+    const gap = 12;
+    carouselRef.current.scrollTo({
+      left: clamped * (slideWidth + gap),
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+    });
+    setCurrentSlide(clamped);
+  }, [lastIndex]);
+
+  const handleScroll = (): void => {
+    if (!carouselRef.current) return;
+
+    const slideWidth = getSlideWidth(carouselRef.current);
+    const gap = 12;
+    const raw = Math.round(carouselRef.current.scrollLeft / (slideWidth + gap));
+    const clamped = Math.max(0, Math.min(raw, lastIndex));
+    if (clamped !== currentSlide) {
+      setCurrentSlide(clamped);
     }
   };
 
-  const handleScroll = (): void => {
-    if (carouselRef.current) {
-      const scrollLeft = carouselRef.current.scrollLeft;
-      const slideWidth = carouselRef.current.offsetWidth * 0.7;
-      const gap = 12;
-      const newIndex = Math.round(scrollLeft / (slideWidth + gap));
-      if (newIndex !== currentSlide) {
-        setCurrentSlide(newIndex);
-      }
-    }
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+
+    e.preventDefault();
+    const next =
+      e.key === "Home" ? 0 :
+      e.key === "End" ? lastIndex :
+      e.key === "ArrowLeft" ? currentSlide - 1 :
+      currentSlide + 1;
+
+    scrollToSlide(next);
   };
 
   return (
     <div className="w-full">
       <div
         ref={carouselRef}
-        className="flex overflow-x-auto gap-3 pb-2 snap-x snap-mandatory scrollbar-hide"
+        tabIndex={0}
+        role="region"
+        aria-label={`${breedName} photo carousel`}
+        aria-roledescription="carousel"
+        className="flex overflow-x-auto gap-3 pb-2 snap-x snap-mandatory scrollbar-hide focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 rounded-xl"
         onScroll={handleScroll}
+        onKeyDown={handleKeyDown}
         style={{
           scrollSnapType: "x mandatory",
           WebkitOverflowScrolling: "touch",
@@ -63,6 +94,7 @@ function BreedMobileCarousel({
         {displayedDogs.map((dog, index) => (
           <Link
             key={dog.id}
+            data-slide
             href={`/dogs/${dog.slug}`}
             className="flex-shrink-0 w-[70vw] max-w-[280px] aspect-[4/5] relative overflow-hidden rounded-xl cursor-pointer group block snap-start"
           >
@@ -70,7 +102,7 @@ function BreedMobileCarousel({
               src={dog.primary_image_url}
               alt={`${dog.name} - ${breedName} rescue dog`}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              className="object-cover group-hover:scale-105 transition-transform duration-300 motion-reduce:transition-none motion-reduce:transform-none"
               priority={index < 3}
               sizes="(max-width: 640px) 70vw, 280px"
               fallbackSrc="/images/dog-placeholder.jpg"
@@ -90,7 +122,7 @@ function BreedMobileCarousel({
           return (
             <button
               key={index}
-              className={`h-2 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 ${
+              className={`h-2 rounded-full transition-all duration-300 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 ${
                 isActive
                   ? "w-6 bg-orange-600"
                   : "w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
@@ -158,13 +190,13 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }: B
                 src={dog.primary_image_url}
                 alt={`${dog.name} - ${breedName} rescue dog`}
                 fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                className="object-cover group-hover:scale-105 transition-transform duration-300 motion-reduce:transition-none motion-reduce:transform-none"
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 priority={index < 3}
                 fallbackSrc="/images/dog-placeholder.jpg"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 motion-reduce:transition-none" />
+              <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 motion-reduce:transition-none">
                 <span className="text-white text-sm font-medium">
                   {dog.name}
                 </span>

@@ -64,7 +64,7 @@ const PersonalityBarChart = ({ breedData }: PersonalityBarChartProps) => {
 
               <div className="w-full bg-gray-100 dark:bg-gray-700/50 rounded-full h-3">
                 <div
-                  className={`${config.barColor} h-3 rounded-full transition-all duration-500 ease-out`}
+                  className={`${config.barColor} h-3 rounded-full transition-all duration-500 ease-out motion-reduce:transition-none`}
                   style={{ width: `${data.percentage}%` }}
                 />
               </div>

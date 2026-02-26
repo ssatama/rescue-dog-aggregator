@@ -94,13 +94,13 @@ export default function BreedStatistics({ breedData, className = "" }: BreedStat
           <div className="relative w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               data-testid="male-bar"
-              className="absolute left-0 top-0 h-full bg-teal-500 dark:bg-teal-400 rounded-full transition-all duration-700 ease-out"
+              className="absolute left-0 top-0 h-full bg-teal-500 dark:bg-teal-400 rounded-full transition-all duration-700 ease-out motion-reduce:transition-none"
               style={{ width: `${sexData.malePercentage}%` }}
               aria-label={`${sexData.male} males out of ${sexData.total} dogs`}
             />
             <div
               data-testid="female-bar"
-              className="absolute right-0 top-0 h-full bg-pink-400 dark:bg-pink-300 rounded-full transition-all duration-700 ease-out"
+              className="absolute right-0 top-0 h-full bg-pink-400 dark:bg-pink-300 rounded-full transition-all duration-700 ease-out motion-reduce:transition-none"
               style={{ width: `${sexData.femalePercentage}%` }}
               aria-label={`${sexData.female} females out of ${sexData.total} dogs`}
             />
@@ -119,9 +119,10 @@ interface BreedInfoProps {
 
 export function BreedInfo({ breedData, lastUpdated, className = "" }: BreedInfoProps) {
   const handleScrollToDogs = (): void => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document
       .getElementById("dogs-grid")
-      ?.scrollIntoView({ behavior: "smooth" });
+      ?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
   };
 
   return (

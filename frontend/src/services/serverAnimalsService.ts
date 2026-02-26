@@ -15,6 +15,7 @@ import { FilterCountsResponseSchema } from "../schemas/common";
 import type { BreedStats } from "../schemas/animals";
 import type { FilterCountsResponse } from "../schemas/common";
 import type { Dog } from "../types/dog";
+import type { BreedPageData, SampleDog, PersonalityMetrics } from "../types/breeds";
 import {
   transformApiDogToDog,
   transformApiDogsToDogs,
@@ -453,8 +454,7 @@ interface AllMetadata {
   standardizedBreeds: string[];
   locationCountries: string[];
   availableCountries: string[];
-   
-  organizations: any[];
+  organizations: Array<{ id: number | string | null; name: string; slug?: string }>;
 }
 
 export async function getAllMetadata(): Promise<AllMetadata> {
@@ -478,8 +478,14 @@ export async function getAllMetadata(): Promise<AllMetadata> {
       : ["Any country"],
     organizations: organizations
       ? [
-          { id: null, name: "Any organization" },
-          ...(Array.isArray(organizations) ? organizations : []),
+          { id: null, name: "Any organization" } as const,
+          ...(Array.isArray(organizations)
+            ? organizations.map((org) => ({
+                id: org.id ?? null,
+                name: org.name,
+                slug: org.slug,
+              }))
+            : []),
         ]
       : [{ id: null, name: "Any organization" }],
   };
@@ -524,7 +530,7 @@ export const getAllAnimals = cache(
 );
 
  
-export const getBreedBySlug = cache(async (slug: string): Promise<any | null> => {
+export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData | null> => {
   try {
     if (slug === "mixed") {
       const breedStats = await getBreedStats();
@@ -538,9 +544,14 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
         sort_by: "created_at",
         sort_order: "desc",
       });
-      const topDogs = candidateDogs
-        .filter((dog: Dog) => dog.primary_image_url)
-        .slice(0, 6);
+      const topDogs: SampleDog[] = candidateDogs
+        .filter((dog: Dog) => dog.primary_image_url && dog.slug)
+        .slice(0, 6)
+        .map((dog) => ({
+          name: dog.name,
+          slug: dog.slug!,
+          primary_image_url: dog.primary_image_url,
+        }));
 
       if (topDogs.length === 0 && candidateDogs.length > 0) {
         logger.warn(`No dogs with images found for Mixed breeds out of ${candidateDogs.length} candidates`);
@@ -551,9 +562,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
         limit: 200,
       });
 
-      const dogsArray = allMixedDogs;
-
-      const organizationSet = new Set<unknown>();
+      const organizationSet = new Set<string>();
       const countrySet = new Set<string>();
 
       if (breedStats?.qualifying_breeds) {
@@ -561,7 +570,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
           if (breed.breed_group === "Mixed" || breed.breed_type === "mixed") {
             if (breed.organizations) {
               breed.organizations.forEach((org: unknown) =>
-                organizationSet.add(org),
+                organizationSet.add(String(org)),
               );
             }
             if (breed.countries) {
@@ -591,13 +600,11 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
 
       let totalAgeMonths = 0;
       let ageCount = 0;
-      let minAge = Infinity;
-      let maxAge = 0;
 
        
-      dogsArray.forEach((dog) => {
+      allMixedDogs.forEach((dog) => {
         if (dog.organization_id) {
-          organizationSet.add(dog.organization_id);
+          organizationSet.add(String(dog.organization_id));
         }
 
         if (dog.organization?.country) {
@@ -612,8 +619,6 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
           const avgAge = (dog.age_min_months + dog.age_max_months) / 2;
           totalAgeMonths += avgAge;
           ageCount++;
-          minAge = Math.min(minAge, dog.age_min_months);
-          maxAge = Math.max(maxAge, dog.age_max_months);
         }
 
         if (dog.properties) {
@@ -645,45 +650,29 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
         }
       });
 
-      const personalityProfile: Record<string, number> = {};
-      const personalityMetrics: Record<
-        string,
-        { percentage: number; label: string }
-      > = {};
-
-      Object.keys(personalityAggregation).forEach((trait) => {
-        let percentage: number;
-        if (personalityCount[trait] > 0) {
-          percentage = Math.round(
-            personalityAggregation[trait] / personalityCount[trait],
-          );
-        } else {
-          percentage =
-            trait === "energy_level"
-              ? 60
-              : trait === "affection"
-                ? 80
-                : trait === "trainability"
-                  ? 70
-                  : trait === "independence"
-                    ? 50
-                    : 50;
-        }
-
-        personalityProfile[trait] = percentage;
-
-        let label: string;
-        if (percentage <= 20) label = "Very Low";
-        else if (percentage <= 40) label = "Low";
-        else if (percentage <= 60) label = "Medium";
-        else if (percentage <= 80) label = "High";
-        else label = "Very High";
-
-        personalityMetrics[trait] = {
-          percentage,
-          label,
+      const getMetric = (trait: string): { percentage: number; label: string } => {
+        const defaults: Record<string, number> = {
+          energy_level: 60, affection: 80, trainability: 70, independence: 50,
         };
-      });
+        const percentage = personalityCount[trait] > 0
+          ? Math.round(personalityAggregation[trait] / personalityCount[trait])
+          : (defaults[trait] ?? 50);
+
+        const label =
+          percentage <= 20 ? "Very Low" :
+          percentage <= 40 ? "Low" :
+          percentage <= 60 ? "Medium" :
+          percentage <= 80 ? "High" : "Very High";
+
+        return { percentage, label };
+      };
+
+      const personalityMetrics: PersonalityMetrics = {
+        energy_level: getMetric("energy_level"),
+        affection: getMetric("affection"),
+        trainability: getMetric("trainability"),
+        independence: getMetric("independence"),
+      };
 
       const commonTraits = Array.from(traitsMap.entries())
         .sort((a, b) => b[1] - a[1])
@@ -700,52 +689,27 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
         );
       }
 
-      const experienceMap = new Map<string, number>();
-       
-      dogsArray.forEach((dog) => {
+      const experienceDistribution = {
+        first_time_ok: 0,
+        some_experience: 0,
+        experienced: 0,
+      };
+
+      allMixedDogs.forEach((dog) => {
         if (dog.properties?.experience_level) {
           const level = dog.properties.experience_level as string;
-          experienceMap.set(level, (experienceMap.get(level) || 0) + 1);
-        }
-      });
-
-      const experienceDistribution = Array.from(experienceMap.entries()).map(
-        ([level, count]) => ({
-          level,
-          count,
-          percentage: Math.round((count / dogsArray.length) * 100),
-        }),
-      );
-
-      const ageCategories: Record<string, number> = {
-        Puppy: 0,
-        Young: 0,
-        Adult: 0,
-        Senior: 0,
-      };
-       
-      dogsArray.forEach((dog) => {
-        if (dog.age_category) {
-          ageCategories[dog.age_category] =
-            (ageCategories[dog.age_category] || 0) + 1;
+          if (level === "first_time_ok") {
+            experienceDistribution.first_time_ok++;
+          } else if (level === "some_experience") {
+            experienceDistribution.some_experience++;
+          } else if (level === "experienced") {
+            experienceDistribution.experienced++;
+          }
         }
       });
 
       const avgAgeMonths =
         ageCount > 0 ? Math.round(totalAgeMonths / ageCount) : 36;
-      const avgAgeYears = Math.floor(avgAgeMonths / 12);
-      const avgAgeText =
-        avgAgeYears === 0
-          ? `${avgAgeMonths} months`
-          : avgAgeYears === 1
-            ? "1 year"
-            : `${avgAgeYears} years`;
-
-       
-      const organizationsCount =
-        organizationSet.size > 0 ? organizationSet.size : 10;
-      const countriesCount =
-        countrySet.size > 0 ? countrySet.size : 2;
 
       return {
         primary_breed: "Mixed Breed",
@@ -753,21 +717,16 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
         breed_type: "mixed",
         breed_group: "Mixed",
         count: mixedGroup?.count || 0,
-        organizations: Array.from(organizationSet).slice(0, 10),
+        organizations: Array.from(organizationSet).slice(0, 10).map(String),
         countries: Array.from(countrySet),
-        organization_count: organizationsCount,
-        country_count: countriesCount,
         topDogs: topDogs,
         description:
           "Every mixed breed is unique! These wonderful dogs combine traits from multiple breeds, creating diverse personalities, unique looks, and often fewer health issues. Each one has their own special story and character.",
-        personality_profile: personalityProfile,
         personality_metrics: personalityMetrics,
         personality_traits: commonTraits,
         experience_distribution: experienceDistribution,
-        age_distribution: ageCategories,
-        average_age: avgAgeText,
+        average_age: avgAgeMonths / 12,
         average_age_months: avgAgeMonths,
-        available_count: mixedGroup?.count || 0,
       };
     }
 
@@ -788,9 +747,14 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
       sort_by: "created_at",
       sort_order: "desc",
     });
-    const topDogs = candidateDogs
-      .filter((dog: Dog) => dog.primary_image_url)
-      .slice(0, 6);
+    const topDogs: SampleDog[] = candidateDogs
+      .filter((dog: Dog) => dog.primary_image_url && dog.slug)
+      .slice(0, 6)
+      .map((dog) => ({
+        name: dog.name,
+        slug: dog.slug!,
+        primary_image_url: dog.primary_image_url,
+      }));
 
     if (topDogs.length === 0 && candidateDogs.length > 0) {
       logger.warn(`No dogs with images found for "${breedData.primary_breed}" out of ${candidateDogs.length} candidates`);
@@ -825,7 +789,7 @@ export const getBreedDogs = cache(
     filters: BreedDogFilters = {},
 
 
-  ): Promise<any[]> => {
+  ): Promise<Dog[]> => {
     const breedStats = await getBreedStats();
     const breedData = breedStats.qualifying_breeds?.find(
       (breed) => breed.breed_slug === breedSlug,

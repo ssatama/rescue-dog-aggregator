@@ -11,6 +11,7 @@ import {
   getAnimals,
   getBreedStats,
 } from "@/services/serverAnimalsService";
+import { logger, reportError } from "@/utils/logger";
 
 interface BreedPageProps {
   params: Promise<{ slug: string }>;
@@ -71,10 +72,11 @@ export async function generateMetadata(
         images:
           breedData.topDogs
             ?.filter(
-              (d: { primary_image_url?: string }) => d.primary_image_url,
+              (d): d is typeof d & { primary_image_url: string } =>
+                Boolean(d.primary_image_url),
             )
             .slice(0, 4)
-            .map((d: { primary_image_url?: string; name?: string }) => ({
+            .map((d) => ({
               url: d.primary_image_url,
               width: 800,
               height: 600,
@@ -89,19 +91,19 @@ export async function generateMetadata(
         images:
           breedData.topDogs
             ?.filter(
-              (d: { primary_image_url?: string }) => d.primary_image_url,
+              (d): d is typeof d & { primary_image_url: string } =>
+                Boolean(d.primary_image_url),
             )
             .slice(0, 1)
-            .map(
-              (d: { primary_image_url?: string }) => d.primary_image_url,
-            ) || [],
+            .map((d) => d.primary_image_url) || [],
       },
       alternates: {
         canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/breeds/${params.slug}`,
       },
     };
   } catch (error) {
-    console.error("Error generating metadata:", error);
+    reportError(error, { context: "generateMetadata" });
+    logger.error("Error generating metadata:", error);
     return {
       title: "Breed Details",
       description: "View rescue dogs by breed",
@@ -126,7 +128,8 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
         })) || []
     );
   } catch (error) {
-    console.error("Error generating static params:", error);
+    reportError(error, { context: "generateStaticParams" });
+    logger.error("Error generating static params:", error);
     return [];
   }
 }
@@ -138,11 +141,11 @@ async function fetchBreedPageData(slug: string) {
     return null;
   }
 
-  const initialDogs = await getAnimals({
-    breed: breedData.primary_breed,
-    limit: 12,
-    offset: 0,
-  });
+  const initialDogs = await getAnimals(
+    slug === "mixed"
+      ? { breed_group: "Mixed", limit: 12, offset: 0 }
+      : { breed: breedData.primary_breed, limit: 12, offset: 0 },
+  );
 
   return { breedData, initialDogs };
 }
