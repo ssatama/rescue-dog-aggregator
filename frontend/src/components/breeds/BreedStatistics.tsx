@@ -100,7 +100,7 @@ export default function BreedStatistics({ breedData, className = "" }: BreedStat
             />
             <div
               data-testid="female-bar"
-              className="absolute right-0 top-0 h-full bg-pink-400 dark:bg-pink-400 rounded-full transition-all duration-700 ease-out"
+              className="absolute right-0 top-0 h-full bg-pink-400 dark:bg-pink-300 rounded-full transition-all duration-700 ease-out"
               style={{ width: `${sexData.femalePercentage}%` }}
               aria-label={`${sexData.female} females out of ${sexData.total} dogs`}
             />

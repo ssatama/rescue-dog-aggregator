@@ -542,6 +542,10 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
         .filter((dog: Dog) => dog.primary_image_url)
         .slice(0, 6);
 
+      if (topDogs.length === 0 && candidateDogs.length > 0) {
+        logger.warn(`No dogs with images found for Mixed breeds out of ${candidateDogs.length} candidates`);
+      }
+
       const allMixedDogs = await getAnimals({
         breed_group: "Mixed",
         limit: 200,
@@ -787,6 +791,10 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
     const topDogs = candidateDogs
       .filter((dog: Dog) => dog.primary_image_url)
       .slice(0, 6);
+
+    if (topDogs.length === 0 && candidateDogs.length > 0) {
+      logger.warn(`No dogs with images found for "${breedData.primary_breed}" out of ${candidateDogs.length} candidates`);
+    }
 
     return {
       ...breedData,

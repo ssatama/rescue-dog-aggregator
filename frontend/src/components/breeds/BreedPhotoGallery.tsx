@@ -112,12 +112,6 @@ interface BreedPhotoGalleryProps {
 }
 
 export default function BreedPhotoGallery({ dogs, breedName, className = "" }: BreedPhotoGalleryProps) {
-  const [, setImageErrors] = useState<Record<string, boolean>>({});
-
-  const handleImageError = (dogId: string | number): void => {
-    setImageErrors((prev) => ({ ...prev, [dogId]: true }));
-  };
-
   if (!dogs || dogs.length === 0) {
     return (
       <div className={`${className}`}>
@@ -148,8 +142,6 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }: B
       </div>
     );
   }
-
-  void handleImageError;
 
   return (
     <div className={`breed-photo-gallery ${className}`}>

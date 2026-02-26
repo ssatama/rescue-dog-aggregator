@@ -413,22 +413,22 @@ export default function BreedDetailClient({
         {(breedData.personality_metrics ||
           (breedData.personality_traits && breedData.personality_traits.length > 0) ||
           breedData.experience_distribution) && (
-          <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 mb-10 divide-y divide-gray-100 dark:divide-gray-700/50">
+          <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 mb-10 space-y-6 divide-y divide-gray-100 dark:divide-gray-700/50 [&>div:not(:first-child)]:pt-6">
             {breedData.personality_metrics && (
-              <div className="pb-6">
+              <div>
                 <PersonalityBarChart breedData={breedData} />
               </div>
             )}
 
             {breedData.personality_traits &&
               breedData.personality_traits.length > 0 && (
-                <div className={`${breedData.personality_metrics ? "pt-6 " : ""}pb-6`}>
+                <div>
                   <CommonTraits personalityTraits={breedData.personality_traits} />
                 </div>
               )}
 
             {breedData.experience_distribution && (
-              <div className={`${breedData.personality_metrics || (breedData.personality_traits && breedData.personality_traits.length > 0) ? "pt-6" : ""}`}>
+              <div>
                 <ExperienceLevelChart
                   experienceDistribution={breedData.experience_distribution}
                 />
