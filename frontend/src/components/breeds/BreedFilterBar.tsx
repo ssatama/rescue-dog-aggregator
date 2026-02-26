@@ -122,7 +122,7 @@ export default function BreedFilterBar({
   const hasActiveFilters = activeFilterCount > 0;
 
   return (
-    <div className="sticky top-20 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 py-4">
+    <div className="border-b border-gray-200 dark:border-gray-700 py-4">
       <div className="max-w-6xl mx-auto px-4">
         {/* Mobile filter button */}
         <div className="lg:hidden mb-4">

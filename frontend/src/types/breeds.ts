@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { BreedGroupDisplay } from "../services/breedImagesService";
 import type { BreedWithImages, BreedStats } from "../schemas/animals";
 import type { Dog } from "./dog";
@@ -142,15 +141,6 @@ export interface BreedStructuredDataProps {
   breedData: BreedData;
   dogs?: BreedDog[];
   pageType?: "detail" | "hub";
-}
-
-export interface StatItem {
-  label: string;
-  value: ReactNode;
-  icon: string;
-  color: string;
-  description: string;
-  isCustom?: boolean;
 }
 
 export interface BreedPageData extends BreedData {

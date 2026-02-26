@@ -1,60 +1,24 @@
 "use client";
 
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useMemo, useId } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { ExpandableTextProps } from "@/types/uiComponents";
 
 export default function ExpandableText({ text, lines = 4, className = "" }: ExpandableTextProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
-  const [needsTruncation, setNeedsTruncation] = useState(false);
   const textId = useId();
 
-  useEffect(() => {
-    const checkScreenSize = () => {
-      const desktop = window.matchMedia("(min-width: 1024px)").matches;
-      setIsDesktop(desktop);
-    };
-
-    checkScreenSize();
-
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-    const handleChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener("change", handleChange);
-    } else {
-      mediaQuery.addListener(handleChange);
-    }
-
-    window.addEventListener("resize", checkScreenSize);
-
-    return () => {
-      if (mediaQuery.removeEventListener) {
-        mediaQuery.removeEventListener("change", handleChange);
-      } else {
-        mediaQuery.removeListener(handleChange);
-      }
-      window.removeEventListener("resize", checkScreenSize);
-    };
-  }, []);
-
-  useEffect(() => {
-    const checkTruncation = () => {
-      if (!text) return;
-
-      const estimatedCharsPerLine = 80;
-      const estimatedTotalChars = lines * estimatedCharsPerLine;
-      setNeedsTruncation(text.length > estimatedTotalChars);
-    };
-
-    checkTruncation();
+  const needsTruncation = useMemo(() => {
+    if (!text) return false;
+    const estimatedCharsPerLine = 80;
+    const estimatedTotalChars = lines * estimatedCharsPerLine;
+    return text.length > estimatedTotalChars;
   }, [text, lines]);
 
   if (!text) return null;
 
-  const shouldShowButton = !isDesktop && needsTruncation;
-  const shouldTruncate = !isDesktop && needsTruncation && !isExpanded;
+  const shouldShowButton = needsTruncation;
+  const shouldTruncate = needsTruncation && !isExpanded;
 
   return (
     <div className={className}>
@@ -64,7 +28,7 @@ export default function ExpandableText({ text, lines = 4, className = "" }: Expa
         className={`text-gray-700 dark:text-gray-300 leading-relaxed text-lg transition-all duration-300 ${
           shouldTruncate ? `line-clamp-${lines}` : ""
         }`}
-        aria-expanded={!isDesktop ? isExpanded : undefined}
+        aria-expanded={needsTruncation ? isExpanded : undefined}
       >
         {text}
       </p>

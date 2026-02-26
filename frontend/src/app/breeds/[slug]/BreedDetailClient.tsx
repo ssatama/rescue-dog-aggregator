@@ -16,7 +16,6 @@ import { Loader2 } from "lucide-react";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import { getAnimals, getFilterCounts } from "@/services/animalsService";
-import { getBreedDescription } from "@/utils/breedDescriptions";
 import { logger, reportError } from "@/utils/logger";
 import { useDebouncedCallback } from "use-debounce";
 import BreedFilterBar from "@/components/breeds/BreedFilterBar";
@@ -25,7 +24,6 @@ import EmptyState from "@/components/ui/EmptyState";
 import PersonalityBarChart from "@/components/breeds/PersonalityBarChart";
 import CommonTraits from "@/components/breeds/CommonTraits";
 import ExperienceLevelChart from "@/components/breeds/ExperienceLevelChart";
-import ExpandableText from "@/components/ui/ExpandableText";
 import BreedDogsViewportWrapper from "@/components/breeds/BreedDogsViewportWrapper";
 import type { Dog } from "@/types/dog";
 import type {
@@ -392,7 +390,7 @@ export default function BreedDetailClient({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Breadcrumbs items={breadcrumbItems} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 lg:mb-12 mt-4 lg:mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-8 lg:mb-12 mt-6 lg:mt-8">
           <BreedPhotoGallery
             dogs={(breedData.topDogs ?? [])
               .filter(
@@ -412,33 +410,31 @@ export default function BreedDetailClient({
           <BreedInfo breedData={breedData} lastUpdated={lastUpdated} className="order-1 lg:order-2" />
         </div>
 
-        {(() => {
-          const description = getBreedDescription(breedData.primary_breed);
-          return description ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
-              <h2 className="text-2xl font-bold mb-4">
-                About the {breedData.primary_breed}
-              </h2>
-              <ExpandableText
-                text={description}
-                lines={4}
-                className="text-gray-700 dark:text-gray-300"
-              />
-            </div>
-          ) : null;
-        })()}
+        {(breedData.personality_metrics ||
+          (breedData.personality_traits && breedData.personality_traits.length > 0) ||
+          breedData.experience_distribution) && (
+          <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 mb-10 space-y-6 divide-y divide-gray-100 dark:divide-gray-700/50 [&>div:not(:first-child)]:pt-6">
+            {breedData.personality_metrics && (
+              <div>
+                <PersonalityBarChart breedData={breedData} />
+              </div>
+            )}
 
-        <PersonalityBarChart breedData={breedData} />
+            {breedData.personality_traits &&
+              breedData.personality_traits.length > 0 && (
+                <div>
+                  <CommonTraits personalityTraits={breedData.personality_traits} />
+                </div>
+              )}
 
-        {breedData.personality_traits &&
-          breedData.personality_traits.length > 0 && (
-            <CommonTraits personalityTraits={breedData.personality_traits} />
-          )}
-
-        {breedData.experience_distribution && (
-          <ExperienceLevelChart
-            experienceDistribution={breedData.experience_distribution}
-          />
+            {breedData.experience_distribution && (
+              <div>
+                <ExperienceLevelChart
+                  experienceDistribution={breedData.experience_distribution}
+                />
+              </div>
+            )}
+          </section>
         )}
 
         <BreedFilterBar
@@ -515,8 +511,9 @@ export default function BreedDetailClient({
           onClose={() => {
             setIsFilterDrawerOpen(false);
             setTimeout(() => {
+              const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
               document.getElementById("dogs-grid")?.scrollIntoView({
-                behavior: "smooth",
+                behavior: reducedMotion ? "auto" : "smooth",
                 block: "start",
               });
             }, 300);
