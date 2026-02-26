@@ -15,35 +15,50 @@ describe("BreedStatistics", () => {
     },
   };
 
-  describe("Sex Distribution Visualization", () => {
-    it("should display sex distribution card with both counts and percentages", () => {
+  describe("Inline Stats Display", () => {
+    it("should display available count and average age inline", () => {
       render(<BreedStatistics breedData={mockBreedData} />);
 
-      // Should display the sex distribution section
-      expect(screen.getByText("Sex Distribution")).toBeInTheDocument();
+      expect(screen.getByText("42")).toBeInTheDocument();
+      expect(screen.getByText("available")).toBeInTheDocument();
+      expect(screen.getByText("3 yrs")).toBeInTheDocument();
+      expect(screen.getByText("avg age")).toBeInTheDocument();
+    });
 
-      // Should show male count and percentage
-      const maleCount = screen.getByText("25");
-      expect(maleCount).toBeInTheDocument();
-      expect(screen.getAllByText(/60%/)[0]).toBeInTheDocument(); // male percentage
+    it("should handle months under 12", () => {
+      const puppyData = { ...mockBreedData, average_age_months: 8 };
+      render(<BreedStatistics breedData={puppyData} />);
 
-      // Should show female count and percentage
-      const femaleCount = screen.getByText("17");
-      expect(femaleCount).toBeInTheDocument();
-      expect(screen.getAllByText(/40%/)[0]).toBeInTheDocument(); // female percentage
+      expect(screen.getByText("8 mo")).toBeInTheDocument();
+    });
+
+    it("should handle missing age data", () => {
+      const noAgeData = { ...mockBreedData, average_age_months: undefined };
+      render(<BreedStatistics breedData={noAgeData} />);
+
+      expect(screen.getByText("N/A")).toBeInTheDocument();
+    });
+  });
+
+  describe("Sex Distribution Visualization", () => {
+    it("should display sex distribution with both counts and percentages", () => {
+      render(<BreedStatistics breedData={mockBreedData} />);
+
+      expect(screen.getByText("25")).toBeInTheDocument();
+      expect(screen.getAllByText(/60%/)[0]).toBeInTheDocument();
+      expect(screen.getByText("17")).toBeInTheDocument();
+      expect(screen.getAllByText(/40%/)[0]).toBeInTheDocument();
     });
 
     it("should render a visual bar chart for sex distribution", () => {
       render(<BreedStatistics breedData={mockBreedData} />);
 
-      // Should have visual bars for male and female
       const maleBar = screen.getByTestId("male-bar");
       const femaleBar = screen.getByTestId("female-bar");
 
       expect(maleBar).toBeInTheDocument();
       expect(femaleBar).toBeInTheDocument();
 
-      // Bars should have width proportional to percentages
       expect(maleBar).toHaveStyle("width: 60%");
       expect(femaleBar).toHaveStyle("width: 40%");
     });
@@ -60,17 +75,15 @@ describe("BreedStatistics", () => {
 
       render(<BreedStatistics breedData={allMaleData} />);
 
-      // Check male stats
       const allTexts = screen.getAllByText("42");
-      expect(allTexts.length).toBeGreaterThan(0); // Should have both count and male count
+      expect(allTexts.length).toBeGreaterThan(0);
       const hundredPercentTexts = screen.getAllByText(/100%/);
-      expect(hundredPercentTexts.length).toBeGreaterThan(0); // male percentage
+      expect(hundredPercentTexts.length).toBeGreaterThan(0);
 
-      // Female should show 0
       const zeroTexts = screen.getAllByText("0");
       expect(zeroTexts.length).toBeGreaterThan(0);
       const zeroPercentTexts = screen.getAllByText(/0%/);
-      expect(zeroPercentTexts.length).toBeGreaterThan(0); // female percentage
+      expect(zeroPercentTexts.length).toBeGreaterThan(0);
     });
 
     it("should handle all-female edge case gracefully", () => {
@@ -85,17 +98,15 @@ describe("BreedStatistics", () => {
 
       render(<BreedStatistics breedData={allFemaleData} />);
 
-      // Male should show 0
       const zeroTexts = screen.getAllByText("0");
       expect(zeroTexts.length).toBeGreaterThan(0);
       const zeroPercentTexts = screen.getAllByText(/0%/);
-      expect(zeroPercentTexts.length).toBeGreaterThan(0); // male percentage
+      expect(zeroPercentTexts.length).toBeGreaterThan(0);
 
-      // Check female stats
       const allTexts = screen.getAllByText("42");
-      expect(allTexts.length).toBeGreaterThan(0); // Should have both count and female count
+      expect(allTexts.length).toBeGreaterThan(0);
       const hundredPercentTexts = screen.getAllByText(/100%/);
-      expect(hundredPercentTexts.length).toBeGreaterThan(0); // female percentage
+      expect(hundredPercentTexts.length).toBeGreaterThan(0);
     });
 
     it("should handle missing sex distribution data", () => {
@@ -106,8 +117,8 @@ describe("BreedStatistics", () => {
 
       render(<BreedStatistics breedData={noSexData} />);
 
-      // Should not crash and should show fallback
-      expect(screen.queryByText(/Sex Distribution/i)).not.toBeInTheDocument();
+      expect(screen.queryByTestId("male-bar")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("female-bar")).not.toBeInTheDocument();
     });
 
     it("should use accessible labels for screen readers", () => {
@@ -121,22 +132,6 @@ describe("BreedStatistics", () => {
       ).toBeInTheDocument();
     });
   });
-
-  describe("Existing Statistics", () => {
-    it("should display available dogs count", () => {
-      render(<BreedStatistics breedData={mockBreedData} />);
-
-      expect(screen.getByText("Available Dogs")).toBeInTheDocument();
-      expect(screen.getByText("42")).toBeInTheDocument();
-    });
-
-    it("should display average age", () => {
-      render(<BreedStatistics breedData={mockBreedData} />);
-
-      expect(screen.getByText("Avg. Age")).toBeInTheDocument();
-      expect(screen.getByText("3 years")).toBeInTheDocument();
-    });
-  });
 });
 
 describe("BreedInfo", () => {
@@ -148,7 +143,7 @@ describe("BreedInfo", () => {
     sex_distribution: { male: 25, female: 17 },
   };
 
-  it("should render 'Data updated' with formatted date when lastUpdated is a valid ISO string", () => {
+  it("should render 'Updated' with formatted date when lastUpdated is a valid ISO string", () => {
     render(
       <BreedInfo breedData={mockBreedData} lastUpdated="2026-02-24T10:30:00.000Z" />,
     );
@@ -157,21 +152,21 @@ describe("BreedInfo", () => {
     expect(timeElement).toBeInTheDocument();
     expect(timeElement.tagName).toBe("TIME");
     expect(timeElement).toHaveAttribute("dateTime", "2026-02-24T10:30:00.000Z");
-    expect(screen.getByText(/Data updated/)).toBeInTheDocument();
+    expect(screen.getByText(/Updated/)).toBeInTheDocument();
   });
 
-  it("should not render 'Data updated' when lastUpdated is undefined", () => {
+  it("should not render 'Updated' when lastUpdated is undefined", () => {
     render(<BreedInfo breedData={mockBreedData} />);
 
-    expect(screen.queryByText(/Data updated/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Updated/)).not.toBeInTheDocument();
   });
 
-  it("should not render 'Data updated' when lastUpdated is an invalid date string", () => {
+  it("should not render 'Updated' when lastUpdated is an invalid date string", () => {
     render(
       <BreedInfo breedData={mockBreedData} lastUpdated="not-a-date" />,
     );
 
-    expect(screen.queryByText(/Data updated/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Updated/)).not.toBeInTheDocument();
     expect(screen.queryByText("Invalid Date")).not.toBeInTheDocument();
   });
 
@@ -181,5 +176,30 @@ describe("BreedInfo", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Golden Retriever",
     );
+  });
+
+  it("should render breed group badge when available", () => {
+    const dataWithGroup = { ...mockBreedData, breed_group: "Sporting" };
+    render(<BreedInfo breedData={dataWithGroup} />);
+
+    expect(screen.getByText("Sporting Group")).toBeInTheDocument();
+  });
+
+  it("should render description when available", () => {
+    const dataWithDesc = {
+      ...mockBreedData,
+      description: "Golden Retrievers are wonderful dogs.",
+    };
+    render(<BreedInfo breedData={dataWithDesc} />);
+
+    expect(screen.getByText("Golden Retrievers are wonderful dogs.")).toBeInTheDocument();
+  });
+
+  it("should render CTA button with count", () => {
+    render(<BreedInfo breedData={mockBreedData} />);
+
+    expect(
+      screen.getByRole("button", { name: /View All 42 Golden Retrievers/i }),
+    ).toBeInTheDocument();
   });
 });

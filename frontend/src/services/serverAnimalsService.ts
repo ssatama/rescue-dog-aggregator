@@ -19,6 +19,7 @@ import {
   transformApiDogToDog,
   transformApiDogsToDogs,
 } from "../utils/dogTransformer";
+import { getBreedDescription } from "../utils/breedDescriptions";
 
 interface CacheEntry {
   data: unknown;
@@ -531,12 +532,15 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
         breedStats.breed_groups as { name: string; count: number }[] | undefined
       )?.find((g) => g.name === "Mixed");
 
-      const topDogs = await getAnimals({
+      const candidateDogs = await getAnimals({
         breed_group: "Mixed",
-        limit: 6,
+        limit: 30,
         sort_by: "created_at",
         sort_order: "desc",
       });
+      const topDogs = candidateDogs
+        .filter((dog: Dog) => dog.primary_image_url)
+        .slice(0, 6);
 
       const allMixedDogs = await getAnimals({
         breed_group: "Mixed",
@@ -774,74 +778,22 @@ export const getBreedBySlug = cache(async (slug: string): Promise<any | null> =>
       return null;
     }
 
-    const topDogs = await getAnimals({
+    const candidateDogs = await getAnimals({
       breed: breedData.primary_breed,
-      limit: 6,
+      limit: 30,
       sort_by: "created_at",
       sort_order: "desc",
     });
-
-    const breedDescriptions: Record<string, string> = {
-      galgo:
-        "Spanish Greyhounds are gentle sighthounds known for their calm, affectionate nature. Despite their athletic build, they're surprisingly lazy, preferring short bursts of exercise followed by long naps.",
-      lurcher:
-        "Lurchers are gentle sighthound crosses that combine speed with intelligence. These 'part-time athletes' are calm indoors but love a good sprint, making wonderful family companions.",
-      greyhound:
-        "Greyhounds are gentle giants known as '45 mph couch potatoes.' Despite their racing background, they're calm indoor companions who need surprisingly little exercise.",
-      collie:
-        "Collies are intelligent, loyal herding dogs famous for their devotion to family. These sensitive souls are excellent with children and make wonderful family pets.",
-      "cocker-spaniel":
-        "Cocker Spaniels are cheerful, affectionate dogs with gentle temperaments. These medium-sized companions are known for their beautiful, silky coats and expressive eyes.",
-      "cavalier-king-charles-spaniel":
-        "Cavalier King Charles Spaniels are gentle, affectionate toy spaniels perfect for companionship. They're equally happy on adventures or cuddling on laps.",
-      "staffordshire-bull-terrier":
-        "Staffordshire Bull Terriers are muscular, affectionate dogs known for their love of people and legendary devotion to family, especially children.",
-      bulldog:
-        "Bulldogs are gentle, affectionate companions known for their distinctive wrinkled faces. Despite their tough appearance, they're sweet-natured and excellent with children.",
-      "french-bulldog":
-        "French Bulldogs are charming, affectionate companions perfect for apartment living. These adaptable dogs are known for their distinctive 'bat ears' and playful personalities.",
-      "labrador-retriever":
-        "Labrador Retrievers are friendly, outgoing, and active companions who famously love water and retrieving games. They're excellent family dogs with a gentle nature.",
-      "german-shepherd":
-        "German Shepherds are versatile, intelligent working dogs devoted to their family. They're confident, courageous, and excel at everything they're trained to do.",
-      "german-shepherd-dog":
-        "German Shepherds are versatile, intelligent working dogs devoted to their family. They're confident, courageous, and excel at everything they're trained to do.",
-      "mixed-breed":
-        "Mixed breed dogs combine the best traits of multiple breeds, often resulting in unique personalities and appearances. Each one is truly one-of-a-kind.",
-      podenco:
-        "Podencos are ancient Spanish hunting dogs with keen senses and athletic builds. They're intelligent, independent, and make loyal companions when given proper exercise.",
-      husky:
-        "Siberian Huskies are energetic, intelligent dogs bred for endurance in harsh climates. They're friendly, dignified, and known for their striking blue eyes.",
-      "siberian-husky":
-        "Siberian Huskies are energetic, intelligent dogs bred for endurance in harsh climates. They're friendly, dignified, and known for their striking blue eyes.",
-      boxer:
-        "Boxers are playful, energetic dogs with patience and protective instincts. They're excellent with children and make devoted family guardians.",
-      beagle:
-        "Beagles are friendly, curious hounds with excellent noses and happy-go-lucky personalities. They're great with kids and other dogs.",
-      "golden-retriever":
-        "Golden Retrievers are intelligent, friendly, and devoted companions. They're eager to please and excel as family dogs and service animals.",
-      pointer:
-        "Pointers are energetic, even-tempered dogs bred for hunting. They're loyal, hardworking, and make excellent companions for active families.",
-      "jack-russell-terrier":
-        "Jack Russell Terriers are small dogs with enormous personalities and endless energy. These fearless terriers are intelligent but independent, requiring experienced owners who can match their wit and provide extensive exercise.",
-      "shih-tzu":
-        "Shih Tzus are affectionate lap dogs with cheerful dispositions, originally bred for Chinese royalty. These adaptable companions are excellent for apartment living and love being the center of attention.",
-      "bichon-frise":
-        "Bichon Frises are cheerful, fluffy companions with hypoallergenic coats and merry personalities. These adaptable dogs are excellent with children and make delightful family pets who love to be pampered.",
-      chihuahua:
-        "Chihuahuas are tiny dogs with giant personalities and fierce loyalty to their families. Despite their small size, they're confident watchdogs who make devoted companions for patient owners.",
-      terrier:
-        "Terriers are spirited, energetic dogs originally bred for hunting vermin. These confident, feisty companions are intelligent and loyal but need consistent training and plenty of mental stimulation.",
-      spaniel:
-        "Spaniels are gentle, affectionate sporting dogs known for their beautiful coats and loving temperaments. These versatile companions are excellent family dogs who enjoy both active adventures and quiet cuddles.",
-    };
+    const topDogs = candidateDogs
+      .filter((dog: Dog) => dog.primary_image_url)
+      .slice(0, 6);
 
     return {
       ...breedData,
       breed_slug: slug,
-      topDogs: topDogs,
+      topDogs,
       description:
-        breedDescriptions[slug] ||
+        getBreedDescription(breedData.primary_breed) ||
         `${breedData.primary_breed} dogs are wonderful companions looking for loving homes.`,
     };
   } catch (error) {

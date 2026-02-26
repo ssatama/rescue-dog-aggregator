@@ -11,7 +11,6 @@ import {
   getAnimals,
   getBreedStats,
 } from "@/services/serverAnimalsService";
-import { getBreedDescription } from "@/utils/breedDescriptions";
 
 interface BreedPageProps {
   params: Promise<{ slug: string }>;
@@ -33,7 +32,7 @@ export async function generateMetadata(
       };
     }
 
-    const description = getBreedDescription(breedData.primary_breed);
+    const description = breedData.description;
 
     const avgAge = breedData.average_age
       ? `Average age ${Math.round(breedData.average_age)} years. `
@@ -145,13 +144,7 @@ async function fetchBreedPageData(slug: string) {
     offset: 0,
   });
 
-  const breedDescription = getBreedDescription(breedData.primary_breed);
-  const enrichedBreedData = {
-    ...breedData,
-    description: breedDescription || breedData.description,
-  };
-
-  return { breedData, initialDogs, enrichedBreedData };
+  return { breedData, initialDogs };
 }
 
 export default async function BreedDetailPage(props: BreedPageProps) {
@@ -162,12 +155,12 @@ export default async function BreedDetailPage(props: BreedPageProps) {
     notFound();
   }
 
-  const { breedData, initialDogs, enrichedBreedData } = data;
+  const { breedData, initialDogs } = data;
 
   return (
     <Layout>
       <BreedStructuredData
-        breedData={enrichedBreedData}
+        breedData={breedData}
         dogs={initialDogs}
         pageType="detail"
       />

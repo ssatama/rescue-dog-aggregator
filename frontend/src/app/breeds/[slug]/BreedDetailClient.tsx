@@ -16,7 +16,6 @@ import { Loader2 } from "lucide-react";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import { getAnimals, getFilterCounts } from "@/services/animalsService";
-import { getBreedDescription } from "@/utils/breedDescriptions";
 import { logger, reportError } from "@/utils/logger";
 import { useDebouncedCallback } from "use-debounce";
 import BreedFilterBar from "@/components/breeds/BreedFilterBar";
@@ -25,7 +24,6 @@ import EmptyState from "@/components/ui/EmptyState";
 import PersonalityBarChart from "@/components/breeds/PersonalityBarChart";
 import CommonTraits from "@/components/breeds/CommonTraits";
 import ExperienceLevelChart from "@/components/breeds/ExperienceLevelChart";
-import ExpandableText from "@/components/ui/ExpandableText";
 import BreedDogsViewportWrapper from "@/components/breeds/BreedDogsViewportWrapper";
 import type { Dog } from "@/types/dog";
 import type {
@@ -412,33 +410,31 @@ export default function BreedDetailClient({
           <BreedInfo breedData={breedData} lastUpdated={lastUpdated} className="order-1 lg:order-2" />
         </div>
 
-        {(() => {
-          const description = getBreedDescription(breedData.primary_breed);
-          return description ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
-              <h2 className="text-2xl font-bold mb-4">
-                About the {breedData.primary_breed}
-              </h2>
-              <ExpandableText
-                text={description}
-                lines={4}
-                className="text-gray-700 dark:text-gray-300"
-              />
-            </div>
-          ) : null;
-        })()}
+        {(breedData.personality_metrics ||
+          (breedData.personality_traits && breedData.personality_traits.length > 0) ||
+          breedData.experience_distribution) && (
+          <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 mb-10 divide-y divide-gray-100 dark:divide-gray-700/50">
+            {breedData.personality_metrics && (
+              <div className="pb-6">
+                <PersonalityBarChart breedData={breedData} />
+              </div>
+            )}
 
-        <PersonalityBarChart breedData={breedData} />
+            {breedData.personality_traits &&
+              breedData.personality_traits.length > 0 && (
+                <div className={`${breedData.personality_metrics ? "pt-6 " : ""}pb-6`}>
+                  <CommonTraits personalityTraits={breedData.personality_traits} />
+                </div>
+              )}
 
-        {breedData.personality_traits &&
-          breedData.personality_traits.length > 0 && (
-            <CommonTraits personalityTraits={breedData.personality_traits} />
-          )}
-
-        {breedData.experience_distribution && (
-          <ExperienceLevelChart
-            experienceDistribution={breedData.experience_distribution}
-          />
+            {breedData.experience_distribution && (
+              <div className={`${breedData.personality_metrics || (breedData.personality_traits && breedData.personality_traits.length > 0) ? "pt-6" : ""}`}>
+                <ExperienceLevelChart
+                  experienceDistribution={breedData.experience_distribution}
+                />
+              </div>
+            )}
+          </section>
         )}
 
         <BreedFilterBar
