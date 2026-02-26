@@ -9,57 +9,10 @@ const LONG_TEXT =
 const SHORT_TEXT = "This is short text that should not be truncated.";
 
 describe("ExpandableText", () => {
-  const originalInnerWidth = window.innerWidth;
-  const originalMatchMedia = window.matchMedia;
-
-  beforeEach(() => {
-    // Reset window width
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: originalInnerWidth,
-    });
-
-    // Mock matchMedia
-    window.matchMedia = jest.fn().mockImplementation((query) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: jest.fn(),
-      removeListener: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
-    }));
-  });
-
-  afterEach(() => {
-    window.innerWidth = originalInnerWidth;
-    window.matchMedia = originalMatchMedia;
-  });
-
-  describe("Desktop behavior", () => {
-    beforeEach(() => {
-      window.innerWidth = 1024;
-      window.matchMedia = jest.fn().mockImplementation((query) => ({
-        matches: query === "(min-width: 1024px)",
-        media: query,
-        onchange: null,
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      }));
-    });
-
-    it("shows full text on desktop without truncation", () => {
-      render(<ExpandableText text={LONG_TEXT} />);
-
-      expect(screen.getByText(LONG_TEXT)).toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: /see more/i }),
-      ).not.toBeInTheDocument();
+  describe("Rendering", () => {
+    it("returns null when text is empty", () => {
+      const { container } = render(<ExpandableText text="" />);
+      expect(container.firstChild).toBeNull();
     });
 
     it("renders with custom className", () => {
@@ -69,32 +22,6 @@ describe("ExpandableText", () => {
 
       expect(container.firstChild).toHaveClass("custom-class");
     });
-  });
-
-  describe("Mobile behavior", () => {
-    beforeEach(() => {
-      window.innerWidth = 375;
-      window.matchMedia = jest.fn().mockImplementation((query) => ({
-        matches: query === "(max-width: 1023px)",
-        media: query,
-        onchange: null,
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      }));
-    });
-
-    it("truncates long text on mobile with See more button", () => {
-      render(<ExpandableText text={LONG_TEXT} />);
-
-      const textElement = screen.getByTestId("expandable-text-content");
-      expect(textElement).toHaveClass("line-clamp-4");
-      expect(
-        screen.getByRole("button", { name: /see more/i }),
-      ).toBeInTheDocument();
-    });
 
     it("does not show See more button for short text", () => {
       render(<ExpandableText text={SHORT_TEXT} />);
@@ -103,6 +30,18 @@ describe("ExpandableText", () => {
       expect(
         screen.queryByRole("button", { name: /see more/i }),
       ).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Truncation behavior", () => {
+    it("truncates long text with See more button", () => {
+      render(<ExpandableText text={LONG_TEXT} />);
+
+      const textElement = screen.getByTestId("expandable-text-content");
+      expect(textElement).toHaveClass("line-clamp-4");
+      expect(
+        screen.getByRole("button", { name: /see more/i }),
+      ).toBeInTheDocument();
     });
 
     it("expands text when See more is clicked", async () => {
@@ -146,7 +85,16 @@ describe("ExpandableText", () => {
       });
     });
 
-    it("has proper ARIA attributes for accessibility", () => {
+    it("allows custom number of lines to show", () => {
+      render(<ExpandableText text={LONG_TEXT} lines={2} />);
+
+      const textElement = screen.getByTestId("expandable-text-content");
+      expect(textElement).toHaveClass("line-clamp-2");
+    });
+  });
+
+  describe("Accessibility", () => {
+    it("has proper ARIA attributes when truncated", () => {
       render(<ExpandableText text={LONG_TEXT} />);
 
       const textElement = screen.getByTestId("expandable-text-content");
@@ -170,102 +118,12 @@ describe("ExpandableText", () => {
         expect(textElement).toHaveAttribute("aria-expanded", "true");
       });
     });
-  });
 
-  describe("Tablet behavior", () => {
-    beforeEach(() => {
-      window.innerWidth = 768;
-      window.matchMedia = jest.fn().mockImplementation((query) => ({
-        matches: query === "(max-width: 1023px)",
-        media: query,
-        onchange: null,
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      }));
-    });
-
-    it("truncates text on tablet devices", () => {
-      render(<ExpandableText text={LONG_TEXT} />);
+    it("does not set aria-expanded on short text", () => {
+      render(<ExpandableText text={SHORT_TEXT} />);
 
       const textElement = screen.getByTestId("expandable-text-content");
-      expect(textElement).toHaveClass("line-clamp-4");
-      expect(
-        screen.getByRole("button", { name: /see more/i }),
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Custom line clamp", () => {
-    beforeEach(() => {
-      window.innerWidth = 375;
-      window.matchMedia = jest.fn().mockImplementation((query) => ({
-        matches: query === "(max-width: 1023px)",
-        media: query,
-        onchange: null,
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      }));
-    });
-
-    it("allows custom number of lines to show", () => {
-      render(<ExpandableText text={LONG_TEXT} lines={2} />);
-
-      const textElement = screen.getByTestId("expandable-text-content");
-      expect(textElement).toHaveClass("line-clamp-2");
-    });
-  });
-
-  describe("Responsive behavior", () => {
-    it("responds to window resize from mobile to desktop", async () => {
-      window.innerWidth = 375;
-      const listeners = [];
-
-      window.matchMedia = jest.fn().mockImplementation((query) => ({
-        matches: window.innerWidth >= 1024 && query === "(min-width: 1024px)",
-        media: query,
-        onchange: null,
-        addEventListener: (event, handler) => listeners.push(handler),
-        removeEventListener: jest.fn(),
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      }));
-
-      const { rerender } = render(<ExpandableText text={LONG_TEXT} />);
-
-      // Initially on mobile - should show See more button
-      expect(
-        screen.getByRole("button", { name: /see more/i }),
-      ).toBeInTheDocument();
-
-      // Simulate resize to desktop
-      window.innerWidth = 1024;
-      window.matchMedia = jest.fn().mockImplementation((query) => ({
-        matches: query === "(min-width: 1024px)",
-        media: query,
-        onchange: null,
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      }));
-
-      // Trigger media query change
-      listeners.forEach((handler) => handler({ matches: true }));
-      rerender(<ExpandableText text={LONG_TEXT} />);
-
-      await waitFor(() => {
-        expect(
-          screen.queryByRole("button", { name: /see more/i }),
-        ).not.toBeInTheDocument();
-      });
+      expect(textElement).not.toHaveAttribute("aria-expanded");
     });
   });
 });

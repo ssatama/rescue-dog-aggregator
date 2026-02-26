@@ -126,7 +126,7 @@ export function BreedInfo({ breedData, lastUpdated, className = "" }: BreedInfoP
   };
 
   return (
-    <div className={`breed-info flex flex-col gap-5 ${className}`}>
+    <div className={`breed-info flex flex-col gap-6 ${className}`}>
       <div>
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-3">
           {breedData.primary_breed}
