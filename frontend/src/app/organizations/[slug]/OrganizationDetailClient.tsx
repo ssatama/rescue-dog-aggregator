@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import DogFilters from "../../../components/filters/DogFilters";
 import OrganizationHero from "../../../components/organizations/OrganizationHero";
@@ -41,8 +41,9 @@ interface OrgFilters {
   sort: SortOption;
 }
 
-export default function OrganizationDetailClient({ initialOrganization = null, initialSearchParams = {} }: OrganizationDetailClientProps) {
+export default function OrganizationDetailClient({ initialOrganization = null }: OrganizationDetailClientProps) {
   const urlParams = useParams();
+  const searchParams = useSearchParams();
   const organizationSlug = urlParams?.slug;
 
   const [organization, setOrganization] = useState<OrganizationWithDetails | null>(
@@ -61,16 +62,13 @@ export default function OrganizationDetailClient({ initialOrganization = null, i
     (initialOrganization as OrganizationWithDetails | null)?.total_dogs ?? 0,
   );
 
-  // Filter state from server-passed searchParams (avoids useSearchParams Suspense trigger and hydration mismatch)
   const [filters, setFilters] = useState<OrgFilters>(() => {
     const defaultFilters = getDefaultFilters();
-    const toStr = (v: string | string[] | undefined): string | undefined =>
-      Array.isArray(v) ? v[0] : v;
 
-    const urlAge = toStr(initialSearchParams.age);
-    const urlBreed = toStr(initialSearchParams.breed);
-    const urlSex = toStr(initialSearchParams.sex);
-    const urlSort = toStr(initialSearchParams.sort);
+    const urlAge = searchParams?.get("age");
+    const urlBreed = searchParams?.get("breed");
+    const urlSex = searchParams?.get("sex");
+    const urlSort = searchParams?.get("sort");
 
     if (urlAge || urlBreed || urlSex || urlSort) {
       return {
