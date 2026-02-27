@@ -14,7 +14,6 @@ import {
   getOrganizationBySlug,
   getOrganizationDogs,
 } from "../../../services/organizationsService";
-import { getBreedSuggestions } from "../../../services/animalsService";
 import { reportError } from "../../../utils/logger";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
@@ -236,11 +235,7 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
 
           // Track organization page view
           if (orgData?.slug) {
-            try {
-              trackOrgPageView(orgData.slug, (orgData as OrganizationWithDetails).total_dogs || 0);
-            } catch (error) {
-              console.error("Failed to track organization page view:", error);
-            }
+            trackOrgPageView(orgData.slug, (orgData as OrganizationWithDetails).total_dogs || 0);
           }
         }
 
@@ -281,7 +276,8 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
     };
 
     fetchData();
-  }, [organizationSlug, filters, organization]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- use organization?.id (stable primitive) instead of organization (unstable object reference) to prevent double-fetch
+  }, [organizationSlug, filters, organization?.id]);
 
   // Loading state
   if (loading) {
