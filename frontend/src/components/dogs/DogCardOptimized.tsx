@@ -85,11 +85,7 @@ const DogCardOptimized = React.memo(
 
   const handleCardClick = useCallback(() => {
     if (id && id !== "0" && name && name !== "Unknown Dog") {
-      try {
-        trackDogCardClick(id.toString(), name, position, listContext);
-      } catch (error) {
-        console.error("Failed to track dog card click:", error);
-      }
+      trackDogCardClick(id.toString(), name, position, listContext);
     }
   }, [id, name, position, listContext]);
 

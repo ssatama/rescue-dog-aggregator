@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { logger } from "../utils/logger";
 
 interface ScrollAnimationOptions {
   threshold?: number;
@@ -125,12 +126,7 @@ export const useReducedMotion = (): boolean => {
         }
       };
     } catch (error: unknown) {
-      if (process.env.NODE_ENV !== "production") {
-        console.warn(
-          "matchMedia setup failed, animations will be enabled:",
-          error,
-        );
-      }
+      logger.warn("matchMedia setup failed, animations will be enabled:", error);
     }
   }, []);
 

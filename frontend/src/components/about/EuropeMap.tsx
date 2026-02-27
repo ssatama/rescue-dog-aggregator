@@ -8,6 +8,7 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 import { getOrganizations } from "../../services/organizationsService";
+import { logger, reportError } from "../../utils/logger";
 import { useTheme } from "../providers/ThemeProvider";
 
 // World TopoJSON from reliable CDN (will filter to Europe countries)
@@ -109,7 +110,7 @@ export default function EuropeMap() {
       const orgs = Array.isArray(response) ? response : [];
 
       if (!orgs.length) {
-        console.warn("No organizations returned from API");
+        logger.warn("No organizations returned from API");
         setOrgsByCountry({});
         setLoading(false);
         return;
@@ -132,7 +133,7 @@ export default function EuropeMap() {
       }, {});
       setOrgsByCountry(grouped);
     } catch (error) {
-      console.error("Failed to load organization data", error);
+      reportError(error, { context: "EuropeMap.loadOrganizations" });
       setMapError("Failed to load organization data");
     } finally {
       setLoading(false);

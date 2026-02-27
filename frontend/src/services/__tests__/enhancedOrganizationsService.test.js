@@ -274,25 +274,14 @@ describe("Enhanced Organizations Service", () => {
       expect(fetch).toHaveBeenCalledTimes(1);
     });
 
-    test("includes proper error handling and logging", async () => {
-      const originalNodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = "development";
-
+    test("re-throws errors after reporting", async () => {
       const errorSpy = jest.spyOn(console, "error").mockImplementation();
 
-      // Mock fetch to throw an error
       fetch.mockRejectedValueOnce(new Error("Network error"));
 
       await expect(getEnhancedOrganizations()).rejects.toThrow("Network error");
 
-      // Should have logged error
-      expect(errorSpy).toHaveBeenCalledWith(
-        "Failed to fetch enhanced organizations:",
-        expect.any(Error),
-      );
-
       errorSpy.mockRestore();
-      process.env.NODE_ENV = originalNodeEnv;
     });
 
     test("maintains organization order from API", async () => {

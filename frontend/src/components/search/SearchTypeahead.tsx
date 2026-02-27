@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import type { IconName } from "@/components/ui/Icon";
 import { useDebouncedCallback } from "use-debounce";
+import { reportError } from "@/utils/logger";
 import { trackSearch } from "@/lib/monitoring/breadcrumbs";
 import {
   fuzzySearch,
@@ -89,7 +90,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
           // Limit history to maxHistoryItems when loading
           setSearchHistory(history.slice(0, maxHistoryItems));
         } catch (error) {
-          console.warn("Failed to load search history:", error);
+          reportError(error, { context: "SearchTypeahead.loadHistory" });
           setSearchHistory([]);
         }
       }
@@ -114,7 +115,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
           setSearchHistory(newHistory);
           localStorage.setItem(historyKey, JSON.stringify(newHistory));
         } catch (error) {
-          console.warn("Failed to save search history:", error);
+          reportError(error, { context: "SearchTypeahead.saveHistory" });
         }
       },
       [searchHistory, showHistory, maxHistoryItems, historyKey],
@@ -143,7 +144,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
                 remoteSuggestions = [];
               }
             } catch (fetchError) {
-              console.error("Error fetching remote suggestions:", fetchError);
+              reportError(fetchError, { context: "SearchTypeahead.fetchRemote" });
               remoteSuggestions = [];
               // Set error state for user feedback when skipLocalFuzzySearch is true
               if (skipLocalFuzzySearch) {
@@ -182,7 +183,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
             }
           }
         } catch (error) {
-          console.error("Error processing suggestions:", error);
+          reportError(error, { context: "SearchTypeahead.processSuggestions" });
           setFilteredSuggestions([]);
           setDidYouMeanSuggestions([]);
         } finally {
@@ -240,11 +241,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
         saveToHistory(inputValue);
 
         // Track search with basic filters (empty object for now)
-        try {
-          trackSearch(inputValue, {}, filteredSuggestions.length);
-        } catch (error) {
-          console.error("Failed to track search:", error);
-        }
+        trackSearch(inputValue, {}, filteredSuggestions.length);
 
         onSearch?.(inputValue);
         setIsOpen(false);

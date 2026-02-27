@@ -12,6 +12,7 @@ import { type Dog } from "../../types/dog";
 import type { ApiDog } from "../../types/apiDog";
 import { transformApiDogsToDogs } from "../../utils/dogTransformer";
 import { safeStorage } from "../../utils/safeStorage";
+import { reportError } from "../../utils/logger";
 import SwipeContainerSkeleton from "../../components/ui/SwipeContainerSkeleton";
 import DogDetailModalSkeleton from "../../components/ui/DogDetailModalSkeleton";
 import type { SwipeFilters } from "../../hooks/useSwipeFilters";
@@ -106,7 +107,7 @@ export default function SwipePageClient({
         const transformedDogs = transformApiDogsToDogs(data.dogs || []);
         return transformedDogs;
       } catch (error) {
-        console.error("Error fetching dogs:", error);
+        reportError(error, { context: "SwipePageClient.fetchDogs" });
         return [];
       }
     },

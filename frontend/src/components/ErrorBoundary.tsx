@@ -6,6 +6,7 @@ import {
   isChunkLoadError,
   clearCacheAndReload,
 } from "@/lib/chunkLoadError";
+import { logger } from "@/utils/logger";
 
 interface Props {
   children: ReactNode;
@@ -45,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
       Sentry.captureException(error);
     });
 
-    console.error("ErrorBoundary caught:", error, errorInfo);
+    logger.error("ErrorBoundary caught:", error, errorInfo);
   }
 
   render() {

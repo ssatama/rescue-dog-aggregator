@@ -5,6 +5,7 @@ import { SwipeFilters } from "../../hooks/useSwipeFilters";
 import { safeStorage } from "../../utils/safeStorage";
 import { get } from "../../utils/api";
 import type { CountryOption } from "../../services/serverSwipeService";
+import { reportError } from "../../utils/logger";
 
 interface SwipeOnboardingProps {
   onComplete: (skipped: boolean, filters?: SwipeFilters) => void;
@@ -119,7 +120,7 @@ export default function SwipeOnboarding({
 
         setCountries(countriesWithCounts);
       } catch (error) {
-        console.error("Failed to fetch available countries:", error);
+        reportError(error, { context: "SwipeOnboarding.fetchAvailableCountries" });
         setCountries([]);
       } finally {
         setLoading(false);
@@ -150,7 +151,7 @@ export default function SwipeOnboarding({
         const sizesWithCounts = await Promise.all(sizePromises);
         setSizesWithCounts(sizesWithCounts);
       } catch (error) {
-        console.error("Failed to fetch size counts:", error);
+        reportError(error, { context: "SwipeOnboarding.fetchSizeCounts" });
         setSizesWithCounts(SIZES);
       }
     };
