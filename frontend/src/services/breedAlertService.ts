@@ -1,4 +1,5 @@
 import { getApiUrl } from "../utils/apiConfig";
+import { logger, reportError } from "../utils/logger";
 
 const API_URL = getApiUrl();
 
@@ -38,7 +39,7 @@ export async function saveBreedAlert(
 
     return response.json();
   } catch (error) {
-    console.error("Error saving breed alert:", error);
+    reportError(error, { context: "breedAlertService.saveBreedAlert" });
     throw error;
   }
 }
@@ -67,7 +68,7 @@ export function saveBreedAlertLocally(alertData: BreedAlertData): BreedAlert {
     localStorage.setItem(BREED_ALERTS_KEY, JSON.stringify(updatedAlerts));
     return newAlert;
   } catch (error) {
-    console.error("Error saving breed alert locally:", error);
+    reportError(error, { context: "breedAlertService.saveLocally" });
     throw error;
   }
 }
@@ -77,7 +78,7 @@ export function getLocalBreedAlerts(): BreedAlert[] {
     const alerts = localStorage.getItem(BREED_ALERTS_KEY);
     return alerts ? JSON.parse(alerts) : [];
   } catch (error) {
-    console.error("Error getting local breed alerts:", error);
+    reportError(error, { context: "breedAlertService.getLocalAlerts" });
     return [];
   }
 }
@@ -93,7 +94,7 @@ export async function saveBreedAlertWithFallback(
   try {
     await saveBreedAlert(alertData);
   } catch (error) {
-    console.warn("API save failed, falling back to local storage only:", error);
+    reportError(error, { context: "breedAlertService.saveWithFallback" });
   }
   return saveBreedAlertLocally(alertData);
 }

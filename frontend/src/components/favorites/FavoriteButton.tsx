@@ -38,12 +38,8 @@ export const FavoriteButton = memo(
 
         // Track favorite toggle
         if (dogName && orgSlug) {
-          try {
-            const action = wasFavorited ? "remove" : "add";
-            trackFavoriteToggle(action, dogId.toString(), dogName, orgSlug);
-          } catch (error) {
-            console.error("Failed to track favorite toggle:", error);
-          }
+          const action = wasFavorited ? "remove" : "add";
+          trackFavoriteToggle(action, dogId.toString(), dogName, orgSlug);
         }
       } finally {
         setIsLoading(false);
@@ -65,12 +61,8 @@ export const FavoriteButton = memo(
 
           // Track favorite toggle for keyboard interaction
           if (dogName && orgSlug) {
-            try {
-              const action = wasFavorited ? "remove" : "add";
-              trackFavoriteToggle(action, dogId.toString(), dogName, orgSlug);
-            } catch (error) {
-              console.error("Failed to track favorite toggle:", error);
-            }
+            const action = wasFavorited ? "remove" : "add";
+            trackFavoriteToggle(action, dogId.toString(), dogName, orgSlug);
           }
         } finally {
           setIsLoading(false);

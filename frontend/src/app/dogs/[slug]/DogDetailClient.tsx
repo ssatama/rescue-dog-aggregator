@@ -103,15 +103,11 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
           // Track dog view when successfully loaded
           const org = data?.organization;
           if (data?.id && data?.name && typeof org === "object" && org?.slug) {
-            try {
-              trackDogView(
-                data.id.toString(),
-                data.name,
-                org.slug,
-              );
-            } catch (error: unknown) {
-              console.error("Failed to track dog view:", error);
-            }
+            trackDogView(
+              data.id.toString(),
+              data.name,
+              org.slug,
+            );
           }
         }
       } catch (err: unknown) {
@@ -183,15 +179,11 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
         initialDog?.name &&
         initialDog?.organization?.slug
       ) {
-        try {
-          trackDogView(
-            initialDog.id.toString(),
-            initialDog.name,
-            initialDog.organization.slug,
-          );
-        } catch (error: unknown) {
-          console.error("Failed to track dog view:", error);
-        }
+        trackDogView(
+          initialDog.id.toString(),
+          initialDog.name,
+          initialDog.organization.slug,
+        );
       }
       return;
     }
@@ -373,14 +365,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                             onClick={() => {
                               // Track image view when hero image is clicked
                               if (dog?.id) {
-                                try {
-                                  trackDogImageView(dog.id.toString(), 0, 1);
-                                } catch (error: unknown) {
-                                  console.error(
-                                    "Failed to track dog image view:",
-                                    error,
-                                  );
-                                }
+                                trackDogImageView(dog.id.toString(), 0, 1);
                               }
                             }}
                             onError={() => {
@@ -684,18 +669,11 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                                     onClick={() => {
                                       // Track external link click
                                       if (dog?.organization?.slug && dog?.id) {
-                                        try {
-                                          trackExternalLinkClick(
-                                            "adopt",
-                                            dog.organization.slug,
-                                            dog.id.toString(),
-                                          );
-                                        } catch (error: unknown) {
-                                          console.error(
-                                            "Failed to track external link click:",
-                                            error,
-                                          );
-                                        }
+                                        trackExternalLinkClick(
+                                          "adopt",
+                                          dog.organization.slug,
+                                          dog.id.toString(),
+                                        );
                                       }
                                     }}
                                   >

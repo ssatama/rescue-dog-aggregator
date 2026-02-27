@@ -11,7 +11,6 @@ export interface DogDetailClientProps {
 
 export interface OrganizationDetailClientProps {
   initialOrganization?: ApiOrganization | null;
-  initialSearchParams?: Record<string, string | string[] | undefined>;
 }
 
 export interface OrganizationsClientProps {

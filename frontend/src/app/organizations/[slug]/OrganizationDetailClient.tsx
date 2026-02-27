@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import DogFilters from "../../../components/filters/DogFilters";
 import OrganizationHero from "../../../components/organizations/OrganizationHero";
@@ -14,7 +14,6 @@ import {
   getOrganizationBySlug,
   getOrganizationDogs,
 } from "../../../services/organizationsService";
-import { getBreedSuggestions } from "../../../services/animalsService";
 import { reportError } from "../../../utils/logger";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
@@ -41,8 +40,9 @@ interface OrgFilters {
   sort: SortOption;
 }
 
-export default function OrganizationDetailClient({ initialOrganization = null, initialSearchParams = {} }: OrganizationDetailClientProps) {
+export default function OrganizationDetailClient({ initialOrganization = null }: OrganizationDetailClientProps) {
   const urlParams = useParams();
+  const searchParams = useSearchParams();
   const organizationSlug = urlParams?.slug;
 
   const [organization, setOrganization] = useState<OrganizationWithDetails | null>(
@@ -61,16 +61,13 @@ export default function OrganizationDetailClient({ initialOrganization = null, i
     (initialOrganization as OrganizationWithDetails | null)?.total_dogs ?? 0,
   );
 
-  // Filter state from server-passed searchParams (avoids useSearchParams Suspense trigger and hydration mismatch)
   const [filters, setFilters] = useState<OrgFilters>(() => {
     const defaultFilters = getDefaultFilters();
-    const toStr = (v: string | string[] | undefined): string | undefined =>
-      Array.isArray(v) ? v[0] : v;
 
-    const urlAge = toStr(initialSearchParams.age);
-    const urlBreed = toStr(initialSearchParams.breed);
-    const urlSex = toStr(initialSearchParams.sex);
-    const urlSort = toStr(initialSearchParams.sort);
+    const urlAge = searchParams?.get("age");
+    const urlBreed = searchParams?.get("breed");
+    const urlSex = searchParams?.get("sex");
+    const urlSort = searchParams?.get("sort");
 
     if (urlAge || urlBreed || urlSex || urlSort) {
       return {
@@ -238,11 +235,7 @@ export default function OrganizationDetailClient({ initialOrganization = null, i
 
           // Track organization page view
           if (orgData?.slug) {
-            try {
-              trackOrgPageView(orgData.slug, (orgData as OrganizationWithDetails).total_dogs || 0);
-            } catch (error) {
-              console.error("Failed to track organization page view:", error);
-            }
+            trackOrgPageView(orgData.slug, (orgData as OrganizationWithDetails).total_dogs || 0);
           }
         }
 
@@ -283,7 +276,8 @@ export default function OrganizationDetailClient({ initialOrganization = null, i
     };
 
     fetchData();
-  }, [organizationSlug, filters, organization]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- use organization?.id (stable primitive) instead of organization (unstable object reference) to prevent double-fetch
+  }, [organizationSlug, filters, organization?.id]);
 
   // Loading state
   if (loading) {

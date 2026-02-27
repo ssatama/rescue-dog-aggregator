@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import { useToast } from "./ToastContext";
 import { generateFavoritesUrl, parseSharedUrl } from "../utils/sharing";
+import { logger, reportError } from "../utils/logger";
 
 interface FavoritesContextType {
   favorites: number[];
@@ -30,7 +31,7 @@ const toNumericId = (dogId: number | string): number => {
   if (typeof dogId === "number") return dogId;
   const parsed = parseInt(dogId, 10);
   if (Number.isNaN(parsed)) {
-    console.error(`[Favorites] Invalid non-numeric dog ID: ${dogId}`);
+    logger.warn(`[Favorites] Invalid non-numeric dog ID: ${dogId}`);
     return -1;
   }
   return parsed;
@@ -122,9 +123,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         setFavorites(parsed);
       }
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Failed to load favorites from localStorage:", error);
-      }
+      reportError(error, { context: "load_favorites_from_localStorage" });
 
       // Clear corrupted data and reset to empty array
       try {
@@ -179,12 +178,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
           setFavorites(parsed);
         } catch (error) {
-          if (process.env.NODE_ENV === "development") {
-            console.error(
-              "Failed to sync favorites from storage event:",
-              error,
-            );
-          }
+          reportError(error, { context: "sync_favorites_from_storage_event" });
           // Don't show user error for cross-tab sync issues - just ignore invalid data
         }
       }
@@ -218,9 +212,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newFavorites));
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Failed to save favorites to localStorage:", error);
-      }
+      reportError(error, { context: "save_favorites_to_localStorage" });
 
       // Handle specific storage errors
       if (error instanceof DOMException) {
@@ -267,9 +259,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (prev.length >= MAX_FAVORITES) {
-          if (process.env.NODE_ENV === "development") {
-            console.warn(`Maximum favorites limit (${MAX_FAVORITES}) reached`);
-          }
+          logger.warn(`Maximum favorites limit (${MAX_FAVORITES}) reached`);
           setToastMessage({
             type: "error",
             message: `Maximum ${MAX_FAVORITES} favorites reached`,
@@ -399,9 +389,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
           });
         }
       } catch (error) {
-        if (process.env.NODE_ENV === "development") {
-          console.error("Failed to load favorites from URL:", error);
-        }
+        reportError(error, { context: "load_favorites_from_url" });
 
         setToastMessage({
           type: "error",

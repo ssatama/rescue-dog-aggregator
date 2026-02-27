@@ -159,8 +159,8 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
   if (params) {
     try {
       resolvedParams = await params;
-    } catch {
-      // Ignore params errors - Client component handles this via useParams()
+    } catch (error) {
+      reportError(error, { context: "DogDetailPageAsync", operation: "resolveParams" });
     }
   }
 
@@ -185,7 +185,7 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
     try {
       heroImageUrl = getDetailHeroImageWithPosition(initialDog.primary_image_url, false).src;
     } catch (error) {
-      console.error("[DogDetailPageAsync] Hero image URL computation failed:", error);
+      reportError(error, { context: "DogDetailPageAsync.heroImage" });
     }
   }
 
@@ -224,7 +224,7 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
       .map((dog) => ({ slug: dog.slug }));
 
   } catch (error) {
-    console.error('[generateStaticParams] Error:', error);
+    reportError(error, { context: "DogDetailPage.generateStaticParams" });
     return [];
   }
 }

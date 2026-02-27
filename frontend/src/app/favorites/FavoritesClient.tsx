@@ -336,7 +336,7 @@ function FavoritesPageContent(): React.JSX.Element {
           hasEnhancedData: filteredDogs.some((d) => d.dog_profiler_data),
         });
       } catch (error) {
-        console.error("Error calculating enhanced insights:", error);
+        reportError(error, { context: "FavoritesClient.calculateInsights" });
         // Fall back to basic insights on error
         setInsights(getBasicInsights(filteredDogs));
       } finally {

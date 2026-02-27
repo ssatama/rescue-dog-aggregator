@@ -20,6 +20,7 @@ import type { SwipeFilters as Filters } from "../../hooks/useSwipeFilters";
 import { safeStorage } from "../../utils/safeStorage";
 import { useTheme } from "../providers/ThemeProvider";
 import { safeToNumber } from "../../utils/dogImageHelpers";
+import { reportError } from "../../utils/logger";
 import { type Dog } from "../../types/dog";
 import type { CountryOption } from "../../services/serverSwipeService";
 
@@ -382,7 +383,7 @@ export function SwipeContainer({
       const currentDogId = safeToNumber(currentDog.id);
 
       if (!currentDogId) {
-        console.warn("Invalid dog ID:", currentDog.id);
+        reportError(new Error("Invalid dog ID"), { context: "SwipeContainer", dogId: currentDog.id });
         return;
       }
 

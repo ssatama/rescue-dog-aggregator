@@ -127,9 +127,6 @@ export async function getEnhancedOrganizations(): Promise<EnhancedOrg[]> {
 
     return parsed.map(normalizeEnhancedOrg);
   } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("Failed to fetch enhanced organizations:", error);
-    }
     reportError(error, { context: "getEnhancedOrganizations" });
     throw error;
   }
@@ -149,11 +146,6 @@ export async function getEnhancedOrganizationsSSR(): Promise<EnhancedOrg[]> {
     } as RequestInit);
 
     if (!response.ok) {
-      console.warn(`SSR fetch failed with status: ${response.status}`, {
-        url: `${apiUrl}/api/organizations/enhanced`,
-        status: response.status,
-        statusText: response.statusText,
-      });
       throw new Error(`Failed to fetch organizations: ${response.status}`);
     }
 
@@ -161,8 +153,7 @@ export async function getEnhancedOrganizationsSSR(): Promise<EnhancedOrg[]> {
     try {
       organizations = await response.json();
     } catch (jsonError) {
-      console.error("SSR JSON parsing error:", jsonError);
-      throw new Error("Invalid JSON response from API");
+      throw new Error("Invalid JSON response from API", { cause: jsonError });
     }
 
     if (typeof window !== "undefined") {
@@ -175,14 +166,7 @@ export async function getEnhancedOrganizationsSSR(): Promise<EnhancedOrg[]> {
 
     return enhancedOrganizations;
   } catch (error) {
-    const err = error as Error;
-    console.error("Failed to fetch enhanced organizations (SSR):", {
-      error: err.message,
-      stack: err.stack,
-      apiUrl: process.env.NEXT_PUBLIC_API_URL,
-      timestamp: new Date().toISOString(),
-    });
-    reportError(error, { context: "getEnhancedOrganizationsSSR" });
+    reportError(error, { context: "getEnhancedOrganizationsSSR", apiUrl: process.env.NEXT_PUBLIC_API_URL });
     return [];
   }
 }

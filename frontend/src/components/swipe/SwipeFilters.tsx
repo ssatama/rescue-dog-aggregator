@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { SwipeFilters as Filters } from "../../hooks/useSwipeFilters";
+import { reportError } from "../../utils/logger";
 
 interface SwipeFiltersProps {
   onFiltersChange: (filters: Filters) => void;
@@ -84,7 +85,7 @@ export default function SwipeFilters({
         return parsed;
       }
     } catch (error) {
-      console.error("Failed to load filters:", error);
+      reportError(error, { context: "SwipeFilters.loadFilters" });
     }
     return { country: "", sizes: [], ages: [] };
   });

@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useSwipeable } from "react-swipeable";
 import { getAnimals } from "../services/animalsService";
 import type { Dog } from "../types/dog";
+import { reportError } from "../utils/logger";
 
 // Types
 interface UseSwipeNavigationProps {
@@ -176,9 +177,9 @@ export function useSwipeNavigation({
     } catch (error) {
       // Don't log errors if request was aborted (user navigated away)
       if (error instanceof Error && error.name !== "AbortError") {
-        console.error("Error loading dogs for navigation:", error);
+        reportError(error, { context: "useSwipeNavigation.loadDogs" });
       } else if (!(error instanceof Error)) {
-        console.error("Error loading dogs for navigation:", error);
+        reportError(error, { context: "useSwipeNavigation.loadDogs" });
       }
       if (mountedRef.current) {
         setDogs([]);

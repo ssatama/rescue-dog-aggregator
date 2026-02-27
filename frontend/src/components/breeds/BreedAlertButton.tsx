@@ -7,6 +7,7 @@ import {
   saveBreedAlertWithFallback,
   hasBreedAlert,
 } from "@/services/breedAlertService";
+import { reportError } from "@/utils/logger";
 import type { BreedData } from "@/types/breeds";
 
 interface BreedAlertButtonProps {
@@ -87,7 +88,7 @@ const BreedAlertButton = forwardRef<HTMLButtonElement, BreedAlertButtonProps>(
           setShowSuccess(false);
         }, 3000);
       } catch (error) {
-        console.error("Failed to save breed alert:", error);
+        reportError(error, { context: "BreedAlertButton.saveAlert" });
         setErrorMsg("Could not save alert. Please try again.");
         // Clear error after 5 seconds
         setTimeout(() => setErrorMsg(""), 5000);
