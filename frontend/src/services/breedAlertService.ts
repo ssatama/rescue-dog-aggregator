@@ -94,7 +94,7 @@ export async function saveBreedAlertWithFallback(
   try {
     await saveBreedAlert(alertData);
   } catch (error) {
-    logger.warn("API save failed, falling back to local storage only:", error);
+    reportError(error, { context: "breedAlertService.saveWithFallback" });
   }
   return saveBreedAlertLocally(alertData);
 }

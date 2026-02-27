@@ -14,11 +14,11 @@ const ALLOWED_FILES = new Set([
   "utils/imageUtils.ts",
   // Network utils - non-prod preload warnings
   "utils/networkUtils.ts",
-  // Error boundaries - componentDidCatch logging (also reports via Sentry.captureException)
-  "components/error/ErrorBoundary.tsx",
-  "components/ui/ErrorBoundary.tsx",
+  // Error boundaries with Sentry.captureException - console.error is dev-only supplementary logging
   "components/swipe/SwipeErrorBoundary.tsx",
   "components/error/MobileCatalogErrorBoundary.tsx",
+  // UI ErrorBoundary - dev-only componentDidCatch logging (no Sentry integration)
+  "components/ui/ErrorBoundary.tsx",
   // FallbackImage - image load warnings are expected UX events
   "components/ui/FallbackImage.tsx",
   // Flag error boundary - non-prod flag loading warnings

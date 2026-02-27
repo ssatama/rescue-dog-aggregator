@@ -152,8 +152,8 @@ export async function getEnhancedOrganizationsSSR(): Promise<EnhancedOrg[]> {
     let organizations: unknown;
     try {
       organizations = await response.json();
-    } catch {
-      throw new Error("Invalid JSON response from API");
+    } catch (jsonError) {
+      throw new Error("Invalid JSON response from API", { cause: jsonError });
     }
 
     if (typeof window !== "undefined") {
@@ -166,7 +166,7 @@ export async function getEnhancedOrganizationsSSR(): Promise<EnhancedOrg[]> {
 
     return enhancedOrganizations;
   } catch (error) {
-    reportError(error, { context: "getEnhancedOrganizationsSSR" });
+    reportError(error, { context: "getEnhancedOrganizationsSSR", apiUrl: process.env.NEXT_PUBLIC_API_URL });
     return [];
   }
 }

@@ -159,8 +159,8 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
   if (params) {
     try {
       resolvedParams = await params;
-    } catch {
-      // Ignore params errors - Client component handles this via useParams()
+    } catch (error) {
+      reportError(error, { context: "DogDetailPageAsync", operation: "resolveParams" });
     }
   }
 

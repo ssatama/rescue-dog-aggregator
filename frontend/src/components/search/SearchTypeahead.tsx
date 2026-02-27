@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import type { IconName } from "@/components/ui/Icon";
 import { useDebouncedCallback } from "use-debounce";
-import { reportError } from "@/utils/logger";
+import { logger, reportError } from "@/utils/logger";
 import { trackSearch } from "@/lib/monitoring/breadcrumbs";
 import {
   fuzzySearch,
@@ -90,7 +90,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
           // Limit history to maxHistoryItems when loading
           setSearchHistory(history.slice(0, maxHistoryItems));
         } catch (error) {
-          reportError(error, { context: "SearchTypeahead.loadHistory" });
+          logger.warn("Failed to load search history:", error);
           setSearchHistory([]);
         }
       }
@@ -115,7 +115,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
           setSearchHistory(newHistory);
           localStorage.setItem(historyKey, JSON.stringify(newHistory));
         } catch (error) {
-          reportError(error, { context: "SearchTypeahead.saveHistory" });
+          logger.warn("Failed to save search history:", error);
         }
       },
       [searchHistory, showHistory, maxHistoryItems, historyKey],
