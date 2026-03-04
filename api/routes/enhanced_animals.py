@@ -250,7 +250,7 @@ async def get_enhanced_metrics(
         service = EnhancedAnimalService(cursor)
         return service.get_metrics()
 
-    except Exception as e:
+    except Exception:
         logger.exception("Error fetching enhanced service metrics")
         return {
             "error": "Internal server error",
