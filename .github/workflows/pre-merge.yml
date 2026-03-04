@@ -153,7 +153,7 @@ jobs:
         run: uv run pip-audit --output security-report.json --format json || echo "::warning::Security vulnerabilities found"
 
       - name: Upload security report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: security-scan-results
