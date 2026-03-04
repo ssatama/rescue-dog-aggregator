@@ -622,7 +622,7 @@ async def get_pool_health():
         logger.error(f"Error checking pool health: {e}")
         return {
             "status": "error",
-            "pool": {"status": "error", "error": str(e)},
+            "pool": {"status": "error"},
             "timestamp": datetime.now(),
         }
 
