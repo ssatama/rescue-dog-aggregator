@@ -305,11 +305,11 @@ async def health_check(db_conn=Depends(get_database_connection)):
 
     except psycopg2.Error as db_err:
         logger.error(f"Health check database error: {db_err}")
-        db_status = {"status": "error", "error": str(db_err), "response_time_ms": None}
+        db_status = {"status": "error", "response_time_ms": None}
         overall_status = "unhealthy"
     except Exception as e:
         logger.error(f"Health check unexpected error: {e}")
-        db_status = {"status": "error", "error": str(e), "response_time_ms": None}
+        db_status = {"status": "error", "response_time_ms": None}
         overall_status = "unhealthy"
 
     return {
