@@ -253,7 +253,7 @@ async def get_enhanced_metrics(
     except Exception as e:
         logger.exception("Error fetching enhanced service metrics")
         return {
-            "error": str(e),
+            "error": "Internal server error",
             "cache_stats": {},
             "cache_hits": {},
             "cache_misses": {},

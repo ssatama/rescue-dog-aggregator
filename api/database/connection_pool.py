@@ -249,7 +249,7 @@ class ConnectionPool:
                 "status": "not_initialized",
                 "initialized": ConnectionPool._initialized,
                 "has_pool": self._pool is not None,
-                "initialization_error": bool(ConnectionPool._initialization_error),
+                "has_initialization_error": bool(ConnectionPool._initialization_error),
             }
 
         return {

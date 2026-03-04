@@ -610,7 +610,7 @@ async def get_pool_health():
         if pool_status.get("status") == "active":
             health = "healthy"
         elif pool_status.get("status") == "not_initialized":
-            if pool_status.get("initialization_error"):
+            if pool_status.get("has_initialization_error"):
                 health = "unhealthy"
             else:
                 health = "initializing"
