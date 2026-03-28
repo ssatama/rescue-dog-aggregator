@@ -121,14 +121,12 @@
   "overrides": {
     "d3-color": "^3.1.0",
     "picomatch": ">=4.0.4",
-    "brace-expansion": ">=5.0.5",
     "yaml": ">=2.8.3"
   },
   "pnpm": {
     "overrides": {
       "d3-color": "^3.1.0",
       "picomatch": ">=4.0.4",
-      "brace-expansion": ">=5.0.5",
       "yaml": ">=2.8.3"
     }
   }
