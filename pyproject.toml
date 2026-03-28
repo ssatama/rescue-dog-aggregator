@@ -53,7 +53,7 @@ dev = [
     "types-requests>=2.31.0",
     "ipython>=8.0.0",
     "watchdog>=3.0.0",
-    "cryptography>=41.0.0",
+    "cryptography>=46.0.6",
     "pip-audit>=2.7.0",
 ]
 
@@ -76,7 +76,7 @@ dev-dependencies = [
     "types-requests>=2.31.0",
     "ipython>=8.0.0",
     "watchdog>=3.0.0",
-    "cryptography>=41.0.0",
+    "cryptography>=46.0.6",
     "pip-audit>=2.7.0",
 ]
 
