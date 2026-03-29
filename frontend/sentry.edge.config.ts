@@ -21,8 +21,8 @@ if (isProduction) {
     // Release tracking
     release: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
 
-    // Performance monitoring - 100% sampling for low-traffic site (15 visitors/day)
-    tracesSampleRate: 1.0,
+    // Performance monitoring - 10% sampling to reduce span volume
+    tracesSampleRate: 0.1,
 
     // Session replay not applicable on edge - explicitly set to 0
     replaysSessionSampleRate: 0,

@@ -56,8 +56,7 @@ class TestSentryConfiguration:
                 mock_init.assert_called_once()
                 call_kwargs = mock_init.call_args.kwargs
 
-                assert call_kwargs["traces_sample_rate"] == 1.0
-                assert call_kwargs["profiles_sample_rate"] == 1.0
+                assert call_kwargs["traces_sample_rate"] == 0.1
 
     def test_sentry_dsn_from_environment(self) -> None:
         from api.monitoring import init_sentry

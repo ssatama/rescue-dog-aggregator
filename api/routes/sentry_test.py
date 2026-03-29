@@ -39,7 +39,6 @@ async def sentry_health():
             "environment": sentry_sdk.get_client().options.get("environment"),
             "dsn_configured": bool(sentry_sdk.get_client().options.get("dsn")),
             "traces_sample_rate": sentry_sdk.get_client().options.get("traces_sample_rate"),
-            "profiles_sample_rate": sentry_sdk.get_client().options.get("profiles_sample_rate"),
         },
     )
 
