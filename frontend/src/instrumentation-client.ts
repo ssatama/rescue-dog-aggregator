@@ -51,8 +51,12 @@ if (
       process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ||
       "unknown",
 
-    // Performance monitoring - 100% sampling for low-traffic site (15 visitors/day)
-    tracesSampleRate: 1.0,
+    // Performance sampling: 100% pageloads (web vitals), 10% everything else
+    tracesSampler: (samplingContext) => {
+      const op = samplingContext.attributes?.["sentry.op"];
+      if (op === "pageload") return 1.0;
+      return 0.1;
+    },
 
     // Enable distributed tracing to backend API
     tracePropagationTargets: [
@@ -61,8 +65,8 @@ if (
       /^https:\/\/api\.rescuedogs\.me/,
     ],
 
-    // Session Replay - Disabled in development to avoid conflicts, 100% in production for better debugging
-    replaysSessionSampleRate: isProduction ? 1.0 : 0,
+    // Session Replay - 10% baseline, 100% on errors
+    replaysSessionSampleRate: isProduction ? 0.1 : 0,
     replaysOnErrorSampleRate: isProduction ? 1.0 : 0,
 
     // Integrations

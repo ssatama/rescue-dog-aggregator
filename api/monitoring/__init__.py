@@ -84,26 +84,23 @@ def init_sentry(app_environment: str) -> None:
             StarletteIntegration(
                 transaction_style="endpoint",
                 failed_request_status_codes={401, 403, 429, *range(500, 600)},
-                middleware_spans=True,
+                middleware_spans=False,
             ),
             FastApiIntegration(
                 transaction_style="endpoint",
                 failed_request_status_codes={401, 403, 429, *range(500, 600)},
-                middleware_spans=True,
+                middleware_spans=False,
             ),
             LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
         ],
-        traces_sample_rate=1.0,  # 100% sampling in production (low traffic)
-        profiles_sample_rate=1.0,  # 100% CPU profiling in production
-        profile_lifecycle="trace",
+        traces_sample_rate=0.1,  # 10% sampling to reduce span volume
         attach_stacktrace=True,
         send_default_pii=False,
         before_send=scrub_sensitive_data,
-        before_send_transaction=filter_transactions,  # Filter noisy transactions
+        before_send_transaction=filter_transactions,
         release=os.getenv("SENTRY_RELEASE", "unknown"),
         server_name=os.getenv("SERVER_NAME", "api"),
         max_breadcrumbs=50,
-        enable_tracing=True,
     )
 
     sentry_sdk.set_tag("service", "backend-api")
