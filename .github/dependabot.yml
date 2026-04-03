@@ -27,6 +27,10 @@ updates:
     ignore:
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "lucide-react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "chore(deps)"
     labels:

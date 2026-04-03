@@ -65,6 +65,10 @@ build-backend = "hatchling.build"
 packages = ["api", "scrapers", "services", "utils", "database"]
 
 [tool.uv]
+constraint-dependencies = [
+    "PyJWT>=2.12.0",
+    "Pygments>=2.20.0",
+]
 dev-dependencies = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
