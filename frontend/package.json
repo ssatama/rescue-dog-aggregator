@@ -121,13 +121,17 @@
   "overrides": {
     "d3-color": "^3.1.0",
     "picomatch": ">=4.0.4",
-    "yaml": ">=2.8.3"
+    "yaml": ">=2.8.3",
+    "flatted": ">=3.4.2",
+    "lodash-es": ">=4.18.0"
   },
   "pnpm": {
     "overrides": {
       "d3-color": "^3.1.0",
       "picomatch": ">=4.0.4",
-      "yaml": ">=2.8.3"
+      "yaml": ">=2.8.3",
+      "flatted": ">=3.4.2",
+      "lodash-es": ">=4.18.0"
     }
   }
 }
