@@ -408,6 +408,41 @@ weiblich, kastriert"""
         assert scraper._classify_section("Reserviert für unsere Hündinnen") == "skip"
 
     @pytest.mark.unit
+    def test_filter_dogs_by_section_drops_selenium_containers_without_hund_link(self, scraper):
+        """Regression guard for the Selenium code path. Previously surfaced as
+        noisy 'Could not find dog link in container N' warnings when Elementor
+        injected non-dog containers (newsletter signup blocks). The bare
+        ``Mock()`` used in ``test_filter_dogs_by_section_success`` above can't
+        verify the early-drop — it passes whether or not the code exists. This
+        test puts the selector result explicitly.
+        """
+        from selenium.webdriver.common.by import By
+
+        mock_driver = Mock()
+
+        header = Mock()
+        header.text = "Unsere Hündinnen"
+
+        dog_container = Mock()
+        dog_container.find_elements.return_value = [Mock()]  # has /hund-*/ link
+
+        newsletter_container = Mock()
+        newsletter_container.find_elements.return_value = []  # no dog link
+
+        mock_driver.find_elements.side_effect = [
+            [header],
+            [dog_container, newsletter_container],
+        ]
+        # Positions: header@100, dog@150, newsletter@160
+        mock_driver.execute_script.side_effect = [100, 150, 160]
+
+        result = scraper._filter_dogs_by_section(mock_driver)
+
+        assert result == [dog_container]
+        dog_container.find_elements.assert_called_with(By.CSS_SELECTOR, "a[href*='/hund-']")
+        newsletter_container.find_elements.assert_called_with(By.CSS_SELECTOR, "a[href*='/hund-']")
+
+    @pytest.mark.unit
     def test_filter_dogs_by_section_soup_with_live_dom(self, scraper):
         """Golden-path DOM test against the current live layout.
 

@@ -558,9 +558,11 @@ class SessionManager:
     ) -> float | None:
         """Return AVG(dogs_found) over the last `limit` successful scrapes.
 
-        Returns None if the org has fewer than `minimum_historical_scrapes`
-        rows — no reliable baseline to compare against, so a caller should
-        skip any drop-rate alerting.
+        Returns None in all failure modes — no baseline, insufficient history,
+        missing connection, or DB error — and logs at error level so the miss
+        stays visible. Callers (observability plumbing) must treat None as
+        "skip the alert", never as "re-raise". This matches the error contract
+        of its sibling `detect_partial_failure`.
         """
         query = """
             SELECT AVG(dogs_found), COUNT(*)
@@ -576,19 +578,23 @@ class SessionManager:
         """
         params = (self.organization_id, limit)
 
-        if self.connection_pool:
-            with self.connection_pool.get_connection_context() as conn:
-                cursor = conn.cursor()
+        try:
+            if self.connection_pool:
+                with self.connection_pool.get_connection_context() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(query, params)
+                    result = cursor.fetchone()
+                    cursor.close()
+            elif self.conn:
+                cursor = self.conn.cursor()
                 cursor.execute(query, params)
                 result = cursor.fetchone()
                 cursor.close()
-        elif self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute(query, params)
-            result = cursor.fetchone()
-            cursor.close()
-        else:
-            self.logger.error("No database connection available for historical average lookup")
+            else:
+                self.logger.error("No database connection available for historical average lookup")
+                return None
+        except Exception as e:
+            self.logger.error(f"Failed to fetch historical average: {e}")
             return None
 
         if not result or result[0] is None or result[1] < minimum_historical_scrapes:

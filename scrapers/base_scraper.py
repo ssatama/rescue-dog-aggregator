@@ -1044,29 +1044,30 @@ class BaseScraper(ABC):
         against the historical average.
 
         Zero-dogs case is handled separately by alert_zero_dogs_found earlier
-        in run(), so we skip when animals_found is 0. Missing baseline or a
-        DB error fetching it also skip — we can't call it a drop without one,
-        and we must not abort the scrape over observability plumbing.
+        in run(), so we skip when animals_found is 0. Missing baseline also
+        skips — we can't call it a drop without one. Sentry transport errors
+        are swallowed: observability plumbing must never abort a scrape
+        mid-flight or `complete_scrape_log` below won't run.
         """
         if animals_found <= 0:
             return
         if not self.session_manager:
             return
-        try:
-            historical_avg = self.session_manager.get_historical_average_dogs_found()
-        except Exception as e:
-            self.logger.error(f"Failed to fetch historical average for partial-failure alert: {e}")
-            return
-        if not historical_avg or historical_avg <= 0:
+
+        historical_avg = self.session_manager.get_historical_average_dogs_found()
+        if historical_avg is None or historical_avg <= 0:
             return
 
-        alert_partial_failure(
-            org_name=self.get_organization_name(),
-            dogs_found=animals_found,
-            historical_average=historical_avg,
-            org_id=self.organization_id,
-            scrape_log_id=getattr(self, "scrape_log_id", None),
-        )
+        try:
+            alert_partial_failure(
+                org_name=self.get_organization_name(),
+                dogs_found=animals_found,
+                historical_average=historical_avg,
+                org_id=self.organization_id,
+                scrape_log_id=getattr(self, "scrape_log_id", None),
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to emit partial-failure Sentry alert: {e}")
 
     def detect_scraper_failure(self, animals_found, threshold_percentage=0.5, absolute_minimum=3):
         """Combined failure detection method that checks both catastrophic and partial failures.

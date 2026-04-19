@@ -18,7 +18,11 @@ if USE_PLAYWRIGHT:
         get_playwright_service,
     )
 else:
-    from selenium.common.exceptions import NoSuchElementException
+    from selenium.common.exceptions import (
+        NoSuchElementException,
+        StaleElementReferenceException,
+        WebDriverException,
+    )
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.webdriver.support.ui import WebDriverWait
@@ -587,11 +591,16 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
             # Filter containers by section
             for container in all_dog_containers:
-                # Early-drop Elementor-injected non-dog containers (no /hund-*/ link)
+                # Early-drop Elementor-injected non-dog containers (no /hund-*/ link).
+                # Narrow catch: only tolerate stale-element / generic WebDriver
+                # errors (include on fail-open to avoid losing a real dog). Any
+                # other error is a bug we want surfaced as a section-filter
+                # failure, handled by the outer except.
                 try:
                     has_dog_link = bool(container.find_elements(By.CSS_SELECTOR, "a[href*='/hund-']"))
-                except Exception:
-                    has_dog_link = True  # on selenium errors, fall through to include
+                except (StaleElementReferenceException, WebDriverException) as e:
+                    self.logger.warning(f"Selenium error probing dog link, including container: {e}")
+                    has_dog_link = True
                 if not has_dog_link:
                     continue
 

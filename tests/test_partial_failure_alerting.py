@@ -79,15 +79,14 @@ class TestPartialFailureAlertWiring:
 
         mock_alert.assert_not_called()
 
-    def test_swallows_session_manager_exception(self, scraper):
-        """A DB error fetching the historical average must not abort the scrape;
-        alert is skipped, error logged."""
-        scraper.session_manager.get_historical_average_dogs_found.side_effect = Exception("DB down")
+    def test_swallows_sentry_transport_exception(self, scraper):
+        """Sentry transport errors must not abort the scrape — `complete_scrape_log`
+        runs right after this helper and we must reach it."""
+        scraper.session_manager.get_historical_average_dogs_found.return_value = 50.0
 
-        with patch("scrapers.base_scraper.alert_partial_failure") as mock_alert:
+        with patch("scrapers.base_scraper.alert_partial_failure", side_effect=Exception("Sentry down")):
             scraper._emit_partial_failure_alert(animals_found=5)
 
-        mock_alert.assert_not_called()
         scraper.logger.error.assert_called_once()
 
 
@@ -126,3 +125,80 @@ class TestSessionManagerHistoricalAverage:
         sm = self._session_manager_with_pool_result((20.0, 2))
 
         assert sm.get_historical_average_dogs_found(minimum_historical_scrapes=3) is None
+
+    def test_returns_average_via_direct_connection_when_no_pool(self):
+        """Covers the `elif self.conn` branch — still supported for legacy call sites."""
+        from services.session_manager import SessionManager
+
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = (18.5, 9)
+        mock_conn.cursor.return_value = mock_cursor
+
+        sm = SessionManager(db_config={}, organization_id=42, connection_pool=None)
+        sm.conn = mock_conn
+
+        assert sm.get_historical_average_dogs_found() == 18.5
+
+    def test_returns_none_when_no_connection_configured(self):
+        """Defensive path — caller should treat None as 'skip the alert'."""
+        from services.session_manager import SessionManager
+
+        sm = SessionManager(db_config={}, organization_id=42, connection_pool=None)
+
+        assert sm.get_historical_average_dogs_found() is None
+
+    def test_swallows_db_exception_and_returns_none(self):
+        """DB errors here must not propagate — the caller is observability plumbing."""
+        from services.session_manager import SessionManager
+
+        pool = MagicMock()
+        ctx = MagicMock()
+        ctx.__enter__ = MagicMock(side_effect=Exception("connection dropped"))
+        ctx.__exit__ = MagicMock(return_value=None)
+        pool.get_connection_context.return_value = ctx
+
+        sm = SessionManager(db_config={}, organization_id=42, connection_pool=pool)
+
+        assert sm.get_historical_average_dogs_found() is None
+
+
+@pytest.mark.unit
+class TestFinalizeScrapeWiringToPartialFailureAlert:
+    """Pin the wiring that the whole PR exists to install: if a refactor drops
+    the `self._emit_partial_failure_alert(...)` line from `_finalize_scrape`,
+    this test fails loudly."""
+
+    def _make_scraper(self):
+        scraper = Mock()  # unspecced so `metrics_collector` etc. can be set freely
+        scraper.logger = Mock()
+        scraper.skip_existing_animals = False
+        scraper.session_manager = Mock()
+        scraper.metrics_collector = Mock()
+        scraper._get_correct_animals_found_count = Mock()
+        scraper.detect_partial_failure = Mock()
+        scraper.complete_scrape_log = Mock()
+        scraper._emit_partial_failure_alert = Mock()
+        scraper._check_adoptions_if_enabled = Mock()
+        scraper._log_service_unavailable = Mock()
+        scraper._finalize_scrape = BaseScraper._finalize_scrape.__get__(scraper)
+        return scraper
+
+    def test_finalize_scrape_invokes_partial_failure_alert_when_detected(self):
+        scraper = self._make_scraper()
+        scraper._get_correct_animals_found_count.return_value = 7
+        scraper.detect_partial_failure.return_value = True
+
+        scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats={"animals_added": 0, "animals_updated": 0})
+
+        scraper._emit_partial_failure_alert.assert_called_once_with(7)
+        scraper.complete_scrape_log.assert_called_once()
+
+    def test_finalize_scrape_does_not_alert_when_no_partial_failure(self):
+        scraper = self._make_scraper()
+        scraper._get_correct_animals_found_count.return_value = 50
+        scraper.detect_partial_failure.return_value = False
+
+        scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats={"animals_added": 0, "animals_updated": 0})
+
+        scraper._emit_partial_failure_alert.assert_not_called()
