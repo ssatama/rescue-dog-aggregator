@@ -36,6 +36,7 @@ class OrganizationRecord:
     city: str | None = None
     service_regions: list[str] | None = None
     adoption_fees: dict | None = None
+    active: bool = True
 
 
 @dataclass(frozen=True)
@@ -91,7 +92,7 @@ class OrganizationSyncService:
         query = """
             SELECT id, name, website_url, description, social_media,
                    created_at, updated_at, ships_to, established_year,
-                   logo_url, country, city, service_regions, adoption_fees
+                   logo_url, country, city, service_regions, adoption_fees, active
             FROM organizations
         """
 
@@ -115,6 +116,7 @@ class OrganizationSyncService:
                 city=row["city"],
                 service_regions=row["service_regions"],
                 adoption_fees=row.get("adoption_fees"),
+                active=row.get("active", True),
             )
             organizations[row["name"]] = org_record
 
@@ -158,6 +160,10 @@ class OrganizationSyncService:
         db_adoption_fees = db_org.adoption_fees or {}
         config_adoption_fees = self._build_adoption_fees_dict(config)
         if db_adoption_fees != config_adoption_fees:
+            return True
+
+        # Check active state drift (config.enabled → organizations.active)
+        if db_org.active != config.enabled:
             return True
 
         return False
@@ -209,9 +215,9 @@ class OrganizationSyncService:
             INSERT INTO organizations (
                 name, config_id, website_url, description, social_media,
                 created_at, updated_at,
-                ships_to, established_year, logo_url, country, city, service_regions, adoption_fees, slug
+                ships_to, established_year, logo_url, country, city, service_regions, adoption_fees, slug, active
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) RETURNING id
         """
 
@@ -231,6 +237,7 @@ class OrganizationSyncService:
             psycopg2.extras.Json(config.metadata.service_regions),
             psycopg2.extras.Json(adoption_fees),
             slug,  # Add slug parameter
+            config.enabled,
         )
 
         result = execute_command(query, params)
@@ -260,7 +267,8 @@ class OrganizationSyncService:
                 updated_at = %s, ships_to = %s,
                 established_year = %s, logo_url = %s, country = %s, city = %s,
                 service_regions = %s, adoption_fees = %s,
-                slug = COALESCE(slug, %s)
+                slug = COALESCE(slug, %s),
+                active = %s
             WHERE id = %s
         """
 
@@ -279,6 +287,7 @@ class OrganizationSyncService:
             psycopg2.extras.Json(config.metadata.service_regions),
             psycopg2.extras.Json(adoption_fees),
             slug,  # Only set if slug is currently NULL
+            config.enabled,
             org_id,
         )
 
