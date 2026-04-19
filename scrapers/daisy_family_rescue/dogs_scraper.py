@@ -48,18 +48,13 @@ class DaisyFamilyRescueScraper(BaseScraper):
         self.base_url: str = "https://daisyfamilyrescue.de"
         self.listing_url: str = "https://daisyfamilyrescue.de/unsere-hunde/"
 
-        # Target sections based on inspection findings
-        self.target_sections = [
-            "Bei einer Pflegestelle in Deutschland",
-            "Hündinnen in Nordmazedonien",
-            "Rüden in Nordmazedonien",
-        ]
-
-        # Sections to skip
-        self.skip_sections = [
-            "In medizinischer Behandlung",
-            "Wir sind bereits reserviert",
-        ]
+        # Keyword lists rather than exact section strings — admins have reworded
+        # these headings at least once ("Bei einer Pflegestelle…" →
+        # "Aktuell bei einer Pflegestelle…", "Hündinnen in Nordmazedonien" →
+        # "Unsere Hündinnen"), and the exact-match predicate previously fell
+        # through to the "unknown section → include" fallback branch silently.
+        self.target_section_keywords = ["pflegestelle", "hündinnen", "rüden"]
+        self.skip_section_keywords = ["reserviert"]
 
         # Initialize detail scraper for enhanced data extraction
         self.detail_scraper = None
@@ -345,6 +340,20 @@ class DaisyFamilyRescueScraper(BaseScraper):
         await page.evaluate("window.scrollTo(0, 0)")
         await asyncio.sleep(1)
 
+    def _classify_section(self, header_text: str) -> str | None:
+        """Classify a section heading as 'target', 'skip', or None.
+
+        Case-insensitive substring match against keyword lists. Skip wins over
+        target so a conflicting header (e.g. 'Reserviert für Hündinnen') never
+        leaks reserved dogs into the listing.
+        """
+        text_lower = header_text.lower()
+        if any(kw in text_lower for kw in self.skip_section_keywords):
+            return "skip"
+        if any(kw in text_lower for kw in self.target_section_keywords):
+            return "target"
+        return None
+
     def _filter_dogs_by_section_soup(self, soup: BeautifulSoup) -> list:
         """Filter dog containers to only include those from target sections using BeautifulSoup."""
         valid_containers = []
@@ -358,14 +367,21 @@ class DaisyFamilyRescueScraper(BaseScraper):
             section_positions = {}
             for header in section_headers:
                 section_text = header.get_text(strip=True)
-                if section_text in self.target_sections or section_text in self.skip_sections:
-                    try:
-                        header_position = all_elements.index(header)
-                        section_positions[section_text] = header_position
-                    except ValueError:
-                        continue
+                if self._classify_section(section_text) is None:
+                    continue
+                try:
+                    header_position = all_elements.index(header)
+                    section_positions[section_text] = header_position
+                except ValueError:
+                    continue
 
             for container in all_dog_containers:
+                # Early-drop containers that Elementor slipped in without a dog
+                # link (newsletter signup, promo blocks). Previously surfaced as
+                # noisy "Could not find dog link in container N" warnings.
+                if not container.select_one("a[href*='/hund-']"):
+                    continue
+
                 try:
                     container_position = all_elements.index(container)
                 except ValueError:
@@ -373,13 +389,12 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     continue
 
                 container_section = self._find_container_section(container_position, section_positions)
+                kind = self._classify_section(container_section) if container_section else None
 
-                if container_section in self.target_sections:
-                    valid_containers.append(container)
-                elif container_section in self.skip_sections:
+                if kind == "skip":
                     self.logger.debug(f"Skipping container in section: {container_section}")
-                else:
-                    valid_containers.append(container)
+                    continue
+                valid_containers.append(container)
 
         except Exception as e:
             self.logger.warning(f"Section filtering failed, using all containers: {e}")
@@ -549,34 +564,37 @@ class DaisyFamilyRescueScraper(BaseScraper):
             # Find all section headers
             section_headers = driver.find_elements(By.CSS_SELECTOR, "h2.elementor-heading-title.elementor-size-default")
 
-            # World-class logging: Section discovery handled by centralized system
-
             # Find all dog containers
             all_dog_containers = driver.find_elements(
                 By.CSS_SELECTOR,
                 "article.elementor-post.elementor-grid-item.ecs-post-loop",
             )
 
-            # World-class logging: Container discovery handled by centralized system
-
-            # Map sections to their positions in DOM
+            # Map sections to their positions in DOM (classified ones only)
             section_positions = {}
             for header in section_headers:
                 section_text = header.text.strip()
-                if section_text in self.target_sections or section_text in self.skip_sections:
-                    # Get the DOM position of this header
-                    header_position = driver.execute_script(
-                        """
-                        var elements = Array.from(document.querySelectorAll('*'));
-                        return elements.indexOf(arguments[0]);
-                    """,
-                        header,
-                    )
-                    section_positions[section_text] = header_position
-                    # World-class logging: Section discovery handled by centralized system
+                if self._classify_section(section_text) is None:
+                    continue
+                header_position = driver.execute_script(
+                    """
+                    var elements = Array.from(document.querySelectorAll('*'));
+                    return elements.indexOf(arguments[0]);
+                """,
+                    header,
+                )
+                section_positions[section_text] = header_position
 
             # Filter containers by section
             for container in all_dog_containers:
+                # Early-drop Elementor-injected non-dog containers (no /hund-*/ link)
+                try:
+                    has_dog_link = bool(container.find_elements(By.CSS_SELECTOR, "a[href*='/hund-']"))
+                except Exception:
+                    has_dog_link = True  # on selenium errors, fall through to include
+                if not has_dog_link:
+                    continue
+
                 container_position = driver.execute_script(
                     """
                     var elements = Array.from(document.querySelectorAll('*'));
@@ -585,18 +603,13 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     container,
                 )
 
-                # Find which section this container belongs to
                 container_section = self._find_container_section(container_position, section_positions)
+                kind = self._classify_section(container_section) if container_section else None
 
-                if container_section in self.target_sections:
-                    valid_containers.append(container)
-                    self.logger.debug(f"Container at position {container_position} belongs to target section: {container_section}")
-                elif container_section in self.skip_sections:
+                if kind == "skip":
                     self.logger.debug(f"Skipping container at position {container_position} in section: {container_section}")
-                else:
-                    # If we can't determine section, include it to be safe
-                    valid_containers.append(container)
-                    self.logger.debug(f"Container at position {container_position} in unknown section, including")
+                    continue
+                valid_containers.append(container)
 
         except Exception as e:
             self.logger.warning(f"Section filtering failed, using all containers: {e}")
@@ -606,7 +619,6 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 "article.elementor-post.elementor-grid-item.ecs-post-loop",
             )
 
-        # World-class logging: Container filtering handled by centralized system
         return valid_containers
 
     def _find_container_section(self, container_position: int, section_positions: dict[str, int]) -> str | None:

@@ -2,6 +2,7 @@ import time
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from bs4 import BeautifulSoup
 
 from scrapers.daisy_family_rescue.dog_detail_scraper import (
     DaisyFamilyRescueDogDetailScraper,
@@ -103,14 +104,17 @@ weiblich, kastriert"""
 
     @pytest.mark.unit
     def test_filter_dogs_by_section_success(self, scraper):
+        """Headers use the current live site copy. First two are target sections,
+        third is the skip section; containers under the first two should survive,
+        the one under the skip section should be filtered out."""
         mock_driver = Mock()
 
         header1 = Mock()
-        header1.text = "Bei einer Pflegestelle in Deutschland"
+        header1.text = "Aktuell bei einer Pflegestelle in Deutschland"
         header2 = Mock()
-        header2.text = "Hündinnen in Nordmazedonien"
+        header2.text = "Unsere Hündinnen"
         header3 = Mock()
-        header3.text = "In medizinischer Behandlung"
+        header3.text = "Wir sind bereits reserviert"
 
         mock_driver.find_elements.side_effect = [
             [header1, header2, header3],
@@ -341,17 +345,19 @@ weiblich, kastriert"""
 
     @pytest.mark.unit
     def test_find_container_section(self, scraper):
+        """Closest preceding section header wins. Contract unchanged — still
+        returns the section name as-is; classification happens separately."""
         section_positions = {
-            "Bei einer Pflegestelle in Deutschland": 100,
-            "Hündinnen in Nordmazedonien": 200,
-            "In medizinischer Behandlung": 300,
+            "Aktuell bei einer Pflegestelle in Deutschland": 100,
+            "Unsere Hündinnen": 200,
+            "Unsere Rüden": 300,
             "Wir sind bereits reserviert": 400,
         }
 
         test_cases = [
-            (150, "Bei einer Pflegestelle in Deutschland"),
-            (250, "Hündinnen in Nordmazedonien"),
-            (350, "In medizinischer Behandlung"),
+            (150, "Aktuell bei einer Pflegestelle in Deutschland"),
+            (250, "Unsere Hündinnen"),
+            (350, "Unsere Rüden"),
             (450, "Wir sind bereits reserviert"),
             (50, None),
         ]
@@ -365,22 +371,88 @@ weiblich, kastriert"""
         assert scraper.base_url == "https://daisyfamilyrescue.de"
         assert scraper.listing_url == "https://daisyfamilyrescue.de/unsere-hunde/"
 
-        assert len(scraper.target_sections) == 3
-        assert "Bei einer Pflegestelle in Deutschland" in scraper.target_sections
-        assert "Hündinnen in Nordmazedonien" in scraper.target_sections
-        assert "Rüden in Nordmazedonien" in scraper.target_sections
+        # Keywords, not exact headings — the site repeatedly reworded these
+        assert scraper.target_section_keywords == ["pflegestelle", "hündinnen", "rüden"]
+        assert scraper.skip_section_keywords == ["reserviert"]
 
-        assert len(scraper.skip_sections) == 2
-        assert "In medizinischer Behandlung" in scraper.skip_sections
-        assert "Wir sind bereits reserviert" in scraper.skip_sections
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "header,expected",
+        [
+            # Current live headers (as of 2026-04-19)
+            ("Aktuell bei einer Pflegestelle in Deutschland", "target"),
+            ("Unsere Hündinnen", "target"),
+            ("Unsere Rüden", "target"),
+            ("Wir sind bereits reserviert", "skip"),
+            # Legacy headers — still match because the keywords survived the rewording
+            ("Bei einer Pflegestelle in Deutschland", "target"),
+            ("Hündinnen in Nordmazedonien", "target"),
+            ("Rüden in Nordmazedonien", "target"),
+            # Case tolerance — admins sometimes title-case or all-caps these
+            ("UNSERE HÜNDINNEN", "target"),
+            ("unsere rüden", "target"),
+            # Unrelated page sections
+            ("Kontakt", None),
+            ("Spenden", None),
+            ("", None),
+        ],
+    )
+    def test_classify_section_is_tolerant_to_rewording(self, scraper, header, expected):
+        assert scraper._classify_section(header) == expected
+
+    @pytest.mark.unit
+    def test_classify_section_skip_wins_when_both_match(self, scraper):
+        """If a section somehow contains both a target and a skip keyword, skip
+        must win so reserved-but-female dogs don't leak into the listing."""
+        # Hypothetical conflict header
+        assert scraper._classify_section("Reserviert für unsere Hündinnen") == "skip"
+
+    @pytest.mark.unit
+    def test_filter_dogs_by_section_soup_with_live_dom(self, scraper):
+        """Golden-path DOM test against the current live layout.
+
+        One dog under each target section plus one under the skip section;
+        after filtering we expect 2 containers (the two target dogs). The
+        non-dog container slipped in by Elementor has no /hund-*/ link and
+        must be silently dropped by the early-skip (no noisy warning).
+        """
+        html = """
+        <html><body>
+          <h2 class="elementor-heading-title elementor-size-default">Aktuell bei einer Pflegestelle in Deutschland</h2>
+          <article class="elementor-post elementor-grid-item ecs-post-loop">
+            <a href="/hund-anja/">Anja - in Berlin</a>
+          </article>
+          <h2 class="elementor-heading-title elementor-size-default">Unsere Hündinnen</h2>
+          <article class="elementor-post elementor-grid-item ecs-post-loop">
+            <a href="/hund-nika/">Nika - in Skopje</a>
+          </article>
+          <article class="elementor-post elementor-grid-item ecs-post-loop">
+            <a href="/newsletter/">Newsletter signup</a>
+          </article>
+          <h2 class="elementor-heading-title elementor-size-default">Wir sind bereits reserviert</h2>
+          <article class="elementor-post elementor-grid-item ecs-post-loop">
+            <a href="/hund-reserved/">Reserved dog</a>
+          </article>
+        </body></html>
+        """
+        soup = BeautifulSoup(html, "html.parser")
+
+        valid = scraper._filter_dogs_by_section_soup(soup)
+
+        hrefs = [c.find("a").get("href") for c in valid]
+        assert "/hund-anja/" in hrefs, "Pflegestelle dog must be kept"
+        assert "/hund-nika/" in hrefs, "Hündinnen dog must be kept"
+        assert "/hund-reserved/" not in hrefs, "Reserved dog must be filtered out"
+        assert "/newsletter/" not in hrefs, "Non-dog container must be silently dropped"
+        assert len(valid) == 2
 
     @pytest.mark.unit
     def test_section_filtering_includes_male_containers(self, scraper):
+        """Regression guard: male containers (under 'Unsere Rüden') are target."""
         section_positions = {
-            "Bei einer Pflegestelle in Deutschland": 100,
-            "Hündinnen in Nordmazedonien": 200,
-            "Rüden in Nordmazedonien": 300,
-            "In medizinischer Behandlung": 400,
+            "Aktuell bei einer Pflegestelle in Deutschland": 100,
+            "Unsere Hündinnen": 200,
+            "Unsere Rüden": 300,
             "Wir sind bereits reserviert": 500,
         }
 
@@ -388,10 +460,8 @@ weiblich, kastriert"""
 
         for container_pos in male_container_positions:
             section = scraper._find_container_section(container_pos, section_positions)
-            assert section == "Rüden in Nordmazedonien"
-
-            is_targeted = section in scraper.target_sections
-            assert is_targeted, f"Male container at position {container_pos} should be in target sections"
+            assert section == "Unsere Rüden"
+            assert scraper._classify_section(section) == "target"
 
     @pytest.mark.unit
     def test_link_extraction_skips_empty_text_links(self, scraper):
