@@ -551,6 +551,56 @@ class SessionManager:
             self.logger.error(f"Error getting stale animals summary: {e}")
             return {}
 
+    def get_historical_average_dogs_found(
+        self,
+        limit: int = 9,
+        minimum_historical_scrapes: int = 3,
+    ) -> float | None:
+        """Return AVG(dogs_found) over the last `limit` successful scrapes.
+
+        Returns None in all failure modes — no baseline, insufficient history,
+        missing connection, or DB error — and logs at error level so the miss
+        stays visible. Callers (observability plumbing) must treat None as
+        "skip the alert", never as "re-raise". This matches the error contract
+        of its sibling `detect_partial_failure`.
+        """
+        query = """
+            SELECT AVG(dogs_found), COUNT(*)
+            FROM (
+                SELECT dogs_found
+                FROM scrape_logs
+                WHERE organization_id = %s
+                AND status = 'success'
+                AND dogs_found > 0
+                ORDER BY started_at DESC
+                LIMIT %s
+            ) recent_scrapes
+        """
+        params = (self.organization_id, limit)
+
+        try:
+            if self.connection_pool:
+                with self.connection_pool.get_connection_context() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(query, params)
+                    result = cursor.fetchone()
+                    cursor.close()
+            elif self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute(query, params)
+                result = cursor.fetchone()
+                cursor.close()
+            else:
+                self.logger.error("No database connection available for historical average lookup")
+                return None
+        except Exception as e:
+            self.logger.error(f"Failed to fetch historical average: {e}")
+            return None
+
+        if not result or result[0] is None or result[1] < minimum_historical_scrapes:
+            return None
+        return float(result[0])
+
     def detect_partial_failure(
         self,
         animals_found: int,
