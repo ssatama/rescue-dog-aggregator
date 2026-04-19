@@ -1,7 +1,7 @@
 schema_version: "1.0"
 id: "furryrescueitaly"
 name: "Furry Rescue Italy"
-enabled: true
+enabled: false  # Disabled 2026-04-19: site rebuilt with Elementor, listing now holds only 4 dogs vs 35 previously scraped. Re-enable after full scraper rewrite (see Sentry issues PYTHON-FASTAPI-T / -Y / -1Z).
 scraper:
   class_name: "FurryRescueItalyScraper"
   module: "scrapers.furryrescueitaly.furryrescueitaly_scraper"
