@@ -116,7 +116,7 @@ class OrganizationSyncService:
                 city=row["city"],
                 service_regions=row["service_regions"],
                 adoption_fees=row.get("adoption_fees"),
-                active=row.get("active", True),
+                active=row["active"],
             )
             organizations[row["name"]] = org_record
 

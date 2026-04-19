@@ -71,9 +71,10 @@ def _db_row(active: bool = True) -> dict:
 class TestOrganizationSyncEnabledCascade:
     """Cover the enabled→active propagation explicitly."""
 
-    def test_create_organization_passes_enabled_true_to_insert(self):
+    @pytest.mark.parametrize("enabled", [True, False])
+    def test_create_organization_binds_enabled_to_last_insert_param(self, enabled):
         service = OrganizationSyncService(logo_service=NullLogoUploadService())
-        config = _make_config(enabled=True)
+        config = _make_config(enabled=enabled)
 
         with (
             patch("utils.organization_sync_service.execute_command", return_value={"id": 42}) as mock_cmd,
@@ -86,29 +87,13 @@ class TestOrganizationSyncEnabledCascade:
         insert_calls = [c for c in mock_cmd.call_args_list if "INSERT INTO organizations" in c.args[0]]
         assert len(insert_calls) == 1
         sql, params = insert_calls[0].args
-        assert "active" in sql
-        assert True in params, f"Expected active=True in params, got {params}"
+        assert sql.count("%s") == len(params), "SQL placeholder count must match params length"
+        assert params[-1] is enabled, f"Expected active={enabled} as last INSERT param, got {params[-1]}"
 
-    def test_create_organization_passes_enabled_false_to_insert(self):
+    @pytest.mark.parametrize("enabled", [True, False])
+    def test_update_organization_binds_enabled_before_where_param(self, enabled):
         service = OrganizationSyncService(logo_service=NullLogoUploadService())
-        config = _make_config(enabled=False)
-
-        with (
-            patch("utils.organization_sync_service.execute_command", return_value={"id": 42}) as mock_cmd,
-            patch.object(service, "_sync_service_regions"),
-            patch.object(service, "_sync_organization_logo"),
-            patch("utils.organization_sync_service.generate_unique_organization_slug", return_value="test-org"),
-        ):
-            service.create_organization(config)
-
-        insert_calls = [c for c in mock_cmd.call_args_list if "INSERT INTO organizations" in c.args[0]]
-        sql, params = insert_calls[0].args
-        assert "active" in sql
-        assert False in params, f"Expected active=False in params, got {params}"
-
-    def test_update_organization_sets_active_from_enabled(self):
-        service = OrganizationSyncService(logo_service=NullLogoUploadService())
-        config = _make_config(enabled=False)
+        config = _make_config(enabled=enabled)
 
         with (
             patch("utils.organization_sync_service.execute_command") as mock_cmd,
@@ -121,8 +106,9 @@ class TestOrganizationSyncEnabledCascade:
         update_calls = [c for c in mock_cmd.call_args_list if "UPDATE organizations" in c.args[0]]
         assert len(update_calls) == 1
         sql, params = update_calls[0].args
-        assert "active = %s" in sql
-        assert False in params, f"Expected active=False in params, got {params}"
+        assert sql.count("%s") == len(params), "SQL placeholder count must match params length"
+        assert params[-1] == 42, "Last UPDATE param must be the WHERE org_id"
+        assert params[-2] is enabled, f"Expected active={enabled} as second-to-last UPDATE param, got {params[-2]}"
 
     def test_get_database_organizations_populates_active(self):
         service = OrganizationSyncService(logo_service=NullLogoUploadService())
@@ -179,3 +165,43 @@ class TestOrganizationSyncEnabledCascade:
         )
 
         assert service.should_update_organization(db_org, config) is False
+
+    def test_sync_single_organization_flips_active_false_for_existing_row(self):
+        """End-to-end: flipping config.enabled to False must UPDATE the row with active=False.
+
+        Guards against a refactor that accidentally bypasses the UPDATE branch.
+        """
+        service = OrganizationSyncService(logo_service=NullLogoUploadService())
+        config = _make_config(enabled=False)
+        db_organizations = {
+            "Test Org": OrganizationRecord(
+                id=42,
+                name="Test Org",
+                website_url="https://example.com",
+                description="desc",
+                social_media={"website": "https://example.com"},
+                ships_to=["DE"],
+                established_year=2020,
+                logo_url=None,
+                country="DE",
+                city="Berlin",
+                service_regions=["DE"],
+                adoption_fees={},
+                active=True,
+            )
+        }
+
+        with (
+            patch("utils.organization_sync_service.execute_command") as mock_cmd,
+            patch.object(service, "_sync_service_regions"),
+            patch.object(service, "_sync_organization_logo"),
+            patch("utils.organization_sync_service.generate_unique_organization_slug", return_value="test-org"),
+        ):
+            result = service.sync_single_organization(config, db_organizations)
+
+        assert result.success is True
+        assert result.was_created is False
+        update_calls = [c for c in mock_cmd.call_args_list if "UPDATE organizations" in c.args[0]]
+        assert len(update_calls) == 1, "Expected exactly one UPDATE, got {}".format(len(update_calls))
+        _, params = update_calls[0].args
+        assert params[-2] is False, f"Flip to enabled=False must UPDATE with active=False (got {params[-2]})"
