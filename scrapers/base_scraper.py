@@ -31,6 +31,7 @@ from scrapers.filtering.filtering_service import FilteringService
 from scrapers.sentry_integration import (
     add_scrape_breadcrumb,
     alert_llm_enrichment_failure,
+    alert_partial_failure,
     alert_zero_dogs_found,
     capture_scraper_error,
     scrape_transaction,
@@ -789,15 +790,19 @@ class BaseScraper(ABC):
         phase_start = datetime.now()
 
         # Check for potential partial failure before updating stale data
-        potential_failure = self.detect_partial_failure(self._get_correct_animals_found_count(animals_data))
+        correct_animals_found = self._get_correct_animals_found_count(animals_data)
+        potential_failure = self.detect_partial_failure(correct_animals_found)
         processing_stats["potential_failure_detected"] = potential_failure
 
         if potential_failure:
             self.logger.warning("Potential partial failure detected - skipping stale data update")
+            # Surface to Sentry — log alone doesn't page. Zero-dogs path is
+            # handled earlier in run(), so this covers the drop-rate case.
+            self._emit_partial_failure_alert(correct_animals_found)
             # Complete scrape log with warning status
             self.complete_scrape_log(
                 status="warning",
-                animals_found=self._get_correct_animals_found_count(animals_data),
+                animals_found=correct_animals_found,
                 animals_added=processing_stats["animals_added"],
                 animals_updated=processing_stats["animals_updated"],
                 error_message="Potential partial failure - low animal count detected",
@@ -1033,6 +1038,35 @@ class BaseScraper(ABC):
 
         self._log_service_unavailable("SessionManager", "partial failure detection disabled")
         return animals_found < absolute_minimum  # Basic check only
+
+    def _emit_partial_failure_alert(self, animals_found: int) -> None:
+        """Emit a Sentry partial-failure alert when the current run is a drop
+        against the historical average.
+
+        Zero-dogs case is handled separately by alert_zero_dogs_found earlier
+        in run(), so we skip when animals_found is 0. Missing baseline or a
+        DB error fetching it also skip — we can't call it a drop without one,
+        and we must not abort the scrape over observability plumbing.
+        """
+        if animals_found <= 0:
+            return
+        if not self.session_manager:
+            return
+        try:
+            historical_avg = self.session_manager.get_historical_average_dogs_found()
+        except Exception as e:
+            self.logger.error(f"Failed to fetch historical average for partial-failure alert: {e}")
+            return
+        if not historical_avg or historical_avg <= 0:
+            return
+
+        alert_partial_failure(
+            org_name=self.get_organization_name(),
+            dogs_found=animals_found,
+            historical_average=historical_avg,
+            org_id=self.organization_id,
+            scrape_log_id=getattr(self, "scrape_log_id", None),
+        )
 
     def detect_scraper_failure(self, animals_found, threshold_percentage=0.5, absolute_minimum=3):
         """Combined failure detection method that checks both catastrophic and partial failures.
