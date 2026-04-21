@@ -87,7 +87,7 @@
     "@babel/preset-env": "^7.29.2",
     "@babel/preset-react": "^7.28.5",
     "@next/bundle-analyzer": "^16.2.4",
-    "@tailwindcss/postcss": "^4.2.2",
+    "@tailwindcss/postcss": "^4.2.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -112,7 +112,7 @@
     "postcss": "^8.5.10",
     "prettier": "^3.8.3",
     "puppeteer": "^24.42.0",
-    "tailwindcss": "^4.2.2",
+    "tailwindcss": "^4.2.4",
     "ts-unused-exports": "^11.0.1",
     "typescript": "^6.0.3",
     "unimport": "^6.1.0"
