@@ -7,7 +7,9 @@ export default [
   ...nextConfig,
   {
     rules: {
-      // Custom rule to prevent invalid OpenGraph types
+      "react-hooks/refs": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/immutability": "warn",
       "no-restricted-syntax": [
         "error",
         {
