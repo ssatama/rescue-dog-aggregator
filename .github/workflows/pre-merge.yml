@@ -190,7 +190,7 @@ jobs:
         run: pnpm lint
 
       - name: Run comprehensive tests
-        run: pnpm test -- --coverage --watchAll=false --maxWorkers=2 --verbose
+        run: pnpm test --coverage --watchAll=false --maxWorkers=2 --verbose
 
       - name: Build validation
         run: pnpm build

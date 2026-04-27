@@ -61,4 +61,4 @@ jobs:
 
       - name: Unit tests
         working-directory: ./frontend
-        run: pnpm test -- --passWithNoTests --watchAll=false
+        run: pnpm test --passWithNoTests --watchAll=false

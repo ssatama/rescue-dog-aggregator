@@ -117,7 +117,7 @@ jobs:
         run: pnpm lint
 
       - name: Run tests
-        run: pnpm test -- --coverage --watchAll=false --maxWorkers=2
+        run: pnpm test --coverage --watchAll=false --maxWorkers=2
 
       - name: Build
         run: pnpm build
