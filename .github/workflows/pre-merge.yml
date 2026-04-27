@@ -176,9 +176,9 @@ jobs:
           node-version: "20"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6
         with:
-          version: 9
+          version: 10
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -190,7 +190,7 @@ jobs:
         run: pnpm lint
 
       - name: Run comprehensive tests
-        run: pnpm test -- --coverage --watchAll=false --maxWorkers=2 --verbose
+        run: pnpm test --coverage --watchAll=false --maxWorkers=2 --verbose
 
       - name: Build validation
         run: pnpm build
