@@ -14,6 +14,9 @@ import DogDetailClient from "./DogDetailClient";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
 import ImagePreload from "../../../components/seo/ImagePreload";
 import Layout from "../../../components/layout/Layout";
+import { prioritizeDogsForStaticParams } from "./prioritizeDogsForStaticParams";
+
+const STATIC_PARAMS_LIMIT = 500;
 
 async function fetchAnimalBySlug(slug: string): Promise<DogWithLlm | null> {
   if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
@@ -219,9 +222,7 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
     const { getAllAnimalsForSitemap } = await import("../../../services/animalsService");
     const dogs = await getAllAnimalsForSitemap();
 
-    return dogs
-      .filter((dog): dog is typeof dog & { slug: string } => typeof dog.slug === "string" && dog.slug !== "")
-      .map((dog) => ({ slug: dog.slug }));
+    return prioritizeDogsForStaticParams(dogs, STATIC_PARAMS_LIMIT);
 
   } catch (error) {
     reportError(error, { context: "DogDetailPage.generateStaticParams" });
