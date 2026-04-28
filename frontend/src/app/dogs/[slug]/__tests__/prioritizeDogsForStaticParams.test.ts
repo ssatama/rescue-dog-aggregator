@@ -73,6 +73,28 @@ describe("prioritizeDogsForStaticParams", () => {
     expect(result[0].slug).toBe("recent");
   });
 
+  it("treats a dog at exactly the 30-day boundary as not recent", () => {
+    const exactlyThirtyDaysAgo = new Date(NOW);
+    exactlyThirtyDaysAgo.setDate(exactlyThirtyDaysAgo.getDate() - 30);
+
+    const dogs = [
+      buildDog({ slug: "boundary", created_at: exactlyThirtyDaysAgo.toISOString() }),
+      buildDog({ slug: "no-signals" }),
+    ];
+
+    const result = prioritizeDogsForStaticParams(dogs, 10, NOW);
+    expect(result.map((d) => d.slug)).toEqual(["boundary", "no-signals"]);
+  });
+
+  it("preserves input order for dogs at the same score (stable sort)", () => {
+    const dogs = Array.from({ length: 6 }, (_, i) =>
+      buildDog({ slug: `tied-${i}`, primary_image_url: "x" }),
+    );
+
+    const result = prioritizeDogsForStaticParams(dogs, 3, NOW);
+    expect(result.map((d) => d.slug)).toEqual(["tied-0", "tied-1", "tied-2"]);
+  });
+
   it("limits the result to the requested size", () => {
     const dogs = Array.from({ length: 1500 }, (_, i) =>
       buildDog({ slug: `dog-${i}`, primary_image_url: i % 2 === 0 ? "x" : undefined }),
