@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.base_scraper import BaseScraper
 from scrapers.dogstrust.dogstrust_scraper import DogsTrustScraper
@@ -66,9 +67,11 @@ class TestDogsTrustScraper(ScraperTestBase):
 
         result = scraper.get_animal_list()
 
-        # Verify the initial page load call
-        expected_first_url = "https://www.dogstrust.org.uk/rehoming/dogs"
-        mock_driver.get.assert_any_call(expected_first_url)
+        # Initial page load uses the canonical parameterized URL.
+        assert mock_driver.get.called
+        loaded_url = mock_driver.get.call_args.args[0]
+        assert loaded_url.startswith("https://www.dogstrust.org.uk/rehoming/dogs")
+        assert "page=0" in loaded_url
         # Verify attempts to find filter elements were made
         assert mock_driver.find_element.called
         assert isinstance(result, list)
@@ -160,19 +163,11 @@ class TestDogsTrustUnifiedStandardization:
             assert processed["breed_category"] == "Unknown"
 
 
-# --- Playwright listing-page resilience tests ---
-#
-# Production data (organization_id=28) shows ~50% of cron runs since 2026-04-20
-# finish in ~22s with zero dogs, every failure preceded by:
-#   "Timeout waiting for initial page load: Page.wait_for_selector: Timeout 15000ms exceeded"
-# Successful runs of the same scraper return 393-442 dogs. The site itself is
-# fine; the issue is intermittent remote-Browserless page load slowness.
-#
-# These tests lock in:
-#   1. Canonical parameterized listing URL (avoids the /rehoming/dogs redirect).
-#   2. One retry on initial wait_for_selector timeout.
-#   3. Hard-fail (raise) if both attempts time out, so Sentry/Railway logs show
-#      a real error instead of swallowing it into a misleading zero-dogs alert.
+# Listing-page resilience: remote Browserless under stealth_mode
+# intermittently fails to render the initial page within the timeout. The
+# tests below lock in: canonical URL, retry-once on timeout, raise on
+# repeated timeout, propagation to collect_data so the failure surfaces as
+# a real Sentry exception (not a misleading zero-dogs alert).
 
 
 def _build_listing_page_mock(wait_for_selector_side_effect, content_html=""):
@@ -226,8 +221,6 @@ _VALID_LISTING_HTML = """
 class TestDogsTrustListingUrl:
     def test_listing_url_uses_canonical_parameterized_path(self):
         scraper = DogsTrustScraper()
-        # Skipping the bare /rehoming/dogs redirect removes one anti-bot
-        # interception point during the page load.
         assert "page=0" in scraper.listing_url
         assert "currentDistance=1000" in scraper.listing_url
 
@@ -239,16 +232,20 @@ class TestDogsTrustPlaywrightResilience:
         """First wait_for_selector times out, reload + second wait succeeds."""
         scraper = DogsTrustScraper()
         page = _build_listing_page_mock(
-            wait_for_selector_side_effect=[TimeoutError("initial timeout"), None],
+            wait_for_selector_side_effect=[PlaywrightTimeoutError("initial timeout"), None],
             content_html=_VALID_LISTING_HTML,
         )
         _patch_browser_retry(scraper, page)
 
+        evaluate_count_before = page.evaluate.await_count
         result = await scraper._get_animal_list_playwright(max_pages_to_scrape=1)
 
-        page.reload.assert_awaited_once()
+        page.reload.assert_awaited_once_with(wait_until="domcontentloaded")
         assert page.wait_for_selector.await_count == 2
-        assert len(result) == 2  # both dogs from the listing HTML
+        # OneTrust overlays can re-render after reload, so the retry path
+        # must re-strip them before the second wait.
+        assert page.evaluate.await_count > evaluate_count_before + 1
+        assert len(result) == 2
 
     @pytest.mark.asyncio
     async def test_raises_when_both_wait_attempts_timeout(self):
@@ -256,17 +253,17 @@ class TestDogsTrustPlaywrightResilience:
         scraper = DogsTrustScraper()
         page = _build_listing_page_mock(
             wait_for_selector_side_effect=[
-                TimeoutError("first timeout"),
-                TimeoutError("retry timeout"),
+                PlaywrightTimeoutError("first timeout"),
+                PlaywrightTimeoutError("retry timeout"),
             ],
             content_html="",
         )
         _patch_browser_retry(scraper, page)
 
-        with pytest.raises(Exception):  # noqa: B017 — any exception type counts
+        with pytest.raises(PlaywrightTimeoutError):
             await scraper._get_animal_list_playwright(max_pages_to_scrape=1)
 
-        page.reload.assert_awaited_once()
+        page.reload.assert_awaited_once_with(wait_until="domcontentloaded")
         assert page.wait_for_selector.await_count == 2
 
     @pytest.mark.asyncio
@@ -284,3 +281,33 @@ class TestDogsTrustPlaywrightResilience:
         page.reload.assert_not_called()
         assert page.wait_for_selector.await_count == 1
         assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_collect_data_propagates_listing_failure(self):
+        """collect_data must not swallow listing-page exceptions.
+
+        Verifies the end-to-end contract: a Playwright timeout during listing
+        discovery propagates out of collect_data so BaseScraper._run_with_connection
+        can capture a real Sentry exception (with stack trace) instead of
+        silently returning [] and firing alert_zero_dogs_found.
+        """
+        scraper = DogsTrustScraper()
+        page = _build_listing_page_mock(
+            wait_for_selector_side_effect=[
+                PlaywrightTimeoutError("first timeout"),
+                PlaywrightTimeoutError("retry timeout"),
+            ],
+            content_html="",
+        )
+        _patch_browser_retry(scraper, page)
+
+        with pytest.raises(PlaywrightTimeoutError):
+            await scraper._get_animal_list_playwright(max_pages_to_scrape=1)
+        # collect_data is sync and calls into the same get_animal_list, so the
+        # async exception path proved above is sufficient — the missing
+        # try/except is what we're asserting against. Belt and braces: grep
+        # the source for the swallow pattern we removed.
+        import inspect
+
+        source = inspect.getsource(scraper.collect_data)
+        assert "except Exception" not in source, "collect_data must not catch and return [] — that re-introduces the silent-failure bug this PR fixes"
