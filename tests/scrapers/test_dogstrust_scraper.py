@@ -5,9 +5,11 @@ Tests cover the hybrid approach (Selenium for listings, HTTP for details)
 and reserved dog filtering requirements.
 """
 
-from unittest.mock import Mock, patch
+from contextlib import asynccontextmanager
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.base_scraper import BaseScraper
 from scrapers.dogstrust.dogstrust_scraper import DogsTrustScraper
@@ -65,9 +67,11 @@ class TestDogsTrustScraper(ScraperTestBase):
 
         result = scraper.get_animal_list()
 
-        # Verify the initial page load call
-        expected_first_url = "https://www.dogstrust.org.uk/rehoming/dogs"
-        mock_driver.get.assert_any_call(expected_first_url)
+        # Initial page load uses the canonical parameterized URL.
+        assert mock_driver.get.called
+        loaded_url = mock_driver.get.call_args.args[0]
+        assert loaded_url.startswith("https://www.dogstrust.org.uk/rehoming/dogs")
+        assert "page=0" in loaded_url
         # Verify attempts to find filter elements were made
         assert mock_driver.find_element.called
         assert isinstance(result, list)
@@ -157,3 +161,153 @@ class TestDogsTrustUnifiedStandardization:
             # Should handle missing breed gracefully
             assert "breed" in processed
             assert processed["breed_category"] == "Unknown"
+
+
+# Listing-page resilience: remote Browserless under stealth_mode
+# intermittently fails to render the initial page within the timeout. The
+# tests below lock in: canonical URL, retry-once on timeout, raise on
+# repeated timeout, propagation to collect_data so the failure surfaces as
+# a real Sentry exception (not a misleading zero-dogs alert).
+
+
+def _build_listing_page_mock(wait_for_selector_side_effect, content_html=""):
+    """Build a mock Playwright Page that satisfies the listing flow.
+
+    All locator-based interactions (cookie banner, filter button, etc.) default
+    to "not visible" so the test only exercises wait_for_selector + content().
+    """
+    page = MagicMock()
+    page.goto = AsyncMock()
+    page.evaluate = AsyncMock(return_value=0)
+    page.wait_for_selector = AsyncMock(side_effect=wait_for_selector_side_effect)
+    page.content = AsyncMock(return_value=content_html)
+    page.reload = AsyncMock()
+
+    locator_first = MagicMock()
+    locator_first.is_visible = AsyncMock(return_value=False)
+    locator_first.is_enabled = AsyncMock(return_value=False)
+    locator_first.click = AsyncMock()
+    locator_first.scroll_into_view_if_needed = AsyncMock()
+    locator = MagicMock()
+    locator.first = locator_first
+    page.locator = MagicMock(return_value=locator)
+
+    return page
+
+
+def _patch_browser_retry(scraper, page):
+    """Replace scraper._with_browser_retry with one yielding the given page."""
+
+    @asynccontextmanager
+    async def _retry(*_args, **_kwargs):
+        result = MagicMock()
+        result.page = page
+        result.is_remote = True
+        yield result
+
+    scraper._with_browser_retry = _retry
+
+
+_VALID_LISTING_HTML = """
+<html><body>
+    <a href="/rehoming/dogs/lurcher/3641644">Lulu Lurcher</a>
+    <a href="/rehoming/dogs/french-bulldog/3625780">Nelly French Bulldog</a>
+    <div>1 of 41</div>
+</body></html>
+"""
+
+
+@pytest.mark.unit
+class TestDogsTrustListingUrl:
+    def test_listing_url_uses_canonical_parameterized_path(self):
+        scraper = DogsTrustScraper()
+        assert "page=0" in scraper.listing_url
+        assert "currentDistance=1000" in scraper.listing_url
+
+
+@pytest.mark.unit
+class TestDogsTrustPlaywrightResilience:
+    @pytest.mark.asyncio
+    async def test_retries_initial_wait_on_timeout(self):
+        """First wait_for_selector times out, reload + second wait succeeds."""
+        scraper = DogsTrustScraper()
+        page = _build_listing_page_mock(
+            wait_for_selector_side_effect=[PlaywrightTimeoutError("initial timeout"), None],
+            content_html=_VALID_LISTING_HTML,
+        )
+        _patch_browser_retry(scraper, page)
+
+        evaluate_count_before = page.evaluate.await_count
+        result = await scraper._get_animal_list_playwright(max_pages_to_scrape=1)
+
+        page.reload.assert_awaited_once_with(wait_until="domcontentloaded")
+        assert page.wait_for_selector.await_count == 2
+        # OneTrust overlays can re-render after reload, so the retry path
+        # must re-strip them before the second wait.
+        assert page.evaluate.await_count > evaluate_count_before + 1
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_raises_when_both_wait_attempts_timeout(self):
+        """Both wait attempts fail → raise instead of silently returning []."""
+        scraper = DogsTrustScraper()
+        page = _build_listing_page_mock(
+            wait_for_selector_side_effect=[
+                PlaywrightTimeoutError("first timeout"),
+                PlaywrightTimeoutError("retry timeout"),
+            ],
+            content_html="",
+        )
+        _patch_browser_retry(scraper, page)
+
+        with pytest.raises(PlaywrightTimeoutError):
+            await scraper._get_animal_list_playwright(max_pages_to_scrape=1)
+
+        page.reload.assert_awaited_once_with(wait_until="domcontentloaded")
+        assert page.wait_for_selector.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_no_retry_when_first_wait_succeeds(self):
+        """Happy path: first wait succeeds, page.reload is never called."""
+        scraper = DogsTrustScraper()
+        page = _build_listing_page_mock(
+            wait_for_selector_side_effect=[None],
+            content_html=_VALID_LISTING_HTML,
+        )
+        _patch_browser_retry(scraper, page)
+
+        result = await scraper._get_animal_list_playwright(max_pages_to_scrape=1)
+
+        page.reload.assert_not_called()
+        assert page.wait_for_selector.await_count == 1
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_collect_data_propagates_listing_failure(self):
+        """collect_data must not swallow listing-page exceptions.
+
+        Verifies the end-to-end contract: a Playwright timeout during listing
+        discovery propagates out of collect_data so BaseScraper._run_with_connection
+        can capture a real Sentry exception (with stack trace) instead of
+        silently returning [] and firing alert_zero_dogs_found.
+        """
+        scraper = DogsTrustScraper()
+        page = _build_listing_page_mock(
+            wait_for_selector_side_effect=[
+                PlaywrightTimeoutError("first timeout"),
+                PlaywrightTimeoutError("retry timeout"),
+            ],
+            content_html="",
+        )
+        _patch_browser_retry(scraper, page)
+
+        with pytest.raises(PlaywrightTimeoutError):
+            await scraper._get_animal_list_playwright(max_pages_to_scrape=1)
+        # collect_data is sync and calls into the same get_animal_list, so the
+        # async exception path proved above is sufficient — the missing
+        # try/except is what we're asserting against. Belt and braces: grep
+        # the source for the swallow pattern we removed.
+        import inspect
+
+        source = inspect.getsource(scraper.collect_data)
+        assert "except Exception" not in source, "collect_data must not catch and return [] — that re-introduces the silent-failure bug this PR fixes"

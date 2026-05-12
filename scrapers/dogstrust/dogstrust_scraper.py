@@ -16,16 +16,15 @@ from scrapers.base_scraper import BaseScraper
 
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
-if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import (
-        PlaywrightOptions,
-    )
-else:
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.webdriver.support.wait import WebDriverWait
+# Imports are unconditional so tests can exercise both paths regardless of
+# the env var; USE_PLAYWRIGHT only routes runtime behaviour.
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError  # noqa: E402
+from selenium.webdriver.common.by import By  # noqa: E402
+from selenium.webdriver.support import expected_conditions as EC  # noqa: E402
+from selenium.webdriver.support.wait import WebDriverWait  # noqa: E402
 
-    from services.browser_service import BrowserOptions, get_browser_service
+from services.browser_service import BrowserOptions, get_browser_service  # noqa: E402
+from services.playwright_browser_service import PlaywrightOptions  # noqa: E402
 
 
 class DogsTrustScraper(BaseScraper):
@@ -61,7 +60,16 @@ class DogsTrustScraper(BaseScraper):
         # Use config-driven URLs instead of hardcoded values
         website_url = getattr(self.org_config.metadata, "website_url", "https://www.dogstrust.org.uk")
         self.base_url = str(website_url).rstrip("/") if website_url else "https://www.dogstrust.org.uk"
-        self.listing_url = f"{self.base_url}/rehoming/dogs"
+        # Navigate directly to the canonical parameterized URL the site
+        # redirects to. Skipping the redirect removes one anti-bot interception
+        # point and a race where wait_for_selector can fire on the pre-redirect
+        # page.
+        self.listing_url = (
+            f"{self.base_url}/rehoming/dogs"
+            "?page=0&sort=NEW&liveWithCats=false&liveWithDogs=false"
+            "&liveWithPreschool=false&liveWithPrimary=false&liveWithSecondary=false"
+            "&noReserved=false&isUnderdog=false&currentDistance=1000"
+        )
         self.organization_name = self.org_config.name
 
     def _get_filtered_animals(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
@@ -177,31 +185,20 @@ class DogsTrustScraper(BaseScraper):
     def collect_data(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Collect all available dog data from listing pages.
 
-        This method implements the BaseScraper template method pattern with
-        enhanced parallel processing following the Many Tears Rescue pattern.
-
-        It extracts dogs from all listing pages using Selenium with pagination,
-        filters existing animals if configured, then scrapes detailed information
-        for each dog using parallel HTTP requests.
-
-        Returns:
-            List of dog data dictionaries for database storage
+        Exceptions propagate to BaseScraper._run_with_connection, which routes
+        them through capture_scraper_error (real Sentry exception with stack
+        trace) and handle_scraper_failure (status="error" in scrape_logs).
+        Catching here would re-introduce the silent-failure pathology this
+        scraper had: return [] -> animals_found == 0 -> misleading
+        alert_zero_dogs_found Sentry alert with no actionable trace.
         """
-        try:
-            # Phase 1: Get and filter animals
-            animals = self._get_filtered_animals(max_pages_to_scrape=max_pages_to_scrape)
-            if not animals:
-                return []
-
-            # Phase 2: Process animals in parallel with HTTP requests
-            all_dogs_data = self._process_animals_parallel(animals)
-
-            self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
-            return all_dogs_data
-
-        except Exception as e:
-            self.logger.error(f"Error collecting data from Dogs Trust: {e}")
+        animals = self._get_filtered_animals(max_pages_to_scrape=max_pages_to_scrape)
+        if not animals:
             return []
+
+        all_dogs_data = self._process_animals_parallel(animals)
+        self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
+        return all_dogs_data
 
     def get_animal_list(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Fetch list of available dogs using browser automation with pagination.
@@ -585,12 +582,37 @@ class DogsTrustScraper(BaseScraper):
                 except Exception as e:
                     self.logger.debug(f"Overlay removal error (non-critical): {e}")
 
-                # Wait for dog cards to appear
+                # Wait for dog cards to appear. Remote Browserless under
+                # stealth_mode intermittently fails to render the initial page;
+                # retry once via reload, then raise so the failure surfaces as
+                # a real Sentry exception with a stack trace instead of a
+                # misleading zero-dogs alert.
+                dog_card_selector = 'a[href*="/rehoming/dogs/"]'
                 try:
-                    await page.wait_for_selector('a[href*="/rehoming/dogs/"]', timeout=15000)
+                    await page.wait_for_selector(dog_card_selector, timeout=45000, state="attached")
                     self.logger.info("Initial page loaded successfully")
-                except Exception as e:
-                    self.logger.warning(f"Timeout waiting for initial page load: {e}")
+                except PlaywrightTimeoutError as first_err:
+                    self.logger.warning(f"Initial page load timed out (attempt 1/2): {first_err}; reloading and retrying...")
+                    await page.reload(wait_until="domcontentloaded")
+                    await asyncio.sleep(1.0)
+                    # OneTrust overlays can re-render after the reload.
+                    try:
+                        await page.evaluate(
+                            """
+                            (() => {
+                                document.querySelector('#onetrust-consent-sdk')?.remove();
+                                document.querySelector('.onetrust-pc-dark-filter')?.remove();
+                            })()
+                        """
+                        )
+                    except Exception as overlay_err:
+                        self.logger.debug(f"Post-reload overlay removal error (non-critical): {overlay_err}")
+                    try:
+                        await page.wait_for_selector(dog_card_selector, timeout=45000, state="attached")
+                        self.logger.info("Initial page loaded successfully after retry")
+                    except PlaywrightTimeoutError as retry_err:
+                        self.logger.error(f"Initial page load failed after retry: {retry_err}")
+                        raise
 
                 # Apply filter to hide reserved dogs
                 try:
@@ -767,6 +789,10 @@ class DogsTrustScraper(BaseScraper):
 
             except Exception as e:
                 self.logger.error(f"Error during Playwright pagination scraping: {e}")
+                # Propagate so collect_data() can record a real failure instead
+                # of silently returning [] and triggering the misleading
+                # zero-dogs Sentry alert.
+                raise
 
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs
