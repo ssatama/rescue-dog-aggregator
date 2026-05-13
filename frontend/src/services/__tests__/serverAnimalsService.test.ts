@@ -47,7 +47,7 @@ describe("Server Animals Service", () => {
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/animals/?limit=20&search=test"),
       expect.objectContaining({
-        next: { revalidate: 300, tags: ["animals"] },
+        next: { revalidate: 86400, tags: ["animals"] },
       }),
     );
     expect(result).toMatchObject(mockResponse);

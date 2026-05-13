@@ -12,7 +12,7 @@ import {
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import { logger, reportError } from "@/utils/logger";
 
-export const revalidate = 300;
+export const revalidate = 604800;
 
 export async function generateMetadata(): Promise<Metadata> {
   const breedStats = await getBreedStats();

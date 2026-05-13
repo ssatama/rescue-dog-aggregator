@@ -128,7 +128,7 @@ async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): 
   );
 }
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   try {

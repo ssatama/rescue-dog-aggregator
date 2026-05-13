@@ -10,7 +10,7 @@ import {
 } from "@/services/serverAnimalsService";
 import { logger, reportError } from "@/utils/logger";
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 export async function generateMetadata(): Promise<Metadata> {
   try {

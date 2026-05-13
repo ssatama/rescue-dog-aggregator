@@ -5,7 +5,7 @@ import {
 } from "../../services/serverSwipeService";
 import SwipePageClient from "./SwipePageClient";
 
-export const revalidate = 300;
+export const revalidate = 604800;
 
 interface SwipePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

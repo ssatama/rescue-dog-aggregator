@@ -139,7 +139,7 @@ export async function getEnhancedOrganizationsSSR(): Promise<EnhancedOrg[]> {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
     const response = await fetch(`${apiUrl}/api/organizations/enhanced`, {
-      next: { revalidate: 300 },
+      next: { revalidate: 604800 },
       headers: {
         "Content-Type": "application/json",
       },

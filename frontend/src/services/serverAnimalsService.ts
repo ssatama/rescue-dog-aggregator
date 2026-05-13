@@ -175,7 +175,7 @@ export const getAnimals = cache(
 
     const response = await fetch(url, {
       next: {
-        revalidate: 300,
+        revalidate: 86400,
         tags: ["animals"],
       },
       headers: {
@@ -198,7 +198,7 @@ export const getStandardizedBreeds = cache(
   async (): Promise<string[]> => {
     const response = await fetch(`${API_URL}/api/animals/meta/breeds/`, {
       next: {
-        revalidate: 3600,
+        revalidate: 86400,
         tags: ["breeds"],
       },
     });
@@ -219,7 +219,7 @@ export const getLocationCountries = cache(
       `${API_URL}/api/animals/meta/location_countries`,
       {
         next: {
-          revalidate: 3600,
+          revalidate: 86400,
           tags: ["location-countries"],
         },
       },
@@ -243,7 +243,7 @@ export const getAvailableCountries = cache(
       `${API_URL}/api/animals/meta/available_countries`,
       {
         next: {
-          revalidate: 3600,
+          revalidate: 86400,
           tags: ["available-countries"],
         },
       },
@@ -271,7 +271,7 @@ export const getAvailableRegions = cache(
       `${API_URL}/api/animals/meta/available_regions?country=${encodeURIComponent(country)}`,
       {
         next: {
-          revalidate: 3600,
+          revalidate: 86400,
           tags: ["available-regions", country],
         },
       },
@@ -291,7 +291,7 @@ export const getOrganizations = cache(
   async (): Promise<z.infer<typeof ApiOrganizationEmbeddedSchema>[]> => {
     const response = await fetch(`${API_URL}/api/organizations/`, {
       next: {
-        revalidate: 3600,
+        revalidate: 86400,
         tags: ["organizations"],
       },
     });
@@ -346,7 +346,7 @@ export const getStatistics = cache(
   async (): Promise<z.infer<typeof StatisticsSchema>> => {
     const response = await fetch(`${API_URL}/api/animals/statistics`, {
       next: {
-        revalidate: 300,
+        revalidate: 21600,
         tags: ["statistics"],
       },
     });
@@ -365,7 +365,7 @@ export const getBreedStats = cache(
   async (): Promise<BreedStats> => {
     const response = await fetch(`${API_URL}/api/animals/breeds/stats`, {
       next: {
-        revalidate: 3600,
+        revalidate: 604800,
         tags: ["breed-stats"],
       },
       headers: {
@@ -408,7 +408,7 @@ export const getAnimalsByCuration = cache(
       `${API_URL}/api/animals/?${queryParams.toString()}`,
       {
         next: {
-          revalidate: 300,
+          revalidate: 21600,
           tags: ["animals", `curation-${curationType}`],
         },
       },
@@ -862,7 +862,7 @@ export const getEnhancedDogContent = cache(
           "Content-Type": "application/json",
         },
         next: {
-          revalidate: 300,
+          revalidate: 172800,
           tags: ["enhanced", `animal-enhanced-${animalId}`],
         },
       });
@@ -922,7 +922,7 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<DogWithLlm | 
   try {
     const response = await fetch(`${API_URL}/api/animals/${slug}/`, {
       next: {
-        revalidate: 300,
+        revalidate: 172800,
         tags: ["animal", slug],
       },
       headers: {
@@ -980,7 +980,7 @@ export const getCountryStats = cache(
   async (): Promise<z.infer<typeof CountryStatsResponseSchema>> => {
     const response = await fetch(`${API_URL}/api/animals/stats/by-country`, {
       next: {
-        revalidate: 300,
+        revalidate: 86400,
         tags: ["country-stats"],
       },
       headers: {
@@ -1015,7 +1015,7 @@ export const getAgeStats = cache(
   async (): Promise<AgeStats> => {
     const response = await fetch(`${API_URL}/api/animals/meta/filter_counts`, {
       next: {
-        revalidate: 300,
+        revalidate: 86400,
         tags: ["age-stats"],
       },
       headers: {

@@ -64,7 +64,7 @@ describe("breedImagesService", () => {
           headers: expect.objectContaining({
             "Content-Type": "application/json",
           }),
-          next: { revalidate: 300 },
+          next: { revalidate: 604800 },
         }),
       );
       expect(result).toEqual(mockBreedsData);

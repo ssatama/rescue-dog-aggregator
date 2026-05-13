@@ -16,7 +16,7 @@ import {
 } from "@/utils/countryData";
 import DogCardSkeletonOptimized from "@/components/ui/DogCardSkeletonOptimized";
 
-export const revalidate = 300;
+export const revalidate = 86400;
 
 interface CountryPageProps {
   params: Promise<{ code: string }>;
