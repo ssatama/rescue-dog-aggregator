@@ -95,30 +95,30 @@ describe("POST /api/revalidate", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/dogs/buddy-1");
   });
 
-  it("returns 200 with no invocations when body has no tags/paths", async () => {
+  it("returns 400 when body has no tags or paths", async () => {
     const res = await POST(makeRequest({ token: TOKEN, body: {} }));
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
     expect(revalidateTag).not.toHaveBeenCalled();
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("returns 200 when body is malformed JSON", async () => {
+  it("returns 400 when body is malformed JSON", async () => {
     const res = await POST(
       makeRequest({ token: TOKEN, bodyRaw: "{not json" }),
     );
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
     expect(revalidateTag).not.toHaveBeenCalled();
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("ignores non-array tags/paths values", async () => {
+  it("returns 400 when tags/paths are non-array values", async () => {
     const res = await POST(
       makeRequest({
         token: TOKEN,
         body: { tags: "not-an-array", paths: 42 },
       }),
     );
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
     expect(revalidateTag).not.toHaveBeenCalled();
     expect(revalidatePath).not.toHaveBeenCalled();
   });

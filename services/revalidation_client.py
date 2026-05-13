@@ -78,8 +78,21 @@ async def invalidate(
                 req["tag_list"],
                 req["path_list"],
             )
-    except Exception as e:
-        logger.error("cache invalidation failed: %s", e)
+    except httpx.HTTPError as e:
+        logger.warning(
+            "cache invalidation network failure: url=%s tags=%s paths=%s err=%s",
+            req["url"],
+            req["tag_list"],
+            req["path_list"],
+            e,
+        )
+    except Exception:
+        logger.exception(
+            "cache invalidation unexpected error: url=%s tags=%s paths=%s",
+            req["url"],
+            req["tag_list"],
+            req["path_list"],
+        )
 
 
 def invalidate_sync(
@@ -104,5 +117,18 @@ def invalidate_sync(
                 req["tag_list"],
                 req["path_list"],
             )
-    except Exception as e:
-        logger.error("cache invalidation failed: %s", e)
+    except httpx.HTTPError as e:
+        logger.warning(
+            "cache invalidation network failure: url=%s tags=%s paths=%s err=%s",
+            req["url"],
+            req["tag_list"],
+            req["path_list"],
+            e,
+        )
+    except Exception:
+        logger.exception(
+            "cache invalidation unexpected error: url=%s tags=%s paths=%s",
+            req["url"],
+            req["tag_list"],
+            req["path_list"],
+        )

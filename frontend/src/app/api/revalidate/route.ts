@@ -31,6 +31,13 @@ export async function POST(request: Request): Promise<NextResponse> {
   const tags = onlyStrings(body.tags);
   const paths = onlyStrings(body.paths);
 
+  if (tags.length === 0 && paths.length === 0) {
+    return NextResponse.json(
+      { error: "no tags or paths provided" },
+      { status: 400 },
+    );
+  }
+
   for (const tag of tags) revalidateTag(tag, "max");
   for (const path of paths) revalidatePath(path);
 

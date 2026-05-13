@@ -358,14 +358,19 @@ def main():
             print("No organizations to check")
             sys.exit(0)
 
-        # Check each organization
-        for config in organizations:
-            command.check_organization(config, args.limit)
+        # Check each organization. Track partial success in a finally so
+        # the cache is invalidated even if a later org raises mid-loop —
+        # earlier orgs already wrote adoption status to the DB.
+        any_processed = False
+        try:
+            for config in organizations:
+                command.check_organization(config, args.limit)
+                any_processed = True
+        finally:
+            if any_processed and not args.dry_run:
+                from services.revalidation_client import invalidate_sync
 
-        if not args.dry_run:
-            from services.revalidation_client import invalidate_sync
-
-            invalidate_sync(tags=["animals", "animal", "statistics"])
+                invalidate_sync(tags=["animals", "animal", "statistics"])
 
         print("\n✅ Adoption checking complete!")
 

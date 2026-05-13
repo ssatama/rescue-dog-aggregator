@@ -125,10 +125,10 @@ class TestInvalidate:
         with patch("services.revalidation_client.httpx.AsyncClient") as mock_class:
             mock_class.return_value.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            with caplog.at_level(logging.ERROR):
+            with caplog.at_level(logging.WARNING):
                 await invalidate(tags=["foo"])
 
-        assert "cache invalidation failed" in caplog.text
+        assert "cache invalidation network failure" in caplog.text
 
     @pytest.mark.asyncio
     async def test_swallows_network_error(self, monkeypatch, caplog):
@@ -141,10 +141,28 @@ class TestInvalidate:
         with patch("services.revalidation_client.httpx.AsyncClient") as mock_class:
             mock_class.return_value.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            with caplog.at_level(logging.WARNING):
+                await invalidate(tags=["foo"])
+
+        assert "cache invalidation network failure" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_logs_traceback_on_unexpected_error(self, monkeypatch, caplog):
+        """Programmer errors (TypeError, AttributeError) go to logger.exception
+        so the traceback reaches Sentry — never silently swallowed."""
+        monkeypatch.setenv("REVALIDATION_TOKEN", "secret")
+        from services.revalidation_client import invalidate
+
+        mock_client_instance = AsyncMock()
+        mock_client_instance.post = AsyncMock(side_effect=TypeError("boom"))
+
+        with patch("services.revalidation_client.httpx.AsyncClient") as mock_class:
+            mock_class.return_value.__aenter__ = AsyncMock(return_value=mock_client_instance)
+            mock_class.return_value.__aexit__ = AsyncMock(return_value=None)
             with caplog.at_level(logging.ERROR):
                 await invalidate(tags=["foo"])
 
-        assert "cache invalidation failed" in caplog.text
+        assert "cache invalidation unexpected error" in caplog.text
 
 
 @pytest.mark.unit
@@ -194,7 +212,7 @@ class TestInvalidateSync:
         with patch("services.revalidation_client.httpx.Client") as mock_class:
             mock_class.return_value.__enter__ = MagicMock(return_value=mock_client_instance)
             mock_class.return_value.__exit__ = MagicMock(return_value=None)
-            with caplog.at_level(logging.ERROR):
+            with caplog.at_level(logging.WARNING):
                 invalidate_sync(tags=["foo"])
 
-        assert "cache invalidation failed" in caplog.text
+        assert "cache invalidation network failure" in caplog.text
