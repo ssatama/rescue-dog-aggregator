@@ -288,6 +288,8 @@ class BaseScraper(ABC):
             return True
 
         self._completion_logged = True
+        if status == "success":
+            self._invalidate_frontend_cache()
 
         # Use injected DatabaseService if available
         if self.database_service:
@@ -321,6 +323,8 @@ class BaseScraper(ABC):
             return True
 
         self._completion_logged = True
+        if status == "success":
+            self._invalidate_frontend_cache()
 
         # Use injected DatabaseService if available
         if self.database_service:
@@ -338,6 +342,35 @@ class BaseScraper(ABC):
 
         self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
         return True
+
+    def _invalidate_frontend_cache(self) -> None:
+        """Fire cache invalidation for the Next.js frontend.
+
+        Fire-and-forget. ``invalidate_sync`` already swallows network and
+        HTTP errors internally, so the outer ``try`` only guards against
+        ``ImportError`` if the module is somehow missing — any other
+        exception is a bug worth surfacing through the inner handler.
+        """
+        try:
+            from services.revalidation_client import invalidate_sync
+        except ImportError as e:
+            self.logger.warning("Cache invalidation hook unavailable: %s", e)
+            return
+
+        invalidate_sync(
+            tags=[
+                "animals",
+                "animal",
+                "enhanced",
+                "statistics",
+                "country-stats",
+                "age-stats",
+                "filter-counts",
+                "breed-stats",
+                "breed-images",
+                "organizations-enhanced",
+            ]
+        )
 
     def detect_language(self, text):
         """Detect the language of the text.
