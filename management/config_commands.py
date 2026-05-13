@@ -55,7 +55,12 @@ class ConfigManager:
         Args:
             dry_run: Only show what would be synced, don't make changes
         """
-        return self.cli.sync_organizations(dry_run)
+        result = self.cli.sync_organizations(dry_run)
+        if not dry_run:
+            from services.revalidation_client import invalidate_sync
+
+            invalidate_sync(tags=["organizations", "organizations-enhanced"])
+        return result
 
     def run_scraper(self, config_id: str, sync_first: bool = True):
         """Run a specific scraper.

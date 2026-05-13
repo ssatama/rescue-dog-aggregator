@@ -304,7 +304,12 @@ class DogProfilerPipeline:
         Returns:
             True if successful
         """
-        return await self.database_updater.save_results(results)
+        saved = await self.database_updater.save_results(results)
+        if saved:
+            from services.revalidation_client import invalidate
+
+            await invalidate(tags=["animals", "animal", "enhanced"])
+        return saved
 
     # Context manager support
     async def __aenter__(self):

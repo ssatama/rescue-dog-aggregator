@@ -288,6 +288,7 @@ class BaseScraper(ABC):
             return True
 
         self._completion_logged = True
+        self._invalidate_frontend_cache()
 
         # Use injected DatabaseService if available
         if self.database_service:
@@ -321,6 +322,7 @@ class BaseScraper(ABC):
             return True
 
         self._completion_logged = True
+        self._invalidate_frontend_cache()
 
         # Use injected DatabaseService if available
         if self.database_service:
@@ -338,6 +340,33 @@ class BaseScraper(ABC):
 
         self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
         return True
+
+    def _invalidate_frontend_cache(self) -> None:
+        """Fire cache invalidation for the Next.js frontend.
+
+        Fire-and-forget. Failures (missing token, network errors) are logged
+        but never propagate — a cache-invalidation hiccup must not abort
+        scrape completion.
+        """
+        try:
+            from services.revalidation_client import invalidate_sync
+
+            invalidate_sync(
+                tags=[
+                    "animals",
+                    "animal",
+                    "enhanced",
+                    "statistics",
+                    "country-stats",
+                    "age-stats",
+                    "filter-counts",
+                    "breed-stats",
+                    "breed-images",
+                    "organizations-enhanced",
+                ]
+            )
+        except Exception as e:
+            self.logger.warning("Cache invalidation hook failed: %s", e)
 
     def detect_language(self, text):
         """Detect the language of the text.

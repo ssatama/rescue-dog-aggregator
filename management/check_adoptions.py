@@ -362,6 +362,11 @@ def main():
         for config in organizations:
             command.check_organization(config, args.limit)
 
+        if not args.dry_run:
+            from services.revalidation_client import invalidate_sync
+
+            invalidate_sync(tags=["animals", "animal", "statistics"])
+
         print("\n✅ Adoption checking complete!")
 
         if args.dry_run:
