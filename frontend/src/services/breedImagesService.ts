@@ -48,7 +48,7 @@ export async function getBreedsWithImages(
       headers: {
         "Content-Type": "application/json",
       },
-      next: { revalidate: 300 },
+      next: { revalidate: 604800 },
     } as RequestInit);
 
     if (!response.ok) {
@@ -90,7 +90,7 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
     const statsUrl = `${API_URL}/api/animals/breeds/stats`;
     const statsResponse = await fetch(statsUrl, {
       headers: { "Content-Type": "application/json" },
-      next: { revalidate: 300 },
+      next: { revalidate: 604800 },
     } as RequestInit);
 
     if (!statsResponse.ok) {
@@ -106,7 +106,7 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
       const breedsWithImagesUrl = `${API_URL}/api/animals/breeds/with-images?min_count=2&limit=50`;
       const imagesResponse = await fetch(breedsWithImagesUrl, {
         headers: { "Content-Type": "application/json" },
-        next: { revalidate: 300 },
+        next: { revalidate: 604800 },
       } as RequestInit);
 
       if (imagesResponse.ok) {
@@ -221,7 +221,7 @@ export async function getBreedsWithImagesForHomePage(
       headers: {
         "Content-Type": "application/json",
       },
-      next: { revalidate: 300 },
+      next: { revalidate: 604800 },
     } as RequestInit);
 
     if (!response.ok) {

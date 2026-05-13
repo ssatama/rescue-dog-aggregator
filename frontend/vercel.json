@@ -1,0 +1,4 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "[ \"$VERCEL_ENV\" = \"preview\" ] && git log -1 --pretty=%an | grep -qiE '^dependabot'"
+}

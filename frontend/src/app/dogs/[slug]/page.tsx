@@ -203,7 +203,7 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
   );
 }
 
-export const revalidate = 3600;
+export const revalidate = 172800;
 
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   try {

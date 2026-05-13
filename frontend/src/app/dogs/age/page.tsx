@@ -5,7 +5,7 @@ import Layout from "@/components/layout/Layout";
 import AgeStructuredData from "@/components/age/AgeStructuredData";
 import { getAgeStats } from "@/services/serverAnimalsService";
 
-export const revalidate = 300;
+export const revalidate = 604800;
 
 export async function generateMetadata(): Promise<Metadata> {
   const stats = await getAgeStats();

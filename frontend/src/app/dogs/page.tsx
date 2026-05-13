@@ -13,7 +13,7 @@ interface DogsPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export const revalidate = 300;
+export const revalidate = 21600;
 
 export async function generateMetadata(): Promise<Metadata> {
   return {

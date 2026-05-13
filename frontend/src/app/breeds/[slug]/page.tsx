@@ -17,7 +17,7 @@ interface BreedPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 export async function generateMetadata(
   props: BreedPageProps,

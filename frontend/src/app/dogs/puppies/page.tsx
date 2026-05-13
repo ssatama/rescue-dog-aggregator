@@ -7,7 +7,7 @@ import { getAnimals, getAllMetadata, getAgeStats } from "@/services/serverAnimal
 import { AGE_CATEGORIES } from "@/utils/ageData";
 import DogCardSkeletonOptimized from "@/components/ui/DogCardSkeletonOptimized";
 
-export const revalidate = 300;
+export const revalidate = 86400;
 
 const puppyCategory = AGE_CATEGORIES.puppies;
 

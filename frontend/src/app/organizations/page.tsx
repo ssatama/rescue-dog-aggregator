@@ -5,7 +5,7 @@ import Layout from "../../components/layout/Layout";
 import { getEnhancedOrganizationsSSR } from "../../services/organizationsService";
 import { reportError } from "../../utils/logger";
 
-export const revalidate = 300;
+export const revalidate = 604800;
 
 export function generateMetadata(): Metadata {
   return {
