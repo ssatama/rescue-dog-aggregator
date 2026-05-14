@@ -35,6 +35,7 @@ if project_root not in sys.path:
 
 from config import enable_world_class_scraper_logging, get_database_config  # noqa: E402
 from scrapers.sentry_integration import add_scrape_breadcrumb, init_scraper_sentry  # noqa: E402
+from services.railway.service_controller import RailwayServiceController  # noqa: E402
 from utils.db_connection import (  # noqa: E402
     create_database_config_from_env,
     initialize_database_pool,
@@ -128,6 +129,35 @@ def format_batch_summary(result: BatchRunResult, start_time: datetime) -> dict:
     }
 
 
+def start_browserless(controller: RailwayServiceController) -> bool:
+    """Redeploy Browserless and wait for it to be healthy. Returns True on success."""
+    health_url = os.getenv("BROWSERLESS_HEALTH_URL")
+    if not health_url:
+        logger.warning("BROWSERLESS_HEALTH_URL not set; skipping health check after redeploy")
+
+    try:
+        status = controller.redeploy()
+    except Exception:
+        logger.exception("Failed to redeploy Browserless; scrapers will likely fail")
+        return False
+
+    logger.info("Browserless redeploy initiated (status=%s)", status)
+
+    if not health_url:
+        return True
+
+    timeout = float(os.getenv("BROWSERLESS_HEALTH_TIMEOUT", "180"))
+    return controller.wait_for_healthy(health_url, timeout=timeout)
+
+
+def stop_browserless(controller: RailwayServiceController) -> None:
+    """Stop the Browserless deployment. Logs but does not raise on failure."""
+    try:
+        controller.stop()
+    except Exception:
+        logger.exception("Failed to stop Browserless; idle Chrome will keep billing until next run")
+
+
 def list_available_scrapers(runner: SecureConfigScraperRunner) -> None:
     """List all available scrapers and their status."""
     scrapers = runner.list_available_scrapers()
@@ -206,20 +236,29 @@ def main():
         logger.warning("Shutdown requested before scraping started")
         sys.exit(1)
 
-    if args.org:
-        result = run_single_scraper(runner, args.org)
-        if args.json:
-            print(json.dumps(result, indent=2))
-        else:
-            if result["success"]:
-                logger.info(f"Scraper completed: {result['organization']} - {result['animals_found']} animals found")
+    browserless = RailwayServiceController.from_env()
+    if browserless is not None:
+        start_browserless(browserless)
+
+    try:
+        if args.org:
+            result = run_single_scraper(runner, args.org)
+            if args.json:
+                print(json.dumps(result, indent=2))
             else:
-                logger.error(f"Scraper failed: {result['error']}")
+                if result["success"]:
+                    logger.info(f"Scraper completed: {result['organization']} - {result['animals_found']} animals found")
+                else:
+                    logger.error(f"Scraper failed: {result['error']}")
 
-        sys.exit(0 if result["success"] else 1)
+            sys.exit(0 if result["success"] else 1)
 
-    batch_result = run_all_scrapers(runner)
-    summary = format_batch_summary(batch_result, start_time)
+        batch_result = run_all_scrapers(runner)
+        summary = format_batch_summary(batch_result, start_time)
+    finally:
+        if browserless is not None:
+            stop_browserless(browserless)
+            browserless.close()
 
     if args.json:
         print(json.dumps(summary, indent=2))
