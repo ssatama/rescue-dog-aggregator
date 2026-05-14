@@ -3,10 +3,6 @@
 Used by management/railway_scraper_cron.py to wake the Browserless service before
 scrape runs and stop it after, eliminating ~24/7 idle Chrome memory billing.
 
-Note: lives at services/railway_service_controller.py (flat), NOT in services/railway/.
-The services/railway/ package's __init__.py eagerly imports SQLAlchemy via connection.py
-and crashed the cron runtime on first import; this flat path bypasses that init.
-
 Required environment variables:
     RAILWAY_API_TOKEN: Account-level Personal Access Token (Bearer)
     RAILWAY_PROJECT_ID: Project ID (auto-injected by Railway runtime)

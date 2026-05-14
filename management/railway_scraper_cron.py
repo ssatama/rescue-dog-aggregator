@@ -35,7 +35,7 @@ if project_root not in sys.path:
 
 from config import enable_world_class_scraper_logging, get_database_config  # noqa: E402
 from scrapers.sentry_integration import add_scrape_breadcrumb, init_scraper_sentry  # noqa: E402
-from services.railway_service_controller import RailwayServiceController  # noqa: E402
+from services.railway.service_controller import RailwayServiceController  # noqa: E402
 from utils.db_connection import (  # noqa: E402
     create_database_config_from_env,
     initialize_database_pool,

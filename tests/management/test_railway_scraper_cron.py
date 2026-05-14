@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from management.railway_scraper_cron import start_browserless, stop_browserless
-from services.railway_service_controller import Deployment, RailwayApiError
+from services.railway.service_controller import Deployment, RailwayApiError
 
 
 @pytest.mark.unit
