@@ -35,7 +35,6 @@ if project_root not in sys.path:
 
 from config import enable_world_class_scraper_logging, get_database_config  # noqa: E402
 from scrapers.sentry_integration import add_scrape_breadcrumb, init_scraper_sentry  # noqa: E402
-from services.railway.service_controller import RailwayServiceController  # noqa: E402
 from utils.db_connection import (  # noqa: E402
     create_database_config_from_env,
     initialize_database_pool,
@@ -129,45 +128,6 @@ def format_batch_summary(result: BatchRunResult, start_time: datetime) -> dict:
     }
 
 
-def start_browserless(controller: RailwayServiceController) -> bool:
-    """Trigger a Browserless redeploy and wait until it returns 2xx at BROWSERLESS_HEALTH_URL.
-
-    Returns True only when the health check passes. Returns False if:
-    - BROWSERLESS_HEALTH_URL is not set (treated as misconfiguration — scrapers would race the redeploy)
-    - controller.redeploy() raises (logged via logger.exception)
-    - the health check times out (logged inside wait_for_healthy)
-
-    Callers must treat False as fatal: scrapers should not run against a Browserless that isn't confirmed up.
-    """
-    health_url = os.getenv("BROWSERLESS_HEALTH_URL")
-    if not health_url:
-        logger.error("BROWSERLESS_HEALTH_URL is required when Browserless control is configured; without it, scrapers would race the redeploy. Refusing to proceed.")
-        return False
-
-    try:
-        deployment = controller.redeploy()
-    except Exception:
-        logger.exception("Failed to redeploy Browserless")
-        return False
-
-    logger.info("Browserless redeploy initiated: deployment=%s status=%s", deployment.id, deployment.status)
-    timeout = float(os.getenv("BROWSERLESS_HEALTH_TIMEOUT", "180"))
-    return controller.wait_for_healthy(health_url, timeout=timeout)
-
-
-def stop_browserless(controller: RailwayServiceController) -> None:
-    """Best-effort stop of the Browserless deployment from the cron's finally block.
-
-    Swallows exceptions so a stop failure doesn't mask scrape results. controller.stop()
-    already logs its own outcome (no deployment / already terminal / successful stop), so
-    the return value is intentionally not propagated.
-    """
-    try:
-        controller.stop()
-    except Exception:
-        logger.exception("Failed to stop Browserless; idle Chrome will keep billing until next run")
-
-
 def list_available_scrapers(runner: SecureConfigScraperRunner) -> None:
     """List all available scrapers and their status."""
     scrapers = runner.list_available_scrapers()
@@ -246,34 +206,20 @@ def main():
         logger.warning("Shutdown requested before scraping started")
         sys.exit(1)
 
-    browserless = RailwayServiceController.from_env()
-    summary: dict | None = None
-
-    try:
-        if browserless is not None and not start_browserless(browserless):
-            logger.error("Browserless wake failed; aborting cron run to avoid wasted scrape attempts")
-            sys.exit(1)
-
-        if args.org:
-            result = run_single_scraper(runner, args.org)
-            if args.json:
-                print(json.dumps(result, indent=2))
+    if args.org:
+        result = run_single_scraper(runner, args.org)
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            if result["success"]:
+                logger.info(f"Scraper completed: {result['organization']} - {result['animals_found']} animals found")
             else:
-                if result["success"]:
-                    logger.info(f"Scraper completed: {result['organization']} - {result['animals_found']} animals found")
-                else:
-                    logger.error(f"Scraper failed: {result['error']}")
+                logger.error(f"Scraper failed: {result['error']}")
 
-            sys.exit(0 if result["success"] else 1)
+        sys.exit(0 if result["success"] else 1)
 
-        batch_result = run_all_scrapers(runner)
-        summary = format_batch_summary(batch_result, start_time)
-    finally:
-        if browserless is not None:
-            stop_browserless(browserless)
-            browserless.close()
-
-    assert summary is not None  # batch path always sets summary; --org path exited above
+    batch_result = run_all_scrapers(runner)
+    summary = format_batch_summary(batch_result, start_time)
 
     if args.json:
         print(json.dumps(summary, indent=2))
