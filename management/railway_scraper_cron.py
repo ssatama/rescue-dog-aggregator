@@ -130,28 +130,38 @@ def format_batch_summary(result: BatchRunResult, start_time: datetime) -> dict:
 
 
 def start_browserless(controller: RailwayServiceController) -> bool:
-    """Redeploy Browserless and wait for it to be healthy. Returns True on success."""
+    """Trigger a Browserless redeploy and wait until it returns 2xx at BROWSERLESS_HEALTH_URL.
+
+    Returns True only when the health check passes. Returns False if:
+    - BROWSERLESS_HEALTH_URL is not set (treated as misconfiguration — scrapers would race the redeploy)
+    - controller.redeploy() raises (logged via logger.exception)
+    - the health check times out (logged inside wait_for_healthy)
+
+    Callers must treat False as fatal: scrapers should not run against a Browserless that isn't confirmed up.
+    """
     health_url = os.getenv("BROWSERLESS_HEALTH_URL")
     if not health_url:
-        logger.warning("BROWSERLESS_HEALTH_URL not set; skipping health check after redeploy")
-
-    try:
-        status = controller.redeploy()
-    except Exception:
-        logger.exception("Failed to redeploy Browserless; scrapers will likely fail")
+        logger.error("BROWSERLESS_HEALTH_URL is required when Browserless control is configured; without it, scrapers would race the redeploy. Refusing to proceed.")
         return False
 
-    logger.info("Browserless redeploy initiated (status=%s)", status)
+    try:
+        deployment = controller.redeploy()
+    except Exception:
+        logger.exception("Failed to redeploy Browserless")
+        return False
 
-    if not health_url:
-        return True
-
+    logger.info("Browserless redeploy initiated: deployment=%s status=%s", deployment.id, deployment.status)
     timeout = float(os.getenv("BROWSERLESS_HEALTH_TIMEOUT", "180"))
     return controller.wait_for_healthy(health_url, timeout=timeout)
 
 
 def stop_browserless(controller: RailwayServiceController) -> None:
-    """Stop the Browserless deployment. Logs but does not raise on failure."""
+    """Best-effort stop of the Browserless deployment from the cron's finally block.
+
+    Swallows exceptions so a stop failure doesn't mask scrape results. controller.stop()
+    already logs its own outcome (no deployment / already terminal / successful stop), so
+    the return value is intentionally not propagated.
+    """
     try:
         controller.stop()
     except Exception:
@@ -237,10 +247,13 @@ def main():
         sys.exit(1)
 
     browserless = RailwayServiceController.from_env()
-    if browserless is not None:
-        start_browserless(browserless)
+    summary: dict | None = None
 
     try:
+        if browserless is not None and not start_browserless(browserless):
+            logger.error("Browserless wake failed; aborting cron run to avoid wasted scrape attempts")
+            sys.exit(1)
+
         if args.org:
             result = run_single_scraper(runner, args.org)
             if args.json:
@@ -259,6 +272,8 @@ def main():
         if browserless is not None:
             stop_browserless(browserless)
             browserless.close()
+
+    assert summary is not None  # batch path always sets summary; --org path exited above
 
     if args.json:
         print(json.dumps(summary, indent=2))
