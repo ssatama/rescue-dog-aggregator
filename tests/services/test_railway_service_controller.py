@@ -8,7 +8,7 @@ from typing import Any
 import httpx
 import pytest
 
-from services.railway.service_controller import (
+from services.railway_service_controller import (
     Deployment,
     RailwayApiError,
     RailwayServiceController,
@@ -63,7 +63,7 @@ class TestFromEnv:
         monkeypatch.delenv("RAILWAY_ENVIRONMENT_ID", raising=False)
         monkeypatch.delenv("BROWSERLESS_SERVICE_ID", raising=False)
 
-        with caplog.at_level("WARNING", logger="services.railway.service_controller"):
+        with caplog.at_level("WARNING", logger="services.railway_service_controller"):
             assert RailwayServiceController.from_env() is None
         assert any("PARTIALLY configured" in record.message for record in caplog.records)
 
@@ -71,7 +71,7 @@ class TestFromEnv:
         for name in self._ALL_ENV:
             monkeypatch.delenv(name, raising=False)
 
-        with caplog.at_level("INFO", logger="services.railway.service_controller"):
+        with caplog.at_level("INFO", logger="services.railway_service_controller"):
             assert RailwayServiceController.from_env() is None
         assert any("disabled" in record.message for record in caplog.records)
         assert not any(record.levelname == "WARNING" for record in caplog.records)
@@ -232,7 +232,7 @@ class TestGraphQLErrors:
 class TestWaitForHealthy:
     @pytest.fixture(autouse=True)
     def _no_sleep(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr("services.railway.service_controller.time.sleep", lambda _s: None)
+        monkeypatch.setattr("services.railway_service_controller.time.sleep", lambda _s: None)
 
     def test_returns_true_on_first_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(httpx.Client, "get", lambda self, url: httpx.Response(200))
@@ -262,7 +262,7 @@ class TestWaitForHealthy:
     def test_returns_false_on_timeout(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Deterministic clock: start at 0, then jump past deadline of 0.05 on second check.
         times = iter([0.0, 0.0, 0.06])
-        monkeypatch.setattr("services.railway.service_controller.time.monotonic", lambda: next(times))
+        monkeypatch.setattr("services.railway_service_controller.time.monotonic", lambda: next(times))
         monkeypatch.setattr(httpx.Client, "get", lambda self, url: httpx.Response(503))
 
         controller = _build_controller(httpx.MockTransport(lambda _r: _graphql_response({})))
@@ -270,7 +270,7 @@ class TestWaitForHealthy:
 
     def test_logs_last_error_with_message(self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
         times = iter([0.0, 0.0, 0.06])
-        monkeypatch.setattr("services.railway.service_controller.time.monotonic", lambda: next(times))
+        monkeypatch.setattr("services.railway_service_controller.time.monotonic", lambda: next(times))
 
         def fake_get(_self: httpx.Client, _url: str) -> httpx.Response:
             raise httpx.ConnectError("DNS resolution failed for example.com")
@@ -278,7 +278,7 @@ class TestWaitForHealthy:
         monkeypatch.setattr(httpx.Client, "get", fake_get)
         controller = _build_controller(httpx.MockTransport(lambda _r: _graphql_response({})))
 
-        with caplog.at_level("ERROR", logger="services.railway.service_controller"):
+        with caplog.at_level("ERROR", logger="services.railway_service_controller"):
             controller.wait_for_healthy("http://example/health", timeout=0.05, interval=0.01)
 
         assert any("DNS resolution failed" in record.message for record in caplog.records)
