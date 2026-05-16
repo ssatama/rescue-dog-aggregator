@@ -89,51 +89,27 @@ class MisisRescueScraper(BaseScraper):
         Returns:
             List of dog data dictionaries for BaseScraper processing
         """
-        all_dogs = []
+        # Get all dog URLs from all pages (handles pagination).
+        # Exceptions propagate to BaseScraper so real failures surface in
+        # Sentry with a stack trace instead of a misleading zero-dogs alert.
+        dogs_from_listing = self._get_all_dogs_from_listing()
 
-        try:
-            # logging: Data collection initiation handled by centralized system
+        all_urls = [urljoin(self.base_url, dog_info["url"]) for dog_info in dogs_from_listing]
 
-            # Get all dog URLs from all pages (handles pagination)
-            dogs_from_listing = self._get_all_dogs_from_listing()
-            # logging: Listing extraction handled by centralized system
+        animals = [{"adoption_url": url, "external_id": self._generate_external_id(url)} for url in all_urls]
 
-            # Convert to full URLs
-            all_urls = []
-            for dog_info in dogs_from_listing:
-                relative_url = dog_info["url"]
-                full_url = urljoin(self.base_url, relative_url)
-                all_urls.append(full_url)
+        if self.skip_existing_animals:
+            filtered_animals = self.filtering_service.filter_existing_animals(animals)
+            self._sync_filtering_stats()
+            urls_to_process = [a["adoption_url"] for a in filtered_animals]
+        else:
+            self.total_animals_before_filter = len(all_urls)
+            self.total_animals_skipped = 0
+            urls_to_process = all_urls
 
-            # Create animal objects with external_id for stale detection
-            # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-            # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
-            animals = []
-            for url in all_urls:
-                animals.append({"adoption_url": url, "external_id": self._generate_external_id(url)})
-
-            # Apply skip_existing_animals filtering
-            if self.skip_existing_animals:
-                filtered_animals = self.filtering_service.filter_existing_animals(animals)
-                self._sync_filtering_stats()
-                urls_to_process = [a["adoption_url"] for a in filtered_animals]
-            else:
-                self.total_animals_before_filter = len(all_urls)
-                self.total_animals_skipped = 0
-                urls_to_process = all_urls
-
-            # Process URLs in batches with retry mechanism (MisisRescue-specific)
-            if urls_to_process:
-                all_dogs = self._process_dogs_in_batches(urls_to_process)
-            else:
-                all_dogs = []
-
-            # class logging: Collection results handled by centralized system
-            return all_dogs
-
-        except Exception as e:
-            self.logger.error(f"Error in collect_data: {e}")
-            return []
+        if urls_to_process:
+            return self._process_dogs_in_batches(urls_to_process)
+        return []
 
     def _get_all_dogs_from_listing(self) -> list[dict[str, str]]:
         """Get all dog data from listing page.
@@ -227,71 +203,64 @@ class MisisRescueScraper(BaseScraper):
     async def _get_all_dogs_from_listing_playwright(self) -> list[dict[str, str]]:
         """Playwright implementation of _get_all_dogs_from_listing."""
         all_dogs = []
-        page_num = 1
+        options = PlaywrightOptions(
+            headless=True,
+            viewport_width=1920,
+            viewport_height=1080,
+        )
 
-        try:
-            options = PlaywrightOptions(
-                headless=True,
-                viewport_width=1920,
-                viewport_height=1080,
-            )
+        # Use retry wrapper for resilient browser connection. Browser-level
+        # exceptions propagate so collect_data → BaseScraper can surface them
+        # in Sentry instead of being silently converted to a zero-dogs alert.
+        async with self._with_browser_retry(options) as browser_result:
+            page = browser_result.page
 
-            # Use retry wrapper for resilient browser connection
-            async with self._with_browser_retry(options) as browser_result:
-                page = browser_result.page
+            await page.goto(self.listing_url, wait_until="load", timeout=60000)
+            await asyncio.sleep(5)  # Give Wix time to load dynamic content
 
-                # Load first page
-                await page.goto(self.listing_url, wait_until="load", timeout=60000)
-                await asyncio.sleep(5)  # Give Wix time to load dynamic content
+            await self._scroll_to_load_all_content_playwright(page)
 
-                # Scroll to trigger lazy loading on page 1
-                await self._scroll_to_load_all_content_playwright(page)
+            content = await page.content()
+            soup = BeautifulSoup(content, "html.parser")
+            page_dogs = self._extract_dogs_before_reserved(soup)
+            self._assign_images_to_dogs(page_dogs, soup)
+            all_dogs.extend(page_dogs)
 
-                # Extract dogs from page 1
-                content = await page.content()
-                soup = BeautifulSoup(content, "html.parser")
-                page_dogs = self._extract_dogs_before_reserved(soup)
-                self._assign_images_to_dogs(page_dogs, soup)
-                all_dogs.extend(page_dogs)
-
-                # Click through pages 2, 3, 4, etc.
-                page_num = 2
-                while page_num <= 10:  # Safety limit
-                    try:
-                        if not await self._click_pagination_button_playwright(page, page_num):
-                            break
-
-                        await asyncio.sleep(5)  # Wait for page to load after click
-                        await self._scroll_to_load_all_content_playwright(page)
-
-                        content = await page.content()
-                        soup = BeautifulSoup(content, "html.parser")
-                        page_dogs = self._extract_dogs_before_reserved(soup)
-                        self._assign_images_to_dogs(page_dogs, soup)
-
-                        if not page_dogs:
-                            break
-
-                        all_dogs.extend(page_dogs)
-                        page_num += 1
-
-                    except Exception as e:
-                        self.logger.error(f"Error processing page {page_num}: {e}")
+            # Pagination errors are per-page tolerable: if page 4 fails to
+            # render after page 3 succeeded, keep what we have rather than
+            # losing the whole listing. Log loudly so the failure is visible.
+            page_num = 2
+            while page_num <= 10:  # Safety limit
+                try:
+                    if not await self._click_pagination_button_playwright(page, page_num):
                         break
 
-            # Remove duplicates
-            unique_dogs = []
-            seen_urls = set()
-            for dog in all_dogs:
-                if dog["url"] not in seen_urls:
-                    unique_dogs.append(dog)
-                    seen_urls.add(dog["url"])
+                    await asyncio.sleep(5)
+                    await self._scroll_to_load_all_content_playwright(page)
 
-            return unique_dogs
+                    content = await page.content()
+                    soup = BeautifulSoup(content, "html.parser")
+                    page_dogs = self._extract_dogs_before_reserved(soup)
+                    self._assign_images_to_dogs(page_dogs, soup)
 
-        except Exception as e:
-            self.logger.error(f"Error in Playwright listing extraction: {e}")
-            return []
+                    if not page_dogs:
+                        break
+
+                    all_dogs.extend(page_dogs)
+                    page_num += 1
+
+                except Exception:
+                    self.logger.error(f"Error processing page {page_num}", exc_info=True)
+                    break
+
+        unique_dogs = []
+        seen_urls = set()
+        for dog in all_dogs:
+            if dog["url"] not in seen_urls:
+                unique_dogs.append(dog)
+                seen_urls.add(dog["url"])
+
+        return unique_dogs
 
     async def _scroll_to_load_all_content_playwright(self, page) -> None:
         """Scroll to bottom of page to trigger lazy loading (Playwright version)."""
@@ -870,8 +839,11 @@ class MisisRescueScraper(BaseScraper):
             # Apply unified standardization
             return self.process_animal(dog_data)
 
-        except Exception as e:
-            self.logger.error(f"Error scraping dog detail with Playwright {url}: {e}")
+        except Exception:
+            # Per-dog tolerance: one bad detail page shouldn't kill the whole
+            # scrape. Log with exc_info so the failure is debuggable instead of
+            # being collapsed into a one-line message.
+            self.logger.error(f"Error scraping dog detail with Playwright {url}", exc_info=True)
             return None
 
     def _extract_main_image_soup(self, soup: BeautifulSoup) -> str | None:
