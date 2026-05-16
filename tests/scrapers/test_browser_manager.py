@@ -88,3 +88,108 @@ class TestNavigateWithRetry:
 
         assert result is False
         assert page.goto.call_count == 2
+
+
+@pytest.mark.unit
+class TestWithBrowserRetry:
+    """Regression tests for the async-generator retry contract.
+
+    Background: a previous implementation retried inside the @asynccontextmanager
+    body, which violated the generator protocol when the caller's `async with`
+    block raised — surfacing as `RuntimeError: generator didn't stop after
+    athrow()` and masking the real exception. See cron failure 2026-05-16.
+    """
+
+    def _patch_service(self, browser_manager, get_browser_factory):
+        from contextlib import asynccontextmanager
+
+        @asynccontextmanager
+        async def fake_get_browser(_opts):
+            async with get_browser_factory() as result:
+                yield result
+
+        service = Mock()
+        service.get_browser = fake_get_browser
+        return patch("scrapers.browser_manager.get_playwright_service", return_value=service)
+
+    def test_body_exception_propagates_without_runtime_error(self, browser_manager):
+        """Caller-side exceptions must surface as the original exception, not
+        as `RuntimeError: generator didn't stop after athrow()`."""
+        from contextlib import asynccontextmanager
+
+        close_called = False
+
+        @asynccontextmanager
+        async def get_browser_factory():
+            nonlocal close_called
+            yield Mock(name="PlaywrightResult")
+            close_called = True
+
+        async def run():
+            with self._patch_service(browser_manager, get_browser_factory):
+                async with browser_manager.with_browser_retry(max_retries=3, base_delay=0.0):
+                    raise ValueError("simulated body failure")
+
+        with pytest.raises(ValueError, match="simulated body failure"):
+            asyncio.new_event_loop().run_until_complete(run())
+
+    def test_retries_browser_acquisition_failure(self, browser_manager):
+        """When browser acquisition fails, retry; succeed on a later attempt."""
+        from contextlib import asynccontextmanager
+
+        attempts = {"count": 0}
+
+        @asynccontextmanager
+        async def get_browser_factory():
+            attempts["count"] += 1
+            if attempts["count"] == 1:
+                raise ConnectionError("browserless cold start")
+            yield Mock(name="PlaywrightResult")
+
+        async def run():
+            with self._patch_service(browser_manager, get_browser_factory):
+                async with browser_manager.with_browser_retry(max_retries=3, base_delay=0.0) as result:
+                    return result
+
+        result = asyncio.new_event_loop().run_until_complete(run())
+        assert result is not None
+        assert attempts["count"] == 2
+
+    def test_raises_last_error_after_exhausted_acquisition_retries(self, browser_manager):
+        """If every acquisition attempt fails, the last error propagates."""
+        from contextlib import asynccontextmanager
+
+        @asynccontextmanager
+        async def get_browser_factory():
+            raise ConnectionError("browserless unreachable")
+            yield  # pragma: no cover
+
+        async def run():
+            with self._patch_service(browser_manager, get_browser_factory):
+                async with browser_manager.with_browser_retry(max_retries=2, base_delay=0.0):
+                    pass
+
+        with pytest.raises(ConnectionError, match="browserless unreachable"):
+            asyncio.new_event_loop().run_until_complete(run())
+
+    def test_does_not_retry_after_yield(self, browser_manager):
+        """Exceptions after yield must not trigger another acquisition attempt
+        (no double-yield, no extra browser sessions)."""
+        from contextlib import asynccontextmanager
+
+        attempts = {"count": 0}
+
+        @asynccontextmanager
+        async def get_browser_factory():
+            attempts["count"] += 1
+            yield Mock(name="PlaywrightResult")
+
+        async def run():
+            with self._patch_service(browser_manager, get_browser_factory):
+                async with browser_manager.with_browser_retry(max_retries=3, base_delay=0.0):
+                    raise RuntimeError("after yield")
+
+        with pytest.raises(RuntimeError, match="after yield"):
+            asyncio.new_event_loop().run_until_complete(run())
+
+        assert attempts["count"] == 1

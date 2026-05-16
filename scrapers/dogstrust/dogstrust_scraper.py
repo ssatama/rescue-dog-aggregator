@@ -584,35 +584,38 @@ class DogsTrustScraper(BaseScraper):
 
                 # Wait for dog cards to appear. Remote Browserless under
                 # stealth_mode intermittently fails to render the initial page;
-                # retry once via reload, then raise so the failure surfaces as
-                # a real Sentry exception with a stack trace instead of a
+                # retry via reload, then raise so the failure surfaces as a
+                # real Sentry exception with a stack trace instead of a
                 # misleading zero-dogs alert.
                 dog_card_selector = 'a[href*="/rehoming/dogs/"]'
-                try:
-                    await page.wait_for_selector(dog_card_selector, timeout=45000, state="attached")
-                    self.logger.info("Initial page loaded successfully")
-                except PlaywrightTimeoutError as first_err:
-                    self.logger.warning(f"Initial page load timed out (attempt 1/2): {first_err}; reloading and retrying...")
-                    await page.reload(wait_until="domcontentloaded")
-                    await asyncio.sleep(1.0)
-                    # OneTrust overlays can re-render after the reload.
-                    try:
-                        await page.evaluate(
-                            """
-                            (() => {
-                                document.querySelector('#onetrust-consent-sdk')?.remove();
-                                document.querySelector('.onetrust-pc-dark-filter')?.remove();
-                            })()
-                        """
-                        )
-                    except Exception as overlay_err:
-                        self.logger.debug(f"Post-reload overlay removal error (non-critical): {overlay_err}")
+                max_initial_attempts = 3
+                for attempt in range(1, max_initial_attempts + 1):
                     try:
                         await page.wait_for_selector(dog_card_selector, timeout=45000, state="attached")
-                        self.logger.info("Initial page loaded successfully after retry")
-                    except PlaywrightTimeoutError as retry_err:
-                        self.logger.error(f"Initial page load failed after retry: {retry_err}")
-                        raise
+                        if attempt == 1:
+                            self.logger.info("Initial page loaded successfully")
+                        else:
+                            self.logger.info(f"Initial page loaded successfully on attempt {attempt}/{max_initial_attempts}")
+                        break
+                    except PlaywrightTimeoutError as err:
+                        if attempt == max_initial_attempts:
+                            self.logger.error(f"Initial page load failed after {max_initial_attempts} attempts: {err}")
+                            raise
+                        self.logger.warning(f"Initial page load timed out (attempt {attempt}/{max_initial_attempts}): {err}; reloading and retrying...")
+                        await page.reload(wait_until="domcontentloaded")
+                        await asyncio.sleep(1.0)
+                        # OneTrust overlays can re-render after the reload.
+                        try:
+                            await page.evaluate(
+                                """
+                                (() => {
+                                    document.querySelector('#onetrust-consent-sdk')?.remove();
+                                    document.querySelector('.onetrust-pc-dark-filter')?.remove();
+                                })()
+                            """
+                            )
+                        except Exception as overlay_err:
+                            self.logger.debug(f"Post-reload overlay removal error (non-critical): {overlay_err}")
 
                 # Apply filter to hide reserved dogs
                 try:
