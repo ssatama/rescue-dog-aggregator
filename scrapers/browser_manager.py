@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import sys
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -128,7 +129,10 @@ class ScraperBrowserManager:
 
         try:
             yield result
-        finally:
+        except BaseException:
+            if not await cm.__aexit__(*sys.exc_info()):
+                raise
+        else:
             await cm.__aexit__(None, None, None)
 
     async def navigate_with_retry(

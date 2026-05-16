@@ -582,11 +582,10 @@ class DogsTrustScraper(BaseScraper):
                 except Exception as e:
                     self.logger.debug(f"Overlay removal error (non-critical): {e}")
 
-                # Wait for dog cards to appear. Remote Browserless under
-                # stealth_mode intermittently fails to render the initial page;
-                # retry via reload, then raise so the failure surfaces as a
-                # real Sentry exception with a stack trace instead of a
-                # misleading zero-dogs alert.
+                # Remote Browserless under stealth_mode intermittently fails
+                # to render the initial page. Raise rather than return [] so
+                # the failure surfaces as a real Sentry exception instead of
+                # a misleading zero-dogs alert.
                 dog_card_selector = 'a[href*="/rehoming/dogs/"]'
                 max_initial_attempts = 3
                 for attempt in range(1, max_initial_attempts + 1):
