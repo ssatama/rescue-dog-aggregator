@@ -248,13 +248,14 @@ class TestDogsTrustPlaywrightResilience:
         assert len(result) == 2
 
     @pytest.mark.asyncio
-    async def test_raises_when_both_wait_attempts_timeout(self):
-        """Both wait attempts fail → raise instead of silently returning []."""
+    async def test_raises_when_all_wait_attempts_timeout(self):
+        """All 3 wait attempts fail → raise instead of silently returning []."""
         scraper = DogsTrustScraper()
         page = _build_listing_page_mock(
             wait_for_selector_side_effect=[
                 PlaywrightTimeoutError("first timeout"),
-                PlaywrightTimeoutError("retry timeout"),
+                PlaywrightTimeoutError("second timeout"),
+                PlaywrightTimeoutError("third timeout"),
             ],
             content_html="",
         )
@@ -263,8 +264,8 @@ class TestDogsTrustPlaywrightResilience:
         with pytest.raises(PlaywrightTimeoutError):
             await scraper._get_animal_list_playwright(max_pages_to_scrape=1)
 
-        page.reload.assert_awaited_once_with(wait_until="domcontentloaded")
-        assert page.wait_for_selector.await_count == 2
+        assert page.reload.await_count == 2
+        assert page.wait_for_selector.await_count == 3
 
     @pytest.mark.asyncio
     async def test_no_retry_when_first_wait_succeeds(self):
@@ -295,7 +296,8 @@ class TestDogsTrustPlaywrightResilience:
         page = _build_listing_page_mock(
             wait_for_selector_side_effect=[
                 PlaywrightTimeoutError("first timeout"),
-                PlaywrightTimeoutError("retry timeout"),
+                PlaywrightTimeoutError("second timeout"),
+                PlaywrightTimeoutError("third timeout"),
             ],
             content_html="",
         )

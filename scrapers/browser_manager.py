@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import sys
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -104,23 +105,35 @@ class ScraperBrowserManager:
         playwright_service = get_playwright_service()
         opts = options or PlaywrightOptions()
 
+        cm = None
+        result: PlaywrightResult | None = None
         last_error: Exception | None = None
         for attempt in range(max_retries):
+            candidate = playwright_service.get_browser(opts)
             try:
-                async with playwright_service.get_browser(opts) as result:
-                    yield result
-                    return
+                result = await candidate.__aenter__()
+                cm = candidate
+                break
             except Exception as e:
                 last_error = e
                 if attempt < max_retries - 1:
                     delay = base_delay * (2**attempt)
-                    self.logger.warning(f"Browser operation failed (attempt {attempt + 1}/{max_retries}), retrying in {delay}s: {e}")
+                    self.logger.warning(f"Browser acquisition failed (attempt {attempt + 1}/{max_retries}), retrying in {delay}s: {e}")
                     await asyncio.sleep(delay)
                 else:
-                    self.logger.error(f"Browser operation failed after {max_retries} attempts: {e}")
+                    self.logger.error(f"Browser acquisition failed after {max_retries} attempts: {e}")
 
-        if last_error:
+        if cm is None or result is None:
+            assert last_error is not None
             raise last_error
+
+        try:
+            yield result
+        except BaseException:
+            if not await cm.__aexit__(*sys.exc_info()):
+                raise
+        else:
+            await cm.__aexit__(None, None, None)
 
     async def navigate_with_retry(
         self,
