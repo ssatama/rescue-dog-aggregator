@@ -1481,3 +1481,17 @@ class TestListingExtraction:
                 assert dog["breed"] == "Mixed Breed"
                 assert dog["sex"] == "Female"
                 assert dog["primary_image_url"] is not None
+
+    def test_collect_data_propagates_listing_failure(self, scraper):
+        """A browser-side failure during discovery must propagate to BaseScraper
+        rather than silently returning [] (which would fire a misleading
+        zero-dogs alert). Regression for #215."""
+        import inspect
+
+        from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+
+        with patch.object(scraper, "_get_all_dogs_from_listing", side_effect=PlaywrightTimeoutError("listing wait timed out")):
+            with pytest.raises(PlaywrightTimeoutError, match="listing wait timed out"):
+                scraper.collect_data()
+
+        assert "except Exception" not in inspect.getsource(scraper.collect_data), "collect_data must not catch and return [] — that re-introduces the silent-failure bug"
