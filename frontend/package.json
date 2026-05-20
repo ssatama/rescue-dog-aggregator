@@ -111,7 +111,7 @@
     "playwright": "^1.60.0",
     "postcss": "^8.5.13",
     "prettier": "^3.8.3",
-    "puppeteer": "^24.43.1",
+    "puppeteer": "^25.0.4",
     "tailwindcss": "^4.3.0",
     "ts-unused-exports": "^11.0.1",
     "typescript": "^6.0.3",
