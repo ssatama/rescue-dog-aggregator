@@ -700,10 +700,14 @@ class DogsTrustScraper(BaseScraper):
                 await page.evaluate("window.scrollTo(0, 0)")
                 await asyncio.sleep(0.2)
 
-                # Pagination loop
+                # Pagination loop — Dogs Trust is a client-side SPA: navigating
+                # directly to ?page=N is rewritten back to page 0, so we must
+                # advance by clicking the "Next" control and waiting for the
+                # cards to re-render. The control's aria-label is "Go to next
+                # page"; older selectors ("Next") no longer match, which is what
+                # stranded the scraper on page 0.
                 page_num = 0
                 max_pages = None
-                pages_scraped = 0
 
                 while True:
                     html_content = await page.content()
@@ -717,11 +721,16 @@ class DogsTrustScraper(BaseScraper):
                     if page_dogs:
                         all_dogs.extend(page_dogs)
                         self.logger.info(f"Page {page_num}: Found {len(page_dogs)} dogs (total so far: {len(all_dogs)})")
+                    elif page_num > 0:
+                        # An empty page past the first means we've run off the end
+                        # of the results — stop even if the detected max is higher
+                        # (the indicator can be stale or fall back to a fixed bound).
+                        self.logger.info(f"Page {page_num}: No dogs found - reached end of results")
+                        break
                     else:
                         self.logger.warning(f"Page {page_num}: No dogs found")
 
-                    pages_scraped += 1
-
+                    pages_scraped = page_num + 1
                     if max_pages_to_scrape and pages_scraped >= max_pages_to_scrape:
                         self.logger.info(f"Reached debug limit of {max_pages_to_scrape} pages")
                         break
@@ -730,64 +739,75 @@ class DogsTrustScraper(BaseScraper):
                         self.logger.info(f"Reached last page ({max_pages} total)")
                         break
 
-                    # Navigate to next page
-                    try:
-                        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                        await asyncio.sleep(0.5)
+                    # "Go to next page" is the current control; the rest are
+                    # retained as defensive fallbacks against another label change.
+                    next_selectors = [
+                        "button[aria-label='Go to next page']",
+                        "button[aria-label='Next']",
+                        "a[aria-label='Next page']",
+                        "button:has-text('Next')",
+                    ]
+                    next_button = None
+                    for selector in next_selectors:
+                        try:
+                            btn = page.locator(selector).first
+                            if await btn.is_visible() and await btn.is_enabled():
+                                next_button = btn
+                                break
+                        except Exception:
+                            continue
 
-                        next_selectors = [
-                            "button[aria-label='Next']",
-                            "button:has-text('Next')",
-                            "a[aria-label='Next page']",
-                        ]
-                        next_button = None
-                        for selector in next_selectors:
-                            try:
-                                btn = page.locator(selector).first
-                                if await btn.is_visible() and await btn.is_enabled():
-                                    next_button = btn
-                                    break
-                            except Exception:
-                                continue
-
-                        if next_button:
-                            self.logger.debug(f"Clicking Next button to navigate to page {page_num + 1}")
-                            await next_button.scroll_into_view_if_needed()
-                            await asyncio.sleep(0.3)
-                            # Use JavaScript click to bypass any overlay issues
-                            try:
-                                await page.evaluate(
-                                    """
-                                    (() => {
-                                        const btn = document.querySelector('button[aria-label="Next"]')
-                                            || document.querySelector('a[aria-label="Next page"]')
-                                            || [...document.querySelectorAll('button')].find(b => b.textContent.includes('Next'));
-                                        if (btn) btn.click();
-                                    })()
-                                """
-                                )
-                            except Exception:
-                                # Fallback to Playwright click with force
-                                await next_button.click(force=True, timeout=10000)
-                            await asyncio.sleep(self.rate_limit_delay + random.uniform(0.3, 0.8))
-
-                            try:
-                                await page.wait_for_selector('a[href*="/rehoming/dogs/"]', timeout=10000)
-                            except Exception:
-                                self.logger.warning(f"Timeout waiting for page {page_num + 1}")
-
-                            await page.evaluate("window.scrollTo(0, document.body.scrollHeight / 2)")
-                            await asyncio.sleep(0.2)
-                            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                            await asyncio.sleep(0.2)
-
-                            page_num += 1
-                        else:
-                            self.logger.info("No enabled Next button found - reached end of results")
-                            break
-                    except Exception as e:
-                        self.logger.info(f"Could not find or click Next button: {e}")
+                    if not next_button:
+                        self.logger.info("No enabled Next button found - reached end of results")
                         break
+
+                    # Capture the current first card so we can detect the
+                    # client-side re-render after clicking Next.
+                    prev_first_href = await page.evaluate(
+                        """() => {
+                            const a = document.querySelector('a[href*="/rehoming/dogs/"]');
+                            return a ? a.getAttribute('href') : null;
+                        }"""
+                    )
+
+                    self.logger.debug(f"Clicking Next to navigate to page {page_num + 1}")
+                    await next_button.scroll_into_view_if_needed()
+                    await asyncio.sleep(0.3)
+                    try:
+                        await next_button.click(timeout=10000)
+                    except Exception:
+                        # Fallback to a JS click if an overlay intercepts the click.
+                        await page.evaluate(
+                            """() => {
+                                const btn = document.querySelector('button[aria-label="Go to next page"]')
+                                    || document.querySelector('button[aria-label="Next"]')
+                                    || document.querySelector('a[aria-label="Next page"]')
+                                    || [...document.querySelectorAll('button')].find(b => b.textContent.includes('Next'));
+                                if (btn) btn.click();
+                            }"""
+                        )
+
+                    # Wait for the listing to re-render with a different first
+                    # card. A timeout means the click did not advance the page
+                    # (stale/intercepted click, or genuinely no further results),
+                    # so stop rather than advance — re-reading the same DOM would
+                    # silently duplicate or skip pages, this scraper's historical
+                    # failure mode.
+                    try:
+                        await page.wait_for_function(
+                            """(prev) => {
+                                const a = document.querySelector('a[href*="/rehoming/dogs/"]');
+                                return a && a.getAttribute('href') !== prev;
+                            }""",
+                            arg=prev_first_href,
+                            timeout=15000,
+                        )
+                    except PlaywrightTimeoutError:
+                        self.logger.warning(f"Page {page_num + 1} did not render after clicking Next - stopping pagination")
+                        break
+
+                    await asyncio.sleep(self.rate_limit_delay + random.uniform(0.3, 0.8))
+                    page_num += 1
 
             except Exception as e:
                 self.logger.error(f"Error during Playwright pagination scraping: {e}")
@@ -828,20 +848,25 @@ class DogsTrustScraper(BaseScraper):
     def _detect_max_pages(self, soup: BeautifulSoup) -> int:
         """Detect maximum page count from pagination indicator.
 
-        Looks for pagination text like "1 of 47" to determine total pages.
-        Based on analysis findings showing 47 total pages.
+        Looks for pagination text like "1 / 38" (or legacy "1 of 47") to
+        determine total pages, falling back to a fixed bound if not found.
 
         Args:
             soup: BeautifulSoup object of the listing page
 
         Returns:
-            Maximum page number detected (defaults to 47 if not found)
+            Total page count from the indicator, or a fixed fallback bound if
+            none is found. The fallback is only a ceiling — the pagination loop's
+            empty-page check is the real terminator, so the exact value is not
+            load-bearing.
         """
-        # Look for pagination indicator with pattern "X of Y"
-        elements = soup.find_all(string=re.compile(r"\d+ of \d+"))
+        # Look for pagination indicator with pattern "X of Y" or "X / Y".
+        # Dogs Trust switched the rendered separator from "of" to "/", so accept both.
+        indicator_pattern = re.compile(r"\d+\s*(?:of|/)\s*\d+")
+        elements = soup.find_all(string=indicator_pattern)
         for element in elements:
             element_text = str(element).strip()
-            match = re.search(r"(\d+) of (\d+)", element_text)
+            match = re.search(r"(\d+)\s*(?:of|/)\s*(\d+)", element_text)
             if match:
                 total_pages = int(match.group(2))
                 self.logger.debug(f"Found pagination indicator: {element_text}")
@@ -879,10 +904,11 @@ class DogsTrustScraper(BaseScraper):
                     continue  # Skip duplicate links on the same page
                 seen_urls.add(href)
 
-                # Check if this dog is reserved
-                # Look for RESERVED indicator within the link element
+                # Check if this dog is reserved. The card renders the indicator
+                # as "Reserved" (title case); match case-insensitively so a
+                # casing change on the site doesn't let reserved dogs slip through.
                 link_text = link.get_text(separator=" ", strip=True)
-                if "RESERVED" in link_text:
+                if "reserved" in link_text.lower():
                     self.logger.debug(f"Skipping reserved dog: {href}")
                     continue
 
