@@ -170,6 +170,33 @@ class TestDogsTrustUnifiedStandardization:
 # a real Sentry exception (not a misleading zero-dogs alert).
 
 
+def _build_paginated_page_mock(page_htmls):
+    """Build a mock Playwright Page whose content() returns a different HTML per page.
+
+    Used to exercise click-based pagination: each call to page.content() yields
+    the next page's markup, and the Next control reports visible+enabled so the
+    loop clicks through.
+    """
+    page = MagicMock()
+    page.goto = AsyncMock()
+    page.evaluate = AsyncMock(return_value=None)
+    page.wait_for_selector = AsyncMock(return_value=None)
+    page.wait_for_function = AsyncMock(return_value=None)
+    page.content = AsyncMock(side_effect=list(page_htmls))
+    page.reload = AsyncMock()
+
+    locator_first = MagicMock()
+    locator_first.is_visible = AsyncMock(return_value=True)
+    locator_first.is_enabled = AsyncMock(return_value=True)
+    locator_first.click = AsyncMock()
+    locator_first.scroll_into_view_if_needed = AsyncMock()
+    locator = MagicMock()
+    locator.first = locator_first
+    page.locator = MagicMock(return_value=locator)
+
+    return page
+
+
 def _build_listing_page_mock(wait_for_selector_side_effect, content_html=""):
     """Build a mock Playwright Page that satisfies the listing flow.
 
@@ -180,6 +207,7 @@ def _build_listing_page_mock(wait_for_selector_side_effect, content_html=""):
     page.goto = AsyncMock()
     page.evaluate = AsyncMock(return_value=0)
     page.wait_for_selector = AsyncMock(side_effect=wait_for_selector_side_effect)
+    page.wait_for_function = AsyncMock(return_value=None)
     page.content = AsyncMock(return_value=content_html)
     page.reload = AsyncMock()
 
@@ -313,3 +341,123 @@ class TestDogsTrustPlaywrightResilience:
 
         source = inspect.getsource(scraper.collect_data)
         assert "except Exception" not in source, "collect_data must not catch and return [] — that re-introduces the silent-failure bug this PR fixes"
+
+
+@pytest.mark.unit
+class TestDogsTrustDetectMaxPages:
+    """Dogs Trust renders its page indicator as 'N / M' (e.g. '2 / 38').
+
+    Earlier markup used 'N of M'; both must parse so a site-side format flip
+    doesn't silently collapse pagination to the hardcoded fallback.
+    """
+
+    def test_parses_slash_format(self):
+        from bs4 import BeautifulSoup
+
+        scraper = DogsTrustScraper()
+        soup = BeautifulSoup("<div>2 / 38</div>", "html.parser")
+        assert scraper._detect_max_pages(soup) == 38
+
+    def test_parses_of_format_still_supported(self):
+        from bs4 import BeautifulSoup
+
+        scraper = DogsTrustScraper()
+        soup = BeautifulSoup("<div>1 of 41</div>", "html.parser")
+        assert scraper._detect_max_pages(soup) == 41
+
+    def test_defaults_when_no_indicator(self):
+        from bs4 import BeautifulSoup
+
+        scraper = DogsTrustScraper()
+        soup = BeautifulSoup("<div>no pagination here</div>", "html.parser")
+        assert scraper._detect_max_pages(soup) == 47
+
+
+@pytest.mark.unit
+class TestDogsTrustReservedFiltering:
+    """The card's reserved indicator renders as 'Reserved' (title case).
+
+    The skip check must be case-insensitive so reserved dogs aren't surfaced
+    as available when the site changes the indicator's casing.
+    """
+
+    def test_skips_title_case_reserved(self):
+        from bs4 import BeautifulSoup
+
+        scraper = DogsTrustScraper()
+        html = """
+        <html><body>
+            <a href="/rehoming/dogs/beagle/111"><span>Bella</span><span>Reserved</span></a>
+            <a href="/rehoming/dogs/collie/222"><span>Max</span></a>
+        </body></html>
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        dogs = scraper._extract_dogs_from_page(soup)
+        ids = sorted(d["external_id"] for d in dogs)
+        assert ids == ["222"]
+
+
+@pytest.mark.unit
+class TestDogsTrustPagination:
+    """Dogs Trust is a client-side SPA: a hard navigation to ?page=N is rewritten
+    back to page 0, so pagination must advance by clicking the Next control
+    (aria-label 'Go to next page'). The old 'Next' selectors no longer match,
+    which stranded the scraper on page 0 (15/422 dogs)."""
+
+    def _page_html(self, indicator, dog_id):
+        return f'<html><body><a href="/rehoming/dogs/breed/{dog_id}">Dog</a><div>{indicator}</div></body></html>'
+
+    @pytest.mark.asyncio
+    async def test_clicks_through_distinct_pages(self):
+        scraper = DogsTrustScraper()
+        page = _build_paginated_page_mock(
+            [
+                self._page_html("1 / 3", 111),
+                self._page_html("2 / 3", 222),
+                self._page_html("3 / 3", 333),
+            ]
+        )
+        _patch_browser_retry(scraper, page)
+
+        result = await scraper._get_animal_list_playwright()
+
+        # All three pages scraped, each yielding a distinct dog.
+        assert sorted(d["external_id"] for d in result) == ["111", "222", "333"]
+        # Pagination is click-driven, not URL-driven: goto fires once (initial load).
+        assert page.goto.await_count == 1
+        # The corrected Next selector must be among those tried.
+        tried_selectors = [call.args[0] for call in page.locator.call_args_list]
+        assert "button[aria-label='Go to next page']" in tried_selectors
+
+    @pytest.mark.asyncio
+    async def test_stops_when_no_next_button(self):
+        scraper = DogsTrustScraper()
+        page = _build_paginated_page_mock([self._page_html("1 / 38", 111)])
+        # No Next control is visible/enabled → must stop after page 0.
+        page.locator.return_value.first.is_visible = AsyncMock(return_value=False)
+        page.locator.return_value.first.is_enabled = AsyncMock(return_value=False)
+        _patch_browser_retry(scraper, page)
+
+        result = await scraper._get_animal_list_playwright()
+
+        assert [d["external_id"] for d in result] == ["111"]
+        assert page.locator.return_value.first.click.await_count == 0
+
+    @pytest.mark.asyncio
+    async def test_stops_on_empty_page_even_when_max_pages_overestimates(self):
+        scraper = DogsTrustScraper()
+        # Indicator claims 47 pages, but the second page returns no dogs:
+        # an empty page past the first must end the loop, not march to 47.
+        page = _build_paginated_page_mock(
+            [
+                self._page_html("1 / 47", 111),
+                "<html><body><div>2 / 47</div></body></html>",
+            ]
+        )
+        _patch_browser_retry(scraper, page)
+
+        result = await scraper._get_animal_list_playwright()
+
+        assert len(result) == 1
+        # Only one Next click happened (page 0 → empty page 1, then stop).
+        assert page.content.await_count == 2
