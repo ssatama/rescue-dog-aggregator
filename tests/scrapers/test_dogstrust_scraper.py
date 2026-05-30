@@ -404,6 +404,12 @@ class TestDogsTrustPagination:
     (aria-label 'Go to next page'). The old 'Next' selectors no longer match,
     which stranded the scraper on page 0 (15/422 dogs)."""
 
+    @pytest.fixture(autouse=True)
+    def _no_real_sleep(self):
+        """Skip the rate-limit/scroll sleeps so these stay unit-fast (<10ms)."""
+        with patch("scrapers.dogstrust.dogstrust_scraper.asyncio.sleep", new=AsyncMock()):
+            yield
+
     def _page_html(self, indicator, dog_id):
         return f'<html><body><a href="/rehoming/dogs/breed/{dog_id}">Dog</a><div>{indicator}</div></body></html>'
 
@@ -459,5 +465,39 @@ class TestDogsTrustPagination:
         result = await scraper._get_animal_list_playwright()
 
         assert len(result) == 1
-        # Only one Next click happened (page 0 → empty page 1, then stop).
+        # Read exactly two pages — page 0, then the empty page 1 — before
+        # stopping, rather than marching toward the detected max of 47.
         assert page.content.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_falls_back_to_js_click_when_playwright_click_fails(self):
+        """If the Playwright click raises (e.g. overlay intercept), the JS-click
+        fallback must run and pagination must still advance, not silently stop."""
+        scraper = DogsTrustScraper()
+        page = _build_paginated_page_mock([self._page_html("1 / 2", 111), self._page_html("2 / 2", 222)])
+        page.locator.return_value.first.click = AsyncMock(side_effect=Exception("intercepted"))
+        _patch_browser_retry(scraper, page)
+
+        result = await scraper._get_animal_list_playwright()
+
+        # Both pages still collected despite the failed Playwright click.
+        assert sorted(d["external_id"] for d in result) == ["111", "222"]
+        # The pagination fallback script (unique 'Go to next page' selector) ran.
+        evaluated = [call.args[0] for call in page.evaluate.await_args_list if call.args]
+        assert any("Go to next page" in script for script in evaluated)
+
+    @pytest.mark.asyncio
+    async def test_stops_when_next_page_never_renders(self):
+        """A re-render timeout means the page didn't advance; stop instead of
+        re-reading the same DOM (which would duplicate or skip pages)."""
+        scraper = DogsTrustScraper()
+        page = _build_paginated_page_mock([self._page_html("1 / 38", 111), self._page_html("2 / 38", 222)])
+        page.wait_for_function = AsyncMock(side_effect=PlaywrightTimeoutError("no re-render"))
+        _patch_browser_retry(scraper, page)
+
+        result = await scraper._get_animal_list_playwright()
+
+        # Only page 0 collected; the loop stopped on the unrendered page rather
+        # than advancing and re-scraping.
+        assert [d["external_id"] for d in result] == ["111"]
+        assert page.content.await_count == 1

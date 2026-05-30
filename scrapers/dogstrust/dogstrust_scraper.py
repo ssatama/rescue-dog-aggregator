@@ -739,6 +739,8 @@ class DogsTrustScraper(BaseScraper):
                         self.logger.info(f"Reached last page ({max_pages} total)")
                         break
 
+                    # "Go to next page" is the current control; the rest are
+                    # retained as defensive fallbacks against another label change.
                     next_selectors = [
                         "button[aria-label='Go to next page']",
                         "button[aria-label='Next']",
@@ -785,7 +787,12 @@ class DogsTrustScraper(BaseScraper):
                             }"""
                         )
 
-                    # Wait for the listing to re-render with a different first card.
+                    # Wait for the listing to re-render with a different first
+                    # card. A timeout means the click did not advance the page
+                    # (stale/intercepted click, or genuinely no further results),
+                    # so stop rather than advance — re-reading the same DOM would
+                    # silently duplicate or skip pages, this scraper's historical
+                    # failure mode.
                     try:
                         await page.wait_for_function(
                             """(prev) => {
@@ -796,7 +803,8 @@ class DogsTrustScraper(BaseScraper):
                             timeout=15000,
                         )
                     except PlaywrightTimeoutError:
-                        self.logger.warning(f"Timeout waiting for page {page_num + 1} to render")
+                        self.logger.warning(f"Page {page_num + 1} did not render after clicking Next - stopping pagination")
+                        break
 
                     await asyncio.sleep(self.rate_limit_delay + random.uniform(0.3, 0.8))
                     page_num += 1
@@ -847,7 +855,10 @@ class DogsTrustScraper(BaseScraper):
             soup: BeautifulSoup object of the listing page
 
         Returns:
-            Maximum page number detected (defaults to 47 if not found)
+            Total page count from the indicator, or a fixed fallback bound if
+            none is found. The fallback is only a ceiling — the pagination loop's
+            empty-page check is the real terminator, so the exact value is not
+            load-bearing.
         """
         # Look for pagination indicator with pattern "X of Y" or "X / Y".
         # Dogs Trust switched the rendered separator from "of" to "/", so accept both.
