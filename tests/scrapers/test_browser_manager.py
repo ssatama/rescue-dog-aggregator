@@ -75,7 +75,7 @@ class TestNavigateWithRetry:
         page = AsyncMock()
         page.goto = AsyncMock()
 
-        result = asyncio.get_event_loop().run_until_complete(browser_manager.navigate_with_retry(page, "https://example.com", max_retries=2))
+        result = asyncio.run(browser_manager.navigate_with_retry(page, "https://example.com", max_retries=2))
 
         assert result is True
         page.goto.assert_called_once()
@@ -84,7 +84,7 @@ class TestNavigateWithRetry:
         page = AsyncMock()
         page.goto = AsyncMock(side_effect=Exception("navigation failed"))
 
-        result = asyncio.get_event_loop().run_until_complete(browser_manager.navigate_with_retry(page, "https://example.com", max_retries=2))
+        result = asyncio.run(browser_manager.navigate_with_retry(page, "https://example.com", max_retries=2))
 
         assert result is False
         assert page.goto.call_count == 2
