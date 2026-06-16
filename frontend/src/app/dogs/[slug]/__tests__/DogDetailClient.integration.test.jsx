@@ -121,14 +121,14 @@ jest.mock("../../../../components/dogs/detail", () => ({
   ),
 }));
 
-// Mock the useSwipeNavigation hook
+// Mock the useSwipeNavigation hook (configurable per-test)
 jest.mock("../../../../hooks/useSwipeNavigation", () => ({
-  useSwipeNavigation: () => ({
+  useSwipeNavigation: jest.fn(() => ({
     handlers: {},
     prevDog: null,
     nextDog: null,
     isLoading: false,
-  }),
+  })),
 }));
 
 // next/navigation is mocked globally in jest.setup.js
@@ -198,10 +198,6 @@ describe("DogDetailClient Dog Detail Integration", () => {
     jest.clearAllMocks();
     const { getAnimalBySlug } = require("../../../../services/animalsService");
     getAnimalBySlug.mockResolvedValue(mockDogData);
-
-    // Mock window.location for navigation tests
-    delete window.location;
-    window.location = { href: "http://localhost/dogs/test-dog-mixed-breed-1" };
   });
 
   describe("OrganizationCard Integration", () => {
@@ -536,5 +532,43 @@ describe("Breed Display - Simplified without legacy text", () => {
 
     // Should not show the original breed value
     expect(screen.queryByText("Lab Mix")).not.toBeInTheDocument();
+  });
+
+  describe("Swipe overlay placement (CTA click regression)", () => {
+    // The touch swipe overlay must be scoped to the hero image. When it covered
+    // the whole card it intercepted every click, breaking the adoption CTA and
+    // action buttons on desktop.
+    test("renders the swipe overlay inside the hero image, not over the CTA", async () => {
+      const {
+        useSwipeNavigation,
+      } = require("../../../../hooks/useSwipeNavigation");
+      useSwipeNavigation.mockReturnValue({
+        handlers: {},
+        prevDog: { slug: "prev-dog", name: "Prev" },
+        nextDog: { slug: "next-dog", name: "Next" },
+        isLoading: false,
+      });
+
+      const { container } = render(
+        <DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("adopt-button")).toBeInTheDocument();
+      });
+
+      const overlay = container.querySelector('[aria-hidden="true"].inset-0');
+      expect(overlay).toBeInTheDocument();
+
+      // The overlay is scoped to the hero image section...
+      const heroSection = screen.getByTestId("hero-section");
+      expect(heroSection).toContainElement(overlay);
+
+      // ...and the CTA / action buttons live OUTSIDE that section, so the
+      // image-scoped overlay cannot sit on top of them. (In the previous
+      // layout the overlay was a sibling of the whole content column.)
+      expect(heroSection).not.toContainElement(screen.getByTestId("adopt-button"));
+      expect(heroSection).not.toContainElement(screen.getByTestId("action-bar"));
+    });
   });
 });

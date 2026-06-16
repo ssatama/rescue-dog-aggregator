@@ -501,3 +501,60 @@ class TestDogsTrustPagination:
         # than advancing and re-scraping.
         assert [d["external_id"] for d in result] == ["111"]
         assert page.content.await_count == 1
+
+
+@pytest.mark.unit
+class TestDogsTrustPrimaryImage:
+    """The detail page now renders promotional/nav images before the dog's own
+    photos. The extractor must return the dog's photo, not a promo placeholder.
+    """
+
+    # Real dog photos live under /images/{size}/dogs/{dogId}/; promo art and
+    # breed illustrations live under /images/{size}/assets/.
+    DETAIL_HTML = """
+    <html><body>
+      <img src="https://www.dogstrust.org.uk/images/400x300/assets/2026-05/nds-promo-nav-setter-2026.jpg"
+           alt="Illustration of three yellow dogs smiling against a colourful background" />
+      <img src="https://www.dogstrust.org.uk/images/400x300/assets/2026-05/BSL-Promo.png"
+           alt="Illustration of dog barking at the door" />
+      <img class="HeroWithCarousel-module--slideImage--ebe4d"
+           src="https://www.dogstrust.org.uk/images/800x600/dogs/3632928/068Sh00000ba4MNIAY.jpg"
+           alt="undefined | Rottweiler | undefined - 1" />
+      <img class="HeroWithCarousel-module--slideImage--ebe4d"
+           src="https://www.dogstrust.org.uk/images/800x600/dogs/3632928/068Sh00000ba41OIAQ.jpg"
+           alt="undefined | Rottweiler | undefined - 2" />
+      <img class="DogListingCard-module--dogCardImage--401c8"
+           src="https://www.dogstrust.org.uk/images/400x300/dogs/3621230/068Sh00000ZNN35IAH.jpg"
+           alt="Milo | Shih Tzu | Manchester" />
+    </body></html>
+    """
+
+    def test_extracts_dog_photo_not_promo_placeholder(self):
+        from bs4 import BeautifulSoup
+
+        scraper = DogsTrustScraper()
+        soup = BeautifulSoup(self.DETAIL_HTML, "html.parser")
+
+        result = scraper._extract_primary_image(soup, dog_id="3632928")
+
+        assert result == "https://www.dogstrust.org.uk/images/800x600/dogs/3632928/068Sh00000ba4MNIAY.jpg"
+
+    def test_ignores_related_dog_card_images(self):
+        from bs4 import BeautifulSoup
+
+        scraper = DogsTrustScraper()
+        # Only a different dog's related-card image plus promos are present.
+        html = """
+        <html><body>
+          <img src="https://www.dogstrust.org.uk/images/400x300/assets/2026-05/nds-promo-nav-setter-2026.jpg"
+               alt="Illustration of three yellow dogs smiling against a colourful background" />
+          <img class="DogListingCard-module--dogCardImage--401c8"
+               src="https://www.dogstrust.org.uk/images/400x300/dogs/3621230/068Sh00000ZNN35IAH.jpg"
+               alt="Milo | Shih Tzu | Manchester" />
+        </body></html>
+        """
+        soup = BeautifulSoup(html, "html.parser")
+
+        result = scraper._extract_primary_image(soup, dog_id="3632928")
+
+        assert result == ""
