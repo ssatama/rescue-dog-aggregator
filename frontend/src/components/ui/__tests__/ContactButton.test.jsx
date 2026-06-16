@@ -10,9 +10,6 @@ Object.assign(navigator, {
   },
 });
 
-// Mock window.location.href
-delete window.location;
-window.location = { href: jest.fn() };
 
 describe("ContactButton", () => {
   const defaultProps = {

@@ -332,15 +332,16 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
               <div className="p-4 sm:p-6 relative">
-                <Suspense fallback={null}>
-                  <SwipeNavigationOverlay key={dogSlug} dogSlug={dogSlug ?? ""} />
-                </Suspense>
-
                 {/* Unified Single Column Responsive Layout */}
                 <div className="flex flex-col gap-8">
                   {/* Hero Image Section - Full Width */}
                   <div>
                     <div className="w-full relative" data-testid="hero-section">
+                      {/* Swipe-to-navigate is scoped to the hero image so it
+                          never covers the action buttons or adoption CTA. */}
+                      <Suspense fallback={null}>
+                        <SwipeNavigationOverlay key={dogSlug} dogSlug={dogSlug ?? ""} />
+                      </Suspense>
 
                       {(() => {
                         if (!dog || !dog.primary_image_url) {

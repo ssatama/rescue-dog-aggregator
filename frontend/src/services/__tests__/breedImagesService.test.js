@@ -312,11 +312,10 @@ describe("breedImagesService", () => {
     it("should build correct URL for server-side requests in development", async () => {
       // Save original env
       const originalEnv = process.env.NODE_ENV;
-      const originalWindow = global.window;
 
-      // Mock server-side environment
+      // The API base URL is resolved at module load, so this asserts the
+      // endpoint path is built correctly regardless of environment.
       process.env.NODE_ENV = "development";
-      delete global.window;
 
       fetch.mockResolvedValueOnce({
         ok: true,
@@ -325,13 +324,11 @@ describe("breedImagesService", () => {
 
       await getBreedsWithImages();
 
-      // In server-side dev, should use localhost URL
       const callUrl = fetch.mock.calls[0][0];
       expect(callUrl).toContain("/api/animals/breeds/with-images");
 
       // Restore environment
       process.env.NODE_ENV = originalEnv;
-      global.window = originalWindow;
     });
 
     it("should use production URL when not in development", async () => {

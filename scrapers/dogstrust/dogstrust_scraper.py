@@ -1047,7 +1047,8 @@ class DogsTrustScraper(BaseScraper):
         size = self._extract_size(soup)
         location = self._extract_location(soup)
         description = self._extract_description(soup)
-        primary_image_url = self._extract_primary_image(soup)
+        dog_id = self._extract_external_id_from_url(adoption_url)
+        primary_image_url = self._extract_primary_image(soup, dog_id)
 
         # Note: Standardization will be applied later via process_animal()
 
@@ -1177,23 +1178,22 @@ class DogsTrustScraper(BaseScraper):
         # Combine parts with newline separator
         return "\n\n".join(description_parts) if description_parts else ""
 
-    def _extract_primary_image(self, soup: BeautifulSoup) -> str:
-        """Extract primary image URL from main carousel."""
-        # Look for the main hero image in carousel
-        images = soup.find_all("img")
-        for img in images:
-            # Check if img is a Tag object before calling get()
-            if hasattr(img, "get"):
-                src = img.get("src", "")
-                alt = img.get("alt", "")
+    def _extract_primary_image(self, soup: BeautifulSoup, dog_id: str | None = None) -> str:
+        """Extract this dog's primary photo from the detail page.
 
-                # Main dog images typically have the dog name in alt text or are in specific containers
-                # Fixed: Changed logic to INCLUDE dog images instead of excluding them
-                if src and alt and len(alt) > 10:
-                    # Make URL absolute if needed
-                    if src.startswith("/"):
-                        return f"{self.base_url}{src}"
-                    return src
+        The dog's own photos are served under /images/{size}/dogs/{dog_id}/.
+        Promotional and breed-illustration images sit under /images/{size}/assets/
+        and appear before the dog's photos in the DOM, so matching on the dog id
+        avoids returning a placeholder. Related-dog cards use other ids.
+        """
+        if dog_id:
+            id_path = f"/dogs/{dog_id}/"
+            for img in soup.find_all("img"):
+                if hasattr(img, "get"):
+                    src = img.get("src", "")
+                    if src and id_path in src:
+                        return f"{self.base_url}{src}" if src.startswith("/") else src
+            return ""
 
         return ""
 
