@@ -560,13 +560,15 @@ describe("Breed Display - Simplified without legacy text", () => {
       const overlay = container.querySelector('[aria-hidden="true"].inset-0');
       expect(overlay).toBeInTheDocument();
 
-      // Overlay lives within the hero image section...
+      // The overlay is scoped to the hero image section...
       const heroSection = screen.getByTestId("hero-section");
       expect(heroSection).toContainElement(overlay);
 
-      // ...and never wraps the action buttons or the adoption CTA.
-      expect(overlay).not.toContainElement(screen.getByTestId("adopt-button"));
-      expect(overlay).not.toContainElement(screen.getByTestId("action-bar"));
+      // ...and the CTA / action buttons live OUTSIDE that section, so the
+      // image-scoped overlay cannot sit on top of them. (In the previous
+      // layout the overlay was a sibling of the whole content column.)
+      expect(heroSection).not.toContainElement(screen.getByTestId("adopt-button"));
+      expect(heroSection).not.toContainElement(screen.getByTestId("action-bar"));
     });
   });
 });
