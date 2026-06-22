@@ -17,17 +17,23 @@ const DOMPURIFY_CONFIG = {
   ALLOWED_ATTR: ["href", "target", "rel", "src", "alt"],
 };
 
+export function stripHtml(html: string | null | undefined): string {
+  if (typeof html !== "string") return "";
+
+  let result = html;
+  let prev: string;
+  do {
+    prev = result;
+    result = result.replace(/<[^>]*>?/g, "");
+  } while (result !== prev);
+  return result;
+}
+
 export function sanitizeHtml(html: string): string {
   if (typeof html !== "string") return "";
 
   if (typeof window === "undefined") {
-    let result = html;
-    let prev: string;
-    do {
-      prev = result;
-      result = result.replace(/<[^>]*>?/g, "");
-    } while (result !== prev);
-    return result;
+    return stripHtml(html);
   }
 
   return DOMPurify.sanitize(html, DOMPURIFY_CONFIG);

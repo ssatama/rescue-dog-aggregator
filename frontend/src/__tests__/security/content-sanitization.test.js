@@ -1,9 +1,38 @@
 /**
  * Tests for content sanitization and XSS prevention
  */
-import { sanitizeHtml, sanitizeText, validateUrl } from "../../utils/security";
+import {
+  sanitizeHtml,
+  sanitizeText,
+  stripHtml,
+  validateUrl,
+} from "../../utils/security";
 
 describe("Content Sanitization", () => {
+  describe("stripHtml", () => {
+    test("removes simple tags and keeps text", () => {
+      const result = stripHtml("<p>Hello <strong>world</strong></p>");
+      expect(result).toBe("Hello world");
+    });
+
+    test("returns empty string for non-string input", () => {
+      expect(stripHtml(null)).toBe("");
+      expect(stripHtml(undefined)).toBe("");
+      expect(stripHtml(123)).toBe("");
+    });
+
+    test("strips unclosed tags so the result cannot contain <script", () => {
+      const result = stripHtml("<p>Safe text<script");
+      expect(result).not.toContain("<script");
+      expect(result).toBe("Safe text");
+    });
+
+    test("strips tags that reconstruct after a single pass", () => {
+      const result = stripHtml("<scr<script>ipt>alert(1)</script>");
+      expect(result).not.toContain("<script");
+    });
+  });
+
   describe("HTML Sanitization", () => {
     test("should remove script tags", () => {
       const input = '<p>Hello</p><script>alert("xss")</script>';
