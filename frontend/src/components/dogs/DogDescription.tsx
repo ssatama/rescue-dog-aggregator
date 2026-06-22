@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { sanitizeText, sanitizeHtml } from "../../utils/security";
+import { sanitizeText, sanitizeHtml, stripHtml } from "../../utils/security";
 import type { DogDescriptionProps } from "@/types/dogComponents";
 
 export default function DogDescription({
@@ -13,7 +13,7 @@ export default function DogDescription({
   const getPlainTextLength = useCallback((htmlString: string): number => {
     if (!htmlString || typeof htmlString !== "string") return 0;
     if (typeof window === "undefined") {
-      return htmlString.replace(/<[^>]*>/g, "").length;
+      return stripHtml(htmlString).length;
     }
 
     const tempDiv = document.createElement("div");
@@ -65,10 +65,7 @@ export default function DogDescription({
     if (plainTextLength <= 200) return descriptionMeta.cleanDescription;
 
     if (typeof window === "undefined") {
-      const plainText = descriptionMeta.cleanDescription.replace(
-        /<[^>]*>/g,
-        "",
-      );
+      const plainText = stripHtml(descriptionMeta.cleanDescription);
       const truncated = plainText.substring(0, 200);
       const lastSpace = truncated.lastIndexOf(" ");
       const breakPoint = lastSpace > 150 ? lastSpace : 200;

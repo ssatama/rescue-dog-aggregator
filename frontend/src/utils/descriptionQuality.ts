@@ -1,9 +1,5 @@
 import type { Dog } from "@/types/dog";
-
-const stripHtmlTags = (text: string): string => {
-  if (!text || typeof text !== "string") return "";
-  return text.replace(/<[^>]+>/g, "");
-};
+import { stripHtml } from "./security";
 
 const isFallbackContent = (text: string): boolean => {
   if (!text || typeof text !== "string") return true;
@@ -30,7 +26,7 @@ export const hasQualityDescription = (description: string | null | undefined): b
     return false;
   }
 
-  const plainText = stripHtmlTags(description.trim());
+  const plainText = stripHtml(description.trim());
 
   if (plainText.length < 200) {
     return false;
@@ -48,12 +44,12 @@ export const getQualityDescription = (dog: Partial<Dog> | null | undefined): str
 
   const propsDescription = dog.properties?.description;
   if (propsDescription && hasQualityDescription(propsDescription)) {
-    return stripHtmlTags(propsDescription.trim());
+    return stripHtml(propsDescription.trim());
   }
 
   const rootDescription = dog.description;
   if (rootDescription && hasQualityDescription(rootDescription)) {
-    return stripHtmlTags(rootDescription.trim());
+    return stripHtml(rootDescription.trim());
   }
 
   return null;
