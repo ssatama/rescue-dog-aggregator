@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.base_scraper import BaseScraper
@@ -341,6 +342,55 @@ class TestDogsTrustPlaywrightResilience:
 
         source = inspect.getsource(scraper.collect_data)
         assert "except Exception" not in source, "collect_data must not catch and return [] — that re-introduces the silent-failure bug this PR fixes"
+
+
+@pytest.mark.unit
+class TestDogsTrustBrowserDropRetry:
+    """Browserless v2 sessions occasionally close mid-pagination, surfacing as a
+    TargetClosedError at page.content(). get_animal_list must retry the whole
+    scrape from a fresh browser rather than losing the run on a transient drop.
+    """
+
+    _CLOSED_MESSAGE = "Page.content: Target page, context or browser has been closed"
+
+    @patch("scrapers.dogstrust.dogstrust_scraper.USE_PLAYWRIGHT", True)
+    @patch("scrapers.dogstrust.dogstrust_scraper.time.sleep")
+    def test_retries_whole_scrape_on_browser_drop(self, mock_sleep):
+        scraper = DogsTrustScraper()
+        dogs = [{"external_id": "1"}, {"external_id": "2"}]
+        attempt = AsyncMock(side_effect=[PlaywrightError(self._CLOSED_MESSAGE), dogs])
+        scraper._get_animal_list_playwright = attempt
+
+        result = scraper.get_animal_list()
+
+        assert result == dogs
+        assert attempt.await_count == 2
+        mock_sleep.assert_called_once()
+
+    @patch("scrapers.dogstrust.dogstrust_scraper.USE_PLAYWRIGHT", True)
+    @patch("scrapers.dogstrust.dogstrust_scraper.time.sleep")
+    def test_reraises_after_exhausting_retries(self, mock_sleep):
+        scraper = DogsTrustScraper()
+        attempt = AsyncMock(side_effect=PlaywrightError(self._CLOSED_MESSAGE))
+        scraper._get_animal_list_playwright = attempt
+
+        with pytest.raises(PlaywrightError):
+            scraper.get_animal_list()
+
+        assert attempt.await_count == 3
+
+    @patch("scrapers.dogstrust.dogstrust_scraper.USE_PLAYWRIGHT", True)
+    @patch("scrapers.dogstrust.dogstrust_scraper.time.sleep")
+    def test_does_not_retry_non_browser_closed_error(self, mock_sleep):
+        scraper = DogsTrustScraper()
+        attempt = AsyncMock(side_effect=PlaywrightTimeoutError("initial page load timed out"))
+        scraper._get_animal_list_playwright = attempt
+
+        with pytest.raises(PlaywrightTimeoutError):
+            scraper.get_animal_list()
+
+        assert attempt.await_count == 1
+        mock_sleep.assert_not_called()
 
 
 @pytest.mark.unit
