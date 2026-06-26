@@ -18,6 +18,7 @@ USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
 # Imports are unconditional so tests can exercise both paths regardless of
 # the env var; USE_PLAYWRIGHT only routes runtime behaviour.
+from playwright.async_api import Error as PlaywrightError  # noqa: E402
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError  # noqa: E402
 from selenium.webdriver.common.by import By  # noqa: E402
 from selenium.webdriver.support import expected_conditions as EC  # noqa: E402
@@ -25,6 +26,23 @@ from selenium.webdriver.support.wait import WebDriverWait  # noqa: E402
 
 from services.browser_service import BrowserOptions, get_browser_service  # noqa: E402
 from services.playwright_browser_service import PlaywrightOptions  # noqa: E402
+
+# Browserless v2 sessions occasionally close mid-pagination — the remote browser
+# is torn down server-side, surfacing as a TargetClosedError partway through the
+# scrape (e.g. at page.content()). Matched by message because Playwright only
+# exports TargetClosedError from a private module, not the public async_api.
+_BROWSER_CLOSED_SIGNATURES = (
+    "target page, context or browser has been closed",
+    "target closed",
+    "browser has been closed",
+    "connection closed",
+)
+
+
+def _is_browser_closed_error(error: BaseException) -> bool:
+    """True if the error is a Browserless session drop worth a full-scrape retry."""
+    message = str(error).lower()
+    return any(signature in message for signature in _BROWSER_CLOSED_SIGNATURES)
 
 
 class DogsTrustScraper(BaseScraper):
@@ -216,8 +234,29 @@ class DogsTrustScraper(BaseScraper):
             List of dictionaries containing basic dog information from all pages
         """
         if USE_PLAYWRIGHT:
-            return asyncio.run(self._get_animal_list_playwright(max_pages_to_scrape))
+            return self._run_playwright_pagination_with_retry(max_pages_to_scrape)
         return self._get_animal_list_selenium(max_pages_to_scrape)
+
+    def _run_playwright_pagination_with_retry(self, max_pages_to_scrape: int = None, max_attempts: int = 3) -> list[dict[str, Any]]:
+        """Run Playwright pagination, retrying from a fresh browser on a session drop.
+
+        ``_with_browser_retry`` only retries browser *acquisition*; a Browserless
+        session that dies mid-pagination (TargetClosedError at page.content())
+        otherwise loses the whole scrape and fires a Sentry alert. Retrying from
+        page 0 with a new browser is the safe recovery — salvaging the partial
+        pages collected so far would let stale detection mark unseen dogs as
+        adopted. Non-session-drop errors (e.g. a genuine initial-load timeout)
+        are re-raised immediately so real failures still surface.
+        """
+        for attempt in range(1, max_attempts + 1):
+            try:
+                return asyncio.run(self._get_animal_list_playwright(max_pages_to_scrape))
+            except PlaywrightError as error:
+                if not _is_browser_closed_error(error) or attempt == max_attempts:
+                    raise
+                delay = 2.0 * attempt
+                self.logger.warning(f"Browserless session dropped mid-scrape (attempt {attempt}/{max_attempts}): {error}; retrying from a fresh browser in {delay}s")
+                time.sleep(delay)
 
     def _get_animal_list_selenium(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Fetch list of available dogs using Selenium WebDriver with pagination."""
