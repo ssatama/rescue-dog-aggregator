@@ -85,7 +85,7 @@
   },
   "devDependencies": {
     "@babel/preset-env": "^8.0.2",
-    "@babel/preset-react": "^7.29.7",
+    "@babel/preset-react": "^8.0.1",
     "@next/bundle-analyzer": "^16.2.9",
     "@tailwindcss/postcss": "^4.3.1",
     "@testing-library/jest-dom": "^6.9.1",
