@@ -249,7 +249,7 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
 
         logger.info(f"Successfully synced {total_synced} animals to Railway")
 
-        _reset_animals_sequence(railway_conn)
+        _reset_sequence(railway_conn, "animals")
 
         return True
 
@@ -258,17 +258,17 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
         return False
 
 
-def _reset_animals_sequence(conn) -> None:
-    """Reset the animals primary key sequence to match the current max ID.
+def _reset_sequence(conn, table: str) -> None:
+    """Reset a table's primary key sequence to match its current max ID.
 
-    After syncing animals with explicit IDs, the auto-increment sequence
+    After syncing rows with explicit IDs, the auto-increment sequence
     can fall behind, causing duplicate key errors on subsequent inserts.
     """
     try:
-        conn.execute(text("SELECT setval(pg_get_serial_sequence('animals', 'id'), (SELECT MAX(id) FROM animals))"))
-        logger.info("Reset animals primary key sequence after sync")
+        conn.execute(text(f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), (SELECT MAX(id) FROM {table}))"))
+        logger.info(f"Reset {table} primary key sequence after sync")
     except Exception as e:
-        logger.error(f"Failed to reset animals sequence: {e}")
+        logger.error(f"Failed to reset {table} sequence: {e}")
 
 
 def _validate_table_schemas() -> bool:
@@ -629,6 +629,9 @@ def _sync_organizations_to_railway_in_transaction(session, chunk_size: int = 100
             return True
 
         logger.info(f"Successfully processed {organizations_processed} organizations for Railway sync")
+
+        _reset_sequence(session, "organizations")
+
         return True
 
     except Exception as e:
@@ -759,7 +762,7 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
 
         logger.info(f"Successfully prepared {total_synced} animals for Railway sync")
 
-        _reset_animals_sequence(session)
+        _reset_sequence(session, "animals")
 
         return True
 
@@ -856,6 +859,9 @@ def _sync_scrape_logs_with_mapping(session, org_id_mapping: dict, batch_size: in
             logger.info(f"Synced batch: {total_synced}/{len(logs)} scrape_logs")
 
         logger.info(f"Successfully synced {total_synced} scrape_logs to Railway")
+
+        _reset_sequence(session, "scrape_logs")
+
         return True
 
     except Exception as e:
@@ -933,6 +939,9 @@ def _sync_service_regions_with_mapping(session, org_id_mapping: dict, batch_size
             logger.info(f"Synced batch: {total_synced}/{len(regions)} service_regions")
 
         logger.info(f"Successfully synced {total_synced} service_regions to Railway")
+
+        _reset_sequence(session, "service_regions")
+
         return True
 
     except Exception as e:
