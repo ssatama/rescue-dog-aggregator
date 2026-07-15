@@ -215,7 +215,12 @@ class MisisRescueScraper(BaseScraper):
         async with self._with_browser_retry(options) as browser_result:
             page = browser_result.page
 
-            await page.goto(self.listing_url, wait_until="load", timeout=60000)
+            # Retry transient stalls: a single un-retried goto loses the whole
+            # organization to a one-off Browserless/network hiccup. Failure must
+            # raise, never yield an empty listing (see #215).
+            if not await self.browser_manager.navigate_with_retry(page, self.listing_url):
+                raise RuntimeError(f"Navigation to {self.listing_url} failed after retries")
+
             await asyncio.sleep(5)  # Give Wix time to load dynamic content
 
             await self._scroll_to_load_all_content_playwright(page)
@@ -784,7 +789,10 @@ class MisisRescueScraper(BaseScraper):
             async with self._with_browser_retry(options) as browser_result:
                 page = browser_result.page
 
-                await page.goto(url, wait_until="load", timeout=60000)
+                # Retry transient stalls. Exhaustion raises into the handler
+                # below, which skips this one dog rather than the whole org.
+                if not await self.browser_manager.navigate_with_retry(page, url):
+                    raise RuntimeError(f"Navigation to {url} failed after retries")
 
                 # Give Wix time to load dynamic content (same as Selenium)
                 await asyncio.sleep(3)
