@@ -21,7 +21,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Site live at www.rescuedogs.me
 - 1,500+ active dogs from 12 organizations
 - Deployment: Vercel (frontend), Railway (backend + PostgreSQL + cron)
-- Scrapers: Railway cron (Tue/Thu/Sat 6am UTC)
+- Scrapers: Railway cron (Mon/Thu/Sat 3pm UTC)
 - Traffic: 20+ daily users, growing steadily
 
 ## USE SUB-AGENTS FOR CONTEXT OPTIMIZATION

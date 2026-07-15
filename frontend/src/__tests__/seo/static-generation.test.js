@@ -210,7 +210,7 @@ describe("SEO Static Generation Validation", () => {
       const dogPage = await import("../../app/dogs/[slug]/page");
       const orgPage = await import("../../app/organizations/[slug]/page");
 
-      // Dogs revalidate every 48h — matches scraper cadence (Tue/Thu/Sat)
+      // Dogs revalidate every 48h — scraper cadence is Mon/Thu/Sat
       expect(dogPage.revalidate).toBe(172800);
 
       // Organizations revalidate weekly — config-driven content changes rarely

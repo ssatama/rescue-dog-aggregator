@@ -166,7 +166,7 @@ Environment variables: `USE_PLAYWRIGHT=true`, `BROWSERLESS_WS_ENDPOINT`, `BROWSE
 
 ### Railway Cron Job
 
-Scrapers run automatically on Railway as a cron service (Tue/Thu/Sat 6am UTC):
+Scrapers run automatically on Railway as a cron service (Mon/Thu/Sat 3pm UTC):
 
 - **Entry**: `management/railway_scraper_cron.py`
 - **Routing**: `start.sh` routes via `SERVICE_TYPE` env var
