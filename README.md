@@ -259,7 +259,7 @@ uv run python management/llm_commands.py cost-report
 - **Frontend**: Vercel (automatic from main branch)
 - **Backend**: Railway (automatic from main branch)
 - **Database**: Railway PostgreSQL with automated backups
-- **Scrapers**: Railway cron job (Tue/Thu/Sat 6am UTC)
+- **Scrapers**: Railway cron job (Mon/Thu/Sat 3pm UTC)
 
 ### Monitoring
 

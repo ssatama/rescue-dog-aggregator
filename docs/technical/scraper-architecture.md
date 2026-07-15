@@ -33,7 +33,7 @@ The scraper system follows a **Template Method Pattern** with a base class (`Bas
 
 Scrapers run automatically on Railway as a cron service:
 
-**Schedule:** Tue/Thu/Sat at 6am UTC
+**Schedule:** Mon/Thu/Sat at 3pm UTC
 
 **Entry Point:** `management/railway_scraper_cron.py`
 

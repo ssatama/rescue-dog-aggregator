@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Railway cron job entrypoint for running all scrapers.
 
-This script is designed to run as a Railway cron job on Tue/Thu/Sat at 6am UTC.
+This script is designed to run as a Railway cron job on Mon/Thu/Sat at 3pm UTC.
 It initializes Sentry, runs all enabled scrapers, and outputs a JSON summary.
 
 Usage:

@@ -192,7 +192,7 @@ print('LLM configured:', get_llm_config().openrouter_api_key is not None)
 # Edit crontab
 crontab -e
 
-# Scrapers run on Railway cron (Tue/Thu/Sat at 6am UTC)
+# Scrapers run on Railway cron (Mon/Thu/Sat at 3pm UTC)
 # For local/manual runs:
 uv run python management/railway_scraper_cron.py           # Run all enabled
 uv run python management/railway_scraper_cron.py --org=dogstrust  # Single org

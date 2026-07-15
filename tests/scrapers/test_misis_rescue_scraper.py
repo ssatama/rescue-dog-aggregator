@@ -1,8 +1,12 @@
+import asyncio
+from contextlib import asynccontextmanager
 from datetime import datetime
-from unittest.mock import Mock, patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from bs4 import BeautifulSoup
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.misis_rescue.detail_parser import MisisRescueDetailParser
 from scrapers.misis_rescue.normalizer import (
@@ -1495,3 +1499,104 @@ class TestListingExtraction:
                 scraper.collect_data()
 
         assert "except Exception" not in inspect.getsource(scraper.collect_data), "collect_data must not catch and return [] — that re-introduces the silent-failure bug"
+
+
+@pytest.mark.unit
+class TestMisisRescueNavigationResilience(ScraperTestBase):
+    """Listing navigation must survive a transient Browserless/network stall.
+
+    Production evidence: the misisrescue org failed a scheduled run with
+    'Page.goto: Timeout 60000ms exceeded' while the site itself served 200 in
+    ~0.5s, and neighbouring runs succeeded. A single un-retried goto therefore
+    loses a whole organization to a one-off stall.
+    """
+
+    scraper_class = MisisRescueScraper
+    config_id = "misisrescue"
+    expected_org_name = "MISIs Animal Rescue"
+    expected_base_url = "https://www.misisrescue.com"
+
+    LISTING_HTML = '<html><body><div><a href="/post/dog1">Dog 1</a></div></body></html>'
+
+    def _patch_page_into(self, scraper, page):
+        """Yield `page` from the browser-retry context manager."""
+
+        @asynccontextmanager
+        async def fake_retry(options=None, **kwargs):
+            yield SimpleNamespace(page=page)
+
+        return patch.object(scraper, "_with_browser_retry", fake_retry)
+
+    def _make_page(self, goto):
+        page = Mock()
+        page.goto = goto
+        page.content = AsyncMock(return_value=self.LISTING_HTML)
+        return page
+
+    def _run_listing(self, scraper, page):
+        # PlaywrightOptions is only imported when USE_PLAYWRIGHT=true at import
+        # time, so under the test default (Selenium branch) the name is absent.
+        with (
+            patch("scrapers.misis_rescue.scraper.PlaywrightOptions", create=True),
+            self._patch_page_into(scraper, page),
+            patch.object(scraper, "_scroll_to_load_all_content_playwright", new=AsyncMock()),
+            patch.object(scraper, "_click_pagination_button_playwright", new=AsyncMock(return_value=False)),
+            patch("scrapers.misis_rescue.scraper.asyncio.sleep", new=AsyncMock()),
+            patch("scrapers.browser_manager.asyncio.sleep", new=AsyncMock()),
+        ):
+            return asyncio.run(scraper._get_all_dogs_from_listing_playwright())
+
+    def test_listing_navigation_recovers_from_transient_stall(self, scraper):
+        """One stalled goto must not cost the whole organization: the navigation
+        retries and the listing is still scraped."""
+        goto = AsyncMock(side_effect=[PlaywrightTimeoutError("Page.goto: Timeout 60000ms exceeded."), None])
+        page = self._make_page(goto)
+
+        dogs = self._run_listing(scraper, page)
+
+        assert goto.await_count == 2, "navigation must be retried after a transient stall"
+        assert [d["url"] for d in dogs] == ["/post/dog1"], "listing must still be scraped after the retry succeeds"
+
+    def test_listing_navigation_raises_when_retries_exhausted(self, scraper):
+        """When every attempt stalls the scraper must fail loudly. Returning []
+        here would re-introduce the misleading zero-dogs alert of #215."""
+        goto = AsyncMock(side_effect=PlaywrightTimeoutError("Page.goto: Timeout 60000ms exceeded."))
+        page = self._make_page(goto)
+
+        with pytest.raises(RuntimeError, match="available-for-adoption"):
+            self._run_listing(scraper, page)
+
+        assert goto.await_count == 3, "all retry attempts must be used before giving up"
+
+    def test_listing_navigation_does_not_wait_for_full_load_event(self, scraper):
+        """The page is a Wix site pulling ~250 subresources including third-party
+        tags (HubSpot, Sentry CDN); waiting on the full `load` event couples the
+        scrape to hosts we do not control. Dynamic content is handled by the
+        explicit scroll/sleep that follows, so `domcontentloaded` suffices."""
+        goto = AsyncMock(return_value=None)
+        page = self._make_page(goto)
+
+        self._run_listing(scraper, page)
+
+        assert goto.await_args.kwargs["wait_until"] == "domcontentloaded"
+
+    def _run_detail(self, scraper, page):
+        with (
+            patch("scrapers.misis_rescue.scraper.PlaywrightOptions", create=True),
+            self._patch_page_into(scraper, page),
+            patch("scrapers.misis_rescue.scraper.asyncio.sleep", new=AsyncMock()),
+            patch("scrapers.browser_manager.asyncio.sleep", new=AsyncMock()),
+        ):
+            return asyncio.run(scraper._scrape_dog_detail_playwright("https://www.misisrescue.com/post/dog1"))
+
+    def test_detail_navigation_retries_then_skips_only_that_dog(self, scraper):
+        """A detail page that stalls on every attempt must be retried and then
+        skipped (None) — losing one dog, not the whole organization. This is
+        deliberately different from the listing, which must raise."""
+        goto = AsyncMock(side_effect=PlaywrightTimeoutError("Page.goto: Timeout 60000ms exceeded."))
+        page = self._make_page(goto)
+
+        result = self._run_detail(scraper, page)
+
+        assert goto.await_count == 3, "detail navigation must be retried before giving up"
+        assert result is None, "an unreachable detail page must skip that dog, not raise"
