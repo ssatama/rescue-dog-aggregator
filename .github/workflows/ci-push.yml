@@ -38,7 +38,7 @@ jobs:
         run: uv run pytest -m "unit" --maxfail=3 -q
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: "20"
 
