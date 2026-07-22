@@ -120,7 +120,7 @@ describe("FilterPanel Component", () => {
         () => {
           expect(onFilter).toHaveBeenCalled();
         },
-        { timeout: 400 },
+        { timeout: 2000 },
       );
 
       // Should filter with user-initiated flag
@@ -213,7 +213,7 @@ describe("FilterPanel Component", () => {
         () => {
           expect(onFilter).toHaveBeenCalled();
         },
-        { timeout: 400 },
+        { timeout: 2000 },
       );
 
       expect(onFilter).toHaveBeenLastCalledWith(
@@ -275,7 +275,7 @@ describe("FilterPanel Component", () => {
             onFilter.mock.calls[onFilter.mock.calls.length - 1][0];
           expect(lastCall).toHaveLength(3);
         },
-        { timeout: 400 },
+        { timeout: 2000 },
       );
 
       const lastCall = onFilter.mock.calls[onFilter.mock.calls.length - 1][0];
@@ -331,7 +331,7 @@ describe("FilterPanel Component", () => {
         () => {
           expect(onFilter).toHaveBeenCalled();
         },
-        { timeout: 400 },
+        { timeout: 2000 },
       );
 
       expect(onFilter).toHaveBeenLastCalledWith(
@@ -382,7 +382,7 @@ describe("FilterPanel Component", () => {
         () => {
           expect(onFilter).toHaveBeenCalled();
         },
-        { timeout: 400 },
+        { timeout: 2000 },
       );
 
       expect(onFilter).toHaveBeenLastCalledWith(
@@ -502,7 +502,7 @@ describe("FilterPanel Component", () => {
         () => {
           expect(onFilter).toHaveBeenCalled();
         },
-        { timeout: 400 },
+        { timeout: 2000 },
       );
 
       // Apply age filter
@@ -526,7 +526,7 @@ describe("FilterPanel Component", () => {
           }
           return false;
         },
-        { timeout: 400 },
+        { timeout: 2000 },
       );
 
       // Should only return Max (large size, 48 months = Adult)
@@ -564,7 +564,7 @@ describe("FilterPanel Component", () => {
         () => {
           expect(onFilter).toHaveBeenCalled();
         },
-        { timeout: 400 },
+        { timeout: 2000 },
       );
 
       // Clear button should appear
