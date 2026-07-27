@@ -105,7 +105,7 @@
     "eslint-config-next": "^16.2.12",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.4.2",
-    "jest-axe": "^10.0.0",
+    "jest-axe": "^11.0.0",
     "jest-environment-jsdom": "^30.4.1",
     "lighthouse": "^13.4.1",
     "playwright": "^1.62.0",
