@@ -103,6 +103,7 @@ exclude = [
     "node_modules",
     "frontend",
     "migrations",
+    "*.md",
 ]
 
 [tool.ruff.lint]
