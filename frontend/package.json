@@ -109,7 +109,7 @@
     "jest-environment-jsdom": "^30.4.1",
     "lighthouse": "^13.4.1",
     "playwright": "^1.62.0",
-    "postcss": "^8.5.23",
+    "postcss": "^8.5.24",
     "prettier": "^3.9.6",
     "puppeteer": "^25.3.0",
     "tailwindcss": "^4.3.3",
