@@ -144,3 +144,18 @@ jobs:
       - name: Check dependencies for vulnerabilities
         continue-on-error: true
         run: uv run pip-audit || echo "::warning::Security vulnerabilities found in dependencies"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Check frontend dependencies for vulnerabilities
+        continue-on-error: true
+        working-directory: ./frontend
+        run: pnpm audit || echo "::warning::Security vulnerabilities found in frontend dependencies"

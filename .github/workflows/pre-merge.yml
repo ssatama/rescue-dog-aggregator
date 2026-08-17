@@ -152,12 +152,28 @@ jobs:
       - name: Check dependencies for vulnerabilities
         run: uv run pip-audit --output security-report.json --format json || echo "::warning::Security vulnerabilities found"
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Check frontend dependencies for vulnerabilities
+        working-directory: ./frontend
+        run: pnpm audit --json > ../frontend-security-report.json || echo "::warning::Security vulnerabilities found in frontend dependencies"
+
       - name: Upload security report
         uses: actions/upload-artifact@v7
         if: always()
         with:
           name: security-scan-results
-          path: security-report.json
+          path: |
+            security-report.json
+            frontend-security-report.json
 
   comprehensive-frontend-tests:
     name: Comprehensive Frontend
