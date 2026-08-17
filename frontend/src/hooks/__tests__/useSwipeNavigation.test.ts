@@ -98,6 +98,7 @@ beforeEach(() => {
     back: jest.fn(),
     forward: jest.fn(),
     prefetch: jest.fn(),
+    bfcacheId: "test-bfcache-id",
   });
 
   // Mock search params
