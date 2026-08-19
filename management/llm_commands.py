@@ -274,7 +274,7 @@ def generate_profiles(organization: int | None, limit: int | None, batch_size: i
             continue
 
         console.print(f"\n[bold blue]Processing {org_config.organization_name} (ID: {org_id})[/bold blue]")
-        console.print(f"  Model: {org_config.model_preference}")
+        console.print(f"  Model: {get_llm_config().models.default_model}")
 
         query = """
             SELECT id, name, breed, age_text, properties

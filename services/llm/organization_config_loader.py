@@ -8,7 +8,6 @@ Following CLAUDE.md principles:
 """
 
 import logging
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -36,15 +35,7 @@ class OrganizationConfig:
     prompt_file: str
     source_language: str = "en"
     target_language: str = "en"
-    model_preference: str = "google/gemini-3-flash-preview"
     enabled: bool = True
-
-    def __post_init__(self):
-        """Post-initialization validation."""
-        # Allow environment override for model
-        model_override = os.environ.get("LLM_MODEL_OVERRIDE")
-        if model_override:
-            self.model_preference = model_override
 
 
 class OrganizationConfigLoader:
@@ -99,7 +90,6 @@ class OrganizationConfigLoader:
             prompt_file=org_data["prompt_file"],
             source_language=org_data.get("source_language", "en"),
             target_language=org_data.get("target_language", "en"),
-            model_preference=org_data.get("model_preference", "google/gemini-3-flash-preview"),
             enabled=org_data.get("enabled", True),
         )
 

@@ -48,7 +48,6 @@ class TestPromptBuilder:
             prompt_file: str = "test.yaml"
             source_language: str = "en"
             target_language: str = "en"
-            model_preference: str = "test-model"
 
         mock_template_content = """
         system_prompt: "Test system prompt"
@@ -82,7 +81,6 @@ class TestPromptBuilder:
             prompt_file: str = "test.yaml"
             source_language: str = "en"
             target_language: str = "en"
-            model_preference: str = "test-model"
 
         with (
             patch("pathlib.Path.exists", return_value=False),

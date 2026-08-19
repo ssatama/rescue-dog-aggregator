@@ -129,7 +129,7 @@ Enriched profiles stored in PostgreSQL JSONB column:
   "special_needs": ["needs secure fencing", "may pull on leash"],
   "ideal_home": "Active family with yard and time for training",
   "profiled_at": "2024-08-20T10:30:00Z",
-  "model_used": "google/gemini-3-flash-preview",
+  "model_used": "google/gemini-3.7-flash",
   "quality_score": 92.5
 }
 ```
@@ -236,7 +236,6 @@ organizations:
     prompt_file: "tierschutzverein_europa.yaml"
     source_language: "de"
     target_language: "en"
-    model_preference: "google/gemini-3-flash-preview"
     enabled: true
 ```
 
@@ -261,7 +260,8 @@ extraction_prompt: |
 OPENROUTER_API_KEY=sk-or-v1-xxxxx
 
 # Optional
-LLM_MODEL_OVERRIDE=openai/gpt-4-turbo  # Override default model
+LLM_DEFAULT_MODEL=openrouter/auto  # Model or router alias
+LLM_COST_TIER=medium               # Auto-router tier: low|medium|high|xhigh|max
 ```
 
 ## Quality Assurance
@@ -270,7 +270,7 @@ LLM_MODEL_OVERRIDE=openai/gpt-4-turbo  # Override default model
 
 - **Processing Success Rate**: 97%+ (with automatic retries)
 - **Quality Score Average**: 85-95% per profile
-- **Cost per Dog**: ~$0.005 (Gemini 3 Flash via OpenRouter)
+- **Cost per Dog**: ~$0.024 (auto-router, medium cost tier)
 - **Processing Time**: 2-5 seconds per dog
 - **Batch Efficiency**: 5 dogs concurrent
 
@@ -283,12 +283,12 @@ RetryConfig(
     max_attempts=3,
     initial_delay=2.0,
     backoff_factor=2.0,
-    fallback_models=[
-        "google/gemini-3-flash-preview",
-        "openai/gpt-4-turbo-preview"
-    ]
+    fallback_models=["openrouter/auto"],
 )
 ```
+
+The auto-router already spreads requests across providers, so retries stay on
+the alias rather than falling back to a pinned model.
 
 ### Data Validation
 

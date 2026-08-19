@@ -99,6 +99,7 @@ class ConfigManager:
             sys.path.insert(0, project_root)
 
         from config import DB_CONFIG
+        from services.llm.config import get_llm_config
         from services.llm.dog_profiler import DogProfilerPipeline
         from services.llm.organization_config_loader import get_config_loader
 
@@ -122,7 +123,7 @@ class ConfigManager:
 
         print(f"🤖 Starting LLM profiling for {org_config.organization_name} (ID: {org_id})")
         print(f"   Source Language: {org_config.source_language}")
-        print(f"   Model: {org_config.model_preference}")
+        print(f"   Model: {get_llm_config().models.default_model}")
 
         # Connect to database
         conn = psycopg2.connect(**DB_CONFIG)

@@ -362,7 +362,6 @@ organizations:
     prompt_file: "tierschutzverein_europa.yaml"
     source_language: "de"
     target_language: "en"
-    model_preference: "google/gemini-3-flash-preview"
     enabled: true
 ```
 

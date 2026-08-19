@@ -47,6 +47,7 @@ class LLMModelConfig(BaseModel):
 
     Attributes:
         default_model: The default LLM model identifier (uses OpenRouter's auto-selection)
+        cost_tier: Auto-router cost tier - low, medium, high, xhigh or max
         temperature_ranges: Processing-type specific temperature ranges for optimal results
         max_tokens: Optional token limit per request to control costs and response length
 
@@ -57,7 +58,8 @@ class LLMModelConfig(BaseModel):
     Complexity: O(1) for all operations - simple configuration data structure
     """
 
-    default_model: str = Field(default="google/gemini-3-flash-preview", description="Default model to use")
+    default_model: str = Field(default="openrouter/auto", description="Default model to use")
+    cost_tier: str = Field(default="medium", description="OpenRouter auto-router cost tier")
     temperature_ranges: dict[str, tuple] = Field(
         default_factory=lambda: {
             "description_cleaning": (0.2, 0.4),
@@ -351,13 +353,15 @@ class LLMConfigLoader:
             LLMModelConfig: Validated model configuration
 
         Environment Variables:
-            LLM_DEFAULT_MODEL: Override default model (default: "google/gemini-3-flash-preview")
+            LLM_DEFAULT_MODEL: Override default model (default: "openrouter/auto")
+            LLM_COST_TIER: Auto-router cost tier (default: "medium")
             LLM_MAX_TOKENS: Maximum tokens per request (default: unlimited)
 
         Complexity: O(1) - simple environment variable reads and construction
         """
         return LLMModelConfig(
-            default_model=os.getenv("LLM_DEFAULT_MODEL", "google/gemini-3-flash-preview"),
+            default_model=os.getenv("LLM_DEFAULT_MODEL", "openrouter/auto"),
+            cost_tier=os.getenv("LLM_COST_TIER", "medium"),
             max_tokens=int(os.getenv("LLM_MAX_TOKENS", "0")) or None,
         )
 

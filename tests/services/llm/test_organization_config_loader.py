@@ -34,12 +34,10 @@ class TestOrganizationConfig:
             prompt_file="tierschutzverein_europa.yaml",
             source_language="de",
             target_language="en",
-            model_preference="google/gemini-2.5-flash",
         )
 
         assert config.organization_id == 11
         assert config.source_language == "de"
-        assert config.model_preference == "google/gemini-2.5-flash"
 
     def test_config_defaults(self):
         """Test default values."""
@@ -47,7 +45,7 @@ class TestOrganizationConfig:
 
         assert config.source_language == "en"
         assert config.target_language == "en"
-        assert config.model_preference == "google/gemini-3-flash-preview"
+        assert config.enabled is True
 
     def test_prompt_template(self):
         """Test prompt template structure."""
@@ -82,7 +80,6 @@ class TestOrganizationConfigLoader:
                 "prompt_file": "tierschutzverein_europa.yaml",
                 "source_language": "de",
                 "target_language": "en",
-                "model_preference": "google/gemini-2.5-flash",
             },
             "27": {
                 "name": "Test Organization",
@@ -109,7 +106,6 @@ class TestOrganizationConfigLoader:
             assert config.organization_id == 11
             assert config.organization_name == "Tierschutzverein Europa"
             assert config.source_language == "de"
-            assert config.model_preference == "google/gemini-2.5-flash"
 
     def test_load_config_not_found(self, loader, mock_config_data):
         """Test loading non-existent config."""
@@ -191,12 +187,11 @@ class TestOrganizationConfigLoader:
             with pytest.raises(ValueError, match="prompt_file"):
                 loader.load_config(11)
 
-    def test_environment_override(self, loader, mock_config_data):
-        """Test environment variable overrides."""
-        with patch.dict("os.environ", {"LLM_MODEL_OVERRIDE": "gpt-4"}):
-            with patch.object(loader, "_load_config_map", return_value=mock_config_data):
-                config = loader.load_config(11)
-                assert config.model_preference == "gpt-4"  # Overridden by env var
+    def test_model_selection_is_not_per_organization(self, loader, mock_config_data):
+        """Model choice moved to LLM_DEFAULT_MODEL/LLM_COST_TIER, applied globally."""
+        with patch.object(loader, "_load_config_map", return_value=mock_config_data):
+            config = loader.load_config(11)
+            assert not hasattr(config, "model_preference")
 
 
 class TestOrganizationConfigIntegration:

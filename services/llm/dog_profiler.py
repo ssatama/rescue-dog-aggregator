@@ -1,10 +1,8 @@
 """
 Dog Profiler Pipeline for enriching dog data with LLM.
 
-Default Model: google/gemini-3-flash-preview
-- 2.5x faster than GPT-4
-- 85% cheaper (~$0.0015/dog vs $0.01/dog)
-- 90% success rate (with retry logic can reach 100%)
+Model selection is delegated to OpenRouter's auto-router, configured by
+LLM_DEFAULT_MODEL and LLM_COST_TIER.
 
 Following CLAUDE.md principles:
 - Pure functions, no mutations
@@ -24,6 +22,7 @@ from dotenv import load_dotenv
 if TYPE_CHECKING:
     from services.connection_pool import ConnectionPoolService
 
+from services.llm.config import get_llm_config
 from services.llm.database_updater import DatabaseUpdater
 from services.llm.extracted_profile_normalizer import ExtractedProfileNormalizer
 from services.llm.llm_client import LLMClient
@@ -68,16 +67,18 @@ class DogProfilerPipeline:
         self.statistics = StatisticsTracker()
         self.quality_rubric = DogProfileQualityRubric()
 
-        # Setup retry handler with fallback models
+        model_config = get_llm_config().models
+        self.model = model_config.default_model
+        self.cost_tier = model_config.cost_tier
+
+        # The auto-router already spreads requests across providers, so retries
+        # stay on the same alias rather than falling back to a pinned model.
         if retry_config is None:
             retry_config = RetryConfig(
                 max_attempts=3,
                 initial_delay=2.0,
                 backoff_factor=2.0,
-                fallback_models=[
-                    "google/gemini-3-flash-preview",
-                    "openai/gpt-4-turbo-preview",
-                ],
+                fallback_models=[self.model],
             )
         self.retry_handler = RetryHandler(retry_config)
 
@@ -112,7 +113,7 @@ class DogProfilerPipeline:
     async def _call_llm_api(
         self,
         dog_data: dict[str, Any],
-        model: str = "google/gemini-3-flash-preview",
+        model: str | None = None,
         timeout: float = 30.0,
         prompt_adjustment: str = "",
     ) -> dict[str, Any]:
@@ -139,10 +140,11 @@ class DogProfilerPipeline:
         # Use LLMClient to make the API call and parse response
         return await self.llm_client.call_api_and_parse(
             messages=messages,
-            model=model,
+            model=model or self.model,
             temperature=0.7,
             max_tokens=4000,
             timeout=timeout,
+            cost_tier=self.cost_tier,
         )
 
     async def process_dog(self, dog_data: dict[str, Any]) -> dict[str, Any] | None:
@@ -168,7 +170,7 @@ class DogProfilerPipeline:
             profiler_result = await self.retry_handler.execute_with_retry(
                 self._call_llm_api,
                 dog_data=dog_data,
-                model="google/gemini-3-flash-preview",
+                model=self.model,
                 timeout=30.0,
                 prompt_adjustment="",  # Start with preferred model  # Will be modified by retry handler if needed
             )
@@ -191,7 +193,7 @@ class DogProfilerPipeline:
             # Add/update metadata fields
             profile_data["profiled_at"] = datetime.now(UTC).isoformat()
             profile_data["prompt_version"] = self.prompt_builder.get_prompt_version()
-            profile_data["model_used"] = profiler_result.get("model_used", "google/gemini-3-flash-preview")
+            profile_data["model_used"] = profiler_result.get("model_used", self.model)
 
             # Add confidence scores if not present (using defaults)
             if "confidence_scores" not in profile_data:
