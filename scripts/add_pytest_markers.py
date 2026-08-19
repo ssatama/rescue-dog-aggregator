@@ -193,7 +193,6 @@ def main():
         "tests/scrapers/validate_furryrescueitaly_real_urls.py",
         "tests/scrapers/test_scraper_base.py",
         "tests/scrapers/test_misis_rescue_normalizer_fixes.py",
-        "tests/services/llm/test_profile_normalizer.py",
         "tests/services/llm/test_dog_profiler_refactoring_regression.py",
         "tests/services/llm/test_prompt_builder.py",
         "tests/services/llm/test_dog_profiler_schema.py",

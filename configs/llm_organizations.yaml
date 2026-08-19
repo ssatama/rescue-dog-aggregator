@@ -103,9 +103,3 @@ models:
   default: "google/gemini-3-flash-preview"
   fallback: "openai/gpt-3.5-turbo"
   high_quality: "openai/gpt-4"
-
-# Cost limits
-cost_limits:
-  daily_limit: 10.00 # USD
-  per_dog_limit: 0.05 # USD
-  alert_threshold: 0.80 # Alert at 80% of daily limit

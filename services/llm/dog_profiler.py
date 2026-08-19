@@ -16,7 +16,7 @@ Following CLAUDE.md principles:
 import asyncio
 import logging
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Optional
 
 from dotenv import load_dotenv
@@ -31,7 +31,6 @@ from services.llm.prompt_builder import PromptBuilder
 from services.llm.retry_handler import RetryConfig, RetryHandler
 from services.llm.schemas.dog_profiler import DogProfilerData
 from services.llm.statistics_tracker import StatisticsTracker
-from services.llm_data_service import OpenRouterLLMDataService
 
 # Load environment variables
 load_dotenv()
@@ -45,7 +44,6 @@ class DogProfilerPipeline:
     def __init__(
         self,
         organization_id: int,
-        llm_service: OpenRouterLLMDataService | None = None,
         dry_run: bool = False,
         retry_config: RetryConfig | None = None,
         connection_pool: Optional["ConnectionPoolService"] = None,
@@ -55,7 +53,6 @@ class DogProfilerPipeline:
 
         Args:
             organization_id: ID of the organization to process
-            llm_service: Optional LLM service instance (creates one if not provided)
             dry_run: If True, don't save to database
             retry_config: Optional retry configuration
             connection_pool: Optional connection pool service for database operations
@@ -63,7 +60,6 @@ class DogProfilerPipeline:
         self.org_id = organization_id
         self.dry_run = dry_run
         self.connection_pool = connection_pool
-        self.llm_service = llm_service or OpenRouterLLMDataService()
         self.prompt_builder = PromptBuilder(organization_id)
         self.llm_client = LLMClient()
         self.normalizer = ExtractedProfileNormalizer()
@@ -178,7 +174,7 @@ class DogProfilerPipeline:
             profile_data = self._normalize_profile_data(profile_data)
 
             # Add/update metadata fields
-            profile_data["profiled_at"] = datetime.utcnow().isoformat()
+            profile_data["profiled_at"] = datetime.now(UTC).isoformat()
             profile_data["prompt_version"] = self.prompt_builder.get_prompt_version()
             profile_data["model_used"] = profiler_result.get("model_used", "google/gemini-3-flash-preview")
 
@@ -210,7 +206,7 @@ class DogProfilerPipeline:
             logger.info(f"Successfully processed dog {dog_id} ({dog_name})")
 
             # Convert to dict with proper datetime serialization
-            result = validated_data.dict()
+            result = validated_data.model_dump()
             # Ensure datetime is serialized
             if "profiled_at" in result and isinstance(result["profiled_at"], datetime):
                 result["profiled_at"] = result["profiled_at"].isoformat()
@@ -331,13 +327,3 @@ class DogProfilerPipeline:
         except Exception as e:
             logger.warning(f"Could not resolve profiled slugs for cache invalidation: {e}")
             return []
-
-    # Context manager support
-    async def __aenter__(self):
-        """Enter context manager."""
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Exit context manager."""
-        if self.llm_service:
-            await self.llm_service.__aexit__(exc_type, exc_val, exc_tb)

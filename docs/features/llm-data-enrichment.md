@@ -31,7 +31,7 @@ The LLM Data Enrichment feature powers the intelligence behind www.rescuedogs.me
 │  ├── prompt_builder.py        # Organization templates      │
 │  ├── llm_client.py           # OpenRouter API              │
 │  ├── normalizers/            # Data standardization        │
-│  └── scraper_integration.py  # Auto-profiling              │
+│  └── database_updater.py     # JSONB persistence           │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -172,14 +172,14 @@ interface LifestyleCompatibility {
 
 ### 1. Scraper Integration
 
-Scrapers can automatically profile dogs during collection:
+`BaseScraper` delegates to `scrapers/enrichment/llm_handler.py`, which profiles
+newly collected dogs for any organization enabled in
+`configs/llm_organizations.yaml`:
 
 ```python
-# scraper_integration.py
-@add_llm_profiling_to_scraper
-class MyScraper(BaseScraper):
-    # Automatically profiles dogs after scraping
-    pass
+# scrapers/enrichment/llm_handler.py
+pipeline = DogProfilerPipeline(organization_id=llm_org_id, dry_run=False)
+results = asyncio.run(pipeline.process_batch(dogs_to_profile, batch_size=5))
 ```
 
 ### 2. Management Commands
@@ -393,9 +393,9 @@ frontend/src/app/favorites/page.tsx      # Favorites analysis
 
 ```bash
 # Unit tests
-pytest tests/services/llm/test_dog_profiler.py -v
+pytest tests/services/llm/test_dog_profiler_schema.py -v
 pytest tests/services/llm/test_prompt_builder.py -v
-pytest tests/services/llm/test_profile_normalizer.py -v
+pytest tests/services/llm/test_organization_config_loader.py -v
 
 # Integration test
 pytest tests/api/test_llm_security_simple.py -v

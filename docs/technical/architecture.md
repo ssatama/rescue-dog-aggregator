@@ -146,11 +146,11 @@ null_objects.py              # Null Object pattern implementations
 **Prompts**: `prompt_builder.py` generates org-specific prompts
 **Config**: `organization_config_loader.py` loads org settings
 **Resilience**: `retry_handler.py` with exponential backoff
-**Normalization**: `field_normalizers.py`, `profile_normalizer.py`, `extracted_profile_normalizer.py`
-**Storage**: `database_updater.py`, `async_database_pool.py`
-**Quality**: `monitoring.py`, `quality_rubric.py`, `statistics_tracker.py`
-**Integration**: `scraper_integration.py`, `photo_analysis_models.py`
-**Utilities**: `text_utilities.py`, `models.py`, `config.py`
+**Normalization**: `field_normalizers.py`, `normalizers/`, `extracted_profile_normalizer.py`
+**Storage**: `database_updater.py`
+**Quality**: `quality_rubric.py`, `statistics_tracker.py`
+**Integration**: `scrapers/enrichment/llm_handler.py`, `photo_analysis_models.py`
+**Utilities**: `models.py`, `config.py`
 
 ## Scraper Architecture
 
