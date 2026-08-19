@@ -160,7 +160,11 @@ const nextConfig = {
         pathname: '/**',
       }
     ],
-    formats: ['image/webp', 'image/avif'],
+    // Resize via Cloudflare (/cdn-cgi/image/) instead of Vercel's metered
+    // optimizer — images.rescuedogs.me already does resizing and Accept-based
+    // format negotiation. See src/utils/cloudflareImageLoader.ts.
+    loader: 'custom',
+    loaderFile: './src/utils/cloudflareImageLoader.ts',
     minimumCacheTTL: 31536000,
     dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
