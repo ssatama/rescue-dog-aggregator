@@ -1,8 +1,20 @@
-# CLAUDE.md - Rescue Dog Aggregator
+# AGENTS.md - Rescue Dog Aggregator
 
 ## Mission
 
 Build an open-source platform aggregating rescue dogs from multiple organizations. Focus: clean code, TDD, zero technical debt.
+
+## Tech Stack
+
+- Backend: Python 3.12+/FastAPI/PostgreSQL 15/Alembic
+- Frontend: Next.js 16 (App Router)/React 19/TypeScript 5
+- Testing: pytest (backend), Jest/Playwright (frontend)
+- AI: OpenRouter API (Google Gemini 3 Flash) for LLM enrichment
+- Browser Automation: Playwright (Browserless v2 in production)
+- Monitoring: Sentry (dev/prod)
+- Package Management: **uv** (backend), **pnpm** (frontend)
+- Linting: **ruff** (replaces black/isort/flake8)
+- Current: 125 backend test files, 270 frontend test files, 1,500+ active dogs
 
 ## Status
 
@@ -156,7 +168,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 ### 5. Commit Message Guidelines
 
-- **NO AI ATTRIBUTION**: Do not include "Claude", "Opus", "Anthropic", "Co-Authored-By: Claude", or similar AI references in commit messages
+- **NO AI ATTRIBUTION**: Do not include "Codex", "Opus", "Anthropic", "Co-Authored-By: Codex", or similar AI references in commit messages
 - Use conventional commit format: `type(scope): description`
 - Focus on what changed and why, not how it was created
 - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `style`, `chore`
@@ -174,6 +186,35 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 7. Merge via GitHub (1 review required)
 
 Branch naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
+
+## Project Structure
+
+```
+api/              # FastAPI backend with async routes
+├── routes/       # animals, organizations, swipe, llm, monitoring
+services/         # Core services (14 total)
+├── llm/          # AI profiling pipeline (20 files)
+scrapers/         # 13 organization scrapers
+frontend/         # Next.js 16 App Router
+├── app/          # Pages: dogs/, swipe/, favorites/, breeds/, guides/
+├── components/   # UI components organized by feature (20 dirs)
+tests/            # Backend tests with fixtures
+configs/          # Organization YAMLs (13 active)
+migrations/       # Alembic database migrations
+management/       # CLI tools (18 scripts)
+docs/
+├── guidelines/   # Code guidelines (Python, TypeScript, React, Web Design)
+├── features/     # Feature documentation
+├── technical/    # Architecture docs
+```
+
+## Key Services
+
+- `database_service.py`: Async connection pooling
+- `llm_profiler_service.py`: AI personality profiling
+- `adoption_detection.py`: Track adopted dogs
+- `metrics_collector.py`: Performance monitoring
+- `session_manager.py`: User preferences
 
 ## Quality Gates (Required for ANY commit)
 
@@ -244,10 +285,67 @@ uv run pytest -m "not slow and not browser and not external" --maxfail=3  # Tier
 uv run pytest                                     # Tier 3: Full suite
 ```
 
-Markers are defined in `pytest.ini`.
+### Pytest Markers (8 essential)
 
-Operational runbooks (org config sync, LLM profiling batches, emergency
-recovery) live in the `ops-commands` skill.
+| Marker                | Purpose                      |
+| --------------------- | ---------------------------- |
+| `unit`                | Pure logic, no I/O (<10ms)   |
+| `integration`         | Internal services (10-100ms) |
+| `slow`                | Complex setup (>1s)          |
+| `database`            | Requires DB access           |
+| `browser`             | Requires Playwright/Selenium |
+| `external`            | Requires external APIs       |
+| `security`            | Security validation          |
+| `requires_migrations` | Production-like migrations   |
+
+## Config Management
+
+```bash
+uv run python management/config_commands.py list      # List organizations
+uv run python management/config_commands.py sync      # Sync to database
+uv run python management/config_commands.py profile --org-id 11  # LLM profiling
+uv run python management/llm_commands.py generate-profiles       # Batch enrichment
+```
+
+## Database Schema Highlights
+
+```sql
+animals: 39 columns including id, name, breed, standardized_breed, properties(JSONB),
+         dog_profiler_data(JSONB), status, availability_confidence, slug, blur_data_url
+organizations: 21 columns including id, name, slug, config_id, active, ships_to(JSONB),
+               website_url, country, city, social_media(JSONB)
+-- GIN indexes on JSONB columns for performance
+-- See docs/technical/architecture.md for complete schema
+```
+
+## Emergency Commands
+
+```bash
+# Database
+psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals WHERE active = true;"
+# Or use Postgres MCP: mcp__postgres__query tool
+uv run python management/emergency_operations.py --reset-stale-data
+
+# Frontend rebuild
+cd frontend && rm -rf node_modules .next && pnpm install && pnpm build
+
+# Python environment rebuild
+rm -rf .venv && uv sync
+
+# Single test
+uv run pytest tests/api/test_swipe.py::test_name -v
+pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
+```
+
+## API Endpoints
+
+- `/api/animals`: CRUD + filtering, search, stats, breeds
+- `/api/enhanced_animals`: AI-enriched data, semantic search
+- `/api/swipe`: Tinder-like discovery interface
+- `/api/llm`: Enrichment, translation, batch processing
+- `/api/organizations`: Org management, metrics, stats
+- `/api/monitoring`: Health checks, scraper status, metrics
+- `/api/sentry-test`: Error tracking debug endpoints
 
 ## LLM Integration
 
@@ -269,4 +367,9 @@ recovery) live in the `ops-commands` skill.
 
 ## When Stuck
 
-Ask for clarification - don't guess.
+1. Check existing implementations
+2. Review test patterns
+3. Use MCP tools
+4. Run subagents for complex tasks
+5. **Review guidelines** for best practices
+6. Ask for clarification - don't guess
