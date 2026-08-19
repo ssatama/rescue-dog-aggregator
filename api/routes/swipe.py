@@ -12,6 +12,10 @@ from api.monitoring import track_slow_query
 
 logger = logging.getLogger(__name__)
 
+# Profiles below this score are withheld from the swipe stack. Scored by
+# DogProfileQualityRubric on a 0-QUALITY_SCORE_MAX scale.
+MIN_SWIPE_QUALITY_SCORE = 70
+
 router = APIRouter()
 
 
@@ -129,7 +133,7 @@ async def get_swipe_stack(
     """
     Get a stack of dogs for the swipe feature.
 
-    Returns dogs with quality LLM profiler data (quality_score > 0.7),
+    Returns dogs with quality LLM profiler data (quality_score > MIN_SWIPE_QUALITY_SCORE),
     ordered by a smart algorithm that prioritizes:
     1. New dogs (added within last 7 days)
     2. Dogs with high engagement scores
@@ -176,7 +180,7 @@ async def get_swipe_stack(
                 # make the ordering deterministic instead of random
                 if randomize:
                     query_parts = [
-                        """
+                        f"""
                         SELECT
                             a.*,
                             o.name as organization_name,
@@ -193,13 +197,13 @@ async def get_swipe_stack(
                             AND a.active = true
                             AND a.animal_type = 'dog'
                             AND a.dog_profiler_data IS NOT NULL
-                            AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+                            AND (a.dog_profiler_data->>'quality_score')::float > {MIN_SWIPE_QUALITY_SCORE}
                         """
                     ]
                     params = []
                 else:
                     query_parts = [
-                        """
+                        f"""
                         SELECT DISTINCT ON (a.id)
                             a.*,
                             o.name as organization_name,
@@ -221,7 +225,7 @@ async def get_swipe_stack(
                             AND a.active = true
                             AND a.animal_type = 'dog'
                             AND a.dog_profiler_data IS NOT NULL
-                            AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+                            AND (a.dog_profiler_data->>'quality_score')::float > {MIN_SWIPE_QUALITY_SCORE}
                         """
                     ]
                     params = [datetime.now(UTC) - timedelta(days=7)]
@@ -349,7 +353,7 @@ async def get_swipe_stack(
             # Check if there are more dogs available with performance tracking
             with sentry_sdk.start_span(op="db.query", description="Check for more dogs"):
                 check_more_query_parts = [
-                    """
+                    f"""
                     SELECT COUNT(*) as total
                     FROM animals a
                     INNER JOIN organizations o ON a.organization_id = o.id
@@ -357,7 +361,7 @@ async def get_swipe_stack(
                         AND a.active = true
                         AND a.animal_type = 'dog'
                         AND a.dog_profiler_data IS NOT NULL
-                        AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+                        AND (a.dog_profiler_data->>'quality_score')::float > {MIN_SWIPE_QUALITY_SCORE}
                     """
                 ]
                 check_params = []
@@ -410,7 +414,7 @@ async def get_available_countries(
     """
     try:
         # Query to get all unique countries from ships_to arrays with dog counts
-        query = """
+        query = f"""
             WITH country_dogs AS (
                 SELECT
                     jsonb_array_elements_text(o.ships_to) as country,
@@ -421,7 +425,7 @@ async def get_available_countries(
                     AND a.active = true
                     AND a.animal_type = 'dog'
                     AND a.dog_profiler_data IS NOT NULL
-                    AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+                    AND (a.dog_profiler_data->>'quality_score')::float > {MIN_SWIPE_QUALITY_SCORE}
                     AND o.ships_to IS NOT NULL
                     AND o.active = true
                 GROUP BY jsonb_array_elements_text(o.ships_to)

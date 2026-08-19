@@ -23,6 +23,7 @@ from rich.table import Table
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from api.routes.swipe import MIN_SWIPE_QUALITY_SCORE
 from config import DB_CONFIG
 from management.batch_processor import create_batch_processor
 from services.llm.config import get_llm_config
@@ -569,6 +570,72 @@ def stats():
 
     cursor.close()
     conn.close()
+
+
+@llm.command("backfill-quality-scores")
+@click.option("--dry-run", is_flag=True, help="Report the score distribution without writing")
+@click.option("--batch-size", default=500, type=int, help="Rows per write batch")
+def backfill_quality_scores(dry_run: bool, batch_size: int):
+    """Recompute quality_score for profiles written before scoring was wired up.
+
+    Every profile generated prior to the rubric being connected carries a
+    hardcoded 80, which makes the swipe quality filter and the average reported
+    by /api/llm/stats meaningless. This rescores them in place from the stored
+    profile JSON.
+    """
+    from services.llm.quality_rubric import DogProfileQualityRubric
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, dog_profiler_data FROM animals WHERE dog_profiler_data IS NOT NULL")
+    rows = cursor.fetchall()
+
+    if not rows:
+        console.print("[yellow]No profiled dogs found[/yellow]")
+        return
+
+    rubric = DogProfileQualityRubric()
+    updates = []
+    for dog_id, profile in rows:
+        profile = json.loads(profile) if isinstance(profile, str) else profile
+        updates.append((dog_id, round(rubric.calculate_quality_score(profile, {}), 2)))
+
+    scores = sorted(score for _, score in updates)
+    below = sum(1 for score in scores if score <= MIN_SWIPE_QUALITY_SCORE)
+
+    table = Table(title="Quality Score Backfill")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="magenta")
+    table.add_row("Profiles", str(len(scores)))
+    table.add_row("Min", f"{scores[0]:.1f}")
+    table.add_row("Median", f"{scores[len(scores) // 2]:.1f}")
+    table.add_row("Max", f"{scores[-1]:.1f}")
+    table.add_row(
+        f"Below swipe threshold ({MIN_SWIPE_QUALITY_SCORE})",
+        f"{below} ({below / len(scores) * 100:.1f}%)",
+    )
+    console.print(table)
+
+    if dry_run:
+        console.print("[yellow]Dry run - no changes written[/yellow]")
+        return
+
+    for start in range(0, len(updates), batch_size):
+        batch = updates[start : start + batch_size]
+        cursor.executemany(
+            """
+            UPDATE animals
+            SET dog_profiler_data = jsonb_set(dog_profiler_data, '{quality_score}', %s::jsonb)
+            WHERE id = %s
+            """,
+            [(json.dumps(score), dog_id) for dog_id, score in batch],
+        )
+        conn.commit()
+        console.print(f"  Updated {min(start + batch_size, len(updates))}/{len(updates)}")
+
+    cursor.close()
+    conn.close()
+    console.print(f"[green]Backfilled {len(updates)} quality scores[/green]")
 
 
 if __name__ == "__main__":
