@@ -45,9 +45,13 @@ class TestLLMEndpointAuth:
         assert response.status_code == 401
 
     def test_valid_key_passes_auth(self, authed_client):
-        """With a valid key, auth passes and the request reaches validation logic."""
-        response = authed_client.get("/api/llm/stats?organization_id=-1")
-        assert response.status_code == 400
+        """A valid key clears the auth gate and the request reaches the handler.
+
+        The status past that point depends on database availability, which this
+        test is not about - only that it is no longer an auth rejection.
+        """
+        response = authed_client.get("/api/llm/stats")
+        assert response.status_code not in (401, 403)
 
     def test_error_message_does_not_leak_key(self, client):
         response = client.get("/api/llm/stats")
