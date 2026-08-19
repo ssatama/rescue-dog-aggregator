@@ -1,61 +1,30 @@
 # Robots.txt for Rescue Dog Aggregator
+#
+# NOTE ON STRUCTURE: a crawler obeys exactly ONE user-agent group — the most
+# specific one matching its name — and ignores every other group, including
+# "*". Named agents are therefore grouped together so they share one rule set;
+# splitting them into per-agent groups would silently exempt each named
+# crawler from the Disallow rules below.
 
-# === SEARCH ENGINES - Full Access ===
+# === SEARCH ENGINES, SOCIAL PREVIEWS, AI CRAWLERS, AND EVERYONE ELSE ===
+# Full access apart from the sensitive and low-value paths listed below.
 User-agent: Googlebot
-Allow: /
-
 User-agent: Googlebot-Image
-Allow: /
-
 User-agent: Bingbot
-Allow: /
-
 User-agent: DuckDuckBot
-Allow: /
-
 User-agent: Slurp
-Allow: /
-
-# === SOCIAL MEDIA - Full Access for Link Previews ===
 User-agent: facebookexternalhit
-Allow: /
-
 User-agent: Twitterbot
-Allow: /
-
 User-agent: LinkedInBot
-Allow: /
-
 User-agent: WhatsApp
-Allow: /
-
 User-agent: Pinterest
-Allow: /
-
-# === AI & LLM CRAWLERS - Full Access ===
 User-agent: GPTBot
-Allow: /
-
 User-agent: ChatGPT-User
-Allow: /
-
 User-agent: anthropic-ai
-Allow: /
-
 User-agent: Claude-Web
-Allow: /
-
 User-agent: PerplexityBot
-Allow: /
-
 User-agent: CCBot
-Allow: /
-
 User-agent: Google-Extended
-Allow: /
-
-# === ALL OTHER LEGITIMATE CRAWLERS ===
-# Allow everything by default, only block sensitive paths
 User-agent: *
 Allow: /
 
@@ -70,6 +39,13 @@ Disallow: /_next/data/
 Disallow: /.git/
 Disallow: /config/
 Disallow: /private/
+
+# Filter and tracking permutations are not distinct content — the canonical
+# for the listing is https://www.rescuedogs.me/dogs and filtered views render
+# client-side, so crawling every combination multiplies requests without
+# adding anything indexable. Clean /dogs and /dogs/<slug> URLs stay crawlable.
+Disallow: /dogs?*
+Disallow: /dogs/*?*
 
 # === AGGRESSIVE BOTS - Block with Rate Limit ===
 User-agent: AhrefsBot
