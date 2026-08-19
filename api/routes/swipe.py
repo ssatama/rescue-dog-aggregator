@@ -14,7 +14,12 @@ logger = logging.getLogger(__name__)
 
 # Profiles below this score are withheld from the swipe stack. Scored by
 # DogProfileQualityRubric on a 0-QUALITY_SCORE_MAX scale.
-MIN_SWIPE_QUALITY_SCORE = 70
+#
+# Set to sit in the empty band between the one genuinely broken profile in
+# production (14.0) and the lowest well-formed cluster (66.7). Raising it to 70
+# catches 34 complete, consistent profiles that the rubric under-scores for
+# stylistic reasons rather than quality.
+MIN_SWIPE_QUALITY_SCORE = 65
 
 router = APIRouter()
 

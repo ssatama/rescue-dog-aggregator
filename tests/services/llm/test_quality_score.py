@@ -127,6 +127,13 @@ class TestSwipeThresholdConsistency:
 
         assert interpolated == 4, f"only {interpolated} of 4 thresholds are interpolated"
 
+    def test_threshold_sits_below_the_well_formed_cluster(self):
+        """Complete profiles score ~66.7 at the low end; the gate must sit under
+        them so stylistic rubric penalties do not hide adoptable dogs."""
+        from api.routes.swipe import MIN_SWIPE_QUALITY_SCORE
+
+        assert MIN_SWIPE_QUALITY_SCORE < 66.7
+
     def test_poor_profile_would_be_excluded_by_swipe(self, poor_profile):
         from api.routes.swipe import MIN_SWIPE_QUALITY_SCORE
 
