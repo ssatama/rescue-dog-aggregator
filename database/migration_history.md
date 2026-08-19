@@ -34,7 +34,6 @@ The project previously had 3 coexisting migration systems from organic growth:
 
 Supporting code also removed:
 - `ensure_migration_tracking()`, `add_organization()`, `setup_initial_data()`, `verify_index_performance()` from db_setup.py
-- `management/railway_schema_migration.py`, `management/verify_migration.py`, `management/drop_unused_indexes.py`
 - CI step that ran `database/migrations/*.sql` after schema.sql
 
 ### Evolution Timeline

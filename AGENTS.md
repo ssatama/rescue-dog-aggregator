@@ -9,12 +9,12 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Backend: Python 3.12+/FastAPI/PostgreSQL 15/Alembic
 - Frontend: Next.js 16 (App Router)/React 19/TypeScript 5
 - Testing: pytest (backend), Jest/Playwright (frontend)
-- AI: OpenRouter API (Google Gemini 3 Flash) for LLM enrichment
+- AI: OpenRouter auto-router for LLM enrichment (model chosen per request)
 - Browser Automation: Playwright (Browserless v2 in production)
 - Monitoring: Sentry (dev/prod)
 - Package Management: **uv** (backend), **pnpm** (frontend)
 - Linting: **ruff** (replaces black/isort/flake8)
-- Current: 125 backend test files, 270 frontend test files, 1,500+ active dogs
+- Current: 133 backend test files, 270 frontend test files, 1,500+ active dogs
 
 ## Status
 
@@ -168,7 +168,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 ### 5. Commit Message Guidelines
 
-- **NO AI ATTRIBUTION**: Do not include "Codex", "Opus", "Anthropic", "Co-Authored-By: Codex", or similar AI references in commit messages
+- **NO AI ATTRIBUTION**: No AI tool or vendor names in commit messages - no "Claude", "Codex", "Opus", "Anthropic", "OpenAI", no `Co-Authored-By:` lines naming an assistant
 - Use conventional commit format: `type(scope): description`
 - Focus on what changed and why, not how it was created
 - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `style`, `chore`
@@ -192,16 +192,16 @@ Branch naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
 ```
 api/              # FastAPI backend with async routes
 ├── routes/       # animals, organizations, swipe, llm, monitoring
-services/         # Core services (14 total)
-├── llm/          # AI profiling pipeline (20 files)
-scrapers/         # 13 organization scrapers
+services/         # Core services (14 modules)
+├── llm/          # AI profiling pipeline (14 files)
+scrapers/         # Organization scrapers
 frontend/         # Next.js 16 App Router
 ├── app/          # Pages: dogs/, swipe/, favorites/, breeds/, guides/
-├── components/   # UI components organized by feature (20 dirs)
+├── components/   # UI components organized by feature (23 dirs)
 tests/            # Backend tests with fixtures
-configs/          # Organization YAMLs (13 active)
-migrations/       # Alembic database migrations
-management/       # CLI tools (18 scripts)
+configs/          # Organization YAMLs (13 active, 12 LLM-enabled)
+migrations/railway/  # Alembic migrations for production
+management/       # CLI tools (11 scripts)
 docs/
 ├── guidelines/   # Code guidelines (Python, TypeScript, React, Web Design)
 ├── features/     # Feature documentation
@@ -210,11 +210,12 @@ docs/
 
 ## Key Services
 
-- `database_service.py`: Async connection pooling
-- `llm_profiler_service.py`: AI personality profiling
-- `adoption_detection.py`: Track adopted dogs
-- `metrics_collector.py`: Performance monitoring
-- `session_manager.py`: User preferences
+- `services/database_service.py`: Async connection pooling
+- `services/llm_data_service.py`: OpenRouter client for enrichment and translation
+- `services/llm/dog_profiler.py`: AI personality profiling pipeline
+- `services/adoption_detection.py`: Track adopted dogs
+- `services/metrics_collector.py`: Performance monitoring
+- `services/session_manager.py`: User preferences
 
 ## Quality Gates (Required for ANY commit)
 
@@ -342,23 +343,34 @@ pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
 - `/api/animals`: CRUD + filtering, search, stats, breeds
 - `/api/enhanced_animals`: AI-enriched data, semantic search
 - `/api/swipe`: Tinder-like discovery interface
-- `/api/llm`: Enrichment, translation, batch processing
+- `/api/llm`: Enrichment coverage stats (admin-key gated; enrichment itself runs in the cron)
 - `/api/organizations`: Org management, metrics, stats
 - `/api/monitoring`: Health checks, scraper status, metrics
 - `/api/sentry-test`: Error tracking debug endpoints
 
 ## LLM Integration
 
-- Model: Google Gemini 3 Flash via OpenRouter
-- Cost: ~$0.005/dog
-- Success rate: 97%+
+- Routing: `openrouter/auto` with `LLM_COST_TIER=medium` (measured ~$0.005/dog)
+- Tuning: `LLM_DEFAULT_MODEL`, `LLM_COST_TIER` - no model strings in code
+- Reasoning is disabled in the request; reasoning models otherwise spend the
+  whole token budget and return empty content
 - Config: `configs/llm_organizations.yaml`
 - Prompts: `prompts/organizations/*.yaml`
+- Details: `docs/features/llm-data-enrichment.md`
 
 ## Documentation
 
+This file is the single source of truth for agent instructions. `CLAUDE.md`
+imports it; do not duplicate content between them.
+
 - Architecture: `docs/technical/architecture.md`
-- LLM Feature: `docs/features/llm-data-enrichment.md`
+- Scrapers: `docs/technical/scraper-architecture.md`
+- LLM pipeline: `docs/features/llm-data-enrichment.md`
+- Setup: `docs/guides/installation.md`
+- Deployment: `docs/guides/deployment.md`
+- Testing: `docs/guides/testing.md`
+- Troubleshooting: `docs/troubleshooting.md`
+- Operational runbooks: the `ops-commands` skill
 - **Guidelines:**
   - Python: `docs/guidelines/PYTHON_GUIDELINES.md`
   - TypeScript: `docs/guidelines/TYPESCRIPT_GUIDELINES.md`

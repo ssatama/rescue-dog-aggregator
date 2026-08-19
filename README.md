@@ -9,7 +9,7 @@ An open-source platform that aggregates rescue dog listings from multiple Europe
 | Active Dogs   | 1,500+                                |
 | Organizations | 12 active                             |
 | AI Profiling  | 97%+ success rate                     |
-| Test Coverage | 125 backend + 270 frontend test files |
+| Test Coverage | 133 backend + 270 frontend test files |
 
 ---
 
@@ -33,7 +33,7 @@ Finding rescue dogs requires visiting multiple websites with different interface
 - Automatic trait extraction and standardization
 - Multi-language support (German, French, Spanish, Italian, etc.)
 - Cost-efficient processing (~$0.005 per dog)
-- 97%+ success rate with Google Gemini 3 Flash
+- 97%+ success rate via OpenRouter's auto-router
 
 ### Data Processing
 
@@ -70,7 +70,7 @@ Claude Code and Claude Desktop users can discover rescue dogs through natural co
 | ------------------ | ------------------------------------------------- |
 | Backend            | Python 3.12+ / FastAPI / PostgreSQL 15 / Alembic  |
 | Frontend           | Next.js 16 (App Router) / React 19 / TypeScript 5 |
-| AI                 | OpenRouter API (Google Gemini 3 Flash)            |
+| AI                 | OpenRouter auto-router (model chosen per request) |
 | Browser Automation | Playwright (Browserless v2 in production)         |
 | Monitoring         | Sentry (dev + prod)                               |
 | Hosting            | Vercel (frontend) + Railway (backend + DB + cron) |
@@ -86,7 +86,7 @@ Backend (FastAPI)
     ↓ Routes → Services → Database
 PostgreSQL 15 (JSONB for metadata)
     ↑ Data collection
-Scrapers (12 organizations)
+Scrapers (13 organizations)
     ↑ Configuration
 YAML configs + LLM prompts
 ```
@@ -104,7 +104,7 @@ frontend/src/
 ├── components/         # Feature-organized UI (22 dirs)
 rescuedogs-mcp-server/  # MCP server for Claude integration
 configs/organizations/  # YAML configs (13 orgs)
-tests/                  # 125 backend test files
+tests/                  # 133 backend test files
 frontend/src/           # 270 frontend test files (colocated)
 migrations/             # Alembic database migrations
 management/             # CLI tools (19 scripts)

@@ -69,7 +69,7 @@ cd frontend
 pnpm install
 
 # Verify setup
-uv run pytest tests/ -m "not slow" --tb=no -q  # Backend tests (125 test files)
+uv run pytest tests/ -m "not slow" --tb=no -q  # Backend tests (133 test files)
 cd frontend && pnpm test                        # Frontend tests (270 test files)
 ```
 
@@ -136,7 +136,7 @@ test(scrapers): add tests for unified DOM extraction
 
 1. **Run all tests**:
    ```bash
-   # Backend tests (REQUIRED - 125 test files)
+   # Backend tests (REQUIRED - 133 test files)
    uv run pytest tests/ -m "not slow" -v      # Fast tests for development
    uv run pytest tests/ -m "unit or fast" -v  # Unit + fast tests
 
@@ -303,7 +303,7 @@ We follow TDD principles:
 ### Backend Testing
 
 ```bash
-# Fast test suite (recommended for development - 125 test files)
+# Fast test suite (recommended for development - 133 test files)
 uv run pytest tests/ -m "not slow" -v      # Excludes slow tests
 uv run pytest tests/ -m "unit or fast" -v  # Unit + fast tests
 

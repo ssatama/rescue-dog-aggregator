@@ -1,272 +1,38 @@
 # CLAUDE.md - Rescue Dog Aggregator
 
-## Mission
+All project instructions live in a single file, imported here:
 
-Build an open-source platform aggregating rescue dogs from multiple organizations. Focus: clean code, TDD, zero technical debt.
+@AGENTS.md
 
-## Status
+`AGENTS.md` is the source of truth and is shared across every coding agent used
+on this repo. Add or change instructions there, never here - the two files
+previously held duplicate copies that drifted apart, which is what this import
+exists to prevent.
 
-- Site live at www.rescuedogs.me
-- 1,500+ active dogs from 12 organizations
-- Deployment: Vercel (frontend), Railway (backend + PostgreSQL + cron)
-- Scrapers: Railway cron (Mon/Thu/Sat 3pm UTC)
-- Traffic: 20+ daily users, growing steadily
+## Claude Code specifics
 
-## USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
+Only tooling notes that apply to Claude Code and nowhere else belong below.
 
-**CRITICAL**: Use sub-agents to reduce context usage and improve efficiency.
+### Skills
 
-## Overall Guidelines
+- `ops-commands` - operational runbooks: organization config sync, LLM
+  profiling batches, emergency recovery.
 
-### 1. Think Before Coding
+### MCP servers
 
-**"Don't assume. Don't hide confusion. Surface tradeoffs."**
+Configured for this project in `.mcp.json`:
 
-- State assumptions explicitly and ask if uncertain
-- Present multiple interpretations rather than choosing silently
-- Advocate for simpler approaches when they exist
-- Stop to clarify anything confusing
+- `postgres` - read-only SQL against the database. Prefer it over shelling out
+  to `psql` for inspection.
+- `rescuedogs` - this repo's own MCP server (`rescuedogs-mcp-server/`): dog
+  search, filter counts, statistics against the live API.
+- `pal` - `precommit` validation, used in the PR workflow above.
+- `lighthouse` - performance audits.
+- `sequential-thinking` - structured reasoning helper.
 
-### 2. Simplicity First
+Railway and Sentry MCP servers may also be available from user-level config for
+deployment status and production error triage.
 
-**"Minimum code that solves the problem. Nothing speculative."**
+### Review
 
-- Write only what was requested—no extra features, unnecessary abstractions, unrequested configurability
-- No error handling for impossible scenarios
-- If code could be 50 lines instead of 200, rewrite it
-- Ask: would a senior engineer call this overcomplicated?
-
-### 3. Surgical Changes
-
-**"Touch only what you must. Clean up only your own mess."**
-
-- Don't "improve" adjacent code or refactor unbroken functionality
-- Match existing style even if you'd prefer differently
-- Remove imports/variables that _your_ changes made unused, but don't delete pre-existing dead code
-- Every changed line should directly trace to the user's request
-
-### 4. Goal-Driven Execution
-
-**"Define success criteria. Loop until verified."**
-
-- Transform vague tasks into verifiable goals
-- For multi-step tasks, outline a brief plan with verification steps
-- Strong success criteria enable independent iteration without constant clarification
-- Don't mark complete until verification passes
-
-## CRITICAL: Planning-First Workflow
-
-**ALWAYS follow this 3-phase approach:**
-
-1. **RESEARCH** (no code): `Read relevant files and understand context`
-2. **PLAN**: `Create detailed implementation plan with checkboxes`
-3. **EXECUTE**: `Implement with TDD - test first, code second`
-
-## Code Guidelines (ENFORCED AT PR REVIEW)
-
-> **All guidelines are reviewed at every PR.** Violations block merge.
-
-### Quick Links
-
-| Guideline                                                         | Scope                       | Priority Order                                           |
-| ----------------------------------------------------------------- | --------------------------- | -------------------------------------------------------- |
-| [Python Guidelines](docs/guidelines/PYTHON_GUIDELINES.md)         | Backend, scrapers, services | Reliability > Simplicity > Performance > Maintainability |
-| [TypeScript Guidelines](docs/guidelines/TYPESCRIPT_GUIDELINES.md) | Frontend types, API calls   | Reliability > Simplicity > Performance > Maintainability |
-| [React Guidelines](docs/guidelines/REACT_GUIDELINES.md)           | Components, hooks, Next.js  | Performance > Reliability > Simplicity > Maintainability |
-| [Web Design Guidelines](docs/guidelines/WEB_DESIGN_GUIDELINES.md) | UI/UX, accessibility        | Accessibility > Usability > Performance > Polish         |
-
-### Non-Negotiable Rules (PR Blockers)
-
-**Python:**
-
-- Python 3.12+ with modern syntax (`list[str]` not `List[str]`, `X | None` not `Optional[X]`)
-- Type hints on ALL functions
-- `ruff check` and `ruff format` must pass
-- `logging` module (not `print()`)
-- Async context managers for resources
-
-**TypeScript:**
-
-- `strict: true` - never disable
-- No `any` - use `unknown` + Zod validation
-- No `@ts-ignore` - use `@ts-expect-error` with explanation if needed
-- Explicit return types on module API functions
-- `import type` for type-only imports
-
-**React/Next.js:**
-
-- No sequential awaits for independent operations - use `Promise.all()`
-- No barrel file imports - import directly or use `optimizePackageImports`
-- Heavy components use `next/dynamic` with `ssr: false`
-- Functional `setState` for current-state updates
-- `toSorted()` not `sort()` on state/props
-- **No `Link` or Client Components in lists with 20+ items**
-
-**Web Design:**
-
-- Icon-only buttons need `aria-label`
-- Interactive elements need keyboard support
-- Never remove focus outline without replacement
-- Animations honor `prefers-reduced-motion`
-- Form inputs have associated labels
-
-## Core Rules
-
-### 1. TDD is MANDATORY
-
-```
-1. Write failing test
-2. See it fail (confirm with pytest/npm test)
-3. Write minimal code to pass
-4. Refactor if needed
-```
-
-### 2. Code Style
-
-- **Immutable data only** - no mutations
-- **Pure functions** - no side effects
-- **Small functions** - one responsibility
-- **No comments** - self-documenting code
-- **Early returns** - no nested conditionals
-
-### 3. Anti-Patterns (NEVER DO)
-
-- NO PARTIAL IMPLEMENTATION
-- NO SIMPLIFICATION : no "//This is simplified stuff for now, complete implementation would blablabla"
-- NO CODE DUPLICATION : check existing codebase to reuse functions and constants Read files before writing new functions. Use common sense function name to find them easily.
-- NO DEAD CODE : either use or delete from codebase completely
-- NO CHEATER TESTS : test must be accurate, reflect real usage and be designed to reveal flaws. No useless tests! Design tests to be verbose so we can use them for debuging.
-- NO INCONSISTENT NAMING - read existing codebase naming patterns.
-- NO OVER-ENGINEERING - Don't add unnecessary abstractions, factory patterns, or middleware when simple functions would work. Don't think "enterprise" when you need "working"
-- NO MIXED CONCERNS - Don't put validation logic inside API handlers, database queries inside UI components, etc. instead of proper separation
-- NO RESOURCE LEAKS - Don't forget to close database connections, clear timeouts, remove event listeners, or clean up file handles
-
-### 4. Tone and Behavior
-
-- **NEVER run `git restore`, `git checkout --`, or discard file changes without explicitly asking first.** Assume local changes are intentional work-in-progress. Discarding without permission leads to lost work.
-- Criticism is welcome. Please tell me when I am wrong or mistaken, or even when you think I might be wrong or mistaken.
-- Please tell me if there is a better approach than the one I am taking.
-- Please tell me if there is a relevant standard or convention that I appear to be unaware of.
-- Be skeptical.
-- Be concise.
-- Short summaries are OK, but don't give an extended breakdown unless we are working through the details of a plan.
-- Do not flatter, and do not give compliments unless I am specifically asking for your judgement.
-- Occasional pleasantries are fine.
-- Feel free to ask many questions. If you are in doubt of my intent, don't guess. Ask.
-
-### 5. Commit Message Guidelines
-
-- **NO AI ATTRIBUTION**: Do not include "Claude", "Opus", "Anthropic", "Co-Authored-By: Claude", or similar AI references in commit messages
-- Use conventional commit format: `type(scope): description`
-- Focus on what changed and why, not how it was created
-- Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `style`, `chore`
-
-### 6. PR Workflow (Required)
-
-**Never commit directly to main.** Always use PRs:
-
-1. Create branch: `git checkout -b type/description`
-2. Make changes
-3. Pre-commit review: Use PAL MCP `precommit` tool with external validation
-4. Commit to branch: `git commit -m "type(scope): description"`
-5. Push & create PR: `git push -u origin HEAD && gh pr create`
-6. Run `/code-review` for automated review (includes guideline compliance check)
-7. Merge via GitHub (1 review required)
-
-Branch naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
-
-## Quality Gates (Required for ANY commit)
-
-- All tests passing (backend + frontend)
-- Linting/formatting clean (ruff, ESLint)
-- No new type errors
-- Test count stable or increasing
-- **No JSX/TSX duplicate files** (enforced by pre-commit)
-- **Database isolation in tests** (global conftest.py fixture)
-- **Guidelines compliance** (see docs/guidelines/)
-
-### Pre-Commit Validation (MANDATORY)
-
-**Run this before every commit:**
-
-```bash
-# Backend
-uv run ruff check . --fix
-uv run ruff format .
-uv run pytest -m 'not slow and not browser and not external' --maxfail=3
-
-# Frontend
-cd frontend
-pnpm tsc --noEmit
-pnpm lint
-pnpm jest --passWithNoTests --watchAll=false
-```
-
-**Do not commit if any command fails.**
-
-### CI Requirements Table
-
-| Gate                        | Commits | PRs     | Pre-merge |
-| --------------------------- | ------- | ------- | --------- |
-| Backend lint (ruff)         | ✅      | ✅      | ✅        |
-| Backend unit tests          | ✅      | ✅      | ✅        |
-| Backend integration tests   | -       | ✅      | ✅        |
-| Backend comprehensive tests | -       | -       | ✅        |
-| Frontend type check (tsc)   | ✅      | ✅      | ✅        |
-| Frontend lint (eslint)      | ✅      | ✅      | ✅        |
-| Frontend unit tests         | ✅      | ✅      | ✅        |
-| Frontend build              | -       | ✅      | ✅        |
-| Security scan               | -       | ⚠️ warn | ⚠️ warn   |
-| Guidelines compliance       | ✅      | ✅      | ✅        |
-
-## Testing Commands
-
-### Frontend
-
-```bash
-cd frontend
-pnpm test                                        # All unit tests (watch mode)
-pnpm jest --watchAll=false                       # All tests (CI mode, no watch)
-pnpm jest --testPathPatterns "DogSchema"         # Tests matching file pattern
-pnpm jest --testNamePattern "renders JSON-LD"    # Tests matching test name
-pnpm build                                       # Build verification
-pnpm tsc --noEmit                                # Type check
-```
-
-**Important:** Use `pnpm jest` directly (not `pnpm test --`) when passing options.
-Jest 30+ uses `--testPathPatterns` (plural) for file patterns.
-
-### Backend
-
-```bash
-uv run pytest -m "unit" --maxfail=5              # Tier 1: Quick feedback
-uv run pytest -m "not slow and not browser and not external" --maxfail=3  # Tier 2: CI
-uv run pytest                                     # Tier 3: Full suite
-```
-
-Markers are defined in `pytest.ini`.
-
-Operational runbooks (org config sync, LLM profiling batches, emergency
-recovery) live in the `ops-commands` skill.
-
-## LLM Integration
-
-- Model: Google Gemini 3 Flash via OpenRouter
-- Cost: ~$0.005/dog
-- Success rate: 97%+
-- Config: `configs/llm_organizations.yaml`
-- Prompts: `prompts/organizations/*.yaml`
-
-## Documentation
-
-- Architecture: `docs/technical/architecture.md`
-- LLM Feature: `docs/features/llm-data-enrichment.md`
-- **Guidelines:**
-  - Python: `docs/guidelines/PYTHON_GUIDELINES.md`
-  - TypeScript: `docs/guidelines/TYPESCRIPT_GUIDELINES.md`
-  - React/Next.js: `docs/guidelines/REACT_GUIDELINES.md`
-  - Web Design: `docs/guidelines/WEB_DESIGN_GUIDELINES.md`
-
-## When Stuck
-
-Ask for clarification - don't guess.
+- `/code-review` for automated review of the current branch or a PR.
