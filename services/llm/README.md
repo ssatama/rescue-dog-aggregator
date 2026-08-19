@@ -60,7 +60,6 @@ organizations:
     prompt_file: "tierschutzverein_europa.yaml"
     source_language: "de"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
     enabled: true
 ```
 
@@ -71,7 +70,8 @@ organizations:
 OPENROUTER_API_KEY=sk-or-v1-xxxxx
 
 # Optional
-LLM_MODEL_OVERRIDE=openai/gpt-4-turbo-preview  # Override model selection
+LLM_DEFAULT_MODEL=openrouter/auto  # Model or router alias
+LLM_COST_TIER=medium               # Auto-router tier: low|medium|high|xhigh|max
 ```
 
 ## Usage
@@ -256,10 +256,7 @@ RetryConfig(
     max_attempts=3,
     initial_delay=2.0,
     backoff_factor=2.0,
-    fallback_models=[
-        "google/gemini-2.5-flash",
-        "openai/gpt-4-turbo-preview"
-    ]
+    fallback_models=["openrouter/auto"],
 )
 ```
 
@@ -360,7 +357,6 @@ organizations:
     prompt_file: "new_rescue.yaml"
     source_language: "es"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
     enabled: true
 ```
 

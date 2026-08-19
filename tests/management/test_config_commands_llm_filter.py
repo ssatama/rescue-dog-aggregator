@@ -36,7 +36,6 @@ class TestLLMAvailabilityFiltering(unittest.TestCase):
         mock_config.prompt_file = "test.yaml"
         mock_config.organization_name = "Test Org"
         mock_config.source_language = "en"
-        mock_config.model_preference = "test-model"
 
         mock_loader_instance = MagicMock()
         mock_loader_instance.load_config.return_value = mock_config

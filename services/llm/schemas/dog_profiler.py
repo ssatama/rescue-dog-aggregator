@@ -181,7 +181,7 @@ class DogProfilerData(BaseModel):
                     "good_with_dogs": "verträglich mit anderen Hunden",
                 },
                 "prompt_version": "1.0.0",
-                "model_used": "google/gemini-3-flash-preview",
+                "model_used": "google/gemini-3.7-flash",
             }
         },
     )

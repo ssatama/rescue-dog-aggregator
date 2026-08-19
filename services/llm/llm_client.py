@@ -23,6 +23,46 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+AUTO_ROUTER_MODEL = "openrouter/auto"
+AUTO_ROUTER_PLUGIN_ID = "auto-router"
+
+
+def build_request_body(
+    messages: list[dict[str, str]],
+    model: str,
+    temperature: float,
+    max_tokens: int,
+    cost_tier: str,
+) -> dict[str, Any]:
+    """
+    Build the OpenRouter chat completion payload.
+
+    Args:
+        messages: Conversation messages
+        model: Model slug, or AUTO_ROUTER_MODEL to delegate selection
+        temperature: Sampling temperature
+        max_tokens: Maximum tokens to generate
+        cost_tier: Auto-router cost tier (ignored for pinned models)
+
+    Returns:
+        Request body ready to POST
+    """
+    body: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "response_format": {"type": "json_object"},
+        # Reasoning models otherwise spend the entire max_tokens budget on
+        # reasoning and return empty content.
+        "reasoning": {"enabled": False},
+    }
+
+    if model == AUTO_ROUTER_MODEL:
+        body["plugins"] = [{"id": AUTO_ROUTER_PLUGIN_ID, "cost_tier": cost_tier}]
+
+    return body
+
 
 class LLMClient:
     """Client for making HTTP requests to LLM APIs."""
@@ -44,10 +84,11 @@ class LLMClient:
     async def call_openrouter_api(
         self,
         messages: list[dict[str, str]],
-        model: str = "google/gemini-3-flash-preview",
+        model: str = AUTO_ROUTER_MODEL,
         temperature: float = 0.7,
         max_tokens: int = 4000,
         timeout: float = 30.0,
+        cost_tier: str = "medium",
     ) -> dict[str, Any]:
         """
         Make API call to OpenRouter.
@@ -83,12 +124,13 @@ class LLMClient:
                         "HTTP-Referer": "https://rescuedogs.me",
                         "X-Title": "Rescue Dog Aggregator",
                     },
-                    json={
-                        "model": model,
-                        "messages": messages,
-                        "temperature": temperature,
-                        "max_tokens": max_tokens,
-                    },
+                    json=build_request_body(
+                        messages=messages,
+                        model=model,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        cost_tier=cost_tier,
+                    ),
                     timeout=timeout,
                 )
 
@@ -152,13 +194,19 @@ class LLMClient:
 
         return "\n".join(json_lines)
 
-    def parse_json_response(self, content: str, model: str = None) -> dict[str, Any]:
+    def parse_json_response(
+        self,
+        content: str,
+        model: str = None,
+        response_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Parse JSON content and add metadata.
 
         Args:
             content: JSON content string
-            model: Model name to add to result
+            model: Model requested, used when the response does not name one
+            response_data: Raw API response, which names the model actually used
 
         Returns:
             Parsed JSON with metadata
@@ -168,19 +216,22 @@ class LLMClient:
         """
         result = json.loads(content)
 
-        # Add model used to result
-        if model:
-            result["model_used"] = model
+        # Under auto-routing the requested model is an alias, so the model named
+        # in the response is the one that actually ran.
+        selected = (response_data or {}).get("model") or model
+        if selected:
+            result["model_used"] = selected
 
         return result
 
     async def call_api_and_parse(
         self,
         messages: list[dict[str, str]],
-        model: str = "google/gemini-3-flash-preview",
+        model: str = AUTO_ROUTER_MODEL,
         temperature: float = 0.7,
         max_tokens: int = 4000,
         timeout: float = 30.0,
+        cost_tier: str = "medium",
     ) -> dict[str, Any]:
         """
         Complete API call with content extraction and parsing.
@@ -191,6 +242,7 @@ class LLMClient:
             temperature: Sampling temperature
             max_tokens: Maximum tokens to generate
             timeout: Request timeout in seconds
+            cost_tier: Auto-router cost tier
 
         Returns:
             Parsed response with metadata
@@ -207,19 +259,13 @@ class LLMClient:
                 temperature=temperature,
                 max_tokens=max_tokens,
                 timeout=timeout,
+                cost_tier=cost_tier,
             )
 
             # Extract content
             content = self.extract_content_from_response(response_data)
 
-            # Parse JSON and add metadata
-            result = self.parse_json_response(content, model)
-
-            # Add model from original response if not already present
-            if "model_used" not in result and "model" in response_data:
-                result["model_used"] = response_data["model"]
-
-            return result
+            return self.parse_json_response(content, model, response_data)
 
     async def call_vision_api(
         self,
