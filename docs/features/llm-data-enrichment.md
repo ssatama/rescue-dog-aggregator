@@ -10,7 +10,7 @@ The LLM Data Enrichment feature powers the intelligence behind www.rescuedogs.me
 - **Multi-language Support**: Processes descriptions in German, French, Spanish, and other languages
 - **Smart Matching**: Enables personality-based filtering and compatibility assessment
 - **Swipe Interface**: Powers the Tinder-like swipe feature with AI-generated insights
-- **Cost Efficiency**: Processes dogs at ~$0.005 each using Gemini 3 Flash via OpenRouter
+- **Cost Efficiency**: ~$0.005 per dog via OpenRouter's auto-router at the `medium` cost tier
 
 ## Architecture
 
@@ -95,7 +95,7 @@ extraction_prompt: |
 ```
 
 #### b. LLM Processing
-Sends structured prompts to OpenRouter API (Google Gemini 3 Flash):
+Sends structured prompts to OpenRouter, which routes to a model per request:
 
 ```python
 # DogProfilerPipeline processes dogs
@@ -263,6 +263,86 @@ OPENROUTER_API_KEY=sk-or-v1-xxxxx
 LLM_DEFAULT_MODEL=openrouter/auto  # Model or router alias
 LLM_COST_TIER=medium               # Auto-router tier: low|medium|high|xhigh|max
 ```
+
+## Component Details
+
+### DogProfilerPipeline
+
+**Purpose:** Main orchestrator for the profiling process
+
+**Key Methods:**
+- `process_dog(dog_data)` - Profile single dog with retry logic
+- `process_batch(dogs, batch_size)` - Process multiple dogs concurrently
+- `save_results(results)` - Persist to database
+- `get_statistics()` - Processing metrics
+
+**Complexity:** O(n) for batch processing where n = number of dogs
+
+### PromptBuilder
+
+**Purpose:** Constructs organization-specific prompts from templates
+
+**Key Methods:**
+- `build_prompt(dog_data)` - Create user prompt with dog data
+- `build_messages(dog_data, prompt_adjustment)` - Full message list for API
+- `get_prompt_version()` - Template version tracking
+
+**Dependencies:** Requires prompt template file for organization
+
+### OrganizationConfigLoader
+
+**Purpose:** Manages organization configurations and prompt mappings
+
+**Key Methods:**
+- `load_config(org_id)` - Get organization configuration
+- `get_supported_organizations()` - List configured orgs
+- `reload()` - Force refresh configurations
+
+**Singleton Pattern:** Access via `get_config_loader()`
+
+### LLMClient
+
+**Purpose:** Handles OpenRouter API communication
+
+**Key Features:**
+- Automatic JSON extraction from responses
+- Request/response logging
+- Timeout handling
+- Error propagation for retry logic
+
+### ExtractedProfileNormalizer
+
+**Purpose:** Normalizes LLM output to match schema requirements
+
+**Normalization Rules:**
+- Energy levels: Maps variations to standard enums
+- Experience levels: Standardizes terminology
+- Boolean conversion: Handles various text representations
+- List processing: Ensures proper array formatting
+
+### RetryHandler
+
+**Purpose:** Implements exponential backoff with model fallback
+
+**Configuration:**
+```python
+RetryConfig(
+    max_attempts=3,
+    initial_delay=2.0,
+    backoff_factor=2.0,
+    fallback_models=["openrouter/auto"],
+)
+```
+
+### DatabaseUpdater
+
+**Purpose:** Updates PostgreSQL with profiler results
+
+**Features:**
+- Batch updates for efficiency
+- JSONB column handling
+- Transaction management
+- Dry-run support
 
 ## Quality Assurance
 

@@ -1,47 +1,64 @@
-# Organization Configuration Files
+# Organization configuration
 
-This directory contains YAML configuration files for rescue organizations integrated into the platform.
+YAML configuration for each rescue organization on the platform. 13 organizations
+are configured; `configs/llm_organizations.yaml` separately controls which 12 of
+them get LLM enrichment.
 
-## File Structure
+Files are validated against `schemas/organization.schema.json` when loaded by
+`utils/config_loader.py`.
 
-## Configuration Format
+## Format
 
-Each organization is defined by a YAML file following the JSON schema in `schemas/organization.schema.json`.
+```yaml
+schema_version: "1.0"
+id: "animalrescuebosnia"          # kebab-case, must match the filename
+name: "Animal Rescue Bosnia"
+enabled: true                      # false disables the scraper
+scraper:
+  class_name: "AnimalRescueBosniaScraper"
+  module: "scrapers.animalrescuebosnia.animalrescuebosnia_scraper"
+  config:                          # optional, scraper-specific
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 240
+    batch_size: 6
+    skip_existing_animals: true
+    enable_llm_profiling: true
+    llm_organization_id: 15        # links to configs/llm_organizations.yaml
+metadata:
+  website_url: "https://www.animal-rescue-bosnia.org/"
+  description: |
+    Free text, shown on the organization page.
+  location:
+    country: "BA"                  # ISO 3166-1 alpha-2
+    city: "Goražde"
+  service_regions: ["BA"]          # where dogs are rescued from
+  ships_to: ["UK", "AT", "DE"]     # where dogs can be adopted to
+  social_media:
+    facebook: "https://..."
+```
 
-### Required Fields
+**Required:** `schema_version`, `id`, `name`, `enabled`, `scraper.class_name`,
+`scraper.module`, `metadata.website_url`.
 
-- `schema_version`: Version of the config format (currently "1.0")
-- `id`: Unique identifier (kebab-case, 2-50 characters)
-- `name`: Human-readable organization name
-- `enabled`: Boolean flag to enable/disable the scraper
-- `scraper.class_name`: Python class name (PascalCase)
-- `scraper.module`: Python module path relative to `scrapers/`
-- `metadata.website_url`: Organization's main website
+## Adding an organization
 
-### Optional Fields
+1. Create `configs/organizations/<id>.yaml` with `enabled: false`.
+2. Build the scraper class under `scrapers/<id>/` - see `scrapers/README.md`.
+3. Sync and verify:
+   ```bash
+   uv run python management/config_commands.py list
+   uv run python management/config_commands.py sync
+   ```
+4. Flip `enabled: true` once a test run looks right.
 
-- `scraper.config`: Scraper-specific settings (rate limits, timeouts, etc.)
-- `metadata.social_media`: Social media URLs
-- `metadata.location`: Primary location (country, region, city)
-- `metadata.service_regions`: Geographic regions served
-- `metadata.contact`: Contact information
-- `metadata.description`: Organization description
+To enable LLM enrichment, add an entry to `configs/llm_organizations.yaml` with a
+prompt template in `prompts/organizations/`, and set `llm_organization_id` in the
+scraper config to match.
 
+## Common validation errors
 
-## Adding a New Organization
- - Create a new YAML file in configs/organizations/
- - Use kebab-case for the filename: organization-name.yaml
- - Follow the schema defined in schemas/organization.schema.json
- - Ensure the id field matches the filename (without extension)
- - Set enabled: false initially for testing
- - Create the corresponding scraper class in scrapers
- - Test the configuration before enabling
-## Validation
- - Configurations are automatically validated against the JSON schema when loaded. Common validation errors:
- - Invalid ID format: Must be kebab-case, 2-50 characters
- - Missing required fields: All required fields must be present
- - Invalid URLs: Must be properly formatted URLs
- - Invalid country codes: Must be ISO 3166-1 alpha-2 codes (e.g., "US", "TR", "DE")
- - Country Codes
- - Use ISO 3166-1 alpha-2 country codes
- - See ISO 3166-1 alpha-2 for complete list.
+- **Invalid id** - must be kebab-case, 2-50 characters, and match the filename
+- **Missing required field** - see the list above
+- **Invalid country code** - must be ISO 3166-1 alpha-2 (`US`, `DE`, `BA`)
+- **Malformed URL** - `website_url` and social media links must be absolute URLs
