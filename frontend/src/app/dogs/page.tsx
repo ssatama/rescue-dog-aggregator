@@ -9,10 +9,6 @@ import DogCardSkeletonOptimized from "../../components/ui/DogCardSkeletonOptimiz
 import Layout from "../../components/layout/Layout";
 import "../../styles/animations.css";
 
-interface DogsPageProps {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}
-
 export const revalidate = 21600;
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -49,38 +45,18 @@ function LoadingFallback(): React.JSX.Element {
   );
 }
 
-export default async function DogsPageOptimized(props: DogsPageProps): Promise<React.JSX.Element> {
-  const searchParams = await props.searchParams;
-
-  const toStr = (v: string | string[] | undefined): string | undefined => {
-    if (Array.isArray(v)) return v[0];
-    return v || undefined;
-  };
-
-  const apiParams = {
-    limit: 20,
-    offset: 0,
-    search: toStr(searchParams?.search),
-    size: toStr(searchParams?.size),
-    age: toStr(searchParams?.age),
-    sex: toStr(searchParams?.sex),
-    organization_id: toStr(searchParams?.organization_id),
-    breed: toStr(searchParams?.breed),
-    breed_group: toStr(searchParams?.breed_group),
-    location_country: toStr(searchParams?.location_country),
-    available_to_country: toStr(searchParams?.available_country),
-    available_to_region: toStr(searchParams?.available_region),
-  };
-
-  const initialParams = {
-    age_category: toStr(searchParams?.age),
-    location_country: toStr(searchParams?.location_country),
-    available_country: toStr(searchParams?.available_country),
-  };
-
-  // Fetch initial data server-side (cached and deduplicated)
+export default async function DogsPageOptimized(): Promise<React.JSX.Element> {
+  // Deliberately independent of searchParams so this route stays statically
+  // cacheable. Reading them opts the page into dynamic rendering, which made
+  // every request — overwhelmingly bots — re-render and re-query the backend.
+  //
+  // Nothing is lost: the client discards initialDogs whenever the URL carries
+  // filters (useDogsPagination) and reads each filter value from
+  // useSearchParams (useDogsFilters), which already takes precedence over
+  // initialParams. The server-side filtered fetch was work the client threw
+  // away.
   const [initialDogs, metadata] = await Promise.all([
-    getAnimals(apiParams),
+    getAnimals({ limit: 20, offset: 0 }),
     getAllMetadata(),
   ]);
 
@@ -102,7 +78,7 @@ export default async function DogsPageOptimized(props: DogsPageProps): Promise<R
         <DogsPageClientSimplified
           initialDogs={initialDogs}
           metadata={metadata}
-          initialParams={initialParams}
+          initialParams={{}}
         />
       </Suspense>
       <section className="container mx-auto px-4 py-12 lg:pl-[calc(16rem+2rem+1rem)]">

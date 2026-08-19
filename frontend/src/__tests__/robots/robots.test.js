@@ -166,3 +166,97 @@ describe("Static Robots.txt File", () => {
     });
   });
 });
+
+/**
+ * Query-string crawl control.
+ *
+ * /dogs reads no searchParams server-side, so every filter/tracking
+ * permutation renders the same page. Letting crawlers walk those
+ * combinations multiplied Vercel edge requests and CPU without producing
+ * anything indexable.
+ *
+ * The subtlety these tests guard: a crawler obeys exactly ONE user-agent
+ * group. If Googlebot or GPTBot get their own group containing only
+ * "Allow: /", they never see the Disallow rules at all.
+ */
+describe("Robots.txt query-string crawl control", () => {
+  let robotsTxtContent;
+
+  beforeAll(() => {
+    const robotsTxtPath = path.join(__dirname, "../../../public/robots.txt");
+    robotsTxtContent = fs.readFileSync(robotsTxtPath, "utf8");
+  });
+
+  /** Rules that apply to a given crawler: its own group, else the "*" group. */
+  const rulesFor = (content, agent) => {
+    const groups = [];
+    let current = null;
+    let expectingAgents = false;
+
+    for (const raw of content.split("\n")) {
+      const line = raw.trim();
+      if (!line || line.startsWith("#")) continue;
+
+      const [rawKey, ...rest] = line.split(":");
+      const key = rawKey.trim().toLowerCase();
+      const value = rest.join(":").trim();
+
+      if (key === "user-agent") {
+        if (!expectingAgents) {
+          current = { agents: [], rules: [] };
+          groups.push(current);
+          expectingAgents = true;
+        }
+        current.agents.push(value.toLowerCase());
+        continue;
+      }
+
+      if (key === "allow" || key === "disallow") {
+        expectingAgents = false;
+        if (current) current.rules.push(`${key}:${value}`);
+      }
+    }
+
+    const named = groups.find((g) => g.agents.includes(agent.toLowerCase()));
+    const wildcard = groups.find((g) => g.agents.includes("*"));
+    return (named ?? wildcard)?.rules ?? [];
+  };
+
+  const CRAWLERS = [
+    "Googlebot",
+    "Bingbot",
+    "GPTBot",
+    "PerplexityBot",
+    "ChatGPT-User",
+    "anthropic-ai",
+    "CCBot",
+    "SomeUnknownBot",
+  ];
+
+  test.each(CRAWLERS)("%s is told not to crawl /dogs query permutations", (agent) => {
+    const rules = rulesFor(robotsTxtContent, agent);
+    expect(rules).toContain("disallow:/dogs?*");
+  });
+
+  test.each(CRAWLERS)("%s still has the sensitive-path blocks", (agent) => {
+    const rules = rulesFor(robotsTxtContent, agent);
+    expect(rules).toContain("disallow:/admin/");
+    expect(rules).toContain("disallow:/api/internal/");
+  });
+
+  test.each(CRAWLERS)("%s can still crawl the site root", (agent) => {
+    expect(rulesFor(robotsTxtContent, agent)).toContain("allow:/");
+  });
+
+  test("aggressive bots stay fully blocked", () => {
+    expect(rulesFor(robotsTxtContent, "AhrefsBot")).toContain("disallow:/");
+    expect(rulesFor(robotsTxtContent, "SemrushBot")).toContain("disallow:/");
+    expect(rulesFor(robotsTxtContent, "MJ12bot")).toContain("disallow:/");
+  });
+
+  test("clean listing and detail URLs are not disallowed", () => {
+    const rules = rulesFor(robotsTxtContent, "Googlebot");
+    expect(rules).not.toContain("disallow:/dogs");
+    expect(rules).not.toContain("disallow:/dogs/");
+  });
+});
