@@ -305,11 +305,32 @@ class DogProfilerPipeline:
             True if successful
         """
         saved = await self.database_updater.save_results(results)
-        if saved:
-            from services.revalidation_client import invalidate
+        if not saved:
+            return False
 
-            await invalidate(tags=["animals", "animal", "enhanced"])
-        return saved
+        from services.revalidation_client import invalidate
+
+        await invalidate(tags=["animals", *self._profiled_slug_tags(results)])
+        return True
+
+    def _profiled_slug_tags(self, results: list[dict[str, Any]]) -> list[str]:
+        """Resolve profiled dogs to per-page cache tags.
+
+        Deliberately avoids the bare ``animal``/``enhanced`` tags: those are
+        attached to every dog-detail fetch, so purging them regenerates all
+        ~1,300 detail pages for the sake of a handful of profiled dogs.
+        Returns empty on failure — the listing tags still fire and stale
+        detail pages expire on their own ``revalidate`` window.
+        """
+        dog_ids = [result["dog_id"] for result in results if result.get("dog_id")]
+        if not dog_ids:
+            return []
+
+        try:
+            return self.database_updater.get_slugs(dog_ids)
+        except Exception as e:
+            logger.warning(f"Could not resolve profiled slugs for cache invalidation: {e}")
+            return []
 
     # Context manager support
     async def __aenter__(self):

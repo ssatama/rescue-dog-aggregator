@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Optional
 import psycopg2
 
 from config import get_database_config
+from utils.slug_generator import fetch_slugs_by_ids
 
 if TYPE_CHECKING:
     from services.connection_pool import ConnectionPoolService
@@ -74,6 +75,28 @@ class DatabaseUpdater:
         except Exception as e:
             logger.error(f"Failed to save results: {e}")
             return False
+
+    def get_slugs(self, animal_ids: list[int]) -> list[str]:
+        """Resolve animal IDs to their detail-page slugs.
+
+        Args:
+            animal_ids: Animal IDs to resolve
+
+        Returns:
+            Slugs for the given IDs, empty on failure.
+        """
+        if not animal_ids:
+            return []
+
+        if self.connection_pool:
+            with self.connection_pool.get_connection_context() as conn:
+                return fetch_slugs_by_ids(conn, animal_ids)
+
+        conn = psycopg2.connect(**get_database_config())
+        try:
+            return fetch_slugs_by_ids(conn, animal_ids)
+        finally:
+            conn.close()
 
     def _save_with_connection(self, conn, results: list[dict[str, Any]]) -> None:
         """

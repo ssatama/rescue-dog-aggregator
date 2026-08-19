@@ -481,3 +481,67 @@ class TestMainFunction:
                         raise
 
                 mock_command.check_organization.assert_called_with({"slug": "dogstrust"}, 10)
+
+
+@pytest.mark.unit
+class TestScopedCacheInvalidation:
+    """Adoption checks purge only the detail pages they changed.
+
+    The frontend tags every dog-detail fetch ``["animal", slug]``, so purging
+    the bare ``"animal"`` tag invalidates all ~1,300 dog pages for the sake of
+    the handful of dogs whose status actually moved.
+    """
+
+    def _result(self, animal_id: int) -> AdoptionCheckResult:
+        return AdoptionCheckResult(
+            animal_id=animal_id,
+            animal_name="Max",
+            previous_status="available",
+            detected_status="adopted",
+            evidence="Page shows REHOMED",
+            confidence=0.95,
+            checked_at=datetime.now(UTC),
+            raw_response={"markdown": "test"},
+            error=None,
+        )
+
+    def test_tracks_each_updated_dog(self, mock_db_connection):
+        mock_conn, mock_cursor = mock_db_connection
+        command = CheckAdoptionsCommand(dry_run=False)
+        command.conn = mock_conn
+        command.cursor = mock_cursor
+
+        command.update_dog_status(1, self._result(1))
+        command.update_dog_status(2, self._result(2))
+
+        assert command.changed_animal_ids == [1, 2]
+
+    def test_dry_run_tracks_nothing(self, mock_db_connection):
+        mock_conn, mock_cursor = mock_db_connection
+        command = CheckAdoptionsCommand(dry_run=True)
+        command.conn = mock_conn
+        command.cursor = mock_cursor
+
+        command.update_dog_status(1, self._result(1))
+
+        assert command.changed_animal_ids == []
+
+    def test_changed_slugs_resolves_tracked_ids(self, mock_db_connection):
+        mock_conn, mock_cursor = mock_db_connection
+        command = CheckAdoptionsCommand(dry_run=False)
+        command.conn = mock_conn
+        command.cursor = mock_cursor
+        command.update_dog_status(1, self._result(1))
+
+        with patch("management.check_adoptions.fetch_slugs_by_ids", return_value=["max-lab-1"]) as mock_fetch:
+            assert command.changed_slugs() == ["max-lab-1"]
+
+        mock_fetch.assert_called_once_with(mock_conn, [1])
+
+    def test_changed_slugs_empty_when_nothing_updated(self, mock_db_connection):
+        mock_conn, mock_cursor = mock_db_connection
+        command = CheckAdoptionsCommand(dry_run=False)
+        command.conn = mock_conn
+        command.cursor = mock_cursor
+
+        assert command.changed_slugs() == []

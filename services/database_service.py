@@ -29,6 +29,7 @@ from services.animal_data_preparation import (
     update_to_final_slug,
 )
 from utils.optimized_standardization import parse_age_text, standardize_size_value
+from utils.slug_generator import fetch_slugs_by_ids
 from utils.standardization import standardize_breed
 
 
@@ -568,6 +569,29 @@ class DatabaseService:
         except Exception as e:
             self.logger.error(f"Error getting existing animal URLs: {e}")
             return set()
+
+    def get_slugs_for_animals(self, animal_ids: list[int]) -> list[str]:
+        """Resolve animal IDs to their detail-page slugs in one round trip.
+
+        Backs scoped frontend cache invalidation: a scrape tracks the animal
+        IDs it changed, but the Next.js detail pages are cache-tagged by slug.
+
+        Args:
+            animal_ids: Animal IDs to resolve
+
+        Returns:
+            Slugs for the given IDs, skipping any animal without one. Empty on
+            failure — cache invalidation is best-effort and must never raise.
+        """
+        if not animal_ids:
+            return []
+
+        if not self.conn:
+            if not self.connect():
+                self.logger.error("No database connection available")
+                return []
+
+        return fetch_slugs_by_ids(self.conn, animal_ids)
 
     def _detect_animal_changes(
         self,
