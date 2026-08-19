@@ -196,14 +196,15 @@ python management/llm_commands.py generate-profiles
 
 ### 3. API Endpoints
 
-REST API for on-demand enrichment:
+REST API for enrichment coverage reporting:
 
 ```python
 # api/routes/llm.py
-POST /api/llm/enrich         # Single dog enrichment
-POST /api/llm/batch-enrich   # Batch processing
 GET  /api/llm/stats          # Processing statistics
 ```
+
+Enrichment itself runs from the scraper cron and the `llm` management
+commands, not over HTTP.
 
 ### 4. Database Queries
 

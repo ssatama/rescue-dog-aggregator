@@ -1,7 +1,9 @@
 """
 Test suite for LLM endpoint authentication.
 
-Verifies that all /api/llm/* endpoints require ADMIN_API_KEY via X-API-Key header.
+Verifies that all /api/llm/* endpoints require ADMIN_API_KEY via X-API-Key
+header. Auth is enforced by a router-level dependency, so exercising the
+surviving endpoint covers every route mounted on the router.
 """
 
 import os
@@ -34,53 +36,21 @@ class TestLLMEndpointAuth:
         client.headers["X-API-Key"] = ADMIN_KEY
         return client
 
-    def test_enrich_requires_auth(self, client):
-        response = client.post(
-            "/api/llm/enrich",
-            json={"animal_id": 1, "processing_type": "description_cleaning"},
-        )
-        assert response.status_code == 401
-
-    def test_batch_enrich_requires_auth(self, client):
-        response = client.post(
-            "/api/llm/batch-enrich",
-            json={"animal_ids": [1], "processing_type": "description_cleaning"},
-        )
-        assert response.status_code == 401
-
-    def test_translate_requires_auth(self, client):
-        response = client.post(
-            "/api/llm/translate",
-            json={"text": "hello", "target_language": "es"},
-        )
-        assert response.status_code == 401
-
     def test_stats_requires_auth(self, client):
         response = client.get("/api/llm/stats")
         assert response.status_code == 401
 
-    def test_clean_description_requires_auth(self, client):
-        response = client.post("/api/llm/clean-description?text=hello")
-        assert response.status_code == 401
-
     def test_wrong_key_rejected(self, client):
-        response = client.post(
-            "/api/llm/enrich",
-            json={"animal_id": 1, "processing_type": "description_cleaning"},
-            headers={"X-API-Key": "wrong-key"},
-        )
+        response = client.get("/api/llm/stats", headers={"X-API-Key": "wrong-key"})
         assert response.status_code == 401
 
     def test_valid_key_passes_auth(self, authed_client):
-        """With valid key, auth passes and request reaches validation logic."""
-        response = authed_client.post(
-            "/api/llm/translate",
-            json={"text": "  ", "target_language": "es"},
-        )
+        """With a valid key, auth passes and the request reaches validation logic."""
+        response = authed_client.get("/api/llm/stats?organization_id=-1")
         assert response.status_code == 400
 
     def test_error_message_does_not_leak_key(self, client):
-        response = client.post("/api/llm/enrich", json={"animal_id": 1})
+        response = client.get("/api/llm/stats")
         detail = response.json().get("detail", "").lower()
         assert ADMIN_KEY not in detail
         assert "admin_api_key" not in detail
@@ -88,9 +58,20 @@ class TestLLMEndpointAuth:
     def test_missing_admin_key_returns_500(self):
         with patch.dict(os.environ, {}, clear=True):
             bare_client = TestClient(app, raise_server_exceptions=False)
-            response = bare_client.post(
-                "/api/llm/enrich",
-                json={"animal_id": 1, "processing_type": "description_cleaning"},
-            )
+            response = bare_client.get("/api/llm/stats")
         assert response.status_code == 500
         assert "Admin API key not configured" in response.json()["detail"]
+
+    @pytest.mark.parametrize(
+        "method,path",
+        [
+            ("post", "/api/llm/enrich"),
+            ("post", "/api/llm/batch-enrich"),
+            ("post", "/api/llm/translate"),
+            ("post", "/api/llm/clean-description"),
+        ],
+    )
+    def test_removed_enrichment_endpoints_are_gone(self, authed_client, method, path):
+        """These endpoints constructed an LLM client the API service has no key for."""
+        response = getattr(authed_client, method)(path, json={})
+        assert response.status_code == 404
