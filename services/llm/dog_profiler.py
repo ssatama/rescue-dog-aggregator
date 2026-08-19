@@ -28,6 +28,7 @@ from services.llm.database_updater import DatabaseUpdater
 from services.llm.extracted_profile_normalizer import ExtractedProfileNormalizer
 from services.llm.llm_client import LLMClient
 from services.llm.prompt_builder import PromptBuilder
+from services.llm.quality_rubric import DogProfileQualityRubric
 from services.llm.retry_handler import RetryConfig, RetryHandler
 from services.llm.schemas.dog_profiler import DogProfilerData
 from services.llm.statistics_tracker import StatisticsTracker
@@ -65,6 +66,7 @@ class DogProfilerPipeline:
         self.normalizer = ExtractedProfileNormalizer()
         self.database_updater = DatabaseUpdater(connection_pool, dry_run)
         self.statistics = StatisticsTracker()
+        self.quality_rubric = DogProfileQualityRubric()
 
         # Setup retry handler with fallback models
         if retry_config is None:
@@ -78,6 +80,19 @@ class DogProfilerPipeline:
                 ],
             )
         self.retry_handler = RetryHandler(retry_config)
+
+    def _calculate_quality_score(self, profile: dict[str, Any], dog_data: dict[str, Any]) -> float:
+        """
+        Score a generated profile against the quality rubric.
+
+        Args:
+            profile: The normalized, schema-validated profile
+            dog_data: The original source data the profile was derived from
+
+        Returns:
+            Score between 0 and QUALITY_SCORE_MAX
+        """
+        return self.quality_rubric.calculate_quality_score(profile, dog_data)
 
     def _normalize_profile_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """
@@ -217,17 +232,7 @@ class DogProfilerPipeline:
             result["breed"] = dog_data.get("breed", "Mixed Breed")
             result["external_id"] = dog_data.get("external_id")
 
-            # Calculate quality score if rubric is available
-            if hasattr(self, "quality_rubric"):
-                from .quality_rubric import DogProfileQualityRubric
-
-                if not hasattr(self, "_rubric_instance"):
-                    self._rubric_instance = DogProfileQualityRubric()
-                # Score returns 0-1, multiply by 100 for percentage
-                result["quality_score"] = self._rubric_instance.calculate_quality_score(result, dog_data) * 100
-            else:
-                # Default quality score for basic validation (80%)
-                result["quality_score"] = 80
+            result["quality_score"] = self._calculate_quality_score(result, dog_data)
 
             return result
 

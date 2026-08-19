@@ -7,7 +7,12 @@ Following CLAUDE.md principles:
 - Comprehensive validation
 """
 
+import re
 from typing import Any
+
+QUALITY_SCORE_MAX = 100
+
+GERMAN_FRAGMENTS = re.compile(r"\b(hund|hunde|rüde|rüden|hündin|jahr|jahre)\b", re.IGNORECASE)
 
 
 class DogProfileQualityRubric:
@@ -124,7 +129,7 @@ class DogProfileQualityRubric:
 
         # Language quality
         lang_score = 0.0
-        if desc and not any(word in desc.lower() for word in ["hund", "rüde", "hündin", "jahr"]):
+        if desc and not GERMAN_FRAGMENTS.search(desc):
             lang_score += 0.5
         if desc and any(word in desc.lower() for word in ["friendly", "loving", "playful", "gentle"]):
             lang_score += 0.5
@@ -189,10 +194,10 @@ class DogProfileQualityRubric:
             source_data: Optional original source data
 
         Returns:
-            Float score between 0.0 and 1.0
+            Float score between 0 and QUALITY_SCORE_MAX
         """
         if source_data is None:
             source_data = {}
 
         result = self.score_profile(profile_data, source_data)
-        return result["total_score"]
+        return result["total_score"] * QUALITY_SCORE_MAX
