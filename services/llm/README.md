@@ -310,9 +310,9 @@ RetryConfig(
 
 ### Unit Tests
 ```bash
-pytest tests/services/llm/test_dog_profiler.py -v
+pytest tests/services/llm/test_dog_profiler_schema.py -v
 pytest tests/services/llm/test_prompt_builder.py -v
-pytest tests/services/llm/test_profile_normalizer.py -v
+pytest tests/services/llm/test_organization_config_loader.py -v
 ```
 
 ### Integration Test
