@@ -114,3 +114,8 @@ docs/ROADMAP.md
 docs/AI_SEO_ACTION_PLAN.md
 queries/debug/
 qr.png
+
+# Vendored agent skills pulled from third-party repos, plus their lockfile.
+# Machine-local tooling state — not part of the project source.
+.agents/
+skills-lock.json
