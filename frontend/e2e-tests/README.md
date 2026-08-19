@@ -71,10 +71,3 @@ pnpm e2e:validate:strict  # same, non-zero exit on any gap
 ```
 
 Prefer adding a `data-testid` over writing a brittle text selector.
-
-## Note on package.json
-
-Several `e2e:*` scripts target spec patterns that no longer exist
-(`responsive-*`, `touch-accessibility-validation`, `test-id-validation`,
-`mobile-*-interactions`). They fail with "no tests found". The scripts listed
-above are the ones that work.
