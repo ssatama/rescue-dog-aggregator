@@ -89,6 +89,40 @@ def generate_animal_slug(
     return slug
 
 
+def fetch_slugs_by_ids(connection, animal_ids: list[int]) -> list[str]:
+    """
+    Look up detail-page slugs for a set of animal IDs in one round trip.
+
+    Backs scoped frontend cache invalidation: callers track the animal IDs
+    they changed, but the Next.js detail pages are cache-tagged by slug.
+
+    Args:
+        connection: Database connection
+        animal_ids: Animal IDs to resolve
+
+    Returns:
+        Slugs for the given IDs, skipping any animal without one. Empty on
+        failure — cache invalidation is best-effort and must never raise.
+    """
+    if not animal_ids:
+        return []
+
+    if not connection:
+        logger.warning("No database connection provided for slug lookup")
+        return []
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT slug FROM animals WHERE id = ANY(%s)", (animal_ids,))
+        results = cursor.fetchall()
+        cursor.close()
+
+        return [row[0] for row in results if row[0]]
+    except Exception as e:
+        logger.error(f"Error fetching slugs by ids: {e}")
+        return []
+
+
 def ensure_unique_slug(base_slug: str, connection, exclude_id: int | None = None) -> str:
     """
     Ensure slug is unique by checking database and adding suffix if needed.

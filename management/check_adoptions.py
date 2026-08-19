@@ -25,6 +25,7 @@ from psycopg2.extras import RealDictCursor
 
 from services.adoption_detection import AdoptionCheckResult, AdoptionDetectionService
 from utils.config_loader import ConfigLoader
+from utils.slug_generator import fetch_slugs_by_ids
 
 load_dotenv()
 
@@ -45,6 +46,7 @@ class CheckAdoptionsCommand:
         self.cursor = None
         self.config_loader = ConfigLoader()
         self.adoption_service = AdoptionDetectionService()
+        self.changed_animal_ids: list[int] = []
 
     def connect(self):
         """Connect to the database."""
@@ -267,6 +269,15 @@ class CheckAdoptionsCommand:
             (result.detected_status, json.dumps(check_data), result.checked_at, dog_id),
         )
         self.conn.commit()
+        self.changed_animal_ids.append(dog_id)
+
+    def changed_slugs(self) -> list[str]:
+        """Detail-page cache tags for the dogs this run updated.
+
+        Lets the caller purge exactly those pages instead of the bare
+        ``"animal"`` tag, which fans out to every dog detail page.
+        """
+        return fetch_slugs_by_ids(self.conn, self.changed_animal_ids)
 
     def print_summary(self, org_name: str, results: list[AdoptionCheckResult]):
         """Print summary of adoption checks.
@@ -370,7 +381,7 @@ def main():
             if any_processed and not args.dry_run:
                 from services.revalidation_client import invalidate_sync
 
-                invalidate_sync(tags=["animals", "animal", "statistics"])
+                invalidate_sync(tags=["animals", "statistics", *command.changed_slugs()])
 
         print("\n✅ Adoption checking complete!")
 

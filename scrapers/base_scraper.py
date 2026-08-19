@@ -180,6 +180,9 @@ class BaseScraper(ABC):
         # Track animals for LLM enrichment
         self.animals_for_llm_enrichment = []
 
+        # Track animals changed this run, to scope frontend cache invalidation
+        self._changed_animal_ids: list[int] = []
+
         # Track completion state to prevent duplicates
         self._completion_logged = False
 
@@ -343,8 +346,45 @@ class BaseScraper(ABC):
         self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
         return True
 
+    def mark_animal_changed(self, animal_id: int) -> None:
+        """Record that an animal was added or updated in this run.
+
+        Drives scoped cache invalidation — only the detail pages for these
+        animals get purged on completion.
+        """
+        if animal_id not in self._changed_animal_ids:
+            self._changed_animal_ids.append(animal_id)
+
+    def _changed_animal_slug_tags(self) -> list[str]:
+        """Resolve changed animal IDs to per-page cache tags.
+
+        The frontend tags each dog-detail fetch ``["animal", slug]``, so one
+        slug tag purges exactly one page. Returns empty on any failure — the
+        aggregate listing tags still fire, and the stale detail pages expire
+        on their own ``revalidate`` window.
+        """
+        if not self._changed_animal_ids:
+            return []
+
+        if not self.database_service:
+            self._log_service_unavailable("DatabaseService", "cannot scope cache invalidation")
+            return []
+
+        try:
+            return self.database_service.get_slugs_for_animals(self._changed_animal_ids)
+        except Exception as e:
+            self.logger.warning("Could not resolve changed slugs for cache invalidation: %s", e)
+            return []
+
     def _invalidate_frontend_cache(self) -> None:
         """Fire cache invalidation for the Next.js frontend.
+
+        Sends the aggregate listing tags plus one tag per changed dog. It
+        deliberately does NOT send the bare ``animal``/``enhanced`` tags:
+        those are attached to every dog-detail fetch, so purging them
+        invalidates all ~1,300 detail pages at once. With 13 orgs scraping
+        3x/week that produced ~150 full-site purges per month and exceeded
+        the Vercel ISR write budget by 3.5x.
 
         Fire-and-forget. ``invalidate_sync`` already swallows network and
         HTTP errors internally, so the outer ``try`` only guards against
@@ -357,11 +397,12 @@ class BaseScraper(ABC):
             self.logger.warning("Cache invalidation hook unavailable: %s", e)
             return
 
+        slug_tags = self._changed_animal_slug_tags()
+        self._changed_animal_ids = []
+
         invalidate_sync(
             tags=[
                 "animals",
-                "animal",
-                "enhanced",
                 "statistics",
                 "country-stats",
                 "age-stats",
@@ -369,8 +410,10 @@ class BaseScraper(ABC):
                 "breed-stats",
                 "breed-images",
                 "organizations-enhanced",
+                *slug_tags,
             ]
         )
+        self.logger.info("Cache invalidation: listings + %d changed dog page(s)", len(slug_tags))
 
     def detect_language(self, text):
         """Detect the language of the text.
@@ -765,8 +808,10 @@ class BaseScraper(ABC):
                 # Update counts
                 if action == "added":
                     processing_stats["animals_added"] += 1
+                    self.mark_animal_changed(animal_id)
                 elif action == "updated":
                     processing_stats["animals_updated"] += 1
+                    self.mark_animal_changed(animal_id)
                 elif action == "no_change":
                     processing_stats["animals_unchanged"] += 1
 
