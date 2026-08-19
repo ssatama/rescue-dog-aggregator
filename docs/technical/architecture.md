@@ -389,7 +389,6 @@ Daily Users:    20+
 API Response Times (p50/p95):
   GET /api/animals:      45ms / 120ms
   GET /api/swipe/stack:  65ms / 180ms
-  POST /api/llm/enrich:  2.5s / 5s
 
 Frontend (Core Web Vitals):
   FCP: 0.8s | LCP: 1.2s | TTI: 1.5s | CLS: 0.02
