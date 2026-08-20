@@ -555,7 +555,7 @@ class UnifiedStandardizer:
         age_result = self._standardize_age(age) if self.enable_age_standardization else {"age_category": None, "age_min_months": None, "age_max_months": None}
 
         # Standardize size
-        size_result = self._standardize_size(size, breed) if self.enable_size_standardization else {"category": size}
+        size_result = self._standardize_size(size, breed_result.get("size")) if self.enable_size_standardization else {"category": size}
 
         # Build result in the format expected by BaseScraper and tests
         primary_breed = breed_result.get("primary_breed") or breed_result.get("name", "Unknown")
@@ -578,7 +578,7 @@ class UnifiedStandardizer:
             "age_max_months": age_result.get("age_max_months"),
             # Size fields - preserve original and add standardized
             "size": size,  # Preserve original size field
-            "standardized_size": size_result.get("category", "Medium"),
+            "standardized_size": size_result.get("category"),
         }
 
         # Return deep copy to prevent cache mutation
@@ -1069,8 +1069,13 @@ class UnifiedStandardizer:
 
         return None
 
-    def _standardize_size(self, size: str | None, breed: str | None = None) -> dict[str, Any]:
-        """Standardize size with comprehensive fallback chain: explicit → breed → weight → default."""
+    def _standardize_size(self, size: str | None, breed_size: str | None = None) -> dict[str, Any]:
+        """Standardize size: the stated size, else the breed's typical size.
+
+        breed_size comes from the breed registry, which is the single source of
+        breed facts; estimating from a second breed table here would let the two
+        drift apart.
+        """
         # Step 1: Try to use explicit size if provided
         if size and isinstance(size, str):
             size_lower = size.strip().lower()
@@ -1098,26 +1103,19 @@ class UnifiedStandardizer:
                     "source": "explicit",
                 }
 
-        # Step 2: Fall back to breed-based estimation
-        if breed and self.enable_breed_standardization:
-            breed_size = self._get_size_from_breed(breed)
-            if breed_size:
-                # Map XLarge to Large for canonical sizes unless it's a guardian breed
-                if breed_size == "XLarge":
-                    breed_size = "Large"
-                return {
-                    "category": breed_size,
-                    "weight_range": self._get_weight_range(breed_size),
-                    "source": "breed_estimated",
-                }
+        # Step 2: Fall back to the breed's typical size
+        if breed_size and self.enable_breed_standardization:
+            canonical = "Large" if breed_size == "XLarge" else breed_size
+            return {
+                "category": canonical,
+                "weight_range": self._get_weight_range(canonical),
+                "source": "breed_estimated",
+            }
 
-        # Step 3: TODO - Weight-based estimation would go here
-        # Step 4: Default fallback
-        return {
-            "category": "Medium",
-            "weight_range": self._get_weight_range("Medium"),
-            "source": "default",
-        }
+        # Nothing known. Returning "Medium" here would invent a size for a dog
+        # nobody measured, putting it in front of adopters who filtered it in
+        # and hiding it from those who filtered it out.
+        return {"category": None, "weight_range": None, "source": "unknown"}
 
     def _get_weight_range(self, size_category: str) -> dict[str, int]:
         """Get weight range for a size category."""
