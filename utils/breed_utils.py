@@ -52,18 +52,10 @@ def generate_breed_slug(primary_breed: str) -> str:
     return slug
 
 
-def is_qualifying_breed(count: int, threshold: int = 15) -> bool:
-    """
-    Check if a breed qualifies for a dedicated page.
-
-    Args:
-        count: Number of dogs of this breed
-        threshold: Minimum count required for qualification (default: 15)
-
-    Returns:
-        True if breed qualifies for dedicated page, False otherwise
-    """
-    return count >= threshold
+# How many available dogs a breed needs before it gets its own page. Deliberately
+# low: this is a niche aggregator, so a thin page for an uncommon breed is still
+# the only place someone searching for it will land.
+QUALIFYING_BREED_MIN_COUNT = 3
 
 
 def validate_breed_type(breed_type: str | None) -> bool:

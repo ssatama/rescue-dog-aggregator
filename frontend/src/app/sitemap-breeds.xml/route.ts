@@ -61,7 +61,13 @@ export async function GET(): Promise<Response> {
               breed.breed_type === "mixed" ||
               breed.breed_group === "Mixed" ||
               breed.primary_breed?.toLowerCase().includes("mix");
-            if (isMixed || !breed.breed_slug) return false;
+            // "Unknown" is the absence of a breed, not a breed. Indexing it
+            // offers a searcher nothing and is thin by construction.
+            const isUnknown =
+              breed.breed_type === "unknown" ||
+              breed.breed_slug === "unknown" ||
+              breed.primary_breed?.toLowerCase() === "unknown";
+            if (isMixed || isUnknown || !breed.breed_slug) return false;
             if (seenSlugs.has(breed.breed_slug)) return false;
             seenSlugs.add(breed.breed_slug);
             return true;

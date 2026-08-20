@@ -20,7 +20,7 @@ from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse, FilterOption
 from api.utils.json_parser import build_organization_object, parse_json_field
 from api.utils.sql_utils import escape_like_pattern
-from utils.breed_utils import generate_breed_slug
+from utils.breed_utils import QUALIFYING_BREED_MIN_COUNT, generate_breed_slug
 
 logger = logging.getLogger(__name__)
 
@@ -706,7 +706,7 @@ class AnimalService:
         - Total dogs
         - Unique breeds count
         - Breed groups distribution
-        - Qualifying breeds (15+ dogs) with details
+        - Qualifying breeds (see QUALIFYING_BREED_MIN_COUNT) with details
         """
         try:
             # Get total dog count
@@ -756,7 +756,7 @@ class AnimalService:
             )
             breed_groups = [{"name": row["group_name"], "count": row["count"]} for row in self.cursor.fetchall()]
 
-            # Get qualifying breeds (15+ dogs) with organization distribution
+            # Get qualifying breeds with organization distribution
             self.cursor.execute(
                 """
                 WITH breed_stats AS (
@@ -816,7 +816,7 @@ class AnimalService:
                     AND o.active = TRUE
                     AND a.primary_breed IS NOT NULL
                     GROUP BY a.primary_breed, a.breed_slug, a.breed_group
-                    HAVING COUNT(*) >= 3
+                    HAVING COUNT(*) >= %s
                 ),
                 breed_traits AS (
                     SELECT
@@ -858,7 +858,8 @@ class AnimalService:
                 FROM breed_stats bs
                 LEFT JOIN top_traits tt ON bs.primary_breed = tt.primary_breed
                 ORDER BY bs.count DESC
-            """
+            """,
+                (QUALIFYING_BREED_MIN_COUNT,),
             )
 
             qualifying_breeds = []
