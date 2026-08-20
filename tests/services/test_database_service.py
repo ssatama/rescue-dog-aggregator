@@ -219,3 +219,94 @@ class TestDatabaseServiceWithConnectionPool:
 
             assert result == (123, "Test Dog", datetime(2024, 1, 15))
             assert db_service.conn == mock_connection
+
+
+@pytest.mark.slow
+@pytest.mark.database
+class TestDatabaseServiceRawBreedPersistence:
+    """Both write paths must persist breed_raw or the original text is lost on disk."""
+
+    def _pooled_service(self, fetchone_side_effect):
+        from services.database_service import DatabaseService
+
+        mock_pool_service = Mock(spec=ConnectionPoolService)
+        mock_connection = Mock()
+        mock_cursor = Mock()
+
+        mock_context = Mock()
+        mock_context.__enter__ = Mock(return_value=mock_connection)
+        mock_context.__exit__ = Mock(return_value=None)
+        mock_pool_service.get_connection_context.return_value = mock_context
+        mock_connection.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.side_effect = fetchone_side_effect
+
+        db_service = DatabaseService(
+            db_config={"host": "localhost", "user": "test", "database": "test_db"},
+            connection_pool=mock_pool_service,
+        )
+        return db_service, mock_cursor
+
+    def test_create_animal_inserts_breed_raw(self):
+        db_service, mock_cursor = self._pooled_service([(0,), (456,)])
+
+        db_service.create_animal(
+            {
+                "name": "New Dog",
+                "external_id": "new-123",
+                "organization_id": 1,
+                "breed": "Mixed Breed",
+                "breed_raw": "Crossbreed",
+                "age_text": "3 years",
+                "status": "available",
+            }
+        )
+
+        insert_call = next(c for c in mock_cursor.execute.call_args_list if "INSERT INTO animals" in c[0][0])
+        assert "breed_raw" in insert_call[0][0]
+        assert "Crossbreed" in insert_call[0][1]
+
+    def test_update_animal_persists_breed_raw(self):
+        from services.database_service import DatabaseService
+
+        mock_conn = Mock()
+        mock_cursor = Mock()
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = (
+            "Old Dog",
+            "Mixed Breed",
+            "3 years",
+            "Male",
+            "http://img",
+            "available",
+            "Mixed Breed",
+            36,
+            48,
+            "Medium",
+            None,
+            "mixed",
+            "Mixed Breed",
+            None,
+            "mixed-breed",
+            "0.5",
+            None,
+        )
+
+        db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"})
+        db_service.conn = mock_conn
+
+        db_service.update_animal(
+            123,
+            {
+                "name": "Old Dog",
+                "breed": "Mixed Breed",
+                "breed_raw": "Crossbreed",
+                "age_text": "3 years",
+                "sex": "Male",
+                "primary_image_url": "http://img",
+                "status": "available",
+            },
+        )
+
+        update_call = next(c for c in mock_cursor.execute.call_args_list if "UPDATE animals" in c[0][0] and "SET" in c[0][0])
+        assert "breed_raw" in update_call[0][0]
+        assert "Crossbreed" in update_call[0][1]
