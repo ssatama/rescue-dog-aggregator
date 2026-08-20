@@ -2075,7 +2075,6 @@ class AnimalService:
             "mixed": "Mixed",
             "crossbreed": "Crossbreed",
             "unknown": "Unknown",
-            "sighthound": "Sighthound",
         }
 
         return [

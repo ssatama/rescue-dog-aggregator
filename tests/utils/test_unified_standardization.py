@@ -74,7 +74,7 @@ class TestUnifiedStandardizer:
         # Puggle (Pug + Beagle)
         result = standardizer.apply_full_standardization(breed="Puggle")
         assert result["breed"] == "Puggle"
-        assert result["breed_category"] == "Hound"  # Puggle gets Hound category
+        assert result["breed_category"] == "Designer/Hybrid"  # all designer breeds share one group
 
         # Schnoodle (Schnauzer + Poodle)
         result = standardizer.apply_full_standardization(breed="Schnoodle")

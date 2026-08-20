@@ -8,13 +8,24 @@
 | `primary_breed` | Canonical breed identity. A cross keeps its root here, so `Border Collie Cross` has `primary_breed = "Border Collie"` |
 | `secondary_breed` | The second named breed when the source names one, otherwise `NULL` |
 | `breed_slug` | Slug of `primary_breed`; the `/breeds/[slug]` page key |
-| `breed_type` | `purebred`, `crossbreed`, `mixed`, or `unknown` |
+| `breed_type` | `purebred`, `crossbreed`, `mixed`, or `unknown` — how the breed was arrived at, never what kind it is |
 | `breed_group` | Group of the primary breed, e.g. a Staffie cross is `Terrier` |
 | `breed` / `standardized_breed` | Display label, e.g. `Border Collie Cross` or `Bichon Frise x Maltese` |
 
 Being a cross is a **facet**, not an identity. `Border Collie` and
 `Border Collie Cross` therefore share one breed page rather than forking into
 two competing ones.
+
+## breed_type is not a category
+
+`breed_type` records **how** a breed was arrived at. It previously also carried
+`sighthound`, a category rather than a type, which meant Lurchers were neither
+`purebred` nor `crossbreed` and the Crossbreed filter silently excluded every
+Lurcher cross. Breed *kind* belongs in `breed_group`.
+
+All designer breeds share the group `Designer/Hybrid`. Inheriting a parent's
+group made the choice arbitrary — a Puggle is no more Hound (from Beagle) than
+Toy (from Pug).
 
 ## Adding a breed or alias
 

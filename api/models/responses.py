@@ -118,7 +118,7 @@ class QualifyingBreed(BaseModel):
     breed_slug: str = Field(..., description="URL-friendly breed slug")
     breed_type: str | None = Field(
         None,
-        description="Breed type (purebred, mixed, crossbreed, unknown, sighthound)",
+        description="Breed type (purebred, mixed, crossbreed, unknown)",
     )
     breed_group: str | None = Field(None, description="Breed group classification")
     count: int = Field(..., description="Total number of dogs of this breed", ge=0)

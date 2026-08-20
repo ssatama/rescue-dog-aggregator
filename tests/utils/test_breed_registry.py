@@ -237,3 +237,28 @@ class TestRegistryCoversProductionBreeds:
     @pytest.mark.parametrize("qualifier", ["Vermutlich", "Wahrscheinlich", "Similar", "Possibly"])
     def test_leading_qualifier_does_not_block_the_match(self, qualifier):
         assert resolve_breed(f"{qualifier} Newfoundland").primary == "Newfoundland"
+
+
+@pytest.mark.unit
+class TestBreedTypeTaxonomy:
+    """breed_type says how the breed was arrived at, never what kind it is."""
+
+    def test_resolver_never_emits_a_category_as_a_type(self, registry):
+        """Lurchers used to carry breed_type 'sighthound', so the Crossbreed
+        filter silently excluded every Lurcher cross."""
+        for raw in ["Lurcher", "Lurcher Cross", "Greyhound", "Whippet", "Galgo"]:
+            assert resolve_breed(raw).breed_type in {"purebred", "crossbreed", "mixed", "unknown"}
+
+    def test_lurcher_cross_is_a_crossbreed(self):
+        identity = resolve_breed("Lurcher Cross")
+        assert identity.breed_type == "crossbreed"
+        assert identity.is_cross is True
+
+    def test_every_registry_group_has_one_spelling(self, registry):
+        """'Designer' and 'Designer/Hybrid' both existed for the same concept."""
+        groups = {b.group for b in registry.breeds} | {b.group for b in registry.designer_breeds}
+        assert "Designer" not in groups
+        assert "Designer/Hybrid" in groups
+
+    def test_designer_breeds_share_one_group(self, registry):
+        assert {b.group for b in registry.designer_breeds} == {"Designer/Hybrid"}
