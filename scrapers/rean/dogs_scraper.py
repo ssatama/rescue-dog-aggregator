@@ -30,6 +30,44 @@ from utils.shared_extraction_patterns import (  # noqa: E402
     extract_weight_from_text as shared_extract_weight,
 )
 
+# Words that appear where a name would sit but never name a dog: calls to
+# action, navigation, and the charity's own copy.
+NON_NAME_WORDS = frozenset(
+    {
+        "rean",
+        "please",
+        "apply",
+        "contact",
+        "message",
+        "email",
+        "donate",
+        "home",
+        "adopt",
+        "sponsor",
+        "foster",
+        "updated",
+        "click",
+        "read",
+        "more",
+        "all",
+        "our",
+        "the",
+        "this",
+        "dogs",
+        "puppies",
+        # Sentence words that can sit where the heading name would be, as in
+        # "is 2 years old and looking for a home".
+        "is",
+        "was",
+        "are",
+        "and",
+        "for",
+        "she",
+        "he",
+        "they",
+    }
+)
+
 
 class REANScraper(BaseScraper):
     """REAN (Rescuing European Animals in Need) scraper for Romania and UK foster dogs."""
@@ -1256,6 +1294,32 @@ class REANScraper(BaseScraper):
         Returns:
             Extracted name or None
         """
+        if not text:
+            return None
+
+        # The site heading carries the name: "Louis- 4 years old - in Romania".
+        # It is sometimes lowercase in the markup, which the capitalised-word
+        # scan below cannot see, so read it here first.
+        heading = re.match(r"\s*([A-Za-z]+)\s*-?\s*\d+(?:[./]\d+)?\s*(?:months?|years?)\s+old", text)
+        if heading:
+            candidate = heading.group(1).strip().title()
+            if self._is_plausible_dog_name(candidate):
+                return candidate
+
+        candidate = self._extract_name_candidate(text)
+        return candidate if candidate and self._is_plausible_dog_name(candidate) else None
+
+    @staticmethod
+    def _is_plausible_dog_name(name: str) -> bool:
+        """Reject page furniture that reads like a name.
+
+        Container text often begins with a call to action, and "Please message
+        us..." previously produced seven dogs named "Please".
+        """
+        return name.lower() not in NON_NAME_WORDS
+
+    def _extract_name_candidate(self, text: str) -> str | None:
+        """Pattern-match a name out of the entry prose."""
         if not text:
             return None
 
