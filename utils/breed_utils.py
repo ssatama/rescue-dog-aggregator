@@ -1,6 +1,7 @@
 # utils/breed_utils.py
 
 import re
+import unicodedata
 
 
 def generate_breed_slug(primary_breed: str) -> str:
@@ -21,8 +22,10 @@ def generate_breed_slug(primary_breed: str) -> str:
     if not primary_breed:
         return ""
 
-    # Convert to lowercase
-    slug = primary_breed.lower()
+    # Casefold first so ligatures expand (German sharp s becomes "ss"), then
+    # decompose accents and drop the combining marks, leaving ASCII letters.
+    decomposed = unicodedata.normalize("NFKD", primary_breed.casefold())
+    slug = "".join(char for char in decomposed if not unicodedata.combining(char))
 
     # Handle special case of "Mix" suffix - preserve it with hyphen
     slug = re.sub(r"\s+mix$", "-mix", slug, flags=re.IGNORECASE)
