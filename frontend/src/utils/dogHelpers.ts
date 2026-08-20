@@ -97,7 +97,11 @@ export const getAgeCategory = (dog: DogInput | null | undefined): string => {
 };
 
 export const formatBreed = (dog: DogInput | null | undefined): string | null => {
-  const rawBreed = dog?.primary_breed || dog?.standardized_breed || dog?.breed;
+  // standardized_breed is the display label and carries the cross, e.g.
+  // "Border Collie Cross" or "Bichon Frise x Maltese". primary_breed is the
+  // canonical identity behind breed pages and filters and omits the cross, so
+  // preferring it here would hide that the dog is a cross.
+  const rawBreed = dog?.standardized_breed || dog?.breed || dog?.primary_breed;
   if (
     !rawBreed ||
     rawBreed === "Unknown" ||

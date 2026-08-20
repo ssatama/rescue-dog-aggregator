@@ -26,7 +26,7 @@ import {
   sanitizeText,
   safeExternalUrl,
 } from "../../../utils/security";
-import { getAgeCategory } from "../../../utils/dogHelpers";
+import { formatBreed, getAgeCategory } from "../../../utils/dogHelpers";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
 import DogDetailErrorBoundary from "../../../components/error/DogDetailErrorBoundary";
 import { ScrollAnimationWrapper } from "../../../hooks/useScrollAnimation";
@@ -431,7 +431,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                                     : ""
                                 }
                                 title={`Meet ${dog.name} - Available for Adoption`}
-                                text={`${dog.name} is a ${dog.primary_breed || dog.standardized_breed || dog.breed || "lovely dog"} looking for a forever home.`}
+                                text={`${dog.name} is a ${formatBreed(dog) || "lovely dog"} looking for a forever home.`}
                                 variant="ghost"
                                 size="sm"
                                 className="p-3 rounded-full hover:bg-gray-100 transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
@@ -451,10 +451,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
 
                     {/* Only show breed section if we have a known breed */}
                     {(() => {
-                      const breed =
-                        dog.primary_breed ||
-                        dog.standardized_breed ||
-                        dog.breed;
+                      const breed = formatBreed(dog);
                       const isUnknownBreed =
                         !breed ||
                         breed === "Unknown" ||
@@ -523,18 +520,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                         </div>
 
                         {/* Breed Card - Only show if breed is known and not "Unknown" */}
-                        {(dog.primary_breed ||
-                          dog.standardized_breed ||
-                          dog.breed) &&
-                          !(
-                            dog.primary_breed === "Unknown" ||
-                            dog.standardized_breed === "Unknown" ||
-                            dog.breed === "Unknown" ||
-                            dog.primary_breed?.toLowerCase() === "unknown" ||
-                            dog.standardized_breed?.toLowerCase() ===
-                              "unknown" ||
-                            dog.breed?.toLowerCase() === "unknown"
-                          ) && (
+                        {formatBreed(dog) && (
                             <div
                               className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-green-100 dark:border-green-800/30"
                               data-testid="dog-breed-card"
@@ -544,9 +530,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                                 Breed
                               </p>
                               <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                                {dog.primary_breed ||
-                                  dog.standardized_breed ||
-                                  dog.breed}
+                                {formatBreed(dog)}
                               </p>
                             </div>
                           )}
