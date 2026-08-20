@@ -62,9 +62,21 @@ parents stay in the registry rather than being copied onto every row.
 
 ## Repairing stored values
 
-`breed_slug`, `primary_breed` and the rest are recomputed on every scrape and are
-covered by change detection, so stored rows correct themselves within one cron
-cycle (Mon/Thu/Sat 15:00 UTC). No backfill migration is needed.
+**Scrapes do not repair existing rows.** Most organisations run with
+`skip_existing_animals: true`, and `filter_existing_animals` drops dogs that are
+already stored *before* `save_animal`, so an existing animal never reaches
+`process_animal` again. Only newly listed dogs get current standardization.
+
+After any change to the registry or resolver, re-resolve the stored rows from
+the organisation's original text:
+
+```bash
+uv run python management/breed_commands.py restandardize             # dry run
+uv run python management/breed_commands.py restandardize --apply     # write
+```
+
+It reads `breed_raw`, falling back to `breed`, and rewrites the derived columns.
+The dry run prints what would change so the rewrite can be reviewed first.
 
 ## Keeping the registry current
 
