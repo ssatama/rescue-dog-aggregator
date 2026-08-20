@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS animals (
     llm_processing_flags JSONB DEFAULT '{}',
     
     -- Enhanced breed information
-    breed_confidence VARCHAR(50),
+    breed_confidence NUMERIC(3, 2),
     breed_type VARCHAR(50),
     primary_breed VARCHAR(255),
     secondary_breed VARCHAR(255),
