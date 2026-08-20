@@ -161,7 +161,7 @@ describe("useDogsFilters", () => {
         age_category: "Puppy",
         sex: "Male",
         organization_id: "1",
-        standardized_breed: "Labrador",
+        primary_breed: "Labrador",
         breed_group: "Sporting",
         location_country: "Germany",
         available_to_country: "Finland",
@@ -412,5 +412,21 @@ describe("useDogsFilters", () => {
 
       expect(result.current.availableRegions).toEqual(["Any region"]);
     });
+  });
+});
+
+describe("breed filter uses the canonical breed", () => {
+  // Filtering on standardized_breed - the display label - split each breed
+  // into "X" and "X Cross", so /dogs disagreed with the breed pages: picking
+  // Border Collie returned 20 dogs where /breeds/border-collie showed 41.
+  it("sends primary_breed, not the display label", () => {
+    const params = buildAPIParams({ breedFilter: "Border Collie" });
+
+    expect(params.primary_breed).toBe("Border Collie");
+    expect(params.standardized_breed).toBeUndefined();
+  });
+
+  it("omits the breed filter at its default", () => {
+    expect(buildAPIParams({ breedFilter: "Any breed" }).primary_breed).toBeUndefined();
   });
 });
