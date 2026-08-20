@@ -27,18 +27,18 @@ QUALIFIER_WORDS = frozenset({"vermutlich", "wahrscheinlich", "similar", "possibl
 PARTICLES = frozenset({"de", "del", "la", "el", "von", "van", "der", "du", "di", "y"})
 GENERIC_BREED_WORDS = frozenset({"breed", "dog", "puppy", "pup"})
 SEPARATOR_PATTERN = re.compile(r"\s+x\s+|[/+,]|\s+and\s+")
-JUNK_VALUES = frozenset(
-    {
-        "n/a",
-        "na",
-        "tbc",
-        "breed tbc",
-        "not specified",
-        "pending",
-        "unknown",
-        "can be the only dog",
-        "",
-    }
+# Written as they appear in source data; normalised below so the comparison
+# against normalised text actually matches ("n/a" folds to "n a").
+JUNK_LITERALS = (
+    "n/a",
+    "na",
+    "tbc",
+    "breed tbc",
+    "not specified",
+    "pending",
+    "unknown",
+    "can be the only dog",
+    "",
 )
 # Single words that appear in the breed field but never name a breed.
 NON_BREED_WORDS = frozenset({"unlisted", "european", "tofu", "yorkshire", "pinscher", "shepherd", "spitz", "hound", "terrier", "spaniel", "poodle", "collie", "retriever"})
@@ -133,6 +133,9 @@ def _normalize(text: str) -> str:
     """Fold to ASCII and reduce punctuation to single spaces for matching."""
     folded = fold_to_ascii(text)
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", folded)).strip()
+
+
+JUNK_VALUES = frozenset(_normalize(value) for value in JUNK_LITERALS)
 
 
 def _find_word(haystack: str, needle: str) -> int | None:
