@@ -364,8 +364,7 @@ class TestCompatibilityWithStandardization:
         assert standardized_breed is not None
         # Standardization preserves the breed component for mixed breeds
         assert standardized_breed in [
-            "German Shepherd Mix",
-            "German Shepherd Mixed Breed",  # Translated input preserved
+            "German Shepherd Dog Cross",  # Canonical breed plus the cross marker
             "Mixed Breed",
             "German Shepherd Dog",
         ]

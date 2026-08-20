@@ -75,7 +75,7 @@ class TestWoofProjectUnifiedStandardization:
 
         # Check values (mixed breeds keep the original breed name)
         assert "labrador" in result["primary_breed"].lower()
-        assert result["breed_category"] == "Mixed"  # Mixed for "mix" breeds
+        assert result["breed_category"] == "Sporting"  # Group follows the primary breed
         assert result["standardized_size"] == "Large"
         assert result["standardization_confidence"] > 0.5  # Lower confidence for mixes
 

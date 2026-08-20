@@ -32,19 +32,18 @@ class TestBreedStandardization:
 
     def test_partial_breed_match(self):
         """Test partial matches that should be detected."""
-        # "lab mix" is recognized as a Labrador cross with correct size
+        # The alias expands to its canonical breed rather than echoing the input
         result = standardize_breed("lab mix")
-        assert result[0] == "Lab Mix"  # Capitalized input, not expanded alias
-        assert result[1] == "Mixed"
+        assert result[0] == "Labrador Retriever Cross"
+        assert result[1] == "Sporting"  # Group follows the primary breed
         assert result[2] == "Large"  # Size from Labrador Retriever
-        # Check that "golden mix" is recognized as Mixed type
-        assert standardize_breed("golden mix")[1] == "Mixed"
+        assert standardize_breed("golden mix")[0] == "Golden Retriever Cross"
 
     def test_unknown_breed(self):
         """Test handling of unknown breeds."""
         result = standardize_breed("unknown breed")
-        # Returns capitalized input "Unknown Breed" when not in breed_data
-        assert result[0] == "Unknown Breed"
+        # "unknown" is a non-breed value, not a name to carry through
+        assert result[0] == "Unknown"
         assert result[1] == "Unknown"
         assert result[2] is None
 
@@ -59,7 +58,7 @@ class TestBreedStandardization:
     def test_mixed_breeds(self):
         """Test various mixed breed descriptions."""
         assert standardize_breed("mixed breed")[:2] == ("Mixed Breed", "Mixed")
-        assert standardize_breed("terrier mix")[:2] == ("Terrier Mix", "Mixed")
+        assert standardize_breed("terrier mix")[:2] == ("Terrier Cross", "Terrier")
 
     def test_empty_or_none_breed(self):
         """Test handling of empty or None input."""

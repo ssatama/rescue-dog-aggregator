@@ -51,6 +51,18 @@ const nextConfig = {
         destination: '/',
         permanent: true,
       },
+      // A cross is a facet of a breed, not a separate breed, so these pages
+      // merged into their canonical breed rather than standing alone.
+      {
+        source: '/breeds/staffordshire-bull-terrier-mix',
+        destination: '/breeds/staffordshire-bull-terrier',
+        permanent: true,
+      },
+      {
+        source: '/breeds/german-shepherd-mix',
+        destination: '/breeds/german-shepherd-dog',
+        permanent: true,
+      },
     ];
   },
 

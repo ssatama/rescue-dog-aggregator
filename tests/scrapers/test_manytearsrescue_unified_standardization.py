@@ -78,7 +78,7 @@ class TestManyTearsRescueUnifiedStandardization:
 
         assert "Collie" in result["breed"]
         assert "Labrador" in result["breed"]
-        assert result["breed_category"] == "Mixed"
+        assert result["breed_category"] == "Herding"
         assert result["standardized_size"] == "Large"
 
     def test_age_text_parsing(self, scraper):

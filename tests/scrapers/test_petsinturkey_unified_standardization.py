@@ -42,9 +42,9 @@ class TestPetsInTurkeyUnifiedStandardization:
 
         result = scraper.process_animal(test_data)
 
-        # Specific breed mix should be preserved as "Terrier Mix"
-        assert result["breed"] == "Terrier Mix"
-        assert result["breed_category"] == "Mixed"
+        # Specific breed mix should be preserved as "Terrier Cross"
+        assert result["breed"] == "Terrier Cross"
+        assert result["breed_category"] == "Terrier"  # Group follows the primary breed
         assert result["breed_type"] == "crossbreed"
         assert result["standardized_size"] == "Medium"
 
