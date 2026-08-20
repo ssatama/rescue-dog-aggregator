@@ -564,7 +564,7 @@ class AnimalService:
             params = []
 
             if breed_group and breed_group != "Any group":
-                query += " AND properties->>'breed_group' = %s"
+                query += " AND breed_group = %s"
                 params.append(breed_group)
 
             query += " ORDER BY standardized_breed"
@@ -583,36 +583,20 @@ class AnimalService:
     def get_distinct_breed_groups(self) -> list[str]:
         """Get distinct breed groups."""
         try:
-            # First try getting breed groups from the properties field
             self.cursor.execute(
                 """
-                SELECT DISTINCT properties->>'breed_group' as breed_group
+                SELECT DISTINCT breed_group
                 FROM animals
-                WHERE properties->>'breed_group' IS NOT NULL
-                  AND properties->>'breed_group' != ''
-                  AND properties->>'breed_group' NOT IN ('Unknown')
+                WHERE breed_group IS NOT NULL
+                  AND breed_group != ''
+                  AND breed_group NOT IN ('Unknown')
                   AND status = 'available'
                   AND active = true
                 ORDER BY breed_group
             """
             )
 
-            groups = [row["breed_group"] for row in self.cursor.fetchall()]
-
-            # If no breed groups found, return default list
-            if not groups:
-                return [
-                    "Sporting",
-                    "Hound",
-                    "Working",
-                    "Terrier",
-                    "Toy",
-                    "Non-Sporting",
-                    "Herding",
-                    "Mixed",
-                ]
-
-            return groups
+            return [row["breed_group"] for row in self.cursor.fetchall()]
 
         except Exception as e:
             logger.error(f"Error in get_distinct_breed_groups: {e}")

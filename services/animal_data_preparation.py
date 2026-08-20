@@ -10,9 +10,8 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from utils.optimized_standardization import parse_age_text, standardize_size_value
 from utils.slug_generator import generate_unique_animal_slug
-from utils.standardization import standardize_breed
+from utils.standardization import parse_age_text, standardize_breed, standardize_size_value
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +53,7 @@ def prepare_animal_data(animal_data: dict[str, Any]) -> PreparedAnimalData:
         age_months_min = animal_data.get("age_min_months")
         age_months_max = animal_data.get("age_max_months")
     else:
-        age_info = parse_age_text(animal_data.get("age_text", ""))
-        age_months_min = age_info.min_months
-        age_months_max = age_info.max_months
+        _, age_months_min, age_months_max = parse_age_text(animal_data.get("age_text", ""))
 
     final_size = animal_data.get("size") or animal_data.get("standardized_size")
     final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))

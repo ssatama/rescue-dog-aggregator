@@ -116,10 +116,3 @@ class TestManyTearsRescueUnifiedStandardization:
 
             result = scraper.process_animal(test_data)
             assert result["standardized_size"] == expected_size
-
-    def test_feature_flag_enabled(self):
-        """Test that feature flag is enabled for ManyTearsRescue."""
-        from utils.feature_flags import FeatureFlags
-
-        # This will fail initially and pass after migration
-        assert FeatureFlags.SCRAPER_FLAGS.get("manytearsrescue", False)

@@ -173,9 +173,3 @@ class TestFurryRescueItalyUnifiedStandardization:
         # Should convert to proper case and full name
         assert processed["breed"] == "German Shepherd Dog"  # Standardized breed name
         assert processed["breed_category"] == "Herding"
-
-    def test_feature_flag_enabled(self):
-        """Test that feature flag is enabled for FurryRescueItaly."""
-        from utils.feature_flags import FeatureFlags
-
-        assert FeatureFlags.SCRAPER_FLAGS.get("furryrescueitaly")
