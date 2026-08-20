@@ -68,7 +68,7 @@ export default function PopularBreedsSection({ popularBreeds }: PopularBreedsSec
             const firstDog = breed.sample_dogs?.[0];
             const imageUrl =
               firstDog?.primary_image_url || "/images/dog-placeholder.jpg";
-            const traits = firstDog?.personality_traits || [];
+            const traits = breed.personality_traits ?? [];
 
             return (
               <Link
@@ -100,8 +100,10 @@ export default function PopularBreedsSection({ popularBreeds }: PopularBreedsSec
                     </h3>
 
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      {breed.breed_group} Group •{" "}
-                      {breed.breed_type === "purebred" ? "Purebred" : "Mixed"}
+                      {breed.breed_group} Group
+                      {typeof breed.crossbreed_count === "number" &&
+                        breed.crossbreed_count > 0 &&
+                        ` • ${breed.purebred_count} purebred, ${breed.crossbreed_count} cross`}
                     </p>
 
                     {/* Personality Traits */}

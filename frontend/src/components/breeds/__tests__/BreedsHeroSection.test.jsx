@@ -64,8 +64,10 @@ describe("BreedsHeroSection", () => {
     expect(screen.getByText("54%")).toBeInTheDocument();
     expect(screen.getByText("Of All Dogs")).toBeInTheDocument();
 
-    expect(screen.getByText("∞")).toBeInTheDocument();
-    expect(screen.getByText("Unique Personalities")).toBeInTheDocument();
+    // "∞ Unique Personalities" was removed: it occupied a stat slot beside
+    // two real numbers without carrying any information.
+    expect(screen.queryByText("∞")).not.toBeInTheDocument();
+    expect(screen.queryByText("Unique Personalities")).not.toBeInTheDocument();
   });
 
   it("displays sample dog cards with images", () => {

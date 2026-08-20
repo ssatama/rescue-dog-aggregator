@@ -44,6 +44,9 @@ export interface BreedData {
   breed_group?: string;
   breed_type?: string;
   count: number;
+  /** A breed page covers the breed and its crosses; these split the count. */
+  purebred_count?: number;
+  crossbreed_count?: number;
   slug?: string;
   description?: string;
   average_age?: number;
@@ -147,8 +150,6 @@ export interface BreedPageData extends BreedData {
   topDogs?: SampleDog[];
   top_locations?: string[];
   available_countries?: string[];
-  purebred_count?: number;
-  crossbreed_count?: number;
 }
 
 export type BreedDetailFilterKey =

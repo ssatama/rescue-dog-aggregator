@@ -58,12 +58,6 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }: BreedsH
             <div className="text-xs md:text-sm opacity-95">Of All Dogs</div>
           </div>
 
-          <div className="bg-white/20 dark:bg-gray-900/30 backdrop-blur-sm rounded-lg p-3 md:p-4 min-w-[100px]">
-            <div className="text-2xl md:text-3xl font-bold">∞</div>
-            <div className="text-xs md:text-sm opacity-95">
-              Unique Personalities
-            </div>
-          </div>
         </div>
 
         {/* Sample Dogs */}

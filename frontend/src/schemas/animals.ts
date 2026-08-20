@@ -236,6 +236,11 @@ export const BreedWithImagesSchema = z
     breed_group: z.string().optional(),
     breed_type: z.string().optional(),
     count: z.number().optional(),
+    /** A breed page covers the breed and its crosses; these split the count. */
+    purebred_count: z.number().optional(),
+    crossbreed_count: z.number().optional(),
+    /** Aggregated across the breed, not taken from one sample dog. */
+    personality_traits: z.array(z.string()).optional(),
     sample_dogs: z
       .array(
         z

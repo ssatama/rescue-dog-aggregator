@@ -31,6 +31,15 @@ export default function BreedHeader({ breedData, breedDescription }: BreedHeader
               <Dog className="h-4 w-4" />
               {breedData.count} available
             </Badge>
+            {typeof breedData.crossbreed_count === "number" &&
+              breedData.crossbreed_count > 0 && (
+                <Badge variant="outline" className="px-3 py-1">
+                  {/* The page covers the breed and its crosses, so say so
+                      rather than letting the count imply all are purebred. */}
+                  {breedData.purebred_count} purebred ·{" "}
+                  {breedData.crossbreed_count} cross
+                </Badge>
+              )}
             {breedData.breed_group && (
               <Badge variant="outline" className="px-3 py-1">
                 {breedData.breed_group} Group
