@@ -22,6 +22,7 @@ from rich.table import Table  # noqa: E402
 
 from config import DB_CONFIG  # noqa: E402
 from management.breed_reconciliation import BreedReconciliation, BreedRow, reconcile  # noqa: E402
+from management.breed_restandardize import DERIVED_FIELDS, AnimalBreedRow, BreedUpdate, plan_restandardization  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -43,6 +44,54 @@ def fetch_breed_rows(available_only: bool) -> list[BreedRow]:
     with psycopg2.connect(**DB_CONFIG) as conn, conn.cursor() as cursor:
         cursor.execute(DISTINCT_BREED_QUERY.format(available_only=clause))
         return [BreedRow(raw, primary, slug, count) for raw, primary, slug, count in cursor.fetchall()]
+
+
+STORED_BREED_QUERY = """
+    SELECT id, breed_raw, breed, primary_breed, secondary_breed, breed_slug, breed_type, breed_group
+    FROM animals
+    {available_only}
+"""
+
+
+def fetch_animal_breed_rows(available_only: bool) -> list[AnimalBreedRow]:
+    clause = "WHERE status = 'available'" if available_only else ""
+    with psycopg2.connect(**DB_CONFIG) as conn, conn.cursor() as cursor:
+        cursor.execute(STORED_BREED_QUERY.format(available_only=clause))
+        return [AnimalBreedRow(*row) for row in cursor.fetchall()]
+
+
+def apply_updates(updates: list[BreedUpdate]) -> int:
+    """Write the planned fields. Returns the number of rows changed."""
+    assignments = ", ".join(f"{name} = %s" for name in DERIVED_FIELDS)
+    statement = f"UPDATE animals SET {assignments} WHERE id = %s"
+
+    with psycopg2.connect(**DB_CONFIG) as conn, conn.cursor() as cursor:
+        for update in updates:
+            cursor.execute(statement, [update.fields[name] for name in DERIVED_FIELDS] + [update.animal_id])
+        conn.commit()
+    return len(updates)
+
+
+def render_plan(updates: list[BreedUpdate], console: Console, limit: int) -> None:
+    if not updates:
+        console.print("\n[green]Every stored row already matches the registry.[/green]\n")
+        return
+
+    table = Table(title=f"{len(updates)} rows resolve differently today", title_justify="left")
+    table.add_column("organisation text")
+    table.add_column("stored")
+    table.add_column("becomes")
+    table.add_column("slug")
+    for update in updates[:limit]:
+        table.add_row(
+            (update.source_text or "")[:38],
+            str(update.was["primary_breed"])[:30],
+            str(update.fields["primary_breed"])[:30],
+            str(update.fields["breed_slug"])[:30],
+        )
+    console.print(table)
+    if len(updates) > limit:
+        console.print(f"[dim]... and {len(updates) - limit} more[/dim]")
 
 
 def render(report: BreedReconciliation, console: Console, limit: int) -> None:
@@ -83,8 +132,9 @@ def render(report: BreedReconciliation, console: Console, limit: int) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Breed registry operations")
-    parser.add_argument("command", choices=["reconcile"])
+    parser.add_argument("command", choices=["reconcile", "restandardize"])
     parser.add_argument("--all-statuses", action="store_true", help="Include adopted and delisted dogs")
+    parser.add_argument("--apply", action="store_true", help="restandardize: write the changes (default is a dry run)")
     parser.add_argument("--limit", type=int, default=25, help="Rows shown per table")
     parser.add_argument(
         "--unmatched-budget",
@@ -94,8 +144,19 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    console = Console()
+
+    if args.command == "restandardize":
+        updates = plan_restandardization(fetch_animal_breed_rows(available_only=not args.all_statuses))
+        render_plan(updates, console, args.limit)
+        if not args.apply:
+            logger.info("Dry run - pass --apply to write these %s rows", len(updates))
+            return 0
+        logger.info("Updated %s rows", apply_updates(updates))
+        return 0
+
     report = reconcile(fetch_breed_rows(available_only=not args.all_statuses))
-    render(report, Console(), args.limit)
+    render(report, console, args.limit)
 
     if not report.is_clean(args.unmatched_budget):
         logger.error("%s unmatched rows exceeds the budget of %s", report.unmatched_rows, args.unmatched_budget)
