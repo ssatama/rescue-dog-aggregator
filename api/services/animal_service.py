@@ -549,15 +549,22 @@ class AnimalService:
         return Animal(**animal_dict)
 
     def get_distinct_breeds(self, breed_group: str | None = None) -> list[str]:
-        """Get distinct standardized breeds."""
+        """Get distinct canonical breeds for the breed filter.
+
+        Uses primary_breed rather than the standardized_breed display label:
+        the label distinguishes "Border Collie" from "Border Collie Cross", so
+        listing it would offer both and split one breed's dogs across two
+        options, disagreeing with the breed pages, which cover a breed together
+        with its crosses.
+        """
         try:
             query = """
-                SELECT DISTINCT standardized_breed
+                SELECT DISTINCT primary_breed
                 FROM animals
-                WHERE standardized_breed IS NOT NULL
-                  AND standardized_breed != ''
-                  AND standardized_breed NOT IN ('Yes', 'No', 'Unknown')
-                  AND LENGTH(standardized_breed) > 1
+                WHERE primary_breed IS NOT NULL
+                  AND primary_breed != ''
+                  AND primary_breed NOT IN ('Yes', 'No', 'Unknown')
+                  AND LENGTH(primary_breed) > 1
                   AND status = 'available'
                   AND active = true
             """
@@ -567,10 +574,10 @@ class AnimalService:
                 query += " AND breed_group = %s"
                 params.append(breed_group)
 
-            query += " ORDER BY standardized_breed"
+            query += " ORDER BY primary_breed"
 
             self.cursor.execute(query, tuple(params))
-            return [row["standardized_breed"] for row in self.cursor.fetchall()]
+            return [row["primary_breed"] for row in self.cursor.fetchall()]
 
         except Exception as e:
             logger.error(f"Error in get_distinct_breeds: {e}")
@@ -1468,7 +1475,7 @@ class AnimalService:
             response.sex_options = self._get_sex_counts(base_conditions, base_params, filters)
 
             # Get breed counts (limit to top breeds to avoid overwhelming response)
-            response.breed_options = self._get_breed_counts(base_conditions, base_params, filters)
+            response.breed_options = self._get_primary_breed_counts(base_conditions, base_params, filters)
 
             # Get organization counts
             response.organization_options = self._get_organization_counts(base_conditions, base_params, filters)

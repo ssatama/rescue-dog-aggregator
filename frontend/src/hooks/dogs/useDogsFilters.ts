@@ -205,7 +205,10 @@ function buildAPIParams(filterValues: Filters): Record<string, string> {
 
   const breed = (filterValues.breedFilter || "").trim();
   if (breed && breed !== FILTER_DEFAULTS.BREED) {
-    params.standardized_breed = breed;
+    // primary_breed is the canonical identity, so a breed and its crosses stay
+    // together. standardized_breed is the display label and would split them,
+    // disagreeing with the breed pages.
+    params.primary_breed = breed;
   }
 
   const breedGroup = (filterValues.breedGroupFilter || "").trim();
