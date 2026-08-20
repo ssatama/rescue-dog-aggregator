@@ -269,7 +269,7 @@ class TestWoofProjectScraperOptimized:
             assert result is not None
             assert result["name"] == "Lisbon"  # Standardized from "LISBON"
             assert result["external_id"] == "wp-lisbon"
-            assert result["breed"] == "Hound Pointer Cross"
+            assert result["breed"] == "Hound x Pointer"
             assert result["standardized_breed"] is not None
             assert result["size"] == "Medium"
             assert result["standardized_size"] is not None

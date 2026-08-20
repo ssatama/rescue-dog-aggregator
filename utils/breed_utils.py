@@ -4,6 +4,19 @@ import re
 import unicodedata
 
 
+def fold_to_ascii(text: str) -> str:
+    """
+    Lowercase text and reduce it to ASCII letters.
+
+    Casefolding first expands ligatures (the German sharp s becomes "ss"),
+    then NFKD decomposition splits accented characters so the combining marks
+    can be dropped, turning "Español" into "espanol" rather than losing the
+    character entirely.
+    """
+    decomposed = unicodedata.normalize("NFKD", text.casefold())
+    return "".join(char for char in decomposed if not unicodedata.combining(char))
+
+
 def generate_breed_slug(primary_breed: str) -> str:
     """
     Convert primary breed names to URL-friendly slugs.
@@ -22,10 +35,7 @@ def generate_breed_slug(primary_breed: str) -> str:
     if not primary_breed:
         return ""
 
-    # Casefold first so ligatures expand (German sharp s becomes "ss"), then
-    # decompose accents and drop the combining marks, leaving ASCII letters.
-    decomposed = unicodedata.normalize("NFKD", primary_breed.casefold())
-    slug = "".join(char for char in decomposed if not unicodedata.combining(char))
+    slug = fold_to_ascii(primary_breed)
 
     # Handle special case of "Mix" suffix - preserve it with hyphen
     slug = re.sub(r"\s+mix$", "-mix", slug, flags=re.IGNORECASE)

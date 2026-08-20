@@ -10,6 +10,7 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Any
 
+from utils.breed_registry import BreedIdentity, resolve_breed
 from utils.breed_utils import generate_breed_slug
 
 
@@ -32,6 +33,16 @@ class AgeInfo:
 
 
 MAX_DOG_AGE_MONTHS = 360
+
+
+def _display_name(identity: BreedIdentity) -> str:
+    """Human-readable breed label that still shows the cross relationship."""
+    if identity.parents:
+        # A designer breed already names the cross; "Cockapoo Cross" is wrong.
+        return identity.primary
+    if identity.secondary:
+        return f"{identity.primary} x {identity.secondary}"
+    return f"{identity.primary} Cross" if identity.is_cross else identity.primary
 
 
 class UnifiedStandardizer:
@@ -547,7 +558,7 @@ class UnifiedStandardizer:
         size_result = self._standardize_size(size, breed) if self.enable_size_standardization else {"category": size}
 
         # Build result in the format expected by BaseScraper and tests
-        primary_breed = breed_result.get("primary_breed", breed_result.get("name", "Unknown"))
+        primary_breed = breed_result.get("primary_breed") or breed_result.get("name", "Unknown")
         result = {
             # Breed fields
             "breed": breed_result.get("name", "Unknown"),
@@ -557,7 +568,7 @@ class UnifiedStandardizer:
             "breed_confidence": breed_result.get("confidence", 0.0),  # Add breed_confidence field
             "primary_breed": primary_breed,
             "secondary_breed": breed_result.get("secondary_breed"),
-            "breed_slug": generate_breed_slug(primary_breed),  # Generate breed_slug for breed pages
+            "breed_slug": breed_result.get("breed_slug") or generate_breed_slug(primary_breed),
             "standardization_confidence": breed_result.get("confidence", 0.0),
             # Age fields - preserve original and add ranges
             "age": age,  # Preserve original age field
@@ -569,14 +580,6 @@ class UnifiedStandardizer:
             "size": size,  # Preserve original size field
             "standardized_size": size_result.get("category", "Medium"),
         }
-
-        # Handle mixed breeds properly for primary/secondary breed fields
-        if breed_result.get("is_mixed") and not breed_result.get("primary_breed"):
-            # For regular mixed breeds like "Terrier Mix", set secondary to "Mixed Breed"
-            result["secondary_breed"] = "Mixed Breed"
-        elif not breed_result.get("is_mixed"):
-            # For pure breeds, secondary breed should be None
-            result["secondary_breed"] = None
 
         # Return deep copy to prevent cache mutation
         return deepcopy(result)
@@ -674,193 +677,33 @@ class UnifiedStandardizer:
         return animal_data
 
     def _standardize_breed(self, breed: str | None) -> dict[str, Any]:
-        """Standardize breed with all fixes including Lurcher, designer breeds, and Staffordshire."""
-        if not breed:
+        """Resolve a breed string to its canonical identity via the registry."""
+        identity = resolve_breed(breed)
+
+        if identity.primary is None:
+            name = "Mixed Breed" if identity.breed_type == "mixed" else "Unknown"
             return {
-                "name": "Unknown",
-                "group": "Unknown",
+                "name": name,
+                "group": identity.group,
                 "size": None,
-                "confidence": 0.0,
-                "breed_type": "unknown",
-                "is_mixed": False,
+                "confidence": identity.confidence,
+                "breed_type": identity.breed_type,
+                "is_mixed": identity.is_cross,
+                "primary_breed": name,
+                "secondary_breed": None,
+                "breed_slug": identity.slug or generate_breed_slug(name),
             }
 
-        # Handle non-string inputs
-        if not isinstance(breed, str):
-            return {
-                "name": "Unknown",
-                "group": "Unknown",
-                "size": None,
-                "confidence": 0.0,
-                "breed_type": "unknown",
-                "is_mixed": False,
-            }
-
-        breed_lower = breed.strip().lower()
-
-        # CRITICAL-3: Input sanitization - blocklist for known non-breed strings
-        # Note: "unknown" is NOT in blocklist - it's a valid (if uninformative) breed value
-        blocklist = [
-            "can be the only dog",
-            "n/a",
-            "breed tbc",
-            "not specified",
-            "tbc",
-            "pending",
-        ]
-        if breed_lower in blocklist or len(breed_lower) > 60:
-            return {
-                "name": "Unknown",
-                "group": "Unknown",
-                "size": None,
-                "confidence": 0.0,
-                "breed_type": "unknown",
-                "is_mixed": False,
-            }
-
-        is_mixed = bool(self.breed_patterns["cross"].search(breed_lower) or self.breed_patterns["mixed"].search(breed_lower))
-
-        # Try parenthetical pattern first (Dogs Trust style)
-        parsed_breed = self._parse_parenthetical_breed(breed)
-        if parsed_breed:
-            # Now look up the parsed breed in our data
-            parsed_lower = parsed_breed.replace(" Cross", "").lower()
-            if parsed_lower in self.breed_data:
-                breed_info = self.breed_data[parsed_lower]
-                return {
-                    "name": parsed_breed,
-                    "group": "Mixed" if is_mixed else breed_info.breed_group,
-                    "size": breed_info.size_estimate,
-                    "confidence": 0.9 if not is_mixed else 0.7,
-                    "breed_type": "purebred" if not is_mixed else "crossbreed",
-                    "is_mixed": is_mixed,
-                    "primary_breed": parsed_breed.replace(" Cross", ""),
-                    "secondary_breed": None,
-                }
-            else:
-                # Parsed but not in breed_data - still better than unknown
-                return {
-                    "name": parsed_breed,
-                    "group": "Mixed" if is_mixed else "Unknown",
-                    "size": None,
-                    "confidence": 0.7 if not is_mixed else 0.6,
-                    "breed_type": "purebred" if not is_mixed else "crossbreed",
-                    "is_mixed": is_mixed,
-                    "primary_breed": parsed_breed.replace(" Cross", ""),
-                    "secondary_breed": None,
-                }
-
-        # Check for Lurcher first (high priority fix)
-        if "lurcher" in breed_lower:
-            return {
-                "name": "Lurcher" + (" Cross" if is_mixed else ""),
-                "group": "Hound",
-                "size": "Large",
-                "confidence": 0.95,
-                "breed_type": "sighthound",
-                "is_mixed": is_mixed,
-            }
-
-        # Check for American Staffordshire variations first (more specific)
-        for variation in self.american_staffordshire_variations:
-            if variation in breed_lower or ("american" in breed_lower and "staff" in breed_lower):
-                return {
-                    "name": "American Staffordshire Terrier" + (" Mix" if is_mixed else ""),
-                    "group": "Mixed" if is_mixed else "Terrier",
-                    "size": "Medium",
-                    "confidence": 0.9 if not is_mixed else 0.8,
-                    "breed_type": "purebred" if not is_mixed else "crossbreed",
-                    "is_mixed": is_mixed,
-                }
-
-        # Check for Staffordshire variations (less specific)
-        for variation in self.staffordshire_variations:
-            if variation in breed_lower and "american" not in breed_lower:
-                return {
-                    "name": "Staffordshire Bull Terrier" + (" Mix" if is_mixed else ""),
-                    "group": "Mixed" if is_mixed else "Terrier",
-                    "size": "Medium",
-                    "confidence": 0.9 if not is_mixed else 0.8,
-                    "breed_type": "purebred" if not is_mixed else "crossbreed",
-                    "is_mixed": is_mixed,
-                }
-
-        # Check for designer breeds
-        for designer_key, designer_info in self.designer_breeds.items():
-            if designer_key in breed_lower:
-                return {
-                    "name": designer_info["name"],
-                    "group": designer_info["group"],
-                    "size": designer_info["size"],
-                    "confidence": 0.85,
-                    "breed_type": "crossbreed",  # Designer breeds are crossbreeds
-                    "primary_breed": designer_info["primary"],
-                    "secondary_breed": designer_info["secondary"],
-                    "is_mixed": True,
-                }
-
-        # Check standard breed data
-        if breed_lower in self.breed_data:
-            breed_info = self.breed_data[breed_lower]
-            return {
-                "name": breed_info.standardized_name + (" Cross" if is_mixed else ""),
-                "group": "Mixed" if is_mixed else breed_info.breed_group,
-                "size": breed_info.size_estimate,
-                "confidence": 0.9 if not is_mixed else 0.7,
-                "breed_type": "purebred" if not is_mixed else "crossbreed",
-                "is_mixed": is_mixed,
-            }
-
-        # HIGH-2: Check for crosses with specific breed mentioned FIRST (before generic mixed breed)
-        # Use dynamic breed_data.keys() instead of hardcoded list
-        breed_keywords = [k for k in self.breed_data.keys() if len(k) >= 3]
-        # Also include international terms not in breed_data
-        international_terms = ["schäferhund", "hund", "dogo", "gordon", "northern", "irish", "ridgeback"]
-        all_keywords = breed_keywords + international_terms
-
-        if is_mixed:
-            matched_breed_key = None
-            for keyword in all_keywords:
-                if keyword in breed_lower:
-                    matched_breed_key = keyword
-                    break
-
-            if matched_breed_key:
-                # Get size from matched breed if available
-                matched_size = None
-                if matched_breed_key in self.breed_data:
-                    matched_size = self.breed_data[matched_breed_key].size_estimate
-
-                breed_name = self._capitalize_breed_name(breed.strip())
-                return {
-                    "name": breed_name,
-                    "group": "Mixed",
-                    "size": matched_size,
-                    "confidence": 0.7,
-                    "breed_type": "crossbreed",
-                    "is_mixed": True,
-                }  # Medium confidence for identifiable crosses
-
-        # Check for generic mixed breed (only if no specific breed identified)
-        if self.breed_patterns["mixed"].search(breed_lower):
-            return {
-                "name": "Mixed Breed",
-                "group": "Mixed",
-                "size": None,
-                "confidence": 0.5,
-                "breed_type": "mixed",
-                "is_mixed": True,
-            }
-
-        # Unknown breed - if it's mixed, put in Mixed group, otherwise Unknown
-        breed_name = self._capitalize_breed_name(breed.strip())
         return {
-            "name": breed_name,
-            "group": "Mixed" if is_mixed else "Unknown",
-            "size": None,
-            "confidence": 0.3,
-            "breed_type": "unknown",
-            "is_mixed": is_mixed,
+            "name": _display_name(identity),
+            "group": identity.group,
+            "size": identity.size,
+            "confidence": identity.confidence,
+            "breed_type": identity.breed_type,
+            "is_mixed": identity.is_cross,
+            "primary_breed": identity.primary,
+            "secondary_breed": identity.secondary,
+            "breed_slug": identity.slug,
         }
 
     def _capitalize_breed_name(self, breed: str) -> str:

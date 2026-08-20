@@ -40,7 +40,7 @@ Linting:       ruff (Python) + ESLint (TypeScript)
 
 ## Core Data Models
 
-### animals (39 columns)
+### animals (40 columns)
 
 ```sql
 -- Identity
@@ -51,7 +51,8 @@ name, breed, standardized_breed, age_text, age_min_months, age_max_months
 sex, size, standardized_size, language
 
 -- Breed Standardization
-breed_confidence, breed_type, primary_breed, secondary_breed, breed_slug, breed_group
+-- breed_raw holds the organization's original text; breed and the rest are derived
+breed_raw, breed_confidence, breed_type, primary_breed, secondary_breed, breed_slug, breed_group
 
 -- Status & Availability
 status, availability_confidence, active
@@ -431,8 +432,8 @@ python management/llm_commands.py cost-report
 
 ```bash
 # Migrations
-alembic revision --autogenerate -m "description"
-alembic upgrade head
+alembic -c migrations/railway/alembic.ini revision -m "description"
+alembic -c migrations/railway/alembic.ini upgrade head   # production only, run by hand
 alembic downgrade -1
 
 # Direct access

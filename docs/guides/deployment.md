@@ -66,8 +66,8 @@ createdb rescue_dogs_local
 # Apply schema
 psql rescue_dogs_local < database/schema.sql
 
-# Run migrations
-alembic upgrade head
+# Local databases are built from schema.sql above; Alembic targets production
+# only, via RAILWAY_DATABASE_URL. See "Applying migrations" below.
 ```
 
 ### 2. Environment Configuration
@@ -157,9 +157,29 @@ uv run ruff check .
 createdb rescue_dogs_production
 psql rescue_dogs_production < database/schema.sql
 
-# Apply all migrations
-alembic upgrade head
+# Apply all migrations (see "Applying migrations" below)
+uv run alembic -c migrations/railway/alembic.ini upgrade head
 ```
+
+### Applying migrations
+
+Migrations are **not** run on deploy. `start.sh` launches either uvicorn or the
+scraper cron and never invokes Alembic, so a schema change reaches production
+only when someone runs it by hand.
+
+Apply the migration **before** merging code that depends on the new column, or
+the next scraper run (Mon/Thu/Sat 15:00 UTC) fails on every animal. Additive
+nullable columns are safe to apply ahead of the code.
+
+```bash
+export RAILWAY_DATABASE_URL="<the Railway Postgres connection string>"
+uv run alembic -c migrations/railway/alembic.ini current   # confirm the target
+uv run alembic -c migrations/railway/alembic.ini upgrade head
+```
+
+`migrations/railway/env.py` reads `RAILWAY_DATABASE_URL`; `alembic.ini` holds
+only a placeholder, so a missing variable fails loudly rather than silently
+migrating a local database.
 
 ### 3. Service Verification
 ```bash

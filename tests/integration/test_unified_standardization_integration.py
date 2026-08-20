@@ -113,8 +113,8 @@ class TestUnifiedStandardizationIntegration:
         bella = saved_animals[2]
         assert bella["breed"] == "Labradoodle"
         assert bella["breed_category"] == "Designer/Hybrid"
-        assert bella["primary_breed"] == "Labrador Retriever"
-        assert bella["secondary_breed"] == "Poodle"
+        assert bella["primary_breed"] == "Labradoodle"  # keeps its own identity
+        assert bella["secondary_breed"] is None
 
     @patch("scrapers.base_scraper.ConfigLoader")
     @patch("scrapers.base_scraper.create_default_sync_service")
@@ -177,7 +177,7 @@ class TestUnifiedStandardizationIntegration:
         result = standardizer.apply_full_standardization(breed="Unknown")
         assert result["breed"] == "Unknown"
         assert result["breed_category"] == "Unknown"
-        assert result["standardization_confidence"] == 0.3  # "Unknown" has 0.3 confidence
+        assert result["standardization_confidence"] == 0.0  # "Unknown" names no breed
 
         # Test empty string breed
         result = standardizer.apply_full_standardization(breed="")

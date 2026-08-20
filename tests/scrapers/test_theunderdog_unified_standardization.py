@@ -53,10 +53,10 @@ def test_theunderdog_uses_unified_standardization_when_enabled(theunderdog_scrap
     processed_data = theunderdog_scraper.process_animal(raw_animal_data)
 
     # Verify standardization was applied
-    assert processed_data["breed"] == "Staffordshire Bull Terrier Mix"  # Mix properly preserved
+    assert processed_data["breed"] == "Staffordshire Bull Terrier Cross"  # Mix properly preserved
     assert processed_data["age"] == "2 years"  # Age preserved
     assert processed_data["size"] == "Medium"  # Size preserved
-    assert processed_data["breed_category"] == "Mixed"  # Mix breeds get "Mixed" category
+    assert processed_data["breed_category"] == "Terrier"  # Mix breeds get "Mixed" category
 
 
 def test_theunderdog_handles_lurcher_breed_correctly(theunderdog_scraper):

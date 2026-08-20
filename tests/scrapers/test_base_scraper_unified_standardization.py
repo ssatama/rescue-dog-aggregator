@@ -62,10 +62,10 @@ class TestBasScraperUnifiedStandardization:
         processed = scraper.process_animal(raw_data)
 
         # Should standardize the breed (Cross becomes Mix)
-        assert processed["breed"] == "Staffordshire Bull Terrier Mix"
-        assert processed["primary_breed"] == "Staffordshire Bull Terrier Mix"  # Primary is the full name
-        assert processed["secondary_breed"] == "Mixed Breed"  # Secondary indicates it's a mix
-        assert processed["breed_category"] == "Mixed"  # Mixed breed category for crosses
+        assert processed["breed"] == "Staffordshire Bull Terrier Cross"
+        assert processed["primary_breed"] == "Staffordshire Bull Terrier"  # Cross suffix is not part of the identity
+        assert processed["secondary_breed"] is None  # No second breed was named
+        assert processed["breed_category"] == "Terrier"  # Group follows the primary breed, not the cross
         assert "standardization_confidence" in processed
         assert processed["name"] == "Buddy"
         assert processed["external_id"] == "dog-123"
@@ -161,8 +161,8 @@ class TestBasScraperUnifiedStandardization:
         assert call_args["location"] == "London"
         # But breed fields should be standardized (Cockapoo is a designer breed)
         assert call_args["breed"] == "Cockapoo"
-        assert call_args["primary_breed"] == "Cocker Spaniel"
-        assert call_args["secondary_breed"] == "Poodle"
+        assert call_args["primary_breed"] == "Cockapoo"  # A designer breed keeps its own identity
+        assert call_args["secondary_breed"] is None  # parents live in the registry, not the row
         assert call_args["breed_category"] == "Designer/Hybrid"  # Designer breeds now have their own category
 
     def test_standardization_logs_events(self, scraper):
@@ -181,10 +181,10 @@ class TestBasScraperUnifiedStandardization:
         # Just verify it doesn't crash when logging
         result = scraper.save_animal(animal_data)
 
-        # Verify the breed was standardized - "Staff X" becomes "Staffordshire Bull Terrier Mix"
+        # Verify the breed was standardized - "Staff X" becomes "Staffordshire Bull Terrier Cross"
         assert result == (222, "create")
         call_args = scraper.database_service.create_animal.call_args[0][0]
-        assert call_args["breed"] == "Staffordshire Bull Terrier Mix"
+        assert call_args["breed"] == "Staffordshire Bull Terrier Cross"
 
     def test_existing_animal_update_with_standardization(self, scraper):
         """Updating existing animal should apply standardization"""
@@ -265,14 +265,14 @@ class TestBaseScraperRawBreedPreservation:
         processed = scraper.process_animal(
             {
                 "name": "Buddy",
-                "breed": "Staffordshire Bull Terrier Cross",
+                "breed": "Terrier (Staffordshire Bull) Cross",
                 "external_id": "dog-123",
                 "organization_id": 1,
             }
         )
 
-        assert processed["breed_raw"] == "Staffordshire Bull Terrier Cross"
-        assert processed["breed"] == "Staffordshire Bull Terrier Mix"
+        assert processed["breed_raw"] == "Terrier (Staffordshire Bull) Cross"
+        assert processed["breed"] == "Staffordshire Bull Terrier Cross"
         assert processed["breed_raw"] != processed["breed"]
 
     def test_raw_breed_kept_when_breed_collapses_to_mixed_breed(self, scraper):

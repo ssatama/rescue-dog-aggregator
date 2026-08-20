@@ -161,9 +161,9 @@ cd rescue-dog-aggregator
 # Setup backend
 uv sync
 
-# Setup database
+# Setup database (local schema comes from schema.sql, not Alembic)
 createdb rescue_dogs
-uv run alembic upgrade head
+uv run python database/db_setup.py
 
 # Configure environment
 cp .env.example .env

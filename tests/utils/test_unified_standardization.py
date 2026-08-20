@@ -61,15 +61,15 @@ class TestUnifiedStandardizer:
         result = standardizer.apply_full_standardization(breed="Cockapoo")
         assert result["breed"] == "Cockapoo"
         assert result["breed_category"] == "Designer/Hybrid"  # Designer breed category
-        assert result["primary_breed"] == "Cocker Spaniel"
-        assert result["secondary_breed"] == "Poodle"
+        assert result["primary_breed"] == "Cockapoo"
+        assert result["secondary_breed"] is None  # parents live in the registry, not the row
 
         # Labradoodle (Labrador + Poodle)
         result = standardizer.apply_full_standardization(breed="Labradoodle")
         assert result["breed"] == "Labradoodle"
         assert result["breed_category"] == "Designer/Hybrid"  # Labradoodle specifically gets Designer/Hybrid
-        assert result["primary_breed"] == "Labrador Retriever"
-        assert result["secondary_breed"] == "Poodle"
+        assert result["primary_breed"] == "Labradoodle"
+        assert result["secondary_breed"] is None  # parents live in the registry, not the row
 
         # Puggle (Pug + Beagle)
         result = standardizer.apply_full_standardization(breed="Puggle")
@@ -236,7 +236,7 @@ def test_unknown_breed_returns_unknown():
 
     assert result["breed"] == "Flibbertigibbet"
     assert result["breed_category"] == "Unknown"
-    assert result["breed_confidence"] == 0.3  # Unknown breeds get 0.3 confidence
+    assert result["breed_confidence"] == 0.4  # A clean unregistered name is kept at low confidence
     assert result["breed_type"] == "unknown"  # Unknown breeds get unknown type
 
 

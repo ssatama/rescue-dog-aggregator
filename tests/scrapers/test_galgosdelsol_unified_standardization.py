@@ -89,9 +89,9 @@ class TestGalgosDelSolUnifiedStandardization:
 
         result = galgosdelsol_scraper.process_animal(animal)
 
-        # Specific breed mix should be preserved as "Galgo Mix"
-        assert result["breed"] == "Galgo Mix"
-        assert result["breed_category"] == "Mixed"
+        # The cross marker is a facet; the identity stays Galgo
+        assert result["breed"] == "Galgo Cross"
+        assert result["breed_category"] == "Hound"
         assert result["breed_type"] == "crossbreed"
         assert result["standardized_size"] == "Large"
 
@@ -147,9 +147,9 @@ class TestGalgosDelSolUnifiedStandardization:
             ("GALGO", "Galgo", "Hound"),
             (
                 "podenco mix",
-                "Podenco Mix",
-                "Mixed",
-            ),  # Mixed breeds preserve specific breed names
+                "Podenco Cross",
+                "Hound",
+            ),  # A cross keeps its primary breed's group
         ]
 
         for raw_breed, expected_breed, expected_category in test_breeds:

@@ -1,0 +1,752 @@
+# Canonical breed registry.
+# Adding a breed or an alias is a data change - no code edit required.
+# 'group' and 'size' describe the canonical breed; 'parents' applies to
+# designer crosses whose two parent breeds are known.
+
+breeds:
+- canonical: Afghan Hound
+  group: Hound
+  size: Large
+  aliases: []
+- canonical: Akbash
+  group: Guardian
+  size: XLarge
+  aliases: []
+- canonical: Akita
+  group: Working
+  size: Large
+  aliases: []
+- canonical: Alaskan Malamute
+  group: Working
+  size: Large
+  aliases: []
+- canonical: American Akita
+  group: Working
+  size: Large
+  aliases: []
+- canonical: American Bulldog
+  group: Working
+  size: Large
+  aliases: []
+- canonical: American Bully
+  group: Non-Sporting
+  size: Medium
+  aliases:
+  - american bully pocket
+- canonical: American Staffordshire Terrier
+  group: Terrier
+  size: Medium
+  aliases:
+  - am staff
+  - american staffie
+  - american stafford
+  - american staffy
+  - amstaff
+- canonical: Anatolian Shepherd
+  group: Guardian
+  size: XLarge
+  aliases:
+  - anatolian shepherd dog
+- canonical: Australian Cattle Dog
+  group: Herding
+  size: Medium
+  aliases:
+  - cattle dog
+- canonical: Australian Kelpie
+  group: Herding
+  size: Medium
+  aliases: []
+- canonical: Australian Shepherd
+  group: Herding
+  size: Large
+  aliases: []
+- canonical: Basset Hound
+  group: Hound
+  size: Medium
+  aliases: []
+- canonical: Beagle
+  group: Hound
+  size: Medium
+  aliases: []
+- canonical: Bedlington Terrier
+  group: Terrier
+  size: Small
+  aliases:
+  - terrier (bedlington)
+- canonical: Belgian Malinois
+  group: Herding
+  size: Large
+  aliases:
+  - malinois
+- canonical: Belgian Shepherd Dog
+  group: Herding
+  size: Large
+  aliases: []
+- canonical: Bernese Mountain Dog
+  group: Working
+  size: Large
+  aliases: []
+- canonical: Bichon Frise
+  group: Non-Sporting
+  size: Small
+  aliases: []
+- canonical: Black and Tan Coonhound
+  group: Hound
+  size: Large
+  aliases: []
+- canonical: Bloodhound
+  group: Hound
+  size: Large
+  aliases: []
+- canonical: Bodeguero Andaluz
+  group: Terrier
+  size: Small
+  aliases:
+  - bodeguero andaluz espanol
+- canonical: Boerboel
+  group: Guardian
+  size: XLarge
+  aliases: []
+- canonical: Bolognese
+  group: Toy
+  size: Small
+  aliases: []
+- canonical: Border Collie
+  group: Herding
+  size: Medium
+  aliases:
+  - collie (border)
+- canonical: Border Terrier
+  group: Terrier
+  size: Small
+  aliases:
+  - terrier (border)
+- canonical: Boston Terrier
+  group: Non-Sporting
+  size: Small
+  aliases:
+  - terrier (boston)
+- canonical: Boxer
+  group: Working
+  size: Large
+  aliases: []
+- canonical: Brittany
+  group: Sporting
+  size: Medium
+  aliases:
+  - bretonischer spaniel
+  - brittany spaniel
+  - epagneul breton
+- canonical: Bulgarian Scenthound
+  group: Hound
+  size: Medium
+  aliases:
+  - gonche (bulgarian scenthound)
+  - gonche bulgarian scenthound
+- canonical: Bull Terrier
+  group: Terrier
+  size: Medium
+  aliases:
+  - terrier (bull)
+- canonical: Bulldog
+  group: Non-Sporting
+  size: Medium
+  aliases:
+  - bulldogge
+  - bulldoggen
+- canonical: Bullmastiff
+  group: Working
+  size: Large
+  aliases: []
+- canonical: Burgos Pointer
+  group: Sporting
+  size: Large
+  aliases:
+  - perdiguero de burgos
+- canonical: Cane Corso
+  group: Working
+  size: Large
+  aliases:
+  - italian corso dog
+- canonical: Caucasian Shepherd
+  group: Guardian
+  size: XLarge
+  aliases:
+  - caucasian ovcharka
+- canonical: Cavalier King Charles Spaniel
+  group: Toy
+  size: Small
+  aliases: []
+- canonical: Chihuahua
+  group: Toy
+  size: Tiny
+  aliases:
+  - chihuahua (long coat)
+  - chihuahua (smooth coat)
+- canonical: Chinese Crested
+  group: Toy
+  size: Small
+  aliases: []
+- canonical: Chow Chow
+  group: Non-Sporting
+  size: Medium
+  aliases:
+  - chow
+- canonical: Cocker Spaniel
+  group: Sporting
+  size: Medium
+  aliases:
+  - spaniel (cocker)
+- canonical: Collie
+  group: Herding
+  size: Large
+  aliases: []
+- canonical: Corgi
+  group: Herding
+  size: Small
+  aliases: []
+- canonical: Czechoslovakian Wolfdog
+  group: Working
+  size: Large
+  aliases:
+  - tschechoslowakischer wolfshund
+- canonical: Dachshund
+  group: Hound
+  size: Small
+  aliases:
+  - dachshund (smooth haired)
+  - dackel
+  - dackel (kurzhaar)
+- canonical: Dalmatian
+  group: Non-Sporting
+  size: Large
+  aliases:
+  - dalmatiner
+- canonical: Deerhound
+  group: Hound
+  size: Large
+  aliases:
+  - scottish deerhound
+- canonical: Doberman Pinscher
+  group: Working
+  size: Large
+  aliases:
+  - dobermann
+- canonical: Dogo Canario
+  group: Working
+  size: Large
+  aliases:
+  - presa canario
+- canonical: Dogue de Bordeaux
+  group: Working
+  size: XLarge
+  aliases: []
+- canonical: Dutch Shepherd
+  group: Herding
+  size: Large
+  aliases: []
+- canonical: English Pointer
+  group: Sporting
+  size: Large
+  aliases: []
+- canonical: English Springer Spaniel
+  group: Sporting
+  size: Medium
+  aliases:
+  - english springer
+  - spaniel (english springer)
+  - springer spaniel
+- canonical: Finnish Lapphund
+  group: Herding
+  size: Medium
+  aliases: []
+- canonical: Flat-Coated Retriever
+  group: Sporting
+  size: Large
+  aliases:
+  - flat coated retriever
+  - retriever (flat coated)
+- canonical: Fox Terrier
+  group: Terrier
+  size: Small
+  aliases: []
+- canonical: Foxhound
+  group: Hound
+  size: Large
+  aliases: []
+- canonical: French Bulldog
+  group: Non-Sporting
+  size: Small
+  aliases:
+  - französische bulldogge
+- canonical: Galgo
+  group: Hound
+  size: Large
+  aliases: []
+- canonical: Galgo Español
+  group: Hound
+  size: Large
+  aliases:
+  - galga
+  - galgo espagnol
+  - galgo espaniol
+- canonical: German Hunting Terrier
+  group: Terrier
+  size: Small
+  aliases:
+  - deutscher jagdterrier
+- canonical: German Shepherd Dog
+  group: Herding
+  size: Large
+  aliases:
+  - german shepherd
+  - german shepherd dog
+- canonical: German Shorthaired Pointer
+  group: Sporting
+  size: Large
+  aliases:
+  - deutsch kurzhaar
+  - deutscher kurzhaar
+- canonical: German Spitz
+  group: Non-Sporting
+  size: Medium
+  aliases: []
+- canonical: German Wirehaired Pointer
+  group: Sporting
+  size: Large
+  aliases: []
+- canonical: Giant Schnauzer
+  group: Working
+  size: Large
+  aliases: []
+- canonical: Golden Retriever
+  group: Sporting
+  size: Large
+  aliases:
+  - golden
+  - retriever (golden)
+- canonical: Grand Basset Griffon Vendeen
+  group: Hound
+  size: Medium
+  aliases:
+  - grand basset griffon vendeen
+- canonical: Great Dane
+  group: Working
+  size: XLarge
+  aliases:
+  - deutsche dogge
+- canonical: Greyhound
+  group: Hound
+  size: Large
+  aliases: []
+- canonical: Harrier
+  group: Hound
+  size: Medium
+  aliases: []
+- canonical: Hound
+  group: Hound
+  size: Medium
+  aliases:
+  - hound dog
+- canonical: Hungarian Vizsla
+  group: Sporting
+  size: Large
+  aliases:
+  - vizsla
+  - magyar vizsla
+- canonical: Irish Wolfhound
+  group: Hound
+  size: XLarge
+  aliases: []
+- canonical: Jack Russell Terrier
+  group: Terrier
+  size: Small
+  aliases:
+  - jack russell
+  - terrier (jack russell)
+- canonical: Kangal
+  group: Guardian
+  size: XLarge
+  aliases:
+  - turkish kangal dog
+- canonical: King Charles Spaniel
+  group: Toy
+  size: Small
+  aliases: []
+- canonical: Labrador Retriever
+  group: Sporting
+  size: Large
+  aliases:
+  - lab
+  - labrador
+  - retriever (labrador)
+- canonical: Lakeland Terrier
+  group: Terrier
+  size: Small
+  aliases:
+  - terrier (lakeland)
+- canonical: Leonberger
+  group: Working
+  size: XLarge
+  aliases: []
+- canonical: Lhasa Apso
+  group: Non-Sporting
+  size: Small
+  aliases: []
+- canonical: Livestock Guardian Dog
+  group: Working
+  size: Large
+  aliases: []
+- canonical: Lurcher
+  group: Hound
+  size: Large
+  aliases: []
+- canonical: Maltese
+  group: Toy
+  size: Tiny
+  aliases:
+  - maltese terrier
+- canonical: Maremma Sheepdog
+  group: Guardian
+  size: Large
+  aliases:
+  - brindle maremma hound
+- canonical: Mastiff
+  group: Working
+  size: XLarge
+  aliases: []
+- canonical: Miniature Bull Terrier
+  group: Terrier
+  size: Small
+  aliases:
+  - terrier (miniature bull)
+- canonical: Miniature Dachshund
+  group: Hound
+  size: Small
+  aliases:
+  - dachshund (miniature smooth haired)
+- canonical: Miniature Pinscher
+  group: Toy
+  size: Small
+  aliases:
+  - pinscher (miniature)
+- canonical: Miniature Poodle
+  group: Non-Sporting
+  size: Small
+  aliases:
+  - poodle (miniature)
+- canonical: Miniature Schnauzer
+  group: Terrier
+  size: Small
+  aliases:
+  - schnauzer (miniature)
+- canonical: Miniature Wire-Haired Dachshund
+  group: Hound
+  size: Small
+  aliases:
+  - miniature wire haired dachshund
+- canonical: New Zealand Huntaway
+  group: Herding
+  size: Large
+  aliases:
+  - huntaway
+- canonical: Newfoundland
+  group: Working
+  size: XLarge
+  aliases:
+  - neufundlaender
+- canonical: Nova Scotia Duck Tolling Retriever
+  group: Sporting
+  size: Medium
+  aliases:
+  - retriever (nova scotia duck tolling)
+  - toller
+- canonical: Old English Sheepdog
+  group: Herding
+  size: Large
+  aliases:
+  - bobtail
+- canonical: Papillon
+  group: Toy
+  size: Small
+  aliases: []
+- canonical: Parson Russell Terrier
+  group: Terrier
+  size: Small
+  aliases:
+  - terrier (parson russell)
+- canonical: Patterdale Terrier
+  group: Terrier
+  size: Small
+  aliases:
+  - terrier (patterdale)
+- canonical: Podenco
+  group: Hound
+  size: Medium
+  aliases:
+  - podenca
+- canonical: Pointer
+  group: Sporting
+  size: Large
+  aliases: []
+- canonical: Pomeranian
+  group: Toy
+  size: Tiny
+  aliases:
+  - zwergspitz
+- canonical: Poodle
+  group: Non-Sporting
+  size: Medium
+  aliases:
+  - pudel
+- canonical: Portuguese Podengo
+  group: Hound
+  size: Small
+  aliases:
+  - podengo portugues pequeno
+- canonical: Portuguese Podengo Grande
+  group: Hound
+  size: Large
+  aliases:
+  - podengo portugues grande
+- canonical: Pug
+  group: Toy
+  size: Small
+  aliases: []
+- canonical: Ratonero Bodeguero Andaluz
+  group: Terrier
+  size: Small
+  aliases:
+  - ratonero
+- canonical: Rhodesian Ridgeback
+  group: Hound
+  size: Large
+  aliases:
+  - ridgeback
+- canonical: Rottweiler
+  group: Working
+  size: Large
+  aliases:
+  - rottweiller
+- canonical: Saint Bernard
+  group: Working
+  size: XLarge
+  aliases:
+  - st bernard
+- canonical: Saluki
+  group: Hound
+  size: Large
+  aliases: []
+- canonical: Samoyed
+  group: Working
+  size: Large
+  aliases: []
+- canonical: Schnauzer
+  group: Working
+  size: Medium
+  aliases:
+  - schnauzer (standard)
+- canonical: Scottish Terrier
+  group: Terrier
+  size: Small
+  aliases: []
+- canonical: Segugio Italiano
+  group: Hound
+  size: Medium
+  aliases:
+  - hound dog (segugio)
+- canonical: Serra da Estrela
+  group: Guardian
+  size: Large
+  aliases:
+  - serra da estrela berghund
+- canonical: Setter
+  group: Sporting
+  size: Large
+  aliases: []
+- canonical: Shar Pei
+  group: Non-Sporting
+  size: Medium
+  aliases: []
+- canonical: Shepherd
+  group: Herding
+  size: Large
+  aliases: []
+- canonical: Shetland Sheepdog
+  group: Herding
+  size: Small
+  aliases:
+  - sheltie
+- canonical: Shiba Inu
+  group: Non-Sporting
+  size: Medium
+  aliases:
+  - shiba
+- canonical: Shih Tzu
+  group: Toy
+  size: Small
+  aliases: []
+- canonical: Siberian Husky
+  group: Working
+  size: Large
+  aliases:
+  - husky
+- canonical: Soft Coated Wheaten Terrier
+  group: Terrier
+  size: Medium
+  aliases:
+  - terrier (soft coated wheaten)
+- canonical: Spaniel
+  group: Sporting
+  size: Medium
+  aliases: []
+- canonical: Spanish Mastiff
+  group: Working
+  size: XLarge
+  aliases: []
+- canonical: Spitz
+  group: Non-Sporting
+  size: Medium
+  aliases: []
+- canonical: Staffordshire Bull Terrier
+  group: Terrier
+  size: Medium
+  aliases:
+  - english staffie
+  - english staffordshire bull terrier
+  - english staffy
+  - sbt
+  - staff
+  - staffie
+  - stafford
+  - staffordshire
+  - staffordshire terrier
+  - staffy
+  - staffy bull terrier
+  - terrier (staffordshire bull)
+- canonical: Standard Poodle
+  group: Non-Sporting
+  size: Large
+  aliases:
+  - poodle (standard)
+- canonical: Standard Schnauzer
+  group: Working
+  size: Medium
+  aliases: []
+- canonical: Terrier
+  group: Terrier
+  size: Medium
+  aliases: []
+- canonical: Toy Poodle
+  group: Toy
+  size: Tiny
+  aliases: []
+- canonical: Trailhound
+  group: Hound
+  size: Medium
+  aliases: []
+- canonical: Weimaraner
+  group: Sporting
+  size: Large
+  aliases: []
+- canonical: Welsh Sheepdog
+  group: Herding
+  size: Medium
+  aliases: []
+- canonical: West Highland White Terrier
+  group: Terrier
+  size: Small
+  aliases: []
+- canonical: Whippet
+  group: Hound
+  size: Medium
+  aliases: []
+- canonical: Wire Fox Terrier
+  group: Terrier
+  size: Small
+  aliases:
+  - terrier (fox wire)
+- canonical: Wire-Haired Dachshund
+  group: Hound
+  size: Small
+  aliases:
+  - rauhhaardackel
+  - wire haired dachshund
+- canonical: Yorkshire Terrier
+  group: Terrier
+  size: Tiny
+  aliases:
+  - terrier (yorkshire)
+designer_breeds:
+- canonical: Cavachon
+  group: Designer
+  size: Small
+  parents:
+  - Cavalier King Charles Spaniel
+  - Bichon Frise
+  aliases:
+  - cavashon
+- canonical: Cavapoo
+  group: Toy
+  size: Small
+  parents:
+  - Cavalier King Charles Spaniel
+  - Poodle
+  aliases: []
+- canonical: Cockapoo
+  group: Designer/Hybrid
+  size: Small
+  parents:
+  - Cocker Spaniel
+  - Poodle
+  aliases:
+  - cockerpoo
+- canonical: Goldendoodle
+  group: Sporting
+  size: Large
+  parents:
+  - Golden Retriever
+  - Poodle
+  aliases: []
+- canonical: Labradoodle
+  group: Designer/Hybrid
+  size: Large
+  parents:
+  - Labrador Retriever
+  - Poodle
+  aliases: []
+- canonical: Maltipoo
+  group: Toy
+  size: Small
+  parents:
+  - Maltese
+  - Poodle
+  aliases: []
+- canonical: Pomsky
+  group: Designer/Hybrid
+  size: Small
+  parents:
+  - Pomeranian
+  - Siberian Husky
+  aliases: []
+- canonical: Puggle
+  group: Hound
+  size: Small
+  parents:
+  - Pug
+  - Beagle
+  aliases: []
+- canonical: Schnoodle
+  group: Non-Sporting
+  size: Medium
+  parents:
+  - Schnauzer
+  - Poodle
+  aliases: []
+- canonical: Yorkipoo
+  group: Toy
+  size: Tiny
+  parents:
+  - Yorkshire Terrier
+  - Poodle
+  aliases: []

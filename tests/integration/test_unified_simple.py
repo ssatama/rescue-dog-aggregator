@@ -45,16 +45,16 @@ class TestUnifiedStandardizationSimple:
         result = standardizer.apply_full_standardization(breed="Labradoodle")
         assert result["breed"] == "Labradoodle"
         assert result["breed_category"] == "Designer/Hybrid"
-        assert result["primary_breed"] == "Labrador Retriever"
-        assert result["secondary_breed"] == "Poodle"
+        assert result["primary_breed"] == "Labradoodle"  # keeps its own identity
+        assert result["secondary_breed"] is None
         assert result["breed_type"] == "crossbreed"
 
         # Test Cockapoo
         result = standardizer.apply_full_standardization(breed="Cockapoo")
         assert result["breed"] == "Cockapoo"
         assert result["breed_category"] == "Designer/Hybrid"
-        assert result["primary_breed"] == "Cocker Spaniel"
-        assert result["secondary_breed"] == "Poodle"
+        assert result["primary_breed"] == "Cockapoo"  # keeps its own identity
+        assert result["secondary_breed"] is None
 
     def test_age_standardization(self):
         """Test age parsing and standardization."""
@@ -99,7 +99,7 @@ class TestUnifiedStandardizationSimple:
         # Verify all fields are standardized
         assert result["breed"] == "Lurcher Cross"  # Cross is kept, not converted to Mix
         assert result["breed_category"] == "Hound"  # Lurcher Cross still gets Hound category
-        assert result["primary_breed"] == "Lurcher Cross"
+        assert result["primary_breed"] == "Lurcher"  # the cross suffix is not part of the identity
         assert result["age_min_months"] == 36
         assert result["age_category"] == "Adult"
         assert result["standardized_size"] == "Large"
