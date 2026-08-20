@@ -58,7 +58,7 @@ class AnimalFilterRequest(BaseModel):
     primary_breed: str | None = Field(default=None, description="Filter by primary breed")
     breed_type: str | None = Field(
         default=None,
-        description="Filter by breed type (purebred, mixed, crossbreed, unknown, sighthound)",
+        description="Filter by breed type (purebred, mixed, crossbreed, unknown)",
     )
 
     # Physical characteristics
@@ -152,7 +152,7 @@ class AnimalFilterRequest(BaseModel):
     def validate_breed_type_field(cls, v):
         """Validate breed_type field."""
         if not validate_breed_type(v):
-            raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound")
+            raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown")
         return v
 
     @field_validator("energy_level")
@@ -295,7 +295,7 @@ class AnimalFilterCountRequest(BaseModel):
     def validate_breed_type_field(cls, v):
         """Validate breed_type field."""
         if not validate_breed_type(v):
-            raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound")
+            raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown")
         return v
 
     @field_validator("energy_level")

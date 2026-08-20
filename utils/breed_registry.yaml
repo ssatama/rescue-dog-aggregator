@@ -693,7 +693,7 @@ breeds:
   - terrier (yorkshire)
 designer_breeds:
 - canonical: Cavachon
-  group: Designer
+  group: Designer/Hybrid
   size: Small
   parents:
   - Cavalier King Charles Spaniel
@@ -701,7 +701,7 @@ designer_breeds:
   aliases:
   - cavashon
 - canonical: Cavapoo
-  group: Toy
+  group: Designer/Hybrid
   size: Small
   parents:
   - Cavalier King Charles Spaniel
@@ -716,7 +716,7 @@ designer_breeds:
   aliases:
   - cockerpoo
 - canonical: Goldendoodle
-  group: Sporting
+  group: Designer/Hybrid
   size: Large
   parents:
   - Golden Retriever
@@ -730,7 +730,7 @@ designer_breeds:
   - Poodle
   aliases: []
 - canonical: Maltipoo
-  group: Toy
+  group: Designer/Hybrid
   size: Small
   parents:
   - Maltese
@@ -744,21 +744,21 @@ designer_breeds:
   - Siberian Husky
   aliases: []
 - canonical: Puggle
-  group: Hound
+  group: Designer/Hybrid
   size: Small
   parents:
   - Pug
   - Beagle
   aliases: []
 - canonical: Schnoodle
-  group: Non-Sporting
+  group: Designer/Hybrid
   size: Medium
   parents:
   - Schnauzer
   - Poodle
   aliases: []
 - canonical: Yorkipoo
-  group: Toy
+  group: Designer/Hybrid
   size: Tiny
   parents:
   - Yorkshire Terrier

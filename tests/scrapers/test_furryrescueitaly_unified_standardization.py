@@ -93,7 +93,7 @@ class TestFurryRescueItalyUnifiedStandardization:
         processed = scraper.process_animal(animal_data)
 
         assert processed["breed"] == "Cavachon"  # Standardized breed name
-        assert processed["breed_category"] == "Designer"
+        assert processed["breed_category"] == "Designer/Hybrid"  # one spelling for the group
         # Parent breeds should be in primary/secondary breed fields
         assert processed.get("primary_breed") in [
             "Cavachon",

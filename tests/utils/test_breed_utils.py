@@ -6,7 +6,7 @@ survives into the output has to be safe there.
 
 import pytest
 
-from utils.breed_utils import generate_breed_slug
+from utils.breed_utils import generate_breed_slug, validate_breed_type
 
 
 @pytest.mark.unit
@@ -77,3 +77,29 @@ class TestGenerateBreedSlugUnchangedBehaviour:
 
     def test_name_that_reduces_to_nothing_returns_empty_string(self):
         assert generate_breed_slug("###") == ""
+
+
+@pytest.mark.unit
+class TestValidateBreedType:
+    """breed_type describes how a breed was arrived at, not what kind it is.
+
+    'sighthound' was a category smuggled into the type enum: Lurchers carried
+    it instead of purebred or crossbreed, so the Crossbreed filter silently
+    excluded every Lurcher cross.
+    """
+
+    @pytest.mark.parametrize("breed_type", ["purebred", "mixed", "crossbreed", "unknown"])
+    def test_supported_types_are_valid(self, breed_type):
+        assert validate_breed_type(breed_type) is True
+
+    def test_sighthound_is_not_a_breed_type(self):
+        assert validate_breed_type("sighthound") is False
+
+    def test_none_is_valid(self):
+        assert validate_breed_type(None) is True
+
+    def test_unrecognised_value_is_invalid(self):
+        assert validate_breed_type("hound") is False
+
+    def test_validation_is_case_insensitive(self):
+        assert validate_breed_type("Purebred") is True

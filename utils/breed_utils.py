@@ -79,5 +79,5 @@ def validate_breed_type(breed_type: str | None) -> bool:
     if breed_type is None:
         return True
 
-    allowed_types = {"purebred", "mixed", "crossbreed", "unknown", "sighthound"}
+    allowed_types = {"purebred", "mixed", "crossbreed", "unknown"}
     return breed_type.lower() in allowed_types
