@@ -56,7 +56,7 @@ class AnimalBase(BaseModel):
     breed_group: str | None = None
     primary_breed: str | None = None
     breed_type: str | None = None
-    breed_confidence: str | None = None
+    breed_confidence: float | None = None
     secondary_breed: str | None = None
     breed_slug: str | None = None
     age_text: str | None = None

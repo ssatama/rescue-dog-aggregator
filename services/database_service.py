@@ -32,6 +32,16 @@ from utils.slug_generator import fetch_slugs_by_ids
 from utils.standardization import parse_age_text, standardize_breed, standardize_size_value
 
 
+def _as_float(value: object) -> float | None:
+    """Compare confidences numerically; the column used to hold text."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 class DatabaseService:
     """Service for all database operations extracted from BaseScraper."""
 
@@ -232,7 +242,7 @@ class DatabaseService:
                 prepared.primary_breed,
                 prepared.secondary_breed,
                 prepared.breed_slug,
-                str(prepared.breed_confidence) if prepared.breed_confidence is not None else None,
+                prepared.breed_confidence,
             ),
         )
 
@@ -348,7 +358,7 @@ class DatabaseService:
                 or new_primary_breed != current_primary_breed
                 or new_secondary_breed != current_secondary_breed
                 or new_breed_slug != current_breed_slug
-                or str(new_breed_confidence) != current_breed_confidence
+                or _as_float(new_breed_confidence) != _as_float(current_breed_confidence)
                 or new_breed_raw != current_breed_raw
             )
 
@@ -398,7 +408,7 @@ class DatabaseService:
                     new_primary_breed,
                     new_secondary_breed,
                     new_breed_slug,
-                    str(new_breed_confidence) if new_breed_confidence is not None else None,
+                    new_breed_confidence,
                     animal_id,
                 ),
             )
