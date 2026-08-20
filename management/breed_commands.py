@@ -27,6 +27,24 @@ from management.breed_restandardize import DERIVED_FIELDS, AnimalBreedRow, Breed
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+
+def _connect():
+    """Connect to the database this command is meant to act on.
+
+    Migrations target production through RAILWAY_DATABASE_URL, so this follows
+    the same convention. Without it the command silently reads the local
+    database, which is not where the rows needing repair live.
+    """
+    database_url = os.getenv("RAILWAY_DATABASE_URL")
+    if database_url:
+        return psycopg2.connect(database_url)
+    return psycopg2.connect(**DB_CONFIG)
+
+
+def describe_target() -> str:
+    return "production (RAILWAY_DATABASE_URL)" if os.getenv("RAILWAY_DATABASE_URL") else f"local ({DB_CONFIG.get('database')})"
+
+
 DISTINCT_BREED_QUERY = """
     SELECT COALESCE(breed_raw, breed) AS raw,
            MIN(primary_breed) AS stored_primary,
@@ -41,7 +59,7 @@ DISTINCT_BREED_QUERY = """
 
 def fetch_breed_rows(available_only: bool) -> list[BreedRow]:
     clause = "AND status = 'available'" if available_only else ""
-    with psycopg2.connect(**DB_CONFIG) as conn, conn.cursor() as cursor:
+    with _connect() as conn, conn.cursor() as cursor:
         cursor.execute(DISTINCT_BREED_QUERY.format(available_only=clause))
         return [BreedRow(raw, primary, slug, count) for raw, primary, slug, count in cursor.fetchall()]
 
@@ -55,7 +73,7 @@ STORED_BREED_QUERY = """
 
 def fetch_animal_breed_rows(available_only: bool) -> list[AnimalBreedRow]:
     clause = "WHERE status = 'available'" if available_only else ""
-    with psycopg2.connect(**DB_CONFIG) as conn, conn.cursor() as cursor:
+    with _connect() as conn, conn.cursor() as cursor:
         cursor.execute(STORED_BREED_QUERY.format(available_only=clause))
         return [AnimalBreedRow(*row) for row in cursor.fetchall()]
 
@@ -65,7 +83,7 @@ def apply_updates(updates: list[BreedUpdate]) -> int:
     assignments = ", ".join(f"{name} = %s" for name in DERIVED_FIELDS)
     statement = f"UPDATE animals SET {assignments} WHERE id = %s"
 
-    with psycopg2.connect(**DB_CONFIG) as conn, conn.cursor() as cursor:
+    with _connect() as conn, conn.cursor() as cursor:
         for update in updates:
             cursor.execute(statement, [update.fields[name] for name in DERIVED_FIELDS] + [update.animal_id])
         conn.commit()
@@ -77,7 +95,24 @@ def render_plan(updates: list[BreedUpdate], console: Console, limit: int) -> Non
         console.print("\n[green]Every stored row already matches the registry.[/green]\n")
         return
 
-    table = Table(title=f"{len(updates)} rows resolve differently today", title_justify="left")
+    # Summarise by what actually changes; a row whose primary breed is stable
+    # but whose secondary is being cleared otherwise reads as a no-op.
+    by_shape: dict[tuple[str, ...], list] = {}
+    for update in updates:
+        shape = tuple(sorted(key for key, old_value in update.was.items() if update.fields[key] != old_value))
+        by_shape.setdefault(shape, []).append(update)
+
+    summary = Table(title=f"{len(updates)} rows resolve differently today", title_justify="left")
+    summary.add_column("fields changing")
+    summary.add_column("rows", justify="right")
+    summary.add_column("example")
+    for shape, group in sorted(by_shape.items(), key=lambda kv: -len(kv[1])):
+        sample = group[0]
+        detail = ", ".join(f"{key}: {sample.was[key]!r}->{sample.fields[key]!r}" for key in shape)
+        summary.add_row(", ".join(shape), str(len(group)), detail[:70])
+    console.print(summary)
+
+    table = Table(title="Sample rows", title_justify="left")
     table.add_column("organisation text")
     table.add_column("stored")
     table.add_column("becomes")
@@ -85,9 +120,9 @@ def render_plan(updates: list[BreedUpdate], console: Console, limit: int) -> Non
     for update in updates[:limit]:
         table.add_row(
             (update.source_text or "")[:38],
-            str(update.was["primary_breed"])[:30],
-            str(update.fields["primary_breed"])[:30],
-            str(update.fields["breed_slug"])[:30],
+            str(update.was["primary_breed"])[:26],
+            str(update.fields["primary_breed"])[:26],
+            str(update.fields["breed_slug"])[:26],
         )
     console.print(table)
     if len(updates) > limit:
@@ -145,6 +180,7 @@ def main() -> int:
     args = parser.parse_args()
 
     console = Console()
+    console.print(f"[dim]target: {describe_target()}[/dim]")
 
     if args.command == "restandardize":
         updates = plan_restandardization(fetch_animal_breed_rows(available_only=not args.all_statuses))

@@ -71,9 +71,14 @@ After any change to the registry or resolver, re-resolve the stored rows from
 the organisation's original text:
 
 ```bash
+export RAILWAY_DATABASE_URL="<the Railway Postgres connection string>"
 uv run python management/breed_commands.py restandardize             # dry run
 uv run python management/breed_commands.py restandardize --apply     # write
 ```
+
+Both `restandardize` and `reconcile` use `RAILWAY_DATABASE_URL` when it is set
+and the local database otherwise, matching how migrations are applied. The
+command prints which target it chose before doing anything.
 
 It reads `breed_raw`, falling back to `breed`, and rewrites the derived columns.
 The dry run prints what would change so the rewrite can be reviewed first.
