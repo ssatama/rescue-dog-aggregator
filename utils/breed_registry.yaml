@@ -115,6 +115,7 @@ breeds:
   group: Herding
   size: Medium
   aliases:
+  - bordercollie
   - collie (border)
 - canonical: Border Terrier
   group: Terrier
@@ -299,8 +300,11 @@ breeds:
   group: Herding
   size: Large
   aliases:
+  - deutscher schaferhund
   - german shepherd
   - german shepherd dog
+  - schaeferhund
+  - schaferhund
 - canonical: German Shorthaired Pointer
   group: Sporting
   size: Large
@@ -396,7 +400,8 @@ breeds:
 - canonical: Livestock Guardian Dog
   group: Working
   size: Large
-  aliases: []
+  aliases:
+  - herdenschutzhund
 - canonical: Lurcher
   group: Hound
   size: Large
@@ -455,6 +460,10 @@ breeds:
   size: XLarge
   aliases:
   - neufundlaender
+- canonical: Norwegian Elkhound
+  group: Hound
+  size: Medium
+  aliases: []
 - canonical: Nova Scotia Duck Tolling Retriever
   group: Sporting
   size: Medium
@@ -604,6 +613,11 @@ breeds:
   group: Working
   size: XLarge
   aliases: []
+- canonical: Spinone Italiano
+  group: Sporting
+  size: Large
+  aliases:
+  - spinone
 - canonical: Spitz
   group: Non-Sporting
   size: Medium
