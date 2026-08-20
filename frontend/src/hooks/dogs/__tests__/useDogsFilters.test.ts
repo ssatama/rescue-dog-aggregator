@@ -419,14 +419,27 @@ describe("breed filter uses the canonical breed", () => {
   // Filtering on standardized_breed - the display label - split each breed
   // into "X" and "X Cross", so /dogs disagreed with the breed pages: picking
   // Border Collie returned 20 dogs where /breeds/border-collie showed 41.
+  const withBreed = (breedFilter: string): Filters => ({
+    searchQuery: "",
+    sizeFilter: "Any size",
+    ageFilter: "Any age",
+    sexFilter: "Any",
+    organizationFilter: "any",
+    breedFilter,
+    breedGroupFilter: "Any group",
+    locationCountryFilter: "Any country",
+    availableCountryFilter: "Any country",
+    availableRegionFilter: "Any region",
+  });
+
   it("sends primary_breed, not the display label", () => {
-    const params = buildAPIParams({ breedFilter: "Border Collie" });
+    const params = buildAPIParams(withBreed("Border Collie"));
 
     expect(params.primary_breed).toBe("Border Collie");
     expect(params.standardized_breed).toBeUndefined();
   });
 
   it("omits the breed filter at its default", () => {
-    expect(buildAPIParams({ breedFilter: "Any breed" }).primary_breed).toBeUndefined();
+    expect(buildAPIParams(withBreed("Any breed")).primary_breed).toBeUndefined();
   });
 });
