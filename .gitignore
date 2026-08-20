@@ -36,8 +36,6 @@ frontend/build/
 !frontend/.env.example
 
 # === Railway/Alembic ===
-migrations/railway/alembic.ini
-migrations/railway/versions/
 
 # === Testing ===
 .pytest_cache/

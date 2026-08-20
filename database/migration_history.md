@@ -42,6 +42,10 @@ Supporting code also removed:
 - **2025-05-31**: Cleanup and standardization (dogs -> animals)
 - **2025-07-09**: Migration files first consolidated into schema.sql
 - **2026-02-16**: Full rationalization — single source of truth established, all orphaned files deleted
+- **2026-08-20**: Alembic history reconciled — a second, never-applied root branch was
+  removed, leaving `45c123f68726` (the revision production is stamped at) as the single
+  root and head. `migrations/railway/versions/` was also un-gitignored; the rule
+  contradicted the tracked files and silently dropped new migrations
 
 ## Troubleshooting
 
