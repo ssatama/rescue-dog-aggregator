@@ -144,7 +144,7 @@ async function fetchBreedPageData(slug: string) {
   const initialDogs = await getAnimals(
     slug === "mixed"
       ? { breed_group: "Mixed", limit: 12, offset: 0 }
-      : { breed: breedData.primary_breed, limit: 12, offset: 0 },
+      : { primary_breed: breedData.primary_breed, limit: 12, offset: 0 },
   );
 
   return { breedData, initialDogs };
