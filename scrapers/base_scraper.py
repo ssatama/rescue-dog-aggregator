@@ -465,6 +465,9 @@ class BaseScraper(ABC):
             # Apply field normalization first (trimming, boolean conversion, defaults)
             processed_data = self.standardizer.apply_field_normalization(processed_data)
 
+            # Preserve the organization's own breed text before standardization rewrites it
+            processed_data["breed_raw"] = processed_data.get("breed")
+
             # Log standardization for breed if present
             original_breed = animal_data.get("breed")
             if original_breed:

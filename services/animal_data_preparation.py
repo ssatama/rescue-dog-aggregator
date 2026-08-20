@@ -22,6 +22,7 @@ class PreparedAnimalData:
     """Standardized animal data ready for database insertion."""
 
     language: str
+    breed_raw: str | None
     standardized_breed: str
     breed_group: str
     final_size: str | None
@@ -65,6 +66,7 @@ def prepare_animal_data(animal_data: dict[str, Any]) -> PreparedAnimalData:
 
     return PreparedAnimalData(
         language=language,
+        breed_raw=animal_data.get("breed_raw") or animal_data.get("breed"),
         standardized_breed=final_standardized_breed,
         breed_group=final_breed_group,
         final_size=final_size,

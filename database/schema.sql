@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS animals (
 
     -- Core searchable fields
     breed VARCHAR(255),
+    breed_raw VARCHAR(255),
     breed_group VARCHAR(100),
     standardized_breed VARCHAR(100),
     age_text VARCHAR(100),

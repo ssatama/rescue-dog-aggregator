@@ -189,14 +189,14 @@ class DatabaseService:
             INSERT INTO animals (
                 name, organization_id, animal_type, external_id,
                 primary_image_url, original_image_url, adoption_url, status,
-                breed, standardized_breed, breed_group, age_text, age_min_months, age_max_months,
+                breed, breed_raw, standardized_breed, breed_group, age_text, age_min_months, age_max_months,
                 sex, size, standardized_size, language, properties, slug,
                 created_at, updated_at, last_scraped_at, last_seen_at,
                 consecutive_scrapes_missing, availability_confidence, active,
                 breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             )
             RETURNING id
             """,
@@ -210,6 +210,7 @@ class DatabaseService:
                 animal_data.get("adoption_url"),
                 animal_data.get("status", "available"),
                 animal_data.get("breed"),
+                prepared.breed_raw,
                 prepared.standardized_breed,
                 prepared.breed_group,
                 animal_data.get("age_text"),
@@ -269,7 +270,8 @@ class DatabaseService:
                 """
                 SELECT name, breed, age_text, sex, primary_image_url, status,
                        standardized_breed, age_min_months, age_max_months, standardized_size, properties,
-                       breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence
+                       breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence,
+                       breed_raw
                 FROM animals WHERE id = %s
                 """,
                 (animal_id,),
@@ -297,6 +299,7 @@ class DatabaseService:
                 current_secondary_breed,
                 current_breed_slug,
                 current_breed_confidence,
+                current_breed_raw,
             ) = current_data
 
             # Process the properties (sanitize to remove null bytes that PostgreSQL rejects)
@@ -329,6 +332,7 @@ class DatabaseService:
             new_secondary_breed = animal_data.get("secondary_breed")
             new_breed_slug = animal_data.get("breed_slug")
             new_breed_confidence = animal_data.get("breed_confidence")
+            new_breed_raw = animal_data.get("breed_raw") or animal_data.get("breed")
 
             # Check if there are actual changes
             has_changes = (
@@ -348,6 +352,7 @@ class DatabaseService:
                 or new_secondary_breed != current_secondary_breed
                 or new_breed_slug != current_breed_slug
                 or str(new_breed_confidence) != current_breed_confidence
+                or new_breed_raw != current_breed_raw
             )
 
             if not has_changes:
@@ -361,7 +366,7 @@ class DatabaseService:
             cursor.execute(
                 """
                 UPDATE animals
-                SET name = %s, breed = %s, standardized_breed = %s, breed_group = %s,
+                SET name = %s, breed = %s, breed_raw = %s, standardized_breed = %s, breed_group = %s,
                     age_text = %s, age_min_months = %s, age_max_months = %s, sex = %s,
                     primary_image_url = %s, original_image_url = %s, status = %s,
                     size = %s, standardized_size = %s, properties = %s,
@@ -375,6 +380,7 @@ class DatabaseService:
                 (
                     animal_data.get("name"),
                     animal_data.get("breed"),
+                    new_breed_raw,
                     final_standardized_breed,
                     final_breed_group,
                     animal_data.get("age_text"),

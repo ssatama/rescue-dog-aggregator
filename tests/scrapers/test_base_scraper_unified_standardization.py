@@ -241,3 +241,82 @@ class TestBasScraperUnifiedStandardization:
         assert processed["breed"] == "Unknown"
         assert processed.get("primary_breed") == "Unknown"
         assert processed.get("breed_category") == "Unknown"
+
+
+@pytest.mark.unit
+class TestBaseScraperRawBreedPreservation:
+    """process_animal() must not destroy the organization's original breed string."""
+
+    @pytest.fixture
+    def scraper(self):
+        with patch("scrapers.base_scraper.psycopg2"):
+            scraper = ConcreteTestScraper(organization_id=1)
+            scraper.database_service = Mock()
+            scraper.conn = Mock()
+            scraper.cursor = Mock()
+            scraper.image_processing_service = Mock()
+            scraper.metrics_collector = Mock()
+            return scraper
+
+    def test_raw_breed_kept_when_standardization_rewrites_breed(self, scraper):
+        """The pre-standardization breed text survives in breed_raw."""
+        scraper.use_unified_standardization = True
+
+        processed = scraper.process_animal(
+            {
+                "name": "Buddy",
+                "breed": "Staffordshire Bull Terrier Cross",
+                "external_id": "dog-123",
+                "organization_id": 1,
+            }
+        )
+
+        assert processed["breed_raw"] == "Staffordshire Bull Terrier Cross"
+        assert processed["breed"] == "Staffordshire Bull Terrier Mix"
+        assert processed["breed_raw"] != processed["breed"]
+
+    def test_raw_breed_kept_when_breed_collapses_to_mixed_breed(self, scraper):
+        """Crossbreed -> Mixed Breed is the lossiest rewrite; raw must still survive."""
+        scraper.use_unified_standardization = True
+
+        processed = scraper.process_animal(
+            {
+                "name": "Nala",
+                "breed": "Crossbreed",
+                "external_id": "dog-456",
+                "organization_id": 1,
+            }
+        )
+
+        assert processed["breed_raw"] == "Crossbreed"
+        assert processed["breed"] == "Mixed Breed"
+
+    def test_raw_breed_none_when_organization_supplied_no_breed(self, scraper):
+        """A missing breed must not become the string 'Unknown' in breed_raw."""
+        scraper.use_unified_standardization = True
+
+        processed = scraper.process_animal(
+            {
+                "name": "Ghost",
+                "external_id": "dog-789",
+                "organization_id": 1,
+            }
+        )
+
+        assert processed["breed_raw"] is None
+        assert processed["breed"] == "Unknown"
+
+    def test_standardization_disabled_leaves_breed_untouched(self, scraper):
+        """With the flag off nothing rewrites breed, so it still holds the raw value."""
+        scraper.use_unified_standardization = False
+
+        processed = scraper.process_animal(
+            {
+                "name": "Max",
+                "breed": "Lurcher Cross",
+                "external_id": "dog-999",
+                "organization_id": 1,
+            }
+        )
+
+        assert processed["breed"] == "Lurcher Cross"

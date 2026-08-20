@@ -163,3 +163,33 @@ class TestSanitizeProperties:
         parsed = json.loads(result)
         assert parsed["tags"] == ["goodboy", "playful"]
         assert "\x00" not in result
+
+
+@pytest.mark.unit
+class TestPrepareAnimalDataRawBreed:
+    """breed_raw must reach the insert layer so the original text is never lost."""
+
+    def test_breed_raw_passed_through_when_scraper_supplied_it(self):
+        animal_data = {
+            "name": "Luna",
+            "breed": "Mixed Breed",
+            "breed_raw": "Mischling",
+            "age_text": "2 years",
+        }
+        result = prepare_animal_data(animal_data)
+        assert result.breed_raw == "Mischling"
+
+    def test_breed_raw_falls_back_to_breed_when_absent(self):
+        """Without standardization, breed still holds the organization's own text."""
+        animal_data = {
+            "name": "Rex",
+            "breed": "Lurcher Cross",
+            "age_text": "4 years",
+        }
+        result = prepare_animal_data(animal_data)
+        assert result.breed_raw == "Lurcher Cross"
+
+    def test_breed_raw_none_when_no_breed_anywhere(self):
+        animal_data = {"name": "Ghost", "age_text": "1 year"}
+        result = prepare_animal_data(animal_data)
+        assert result.breed_raw is None
