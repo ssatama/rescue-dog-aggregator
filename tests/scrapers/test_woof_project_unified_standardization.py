@@ -1,7 +1,5 @@
 """Test Woof Project scraper integration with unified standardization."""
 
-from unittest.mock import patch
-
 from scrapers.base_scraper import BaseScraper
 from scrapers.woof_project.dogs_scraper import WoofProjectScraper
 from utils.unified_standardization import UnifiedStandardizer
@@ -27,14 +25,6 @@ class TestWoofProjectUnifiedStandardization:
         # Should default to True for base scraper
         assert scraper.use_unified_standardization is True
 
-    def test_feature_flag_enables_unified_standardization(self):
-        """Verify feature flag controls unified standardization."""
-        from utils.feature_flags import is_scraper_standardization_enabled
-
-        _scraper = WoofProjectScraper()
-        # Feature flag should be enabled for woof_project
-        assert is_scraper_standardization_enabled("woof_project") is True
-
     def test_scraper_no_longer_imports_optimized_standardization(self):
         """Verify scraper doesn't import from optimized_standardization."""
         import scrapers.woof_project.dogs_scraper as module
@@ -56,10 +46,8 @@ class TestWoofProjectUnifiedStandardization:
         assert '"standardized_breed":' not in content
         assert '"standardized_size":' not in content
 
-    @patch("utils.feature_flags.is_unified_standardization_enabled")
-    def test_process_animal_applies_unified_standardization(self, mock_flag):
+    def test_process_animal_applies_unified_standardization(self):
         """Verify process_animal applies unified standardization."""
-        mock_flag.return_value = True
 
         scraper = WoofProjectScraper()
 
@@ -91,10 +79,8 @@ class TestWoofProjectUnifiedStandardization:
         assert result["standardized_size"] == "Large"
         assert result["standardization_confidence"] > 0.5  # Lower confidence for mixes
 
-    @patch("utils.feature_flags.is_unified_standardization_enabled")
-    def test_lurcher_standardization(self, mock_flag):
+    def test_lurcher_standardization(self):
         """Test Lurcher breed is correctly mapped to Hound group."""
-        mock_flag.return_value = True
 
         scraper = WoofProjectScraper()
 

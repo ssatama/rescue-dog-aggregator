@@ -92,24 +92,22 @@ class TestDogsTrustUnifiedStandardization:
         """Test that DogsTrust uses unified standardization when feature flag is enabled."""
         scraper = DogsTrustScraper()
 
-        # Mock feature flag enabled
-        with patch("utils.feature_flags.is_scraper_standardization_enabled", return_value=True):
-            raw_animal_data = {
-                "name": "Buddy",
-                "breed": "german shepherd",
-                "age": "3 years old",
-                "size": "large",
-                "gender": "Male",
-            }
+        raw_animal_data = {
+            "name": "Buddy",
+            "breed": "german shepherd",
+            "age": "3 years old",
+            "size": "large",
+            "gender": "Male",
+        }
 
-            processed = scraper.process_animal(raw_animal_data)
+        processed = scraper.process_animal(raw_animal_data)
 
-            # Verify unified standardization was applied
-            assert processed["breed"] == "German Shepherd Dog"  # Standardized breed
-            assert processed["breed_category"] == "Herding"  # Group assignment
-            assert processed["standardized_size"] == "Large"  # Size standardization
-            assert processed["primary_breed"] == "German Shepherd Dog"  # Primary breed
-            assert processed["standardization_confidence"] > 0.8  # Confidence score
+        # Verify unified standardization was applied
+        assert processed["breed"] == "German Shepherd Dog"  # Standardized breed
+        assert processed["breed_category"] == "Herding"  # Group assignment
+        assert processed["standardized_size"] == "Large"  # Size standardization
+        assert processed["primary_breed"] == "German Shepherd Dog"  # Primary breed
+        assert processed["standardization_confidence"] > 0.8  # Confidence score
 
     def test_dogstrust_bypasses_unified_when_disabled(self):
         """Test that DogsTrust bypasses unified standardization when feature flag is disabled."""
@@ -149,19 +147,18 @@ class TestDogsTrustUnifiedStandardization:
         """Test that DogsTrust handles missing breed data gracefully."""
         scraper = DogsTrustScraper()
 
-        with patch("utils.feature_flags.is_scraper_standardization_enabled", return_value=True):
-            raw_animal_data = {
-                "name": "Buddy",
-                # Missing breed field
-                "age": "2 years",
-                "size": "medium",
-            }
+        raw_animal_data = {
+            "name": "Buddy",
+            # Missing breed field
+            "age": "2 years",
+            "size": "medium",
+        }
 
-            processed = scraper.process_animal(raw_animal_data)
+        processed = scraper.process_animal(raw_animal_data)
 
-            # Should handle missing breed gracefully
-            assert "breed" in processed
-            assert processed["breed_category"] == "Unknown"
+        # Should handle missing breed gracefully
+        assert "breed" in processed
+        assert processed["breed_category"] == "Unknown"
 
 
 # Listing-page resilience: remote Browserless under stealth_mode

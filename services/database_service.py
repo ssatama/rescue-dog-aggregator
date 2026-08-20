@@ -28,9 +28,8 @@ from services.animal_data_preparation import (
     sanitize_properties,
     update_to_final_slug,
 )
-from utils.optimized_standardization import parse_age_text, standardize_size_value
 from utils.slug_generator import fetch_slugs_by_ids
-from utils.standardization import standardize_breed
+from utils.standardization import parse_age_text, standardize_breed, standardize_size_value
 
 
 class DatabaseService:
@@ -314,9 +313,7 @@ class DatabaseService:
                 new_age_min_months = animal_data.get("age_min_months")
                 new_age_max_months = animal_data.get("age_max_months")
             else:
-                age_info = parse_age_text(animal_data.get("age_text", ""))
-                new_age_min_months = age_info.min_months
-                new_age_max_months = age_info.max_months
+                _, new_age_min_months, new_age_max_months = parse_age_text(animal_data.get("age_text", ""))
 
             # Use size estimate if no size provided
             new_final_size = animal_data.get("size") or animal_data.get("standardized_size")

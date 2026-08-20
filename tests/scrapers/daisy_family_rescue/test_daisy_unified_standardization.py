@@ -35,13 +35,6 @@ class TestDaisyFamilyRescueUnifiedStandardization:
         assert hasattr(scraper, "use_unified_standardization")
         assert scraper.use_unified_standardization is True
 
-    def test_feature_flag_enables_unified_standardization(self):
-        """Test that feature flag controls unified standardization."""
-        from utils.feature_flags import is_feature_enabled
-
-        # Check if feature is enabled for Daisy Family Rescue
-        assert is_feature_enabled("unified_breed_standardization", "daisyfamilyrescue")
-
     def test_detail_scraper_no_custom_parse_age(self):
         """Test that detail scraper doesn't have custom _parse_age method."""
         from scrapers.daisy_family_rescue.dog_detail_scraper import (

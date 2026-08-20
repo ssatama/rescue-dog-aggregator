@@ -84,13 +84,6 @@ class TestAnimalRescueBosniaUnifiedStandardization:
         # Verify _standardize_size_for_database method doesn't exist
         assert not hasattr(scraper, "_standardize_size_for_database")
 
-    def test_unified_standardization_enabled(self):
-        """Test that unified standardization is enabled for AnimalRescueBosnia."""
-        from utils.feature_flags import is_scraper_standardization_enabled
-
-        # Verify the feature flag is enabled for animalrescuebosnia
-        assert is_scraper_standardization_enabled("animalrescuebosnia") is True
-
     def test_size_categories_comprehensive(self):
         """Test comprehensive size categorization from various weights."""
         scraper = AnimalRescueBosniaScraper(organization_id=1)
