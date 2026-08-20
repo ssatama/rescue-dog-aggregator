@@ -87,21 +87,46 @@ describe("dogHelpers", () => {
   });
 
   describe("formatBreed", () => {
-    it("prefers primary_breed over all other breed fields", () => {
+    it("shows the display label rather than the grouping key", () => {
+      // primary_breed is the canonical identity used for breed pages and
+      // filters; it deliberately omits the cross, so showing it would hide
+      // that this dog is a cross.
       const dog = {
-        breed: "Mixed Breed",
-        standardized_breed: "Mixed Breed",
-        primary_breed: "German Shepherd Mix",
+        breed: "Border Collie Cross",
+        standardized_breed: "Border Collie Cross",
+        primary_breed: "Border Collie",
       };
-      expect(formatBreed(dog)).toBe("German Shepherd Mix");
+      expect(formatBreed(dog)).toBe("Border Collie Cross");
     });
 
-    it("falls back to standardized_breed when primary_breed not available", () => {
+    it("shows both parents of a two-breed cross", () => {
       const dog = {
-        breed: "Golden Retriever Mix",
-        standardized_breed: "Golden Retriever",
+        breed: "Bichon Frise x Maltese",
+        standardized_breed: "Bichon Frise x Maltese",
+        primary_breed: "Bichon Frise",
+        secondary_breed: "Maltese",
       };
-      expect(formatBreed(dog)).toBe("Golden Retriever");
+      expect(formatBreed(dog)).toBe("Bichon Frise x Maltese");
+    });
+
+    it("shows a designer breed by its own name", () => {
+      const dog = {
+        breed: "Cockapoo",
+        standardized_breed: "Cockapoo",
+        primary_breed: "Cockapoo",
+      };
+      expect(formatBreed(dog)).toBe("Cockapoo");
+    });
+
+    it("falls back to primary_breed when no display label is present", () => {
+      expect(formatBreed({ primary_breed: "Golden Retriever" })).toBe(
+        "Golden Retriever",
+      );
+    });
+
+    it("falls back to breed when standardized_breed is absent", () => {
+      const dog = { breed: "Golden Retriever Mix", primary_breed: "Golden Retriever" };
+      expect(formatBreed(dog)).toBe("Golden Retriever Mix");
     });
 
     it("falls back to breed when primary_breed and standardized_breed not available", () => {

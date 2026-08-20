@@ -463,14 +463,17 @@ describe("DogDetailClient Dog Detail Integration", () => {
 });
 
 describe("Breed Display - Simplified without legacy text", () => {
-  it("should NOT show 'originally listed as' text even when primary_breed differs from breed", async () => {
+  it("should NOT show 'originally listed as' text even when the display label differs from the raw breed", async () => {
     const mockDog = {
       id: 1,
       slug: "test-dog",
       name: "Test Dog",
-      primary_breed: "German Shepherd Mix",
-      breed: "Shepherd Mix", // Different from primary_breed
-      standardized_breed: "Mixed Breed",
+      // primary_breed is the canonical identity; standardized_breed is the
+      // display label and is what the page shows.
+      primary_breed: "German Shepherd Dog",
+      standardized_breed: "German Shepherd Dog Cross",
+      breed_raw: "Shepherd Mix",
+      breed: "German Shepherd Dog Cross",
       age: "2 years",
       sex: "Male",
       weight: "50 lbs",
@@ -490,23 +493,25 @@ describe("Breed Display - Simplified without legacy text", () => {
     render(<DogDetailClient params={{ slug: "test-dog" }} />);
 
     await waitFor(() => {
-      const breedElements = screen.getAllByText("German Shepherd Mix");
+      const breedElements = screen.getAllByText("German Shepherd Dog Cross");
       expect(breedElements.length).toBeGreaterThan(0);
     });
 
     // The legacy text should NOT be present
     expect(screen.queryByText(/originally listed as/i)).not.toBeInTheDocument();
-    // The original breed value should not be shown anywhere
+    // The organisation's raw text should not be shown anywhere
     expect(screen.queryByText("Shepherd Mix")).not.toBeInTheDocument();
   });
 
-  it("should display only primary_breed when available", async () => {
+  it("should display the breed once, using the display label", async () => {
     const mockDog = {
       id: 1,
       slug: "test-dog",
       name: "Test Dog",
-      primary_breed: "Labrador Retriever Mix",
-      breed: "Lab Mix",
+      primary_breed: "Labrador Retriever",
+      standardized_breed: "Labrador Retriever Cross",
+      breed: "Labrador Retriever Cross",
+      breed_raw: "Lab Mix",
       age: "3 years",
       sex: "Female",
       weight: "60 lbs",
@@ -526,11 +531,11 @@ describe("Breed Display - Simplified without legacy text", () => {
     render(<DogDetailClient params={{ slug: "test-dog" }} />);
 
     await waitFor(() => {
-      const breedElements = screen.getAllByText("Labrador Retriever Mix");
+      const breedElements = screen.getAllByText("Labrador Retriever Cross");
       expect(breedElements.length).toBeGreaterThan(0);
     });
 
-    // Should not show the original breed value
+    // Should not show the organisation's raw text
     expect(screen.queryByText("Lab Mix")).not.toBeInTheDocument();
   });
 
