@@ -77,10 +77,40 @@ export async function getMixedBreedData(): Promise<z.infer<
 export async function getPopularBreedsWithImages(
   limit: number = 8,
 ): Promise<z.infer<typeof BreedWithImagesSchema>[]> {
-  return getBreedsWithImages({
-    minCount: 5,
-    limit,
-  });
+  const breeds = await getBreedsWithImages({ minCount: 5, limit });
+
+  // /breeds/with-images carries no breed-level traits, so the cards previously
+  // showed the first sample dog's traits as if they described the breed. The
+  // stats endpoint aggregates them properly; attach those instead.
+  try {
+    const statsResponse = await fetch(`${API_URL}/api/animals/breeds/stats`, {
+      headers: { "Content-Type": "application/json" },
+      next: { revalidate: 604800, tags: ["breed-stats"] },
+    } as RequestInit);
+    if (!statsResponse.ok) return breeds;
+
+    const stats = await statsResponse.json();
+    const traitsBySlug = new Map<string, string[]>(
+      (stats?.qualifying_breeds ?? [])
+        .filter((b: { breed_slug?: string; personality_traits?: string[] }) =>
+          Boolean(b.breed_slug && b.personality_traits?.length),
+        )
+        .map((b: { breed_slug: string; personality_traits: string[] }) => [
+          b.breed_slug,
+          b.personality_traits,
+        ]),
+    );
+
+    return breeds.map((breed) => ({
+      ...breed,
+      personality_traits: breed.breed_slug
+        ? (traitsBySlug.get(breed.breed_slug) ?? breed.personality_traits)
+        : breed.personality_traits,
+    }));
+  } catch (error) {
+    logger.error("Failed to attach breed-level traits", error);
+    return breeds;
+  }
 }
 
 export async function getBreedGroupsWithTopBreeds(): Promise<
@@ -137,25 +167,31 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
     > = {
       Hound: {
         icon: "\u{1F415}",
-        description: "Bred for hunting by sight or scent",
+        description: "Calm indoors, strong instinct to follow a scent or a sprint",
       },
       Sporting: {
         icon: "\u{1F9AE}",
-        description: "Active dogs bred for hunting and retrieving",
+        description: "Energetic and people-focused; happiest with a job to do",
       },
       Herding: {
         icon: "\u{1F411}",
-        description: "Intelligent breeds that control livestock",
+        description: "Clever and quick to learn; need their minds kept busy",
       },
       Working: {
         icon: "\u{1F4AA}",
-        description: "Strong dogs bred for guarding and rescue",
+        description: "Big, steady dogs that bond closely and take life seriously",
       },
-      Terrier: { icon: "\u{1F9B4}", description: "Feisty & determined" },
-      Toy: { icon: "\u{1F380}", description: "Small companions" },
+      Terrier: {
+        icon: "\u{1F9B4}",
+        description: "Bold, funny and full of character in a small package",
+      },
+      Toy: {
+        icon: "\u{1F380}",
+        description: "Small companions who want to be wherever you are",
+      },
       "Non-Sporting": {
         icon: "\u{1F43E}",
-        description: "Diverse group of companion dogs",
+        description: "A varied group with one thing in common: made for company",
       },
       Mixed: {
         icon: "\u{2764}\u{FE0F}",

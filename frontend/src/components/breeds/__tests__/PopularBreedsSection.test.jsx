@@ -110,20 +110,27 @@ describe("PopularBreedsSection", () => {
     render(<PopularBreedsSection popularBreeds={mockPopularBreeds} />);
 
     // Check breed groups are displayed (use getAllByText since there are multiple)
-    const houndGroups = screen.getAllByText("Hound Group • Purebred");
-    expect(houndGroups.length).toBeGreaterThan(0);
-
-    const herdingGroup = screen.getByText("Herding Group • Purebred");
-    expect(herdingGroup).toBeInTheDocument();
+    // A breed page covers the breed and its crosses, so a flat "Purebred"
+    // label would misdescribe it.
+    expect(screen.getAllByText(/Hound Group/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Herding Group/)).toBeInTheDocument();
+    expect(screen.queryByText(/Group • Purebred$/)).not.toBeInTheDocument();
   });
 
-  it("displays personality traits", () => {
-    render(<PopularBreedsSection popularBreeds={mockPopularBreeds} />);
+  it("shows the breed's own traits, not one sample dog's", () => {
+    // The card used to read firstDog.personality_traits, presenting a single
+    // dog's traits as if they characterised the whole breed.
+    const breeds = [
+      {
+        ...mockPopularBreeds[0],
+        personality_traits: ["Steady", "Watchful"],
+      },
+    ];
+    render(<PopularBreedsSection popularBreeds={breeds} />);
 
-    // Check personality traits are shown
-    expect(screen.getByText("Gentle")).toBeInTheDocument();
-    expect(screen.getByText("Calm")).toBeInTheDocument();
-    expect(screen.getByText("Loyal")).toBeInTheDocument();
+    expect(screen.getByText("Steady")).toBeInTheDocument();
+    expect(screen.getByText("Watchful")).toBeInTheDocument();
+    expect(screen.queryByText("Gentle")).not.toBeInTheDocument();
   });
 
   it("links to individual breed pages", () => {

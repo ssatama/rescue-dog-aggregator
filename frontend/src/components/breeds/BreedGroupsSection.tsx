@@ -150,6 +150,9 @@ export default function BreedGroupsSection({ breedGroups }: BreedGroupsSectionPr
                 {/* Expandable Top Breeds */}
                 {isExpanded && (
                   <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 px-2">
+                      {group.name.replace(" Group", "")} breeds
+                    </p>
                     {group.top_breeds && group.top_breeds.length > 0 ? (
                       group.top_breeds.map((breed) => (
                         <Link
@@ -179,9 +182,8 @@ export default function BreedGroupsSection({ breedGroups }: BreedGroupsSectionPr
                               {breed.name}
                             </span>
                           </div>
-                          <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 font-medium">
+                          <span className="text-sm text-green-600 dark:text-green-400 font-medium">
                             {breed.count} available
-                            <span className="text-red-500">❤️</span>
                           </span>
                         </Link>
                       ))

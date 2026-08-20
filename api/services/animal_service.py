@@ -763,7 +763,13 @@ class AnimalService:
                     SELECT
                         a.primary_breed,
                         a.breed_slug,
-                        a.breed_type,
+                        CASE
+                            WHEN bool_or(a.breed_type = 'purebred') THEN 'purebred'
+                            WHEN bool_or(a.breed_type = 'crossbreed') THEN 'crossbreed'
+                            ELSE MIN(a.breed_type)
+                        END AS breed_type,
+                        COUNT(*) FILTER (WHERE a.breed_type = 'purebred') AS purebred_count,
+                        COUNT(*) FILTER (WHERE a.breed_type = 'crossbreed') AS crossbreed_count,
                         a.breed_group,
                         COUNT(*) as count,
                         -- Calculate average age in months
@@ -809,7 +815,7 @@ class AnimalService:
                     AND a.active = true
                     AND o.active = TRUE
                     AND a.primary_breed IS NOT NULL
-                    GROUP BY a.primary_breed, a.breed_slug, a.breed_type, a.breed_group
+                    GROUP BY a.primary_breed, a.breed_slug, a.breed_group
                     HAVING COUNT(*) >= 3
                 ),
                 breed_traits AS (
@@ -956,6 +962,11 @@ class AnimalService:
                     "breed_type": row["breed_type"],
                     "breed_group": row["breed_group"],
                     "count": row["count"],
+                    # The page covers the breed and its crosses; expose the
+                    # split so the heading can say so instead of implying all
+                    # of them are purebred.
+                    "purebred_count": row["purebred_count"],
+                    "crossbreed_count": row["crossbreed_count"],
                     "average_age_months": row["average_age_months"],  # Add actual average age
                     "organization_count": row["org_count"],
                     "organizations": row["organizations"][:5] if row["organizations"] else [],  # Limit to top 5 orgs
@@ -1140,13 +1151,19 @@ class AnimalService:
                     SELECT
                         a.primary_breed,
                         a.breed_slug,
-                        a.breed_type,
+                        CASE
+                            WHEN bool_or(a.breed_type = 'purebred') THEN 'purebred'
+                            WHEN bool_or(a.breed_type = 'crossbreed') THEN 'crossbreed'
+                            ELSE MIN(a.breed_type)
+                        END AS breed_type,
+                        COUNT(*) FILTER (WHERE a.breed_type = 'purebred') AS purebred_count,
+                        COUNT(*) FILTER (WHERE a.breed_type = 'crossbreed') AS crossbreed_count,
                         a.breed_group,
                         COUNT(DISTINCT a.id) as count
                     FROM animals a
                     JOIN organizations o ON a.organization_id = o.id
                     WHERE {count_where_clause}
-                    GROUP BY a.primary_breed, a.breed_slug, a.breed_type, a.breed_group
+                    GROUP BY a.primary_breed, a.breed_slug, a.breed_group
                     HAVING COUNT(DISTINCT a.id) >= %s
                     ORDER BY COUNT(DISTINCT a.id) DESC
                     LIMIT %s
