@@ -34,6 +34,8 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from config import enable_world_class_scraper_logging, get_database_config  # noqa: E402
+from management.breed_commands import fetch_breed_rows  # noqa: E402
+from management.breed_reconciliation import reconcile  # noqa: E402
 from scrapers.sentry_integration import add_scrape_breadcrumb, init_scraper_sentry  # noqa: E402
 from utils.db_connection import (  # noqa: E402
     create_database_config_from_env,
@@ -98,6 +100,25 @@ def run_single_scraper(runner: SecureConfigScraperRunner, config_id: str) -> dic
     }
 
 
+def report_breed_reconciliation() -> dict:
+    """Summarise breed text the registry could not place.
+
+    The scrape is when new organisation text arrives, so it is the moment worth
+    checking. A reporting problem must never fail a scrape that otherwise
+    succeeded, so every error is captured rather than raised.
+    """
+    try:
+        report = reconcile(fetch_breed_rows(available_only=True))
+    except Exception as exc:
+        return {"error": str(exc)}
+
+    return {
+        "unmatched_rows": report.unmatched_rows,
+        "provisional_values": len(report.provisional),
+        "top_unmatched": [[text, count] for text, count in report.unmatched[:5]],
+    }
+
+
 def run_all_scrapers(runner: SecureConfigScraperRunner) -> BatchRunResult:
     """Run all enabled scrapers."""
     logger.info("Running all enabled scrapers")
@@ -125,6 +146,7 @@ def format_batch_summary(result: BatchRunResult, start_time: datetime) -> dict:
         "duration_seconds": round(duration_seconds, 2),
         "failed_orgs": failed_orgs,
         "overall_success": result.success and result.failed == 0,
+        "breed_reconciliation": report_breed_reconciliation(),
     }
 
 
@@ -235,6 +257,15 @@ def main():
 
         if summary["failed_orgs"]:
             logger.warning(f"Failed organizations: {', '.join(summary['failed_orgs'])}")
+
+        breeds = summary["breed_reconciliation"]
+        if breeds.get("error"):
+            logger.warning(f"Breed reconciliation unavailable: {breeds['error']}")
+        elif breeds["unmatched_rows"]:
+            worst = ", ".join(f"{text} ({count})" for text, count in breeds["top_unmatched"])
+            logger.warning(f"Breed text the registry cannot place: {breeds['unmatched_rows']} rows - {worst}")
+        else:
+            logger.info(f"Breed registry resolved every breed string ({breeds['provisional_values']} provisional)")
 
         print("\n" + json.dumps(summary, indent=2))
 
