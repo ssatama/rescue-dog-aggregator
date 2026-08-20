@@ -738,3 +738,34 @@ class TestBreedNormalizationFixes:
         assert result["name"] == "Rhodesian Ridgeback"
         assert result["breed_type"] == "purebred"
         assert result["group"] == "Hound"
+
+
+@pytest.mark.unit
+class TestSizeIsNotFabricated:
+    """An unknown size must stay unknown rather than defaulting to Medium.
+
+    Size drives a filter adopters rely on. Inventing "Medium" for a dog nobody
+    measured puts it in front of people who filtered it in, and hides it from
+    people who filtered it out.
+    """
+
+    def test_unknown_size_and_unknown_breed_yields_no_size(self):
+        standardizer = UnifiedStandardizer()
+        result = standardizer.apply_full_standardization(breed="Flibbertigibbet", size=None)
+        assert result["standardized_size"] is None
+
+    def test_unrecognised_size_word_yields_no_size(self):
+        standardizer = UnifiedStandardizer()
+        result = standardizer.apply_full_standardization(breed=None, size="Huge")
+        assert result["standardized_size"] is None
+
+    def test_stated_size_is_still_honoured(self):
+        standardizer = UnifiedStandardizer()
+        for stated, expected in [("small", "Small"), ("Medium", "Medium"), ("large", "Large"), ("giant", "Large")]:
+            assert standardizer.apply_full_standardization(size=stated)["standardized_size"] == expected
+
+    def test_breed_estimate_still_fills_a_missing_size(self):
+        """A known breed is real evidence; only the blind default is removed."""
+        standardizer = UnifiedStandardizer()
+        result = standardizer.apply_full_standardization(breed="Chihuahua", size=None)
+        assert result["standardized_size"] == "Tiny"

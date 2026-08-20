@@ -206,17 +206,22 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
             assert result["standardized_size"] == expected_standardized
 
     def test_empty_size_standardization(self, scraper):
+        """No weight and a mixed breed means the size is genuinely unknown.
+
+        Inventing "Medium" here would put an unmeasured dog in front of adopters
+        who filtered for medium dogs, and hide it from those who filtered it out.
+        """
         result = scraper.process_animal({"size": None, "breed": "Mix", "age": "2 years"})
         assert "standardized_size" in result
-        assert result["standardized_size"] in ["Medium", "Large"]
+        assert result["standardized_size"] is None
 
         result = scraper.process_animal({"size": "", "breed": "Mix", "age": "2 years"})
         assert "standardized_size" in result
-        assert result["standardized_size"] in ["Medium", "Large"]
+        assert result["standardized_size"] is None
 
         result = scraper.process_animal({"size": "Unknown", "breed": "Mix", "age": "2 years"})
         assert "standardized_size" in result
-        assert result["standardized_size"] in ["Medium", "Large"]
+        assert result["standardized_size"] is None
 
     @patch("requests.get")
     def test_complete_data_structure_with_standardized_size(self, mock_get, scraper):
