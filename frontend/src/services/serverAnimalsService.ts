@@ -742,7 +742,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
     }
 
     const candidateDogs = await getAnimals({
-      breed: breedData.primary_breed,
+      primary_breed: breedData.primary_breed,
       limit: 30,
       sort_by: "created_at",
       sort_order: "desc",
@@ -800,7 +800,7 @@ export const getBreedDogs = cache(
     }
 
     const params: AnimalQueryParams = {
-      breed: breedData.primary_breed,
+      primary_breed: breedData.primary_breed,
       limit: filters.limit || 12,
       offset: filters.offset || 0,
       ...filters,
@@ -825,7 +825,7 @@ export const getBreedFilterCounts = cache(
       }
 
       return getFilterCounts({
-        breed: breedData.primary_breed,
+        primary_breed: breedData.primary_breed,
       });
     } catch (error) {
       logger.error(

@@ -147,7 +147,10 @@ export default function BreedDetailClient({
       ) {
         params.breed_group = "Mixed";
       } else {
-        params.breed = breedData.primary_breed;
+        // primary_breed is the canonical identity and covers the breed's
+        // crosses; `breed` is the display label, so filtering on it would drop
+        // every "X Cross" from a page whose own count includes them.
+        params.primary_breed = breedData.primary_breed;
       }
 
       if (currentFilters.searchQuery)
