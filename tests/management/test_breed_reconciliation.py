@@ -119,3 +119,44 @@ class TestKnownNonBreedsAreNotRegistryGaps:
     def test_sentinels_do_not_break_the_budget(self):
         rows = [BreedRow("Unknown", "Unknown", "unknown", 83), BreedRow("European", "European", "european", 2)]
         assert reconcile(rows).is_clean(unmatched_row_budget=10)
+
+
+@pytest.mark.unit
+class TestCommandTargetsTheRightDatabase:
+    """The rows needing repair live in production, not in a local database.
+
+    Migrations reach production through RAILWAY_DATABASE_URL. This command has
+    to follow the same convention, or it silently operates on the wrong data.
+    """
+
+    def test_railway_url_is_preferred_when_set(self, monkeypatch):
+        from management import breed_commands
+
+        monkeypatch.setenv("RAILWAY_DATABASE_URL", "postgresql://u:p@remote/railway")
+        captured = {}
+        monkeypatch.setattr(breed_commands.psycopg2, "connect", lambda *a, **k: captured.update(args=a, kwargs=k))
+
+        breed_commands._connect()
+
+        assert captured["args"] == ("postgresql://u:p@remote/railway",)
+        assert captured["kwargs"] == {}
+
+    def test_falls_back_to_local_config_when_unset(self, monkeypatch):
+        from management import breed_commands
+
+        monkeypatch.delenv("RAILWAY_DATABASE_URL", raising=False)
+        captured = {}
+        monkeypatch.setattr(breed_commands.psycopg2, "connect", lambda *a, **k: captured.update(args=a, kwargs=k))
+
+        breed_commands._connect()
+
+        assert captured["args"] == ()
+        assert captured["kwargs"]
+
+    def test_target_is_named_so_the_operator_can_see_it(self, monkeypatch):
+        from management import breed_commands
+
+        monkeypatch.setenv("RAILWAY_DATABASE_URL", "postgresql://u:p@remote/railway")
+        assert "production" in breed_commands.describe_target()
+        monkeypatch.delenv("RAILWAY_DATABASE_URL")
+        assert "local" in breed_commands.describe_target()
