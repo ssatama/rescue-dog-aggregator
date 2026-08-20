@@ -1026,3 +1026,54 @@ class TestREANIntegration:
             scraper.scrape_animals()
 
             assert mock_sleep.called
+
+
+@pytest.mark.unit
+class TestExtractNameFromLiveLayout:
+    """Names as the REAN site actually renders them.
+
+    Container text repeats the heading before the prose, so the name has to be
+    read from the heading form "Name- N years old - in Location". One dog was
+    being dropped because that heading is lowercase in the markup.
+    """
+
+    @pytest.fixture
+    def scraper(self):
+        from scrapers.rean.dogs_scraper import REANScraper
+
+        return object.__new__(REANScraper)
+
+    def test_lowercase_heading_still_yields_a_name(self):
+        from scrapers.rean.dogs_scraper import REANScraper
+
+        scraper = object.__new__(REANScraper)
+        text = "louis- 4 years old - in Romanialouis- 4 years old - in Romania Louis is one of the survivors"
+        assert scraper.extract_name(text) == "Louis"
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("Alexa - 6 months old - in Romania Alexa is a rescue pup", "Alexa"),
+            ("Annie 1 year old - in RomaniaAnnie is around 1 year old", "Annie"),
+            ("Daphne 3/4 year old - in RomaniaDaphne is a 3/4 years old", "Daphne"),
+            ("Danny -1 year old - NewmarketDanny is a rescue pup", "Danny"),
+            ("Freddie - 4.5 years old - NorfolkFreddie has been stuck", "Freddie"),
+        ],
+        ids=["spaced-hyphen", "no-hyphen", "fraction-age", "tight-hyphen", "decimal-age"],
+    )
+    def test_heading_forms_seen_on_the_site(self, scraper, text, expected):
+        assert scraper.extract_name(text) == expected
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "Please message us with the following information if you would like to apply to adopt",
+            "Apply to adopt this dog today",
+            "Contact us for more information about our dogs",
+            "To donate £10 please text REAN to 70191HomeAdopt a Dog",
+        ],
+        ids=["please-cta", "apply-cta", "contact-cta", "site-chrome"],
+    )
+    def test_call_to_action_text_is_not_a_dog_name(self, scraper, text):
+        """Seven dogs named "Please" reached production from this text."""
+        assert scraper.extract_name(text) is None
