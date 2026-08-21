@@ -54,8 +54,14 @@ class TestPipelineSkipsUngroundedDogs:
     """An ungrounded dog must cost nothing and produce nothing."""
 
     @pytest.fixture
-    def pipeline(self):
+    def pipeline(self, monkeypatch):
         from services.llm.dog_profiler import DogProfilerPipeline
+
+        # The pipeline requires a key at construction. These tests never reach
+        # the network - the guard returns first, and the model call is mocked -
+        # so a placeholder keeps them running in CI rather than being skipped,
+        # which is the point for a guard whose job is to prevent spend.
+        monkeypatch.setenv("OPENROUTER_API_KEY", "test-key-never-used")
 
         return DogProfilerPipeline(organization_id=11, dry_run=True)
 
