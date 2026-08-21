@@ -1,7 +1,15 @@
 # tests/scrapers/test_scraper_base.py
-"""
-Shared base test class for all scraper tests.
-Eliminates duplication across 46 individual scraper test files.
+"""Shared setup for scraper tests.
+
+This used to carry nine tests asserting that attributes exist on BaseScraper.
+They could not fail: several were structurally unfalsifiable
+(`has_config or has_org_config`), one asserted nothing at all when the
+attribute was absent, and the rest re-checked what the fixture already proves
+by constructing the scraper. Across five subclasses they collected 48 cases
+and covered nothing.
+
+What remains is the one assertion that can fail - that a scraper reads the
+identity its config declares - and the fixture the subclasses build on.
 """
 
 from unittest.mock import Mock, patch
@@ -10,9 +18,10 @@ import pytest
 
 
 class ScraperTestBase:
-    """
-    Base test class for all scrapers.
-    Individual scraper tests should inherit from this and only add scraper-specific tests.
+    """Base for per-organisation scraper tests.
+
+    Subclasses set the four class attributes and add tests for whatever their
+    scraper actually does.
     """
 
     # Override in subclasses
@@ -33,53 +42,8 @@ class ScraperTestBase:
             scraper.cursor = Mock()
             return scraper
 
-    @pytest.mark.integration
     @pytest.mark.unit
-    def test_initialization_with_config(self, scraper):
-        """Test scraper initializes correctly with config."""
+    def test_reads_its_identity_from_config(self, scraper):
+        """A scraper pointed at the wrong config would serve the wrong dogs."""
         assert scraper.organization_name == self.expected_org_name
         assert scraper.base_url == self.expected_base_url
-
-    def test_config_driven_architecture(self, scraper):
-        """Test scraper follows config-driven architecture."""
-        # Modern scrapers may have org_config instead of config
-        has_config = hasattr(scraper, "config") and scraper.config is not None
-        has_org_config = hasattr(scraper, "org_config") and scraper.org_config is not None
-        assert has_config or has_org_config, "Scraper should have either config or org_config"
-
-    def test_rate_limiting_configured(self, scraper):
-        """Test rate limiting is configured from config."""
-        assert hasattr(scraper, "rate_limit_delay")
-        assert scraper.rate_limit_delay >= 0
-
-    def test_has_required_methods(self, scraper):
-        """Test scraper implements required abstract methods."""
-        assert hasattr(scraper, "collect_data")
-        assert callable(scraper.collect_data)
-
-    def test_database_connection_handling(self, scraper):
-        """Test scraper handles database connections properly."""
-        # Modern scrapers use dependency injection, legacy ones have direct methods
-        has_database_service = hasattr(scraper, "database_service")
-        has_legacy_methods = hasattr(scraper, "connect_to_database")
-        assert has_database_service or has_legacy_methods, "Scraper should have database access"
-
-    def test_error_handling_exists(self, scraper):
-        """Test scraper has error handling mechanisms."""
-        assert hasattr(scraper, "handle_scraper_failure")
-
-    def test_skip_existing_animals_configurable(self, scraper):
-        """Test skip_existing_animals is configurable."""
-        assert hasattr(scraper, "skip_existing_animals")
-        assert isinstance(scraper.skip_existing_animals, bool)
-
-    def test_batch_processing_configured(self, scraper):
-        """Test batch processing is properly configured."""
-        if hasattr(scraper, "batch_size"):
-            assert scraper.batch_size > 0
-            assert scraper.batch_size <= 100  # Reasonable limit
-
-    def test_logging_configured(self, scraper):
-        """Test logging is properly configured."""
-        assert hasattr(scraper, "logger")
-        assert scraper.logger is not None
