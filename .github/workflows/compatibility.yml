@@ -1,0 +1,74 @@
+name: Forward Compatibility
+
+# Was pre-merge.yml, which triggered only on `ready_for_review` — an event
+# GitHub fires solely when a draft PR is promoted. PRs opened ready never
+# fired it, so it last ran on 2026-01-25 and the 473 tests it alone executed
+# ran nowhere. ci-pr.yml now runs the whole suite on every PR, leaving this
+# job one distinct purpose: catching breakage on a Python the project does
+# not yet run in production.
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  next-python:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13"]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_rescue_dogs
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Setup database
+        uses: ./.github/actions/setup-postgres-db
+        with:
+          db-name: test_rescue_dogs
+
+      - name: Run tests
+        env:
+          TESTING: "true"
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          PYTHONPATH: ${{ github.workspace }}
+        run: uv run pytest -m "not browser" --tb=short

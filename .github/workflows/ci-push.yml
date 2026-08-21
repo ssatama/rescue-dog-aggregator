@@ -7,6 +7,12 @@ on:
   push:
     branches-ignore: [main]
 
+# Superseded pushes are cancelled. Once a PR exists, ci-pr.yml is the real
+# gate and this only has to keep a bare branch from drifting.
+concurrency:
+  group: push-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quick-check:
     name: Quick Check
@@ -20,6 +26,8 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
         run: uv python install 3.12
@@ -32,20 +40,24 @@ jobs:
           uv run ruff check .
           uv run ruff format --check .
 
+      # Stays on `unit`: tests/conftest.py skips database pool initialisation
+      # only for that marker expression, and this job has no Postgres service.
       - name: Run unit tests
         env:
           TESTING: "true"
         run: uv run pytest -m "unit" --maxfail=3 -q
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "20"
-
       - name: Install pnpm
         uses: pnpm/action-setup@v6
         with:
           version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install frontend dependencies
         working-directory: ./frontend
