@@ -227,6 +227,49 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
             console.print(f"[bold red]✗[/bold red] Failed to process {error_count} animals")
 
 
+VALID_CONFIDENCE_FILTERS = ("high", "medium", "low", "all")
+
+
+def build_profile_selection_query(org_id: int, force: bool, confidence: str, limit: int | None) -> tuple[str, tuple]:
+    """Build the query selecting which dogs to profile.
+
+    Args:
+        org_id: Organization to select from
+        force: Include dogs that already have a profile, so a batch can be
+            regenerated after a scraper fix changed the source text
+        confidence: One of VALID_CONFIDENCE_FILTERS; "all" drops the filter
+        limit: Optional row cap
+
+    Returns:
+        The SQL and its parameters
+
+    Raises:
+        ValueError: If confidence is not a recognised value
+    """
+    if confidence not in VALID_CONFIDENCE_FILTERS:
+        raise ValueError(f"Unknown confidence filter {confidence!r}; expected one of {VALID_CONFIDENCE_FILTERS}")
+
+    conditions = ["organization_id = %s", "status = 'available'"]
+
+    if not force:
+        conditions.append("(dog_profiler_data IS NULL OR dog_profiler_data = '{}')")
+
+    if confidence != "all":
+        conditions.append(f"availability_confidence = '{confidence}'")
+
+    sql = f"""
+            SELECT id, name, breed, age_text, properties
+            FROM animals
+            WHERE {" AND ".join(conditions)}
+            ORDER BY id DESC
+        """
+
+    if limit:
+        sql += f" LIMIT {int(limit)}"
+
+    return sql, (org_id,)
+
+
 @llm.command()
 @click.option("--organization", "-o", type=int, help="Process only specific organization ID")
 @click.option(
@@ -236,6 +279,13 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
     type=int,
     help="Limit number of animals to process per organization",
 )
+@click.option("--force", is_flag=True, help="Re-profile dogs that already have a profile")
+@click.option(
+    "--confidence",
+    type=click.Choice(VALID_CONFIDENCE_FILTERS),
+    default="high",
+    help="Availability confidence to include (default: high)",
+)
 @click.option(
     "--batch-size",
     "-b",
@@ -243,7 +293,7 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
     type=int,
     help="Number of items to process per batch (default: 10)",
 )
-def generate_profiles(organization: int | None, limit: int | None, batch_size: int):
+def generate_profiles(organization: int | None, limit: int | None, force: bool, confidence: str, batch_size: int):
     """Generate dog profiler data using org-specific prompts."""
     from services.llm.dog_profiler import DogProfilerPipeline
     from services.llm.organization_config_loader import get_config_loader
@@ -276,19 +326,9 @@ def generate_profiles(organization: int | None, limit: int | None, batch_size: i
         console.print(f"\n[bold blue]Processing {org_config.organization_name} (ID: {org_id})[/bold blue]")
         console.print(f"  Model: {get_llm_config().models.default_model}")
 
-        query = """
-            SELECT id, name, breed, age_text, properties
-            FROM animals
-            WHERE organization_id = %s
-            AND (dog_profiler_data IS NULL OR dog_profiler_data = '{}')
-            AND availability_confidence = 'high'
-            AND status = 'available'
-            ORDER BY id DESC
-        """
-        if limit:
-            query += f" LIMIT {limit}"
+        query, query_params = build_profile_selection_query(org_id=org_id, force=force, confidence=confidence, limit=limit)
 
-        cursor.execute(query, (org_id,))
+        cursor.execute(query, query_params)
         dogs = [
             {
                 "id": r[0],
