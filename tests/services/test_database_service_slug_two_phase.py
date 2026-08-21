@@ -15,12 +15,10 @@ from unittest.mock import Mock, patch
 import pytest
 
 from services.database_service import DatabaseService
+from tests.fixtures.sql_introspection import insert_column_value
 
 
-@pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.integration
-@pytest.mark.slow
 class TestDatabaseServiceTwoPhaseSlugGeneration:
     """Test two-phase slug generation: INSERT with temp slug, UPDATE with final slug containing ID."""
 
@@ -78,14 +76,12 @@ class TestDatabaseServiceTwoPhaseSlugGeneration:
 
         # Verify INSERT was called with temp slug
         insert_call = mock_cursor.execute.call_args_list[1]
-        insert_sql = insert_call[0][0]
-        insert_params = insert_call[0][1]
 
-        assert "INSERT INTO animals" in insert_sql
-        # The temp slug should be in the INSERT (position 19 based on current schema)
-        temp_slug = insert_params[19]  # slug parameter position
-        # "Labrador Mix" standardizes to "Labrador Mix" (capitalized input)
-        assert temp_slug == "bella-labrador-mix-temp"
+        assert "INSERT INTO animals" in insert_call[0][0]
+        temp_slug = insert_column_value(insert_call, "slug")
+        # standardized_breed keeps the cross ("Labrador Mix" -> "Labrador
+        # Retriever Cross"); primary_breed is the bare grouping key.
+        assert temp_slug == "bella-labrador-retriever-cross-temp"
 
         # Verify UPDATE was called with final slug containing ID
         update_call = mock_cursor.execute.call_args_list[3]
@@ -93,7 +89,7 @@ class TestDatabaseServiceTwoPhaseSlugGeneration:
         update_params = update_call[0][1]
 
         assert "UPDATE animals SET slug" in update_sql
-        assert update_params[0] == "bella-labrador-mix-1234"  # final slug with ID
+        assert update_params[0] == "bella-labrador-retriever-cross-1234"  # final slug with ID
         assert update_params[1] == 1234  # WHERE id = animal_id
 
         # Verify transaction was committed

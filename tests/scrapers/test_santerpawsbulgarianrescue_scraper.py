@@ -1022,7 +1022,9 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         self.assertEqual(result["breed"], "Unknown")
         self.assertEqual(result["standardized_size"], "Medium")
         self.assertEqual(result["description"], "Basic description only.")
-        self.assertIn(result.get("age"), [None, "Unknown"])
+        # An unread age is left absent rather than becoming the string
+        # "Unknown", which reaches the page as though it were scraped.
+        self.assertIsNone(result.get("age"))
         self.assertIsNone(result.get("gender"))
 
     @patch("requests.get")

@@ -638,7 +638,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                     result["gender"] = (properties["sex"] or "Unknown").lower()
                 # Rename age_text to age for unified standardization API
                 if "age_text" in properties:
-                    result["age"] = properties["age_text"] or "Unknown"
+                    result["age"] = properties["age_text"]
                 if "size" in properties:
                     result["size"] = properties["size"] or "Medium"
                 if "status" in properties:

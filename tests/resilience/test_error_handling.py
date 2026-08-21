@@ -10,30 +10,32 @@ from scrapers.base_scraper import BaseScraper
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-@pytest.mark.slow
-@pytest.mark.external
 class TestErrorResilience:
     """Test system resilience to various failure scenarios."""
 
     @pytest.fixture
-    def mock_scraper(self):
-        """Create a mock scraper for testing."""
+    def database_service(self):
+        """Stand in for the DatabaseService production injects into every scraper.
+
+        BaseScraper.save_animal persists through self.database_service. Without
+        one it logs a warning and returns (None, "error"), so a scraper built
+        without this saves nothing while still looking like it ran.
+        """
+        service = Mock()
+        service.get_existing_animal.return_value = None
+        service.create_animal.return_value = (1, "added")
+        service.update_animal.side_effect = lambda animal_id, animal_data: (animal_id, "updated")
+        return service
+
+    @pytest.fixture
+    def mock_scraper(self, database_service):
+        """Create a scraper wired the way the production loader wires one."""
 
         class TestScraper(BaseScraper):
             def collect_data(self):
                 return [{"name": "Test Dog", "external_id": "test123"}]
 
-            def get_existing_animal(self, external_id, organization_id):
-                return None
-
-            def create_animal(self, animal_data):
-                return 1, "added"
-
-            def update_animal(self, animal_id, animal_data):
-                return animal_id, "updated"
-
-        # Use only organization_id (removed organization_name parameter)
-        return TestScraper(organization_id=1)
+        return TestScraper(organization_id=1, database_service=database_service)
 
     @patch.dict(
         "os.environ",
@@ -91,7 +93,7 @@ class TestErrorResilience:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_partial_data_handling(self, mock_scraper):
+    def test_partial_data_handling(self, mock_scraper, database_service):
         """Test system handles incomplete animal data gracefully."""
         # Test with minimal required data
         minimal_data = {
@@ -101,10 +103,16 @@ class TestErrorResilience:
             # Missing breed, age, size, etc.
         }
 
-        # Should not crash with minimal data
         animal_id, action = mock_scraper.save_animal(minimal_data)
-        assert animal_id is not None
-        assert action in ["added", "updated", "test"]
+
+        assert (animal_id, action) == (1, "added")
+
+        # The absent fields must reach the database as absent, not as junk.
+        saved = database_service.create_animal.call_args[0][0]
+        assert saved["name"] == "Incomplete Dog"
+        assert saved["external_id"] == "incomplete123"
+        assert saved.get("age_text") is None  # present, and explicitly empty
+        assert "sex" not in saved  # never invented
 
     @patch.dict(
         "os.environ",
@@ -114,7 +122,7 @@ class TestErrorResilience:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_malformed_image_url_handling(self, mock_scraper):
+    def test_malformed_image_url_handling(self, mock_scraper, database_service):
         """Test handling of malformed or invalid image URLs."""
         malformed_data = {
             "name": "Test Dog",
@@ -123,10 +131,16 @@ class TestErrorResilience:
             "organization_id": 1,
         }
 
-        # Should handle malformed URL gracefully
         animal_id, action = mock_scraper.save_animal(malformed_data)
-        assert animal_id is not None
-        assert action in ["added", "updated", "test"]
+
+        assert (animal_id, action) == (1, "added")
+
+        # AnimalValidator requires primary_image_url to be present but does not
+        # validate its format, so a malformed URL is stored verbatim rather than
+        # rejected or rewritten. Pinned so a change to either is deliberate.
+        saved = database_service.create_animal.call_args[0][0]
+        assert saved["name"] == "Test Dog"
+        assert saved["primary_image_url"] == "not-a-valid-url"
 
     @patch.dict(
         "os.environ",

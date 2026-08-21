@@ -150,7 +150,7 @@ class PetsInTurkeyScraper(BaseScraper):
         dog_data = {
             "name": "",
             "breed": "Mixed Breed",
-            "age": "Unknown",
+            "age": None,
             "sex": "Unknown",
             "size": "Medium",
             "status": "available",

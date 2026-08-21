@@ -272,7 +272,7 @@ class GalgosDelSolScraper(BaseScraper):
                 if "sex" in properties:
                     result["sex"] = properties["sex"] or "Unknown"
                 if "age_text" in properties:
-                    result["age_text"] = properties["age_text"] or "Unknown"
+                    result["age_text"] = properties["age_text"]
 
             # Ensure zero NULLs compliance - set proper defaults for missing fields
             if "breed" not in result:
@@ -280,7 +280,7 @@ class GalgosDelSolScraper(BaseScraper):
             if "sex" not in result:
                 result["sex"] = "Unknown"
             if "age_text" not in result:
-                result["age_text"] = "Unknown"
+                result["age_text"] = None
 
             # Use BaseScraper fallback for size (not available on this site)
             result["size"] = "Medium"  # Default fallback as requested

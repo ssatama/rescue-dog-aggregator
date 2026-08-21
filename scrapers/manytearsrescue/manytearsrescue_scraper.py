@@ -638,7 +638,7 @@ class ManyTearsRescueScraper(BaseScraper):
             # Default values for required fields (will be enriched in detail scraping)
             "breed": "Mixed Breed",
             "size": None,  # Let unified standardization handle defaults
-            "age": "Unknown",
+            "age": None,
             "sex": "Unknown",
             "location": "Wales, UK",
             "description": "",
@@ -751,8 +751,8 @@ class ManyTearsRescueScraper(BaseScraper):
             # Zero NULLs compliance - always provide defaults
             result["breed"] = structured_data.get("breed") or "Mixed Breed"
             result["sex"] = structured_data.get("sex") or "Unknown"
-            result["age"] = structured_data.get("age") or "Unknown"
-            result["age_text"] = structured_data.get("age_text") or structured_data.get("age") or "Unknown"
+            result["age"] = structured_data.get("age")
+            result["age_text"] = structured_data.get("age_text") or structured_data.get("age")
 
             # Size will be handled by unified standardization
             result["size"] = structured_data.get("size")
@@ -843,8 +843,8 @@ class ManyTearsRescueScraper(BaseScraper):
             # Zero NULLs compliance - always provide defaults
             result["breed"] = structured_data.get("breed") or "Mixed Breed"
             result["sex"] = structured_data.get("sex") or "Unknown"
-            result["age"] = structured_data.get("age") or "Unknown"
-            result["age_text"] = structured_data.get("age_text") or structured_data.get("age") or "Unknown"
+            result["age"] = structured_data.get("age")
+            result["age_text"] = structured_data.get("age_text") or structured_data.get("age")
 
             # Size will be handled by unified standardization
             result["size"] = structured_data.get("size")
