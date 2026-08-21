@@ -9,6 +9,7 @@ import asyncio
 import os
 import sys
 import time
+from typing import Any
 from unittest.mock import Mock, patch
 
 import psycopg2
@@ -42,7 +43,7 @@ class RecordedSleeps:
     than on elapsed wall clock, which is both exact and immune to load.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.calls: list[float] = []
 
     @property
@@ -52,7 +53,7 @@ class RecordedSleeps:
     def sleep(self, seconds: float) -> None:
         self.calls.append(seconds)
 
-    async def async_sleep(self, delay: float, result=None):
+    async def async_sleep(self, delay: float, result: Any = None) -> Any:
         self.calls.append(delay)
         return result
 
@@ -504,7 +505,7 @@ def disable_cloudinary_in_tests():
 
 
 @pytest.fixture(autouse=True)
-def stub_clock(request, monkeypatch):
+def stub_clock(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> RecordedSleeps:
     """Replace sleeps with recordings so the suite runs at CPU speed.
 
     Production code sleeps for rate limiting and retry backoff. Tests exercise

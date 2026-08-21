@@ -286,7 +286,7 @@ uv run pytest -m "not slow and not browser and not external" --maxfail=3  # Tier
 uv run pytest                                     # Tier 3: Full suite
 ```
 
-### Pytest Markers (8 essential)
+### Pytest Markers (9 essential)
 
 | Marker                | Purpose                      |
 | --------------------- | ---------------------------- |
@@ -298,6 +298,12 @@ uv run pytest                                     # Tier 3: Full suite
 | `external`            | Requires external APIs       |
 | `security`            | Security validation          |
 | `requires_migrations` | Production-like migrations   |
+| `real_clock`          | Must observe real elapsed time |
+
+Sleeps are stubbed suite-wide by the autouse `stub_clock` fixture, so a
+test that needs real elapsed time — thread overlap, a timing bound — must
+carry `real_clock` or it will pass without observing anything. Assert on
+the delay `stub_clock.calls` records wherever that is enough.
 
 ## Config Management
 
