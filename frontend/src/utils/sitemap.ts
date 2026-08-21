@@ -4,6 +4,36 @@ import { getAllOrganizations } from "../services/organizationsService";
 const getBaseUrl = (): string =>
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
 
+const MAX_CAPTION_LENGTH = 200;
+
+/**
+ * Caption for a dog's image in the sitemap.
+ *
+ * Prefers the curated profile text over the raw scraped description, since it
+ * is written about this dog and reads cleanly out of context. Truncates on a
+ * word boundary so the caption never ends mid-word.
+ */
+export function buildImageCaption(dog: SitemapDog): string {
+  const source =
+    dog.dog_profiler_data?.description?.trim() ||
+    dog.properties?.description?.trim();
+
+  if (!source) {
+    return `Meet ${dog.name}, available for adoption`;
+  }
+
+  const plain = source.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
+  if (plain.length <= MAX_CAPTION_LENGTH) {
+    return plain;
+  }
+
+  const clipped = plain.slice(0, MAX_CAPTION_LENGTH);
+  const lastSpace = clipped.lastIndexOf(" ");
+  return `${clipped.slice(0, lastSpace > 0 ? lastSpace : MAX_CAPTION_LENGTH).trimEnd()}…`;
+}
+
+
 interface SitemapDog {
   id: number | string;
   slug?: string;
@@ -12,7 +42,10 @@ interface SitemapDog {
   primary_image_url?: string;
   created_at?: string;
   updated_at?: string;
-  description?: string;
+  /** Curated profile text, preferred for captions when present. */
+  dog_profiler_data?: { description?: string };
+  /** Raw text as scraped from the organisation. */
+  properties?: { description?: string };
 }
 
 interface SitemapOrganization {
@@ -296,9 +329,7 @@ export const generateImageSitemap = async (): Promise<string> => {
       .map((dog) => {
         const dogUrl = `${baseUrl}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`;
         const imageTitle = `${dog.name} - ${dog.breed || "Mixed Breed"} for Adoption`;
-        const imageCaption = dog.description
-          ? dog.description.substring(0, 200)
-          : `Meet ${dog.name}, available for adoption`;
+        const imageCaption = buildImageCaption(dog);
 
         return `  <url>
     <loc>${escapeXml(dogUrl)}</loc>
