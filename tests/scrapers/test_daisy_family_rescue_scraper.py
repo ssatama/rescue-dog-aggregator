@@ -1,4 +1,3 @@
-import time
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
@@ -739,12 +738,10 @@ class TestDaisyFamilyRescueScraperIntegration:
         assert result[0]["name"] == "Test"
 
     @pytest.mark.integration
-    def test_rate_limiting_integration(self, scraper):
-        start_time = time.time()
+    def test_rate_limiting_integration(self, scraper, stub_clock):
         scraper.respect_rate_limit()
-        elapsed = time.time() - start_time
 
-        assert elapsed >= 0.09, f"Rate limit not respected: {elapsed} seconds"
+        assert stub_clock.calls == [0.1]
 
     @pytest.mark.integration
     def test_basescraper_method_integration(self, scraper):

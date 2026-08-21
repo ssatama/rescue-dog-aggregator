@@ -26,6 +26,10 @@ logger = logging.getLogger(__name__)
 AUTO_ROUTER_MODEL = "openrouter/auto"
 AUTO_ROUTER_PLUGIN_ID = "auto-router"
 
+# Safety net beyond httpx's own timeout: how long past the request timeout the
+# whole call is allowed to run before asyncio.timeout cancels it.
+TIMEOUT_BUFFER_SECONDS = 5.0
+
 
 def build_request_body(
     messages: list[dict[str, str]],
@@ -251,7 +255,7 @@ class LLMClient:
             httpx.HTTPStatusError: If API returns error status
             json.JSONDecodeError: If response is not valid JSON
         """
-        async with asyncio.timeout(timeout + 5.0):
+        async with asyncio.timeout(timeout + TIMEOUT_BUFFER_SECONDS):
             # Make API call
             response_data = await self.call_openrouter_api(
                 messages=messages,

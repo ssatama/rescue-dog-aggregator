@@ -38,6 +38,10 @@ class TestR2ConcurrentUpload(unittest.TestCase):
             self.assertEqual(len(results), 4)
             self.assertEqual(mock_upload.call_count, 4)
 
+    # Needs real elapsed time: the mock's sleep is what makes max_workers
+    # observable at all. Stubbed, the whole batch finishes in microseconds and
+    # the duration bound passes no matter how many workers ran.
+    @pytest.mark.real_clock
     def test_concurrent_upload_respects_max_workers(self):
         """Test that concurrent upload respects max_workers limit."""
         test_images = [
@@ -102,6 +106,10 @@ class TestR2ConcurrentUpload(unittest.TestCase):
             self.assertEqual(results[1][1], False)
             self.assertEqual(results[2][1], True)
 
+    # Needs real overlap: the mock's sleep is what holds a worker inside the
+    # critical section long enough for a second to enter. Stubbed, concurrency
+    # never exceeds 1 and the semaphore limit is never exercised.
+    @pytest.mark.real_clock
     def test_concurrent_upload_with_semaphore_limiting(self):
         """Test concurrent upload uses semaphore for rate limiting."""
         test_images = [("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(10)]
@@ -167,6 +175,7 @@ class TestR2ConcurrentUpload(unittest.TestCase):
             self.assertEqual(results[0][1], False)  # First failed
             self.assertEqual(results[1][1], True)  # Second succeeded
 
+    @pytest.mark.real_clock
     def test_concurrent_vs_sequential_performance(self):
         """Test that concurrent upload is faster than sequential."""
         test_images = [("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(6)]
