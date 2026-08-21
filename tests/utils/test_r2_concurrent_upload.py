@@ -167,6 +167,7 @@ class TestR2ConcurrentUpload(unittest.TestCase):
             self.assertEqual(results[0][1], False)  # First failed
             self.assertEqual(results[1][1], True)  # Second succeeded
 
+    @pytest.mark.real_clock
     def test_concurrent_vs_sequential_performance(self):
         """Test that concurrent upload is faster than sequential."""
         test_images = [("http://test.com/dog1.jpg", f"Dog {i}", "test_org") for i in range(6)]

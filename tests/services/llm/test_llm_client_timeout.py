@@ -55,13 +55,18 @@ class TestLLMClientAsyncioTimeout:
         """If the call hangs past timeout+5s, asyncio.TimeoutError is raised."""
 
         async def hang_forever(*args, **kwargs):
-            await asyncio.sleep(3600)
+            # Waits on an event nothing sets. asyncio.sleep is stubbed suite-wide,
+            # so it would return immediately and never trip the timeout.
+            await asyncio.Event().wait()
 
-        with patch.object(llm_client, "call_openrouter_api", side_effect=hang_forever):
+        with (
+            patch("services.llm.llm_client.TIMEOUT_BUFFER_SECONDS", 0.05),
+            patch.object(llm_client, "call_openrouter_api", side_effect=hang_forever),
+        ):
             with pytest.raises(TimeoutError):
                 await llm_client.call_api_and_parse(
                     messages=[{"role": "user", "content": "test"}],
-                    timeout=0.1,
+                    timeout=0.01,
                 )
 
     @pytest.mark.asyncio

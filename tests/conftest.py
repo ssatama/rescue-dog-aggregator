@@ -5,8 +5,10 @@ Sets up a connection to a real test database and manages test data.
 Uses dependency overrides for TestClient database access.
 """
 
+import asyncio
 import os
 import sys
+import time
 from unittest.mock import Mock, patch
 
 import psycopg2
@@ -26,6 +28,34 @@ from api.main import app  # noqa: E402
 
 # Import database pool to initialize it
 from utils.db_connection import DatabaseConfig  # noqa: E402
+
+# --- Clock stubbing ---
+# Captured before any test can stub time.sleep, so fixtures that genuinely need to
+# wait (database retry backoff) keep working while tests do not.
+_REAL_SLEEP = time.sleep
+
+
+class RecordedSleeps:
+    """Collects the delays tests ask for instead of waiting them out.
+
+    Tests that care about a delay assert on the value that was requested rather
+    than on elapsed wall clock, which is both exact and immune to load.
+    """
+
+    def __init__(self):
+        self.calls: list[float] = []
+
+    @property
+    def total(self) -> float:
+        return sum(self.calls)
+
+    def sleep(self, seconds: float) -> None:
+        self.calls.append(seconds)
+
+    async def async_sleep(self, delay: float, result=None):
+        self.calls.append(delay)
+        return result
+
 
 # Set TESTING environment variable early
 os.environ["TESTING"] = "true"
@@ -173,7 +203,6 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
     Handles network issues, connection timeouts, and foreign key constraints
     by retrying with proper deletion order and connection recovery.
     """
-    import time
 
     import psycopg2
 
@@ -220,7 +249,7 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
                     raise
 
             # Wait before retry
-            time.sleep(0.1 * (attempt + 1))
+            _REAL_SLEEP(0.1 * (attempt + 1))
 
         except (psycopg2.OperationalError, psycopg2.DatabaseError) as e:
             # Network/connection issues
@@ -231,7 +260,7 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
                 raise
 
             # Wait longer for network issues
-            time.sleep(0.5 * (attempt + 1))
+            _REAL_SLEEP(0.5 * (attempt + 1))
 
         except Exception as e:
             # Unexpected error
@@ -241,7 +270,7 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
             if attempt == max_retries - 1:
                 raise
 
-            time.sleep(0.2 * (attempt + 1))
+            _REAL_SLEEP(0.2 * (attempt + 1))
 
 
 # --- Test Data Management Fixture ---
@@ -472,3 +501,28 @@ def disable_cloudinary_in_tests():
         },
     ):
         yield
+
+
+@pytest.fixture(autouse=True)
+def stub_clock(request, monkeypatch):
+    """Replace sleeps with recordings so the suite runs at CPU speed.
+
+    Production code sleeps for rate limiting and retry backoff. Tests exercise
+    those paths with everything else mocked, so the wait buys nothing but wall
+    clock. Tests that must observe real elapsed time carry
+    ``@pytest.mark.real_clock`` and opt out.
+
+    Request this fixture by name to assert on the delays that were requested::
+
+        def test_rate_limit(scraper, stub_clock):
+            scraper.respect_rate_limit()
+            assert stub_clock.calls == [0.1]
+    """
+    recorder = RecordedSleeps()
+
+    if request.node.get_closest_marker("real_clock"):
+        return recorder
+
+    monkeypatch.setattr(time, "sleep", recorder.sleep)
+    monkeypatch.setattr(asyncio, "sleep", recorder.async_sleep)
+    return recorder
