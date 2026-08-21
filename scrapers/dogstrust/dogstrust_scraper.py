@@ -10,7 +10,7 @@ from threading import Lock
 from typing import Any
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from scrapers.base_scraper import BaseScraper
 
@@ -1185,37 +1185,48 @@ class DogsTrustScraper(BaseScraper):
         return location_link.get_text(strip=True) if location_link else ""
 
     def _extract_description(self, soup: BeautifulSoup) -> str:
-        """Extract description from two-part pattern identified in analysis.
+        """Extract description from the two per-dog sections.
 
-        Combines "Are you right for [Name]?" and "Is [Name] right for you?" sections.
+        Combines "Are you right for [Name]?" and "Is [Name] right for you?".
+        The body of each section is a sibling element of the heading, not a
+        <p>, so the section must be walked by sibling rather than searched for
+        a paragraph: a document-wide paragraph search escapes the section and
+        finds the breed-guide promo further down the page instead.
         """
-        description_parts = []
+        description_parts: list[str] = []
 
-        # Find the two description sections
-        h2_elements = soup.find_all("h2")
-        for h2 in h2_elements:
+        for h2 in soup.find_all("h2"):
             h2_text = h2.get_text(strip=True)
 
-            if "Are you right for" in h2_text:
-                # Get the following paragraph
-                next_p = h2.find_next("p")
-                if next_p:
-                    text = next_p.get_text(strip=True)
-                    # Normalize smart quotes and special characters
-                    text = self._normalize_text(text)
-                    description_parts.append(text)
+            if "Are you right for" not in h2_text and "right for you" not in h2_text:
+                continue
 
-            elif "right for you" in h2_text:
-                # Get the following paragraph
-                next_p = h2.find_next("p")
-                if next_p:
-                    text = next_p.get_text(strip=True)
-                    # Normalize smart quotes and special characters
-                    text = self._normalize_text(text)
-                    description_parts.append(text)
+            body = self._extract_section_body(h2)
+            if not body:
+                continue
 
-        # Combine parts with newline separator
-        return "\n\n".join(description_parts) if description_parts else ""
+            text = self._normalize_text(body)
+            if text not in description_parts:
+                description_parts.append(text)
+
+        return "\n\n".join(description_parts)
+
+    def _extract_section_body(self, heading: Tag) -> str:
+        """Collect the text that belongs to a heading's own section.
+
+        Stops at the next heading so the walk cannot spill into whatever
+        content block follows.
+        """
+        parts = []
+
+        for sibling in heading.find_next_siblings():
+            if sibling.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+                break
+            text = sibling.get_text(" ", strip=True)
+            if text:
+                parts.append(text)
+
+        return " ".join(parts)
 
     def _extract_primary_image(self, soup: BeautifulSoup, dog_id: str | None = None) -> str:
         """Extract this dog's primary photo from the detail page.

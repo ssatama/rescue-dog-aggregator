@@ -605,3 +605,66 @@ class TestDogsTrustPrimaryImage:
         result = scraper._extract_primary_image(soup, dog_id="3632928")
 
         assert result == ""
+
+
+DETAIL_PAGE_HTML = """
+<html><body>
+  <div class="DogPage-module--contentBlock--7017c">
+    <h2 class="DogPage-module--contentHeading--ee730">Are you right for <span>Noodle</span>?</h2>
+    <div class="DogPage-module--contentBody--7b69a">
+      <span>Noodle can live with teenagers but will need to be the only dog at home for now.</span>
+    </div>
+  </div>
+  <div class="DogPage-module--contentBlock--7017c">
+    <h2 class="DogPage-module--contentHeading--ee730">Is <span>Noodle</span> right for you?</h2>
+    <div class="DogPage-module--contentBody--7b69a">
+      <span>Noodle is only two years old and loves to be stroked on her nose.</span>
+    </div>
+  </div>
+  <div class="breed-promo">
+    <h2>More about collie (border) crosss</h2>
+    <p>Everything you need to know about Border Collies</p>
+  </div>
+  <div class="rehoming">
+    <h2>How our rehoming process works</h2>
+    <p>In our form you can tell us all about your home, your lifestyle and the kind of dog you want.</p>
+  </div>
+</body></html>
+"""
+
+
+@pytest.mark.unit
+class TestDogsTrustDescriptionExtraction:
+    """The two description sections live in a sibling div, not a <p>.
+
+    Regression cover for the production bug where h2.find_next("p") walked past
+    the section into the breed-guide promo, giving 385 of 512 available dogs a
+    description of "Everything you need to know about <breed>".
+    """
+
+    @staticmethod
+    def _extract(html: str) -> str:
+        from bs4 import BeautifulSoup
+
+        return DogsTrustScraper()._extract_description(BeautifulSoup(html, "html.parser"))
+
+    def test_returns_the_dogs_own_narrative_from_both_sections(self):
+        description = self._extract(DETAIL_PAGE_HTML)
+
+        assert "Noodle can live with teenagers" in description
+        assert "loves to be stroked on her nose" in description
+
+    def test_never_returns_breed_guide_or_rehoming_boilerplate(self):
+        description = self._extract(DETAIL_PAGE_HTML)
+
+        assert "Everything you need to know" not in description
+        assert "In our form you can tell us" not in description
+
+    def test_does_not_duplicate_the_same_paragraph(self):
+        description = self._extract(DETAIL_PAGE_HTML)
+        parts = [part for part in description.split("\n\n") if part]
+
+        assert len(parts) == len(set(parts))
+
+    def test_returns_empty_string_when_sections_are_absent(self):
+        assert self._extract("<html><body><h2>Key information</h2><p>Nope.</p></body></html>") == ""
