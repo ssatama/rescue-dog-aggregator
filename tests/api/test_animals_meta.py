@@ -23,7 +23,6 @@ class TestAnimalsMeta:
         # every element is a non-empty string
         assert all(isinstance(x, str) and x for x in data)
 
-    @pytest.mark.slow  # Fails in CI due to database setup differences
     def test_breeds_contains_known_value(self, client):
         """Ensure the breeds meta endpoint returns 'Mixed Breed'."""
         resp = client.get("/api/animals/meta/breeds")

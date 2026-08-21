@@ -315,26 +315,27 @@ def manage_test_data(request):
 
         # Insert comprehensive test animals for all tests
         animals_sql = """
-        INSERT INTO animals (id, name, slug, animal_type, sex, status, organization_id, adoption_url, properties, primary_image_url, created_at, updated_at, availability_confidence, breed, standardized_breed, breed_group, size, age_text, age_min_months, age_max_months)
+        INSERT INTO animals (id, name, slug, animal_type, sex, status, organization_id, adoption_url, properties, primary_image_url, created_at, updated_at, availability_confidence, breed, standardized_breed, breed_group, size, age_text, age_min_months, age_max_months, primary_breed, breed_type, breed_slug)
         VALUES
-            (9001, 'Test Male Dog', 'test-male-dog', 'dog', 'Male', 'available', 901, 'http://example.com/9001', '{}', 'http://example.com/male.jpg', NOW(), NOW(), 'high', 'Golden Retriever', 'Golden Retriever', 'Sporting', 'large', '2 years', 24, 24),
-            (9002, 'Mixed Breed Dog', 'mixed-breed-dog', 'dog', 'Female', 'available', 901, 'http://example.com/9002', '{}', 'http://example.com/female.jpg', NOW(), NOW(), 'high', 'Mixed Breed', 'Mixed Breed', 'Mixed', 'medium', '1 year', 12, 12),
-            (9003, 'German Shepherd', 'german-shepherd', 'dog', 'Male', 'available', 901, 'http://example.com/9003', '{}', 'http://example.com/shepherd.jpg', NOW(), NOW(), 'high', 'German Shepherd', 'German Shepherd', 'Herding', 'large', '3 years', 36, 36),
-            (9004, 'Labrador Mix', 'labrador-mix', 'dog', 'Female', 'available', 901, 'http://example.com/9004', '{}', 'http://example.com/lab.jpg', NOW(), NOW(), 'high', 'Labrador Retriever', 'Labrador Retriever', 'Sporting', 'large', '18 months', 18, 18),
-            (9005, 'Beagle', 'beagle', 'dog', 'Male', 'available', 901, 'http://example.com/9005', '{}', 'http://example.com/beagle.jpg', NOW(), NOW(), 'high', 'Beagle', 'Beagle', 'Hound', 'medium', '4 years', 48, 48),
-            (9006, 'Poodle', 'poodle', 'dog', 'Female', 'available', 901, 'http://example.com/9006', '{}', 'http://example.com/poodle.jpg', NOW(), NOW(), 'high', 'Poodle', 'Poodle', 'Non-Sporting', 'medium', '6 months', 6, 6),
-            (9007, 'Bulldog', 'bulldog', 'dog', 'Male', 'available', 901, 'http://example.com/9007', '{}', 'http://example.com/bulldog.jpg', NOW(), NOW(), 'high', 'Bulldog', 'Bulldog', 'Non-Sporting', 'medium', '5 years', 60, 60),
-            (9008, 'Chihuahua', 'chihuahua', 'dog', 'Female', 'available', 901, 'http://example.com/9008', '{}', 'http://example.com/chihuahua.jpg', NOW(), NOW(), 'high', 'Chihuahua', 'Chihuahua', 'Toy', 'small', '8 years', 96, 96),
-            (9009, 'Rottweiler', 'rottweiler', 'dog', 'Male', 'available', 901, 'http://example.com/9009', '{}', 'http://example.com/rottweiler.jpg', NOW(), NOW(), 'high', 'Rottweiler', 'Rottweiler', 'Working', 'large', '7 years', 84, 84),
-            (9010, 'Border Collie', 'border-collie', 'dog', 'Female', 'available', 901, 'http://example.com/9010', '{}', 'http://example.com/collie.jpg', NOW(), NOW(), 'high', 'Border Collie', 'Border Collie', 'Herding', 'medium', '2 years', 24, 24),
-            (9011, 'Siberian Husky', 'siberian-husky', 'dog', 'Male', 'available', 901, 'http://example.com/9011', '{}', 'http://example.com/husky.jpg', NOW(), NOW(), 'high', 'Siberian Husky', 'Siberian Husky', 'Working', 'large', '4 years', 48, 48),
-            (9012, 'Yorkshire Terrier', 'yorkshire-terrier', 'dog', 'Female', 'available', 901, 'http://example.com/9012', '{}', 'http://example.com/yorkie.jpg', NOW(), NOW(), 'high', 'Yorkshire Terrier', 'Yorkshire Terrier', 'Toy', 'small', '3 years', 36, 36)
+            (9001, 'Test Male Dog', 'test-male-dog', 'dog', 'Male', 'available', 901, 'http://example.com/9001', '{}', 'http://example.com/male.jpg', NOW(), NOW(), 'high', 'Golden Retriever', 'Golden Retriever', 'Sporting', 'large', '2 years', 24, 24, 'Golden Retriever', 'purebred', 'golden-retriever'),
+            (9002, 'Mixed Breed Dog', 'mixed-breed-dog', 'dog', 'Female', 'available', 901, 'http://example.com/9002', '{}', 'http://example.com/female.jpg', NOW(), NOW(), 'high', 'Mixed Breed', 'Mixed Breed', 'Mixed', 'medium', '1 year', 12, 12, 'Mixed Breed', 'mixed', 'mixed-breed'),
+            (9003, 'German Shepherd', 'german-shepherd', 'dog', 'Male', 'available', 901, 'http://example.com/9003', '{}', 'http://example.com/shepherd.jpg', NOW(), NOW(), 'high', 'German Shepherd', 'German Shepherd', 'Herding', 'large', '3 years', 36, 36, 'German Shepherd Dog', 'purebred', 'german-shepherd-dog'),
+            (9004, 'Labrador Mix', 'labrador-mix', 'dog', 'Female', 'available', 901, 'http://example.com/9004', '{}', 'http://example.com/lab.jpg', NOW(), NOW(), 'high', 'Labrador Retriever', 'Labrador Retriever', 'Sporting', 'large', '18 months', 18, 18, 'Labrador Retriever', 'purebred', 'labrador-retriever'),
+            (9005, 'Beagle', 'beagle', 'dog', 'Male', 'available', 901, 'http://example.com/9005', '{}', 'http://example.com/beagle.jpg', NOW(), NOW(), 'high', 'Beagle', 'Beagle', 'Hound', 'medium', '4 years', 48, 48, 'Beagle', 'purebred', 'beagle'),
+            (9006, 'Poodle', 'poodle', 'dog', 'Female', 'available', 901, 'http://example.com/9006', '{}', 'http://example.com/poodle.jpg', NOW(), NOW(), 'high', 'Poodle', 'Poodle', 'Non-Sporting', 'medium', '6 months', 6, 6, 'Poodle', 'purebred', 'poodle'),
+            (9007, 'Bulldog', 'bulldog', 'dog', 'Male', 'available', 901, 'http://example.com/9007', '{}', 'http://example.com/bulldog.jpg', NOW(), NOW(), 'high', 'Bulldog', 'Bulldog', 'Non-Sporting', 'medium', '5 years', 60, 60, 'Bulldog', 'purebred', 'bulldog'),
+            (9008, 'Chihuahua', 'chihuahua', 'dog', 'Female', 'available', 901, 'http://example.com/9008', '{}', 'http://example.com/chihuahua.jpg', NOW(), NOW(), 'high', 'Chihuahua', 'Chihuahua', 'Toy', 'small', '8 years', 96, 96, 'Chihuahua', 'purebred', 'chihuahua'),
+            (9009, 'Rottweiler', 'rottweiler', 'dog', 'Male', 'available', 901, 'http://example.com/9009', '{}', 'http://example.com/rottweiler.jpg', NOW(), NOW(), 'high', 'Rottweiler', 'Rottweiler', 'Working', 'large', '7 years', 84, 84, 'Rottweiler', 'purebred', 'rottweiler'),
+            (9010, 'Border Collie', 'border-collie', 'dog', 'Female', 'available', 901, 'http://example.com/9010', '{}', 'http://example.com/collie.jpg', NOW(), NOW(), 'high', 'Border Collie', 'Border Collie', 'Herding', 'medium', '2 years', 24, 24, 'Border Collie', 'purebred', 'border-collie'),
+            (9011, 'Siberian Husky', 'siberian-husky', 'dog', 'Male', 'available', 901, 'http://example.com/9011', '{}', 'http://example.com/husky.jpg', NOW(), NOW(), 'high', 'Siberian Husky', 'Siberian Husky', 'Working', 'large', '4 years', 48, 48, 'Siberian Husky', 'purebred', 'siberian-husky'),
+            (9012, 'Yorkshire Terrier', 'yorkshire-terrier', 'dog', 'Female', 'available', 901, 'http://example.com/9012', '{}', 'http://example.com/yorkie.jpg', NOW(), NOW(), 'high', 'Yorkshire Terrier', 'Yorkshire Terrier', 'Toy', 'small', '3 years', 36, 36, 'Yorkshire Terrier', 'purebred', 'yorkshire-terrier')
         ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name, slug = EXCLUDED.slug, animal_type = EXCLUDED.animal_type, sex = EXCLUDED.sex, status = EXCLUDED.status,
             organization_id = EXCLUDED.organization_id, adoption_url = EXCLUDED.adoption_url, properties = EXCLUDED.properties,
             primary_image_url = EXCLUDED.primary_image_url, updated_at = NOW(), availability_confidence = EXCLUDED.availability_confidence,
             breed = EXCLUDED.breed, standardized_breed = EXCLUDED.standardized_breed, breed_group = EXCLUDED.breed_group, size = EXCLUDED.size, age_text = EXCLUDED.age_text,
-            age_min_months = EXCLUDED.age_min_months, age_max_months = EXCLUDED.age_max_months;
+            age_min_months = EXCLUDED.age_min_months, age_max_months = EXCLUDED.age_max_months,
+            primary_breed = EXCLUDED.primary_breed, breed_type = EXCLUDED.breed_type, breed_slug = EXCLUDED.breed_slug;
         """
         cursor.execute(animals_sql)
         print("[conftest.manage_test_data] Comprehensive test animals inserted (12 dogs with various breeds).")

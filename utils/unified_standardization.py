@@ -572,7 +572,7 @@ class UnifiedStandardizer:
             "standardization_confidence": breed_result.get("confidence", 0.0),
             # Age fields - preserve original and add ranges
             "age": age,  # Preserve original age field
-            "age_text": age or "Unknown",  # Database expects age_text field
+            "age_text": age,  # Nullable end to end; an absent age stays absent
             "age_category": age_result.get("age_category"),
             "age_min_months": age_result.get("age_min_months"),
             "age_max_months": age_result.get("age_max_months"),
