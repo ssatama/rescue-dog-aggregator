@@ -163,6 +163,9 @@ export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<Rea
       resolvedParams = await params;
     } catch (error) {
       reportError(error, { context: "DogDetailPageAsync", operation: "resolveParams" });
+      // Swallowing this left the route rendering a dog page with no slug to
+      // fetch, which ISR then cached as an empty page for 48 hours.
+      throw error;
     }
   }
 

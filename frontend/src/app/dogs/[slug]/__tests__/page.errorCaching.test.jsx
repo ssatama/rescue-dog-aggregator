@@ -45,3 +45,14 @@ describe("dog detail page — failed fetches must not be cached", () => {
     expect(notFound).toHaveBeenCalled();
   });
 });
+
+describe("dog detail page — an unresolvable slug is a failure, not an empty page", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("propagates a params resolution failure instead of rendering a shell", async () => {
+    const badProps = { params: Promise.reject(new Error("params unavailable")) };
+
+    await expect(DogDetailPageAsync(badProps)).rejects.toThrow("params unavailable");
+    expect(getAnimalBySlug).not.toHaveBeenCalled();
+  });
+});
