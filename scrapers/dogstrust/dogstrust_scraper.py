@@ -1076,7 +1076,7 @@ class DogsTrustScraper(BaseScraper):
                     return {}
 
         # Parse HTML with BeautifulSoup
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup = self._soup_from_response(response)
 
         # Extract core fields using analysis-identified selectors
         name = self._extract_name(soup)
@@ -1183,6 +1183,16 @@ class DogsTrustScraper(BaseScraper):
         """Extract location from center filter link."""
         location_link = soup.find("a", href=re.compile(r"centres%5B0%5D="))
         return location_link.get_text(strip=True) if location_link else ""
+
+    def _soup_from_response(self, response) -> BeautifulSoup:
+        """Parse a detail page response, decoding it as the page declares.
+
+        Dogs Trust sends text/html with no charset, so requests falls back to
+        ISO-8859-1 and response.text turns every smart quote into mojibake.
+        Handing BeautifulSoup the raw bytes lets it read the meta charset
+        instead.
+        """
+        return BeautifulSoup(response.content, "html.parser")
 
     def _extract_description(self, soup: BeautifulSoup) -> str:
         """Extract description from the two per-dog sections.

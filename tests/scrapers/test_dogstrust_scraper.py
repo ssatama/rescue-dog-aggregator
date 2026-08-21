@@ -668,3 +668,50 @@ class TestDogsTrustDescriptionExtraction:
 
     def test_returns_empty_string_when_sections_are_absent(self):
         assert self._extract("<html><body><h2>Key information</h2><p>Nope.</p></body></html>") == ""
+
+
+@pytest.mark.unit
+class TestDogsTrustResponseDecoding:
+    """Dogs Trust serves text/html with no charset.
+
+    requests then falls back to ISO-8859-1 per RFC 2616, so response.text
+    decodes the UTF-8 bytes as Latin-1 and every smart quote becomes mojibake:
+    "He'd" arrives as "Heâ€™d". This was invisible while descriptions were the
+    breed-guide promo, which has no apostrophes; the dogs' real narratives do,
+    and 183 of 478 available dogs were affected.
+    """
+
+    SMART_QUOTE_HTML = (
+        '<html><body><div class="DogPage-module--contentBlock--7017c">'
+        '<h2 class="DogPage-module--contentHeading--ee730">Are you right for Kevin?</h2>'
+        '<div class="DogPage-module--contentBody--7b69a">'
+        "<span>Kevin’s ready for a home he’d love.</span>"
+        "</div></div></body></html>"
+    )
+
+    class FakeResponse:
+        """Stands in for a requests.Response with no charset in Content-Type."""
+
+        def __init__(self, html: str):
+            self._body = html.encode("utf-8")
+
+        @property
+        def content(self) -> bytes:
+            return self._body
+
+        @property
+        def text(self) -> str:
+            return self._body.decode("iso-8859-1")
+
+    def test_response_text_alone_would_corrupt_the_apostrophes(self):
+        """Guards the premise: this is what the old code parsed."""
+        assert "â" in self.FakeResponse(self.SMART_QUOTE_HTML).text
+
+    def test_description_decodes_as_utf8(self):
+        scraper = DogsTrustScraper()
+        response = self.FakeResponse(self.SMART_QUOTE_HTML)
+
+        description = scraper._extract_description(scraper._soup_from_response(response))
+
+        assert "Kevin's ready for a home he'd love." == description
+        assert "â" not in description
