@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 from services.llm.config import get_llm_config
 from services.llm.database_updater import DatabaseUpdater
 from services.llm.extracted_profile_normalizer import ExtractedProfileNormalizer
+from services.llm.grounding import is_sufficiently_grounded, source_text_length
 from services.llm.llm_client import LLMClient
 from services.llm.prompt_builder import PromptBuilder
 from services.llm.quality_rubric import DogProfileQualityRubric
@@ -159,6 +160,10 @@ class DogProfilerPipeline:
         """
         dog_id = dog_data.get("id", "unknown")
         dog_name = dog_data.get("name", "Unknown")
+
+        if not is_sufficiently_grounded(dog_data):
+            logger.warning(f"Skipping dog {dog_id} ({dog_name}): only {source_text_length(dog_data)} chars of source text, below the grounding floor")
+            return None
 
         try:
             start_time = time.time()
