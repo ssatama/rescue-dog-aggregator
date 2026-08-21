@@ -351,7 +351,7 @@ Make it engaging, honest, and help potential adopters connect emotionally."""
         user_prompt = f"""Create a profile for:
 Name: {dog_data.get("name")}
 Breed: {dog_data.get("breed", "Mixed breed")}
-Age: {dog_data.get("age_text", "Unknown")}
+Age: {dog_data.get("age_text") or "Unknown"}
 Description: {dog_data.get("description", "")}"""
 
         temperature = get_model_temperature("dog_profiler", self.config.models)

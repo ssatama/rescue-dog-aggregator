@@ -3,7 +3,6 @@ import pytest
 # No global client - use the fixture from conftest.py
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestAnimalsMeta:
     @pytest.mark.parametrize(

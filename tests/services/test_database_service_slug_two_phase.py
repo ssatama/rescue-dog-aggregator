@@ -18,10 +18,7 @@ from services.database_service import DatabaseService
 from tests.fixtures.sql_introspection import insert_column_value
 
 
-@pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.integration
-@pytest.mark.slow
 class TestDatabaseServiceTwoPhaseSlugGeneration:
     """Test two-phase slug generation: INSERT with temp slug, UPDATE with final slug containing ID."""
 

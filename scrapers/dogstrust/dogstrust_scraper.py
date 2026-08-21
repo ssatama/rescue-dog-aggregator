@@ -992,7 +992,7 @@ class DogsTrustScraper(BaseScraper):
             "name": "Unknown",
             "breed": "Mixed Breed",
             "size": "Medium",
-            "age_text": "Unknown",
+            "age_text": None,
             "sex": "Unknown",
             "location": "UK",
             "description": "",
@@ -1133,7 +1133,7 @@ class DogsTrustScraper(BaseScraper):
         raw_result = {
             "name": name or "Unknown",
             "breed": breed or "Mixed Breed",
-            "age": age or "Unknown",  # Unified standardization expects 'age' field
+            "age": age,  # Unified standardization expects 'age' field
             "sex": sex or "Unknown",
             "size": size or "Medium",
             "location": location or "UK",

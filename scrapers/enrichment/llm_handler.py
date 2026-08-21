@@ -147,7 +147,7 @@ class LLMEnrichmentHandler:
                 "id": item["id"],
                 "name": animal_data.get("name", "Unknown"),
                 "breed": animal_data.get("breed", "Mixed Breed"),
-                "age_text": animal_data.get("age_text", "Unknown"),
+                "age_text": animal_data.get("age_text") or "Unknown",
                 "properties": animal_data.get("properties", {}),
             }
 

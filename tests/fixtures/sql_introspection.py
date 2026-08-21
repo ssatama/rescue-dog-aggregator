@@ -34,8 +34,10 @@ def insert_column_value(execute_call: Any, column: str) -> Any:
     if column not in columns:
         raise AssertionError(f"INSERT does not write {column!r}. Columns: {columns}")
 
-    index = columns.index(column)
-    if index >= len(params):
-        raise AssertionError(f"INSERT declares {len(columns)} columns but bound only {len(params)} parameters")
+    # Checked before indexing: a mismatch makes a late column raise but an
+    # early one return a plausible wrong value - the silent rot this exists
+    # to prevent.
+    if len(columns) != len(params):
+        raise AssertionError(f"INSERT declares {len(columns)} columns but bound {len(params)} parameters")
 
-    return params[index]
+    return params[columns.index(column)]

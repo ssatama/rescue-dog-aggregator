@@ -10,8 +10,6 @@ from scrapers.base_scraper import BaseScraper
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-@pytest.mark.slow
-@pytest.mark.external
 class TestErrorResilience:
     """Test system resilience to various failure scenarios."""
 
@@ -113,8 +111,8 @@ class TestErrorResilience:
         saved = database_service.create_animal.call_args[0][0]
         assert saved["name"] == "Incomplete Dog"
         assert saved["external_id"] == "incomplete123"
-        assert saved.get("age_text") is None
-        assert saved.get("sex") is None
+        assert saved.get("age_text") is None  # present, and explicitly empty
+        assert "sex" not in saved  # never invented
 
     @patch.dict(
         "os.environ",
@@ -137,10 +135,12 @@ class TestErrorResilience:
 
         assert (animal_id, action) == (1, "added")
 
-        # A malformed URL must not silently become the dog's image.
+        # AnimalValidator requires primary_image_url to be present but does not
+        # validate its format, so a malformed URL is stored verbatim rather than
+        # rejected or rewritten. Pinned so a change to either is deliberate.
         saved = database_service.create_animal.call_args[0][0]
         assert saved["name"] == "Test Dog"
-        assert saved.get("primary_image_url") in (None, "not-a-valid-url")
+        assert saved["primary_image_url"] == "not-a-valid-url"
 
     @patch.dict(
         "os.environ",

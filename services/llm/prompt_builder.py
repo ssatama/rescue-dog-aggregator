@@ -86,7 +86,7 @@ class PromptBuilder:
         prompt = self.prompt_template["extraction_prompt"].format(
             name=dog_data.get("name", "Unknown"),
             breed=dog_data.get("breed", "Mixed Breed"),
-            age_text=dog_data.get("age_text", "Unknown age"),
+            age_text=dog_data.get("age_text") or "Unknown age",
             properties=properties_str,
         )
 

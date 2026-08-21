@@ -11,10 +11,7 @@ from services.database_service import DatabaseService
 from tests.fixtures.sql_introspection import insert_column_value
 
 
-@pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.integration
-@pytest.mark.slow
 class TestDatabaseServiceSlugIntegration:
     """Test slug generation integration in DatabaseService."""
 

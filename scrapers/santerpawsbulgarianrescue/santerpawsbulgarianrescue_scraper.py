@@ -485,9 +485,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                                     properties["age_max_months"] = age_info["age_max_months"]
                                     properties["age_category"] = age_info.get("age_category", "Unknown")
                         elif label == "Size":
-                            properties["size"] = value or "Medium"
+                            properties["size"] = value
                         elif label == "Sex":
-                            properties["sex"] = value or "Unknown"
+                            properties["sex"] = value
                         elif label == "Breed":
                             # Store raw breed for unified standardization
                             properties["breed"] = value or "Mixed Breed"
@@ -638,9 +638,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                     result["gender"] = (properties["sex"] or "Unknown").lower()
                 # Rename age_text to age for unified standardization API
                 if "age_text" in properties:
-                    result["age"] = properties["age_text"] or "Unknown"
+                    result["age"] = properties["age_text"]
                 if "size" in properties:
-                    result["size"] = properties["size"] or "Medium"
+                    result["size"] = properties["size"]
                 if "status" in properties:
                     result["status"] = properties["status"]  # Override default with extracted status
 
@@ -648,11 +648,11 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             # This handles breed standardization, age parsing, size normalization, etc.
             result = self.process_animal(result)
 
-            # Zero NULLs compliance - set defaults only if unified standardization didn't provide them
+            # An unread size stays unknown rather than becoming Medium (#334),
+            # and an unread age stays absent. Inventing either produces data
+            # that looks scraped and is not.
             if "breed" not in result or not result["breed"]:
                 result["breed"] = "Mixed Breed"
-            if "standardized_size" not in result or not result["standardized_size"]:
-                result["standardized_size"] = "Medium"
 
             self.logger.debug(f"Successfully extracted data for {name}")
             return result

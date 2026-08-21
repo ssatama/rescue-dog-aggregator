@@ -1020,9 +1020,13 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
 
         self.assertEqual(result["breed"], "Unknown")
-        self.assertEqual(result["standardized_size"], "Medium")
         self.assertEqual(result["description"], "Basic description only.")
-        self.assertIn(result.get("age"), [None, "Unknown"])
+        # Nothing on the page states a size, an age or a sex, so none is
+        # invented. 100% of this organisation's dogs read as Medium before
+        # this changed.
+        self.assertIsNone(result.get("standardized_size"))
+        self.assertIsNone(result.get("age"))
+        self.assertIsNone(result.get("sex"))
         self.assertIsNone(result.get("gender"))
 
     @patch("requests.get")
