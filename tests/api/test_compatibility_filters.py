@@ -170,7 +170,6 @@ class TestCompatibilityFilterSQLConditions:
         assert "yes" in params
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestCompatibilityFilterAPI:
     @pytest.mark.parametrize("field", ["good_with_kids", "good_with_dogs", "good_with_cats"])

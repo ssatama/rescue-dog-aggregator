@@ -3,7 +3,6 @@ import urllib.parse
 import pytest
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationSlugLookup:
     def test_nonexistent_slug_returns_404(self, client):
@@ -28,7 +27,6 @@ class TestOrganizationSlugLookup:
         assert isinstance(response.json(), list)
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationSearchFiltering:
     def test_search_with_sql_percent_wildcard(self, client):
@@ -72,7 +70,6 @@ class TestOrganizationSearchFiltering:
         assert response.json() == []
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationListValidation:
     def test_org_list_contains_test_org(self, client):
@@ -97,7 +94,6 @@ class TestOrganizationListValidation:
         assert len(orgs) == 1
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationRecentDogsEdgeCases:
     def test_recent_dogs_returns_list(self, client):
@@ -122,7 +118,6 @@ class TestOrganizationRecentDogsEdgeCases:
             assert dog["thumbnail_url"] is not None
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationStatisticsEdgeCases:
     def test_statistics_values_are_numeric(self, client):

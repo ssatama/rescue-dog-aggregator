@@ -7,7 +7,6 @@ Tests recent-dogs and statistics endpoints with real database interaction.
 import pytest
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationRecentDogsIntegration:
     # Use the client fixture from conftest.py instead of creating our own
@@ -70,7 +69,6 @@ class TestOrganizationRecentDogsIntegration:
             assert "primary_image_url" in dog or "thumbnail_url" in dog
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationStatisticsIntegration:
     # Use the client fixture from conftest.py instead of creating our own
@@ -138,7 +136,6 @@ class TestOrganizationStatisticsIntegration:
         assert data["new_this_week"] <= data["new_this_month"] + 7  # Allow some flexibility
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationJSONParsingIntegration:
     # Use the client fixture from conftest.py instead of creating our own

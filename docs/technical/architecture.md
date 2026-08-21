@@ -318,7 +318,7 @@ async def get_filtered_dogs(filters: DogFilters) -> list[Dog]:
 ```bash
 # Backend (pytest)
 pytest -m "unit or fast" --maxfail=5          # Tier 1: Quick (2-3 min)
-pytest -m "not slow and not browser" --maxfail=3  # Tier 2: CI (5-8 min)
+pytest -m "not browser" --maxfail=3  # What CI runs on every PR
 pytest                                         # Tier 3: Full (10-15 min)
 
 # Frontend (Jest + Playwright)
@@ -333,7 +333,6 @@ pnpm exec playwright test                      # E2E tests
 @pytest.mark.unit        # Pure logic, no IO
 @pytest.mark.fast        # < 1 second
 @pytest.mark.integration # API/DB interaction
-@pytest.mark.slow        # > 5 seconds
 @pytest.mark.browser     # Selenium/Playwright
 ```
 

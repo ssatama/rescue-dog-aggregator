@@ -7,7 +7,6 @@ from api.dependencies import get_pooled_db_cursor
 from api.main import app
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestDatabaseErrorHandling:
     # Use the client fixture from conftest.py instead of creating our own

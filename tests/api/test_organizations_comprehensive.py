@@ -13,7 +13,6 @@ from api.dependencies import get_db_cursor
 from api.main import app
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationsJSONParsing:
     # Use the client fixture from conftest.py instead of creating our own
@@ -196,7 +195,6 @@ class TestOrganizationsJSONParsing:
                 app.dependency_overrides.clear()
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationsDatabaseErrors:
     # Use the client fixture from conftest.py instead of creating our own
@@ -279,7 +277,6 @@ class TestOrganizationsDatabaseErrors:
                 app.dependency_overrides.clear()
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationRecentDogsEndpoint:
     # Use the client fixture from conftest.py instead of creating our own
@@ -403,7 +400,6 @@ class TestOrganizationRecentDogsEndpoint:
         assert isinstance(data, list)
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationStatisticsEndpoint:
     # Use the client fixture from conftest.py instead of creating our own
@@ -499,7 +495,6 @@ class TestOrganizationStatisticsEndpoint:
                 app.dependency_overrides.clear()
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestOrganizationDetailEdgeCases:
     # Use the client fixture from conftest.py instead of creating our own

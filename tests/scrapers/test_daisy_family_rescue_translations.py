@@ -26,7 +26,6 @@ from utils.standardization import standardize_age, standardize_breed
 
 @pytest.mark.database
 @pytest.mark.integration
-@pytest.mark.slow
 class TestNameNormalization:
     """Test name normalization and capitalization."""
 

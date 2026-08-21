@@ -16,7 +16,6 @@ from services.progress_tracker import LoggingLevel, ProgressTracker
 
 @pytest.mark.database
 @pytest.mark.integration
-@pytest.mark.slow
 class TestProgressTracker:
     """Test for ProgressTracker service with adaptive verbosity levels."""
 

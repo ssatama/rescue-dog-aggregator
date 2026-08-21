@@ -12,7 +12,6 @@ from scrapers.base_scraper import BaseScraper
 from services.image_processing_service import ImageProcessingService
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestBaseScraperWithImageProcessingService:
     """Test BaseScraper using injected ImageProcessingService."""

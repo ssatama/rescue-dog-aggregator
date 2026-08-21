@@ -1,15 +1,12 @@
 import os
 import sys
 
-import pytest
-
 from utils.standardization import standardize_age, standardize_breed
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-@pytest.mark.slow
 class TestDataConsistency:
     """Test data standardization consistency."""
 

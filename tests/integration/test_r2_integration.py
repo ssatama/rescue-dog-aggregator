@@ -10,7 +10,6 @@ from utils.r2_service import R2Service
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-@pytest.mark.slow
 @pytest.mark.external
 @pytest.mark.integration
 class TestR2Integration:

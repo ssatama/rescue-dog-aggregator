@@ -6,9 +6,7 @@ import pytest
 ADMIN_KEY = "test-admin-key-for-monitoring"
 
 
-@pytest.mark.slow
 @pytest.mark.database
-@pytest.mark.requires_migrations
 class TestMonitoringAuthRequirements:
     PROTECTED_ENDPOINTS = [
         "/api/monitoring/scrapers",
@@ -32,7 +30,6 @@ class TestMonitoringAuthRequirements:
         assert response.status_code == 401, f"{endpoint} returned {response.status_code} with invalid key"
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestHealthCheckPublicAccess:
     def test_health_accessible_without_auth(self, api_client_no_auth):

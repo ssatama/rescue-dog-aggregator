@@ -88,7 +88,7 @@ select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
 ### 4. Tests Must Pass
 
 ```bash
-uv run pytest -m "not slow and not browser and not external" --maxfail=3
+uv run pytest -m "not browser" --maxfail=3
 ```
 
 ---
@@ -566,7 +566,7 @@ Before submitting a Python PR:
 ```
 [ ] ruff check passes: `uv run ruff check .`
 [ ] ruff format passes: `uv run ruff format --check .`
-[ ] All tests pass: `uv run pytest -m "not slow and not browser and not external"`
+[ ] All tests pass: `uv run pytest -m "not browser"`
 [ ] Type hints on all new functions
 [ ] No bare except: clauses
 [ ] No string paths (use pathlib.Path)

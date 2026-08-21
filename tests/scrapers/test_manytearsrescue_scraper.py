@@ -5,7 +5,6 @@ import pytest
 from scrapers.manytearsrescue.manytearsrescue_scraper import ManyTearsRescueScraper
 
 
-@pytest.mark.slow
 @pytest.mark.browser
 class TestManyTearsRescueScraper:
     def test_scraper_initialization_with_config(self):

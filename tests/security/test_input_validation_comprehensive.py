@@ -6,7 +6,6 @@ from api.main import app
 client = TestClient(app)
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestInputValidationComprehensive:
     """Test comprehensive input validation across all endpoints."""

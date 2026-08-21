@@ -815,7 +815,6 @@ pytest tests/scrapers/test_<org>_scraper.py -m browser -v
 @pytest.mark.fast        # < 1 second
 @pytest.mark.browser     # Playwright/Selenium required
 @pytest.mark.external    # Hits live sites
-@pytest.mark.slow        # > 5 seconds
 ```
 
 ### Running Scrapers

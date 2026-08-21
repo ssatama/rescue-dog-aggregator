@@ -81,16 +81,11 @@ def initialize_database_pool(request):
 
     For unit/fast tests, skip database initialization since they should not access database.
     """
-    # Check if we're running only unit/fast tests that don't need database
-    print(f"\n[conftest] DEBUG: request.config exists: {hasattr(request.config, 'getoption')}")
-    if hasattr(request.config, "getoption"):
-        markexpr = request.config.getoption("-m", None)
-        print(f"[conftest] DEBUG: markexpr = {markexpr}")
-        if markexpr and ("unit or fast" in markexpr or "unit and fast" in markexpr):
-            print("\n[conftest] Skipping database pool initialization for unit/fast tests.")
-            yield  # Must yield for fixture to work
-            return
-
+    # This used to also branch on `"unit or fast" in markexpr`, which no runner
+    # ever passed - `fast` has not been a marker for a long time and `-m "unit"`
+    # does not contain the substring. The branch was unreachable, so the pool
+    # initialised anyway and a bare except below swallowed the failure after
+    # three backoff attempts. PYTEST_UNIT_ONLY is the switch that works.
     # Check environment variable that indicates unit-only test run
     if os.environ.get("PYTEST_UNIT_ONLY") == "true":
         print("\n[conftest] Skipping database pool initialization for unit-only test run.")

@@ -235,7 +235,7 @@ docs/
 # Backend
 uv run ruff check . --fix
 uv run ruff format .
-uv run pytest -m 'not slow and not browser and not external' --maxfail=3
+uv run pytest -m "not browser" --maxfail=3
 
 # Frontend
 cd frontend
@@ -284,24 +284,29 @@ Jest 30+ uses `--testPathPatterns` (plural) for file patterns.
 ### Backend
 
 ```bash
-uv run pytest -m "unit" --maxfail=5              # Tier 1: Quick feedback
-uv run pytest -m "not slow and not browser and not external" --maxfail=3  # Tier 2: CI
-uv run pytest                                     # Tier 3: Full suite
+uv run pytest -m "unit" --maxfail=5   # Quick feedback, no database needed
+uv run pytest -m "not browser"        # What CI runs on every PR
+uv run pytest                         # Everything, including browser tests
 ```
 
 ### Pytest Markers (9 essential)
 
-| Marker                | Purpose                      |
-| --------------------- | ---------------------------- |
-| `unit`                | Pure logic, no I/O (<10ms)   |
-| `integration`         | Internal services (10-100ms) |
-| `slow`                | Complex setup (>1s)          |
-| `database`            | Requires DB access           |
-| `browser`             | Requires Playwright/Selenium |
-| `external`            | Requires external APIs       |
-| `security`            | Security validation          |
-| `requires_migrations` | Production-like migrations   |
-| `real_clock`          | Must observe real elapsed time |
+| Marker       | Purpose                                        |
+| ------------ | ---------------------------------------------- |
+| `database`   | Requires a PostgreSQL database                 |
+| `browser`    | Requires Playwright/Selenium                   |
+| `external`   | Requires external APIs or credentials          |
+| `real_clock` | Must observe real elapsed time                 |
+| `unit`       | Pure logic, no I/O                             |
+| `integration`| Exercises more than one internal component     |
+| `benchmark`  | Measures performance rather than asserting     |
+
+Markers say what a test **needs**, so a runner can decide whether it can run
+one. They are not speed labels. `slow` claimed ">1s" while every test carrying
+it finished in milliseconds, and because CI deselected on it, it became a
+quarantine: seven failing tests hid behind it for seven months. Measure speed
+with `--durations`, do not assert it with a decorator. `--strict-markers` is on,
+so an unregistered marker is an error rather than a silent no-op.
 
 Sleeps are stubbed suite-wide by the autouse `stub_clock` fixture, so a
 test that needs real elapsed time — thread overlap, a timing bound — must

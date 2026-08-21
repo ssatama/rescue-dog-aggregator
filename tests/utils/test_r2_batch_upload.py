@@ -10,7 +10,6 @@ from utils.r2_service import R2Service
 
 @pytest.mark.database
 @pytest.mark.external
-@pytest.mark.slow
 @pytest.mark.integration
 class TestR2BatchUpload(unittest.TestCase):
     """Test batch upload functionality for R2 Service."""

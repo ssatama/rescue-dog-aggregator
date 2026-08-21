@@ -15,7 +15,6 @@ from services.session_manager import SessionManager
 
 @pytest.mark.database
 @pytest.mark.integration
-@pytest.mark.slow
 class TestAvailabilityConfidenceFix:
     """Test the availability confidence SQL logic."""
 

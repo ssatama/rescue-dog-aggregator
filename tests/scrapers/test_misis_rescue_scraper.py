@@ -1253,7 +1253,6 @@ class TestIntegratedNormalization:
 
 @pytest.mark.browser
 @pytest.mark.integration
-@pytest.mark.slow
 class TestErrorPageDetection:
     @patch("scrapers.misis_rescue.scraper.get_browser_service")
     def test_error_page_detected_in_title(self, mock_browser_service):
@@ -1380,7 +1379,6 @@ class TestPerformanceOptimization:
         assert len(result.get("image_urls", [])) > 0
 
 
-@pytest.mark.slow
 @pytest.mark.integration
 @pytest.mark.external
 class TestListingExtraction:

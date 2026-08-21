@@ -18,7 +18,6 @@ from tests.scrapers.test_scraper_base import ScraperTestBase
 from utils.unified_standardization import UnifiedStandardizer
 
 
-@pytest.mark.slow
 @pytest.mark.browser
 class TestDogsTrustScraper(ScraperTestBase):
     """Test cases for DogsTrustScraper - only scraper-specific tests."""

@@ -199,7 +199,6 @@ test('complete adoption journey', async ({ page }) => {
 
 ### Backend Performance
 ```python
-@pytest.mark.slow
 def test_scraper_performance():
     start_time = time.time()
     result = scraper.collect_data()
@@ -235,7 +234,6 @@ test('sanitizes malicious content', () => {
 
 ### SQL Injection Prevention
 ```python
-@pytest.mark.security
 def test_sql_injection_prevention():
     malicious_input = "'; DROP TABLE animals; --"
     result = search_animals(name=malicious_input)
@@ -251,7 +249,7 @@ def test_sql_injection_prevention():
 # Backend
 uv run ruff check . --fix
 uv run ruff format .
-uv run pytest tests/ -m "not slow" -v
+uv run pytest tests/ -m "not browser" -v
 
 # Frontend
 cd frontend
@@ -277,7 +275,7 @@ pnpm test -- --maxWorkers=4
 ### Watch Mode (TDD)
 ```bash
 # Backend
-uv run pytest tests/ -m "not slow" --tb=short -q
+uv run pytest tests/ -m "not browser" --tb=short -q
 
 # Frontend
 pnpm test -- --watch --coverage

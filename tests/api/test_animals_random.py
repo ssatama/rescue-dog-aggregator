@@ -1,7 +1,6 @@
 import pytest
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestRandomAnimals:
     # Use the client fixture from conftest.py instead of creating our own

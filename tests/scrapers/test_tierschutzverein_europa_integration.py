@@ -410,7 +410,6 @@ class TestScraperCoreFunctions:
 @pytest.mark.database
 @pytest.mark.integration
 @pytest.mark.browser
-@pytest.mark.slow
 class TestTierschutzvereinEuropaIntegration:
     def test_scraper_base_scraper_integration(self):
         scraper = TierschutzvereinEuropaScraper(config_id="tierschutzverein-europa")

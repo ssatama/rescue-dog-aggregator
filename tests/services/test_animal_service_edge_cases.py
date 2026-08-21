@@ -29,7 +29,6 @@ class TestEscapeLikePattern:
         assert escape_like_pattern("50%_off\\deal") == "50\\%\\_off\\\\deal"
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestAnimalServiceSorting:
     def test_sort_by_name_asc(self, client):
@@ -55,7 +54,6 @@ class TestAnimalServiceSorting:
         assert created_dates == sorted(created_dates, reverse=True)
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestAnimalServiceBreedGroupFilter:
     def test_filter_by_herding_breed_group(self, client):
@@ -66,7 +64,6 @@ class TestAnimalServiceBreedGroupFilter:
         assert names == ["Border Collie", "German Shepherd"]
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestAnimalServiceAgeFilter:
     def test_filter_adult_age_category(self, client):

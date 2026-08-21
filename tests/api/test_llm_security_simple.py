@@ -16,7 +16,6 @@ import pytest
 ADMIN_KEY = "test-admin-key-for-llm-security-tests"
 
 
-@pytest.mark.security
 @pytest.mark.database
 @pytest.mark.integration
 class TestLLMSecurityBasics:
