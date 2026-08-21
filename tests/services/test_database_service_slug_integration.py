@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from services.database_service import DatabaseService
+from tests.fixtures.sql_introspection import insert_column_value
 
 
 @pytest.mark.slow
@@ -67,8 +68,7 @@ class TestDatabaseServiceSlugIntegration:
 
                 # Check INSERT uses temp slug
                 insert_call = mock_cursor.execute.call_args_list[0]
-                insert_values = insert_call[0][1]
-                assert "fluffy-temp" == insert_values[19]  # slug parameter position
+                assert insert_column_value(insert_call, "slug") == "fluffy-temp"
 
                 # Check UPDATE uses final slug
                 update_call = mock_cursor.execute.call_args_list[1]
@@ -198,8 +198,7 @@ class TestDatabaseServiceSlugIntegration:
 
             # Verify INSERT was called with fallback slug pattern
             insert_call = mock_cursor.execute.call_args_list[0]
-            insert_values = insert_call[0][1]
-            fallback_slug = insert_values[19]  # slug parameter position
+            fallback_slug = insert_column_value(insert_call, "slug")
             assert "animal-test-999-temp" == fallback_slug
 
     def test_create_animal_with_connection_pool(self):
@@ -259,10 +258,11 @@ class TestDatabaseServiceSlugIntegration:
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
 
-        # Mock existing animal data (slug should be preserved)
-        # Updated to include all 16 columns that the SELECT query expects
+        # Mock existing animal data (slug should be preserved).
+        # Must match the SELECT column list in DatabaseService.update_animal
+        # exactly; a short row raises inside the broad except and returns
+        # (None, "error") rather than failing visibly.
         mock_cursor.fetchone.side_effect = [
-            # First call - get current animal data (16 columns)
             (
                 "Old Name",  # name
                 "Old Breed",  # breed
@@ -280,6 +280,7 @@ class TestDatabaseServiceSlugIntegration:
                 None,  # secondary_breed
                 "old-breed-slug",  # breed_slug
                 0.95,  # breed_confidence
+                "Old Breed",  # breed_raw
             ),
             # No second call needed for updates
         ]
@@ -304,11 +305,8 @@ class TestDatabaseServiceSlugIntegration:
             )
 
             with patch("services.database_service.parse_age_text") as mock_parse_age:
-                # Create a mock object with min_months and max_months attributes
-                mock_age_info = MagicMock()
-                mock_age_info.min_months = 12
-                mock_age_info.max_months = 24
-                mock_parse_age.return_value = mock_age_info
+                # parse_age_text returns (age_category, min_months, max_months)
+                mock_parse_age.return_value = ("Young", 12, 24)
 
                 animal_id, action = db_service.update_animal(123, animal_data)
 
