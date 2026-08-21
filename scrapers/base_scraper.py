@@ -49,6 +49,19 @@ from utils.unified_standardization import UnifiedStandardizer
 logger = logging.getLogger(__name__)
 
 
+FORCE_RESCRAPE_VALUES = ("true", "1", "yes")
+
+
+def force_rescrape_enabled() -> bool:
+    """Whether this run should re-scrape animals it would normally skip.
+
+    Set FORCE_RESCRAPE when a scraper fix has changed what the source pages
+    yield and the existing rows need refreshing; orgs configured with
+    skip_existing_animals would otherwise keep their stale text indefinitely.
+    """
+    return os.environ.get("FORCE_RESCRAPE", "").strip().lower() in FORCE_RESCRAPE_VALUES
+
+
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
 
@@ -106,7 +119,7 @@ class BaseScraper(ABC):
             # New retry and batch processing settings
             self.retry_backoff_factor = scraper_config.get("retry_backoff_factor", 2.0)
             self.batch_size = scraper_config.get("batch_size", 6)
-            self.skip_existing_animals = scraper_config.get("skip_existing_animals", False)
+            self.skip_existing_animals = False if force_rescrape_enabled() else scraper_config.get("skip_existing_animals", False)
 
             # Set organization name from config
             self.organization_name = self.org_config.name

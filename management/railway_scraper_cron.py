@@ -172,7 +172,16 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Show what would run without executing")
     parser.add_argument("--list", action="store_true", help="List available scrapers")
     parser.add_argument("--json", action="store_true", help="Output results as JSON only")
+    parser.add_argument(
+        "--force-rescrape",
+        action="store_true",
+        help="Re-scrape animals that would normally be skipped, for refreshing existing rows after a scraper fix",
+    )
     args = parser.parse_args()
+
+    if args.force_rescrape:
+        os.environ["FORCE_RESCRAPE"] = "true"
+        logger.warning("FORCE_RESCRAPE enabled: skip_existing_animals is overridden for this run")
 
     signal.signal(signal.SIGTERM, handle_shutdown)
     signal.signal(signal.SIGINT, handle_shutdown)
