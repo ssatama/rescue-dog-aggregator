@@ -40,11 +40,14 @@ jobs:
           uv run ruff check .
           uv run ruff format --check .
 
-      # Stays on `unit`: tests/conftest.py skips database pool initialisation
-      # only for that marker expression, and this job has no Postgres service.
+      # No Postgres service here, so PYTEST_UNIT_ONLY tells conftest to skip
+      # pool initialisation. Without it the pool burns three connection
+      # attempts with exponential backoff before a bare except swallows the
+      # failure - seconds of waste on every push, and silent.
       - name: Run unit tests
         env:
           TESTING: "true"
+          PYTEST_UNIT_ONLY: "true"
         run: uv run pytest -m "unit" --maxfail=3 -q
 
       - name: Install pnpm

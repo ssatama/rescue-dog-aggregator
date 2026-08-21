@@ -248,18 +248,21 @@ pnpm jest --passWithNoTests --watchAll=false
 
 ### CI Requirements Table
 
-| Gate                        | Commits | PRs     | Pre-merge |
-| --------------------------- | ------- | ------- | --------- |
-| Backend lint (ruff)         | ✅      | ✅      | ✅        |
-| Backend unit tests          | ✅      | ✅      | ✅        |
-| Backend integration tests   | -       | ✅      | ✅        |
-| Backend comprehensive tests | -       | -       | ✅        |
-| Frontend type check (tsc)   | ✅      | ✅      | ✅        |
-| Frontend lint (eslint)      | ✅      | ✅      | ✅        |
-| Frontend unit tests         | ✅      | ✅      | ✅        |
-| Frontend build              | -       | ✅      | ✅        |
-| Security scan               | -       | ⚠️ warn | ⚠️ warn   |
-| Guidelines compliance       | ✅      | ✅      | ✅        |
+| Gate                      | Push (`ci-push`) | PR (`ci-pr`) |
+| ------------------------- | ---------------- | ------------ |
+| Backend lint (ruff)       | ✅               | ✅           |
+| Backend unit tests        | ✅               | ✅           |
+| Backend full suite        | -                | ✅           |
+| Frontend type check (tsc) | ✅               | ✅           |
+| Frontend lint (eslint)    | ✅               | ✅           |
+| Frontend unit tests       | ✅               | ✅           |
+| Frontend build            | -                | ✅           |
+| Dependency audit          | -                | ⚠️ warn      |
+
+There is no pre-merge tier. `ci-pr` runs the whole backend suite
+(`-m "not browser"`) on every PR, which takes well under a minute.
+`compatibility.yml` runs weekly against the next Python version and is not a
+merge gate.
 
 ## Testing Commands
 

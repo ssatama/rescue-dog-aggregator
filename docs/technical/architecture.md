@@ -448,10 +448,11 @@ python management/emergency_operations.py --fix-duplicates
 ### Deployment
 
 ```
-Git Push → GitHub Actions (3-tier CI/CD)
-  ├─ Tier 1: Quick tests (2-3 min)
-  ├─ Tier 2: Full CI (5-8 min)
-  └─ Tier 3: Pre-merge (10-15 min)
+Git Push → GitHub Actions
+  ├─ ci-push:  lint + unit tests, both stacks (~2 min)
+  └─ ci-pr:    whole backend suite + frontend + build (~4 min)
+
+Weekly → compatibility.yml: the suite on the next Python (not a merge gate)
 
 Main Branch Merge:
   ├─ Vercel: Automatic frontend deployment
