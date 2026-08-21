@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import type { Dog } from "../../../types/dog";
 import type { DogWithLlm } from "../../../services/serverAnimalsService";
 import { reportError } from "../../../utils/logger";
-import DogSchema from "../../../components/seo/DogSchema";
 import {
   generateSEODescription,
   generateFallbackDescription,
@@ -155,7 +154,7 @@ function DogDetailPage(_props: DogDetailPageProps): React.JSX.Element {
   return <Layout><DogDetailClient /></Layout>;
 }
 
-async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.Element> {
+export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.Element> {
   const { params } = props || {};
   let resolvedParams: { slug?: string } = {};
 
@@ -168,19 +167,20 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
   }
 
   let initialDog: DogWithLlm | null = null;
-  let fetchError = false;
   if (resolvedParams.slug) {
     try {
       initialDog = await fetchAnimalBySlug(resolvedParams.slug);
     } catch (error) {
-      fetchError = true;
       reportError(error, { context: "DogDetailPageAsync", slug: resolvedParams.slug });
+      // This route is ISR-cached for `revalidate`, so rendering a page without
+      // its dog would cache the failure for 48 hours. Fail the render instead:
+      // the next request retries rather than serving a permanent empty shell.
+      throw error;
     }
-  }
 
-  const fetchAttempted = !!resolvedParams.slug;
-  if (!initialDog && fetchAttempted && !fetchError) {
-    notFound();
+    if (!initialDog) {
+      notFound();
+    }
   }
 
   let heroImageUrl: string | null = null;
@@ -194,7 +194,6 @@ async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.
 
   return (
     <Layout>
-      {initialDog && <DogSchema dog={initialDog} />}
       {heroImageUrl && <ImagePreload src={heroImageUrl} />}
       <Suspense fallback={<DogDetailSkeleton />}>
         <DogDetailClient initialDog={initialDog} />
