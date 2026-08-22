@@ -28,7 +28,12 @@ class QueryBuilder:
         self._order_by_fields: list[str] = []
         self._limit_value: int | None = None
         self._offset_value: int | None = None
-        self._params: list[Any] = []
+        # Kept per clause, not in call order. Parameters bind positionally and
+        # build() always emits WHERE before HAVING, so a builder that declared
+        # HAVING first would otherwise bind each value to the other's
+        # placeholder - no error, just the wrong rows.
+        self._where_params: list[Any] = []
+        self._having_params: list[Any] = []
 
     def select(self, *fields: str) -> "QueryBuilder":
         """Add SELECT fields."""
@@ -49,7 +54,7 @@ class QueryBuilder:
     def where(self, condition: str, *params: Any) -> "QueryBuilder":
         """Add WHERE condition with parameters."""
         self._where_conditions.append(condition)
-        self._params.extend(params)
+        self._where_params.extend(params)
         return self
 
     def where_in(self, column: str, values: list[Any]) -> "QueryBuilder":
@@ -61,7 +66,7 @@ class QueryBuilder:
 
         placeholders = ",".join(["%s"] * len(values))
         self._where_conditions.append(f"{column} IN ({placeholders})")
-        self._params.extend(values)
+        self._where_params.extend(values)
         return self
 
     def group_by(self, *fields: str) -> "QueryBuilder":
@@ -72,7 +77,7 @@ class QueryBuilder:
     def having(self, condition: str, *params: Any) -> "QueryBuilder":
         """Add HAVING condition with parameters."""
         self._having_conditions.append(condition)
-        self._params.extend(params)
+        self._having_params.extend(params)
         return self
 
     def order_by(self, field: str, direction: str = "ASC") -> "QueryBuilder":
@@ -132,7 +137,7 @@ class QueryBuilder:
             query_parts.append(f"OFFSET {self._offset_value}")
 
         query = " ".join(query_parts)
-        return query, self._params
+        return query, self._where_params + self._having_params
 
     def execute(self, cursor: RealDictCursor) -> list[dict[str, Any]]:
         """Execute the query and return results."""
