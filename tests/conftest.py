@@ -208,6 +208,7 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
         # "animal_images",  # Table removed in migration 005
         "animals",  # References organizations(id)
         "scrape_logs",  # References organizations(id)
+        "service_regions",  # References organizations(id)
         "organizations",  # Parent table - delete last
     ]
 
@@ -306,6 +307,17 @@ def manage_test_data(request):
             social_media = EXCLUDED.social_media;
         """
         cursor.execute(org_sql)
+
+        # /api/animals/meta/available_countries reads service_regions. Without
+        # these rows it returned [] against a seeded organisation, and the test
+        # covering it asserted with all(), which is vacuously true on an empty
+        # list - so it passed while checking nothing.
+        service_regions_sql = """
+        INSERT INTO service_regions (organization_id, country, region)
+        VALUES (901, 'Testland', 'Test Region'), (901, 'Otherland', 'Other Region')
+        ON CONFLICT DO NOTHING;
+        """
+        cursor.execute(service_regions_sql)
         print("[conftest manage_test_data] Base test data inserted.")
 
         # Insert comprehensive test animals for all tests

@@ -23,37 +23,26 @@ ZOD_SCHEMA = Path(__file__).resolve().parents[2] / "frontend" / "src" / "schemas
 # undefined at runtime. Each is either dead schema or a guarded fallback; the
 # set must shrink, never grow, so a new entry means new drift.
 KNOWN_FRONTEND_ONLY_FIELDS = {
-    "additional_images",
     "age",
     "age_months",
     "city",
-    "coat",
     "color",
     "country",
     "description",
     "good_with_cats",
     "good_with_children",
     "good_with_dogs",
-    "house_trained",
     "image",
-    "images",
     "location",
     "main_image",
-    "mixed_breed",
     # Sent by /api/swipe (api/routes/swipe.py:354), which builds its payload by
     # hand rather than from the Animal response model, so it is absent here.
     "dogProfilerData",
     # LLM profile fields; the API nests these inside dog_profiler_data.
     "personality_traits",
-    "postcode",
     "quality_score",
-    "shots_current",
-    "spayed_neutered",
     "special_needs",
     "state",
-    "traits",
-    "videos",
-    "weight",
 }
 
 
