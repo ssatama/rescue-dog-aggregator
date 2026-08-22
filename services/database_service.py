@@ -316,7 +316,7 @@ class DatabaseService:
             new_properties_json = json.dumps(sanitize_for_postgres(animal_data.get("properties")), sort_keys=True) if animal_data.get("properties") else None
 
             # Apply standardization for new values - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
-            new_standardized_breed, new_breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
+            new_standardized_breed, new_breed_group, size_estimate = standardize_breed(animal_data.get("breed") or "")
 
             # Use pre-calculated age values if available
             if "age_min_months" in animal_data and "age_max_months" in animal_data:

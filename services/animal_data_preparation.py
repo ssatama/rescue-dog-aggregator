@@ -44,10 +44,12 @@ def prepare_animal_data(animal_data: dict[str, Any]) -> PreparedAnimalData:
     Returns:
         PreparedAnimalData with all fields ready for INSERT
     """
-    description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"
+    # `or ''` throughout: a NULL column arrives present-and-None, so a get()
+    # default never fires and the literal "None" would be fed to langdetect.
+    description_text = f"{animal_data.get('name') or ''} {animal_data.get('breed') or ''} {animal_data.get('age_text') or ''}"
     language = _detect_language(description_text)
 
-    standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
+    standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed") or "")
 
     if "age_min_months" in animal_data and "age_max_months" in animal_data:
         age_months_min = animal_data.get("age_min_months")
