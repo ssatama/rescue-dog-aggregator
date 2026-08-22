@@ -16,6 +16,11 @@ class TestIsFabricated:
     def test_placeholders_with_no_range_are_fabricated(self, text):
         assert is_fabricated(row(age_text=text)) is True
 
+    @pytest.mark.parametrize("text", ["Unknown age", "unknown age", "Unbekannt", "  unbekannt "])
+    def test_the_other_wordings_of_unknown_are_fabricated(self, text):
+        """woof-project and tierschutzverein-europa word it differently."""
+        assert is_fabricated(row(age_text=text)) is True
+
     def test_a_real_age_is_left_alone(self):
         assert is_fabricated(row(age_text="2 years", age_min_months=24, age_max_months=24)) is False
 
@@ -28,6 +33,15 @@ class TestIsFabricated:
 
     def test_unrecognised_text_is_never_cleared(self):
         assert is_fabricated(row(age_text="ancient")) is False
+
+    @pytest.mark.parametrize("text", ["4-5 Jahre", "9+", "12/2028", "Geschlecht: weiblich"])
+    def test_text_that_is_merely_bad_is_left_for_a_human(self, text):
+        """These are real values daisyfamilyrescue stored: junk, but scraped.
+
+        Clearing them would hide a scraper bug rather than fix it, so the
+        planner must leave them alone.
+        """
+        assert is_fabricated(row(age_text=text)) is False
 
 
 @pytest.mark.unit

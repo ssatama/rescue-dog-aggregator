@@ -18,7 +18,10 @@ from dataclasses import dataclass
 from typing import Any
 
 # Values that are placeholders rather than anything an organisation published.
-FABRICATED_AGE_TEXTS = ("unknown", "n/a", "none", "not known", "")
+# "unknown age" and "unbekannt" are the same admission in a different wording:
+# woof-project and tierschutzverein-europa store them where the other six
+# scrapers stored "Unknown".
+FABRICATED_AGE_TEXTS = ("unknown", "unknown age", "unbekannt", "n/a", "none", "not known", "")
 
 
 @dataclass(frozen=True)
