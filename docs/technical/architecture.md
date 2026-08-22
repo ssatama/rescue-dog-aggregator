@@ -330,10 +330,10 @@ pnpm exec playwright test                      # E2E tests
 ### Test Markers
 
 ```python
-@pytest.mark.unit        # Pure logic, no IO
-@pytest.mark.fast        # < 1 second
-@pytest.mark.integration # API/DB interaction
-@pytest.mark.browser     # Selenium/Playwright
+@pytest.mark.unit        # Pure logic, no I/O
+@pytest.mark.integration # Exercises more than one internal component
+@pytest.mark.database    # Requires a PostgreSQL database
+@pytest.mark.browser     # Requires Playwright/Selenium
 ```
 
 ## Configuration Management

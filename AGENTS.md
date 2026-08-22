@@ -289,7 +289,7 @@ uv run pytest -m "not browser"        # What CI runs on every PR
 uv run pytest                         # Everything, including browser tests
 ```
 
-### Pytest Markers (9 essential)
+### Pytest Markers (7 essential)
 
 | Marker       | Purpose                                        |
 | ------------ | ---------------------------------------------- |
