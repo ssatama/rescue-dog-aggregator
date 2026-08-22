@@ -12,12 +12,26 @@ from datetime import datetime
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from tabulate import tabulate
+from rich.console import Console
+from rich.table import Table
 
 from config import DB_CONFIG
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def _render(rows: list[dict], console: Console) -> None:
+    """Print rows as a table keyed on the first row's columns."""
+    if not rows:
+        return
+
+    table = Table(show_header=True, header_style="bold")
+    for column in rows[0]:
+        table.add_column(str(column))
+    for row in rows:
+        table.add_row(*("" if value is None else str(value) for value in row.values()))
+    console.print(table)
 
 
 class IndexMonitor:
@@ -144,6 +158,7 @@ class IndexMonitor:
 
     def generate_report(self) -> None:
         """Generate comprehensive index monitoring report."""
+        console = Console()
         print("\n" + "=" * 80)
         print("DATABASE INDEX MONITORING REPORT")
         print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -153,24 +168,24 @@ class IndexMonitor:
         unused = self.get_unused_indexes()
         if unused:
             print("\n📊 UNUSED INDEXES (Consider removing):")
-            print(tabulate(unused, headers="keys", tablefmt="grid"))
+            _render(unused, console)
 
         # Index effectiveness
         effectiveness = self.get_index_effectiveness()[:10]
         print("\n📈 TOP 10 MOST USED INDEXES:")
-        print(tabulate(effectiveness, headers="keys", tablefmt="grid"))
+        _render(effectiveness, console)
 
         # Duplicate indexes
         duplicates = self.get_duplicate_indexes()
         if duplicates:
             print("\n🔄 POTENTIAL DUPLICATE INDEXES:")
-            print(tabulate(duplicates, headers="keys", tablefmt="grid"))
+            _render(duplicates, console)
 
         # Missing index recommendations
         missing = self.get_missing_indexes_recommendation()
         if missing:
             print("\n💡 POTENTIAL MISSING INDEXES (High cardinality columns):")
-            print(tabulate(missing, headers="keys", tablefmt="grid"))
+            _render(missing, console)
 
         print("\n" + "=" * 80)
 
