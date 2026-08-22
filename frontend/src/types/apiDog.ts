@@ -60,7 +60,6 @@ export interface ApiDog {
   primary_breed?: string;
   standardized_breed?: string;
   secondary_breed?: string;
-  mixed_breed?: boolean;
   age?: string;
   age_text?: string;
   age_months?: number;
@@ -69,13 +68,8 @@ export interface ApiDog {
   sex?: string;
   size?: string;
   standardized_size?: string;
-  weight?: string;
-  coat?: string;
   color?: string;
-  spayed_neutered?: boolean;
-  house_trained?: boolean;
   special_needs?: boolean;
-  shots_current?: boolean;
   good_with_children?: boolean;
   good_with_dogs?: boolean;
   good_with_cats?: boolean;
@@ -85,13 +79,9 @@ export interface ApiDog {
   primary_image_url?: string;
   image?: string;
   main_image?: string;
-  images?: string[];
-  additional_images?: string[];
-  videos?: string[];
   location?: string;
   city?: string;
   state?: string;
-  postcode?: string;
   country?: string;
   created_at?: string;
   updated_at?: string;
@@ -99,7 +89,6 @@ export interface ApiDog {
   dogProfilerData?: ApiDogProfilerData;
   dog_profiler_data?: ApiDogProfilerData;
   personality_traits?: string[];
-  traits?: string[];
   quality_score?: number;
 }
 

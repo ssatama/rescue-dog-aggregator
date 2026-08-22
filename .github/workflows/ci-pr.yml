@@ -5,8 +5,10 @@ permissions:
   pull-requests: read
 
 on:
+  # No `branches:` filter. Scoped to main, a PR based on another branch ran
+  # only Quick Check, so a stacked PR got lint and unit tests and nothing else
+  # - no full backend suite, no frontend build, no dependency audit.
   pull_request:
-    branches: [main]
     types: [opened, reopened, synchronize, ready_for_review]
 
 # A new push supersedes the run in flight; do not pay for the old one.

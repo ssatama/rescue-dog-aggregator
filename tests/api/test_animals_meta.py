@@ -19,7 +19,10 @@ class TestAnimalsMeta:
         assert resp.status_code == 200, resp.text
         data = resp.json()
         assert isinstance(data, list)
-        # every element is a non-empty string
+        # `all()` is vacuously true on an empty list. Before the conftest seed
+        # gained primary_breed/breed_type/breed_slug, /meta/breeds returned []
+        # against 12 seeded dogs and this assertion checked nothing.
+        assert data, f"{endpoint} returned nothing against the seeded animals"
         assert all(isinstance(x, str) and x for x in data)
 
     def test_breeds_contains_known_value(self, client):
