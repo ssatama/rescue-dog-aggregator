@@ -807,8 +807,8 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
         self.assertIn("description", result)
         self.assertEqual(result["description"], "Basic description only.")
-        self.assertIn(result.get("age"), [None, "Unknown"])
-        self.assertIn(result.get("gender"), [None, "unknown"])
+        self.assertIsNone(result.get("age"))
+        self.assertIsNone(result.get("gender"))
 
     @patch("requests.get")
     def test_scrape_animal_details_handles_network_error(self, mock_get):
@@ -841,14 +841,14 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
         result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
 
-        if result:
-            self.assertIn(result.get("description"), ["", None])
-            self.assertIn(result.get("breed"), ["Mixed Breed", "Unknown", None])
-            self.assertIn(result.get("standardized_size"), ["Medium", None])
-            self.assertIn(result.get("age"), [None, "Unknown"])
-            self.assertIn(result.get("gender"), [None, "unknown"])
-        else:
-            self.assertEqual(result, {})
+        # Pinned exactly. The previous form accepted every listed value and
+        # then fell back to `else: assertEqual(result, {})`, so any outcome
+        # whatsoever passed.
+        self.assertIsNone(result.get("description"))
+        self.assertEqual(result.get("breed"), "Unknown")
+        self.assertEqual(result.get("standardized_size"), "Medium")
+        self.assertIsNone(result.get("age"))
+        self.assertIsNone(result.get("gender"))
 
     def test_scrape_animal_details_integrates_with_collect_data(self):
         """Test that detail scraping integrates correctly with collect_data."""
