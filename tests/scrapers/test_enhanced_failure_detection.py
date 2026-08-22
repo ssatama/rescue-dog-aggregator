@@ -13,7 +13,6 @@ from scrapers.base_scraper import BaseScraper
 from tests.fixtures.service_mocks import create_mock_session_manager
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestEnhancedFailureDetection:
     """Test enhanced failure detection scenarios."""
@@ -154,7 +153,6 @@ class TestEnhancedFailureDetection:
         assert result is False
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestFailureDetectionEdgeCases:
     """Test edge cases for failure detection."""
@@ -214,7 +212,6 @@ class TestFailureDetectionEdgeCases:
         assert result is True
 
 
-@pytest.mark.slow
 class TestFailureDetectionConfiguration:
     """Test configurable aspects of failure detection."""
 
@@ -279,7 +276,6 @@ class TestFailureDetectionConfiguration:
         mock_scraper.session_manager.detect_partial_failure.assert_called_once_with(10, 0.5, 3, 15, 0, 0)
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestFailureLoggingAndReporting:
     """Test that failure detection provides good logging and debugging info."""

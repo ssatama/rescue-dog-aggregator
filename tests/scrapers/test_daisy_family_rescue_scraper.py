@@ -133,7 +133,6 @@ weiblich, kastriert"""
 
         assert len(result) == 2
 
-    @pytest.mark.slow
     @pytest.mark.browser
     def test_handle_lazy_loading(self, scraper):
         mock_driver = Mock()

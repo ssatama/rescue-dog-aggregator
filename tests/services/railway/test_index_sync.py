@@ -13,7 +13,6 @@ from services.railway.index_sync import (
 
 
 @pytest.mark.integration
-@pytest.mark.slow
 @pytest.mark.unit
 class TestIndexSync:
     """Test suite for index synchronization functionality."""

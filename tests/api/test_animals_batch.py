@@ -2,7 +2,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestBatchEndpointValidation:
     def test_no_ids_returns_422(self, client: TestClient):
@@ -23,7 +22,6 @@ class TestBatchEndpointValidation:
         assert response.status_code == 422
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestBatchEndpointIntegration:
     def test_single_id_returns_matching_animal(self, client: TestClient):

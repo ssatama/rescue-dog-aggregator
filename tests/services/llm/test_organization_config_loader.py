@@ -22,7 +22,6 @@ from services.llm.organization_config_loader import (
 
 @pytest.mark.integration
 @pytest.mark.integration
-@pytest.mark.slow
 class TestOrganizationConfig:
     """Test organization configuration model."""
 

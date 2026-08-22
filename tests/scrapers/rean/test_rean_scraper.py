@@ -734,7 +734,6 @@ class TestREANNetworkOperations:
         result = scraper.scrape_page("https://rean.org.uk/test")
         assert result == "Sample page content"
 
-    @pytest.mark.slow
     @pytest.mark.external
     @patch("requests.get")
     def test_scrape_page_failure(self, mock_get, scraper):
@@ -743,7 +742,6 @@ class TestREANNetworkOperations:
         result = scraper.scrape_page("https://rean.org.uk/test")
         assert result is None
 
-    @pytest.mark.slow
     @pytest.mark.external
     @patch("requests.get")
     @patch("time.sleep")
@@ -758,7 +756,6 @@ class TestREANNetworkOperations:
         assert result == "Success"
         assert mock_get.call_count == 2
 
-    @pytest.mark.slow
     @pytest.mark.external
     @patch("requests.get")
     @patch("time.sleep")
@@ -770,7 +767,6 @@ class TestREANNetworkOperations:
         assert result is None
         assert mock_get.call_count <= scraper.max_retries + 1
 
-    @pytest.mark.slow
     @pytest.mark.external
     @patch("requests.get")
     def test_http_error_codes(self, mock_get, scraper):
@@ -786,7 +782,6 @@ class TestREANNetworkOperations:
 
 
 class TestREANBrowserExtraction:
-    @pytest.mark.slow
     @pytest.mark.browser
     @patch("scrapers.rean.dogs_scraper.get_browser_service")
     def test_extract_images_with_browser_basic(self, mock_browser_service, scraper):
@@ -820,7 +815,6 @@ class TestREANBrowserExtraction:
         assert "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg" in images
         assert "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg" in images
 
-    @pytest.mark.slow
     @pytest.mark.browser
     @patch("scrapers.rean.dogs_scraper.get_browser_service")
     @patch("scrapers.rean.dogs_scraper.time.sleep")
@@ -842,7 +836,6 @@ class TestREANBrowserExtraction:
         scroll_calls = [call for call in mock_driver.execute_script.call_args_list if "scrollTo" in str(call)]
         assert len(scroll_calls) > 0
 
-    @pytest.mark.slow
     @pytest.mark.browser
     @patch("scrapers.rean.dogs_scraper.get_browser_service")
     def test_extract_images_with_browser_filters_wsimg_only(self, mock_browser_service, scraper):
@@ -889,7 +882,6 @@ class TestREANBrowserExtraction:
 
         assert images == []
 
-    @pytest.mark.slow
     @pytest.mark.browser
     @patch("scrapers.rean.dogs_scraper.get_browser_service")
     def test_extract_images_with_browser_configuration(self, mock_browser_service, scraper):
@@ -906,7 +898,6 @@ class TestREANBrowserExtraction:
 
         mock_service.create_driver.assert_called_once()
 
-    @pytest.mark.slow
     @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     def test_extract_images_browser_webdriver_failure(self, mock_chrome, scraper):
@@ -916,7 +907,6 @@ class TestREANBrowserExtraction:
 
         assert result == []
 
-    @pytest.mark.slow
     @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     def test_browser_element_not_found(self, mock_chrome, scraper):
@@ -932,7 +922,6 @@ class TestREANBrowserExtraction:
 
 
 class TestREANIntegration:
-    @pytest.mark.slow
     @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     @patch("time.sleep")
@@ -961,7 +950,6 @@ class TestREANIntegration:
         assert result[0]["age_text"] == "4 months"
         assert result[0]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
 
-    @pytest.mark.slow
     @pytest.mark.browser
     @patch("selenium.webdriver.Chrome")
     def test_unified_extraction_fallback(self, mock_chrome, scraper):
@@ -974,7 +962,6 @@ class TestREANIntegration:
         assert result == []
         scraper._extract_dogs_legacy_fallback.assert_called_once()
 
-    @pytest.mark.slow
     @pytest.mark.external
     @patch("requests.get")
     @patch("selenium.webdriver.Chrome")
@@ -1015,7 +1002,6 @@ class TestREANIntegration:
         assert dog["animal_type"] == "dog"
         assert "external_id" in dog
 
-    @pytest.mark.slow
     @pytest.mark.external
     def test_rate_limiting_between_pages(self, scraper):
         with patch("time.sleep") as mock_sleep, patch("requests.get") as mock_get:

@@ -11,7 +11,6 @@ MEDIUM_IDS = {9002, 9005, 9006, 9007, 9010}
 SMALL_IDS = {9008, 9012}
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestPaginationEdgeCases:
     def test_offset_beyond_total_returns_empty_list(self, client: TestClient):
@@ -35,7 +34,6 @@ class TestPaginationEdgeCases:
         assert len(data) == TOTAL_TEST_DOGS
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestFilterValidation:
     def test_filter_by_sex_male_returns_only_males(self, client: TestClient):
@@ -109,7 +107,6 @@ class TestFilterValidation:
         assert response.json() == []
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestSearchSafety:
     def test_search_with_percent_returns_no_results(self, client: TestClient):
@@ -148,7 +145,6 @@ class TestSearchSafety:
         assert data[0]["id"] == 9005
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestSlugAndIdLookup:
     def test_nonexistent_slug_returns_404(self, client: TestClient):

@@ -34,7 +34,6 @@ class TestAnimalsMeta:
         resp = client.get("/api/animals/meta/available_regions")
         assert resp.status_code == 422
 
-    @pytest.mark.slow  # Fails in CI due to missing service_regions table
     def test_available_regions_with_country(self, client):
         """GET /api/animals/meta/available_regions?country=<X> returns string list."""
         # First grab any valid country

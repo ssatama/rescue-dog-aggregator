@@ -14,7 +14,6 @@ from scrapers.base_scraper import BaseScraper
 from services.database_service import DatabaseService
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestBaseScraperWithDatabaseService:
     """Test BaseScraper using injected DatabaseService."""
@@ -139,7 +138,6 @@ class TestBaseScraperWithDatabaseService:
         assert "DatabaseService" in caplog.text
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestBaseScraperCompleteIntegration:
     """Test that all BaseScraper database methods use DatabaseService when available.

@@ -162,7 +162,6 @@ class TestBuildOrganizationObject:
         assert build_organization_object({}) is None
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestJSONBFieldsInAPI:
     """Integration: verify JSONB fields are always dict/list in API responses, never strings."""

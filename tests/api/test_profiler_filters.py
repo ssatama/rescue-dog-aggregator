@@ -140,7 +140,6 @@ class TestProfilerFilterCombinations:
         assert request.age_category == "Adult"
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestProfilerFilterAPI:
     """Integration tests for profiler filter API endpoints."""

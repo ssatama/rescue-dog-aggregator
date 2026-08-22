@@ -32,7 +32,6 @@ class TestLexicalComparisonWasWrong:
         assert sorted([0.9, 0.85]) == [0.85, 0.9]
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestConfidenceWrittenAsNumber:
     def _service(self, fetchone_side_effect):

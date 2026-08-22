@@ -8,7 +8,6 @@ from api.services.slug_service import (
 
 
 @pytest.mark.integration
-@pytest.mark.slow
 class TestSanitizeForUrl:
     """Test URL sanitization function."""
 

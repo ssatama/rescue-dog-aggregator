@@ -7,7 +7,6 @@ import pytest
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestSecurity:
     """Test security aspects of the application."""

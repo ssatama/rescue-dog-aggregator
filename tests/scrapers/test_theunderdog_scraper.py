@@ -7,7 +7,6 @@ from scrapers.theunderdog.theunderdog_scraper import TheUnderdogScraper
 
 
 @pytest.mark.database
-@pytest.mark.slow
 @pytest.mark.integration
 @pytest.mark.external
 class TestTheUnderdogScraper:
@@ -359,7 +358,6 @@ class TestTheUnderdogDetailScraping:
 
 
 @pytest.mark.integration
-@pytest.mark.slow
 @pytest.mark.external
 class TestTheUnderdogIntegration:
     @pytest.fixture

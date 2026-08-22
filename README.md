@@ -215,11 +215,16 @@ pnpm build             # Build verification
 
 ### Test Markers
 
-- `@pytest.mark.unit` - Pure logic, no IO
-- `@pytest.mark.fast` - < 1 second
-- `@pytest.mark.integration` - API/DB interaction
-- `@pytest.mark.slow` - > 5 seconds
-- `@pytest.mark.browser` - Playwright tests
+Markers say what a test **needs**, not how fast it is. `--strict-markers` is
+on, so an unregistered marker is an error rather than a silent no-op.
+
+- `@pytest.mark.database` - Requires a PostgreSQL database
+- `@pytest.mark.browser` - Requires Playwright/Selenium
+- `@pytest.mark.external` - Requires external APIs or credentials
+- `@pytest.mark.real_clock` - Must observe real elapsed time
+- `@pytest.mark.unit` - Pure logic, no I/O
+- `@pytest.mark.integration` - Exercises more than one internal component
+- `@pytest.mark.benchmark` - Measures performance rather than asserting behaviour
 
 ---
 

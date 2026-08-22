@@ -51,7 +51,6 @@ class TestDatabaseServiceDirectConnection:
         )
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestDatabaseServiceWithConnectionPool:
     """Test DatabaseService using connection pool."""
@@ -221,7 +220,6 @@ class TestDatabaseServiceWithConnectionPool:
             assert db_service.conn == mock_connection
 
 
-@pytest.mark.slow
 @pytest.mark.database
 class TestDatabaseServiceRawBreedPersistence:
     """Both write paths must persist breed_raw or the original text is lost on disk."""

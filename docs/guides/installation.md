@@ -140,7 +140,7 @@ open http://localhost:3000  # Or visit in browser
 
 ```bash
 # Backend tests (125 test files)
-uv run pytest tests/ -m "not slow" -v
+uv run pytest tests/ -m "not browser" -v
 
 # Frontend tests (267 test files)
 cd frontend
@@ -414,7 +414,7 @@ pnpm exec playwright test
 ```bash
 # Backend Development
 uv run pytest tests/ -m "unit or fast" -v          # Fast feedback
-uv run pytest tests/ -m "not browser and not requires_migrations" -v  # CI pipeline
+uv run pytest tests/ -m "not browser" -v  # CI pipeline
 uv run pytest tests/ -v                            # All tests
 
 # Frontend Development

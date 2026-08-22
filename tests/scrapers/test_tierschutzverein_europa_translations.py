@@ -17,7 +17,6 @@ from utils.standardization import standardize_age, standardize_breed
 
 @pytest.mark.database
 @pytest.mark.integration
-@pytest.mark.slow
 class TestGenderTranslation:
     """Test translation of all gender values found in production database."""
 

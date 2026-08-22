@@ -811,11 +811,10 @@ pytest tests/scrapers/test_<org>_scraper.py -m browser -v
 ### Test Markers
 
 ```python
-@pytest.mark.unit        # Pure logic, no IO
-@pytest.mark.fast        # < 1 second
-@pytest.mark.browser     # Playwright/Selenium required
-@pytest.mark.external    # Hits live sites
-@pytest.mark.slow        # > 5 seconds
+@pytest.mark.unit        # Pure logic, no I/O
+@pytest.mark.database    # Requires a PostgreSQL database
+@pytest.mark.browser     # Requires Playwright/Selenium
+@pytest.mark.external    # Requires external APIs or credentials
 ```
 
 ### Running Scrapers

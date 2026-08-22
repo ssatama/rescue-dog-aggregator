@@ -1,7 +1,5 @@
 from datetime import datetime
 
-import pytest
-
 from utils.standardization import (
     apply_standardization,
     get_size_from_breed,
@@ -10,7 +8,6 @@ from utils.standardization import (
 )
 
 
-@pytest.mark.slow
 class TestBreedStandardization:
     def test_exact_breed_match(self):
         """Test exact matches against the breed mapping dictionary."""
@@ -66,7 +63,6 @@ class TestBreedStandardization:
         assert standardize_breed(None) == ("Unknown", "Unknown", None)
 
 
-@pytest.mark.slow
 class TestAgeStandardization:
     def test_years_format(self):
         """Test parsing of age expressed in years."""
@@ -243,7 +239,6 @@ class TestAgeStandardization:
         assert result["age_category"] == "Senior"
 
 
-@pytest.mark.slow
 class TestSizeEstimation:
     def test_size_from_known_breed(self):
         """Test size estimation from known breeds."""
@@ -264,7 +259,6 @@ class TestSizeEstimation:
         assert get_size_from_breed("Some Random Breed") is None
 
 
-@pytest.mark.slow
 class TestFullStandardization:
     def test_apply_standardization_complete_data(self):
         """Test full standardization with complete data."""

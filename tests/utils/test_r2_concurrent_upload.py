@@ -10,7 +10,6 @@ from utils.r2_service import R2Service
 
 
 @pytest.mark.external
-@pytest.mark.slow
 @pytest.mark.integration
 class TestR2ConcurrentUpload(unittest.TestCase):
     """Test concurrent upload functionality for R2 Service."""
