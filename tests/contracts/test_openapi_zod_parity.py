@@ -40,6 +40,9 @@ KNOWN_FRONTEND_ONLY_FIELDS = {
     "location",
     "main_image",
     "mixed_breed",
+    # Sent by /api/swipe (api/routes/swipe.py:354), which builds its payload by
+    # hand rather than from the Animal response model, so it is absent here.
+    "dogProfilerData",
     # LLM profile fields; the API nests these inside dog_profiler_data.
     "personality_traits",
     "postcode",
@@ -66,13 +69,17 @@ def _zod_declared_fields(schema_name: str) -> set[str]:
 
     Reads the source rather than a generated artefact so the check cannot go
     stale against a schema someone edits without regenerating anything.
+
+    The name pattern accepts camelCase as well as snake_case: a snake_case-only
+    pattern skipped `dogProfilerData` silently, which is the one shape this
+    test exists to catch.
     """
     source = ZOD_SCHEMA.read_text()
     start = source.index(f"export const {schema_name} = z")
     # The object literal closes on a line of its own at two-space indent,
     # before any chained .passthrough() / .optional().
     body = source[start : source.index("\n  })", start)]
-    return set(re.findall(r"^\s{4}([a-z_][a-z0-9_]*):\s", body, re.MULTILINE))
+    return set(re.findall(r"^\s{4}([A-Za-z_][A-Za-z0-9_]*):\s", body, re.MULTILINE))
 
 
 @pytest.mark.unit
@@ -81,6 +88,10 @@ class TestDogFieldParity:
         """Both sides must parse, or every assertion below passes vacuously."""
         assert len(_openapi_animal_fields()) > 20
         assert len(_zod_declared_fields("ApiDogSchema")) > 20
+
+    def test_the_extractor_sees_camel_case_fields(self):
+        """A snake_case-only pattern skipped these without failing anything."""
+        assert "dogProfilerData" in _zod_declared_fields("ApiDogSchema")
 
     def test_frontend_declares_no_new_field_the_api_does_not_send(self):
         phantom = _zod_declared_fields("ApiDogSchema") - _openapi_animal_fields()
