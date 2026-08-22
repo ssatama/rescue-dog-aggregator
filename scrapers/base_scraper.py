@@ -286,8 +286,14 @@ class BaseScraper(ABC):
             self.scrape_log_id = self.database_service.create_scrape_log(self.organization_id)
             return self.scrape_log_id is not None
 
-        self._log_service_unavailable("DatabaseService", "scrape logging disabled")
-        return True  # Continue scraping without logging
+        # Refuse rather than degrade. Without a DatabaseService every
+        # save_animal returns ("error", None), so the scrape would complete a
+        # full run, persist nothing, and report success - the counts simply
+        # stay at zero and nothing says the dogs never reached the database.
+        # Production always injects via utils/secure_scraper_loader.py, so this
+        # only fires on a misconfiguration, which is exactly when it must.
+        self.logger.error("No DatabaseService available - refusing to scrape, as nothing could be persisted")
+        return False
 
     def complete_scrape_log(
         self,

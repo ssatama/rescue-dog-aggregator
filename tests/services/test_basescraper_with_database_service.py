@@ -218,11 +218,17 @@ class TestBaseScraperCompleteIntegration:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_legacy_fallback_without_service(self, mock_scraper_with_service):
-        """Test that all methods return appropriate defaults without DatabaseService."""
+    def test_a_scraper_without_the_service_refuses_rather_than_degrades(self, mock_scraper_with_service):
+        """Without a DatabaseService there is nothing a scrape can accomplish.
+
+        This previously asserted `start_scrape_log() is True`, described as
+        "continue scraping without logging". The save_animal assertion directly
+        below it shows the real consequence: every animal returns "error", so
+        the run persisted nothing while completing normally and reporting
+        success. Setup now refuses instead.
+        """
         scraper = mock_scraper_with_service(organization_id=1)
 
-        # Test save_animal returns error without database service
         animal_data = {
             "name": "Test Dog",
             "external_id": "test-org1-456",
@@ -232,13 +238,6 @@ class TestBaseScraperCompleteIntegration:
         assert animal_id is None
         assert action == "error"
 
-        # Test start_scrape_log returns True to continue scraping without logging
-        result = scraper.start_scrape_log()
-        assert result is True
+        assert scraper.start_scrape_log() is False, "a scrape that cannot persist must not start"
 
-        # Test complete_scrape_log returns True to continue scraping without logging
-        result = scraper.complete_scrape_log("completed", 10, 5, 3, None)
-        assert result is True
-
-        # Verify service methods are not used
         assert scraper.database_service is None
