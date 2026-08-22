@@ -159,7 +159,7 @@ class DogProfilerPipeline:
             Profiler data dictionary or None if failed
         """
         dog_id = dog_data.get("id", "unknown")
-        dog_name = dog_data.get("name", "Unknown")
+        dog_name = dog_data.get("name") or "Unknown"
 
         if not is_sufficiently_grounded(dog_data):
             logger.warning(f"Skipping dog {dog_id} ({dog_name}): only {source_text_length(dog_data)} chars of source text, below the grounding floor")
@@ -217,7 +217,7 @@ class DogProfilerPipeline:
             # Add source references if not present
             if "source_references" not in profile_data:
                 profile_data["source_references"] = {
-                    "description": str(dog_data.get("properties", {}).get("description", "")),
+                    "description": str((dog_data.get("properties") or {}).get("description") or ""),
                     "personality_traits": "inferred from description",
                 }
 
@@ -236,7 +236,7 @@ class DogProfilerPipeline:
             # Add original dog data fields that aren't in the schema
             result["dog_id"] = dog_id  # Database updater expects dog_id
             result["name"] = dog_name
-            result["breed"] = dog_data.get("breed", "Mixed Breed")
+            result["breed"] = dog_data.get("breed") or "Mixed Breed"
             result["external_id"] = dog_data.get("external_id")
 
             result["quality_score"] = self._calculate_quality_score(result, dog_data)

@@ -75,8 +75,11 @@ class PromptBuilder:
         Returns:
             Formatted prompt string
         """
-        # Extract properties as JSON string
-        properties = dog_data.get("properties", {})
+        # `or {}` rather than a get() default: every row loaded for profiling
+        # carries these keys, so a NULL column arrives present-and-None and a
+        # default never fires. Without this the model is handed the word
+        # "None" as its source material.
+        properties = dog_data.get("properties") or {}
         if isinstance(properties, dict):
             properties_str = json.dumps(properties, ensure_ascii=False, indent=2)
         else:
@@ -84,8 +87,8 @@ class PromptBuilder:
 
         # Format the extraction prompt with dog data
         prompt = self.prompt_template["extraction_prompt"].format(
-            name=dog_data.get("name", "Unknown"),
-            breed=dog_data.get("breed", "Mixed Breed"),
+            name=dog_data.get("name") or "Unknown",
+            breed=dog_data.get("breed") or "Mixed Breed",
             age_text=dog_data.get("age_text") or "Unknown age",
             properties=properties_str,
         )

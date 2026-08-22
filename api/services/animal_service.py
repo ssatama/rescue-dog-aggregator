@@ -526,7 +526,7 @@ class AnimalService:
             "organization_id": row.get("organization_id"),
             "external_id": row.get("external_id"),
             "language": row.get("language"),
-            "properties": row_dict.get("properties", {}),
+            "properties": row_dict.get("properties") or {},
             "created_at": row.get("created_at"),
             "updated_at": row.get("updated_at"),
             "last_scraped_at": row.get("last_scraped_at"),
