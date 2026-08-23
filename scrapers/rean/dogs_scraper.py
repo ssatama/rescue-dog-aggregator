@@ -223,41 +223,6 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error extracting images from HTML: {e}")
             return []
 
-    def determine_dog_image(self, dog_name: str, available_images: list[str]) -> str | None:
-        """
-        Determine the best image for a specific dog.
-
-        Args:
-            dog_name: Name of the dog
-            available_images: List of available image URLs from the page
-
-        Returns:
-            Best image URL for the dog, or None if no suitable image found
-        """
-        # Filter out known non-dog images (like logos)
-        dog_images = []
-        for img_url in available_images:
-            # Skip obvious logos and icons
-            if any(term in img_url.lower() for term in ["logo", "icon", "favicon"]):
-                continue
-            dog_images.append(img_url)
-
-        # For now, since REAN uses placeholders, we'll return None
-        # This allows the system to use default placeholder handling
-        # In the future, this method can be enhanced to:
-        # 1. Match images to dogs by position/context
-        # 2. Use facial recognition or AI to identify dog photos
-        # 3. Use external image sources (Facebook, etc.)
-
-        if dog_images:
-            # Log available images for debugging
-            # World-class logging: Image matching handled by centralized system
-            # For now, return None to use system defaults
-            # TODO: Implement image-to-dog matching logic
-            pass
-
-        return None
-
     def extract_images_with_browser(self, url: str) -> list[str]:
         """
         Extract image URLs using browser automation to handle JavaScript-loaded images.

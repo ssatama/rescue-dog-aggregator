@@ -47,8 +47,6 @@ coverage.xml
 .nox/
 .hypothesis/
 test-results/
-frontend/playwright-report/
-frontend/e2e-failures.txt
 
 # === IDE ===
 .idea/

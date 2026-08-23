@@ -209,7 +209,6 @@ cd frontend
 
 pnpm test              # Unit tests
 pnpm test -- --watch   # Watch mode
-pnpm exec playwright test   # E2E tests
 pnpm build             # Build verification
 ```
 

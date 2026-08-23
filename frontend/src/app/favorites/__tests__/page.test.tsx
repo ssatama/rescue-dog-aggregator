@@ -77,11 +77,6 @@ jest.mock("../../../components/favorites/FilterPanel", () => {
   };
 });
 
-jest.mock("../../../components/favorites/ShareModal", () => ({
-  ShareModal: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
-    isOpen ? <div>Share Modal</div> : null,
-}));
-
 jest.mock("../../../components/favorites/CompareMode", () => {
   return function CompareMode({
     dogs,

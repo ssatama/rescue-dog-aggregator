@@ -35,13 +35,10 @@ const ALLOWED_FILES = new Set([
   "app/sitemap-breeds.xml/route.ts",
   "app/sitemap_index.xml/route.ts",
   "app/sitemap.xml/route.ts",
-  // ContactButton/ShareButton - user-facing clipboard/share API failures
-  "components/ui/ContactButton.tsx",
+  // ShareButton - user-facing clipboard/share API failures
   "components/ui/ShareButton.tsx",
   // Dev/test pages - not user-facing production code
   "app/test-images/page.tsx",
-  // Performance metrics utility - dev-only console.log
-  "utils/performanceMetrics.ts",
 ]);
 
 function findConsoleUsages(): Array<{ file: string; line: number; content: string }> {

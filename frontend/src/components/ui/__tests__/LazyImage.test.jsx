@@ -3,17 +3,6 @@ import { render, screen, fireEvent, waitFor } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import LazyImage from "../LazyImage";
 
-// Mock ImagePlaceholder component
-jest.mock("../ImagePlaceholder", () => {
-  return function MockImagePlaceholder({ className }) {
-    return (
-      <div className={className} data-testid="mock-image-placeholder">
-        Mock Placeholder
-      </div>
-    );
-  };
-});
-
 // Mock IntersectionObserver
 const mockIntersectionObserver = jest.fn();
 mockIntersectionObserver.mockReturnValue({
