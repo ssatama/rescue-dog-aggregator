@@ -69,6 +69,8 @@ export interface Dog {
 
   // Status and display
   status?: DogStatus;
+  /** False once the scrapers stop finding the listing at its source. */
+  active?: boolean;
   blur_data_url?: string;
   breed_group?: string;
 

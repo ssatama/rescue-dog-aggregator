@@ -268,7 +268,7 @@ export default function OrganizationHero({ organization }: OrganizationHeroProps
             <a
               href={organization.website_url}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener"
               className="bg-orange-500 dark:bg-orange-600 hover:bg-orange-600 dark:hover:bg-orange-700 text-white font-medium px-6 py-3 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Visit Original Website

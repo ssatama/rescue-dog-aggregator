@@ -43,10 +43,12 @@ describe("MobileStickyBar", () => {
     const contactButton = screen.getByTestId("mobile-contact-button");
     contactButton.click();
 
+    // Referrer is deliberately preserved: rescues see rescuedogs.me in their
+    // own analytics, which is the only proof we send them traffic.
     expect(mockWindowOpen).toHaveBeenCalledWith(
       "https://example.com/adopt",
       "_blank",
-      "noopener,noreferrer",
+      "noopener",
     );
   });
 

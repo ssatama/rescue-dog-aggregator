@@ -335,7 +335,9 @@ describe("ComparisonView", () => {
     expect(mockOpen).toHaveBeenCalledWith(
       mockDogs[0].adoption_url,
       "_blank",
-      "noopener,noreferrer",
+      // Referrer is deliberately preserved: rescues see rescuedogs.me in their
+      // own analytics, which is the only proof we send them traffic.
+      "noopener",
     );
   });
 

@@ -365,6 +365,18 @@ class BaseScraper(ABC):
         self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
         return True
 
+    def _purge_if_reactivated(self, animal_id: int) -> None:
+        """Invalidate a dog that has just come back from inactive.
+
+        Its cached detail page carries a noindex and a "no longer listed"
+        banner. A dog that reappears with identical data takes the "no_change"
+        branch, which purges nothing, so without this the page keeps
+        contradicting reality for the whole revalidate window.
+        """
+        reactivated = getattr(self.session_manager, "reactivated_animal_ids", None)
+        if isinstance(reactivated, list) and animal_id in reactivated:
+            self.mark_animal_changed(animal_id)
+
     def mark_animal_changed(self, animal_id: int) -> None:
         """Record that an animal was added or updated in this run.
 
@@ -826,6 +838,7 @@ class BaseScraper(ABC):
                 # Mark animal as seen in current session for confidence tracking
                 if self.session_manager:
                     self.session_manager.mark_animal_as_seen(animal_id)
+                    self._purge_if_reactivated(animal_id)
 
                 # Update counts
                 if action == "added":

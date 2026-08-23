@@ -32,6 +32,7 @@ import DogDetailErrorBoundary from "../../../components/error/DogDetailErrorBoun
 import { ScrollAnimationWrapper } from "../../../hooks/useScrollAnimation";
 import { DogSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
+import RetiredListingNotice from "../../../components/dogs/RetiredListingNotice";
 import {
   trackDogView,
   trackDogImageView,
@@ -319,6 +320,8 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
               <Breadcrumbs items={breadcrumbItems} />
             </div>
 
+            <RetiredListingNotice active={dog?.active} />
+
             <div>
               <Button
                 onClick={() => router.back()}
@@ -401,7 +404,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 transition-colors duration-300">
                                 {dog.name}
                               </h1>
-                              {dog.status && (
+                              {dog.status && dog.active !== false && (
                                 <DogStatusBadge status={dog.status} />
                               )}
                             </div>
@@ -625,7 +628,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                     )}
 
                     {/* CTA Section */}
-                    {dog.status === "available" && (
+                    {dog.status === "available" && dog.active !== false && (
                       <ScrollAnimationWrapper delay={850}>
                         <div className="mb-8" data-testid="cta-section">
                           <div className="flex justify-center">
@@ -647,7 +650,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                                   <a
                                     href={safeUrl}
                                     target="_blank"
-                                    rel="noopener noreferrer"
+                                    rel="noopener"
                                     className="flex items-center justify-center"
                                     data-testid="adopt-button"
                                     aria-label={`Start adoption process for ${dog.name}`}

@@ -329,7 +329,9 @@ describe("EnhancedOrganizationCard", () => {
 
       expect(link).toHaveAttribute("href", "https://petsinturkey.org");
       expect(link).toHaveAttribute("target", "_blank");
-      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+      // Referrer is deliberately preserved: rescues see rescuedogs.me in their
+      // own analytics, which is the only proof we send them traffic.
+      expect(link).toHaveAttribute("rel", "noopener");
     });
 
     test("View Dogs button shows correct count", () => {
@@ -463,7 +465,9 @@ describe("EnhancedOrganizationCard", () => {
       const visitButton = screen.getByText("Visit Website");
       const link = visitButton.closest("a");
 
-      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+      // Referrer is deliberately preserved: rescues see rescuedogs.me in their
+      // own analytics, which is the only proof we send them traffic.
+      expect(link).toHaveAttribute("rel", "noopener");
       expect(link).toHaveAttribute("target", "_blank");
     });
   });

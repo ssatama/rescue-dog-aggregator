@@ -178,7 +178,9 @@ describe("OrganizationSection", () => {
       expect(visitWebsiteButton).toBeInTheDocument();
       expect(visitWebsiteButton).toHaveAttribute("href", "https://example.org");
       expect(visitWebsiteButton).toHaveAttribute("target", "_blank");
-      expect(visitWebsiteButton).toHaveAttribute("rel", "noopener noreferrer");
+      // Referrer is deliberately preserved: rescues see rescuedogs.me in their
+      // own analytics, which is the only proof we send them traffic.
+      expect(visitWebsiteButton).toHaveAttribute("rel", "noopener");
       expect(visitWebsiteButton).toHaveTextContent("Visit Website");
     });
 
@@ -325,7 +327,9 @@ describe("OrganizationSection", () => {
 
       const visitWebsiteButton = screen.getByTestId("visit-website-button");
 
-      expect(visitWebsiteButton).toHaveAttribute("rel", "noopener noreferrer");
+      // Referrer is deliberately preserved: rescues see rescuedogs.me in their
+      // own analytics, which is the only proof we send them traffic.
+      expect(visitWebsiteButton).toHaveAttribute("rel", "noopener");
     });
   });
 

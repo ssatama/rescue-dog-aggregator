@@ -112,6 +112,7 @@ class Animal(AnimalBase):
     created_at: datetime
     updated_at: datetime
     last_scraped_at: datetime | None = None
+    active: bool = True
     availability_confidence: AvailabilityConfidence | None = AvailabilityConfidence.HIGH
     last_seen_at: datetime | None = None
     consecutive_scrapes_missing: int | None = 0
