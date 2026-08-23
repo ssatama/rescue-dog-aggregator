@@ -52,3 +52,21 @@ def test_single_animal_response_preserves_inactive_flag():
     animal = AnimalService.__new__(AnimalService)._build_single_animal_response(row)
 
     assert animal.active is False
+
+
+@pytest.mark.unit
+def test_batch_endpoint_query_selects_active():
+    """The favourites batch endpoint must report retirement truthfully.
+
+    ``get_animals_by_ids`` backs ``GET /api/animals/batch``, which the
+    favourites page calls. It builds full ``Animal`` payloads, so a query that
+    omits ``a.active`` lets the model default fire and reports every retired
+    dog as live - the same defect this module fixes for the slug endpoint.
+    """
+    import inspect
+
+    from api.services.animal_service import AnimalService
+
+    source = inspect.getsource(AnimalService.get_animals_by_ids)
+
+    assert "a.active" in source

@@ -404,7 +404,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 transition-colors duration-300">
                                 {dog.name}
                               </h1>
-                              {dog.status && (
+                              {dog.status && dog.active !== false && (
                                 <DogStatusBadge status={dog.status} />
                               )}
                             </div>
@@ -628,7 +628,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                     )}
 
                     {/* CTA Section */}
-                    {dog.status === "available" && (
+                    {dog.status === "available" && dog.active !== false && (
                       <ScrollAnimationWrapper delay={850}>
                         <div className="mb-8" data-testid="cta-section">
                           <div className="flex justify-center">

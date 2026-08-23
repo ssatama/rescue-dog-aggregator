@@ -48,6 +48,10 @@ class SessionManager:
         self.conn = None
         self.current_scrape_session: datetime | None = None
         self.found_external_ids: set[str] = set()
+        # Animals that were inactive and are live again this run. Their
+        # detail pages cache a noindex plus a retirement banner, so they
+        # need purging even when the scraped data itself is unchanged.
+        self.reactivated_animal_ids: list[int] = []
 
     def connect(self) -> bool:
         """Establish database connection.
@@ -124,6 +128,24 @@ class SessionManager:
         """
         return len(self.found_external_ids)
 
+    def _record_if_reactivated(self, cursor, animal_id: int) -> None:
+        """Note an animal that has just come back from inactive.
+
+        Its cached detail page carries a noindex and a retirement banner, so it
+        needs invalidating even when the scraped fields are unchanged.
+        """
+        # Bookkeeping only. Marking the animal as seen is the operation that
+        # matters; a failure to read the previous flag must never fail it.
+        try:
+            row = cursor.fetchone()
+            was_active = row["was_active"] if isinstance(row, dict) else row[0]
+        except (TypeError, KeyError, IndexError) as e:
+            self.logger.debug(f"Could not read previous active flag for {animal_id}: {e}")
+            return
+
+        if was_active is False and animal_id not in self.reactivated_animal_ids:
+            self.reactivated_animal_ids.append(animal_id)
+
     def mark_animal_as_seen(self, animal_id: int) -> bool:
         """Mark an animal as seen in the current scrape session.
 
@@ -144,15 +166,21 @@ class SessionManager:
                     cursor = conn.cursor()
                     cursor.execute(
                         """
+                        WITH previous AS (
+                            SELECT active FROM animals WHERE id = %s
+                        )
                         UPDATE animals
                         SET last_seen_at = %s,
                             consecutive_scrapes_missing = 0,
                             availability_confidence = 'high',
                             active = true
-                        WHERE id = %s
+                        FROM previous
+                        WHERE animals.id = %s
+                        RETURNING previous.active AS was_active
                         """,
-                        (self.current_scrape_session, animal_id),
+                        (animal_id, self.current_scrape_session, animal_id),
                     )
+                    self._record_if_reactivated(cursor, animal_id)
                     conn.commit()
                     cursor.close()
                     return True
@@ -171,15 +199,21 @@ class SessionManager:
             cursor = self.conn.cursor()
             cursor.execute(
                 """
+                WITH previous AS (
+                    SELECT active FROM animals WHERE id = %s
+                )
                 UPDATE animals
                 SET last_seen_at = %s,
                     consecutive_scrapes_missing = 0,
                     availability_confidence = 'high',
                     active = true
-                WHERE id = %s
+                FROM previous
+                WHERE animals.id = %s
+                RETURNING previous.active AS was_active
                 """,
-                (self.current_scrape_session, animal_id),
+                (animal_id, self.current_scrape_session, animal_id),
             )
+            self._record_if_reactivated(cursor, animal_id)
             self.conn.commit()
             cursor.close()
             return True
