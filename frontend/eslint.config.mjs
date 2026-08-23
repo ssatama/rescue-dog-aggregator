@@ -43,7 +43,6 @@ export default [
   // Progressive image components use native <img> for fine-grained loading control
   {
     files: [
-      "src/components/ui/ProgressiveImage.tsx",
       "src/components/ui/LazyImage.tsx",
       "src/components/ui/HeroImageWithBlurredBackground.tsx",
     ],
@@ -53,7 +52,7 @@ export default [
   },
   // Test files may use native <img> for testing purposes
   {
-    files: ["**/__tests__/**", "**/*.test.*", "**/*.spec.*", "e2e-tests/**"],
+    files: ["**/__tests__/**", "**/*.test.*", "**/*.spec.*"],
     rules: {
       "@next/next/no-img-element": "off",
       "jsx-a11y/alt-text": "off",

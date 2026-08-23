@@ -3,7 +3,7 @@ import type { Dog, DogStatus } from "./dog";
 import type { EmptyStateVariant } from "../components/ui/EmptyState";
 import type { ErrorBoundaryState } from "./uiComponents";
 
-export type { ErrorBoundaryProps, ErrorBoundaryState, ExpandableTextProps, ContactButtonProps } from "./uiComponents";
+export type { ErrorBoundaryProps, ErrorBoundaryState, ExpandableTextProps } from "./uiComponents";
 export type { DogStatus };
 export type ListContext = "home" | "search" | "org-page" | "favorites" | "breed-page";
 export type LoadingType = "initial" | "filter" | "pagination";
@@ -53,10 +53,6 @@ export interface DogsGridProps
   listContext?: ListContext;
 }
 
-export interface RelatedDogsCardProps {
-  dog: Dog;
-}
-
 export interface RelatedDogsSectionProps {
   organizationId: number | string;
   currentDogId: number | string;
@@ -81,9 +77,3 @@ export interface DogDetailErrorBoundaryState {
   errorInfo: React.ErrorInfo | null;
   retryCount: number;
 }
-
-export interface DogSectionErrorBoundaryProps {
-  children: ReactNode;
-}
-
-export type DogSectionErrorBoundaryState = ErrorBoundaryState;

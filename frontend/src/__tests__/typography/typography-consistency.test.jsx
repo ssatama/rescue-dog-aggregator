@@ -2,7 +2,6 @@ import React from "react";
 import { render, screen, waitFor } from "../../test-utils";
 import DogCard from "../../components/dogs/DogCardOptimized";
 import OrganizationCard from "../../components/organizations/OrganizationCard";
-import RelatedDogsCard from "../../components/dogs/RelatedDogsCard";
 import TrustSection from "../../components/home/TrustSection";
 import RelatedDogsSection from "../../components/dogs/RelatedDogsSection";
 
@@ -84,22 +83,6 @@ describe("Typography Consistency Tests", () => {
       const orgName = screen.getByText("Test Organization");
       expect(orgName).toHaveClass("text-card-title");
       expect(orgName.tagName).toBe("H3");
-    });
-
-    it("should use .text-card-title for related dogs card titles", () => {
-      const mockDog = {
-        id: 1,
-        name: "Related Dog",
-        breed: "Test Breed",
-        images: ["test-image.jpg"],
-        organization: { name: "Test Org" },
-      };
-
-      render(<RelatedDogsCard dog={mockDog} />);
-
-      const dogName = screen.getByText("Related Dog");
-      expect(dogName).toHaveClass("text-card-title");
-      expect(dogName.tagName).toBe("H3");
     });
 
     it("should use .text-section for section headings", async () => {

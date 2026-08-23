@@ -15,24 +15,18 @@ class ErrorType(str, Enum):
     """Types of errors that can occur."""
 
     DATABASE_CONNECTION = "database_connection"
-    POOL_INITIALIZATION = "pool_initialization"
-    QUERY_ERROR = "query_error"
     VALIDATION_ERROR = "validation_error"
-    NOT_FOUND = "not_found"
     INTERNAL_ERROR = "internal_error"
 
 
 class ErrorCode(str, Enum):
     """Specific error codes for detailed identification."""
 
-    POOL_INIT_FAILED = "POOL_INIT_FAILED"
     POOL_NOT_INITIALIZED = "POOL_NOT_INITIALIZED"
     CONNECTION_REFUSED = "CONNECTION_REFUSED"
     CONNECTION_TIMEOUT = "CONNECTION_TIMEOUT"
     POOL_EXHAUSTED = "POOL_EXHAUSTED"
-    QUERY_FAILED = "QUERY_FAILED"
     TRANSACTION_FAILED = "TRANSACTION_FAILED"
-    RESOURCE_NOT_FOUND = "RESOURCE_NOT_FOUND"
     INVALID_REQUEST = "INVALID_REQUEST"
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
 
@@ -71,28 +65,6 @@ class ErrorResponse(BaseModel):
     error: ErrorDetail
 
 
-def create_pool_initialization_error(detail: str, retry_attempt: int = 1, max_attempts: int = 3) -> ErrorResponse:
-    """Create a pool initialization error response."""
-    return ErrorResponse(
-        error=ErrorDetail(
-            type=ErrorType.POOL_INITIALIZATION,
-            code=ErrorCode.POOL_INIT_FAILED,
-            message="Unable to initialize database connection pool",
-            detail=detail,
-            retry=(
-                RetryInfo(
-                    suggested=retry_attempt < max_attempts,
-                    after_seconds=5 * (2 ** (retry_attempt - 1)),
-                    attempt=retry_attempt,
-                    max_attempts=max_attempts,
-                )  # Exponential backoff
-                if retry_attempt < max_attempts
-                else None
-            ),
-        )
-    )
-
-
 def create_pool_not_initialized_error() -> ErrorResponse:
     """Create an error for when pool is not initialized."""
     return ErrorResponse(
@@ -115,31 +87,5 @@ def create_connection_error(detail: str, code: ErrorCode = ErrorCode.CONNECTION_
             message="Database connection error",
             detail=detail,
             retry=RetryInfo(suggested=True, after_seconds=5),
-        )
-    )
-
-
-def create_query_error(detail: str) -> ErrorResponse:
-    """Create a query execution error response."""
-    return ErrorResponse(
-        error=ErrorDetail(
-            type=ErrorType.QUERY_ERROR,
-            code=ErrorCode.QUERY_FAILED,
-            message="Database query failed",
-            detail=detail,
-            retry=RetryInfo(suggested=False),
-        )
-    )
-
-
-def create_not_found_error(resource: str, identifier: str) -> ErrorResponse:
-    """Create a resource not found error response."""
-    return ErrorResponse(
-        error=ErrorDetail(
-            type=ErrorType.NOT_FOUND,
-            code=ErrorCode.RESOURCE_NOT_FOUND,
-            message=f"{resource} not found",
-            detail=f"No {resource.lower()} found with identifier: {identifier}",
-            retry=RetryInfo(suggested=False),
         )
     )

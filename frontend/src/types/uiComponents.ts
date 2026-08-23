@@ -17,13 +17,6 @@ export interface ExpandableTextProps {
   className?: string;
 }
 
-export interface ContactButtonProps {
-  email?: string;
-  buttonText?: string;
-  size?: "default" | "sm" | "lg" | "icon";
-  className?: string;
-}
-
 export interface BreadcrumbItem {
   name: string;
   url?: string;

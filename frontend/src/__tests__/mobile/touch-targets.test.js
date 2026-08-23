@@ -1,13 +1,8 @@
-import { render, screen, act } from "../../test-utils";
-import DogSection from "../../components/home/DogSection";
+import { render, screen } from "../../test-utils";
 import HeroSection from "../../components/home/HeroSection";
 import DogCard from "../../components/dogs/DogCardOptimized";
 
 // Mock services and utilities
-jest.mock("../../services/animalsService", () => ({
-  getAnimalsByCuration: jest.fn(),
-}));
-
 jest.mock("../../utils/imageUtils", () => ({
   preloadImages: jest.fn(),
   getCatalogCardImageWithPosition: jest.fn((url) => ({
@@ -37,12 +32,7 @@ describe("Mobile Touch Targets Validation", () => {
   };
 
   beforeEach(() => {
-    // Mock API responses
-    require("../../services/animalsService").getAnimalsByCuration.mockResolvedValue(
-      [mockDog],
-    );
-
-    // Mock mobile viewport - need to match the actual query used in DogSection
+    // Mock mobile viewport
     Object.defineProperty(window, "matchMedia", {
       writable: true,
       value: jest.fn().mockImplementation((query) => ({
@@ -227,32 +217,6 @@ describe("Mobile Touch Targets Validation", () => {
     });
   });
 
-  describe("Carousel Navigation Touch Targets", () => {
-    test("scroll indicators should be ≥48px for touch", async () => {
-      await act(async () => {
-        render(<DogSection title="Test Dogs" curationType="recent" />);
-      });
-
-      const indicators = screen.getAllByTestId(/scroll-indicator/);
-      indicators.forEach((indicator) => {
-        expect(validateTouchTarget(indicator)).toBe(true);
-      });
-    });
-
-    test("carousel swipe area should be large enough for gestures", async () => {
-      await act(async () => {
-        render(<DogSection title="Test Dogs" curationType="recent" />);
-      });
-
-      const carousel = screen.getByTestId("dog-carousel");
-      const rect = carousel.getBoundingClientRect();
-
-      // Carousel should be at least 300px wide for effective swiping
-      expect(rect.width).toBeGreaterThanOrEqual(300);
-      expect(rect.height).toBeGreaterThanOrEqual(200);
-    });
-  });
-
   describe("Accessibility and Focus States", () => {
     test("all touch targets should have visible focus states", () => {
       render(<HeroSection statistics={mockStats} />);
@@ -262,29 +226,6 @@ describe("Mobile Touch Targets Validation", () => {
 
       const styles = window.getComputedStyle(ctaButton, ":focus");
       expect(styles.outline).not.toBe("none");
-    });
-
-    test("touch targets should have proper ARIA labels", async () => {
-      await act(async () => {
-        render(<DogSection title="Test Dogs" curationType="recent" />);
-      });
-
-      // Get all tab elements (indicator buttons) and check their aria-label
-      const allTabs = screen.getAllByRole("tab");
-      allTabs.forEach((tab, index) => {
-        expect(tab).toHaveAttribute("aria-label", `Go to slide ${index + 1}`);
-      });
-    });
-
-    test("carousel should support keyboard navigation", async () => {
-      await act(async () => {
-        render(<DogSection title="Test Dogs" curationType="recent" />);
-      });
-
-      const carousel = screen.getByTestId("dog-carousel");
-      expect(carousel).toHaveAttribute("tabindex", "0");
-      expect(carousel).toHaveAttribute("role", "region");
-      expect(carousel).toHaveAttribute("aria-label");
     });
   });
 

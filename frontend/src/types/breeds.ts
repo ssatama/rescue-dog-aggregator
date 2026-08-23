@@ -5,27 +5,6 @@ import type { FilterCountsResponse } from "../schemas/common";
 
 export type { BreedGroupDisplay } from "../services/breedImagesService";
 
-export interface BreedDescription {
-  tagline?: string;
-  overview?: string;
-  temperament?: string;
-  family?: string;
-  care_info?: {
-    grooming?: string;
-    health?: string;
-    training?: string;
-    living_conditions?: string;
-  };
-  characteristics?: {
-    affection_level?: number;
-    energy_level?: number;
-    trainability?: number;
-    good_with_children?: number;
-    exercise_needs?: number;
-    size?: string;
-  };
-}
-
 export interface PersonalityMetric {
   percentage: number;
   label: string;
@@ -110,11 +89,6 @@ export interface BreedFilters {
   sizeFilter?: string;
   ageFilter?: string;
   [key: string]: string | undefined;
-}
-
-export interface GalleryImage {
-  url: string;
-  alt?: string;
 }
 
 export interface BreedFilterBarProps {

@@ -1,7 +1,6 @@
 import type { Dog } from "./dog";
 import type { BreedWithImages, Statistics } from "../schemas/animals";
 import type { OrganizationCardData } from "./organizationComponents";
-import type { CurationType } from "../services/animalsService";
 
 export interface CountryStat {
   code: string;
@@ -27,15 +26,6 @@ export interface ClientHomePageProps {
 export interface HeroSectionProps {
   statistics: Statistics;
   previewDogs?: Dog[];
-}
-
-export interface DogSectionProps {
-  title: string;
-  subtitle: string;
-  curationType: CurationType;
-  viewAllHref: string;
-  initialDogs?: Dog[] | null;
-  priority?: boolean;
 }
 
 export interface TrustSectionProps {

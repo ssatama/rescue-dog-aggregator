@@ -3,7 +3,6 @@ export const getAnimalById = jest.fn();
 export const getAnimalBySlug = jest.fn();
 export const getAnimalsByStandardizedBreed = jest.fn();
 export const getRandomAnimals = jest.fn();
-export const getAnimalsByCuration = jest.fn();
 export const getAllAnimals = jest.fn();
 export const getAllAnimalsForSitemap = jest.fn();
 export const getStandardizedBreeds = jest.fn();

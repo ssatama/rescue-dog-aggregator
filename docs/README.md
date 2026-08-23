@@ -51,6 +51,5 @@ Enforced at PR review - see `AGENTS.md` for the non-negotiable subset.
 | `services/llm/README.md` | Orientation for the LLM pipeline source |
 | `scrapers/README.md` | Adding a new organization scraper |
 | `configs/README.md` | Organization YAML configuration |
-| `frontend/e2e-tests/README.md` | Playwright end-to-end tests |
 | `monitoring/README.md` | Data quality monitoring |
 | The `ops-commands` skill | Operational runbooks |
