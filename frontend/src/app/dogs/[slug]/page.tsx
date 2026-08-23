@@ -103,9 +103,16 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
         }]
       : [fallbackImage];
 
+    // The detail route serves dogs the scrapers retired (see
+    // get_animal_by_slug), so the URL keeps returning 200 after a listing
+    // vanishes from its organisation. Without this the page stays an
+    // indexable, live-looking profile for a dog nobody can adopt.
+    const isRetired = dog.active === false;
+
     const metadata: Metadata = {
       title,
       description,
+      ...(isRetired && { robots: { index: false, follow: true } }),
       alternates: {
         canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/dogs/${resolvedParams.slug}`,
       },

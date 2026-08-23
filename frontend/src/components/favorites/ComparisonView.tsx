@@ -188,7 +188,7 @@ const DogComparisonCard = ({
 
   const handleVisit = () => {
     if (dog.adoption_url) {
-      window.open(dog.adoption_url, "_blank", "noopener,noreferrer");
+      window.open(dog.adoption_url, "_blank", "noopener");
     }
   };
 

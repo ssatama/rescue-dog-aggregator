@@ -530,6 +530,7 @@ class AnimalService:
             "created_at": row.get("created_at"),
             "updated_at": row.get("updated_at"),
             "last_scraped_at": row.get("last_scraped_at"),
+            "active": row.get("active", True),
             "availability_confidence": row.get("availability_confidence"),
             "last_seen_at": row.get("last_seen_at"),
             "consecutive_scrapes_missing": row.get("consecutive_scrapes_missing"),

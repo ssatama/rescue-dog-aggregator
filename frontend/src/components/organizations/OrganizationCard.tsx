@@ -289,7 +289,7 @@ const OrganizationCard = memo(
               <a
                 href={websiteUrl}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener"
                 className="inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 rounded"
                 onClick={(e: React.MouseEvent) => e.stopPropagation()} // Prevent navigation when clicking button
               >

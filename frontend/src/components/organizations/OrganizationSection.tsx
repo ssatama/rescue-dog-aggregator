@@ -97,7 +97,7 @@ const OrganizationSection = memo(
                 <a
                   href={websiteUrl}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener"
                   className="inline-flex items-center px-4 py-2 font-medium"
                   data-testid="visit-website-button"
                 >

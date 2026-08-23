@@ -32,6 +32,7 @@ import DogDetailErrorBoundary from "../../../components/error/DogDetailErrorBoun
 import { ScrollAnimationWrapper } from "../../../hooks/useScrollAnimation";
 import { DogSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
+import RetiredListingNotice from "../../../components/dogs/RetiredListingNotice";
 import {
   trackDogView,
   trackDogImageView,
@@ -318,6 +319,8 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
             <div>
               <Breadcrumbs items={breadcrumbItems} />
             </div>
+
+            <RetiredListingNotice active={dog?.active} />
 
             <div>
               <Button
@@ -647,7 +650,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                                   <a
                                     href={safeUrl}
                                     target="_blank"
-                                    rel="noopener noreferrer"
+                                    rel="noopener"
                                     className="flex items-center justify-center"
                                     data-testid="adopt-button"
                                     aria-label={`Start adoption process for ${dog.name}`}

@@ -460,6 +460,47 @@ describe("DogDetailClient Dog Detail Integration", () => {
       });
     });
   });
+
+  describe("retired listings and outbound referrer", () => {
+    it("shows no retirement notice for a dog still listed", async () => {
+      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("adopt-button")).toBeInTheDocument();
+      });
+
+      expect(
+        screen.queryByTestId("retired-listing-notice"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("warns the reader when the scrapers retired the listing", async () => {
+      getAnimalBySlug.mockResolvedValue({ ...mockDogData, active: false });
+
+      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("retired-listing-notice"),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("preserves the referrer on the adopt link", async () => {
+      // Rescues never replied to outreach partly because they cannot see the
+      // traffic: noreferrer stripped rescuedogs.me from their analytics, so
+      // our visits landed as direct/unknown. noopener stays for security.
+      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("adopt-button")).toBeInTheDocument();
+      });
+
+      const adoptLink = screen.getByTestId("adopt-button");
+      expect(adoptLink).toHaveAttribute("rel", "noopener");
+      expect(adoptLink.getAttribute("rel")).not.toMatch(/noreferrer/);
+    });
+  });
 });
 
 describe("Breed Display - Simplified without legacy text", () => {

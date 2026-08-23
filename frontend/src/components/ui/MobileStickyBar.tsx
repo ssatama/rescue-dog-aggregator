@@ -19,7 +19,7 @@ export default function MobileStickyBar({
   const handleContactClick = (): void => {
     if (dog?.adoption_url) {
       // Open the adoption URL
-      window.open(dog.adoption_url, "_blank", "noopener,noreferrer");
+      window.open(dog.adoption_url, "_blank", "noopener");
     }
   };
 

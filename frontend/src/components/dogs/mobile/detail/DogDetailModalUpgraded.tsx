@@ -801,7 +801,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                         window.open(
                           dog.adoption_url,
                           "_blank",
-                          "noopener,noreferrer",
+                          "noopener",
                         );
                       }
                     }}

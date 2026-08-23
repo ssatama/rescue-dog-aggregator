@@ -288,7 +288,7 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
               <a
                 href={dog.adoption_url}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener"
                 className="text-xs font-medium text-orange-600 hover:text-orange-700 whitespace-nowrap"
               >
                 Visit {dog.name} →

@@ -331,7 +331,9 @@ describe("OrganizationHero", () => {
       const visitButton = screen
         .getByText("Visit Original Website")
         .closest("a");
-      expect(visitButton).toHaveAttribute("rel", "noopener noreferrer");
+      // Referrer is deliberately preserved: rescues see rescuedogs.me in their
+      // own analytics, which is the only proof we send them traffic.
+      expect(visitButton).toHaveAttribute("rel", "noopener");
     });
   });
 });
