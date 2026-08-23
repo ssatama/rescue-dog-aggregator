@@ -161,68 +161,6 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error extracting dog content from HTML: {e}")
             return []
 
-    def extract_images_from_html(self, html_content: str) -> list[str]:
-        """
-        Extract image URLs from HTML content.
-
-        Args:
-            html_content: Raw HTML content
-
-        Returns:
-            List of image URLs (excluding base64 placeholders)
-        """
-        try:
-            soup = BeautifulSoup(html_content, "html.parser")
-            image_urls = []
-
-            # Extract from img tags
-            for img in soup.find_all("img"):
-                # Only process Tag elements (not NavigableString or other types)
-                if not hasattr(img, "get"):
-                    continue
-
-                # Check src attribute
-                src = img.get("src", "")
-                if src and not src.startswith("data:"):
-                    # Normalize protocol-relative URLs
-                    if src.startswith("//"):
-                        src = "https:" + src
-                    image_urls.append(src)
-
-                # Check data-src for lazy loading
-                data_src = img.get("data-src", "")
-                if data_src and not data_src.startswith("data:"):
-                    if data_src.startswith("//"):
-                        data_src = "https:" + data_src
-                    image_urls.append(data_src)
-
-            # Extract from CSS background-image styles
-            for element in soup.find_all(attrs={"style": True}):
-                # Only process Tag elements (not NavigableString or other types)
-                if not hasattr(element, "get"):
-                    continue
-                style = element.get("style", "")
-                # Look for background-image URLs
-                bg_matches = re.findall(r"background-image:\s*url\(['\"]?([^'\")\s]+)['\"]?\)", style)
-                for bg_url in bg_matches:
-                    if not bg_url.startswith("data:"):
-                        if bg_url.startswith("//"):
-                            bg_url = "https:" + bg_url
-                        image_urls.append(bg_url)
-
-            # Remove duplicates while preserving order
-            unique_images = []
-            for url in image_urls:
-                if url not in unique_images:
-                    unique_images.append(url)
-
-            # World-class logging: Image extraction handled by centralized system
-            return unique_images
-
-        except Exception as e:
-            self.logger.error(f"Error extracting images from HTML: {e}")
-            return []
-
     def extract_images_with_browser(self, url: str) -> list[str]:
         """
         Extract image URLs using browser automation to handle JavaScript-loaded images.

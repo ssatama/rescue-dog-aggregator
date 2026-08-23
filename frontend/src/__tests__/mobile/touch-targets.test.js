@@ -1,12 +1,8 @@
-import { render, screen, act } from "../../test-utils";
+import { render, screen } from "../../test-utils";
 import HeroSection from "../../components/home/HeroSection";
 import DogCard from "../../components/dogs/DogCardOptimized";
 
 // Mock services and utilities
-jest.mock("../../services/animalsService", () => ({
-  getAnimalsByCuration: jest.fn(),
-}));
-
 jest.mock("../../utils/imageUtils", () => ({
   preloadImages: jest.fn(),
   getCatalogCardImageWithPosition: jest.fn((url) => ({
@@ -36,11 +32,6 @@ describe("Mobile Touch Targets Validation", () => {
   };
 
   beforeEach(() => {
-    // Mock API responses
-    require("../../services/animalsService").getAnimalsByCuration.mockResolvedValue(
-      [mockDog],
-    );
-
     // Mock mobile viewport
     Object.defineProperty(window, "matchMedia", {
       writable: true,

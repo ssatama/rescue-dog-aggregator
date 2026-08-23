@@ -99,11 +99,6 @@ def test_scraper_with_context_manager():
 - ✅ Search/filter interactions
 - ✅ Accessibility testing with React Testing Library
 
-**Use E2E for:**
-- ✅ Critical user journeys (3-5 workflows)
-- ✅ Real browser navigation
-- ✅ Cross-browser compatibility
-- ✅ Real network conditions
 
 ### TDD Example - Frontend
 ```javascript
@@ -178,21 +173,6 @@ export async function getStandardizedBreeds() {
     return [];
   }
 }
-```
-
-## E2E Testing (Playwright)
-
-### Critical User Journeys Only
-```typescript
-// e2e-tests/tests/end-to-end-adoption-journey.spec.ts
-test('complete adoption journey', async ({ page }) => {
-  await page.goto('/');
-  await page.click('[data-testid="view-dogs"]');
-  await page.fill('[role="searchbox"]', 'German Shepherd');
-  await page.click('text=Search');
-  await page.click('[data-testid="dog-card"]:first-child');
-  await expect(page.locator('[data-testid="adopt-button"]')).toBeVisible();
-});
 ```
 
 ## Performance Testing
@@ -321,7 +301,7 @@ console.log('Component state:', { props, state });
 1. **AAA Pattern**: Arrange → Act → Assert
 2. **Isolation**: Each test independent
 3. **Descriptive Names**: Clear intent
-4. **Fast Feedback**: Unit > Integration > E2E
+4. **Fast Feedback**: Unit > Integration
 
 ### Test Data
 ```python
@@ -358,6 +338,5 @@ const createMockDog = (overrides = {}) => ({
 
 - **TDD Mandatory**: Red → Green → Refactor
 - **Database Protected**: Automatic isolation in all tests
-- **Fast Feedback**: Use markers for speed (`unit`, `fast`, `slow`)
-- **Clear Boundaries**: Jest for components, E2E for journeys
+- **Fast Feedback**: Use markers to select what a runner can run (`unit`, `database`, `browser`)
 - **Quality Gates**: All tests must pass before commit

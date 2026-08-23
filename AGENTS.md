@@ -8,13 +8,13 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 - Backend: Python 3.12+/FastAPI/PostgreSQL 15/Alembic
 - Frontend: Next.js 16 (App Router)/React 19/TypeScript 5
-- Testing: pytest (backend), Jest/Playwright (frontend)
+- Testing: pytest (backend), Jest (frontend)
 - AI: OpenRouter auto-router for LLM enrichment (model chosen per request)
 - Browser Automation: Playwright (Browserless v2 in production)
 - Monitoring: Sentry (dev/prod)
 - Package Management: **uv** (backend), **pnpm** (frontend)
 - Linting: **ruff** (replaces black/isort/flake8)
-- Current: 133 backend test files, 270 frontend test files, 1,500+ active dogs
+- Current: 155 backend test files, 250 frontend test files, 1,500+ active dogs
 
 ## Status
 

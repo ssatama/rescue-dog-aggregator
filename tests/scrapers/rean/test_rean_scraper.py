@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock, Mock, patch
-from urllib.parse import urlparse
 
 import pytest
 import requests
@@ -368,82 +367,6 @@ class TestREANDescriptionExtraction:
 
 
 class TestREANImageExtraction:
-    @pytest.mark.unit
-    def test_extract_images_from_html_basic(self, scraper):
-        html_content = """
-        <div>
-            <img src="https://example.com/dog1.jpg" alt="Dog 1" />
-            <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" />
-            <img src="https://img1.wsimg.com/image/dog2.jpg" alt="Dog 2" />
-        </div>
-        """
-
-        images = scraper.extract_images_from_html(html_content)
-        assert len(images) == 2
-        assert "https://example.com/dog1.jpg" in images
-        assert "https://img1.wsimg.com/image/dog2.jpg" in images
-
-    @pytest.mark.unit
-    def test_extract_images_wsimg_cdn(self, scraper):
-        html_content = """
-        <img src="//img1.wsimg.com/isteam/ip/abc123/dog.jpg/:/rs=w:400,h:300" />
-        """
-
-        images = scraper.extract_images_from_html(html_content)
-        assert len(images) == 1
-        expected_url = "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg/:/rs=w:400,h:300"
-        assert images[0] == expected_url
-
-    @pytest.mark.unit
-    def test_extract_images_with_data_src(self, scraper):
-        html_content = """
-        <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
-             data-src="https://example.com/lazy-dog.jpg" />
-        """
-
-        images = scraper.extract_images_from_html(html_content)
-        assert len(images) == 1
-        assert images[0] == "https://example.com/lazy-dog.jpg"
-
-    @pytest.mark.unit
-    def test_extract_images_background_style(self, scraper):
-        html_content = """
-        <div style="background-image: url('https://example.com/bg-dog.jpg');">
-            <p>Dog content</p>
-        </div>
-        """
-
-        images = scraper.extract_images_from_html(html_content)
-        assert len(images) == 1
-        assert images[0] == "https://example.com/bg-dog.jpg"
-
-    @pytest.mark.unit
-    def test_extract_images_no_valid_images(self, scraper):
-        html_content = """
-        <div>
-            <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" />
-            <p>No real images here</p>
-        </div>
-        """
-
-        images = scraper.extract_images_from_html(html_content)
-        assert len(images) == 0
-
-    @pytest.mark.unit
-    def test_extract_images_from_html_wsimg_only(self, scraper):
-        html_content = """
-        <div>
-            <img src="https://img1.wsimg.com/isteam/ip/abc/dog1.jpg" alt="Dog 1" />
-            <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" />
-            <img data-src="https://img1.wsimg.com/isteam/ip/def/dog2.jpg" />
-            <div style="background-image: url('https://img1.wsimg.com/isteam/ip/ghi/dog3.jpg');"></div>
-        </div>
-        """
-
-        images = scraper.extract_images_from_html(html_content)
-        assert len(images) == 3
-        assert all(urlparse(url).hostname and urlparse(url).hostname.endswith(".wsimg.com") for url in images)
-
     @pytest.mark.unit
     def test_image_url_validation(self, scraper):
         assert scraper._is_valid_rean_image("https://img1.wsimg.com/isteam/ip/abc/dog.jpg")

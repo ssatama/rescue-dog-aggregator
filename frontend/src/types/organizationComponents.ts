@@ -34,8 +34,3 @@ export interface OrganizationCardProps {
 export interface OrganizationHeroProps {
   organization: OrganizationCardData;
 }
-
-export interface OrganizationSectionProps {
-  organization: OrganizationCardData;
-  organizationId: number | string;
-}

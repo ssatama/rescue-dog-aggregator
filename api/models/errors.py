@@ -15,24 +15,18 @@ class ErrorType(str, Enum):
     """Types of errors that can occur."""
 
     DATABASE_CONNECTION = "database_connection"
-    POOL_INITIALIZATION = "pool_initialization"
-    QUERY_ERROR = "query_error"
     VALIDATION_ERROR = "validation_error"
-    NOT_FOUND = "not_found"
     INTERNAL_ERROR = "internal_error"
 
 
 class ErrorCode(str, Enum):
     """Specific error codes for detailed identification."""
 
-    POOL_INIT_FAILED = "POOL_INIT_FAILED"
     POOL_NOT_INITIALIZED = "POOL_NOT_INITIALIZED"
     CONNECTION_REFUSED = "CONNECTION_REFUSED"
     CONNECTION_TIMEOUT = "CONNECTION_TIMEOUT"
     POOL_EXHAUSTED = "POOL_EXHAUSTED"
-    QUERY_FAILED = "QUERY_FAILED"
     TRANSACTION_FAILED = "TRANSACTION_FAILED"
-    RESOURCE_NOT_FOUND = "RESOURCE_NOT_FOUND"
     INVALID_REQUEST = "INVALID_REQUEST"
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
 

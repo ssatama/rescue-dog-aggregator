@@ -180,56 +180,6 @@ export async function getStatistics(): Promise<z.infer<typeof StatisticsSchema>>
   });
 }
 
-const VALID_CURATION_TYPES = [
-  "recent",
-  "recent_with_fallback",
-  "diverse",
-  "random",
-] as const;
-
-export type CurationType = (typeof VALID_CURATION_TYPES)[number];
-
-export async function getAnimalsByCuration(
-  curationType: string,
-  limit: number = 4,
-): Promise<Dog[]> {
-  if (!curationType) {
-    throw new Error("Curation type is required");
-  }
-
-  if (
-    !VALID_CURATION_TYPES.includes(
-      curationType as (typeof VALID_CURATION_TYPES)[number],
-    )
-  ) {
-    throw new Error(
-      "Invalid curation type. Must be one of: recent, recent_with_fallback, diverse, random",
-    );
-  }
-
-  if (typeof limit !== "number" || limit <= 0) {
-    throw new Error("Limit must be a positive number");
-  }
-
-  logger.log(
-    `Fetching animals with curation type: ${curationType}, limit: ${limit}`,
-  );
-
-  const params = {
-    curation_type: curationType,
-    limit,
-    animal_type: "dog",
-    status: "available",
-  };
-
-  logger.log("API call parameters:", params);
-
-  const raw = await get<ApiDog[]>("/api/animals", params, {
-    schema: z.array(ApiDogSchema),
-  });
-  return transformApiDogsToDogs(raw);
-}
-
 export async function getAllAnimals(
   params: AnimalParams = {},
 ): Promise<Dog[]> {
