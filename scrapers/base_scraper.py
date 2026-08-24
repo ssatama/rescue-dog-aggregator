@@ -43,6 +43,7 @@ from utils.config_loader import ConfigLoader
 from utils.config_models import OrganizationConfig
 from utils.organization_sync_service import create_default_sync_service
 from utils.r2_service import R2Service
+from utils.robots_checker import RobotsChecker
 from utils.unified_standardization import UnifiedStandardizer
 
 # Set up module-level logger
@@ -689,11 +690,104 @@ class BaseScraper(ABC):
                 self.handle_scraper_failure(str(e))
                 return False
 
+    # Class-level default, replaced with an instance on first use.
+    _robots_checker: RobotsChecker | None = None
+
+    def get_robots_check_urls(self) -> list[str]:
+        """URLs to test against robots.txt before scraping.
+
+        The organization homepage alone is not enough: a site can allow / and
+        still carry `Disallow: /rehoming/`, which is exactly the path a scraper
+        goes on to fetch. Subclasses that build listing URLs should override
+        this to include them, so the rule the site wrote is the rule we honour.
+        """
+        candidates = [
+            getattr(getattr(self.org_config, "metadata", None), "website_url", None),
+            getattr(self, "base_url", None),
+            getattr(self, "listing_url", None),
+        ]
+        seen: list[str] = []
+        for url in candidates:
+            if isinstance(url, str) and url and url not in seen:
+                seen.append(url)
+        return seen
+
+    def _check_robots_permission(self) -> bool:
+        """Whether the organization's site permits us to collect from it.
+
+        Gives an organization an opt-out it can exercise on its own: add a
+        Disallow line and the next run stops, with no need to find this
+        repository or contact anyone. For organizations that do not answer
+        email, an opt-out needing no response from them is worth more than one
+        that does.
+
+        Only an explicit disallow blocks a scrape. A missing or unreadable
+        robots.txt, an unconfigured website, or a fault in this check itself
+        all proceed - the gate exists to honour a stated refusal, not to
+        become a new way for the pipeline to fail.
+        """
+        urls = self.get_robots_check_urls()
+        if not urls:
+            self.logger.warning(f"No website URL configured for {self.get_organization_name()}; cannot check robots.txt")
+            return True
+
+        if self._robots_checker is None:
+            self._robots_checker = RobotsChecker()
+
+        for url in urls:
+            try:
+                decision = self._robots_checker.check(url)
+            except Exception as exc:  # noqa: BLE001 - never let the gate break a run
+                self.logger.warning(f"robots.txt check failed for {url}: {exc}")
+                continue
+
+            if decision.uncertain:
+                self.logger.warning(f"robots.txt for {url}: {decision.reason}")
+            if not decision.allowed:
+                self.logger.error(f"Skipping {self.get_organization_name()}: {decision.reason}")
+                return False
+            self._apply_crawl_delay(url, decision.crawl_delay)
+
+        return True
+
+    def _apply_crawl_delay(self, url: str, crawl_delay: float | None) -> None:
+        """Honour a site's Crawl-delay, rather than only reporting it.
+
+        Parsing the directive and then ignoring it would leave us crawling a
+        site at our own pace while claiming to respect its robots.txt. Only
+        ever slows us down; a delay below our own is left alone.
+        """
+        if not crawl_delay:
+            return
+        current = getattr(self, "rate_limit_delay", 0) or 0
+        if crawl_delay > current:
+            self.rate_limit_delay = crawl_delay
+            self.logger.info(f"{url} requests Crawl-delay {crawl_delay}s; raising rate limit delay from {current}s")
+
     def _setup_scrape(self):
         """Setup phase: Initialize scrape log, session, and timing with world-class logging."""
         # Use centralized logger for setup phase
         central_logger = logging.getLogger("scraper")
         central_logger.info(f"🚀 Starting scrape for {self.get_organization_name()}")
+
+        # Ask the source site for permission before fetching anything from it.
+        if not self._check_robots_permission():
+            central_logger.error("❌ Scrape blocked by the site's robots.txt")
+            # "skipped", not "error": this is the site exercising an opt-out,
+            # not a malfunction. Recording it as an error would have the
+            # monitoring endpoints report the organization as a permanently
+            # unhealthy scraper.
+            if self.start_scrape_log():
+                self.complete_scrape_log(
+                    status="skipped",
+                    error_message="Scrape skipped: the organization's robots.txt disallows it",
+                    animals_found=0,
+                    animals_added=0,
+                    animals_updated=0,
+                )
+            else:
+                central_logger.error("❌ Could not record the robots.txt skip in the scrape log")
+            return False
 
         # Start scrape log - must succeed for proper tracking
         if not self.start_scrape_log():
