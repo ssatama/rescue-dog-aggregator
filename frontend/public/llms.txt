@@ -115,9 +115,16 @@ rescue as an entity, follow through to its organization page.
 ## Data provenance
 
 Listings are collected from the adoption pages each organization publishes
-openly. Nothing behind a login or paywall is collected, and no personal data
-about adopters or rescue staff is stored. Content belongs to the originating
-organizations, and every listing links back to the source page.
+openly. Nothing behind a login, paywall or robots.txt restriction is collected,
+and no personal data about adopters or rescue staff is stored. Content belongs
+to the originating organizations, and every listing links back to the source
+page.
+
+robots.txt is fetched and enforced before each run rather than checked by hand:
+a disallowed path means that organization is skipped, and a published
+`Crawl-delay` slows collection to the rate the site asks for. An organization
+that would rather not be listed can opt out through a file it already controls,
+with no need to contact anyone.
 
 Organizations wanting their listings removed, changed, or credited differently
 can open an issue at
