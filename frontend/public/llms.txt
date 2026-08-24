@@ -119,6 +119,20 @@ openly. Nothing behind a login or paywall is collected, and no personal data
 about adopters or rescue staff is stored. Content belongs to the originating
 organizations, and every listing links back to the source page.
 
+robots.txt is enforced, not just consulted by hand. Before a scrape runs, the
+organization's robots.txt is fetched and its listing pages checked; if those
+are disallowed the organization is skipped for that run, and a published
+`Crawl-delay` raises the delay between requests.
+
+The specifics, so this is not read as more than it is. The check covers the
+scrapers' entry pages rather than every URL fetched, so a rule targeting a
+deeper path may not be caught. If robots.txt cannot be read - the server is
+down, the request times out - collection proceeds rather than halting, and the
+run records that the file was unreadable. The periodic adoption re-check, which
+revisits dog pages already collected, does not yet consult robots.txt. And a
+Disallow line stops further collection but does not remove listings gathered
+earlier; for that, use the removal process below.
+
 Organizations wanting their listings removed, changed, or credited differently
 can open an issue at
 https://github.com/ssatama/rescue-dog-aggregator/issues — requests are honoured
