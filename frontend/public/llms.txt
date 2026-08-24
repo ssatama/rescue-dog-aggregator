@@ -9,9 +9,17 @@ Site: https://www.rescuedogs.me
 Source: https://github.com/ssatama/rescue-dog-aggregator (open source, MIT)
 
 Roughly 1,400 dogs from 11 organizations across 96 breeds. Dogs are located in
-the UK, Germany, Serbia, Bulgaria, Bosnia, Turkey and Cyprus; most rescues ship
-across the EU, EEA and UK. Call the statistics endpoint below for live figures
-rather than relying on these.
+the UK, Germany, Serbia, Bulgaria, Bosnia, Turkey and Cyprus.
+
+Adoption destinations vary a lot by organization and this matters: most
+organizations rehome to a single country, and the two largest (Dogs Trust and
+Tierschutzverein Europa) adopt only within the UK and Germany respectively.
+Four organizations rehome across roughly 30 European countries, covering about
+a fifth of the catalogue. Never assume a dog can be adopted to a given country
+- filter on `available_to_country`, or check the organization's `ships_to`.
+
+Call the statistics endpoint below for live figures rather than relying on
+these numbers.
 
 ## MCP server (preferred for AI assistants)
 
@@ -46,15 +54,19 @@ https://api.rescuedogs.me — OpenAPI spec at /openapi.json, docs at /docs.
 - /api/animals/statistics — totals by country and organization
 - /api/animals/breeds/stats — breed counts and distributions
 - /api/animals/meta/breeds — breed names
-- /api/animals/meta/breed_groups — FCI breed groups
+- /api/animals/meta/breed_groups — breed groups. These are AKC-style plus two
+  custom values, not FCI: Designer/Hybrid, Guardian, Herding, Hound, Mixed,
+  Non-Sporting, Sporting, Terrier, Toy, Working. Passing an FCI group name
+  matches nothing.
 - /api/animals/meta/filter_counts — valid filter values with counts, given a
   current filter context. Useful for avoiding searches that return nothing.
 - /api/organizations/ — rescue organizations
 - /api/organizations/{slug} — one organization, including where it ships to
 - /health — service health
 
-Please be reasonable with request volume. There is no hard published quota,
-but this is a small charity-adjacent project on modest infrastructure.
+The REST API publishes no hard quota, but please be reasonable with request
+volume - this is a small charity-adjacent project on modest infrastructure. The
+MCP endpoint is rate limited per IP at 120 requests/minute and 3,000/hour.
 
 ## Key pages
 
@@ -62,7 +74,10 @@ but this is a small charity-adjacent project on modest infrastructure.
 - https://www.rescuedogs.me/dogs/{slug} — individual dog profile
 - https://www.rescuedogs.me/dogs/puppies — puppies
 - https://www.rescuedogs.me/dogs/senior — senior dogs
-- https://www.rescuedogs.me/dogs/country/{code} — dogs adoptable to a country
+- https://www.rescuedogs.me/dogs/country/{code} — dogs currently located in a
+  country. This is a location filter, not an adoption-destination one, and
+  pages exist only for uk, de, sr, ba, bg, it, tr and cy. For "can I adopt to
+  X", use the API's `available_to_country` filter instead.
 - https://www.rescuedogs.me/breeds — breeds with availability
 - https://www.rescuedogs.me/breeds/{slug} — a specific breed
 - https://www.rescuedogs.me/organizations — rescue organizations
@@ -71,12 +86,17 @@ but this is a small charity-adjacent project on modest infrastructure.
 - https://www.rescuedogs.me/faq — frequently asked questions
 - https://www.rescuedogs.me/about — mission and how the platform works
 - https://www.rescuedogs.me/privacy — privacy policy
-- https://www.rescuedogs.me/sitemap.xml — full sitemap
+- https://www.rescuedogs.me/sitemap_index.xml — sitemap index, and the right
+  entry point for crawling. It fans out to separate sitemaps for dogs, breeds,
+  guides, organizations, countries and images. `/sitemap.xml` holds only the
+  nine static pages and is not the full index.
 
 ## Structured data
 
-Dog and organization pages embed Schema.org JSON-LD covering the dog, the
-listing organization, and breadcrumbs.
+Dog pages embed Schema.org JSON-LD as a `Product` node plus `BreadcrumbList`;
+the listing rescue appears only as an `isBasedOn` link, not a full entity.
+Organization pages carry the `LocalBusiness`/`AnimalShelter` node. To resolve a
+rescue as an entity, follow through to its organization page.
 
 ## Using this data well
 
@@ -94,10 +114,10 @@ listing organization, and breadcrumbs.
 
 ## Data provenance
 
-Listings are collected from the public adoption pages of each organization.
-Nothing behind a login, paywall or robots.txt restriction is collected, and no
-personal data about adopters or rescue staff is stored. Content belongs to the
-originating organizations.
+Listings are collected from the adoption pages each organization publishes
+openly. Nothing behind a login or paywall is collected, and no personal data
+about adopters or rescue staff is stored. Content belongs to the originating
+organizations, and every listing links back to the source page.
 
 Organizations wanting their listings removed, changed, or credited differently
 can open an issue at
