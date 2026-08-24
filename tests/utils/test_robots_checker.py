@@ -1,8 +1,8 @@
 """Tests for robots.txt compliance checking.
 
-The provenance statement in frontend/public/llms.txt says listings are only
-collected where the source site permits it. These tests are what make that
-claim true rather than aspirational.
+These tests cover the check that makes collection conditional on the source
+site permitting it, so the provenance claim in frontend/public/llms.txt can be
+stated as behaviour rather than intention.
 """
 
 import pytest
@@ -71,6 +71,12 @@ class TestMissingOrBrokenRobots:
         assert d.allowed
         assert d.uncertain
 
+    def test_a_429_is_not_treated_as_permission(self):
+        # RFC 9309 excludes 429 from the 4xx allow rule: the site is asking us
+        # to back off, not telling us there are no rules.
+        d = StubChecker(None, status=429).check("https://example.org/dogs")
+        assert d.uncertain
+
     def test_a_clean_allow_is_not_marked_uncertain(self):
         assert not StubChecker("User-agent: *\nAllow: /\n").check("https://example.org/x").uncertain
 
@@ -81,6 +87,13 @@ class TestFetching:
         c.check("https://example.org/deep/path/page.html")
         assert c.fetches == ["https://example.org/robots.txt"]
 
+    def test_does_not_reuse_an_http_result_for_https(self):
+        # robots.txt is scoped per scheme and authority.
+        c = StubChecker("User-agent: *\nAllow: /\n")
+        c.check("http://example.org/a")
+        c.check("https://example.org/b")
+        assert len(c.fetches) == 2
+
     def test_fetches_once_per_host_then_reuses(self):
         c = StubChecker("User-agent: *\nAllow: /\n")
         c.check("https://example.org/a")
@@ -88,7 +101,10 @@ class TestFetching:
         c.check("https://other.org/c")
         assert c.fetches == ["https://example.org/robots.txt", "https://other.org/robots.txt"]
 
-    def test_rejects_a_url_with_no_host(self):
+    def test_a_malformed_url_does_not_read_as_a_refusal(self):
+        # A bad config value is our fault. Blocking here would report "the
+        # site disallows us" about a site we never contacted.
         d = StubChecker("").check("not-a-url")
-        assert not d.allowed
+        assert d.allowed
+        assert d.uncertain
         assert "url" in d.reason.lower()

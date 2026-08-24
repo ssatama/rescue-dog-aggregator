@@ -1,9 +1,9 @@
 """A scrape must not proceed against a site whose robots.txt forbids it.
 
-frontend/public/llms.txt tells the public that collection respects what source
-sites permit. Before this gate existed nothing in the codebase read robots.txt,
-so the statement described an intention rather than a behaviour: had a rescue
-added a Disallow line, the scrapers would have carried on regardless.
+Before this gate existed nothing in the codebase read robots.txt, so a rescue
+that added a Disallow line would have been scraped anyway. That is also why the
+robots.txt sentence had to be removed from frontend/public/llms.txt during
+review - it described an intention, not a behaviour.
 
 The check runs once per scrape at setup rather than per request. There is no
 shared HTTP helper across the eighteen scraper modules, and site-level
@@ -87,6 +87,45 @@ class TestRobotsGate:
             assert scraper._check_robots_permission() is True
 
 
+class TestCrawlDelay:
+    def test_raises_the_rate_limit_to_match_a_slower_site(self, scraper):
+        scraper.rate_limit_delay = 1.0
+        scraper._apply_crawl_delay("https://example.org", 30.0)
+        assert scraper.rate_limit_delay == 30.0
+
+    def test_never_speeds_us_up(self, scraper):
+        scraper.rate_limit_delay = 5.0
+        scraper._apply_crawl_delay("https://example.org", 1.0)
+        assert scraper.rate_limit_delay == 5.0
+
+    def test_no_delay_directive_changes_nothing(self, scraper):
+        scraper.rate_limit_delay = 2.0
+        scraper._apply_crawl_delay("https://example.org", None)
+        assert scraper.rate_limit_delay == 2.0
+
+
+class TestCheckedUrls:
+    def test_checks_listing_paths_not_just_the_homepage(self, scraper):
+        # A site can allow / and still disallow /rehoming/, which is exactly
+        # where the scraper then goes.
+        scraper.base_url = "https://example.org/rehoming/dogs"
+        assert "https://example.org/rehoming/dogs" in scraper.get_robots_check_urls()
+
+    def test_blocks_when_any_checked_path_is_disallowed(self, scraper):
+        scraper.base_url = "https://example.org/rehoming/dogs"
+        with patch.object(scraper, "_robots_checker") as checker:
+            checker.check.side_effect = [
+                _decision(allowed=True),
+                _decision(allowed=False, reason="Disallowed by robots.txt: /rehoming/"),
+            ]
+            assert scraper._check_robots_permission() is False
+
+    def test_does_not_check_the_same_url_twice(self, scraper):
+        scraper.base_url = "https://example.org/"
+        scraper.org_config.metadata.website_url = "https://example.org/"
+        assert scraper.get_robots_check_urls() == ["https://example.org/"]
+
+
 class TestSetupIntegration:
     def test_setup_aborts_when_robots_forbids(self, scraper):
         with patch.object(scraper, "_check_robots_permission", return_value=False):
@@ -98,7 +137,9 @@ class TestSetupIntegration:
             with patch.object(scraper, "complete_scrape_log") as complete:
                 scraper._setup_scrape()
         complete.assert_called_once()
-        assert complete.call_args.kwargs["status"] == "error"
+        # "skipped", not "error": an opt-out is not a broken scraper, and the
+        # monitoring endpoints count error/warning logs as unhealthy.
+        assert complete.call_args.kwargs["status"] == "skipped"
         assert "robots.txt" in complete.call_args.kwargs["error_message"]
 
     def test_robots_is_checked_before_any_data_collection(self, scraper):

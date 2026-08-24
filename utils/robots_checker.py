@@ -1,9 +1,13 @@
 """robots.txt compliance for the scrapers.
 
-Listings are collected from other organizations' websites, and
-frontend/public/llms.txt states publicly that collection respects what those
-sites permit. This module is what makes that statement true: before a scrape
-runs, the organization's robots.txt is fetched and consulted.
+Listings are collected from other organizations' websites. This module makes
+that collection conditional on those sites permitting it: before a scrape runs,
+the organization's robots.txt is fetched and consulted.
+
+frontend/public/llms.txt currently claims only that listings come from openly
+published pages - the stronger sentence about robots.txt was removed during
+review precisely because no code backed it. With this in place that claim can
+be restored.
 
 It also gives source organizations an opt-out that costs them nothing. A rescue
 that would rather not be aggregated can add a Disallow line to a file it
@@ -50,30 +54,38 @@ class RobotsChecker:
     def __init__(self, user_agent: str = USER_AGENT, timeout: float = DEFAULT_TIMEOUT):
         self.user_agent = user_agent
         self.timeout = timeout
-        self._cache: dict[str, tuple[str | None, int]] = {}
+        self._cache: dict[tuple[str, str], tuple[str | None, int]] = {}
 
     def check(self, url: str) -> RobotsDecision:
         """Decide whether `url` may be fetched."""
         parsed = urlparse(url)
         if not parsed.scheme or not parsed.netloc:
-            return RobotsDecision(False, f"Not an absolute URL: {url!r}")
+            # A bad config value is our fault, not a refusal by the site.
+            # Blocking here would report "the site disallows us" about a site
+            # we never contacted.
+            return RobotsDecision(True, f"Not an absolute URL, cannot check: {url!r}", uncertain=True)
 
         robots_url = urlunparse((parsed.scheme, parsed.netloc, "/robots.txt", "", "", ""))
-        host = parsed.netloc
+        origin = (parsed.scheme, parsed.netloc)
 
-        if host not in self._cache:
-            self._cache[host] = self._fetch(robots_url)
-        body, status = self._cache[host]
+        if origin not in self._cache:
+            self._cache[origin] = self._fetch(robots_url)
+        body, status = self._cache[origin]
 
         if body is None:
-            # 4xx means no restrictions were expressed (RFC 9309). Anything
-            # else means we could not read them; allow, but say so, rather
-            # than letting a transient outage read as permission.
-            if 400 <= status < 500:
+            # RFC 9309 2.3.1.3: 4xx means no restrictions were expressed, so
+            # crawling is allowed - except 429, which is the site asking us to
+            # back off and must not be read as permission.
+            if 400 <= status < 500 and status != 429:
                 return RobotsDecision(True, f"No robots.txt ({status})")
+
+            # RFC 9309 2.3.1.4 says an unreachable robots.txt SHOULD be treated
+            # as a full disallow. We deliberately depart from that: a transient
+            # 5xx at one rescue should not silently halt its listings. The
+            # result is flagged uncertain so it is never mistaken for consent.
             return RobotsDecision(
                 True,
-                f"robots.txt unreachable ({status}); proceeding without its rules",
+                f"robots.txt unreadable ({status}); proceeding without its rules",
                 uncertain=True,
             )
 
