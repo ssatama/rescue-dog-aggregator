@@ -341,8 +341,8 @@ describe("Server Animals Service", () => {
   });
 
   describe("getAnimalBySlug", () => {
-    it("should throw on HTTP 522 server error", async () => {
-      (fetch as jest.Mock).mockResolvedValueOnce({
+    it("should throw on HTTP 522 server error once retries are exhausted", async () => {
+      (fetch as jest.Mock).mockResolvedValue({
         ok: false,
         status: 522,
         statusText: "Connection Timed Out",
@@ -353,8 +353,8 @@ describe("Server Animals Service", () => {
       );
     });
 
-    it("should throw on HTTP 500 server error", async () => {
-      (fetch as jest.Mock).mockResolvedValueOnce({
+    it("should throw on HTTP 500 server error once retries are exhausted", async () => {
+      (fetch as jest.Mock).mockResolvedValue({
         ok: false,
         status: 500,
         statusText: "Internal Server Error",
@@ -365,14 +365,30 @@ describe("Server Animals Service", () => {
       );
     });
 
+    it("should retry a 502 and succeed when the backend comes back", async () => {
+      (fetch as jest.Mock)
+        .mockResolvedValueOnce({ ok: false, status: 502 })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ id: 7, name: "Zeus", slug: "zeus-7" }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      const result = await getAnimalBySlug("zeus-7");
+
+      expect(result).toMatchObject({ id: 7, name: "Zeus" });
+    });
+
     it("should log warning before throwing on 5xx", async () => {
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as jest.Mock).mockResolvedValue({
         ok: false,
         status: 500,
         statusText: "Internal Server Error",
       });
 
-      await expect(getAnimalBySlug("test-dog-123")).rejects.toThrow();
+      await expect(getAnimalBySlug("test-dog-123")).rejects.toThrow(
+        "Failed to fetch animal: HTTP 500",
+      );
     });
 
     it("should return null on HTTP 404", async () => {

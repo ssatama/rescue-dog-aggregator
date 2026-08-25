@@ -6,11 +6,8 @@
       "api/**",
       "configs/**",
       "database/**",
-      "management/**",
       "migrations/**",
       "monitoring/**",
-      "prompts/**",
-      "scrapers/**",
       "services/**",
       "utils/**",
       "config.py",
@@ -24,6 +21,9 @@
   },
   "deploy": {
     "startCommand": "bash start.sh",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 120,
+    "overlapSeconds": 30,
     "restartPolicyType": "ON_FAILURE"
   }
 }

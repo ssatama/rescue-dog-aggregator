@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
 import { stripNulls } from "../utils/api";
+import { fetchWithRetry } from "../utils/serverFetch";
 import { logger, reportError } from "../utils/logger";
 import * as Sentry from "@sentry/nextjs";
 import {
@@ -173,7 +174,7 @@ export const getAnimals = cache(
 
     const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       next: {
         revalidate: 86400,
         tags: ["animals"],
@@ -196,7 +197,7 @@ export const getAnimals = cache(
 
 export const getStandardizedBreeds = cache(
   async (): Promise<string[]> => {
-    const response = await fetch(`${API_URL}/api/animals/meta/breeds/`, {
+    const response = await fetchWithRetry(`${API_URL}/api/animals/meta/breeds`, {
       next: {
         revalidate: 86400,
         tags: ["breeds"],
@@ -215,7 +216,7 @@ export const getStandardizedBreeds = cache(
 
 export const getLocationCountries = cache(
   async (): Promise<string[]> => {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/api/animals/meta/location_countries`,
       {
         next: {
@@ -239,7 +240,7 @@ export const getLocationCountries = cache(
 
 export const getAvailableCountries = cache(
   async (): Promise<string[]> => {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/api/animals/meta/available_countries`,
       {
         next: {
@@ -267,7 +268,7 @@ export const getAvailableRegions = cache(
       return [];
     }
 
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/api/animals/meta/available_regions?country=${encodeURIComponent(country)}`,
       {
         next: {
@@ -289,7 +290,7 @@ export const getAvailableRegions = cache(
 
 export const getOrganizations = cache(
   async (): Promise<z.infer<typeof ApiOrganizationEmbeddedSchema>[]> => {
-    const response = await fetch(`${API_URL}/api/organizations/`, {
+    const response = await fetchWithRetry(`${API_URL}/api/organizations/`, {
       next: {
         revalidate: 86400,
         tags: ["organizations"],
@@ -320,7 +321,7 @@ export const getFilterCounts = cache(
       }
     });
 
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/api/animals/meta/filter_counts?${queryParams.toString()}`,
       {
         next: {
@@ -344,7 +345,7 @@ export const getFilterCounts = cache(
 
 export const getStatistics = cache(
   async (): Promise<z.infer<typeof StatisticsSchema>> => {
-    const response = await fetch(`${API_URL}/api/animals/statistics`, {
+    const response = await fetchWithRetry(`${API_URL}/api/animals/statistics`, {
       next: {
         revalidate: 21600,
         tags: ["statistics"],
@@ -363,7 +364,7 @@ export const getStatistics = cache(
 
 export const getBreedStats = cache(
   async (): Promise<BreedStats> => {
-    const response = await fetch(`${API_URL}/api/animals/breeds/stats`, {
+    const response = await fetchWithRetry(`${API_URL}/api/animals/breeds/stats`, {
       next: {
         revalidate: 604800,
         tags: ["breed-stats"],
@@ -404,7 +405,7 @@ export const getAnimalsByCuration = cache(
       status: "available",
     });
 
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/api/animals/?${queryParams.toString()}`,
       {
         next: {
@@ -506,7 +507,7 @@ export const getAllAnimals = cache(
 
     const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       next: {
         revalidate: 3600,
         tags: ["all-animals"],
@@ -856,7 +857,7 @@ export const getEnhancedDogContent = cache(
     try {
       const url = `${API_URL}/api/animals/enhanced/detail-content?animal_ids=${animalId}`;
 
-      const response = await fetch(url, {
+      const response = await fetchWithRetry(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -920,7 +921,7 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<DogWithLlm | 
   }
 
   try {
-    const response = await fetch(`${API_URL}/api/animals/${slug}/`, {
+    const response = await fetchWithRetry(`${API_URL}/api/animals/${slug}`, {
       next: {
         revalidate: 172800,
         tags: ["animal", slug],
@@ -978,7 +979,7 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<DogWithLlm | 
 
 export const getCountryStats = cache(
   async (): Promise<z.infer<typeof CountryStatsResponseSchema>> => {
-    const response = await fetch(`${API_URL}/api/animals/stats/by-country`, {
+    const response = await fetchWithRetry(`${API_URL}/api/animals/stats/by-country`, {
       next: {
         revalidate: 86400,
         tags: ["country-stats"],
@@ -1013,7 +1014,7 @@ interface AgeStats {
 
 export const getAgeStats = cache(
   async (): Promise<AgeStats> => {
-    const response = await fetch(`${API_URL}/api/animals/meta/filter_counts`, {
+    const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts`, {
       next: {
         revalidate: 86400,
         tags: ["age-stats"],

@@ -25,6 +25,11 @@ const ALLOWED_FILES = new Set([
   "components/ui/FlagErrorBoundary.tsx",
   // Sharing utils - dev-only guarded
   "utils/sharing.ts",
+  // Server fetch retries - build-time server-side logging. logger.warn is
+  // dev-only, and this fires during production prerendering, which is the one
+  // place it needs to be visible. A retry that ultimately fails still throws
+  // and is reported to Sentry by the caller.
+  "utils/serverFetch.ts",
   // Sitemap generation - build-time server-side logging
   "utils/sitemap.ts",
   "app/sitemap-guides.xml/route.ts",
