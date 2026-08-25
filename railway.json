@@ -24,6 +24,6 @@
   },
   "deploy": {
     "startCommand": "bash start.sh",
-    "restartPolicyType": "ON_FAILURE"
+    "restartPolicyType": "NEVER"
   }
 }
