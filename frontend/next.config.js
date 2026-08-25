@@ -23,6 +23,12 @@ const nextConfig = {
     }
   },
 
+  // A prerendered page can make several API calls in sequence, and each one
+  // retries a transient backend failure rather than aborting the whole build
+  // (see src/utils/serverFetch.ts). The default 60s is not enough headroom for
+  // that retry budget, so Next would kill the page before the retry can help.
+  staticPageGenerationTimeout: 120,
+
   env: (process.env.NODE_ENV === 'test' || process.env.NEXT_PUBLIC_API_URL === 'http://localhost:3000') ? {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
   } : {},

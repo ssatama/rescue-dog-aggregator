@@ -72,7 +72,7 @@ describe("getEnhancedDogContent", () => {
   });
 
   it("should return null when API call fails", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 500,
     });
@@ -167,15 +167,15 @@ describe("getAnimalBySlug with LLM enhancement", () => {
       slug: "bella-123",
     };
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockAnimal,
-    });
-
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-    });
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockAnimal,
+      })
+      .mockResolvedValue({
+        ok: false,
+        status: 500,
+      });
 
     const result = await getAnimalBySlug("bella-123");
 
@@ -201,8 +201,8 @@ describe("getAnimalBySlug with LLM enhancement", () => {
     expect(result).toBeNull();
   });
 
-  it("should throw for non-404 HTTP errors", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+  it("should throw for non-404 HTTP errors once retries are exhausted", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 500,
     });
