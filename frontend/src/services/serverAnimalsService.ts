@@ -197,7 +197,7 @@ export const getAnimals = cache(
 
 export const getStandardizedBreeds = cache(
   async (): Promise<string[]> => {
-    const response = await fetchWithRetry(`${API_URL}/api/animals/meta/breeds/`, {
+    const response = await fetchWithRetry(`${API_URL}/api/animals/meta/breeds`, {
       next: {
         revalidate: 86400,
         tags: ["breeds"],

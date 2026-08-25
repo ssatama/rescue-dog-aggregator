@@ -9,6 +9,8 @@ const nextConfig = require("../../../next.config.js");
 
 // The real backoff always uses the production base delay; getRetryPolicy zeroes
 // it under test so retry tests do not sleep.
+const MAX_SEQUENTIAL_FETCHES_PER_PAGE = 4;
+
 const totalWaitMs = (attempts: number): number =>
   Array.from({ length: attempts - 1 }, (_, i) =>
     backoffDelayMs({ attempts, baseDelayMs: 2000 }, i),
@@ -51,7 +53,10 @@ describe("getRetryPolicy", () => {
   });
 
   // Exceeding it means Next kills the page for running long, which is the very
-  // failure the retry exists to prevent. Two sequential calls must still fit.
+  // failure the retry exists to prevent. The worst page is /breeds/mixed:
+  // getBreedStats, then getAnimals x2 inside getBreedBySlug, then a fourth
+  // getAnimals on the page itself — four sequential calls, all distinct URLs,
+  // so nothing collapses them. Leave a quarter of the timeout for the network.
   it("keeps the prerender budget inside staticPageGenerationTimeout", () => {
     process.env.NEXT_PHASE = "phase-production-build";
 
@@ -59,8 +64,8 @@ describe("getRetryPolicy", () => {
     const { attempts } = getRetryPolicy();
 
     expect(staticPageGenerationTimeout).toBeDefined();
-    expect(2 * totalWaitMs(attempts)).toBeLessThanOrEqual(
-      staticPageGenerationTimeout * 1000,
+    expect(MAX_SEQUENTIAL_FETCHES_PER_PAGE * totalWaitMs(attempts)).toBeLessThanOrEqual(
+      0.75 * staticPageGenerationTimeout * 1000,
     );
   });
 
@@ -149,12 +154,33 @@ describe("fetchWithRetry", () => {
     expect(fetch).toHaveBeenCalledTimes(3);
   });
 
-  it("passes url and init through to fetch unchanged", async () => {
+  it("passes url and init through to fetch unchanged on the first attempt", async () => {
     (fetch as jest.Mock).mockResolvedValue(okResponse());
     const init = { next: { revalidate: 86400, tags: ["animals"] } };
 
     await fetchWithRetry("https://api.test/x", init, policy(6));
 
     expect(fetch).toHaveBeenCalledWith("https://api.test/x", init);
+  });
+
+  // Next memoizes fetch per URL for a render and memoizes failures too, so a
+  // retry with a byte-identical init is served the cached 5xx and never
+  // reaches the network. A signal is that layer's opt-out. Without this the
+  // whole retry is a no-op that only burns the backoff.
+  it("carries a signal on retries so they escape Next's render dedupe", async () => {
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce(errorResponse(502))
+      .mockResolvedValueOnce(okResponse());
+    const init = { next: { revalidate: 86400, tags: ["animals"] } };
+
+    await fetchWithRetry("https://api.test/x", init, policy(6));
+
+    const [, firstInit] = (fetch as jest.Mock).mock.calls[0];
+    const [, retryInit] = (fetch as jest.Mock).mock.calls[1];
+
+    expect(firstInit.signal).toBeUndefined();
+    expect(retryInit.signal).toBeInstanceOf(AbortSignal);
+    expect(retryInit.signal.aborted).toBe(false);
+    expect(retryInit.next).toEqual(init.next);
   });
 });

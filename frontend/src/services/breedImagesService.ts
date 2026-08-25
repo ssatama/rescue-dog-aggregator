@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
 import { logger, reportError } from "../utils/logger";
 import { stripNulls } from "../utils/api";
+import { fetchWithRetry } from "../utils/serverFetch";
 import {
   BreedWithImagesSchema,
   BreedStatsSchema,
@@ -44,7 +45,7 @@ export async function getBreedsWithImages(
   const url = `${API_URL}/api/animals/breeds/with-images${queryString ? `?${queryString}` : ""}`;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -83,7 +84,7 @@ export async function getPopularBreedsWithImages(
   // showed the first sample dog's traits as if they described the breed. The
   // stats endpoint aggregates them properly; attach those instead.
   try {
-    const statsResponse = await fetch(`${API_URL}/api/animals/breeds/stats`, {
+    const statsResponse = await fetchWithRetry(`${API_URL}/api/animals/breeds/stats`, {
       headers: { "Content-Type": "application/json" },
       next: { revalidate: 604800, tags: ["breed-stats"] },
     } as RequestInit);
@@ -118,7 +119,7 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
 > {
   try {
     const statsUrl = `${API_URL}/api/animals/breeds/stats`;
-    const statsResponse = await fetch(statsUrl, {
+    const statsResponse = await fetchWithRetry(statsUrl, {
       headers: { "Content-Type": "application/json" },
       next: { revalidate: 604800, tags: ["breed-stats"] },
     } as RequestInit);
@@ -134,7 +135,7 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
     let breedsWithImages: z.infer<typeof BreedWithImagesSchema>[] = [];
     try {
       const breedsWithImagesUrl = `${API_URL}/api/animals/breeds/with-images?min_count=2&limit=50`;
-      const imagesResponse = await fetch(breedsWithImagesUrl, {
+      const imagesResponse = await fetchWithRetry(breedsWithImagesUrl, {
         headers: { "Content-Type": "application/json" },
         next: { revalidate: 604800, tags: ["breed-images"] },
       } as RequestInit);
@@ -253,7 +254,7 @@ export async function getBreedsWithImagesForHomePage(
   const url = `${API_URL}/api/animals/breeds/with-images${queryString ? `?${queryString}` : ""}`;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       headers: {
         "Content-Type": "application/json",
       },

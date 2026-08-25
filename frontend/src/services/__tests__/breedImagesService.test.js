@@ -107,12 +107,14 @@ describe("breedImagesService", () => {
       // Mock console.error to avoid test output noise
       const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
-      fetch.mockRejectedValueOnce(new Error("Network error"));
+      fetch.mockRejectedValue(new Error("Network error"));
 
       const result = await getBreedsWithImages();
 
+      // Retried once before giving up, so a backend blip mid-build no longer
+      // silently caches an empty breed section for the revalidate window.
       expect(result).toEqual([]);
-      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(fetch).toHaveBeenCalledTimes(2);
 
       consoleErrorSpy.mockRestore();
     });

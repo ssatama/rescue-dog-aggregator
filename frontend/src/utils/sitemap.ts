@@ -1,5 +1,6 @@
 import { getAllAnimalsForSitemap } from "../services/animalsService";
 import { getAllOrganizations } from "../services/organizationsService";
+import { fetchWithRetry } from "./serverFetch";
 
 const getBaseUrl = (): string =>
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
@@ -375,7 +376,7 @@ export const generateBreedPages = async (): Promise<SitemapEntry[]> => {
       }),
     );
 
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me"}/api/animals/breeds/stats`,
     );
 

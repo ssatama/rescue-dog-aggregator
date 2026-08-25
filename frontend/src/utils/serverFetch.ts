@@ -1,4 +1,8 @@
-import { logger } from "./logger";
+// logger.warn only emits in development, and this fires during production
+// builds — the one place the retry needs to be visible in the log.
+const warn = (message: string, ...rest: unknown[]): void => {
+  console.warn(message, ...rest);
+};
 
 export interface RetryPolicy {
   attempts: number;
@@ -42,13 +46,24 @@ const isRetryableStatus = (status: number): boolean => status >= 500;
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+// Next memoizes fetch per URL for the duration of a render, and it memoizes
+// failures too: dedupe-fetch.js stores the response whatever its status and
+// replays a clone for every identical GET. A plain retry is therefore handed
+// back the same 5xx without touching the network, which makes the retry a
+// no-op that only burns the backoff. Passing a signal is that layer's own
+// opt-out ("someone else controls the lifetime of this object"), so retries
+// carry one and reach the origin. Only retries do — attempt 0 keeps the plain
+// init so the normal dedupe and data-cache behaviour is untouched.
+const bypassRenderDedupe = (init?: RequestInit): RequestInit => ({
+  ...init,
+  signal: new AbortController().signal,
+});
+
 export async function fetchWithRetry(
   url: string,
   init?: RequestInit,
   policy: RetryPolicy = getRetryPolicy(),
 ): Promise<Response> {
-  let lastError: unknown;
-
   for (let attempt = 0; attempt < policy.attempts; attempt++) {
     if (attempt > 0) {
       await sleep(backoffDelayMs(policy, attempt - 1));
@@ -57,13 +72,16 @@ export async function fetchWithRetry(
     const isLastAttempt = attempt === policy.attempts - 1;
 
     try {
-      const response = await fetch(url, init);
+      const response = await fetch(
+        url,
+        attempt === 0 ? init : bypassRenderDedupe(init),
+      );
 
       if (!isRetryableStatus(response.status) || isLastAttempt) {
         return response;
       }
 
-      logger.warn(
+      warn(
         `Retrying ${url} after HTTP ${response.status} (attempt ${attempt + 1}/${policy.attempts})`,
       );
     } catch (error) {
@@ -71,13 +89,12 @@ export async function fetchWithRetry(
         throw error;
       }
 
-      lastError = error;
-      logger.warn(
+      warn(
         `Retrying ${url} after network error (attempt ${attempt + 1}/${policy.attempts}):`,
         error,
       );
     }
   }
 
-  throw lastError;
+  throw new Error(`fetchWithRetry needs at least one attempt, got ${policy.attempts}`);
 }
