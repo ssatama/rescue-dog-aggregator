@@ -13,7 +13,8 @@ const mockGuide: Guide = {
     readTime: 10,
     category: "test",
     keywords: ["test", "guide"],
-    lastUpdated: "2025-10-03",
+    lastUpdated: "2026-03-15",
+    datePublished: "2025-10-03",
     author: "Test Author",
     relatedGuides: [],
   },
@@ -71,7 +72,7 @@ describe("GuideSchema", () => {
     expect(schema.image).toBe("/test-hero.jpg");
   });
 
-  it("includes publication and modification dates", () => {
+  it("takes datePublished from frontmatter and dateModified from lastUpdated", () => {
     const { container } = render(<GuideSchema guide={mockGuide} />);
     const scriptTag = container.querySelector(
       'script[type="application/ld+json"]',
@@ -79,7 +80,28 @@ describe("GuideSchema", () => {
     const schema = JSON.parse(scriptTag?.textContent || "{}");
 
     expect(schema.datePublished).toBe("2025-10-03");
-    expect(schema.dateModified).toBe("2025-10-03");
+    expect(schema.dateModified).toBe("2026-03-15");
+  });
+
+  it("omits datePublished rather than asserting a false one", () => {
+    const guideWithoutPublishDate: Guide = {
+      ...mockGuide,
+      frontmatter: {
+        ...mockGuide.frontmatter,
+        datePublished: undefined,
+      },
+    };
+
+    const { container } = render(
+      <GuideSchema guide={guideWithoutPublishDate} />,
+    );
+    const scriptTag = container.querySelector(
+      'script[type="application/ld+json"]',
+    );
+    const schema = JSON.parse(scriptTag?.textContent || "{}");
+
+    expect(schema).not.toHaveProperty("datePublished");
+    expect(schema.dateModified).toBe("2026-03-15");
   });
 
   it("includes author with Person type", () => {

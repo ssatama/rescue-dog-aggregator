@@ -159,16 +159,22 @@ export function DogGrid({
   }
 
   if (dogs.length === 0) {
+    const breedLabel = breed || primary_breed;
+
     return (
       <div className="my-8 not-prose p-6 bg-gray-50 dark:bg-gray-900 rounded-lg text-center">
         <p className="text-gray-600 dark:text-gray-400 mb-3">
-          Currently no {breed || "dogs"} available matching these criteria.
+          Currently no {breedLabel || "dogs"} available matching these criteria.
         </p>
         <a
-          href={breed ? `/breeds/${breed}` : "/dogs"}
+          href={
+            breedLabel
+              ? `/dogs?breed=${encodeURIComponent(breedLabel)}`
+              : "/dogs"
+          }
           className="text-orange-500 hover:underline"
         >
-          Browse all {breed || "available dogs"} →
+          Browse all {breedLabel || "available dogs"} →
         </a>
       </div>
     );

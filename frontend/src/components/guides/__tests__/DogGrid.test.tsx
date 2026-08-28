@@ -163,7 +163,66 @@ describe("DogGrid", () => {
 
     await waitFor(() => {
       const link = screen.getByText(/Browse all/i);
-      expect(link).toHaveAttribute("href", "/breeds/galgo");
+      expect(link).toHaveAttribute("href", "/dogs?breed=galgo");
+    });
+  });
+
+  it("links the empty state to the breed page when primary_breed is set", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid primary_breed="Galgo" />);
+
+    await waitFor(() => {
+      const link = screen.getByText(/Browse all/i);
+      expect(link).toHaveAttribute("href", "/dogs?breed=Galgo");
+    });
+  });
+
+  it("names the breed in the empty state message when primary_breed is set", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid primary_breed="Podenco" />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Currently no Podenco available/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("url-encodes a multi-word primary_breed without guessing a slug", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid primary_breed="German Shepherd" />);
+
+    await waitFor(() => {
+      const link = screen.getByText(/Browse all/i);
+      expect(link).toHaveAttribute("href", "/dogs?breed=German%20Shepherd");
+    });
+  });
+
+  it("preserves accented breed names rather than mangling them", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid primary_breed="Galgo Español" />);
+
+    await waitFor(() => {
+      const link = screen.getByText(/Browse all/i);
+      expect(link).toHaveAttribute(
+        "href",
+        `/dogs?breed=${encodeURIComponent("Galgo Español")}`,
+      );
+    });
+  });
+
+  it("prefers the breed prop over primary_breed for the breed page link", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid breed="lurcher" primary_breed="Galgo" />);
+
+    await waitFor(() => {
+      const link = screen.getByText(/Browse all/i);
+      expect(link).toHaveAttribute("href", "/dogs?breed=lurcher");
     });
   });
 

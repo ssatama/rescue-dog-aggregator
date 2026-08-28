@@ -1,4 +1,27 @@
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
 import { getAllGuides, getGuide } from "@/lib/guides";
+
+interface GuideFile {
+  file: string;
+  data: Record<string, unknown>;
+  body: string;
+}
+
+function readGuideFiles(): GuideFile[] {
+  const guidesDir = path.join(process.cwd(), "content", "guides");
+
+  return fs
+    .readdirSync(guidesDir)
+    .filter((file) => file.endsWith(".mdx"))
+    .map((file) => {
+      const { data, content } = matter(
+        fs.readFileSync(path.join(guidesDir, file), "utf-8"),
+      );
+      return { file, data, body: content };
+    });
+}
 
 describe("MDX Guide Compilation", () => {
   it("should compile all guide MDX files without errors", async () => {
@@ -66,6 +89,117 @@ describe("MDX Guide Compilation", () => {
         }
       });
     });
+  });
+
+  it("should not declare a top-level H1 in MDX body (page H1 comes from frontmatter.title)", async () => {
+    const offenders: string[] = [];
+
+    readGuideFiles().forEach(({ file, body }) => {
+      let inCodeFence = false;
+
+      body.split("\n").forEach((line: string, index: number) => {
+        if (/^\s*```/.test(line)) {
+          inCodeFence = !inCodeFence;
+          return;
+        }
+        if (inCodeFence) return;
+
+        if (/^# /.test(line)) {
+          offenders.push(`${file}:${index + 1} - ${line.trim()}`);
+        }
+      });
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("should not declare a dead seoMeta block in frontmatter", async () => {
+    const offenders = readGuideFiles()
+      .filter(({ data }) => "seoMeta" in data)
+      .map(({ file }) => file);
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("should declare datePublished for all guides", async () => {
+    const guides = await getAllGuides();
+
+    guides.forEach((guide) => {
+      expect(guide.frontmatter.datePublished).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+  });
+
+  it("should not mix currency symbols within a single range", async () => {
+    const offenders: string[] = [];
+
+    readGuideFiles().forEach(({ file, body }) => {
+      body.split("\n").forEach((line: string, index: number) => {
+        // A range that opens in one currency and closes in the other,
+        // e.g. "£18,478-€55,132" or "£17-€83".
+        const mixedRange = /([£€])[\d,.]+\s*[-–]\s*([£€])[\d,.]+/g;
+
+        for (const match of line.matchAll(mixedRange)) {
+          if (match[1] !== match[2]) {
+            offenders.push(`${file}:${index + 1} - ${match[0]}`);
+          }
+        }
+      });
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("should convert £ to € at a consistent rate", async () => {
+    // Wrong symbols are one failure mode; a wrong converted value behind the
+    // right symbol is the other, and it reads as authoritative. Every guide
+    // quotes euro alongside sterling at roughly 1.17, so an implied rate far
+    // outside that band is an arithmetic slip, not a rounding choice.
+    const AMOUNT = "[\\d,]+(?:\\.\\d+)?";
+    const RANGE = new RegExp(
+      `£(${AMOUNT})\\s*[-–]\\s*£?(${AMOUNT})\\+?\\s*[(/]\\s*€(${AMOUNT})\\s*[-–]\\s*€?(${AMOUNT})`,
+      "g",
+    );
+    const SINGLE = new RegExp(`£(${AMOUNT})\\+?\\s*[(/]\\s*€(${AMOUNT})`, "g");
+
+    // Below this, rounding to whole euros dominates (£3 → €4 is 1.33 and fine).
+    const ROUNDING_FLOOR_GBP = 10;
+    const MIN_RATE = 1.1;
+    const MAX_RATE = 1.25;
+
+    const toNumber = (raw: string): number => Number(raw.replace(/,/g, ""));
+    const offenders: string[] = [];
+
+    readGuideFiles().forEach(({ file, body }) => {
+      body.split("\n").forEach((line: string, index: number) => {
+        const pairs: Array<[number, number]> = [];
+        const consumed: Array<[number, number]> = [];
+
+        for (const m of line.matchAll(RANGE)) {
+          consumed.push([m.index, m.index + m[0].length]);
+          pairs.push([toNumber(m[1]), toNumber(m[3])]);
+          pairs.push([toNumber(m[2]), toNumber(m[4])]);
+        }
+
+        for (const m of line.matchAll(SINGLE)) {
+          const insideRange = consumed.some(
+            ([start, end]) => m.index >= start && m.index < end,
+          );
+          if (!insideRange) pairs.push([toNumber(m[1]), toNumber(m[2])]);
+        }
+
+        pairs.forEach(([gbp, eur]) => {
+          if (gbp < ROUNDING_FLOOR_GBP) return;
+          const rate = eur / gbp;
+          if (rate < MIN_RATE || rate > MAX_RATE) {
+            offenders.push(
+              `${file}:${index + 1} - £${gbp} → €${eur} implies ${rate.toFixed(2)}`,
+            );
+          }
+        });
+      });
+    });
+
+    expect(offenders).toEqual([]);
   });
 
   it("should have unique slugs", async () => {

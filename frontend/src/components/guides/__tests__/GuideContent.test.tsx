@@ -42,6 +42,22 @@ describe("GuideContent", () => {
     expect(screen.getByText("Test Guide")).toBeInTheDocument();
   });
 
+  it("renders exactly one h1, sourced from the frontmatter title", () => {
+    const { container } = render(<GuideContent guide={mockGuide} />);
+    const headings = container.querySelectorAll("h1");
+
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveTextContent("Test Guide");
+  });
+
+  it("does not emit Article JSON-LD (the guide page owns page-level schema)", () => {
+    const { container } = render(<GuideContent guide={mockGuide} />);
+
+    expect(
+      container.querySelector('script[type="application/ld+json"]'),
+    ).toBeNull();
+  });
+
   it("renders hero image with alt text", () => {
     render(<GuideContent guide={mockGuide} />);
     const image = screen.getByAltText("Test hero image");
