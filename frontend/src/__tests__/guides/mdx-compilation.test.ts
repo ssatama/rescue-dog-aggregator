@@ -202,6 +202,42 @@ describe("MDX Guide Compilation", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("should not reintroduce claims removed as unsupported or repealed", async () => {
+    // Each pattern is a claim deleted in the unsupported-claims pass, either
+    // because no primary source could be found for it or because the
+    // instrument it names was repealed. Re-adding one needs a source, not a
+    // revert. See docs/audits/guides-regulatory-audit.md.
+    const REMOVED: Array<[string, RegExp]> = [
+      ["Balai Directive (repealed 21 April 2021)", /Balai/i],
+      ["89% of imports using the wrong rules", /89%/],
+      ["14.8% Leishmania positive rate", /14\.8%/],
+      ["Romania exported 33,725 dogs", /33,725/],
+      ["Turkish shelter capacity figures", /105,000/],
+      ["2.7% public support poll", /2\.7% public support/],
+      ["Romanian Law 258/2013", /258\/2013/],
+      ["98% of owners underestimate costs", /98% of pet owners/],
+      ["100% adjusted well at six months", /100% of owners/],
+      ["unnamed PMC adjustment study", /published in PMC shows/],
+      ["CareCredit emergency figures", /CareCredit/],
+      ["Cesar's Way surrender research", /Cesar's Way/],
+      ["Walkin' Pets senior-dog recommendation", /Walkin' Pets/],
+      ["Minnesota Greyhound Rescue", /Minnesota Greyhound/],
+      ["University of Pennsylvania lifetime range", /University of Pennsylvania/],
+      ["FDA drug dosing", /mg\/kg/],
+      ["car restraints as a legal requirement", /legally required/],
+    ];
+
+    const offenders: string[] = [];
+
+    readGuideFiles().forEach(({ file, body }) => {
+      REMOVED.forEach(([label, pattern]) => {
+        if (pattern.test(body)) offenders.push(`${file} - ${label}`);
+      });
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
   it("should have unique slugs", async () => {
     const guides = await getAllGuides();
     const slugs = guides.map((g) => g.slug);

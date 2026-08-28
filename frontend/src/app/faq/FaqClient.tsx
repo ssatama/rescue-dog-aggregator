@@ -57,7 +57,7 @@ const FAQ_SECTIONS: FAQSectionData[] = [
       {
         question: "How long does the adoption process take?",
         answer:
-          "Good news – European rescue organizations can often match you with a dog within 2-3 weeks from application to arrival. This is considerably faster than many domestic rescues, where waiting lists can stretch 3-6 months for the right match.",
+          "Expect roughly 6-10 weeks from application to arrival, covering the home check, the dog's vaccinations and health screening, and transport. Many domestic rescues have waiting lists of 3-6 months for the right match.",
       },
       {
         question: "What's included in the adoption fee?",
@@ -80,17 +80,17 @@ const FAQ_SECTIONS: FAQSectionData[] = [
       {
         question: "Are rescue dogs good for first-time owners?",
         answer:
-          "Absolutely! Many rescue dogs make wonderful companions for first-time owners. Organizations carefully assess each dog's temperament and work to match you with the right fit. Research shows 97% of international rescue adoptions succeed long-term, often thanks to excellent post-adoption support from the rescue community.",
+          "Many rescue dogs make wonderful companions for first-time owners. Organizations assess each dog's temperament and work to match you with the right fit, and most offer post-adoption support once the dog is home.",
       },
       {
         question: "Do rescue dogs have more problems than purchased dogs?",
         answer:
-          "Actually, the data suggests otherwise. International rescue adoptions have a remarkable 97% retention rate (based on a University of Liverpool study of 3,080 adopters). The thorough matching process – including home visits and lifestyle assessments – helps create successful, lasting bonds.",
+          "The University of Liverpool surveyed 3,080 people who adopted a rescue dog from abroad, and the large majority still had their dog at the time of the survey. The thorough matching process – including home visits and lifestyle assessments – helps create successful, lasting bonds.",
       },
       {
         question: "What support is available after adoption?",
         answer:
-          "You won't be on your own! Most organizations offer ongoing guidance, and there are active community groups full of experienced adopters happy to help. About two-thirds of adopters seek some behavioral support, and the vast majority report any challenges are fully resolved with the right guidance.",
+          "You won't be on your own. Most organizations offer ongoing guidance, and there are active community groups full of experienced adopters happy to help. Many adopters seek some behavioural support, and report that challenges resolve with the right guidance.",
       },
     ],
   },
