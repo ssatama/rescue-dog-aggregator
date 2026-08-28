@@ -163,7 +163,7 @@ describe("DogGrid", () => {
 
     await waitFor(() => {
       const link = screen.getByText(/Browse all/i);
-      expect(link).toHaveAttribute("href", "/breeds/galgo");
+      expect(link).toHaveAttribute("href", "/dogs?breed=galgo");
     });
   });
 
@@ -174,7 +174,7 @@ describe("DogGrid", () => {
 
     await waitFor(() => {
       const link = screen.getByText(/Browse all/i);
-      expect(link).toHaveAttribute("href", "/breeds/galgo");
+      expect(link).toHaveAttribute("href", "/dogs?breed=Galgo");
     });
   });
 
@@ -190,14 +190,28 @@ describe("DogGrid", () => {
     });
   });
 
-  it("slugifies a multi-word primary_breed for the breed page link", async () => {
+  it("url-encodes a multi-word primary_breed without guessing a slug", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid primary_breed="German Shepherd" />);
 
     await waitFor(() => {
       const link = screen.getByText(/Browse all/i);
-      expect(link).toHaveAttribute("href", "/breeds/german-shepherd");
+      expect(link).toHaveAttribute("href", "/dogs?breed=German%20Shepherd");
+    });
+  });
+
+  it("preserves accented breed names rather than mangling them", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid primary_breed="Galgo Español" />);
+
+    await waitFor(() => {
+      const link = screen.getByText(/Browse all/i);
+      expect(link).toHaveAttribute(
+        "href",
+        `/dogs?breed=${encodeURIComponent("Galgo Español")}`,
+      );
     });
   });
 
@@ -208,7 +222,7 @@ describe("DogGrid", () => {
 
     await waitFor(() => {
       const link = screen.getByText(/Browse all/i);
-      expect(link).toHaveAttribute("href", "/breeds/lurcher");
+      expect(link).toHaveAttribute("href", "/dogs?breed=lurcher");
     });
   });
 

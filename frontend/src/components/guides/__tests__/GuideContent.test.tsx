@@ -50,6 +50,14 @@ describe("GuideContent", () => {
     expect(headings[0]).toHaveTextContent("Test Guide");
   });
 
+  it("does not emit Article JSON-LD (the guide page owns page-level schema)", () => {
+    const { container } = render(<GuideContent guide={mockGuide} />);
+
+    expect(
+      container.querySelector('script[type="application/ld+json"]'),
+    ).toBeNull();
+  });
+
   it("renders hero image with alt text", () => {
     render(<GuideContent guide={mockGuide} />);
     const image = screen.getByAltText("Test hero image");

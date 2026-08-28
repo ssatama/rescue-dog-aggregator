@@ -35,7 +35,8 @@ export async function generateMetadata({
       title: frontmatter.title,
       description: frontmatter.description,
       type: "article",
-      publishedTime: frontmatter.lastUpdated,
+      publishedTime: frontmatter.datePublished,
+      modifiedTime: frontmatter.lastUpdated,
       authors: [frontmatter.author],
       images: [
         {

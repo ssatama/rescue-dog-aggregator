@@ -7,7 +7,6 @@ import type { Guide } from "@/types/guide";
 import { DogGrid } from "./DogGrid";
 import { Callout } from "./Callout";
 import { Stats } from "./Stats";
-import { GuideSchema } from "./GuideSchema";
 import { TableOfContents } from "./TableOfContents";
 import { RelatedGuides } from "./RelatedGuides";
 import { FontSizeProvider } from "@/contexts/FontSizeContext";
@@ -118,7 +117,6 @@ export function GuideContent({
 
   return (
     <FontSizeProvider>
-      <GuideSchema guide={guide} />
       {fullPage && <FontSizeControl />}
       <div className={fullPage ? "container mx-auto px-4 py-12" : "px-8 py-6"}>
         <div className="flex gap-8 max-w-7xl mx-auto">

@@ -54,13 +54,6 @@ interface DogGridProps {
   embedded?: boolean; // Compact mode for guide pages (default true)
 }
 
-function toBreedSlug(breedName: string): string {
-  return breedName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
 export function DogGrid({
   breed,
   standardized_breed,
@@ -174,7 +167,11 @@ export function DogGrid({
           Currently no {breedLabel || "dogs"} available matching these criteria.
         </p>
         <a
-          href={breedLabel ? `/breeds/${toBreedSlug(breedLabel)}` : "/dogs"}
+          href={
+            breedLabel
+              ? `/dogs?breed=${encodeURIComponent(breedLabel)}`
+              : "/dogs"
+          }
           className="text-orange-500 hover:underline"
         >
           Browse all {breedLabel || "available dogs"} →
