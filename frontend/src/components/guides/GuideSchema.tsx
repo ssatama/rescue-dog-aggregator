@@ -5,13 +5,15 @@ interface GuideSchemaProps {
 }
 
 export function GuideSchema({ guide }: GuideSchemaProps) {
+  const { datePublished } = guide.frontmatter;
+
   const schema = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: guide.frontmatter.title,
     description: guide.frontmatter.description,
     image: guide.frontmatter.heroImage,
-    datePublished: guide.frontmatter.lastUpdated,
+    ...(datePublished ? { datePublished } : {}),
     dateModified: guide.frontmatter.lastUpdated,
     author: {
       "@type": "Person",

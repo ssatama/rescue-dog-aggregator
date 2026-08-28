@@ -68,6 +68,92 @@ describe("MDX Guide Compilation", () => {
     });
   });
 
+  it("should not declare a top-level H1 in MDX body (page H1 comes from frontmatter.title)", async () => {
+    const fs = require("fs");
+    const path = require("path");
+
+    const guidesDir = path.join(process.cwd(), "content", "guides");
+    const files = fs
+      .readdirSync(guidesDir)
+      .filter((f: string) => f.endsWith(".mdx"));
+
+    const offenders: string[] = [];
+
+    files.forEach((file: string) => {
+      const content = fs.readFileSync(path.join(guidesDir, file), "utf-8");
+      const lines = content.split("\n");
+      let frontmatterDelimiters = 0;
+
+      lines.forEach((line: string, index: number) => {
+        if (line.trim() === "---" && frontmatterDelimiters < 2) {
+          frontmatterDelimiters += 1;
+          return;
+        }
+        if (frontmatterDelimiters < 2) return;
+
+        if (/^# /.test(line)) {
+          offenders.push(`${file}:${index + 1} - ${line.trim()}`);
+        }
+      });
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("should not declare a dead seoMeta block in frontmatter", async () => {
+    const fs = require("fs");
+    const path = require("path");
+
+    const guidesDir = path.join(process.cwd(), "content", "guides");
+    const files = fs
+      .readdirSync(guidesDir)
+      .filter((f: string) => f.endsWith(".mdx"));
+
+    const offenders = files.filter((file: string) => {
+      const content = fs.readFileSync(path.join(guidesDir, file), "utf-8");
+      return /^seoMeta:/m.test(content.split("---")[1] || "");
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("should declare datePublished for all guides", async () => {
+    const guides = await getAllGuides();
+
+    guides.forEach((guide) => {
+      expect(guide.frontmatter.datePublished).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+  });
+
+  it("should not mix currency symbols within a single range", async () => {
+    const fs = require("fs");
+    const path = require("path");
+
+    const guidesDir = path.join(process.cwd(), "content", "guides");
+    const files = fs
+      .readdirSync(guidesDir)
+      .filter((f: string) => f.endsWith(".mdx"));
+
+    const offenders: string[] = [];
+
+    files.forEach((file: string) => {
+      const content = fs.readFileSync(path.join(guidesDir, file), "utf-8");
+      content.split("\n").forEach((line: string, index: number) => {
+        // A range that opens in one currency and closes in the other,
+        // e.g. "£18,478-€55,132" or "£17-€83".
+        const mixedRange = /([£€])[\d,.]+\s*[-–]\s*([£€])[\d,.]+/g;
+
+        for (const match of line.matchAll(mixedRange)) {
+          if (match[1] !== match[2]) {
+            offenders.push(`${file}:${index + 1} - ${match[0]}`);
+          }
+        }
+      });
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
   it("should have unique slugs", async () => {
     const guides = await getAllGuides();
     const slugs = guides.map((g) => g.slug);

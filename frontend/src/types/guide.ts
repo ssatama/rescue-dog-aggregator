@@ -10,6 +10,7 @@ export interface GuideFrontmatter {
   category: string;
   keywords: string[];
   lastUpdated: string;
+  datePublished?: string;
   author: string;
   relatedGuides: string[];
 }

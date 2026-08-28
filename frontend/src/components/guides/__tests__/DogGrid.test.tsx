@@ -167,6 +167,51 @@ describe("DogGrid", () => {
     });
   });
 
+  it("links the empty state to the breed page when primary_breed is set", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid primary_breed="Galgo" />);
+
+    await waitFor(() => {
+      const link = screen.getByText(/Browse all/i);
+      expect(link).toHaveAttribute("href", "/breeds/galgo");
+    });
+  });
+
+  it("names the breed in the empty state message when primary_breed is set", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid primary_breed="Podenco" />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Currently no Podenco available/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("slugifies a multi-word primary_breed for the breed page link", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid primary_breed="German Shepherd" />);
+
+    await waitFor(() => {
+      const link = screen.getByText(/Browse all/i);
+      expect(link).toHaveAttribute("href", "/breeds/german-shepherd");
+    });
+  });
+
+  it("prefers the breed prop over primary_breed for the breed page link", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid breed="lurcher" primary_breed="Galgo" />);
+
+    await waitFor(() => {
+      const link = screen.getByText(/Browse all/i);
+      expect(link).toHaveAttribute("href", "/breeds/lurcher");
+    });
+  });
+
   it("uses generic fallback link when no breed specified", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 
