@@ -229,6 +229,11 @@ describe("MDX Guide Compilation", () => {
       ["Minnesota Greyhound Rescue", /Minnesota Greyhound/],
       ["University of Pennsylvania lifetime range", /University of Pennsylvania/],
       ["FDA drug dosing", /mg\/kg/],
+      // Norman et al. (2020) Vet Rec 186:248 does not report a satisfaction,
+      // retention or success rate. The figure was attributed to it anyway,
+      // which is why a named citation is not on its own a defence.
+      ["satisfaction/retention rate falsely attributed to Norman et al.",
+       /97(?:\.4)?%\s*(?:owner\s+)?(?:satisfaction|retention|success)|(?:satisfaction|retention|success)\s+rates?[^.]{0,40}97(?:\.4)?%|1-5%\s*returns?/i],
       ["car restraints as a legal requirement", /restraints?[^.]*legally required|legally required[^.]*restraint/i],
     ];
 
