@@ -85,7 +85,7 @@ const FAQ_SECTIONS: FAQSectionData[] = [
       {
         question: "Do rescue dogs have more problems than purchased dogs?",
         answer:
-          "The University of Liverpool surveyed 3,080 people who adopted a rescue dog from abroad, and the large majority still had their dog at the time of the survey. The thorough matching process – including home visits and lifestyle assessments – helps create successful, lasting bonds.",
+          "The University of Liverpool surveyed 3,080 people who adopted a rescue dog from abroad. It found that 20% of dogs arrived with a known health condition, most often a traumatic injury, and that the common behaviour problems were fear of strangers and of unusual noises. Ask the organization what they have tested for and what they have observed, and expect a straight answer.",
       },
       {
         question: "What support is available after adoption?",

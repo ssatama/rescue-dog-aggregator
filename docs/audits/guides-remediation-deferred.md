@@ -63,28 +63,61 @@ Needs: a short dated note, and the new instruments named where relevant
   Annex II of 2026/636; Switzerland in Annex I; **Turkey is unlisted**. Directly
   relevant: 157 available dogs come from Serbian organisations and 44 from Turkey.
 
-## 3a. Correct statements removed by the deletion pass, to restore with a qualifier
+## 3a. GB statutory duties — RESTORED 2026-08-29
 
-The unsupported-claims pass removed these under its brief, but the audit's
-remedy was to **qualify** them, not to delete them. They are true; they were
-just addressed to a four-country audience without saying which country.
-Restoring them means writing a sourced sentence about law, which is why they
-are here and not there.
+Done, not deferred. The ID tag and microchipping duties are real and are back
+with a Great Britain qualifier and primary sources: [Control of Dogs Order
+1992](https://www.legislation.gov.uk/uksi/1992/901/made) for the collar, and the
+microchipping regulations for
+[England](https://www.legislation.gov.uk/uksi/2015/108/made),
+[Scotland](https://www.legislation.gov.uk/ssi/2016/58/made) and
+[Wales](https://www.legislation.gov.uk/wsi/2015/1990/made).
 
-- **"ID tag (legally required)"** — `costs-and-preparation.mdx`,
-  `first-time-owner-guide.mdx`. True in Great Britain under the Control of Dogs
-  Order 1992: a dog in a highway or place of public resort must wear a collar
-  bearing the owner's name and address.
-  ([legislation.gov.uk](https://www.legislation.gov.uk/uksi/1992/901/made))
-- **"Microchipping (£15-25, legally required)"** — `costs-and-preparation.mdx`.
-  Compulsory in England, Scotland and Wales.
+Still open from that group:
+
 - **Hunde-Sachkunde (Austria)** — the whole bullet went when only its price
-  should have. The obligation exists but does not apply to every new owner, so
-  restoring it needs the actual trigger conditions from the relevant Land, not
-  the old "for new owners" wording.
+  should have. Restoring it needs the actual trigger conditions from the
+  relevant Land, not the old "for new owners" wording the audit flagged as
+  wrong.
 
-UK readers are currently unaware of two real statutory duties. This is the
-highest-priority item in this document after §1.
+## 3b. Norman et al. (2020) — what the paper actually supports
+
+The paper behind most of the guides' statistics has now been read. See the
+correction block at the top of `guides-regulatory-audit.md`. For PR 3:
+
+- **14.8% Leishmania can come back, with its denominator.** It is 14.8% *of
+  dogs that had been tested*. 79 owners reported a positive test. Reinstating it
+  without "of those tested" reintroduces the original defect.
+- **89% can come back, reframed as owner belief.** The paper reports what
+  adopters said about how their dog was imported, from a Facebook-recruited 2017
+  sample, with owner knowledge of importation practice named as a limitation.
+  "89% of rescue imports were using the wrong rules" is not what it establishes.
+- **20% arrived with known health conditions**, most commonly traumatic injury —
+  a real finding the guides never used, and one that belongs in an honest guide.
+- **Do not reinstate any satisfaction, retention or success rate.** The paper
+  reports none.
+
+**Before reinstating anything from this list, amend the guard.**
+`frontend/src/__tests__/guides/mdx-compilation.test.ts` blocks `89%` and
+`14.8%` as bare patterns, so a correctly-framed reinstatement will fail CI
+until its entry is updated or removed in the same commit that adds the source.
+That is the intended friction, not a bug — but it needs doing deliberately
+rather than by deleting the guard.
+
+Still to verify against the full text before reuse, all currently in the guides
+and all attributed to this paper or to "the UK study":
+
+- 67.5% sought behavioural help / 71% reported it resolved
+  (`european-rescue-guide.mdx`, `why-rescue-from-abroad.mdx`)
+- 4% vs 8% consideration-of-return comparison with p < 0.0001
+- 81% home visits, 40% questionnaires, 92% through organizations, 59% wanted a
+  specific dog, 53% previously tried UK adoption, 61% street dogs, 41% adults,
+  65% mixed breeds, 10% from cruelty
+
+Separately, the Danish 2021 study figures in `european-rescue-guide.mdx` (97% of
+street dog owners still had their dogs, 2.1% aggression, 6.7% anxiety) are a
+**different** citation and were not part of the Norman et al. problem. They have
+not been checked against their source.
 
 ## 4. Structural work
 
@@ -120,25 +153,30 @@ highest-priority item in this document after §1.
   `first-time-owner` no longer quotes a figure at all after PR 2 removed the
   University of Pennsylvania range. A single sourced range should be agreed and
   used everywhere.
-- **Study-attributed figures kept asymmetrically.** PR 2 removed the 97%
-  retention figures from `FaqClient.tsx` per its brief, but `european-rescue`
-  (97.4%, 1%, 5%) and `why-rescue` (97%) keep theirs, because the audit did not
-  mark them UNVERIFIABLE — they carry a named study and journal (Norman et al.
-  2020, *Veterinary Record*). **This is now inconsistent across surfaces and
-  needs one decision**: cite the study properly everywhere, or remove everywhere.
+- ~~Study-attributed figures kept asymmetrically.~~ **Resolved 2026-08-29.**
+  Removed everywhere, because the paper reports no such figure. See §3b.
 - **Remaining UNVERIFIABLE rows not deleted**, because deleting them would have
   gutted sections that carry real weight and the replacement is a sourcing job:
-  the 50,000–100,000 Galgo figure (all three guides), the Charleston/Canadian/US
-  return-rate comparisons, the Danish street-dog study percentages, the German
-  2025 C-BARQ study, the carbon figures, Bosnia/Montenegro figures, and the
-  "7,800 UK dogs euthanized annually" figure. Each needs a citation or a cut.
+  the 50,000–100,000 Galgo figure (all three guides), the German 2025 C-BARQ
+  study, the carbon figures, the Bosnia/Montenegro figures, and the "7,800 UK
+  dogs euthanized annually" figure. Each needs a citation or a cut. The
+  Charleston/Canadian/US return-rate comparisons and the Danish study's
+  retention figure have since been deleted; the Danish aggression (2.1%) and
+  anxiety (6.7%) figures remain and are still unverified — a search for them
+  returns only this repository.
 
 ## 6. Data defects, not content defects
 
 - **`age_min_months` is NULL for every available Bulgarian (82) and Bosnian (63)
-  dog.** Any `age_category` filter returns zero for those countries. PR #368
-  worked around it by dropping the age filter from the Bulgarian `DogGrid`.
-  Fixing it is a scraper/backfill job.
+  dog.** Not a scraper bug: those organisations do not publish age on their own
+  sites, so there is nothing to scrape. It is a **filter-semantics** problem.
+  `age_category` compiles to `a.age_min_months >= x AND a.age_max_months <= y`,
+  so a NULL age fails every comparison and the dog silently disappears from any
+  age-filtered query — across `/dogs`, the swipe interface and the guides, not
+  just the one `DogGrid` PR #368 worked around. 145 available dogs are currently
+  invisible to a large share of filtered searches. **This is the highest-value
+  item in this document**: it is costing adoptions now, and the fix is in how
+  unknown ages are treated, not in data we cannot obtain.
 - **`location_country="SR"` is not ISO 3166 for Serbia** (`RS` is). The
   production database stores `SR`, so content and data agree and the queries
   work. Changing it is a data migration.

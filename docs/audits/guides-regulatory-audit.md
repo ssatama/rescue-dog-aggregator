@@ -5,6 +5,42 @@
 elsewhere in the frontend (`src/app/faq/FaqClient.tsx`, guide JSON-LD, guide metadata).
 **Phase:** Discovery only. No source files were edited.
 
+## Correction, 2026-08-29
+
+The source behind several UNVERIFIABLE rows has since been read: **Norman C,
+Stavisky J, Westgarth C (2020), *Importing rescue dogs into the UK: reasons,
+methods and welfare considerations*, Veterinary Record 186:248**
+([summary](https://www.rcvsknowledge.org/resource/importing-rescue-dogs-into-the-uk-reasons-methods-and-welfare-considerations/)).
+It changes four rows in the tables below:
+
+- **U15 (Leishmania) — partly answered.** The summary confirms that 79 owners
+  reported a positive Leishmania test, and that the 14.8% figure is of *dogs
+  that had been tested* rather than of all imported dogs — a denominator the
+  guides dropped, which changes what the number means. The 14.8% itself does
+  not appear in the summary, so it still needs the full text before reuse. This
+  says nothing about the rest of row U15: the babesiosis, heartworm,
+  ehrlichiosis, Echinococcus and Linguatula percentages remain unverified.
+- **U1 (89%) — real, but not what the guides claimed.** The paper reports that
+  89% of dogs were *reported by their owners* as imported under the EU Pet
+  Travel Scheme and 1% under the Balai Directive. That is owner belief from a
+  Facebook-recruited 2017 sample, and the authors name owner knowledge of
+  importation practice as a limitation. It does not establish that 89% of
+  imports used the wrong rules.
+- **U2 (3,080) — deletion was correct.** 3,826 questionnaires completed, 3,080
+  eligible for analysis. It is a sample size, not an annual adoption rate.
+- **The 97.4% / 97% satisfaction and retention figures were WRONG, not merely
+  unverifiable.** The paper reports no satisfaction rate, retention rate,
+  success rate or proportion returned. Its stated aim was to establish why
+  people adopt from outside the UK and to investigate health and welfare
+  problems; it reports 20% of dogs arriving with known health conditions, most
+  commonly traumatic injury. The audit graded these figures as acceptable
+  because they carried a named study and journal. **That was the wrong test.** A
+  citation attached to a finding the paper does not contain is more dangerous
+  than a bare number, because it survives exactly the review that catches the
+  bare one. Removed from both guides on 2026-08-29.
+
+---
+
 ## Why this audit exists
 
 All four guides carry `lastUpdated: "2026-02-24"`, and `git log` confirms that is the real
