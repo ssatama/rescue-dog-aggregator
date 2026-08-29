@@ -49,7 +49,7 @@ class TestAnimalServiceSorting:
         response = client.get("/api/animals/?sort=newest&limit=100")
         assert response.status_code == 200
         animals = response.json()
-        assert len(animals) == 12
+        assert len(animals) == 14
         created_dates = [a["created_at"] for a in animals]
         assert created_dates == sorted(created_dates, reverse=True)
 
@@ -98,6 +98,21 @@ class TestAnimalServiceAgeFilter:
     def test_unknown_category_is_accepted(self, client):
         response = client.get("/api/animals/?age_category=Unknown&limit=100")
         assert response.status_code == 200
+
+    def test_age_filter_counts_include_unknown_and_match_the_filter(self, client):
+        """_get_age_counts had no coverage, and it is easy for the counts query
+        and the filter query to drift apart. They are built from the same
+        helper, so a count must equal the number of dogs the filter returns."""
+        response = client.get("/api/animals/meta/filter_counts")
+        assert response.status_code == 200
+
+        counts = {opt["value"]: opt["count"] for opt in response.json()["age_options"]}
+        assert "Unknown" in counts, "unknown-age dogs have no reachable option"
+
+        for category, count in counts.items():
+            filtered = client.get(f"/api/animals/?age_category={category}&limit=1000")
+            assert filtered.status_code == 200
+            assert len(filtered.json()) == count, f"{category}: count {count} != {len(filtered.json())} returned"
 
     def test_unknown_age_dogs_stay_out_of_the_real_buckets(self, client):
         """Buckets stay honest: a missing age is not evidence of puppyhood."""

@@ -3,11 +3,13 @@ import urllib.parse
 import pytest
 from fastapi.testclient import TestClient
 
-TOTAL_TEST_DOGS = 12
-MALE_IDS = {9001, 9003, 9005, 9007, 9009, 9011}
-FEMALE_IDS = {9002, 9004, 9006, 9008, 9010, 9012}
+# 9013 (straddles the Puppy/Young boundary) and 9014 (no recorded age) exist so
+# the age-filter tests can fail; every other fixture dog has age_min == age_max.
+TOTAL_TEST_DOGS = 14
+MALE_IDS = {9001, 9003, 9005, 9007, 9009, 9011, 9013}
+FEMALE_IDS = {9002, 9004, 9006, 9008, 9010, 9012, 9014}
 LARGE_IDS = {9001, 9003, 9004, 9009, 9011}
-MEDIUM_IDS = {9002, 9005, 9006, 9007, 9010}
+MEDIUM_IDS = {9002, 9005, 9006, 9007, 9010, 9013, 9014}
 SMALL_IDS = {9008, 9012}
 
 

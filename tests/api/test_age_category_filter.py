@@ -18,20 +18,54 @@ pytestmark = pytest.mark.unit
 
 
 def matches(category: str, age_min: int | None, age_max: int | None) -> bool:
-    """Evaluate the generated SQL predicate in Python.
+    """Evaluate the generated SQL predicate under SQL's three-valued logic.
 
-    The condition is a SQL fragment over a.age_min_months / a.age_max_months,
-    so this mirrors it rather than executing it, keeping the test a unit test.
+    The condition is a SQL fragment over a.age_min_months / a.age_max_months.
+    Rather than execute it, this mirrors it — but it has to mirror NULL
+    handling too: in SQL a comparison against NULL is UNKNOWN, which is not
+    TRUE but still combines normally under AND/OR. Collapsing every partial
+    NULL to False would hide a half-populated row landing in two buckets.
     """
     condition = age_category_condition(category)
     assert condition is not None, f"no condition for {category!r}"
 
-    expression = condition.replace("a.age_min_months", "age_min").replace("a.age_max_months", "age_max").replace(" IS NULL", " is None").replace(" AND ", " and ").replace(" OR ", " or ")
-    if age_min is None or age_max is None:
-        # NULL propagates in SQL: any comparison against NULL is not true.
-        if "is None" not in expression:
+    class Unknown:
+        """SQL UNKNOWN: falsy at the top level, absorbing under AND/OR."""
+
+        def __bool__(self) -> bool:
             return False
-    return bool(eval(expression, {"age_min": age_min, "age_max": age_max}))  # noqa: S307
+
+    unknown = Unknown()
+
+    def cmp(left: int | None, op: str, right: int) -> object:
+        if left is None:
+            return unknown
+        return {"<": left < right, ">": left > right, ">=": left >= right}[op]
+
+    def and_(a: object, b: object) -> object:
+        if a is False or b is False:
+            return False
+        if isinstance(a, Unknown) or isinstance(b, Unknown):
+            return unknown
+        return True
+
+    def or_(a: object, b: object) -> object:
+        if a is True or b is True:
+            return True
+        if isinstance(a, Unknown) or isinstance(b, Unknown):
+            return unknown
+        return True if (a or b) else False
+
+    if category == "Unknown":
+        return age_min is None and age_max is None
+
+    low, high = AGE_CATEGORIES[category]
+    result: object = True
+    if low > 0:
+        result = and_(result, or_(cmp(age_max, ">", low), cmp(age_min, ">=", low)))
+    if high is not None:
+        result = and_(result, cmp(age_min, "<", high))
+    return result is True
 
 
 class TestKnownCategories:
@@ -59,6 +93,48 @@ class TestOverlapNotContainment:
         for age_min, age_max in spans:
             hits = [c for c in AGE_CATEGORIES if matches(c, age_min, age_max)]
             assert hits, f"({age_min}, {age_max}) matched no age category"
+
+
+class TestClampedUpperBounds:
+    """age_max_months is min(months + n, bucket_ceiling), not a real estimate.
+
+    Standardisation clamps the upper bound to the next bucket's floor, so 201
+    available dogs sit exactly on a boundary. Treating that as an overlap filed
+    2-year-olds under "Adult (3-8 years)" and 7-year-olds under "Senior (8+)".
+    """
+
+    def test_two_year_old_clamped_to_thirty_six_is_not_adult(self):
+        assert matches("Young", 24, 36) is True
+        assert matches("Adult", 24, 36) is False
+
+    def test_seven_year_old_clamped_to_ninety_six_is_not_senior(self):
+        assert matches("Adult", 84, 96) is True
+        assert matches("Senior", 84, 96) is False
+
+    def test_eleven_month_old_clamped_to_twelve_is_not_young(self):
+        assert matches("Puppy", 10, 12) is True
+        assert matches("Young", 10, 12) is False
+
+    def test_a_range_that_really_crosses_still_matches_both(self):
+        assert matches("Young", 24, 60) is True
+        assert matches("Adult", 24, 60) is True
+
+
+class TestPartiallyRecordedAge:
+    """Nothing in the schema stops one bound being set without the other."""
+
+    def test_half_populated_row_is_not_unknown(self):
+        assert matches("Unknown", 6, None) is False
+        assert matches("Unknown", None, 6) is False
+
+    def test_half_populated_row_still_reaches_a_bucket(self):
+        assert matches("Puppy", 6, None) is True
+        assert matches("Senior", 120, None) is True
+
+    def test_half_populated_row_is_not_double_counted(self):
+        """The OR form put this row in Unknown and Puppy at once."""
+        hits = [c for c in AGE_CATEGORIES if matches(c, 6, None)]
+        assert hits == ["Puppy"]
 
 
 class TestBoundaries:

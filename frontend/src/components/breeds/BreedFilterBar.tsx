@@ -20,7 +20,11 @@ export default function BreedFilterBar({
     sexFilter: "Any",
   };
 
-  const quickFilters: Array<{ key: string; label: string; options: Array<{ value: string; label: string; count?: number }> }> = [
+  const quickFilters: Array<{
+    key: string;
+    label: string;
+    options: Array<{ value: string; label: string; count?: number }>;
+  }> = [
     {
       key: "sexFilter",
       label: "Sex",
@@ -106,6 +110,13 @@ export default function BreedFilterBar({
           label: "Seniors",
           count: filterCounts?.age_options?.find(
             (opt) => opt.value === "Senior",
+          )?.count,
+        },
+        {
+          value: "Unknown",
+          label: "Age Unknown",
+          count: filterCounts?.age_options?.find(
+            (opt) => opt.value === "Unknown",
           )?.count,
         },
       ].filter((opt) => {

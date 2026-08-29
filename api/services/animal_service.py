@@ -39,22 +39,31 @@ AGE_CATEGORIES: dict[str, tuple[int, int | None]] = {
 def age_category_condition(category: str) -> str | None:
     """SQL predicate selecting dogs in an age bucket, or None if unrecognised.
 
-    A dog matches a bucket when its estimated age range *overlaps* the bucket.
-    The previous test required containment (``age_min >= lo AND age_max <= hi``),
+    A dog matches a bucket when its estimated age range genuinely overlaps it.
+    The original test required containment (``age_min >= lo AND age_max <= hi``),
     which silently hid every dog whose range straddled a boundary: a dog
     recorded as "6 - 12 months" matched no category at all, because
     ``age_max < 12`` fails at exactly 12 and ``age_min >= 12`` fails at 6.
 
-    A dog whose range spans a boundary matches both adjacent buckets, which is
-    the honest answer when the age is an estimate.
+    The lower bound needs care, because ``age_max_months`` is a clamp rather
+    than a real upper estimate. ``utils.unified_standardization`` derives it as
+    ``min(months + n, bucket_ceiling)``, so a "2 years old" dog is stored
+    (24, 36) and a "7 years old" dog (84, 96) — both sitting exactly on the
+    next bucket's floor. Treating that single-point touch as an overlap would
+    file 2-year-olds under "Adult (3-8 years)" and 7-year-olds under
+    "Senior (8+ years)". Requiring the range to *cross* the floor, or to start
+    at or above it, keeps clamped values in their own bucket while still
+    matching a dog whose range really does span two.
 
     "Unknown" selects dogs with no recorded age. Those dogs are deliberately
-    *not* swept into the other buckets: a null age is not evidence that a dog
-    is a puppy, so the buckets stay accurate and the unknowns stay reachable
+    not swept into the other buckets: a null age is not evidence that a dog is
+    a puppy, so the buckets stay accurate and the unknowns stay reachable
     through their own option instead of diluting every other one.
     """
     if category == "Unknown":
-        return "(a.age_min_months IS NULL OR a.age_max_months IS NULL)"
+        # AND, not OR: a half-populated row still has a usable bound, so it
+        # belongs in a real bucket rather than in both that bucket and this one.
+        return "(a.age_min_months IS NULL AND a.age_max_months IS NULL)"
 
     bounds = AGE_CATEGORIES.get(category)
     if bounds is None:
@@ -63,7 +72,7 @@ def age_category_condition(category: str) -> str | None:
     low, high = bounds
     clauses = []
     if low > 0:
-        clauses.append(f"a.age_max_months >= {low}")
+        clauses.append(f"(a.age_max_months > {low} OR a.age_min_months >= {low})")
     if high is not None:
         clauses.append(f"a.age_min_months < {high}")
 

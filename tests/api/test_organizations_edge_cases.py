@@ -132,7 +132,7 @@ class TestOrganizationStatisticsEdgeCases:
         response = client.get("/api/organizations/901/statistics")
         assert response.status_code == 200
         data = response.json()
-        assert data["total_dogs"] == 12
+        assert data["total_dogs"] == 14
 
     def test_statistics_new_this_month_includes_all_recent(self, client):
         response = client.get("/api/organizations/901/statistics")

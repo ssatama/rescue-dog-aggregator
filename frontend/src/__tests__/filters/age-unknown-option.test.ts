@@ -2,16 +2,24 @@ import fs from "fs";
 import path from "path";
 
 /**
- * 230 available dogs have no recorded age. They are deliberately excluded from
- * the real age buckets, so an explicit "Unknown" option is the only way to
- * reach them. The option list is hardcoded in several components, so this
- * guards every copy rather than one.
+ * Dogs with no recorded age are deliberately excluded from the real age
+ * buckets, so an explicit "Unknown" option is the only way to reach them.
+ * The option list is declared in several places, in two different shapes, and
+ * they drift: the desktop breed filter bar was missed the first time.
  */
 describe("age filter offers an Unknown option everywhere it is listed", () => {
   const SOURCE_ROOT = path.join(process.cwd(), "src");
 
-  function sourceFilesListingAgeOptions(): string[] {
-    const found: string[] = [];
+  // Flat string arrays, e.g. ["Any age", "Puppy", ...]. The value doubles as
+  // the label and as the API parameter.
+  const FLAT_LIST = /\[\s*"Any age"[\s\S]{0,200}?\]/g;
+
+  // Object lists, e.g. { value: "Puppy", label: "Puppies" }, which carry a
+  // separate display label.
+  const OBJECT_LIST = /value:\s*"Puppy"/;
+
+  function sourceFiles(): { file: string; contents: string }[] {
+    const found: { file: string; contents: string }[] = [];
 
     function walk(dir: string): void {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -21,11 +29,8 @@ describe("age filter offers an Unknown option everywhere it is listed", () => {
           walk(full);
           continue;
         }
-        if (!/\.tsx?$/.test(entry.name)) continue;
-        if (/\.test\.tsx?$/.test(entry.name)) continue;
-
-        const contents = fs.readFileSync(full, "utf-8");
-        if (contents.includes('"Any age", "Puppy"')) found.push(full);
+        if (!/\.tsx?$/.test(entry.name) || /\.test\.tsx?$/.test(entry.name)) continue;
+        found.push({ file: path.relative(SOURCE_ROOT, full), contents: fs.readFileSync(full, "utf-8") });
       }
     }
 
@@ -33,17 +38,35 @@ describe("age filter offers an Unknown option everywhere it is listed", () => {
     return found;
   }
 
-  it("finds the hardcoded age option lists", () => {
-    expect(sourceFilesListingAgeOptions().length).toBeGreaterThan(0);
+  function filesDeclaringAgeOptions(): string[] {
+    return sourceFiles()
+      .filter(({ contents }) => FLAT_LIST.test(contents) || OBJECT_LIST.test(contents))
+      .map(({ file }) => file)
+      .sort();
+  }
+
+  it("guards every file that declares age options", () => {
+    // Pinned, not just non-empty: a reformat or a rename that drops a file out
+    // of the scan would otherwise leave it silently unguarded.
+    expect(filesDeclaringAgeOptions()).toEqual([
+      "app/breeds/[slug]/BreedDetailClient.tsx",
+      "app/dogs/DogsPageClientSimplified.tsx",
+      "app/organizations/[slug]/OrganizationDetailClient.tsx",
+      "components/breeds/BreedFilterBar.tsx",
+      "utils/breedFilterUtils.ts",
+      "utils/dogFilters.ts",
+    ]);
   });
 
   it("has no age option list missing Unknown", () => {
-    const offenders = sourceFilesListingAgeOptions().filter((file) => {
-      const contents = fs.readFileSync(file, "utf-8");
-      const lists = contents.match(/\["Any age",[^\]]*\]/g) || [];
-      return lists.some((list) => !list.includes('"Unknown"'));
-    });
+    const offenders = sourceFiles()
+      .filter(({ contents }) => {
+        const flat = contents.match(FLAT_LIST) || [];
+        if (flat.some((list) => !list.includes('"Unknown"'))) return true;
+        return OBJECT_LIST.test(contents) && !/value:\s*"Unknown"/.test(contents);
+      })
+      .map(({ file }) => file);
 
-    expect(offenders.map((f) => path.relative(SOURCE_ROOT, f))).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 });
