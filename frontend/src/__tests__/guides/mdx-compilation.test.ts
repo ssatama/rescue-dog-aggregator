@@ -202,6 +202,53 @@ describe("MDX Guide Compilation", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("should not reintroduce claims removed as unsupported or repealed", async () => {
+    // Each pattern is a claim deleted in the unsupported-claims pass, either
+    // because no primary source could be found for it or because the
+    // instrument it names was repealed. This is a speed bump, not a ban: if a
+    // primary source turns up, update this list in the same commit that cites
+    // it. A revert on its own should fail. See
+    // docs/audits/guides-regulatory-audit.md.
+    const REMOVED: Array<[string, RegExp]> = [
+      // gov.uk still publishes GB's retained regime as "Balai rules", which the
+      // deferred W3 correction has to cite. Only the repealed EU directive is
+      // out of bounds.
+      ["Balai Directive (repealed 21 April 2021)", /Balai Directive|92\/65\/EEC/i],
+      ["89% of imports using the wrong rules", /89%/],
+      ["14.8% Leishmania positive rate", /14\.8%/],
+      ["Romania exported 33,725 dogs", /33,725/],
+      ["Turkish shelter capacity figures", /105,000/],
+      ["2.7% public support poll", /2\.7% public support/],
+      ["Romanian 14-day kill rule", /258\/2013|14[- ](?:working )?day(?:s)? (?:kill|euthanasia|countdown|hold)/i],
+      ["98% of owners underestimate costs", /98% of pet owners/],
+      ["100% adjusted well at six months", /100% of owners/],
+      ["unnamed PMC adjustment study", /published in PMC shows/],
+      ["CareCredit emergency figures", /CareCredit/],
+      ["Cesar's Way surrender research", /Cesar's Way/],
+      ["Walkin' Pets senior-dog recommendation", /Walkin' Pets/],
+      ["Minnesota Greyhound Rescue", /Minnesota Greyhound/],
+      ["University of Pennsylvania lifetime range", /University of Pennsylvania/],
+      ["FDA drug dosing", /mg\/kg/],
+      ["car restraints as a legal requirement", /restraints?[^.]*legally required|legally required[^.]*restraint/i],
+    ];
+
+    const offenders: string[] = [];
+
+    // Scoped per line: a body-wide test lets `[^.]*` in a pattern run across
+    // newlines and match two unrelated sentences.
+    readGuideFiles().forEach(({ file, body }) => {
+      body.split("\n").forEach((line, index) => {
+        REMOVED.forEach(([label, pattern]) => {
+          if (pattern.test(line)) {
+            offenders.push(`${file}:${index + 1} - ${label}`);
+          }
+        });
+      });
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
   it("should have unique slugs", async () => {
     const guides = await getAllGuides();
     const slugs = guides.map((g) => g.slug);
