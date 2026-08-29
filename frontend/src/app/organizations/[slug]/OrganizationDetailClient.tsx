@@ -500,7 +500,7 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
         sizeOptions={["Any size"]}
         ageCategoryFilter={filters.age || "Any age"}
         setAgeCategoryFilter={(age: string) => setFilters((prev) => ({ ...prev, age: age as AgeCategory }))}
-        ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
+        ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"]}
         availableCountryFilter="Any country"
         setAvailableCountryFilter={() => {}}
         availableCountries={["Any country"]}

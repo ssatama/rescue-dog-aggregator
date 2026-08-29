@@ -335,7 +335,12 @@ def manage_test_data(request):
             (9009, 'Rottweiler', 'rottweiler', 'dog', 'Male', 'available', 901, 'http://example.com/9009', '{}', 'http://example.com/rottweiler.jpg', NOW(), NOW(), 'high', 'Rottweiler', 'Rottweiler', 'Working', 'large', '7 years', 84, 84, 'Rottweiler', 'purebred', 'rottweiler'),
             (9010, 'Border Collie', 'border-collie', 'dog', 'Female', 'available', 901, 'http://example.com/9010', '{}', 'http://example.com/collie.jpg', NOW(), NOW(), 'high', 'Border Collie', 'Border Collie', 'Herding', 'medium', '2 years', 24, 24, 'Border Collie', 'purebred', 'border-collie'),
             (9011, 'Siberian Husky', 'siberian-husky', 'dog', 'Male', 'available', 901, 'http://example.com/9011', '{}', 'http://example.com/husky.jpg', NOW(), NOW(), 'high', 'Siberian Husky', 'Siberian Husky', 'Working', 'large', '4 years', 48, 48, 'Siberian Husky', 'purebred', 'siberian-husky'),
-            (9012, 'Yorkshire Terrier', 'yorkshire-terrier', 'dog', 'Female', 'available', 901, 'http://example.com/9012', '{}', 'http://example.com/yorkie.jpg', NOW(), NOW(), 'high', 'Yorkshire Terrier', 'Yorkshire Terrier', 'Toy', 'small', '3 years', 36, 36, 'Yorkshire Terrier', 'purebred', 'yorkshire-terrier')
+            (9012, 'Yorkshire Terrier', 'yorkshire-terrier', 'dog', 'Female', 'available', 901, 'http://example.com/9012', '{}', 'http://example.com/yorkie.jpg', NOW(), NOW(), 'high', 'Yorkshire Terrier', 'Yorkshire Terrier', 'Toy', 'small', '3 years', 36, 36, 'Yorkshire Terrier', 'purebred', 'yorkshire-terrier'),
+            -- 9013 straddles the Puppy/Young boundary and 9014 has no recorded
+            -- age. Every other fixture dog has age_min == age_max and a known
+            -- age, so without these two the age-filter tests cannot fail.
+            (9013, 'Straddler Pup', 'straddler-pup', 'dog', 'Male', 'available', 901, 'http://example.com/9013', '{}', 'http://example.com/straddler.jpg', NOW(), NOW(), 'high', 'Mixed Breed', 'Mixed Breed', 'Mixed', 'medium', '6 - 12 months', 6, 12, 'Mixed Breed', 'mixed', 'mixed-breed'),
+            (9014, 'Ageless Wonder', 'ageless-wonder', 'dog', 'Female', 'available', 901, 'http://example.com/9014', '{}', 'http://example.com/ageless.jpg', NOW(), NOW(), 'high', 'Mixed Breed', 'Mixed Breed', 'Mixed', 'medium', NULL, NULL, NULL, 'Mixed Breed', 'mixed', 'mixed-breed')
         ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name, slug = EXCLUDED.slug, animal_type = EXCLUDED.animal_type, sex = EXCLUDED.sex, status = EXCLUDED.status,
             organization_id = EXCLUDED.organization_id, adoption_url = EXCLUDED.adoption_url, properties = EXCLUDED.properties,

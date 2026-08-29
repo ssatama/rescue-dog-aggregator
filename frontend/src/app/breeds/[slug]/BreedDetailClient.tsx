@@ -562,7 +562,7 @@ export default function BreedDetailClient({
           setAgeCategoryFilter={(value: string) =>
             handleMobileFilterChange("ageFilter", value)
           }
-          ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
+          ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"]}
           availableCountryFilter={filters.availableCountryFilter}
           setAvailableCountryFilter={(value: string) =>
             handleMobileFilterChange("availableCountryFilter", value)

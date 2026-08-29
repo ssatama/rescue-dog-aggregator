@@ -58,7 +58,7 @@ export function getBreedFilterOptions(breedData: BreedData, metadata?: FilterMet
       "Large",
       "Extra Large",
     ],
-    ageOptions: ["Any age", "Puppy", "Young", "Adult", "Senior"],
+    ageOptions: ["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"],
 
     organizations: metadata?.organizations?.filter((org) =>
       breedData.organizations?.includes(org.id),
