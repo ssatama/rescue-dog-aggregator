@@ -210,13 +210,16 @@ describe("MDX Guide Compilation", () => {
     // it. A revert on its own should fail. See
     // docs/audits/guides-regulatory-audit.md.
     const REMOVED: Array<[string, RegExp]> = [
-      ["Balai Directive (repealed 21 April 2021)", /Balai/i],
+      // gov.uk still publishes GB's retained regime as "Balai rules", which the
+      // deferred W3 correction has to cite. Only the repealed EU directive is
+      // out of bounds.
+      ["Balai Directive (repealed 21 April 2021)", /Balai Directive|92\/65\/EEC/i],
       ["89% of imports using the wrong rules", /89%/],
       ["14.8% Leishmania positive rate", /14\.8%/],
       ["Romania exported 33,725 dogs", /33,725/],
       ["Turkish shelter capacity figures", /105,000/],
       ["2.7% public support poll", /2\.7% public support/],
-      ["Romanian Law 258/2013", /258\/2013/],
+      ["Romanian 14-day kill rule", /258\/2013|14[- ](?:working )?day(?:s)? (?:kill|euthanasia|countdown|hold)/i],
       ["98% of owners underestimate costs", /98% of pet owners/],
       ["100% adjusted well at six months", /100% of owners/],
       ["unnamed PMC adjustment study", /published in PMC shows/],

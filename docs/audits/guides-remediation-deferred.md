@@ -28,10 +28,13 @@ primary source, not a deletion.
 
 ## 2. The 22 April 2026 framing
 
-No guide mentions that the EU framework changed on 22 April 2026. All four were
-last edited 2026-02-24, eight weeks before. Until this is stated, a reader
-comparing the guides against their vet's advice finds them describing a
-superseded regime, which undermines the accurate parts too.
+No guide mentions that the EU framework changed on 22 April 2026. The
+regulatory content was written before that date and has not been revisited
+since; the `lastUpdated` field now reads 2026-08-28 because of the mechanical
+and deletion passes, which makes the guides look current while the regulatory
+substance is not. Until the change is stated, a reader comparing the guides
+against their vet's advice finds them describing a superseded regime, which
+undermines the accurate parts too.
 
 Needs: a short dated note, and the new instruments named where relevant
 (2016/429 Part VI, 2026/131, /132, /133, /135, /636, /705, /848).
@@ -59,6 +62,29 @@ Needs: a short dated note, and the new instruments named where relevant
 - **Country listing status** — Serbia, Bosnia, Montenegro and the UK are in
   Annex II of 2026/636; Switzerland in Annex I; **Turkey is unlisted**. Directly
   relevant: 157 available dogs come from Serbian organisations and 44 from Turkey.
+
+## 3a. Correct statements removed by the deletion pass, to restore with a qualifier
+
+The unsupported-claims pass removed these under its brief, but the audit's
+remedy was to **qualify** them, not to delete them. They are true; they were
+just addressed to a four-country audience without saying which country.
+Restoring them means writing a sourced sentence about law, which is why they
+are here and not there.
+
+- **"ID tag (legally required)"** — `costs-and-preparation.mdx`,
+  `first-time-owner-guide.mdx`. True in Great Britain under the Control of Dogs
+  Order 1992: a dog in a highway or place of public resort must wear a collar
+  bearing the owner's name and address.
+  ([legislation.gov.uk](https://www.legislation.gov.uk/uksi/1992/901/made))
+- **"Microchipping (£15-25, legally required)"** — `costs-and-preparation.mdx`.
+  Compulsory in England, Scotland and Wales.
+- **Hunde-Sachkunde (Austria)** — the whole bullet went when only its price
+  should have. The obligation exists but does not apply to every new owner, so
+  restoring it needs the actual trigger conditions from the relevant Land, not
+  the old "for new owners" wording.
+
+UK readers are currently unaware of two real statutory duties. This is the
+highest-priority item in this document after §1.
 
 ## 4. Structural work
 
