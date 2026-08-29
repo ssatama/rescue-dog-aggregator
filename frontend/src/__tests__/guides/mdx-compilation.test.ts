@@ -205,8 +205,10 @@ describe("MDX Guide Compilation", () => {
   it("should not reintroduce claims removed as unsupported or repealed", async () => {
     // Each pattern is a claim deleted in the unsupported-claims pass, either
     // because no primary source could be found for it or because the
-    // instrument it names was repealed. Re-adding one needs a source, not a
-    // revert. See docs/audits/guides-regulatory-audit.md.
+    // instrument it names was repealed. This is a speed bump, not a ban: if a
+    // primary source turns up, update this list in the same commit that cites
+    // it. A revert on its own should fail. See
+    // docs/audits/guides-regulatory-audit.md.
     const REMOVED: Array<[string, RegExp]> = [
       ["Balai Directive (repealed 21 April 2021)", /Balai/i],
       ["89% of imports using the wrong rules", /89%/],
@@ -224,14 +226,20 @@ describe("MDX Guide Compilation", () => {
       ["Minnesota Greyhound Rescue", /Minnesota Greyhound/],
       ["University of Pennsylvania lifetime range", /University of Pennsylvania/],
       ["FDA drug dosing", /mg\/kg/],
-      ["car restraints as a legal requirement", /legally required/],
+      ["car restraints as a legal requirement", /restraints?[^.]*legally required|legally required[^.]*restraint/i],
     ];
 
     const offenders: string[] = [];
 
+    // Scoped per line: a body-wide test lets `[^.]*` in a pattern run across
+    // newlines and match two unrelated sentences.
     readGuideFiles().forEach(({ file, body }) => {
-      REMOVED.forEach(([label, pattern]) => {
-        if (pattern.test(body)) offenders.push(`${file} - ${label}`);
+      body.split("\n").forEach((line, index) => {
+        REMOVED.forEach(([label, pattern]) => {
+          if (pattern.test(line)) {
+            offenders.push(`${file}:${index + 1} - ${label}`);
+          }
+        });
       });
     });
 
