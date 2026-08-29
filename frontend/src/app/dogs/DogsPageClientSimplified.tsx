@@ -280,7 +280,7 @@ export default function DogsPageClientSimplified({
               setAgeCategoryFilter={(value: string) =>
                 handleFilterChange("ageFilter", value)
               }
-              ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
+              ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"]}
               // Location
               locationCountryFilter={filterState.filters.locationCountryFilter}
               setLocationCountryFilter={(value: string) =>
@@ -435,7 +435,7 @@ export default function DogsPageClientSimplified({
         ]}
         ageCategoryFilter={filterState.filters.ageFilter}
         setAgeCategoryFilter={(value: string) => handleFilterChange("ageFilter", value)}
-        ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
+        ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"]}
         // Location
         availableCountryFilter={filterState.filters.availableCountryFilter}
         setAvailableCountryFilter={(value: string) =>

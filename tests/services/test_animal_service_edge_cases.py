@@ -71,4 +71,38 @@ class TestAnimalServiceAgeFilter:
         assert response.status_code == 200
         animals = response.json()
         ids = sorted(a["id"] for a in animals)
-        assert ids == [9003, 9005, 9007, 9008, 9009, 9011, 9012]
+        # 9008 is exactly 96 months. The bucket boundary is Senior at 96, so it
+        # is Senior only; containment semantics previously put it in both.
+        assert ids == [9003, 9005, 9007, 9009, 9011, 9012]
+
+    def test_ninety_six_months_is_senior(self, client):
+        response = client.get("/api/animals/?age_category=Senior&limit=100")
+        assert response.status_code == 200
+        ids = sorted(a["id"] for a in response.json())
+        assert 9008 in ids
+
+    def test_every_dog_reaches_at_least_one_age_category(self, client):
+        """The defect this fix addresses: 28% of available dogs matched no
+        category at all, either because their estimated range straddled a
+        boundary or because they had no recorded age."""
+        all_ids = {a["id"] for a in client.get("/api/animals/?limit=1000").json()}
+
+        reachable: set[int] = set()
+        for category in ("Puppy", "Young", "Adult", "Senior", "Unknown"):
+            response = client.get(f"/api/animals/?age_category={category}&limit=1000")
+            assert response.status_code == 200
+            reachable.update(a["id"] for a in response.json())
+
+        assert all_ids - reachable == set()
+
+    def test_unknown_category_is_accepted(self, client):
+        response = client.get("/api/animals/?age_category=Unknown&limit=100")
+        assert response.status_code == 200
+
+    def test_unknown_age_dogs_stay_out_of_the_real_buckets(self, client):
+        """Buckets stay honest: a missing age is not evidence of puppyhood."""
+        unknown_ids = {a["id"] for a in client.get("/api/animals/?age_category=Unknown&limit=1000").json()}
+
+        for category in ("Puppy", "Young", "Adult", "Senior"):
+            bucket_ids = {a["id"] for a in client.get(f"/api/animals/?age_category={category}&limit=1000").json()}
+            assert unknown_ids & bucket_ids == set(), f"unknown-age dog leaked into {category}"

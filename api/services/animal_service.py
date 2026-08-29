@@ -25,6 +25,51 @@ from utils.breed_utils import QUALIFYING_BREED_MIN_COUNT, generate_breed_slug
 logger = logging.getLogger(__name__)
 
 
+# Age buckets in months, as (lower inclusive, upper exclusive). ``None`` on the
+# upper bound means open-ended.
+AGE_CATEGORIES: dict[str, tuple[int, int | None]] = {
+    "Puppy": (0, 12),
+    "Young": (12, 36),
+    "Adult": (36, 96),
+    "Senior": (96, None),
+    "Unknown": (0, 0),  # sentinel; handled separately below
+}
+
+
+def age_category_condition(category: str) -> str | None:
+    """SQL predicate selecting dogs in an age bucket, or None if unrecognised.
+
+    A dog matches a bucket when its estimated age range *overlaps* the bucket.
+    The previous test required containment (``age_min >= lo AND age_max <= hi``),
+    which silently hid every dog whose range straddled a boundary: a dog
+    recorded as "6 - 12 months" matched no category at all, because
+    ``age_max < 12`` fails at exactly 12 and ``age_min >= 12`` fails at 6.
+
+    A dog whose range spans a boundary matches both adjacent buckets, which is
+    the honest answer when the age is an estimate.
+
+    "Unknown" selects dogs with no recorded age. Those dogs are deliberately
+    *not* swept into the other buckets: a null age is not evidence that a dog
+    is a puppy, so the buckets stay accurate and the unknowns stay reachable
+    through their own option instead of diluting every other one.
+    """
+    if category == "Unknown":
+        return "(a.age_min_months IS NULL OR a.age_max_months IS NULL)"
+
+    bounds = AGE_CATEGORIES.get(category)
+    if bounds is None:
+        return None
+
+    low, high = bounds
+    clauses = []
+    if low > 0:
+        clauses.append(f"a.age_max_months >= {low}")
+    if high is not None:
+        clauses.append(f"a.age_min_months < {high}")
+
+    return f"({' AND '.join(clauses)})"
+
+
 def _normalize_url(url: str | None) -> str | None:
     """Normalize protocol-relative URLs to HTTPS."""
     if isinstance(url, str) and url.startswith("//"):
@@ -1353,14 +1398,9 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         if filters.age_category:
-            if filters.age_category == "Puppy":
-                conditions.append("(a.age_max_months < 12)")
-            elif filters.age_category == "Young":
-                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
-            elif filters.age_category == "Adult":
-                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
-            elif filters.age_category == "Senior":
-                conditions.append("(a.age_min_months >= 96)")
+            age_condition = age_category_condition(filters.age_category)
+            if age_condition:
+                conditions.append(age_condition)
 
         if filters.organization_id:
             conditions.append("a.organization_id = %s")
@@ -1618,14 +1658,9 @@ class AnimalService:
             params.append(filters.sex)
 
         if filters.age_category:
-            if filters.age_category == "Puppy":
-                conditions.append("(a.age_max_months < 12)")
-            elif filters.age_category == "Young":
-                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
-            elif filters.age_category == "Adult":
-                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
-            elif filters.age_category == "Senior":
-                conditions.append("(a.age_min_months >= 96)")
+            age_condition = age_category_condition(filters.age_category)
+            if age_condition:
+                conditions.append(age_condition)
 
         query = f"""
             SELECT a.standardized_size, COUNT(*) as count
@@ -1687,30 +1722,26 @@ class AnimalService:
             conditions.append("a.standardized_size = %s")
             params.append(filters.standardized_size.value)
 
+        # One aggregate per bucket rather than a CASE: a dog whose estimated age
+        # range straddles a boundary belongs to both adjacent buckets, which a
+        # single-assignment CASE cannot express.
+        selects = ",\n                ".join(f'COUNT(*) FILTER (WHERE {age_category_condition(category)}) AS "{category}"' for category in AGE_CATEGORIES)
+
         query = f"""
             SELECT
-                CASE
-                    WHEN a.age_max_months < 12 THEN 'Puppy'
-                    WHEN a.age_min_months >= 12 AND a.age_max_months <= 36 THEN 'Young'
-                    WHEN a.age_min_months >= 36 AND a.age_max_months <= 96 THEN 'Adult'
-                    WHEN a.age_min_months >= 96 THEN 'Senior'
-                    ELSE 'Unknown'
-                END as age_category,
-                COUNT(*) as count
+                {selects}
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
             WHERE {" AND ".join(conditions)}
-              AND a.age_min_months IS NOT NULL
-              AND a.age_max_months IS NOT NULL
-            GROUP BY 1
-            HAVING COUNT(*) > 0
-            ORDER BY 1
         """
 
         self.cursor.execute(query, params)
-        results = self.cursor.fetchall()
+        row = self.cursor.fetchone()
 
-        return [FilterOption(value=row["age_category"], label=row["age_category"], count=row["count"]) for row in results if row["age_category"] != "Unknown" and row["count"] > 0]
+        if not row:
+            return []
+
+        return [FilterOption(value=category, label=category, count=row[category]) for category in AGE_CATEGORIES if row[category] > 0]
 
     def _get_sex_counts(
         self,
@@ -1728,14 +1759,9 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         if filters.age_category:
-            if filters.age_category == "Puppy":
-                conditions.append("(a.age_max_months < 12)")
-            elif filters.age_category == "Young":
-                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
-            elif filters.age_category == "Adult":
-                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
-            elif filters.age_category == "Senior":
-                conditions.append("(a.age_min_months >= 96)")
+            age_condition = age_category_condition(filters.age_category)
+            if age_condition:
+                conditions.append(age_condition)
 
         query = f"""
             SELECT a.sex, COUNT(*) as count
@@ -1773,14 +1799,9 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         if filters.age_category:
-            if filters.age_category == "Puppy":
-                conditions.append("(a.age_max_months < 12)")
-            elif filters.age_category == "Young":
-                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
-            elif filters.age_category == "Adult":
-                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
-            elif filters.age_category == "Senior":
-                conditions.append("(a.age_min_months >= 96)")
+            age_condition = age_category_condition(filters.age_category)
+            if age_condition:
+                conditions.append(age_condition)
 
         query = f"""
             SELECT a.standardized_breed, COUNT(*) as count
@@ -1828,14 +1849,9 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         if filters.age_category:
-            if filters.age_category == "Puppy":
-                conditions.append("(a.age_max_months < 12)")
-            elif filters.age_category == "Young":
-                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
-            elif filters.age_category == "Adult":
-                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
-            elif filters.age_category == "Senior":
-                conditions.append("(a.age_min_months >= 96)")
+            age_condition = age_category_condition(filters.age_category)
+            if age_condition:
+                conditions.append(age_condition)
 
         query = f"""
             SELECT o.id, o.name, COUNT(*) as count
@@ -1872,14 +1888,9 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         if filters.age_category:
-            if filters.age_category == "Puppy":
-                conditions.append("(a.age_max_months < 12)")
-            elif filters.age_category == "Young":
-                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
-            elif filters.age_category == "Adult":
-                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
-            elif filters.age_category == "Senior":
-                conditions.append("(a.age_min_months >= 96)")
+            age_condition = age_category_condition(filters.age_category)
+            if age_condition:
+                conditions.append(age_condition)
 
         query = f"""
             SELECT o.country, COUNT(*) as count
@@ -1917,14 +1928,9 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         if filters.age_category:
-            if filters.age_category == "Puppy":
-                conditions.append("(a.age_max_months < 12)")
-            elif filters.age_category == "Young":
-                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
-            elif filters.age_category == "Adult":
-                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
-            elif filters.age_category == "Senior":
-                conditions.append("(a.age_min_months >= 96)")
+            age_condition = age_category_condition(filters.age_category)
+            if age_condition:
+                conditions.append(age_condition)
 
         query = f"""
             SELECT sr.country, COUNT(DISTINCT a.id) as count
@@ -1967,14 +1973,9 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         if filters.age_category:
-            if filters.age_category == "Puppy":
-                conditions.append("(a.age_max_months < 12)")
-            elif filters.age_category == "Young":
-                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
-            elif filters.age_category == "Adult":
-                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
-            elif filters.age_category == "Senior":
-                conditions.append("(a.age_min_months >= 96)")
+            age_condition = age_category_condition(filters.age_category)
+            if age_condition:
+                conditions.append(age_condition)
 
         query = f"""
             SELECT sr.region, COUNT(DISTINCT a.id) as count
@@ -2014,14 +2015,9 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         if filters.age_category:
-            if filters.age_category == "Puppy":
-                conditions.append("(a.age_max_months < 12)")
-            elif filters.age_category == "Young":
-                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
-            elif filters.age_category == "Adult":
-                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
-            elif filters.age_category == "Senior":
-                conditions.append("(a.age_min_months >= 96)")
+            age_condition = age_category_condition(filters.age_category)
+            if age_condition:
+                conditions.append(age_condition)
 
         # Note: excluding current primary_breed filter to show counts without that filter
         query = f"""
@@ -2070,14 +2066,9 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         if filters.age_category:
-            if filters.age_category == "Puppy":
-                conditions.append("(a.age_max_months < 12)")
-            elif filters.age_category == "Young":
-                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
-            elif filters.age_category == "Adult":
-                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
-            elif filters.age_category == "Senior":
-                conditions.append("(a.age_min_months >= 96)")
+            age_condition = age_category_condition(filters.age_category)
+            if age_condition:
+                conditions.append(age_condition)
 
         # Note: excluding current breed_type filter to show counts without that filter
         query = f"""
