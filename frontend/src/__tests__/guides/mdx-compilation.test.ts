@@ -7,6 +7,7 @@ interface GuideFile {
   file: string;
   data: Record<string, unknown>;
   body: string;
+  bodyOffset: number;
 }
 
 function readGuideFiles(): GuideFile[] {
@@ -16,10 +17,12 @@ function readGuideFiles(): GuideFile[] {
     .readdirSync(guidesDir)
     .filter((file) => file.endsWith(".mdx"))
     .map((file) => {
-      const { data, content } = matter(
-        fs.readFileSync(path.join(guidesDir, file), "utf-8"),
-      );
-      return { file, data, body: content };
+      const raw = fs.readFileSync(path.join(guidesDir, file), "utf-8");
+      const { data, content } = matter(raw);
+      // gray-matter strips the frontmatter, so a body index is not a file line
+      // number. Offset by the lines it removed so failures point at the file.
+      const bodyOffset = raw.split("\n").length - content.split("\n").length;
+      return { file, data, body: content, bodyOffset };
     });
 }
 
@@ -233,7 +236,9 @@ describe("MDX Guide Compilation", () => {
       // retention or success rate. The figure was attributed to it anyway,
       // which is why a named citation is not on its own a defence.
       ["satisfaction/retention rate falsely attributed to Norman et al.",
-       /97(?:\.4)?%\s*(?:owner\s+)?(?:satisfaction|retention|success)|(?:satisfaction|retention|success)\s+rates?[^.]{0,40}97(?:\.4)?%|1-5%\s*returns?/i],
+       /(?:97(?:\.4)?%|\b1-5%)[^.\n]{0,70}(?:satisfaction|satisfied|retention|succe(?:ss|ed)|still ha[dv]e?|rehomed|return)|(?:satisfaction|retention|succe(?:ss|ed)|still ha[dv]e?|rehomed|returns?)[^.\n]{0,70}(?:97(?:\.4)?%|\b1-5%)/i],
+      ["proportion-returned figures from the same study",
+       /Actual returns:\s*\d+%|\d+% ever considered returning|\d+ dogs out of 3,080/i],
       ["car restraints as a legal requirement", /restraints?[^.]*legally required|legally required[^.]*restraint/i],
     ];
 
@@ -241,11 +246,11 @@ describe("MDX Guide Compilation", () => {
 
     // Scoped per line: a body-wide test lets `[^.]*` in a pattern run across
     // newlines and match two unrelated sentences.
-    readGuideFiles().forEach(({ file, body }) => {
+    readGuideFiles().forEach(({ file, body, bodyOffset }) => {
       body.split("\n").forEach((line, index) => {
         REMOVED.forEach(([label, pattern]) => {
           if (pattern.test(line)) {
-            offenders.push(`${file}:${index + 1} - ${label}`);
+            offenders.push(`${file}:${index + 1 + bodyOffset} - ${label}`);
           }
         });
       });

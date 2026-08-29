@@ -19,6 +19,17 @@ describe("FAQ unsupported claims", () => {
     expect(document.body.textContent).not.toMatch(/97%/);
   });
 
+  it("does not make the retention claim in prose either", () => {
+    render(<FaqClient />);
+
+    // Norman et al. (2020) reports no retention finding, so the claim is just
+    // as wrong spelled out as it was as a percentage.
+    const PROSE_RETENTION =
+      /(?:most|majority|nearly all|vast majority)[^.]{0,60}still (?:had|have) (?:their|the) dog/i;
+
+    expect(document.body.textContent).not.toMatch(PROSE_RETENTION);
+  });
+
   it("quotes the same adoption timeline as the guides", () => {
     render(<FaqClient />);
 

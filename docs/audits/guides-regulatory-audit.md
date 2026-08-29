@@ -13,10 +13,13 @@ methods and welfare considerations*, Veterinary Record 186:248**
 ([summary](https://www.rcvsknowledge.org/resource/importing-rescue-dogs-into-the-uk-reasons-methods-and-welfare-considerations/)).
 It changes four rows in the tables below:
 
-- **U15 (14.8% Leishmania) — real, with a denominator the guides dropped.** The
-  figure is of *dogs that had been tested*, not of all imported dogs. 79 owners
-  reported a positive Leishmania test. Stated without the denominator the number
-  means something else entirely.
+- **U15 (Leishmania) — partly answered.** The summary confirms that 79 owners
+  reported a positive Leishmania test, and that the 14.8% figure is of *dogs
+  that had been tested* rather than of all imported dogs — a denominator the
+  guides dropped, which changes what the number means. The 14.8% itself does
+  not appear in the summary, so it still needs the full text before reuse. This
+  says nothing about the rest of row U15: the babesiosis, heartworm,
+  ehrlichiosis, Echinococcus and Linguatula percentages remain unverified.
 - **U1 (89%) — real, but not what the guides claimed.** The paper reports that
   89% of dogs were *reported by their owners* as imported under the EU Pet
   Travel Scheme and 1% under the Balai Directive. That is owner belief from a

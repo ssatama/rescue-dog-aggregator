@@ -97,6 +97,13 @@ correction block at the top of `guides-regulatory-audit.md`. For PR 3:
 - **Do not reinstate any satisfaction, retention or success rate.** The paper
   reports none.
 
+**Before reinstating anything from this list, amend the guard.**
+`frontend/src/__tests__/guides/mdx-compilation.test.ts` blocks `89%` and
+`14.8%` as bare patterns, so a correctly-framed reinstatement will fail CI
+until its entry is updated or removed in the same commit that adds the source.
+That is the intended friction, not a bug — but it needs doing deliberately
+rather than by deleting the guard.
+
 Still to verify against the full text before reuse, all currently in the guides
 and all attributed to this paper or to "the UK study":
 
@@ -150,10 +157,13 @@ not been checked against their source.
   Removed everywhere, because the paper reports no such figure. See §3b.
 - **Remaining UNVERIFIABLE rows not deleted**, because deleting them would have
   gutted sections that carry real weight and the replacement is a sourcing job:
-  the 50,000–100,000 Galgo figure (all three guides), the Charleston/Canadian/US
-  return-rate comparisons, the Danish street-dog study percentages, the German
-  2025 C-BARQ study, the carbon figures, Bosnia/Montenegro figures, and the
-  "7,800 UK dogs euthanized annually" figure. Each needs a citation or a cut.
+  the 50,000–100,000 Galgo figure (all three guides), the German 2025 C-BARQ
+  study, the carbon figures, the Bosnia/Montenegro figures, and the "7,800 UK
+  dogs euthanized annually" figure. Each needs a citation or a cut. The
+  Charleston/Canadian/US return-rate comparisons and the Danish study's
+  retention figure have since been deleted; the Danish aggression (2.1%) and
+  anxiety (6.7%) figures remain and are still unverified — a search for them
+  returns only this repository.
 
 ## 6. Data defects, not content defects
 
