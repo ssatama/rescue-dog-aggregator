@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
 import { isValidElement, type ReactNode } from "react";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import GuidePage from "@/app/guides/[slug]/page";
@@ -41,7 +44,16 @@ describe("guide route server rendering", () => {
     expect(mdx).not.toBeNull();
   });
 
-  it("gives the renderer the raw guide source", async () => {
+  it("gives the renderer the guide's own body", async () => {
+    // Read from disk, not through getGuide: using the same loader the route
+    // uses would make the oracle circular, and a getGuide that returned the
+    // frontmatter too, or ignored its slug, would still satisfy both sides.
+    const raw = fs.readFileSync(
+      path.join(process.cwd(), "content", "guides", "european-rescue-guide.mdx"),
+      "utf-8",
+    );
+    const body = matter(raw).content;
+
     const element = await GuidePage({
       params: Promise.resolve({ slug: "european-rescue-guide" }),
     });
@@ -49,7 +61,8 @@ describe("guide route server rendering", () => {
     const mdx = findElement(element, (el) => el.type === MDXRemote);
     const source = (mdx?.props as { source?: string })?.source ?? "";
 
-    expect(source).toContain("## The Legal Framework");
+    expect(source).toBe(body);
+    expect(source).not.toContain("lastUpdated:");
   });
 
   it("nests the body inside GuideContent so the shell stays interactive", async () => {
