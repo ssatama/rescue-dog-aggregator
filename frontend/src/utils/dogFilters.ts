@@ -1,3 +1,4 @@
+import { AGE_FILTER_LABELS } from "@/constants/filters";
 import type { Dog } from "@/types/dog";
 import { FILTER_DEFAULTS } from "@/constants/filters";
 
@@ -229,7 +230,7 @@ export const getAgeFilterOptions = (): FilterOption[] => [
   { value: "Young", label: "Young (1-3 years)" },
   { value: "Adult", label: "Adult (3-8 years)" },
   { value: "Senior", label: "Senior (8+ years)" },
-  { value: "Unknown", label: "Age Unknown" },
+  { value: "Unknown", label: AGE_FILTER_LABELS.Unknown },
 ];
 
 export const getSortFilterOptions = (): FilterOption[] => [

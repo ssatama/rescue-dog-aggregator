@@ -299,7 +299,7 @@ export default function DesktopFilters({
                   .filter((age) => age !== FILTER_DEFAULTS.AGE)
                   .map((age) => (
                     <option key={age} value={age}>
-                      {ageFilterLabel(age)}
+                      {age}
                     </option>
                   ))}
               </select>

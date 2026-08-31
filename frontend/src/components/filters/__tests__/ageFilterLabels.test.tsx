@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "../../../test-utils";
+import { render, screen, within } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import DesktopFilters from "../DesktopFilters";
 import MobileFilterDrawer from "../MobileFilterDrawer";
@@ -58,20 +58,18 @@ const baseProps = {
 };
 
 describe("age filter rendering", () => {
-  it("labels the Unknown option in the desktop filters", () => {
+  it("labels the Unknown option on the visible desktop button", () => {
     render(<DesktopFilters {...baseProps} />);
 
-    expect(screen.getAllByText("Age Unknown").length).toBeGreaterThan(0);
+    // Asserted on the button, not with getAllByText: the off-screen E2E select
+    // also renders this option, and a page-wide text query passes on that
+    // alone while the user-facing chip still reads "Unknown".
+    expect(screen.getByTestId("age-button-Unknown")).toHaveTextContent(
+      "Age Unknown",
+    );
   });
 
-  it("keeps the API value on the desktop option, not the label", () => {
-    render(<DesktopFilters {...baseProps} />);
-
-    // The value is what reaches age_category, so it must stay "Unknown".
-    expect(screen.getByTestId("age-button-Unknown")).toBeInTheDocument();
-  });
-
-  it("labels the Unknown option in the mobile drawer", () => {
+  it("labels the Unknown option on the visible mobile button", () => {
     render(
       <MobileFilterDrawer
         {...baseProps}
@@ -81,6 +79,21 @@ describe("age filter rendering", () => {
       />,
     );
 
-    expect(screen.getAllByText("Age Unknown").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("age-button-Unknown")).toHaveTextContent(
+      "Age Unknown",
+    );
+  });
+
+  it("keeps the raw API value on the hidden E2E select option", () => {
+    render(<DesktopFilters {...baseProps} />);
+
+    // This value becomes age_category. If it ever became the label, the filter
+    // would send "Age Unknown" and return nothing.
+    const option = within(screen.getByTestId("age-filter")).getByRole(
+      "option",
+      { name: "Unknown" },
+    ) as HTMLOptionElement;
+
+    expect(option.value).toBe("Unknown");
   });
 });
