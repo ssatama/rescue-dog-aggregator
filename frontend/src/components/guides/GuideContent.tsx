@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type ReactNode } from "react";
 import Image from "next/image";
-import type { Guide } from "@/types/guide";
+import type { GuideSummary } from "@/types/guide";
 import { TableOfContents } from "./TableOfContents";
 import { RelatedGuides } from "./RelatedGuides";
 import { FontSizeProvider } from "@/contexts/FontSizeContext";
@@ -10,9 +10,9 @@ import { FontSizeControl } from "./FontSizeControl";
 import { Breadcrumb } from "./Breadcrumb";
 
 interface GuideContentProps {
-  guide: Guide;
+  guide: GuideSummary;
   fullPage?: boolean;
-  relatedGuides?: Guide[];
+  relatedGuides?: GuideSummary[];
   /** MDX body, rendered on the server by the route. */
   children?: ReactNode;
 }
@@ -46,11 +46,9 @@ export function GuideContent({
       setSections(extracted);
     };
 
-    // The body is server-rendered, so the headings are in the document on the
-    // first pass. The timeout only covers a re-render after a guide change.
+    // The body is server-rendered, so the headings are already in the document.
+    // This used to wait 100ms for the client-side MDX bundle.
     extractSections();
-    const timer = setTimeout(extractSections, 100);
-    return () => clearTimeout(timer);
   }, [guide]);
 
   // Calculate reading progress on scroll

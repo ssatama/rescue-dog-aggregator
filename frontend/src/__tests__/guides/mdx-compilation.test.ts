@@ -1,7 +1,9 @@
+import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
-import { getAllGuides, getGuide } from "@/lib/guides";
+import { getAllGuides } from "@/lib/guides";
+import { mdxComponents } from "@/components/guides/mdxComponents";
 
 interface GuideFile {
   file: string;
@@ -27,26 +29,37 @@ function readGuideFiles(): GuideFile[] {
 }
 
 describe("MDX Guide Compilation", () => {
-  it("should compile all guide MDX files without errors", async () => {
-    // Get all guides (this triggers MDX compilation)
-    const guides = await getAllGuides();
-
-    // Should have all 4 guides
-    expect(guides).toHaveLength(4);
-
-    // All guides should have basic structure
-    guides.forEach((guide) => {
-      expect(guide.frontmatter).toBeDefined();
-      expect(guide.slug).toBeDefined();
+  it("should compile all guide MDX files without errors", () => {
+    // jest cannot load next-mdx-remote's ESM build, which is why the MDX
+    // packages are mocked here. A mocked compiler compiles nothing, so the
+    // real one runs in a subprocess. Without this the suite passed on MDX with
+    // unbalanced JSX, and ci-push does not run the frontend build.
+    const result = spawnSync("node", ["scripts/check-mdx-compiles.js"], {
+      cwd: process.cwd(),
+      encoding: "utf-8",
     });
 
-    // The body is compiled by the route at build time now, not pre-serialized
-    // here, so what this can still assert is that every guide has a body to
-    // compile. A malformed one fails the build, which CI runs.
-    for (const guide of guides) {
-      const fullGuide = await getGuide(guide.slug);
-      expect(fullGuide.content.trim().length).toBeGreaterThan(0);
-    }
+    expect(result.stderr || "").toBe("");
+    expect(result.status).toBe(0);
+  }, 60000);
+
+  it("should only use MDX components that are actually provided", async () => {
+    // Compilation accepts <Foo />; rendering it throws. The components map is
+    // the whole set available to a guide.
+    const provided = new Set(Object.keys(mdxComponents));
+    const offenders: string[] = [];
+
+    readGuideFiles().forEach(({ file, body, bodyOffset }) => {
+      body.split("\n").forEach((line, index) => {
+        for (const match of line.matchAll(/<([A-Z][A-Za-z0-9]*)/g)) {
+          if (!provided.has(match[1])) {
+            offenders.push(`${file}:${index + 1 + bodyOffset} - <${match[1]}>`);
+          }
+        }
+      });
+    });
+
+    expect(offenders).toEqual([]);
   });
 
   it("should have valid frontmatter for all guides", async () => {

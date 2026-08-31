@@ -2,17 +2,6 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { GuideContent } from "../GuideContent";
 
-// Mock MDXRemote
-interface MockMDXRemoteProps {
-  children?: React.ReactNode;
-}
-
-jest.mock("next-mdx-remote", () => ({
-  MDXRemote: ({ children }: MockMDXRemoteProps) => (
-    <div data-testid="mdx-content">{children}</div>
-  ),
-}));
-
 const mockGuide = {
   slug: "test-guide",
   frontmatter: {
@@ -29,11 +18,6 @@ const mockGuide = {
     relatedGuides: [],
   },
   content: "## Test Content",
-  serializedContent: {
-    compiledSource: "return function() { return <div>Test</div> }",
-    frontmatter: {},
-    scope: {},
-  },
 };
 
 describe("GuideContent", () => {

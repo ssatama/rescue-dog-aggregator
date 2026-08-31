@@ -12,7 +12,7 @@ import { BreadcrumbSchema } from "@/components/seo";
 import Layout from "@/components/layout/Layout";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Guide } from "@/types/guide";
+import type { GuideSummary } from "@/types/guide";
 
 // Force static generation for guides (content doesn't change frequently)
 export const dynamic = "force-static";
@@ -81,15 +81,17 @@ export default async function GuidePage({
     notFound();
   }
 
-  let relatedGuides: Guide[] = [];
+  let relatedGuides: GuideSummary[] = [];
   if (
     guide.frontmatter.relatedGuides &&
     guide.frontmatter.relatedGuides.length > 0
   ) {
     const allGuides = await getAllGuides();
-    relatedGuides = allGuides.filter((g) =>
-      guide.frontmatter.relatedGuides?.includes(g.slug),
-    );
+    relatedGuides = allGuides
+      .filter((g) => guide.frontmatter.relatedGuides?.includes(g.slug))
+      // Drop the body: RelatedGuides renders cards from frontmatter alone, and
+      // these cross the client boundary.
+      .map(({ slug: relatedSlug, frontmatter }) => ({ slug: relatedSlug, frontmatter }));
   }
 
   return (
@@ -103,7 +105,11 @@ export default async function GuidePage({
         ]}
       />
       <ReadingProgress />
-      <GuideContent guide={guide} fullPage={true} relatedGuides={relatedGuides}>
+      <GuideContent
+        guide={{ slug: guide.slug, frontmatter: guide.frontmatter }}
+        fullPage={true}
+        relatedGuides={relatedGuides}
+      >
         {/* Rendered here, on the server, so the guide body is in the static
             HTML. It used to be loaded with dynamic(..., { ssr: false }), which
             left the prerendered page with a title and a hero image and put

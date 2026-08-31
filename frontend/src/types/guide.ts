@@ -18,3 +18,10 @@ export interface Guide {
   frontmatter: GuideFrontmatter;
   content: string;
 }
+
+/**
+ * What the client components actually read. The route renders the body itself,
+ * so passing a whole Guide across the boundary serialises 18-40KB of raw MDX
+ * per guide into the RSC payload that nothing reads.
+ */
+export type GuideSummary = Pick<Guide, "slug" | "frontmatter">;
