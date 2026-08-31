@@ -66,10 +66,6 @@ describe("<Footer />", () => {
       expect(
         screen.getByRole("link", { name: /european rescue/i }),
       ).toHaveAttribute("href", "/guides/european-rescue-guide");
-      expect(screen.getByRole("link", { name: /why rescue/i })).toHaveAttribute(
-        "href",
-        "/guides/why-rescue-from-abroad",
-      );
       expect(
         screen.getByRole("link", { name: /first-time owner/i }),
       ).toHaveAttribute("href", "/guides/first-time-owner-guide");

@@ -5,6 +5,11 @@
 elsewhere in the frontend (`src/app/faq/FaqClient.tsx`, guide JSON-LD, guide metadata).
 **Phase:** Discovery only. No source files were edited.
 
+> **Note, 2026-08-31:** `why-rescue-from-abroad.mdx` was merged into
+> `european-rescue-guide.mdx` and deleted. Rows and sections below that cite it
+> (W2, U12, U13, and the W8/W9 comparison) describe content that is no longer
+> published. They are kept as the record of what was found.
+
 ## Correction, 2026-08-29
 
 The source behind several UNVERIFIABLE rows has since been read: **Norman C,
@@ -17,8 +22,9 @@ It changes four rows in the tables below:
   reported a positive Leishmania test, and that the 14.8% figure is of *dogs
   that had been tested* rather than of all imported dogs — a denominator the
   guides dropped, which changes what the number means. The 14.8% itself does
-  not appear in the summary, so it still needs the full text before reuse. This
-  says nothing about the rest of row U15: the babesiosis, heartworm,
+  not appear in the RCVS Knowledge summary; it was confirmed against the full
+  paper by the repository owner on 2026-08-29, and reinstated with its
+  denominator on 2026-08-31. This says nothing about the rest of row U15: the babesiosis, heartworm,
   ehrlichiosis, Echinococcus and Linguatula percentages remain unverified.
 - **U1 (89%) — real, but not what the guides claimed.** The paper reports that
   89% of dogs were *reported by their owners* as imported under the EU Pet
