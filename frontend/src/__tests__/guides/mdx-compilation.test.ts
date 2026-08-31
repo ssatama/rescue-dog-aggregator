@@ -227,24 +227,13 @@ describe("MDX Guide Compilation", () => {
     // primary source turns up, update this list in the same commit that cites
     // it. A revert on its own should fail. See
     // docs/audits/guides-regulatory-audit.md.
-    type Rule = RegExp | { pattern: RegExp; unless: RegExp };
-    const REMOVED: Array<[string, Rule]> = [
+    const REMOVED: Array<[string, RegExp]> = [
       // gov.uk still publishes GB's retained regime as "Balai rules", which the
       // deferred W3 correction has to cite. Only the repealed EU directive is
       // out of bounds.
       ["Balai Directive (repealed 21 April 2021)", /Balai Directive|92\/65\/EEC/i],
       ["89% of imports using the wrong rules", /89%/],
-      // 14.8% is real, but it is 14.8% *of dogs that were tested*. Stated
-      // without that denominator it reads as a share of all imported dogs,
-      // which is the form that was removed. Allowed only on a line that also
-      // says "tested".
-      [
-        "14.8% Leishmania without its denominator",
-        {
-          pattern: /14\.8%/,
-          unless: /14\.8%\s*(?:\*\*)?\s*of the dogs that had been tested/i,
-        },
-      ],
+      ["14.8% Leishmania positive rate", /14\.8%/],
       ["Romania exported 33,725 dogs", /33,725/],
       ["Turkish shelter capacity figures", /105,000/],
       ["2.7% public support poll", /2\.7% public support/],
@@ -274,12 +263,8 @@ describe("MDX Guide Compilation", () => {
     // newlines and match two unrelated sentences.
     readGuideFiles().forEach(({ file, body, bodyOffset }) => {
       body.split("\n").forEach((line, index) => {
-        REMOVED.forEach(([label, rule]) => {
-          const matched =
-            rule instanceof RegExp
-              ? rule.test(line)
-              : rule.pattern.test(line) && !rule.unless.test(line);
-          if (matched) {
+        REMOVED.forEach(([label, pattern]) => {
+          if (pattern.test(line)) {
             offenders.push(`${file}:${index + 1 + bodyOffset} - ${label}`);
           }
         });

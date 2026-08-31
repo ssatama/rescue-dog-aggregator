@@ -5,6 +5,7 @@ describe("guides utilities", () => {
     const slugs = getAllGuideSlugs();
     expect(slugs.length).toBeGreaterThan(0);
     expect(slugs).toContain("european-rescue-guide");
+    expect(slugs).toContain("why-rescue-from-abroad");
     expect(slugs).toContain("first-time-owner-guide");
     expect(slugs).toContain("costs-and-preparation");
   });
@@ -30,7 +31,7 @@ describe("guides utilities", () => {
 
   it("fetches all guides", async () => {
     const guides = await getAllGuides();
-    expect(guides.length).toBe(3);
+    expect(guides.length).toBe(4);
     guides.forEach((guide) => {
       expect(guide.frontmatter.title).toBeDefined();
       expect(guide.content).toBeDefined();

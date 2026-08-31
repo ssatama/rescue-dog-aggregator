@@ -59,14 +59,6 @@ const nextConfig = {
         destination: '/',
         permanent: true,
       },
-      // This guide argued the case for adopting from abroad, which the
-      // European rescue guide already covered in its objections and country
-      // sections. Two guides owning the same facts is how they drifted apart.
-      {
-        source: '/guides/why-rescue-from-abroad',
-        destination: '/guides/european-rescue-guide',
-        permanent: true,
-      },
       // A cross is a facet of a breed, not a separate breed, so these pages
       // merged into their canonical breed rather than standing alone.
       {

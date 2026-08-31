@@ -101,6 +101,14 @@ export default function Footer() {
               </li>
               <li>
                 <Link
+                  href="/guides/why-rescue-from-abroad"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Why Rescue
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/guides/first-time-owner-guide"
                   className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                 >
