@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Guide } from "@/types/guide";
+import type { GuideSummary } from "@/types/guide";
 import { Badge } from "@/components/ui/badge";
 
 interface GuideCardProps {
-  guide: Guide;
+  guide: GuideSummary;
   priority?: boolean;
 }
 

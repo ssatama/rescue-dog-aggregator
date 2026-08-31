@@ -2,17 +2,6 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { GuideContent } from "../GuideContent";
 
-// Mock MDXRemote
-interface MockMDXRemoteProps {
-  children?: React.ReactNode;
-}
-
-jest.mock("next-mdx-remote", () => ({
-  MDXRemote: ({ children }: MockMDXRemoteProps) => (
-    <div data-testid="mdx-content">{children}</div>
-  ),
-}));
-
 const mockGuide = {
   slug: "test-guide",
   frontmatter: {
@@ -29,11 +18,6 @@ const mockGuide = {
     relatedGuides: [],
   },
   content: "## Test Content",
-  serializedContent: {
-    compiledSource: "return function() { return <div>Test</div> }",
-    frontmatter: {},
-    scope: {},
-  },
 };
 
 describe("GuideContent", () => {
@@ -56,6 +40,35 @@ describe("GuideContent", () => {
     expect(
       container.querySelector('script[type="application/ld+json"]'),
     ).toBeNull();
+  });
+
+  it("renders the body it is given rather than fetching one itself", () => {
+    // The body arrives as children, rendered on the server by the route. It
+    // used to be loaded with dynamic(..., { ssr: false }), which kept every
+    // heading and paragraph out of the static HTML.
+    render(
+      <GuideContent guide={mockGuide}>
+        <h2 id="a-section">A Section</h2>
+        <p>Body prose</p>
+      </GuideContent>,
+    );
+
+    expect(screen.getByRole("heading", { name: "A Section" })).toBeInTheDocument();
+    expect(screen.getByText("Body prose")).toBeInTheDocument();
+  });
+
+  it("builds its table of contents from the rendered headings", () => {
+    const { container } = render(
+      <GuideContent guide={mockGuide} fullPage={true}>
+        <h2 id="first-section">First Section</h2>
+        <h2 id="second-section">Second Section</h2>
+      </GuideContent>,
+    );
+
+    // Ids come from rehype-slug on the server; the component must read them
+    // rather than re-deriving slugs with a different algorithm.
+    const ids = Array.from(container.querySelectorAll("article h2")).map((h) => h.id);
+    expect(ids).toEqual(["first-section", "second-section"]);
   });
 
   it("renders hero image with alt text", () => {
