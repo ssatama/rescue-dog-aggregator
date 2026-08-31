@@ -1,24 +1,20 @@
 "use client";
 
-import { useState, useEffect, ComponentPropsWithoutRef } from "react";
-import dynamic from "next/dynamic";
+import { useState, useEffect, type ReactNode } from "react";
 import Image from "next/image";
 import type { Guide } from "@/types/guide";
-import { DogGrid } from "./DogGrid";
-import { Callout } from "./Callout";
-import { Stats } from "./Stats";
 import { TableOfContents } from "./TableOfContents";
 import { RelatedGuides } from "./RelatedGuides";
 import { FontSizeProvider } from "@/contexts/FontSizeContext";
 import { FontSizeControl } from "./FontSizeControl";
 import { Breadcrumb } from "./Breadcrumb";
 
-const MDXRenderer = dynamic(() => import("./MDXRenderer"), { ssr: false });
-
 interface GuideContentProps {
   guide: Guide;
   fullPage?: boolean;
   relatedGuides?: Guide[];
+  /** MDX body, rendered on the server by the route. */
+  children?: ReactNode;
 }
 
 interface TOCSection {
@@ -27,46 +23,14 @@ interface TOCSection {
   level: number;
 }
 
-const components = {
-  h2: ({ children, ...props }: ComponentPropsWithoutRef<"h2">) => {
-    const id = children
-      ?.toString()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-");
-    return (
-      <h2 id={id} className="text-3xl font-bold mt-8 mb-4" {...props}>
-        {children}
-      </h2>
-    );
-  },
-
-  DogGrid,
-  Callout,
-  Stats,
-
-  p: (props: ComponentPropsWithoutRef<"p">) => (
-    <p className="mb-4 leading-relaxed" {...props} />
-  ),
-  ul: (props: ComponentPropsWithoutRef<"ul">) => (
-    <ul className="list-disc list-inside mb-4 space-y-2" {...props} />
-  ),
-  ol: (props: ComponentPropsWithoutRef<"ol">) => (
-    <ol className="list-decimal list-inside mb-4 space-y-2" {...props} />
-  ),
-  a: (props: ComponentPropsWithoutRef<"a">) => (
-    <a className="text-orange-500 hover:underline" {...props} />
-  ),
-  code: (props: ComponentPropsWithoutRef<"code">) => (
-    <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded" {...props} />
-  ),
-};
 
 export function GuideContent({
   guide,
   fullPage = false,
   relatedGuides = [],
+  children,
 }: GuideContentProps) {
-  const { frontmatter, serializedContent } = guide;
+  const { frontmatter } = guide;
   const [sections, setSections] = useState<TOCSection[]>([]);
   const [readingProgress, setReadingProgress] = useState(0);
 
@@ -82,7 +46,9 @@ export function GuideContent({
       setSections(extracted);
     };
 
-    // Wait for MDX to render, then extract sections
+    // The body is server-rendered, so the headings are in the document on the
+    // first pass. The timeout only covers a re-render after a guide change.
+    extractSections();
     const timer = setTimeout(extractSections, 100);
     return () => clearTimeout(timer);
   }, [guide]);
@@ -166,9 +132,7 @@ export function GuideContent({
               dark:prose-a:text-orange-400"
               style={{ fontSize: "var(--guide-font-size, 16px)" }}
             >
-              {serializedContent && (
-                <MDXRenderer {...serializedContent} components={components} />
-              )}
+              {children}
             </div>
 
             {/* Related Guides */}

@@ -14,7 +14,6 @@ describe("guides utilities", () => {
     const guide = await getGuide("european-rescue-guide");
     expect(guide.frontmatter.title).toBeDefined();
     expect(guide.frontmatter.slug).toBe("european-rescue-guide");
-    expect(guide.serializedContent).toBeDefined();
     expect(guide.content).toBeDefined();
   });
 

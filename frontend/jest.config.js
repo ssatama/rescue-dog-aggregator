@@ -18,6 +18,7 @@ const customJestConfig = {
 
     // Mock MDX packages
     '^next-mdx-remote/serialize$': '<rootDir>/src/__mocks__/next-mdx-remote/serialize.ts',
+    '^next-mdx-remote/rsc$': '<rootDir>/src/__mocks__/next-mdx-remote/rsc.tsx',
     '^remark-gfm$': '<rootDir>/src/__mocks__/remark-gfm.ts',
     '^rehype-slug$': '<rootDir>/src/__mocks__/rehype-slug.ts',
     '^rehype-autolink-headings$': '<rootDir>/src/__mocks__/rehype-autolink-headings.ts',

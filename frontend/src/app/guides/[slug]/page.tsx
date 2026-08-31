@@ -1,4 +1,10 @@
+import { MDXRemote } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
+import rehypeSlug from "rehype-slug";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeHighlight from "rehype-highlight";
 import { getGuide, getAllGuideSlugs, getAllGuides } from "@/lib/guides";
+import { mdxComponents } from "@/components/guides/mdxComponents";
 import { GuideContent } from "@/components/guides/GuideContent";
 import { GuideSchema } from "@/components/guides/GuideSchema";
 import { ReadingProgress } from "@/components/guides/ReadingProgress";
@@ -97,11 +103,26 @@ export default async function GuidePage({
         ]}
       />
       <ReadingProgress />
-      <GuideContent
-        guide={guide}
-        fullPage={true}
-        relatedGuides={relatedGuides}
-      />
+      <GuideContent guide={guide} fullPage={true} relatedGuides={relatedGuides}>
+        {/* Rendered here, on the server, so the guide body is in the static
+            HTML. It used to be loaded with dynamic(..., { ssr: false }), which
+            left the prerendered page with a title and a hero image and put
+            every heading and paragraph in the client payload only. */}
+        <MDXRemote
+          source={guide.content}
+          components={mdxComponents}
+          options={{
+            mdxOptions: {
+              remarkPlugins: [remarkGfm],
+              rehypePlugins: [
+                rehypeSlug,
+                [rehypeAutolinkHeadings, { behavior: "wrap" }],
+                rehypeHighlight,
+              ],
+            },
+          }}
+        />
+      </GuideContent>
     </Layout>
   );
 }

@@ -40,10 +40,12 @@ describe("MDX Guide Compilation", () => {
       expect(guide.slug).toBeDefined();
     });
 
-    // Test that each guide can be serialized without errors
+    // The body is compiled by the route at build time now, not pre-serialized
+    // here, so what this can still assert is that every guide has a body to
+    // compile. A malformed one fails the build, which CI runs.
     for (const guide of guides) {
       const fullGuide = await getGuide(guide.slug);
-      expect(fullGuide.serializedContent).toBeDefined();
+      expect(fullGuide.content.trim().length).toBeGreaterThan(0);
     }
   });
 
