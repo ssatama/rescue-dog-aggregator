@@ -85,15 +85,16 @@ Still open from that group:
 The paper behind most of the guides' statistics has now been read. See the
 correction block at the top of `guides-regulatory-audit.md`. For PR 3:
 
-- **14.8% Leishmania can come back, with its denominator.** It is 14.8% *of
-  dogs that had been tested*. 79 owners reported a positive test. Reinstating it
-  without "of those tested" reintroduces the original defect.
+- ~~**14.8% Leishmania can come back, with its denominator.**~~ **Done
+  2026-08-31.** Reinstated in `european-rescue-guide.mdx` as 14.8% *of the dogs
+  that had been tested*, cited to the paper. A test guard fails the build if the
+  denominator is ever separated from the figure.
 - **89% can come back, reframed as owner belief.** The paper reports what
   adopters said about how their dog was imported, from a Facebook-recruited 2017
   sample, with owner knowledge of importation practice named as a limitation.
   "89% of rescue imports were using the wrong rules" is not what it establishes.
-- **20% arrived with known health conditions**, most commonly traumatic injury —
-  a real finding the guides never used, and one that belongs in an honest guide.
+- ~~**20% arrived with known health conditions**~~ **Done 2026-08-31.** Added to
+  the Mediterranean diseases section with the citation.
 - **Do not reinstate any satisfaction, retention or success rate.** The paper
   reports none.
 
@@ -104,15 +105,17 @@ until its entry is updated or removed in the same commit that adds the source.
 That is the intended friction, not a bug — but it needs doing deliberately
 rather than by deleting the guard.
 
-Still to verify against the full text before reuse, all currently in the guides
-and all attributed to this paper or to "the UK study":
+Still to verify against the full text before reuse. **`why-rescue-from-abroad.mdx`
+was merged into `european-rescue-guide.mdx` on 2026-08-31**, so the figures that
+lived only in that guide (4% vs 8% consideration of return, 81% home visits, 40%
+questionnaires, 92% through organizations, 59% wanted a specific dog, 53%
+previously tried UK adoption, 61% street dogs, 41% adults, 65% mixed breeds, 10%
+from cruelty) are no longer published anywhere and need no action unless someone
+wants them back.
+
+Still live in `european-rescue-guide.mdx`:
 
 - 67.5% sought behavioural help / 71% reported it resolved
-  (`european-rescue-guide.mdx`, `why-rescue-from-abroad.mdx`)
-- 4% vs 8% consideration-of-return comparison with p < 0.0001
-- 81% home visits, 40% questionnaires, 92% through organizations, 59% wanted a
-  specific dog, 53% previously tried UK adoption, 61% street dogs, 41% adults,
-  65% mixed breeds, 10% from cruelty
 
 Separately, the Danish 2021 study figures in `european-rescue-guide.mdx` (97% of
 street dog owners still had their dogs, 2.1% aggression, 6.7% anxiety) are a
