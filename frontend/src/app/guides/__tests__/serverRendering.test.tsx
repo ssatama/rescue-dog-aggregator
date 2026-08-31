@@ -41,7 +41,10 @@ describe("guide route server rendering", () => {
     expect(mdx).not.toBeNull();
   });
 
-  it("gives the renderer the raw guide source", async () => {
+  it("gives the renderer the guide's own body", async () => {
+    const { getGuide } = await import("@/lib/guides");
+    const guide = await getGuide("european-rescue-guide");
+
     const element = await GuidePage({
       params: Promise.resolve({ slug: "european-rescue-guide" }),
     });
@@ -49,7 +52,10 @@ describe("guide route server rendering", () => {
     const mdx = findElement(element, (el) => el.type === MDXRemote);
     const source = (mdx?.props as { source?: string })?.source ?? "";
 
-    expect(source).toContain("## The Legal Framework");
+    // Compared against the file rather than a quoted heading, so editing the
+    // guide cannot fail this for the wrong reason.
+    expect(source).toBe(guide.content);
+    expect(source).toMatch(/^##\s/m);
   });
 
   it("nests the body inside GuideContent so the shell stays interactive", async () => {
