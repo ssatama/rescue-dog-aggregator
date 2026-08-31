@@ -126,6 +126,13 @@ class RetryHandler:
                     last_error = e
                     logger.warning(f"Error with {model} (attempt {attempt + 1}): {str(e)}")
 
+                    # An error that knows how the model should have answered
+                    # says so on the exception; a transport error does not, and
+                    # must not disturb the prompt.
+                    adjustment = getattr(e, "prompt_adjustment", None)
+                    if adjustment and "prompt_adjustment" in kwargs:
+                        kwargs["prompt_adjustment"] = adjustment
+
                 # Calculate delay with exponential backoff
                 if attempt < attempts_per_model - 1 or model_idx < len(models_to_try) - 1:
                     delay = min(

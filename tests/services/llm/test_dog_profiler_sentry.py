@@ -79,7 +79,7 @@ class TestPerDogFailureReachesSentry:
 
     @pytest.mark.asyncio
     async def test_a_success_raises_no_alert(self, pipeline):
-        pipeline.retry_handler.execute_with_retry = AsyncMock(return_value=dict(VALID_PROFILE))
+        pipeline._call_llm_api = AsyncMock(return_value=dict(VALID_PROFILE))
 
         with patch("services.llm.dog_profiler.sentry_sdk") as sentry:
             await pipeline.process_dog(dict(GROUNDED))

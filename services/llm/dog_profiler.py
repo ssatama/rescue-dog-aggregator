@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 import sentry_sdk
 from dotenv import load_dotenv
+from pydantic import ValidationError
 
 if TYPE_CHECKING:
     from services.connection_pool import ConnectionPoolService
@@ -38,6 +39,26 @@ from services.llm.statistics_tracker import StatisticsTracker
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+
+class ProfileValidationError(ValueError):
+    """A generated profile did not satisfy DogProfilerData.
+
+    Carries a `prompt_adjustment` so the retry handler can tell the model which
+    field it got wrong, rather than re-sending the identical prompt and losing
+    the dog after three identical failures.
+    """
+
+    def __init__(self, message: str, prompt_adjustment: str):
+        super().__init__(message)
+        self.prompt_adjustment = prompt_adjustment
+
+
+def _prompt_adjustment_for(error: ValidationError) -> str:
+    """Turn pydantic's complaints into an instruction the model can act on."""
+    faults = "; ".join(f"{'.'.join(str(part) for part in fault['loc'])}: {fault['msg']}" for fault in error.errors())
+
+    return f"Your previous response was rejected. Fix exactly these fields and return the complete JSON object again - {faults}"
 
 
 class DogProfilerPipeline:
@@ -149,6 +170,82 @@ class DogProfilerPipeline:
             cost_tier=self.cost_tier,
         )
 
+    async def _generate_profile(
+        self,
+        dog_data: dict[str, Any],
+        model: str | None = None,
+        timeout: float = 30.0,
+        prompt_adjustment: str = "",
+    ) -> DogProfilerData:
+        """Call the model and build a schema-valid profile, or raise.
+
+        Args:
+            dog_data: Dog information dictionary
+            model: Model to use
+            timeout: Request timeout
+            prompt_adjustment: Correction carried over from a failed attempt
+
+        Returns:
+            The validated profile
+
+        Raises:
+            ProfileValidationError: If the model's answer does not satisfy the schema
+        """
+        dog_id = dog_data.get("id", "unknown")
+        dog_name = dog_data.get("name") or "Unknown"
+
+        start_time = time.time()
+        profiler_result = await self._call_llm_api(
+            dog_data=dog_data,
+            model=model,
+            timeout=timeout,
+            prompt_adjustment=prompt_adjustment,
+        )
+        processing_time_ms = int((time.time() - start_time) * 1000)
+
+        # Ensure we have the required metadata
+        if "dog_profiler_data" in profiler_result:
+            profile_data = profiler_result["dog_profiler_data"]
+        else:
+            profile_data = profiler_result
+
+        # Add processing time before normalization
+        profile_data["processing_time_ms"] = processing_time_ms
+
+        # Normalize values to match our schema enums
+        profile_data = self._normalize_profile_data(profile_data)
+
+        # Add/update metadata fields
+        profile_data["profiled_at"] = datetime.now(UTC).isoformat()
+        profile_data["prompt_version"] = self.prompt_builder.get_prompt_version()
+        profile_data["model_used"] = profiler_result.get("model_used", self.model)
+
+        # Add confidence scores if not present (using defaults)
+        if "confidence_scores" not in profile_data:
+            profile_data["confidence_scores"] = {
+                "description": 0.8,
+                "energy_level": 0.7,
+                "trainability": 0.7,
+            }
+        else:
+            required_defaults = {"description": 0.5, "energy_level": 0.5, "trainability": 0.5}
+            for field, default in required_defaults.items():
+                if field not in profile_data["confidence_scores"]:
+                    profile_data["confidence_scores"][field] = default
+                    logger.warning(f"Backfilled missing confidence score '{field}' with default {default} for dog {dog_id} ({dog_name})")
+
+        # Add source references if not present
+        if "source_references" not in profile_data:
+            profile_data["source_references"] = {
+                "description": str((dog_data.get("properties") or {}).get("description") or ""),
+                "personality_traits": "inferred from description",
+            }
+
+        try:
+            return DogProfilerData(**profile_data)
+        except ValidationError as e:
+            raise ProfileValidationError(f"Profile for dog {dog_id} ({dog_name}) failed validation: {e}", prompt_adjustment=_prompt_adjustment_for(e)) from e
+
     async def process_dog(self, dog_data: dict[str, Any]) -> dict[str, Any] | None:
         """
         Process a single dog with error handling and retry logic.
@@ -174,63 +271,17 @@ class DogProfilerPipeline:
             return None
 
         try:
-            start_time = time.time()
-
-            # Call LLM service with retry logic
             logger.info(f"Processing dog {dog_id} ({dog_name})")
 
-            # Use retry handler to call the API with automatic retries and model fallback
-            profiler_result = await self.retry_handler.execute_with_retry(
-                self._call_llm_api,
+            # Validation runs inside the retried call: a schema failure is a
+            # bad answer the model can be asked to correct, not a lost dog.
+            validated_data = await self.retry_handler.execute_with_retry(
+                self._generate_profile,
                 dog_data=dog_data,
                 model=self.model,
                 timeout=30.0,
-                prompt_adjustment="",  # Start with preferred model  # Will be modified by retry handler if needed
+                prompt_adjustment="",  # Rewritten by the retry handler when an attempt says how
             )
-
-            # Calculate processing time
-            processing_time_ms = int((time.time() - start_time) * 1000)
-
-            # Ensure we have the required metadata
-            if "dog_profiler_data" in profiler_result:
-                profile_data = profiler_result["dog_profiler_data"]
-            else:
-                profile_data = profiler_result
-
-            # Add processing time before normalization
-            profile_data["processing_time_ms"] = processing_time_ms
-
-            # Normalize values to match our schema enums
-            profile_data = self._normalize_profile_data(profile_data)
-
-            # Add/update metadata fields
-            profile_data["profiled_at"] = datetime.now(UTC).isoformat()
-            profile_data["prompt_version"] = self.prompt_builder.get_prompt_version()
-            profile_data["model_used"] = profiler_result.get("model_used", self.model)
-
-            # Add confidence scores if not present (using defaults)
-            if "confidence_scores" not in profile_data:
-                profile_data["confidence_scores"] = {
-                    "description": 0.8,
-                    "energy_level": 0.7,
-                    "trainability": 0.7,
-                }
-            else:
-                required_defaults = {"description": 0.5, "energy_level": 0.5, "trainability": 0.5}
-                for field, default in required_defaults.items():
-                    if field not in profile_data["confidence_scores"]:
-                        profile_data["confidence_scores"][field] = default
-                        logger.warning(f"Backfilled missing confidence score '{field}' with default {default} for dog {dog_id} ({dog_name})")
-
-            # Add source references if not present
-            if "source_references" not in profile_data:
-                profile_data["source_references"] = {
-                    "description": str((dog_data.get("properties") or {}).get("description") or ""),
-                    "personality_traits": "inferred from description",
-                }
-
-            # Validate against schema
-            validated_data = DogProfilerData(**profile_data)
 
             self.statistics.record_success()
             logger.info(f"Successfully processed dog {dog_id} ({dog_name})")
