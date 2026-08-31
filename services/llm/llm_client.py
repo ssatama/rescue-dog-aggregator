@@ -26,9 +26,24 @@ logger = logging.getLogger(__name__)
 AUTO_ROUTER_MODEL = "openrouter/auto"
 AUTO_ROUTER_PLUGIN_ID = "auto-router"
 
+# Reasoning is capped rather than disabled. Disabling it outright is a 400 on
+# every endpoint that mandates reasoning - a growing share of what the
+# auto-router picks - while leaving it unbounded lets a reasoning model spend
+# the whole max_tokens budget thinking and return empty content.
+REASONING_EFFORT = "low"
+
 # Safety net beyond httpx's own timeout: how long past the request timeout the
 # whole call is allowed to run before asyncio.timeout cancels it.
 TIMEOUT_BUFFER_SECONDS = 5.0
+
+
+class EmptyLLMResponseError(ValueError):
+    """The provider returned a completion with no content.
+
+    Raised in place of the `json.loads("")` decode error this used to surface
+    as, which read like malformed JSON and named neither the model that burnt
+    the budget nor the reason it stopped.
+    """
 
 
 def build_request_body(
@@ -57,9 +72,7 @@ def build_request_body(
         "temperature": temperature,
         "max_tokens": max_tokens,
         "response_format": {"type": "json_object"},
-        # Reasoning models otherwise spend the entire max_tokens budget on
-        # reasoning and return empty content.
-        "reasoning": {"enabled": False},
+        "reasoning": {"effort": REASONING_EFFORT},
     }
 
     if model == AUTO_ROUTER_MODEL:
@@ -165,8 +178,15 @@ class LLMClient:
 
         Returns:
             Extracted content string
+
+        Raises:
+            EmptyLLMResponseError: If the completion carries no content
         """
-        content = response_data["choices"][0]["message"]["content"]
+        choice = response_data["choices"][0]
+        content = choice["message"].get("content")
+
+        if not (content or "").strip():
+            raise EmptyLLMResponseError(f"{response_data.get('model') or 'unknown model'} returned no content (finish_reason={choice.get('finish_reason')})")
 
         # Handle markdown wrapping if present
         if content.startswith("```"):

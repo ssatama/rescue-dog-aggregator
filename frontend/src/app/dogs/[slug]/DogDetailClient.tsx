@@ -47,6 +47,7 @@ import {
 import DogStatusBadge from "../../../components/dogs/DogStatusBadge";
 import AdoptedCelebration from "../../../components/dogs/AdoptedCelebration";
 import SwipeNavigationOverlay from "./SwipeNavigationOverlay";
+import { hasDisplayableProfile } from "../../../utils/dogProfiler";
 
 export default function DogDetailClient({ params = {}, initialDog = null }: DogDetailClientProps) {
   const urlParams = useParams();
@@ -578,7 +579,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }: DogD
                     </section>
 
                     {/* LLM Components Section */}
-                    {dog.dog_profiler_data && (
+                    {hasDisplayableProfile(dog.dog_profiler_data) && (
                       <ScrollAnimationWrapper delay={750}>
                         <section
                           aria-label="Personality and Behavioral Information"

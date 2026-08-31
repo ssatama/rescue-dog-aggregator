@@ -21,12 +21,6 @@ class TestBuildRequestBody:
         body = build_request_body(messages=[], model="google/gemini-3-flash-preview", temperature=0.7, max_tokens=4000, cost_tier="medium")
         assert "plugins" not in body
 
-    def test_reasoning_is_disabled(self):
-        """Reasoning models consume the whole max_tokens budget and return no
-        content, so the router must not be allowed to spend tokens on it."""
-        body = build_request_body(messages=[], model=AUTO_ROUTER_MODEL, temperature=0.7, max_tokens=4000, cost_tier="medium")
-        assert body["reasoning"] == {"enabled": False}
-
     def test_json_object_response_format_is_requested(self):
         body = build_request_body(messages=[], model=AUTO_ROUTER_MODEL, temperature=0.7, max_tokens=4000, cost_tier="medium")
         assert body["response_format"] == {"type": "json_object"}

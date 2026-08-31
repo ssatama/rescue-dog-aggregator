@@ -22,6 +22,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { type Dog } from "@/types/dog";
 import { getAgeCategory } from "@/utils/dogHelpers";
 import { capitalizeFirst } from "@/utils/breedDisplayUtils";
+import { hasCompatibilityData } from "@/utils/dogProfiler";
 import ShareButton from "@/components/ui/ShareButton";
 
 interface DogDetailModalUpgradedProps {
@@ -664,7 +665,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                   )}
 
                   {/* Good With */}
-                  {dog.dog_profiler_data && (
+                  {hasCompatibilityData(dog.dog_profiler_data) && (
                     <div>
                       <h3 className="font-semibold mb-3 dark:text-white">
                         Good With

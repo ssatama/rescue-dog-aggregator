@@ -17,6 +17,7 @@ import time
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Optional
 
+import sentry_sdk
 from dotenv import load_dotenv
 
 if TYPE_CHECKING:
@@ -162,7 +163,14 @@ class DogProfilerPipeline:
         dog_name = dog_data.get("name") or "Unknown"
 
         if not is_sufficiently_grounded(dog_data):
-            logger.warning(f"Skipping dog {dog_id} ({dog_name}): only {source_text_length(dog_data)} chars of source text, below the grounding floor")
+            chars = source_text_length(dog_data)
+            logger.warning(f"Skipping dog {dog_id} ({dog_name}): only {chars} chars of source text, below the grounding floor")
+            self._alert_dog_dropped(
+                dog_id,
+                dog_name,
+                reason="ungrounded",
+                message=f"Dog {dog_id} ({dog_name}) has {chars} chars of source text, below the grounding floor - the scraper is not capturing its description",
+            )
             return None
 
         try:
@@ -248,7 +256,44 @@ class DogProfilerPipeline:
             self.statistics.record_error(error_info)
             error_msg = f"Failed to process dog {dog_id} ({dog_name}): {str(e)}"
             logger.error(error_msg)
+            self._alert_dog_dropped(dog_id, dog_name, reason="llm_failure", error=e)
             return None
+
+    def _alert_dog_dropped(
+        self,
+        dog_id: Any,
+        dog_name: str,
+        reason: str,
+        error: Exception | None = None,
+        message: str | None = None,
+    ) -> None:
+        """Report a dog that will be stored with no profile.
+
+        Every drop here is silent in the product - the dog just renders without
+        a personality section - so Sentry is the only place the failure can
+        surface before someone notices a blank page.
+        """
+        with sentry_sdk.new_scope() as scope:
+            scope.set_tag("llm.stage", "dog_profiler")
+            scope.set_tag("llm.drop_reason", reason)
+            scope.set_tag("llm.dog_id", str(dog_id))
+            scope.set_tag("llm.org_id", str(self.org_id))
+            scope.set_context(
+                "llm_profiling",
+                {
+                    "dog_id": dog_id,
+                    "dog_name": dog_name,
+                    "organization_id": self.org_id,
+                    "model": self.model,
+                    "cost_tier": self.cost_tier,
+                    "reason": reason,
+                },
+            )
+
+            if error is not None:
+                sentry_sdk.capture_exception(error, scope=scope)
+            else:
+                sentry_sdk.capture_message(message or f"Dog {dog_id} ({dog_name}) dropped: {reason}", level="warning", scope=scope)
 
     async def process_batch(self, dogs: list[dict[str, Any]], batch_size: int = 5) -> list[dict[str, Any]]:
         """
