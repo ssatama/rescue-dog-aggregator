@@ -16,7 +16,7 @@ import {
   getSearchSuggestions,
   getBreedSuggestions,
 } from "@/services/animalsService";
-import { FILTER_DEFAULTS } from "@/constants/filters";
+import { FILTER_DEFAULTS, ageFilterLabel } from "@/constants/filters";
 import { useFilterOptions } from "@/hooks/useFilterOptions";
 import type { MobileFilterDrawerProps, FilterConfig } from "@/types/filterComponents";
 import FilterSection from "./FilterSection";
@@ -425,7 +425,7 @@ export default function MobileFilterDrawer({
                           .filter((age) => age !== FILTER_DEFAULTS.AGE)
                           .map((age) => (
                             <option key={age} value={age}>
-                              {age}
+                              {ageFilterLabel(age)}
                             </option>
                           ))}
                       </select>
@@ -451,7 +451,7 @@ export default function MobileFilterDrawer({
                             style={{ minHeight: "48px" }}
                             aria-pressed={isActive}
                           >
-                            {age}
+                            {ageFilterLabel(age)}
                           </Button>
                         );
                       })}
