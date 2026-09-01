@@ -18,6 +18,19 @@ export const SIZE_API_MAPPING = {
   "Extra Large": "XLarge",
 } as const
 
+// Display-only overrides for age options. The option string doubles as the
+// state value, the URL parameter and the age_category sent to the API, so it
+// has to stay exactly what the API expects; only the text shown changes.
+// "Unknown" alone reads as a chip with no noun, which is useless out of
+// context and worse for a screen reader.
+export const AGE_FILTER_LABELS: Record<string, string> = {
+  Unknown: "Age Unknown",
+}
+
+export function ageFilterLabel(option: string): string {
+  return AGE_FILTER_LABELS[option] ?? option
+}
+
 const DEFAULT_VALUES = new Set<string>(Object.values(FILTER_DEFAULTS))
 
 export function isDefaultFilterValue(

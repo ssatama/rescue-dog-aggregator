@@ -38,6 +38,32 @@ def parse_json_field(data: dict[str, Any], field: str, default_value: dict | lis
     # If it's already a dict/list, keep it as is
 
 
+def parse_optional_json_field(data: dict[str, Any], field: str) -> None:
+    """Parse a JSON string field in-place, leaving an absent value as None.
+
+    The difference from `parse_json_field` is that null stays null. For a field
+    the frontend tests for presence rather than indexes into - notably
+    `dog_profiler_data` - coercing null to `{}` makes "never profiled"
+    indistinguishable from "profiled", because `{}` is truthy in JavaScript.
+
+    Args:
+        data: Dictionary containing the field to parse
+        field: Name of the field to parse
+    """
+    value = data.get(field)
+
+    if value is None:
+        data[field] = None
+        return
+
+    if isinstance(value, str):
+        try:
+            data[field] = json.loads(value)
+        except json.JSONDecodeError:
+            logger.warning(f"Could not parse {field} JSON: {value}")
+            data[field] = None
+
+
 def parse_organization_fields(row_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Parse organization-related JSON fields from a database row.

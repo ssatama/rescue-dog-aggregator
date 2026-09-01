@@ -1,10 +1,10 @@
 "use client";
 
-import { Guide } from "@/types/guide";
+import type { GuideSummary } from "@/types/guide";
 import { GuideCard } from "./GuideCard";
 
 interface RelatedGuidesProps {
-  relatedGuides: Guide[];
+  relatedGuides: GuideSummary[];
 }
 
 export function RelatedGuides({ relatedGuides }: RelatedGuidesProps) {

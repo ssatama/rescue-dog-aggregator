@@ -28,7 +28,9 @@ const getEnergyConfig = (level: EnergyLevel): ProgressBarConfig | undefined => {
 };
 
 // Pure function to get trainability configuration
-const getTrainabilityConfig = (level: TrainabilityLevel): ProgressBarConfig | undefined => {
+const getTrainabilityConfig = (
+  level: TrainabilityLevel,
+): ProgressBarConfig | undefined => {
   const configs: Record<TrainabilityLevel, ProgressBarConfig> = {
     easy: { percentage: 33, color: "bg-green-500", label: "Easy" },
     moderate: { percentage: 67, color: "bg-yellow-500", label: "Moderate" },
@@ -73,39 +75,51 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ title, config, testId }) => (
   </div>
 );
 
-// Main component
-const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({
-  profilerData,
-}) => {
-  // Early return for invalid data
+/** The bars this section would draw, after dropping anything the model was
+ * not confident about. */
+const visibleBars = (profilerData: DogProfilerData | null | undefined) => {
   if (!profilerData) {
-    return null;
+    return { energyConfig: undefined, trainabilityConfig: undefined };
   }
 
   const { energy_level, trainability, confidence_scores } = profilerData;
 
-  // Check if we should show energy level
-  // Show if data exists, unless confidence score is explicitly low
-  const energyConfig = energy_level
-    ? getEnergyConfig(energy_level as EnergyLevel)
-    : undefined;
-  const trainabilityConfig = trainability
-    ? getTrainabilityConfig(trainability as TrainabilityLevel)
-    : undefined;
+  const energyConfig =
+    energy_level &&
+    !shouldHideDueToLowConfidence(confidence_scores?.energy_level)
+      ? getEnergyConfig(energy_level as EnergyLevel)
+      : undefined;
 
-  const shouldShowEnergy =
-    energyConfig && !shouldHideDueToLowConfidence(confidence_scores?.energy_level);
+  const trainabilityConfig =
+    trainability &&
+    !shouldHideDueToLowConfidence(confidence_scores?.trainability)
+      ? getTrainabilityConfig(trainability as TrainabilityLevel)
+      : undefined;
 
-  const shouldShowTrainability =
-    trainabilityConfig && !shouldHideDueToLowConfidence(confidence_scores?.trainability);
+  return { energyConfig, trainabilityConfig };
+};
 
-  if (!shouldShowEnergy && !shouldShowTrainability) {
+/** Whether the Energy & Training section has anything to show. */
+export const hasEnergyTrainabilitySection = (
+  profilerData: DogProfilerData | null | undefined,
+): boolean => {
+  const { energyConfig, trainabilityConfig } = visibleBars(profilerData);
+  return Boolean(energyConfig || trainabilityConfig);
+};
+
+// Main component
+const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({
+  profilerData,
+}) => {
+  const { energyConfig, trainabilityConfig } = visibleBars(profilerData);
+
+  if (!energyConfig && !trainabilityConfig) {
     return null;
   }
 
   return (
     <div>
-      {shouldShowEnergy && (
+      {energyConfig && (
         <ProgressBar
           title="Energy Level"
           config={energyConfig}
@@ -113,7 +127,7 @@ const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({
         />
       )}
 
-      {shouldShowTrainability && (
+      {trainabilityConfig && (
         <ProgressBar
           title="Trainability"
           config={trainabilityConfig}

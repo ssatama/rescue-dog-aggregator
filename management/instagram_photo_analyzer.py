@@ -29,10 +29,14 @@ import psycopg2
 from pydantic import ValidationError
 
 # Add parent directory to path
-sys.path.append(str(Path(__file__).parent.parent))
+# Put the project root ahead of this directory on the import path, so
+# `management/services/` cannot shadow the project's own `services/`.
+_project_root = str(Path(__file__).parent.parent)
+if sys.path[0] != _project_root:
+    sys.path.insert(0, _project_root)
 
-from services.llm.llm_client import LLMClient
-from services.llm.photo_analysis_models import PhotoAnalysisResponse
+from services.llm.llm_client import LLMClient  # noqa: E402
+from services.llm.photo_analysis_models import PhotoAnalysisResponse  # noqa: E402
 
 
 class InstagramPhotoAnalyzer:

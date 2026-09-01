@@ -18,7 +18,6 @@ const mockGuides = [
       relatedGuides: [],
     },
     content: "",
-    serializedContent: undefined,
   },
   {
     slug: "first-time-owner-guide",
@@ -36,7 +35,6 @@ const mockGuides = [
       relatedGuides: [],
     },
     content: "",
-    serializedContent: undefined,
   },
 ];
 

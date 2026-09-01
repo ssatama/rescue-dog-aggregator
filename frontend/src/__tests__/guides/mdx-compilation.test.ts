@@ -1,7 +1,9 @@
+import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
-import { getAllGuides, getGuide } from "@/lib/guides";
+import { getAllGuides } from "@/lib/guides";
+import { mdxComponents } from "@/components/guides/mdxComponents";
 
 interface GuideFile {
   file: string;
@@ -27,24 +29,37 @@ function readGuideFiles(): GuideFile[] {
 }
 
 describe("MDX Guide Compilation", () => {
-  it("should compile all guide MDX files without errors", async () => {
-    // Get all guides (this triggers MDX compilation)
-    const guides = await getAllGuides();
-
-    // Should have all 4 guides
-    expect(guides).toHaveLength(4);
-
-    // All guides should have basic structure
-    guides.forEach((guide) => {
-      expect(guide.frontmatter).toBeDefined();
-      expect(guide.slug).toBeDefined();
+  it("should compile all guide MDX files without errors", () => {
+    // jest cannot load next-mdx-remote's ESM build, which is why the MDX
+    // packages are mocked here. A mocked compiler compiles nothing, so the
+    // real one runs in a subprocess. Without this the suite passed on MDX with
+    // unbalanced JSX, and ci-push does not run the frontend build.
+    const result = spawnSync("node", ["scripts/check-mdx-compiles.js"], {
+      cwd: process.cwd(),
+      encoding: "utf-8",
     });
 
-    // Test that each guide can be serialized without errors
-    for (const guide of guides) {
-      const fullGuide = await getGuide(guide.slug);
-      expect(fullGuide.serializedContent).toBeDefined();
-    }
+    expect(result.stderr || "").toBe("");
+    expect(result.status).toBe(0);
+  }, 60000);
+
+  it("should only use MDX components that are actually provided", async () => {
+    // Compilation accepts <Foo />; rendering it throws. The components map is
+    // the whole set available to a guide.
+    const provided = new Set(Object.keys(mdxComponents));
+    const offenders: string[] = [];
+
+    readGuideFiles().forEach(({ file, body, bodyOffset }) => {
+      body.split("\n").forEach((line, index) => {
+        for (const match of line.matchAll(/<([A-Z][A-Za-z0-9]*)/g)) {
+          if (!provided.has(match[1])) {
+            offenders.push(`${file}:${index + 1 + bodyOffset} - <${match[1]}>`);
+          }
+        }
+      });
+    });
+
+    expect(offenders).toEqual([]);
   });
 
   it("should have valid frontmatter for all guides", async () => {
@@ -212,13 +227,31 @@ describe("MDX Guide Compilation", () => {
     // primary source turns up, update this list in the same commit that cites
     // it. A revert on its own should fail. See
     // docs/audits/guides-regulatory-audit.md.
-    const REMOVED: Array<[string, RegExp]> = [
+    type Rule = RegExp | ((line: string) => boolean);
+    const REMOVED: Array<[string, Rule]> = [
       // gov.uk still publishes GB's retained regime as "Balai rules", which the
       // deferred W3 correction has to cite. Only the repealed EU directive is
       // out of bounds.
       ["Balai Directive (repealed 21 April 2021)", /Balai Directive|92\/65\/EEC/i],
       ["89% of imports using the wrong rules", /89%/],
-      ["14.8% Leishmania positive rate", /14\.8%/],
+      // 14.8% is real, but it is 14.8% *of dogs that were tested*. Stated
+      // without that denominator it reads as a share of all imported dogs,
+      // which is the form that was removed. Every occurrence on a line must
+      // sit next to the qualifier, in either order, so a correct rewrite that
+      // leads with the denominator passes and a line carrying one qualified
+      // and one bare mention still fails.
+      [
+        "14.8% Leishmania without its denominator",
+        (line: string) => {
+          const mentions = line.match(/14\.8%/g)?.length ?? 0;
+          if (mentions === 0) return false;
+          const qualified =
+            line.match(
+              /14\.8%\s*(?:\*\*)?\s*of the dogs that had been tested|of the dogs that had been tested[^.\n]{0,40}14\.8%/gi,
+            )?.length ?? 0;
+          return qualified < mentions;
+        },
+      ],
       ["Romania exported 33,725 dogs", /33,725/],
       ["Turkish shelter capacity figures", /105,000/],
       ["2.7% public support poll", /2\.7% public support/],
@@ -248,8 +281,10 @@ describe("MDX Guide Compilation", () => {
     // newlines and match two unrelated sentences.
     readGuideFiles().forEach(({ file, body, bodyOffset }) => {
       body.split("\n").forEach((line, index) => {
-        REMOVED.forEach(([label, pattern]) => {
-          if (pattern.test(line)) {
+        REMOVED.forEach(([label, rule]) => {
+          const matched =
+            rule instanceof RegExp ? rule.test(line) : rule(line);
+          if (matched) {
             offenders.push(`${file}:${index + 1 + bodyOffset} - ${label}`);
           }
         });

@@ -20,16 +20,23 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-# Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Put the project root ahead of this directory on the import path.
+# Running `python management/foo.py` puts `management/` at sys.path[0], and
+# `management/services/` would otherwise shadow the project's own `services/`.
+# Testing membership is not enough: an editable install already puts the root
+# on sys.path, just after `management/`.
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if sys.path[0] != project_root:
+    sys.path.insert(0, project_root)
 
-from api.routes.swipe import MIN_SWIPE_QUALITY_SCORE
-from config import DB_CONFIG
-from management.batch_processor import create_batch_processor
-from services.llm.config import get_llm_config
+from api.routes.swipe import MIN_SWIPE_QUALITY_SCORE  # noqa: E402
+from config import DB_CONFIG  # noqa: E402
+from management.batch_processor import create_batch_processor  # noqa: E402
+from scrapers.sentry_integration import init_scraper_sentry  # noqa: E402
+from services.llm.config import get_llm_config  # noqa: E402
 
 # ProcessingType import removed - was unused
-from services.llm_data_service import OpenRouterLLMDataService
+from services.llm_data_service import OpenRouterLLMDataService  # noqa: E402
 
 console = Console()
 logger = logging.getLogger(__name__)
@@ -299,6 +306,11 @@ def generate_profiles(organization: int | None, limit: int | None, force: bool, 
     from services.llm.organization_config_loader import get_config_loader
 
     console.print("[bold cyan]Starting dog profiler generation with org-specific prompts...[/bold cyan]")
+
+    # The profiler reports every dropped dog to Sentry, and capture_* is a
+    # no-op without a DSN. This is the only path that retries a dog the
+    # scraper already failed to profile, so it is the path that most needs it.
+    init_scraper_sentry(environment=os.getenv("ENVIRONMENT", "production"))
 
     conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()

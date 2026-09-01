@@ -27,7 +27,9 @@ const PASTEL_COLORS = [
 const getColorForIndex = (index: number) =>
   PASTEL_COLORS[index % PASTEL_COLORS.length];
 
-const shouldShowTraits = (
+/** Whether the Personality section has anything to show. Shared with the
+ * heading in DogDetailClient so the two cannot disagree. */
+export const hasPersonalitySection = (
   profilerData: DogProfilerData | null | undefined,
 ): boolean => {
   if (!profilerData) return false;
@@ -50,7 +52,7 @@ const shouldShowTraits = (
 export default function PersonalityTraits({
   profilerData,
 }: PersonalityTraitsProps) {
-  if (!shouldShowTraits(profilerData)) {
+  if (!hasPersonalitySection(profilerData)) {
     return null;
   }
 

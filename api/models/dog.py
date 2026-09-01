@@ -116,7 +116,7 @@ class Animal(AnimalBase):
     availability_confidence: AvailabilityConfidence | None = AvailabilityConfidence.HIGH
     last_seen_at: datetime | None = None
     consecutive_scrapes_missing: int | None = 0
-    dog_profiler_data: dict[str, Any] | None = Field(default_factory=dict)
+    dog_profiler_data: dict[str, Any] | None = None
     breed_slug: str | None = None
     organization: Organization | None = None
     adoption_check_data: dict[str, Any] | None = None

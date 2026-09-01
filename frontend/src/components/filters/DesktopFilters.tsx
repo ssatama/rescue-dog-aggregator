@@ -15,7 +15,7 @@ import {
   getSearchSuggestions,
   getBreedSuggestions,
 } from "@/services/animalsService";
-import { FILTER_DEFAULTS } from "@/constants/filters";
+import { FILTER_DEFAULTS, ageFilterLabel } from "@/constants/filters";
 import { useFilterOptions } from "@/hooks/useFilterOptions";
 import type { DesktopFiltersProps } from "@/types/filterComponents";
 
@@ -325,7 +325,7 @@ export default function DesktopFilters({
                     }`}
                     style={{ minHeight: "48px" }}
                   >
-                    {age}
+                    {ageFilterLabel(age)}
                   </Button>
                 );
               })}
