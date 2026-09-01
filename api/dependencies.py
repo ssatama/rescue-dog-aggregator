@@ -133,37 +133,49 @@ def get_pooled_db_cursor() -> Generator[RealDictCursor, None, None]:
     This is an optimized version of get_db_cursor that uses connection pooling
     for better performance under high load.
     """
+    from api.database.connection_pool import PoolExhaustedError, PoolNotInitializedError
     from api.models.errors import (
         create_connection_error,
         create_pool_not_initialized_error,
     )
 
+    # FastAPI throws the route's exception into this generator when it unwinds
+    # the AsyncExitStack. That exception belongs to the route, so it is held by
+    # identity here and re-raised untouched below - translating it turned a 422
+    # into a 500 UNKNOWN_ERROR.
+    route_error: BaseException | None = None
+
     try:
         with get_pooled_cursor() as cursor:
-            yield cursor
+            try:
+                yield cursor
+            except BaseException as exc:
+                route_error = exc
+                raise
     except HTTPException:
-        # Let HTTPExceptions from routes bubble up without modification
         raise
-    except RuntimeError as e:
-        error_msg = str(e)
-        logger.error(f"Pool error in dependency: {error_msg}")
+    except PoolNotInitializedError as e:
+        logger.error(f"Pool error in dependency: {e}")
+        error_response = create_pool_not_initialized_error()
+        raise HTTPException(status_code=503, detail=error_response.error.model_dump())
+    except PoolExhaustedError as e:
+        logger.error(f"Pool error in dependency: {e}")
+        from api.models.errors import ErrorCode
 
-        # Handle specific pool errors with structured responses
-        if "not initialized" in error_msg.lower():
-            error_response = create_pool_not_initialized_error()
-            raise HTTPException(status_code=503, detail=error_response.error.model_dump())
-        elif "pool may be exhausted" in error_msg.lower():
-            from api.models.errors import ErrorCode
-
-            error_response = create_connection_error(
-                detail="Connection pool exhausted - too many concurrent requests",
-                code=ErrorCode.POOL_EXHAUSTED,
-            )
-            raise HTTPException(status_code=503, detail=error_response.error.model_dump())
-        else:
-            error_response = create_connection_error(detail=error_msg)
-            raise HTTPException(status_code=500, detail=error_response.error.model_dump())
+        error_response = create_connection_error(
+            detail="Connection pool exhausted - too many concurrent requests",
+            code=ErrorCode.POOL_EXHAUSTED,
+        )
+        raise HTTPException(status_code=503, detail=error_response.error.model_dump())
     except Exception as e:
+        if e is route_error:
+            raise
+
+        if isinstance(e, RuntimeError):
+            logger.error(f"Pool error in dependency: {e}")
+            error_response = create_connection_error(detail=str(e))
+            raise HTTPException(status_code=500, detail=error_response.error.model_dump())
+
         logger.error(f"Unexpected error with pooled cursor: {e}")
         from api.models.errors import ErrorCode, ErrorDetail, ErrorResponse, ErrorType
 

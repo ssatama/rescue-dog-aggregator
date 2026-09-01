@@ -29,8 +29,20 @@ logger = logging.getLogger(__name__)
 
 POOL_MIN_CONN = int(os.getenv("DB_POOL_MIN_CONN", "5"))
 POOL_MAX_CONN = int(os.getenv("DB_POOL_MAX_CONN", "50"))
-POOL_ACQUIRE_RETRIES = int(os.getenv("DB_POOL_ACQUIRE_RETRIES", "3"))
+POOL_ACQUIRE_RETRIES = int(os.getenv("DB_POOL_ACQUIRE_RETRIES", "5"))
 POOL_ACQUIRE_RETRY_DELAY = float(os.getenv("DB_POOL_ACQUIRE_RETRY_DELAY", "0.1"))
+# Discarding a stale connection is not a sign the pool is full, so it gets its
+# own budget. Sharing one meant two dead connections could spend every attempt
+# and fail the request with no error to report.
+POOL_STALE_CONNECTION_RETRIES = int(os.getenv("DB_POOL_STALE_CONNECTION_RETRIES", "3"))
+
+
+class PoolNotInitializedError(RuntimeError):
+    """The pool was used before initialize() ran, or initialization failed."""
+
+
+class PoolExhaustedError(RuntimeError):
+    """Every connection is checked out and the retry budget ran out."""
 
 
 class ConnectionPool:
@@ -163,36 +175,51 @@ class ConnectionPool:
         except (psycopg2.OperationalError, psycopg2.InterfaceError):
             return False
 
-    def _acquire_connection_with_retry(self) -> psycopg2.extensions.connection:
-        """Acquire a connection with retry logic for pool exhaustion and stale connections."""
-        last_error = None
+    def _discard_stale_connection(self, conn: psycopg2.extensions.connection) -> None:
+        """Close a connection that failed its health check and return it to the pool."""
+        try:
+            self._pool.putconn(conn, close=True)
+        except Exception as e:
+            logger.error(f"Failed to return stale connection to pool: {e}", exc_info=True)
 
-        for attempt in range(POOL_ACQUIRE_RETRIES):
+    def _acquire_connection_with_retry(self) -> psycopg2.extensions.connection:
+        """Acquire a connection, retrying past pool exhaustion and stale connections.
+
+        The two retry budgets are separate on purpose: a stale connection says
+        nothing about how full the pool is, so discarding one must not spend an
+        attempt that a genuinely exhausted pool needs.
+        """
+        last_error: Exception | None = None
+        attempt = 0
+        stale_discarded = 0
+
+        while attempt < POOL_ACQUIRE_RETRIES:
             try:
                 conn = self._pool.getconn()
                 if conn is None:
                     raise pool.PoolError("Pool returned None connection")
 
                 if not self._check_connection_health(conn):
-                    logger.warning(f"Stale connection detected, returning to pool and retrying (attempt {attempt + 1})")
-                    try:
-                        self._pool.putconn(conn, close=True)
-                    except Exception as e:
-                        logger.error(f"Failed to return stale connection to pool: {e}", exc_info=True)
+                    stale_discarded += 1
+                    logger.warning(f"Stale connection detected, closing and retrying (stale {stale_discarded}/{POOL_STALE_CONNECTION_RETRIES})")
+                    self._discard_stale_connection(conn)
+                    if stale_discarded >= POOL_STALE_CONNECTION_RETRIES:
+                        raise PoolExhaustedError(f"Pool returned {stale_discarded} stale connections in a row; the database is not reachable")
                     continue
 
-                if attempt > 0:
-                    logger.info(f"Connection acquired after {attempt + 1} attempts")
+                if attempt > 0 or stale_discarded > 0:
+                    logger.info(f"Connection acquired after {attempt + 1} attempts and {stale_discarded} stale discards")
                 return conn
             except pool.PoolError as e:
                 last_error = e
-                if attempt < POOL_ACQUIRE_RETRIES - 1:
-                    delay = POOL_ACQUIRE_RETRY_DELAY * (2**attempt)
-                    logger.warning(f"Pool exhausted, retrying in {delay:.2f}s (attempt {attempt + 1}/{POOL_ACQUIRE_RETRIES})")
+                attempt += 1
+                if attempt < POOL_ACQUIRE_RETRIES:
+                    delay = POOL_ACQUIRE_RETRY_DELAY * (2 ** (attempt - 1))
+                    logger.warning(f"Pool exhausted, retrying in {delay:.2f}s (attempt {attempt}/{POOL_ACQUIRE_RETRIES})")
                     time.sleep(delay)
 
         logger.error(f"Failed to acquire connection after {POOL_ACQUIRE_RETRIES} retries: {last_error}")
-        raise RuntimeError(f"Connection pool exhausted after {POOL_ACQUIRE_RETRIES} retries")
+        raise PoolExhaustedError(f"Connection pool exhausted after {POOL_ACQUIRE_RETRIES} retries: {last_error}")
 
     @contextmanager
     def get_connection(self) -> Generator[psycopg2.extensions.connection, None, None]:
@@ -201,8 +228,8 @@ class ConnectionPool:
         try:
             if not ConnectionPool._initialized or self._pool is None:
                 if ConnectionPool._initialization_error:
-                    raise RuntimeError(f"Connection pool initialization failed: {ConnectionPool._initialization_error}")
-                raise RuntimeError("Connection pool not initialized. Call initialize() first.")
+                    raise PoolNotInitializedError(f"Connection pool initialization failed: {ConnectionPool._initialization_error}")
+                raise PoolNotInitializedError("Connection pool not initialized. Call initialize() first.")
 
             conn = self._acquire_connection_with_retry()
             logger.debug(f"Connection acquired from pool: {id(conn)}")
