@@ -26,11 +26,7 @@ import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-CLI_SCRIPTS = sorted(
-    path.name
-    for path in (PROJECT_ROOT / "management").glob("*.py")
-    if path.name != "__init__.py" and "__main__" in path.read_text()
-)
+CLI_SCRIPTS = sorted(path.name for path in (PROJECT_ROOT / "management").glob("*.py") if path.name != "__init__.py" and "__main__" in path.read_text())
 
 
 @pytest.mark.unit
