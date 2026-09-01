@@ -14,9 +14,13 @@ import sys
 import click
 from dotenv import load_dotenv
 
-# Add the project root directory to Python path (insert at beginning for priority)
+# Put the project root ahead of this directory on the import path.
+# Running `python management/foo.py` puts `management/` at sys.path[0], and
+# `management/services/` would otherwise shadow the project's own `services/`.
+# Testing membership is not enough: an editable install already puts the root
+# on sys.path, just after `management/`.
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
+if sys.path[0] != project_root:
     sys.path.insert(0, project_root)
 
 # Load environment variables from .env file
