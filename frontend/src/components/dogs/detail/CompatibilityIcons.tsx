@@ -58,11 +58,13 @@ const shouldHideDueToLowConfidence = (
   return typeof score === "number" && score <= 0.5;
 };
 
-const CompatibilityIcons: React.FC<CompatibilityIconsProps> = ({
-  profilerData,
-}) => {
+/** The compatibility answers worth drawing, after dropping anything the model
+ * was not confident about. */
+const visibleCompatibilityItems = (
+  profilerData: DogProfilerData | null | undefined,
+): CompatibilityItem[] => {
   if (!profilerData) {
-    return null;
+    return [];
   }
 
   const compatibilityItems: CompatibilityItem[] = [
@@ -90,9 +92,23 @@ const CompatibilityIcons: React.FC<CompatibilityIconsProps> = ({
   ];
 
   // Show items if data exists, unless confidence score is explicitly low
-  const validItems = compatibilityItems.filter(
-    (item) => item.value && !shouldHideDueToLowConfidence(profilerData, item.confidenceKey),
+  return compatibilityItems.filter(
+    (item) =>
+      item.value &&
+      !shouldHideDueToLowConfidence(profilerData, item.confidenceKey),
   );
+};
+
+/** Whether the Good With section has anything to show. */
+export const hasCompatibilitySection = (
+  profilerData: DogProfilerData | null | undefined,
+): profilerData is DogProfilerData =>
+  visibleCompatibilityItems(profilerData).length > 0;
+
+const CompatibilityIcons: React.FC<CompatibilityIconsProps> = ({
+  profilerData,
+}) => {
+  const validItems = visibleCompatibilityItems(profilerData);
 
   if (validItems.length === 0) {
     return null;

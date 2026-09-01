@@ -26,6 +26,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from api.routes.swipe import MIN_SWIPE_QUALITY_SCORE
 from config import DB_CONFIG
 from management.batch_processor import create_batch_processor
+from scrapers.sentry_integration import init_scraper_sentry
 from services.llm.config import get_llm_config
 
 # ProcessingType import removed - was unused
@@ -299,6 +300,11 @@ def generate_profiles(organization: int | None, limit: int | None, force: bool, 
     from services.llm.organization_config_loader import get_config_loader
 
     console.print("[bold cyan]Starting dog profiler generation with org-specific prompts...[/bold cyan]")
+
+    # The profiler reports every dropped dog to Sentry, and capture_* is a
+    # no-op without a DSN. This is the only path that retries a dog the
+    # scraper already failed to profile, so it is the path that most needs it.
+    init_scraper_sentry(environment=os.getenv("ENVIRONMENT", "production"))
 
     conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()

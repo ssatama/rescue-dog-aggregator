@@ -18,7 +18,7 @@ from api.exceptions import APIException
 from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse, FilterOption
-from api.utils.json_parser import build_organization_object, parse_json_field
+from api.utils.json_parser import build_organization_object, parse_json_field, parse_optional_json_field
 from api.utils.sql_utils import escape_like_pattern
 from utils.breed_utils import QUALIFYING_BREED_MIN_COUNT, generate_breed_slug
 
@@ -330,7 +330,7 @@ class AnimalService:
                 parse_json_field(row_dict, "properties")
 
                 # Parse dog_profiler_data if present (for LLM-enhanced descriptions)
-                parse_json_field(row_dict, "dog_profiler_data")
+                parse_optional_json_field(row_dict, "dog_profiler_data")
 
                 # Parse adoption_check_data if present
                 parse_json_field(row_dict, "adoption_check_data")
@@ -544,7 +544,7 @@ class AnimalService:
         # Parse properties JSON field properly
         row_dict = dict(row)
         parse_json_field(row_dict, "properties")
-        parse_json_field(row_dict, "dog_profiler_data")
+        parse_optional_json_field(row_dict, "dog_profiler_data")
         parse_json_field(row_dict, "adoption_check_data")
 
         # Parse the org_recent_dogs JSON field if present
@@ -588,7 +588,7 @@ class AnimalService:
             "availability_confidence": row.get("availability_confidence"),
             "last_seen_at": row.get("last_seen_at"),
             "consecutive_scrapes_missing": row.get("consecutive_scrapes_missing"),
-            "dog_profiler_data": row_dict.get("dog_profiler_data", {}),
+            "dog_profiler_data": row_dict.get("dog_profiler_data"),
             "organization": organization,
         }
 
