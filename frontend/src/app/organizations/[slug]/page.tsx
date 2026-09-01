@@ -8,6 +8,14 @@ import { reportError } from "../../../utils/logger";
 import Layout from "../../../components/layout/Layout";
 import OrganizationDetailClient from "./OrganizationDetailClient";
 import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
+import { notFound } from "next/navigation";
+
+// The API 404s an organization that does not exist or has been deactivated.
+// That is a routing outcome, not a fetch failure, and the two need different
+// handling: 404 -> notFound(), anything else -> throw so ISR caches nothing.
+function isNotFound(error: unknown): boolean {
+  return (error as { status?: number } | null)?.status === 404;
+}
 
 interface OrganizationDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -70,7 +78,11 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
 
     return metadata;
   } catch (error) {
-    reportError(error, { context: "generateMetadata", component: "OrganizationDetailPage" });
+    // A 404 here is the expected answer for a retired org, so it is not worth
+    // a Sentry event; reporting it buried the real fetch failures on this route.
+    if (!isNotFound(error)) {
+      reportError(error, { context: "generateMetadata", component: "OrganizationDetailPage" });
+    }
     return {
       title: "Organization Not Found | Rescue Dog Aggregator",
       description:
@@ -86,7 +98,7 @@ function OrganizationDetailPage(_props: OrganizationDetailPageProps): React.JSX.
   return <Layout><OrganizationDetailClient /></Layout>;
 }
 
-async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): Promise<React.JSX.Element> {
+export async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): Promise<React.JSX.Element> {
   const { params } = props || {};
   let resolvedParams: { slug?: string } = {};
 
@@ -95,6 +107,7 @@ async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): 
       resolvedParams = await params;
     } catch (error) {
       reportError(error, { context: "OrganizationDetailPageAsync", operation: "resolveParams" });
+      throw error;
     }
   }
 
@@ -103,7 +116,14 @@ async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): 
     try {
       initialOrganization = await getOrganizationBySlug(resolvedParams.slug);
     } catch (error) {
+      if (isNotFound(error)) {
+        notFound();
+      }
       reportError(error, { context: "OrganizationDetailPageAsync", slug: resolvedParams.slug });
+      // This route is ISR-cached for `revalidate`, so rendering the page
+      // without its organization would pin an empty shell for 7 days. Fail the
+      // render instead: the next request retries.
+      throw error;
     }
   }
 
