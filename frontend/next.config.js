@@ -67,6 +67,14 @@ const nextConfig = {
         destination: '/guides/european-rescue-guide',
         permanent: true,
       },
+      // Never a guide in this repo, but inbound links and index coverage still
+      // point at it. The European rescue guide is the adoption-process guide
+      // that covers the same ground.
+      {
+        source: '/guides/how-to-adopt-a-rescue-dog',
+        destination: '/guides/european-rescue-guide',
+        permanent: true,
+      },
       // A cross is a facet of a breed, not a separate breed, so these pages
       // merged into their canonical breed rather than standing alone.
       {

@@ -1,4 +1,13 @@
 import { getGuide, getAllGuideSlugs, getAllGuides } from "../guides";
+import type { Guide } from "@/types/guide";
+
+async function requireGuide(slug: string): Promise<Guide> {
+  const guide = await getGuide(slug);
+  if (!guide) {
+    throw new Error(`Expected guide ${slug} to exist`);
+  }
+  return guide;
+}
 
 describe("guides utilities", () => {
   it("lists all guide slugs", () => {
@@ -10,14 +19,14 @@ describe("guides utilities", () => {
   });
 
   it("fetches guide by slug", async () => {
-    const guide = await getGuide("european-rescue-guide");
+    const guide = await requireGuide("european-rescue-guide");
     expect(guide.frontmatter.title).toBeDefined();
     expect(guide.frontmatter.slug).toBe("european-rescue-guide");
     expect(guide.content).toBeDefined();
   });
 
   it("parses frontmatter correctly", async () => {
-    const guide = await getGuide("european-rescue-guide");
+    const guide = await requireGuide("european-rescue-guide");
     expect(guide.frontmatter).toHaveProperty("title");
     expect(guide.frontmatter).toHaveProperty("description");
     expect(guide.frontmatter).toHaveProperty("heroImage");
@@ -38,7 +47,7 @@ describe("guides utilities", () => {
     });
   });
 
-  it("throws error for non-existent guide", async () => {
-    await expect(getGuide("non-existent-guide")).rejects.toThrow();
+  it("returns null for non-existent guide", async () => {
+    await expect(getGuide("non-existent-guide")).resolves.toBeNull();
   });
 });

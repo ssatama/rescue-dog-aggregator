@@ -5,7 +5,14 @@ import { Guide, GuideFrontmatter } from "@/types/guide";
 
 const guidesDirectory = path.join(process.cwd(), "content/guides");
 
-export async function getGuide(slug: string): Promise<Guide> {
+export async function getGuide(slug: string): Promise<Guide | null> {
+  // Resolving against the known slugs keeps a stale inbound link (or a crawler
+  // probing a retired guide) out of readFileSync, which threw ENOENT and made
+  // the route answer 500 instead of 404.
+  if (!getAllGuideSlugs().includes(slug)) {
+    return null;
+  }
+
   const fullPath = path.join(guidesDirectory, `${slug}.mdx`);
   const fileContents = fs.readFileSync(fullPath, "utf8");
   const { data, content } = matter(fileContents);
