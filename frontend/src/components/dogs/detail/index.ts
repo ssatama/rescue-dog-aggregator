@@ -1,5 +1,5 @@
-export { default as PersonalityTraits } from "./PersonalityTraits";
-export { default as EnergyTrainability } from "./EnergyTrainability";
-export { default as CompatibilityIcons } from "./CompatibilityIcons";
-export { default as ActivitiesQuirks } from "./ActivitiesQuirks";
+export { default as PersonalityTraits, hasPersonalitySection } from "./PersonalityTraits";
+export { default as EnergyTrainability, hasEnergyTrainabilitySection } from "./EnergyTrainability";
+export { default as CompatibilityIcons, hasCompatibilitySection } from "./CompatibilityIcons";
+export { default as ActivitiesQuirks, hasActivitiesSection } from "./ActivitiesQuirks";
 export { default as NavigationArrows } from "./NavigationArrows";

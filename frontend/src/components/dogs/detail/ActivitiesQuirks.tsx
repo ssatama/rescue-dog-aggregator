@@ -118,7 +118,8 @@ const shouldShowQuirk = (
   return true;
 };
 
-const shouldShowComponent = (
+/** Whether the Activities & Quirks section has anything to show. */
+export const hasActivitiesSection = (
   profilerData: DogProfilerData | null | undefined,
 ): boolean => {
   return shouldShowActivities(profilerData) || shouldShowQuirk(profilerData);
@@ -127,7 +128,7 @@ const shouldShowComponent = (
 export default function ActivitiesQuirks({
   profilerData,
 }: ActivitiesQuirksProps) {
-  if (!shouldShowComponent(profilerData)) {
+  if (!hasActivitiesSection(profilerData)) {
     return null;
   }
 

@@ -368,7 +368,7 @@ pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
 - Tuning: `LLM_DEFAULT_MODEL`, `LLM_COST_TIER` - no model strings in code
 - Reasoning is capped at `effort: low`, never disabled. Disabling it is a 400
   (`Reasoning is mandatory for this endpoint`) on the reasoning-only endpoints
-  the auto-router picks, which silently left 156 dogs unprofiled; leaving it
+  the auto-router picks, which silently left 123 dogs unprofiled; leaving it
   uncapped lets a reasoning model spend the whole token budget and return
   empty content
 - Config: `configs/llm_organizations.yaml`

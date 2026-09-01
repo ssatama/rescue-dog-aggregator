@@ -69,8 +69,11 @@ jest.mock("../../../../utils/logger", () => ({
   reportError: jest.fn(),
 }));
 
-// Mock the LLM detail components
+// Mock the LLM detail components. The section predicates are deliberately NOT
+// mocked: they decide whether each heading renders, so a stub would let the
+// empty-heading bug back in without failing a test.
 jest.mock("../../../../components/dogs/detail", () => ({
+  ...jest.requireActual("../../../../components/dogs/detail"),
   PersonalityTraits: ({ profilerData }) => {
     if (
       !profilerData ||

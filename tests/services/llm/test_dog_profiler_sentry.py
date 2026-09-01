@@ -1,7 +1,7 @@
 """Every dropped dog must reach Sentry.
 
 A per-dog LLM failure used to be a `logger.error` inside the cron container and
-nothing else. The 400 that stopped 156 dogs from ever getting a profile ran for
+nothing else. The 400 that stopped 123 dogs from ever getting a profile ran for
 five days across four scrape runs without raising an alert, because the only
 Sentry signal was a batch-level warning that fires with no error detail.
 """

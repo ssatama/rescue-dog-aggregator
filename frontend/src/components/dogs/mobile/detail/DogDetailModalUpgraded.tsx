@@ -22,7 +22,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { type Dog } from "@/types/dog";
 import { getAgeCategory } from "@/utils/dogHelpers";
 import { capitalizeFirst } from "@/utils/breedDisplayUtils";
-import { hasCompatibilityData } from "@/utils/dogProfiler";
+import { hasCompatibilitySection } from "@/components/dogs/detail";
 import ShareButton from "@/components/ui/ShareButton";
 
 interface DogDetailModalUpgradedProps {
@@ -66,7 +66,6 @@ const infoCardColors = {
     "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700",
   size: "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700",
 };
-
 
 // Activity colors matching main page
 const ACTIVITY_COLORS = [
@@ -280,9 +279,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     typeof window !== "undefined"
       ? window.location.origin
       : "https://www.rescuedogs.me";
-  const shareUrl = dog?.slug
-    ? `${origin}/dogs/${dog.slug}`
-    : `${origin}/dogs`;
+  const shareUrl = dog?.slug ? `${origin}/dogs/${dog.slug}` : `${origin}/dogs`;
 
   const toggleFavorite = async () => {
     if (!dog) return;
@@ -491,14 +488,20 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                       <ShareButton
                         url={shareUrl}
                         title={dog ? `Meet ${dog.name}` : ""}
-                        text={dog ? `Check out ${dog.name}, a ${dog.age_text || dog.age} ${dog.breed} looking for a loving home!` : ""}
+                        text={
+                          dog
+                            ? `Check out ${dog.name}, a ${dog.age_text || dog.age} ${dog.breed} looking for a loving home!`
+                            : ""
+                        }
                         compact
                         variant="ghost"
                         className="w-10 h-10 bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
                       />
                       <button
                         onClick={toggleFavorite}
-                        aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+                        aria-label={
+                          isFav ? "Remove from favorites" : "Add to favorites"
+                        }
                         aria-pressed={isFav}
                         className={cn(
                           "w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-105 active:scale-95",
@@ -665,50 +668,56 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                   )}
 
                   {/* Good With */}
-                  {hasCompatibilityData(dog.dog_profiler_data) && (
+                  {hasCompatibilitySection(dog.dog_profiler_data) && (
                     <div>
                       <h3 className="font-semibold mb-3 dark:text-white">
                         Good With
                       </h3>
                       <div className="flex gap-4">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={cn(
-                              "w-5 h-5 rounded-full flex items-center justify-center",
-                              dog.dog_profiler_data.good_with_dogs === "yes"
-                                ? "bg-green-100 dark:bg-green-900/30"
-                                : "bg-gray-100 dark:bg-gray-800",
-                            )}
-                          >
-                            {dog.dog_profiler_data.good_with_dogs === "yes" ? (
-                              <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
-                            ) : (
-                              <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
-                            )}
+                        {dog.dog_profiler_data.good_with_dogs !== undefined && (
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                "w-5 h-5 rounded-full flex items-center justify-center",
+                                dog.dog_profiler_data.good_with_dogs === "yes"
+                                  ? "bg-green-100 dark:bg-green-900/30"
+                                  : "bg-gray-100 dark:bg-gray-800",
+                              )}
+                            >
+                              {dog.dog_profiler_data.good_with_dogs ===
+                              "yes" ? (
+                                <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
+                              ) : (
+                                <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
+                              )}
+                            </div>
+                            <span className="text-sm dark:text-gray-300">
+                              Dogs
+                            </span>
                           </div>
-                          <span className="text-sm dark:text-gray-300">
-                            Dogs
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={cn(
-                              "w-5 h-5 rounded-full flex items-center justify-center",
-                              dog.dog_profiler_data.good_with_cats === "yes"
-                                ? "bg-green-100 dark:bg-green-900/30"
-                                : "bg-gray-100 dark:bg-gray-800",
-                            )}
-                          >
-                            {dog.dog_profiler_data.good_with_cats === "yes" ? (
-                              <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
-                            ) : (
-                              <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
-                            )}
+                        )}
+                        {dog.dog_profiler_data.good_with_cats !== undefined && (
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                "w-5 h-5 rounded-full flex items-center justify-center",
+                                dog.dog_profiler_data.good_with_cats === "yes"
+                                  ? "bg-green-100 dark:bg-green-900/30"
+                                  : "bg-gray-100 dark:bg-gray-800",
+                              )}
+                            >
+                              {dog.dog_profiler_data.good_with_cats ===
+                              "yes" ? (
+                                <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
+                              ) : (
+                                <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
+                              )}
+                            </div>
+                            <span className="text-sm dark:text-gray-300">
+                              Cats
+                            </span>
                           </div>
-                          <span className="text-sm dark:text-gray-300">
-                            Cats
-                          </span>
-                        </div>
+                        )}
                         {dog.dog_profiler_data.good_with_children !==
                           undefined && (
                           <div className="flex items-center gap-2">
@@ -799,11 +808,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                     className="w-full bg-gradient-to-r from-orange-500 to-orange-600 dark:bg-orange-600 hover:from-orange-600 hover:to-orange-700 dark:hover:from-orange-700 dark:hover:to-orange-800 text-white py-4 px-6 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                     onClick={() => {
                       if (dog.adoption_url) {
-                        window.open(
-                          dog.adoption_url,
-                          "_blank",
-                          "noopener",
-                        );
+                        window.open(dog.adoption_url, "_blank", "noopener");
                       }
                     }}
                   >
