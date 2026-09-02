@@ -133,26 +133,43 @@ def get_pooled_db_cursor() -> Generator[RealDictCursor, None, None]:
     This is an optimized version of get_db_cursor that uses connection pooling
     for better performance under high load.
     """
+    from api.database.connection_pool import PoolExhaustedError, PoolNotInitializedError
     from api.models.errors import (
         create_connection_error,
         create_pool_not_initialized_error,
     )
 
+    # FastAPI throws the route's exception into this generator when it unwinds
+    # the AsyncExitStack. That exception belongs to the route, so it is held by
+    # identity here and re-raised untouched below - translating it turned a 422
+    # into a 500 UNKNOWN_ERROR.
+    route_error: BaseException | None = None
+
     try:
         with get_pooled_cursor() as cursor:
-            yield cursor
-    except HTTPException:
-        # Let HTTPExceptions from routes bubble up without modification
-        raise
-    except RuntimeError as e:
-        error_msg = str(e)
-        logger.error(f"Pool error in dependency: {error_msg}")
+            try:
+                yield cursor
+            except BaseException as exc:
+                route_error = exc
+                raise
+    except BaseException as e:
+        # The identity check comes first and covers every branch below. Putting
+        # it inside a single clause meant a route that raised PoolExhaustedError
+        # itself would be caught by the type-specific clause and relabelled -
+        # the exact bug #380 fixes, reintroduced for the new types.
+        #
+        # A BaseException that is not an Exception (GeneratorExit,
+        # KeyboardInterrupt) is never ours to translate either.
+        if e is route_error or not isinstance(e, Exception) or isinstance(e, HTTPException):
+            raise
 
-        # Handle specific pool errors with structured responses
-        if "not initialized" in error_msg.lower():
+        if isinstance(e, PoolNotInitializedError):
+            logger.error(f"Pool error in dependency: {e}")
             error_response = create_pool_not_initialized_error()
             raise HTTPException(status_code=503, detail=error_response.error.model_dump())
-        elif "pool may be exhausted" in error_msg.lower():
+
+        if isinstance(e, PoolExhaustedError):
+            logger.error(f"Pool error in dependency: {e}")
             from api.models.errors import ErrorCode
 
             error_response = create_connection_error(
@@ -160,10 +177,25 @@ def get_pooled_db_cursor() -> Generator[RealDictCursor, None, None]:
                 code=ErrorCode.POOL_EXHAUSTED,
             )
             raise HTTPException(status_code=503, detail=error_response.error.model_dump())
-        else:
-            error_response = create_connection_error(detail=error_msg)
+
+        if isinstance(e, RuntimeError):
+            logger.error(f"Pool error in dependency: {e}")
+            error_response = create_connection_error(detail=str(e))
             raise HTTPException(status_code=500, detail=error_response.error.model_dump())
-    except Exception as e:
+
+        logger.error(f"Unexpected error with pooled cursor: {e}")
+        from api.models.errors import ErrorCode, ErrorDetail, ErrorResponse, ErrorType
+
+        error_response = ErrorResponse(
+            error=ErrorDetail(
+                type=ErrorType.INTERNAL_ERROR,
+                code=ErrorCode.UNKNOWN_ERROR,
+                message="An unexpected error occurred",
+                detail=str(e),
+            )
+        )
+        raise HTTPException(status_code=500, detail=error_response.error.model_dump())
+
         logger.error(f"Unexpected error with pooled cursor: {e}")
         from api.models.errors import ErrorCode, ErrorDetail, ErrorResponse, ErrorType
 
