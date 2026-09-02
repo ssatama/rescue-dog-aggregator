@@ -176,9 +176,11 @@ describe("Structured Data Integration", () => {
     });
 
     test("should not include structured data for invalid organization", async () => {
-      getOrganizationBySlug.mockRejectedValue(
-        new Error("Organization not found"),
-      );
+      // The API answers a retired or unknown slug with a 404; the status is
+      // what separates it from a transient failure.
+      const notFound = new Error("Organization not found");
+      notFound.status = 404;
+      getOrganizationBySlug.mockRejectedValue(notFound);
 
       const metadata = await generateOrgMetadata({ params: { slug: "999" } });
 

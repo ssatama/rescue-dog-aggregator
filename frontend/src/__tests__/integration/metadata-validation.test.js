@@ -159,11 +159,14 @@ describe("Metadata Validation Integration Tests", () => {
 
   describe("Error Handling in Metadata Generation", () => {
     test("should handle service errors gracefully", async () => {
+      // A transient failure is not a missing organization: the page throws for
+      // this case, so titling it "Not Found" would tell a crawler a temporary
+      // error is permanent.
       getOrganizationBySlug.mockRejectedValue(new Error("Service error"));
 
       const metadata = await generateOrgMetadata({ params: { slug: "999" } });
 
-      expect(metadata.title).toContain("Not Found");
+      expect(metadata.title).toContain("Error Loading Organization");
       expect(metadata.description).toBeDefined();
       // Should not include OpenGraph when there's an error
       expect(metadata.openGraph).toBeUndefined();
