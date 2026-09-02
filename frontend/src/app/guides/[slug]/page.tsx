@@ -29,6 +29,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const guide = await getGuide(slug);
+
+  if (!guide) {
+    return {
+      title: "Guide Not Found | Rescue Dog Aggregator",
+      description:
+        "The requested guide could not be found. Browse our rescue adoption guides.",
+    };
+  }
+
   const { frontmatter } = guide;
 
   return {
@@ -74,10 +83,9 @@ export default async function GuidePage({
 }) {
   const { slug } = await params;
 
-  let guide;
-  try {
-    guide = await getGuide(slug);
-  } catch {
+  const guide = await getGuide(slug);
+
+  if (!guide) {
     notFound();
   }
 
