@@ -152,29 +152,49 @@ def get_pooled_db_cursor() -> Generator[RealDictCursor, None, None]:
             except BaseException as exc:
                 route_error = exc
                 raise
-    except HTTPException:
-        raise
-    except PoolNotInitializedError as e:
-        logger.error(f"Pool error in dependency: {e}")
-        error_response = create_pool_not_initialized_error()
-        raise HTTPException(status_code=503, detail=error_response.error.model_dump())
-    except PoolExhaustedError as e:
-        logger.error(f"Pool error in dependency: {e}")
-        from api.models.errors import ErrorCode
-
-        error_response = create_connection_error(
-            detail="Connection pool exhausted - too many concurrent requests",
-            code=ErrorCode.POOL_EXHAUSTED,
-        )
-        raise HTTPException(status_code=503, detail=error_response.error.model_dump())
-    except Exception as e:
-        if e is route_error:
+    except BaseException as e:
+        # The identity check comes first and covers every branch below. Putting
+        # it inside a single clause meant a route that raised PoolExhaustedError
+        # itself would be caught by the type-specific clause and relabelled -
+        # the exact bug #380 fixes, reintroduced for the new types.
+        #
+        # A BaseException that is not an Exception (GeneratorExit,
+        # KeyboardInterrupt) is never ours to translate either.
+        if e is route_error or not isinstance(e, Exception) or isinstance(e, HTTPException):
             raise
+
+        if isinstance(e, PoolNotInitializedError):
+            logger.error(f"Pool error in dependency: {e}")
+            error_response = create_pool_not_initialized_error()
+            raise HTTPException(status_code=503, detail=error_response.error.model_dump())
+
+        if isinstance(e, PoolExhaustedError):
+            logger.error(f"Pool error in dependency: {e}")
+            from api.models.errors import ErrorCode
+
+            error_response = create_connection_error(
+                detail="Connection pool exhausted - too many concurrent requests",
+                code=ErrorCode.POOL_EXHAUSTED,
+            )
+            raise HTTPException(status_code=503, detail=error_response.error.model_dump())
 
         if isinstance(e, RuntimeError):
             logger.error(f"Pool error in dependency: {e}")
             error_response = create_connection_error(detail=str(e))
             raise HTTPException(status_code=500, detail=error_response.error.model_dump())
+
+        logger.error(f"Unexpected error with pooled cursor: {e}")
+        from api.models.errors import ErrorCode, ErrorDetail, ErrorResponse, ErrorType
+
+        error_response = ErrorResponse(
+            error=ErrorDetail(
+                type=ErrorType.INTERNAL_ERROR,
+                code=ErrorCode.UNKNOWN_ERROR,
+                message="An unexpected error occurred",
+                detail=str(e),
+            )
+        )
+        raise HTTPException(status_code=500, detail=error_response.error.model_dump())
 
         logger.error(f"Unexpected error with pooled cursor: {e}")
         from api.models.errors import ErrorCode, ErrorDetail, ErrorResponse, ErrorType

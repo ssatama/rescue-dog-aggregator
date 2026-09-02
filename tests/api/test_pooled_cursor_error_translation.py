@@ -66,6 +66,31 @@ class TestRouteErrorsPassThrough:
 
         assert exc_info.value is route_error
 
+    def test_a_route_raising_a_pool_error_is_not_relabelled(self, pooled_cursor):
+        """PoolExhaustedError is a public importable type a route could raise.
+
+        The type-specific clauses used to sit above the identity check, so the
+        dependency would swallow the route's own message and answer with the
+        fixed "too many concurrent requests" 503 - #380's bug, reintroduced for
+        the types #379 added.
+        """
+        generator = get_pooled_db_cursor()
+        next(generator)
+
+        route_error = PoolExhaustedError("the route decided to shed load")
+        with pytest.raises(PoolExhaustedError) as exc_info:
+            generator.throw(route_error)
+
+        assert exc_info.value is route_error
+
+    def test_generator_exit_is_not_translated(self, pooled_cursor):
+        """A BaseException that is not an Exception is never ours to rewrite."""
+        generator = get_pooled_db_cursor()
+        next(generator)
+
+        with pytest.raises(GeneratorExit):
+            generator.throw(GeneratorExit())
+
     def test_route_http_exception_still_passes_through(self, pooled_cursor):
         generator = get_pooled_db_cursor()
         next(generator)
