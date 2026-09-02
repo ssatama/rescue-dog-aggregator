@@ -80,13 +80,22 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
   } catch (error) {
     // A 404 here is the expected answer for a retired org, so it is not worth
     // a Sentry event; reporting it buried the real fetch failures on this route.
-    if (!isNotFound(error)) {
-      reportError(error, { context: "generateMetadata", component: "OrganizationDetailPage" });
+    if (isNotFound(error)) {
+      return {
+        title: "Organization Not Found | Rescue Dog Aggregator",
+        description:
+          "The requested organization could not be found. Browse our partner rescue organizations.",
+      };
     }
+
+    reportError(error, { context: "generateMetadata", component: "OrganizationDetailPage" });
+    // The page component throws for this case, so the body renders as an error.
+    // Titling it "Not Found" would tell a crawler that a transient failure is a
+    // permanent one. Mirrors the dog route's "Error Loading Dog".
     return {
-      title: "Organization Not Found | Rescue Dog Aggregator",
+      title: "Error Loading Organization | Rescue Dog Aggregator",
       description:
-        "The requested organization could not be found. Browse our partner rescue organizations.",
+        "We encountered an error loading this organization's details. Please try again later.",
     };
   }
 }
