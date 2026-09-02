@@ -65,14 +65,18 @@ class TestCollectDataPropagatesFailures:
 
 @pytest.mark.unit
 class TestEmptyFilterResultIsDiagnosable:
-    """No exception, no dogs: the log must distinguish the possible causes."""
+    """No exception, no dogs: the log must distinguish the possible causes.
+
+    Logged at WARNING so it lands as a breadcrumb on the alert_zero_dogs_found
+    event rather than raising a second, competing Sentry issue.
+    """
 
     def test_a_page_that_did_not_render_says_so(self, scraper):
         soup = BeautifulSoup("<html><body></body></html>", "html.parser")
 
         assert scraper._filter_dogs_by_section_soup(soup) == []
 
-        message = scraper.logger.error.call_args[0][0]
+        message = scraper.logger.warning.call_args[0][0]
         assert "0 section headers" in message
         assert "0 dog containers" in message
 
@@ -90,12 +94,12 @@ class TestEmptyFilterResultIsDiagnosable:
 
         assert scraper._filter_dogs_by_section_soup(soup) == []
 
-        message = scraper.logger.error.call_args[0][0]
+        message = scraper.logger.warning.call_args[0][0]
         assert "1 section headers" in message
         assert "1 dog containers" in message
         assert "1 matched a known section" in message
 
-    def test_a_healthy_page_logs_no_error(self, scraper):
+    def test_a_healthy_page_logs_no_diagnostic(self, scraper):
         html = """
         <html><body>
           <h2 class="elementor-heading-title elementor-size-default">Unsere Hündinnen</h2>
@@ -107,4 +111,4 @@ class TestEmptyFilterResultIsDiagnosable:
         soup = BeautifulSoup(html, "html.parser")
 
         assert len(scraper._filter_dogs_by_section_soup(soup)) == 1
-        scraper.logger.error.assert_not_called()
+        scraper.logger.warning.assert_not_called()

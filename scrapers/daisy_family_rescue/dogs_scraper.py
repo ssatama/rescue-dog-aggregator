@@ -404,7 +404,13 @@ class DaisyFamilyRescueScraper(BaseScraper):
             # never rendered, containers with no matched section means the
             # headings were reworded, and matched sections with no containers
             # means the article selector changed.
-            self.logger.error(
+            #
+            # WARNING, not ERROR, on purpose: Sentry's LoggingIntegration turns
+            # ERROR into its own event, which would compete with the
+            # alert_zero_dogs_found event BaseScraper already raises for this
+            # exact condition. At WARNING these counts ride along as a breadcrumb
+            # on that alert, which is where the cause belongs.
+            self.logger.warning(
                 f"Section filtering produced no dog containers: {len(section_headers)} section headers, "
                 f"{len(all_dog_containers)} dog containers on the page, {len(section_positions)} matched a known section"
             )
