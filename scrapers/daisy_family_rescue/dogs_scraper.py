@@ -71,35 +71,27 @@ class DaisyFamilyRescueScraper(BaseScraper):
         2. Enhance each dog with detailed information
         3. Apply German-to-English translation
         4. Return standardized data for BaseScraper processing
+
+        Exceptions propagate to BaseScraper._run_with_connection, which routes
+        them through capture_scraper_error (a real Sentry exception with a
+        stack trace) and handle_scraper_failure (status="error" in
+        scrape_logs). Catching here flattened a Browserless session drop, a
+        navigation timeout and a selector change into the same signal - an
+        empty list, a `warning` run, and dogs_found = 0 with no cause.
         """
-        all_dogs = []
+        # Step 1: Extract dogs using browser automation with section filtering
+        if USE_PLAYWRIGHT:
+            all_dogs = asyncio.run(self._extract_with_playwright())
+        else:
+            all_dogs = self._extract_with_selenium()
 
-        try:
-            # World-class logging: Scrape initiation handled by centralized system
-
-            # Step 1: Extract dogs using browser automation with section filtering
-            if USE_PLAYWRIGHT:
-                all_dogs = asyncio.run(self._extract_with_playwright())
-            else:
-                all_dogs = self._extract_with_selenium()
-
-            if len(all_dogs) == 0:
-                self.logger.warning("No dogs extracted from main listing")
-                return []
-
-            # World-class logging: Extraction stats handled by centralized system
-
-            # Step 2: Apply translation before returning to BaseScraper
-            # This ensures all German text is translated to English for standardization
-            all_dogs = self._translate_and_normalize_dogs(all_dogs)
-
-            # World-class logging: Translation completion handled by centralized system
-            return all_dogs
-
-        except Exception as e:
-            self.logger.error(f"Error in collect_data: {e}")
-            # Return empty list to trigger partial failure detection in BaseScraper
+        if len(all_dogs) == 0:
+            self.logger.warning("No dogs extracted from main listing")
             return []
+
+        # Step 2: Apply translation before returning to BaseScraper
+        # This ensures all German text is translated to English for standardization
+        return self._translate_and_normalize_dogs(all_dogs)
 
     def _translate_and_normalize_dogs(self, dogs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Translate German data to English using comprehensive translation service.
@@ -361,6 +353,9 @@ class DaisyFamilyRescueScraper(BaseScraper):
     def _filter_dogs_by_section_soup(self, soup: BeautifulSoup) -> list:
         """Filter dog containers to only include those from target sections using BeautifulSoup."""
         valid_containers = []
+        section_headers = []
+        all_dog_containers = []
+        section_positions = {}
 
         try:
             section_headers = soup.select("h2.elementor-heading-title.elementor-size-default")
@@ -368,7 +363,6 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
             all_elements = list(soup.find_all(True))
 
-            section_positions = {}
             for header in section_headers:
                 section_text = header.get_text(strip=True)
                 if self._classify_section(section_text) is None:
@@ -403,6 +397,23 @@ class DaisyFamilyRescueScraper(BaseScraper):
         except Exception as e:
             self.logger.warning(f"Section filtering failed, using all containers: {e}")
             valid_containers = soup.select("article.elementor-post.elementor-grid-item.ecs-post-loop")
+
+        if not valid_containers:
+            # A zero-dog run used to report only the symptom. These three counts
+            # separate the causes: no headers and no containers means the page
+            # never rendered, containers with no matched section means the
+            # headings were reworded, and matched sections with no containers
+            # means the article selector changed.
+            #
+            # WARNING, not ERROR, on purpose: Sentry's LoggingIntegration turns
+            # ERROR into its own event, which would compete with the
+            # alert_zero_dogs_found event BaseScraper already raises for this
+            # exact condition. At WARNING these counts ride along as a breadcrumb
+            # on that alert, which is where the cause belongs.
+            self.logger.warning(
+                f"Section filtering produced no dog containers: {len(section_headers)} section headers, "
+                f"{len(all_dog_containers)} dog containers on the page, {len(section_positions)} matched a known section"
+            )
 
         return valid_containers
 

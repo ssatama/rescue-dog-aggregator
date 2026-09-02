@@ -169,12 +169,16 @@ weiblich, kastriert"""
 
     @pytest.mark.unit
     def test_collect_data_selenium_failure(self, scraper):
+        """A browser failure must reach BaseScraper so the run is marked `error`.
+
+        See tests/scrapers/test_daisy_zero_dog_diagnostics.py - swallowing this
+        is what produced 28 zero-dog runs with no diagnosable cause.
+        """
         with patch.object(scraper, "_extract_with_selenium") as mock_extract:
             mock_extract.side_effect = Exception("WebDriver failed")
 
-            result = scraper.collect_data()
-
-            assert result == []
+            with pytest.raises(Exception, match="WebDriver failed"):
+                scraper.collect_data()
 
     @pytest.mark.unit
     def test_collect_data_no_dogs_found(self, scraper):
