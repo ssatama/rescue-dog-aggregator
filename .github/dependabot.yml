@@ -7,13 +7,20 @@ updates:
       day: "monday"
       time: "05:00"
       timezone: "Europe/Berlin"
+    cooldown:
+      default-days: 7
     groups:
       python-dependencies:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+      python-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
     commit-message:
       prefix: "chore(deps)"
     labels:
@@ -28,13 +35,20 @@ updates:
       day: "monday"
       time: "05:00"
       timezone: "Europe/Berlin"
+    cooldown:
+      default-days: 7
     groups:
       npm-dependencies:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
     ignore:
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
@@ -56,13 +70,20 @@ updates:
       day: "monday"
       time: "05:00"
       timezone: "Europe/Berlin"
+    cooldown:
+      default-days: 7
     groups:
       ci-dependencies:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+      ci-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
     commit-message:
       prefix: "chore(ci)"
     labels:
