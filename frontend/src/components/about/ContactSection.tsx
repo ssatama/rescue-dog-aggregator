@@ -1,4 +1,5 @@
-import { Mail, Linkedin, Github } from "lucide-react";
+import { Mail } from "lucide-react";
+import { Github, Linkedin } from "../ui/brandIcons";
 
 interface ContactItem {
   icon: React.ComponentType<{ className?: string }>;
