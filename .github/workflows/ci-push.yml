@@ -5,7 +5,7 @@ permissions:
 
 on:
   push:
-    branches-ignore: [main]
+    branches-ignore: [main, "dependabot/**"]
 
 # Superseded pushes are cancelled. Once a PR exists, ci-pr.yml is the real
 # gate and this only has to keep a bare branch from drifting.
