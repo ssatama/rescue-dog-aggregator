@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { Facebook, Instagram } from "./brandIcons";
 import {
   // Navigation icons
   X,
@@ -18,8 +19,6 @@ import {
   CheckCircle,
 
   // Social media icons
-  Facebook,
-  Instagram,
   Globe,
 
   // Status/info icons
