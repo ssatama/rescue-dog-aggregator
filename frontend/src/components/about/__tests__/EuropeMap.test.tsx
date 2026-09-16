@@ -12,6 +12,7 @@ jest.mock("react-simple-maps", () => {
     { rsmKey: "gb", properties: { name: "United Kingdom" } },
     { rsmKey: "es", properties: { name: "Spain" } },
     { rsmKey: "fr", properties: { name: "France" } },
+    { rsmKey: "null-props", properties: null },
   ];
 
   return {
@@ -19,14 +20,9 @@ jest.mock("react-simple-maps", () => {
       <div data-testid={testId}>{children}</div>
     ),
     ZoomableGroup: ({ children }: any) => <div>{children}</div>,
-    Geographies: ({ children }: any) => (
-      <div>{children({ geographies })}</div>
-    ),
-    Geography: ({ geography, fill, stroke, strokeWidth, style, ...rest }: any) => (
-      <div
-        data-testid={`geography-${geography?.rsmKey}`}
-        {...rest}
-      />
+    Geographies: ({ children }: any) => <div>{children({ geographies })}</div>,
+    Geography: ({ geography, fill, stroke, strokeWidth, ...rest }: any) => (
+      <div data-testid={`geography-${geography?.rsmKey}`} {...rest} />
     ),
     Marker: ({ children }: any) => <g data-testid="marker">{children}</g>,
   };
@@ -64,9 +60,7 @@ describe("EuropeMap", () => {
           screen.getByText("Failed to load organization data"),
         ).toBeInTheDocument();
       });
-      expect(
-        screen.getByRole("button", { name: "Retry" }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
     });
 
     test("retry button re-fetches data after error", async () => {
@@ -116,6 +110,21 @@ describe("EuropeMap", () => {
       await waitFor(() => {
         expect(screen.getByTestId("europe-map")).toBeInTheDocument();
       });
+    });
+  });
+
+  describe("geography filtering", () => {
+    test("skips features without properties instead of crashing", async () => {
+      mockGetOrganizations.mockResolvedValue(mockOrgs);
+      render(<EuropeMap />);
+      await waitFor(() => {
+        expect(screen.getByTestId("europe-map")).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId("geography-gb")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("geography-null-props"),
+      ).not.toBeInTheDocument();
     });
   });
 

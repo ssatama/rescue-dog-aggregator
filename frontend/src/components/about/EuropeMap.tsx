@@ -6,6 +6,7 @@ import {
   Geographies,
   Geography,
   ZoomableGroup,
+  type GeographyProps,
 } from "react-simple-maps";
 import { getOrganizations } from "../../services/organizationsService";
 import { logger, reportError } from "../../utils/logger";
@@ -178,6 +179,11 @@ export default function EuropeMap() {
     return COUNTRY_NAME_TO_CODE[countryName] || null;
   }
 
+  function getGeographyName(geo: GeographyProps["geography"]): string {
+    const name: unknown = geo.properties?.name;
+    return typeof name === "string" ? name : "";
+  }
+
   return (
     <section>
       <h2 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-gray-200 mb-8 text-center">
@@ -225,10 +231,10 @@ export default function EuropeMap() {
                       {({ geographies }) =>
                         geographies
                           .filter((geo) =>
-                            EUROPEAN_COUNTRIES.has(geo.properties.name),
+                            EUROPEAN_COUNTRIES.has(getGeographyName(geo)),
                           )
                           .map((geo) => {
-                            const countryName = geo.properties.name;
+                            const countryName = getGeographyName(geo);
                             const countryCode =
                               getCountryCodeFromName(countryName);
                             const orgCount = countryCode
@@ -242,23 +248,6 @@ export default function EuropeMap() {
                                 fill={getCountryFill(countryName, isDarkMode)}
                                 stroke={isDarkMode ? "#374151" : "#E5E7EB"}
                                 strokeWidth={0.5}
-                                style={{
-                                  default: {
-                                    outline: "none",
-                                    transition: "all 200ms ease-in-out",
-                                  },
-                                  hover: {
-                                    outline: "none",
-                                    filter: "brightness(1.1)",
-                                    stroke: "#F97316",
-                                    strokeWidth: 2,
-                                    cursor: "pointer",
-                                  },
-                                  pressed: {
-                                    outline: "none",
-                                    filter: "brightness(0.9)",
-                                  },
-                                }}
                                 tabIndex={orgCount > 0 ? 0 : -1}
                                 onMouseEnter={() => {
                                   if (orgCount > 0 && countryCode) {
@@ -286,7 +275,7 @@ export default function EuropeMap() {
                                     );
                                   }
                                 }}
-                                className="transition-all duration-200 motion-reduce:transition-none focus-visible:outline-orange-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                                className="outline-none cursor-pointer transition-all duration-200 ease-in-out motion-reduce:transition-none hover:brightness-110 hover:stroke-orange-500 hover:stroke-2 active:brightness-90 focus-visible:outline-orange-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                                 role="button"
                                 aria-label={
                                   orgCount > 0
