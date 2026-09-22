@@ -60,3 +60,13 @@ class TestDaisyStoryExtraction:
         description = scraper._extract_description_soup(_page(STECKBRIEF + [personality] + FOOTER))
 
         assert description == personality
+
+    def test_drops_a_steckbrief_line_long_enough_to_pass_the_length_floor(self, scraper):
+        """hund-bjanka: her Charakter: widget is 150 chars, so only the label check keeps it out."""
+        long_charakter = "Charakter: verschmust, verspielt, aufgeschlossen, menschenbezogen, anhänglich, verträglich, lernfreudig, neugierig, aktiv, sensibel, sanft und fröhlich"
+        assert len(long_charakter) >= 150
+
+        description = scraper._extract_description_soup(_page([long_charakter] + STORY))
+
+        assert "Charakter:" not in description
+        assert description.startswith("Ich wurde Mitte Januar 2026 geboren")
