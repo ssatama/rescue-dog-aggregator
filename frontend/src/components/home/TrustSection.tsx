@@ -142,7 +142,7 @@ export default function TrustSection({ initialStatistics = null }: TrustSectionP
               className="text-4xl font-bold text-foreground mb-2"
               data-testid="organizations-stat"
             >
-              {total_organizations.toLocaleString()}
+              {total_organizations.toLocaleString("en-US")}
             </div>
             <div className="text-lg text-muted-foreground">
               Rescue Organizations
@@ -167,7 +167,7 @@ export default function TrustSection({ initialStatistics = null }: TrustSectionP
               className="text-4xl font-bold text-foreground mb-2"
               data-testid="total-dogs-stat"
             >
-              {total_dogs.toLocaleString()}
+              {total_dogs.toLocaleString("en-US")}
             </div>
             <div className="text-lg text-muted-foreground">Dogs Available</div>
           </div>
@@ -194,7 +194,7 @@ export default function TrustSection({ initialStatistics = null }: TrustSectionP
               className="text-4xl font-bold text-foreground mb-2"
               data-testid="countries-stat"
             >
-              {total_countries.toLocaleString()}
+              {total_countries.toLocaleString("en-US")}
             </div>
             <div className="text-lg text-muted-foreground">Countries</div>
           </div>

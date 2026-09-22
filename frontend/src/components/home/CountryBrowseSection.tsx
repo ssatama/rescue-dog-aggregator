@@ -68,7 +68,7 @@ export default function CountryBrowseSection({ countryStats = [] }: CountryBrows
                     {country.shortName}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {country.count.toLocaleString()} dogs
+                    {country.count.toLocaleString("en-US")} dogs
                   </p>
                 </div>
               </div>

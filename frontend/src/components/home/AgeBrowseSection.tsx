@@ -137,7 +137,7 @@ export default function AgeBrowseSection({ ageStats = [] }: AgeBrowseSectionProp
                     {/* Count */}
                     <div>
                       <p className="text-4xl font-bold text-white">
-                        {puppies.count.toLocaleString()}
+                        {puppies.count.toLocaleString("en-US")}
                       </p>
                       <p className="text-white/80 font-medium">
                         puppies waiting
@@ -229,7 +229,7 @@ export default function AgeBrowseSection({ ageStats = [] }: AgeBrowseSectionProp
                     {/* Count */}
                     <div>
                       <p className="text-4xl font-bold text-white">
-                        {seniors.count.toLocaleString()}
+                        {seniors.count.toLocaleString("en-US")}
                       </p>
                       <p className="text-white/80 font-medium">
                         wise souls waiting
