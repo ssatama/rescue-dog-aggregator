@@ -87,7 +87,11 @@ class TestScraperSentryDropsFrameLocals:
     def test_frame_locals_are_not_sent(self):
         """A failed connect_over_cdp would otherwise ship ws_url, token included,
         as a stack-frame local; the scrubber only matches key names."""
-        with patch.dict(os.environ, {"SENTRY_DSN_BACKEND": "https://key@example.ingest.sentry.io/1"}), patch("scrapers.sentry_integration._sentry_initialized", False), patch("scrapers.sentry_integration.sentry_sdk.init") as init:
+        with (
+            patch.dict(os.environ, {"SENTRY_DSN_BACKEND": "https://key@example.ingest.sentry.io/1"}),
+            patch("scrapers.sentry_integration._sentry_initialized", False),
+            patch("scrapers.sentry_integration.sentry_sdk.init") as init,
+        ):
             init_scraper_sentry()
 
         assert init.call_args.kwargs["include_local_variables"] is False
