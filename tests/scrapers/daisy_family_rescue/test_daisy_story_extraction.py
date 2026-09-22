@@ -51,3 +51,12 @@ class TestDaisyStoryExtraction:
 
     def test_page_with_only_a_steckbrief_has_no_description(self, scraper):
         assert scraper._extract_description_soup(_page(STECKBRIEF + FOOTER)) is None
+
+    def test_keeps_a_story_paragraph_with_an_early_colon(self, scraper):
+        """hund-pepe: the personality paragraph has a colon at char 40 and a
+        generic "Label:" pattern dropped all 1,222 chars of it."""
+        personality = "Ich bin durch und durch ein Menschenhund: offen, freundlich und immer dabei, wenn meine Menschen etwas unternehmen. Ich liebe lange Spaziergänge und Kuscheln."
+
+        description = scraper._extract_description_soup(_page(STECKBRIEF + [personality] + FOOTER))
+
+        assert description == personality

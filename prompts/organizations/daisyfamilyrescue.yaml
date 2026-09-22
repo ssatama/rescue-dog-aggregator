@@ -64,7 +64,7 @@ extraction_prompt: |
   - The "compatibility" field shows dog/cat compatibility
   - The "sex_german" indicates gender and neuter status
   - The "current_location" shows if dog is in North Macedonia, Germany, or foster care
-  - The standard description is boilerplate about permits/vaccinations - look for unique info in character fields
+  - The "german_description" field is the dog's own first-person story in German - the main source for personality and history. Its closing paragraph about permits, vaccinations and the adoption process is identical for every dog; ignore it
 
   Return a FLAT JSON object (no nested sections) with exactly these fields:
 

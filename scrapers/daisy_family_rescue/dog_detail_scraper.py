@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
 MIN_STORY_WIDGET_CHARS = 150
-STECKBRIEF_LINE = re.compile(r"^[^:\s][^:]{0,40}:\s")
 
 if TYPE_CHECKING:
     from selenium.webdriver.remote.webdriver import WebDriver
@@ -306,10 +305,12 @@ class DaisyFamilyRescueDogDetailScraper:
 
         Each Steckbrief line ("Alter: 01/2026") is its own widget ahead of the
         story, and the footer holds short contact and bank-detail widgets, so
-        the story is the widgets long enough to be prose that are not a label.
+        the story is the widgets long enough to be prose that do not open with
+        a known Steckbrief label. A generic "Label:" pattern is not enough:
+        story paragraphs open with "Ich bin ... ein Menschenhund: ..." too.
         """
         widgets = [" ".join(el.get_text().split()) for el in soup.select(".elementor-widget-text-editor")]
-        story = [text for text in widgets if len(text) >= MIN_STORY_WIDGET_CHARS and not STECKBRIEF_LINE.match(text)]
+        story = [text for text in widgets if len(text) >= MIN_STORY_WIDGET_CHARS and not text.startswith(tuple(self.steckbrief_patterns))]
 
         if logger and story:
             logger.debug(f"Found description ({sum(len(text) for text in story)} chars)")
