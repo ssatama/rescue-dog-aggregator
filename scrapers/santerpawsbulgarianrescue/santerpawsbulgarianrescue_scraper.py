@@ -5,13 +5,15 @@ from typing import Any
 from urllib.parse import urljoin
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from scrapers.base_scraper import BaseScraper
 
 # Migrated to unified standardization - using BaseScraper.process_animal()
 # Legacy standardize_age kept for date-of-birth calculations
 from utils.standardization import standardize_age
+
+STORY_BLOCK_TAGS = ["p", "div", "li", "blockquote"]
 
 
 class SanterPawsBulgarianRescueScraper(BaseScraper):
@@ -404,8 +406,17 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
         return name
 
+    def _dog_column(self, soup: BeautifulSoup) -> Tag | None:
+        """The page column holding this dog's name, story and field grid.
+
+        Anchoring on the <h1> keeps the "Meet more of our dogs" cards, which
+        repeat the same field markup for other dogs, out of this dog's data.
+        """
+        heading = soup.find("h1")
+        return heading.find_parent(class_="bde-column") if heading else None
+
     def _extract_properties(self, soup: BeautifulSoup) -> dict[str, Any]:
-        """Extract properties from detail page Information section.
+        """Extract properties from the label/value grid in the dog's column.
 
         Args:
             soup: BeautifulSoup object of the detail page
@@ -415,93 +426,52 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         """
         properties: dict[str, Any] = {}
 
-        # Extract Information section structured data - use robust H2 text matching
-        info_heading = None
-        for h2 in soup.find_all("h2"):
-            if h2.get_text(strip=True).lower() == "information":
-                info_heading = h2
-                break
+        column = self._dog_column(soup)
+        if not column:
+            return properties
 
-        if info_heading:
-            info_content = info_heading.find_next_sibling()
-            if info_content and hasattr(info_content, "find_all"):
-                # Parse information pairs - look for all text pairs
-                text_elements = []
-                for element in info_content.find_all(string=True):
-                    text = element.strip()
-                    if text and text not in ["\n", " "]:
-                        text_elements.append(text)
+        for field in column.select(".bde-grid > .bde-div"):
+            cells = field.find_all(class_="bde-text", recursive=False)
+            if len(cells) != 2:
+                continue
 
-                # FIX: Robust field-value pairing that handles missing values
-                # Process text pairs as label: value with improved logic
-                i = 0
-                while i < len(text_elements):
-                    if i >= len(text_elements):
-                        break
+            label = cells[0].get_text(strip=True).rstrip(":")
+            value = cells[1].get_text(strip=True)
 
-                    label = text_elements[i].strip()
-
-                    # Skip empty labels
-                    if not label:
-                        i += 1
-                        continue
-
-                    # Normalize label by removing trailing colons
-                    label = label.rstrip(":")
-
-                    # Get value (next element if exists, otherwise empty string)
-                    value = ""
-                    if i + 1 < len(text_elements):
-                        potential_value = text_elements[i + 1].strip()
-
-                        # Check if next element looks like another label (contains colon or known field name)
-                        known_labels = ["D.O.B", "Size", "Sex", "Breed", "Status"]
-                        is_next_label = potential_value.endswith(":") or potential_value in known_labels or any(potential_value.startswith(known_label) for known_label in known_labels)
-
-                        if not is_next_label:
-                            value = potential_value
-                            i += 2  # Skip both label and value
-                        else:
-                            # Next element is another label, current field has no value
-                            value = ""
-                            i += 1  # Skip only current label, next iteration will process the next label
+            # Process the label-value pair (allow empty values for some fields)
+            if label:
+                # Map labels to our field names with zero NULLs compliance
+                if label == "D.O.B":
+                    # A blank cell stays absent: "Unknown" would reach the page
+                    # as though it were a scraped age (#349)
+                    if value:
+                        properties["age_text"] = value
+                        age_info = standardize_age(value)
+                        if age_info.get("age_min_months") is not None:
+                            properties["age_min_months"] = age_info["age_min_months"]
+                            properties["age_max_months"] = age_info["age_max_months"]
+                            properties["age_category"] = age_info.get("age_category", "Unknown")
+                elif label == "Size":
+                    properties["size"] = value or "Medium"
+                elif label == "Sex":
+                    properties["sex"] = value or "Unknown"
+                elif label == "Breed":
+                    # Store raw breed for unified standardization
+                    properties["breed"] = value or "Mixed Breed"
+                elif label == "Status":
+                    # Map status values
+                    if value and value.lower() in ["reserved", "on hold"]:
+                        properties["status"] = "reserved"
                     else:
-                        # No more elements, this field has no value
-                        i += 1
-
-                    # Process the label-value pair (allow empty values for some fields)
-                    if label:
-                        # Map labels to our field names with zero NULLs compliance
-                        if label == "D.O.B":
-                            raw_age_text = value or "Unknown"
-                            properties["age_text"] = raw_age_text
-
-                            # Store raw age text for unified standardization
-                            # Legacy standardize_age kept for D.O.B calculations if needed
-                            if raw_age_text and raw_age_text != "Unknown":
-                                age_info = standardize_age(raw_age_text)
-                                if age_info.get("age_min_months") is not None:
-                                    properties["age_min_months"] = age_info["age_min_months"]
-                                    properties["age_max_months"] = age_info["age_max_months"]
-                                    properties["age_category"] = age_info.get("age_category", "Unknown")
-                        elif label == "Size":
-                            properties["size"] = value or "Medium"
-                        elif label == "Sex":
-                            properties["sex"] = value or "Unknown"
-                        elif label == "Breed":
-                            # Store raw breed for unified standardization
-                            properties["breed"] = value or "Mixed Breed"
-                        elif label == "Status":
-                            # Map status values
-                            if value and value.lower() in ["reserved", "on hold"]:
-                                properties["status"] = "reserved"
-                            else:
-                                properties["status"] = "available"
+                        properties["status"] = "available"
 
         return properties
 
     def _extract_description(self, soup: BeautifulSoup) -> str:
-        """Extract description text from About section.
+        """Extract the story from the dog's column.
+
+        Stories arrive as <p>s, as Facebook-pasted <div>s, and with <ul> lists,
+        so every innermost block element is a paragraph.
 
         Args:
             soup: BeautifulSoup object of the detail page
@@ -509,30 +479,15 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         Returns:
             Description text or empty string if not found
         """
-        # Extract About section description - use robust H2 text matching
-        about_heading = None
-        for h2 in soup.find_all("h2"):
-            if h2.get_text(strip=True).lower() == "about":
-                about_heading = h2
-                break
+        column = self._dog_column(soup)
+        if not column:
+            return ""
 
-        if about_heading:
-            about_content = about_heading.find_next_sibling()
-            if about_content and hasattr(about_content, "find_all"):
-                # FIX: Handle both <p> and <div> tags for description content
-                # Some dogs (Melody) use <p> tags, others (Mirrium) use <div> elements
-                description_elements = about_content.find_all(["p", "div"])
-                if description_elements:
-                    description_parts = []
-                    for element in description_elements:
-                        text = element.get_text(strip=True)
-                        if text:
-                            description_parts.append(text)
+        paragraphs = [
+            " ".join(leaf.get_text().split()) for block in column.find_all(class_="bde-text", recursive=False) for leaf in block.find_all(STORY_BLOCK_TAGS) if not leaf.find(STORY_BLOCK_TAGS)
+        ]
 
-                    if description_parts:
-                        return " ".join(description_parts)
-
-        return ""
+        return " ".join(text for text in paragraphs if text)
 
     def _extract_hero_image(self, soup: BeautifulSoup) -> str | None:
         """Extract hero image URL from detail page.
