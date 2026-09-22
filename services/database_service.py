@@ -554,14 +554,14 @@ class DatabaseService:
                 self.conn.rollback()
             return False
 
-    def get_existing_animal_urls(self, organization_id: int) -> set:
-        """Get set of existing animal URLs for this organization.
+    def get_existing_external_ids(self, organization_id: int) -> set[str]:
+        """Get external IDs of this organization's available animals.
 
         Args:
             organization_id: Organization ID
 
         Returns:
-            Set of existing animal URLs
+            Set of existing external IDs
         """
         if not self.conn:
             # Try to establish connection before failing
@@ -572,15 +572,15 @@ class DatabaseService:
         try:
             cursor = self.conn.cursor()
             cursor.execute(
-                "SELECT adoption_url FROM animals WHERE organization_id = %s AND status = 'available'",
+                "SELECT external_id FROM animals WHERE organization_id = %s AND status = 'available'",
                 (organization_id,),
             )
             results = cursor.fetchall()
             cursor.close()
 
-            return {url[0] for url in results if url[0]}
+            return {row[0] for row in results if row[0]}
         except Exception as e:
-            self.logger.error(f"Error getting existing animal URLs: {e}")
+            self.logger.error(f"Error getting existing external IDs: {e}")
             return set()
 
     def get_slugs_for_animals(self, animal_ids: list[int]) -> list[str]:
