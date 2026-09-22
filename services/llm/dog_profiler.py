@@ -40,6 +40,12 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+# A full profile is ~1000 output tokens, but reasoning shares the same budget
+# and effort:low has been seen to spend over 3800 tokens before answering.
+# Only tokens actually generated are billed, so the headroom costs nothing on
+# the calls that would have finished anyway.
+PROFILE_MAX_TOKENS = 8000
+
 
 class ProfileValidationError(ValueError):
     """A generated profile did not satisfy DogProfilerData.
@@ -165,7 +171,7 @@ class DogProfilerPipeline:
             messages=messages,
             model=model or self.model,
             temperature=0.7,
-            max_tokens=4000,
+            max_tokens=PROFILE_MAX_TOKENS,
             timeout=timeout,
             cost_tier=self.cost_tier,
         )
