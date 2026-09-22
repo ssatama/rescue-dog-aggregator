@@ -300,10 +300,12 @@ def process_animal(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
 Optimization to avoid re-scraping unchanged animals:
 
 ```python
-def _filter_existing_urls(self, urls: List[str]) -> List[str]:
+def filter_existing_animals(self, animals: list[dict]) -> list[dict]:
     """
-    Queries database for existing animals by adoption_url.
-    Returns only URLs that don't exist or need updating.
+    FilteringService: records every found external_id for stale detection,
+    then drops animals whose external_id belongs to an available row.
+    Matching is by external_id, not adoption_url: some sites (REAN) list
+    every dog on one shared URL.
     """
 
 def set_filtering_stats(self, total: int, skipped: int) -> None:

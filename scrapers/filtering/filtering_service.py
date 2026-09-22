@@ -36,37 +36,13 @@ class FilteringService:
     def total_animals_skipped(self) -> int:
         return self._total_animals_skipped
 
-    def get_existing_animal_urls(self) -> set[str]:
-        """Get set of existing animal URLs for this organization."""
+    def get_existing_external_ids(self) -> set[str]:
+        """Get external IDs of this organization's available animals."""
         if self.database_service:
-            return self.database_service.get_existing_animal_urls(self.organization_id)
+            return self.database_service.get_existing_external_ids(self.organization_id)
 
         self.logger.warning("No DatabaseService available - cannot check existing animals")
         return set()
-
-    def filter_existing_urls(self, all_urls: list[str]) -> list[str]:
-        """Filter out existing URLs if skip_existing_animals is enabled."""
-        if not self.skip_existing_animals:
-            self.logger.debug(f"skip_existing_animals is False, returning all {len(all_urls)} URLs")
-            return all_urls
-
-        self.logger.info("Checking database for existing animals...")
-        existing_urls = self.get_existing_animal_urls()
-
-        if not existing_urls:
-            self.logger.info(f"No existing animals found in database, processing all {len(all_urls)} URLs")
-            return all_urls
-
-        filtered_urls = [url for url in all_urls if url not in existing_urls]
-        skipped_count = len(all_urls) - len(filtered_urls)
-
-        self.logger.info(f"Found {len(existing_urls)} existing animals in database")
-        self.logger.info(f"Filtered results: Skipped {skipped_count} existing, will process {len(filtered_urls)} new animals")
-
-        if skipped_count == 0 and len(existing_urls) > 0:
-            self.logger.warning("No URLs were filtered despite having existing animals - possible URL mismatch!")
-
-        return filtered_urls
 
     def filter_existing_animals(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Filter existing animals and record ALL found external_ids for stale detection.
@@ -75,7 +51,7 @@ class FilteringService:
         knows which dogs were actually found on the website.
 
         Args:
-            animals: List of animal data dicts, each containing 'external_id' and 'adoption_url'
+            animals: List of animal data dicts, each containing 'external_id'
 
         Returns:
             Filtered list of animals (only new ones if skip_existing_animals is True)
@@ -97,16 +73,16 @@ class FilteringService:
             self.logger.info(f"Processing all {len(animals)} animals")
             return animals
 
-        all_urls = [animal.get("adoption_url", "") for animal in animals]
-        filtered_urls = self.filter_existing_urls(all_urls)
+        existing_ids = self.get_existing_external_ids()
+        filtered_animals = [animal for animal in animals if animal.get("external_id") not in existing_ids]
 
-        skipped_count = len(all_urls) - len(filtered_urls)
-        self._set_filtering_stats(len(all_urls), skipped_count)
+        skipped_count = len(animals) - len(filtered_animals)
+        self._set_filtering_stats(len(animals), skipped_count)
 
-        url_to_animal = {animal.get("adoption_url", ""): animal for animal in animals}
-        filtered_animals = [url_to_animal[url] for url in filtered_urls if url in url_to_animal]
+        if skipped_count == 0 and existing_ids:
+            self.logger.warning(f"No animals matched {len(existing_ids)} existing ones - possible external_id mismatch!")
 
-        self.logger.info(f"Filtering: {skipped_count} existing (skipped), {len(filtered_animals)} new ({skipped_count / len(all_urls) * 100:.1f}% skip rate)")
+        self.logger.info(f"Filtering: {skipped_count} existing (skipped), {len(filtered_animals)} new ({skipped_count / len(animals) * 100:.1f}% skip rate)")
 
         return filtered_animals
 

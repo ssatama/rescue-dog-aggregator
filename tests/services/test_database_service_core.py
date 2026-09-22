@@ -166,23 +166,36 @@ class TestReadPathsDegradeRatherThanRaise:
 
         assert service.get_existing_animal("ext-1", 1) == (7, "Bella", "2026-08-22")
 
-    def test_url_lookup_drops_nulls_rather_than_returning_them(self, service):
+    def test_external_id_lookup_drops_nulls_rather_than_returning_them(self, service):
         cursor = Mock()
-        cursor.fetchall.return_value = [("http://a",), (None,), ("http://b",)]
+        cursor.fetchall.return_value = [("rean-a",), (None,), ("rean-b",)]
         service.conn = Mock(cursor=Mock(return_value=cursor))
 
-        assert service.get_existing_animal_urls(1) == {"http://a", "http://b"}
+        assert service.get_existing_external_ids(1) == {"rean-a", "rean-b"}
 
-    def test_url_lookup_returns_an_empty_set_on_a_query_error(self, service):
+    def test_external_id_lookup_only_counts_available_animals(self, service):
+        """An inactive dog back on the site must be processed so it can be reactivated."""
+        cursor = Mock()
+        cursor.fetchall.return_value = []
+        service.conn = Mock(cursor=Mock(return_value=cursor))
+
+        service.get_existing_external_ids(5)
+
+        sql, params = cursor.execute.call_args.args
+        assert "SELECT external_id FROM animals" in sql
+        assert "status = 'available'" in sql
+        assert params == (5,)
+
+    def test_external_id_lookup_returns_an_empty_set_on_a_query_error(self, service):
         """An empty set means 'nothing seen'; it must not be a partial answer."""
         service.conn = Mock()
         service.conn.cursor.side_effect = RuntimeError("connection reset")
 
-        assert service.get_existing_animal_urls(1) == set()
+        assert service.get_existing_external_ids(1) == set()
 
-    def test_url_lookup_gives_up_when_it_cannot_connect(self, service):
+    def test_external_id_lookup_gives_up_when_it_cannot_connect(self, service):
         with patch.object(service, "connect", return_value=False):
-            assert service.get_existing_animal_urls(1) == set()
+            assert service.get_existing_external_ids(1) == set()
 
     def test_slug_lookup_short_circuits_on_an_empty_id_list(self, service):
         """Must not open a connection to resolve nothing."""

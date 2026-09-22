@@ -42,7 +42,7 @@ def create_mock_database_service(success_mode: bool = True) -> Mock:
         mock_service.update_animal.return_value = (1, "updated")
         mock_service.create_scrape_log.return_value = 123
         mock_service.complete_scrape_log.return_value = True
-        mock_service.get_existing_animal_urls.return_value = set()
+        mock_service.get_existing_external_ids.return_value = set()
     else:
         # Configure error scenarios
         mock_service.connect.return_value = False
@@ -52,7 +52,7 @@ def create_mock_database_service(success_mode: bool = True) -> Mock:
         mock_service.update_animal.return_value = (None, "error")
         mock_service.create_scrape_log.return_value = None
         mock_service.complete_scrape_log.return_value = False
-        mock_service.get_existing_animal_urls.return_value = set()
+        mock_service.get_existing_external_ids.return_value = set()
 
     return mock_service
 

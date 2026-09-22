@@ -187,13 +187,9 @@ class NullFilteringService:
     def total_animals_skipped(self) -> int:
         return self._total_animals_skipped
 
-    def get_existing_animal_urls(self) -> set:
-        """Get existing URLs - returns empty set."""
+    def get_existing_external_ids(self) -> set[str]:
+        """Get existing external IDs - returns empty set."""
         return set()
-
-    def filter_existing_urls(self, all_urls: list[str]) -> list[str]:
-        """Filter URLs - returns all unchanged."""
-        return all_urls
 
     def filter_existing_animals(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Filter animals - returns all unchanged."""
