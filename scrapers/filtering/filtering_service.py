@@ -79,6 +79,9 @@ class FilteringService:
         skipped_count = len(animals) - len(filtered_animals)
         self._set_filtering_stats(len(animals), skipped_count)
 
+        if skipped_count == 0 and existing_ids:
+            self.logger.warning(f"No animals matched {len(existing_ids)} existing ones - possible external_id mismatch!")
+
         self.logger.info(f"Filtering: {skipped_count} existing (skipped), {len(filtered_animals)} new ({skipped_count / len(animals) * 100:.1f}% skip rate)")
 
         return filtered_animals

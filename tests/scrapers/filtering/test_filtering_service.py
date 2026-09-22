@@ -209,3 +209,15 @@ class TestExistingAnimalsMatchByExternalId:
         processed_ids = [animal["external_id"] for animal in to_process]
         assert processed_ids == ["rean-uk_foster-danny-43968b", "rean-romania-flossie-0e61ca"], f"inactive dogs back on the site must be processed, got {processed_ids}"
         database.get_existing_external_ids.assert_called_once_with(5)
+
+    def test_warns_when_nothing_matches_despite_existing_animals(self, caplog):
+        """If a scraper's external_id format drifts, every dog is re-processed and
+        re-profiled each run; this warning is the only early signal."""
+        database = Mock()
+        database.get_existing_external_ids.return_value = {"old-format-1", "old-format-2"}
+        service = FilteringService(database_service=database, session_manager=Mock(), organization_id=5, skip_existing_animals=True)
+
+        with caplog.at_level("WARNING"):
+            service.filter_existing_animals([{"external_id": "new-format-1"}, {"external_id": "new-format-2"}])
+
+        assert "possible external_id mismatch" in caplog.text
