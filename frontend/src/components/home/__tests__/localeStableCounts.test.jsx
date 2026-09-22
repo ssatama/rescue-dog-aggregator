@@ -16,14 +16,12 @@ describe("homepage counts render the same in every browser locale", () => {
   const originalToLocaleString = Number.prototype.toLocaleString;
 
   beforeEach(() => {
-    // eslint-disable-next-line no-extend-native
     Number.prototype.toLocaleString = function (locales, options) {
       return originalToLocaleString.call(this, locales ?? "fi-FI", options);
     };
   });
 
   afterEach(() => {
-    // eslint-disable-next-line no-extend-native
     Number.prototype.toLocaleString = originalToLocaleString;
   });
 
