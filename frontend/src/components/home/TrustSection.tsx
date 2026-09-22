@@ -14,13 +14,9 @@ import type { OrganizationCardData } from "@/types/organizationComponents";
 import type { Statistics } from "@/schemas/animals";
 import { formatCount } from "@/utils/formatCount";
 
-export default function TrustSection({
-  initialStatistics = null,
-}: TrustSectionProps) {
+export default function TrustSection({ initialStatistics = null }: TrustSectionProps) {
   const router = useRouter();
-  const [statistics, setStatistics] = useState<Statistics | null>(
-    initialStatistics,
-  );
+  const [statistics, setStatistics] = useState<Statistics | null>(initialStatistics);
   const [loading, setLoading] = useState(!initialStatistics);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,20 +94,18 @@ export default function TrustSection({
   const total_countries = countries.length;
 
   // Show top 8 organizations for grid display with field mapping
-  const topOrganizations: OrganizationCardData[] = organizations
-    .slice(0, 8)
-    .map((org) => ({
-      ...org,
-      total_dogs: org.dog_count || org.total_dogs || 0,
-      ships_to: org.ships_to || [],
-      service_regions: org.service_regions || [],
-      recent_dogs: org.recent_dogs || [],
-      new_this_week: org.new_this_week || 0,
-      social_media: org.social_media || {},
-      logo_url: org.logo_url ?? undefined,
-      country: org.country ?? undefined,
-      city: org.city ?? undefined,
-    }));
+  const topOrganizations: OrganizationCardData[] = organizations.slice(0, 8).map((org) => ({
+    ...org,
+    total_dogs: org.dog_count || org.total_dogs || 0,
+    ships_to: org.ships_to || [],
+    service_regions: org.service_regions || [],
+    recent_dogs: org.recent_dogs || [],
+    new_this_week: org.new_this_week || 0,
+    social_media: org.social_media || {},
+    logo_url: org.logo_url ?? undefined,
+    country: org.country ?? undefined,
+    city: org.city ?? undefined,
+  }));
   const remainingCount = organizations.length - 8;
 
   return (

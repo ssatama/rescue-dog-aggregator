@@ -27,7 +27,7 @@ export default function MobileCountryBrowse({
   const countriesWithStats = countriesData
     .map((country) => {
       const stats = countryStats.find(
-        (s) => s.code?.toUpperCase() === country.code.toUpperCase(),
+        (s) => s.code?.toUpperCase() === country.code.toUpperCase()
       );
       return {
         ...country,

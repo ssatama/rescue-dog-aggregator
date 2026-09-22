@@ -25,7 +25,7 @@ export default function MobileAgeBrowse({
 
   const categoriesWithStats = categories.map((category) => {
     const stats = ageStats.find(
-      (s) => s.slug?.toLowerCase() === category.slug.toLowerCase(),
+      (s) => s.slug?.toLowerCase() === category.slug.toLowerCase()
     );
     return {
       ...category,
@@ -42,7 +42,10 @@ export default function MobileAgeBrowse({
   }
 
   return (
-    <section className="px-4 py-6" aria-labelledby="mobile-age-browse-heading">
+    <section
+      className="px-4 py-6"
+      aria-labelledby="mobile-age-browse-heading"
+    >
       {/* Header */}
       <h2
         id="mobile-age-browse-heading"

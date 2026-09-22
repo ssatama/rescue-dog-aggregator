@@ -4,10 +4,7 @@ import { Button } from "../ui/button";
 import type { FeaturedDogsSectionProps } from "@/types/homeComponents";
 import { formatCount } from "@/utils/formatCount";
 
-export default function FeaturedDogsSection({
-  dogs,
-  totalCount,
-}: FeaturedDogsSectionProps) {
+export default function FeaturedDogsSection({ dogs, totalCount }: FeaturedDogsSectionProps) {
   return (
     <section
       className="bg-white dark:bg-gray-900 py-32 border-t border-orange-200/30 dark:border-orange-800/30 bg-dot-pattern"

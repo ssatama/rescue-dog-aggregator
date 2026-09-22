@@ -10,16 +10,14 @@ import { formatCount } from "@/utils/formatCount";
  * CountryBrowseSection - Desktop homepage section showing top countries by dog count
  * Displays the top 4 countries with the most dogs available for adoption
  */
-export default function CountryBrowseSection({
-  countryStats = [],
-}: CountryBrowseSectionProps) {
+export default function CountryBrowseSection({ countryStats = [] }: CountryBrowseSectionProps) {
   const countriesData = getCountriesArray();
 
   // Merge country metadata with stats, sort by count, take top 4
   const countriesWithStats = countriesData
     .map((country) => {
       const stats = countryStats.find(
-        (s) => s.code?.toUpperCase() === country.code.toUpperCase(),
+        (s) => s.code?.toUpperCase() === country.code.toUpperCase()
       );
       return {
         ...country,
@@ -63,11 +61,7 @@ export default function CountryBrowseSection({
               className="group"
             >
               <div className="flex items-center gap-3 p-5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 hover:bg-orange-50 dark:hover:bg-orange-950/30 hover:border-orange-200 dark:hover:border-orange-800 transition-all duration-200">
-                <span
-                  className="text-4xl"
-                  role="img"
-                  aria-label={`${country.name} flag`}
-                >
+                <span className="text-4xl" role="img" aria-label={`${country.name} flag`}>
                   {country.flag}
                 </span>
                 <div>

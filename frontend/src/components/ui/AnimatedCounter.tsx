@@ -25,9 +25,7 @@ export default function AnimatedCounter({
   label = "",
   className = "",
 }: AnimatedCounterProps) {
-  const [displayValue, setDisplayValue] = useState(
-    Math.max(0, Math.round(value)),
-  );
+  const [displayValue, setDisplayValue] = useState(Math.max(0, Math.round(value)));
   const [hasAnimated, setHasAnimated] = useState(false);
   const elementRef = useRef<HTMLSpanElement>(null);
   const animationFrameRef = useRef<number | null>(null);
