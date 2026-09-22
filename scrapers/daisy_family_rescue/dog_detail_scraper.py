@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup
 
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
+MIN_STORY_WIDGET_CHARS = 150
+
 if TYPE_CHECKING:
     from selenium.webdriver.remote.webdriver import WebDriver
 
@@ -299,29 +301,21 @@ class DaisyFamilyRescueDogDetailScraper:
         return None
 
     def _extract_description_soup(self, soup: BeautifulSoup, logger=None) -> str | None:
-        """Extract dog description using BeautifulSoup."""
-        try:
-            description_selectors = [
-                ".elementor-widget-text-editor",
-                ".entry-content p",
-                "article p",
-            ]
+        """Extract the dog's story from the page's Elementor text widgets.
 
-            for selector in description_selectors:
-                elements = soup.select(selector)
-                if elements:
-                    texts = [el.get_text(strip=True) for el in elements if el.get_text(strip=True)]
-                    if texts:
-                        description = " ".join(texts[:5])
-                        if len(description) > 50:
-                            if logger:
-                                logger.debug(f"Found description ({len(description)} chars)")
-                            return description
+        Each Steckbrief line ("Alter: 01/2026") is its own widget ahead of the
+        story, and the footer holds short contact and bank-detail widgets, so
+        the story is the widgets long enough to be prose that do not open with
+        a known Steckbrief label. A generic "Label:" pattern is not enough:
+        story paragraphs open with "Ich bin ... ein Menschenhund: ..." too.
+        """
+        widgets = [" ".join(el.get_text().split()) for el in soup.select(".elementor-widget-text-editor")]
+        story = [text for text in widgets if len(text) >= MIN_STORY_WIDGET_CHARS and not text.startswith(tuple(self.steckbrief_patterns))]
 
-        except Exception as e:
-            if logger:
-                logger.error(f"Error extracting description: {e}")
-        return None
+        if logger and story:
+            logger.debug(f"Found description ({sum(len(text) for text in story)} chars)")
+
+        return "\n\n".join(story) or None
 
     def _extract_dog_name_soup(self, soup: BeautifulSoup, logger=None) -> str | None:
         """Extract dog name using BeautifulSoup."""
