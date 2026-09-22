@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Sparkles, Heart, ArrowRight } from "lucide-react";
 import { AGE_CATEGORIES, getAgeCategoriesArray } from "@/utils/ageData";
 import type { AgeBrowseSectionProps } from "@/types/homeComponents";
+import { formatCount } from "@/utils/formatCount";
 
 /**
  * AgeBrowseSection - A distinctive, emotionally resonant section for browsing dogs by age
@@ -137,7 +138,7 @@ export default function AgeBrowseSection({ ageStats = [] }: AgeBrowseSectionProp
                     {/* Count */}
                     <div>
                       <p className="text-4xl font-bold text-white">
-                        {puppies.count.toLocaleString()}
+                        {formatCount(puppies.count)}
                       </p>
                       <p className="text-white/80 font-medium">
                         puppies waiting
@@ -229,7 +230,7 @@ export default function AgeBrowseSection({ ageStats = [] }: AgeBrowseSectionProp
                     {/* Count */}
                     <div>
                       <p className="text-4xl font-bold text-white">
-                        {seniors.count.toLocaleString()}
+                        {formatCount(seniors.count)}
                       </p>
                       <p className="text-white/80 font-medium">
                         wise souls waiting

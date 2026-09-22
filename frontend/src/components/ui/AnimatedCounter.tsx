@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { formatCount } from "@/utils/formatCount";
 
 interface AnimatedCounterProps {
   /** Target value to animate to */
@@ -149,7 +150,7 @@ export default function AnimatedCounter({
       aria-live="polite"
       aria-label={ariaLabel}
     >
-      {displayValue.toLocaleString()}
+      {formatCount(displayValue)}
     </span>
   );
 }

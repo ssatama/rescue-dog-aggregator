@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { COUNTRIES, getCountriesArray } from "@/utils/countryData";
 import type { CountryBrowseSectionProps } from "@/types/homeComponents";
+import { formatCount } from "@/utils/formatCount";
 
 /**
  * CountryBrowseSection - Desktop homepage section showing top countries by dog count
@@ -68,7 +69,7 @@ export default function CountryBrowseSection({ countryStats = [] }: CountryBrows
                     {country.shortName}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {country.count.toLocaleString()} dogs
+                    {formatCount(country.count)} dogs
                   </p>
                 </div>
               </div>

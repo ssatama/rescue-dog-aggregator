@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Sparkles, Heart } from "lucide-react";
 import { AGE_CATEGORIES, getAgeCategoriesArray } from "@/utils/ageData";
+import { formatCount } from "@/utils/formatCount";
 
 interface AgeStat {
   slug: string;
@@ -95,7 +96,7 @@ export default function MobileAgeBrowse({
                     {puppies.name}
                   </h3>
                   <p className="text-white/80 text-xs font-medium">
-                    {puppies.count.toLocaleString()} waiting
+                    {formatCount(puppies.count)} waiting
                   </p>
                 </div>
               </div>
@@ -146,7 +147,7 @@ export default function MobileAgeBrowse({
                     {seniors.name}
                   </h3>
                   <p className="text-white/80 text-xs font-medium">
-                    {seniors.count.toLocaleString()} waiting
+                    {formatCount(seniors.count)} waiting
                   </p>
                 </div>
               </div>

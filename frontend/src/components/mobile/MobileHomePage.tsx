@@ -10,6 +10,7 @@ import { MobileAvailableNow } from "./MobileAvailableNow";
 import { MobileBreedSpotlight } from "./MobileBreedSpotlight";
 import MobileBottomNav from "../navigation/MobileBottomNav";
 import { type Dog } from "../../types/dog";
+import { formatCount } from "@/utils/formatCount";
 
 interface Statistics {
   totalDogs?: number;
@@ -154,13 +155,12 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
             {
               label: "Dogs",
               value:
-                initialData?.statistics?.totalDogs?.toLocaleString() || "0",
+                formatCount(initialData?.statistics?.totalDogs ?? 0),
             },
             {
               label: "Rescues",
               value:
-                initialData?.statistics?.totalOrganizations?.toLocaleString() ||
-                "0",
+                formatCount(initialData?.statistics?.totalOrganizations ?? 0),
             },
             {
               label: "Countries",

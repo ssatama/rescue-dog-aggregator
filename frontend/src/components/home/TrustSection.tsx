@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { TrustSectionProps } from "@/types/homeComponents";
 import type { OrganizationCardData } from "@/types/organizationComponents";
 import type { Statistics } from "@/schemas/animals";
+import { formatCount } from "@/utils/formatCount";
 
 export default function TrustSection({ initialStatistics = null }: TrustSectionProps) {
   const router = useRouter();
@@ -142,7 +143,7 @@ export default function TrustSection({ initialStatistics = null }: TrustSectionP
               className="text-4xl font-bold text-foreground mb-2"
               data-testid="organizations-stat"
             >
-              {total_organizations.toLocaleString()}
+              {formatCount(total_organizations)}
             </div>
             <div className="text-lg text-muted-foreground">
               Rescue Organizations
@@ -167,7 +168,7 @@ export default function TrustSection({ initialStatistics = null }: TrustSectionP
               className="text-4xl font-bold text-foreground mb-2"
               data-testid="total-dogs-stat"
             >
-              {total_dogs.toLocaleString()}
+              {formatCount(total_dogs)}
             </div>
             <div className="text-lg text-muted-foreground">Dogs Available</div>
           </div>
@@ -194,7 +195,7 @@ export default function TrustSection({ initialStatistics = null }: TrustSectionP
               className="text-4xl font-bold text-foreground mb-2"
               data-testid="countries-stat"
             >
-              {total_countries.toLocaleString()}
+              {formatCount(total_countries)}
             </div>
             <div className="text-lg text-muted-foreground">Countries</div>
           </div>

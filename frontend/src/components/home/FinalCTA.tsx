@@ -1,6 +1,7 @@
 // frontend/src/components/home/FinalCTA.tsx
 
 import Link from "next/link";
+import { formatCount } from "@/utils/formatCount";
 
 interface FinalCTAProps {
   totalCount?: number;
@@ -10,7 +11,7 @@ export default function FinalCTA({ totalCount = 3186 }: FinalCTAProps) {
   const ctaCards = [
     {
       title: "Browse All Dogs",
-      subtitle: `${totalCount.toLocaleString()} available`,
+      subtitle: `${formatCount(totalCount)} available`,
       description: "Advanced filters by breed, age, size, gender, and location",
       href: "/dogs",
     },
