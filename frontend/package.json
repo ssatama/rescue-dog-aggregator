@@ -81,8 +81,7 @@
     "puppeteer": "^25.10.0",
     "tailwindcss": "^4.3.3",
     "ts-unused-exports": "^11.0.1",
-    "typescript": "^6.0.3",
-    "unimport": "^6.4.0"
+    "typescript": "^6.0.3"
   },
   "pnpm": {
     "overrides": {
