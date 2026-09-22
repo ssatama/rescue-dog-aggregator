@@ -46,6 +46,14 @@ class EmptyLLMResponseError(ValueError):
     """
 
 
+class TruncatedLLMResponseError(ValueError):
+    """The completion hit max_tokens before the answer was finished.
+
+    Raised in place of the "Unterminated string" decode error a cut-off JSON
+    answer produces, which the retry handler mistook for a formatting problem.
+    """
+
+
 def build_request_body(
     messages: list[dict[str, str]],
     model: str,
@@ -181,12 +189,16 @@ class LLMClient:
 
         Raises:
             EmptyLLMResponseError: If the completion carries no content
+            TruncatedLLMResponseError: If the completion was cut off by max_tokens
         """
         choice = response_data["choices"][0]
         content = choice["message"].get("content")
 
         if not (content or "").strip():
             raise EmptyLLMResponseError(f"{response_data.get('model') or 'unknown model'} returned no content (finish_reason={choice.get('finish_reason')})")
+
+        if choice.get("finish_reason") == "length":
+            raise TruncatedLLMResponseError(f"{response_data.get('model') or 'unknown model'} hit max_tokens after {len(content)} chars of content")
 
         # Handle markdown wrapping if present
         if content.startswith("```"):
