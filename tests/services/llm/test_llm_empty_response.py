@@ -100,3 +100,17 @@ class TestProfileTokenBudget:
 
         requested = pipeline.llm_client.call_api_and_parse.call_args.kwargs["max_tokens"]
         assert requested >= 8000, f"profile budget {requested} leaves too little room after reasoning"
+
+    @pytest.mark.asyncio
+    async def test_profile_timeout_leaves_time_to_generate_the_full_budget(self, monkeypatch):
+        """Truncated calls returned 4000 tokens inside the old 35s limit, so
+        doubling the budget at 30s would trade truncation for timeouts."""
+        monkeypatch.setenv("OPENROUTER_API_KEY", "test-key-never-used")
+        pipeline = DogProfilerPipeline(organization_id=28, dry_run=True)
+        pipeline.retry_handler.execute_with_retry = AsyncMock(return_value=None)
+        grounded = {"id": 11575, "name": "Woody & Jessie", "properties": {"description": "Woody and Jessie are a bonded pair. " * 10}}
+
+        await pipeline.process_dog(grounded)
+
+        timeout = pipeline.retry_handler.execute_with_retry.call_args.kwargs["timeout"]
+        assert timeout >= 60.0, f"profile timeout {timeout}s cannot fit an 8000-token completion"

@@ -41,10 +41,11 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # A full profile is ~1000 output tokens, but reasoning shares the same budget
-# and effort:low has been seen to spend over 3800 tokens before answering.
-# Only tokens actually generated are billed, so the headroom costs nothing on
-# the calls that would have finished anyway.
+# and effort:low has been seen to spend over 3800 tokens before answering. The
+# timeout has to grow with the budget or a long answer times out instead of
+# truncating; 60s is also the ceiling the retry handler escalates timeouts to.
 PROFILE_MAX_TOKENS = 8000
+PROFILE_TIMEOUT_SECONDS = 60.0
 
 
 class ProfileValidationError(ValueError):
@@ -285,7 +286,7 @@ class DogProfilerPipeline:
                 self._generate_profile,
                 dog_data=dog_data,
                 model=self.model,
-                timeout=30.0,
+                timeout=PROFILE_TIMEOUT_SECONDS,
                 prompt_adjustment="",  # Rewritten by the retry handler when an attempt says how
             )
 
