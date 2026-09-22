@@ -20,6 +20,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from services.playwright_browser_service import redact_endpoint
+
 logger = logging.getLogger(__name__)
 
 
@@ -126,7 +128,7 @@ class BrowserService:
         )
         self._configure_driver(driver, opts)
 
-        logger.info(f"Created remote browser via Browserless: {self._endpoint}")
+        logger.info(f"Created remote browser via Browserless: {redact_endpoint(self._endpoint)}")
 
         return BrowserResult(
             driver=driver,
@@ -242,7 +244,7 @@ class BrowserService:
         """
         return {
             "mode": "remote" if self.is_remote_mode else "local",
-            "endpoint": self._endpoint if self.is_remote_mode else None,
+            "endpoint": redact_endpoint(self._endpoint) if self.is_remote_mode else None,
             "token_configured": bool(self._token),
         }
 
