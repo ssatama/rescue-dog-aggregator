@@ -16,6 +16,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 try:
     from playwright.async_api import (
@@ -36,6 +37,12 @@ except ImportError:
     async_playwright = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
+
+
+def redact_endpoint(url: str) -> str:
+    """Drop query string and userinfo, where Browserless endpoints carry the token."""
+    parts = urlsplit(url)
+    return urlunsplit((parts.scheme, parts.netloc.rpartition("@")[2], parts.path, "", ""))
 
 
 DEFAULT_USER_AGENTS = [
@@ -250,7 +257,7 @@ class PlaywrightBrowserService:
                 if attempt > 0:
                     logger.info(f"Created remote Playwright browser via Browserless (succeeded on attempt {attempt + 1})")
                 else:
-                    logger.info(f"Created remote Playwright browser via Browserless: {self._endpoint}")
+                    logger.info(f"Created remote Playwright browser via Browserless: {redact_endpoint(self._endpoint)}")
 
                 return PlaywrightResult(
                     browser=browser,
@@ -394,7 +401,7 @@ class PlaywrightBrowserService:
         return {
             "enabled": self.is_enabled,
             "mode": "remote" if self.is_remote_mode else "local",
-            "endpoint": self._endpoint if self.is_remote_mode else None,
+            "endpoint": redact_endpoint(self._endpoint) if self.is_remote_mode else None,
             "token_configured": bool(self._token),
         }
 
