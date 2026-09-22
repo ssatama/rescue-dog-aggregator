@@ -13,6 +13,8 @@ from scrapers.base_scraper import BaseScraper
 # Legacy standardize_age kept for date-of-birth calculations
 from utils.standardization import standardize_age
 
+STORY_BLOCK_TAGS = ["p", "div", "li", "blockquote"]
+
 
 class SanterPawsBulgarianRescueScraper(BaseScraper):
     """Scraper for Santer Paws Bulgarian Rescue organization.
@@ -440,13 +442,11 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             if label:
                 # Map labels to our field names with zero NULLs compliance
                 if label == "D.O.B":
-                    raw_age_text = value or "Unknown"
-                    properties["age_text"] = raw_age_text
-
-                    # Store raw age text for unified standardization
-                    # Legacy standardize_age kept for D.O.B calculations if needed
-                    if raw_age_text and raw_age_text != "Unknown":
-                        age_info = standardize_age(raw_age_text)
+                    # A blank cell stays absent: "Unknown" would reach the page
+                    # as though it were a scraped age (#349)
+                    if value:
+                        properties["age_text"] = value
+                        age_info = standardize_age(value)
                         if age_info.get("age_min_months") is not None:
                             properties["age_min_months"] = age_info["age_min_months"]
                             properties["age_max_months"] = age_info["age_max_months"]
@@ -468,7 +468,10 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         return properties
 
     def _extract_description(self, soup: BeautifulSoup) -> str:
-        """Extract the story paragraphs from the dog's column.
+        """Extract the story from the dog's column.
+
+        Stories arrive as <p>s, as Facebook-pasted <div>s, and with <ul> lists,
+        so every innermost block element is a paragraph.
 
         Args:
             soup: BeautifulSoup object of the detail page
@@ -480,7 +483,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         if not column:
             return ""
 
-        paragraphs = [" ".join(p.get_text().split()) for block in column.find_all(class_="bde-text", recursive=False) for p in block.find_all("p")]
+        paragraphs = [
+            " ".join(leaf.get_text().split()) for block in column.find_all(class_="bde-text", recursive=False) for leaf in block.find_all(STORY_BLOCK_TAGS) if not leaf.find(STORY_BLOCK_TAGS)
+        ]
 
         return " ".join(text for text in paragraphs if text)
 

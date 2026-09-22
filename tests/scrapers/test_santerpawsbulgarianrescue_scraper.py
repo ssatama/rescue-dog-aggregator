@@ -806,14 +806,14 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         )
 
 
-def _dog_page(fields: dict[str, str], paragraphs: list[str]) -> str:
+def _dog_page(fields: dict[str, str], paragraphs: list[str], story_html: str | None = None) -> str:
     """The detail-page layout Santer Paws has served since its early-2026 redesign.
 
     The dog's own column holds the <h1>, the story and a grid of label/value
     pairs; the "Meet more of our dogs" cards below repeat the same field shape
     for other dogs and must not leak into this dog's properties.
     """
-    story = "".join(f"<p>{text}</p>" for text in paragraphs)
+    story = story_html if story_html is not None else "".join(f"<p>{text}</p>" for text in paragraphs)
     grid = "".join(f'<div class="bde-div"><div class="bde-text">{label}</div><div class="bde-text">{value}</div></div>' for label, value in fields.items())
     return f"""
     <html><body>
@@ -876,7 +876,7 @@ class TestSanterPawsDetailPageLayout:
         assert result["gender"] == "male"
         assert result["standardized_size"] == "Large"
         assert result["properties"]["age_text"] == "04/04/2022"
-        assert result["age"] is not None, result
+        assert result["properties"]["age_category"] == "Adult", result["properties"]
 
     def test_joins_the_story_paragraphs_with_readable_spacing(self, scraper, serve):
         serve(_dog_page(KEVIN_FIELDS, ["Kevin is a stunning young <strong>English Setter</strong>, purebred.", "He is wonderful with other dogs and cats."]))
@@ -917,3 +917,37 @@ class TestSanterPawsDetailPageLayout:
 
         assert not result.get("description")
         assert result["properties"]["breed"] == "English Setter"
+
+    def test_reads_a_story_pasted_in_div_blocks(self, scraper, serve):
+        """harvey, jerry, obie, pellet and summer-breeze: Facebook-pasted stories in <div>s beside empty <p>s."""
+        serve(_dog_page(KEVIN_FIELDS, [], story_html="<p></p><div>Harvey came to us from a village shelter.</div><div>He loves every dog he meets.</div>"))
+
+        result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/harvey/")
+
+        assert result["description"] == "Harvey came to us from a village shelter. He loves every dog he meets."
+
+    def test_keeps_list_items_as_separate_sentences(self, scraper, serve):
+        """via and bamboo keep their home requirements in <ul><li>."""
+        serve(_dog_page(KEVIN_FIELDS, [], story_html="<p>Bamboo needs:</p><ul><li>Older children only</li><li>A secure garden</li></ul>"))
+
+        result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/bamboo/")
+
+        assert result["description"] == "Bamboo needs: Older children only A secure garden"
+
+    def test_a_blank_date_of_birth_leaves_age_absent(self, scraper, serve):
+        """#349 removed the "Unknown" age placeholder; 11 live dogs have a blank D.O.B. cell."""
+        serve(_dog_page({**KEVIN_FIELDS, "D.O.B": ""}, ["Nanny."]))
+
+        result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/nanny/")
+
+        assert "age_text" not in result["properties"]
+        assert result.get("age") is None
+
+    def test_story_without_a_field_grid_leaves_sex_and_age_absent(self, scraper, serve):
+        serve(_dog_page({}, ["Only a story, no fields yet."]))
+
+        result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
+
+        assert result["description"] == "Only a story, no fields yet."
+        assert result.get("gender") is None
+        assert result.get("age") is None
