@@ -42,9 +42,7 @@ logger = logging.getLogger(__name__)
 def redact_endpoint(url: str) -> str:
     """Drop query string and userinfo, where Browserless endpoints carry the token."""
     parts = urlsplit(url)
-    host = parts.hostname or ""
-    netloc = f"{host}:{parts.port}" if parts.port else host
-    return urlunsplit((parts.scheme, netloc, parts.path, "", ""))
+    return urlunsplit((parts.scheme, parts.netloc.rpartition("@")[2], parts.path, "", ""))
 
 
 DEFAULT_USER_AGENTS = [

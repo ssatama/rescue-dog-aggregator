@@ -90,6 +90,7 @@ def init_scraper_sentry(environment: str = "production") -> bool:
         profiles_sample_rate=1.0,
         attach_stacktrace=True,
         send_default_pii=False,
+        include_local_variables=False,
         before_send=scrub_sensitive_data,
         release=os.getenv("SENTRY_RELEASE", "unknown"),
         server_name=os.getenv("SERVER_NAME", "scraper-cron"),
