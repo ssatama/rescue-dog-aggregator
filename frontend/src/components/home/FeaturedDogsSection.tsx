@@ -2,8 +2,12 @@ import Link from "next/link";
 import DogCardOptimized from "../dogs/DogCardOptimized";
 import { Button } from "../ui/button";
 import type { FeaturedDogsSectionProps } from "@/types/homeComponents";
+import { formatCount } from "@/utils/formatCount";
 
-export default function FeaturedDogsSection({ dogs, totalCount }: FeaturedDogsSectionProps) {
+export default function FeaturedDogsSection({
+  dogs,
+  totalCount,
+}: FeaturedDogsSectionProps) {
   return (
     <section
       className="bg-white dark:bg-gray-900 py-32 border-t border-orange-200/30 dark:border-orange-800/30 bg-dot-pattern"
@@ -19,7 +23,7 @@ export default function FeaturedDogsSection({ dogs, totalCount }: FeaturedDogsSe
             Dogs Waiting for Homes
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400">
-            Showing 6 of {totalCount.toLocaleString()} available dogs
+            Showing 6 of {formatCount(totalCount)} available dogs
           </p>
         </div>
 
@@ -42,7 +46,7 @@ export default function FeaturedDogsSection({ dogs, totalCount }: FeaturedDogsSe
               size="lg"
               className="bg-orange-600 hover:bg-orange-700 text-white px-16 py-6 text-lg font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group"
             >
-              Browse All {totalCount.toLocaleString()} Dogs
+              Browse All {formatCount(totalCount)} Dogs
               <span className="inline-block ml-2 group-hover:translate-x-1 transition-transform duration-300">
                 →
               </span>

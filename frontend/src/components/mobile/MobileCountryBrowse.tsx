@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { COUNTRIES, getCountriesArray } from "@/utils/countryData";
+import { formatCount } from "@/utils/formatCount";
 
 interface CountryStat {
   code: string;
@@ -26,7 +27,7 @@ export default function MobileCountryBrowse({
   const countriesWithStats = countriesData
     .map((country) => {
       const stats = countryStats.find(
-        (s) => s.code?.toUpperCase() === country.code.toUpperCase()
+        (s) => s.code?.toUpperCase() === country.code.toUpperCase(),
       );
       return {
         ...country,
@@ -85,7 +86,7 @@ export default function MobileCountryBrowse({
                   {country.shortName}
                 </p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {country.count.toLocaleString()} dogs
+                  {formatCount(country.count)} dogs
                 </p>
               </div>
             </div>

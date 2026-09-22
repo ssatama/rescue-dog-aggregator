@@ -4,17 +4,20 @@ import Link from "next/link";
 import { Sparkles, Heart, ArrowRight } from "lucide-react";
 import { AGE_CATEGORIES, getAgeCategoriesArray } from "@/utils/ageData";
 import type { AgeBrowseSectionProps } from "@/types/homeComponents";
+import { formatCount } from "@/utils/formatCount";
 
 /**
  * AgeBrowseSection - A distinctive, emotionally resonant section for browsing dogs by age
  * Features playful animations for puppies and warm, dignified styling for seniors
  */
-export default function AgeBrowseSection({ ageStats = [] }: AgeBrowseSectionProps) {
+export default function AgeBrowseSection({
+  ageStats = [],
+}: AgeBrowseSectionProps) {
   const categories = getAgeCategoriesArray();
 
   const categoriesWithStats = categories.map((category) => {
     const stats = ageStats.find(
-      (s) => s.slug?.toLowerCase() === category.slug.toLowerCase()
+      (s) => s.slug?.toLowerCase() === category.slug.toLowerCase(),
     );
     return {
       ...category,
@@ -53,8 +56,8 @@ export default function AgeBrowseSection({ ageStats = [] }: AgeBrowseSectionProp
             Find Your Perfect Match
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
-            Whether you&apos;re looking for playful energy or calm companionship,
-            there&apos;s a rescue dog waiting for you
+            Whether you&apos;re looking for playful energy or calm
+            companionship, there&apos;s a rescue dog waiting for you
           </p>
         </div>
 
@@ -137,7 +140,7 @@ export default function AgeBrowseSection({ ageStats = [] }: AgeBrowseSectionProp
                     {/* Count */}
                     <div>
                       <p className="text-4xl font-bold text-white">
-                        {puppies.count.toLocaleString("en-US")}
+                        {formatCount(puppies.count)}
                       </p>
                       <p className="text-white/80 font-medium">
                         puppies waiting
@@ -229,7 +232,7 @@ export default function AgeBrowseSection({ ageStats = [] }: AgeBrowseSectionProp
                     {/* Count */}
                     <div>
                       <p className="text-4xl font-bold text-white">
-                        {seniors.count.toLocaleString("en-US")}
+                        {formatCount(seniors.count)}
                       </p>
                       <p className="text-white/80 font-medium">
                         wise souls waiting
@@ -263,7 +266,6 @@ export default function AgeBrowseSection({ ageStats = [] }: AgeBrowseSectionProp
           </Link>
         </div>
       </div>
-
     </section>
   );
 }
