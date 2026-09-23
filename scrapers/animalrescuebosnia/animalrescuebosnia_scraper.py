@@ -178,61 +178,56 @@ class AnimalRescueBosniaScraper(BaseScraper):
                             hero_image_url = src
                         break
 
-            # Extract properties from Short description section
+            # Extract properties from the "Breed: … Gender: …" paragraph. It usually sits under a
+            # "Short description" heading, but some pages omit the heading, so match on content.
             properties = {}
 
-            # Find Short description section
-            short_desc_heading = None
-            for heading in soup.find_all(["h2", "h3"]):
-                if "Short description" in heading.get_text():
-                    short_desc_heading = heading
-                    break
+            property_paragraph = next(
+                (p for p in soup.find_all("p") if "Gender:" in p.get_text() or "Date of birth:" in p.get_text()),
+                None,
+            )
+            if property_paragraph:
+                # Convert <br> tags to newlines before extracting text
+                for br in property_paragraph.find_all("br"):
+                    br.replace_with("\n")
 
-            if short_desc_heading:
-                # Look for the next sibling that contains the properties
-                next_elem = short_desc_heading.find_next_sibling()
-                if next_elem and hasattr(next_elem, "find_all"):
-                    # Convert <br> tags to newlines before extracting text
-                    for br in next_elem.find_all("br"):
-                        br.replace_with("\n")
+                # Split by line breaks to handle each property separately
+                lines = property_paragraph.get_text().strip().split("\n")
 
-                    # Split by line breaks to handle each property separately
-                    lines = next_elem.get_text().strip().split("\n")
+                # Process each line
+                for line in lines:
+                    line = line.strip()
+                    if ":" in line:
+                        # Split on first colon
+                        key, value = line.split(":", 1)
+                        key = key.strip()
+                        value = value.strip()
 
-                    # Process each line
-                    for line in lines:
-                        line = line.strip()
-                        if ":" in line:
-                            # Split on first colon
-                            key, value = line.split(":", 1)
-                            key = key.strip()
-                            value = value.strip()
+                        # Map to our property names
+                        if key == "Breed":
+                            properties["breed"] = value
+                        elif key == "Gender":
+                            properties["gender"] = value
+                        elif key == "Date of birth":
+                            properties["date_of_birth"] = value
+                        elif key == "Height":
+                            properties["height"] = value
+                        elif key == "Weight":
+                            properties["weight"] = value
+                        elif key == "In a shelter from":
+                            properties["shelter_entry"] = value
 
-                            # Map to our property names
-                            if key == "Breed":
-                                properties["breed"] = value
-                            elif key == "Gender":
-                                properties["gender"] = value
-                            elif key == "Date of birth":
-                                properties["date_of_birth"] = value
-                            elif key == "Height":
-                                properties["height"] = value
-                            elif key == "Weight":
-                                properties["weight"] = value
-                            elif key == "In a shelter from":
-                                properties["shelter_entry"] = value
-
-                    # Set None for missing fields
-                    for field in [
-                        "breed",
-                        "gender",
-                        "date_of_birth",
-                        "height",
-                        "weight",
-                        "shelter_entry",
-                    ]:
-                        if field not in properties:
-                            properties[field] = None
+                # Set None for missing fields
+                for field in [
+                    "breed",
+                    "gender",
+                    "date_of_birth",
+                    "height",
+                    "weight",
+                    "shelter_entry",
+                ]:
+                    if field not in properties:
+                        properties[field] = None
 
             # Extract description from About section
             description = None
@@ -245,13 +240,13 @@ class AnimalRescueBosniaScraper(BaseScraper):
             if about_heading:
                 # Get all text after the About heading until next heading
                 desc_parts = []
-                next_elem = about_heading.find_next_sibling()
-                while next_elem and hasattr(next_elem, "name") and next_elem.name not in ["h1", "h2", "h3"]:
-                    if hasattr(next_elem, "name") and next_elem.name == "p":
-                        text = next_elem.get_text().strip()
+                property_paragraph = about_heading.find_next_sibling()
+                while property_paragraph and hasattr(property_paragraph, "name") and property_paragraph.name not in ["h1", "h2", "h3"]:
+                    if hasattr(property_paragraph, "name") and property_paragraph.name == "p":
+                        text = property_paragraph.get_text().strip()
                         if text:
                             desc_parts.append(text)
-                    next_elem = next_elem.find_next_sibling()
+                    property_paragraph = property_paragraph.find_next_sibling()
 
                 description = " ".join(desc_parts)
 

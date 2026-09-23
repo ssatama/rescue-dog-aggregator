@@ -320,3 +320,46 @@ class TestBaseScraperRawBreedPreservation:
         )
 
         assert processed["breed"] == "Lurcher Cross"
+
+
+@pytest.mark.unit
+class TestBaseScraperAgeTextOnly:
+    """A scraper that sets only age_text must not have it wiped by standardization (#453)."""
+
+    @pytest.fixture
+    def scraper(self):
+        with patch("scrapers.base_scraper.psycopg2"):
+            scraper = ConcreteTestScraper(organization_id=1)
+            scraper.database_service = Mock()
+            scraper.conn = Mock()
+            scraper.cursor = Mock()
+            scraper.image_processing_service = Mock()
+            scraper.metrics_collector = Mock()
+            return scraper
+
+    def test_age_text_without_age_is_kept_and_parsed(self, scraper):
+        processed = scraper.process_animal(
+            {
+                "name": "Elmy",
+                "age_text": "7 years 8 months",
+                "external_id": "arb-elmy",
+                "organization_id": 1,
+            }
+        )
+
+        assert processed["age_text"] == "7 years 8 months"
+        assert processed["age_min_months"] is not None
+        assert processed["age_category"] is not None
+
+    def test_age_takes_precedence_over_age_text(self, scraper):
+        processed = scraper.process_animal(
+            {
+                "name": "Rex",
+                "age": "2 years",
+                "age_text": "ignored",
+                "external_id": "dog-1",
+                "organization_id": 1,
+            }
+        )
+
+        assert processed["age_text"] == "2 years"
