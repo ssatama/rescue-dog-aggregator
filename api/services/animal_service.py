@@ -881,9 +881,11 @@ class AnimalService:
                     HAVING COUNT(*) >= %s
                 ),
                 breed_traits AS (
+                    -- LLM profiles vary the case of a trait ("Affectionate" / "affectionate"),
+                    -- so count case-insensitively and show one sentence-case spelling
                     SELECT
                         a.primary_breed,
-                        trait,
+                        UPPER(LEFT(LOWER(trait), 1)) || SUBSTRING(LOWER(trait) FROM 2) as trait,
                         COUNT(*) as trait_count
                     FROM animals a
                     JOIN organizations o ON a.organization_id = o.id
@@ -898,18 +900,18 @@ class AnimalService:
                     AND a.dog_profiler_data IS NOT NULL
                     AND a.dog_profiler_data != '{}'::jsonb
                     AND jsonb_typeof(a.dog_profiler_data->'personality_traits') = 'array'
-                    GROUP BY a.primary_breed, trait
+                    GROUP BY a.primary_breed, LOWER(trait)
                 ),
                 top_traits AS (
                     SELECT
                         primary_breed,
-                        ARRAY_AGG(trait ORDER BY trait_count DESC) FILTER (WHERE row_num <= 5) as top_personality_traits
+                        ARRAY_AGG(trait ORDER BY row_num) FILTER (WHERE row_num <= 5) as top_personality_traits
                     FROM (
                         SELECT
                             primary_breed,
                             trait,
                             trait_count,
-                            ROW_NUMBER() OVER (PARTITION BY primary_breed ORDER BY trait_count DESC) as row_num
+                            ROW_NUMBER() OVER (PARTITION BY primary_breed ORDER BY trait_count DESC, trait) as row_num
                         FROM breed_traits
                     ) ranked_traits
                     GROUP BY primary_breed
