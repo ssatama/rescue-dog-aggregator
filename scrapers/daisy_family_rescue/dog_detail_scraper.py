@@ -8,7 +8,12 @@ from bs4 import BeautifulSoup
 
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
-MIN_STORY_WIDGET_CHARS = 150
+# The footer is excluded by position, so this floor only has to keep out short
+# Steckbrief lines and the name widget; story paragraphs run from ~119 chars.
+MIN_STORY_WIDGET_CHARS = 80
+
+# Steckbrief lines that are never parsed into fields but must not read as story.
+UNPARSED_STECKBRIEF_LABELS = ("Verträglich mit", "Als Zweithund")
 
 if TYPE_CHECKING:
     from selenium.webdriver.remote.webdriver import WebDriver
@@ -304,13 +309,15 @@ class DaisyFamilyRescueDogDetailScraper:
         """Extract the dog's story from the page's Elementor text widgets.
 
         Each Steckbrief line ("Alter: 01/2026") is its own widget ahead of the
-        story, and the footer holds short contact and bank-detail widgets, so
-        the story is the widgets long enough to be prose that do not open with
-        a known Steckbrief label. A generic "Label:" pattern is not enough:
-        story paragraphs open with "Ich bin ... ein Menschenhund: ..." too.
+        story, so the story is the widgets long enough to be prose that do not
+        open with a known Steckbrief label. A generic "Label:" pattern is not
+        enough: story paragraphs open with "Ich bin ... ein Menschenhund: ..."
+        too. The contact and bank-detail widgets live in the site's footer
+        template and are skipped by position, not by length.
         """
-        widgets = [" ".join(el.get_text().split()) for el in soup.select(".elementor-widget-text-editor")]
-        story = [text for text in widgets if len(text) >= MIN_STORY_WIDGET_CHARS and not text.startswith(tuple(self.steckbrief_patterns))]
+        labels = tuple(self.steckbrief_patterns) + UNPARSED_STECKBRIEF_LABELS
+        widgets = [" ".join(el.get_text().split()) for el in soup.select(".elementor-widget-text-editor") if not el.find_parent(attrs={"data-elementor-type": ["header", "footer"]})]
+        story = [text for text in widgets if len(text) >= MIN_STORY_WIDGET_CHARS and not text.startswith(labels)]
 
         if logger and story:
             logger.debug(f"Found description ({sum(len(text) for text in story)} chars)")
@@ -396,6 +403,10 @@ class DaisyFamilyRescueDogDetailScraper:
             value = match.group(1).strip()
             # Remove the field name if it's repeated
             value = re.sub(rf"^{re.escape(field_pattern)}\s*", "", value).strip()
+            # A blank field lets the match run onto the next line; that is the
+            # next field ("Alter:" -> "Geschlecht: weiblich"), not a value.
+            if value.startswith(tuple(self.steckbrief_patterns)):
+                return None
             return value if value else None
 
         return None
@@ -666,42 +677,8 @@ class DaisyFamilyRescueDogDetailScraper:
         return False
 
     def _extract_description(self, driver: "WebDriver", logger=None) -> str | None:
-        """Extract additional description text from the page."""
-        try:
-            # Look for content areas that might contain descriptions
-            description_selectors = [
-                ".elementor-text-editor",
-                ".entry-content",
-                ".post-content",
-                "main p",
-                ".content p",
-            ]
-
-            description_parts = []
-
-            for selector in description_selectors:
-                try:
-                    elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                    for element in elements:
-                        text = element.text.strip()
-                        if text and len(text) > 50:  # Only substantial text
-                            # Skip if it's just the Steckbrief content
-                            if "steckbrief" not in text.lower():
-                                description_parts.append(text)
-                except Exception:
-                    continue
-
-            if description_parts:
-                full_description = "\n\n".join(description_parts)
-                if logger:
-                    logger.debug(f"Extracted description: {len(full_description)} characters")
-                return full_description
-
-        except Exception as e:
-            if logger:
-                logger.error(f"Error extracting description: {e}")
-
-        return None
+        """Extract the dog's story with the same rules as the Playwright path."""
+        return self._extract_description_soup(BeautifulSoup(driver.page_source, "html.parser"), logger)
 
     def _extract_dog_name(self, driver: "WebDriver", logger=None) -> str | None:
         """Extract dog name from page title or content."""

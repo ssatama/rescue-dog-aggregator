@@ -788,15 +788,15 @@ class UnifiedStandardizer:
             else:
                 return "Young", min_months, MAX_DOG_AGE_MONTHS
 
-        # Pattern: "X - Y months/years" -> X to Y range
-        range_match = re.search(r"(\d+)\s*-\s*(\d+)\s*(months?|years?|mo|yr)", age_text)
+        # Pattern: "X - Y months/years" (or German "4-5 Jahre", "2–3 Monate") -> X to Y range
+        range_match = re.search(r"(\d+)\s*[-–]\s*(\d+)\s*(months?|years?|mo|yr|jahre?|monate?)", age_text)
         if range_match:
             min_val = int(range_match.group(1))
             max_val = int(range_match.group(2))
             unit = range_match.group(3).lower()
 
             # Convert to months if needed
-            if "year" in unit or "yr" in unit:
+            if "year" in unit or "yr" in unit or "jahr" in unit:
                 min_months = min_val * 12
                 max_months = max_val * 12
             else:

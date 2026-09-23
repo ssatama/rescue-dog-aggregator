@@ -961,3 +961,28 @@ class TestSanterPawsDetailPageLayout:
 
         assert result["sex"] == "Female"
         assert "gender" not in result
+
+    def test_keeps_a_title_that_sits_beside_the_story_blocks(self, scraper, serve):
+        """marley, hiltz and skilo open with an <h2>/<strong> title next to the <p>s, which only innermost blocks missed."""
+        story = "<div><p> </p><h2>🐾 <strong>Meet Marley</strong> 🐾</h2><p>Born <strong>9th March 2025</strong>, little Marley came into rescue.</p></div>"
+        serve(_dog_page(KEVIN_FIELDS, [], story_html=story))
+
+        result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/marley/")
+
+        assert result["description"] == "🐾 Meet Marley 🐾 Born 9th March 2025, little Marley came into rescue."
+
+    def test_keeps_a_bare_strong_title_outside_any_block(self, scraper, serve):
+        serve(_dog_page(KEVIN_FIELDS, [], story_html="<strong>Hiltz, our collie boy</strong><p>Hiltz walks beautifully on the lead.</p>"))
+
+        result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/hiltz/")
+
+        assert result["description"] == "Hiltz, our collie boy Hiltz walks beautifully on the lead."
+
+    def test_a_blank_sex_leaves_sex_absent(self, scraper, serve):
+        """Same placeholder class #349 removed for age: "Unknown" would read as scraped."""
+        serve(_dog_page({**KEVIN_FIELDS, "Sex": ""}, ["Kevin."]))
+
+        result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
+
+        assert "sex" not in result["properties"]
+        assert result.get("sex") is None

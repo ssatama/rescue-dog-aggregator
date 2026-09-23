@@ -46,17 +46,31 @@ from utils.secure_config_scraper_runner import (  # noqa: E402
     SecureConfigScraperRunner,
 )
 
-# Configure root logger directly (basicConfig doesn't work if called after config.py import)
-root_logger = logging.getLogger()
-handler = logging.StreamHandler()
-handler.setFormatter(
-    logging.Formatter(
+
+def _log_handlers() -> list[logging.Handler]:
+    """INFO and below to stdout, WARNING and up to stderr.
+
+    Railway tags every stderr line as severity "error", so a single stderr
+    handler made the whole cron log look like errors and hid the real ones.
+    """
+    formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%dT%H:%M:%SZ",
     )
-)
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.addFilter(lambda record: record.levelno < logging.WARNING)
+    stderr_handler = logging.StreamHandler(sys.stderr)
+    stderr_handler.setLevel(logging.WARNING)
+    for handler in (stdout_handler, stderr_handler):
+        handler.setFormatter(formatter)
+    return [stdout_handler, stderr_handler]
+
+
+# Configure root logger directly (basicConfig doesn't work if called after config.py import)
+root_logger = logging.getLogger()
 root_logger.handlers.clear()
-root_logger.addHandler(handler)
+for handler in _log_handlers():
+    root_logger.addHandler(handler)
 root_logger.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
