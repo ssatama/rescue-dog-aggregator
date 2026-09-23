@@ -6,9 +6,9 @@
 
 Dry run by default. Run it right after the scraper change deploys: a scrape
 under the new IDs that finds no matching row inserts the dog again. Rows with
-the same photo are the same dog re-keyed by an age change; the most recently
-seen one takes the new ID, keeping its slug and profile, and the older
-duplicates are left as they are (inactive).
+the same name on the same page are the same dog re-keyed by an age change; the
+most recently seen one takes the new ID, keeping its slug and profile, and the
+older duplicates are left as they are (inactive).
 """
 
 import argparse
@@ -23,12 +23,12 @@ from psycopg2.extras import RealDictCursor
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import DB_CONFIG  # noqa: E402
-from scrapers.rean.dogs_scraper import rean_external_id, rean_image_key  # noqa: E402
+from scrapers.rean.dogs_scraper import rean_external_id  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 FETCH_QUERY = """
-    SELECT a.id, a.name, a.external_id, a.original_image_url, a.last_seen_at, a.active
+    SELECT a.id, a.name, a.external_id, a.last_seen_at, a.active
     FROM animals a
     JOIN organizations o ON o.id = a.organization_id
     WHERE o.config_id = 'rean'
@@ -52,15 +52,15 @@ def _page_type(external_id: str) -> str | None:
 
 
 def plan_rekeys(rows: list[dict]) -> list[Rekey]:
-    """One row per photo-keyed ID moves to it: the most recently seen."""
+    """One row per name-keyed ID moves to it: the most recently seen."""
     taken = {row["external_id"] for row in rows}
     candidates: dict[str, dict] = {}
 
     for row in rows:
         page_type = _page_type(row["external_id"])
-        if not page_type or not rean_image_key(row["original_image_url"]):
+        if not page_type or not row["name"]:
             continue
-        new_id = rean_external_id(row["name"], page_type, row["original_image_url"], None, None, None)
+        new_id = rean_external_id(row["name"], page_type)
         if new_id == row["external_id"]:
             continue
         current = candidates.get(new_id)

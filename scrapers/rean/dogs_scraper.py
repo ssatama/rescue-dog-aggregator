@@ -1,10 +1,8 @@
 import asyncio
-import hashlib
 import os
 import re
 import time
 from typing import Any
-from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -70,30 +68,14 @@ NON_NAME_WORDS = frozenset(
 )
 
 
-def rean_image_key(image_url: str | None) -> str | None:
-    """The photo's file name, which REAN keeps while a dog stays listed.
-
-    wsimg URLs arrive protocol-relative or not, with or without "/:/"
-    transformation suffixes, so only the file name is compared.
-    """
-    if not image_url:
-        return None
-    path = urlparse(image_url).path.split("/:")[0]
-    filename = path.rstrip("/").rsplit("/", 1)[-1].lower()
-    return filename or None
-
-
-def rean_external_id(name: str, page_type: str, image_url: str | None, breed: Any, age: Any, sex: Any) -> str:
+def rean_external_id(name: str, page_type: str) -> str:
     """ID for a REAN dog, which has no ID or page of its own on the site.
 
-    Keyed on the photo, because the age text changes as the dog gets older and
-    hashing it gave the same dog a new row on every birthday (#421). Without a
-    photo the old field hash is kept, so those dogs keep their existing rows.
+    The name and page are the only fields every scrape reads reliably. Hashing
+    the age text gave the same dog a new row on every birthday (#421), and the
+    photo is lazy-loaded, so keying on it flips the ID whenever a run misses it.
     """
-    image_key = rean_image_key(image_url)
-    identity = image_key or f"{name}-{breed}-{age}-{sex}-{page_type}"
-    hash_suffix = hashlib.md5(identity.encode()).hexdigest()[:6]
-    return f"rean-{page_type}-{name.lower().replace(' ', '-')}-{hash_suffix}"
+    return f"rean-{page_type}-{name.lower().replace(' ', '-')}"
 
 
 class REANScraper(BaseScraper):
@@ -1106,9 +1088,15 @@ class REANScraper(BaseScraper):
                 # World-class logging: Page results handled by centralized system
 
                 # Convert to standardized format and add to results
+                ids_on_page: dict[str, int] = {}
                 for dog_data in enriched_dog_data_list:
                     try:
                         standardized_data = self.standardize_animal_data(dog_data, page_type)
+                        # Two dogs listed under one name must not share a row
+                        external_id = standardized_data["external_id"]
+                        ids_on_page[external_id] = ids_on_page.get(external_id, 0) + 1
+                        if ids_on_page[external_id] > 1:
+                            standardized_data["external_id"] = f"{external_id}-{ids_on_page[external_id]}"
                         all_animals.append(standardized_data)
                     except Exception as e:
                         self.logger.error(f"Error processing dog entry: {e}")
@@ -1835,14 +1823,7 @@ class REANScraper(BaseScraper):
         if name is None:
             name = "Unknown"
 
-        external_id = rean_external_id(
-            name=name,
-            page_type=page_type,
-            image_url=dog_data.get("primary_image_url"),
-            breed=dog_data.get("breed", "unknown"),
-            age=dog_data.get("age_text", "unknown"),
-            sex=dog_data.get("sex", "unknown"),
-        )
+        external_id = rean_external_id(name, page_type)
 
         # Build adoption URL (link to organization contact)
         if self.org_config:
