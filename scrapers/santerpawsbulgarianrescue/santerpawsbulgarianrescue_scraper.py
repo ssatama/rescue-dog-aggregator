@@ -588,9 +588,8 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             if properties:
                 if "breed" in properties:
                     result["breed"] = properties["breed"] or "Mixed Breed"
-                # Use gender field for consistency with unified standardization
                 if "sex" in properties:
-                    result["gender"] = (properties["sex"] or "Unknown").lower()
+                    result["sex"] = properties["sex"] or "Unknown"
                 # Rename age_text to age for unified standardization API
                 if "age_text" in properties:
                     result["age"] = properties["age_text"]

@@ -702,7 +702,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         self.assertEqual(result.get("breed"), "Unknown")
         self.assertEqual(result.get("standardized_size"), "Medium")
         self.assertIsNone(result.get("age"))
-        self.assertIsNone(result.get("gender"))
+        self.assertIsNone(result.get("sex"))
 
     def test_scrape_animal_details_integrates_with_collect_data(self):
         """Test that detail scraping integrates correctly with collect_data."""
@@ -873,7 +873,7 @@ class TestSanterPawsDetailPageLayout:
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
 
         assert result["properties"]["breed"] == "English Setter"
-        assert result["gender"] == "male"
+        assert result["sex"] == "Male"
         assert result["standardized_size"] == "Large"
         assert result["properties"]["age_text"] == "04/04/2022"
         assert result["properties"]["age_category"] == "Adult", result["properties"]
@@ -892,7 +892,7 @@ class TestSanterPawsDetailPageLayout:
 
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
 
-        assert result["gender"] == "male"
+        assert result["sex"] == "Male"
         assert result["properties"]["breed"] == "English Setter"
         assert "Adopting a rescue dog" not in result["description"]
 
@@ -949,5 +949,15 @@ class TestSanterPawsDetailPageLayout:
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
 
         assert result["description"] == "Only a story, no fields yet."
-        assert result.get("gender") is None
+        assert result.get("sex") is None
         assert result.get("age") is None
+
+    def test_sex_uses_the_key_the_database_column_is_written_from(self, scraper, serve):
+        """DatabaseService writes animals.sex from animal_data["sex"]. The scraper
+        set "gender", which nothing maps, so every Santer Paws dog had a NULL sex."""
+        serve(_dog_page({**KEVIN_FIELDS, "Sex": "Female"}, ["Kevin."]))
+
+        result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
+
+        assert result["sex"] == "Female"
+        assert "gender" not in result
