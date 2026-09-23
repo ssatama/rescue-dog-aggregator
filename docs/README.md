@@ -34,15 +34,6 @@ These documents describe how the system works.
 | [features/railway-database-sync.md](features/railway-database-sync.md) | Syncing data between environments |
 | [features/analytics-self-exclusion.md](features/analytics-self-exclusion.md) | Excluding own traffic from analytics |
 
-## Code guidelines
-
-Enforced at PR review - see `AGENTS.md` for the non-negotiable subset.
-
-- [Python](guidelines/PYTHON_GUIDELINES.md)
-- [TypeScript](guidelines/TYPESCRIPT_GUIDELINES.md)
-- [React / Next.js](guidelines/REACT_GUIDELINES.md)
-- [Web design and accessibility](guidelines/WEB_DESIGN_GUIDELINES.md)
-
 ## Elsewhere in the repo
 
 | Path | Covers |

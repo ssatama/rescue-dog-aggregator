@@ -2,14 +2,14 @@
 
 ## Mission
 
-Build an open-source platform aggregating rescue dogs from multiple organizations. Focus: clean code, TDD, zero technical debt.
+Build an open-source platform aggregating rescue dogs from multiple organizations.
 
 ## Tech Stack
 
 - Backend: Python 3.12+/FastAPI/PostgreSQL 15/Alembic
 - Frontend: Next.js 16 (App Router)/React 19/TypeScript 5
 - Testing: pytest (backend), Jest (frontend)
-- AI: OpenRouter auto-router for LLM enrichment (model chosen per request)
+- AI: OpenRouter, pinned to `google/gemini-3.8-flash` for LLM enrichment
 - Browser Automation: Playwright (Browserless v2 in production)
 - Monitoring: Sentry (dev/prod)
 - Package Management: **uv** (backend), **pnpm** (frontend)
@@ -23,10 +23,6 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Deployment: Vercel (frontend), Railway (backend + PostgreSQL + cron)
 - Scrapers: Railway cron (Mon/Thu/Sat 3pm UTC)
 - Traffic: 20+ daily users, growing steadily
-
-## USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
-
-**CRITICAL**: Use sub-agents to reduce context usage and improve efficiency.
 
 ## Overall Guidelines
 
@@ -48,16 +44,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - If code could be 50 lines instead of 200, rewrite it
 - Ask: would a senior engineer call this overcomplicated?
 
-### 3. Surgical Changes
-
-**"Touch only what you must. Clean up only your own mess."**
-
-- Don't "improve" adjacent code or refactor unbroken functionality
-- Match existing style even if you'd prefer differently
-- Remove imports/variables that _your_ changes made unused, but don't delete pre-existing dead code
-- Every changed line should directly trace to the user's request
-
-### 4. Goal-Driven Execution
+### 3. Goal-Driven Execution
 
 **"Define success criteria. Loop until verified."**
 
@@ -66,114 +53,9 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Strong success criteria enable independent iteration without constant clarification
 - Don't mark complete until verification passes
 
-## CRITICAL: Planning-First Workflow
-
-**ALWAYS follow this 3-phase approach:**
-
-1. **RESEARCH** (no code): `Read relevant files and understand context`
-2. **PLAN**: `Create detailed implementation plan with checkboxes`
-3. **EXECUTE**: `Implement with TDD - test first, code second`
-
-## Code Guidelines (ENFORCED AT PR REVIEW)
-
-> **All guidelines are reviewed at every PR.** Violations block merge.
-
-### Quick Links
-
-| Guideline                                                         | Scope                       | Priority Order                                           |
-| ----------------------------------------------------------------- | --------------------------- | -------------------------------------------------------- |
-| [Python Guidelines](docs/guidelines/PYTHON_GUIDELINES.md)         | Backend, scrapers, services | Reliability > Simplicity > Performance > Maintainability |
-| [TypeScript Guidelines](docs/guidelines/TYPESCRIPT_GUIDELINES.md) | Frontend types, API calls   | Reliability > Simplicity > Performance > Maintainability |
-| [React Guidelines](docs/guidelines/REACT_GUIDELINES.md)           | Components, hooks, Next.js  | Performance > Reliability > Simplicity > Maintainability |
-| [Web Design Guidelines](docs/guidelines/WEB_DESIGN_GUIDELINES.md) | UI/UX, accessibility        | Accessibility > Usability > Performance > Polish         |
-
-### Non-Negotiable Rules (PR Blockers)
-
-**Python:**
-
-- Python 3.12+ with modern syntax (`list[str]` not `List[str]`, `X | None` not `Optional[X]`)
-- Type hints on ALL functions
-- `ruff check` and `ruff format` must pass
-- `logging` module (not `print()`)
-- Async context managers for resources
-
-**TypeScript:**
-
-- `strict: true` - never disable
-- No `any` - use `unknown` + Zod validation
-- No `@ts-ignore` - use `@ts-expect-error` with explanation if needed
-- Explicit return types on module API functions
-- `import type` for type-only imports
-
-**React/Next.js:**
-
-- No sequential awaits for independent operations - use `Promise.all()`
-- No barrel file imports - import directly or use `optimizePackageImports`
-- Heavy components use `next/dynamic` with `ssr: false`
-- Functional `setState` for current-state updates
-- `toSorted()` not `sort()` on state/props
-- **No `Link` or Client Components in lists with 20+ items**
-
-**Web Design:**
-
-- Icon-only buttons need `aria-label`
-- Interactive elements need keyboard support
-- Never remove focus outline without replacement
-- Animations honor `prefers-reduced-motion`
-- Form inputs have associated labels
-
 ## Core Rules
 
-### 1. TDD is MANDATORY
-
-```
-1. Write failing test
-2. See it fail (confirm with pytest/npm test)
-3. Write minimal code to pass
-4. Refactor if needed
-```
-
-### 2. Code Style
-
-- **Immutable data only** - no mutations
-- **Pure functions** - no side effects
-- **Small functions** - one responsibility
-- **No comments** - self-documenting code
-- **Early returns** - no nested conditionals
-
-### 3. Anti-Patterns (NEVER DO)
-
-- NO PARTIAL IMPLEMENTATION
-- NO SIMPLIFICATION : no "//This is simplified stuff for now, complete implementation would blablabla"
-- NO CODE DUPLICATION : check existing codebase to reuse functions and constants Read files before writing new functions. Use common sense function name to find them easily.
-- NO DEAD CODE : either use or delete from codebase completely
-- NO CHEATER TESTS : test must be accurate, reflect real usage and be designed to reveal flaws. No useless tests! Design tests to be verbose so we can use them for debuging.
-- NO INCONSISTENT NAMING - read existing codebase naming patterns.
-- NO OVER-ENGINEERING - Don't add unnecessary abstractions, factory patterns, or middleware when simple functions would work. Don't think "enterprise" when you need "working"
-- NO MIXED CONCERNS - Don't put validation logic inside API handlers, database queries inside UI components, etc. instead of proper separation
-- NO RESOURCE LEAKS - Don't forget to close database connections, clear timeouts, remove event listeners, or clean up file handles
-
-### 4. Tone and Behavior
-
-- **NEVER run `git restore`, `git checkout --`, or discard file changes without explicitly asking first.** Assume local changes are intentional work-in-progress. Discarding without permission leads to lost work.
-- Criticism is welcome. Please tell me when I am wrong or mistaken, or even when you think I might be wrong or mistaken.
-- Please tell me if there is a better approach than the one I am taking.
-- Please tell me if there is a relevant standard or convention that I appear to be unaware of.
-- Be skeptical.
-- Be concise.
-- Short summaries are OK, but don't give an extended breakdown unless we are working through the details of a plan.
-- Do not flatter, and do not give compliments unless I am specifically asking for your judgement.
-- Occasional pleasantries are fine.
-- Feel free to ask many questions. If you are in doubt of my intent, don't guess. Ask.
-
-### 5. Commit Message Guidelines
-
-- **NO AI ATTRIBUTION**: No AI tool or vendor names in commit messages - no "Claude", "Codex", "Opus", "Anthropic", "OpenAI", no `Co-Authored-By:` lines naming an assistant
-- Use conventional commit format: `type(scope): description`
-- Focus on what changed and why, not how it was created
-- Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `style`, `chore`
-
-### 6. PR Workflow (Required)
+### PR Workflow (Required)
 
 **Never commit directly to main.** Always use PRs:
 
@@ -182,7 +64,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 3. Pre-commit review: Use PAL MCP `precommit` tool with external validation
 4. Commit to branch: `git commit -m "type(scope): description"`
 5. Push & create PR: `git push -u origin HEAD && gh pr create`
-6. Run `/code-review` for automated review (includes guideline compliance check)
+6. Run `/code-review` for automated review
 7. Merge via GitHub (1 review required)
 
 Branch naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
@@ -203,7 +85,6 @@ configs/          # Organization YAMLs (13 active, 12 LLM-enabled)
 migrations/railway/  # Alembic migrations for production
 management/       # CLI tools (11 scripts)
 docs/
-├── guidelines/   # Code guidelines (Python, TypeScript, React, Web Design)
 ├── features/     # Feature documentation
 ├── technical/    # Architecture docs
 ```
@@ -225,7 +106,6 @@ docs/
 - Test count stable or increasing
 - **No JSX/TSX duplicate files** (enforced by pre-commit)
 - **Database isolation in tests** (global conftest.py fixture)
-- **Guidelines compliance** (see docs/guidelines/)
 
 ### Pre-Commit Validation (MANDATORY)
 
@@ -291,15 +171,15 @@ uv run pytest                         # Everything, including browser tests
 
 ### Pytest Markers (7 essential)
 
-| Marker       | Purpose                                        |
-| ------------ | ---------------------------------------------- |
-| `database`   | Requires a PostgreSQL database                 |
-| `browser`    | Requires Playwright/Selenium                   |
-| `external`   | Requires external APIs or credentials          |
-| `real_clock` | Must observe real elapsed time                 |
-| `unit`       | Pure logic, no I/O                             |
-| `integration`| Exercises more than one internal component     |
-| `benchmark`  | Measures performance rather than asserting     |
+| Marker        | Purpose                                    |
+| ------------- | ------------------------------------------ |
+| `database`    | Requires a PostgreSQL database             |
+| `browser`     | Requires Playwright/Selenium               |
+| `external`    | Requires external APIs or credentials      |
+| `real_clock`  | Must observe real elapsed time             |
+| `unit`        | Pure logic, no I/O                         |
+| `integration` | Exercises more than one internal component |
+| `benchmark`   | Measures performance rather than asserting |
 
 Markers say what a test **needs**, so a runner can decide whether it can run
 one. They are not speed labels. `slow` claimed ">1s" while every test carrying
@@ -364,13 +244,20 @@ pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
 
 ## LLM Integration
 
-- Routing: `openrouter/auto` with `LLM_COST_TIER=medium` (measured ~$0.005/dog)
-- Tuning: `LLM_DEFAULT_MODEL`, `LLM_COST_TIER` - no model strings in code
-- Reasoning is capped at `effort: low`, never disabled. Disabling it is a 400
-  (`Reasoning is mandatory for this endpoint`) on the reasoning-only endpoints
-  the auto-router picks, which silently left 123 dogs unprofiled; leaving it
-  uncapped lets a reasoning model spend the whole token budget and return
-  empty content
+- Model: pinned to `google/gemini-3.8-flash` via `LLM_DEFAULT_MODEL` on the
+  cron service `thriving-appreciation` (measured $0.0085/dog, 12/12 on a
+  like-for-like test). The code default is still `openrouter/auto`, so a
+  missing env var silently falls back to the router
+- Tuning: `LLM_DEFAULT_MODEL` (and `LLM_COST_TIER`, which only applies to
+  `openrouter/auto`) - no model strings in code
+- Why pinned: the auto-router caused two silent failure classes - 400s from
+  reasoning-only endpoints (123 dogs unprofiled) and reasoning models spending
+  the budget so the JSON answer was truncated (#409). Re-check for a newer
+  Flash roughly monthly
+- Reasoning is capped at `effort: low`, never disabled; profile requests get
+  8000 tokens / 60s so reasoning cannot crowd out the answer. A completion cut
+  off by the limit raises `TruncatedLLMResponseError` (or
+  `EmptyLLMResponseError` if nothing came back at all)
 - Config: `configs/llm_organizations.yaml`
 - Prompts: `prompts/organizations/*.yaml`
 - Details: `docs/features/llm-data-enrichment.md`
@@ -388,17 +275,3 @@ imports it; do not duplicate content between them.
 - Testing: `docs/guides/testing.md`
 - Troubleshooting: `docs/troubleshooting.md`
 - Operational runbooks: the `ops-commands` skill
-- **Guidelines:**
-  - Python: `docs/guidelines/PYTHON_GUIDELINES.md`
-  - TypeScript: `docs/guidelines/TYPESCRIPT_GUIDELINES.md`
-  - React/Next.js: `docs/guidelines/REACT_GUIDELINES.md`
-  - Web Design: `docs/guidelines/WEB_DESIGN_GUIDELINES.md`
-
-## When Stuck
-
-1. Check existing implementations
-2. Review test patterns
-3. Use MCP tools
-4. Run subagents for complex tasks
-5. **Review guidelines** for best practices
-6. Ask for clarification - don't guess

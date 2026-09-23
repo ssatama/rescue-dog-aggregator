@@ -10,7 +10,7 @@ The LLM Data Enrichment feature powers the intelligence behind www.rescuedogs.me
 - **Multi-language Support**: Processes descriptions in German, French, Spanish, and other languages
 - **Smart Matching**: Enables personality-based filtering and compatibility assessment
 - **Swipe Interface**: Powers the Tinder-like swipe feature with AI-generated insights
-- **Cost Efficiency**: ~$0.005 per dog via OpenRouter's auto-router at the `medium` cost tier
+- **Cost Efficiency**: ~$0.0085 per dog with the model pinned to `google/gemini-3.8-flash`
 
 ## Architecture
 
@@ -260,8 +260,8 @@ extraction_prompt: |
 OPENROUTER_API_KEY=sk-or-v1-xxxxx
 
 # Optional
-LLM_DEFAULT_MODEL=openrouter/auto  # Model or router alias
-LLM_COST_TIER=medium               # Auto-router tier: low|medium|high|xhigh|max
+LLM_DEFAULT_MODEL=google/gemini-3.8-flash  # Production value; code default is openrouter/auto
+LLM_COST_TIER=medium                       # Only used when LLM_DEFAULT_MODEL=openrouter/auto
 ```
 
 ## Component Details
@@ -330,7 +330,7 @@ RetryConfig(
     max_attempts=3,
     initial_delay=2.0,
     backoff_factor=2.0,
-    fallback_models=["openrouter/auto"],
+    fallback_models=[self.model],
 )
 ```
 
@@ -350,7 +350,7 @@ RetryConfig(
 
 - **Processing Success Rate**: 97%+ (with automatic retries)
 - **Quality Score Average**: 85-95% per profile
-- **Cost per Dog**: ~$0.024 (auto-router, medium cost tier)
+- **Cost per Dog**: ~$0.0085 (pinned `google/gemini-3.8-flash`; the auto-router's medium tier measured ~$0.024)
 - **Processing Time**: 2-5 seconds per dog
 - **Batch Efficiency**: 5 dogs concurrent
 
@@ -363,12 +363,21 @@ RetryConfig(
     max_attempts=3,
     initial_delay=2.0,
     backoff_factor=2.0,
-    fallback_models=["openrouter/auto"],
+    fallback_models=[self.model],
 )
 ```
 
-The auto-router already spreads requests across providers, so retries stay on
-the alias rather than falling back to a pinned model.
+Retries stay on the configured model. OpenRouter already fails over between
+providers serving that model, so there is no cross-model fallback.
+
+### Model choice
+
+Production pins `LLM_DEFAULT_MODEL=google/gemini-3.8-flash` (2026-09-23). On the
+same 12 dogs across 4 orgs, it profiled 12/12 at $0.0085/dog, against 7/12 at
+$0.0212/dog for `gemini-3-flash-preview`. The `openrouter/auto` router at the
+`medium` tier measured ~$0.024/dog and produced two silent failure classes
+(reasoning-only endpoints rejecting disabled reasoning, and reasoning models
+truncating the JSON answer).
 
 ### Data Validation
 

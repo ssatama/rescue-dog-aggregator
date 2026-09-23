@@ -32,8 +32,8 @@ Finding rescue dogs requires visiting multiple websites with different interface
 - Personality profiling from descriptions (energy, trainability, compatibility)
 - Automatic trait extraction and standardization
 - Multi-language support (German, French, Spanish, Italian, etc.)
-- Cost-efficient processing (~$0.005 per dog)
-- 97%+ success rate via OpenRouter's auto-router
+- Cost-efficient processing (~$0.0085 per dog)
+- 97%+ success rate with Gemini Flash via OpenRouter
 
 ### Data Processing
 
@@ -70,7 +70,7 @@ Claude Code and Claude Desktop users can discover rescue dogs through natural co
 | ------------------ | ------------------------------------------------- |
 | Backend            | Python 3.12+ / FastAPI / PostgreSQL 15 / Alembic  |
 | Frontend           | Next.js 16 (App Router) / React 19 / TypeScript 5 |
-| AI                 | OpenRouter auto-router (model chosen per request) |
+| AI                 | OpenRouter, pinned to Gemini 3.8 Flash            |
 | Browser Automation | Playwright (Browserless v2 in production)         |
 | Monitoring         | Sentry (dev + prod)                               |
 | Hosting            | Vercel (frontend) + Railway (backend + DB + cron) |

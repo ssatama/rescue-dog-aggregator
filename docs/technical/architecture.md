@@ -10,7 +10,7 @@ Data:          1,500+ active dogs | 12 active organizations
 Backend:       Python 3.12+/FastAPI + PostgreSQL 15 + Alembic
 Frontend:      Next.js 16 App Router + React 19 + TypeScript 5
 MCP Server:    TypeScript + @modelcontextprotocol/sdk (npm: rescuedogs-mcp-server)
-LLM:           OpenRouter auto-router (LLM_COST_TIER=medium)
+LLM:           OpenRouter, pinned to google/gemini-3.8-flash (LLM_DEFAULT_MODEL)
 Monitoring:    Sentry (dev + prod)
 Hosting:       Vercel (frontend) + Railway (backend + DB + cron)
 Packages:      uv (Python) + pnpm (Node.js)
@@ -398,9 +398,9 @@ Database:
   Average query time: 12ms
 
 LLM Processing:
-  Cost: ~$0.005/dog
+  Cost: ~$0.0085/dog
   Success rate: 97%+
-  Model: selected per request by openrouter/auto
+  Model: google/gemini-3.8-flash, pinned via LLM_DEFAULT_MODEL
 ```
 
 ## Common Operations
@@ -511,7 +511,7 @@ The `rescuedogs-mcp-server` enables LLMs (Claude Code, Claude Desktop) to discov
 - **FastAPI**: Native async, automatic OpenAPI docs, Pydantic validation
 - **Next.js 16**: App Router performance, React Server Components, built-in SEO
 - **PostgreSQL**: JSONB flexibility, full-text search, strong ACID, asyncpg driver
-- **OpenRouter auto-router**: Cost-effective (~$0.005/dog), fast (2-5s), high success (97%+), and the model tracks the frontier without code changes
+- **OpenRouter with a pinned Gemini Flash**: ~$0.0085/dog and 12/12 on a like-for-like test. The auto-router was dropped in 2026-09 after it caused silent failures (reasoning-only endpoints, truncated answers) at ~$0.024/dog; the model is one env var, so upgrades need no code change
 - **Service Pattern**: Testability, clear separation, future microservices path
 
 ### Technology Choices
