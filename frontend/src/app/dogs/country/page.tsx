@@ -1,3 +1,4 @@
+import { formatCount } from "@/utils/formatCount";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import CountriesHubClient from "./CountriesHubClient";
@@ -13,8 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const countryCount = stats?.countries?.length || 8;
 
   return {
-    title: `Rescue Dogs by Country | ${totalDogs.toLocaleString()} Dogs Across ${countryCount} Countries`,
-    description: `Find rescue dogs by location. Browse ${totalDogs.toLocaleString()} dogs from ${countryCount} European countries. Filter by UK, Germany, Italy, Turkey, and more.`,
+    title: `Rescue Dogs by Country | ${formatCount(totalDogs)} Dogs Across ${countryCount} Countries`,
+    description: `Find rescue dogs by location. Browse ${formatCount(totalDogs)} dogs from ${countryCount} European countries. Filter by UK, Germany, Italy, Turkey, and more.`,
     keywords:
       "rescue dogs by country, European rescue dogs, dogs from abroad, international dog adoption, rescue dogs UK, rescue dogs Germany",
     alternates: {
@@ -22,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       title: "Rescue Dogs by Country",
-      description: `Browse ${totalDogs.toLocaleString()} rescue dogs from ${countryCount} European countries`,
+      description: `Browse ${formatCount(totalDogs)} rescue dogs from ${countryCount} European countries`,
       type: "website",
       images: ["/og-image.png"],
     },

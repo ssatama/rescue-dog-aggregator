@@ -1,3 +1,4 @@
+import { formatCount } from "@/utils/formatCount";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
@@ -41,15 +42,15 @@ export async function generateMetadata(props: CountryPageProps): Promise<Metadat
     countryStats?.countries?.find((c: { code: string }) => c.code === country.code)?.count || 0;
 
   return {
-    title: `${count.toLocaleString()} Rescue Dogs in ${country.name} | Adopt from ${country.shortName}`,
-    description: `Browse ${count.toLocaleString()} rescue dogs currently in ${country.name}. ${country.description} View photos, profiles, and apply through verified rescue organizations.`,
+    title: `${formatCount(count)} Rescue Dogs in ${country.name} | Adopt from ${country.shortName}`,
+    description: `Browse ${formatCount(count)} rescue dogs currently in ${country.name}. ${country.description} View photos, profiles, and apply through verified rescue organizations.`,
     keywords: `rescue dogs ${country.name}, ${country.name} dog adoption, dogs from ${country.name}, adopt dog ${country.shortName}, ${country.name} rescue organizations`,
     alternates: {
       canonical: `https://www.rescuedogs.me/dogs/country/${params.code.toLowerCase()}`,
     },
     openGraph: {
       title: `Rescue Dogs Available in ${country.name}`,
-      description: `Find your perfect rescue dog from ${country.name}. ${count.toLocaleString()} dogs currently available for adoption.`,
+      description: `Find your perfect rescue dog from ${country.name}. ${formatCount(count)} dogs currently available for adoption.`,
       type: "website",
       images: ["/og-image.png"],
     },

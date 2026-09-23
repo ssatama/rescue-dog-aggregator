@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCount } from "@/utils/formatCount";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import CountryQuickNav from "@/components/countries/CountryQuickNav";
 import type { CountryDogsClientProps } from "@/types/pageComponents";
@@ -46,7 +47,7 @@ export default function CountryDogsClient({
           <p className="text-base md:text-lg text-white/95 max-w-2xl drop-shadow-sm">
             {country.tagline} &mdash;{" "}
             <span className="font-semibold">
-              {totalDogs.toLocaleString()}
+              {formatCount(totalDogs)}
             </span>{" "}
             dogs waiting for their forever homes
           </p>

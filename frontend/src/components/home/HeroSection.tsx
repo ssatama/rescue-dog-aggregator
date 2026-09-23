@@ -1,3 +1,4 @@
+import { formatCount } from "@/utils/formatCount";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import AnimatedCounter from "../ui/AnimatedCounter";
@@ -35,7 +36,7 @@ export default function HeroSection({
             >
               Browse{" "}
               {statistics.total_dogs > 0
-                ? statistics.total_dogs.toLocaleString()
+                ? formatCount(statistics.total_dogs)
                 : "3,186"}{" "}
               dogs aggregated from{" "}
               {statistics.total_organizations > 0

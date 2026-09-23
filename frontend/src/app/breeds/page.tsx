@@ -1,3 +1,4 @@
+import { formatCount } from "@/utils/formatCount";
 import type { Metadata } from "next";
 
 import BreedsHubClient from "./BreedsHubClient";
@@ -21,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const qualifyingBreedsCount = breedStats?.qualifying_breeds?.length || 26;
 
   return {
-    title: `Dog Breeds | ${totalDogs.toLocaleString()} Rescue Dogs Across ${uniqueBreeds} Breeds`,
+    title: `Dog Breeds | ${formatCount(totalDogs)} Rescue Dogs Across ${uniqueBreeds} Breeds`,
     description:
       `Discover rescue dogs by breed. Browse ${qualifyingBreedsCount} popular breeds with dedicated pages, personality profiles, and real-time availability from verified rescue organizations.`,
     keywords:

@@ -1,3 +1,4 @@
+import { formatCount } from "@/utils/formatCount";
 import type { Metadata } from "next";
 import type { OrganizationCardData } from "../types/organizationComponents";
 import Layout from "../components/layout/Layout";
@@ -24,20 +25,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const totalOrgs = stats.total_organizations || 13;
 
   return {
-    title: `Find Rescue Dogs | ${totalDogs.toLocaleString()}+ Dogs Available`,
-    description: `Browse ${totalDogs.toLocaleString()}+ rescue dogs from ${totalOrgs} European organizations. Filter by breed, size, age, and location to find your perfect companion.`,
+    title: `Find Rescue Dogs | ${formatCount(totalDogs)}+ Dogs Available`,
+    description: `Browse ${formatCount(totalDogs)}+ rescue dogs from ${totalOrgs} European organizations. Filter by breed, size, age, and location to find your perfect companion.`,
     alternates: {
       canonical: "https://www.rescuedogs.me",
     },
     openGraph: {
       title: "Find Your Perfect Rescue Dog",
-      description: `${totalDogs.toLocaleString()}+ dogs from verified rescue organizations across Europe.`,
+      description: `${formatCount(totalDogs)}+ dogs from verified rescue organizations across Europe.`,
       images: ["/og-image.png"],
     },
     twitter: {
       card: "summary_large_image",
       title: "Find Rescue Dogs",
-      description: `Browse ${totalDogs.toLocaleString()}+ rescue dogs from ${totalOrgs}+ European organizations.`,
+      description: `Browse ${formatCount(totalDogs)}+ rescue dogs from ${totalOrgs}+ European organizations.`,
     },
   };
 }

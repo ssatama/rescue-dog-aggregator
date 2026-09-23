@@ -1,3 +1,4 @@
+import { formatCount } from "@/utils/formatCount";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import SeniorDogsClient from "./SeniorDogsClient";
@@ -17,15 +18,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const count = seniorCategoryStat?.count || 0;
 
   return {
-    title: `${count.toLocaleString()}+ Senior Rescue Dogs for Adoption | Give an Older Dog a Home`,
-    description: `Adopt a senior rescue dog (8+ years). ${count.toLocaleString()} gentle, loving older dogs seeking their forever homes. Often house-trained with calm temperaments. ${seniorCategory.tagline}`,
+    title: `${formatCount(count)}+ Senior Rescue Dogs for Adoption | Give an Older Dog a Home`,
+    description: `Adopt a senior rescue dog (8+ years). ${formatCount(count)} gentle, loving older dogs seeking their forever homes. Often house-trained with calm temperaments. ${seniorCategory.tagline}`,
     keywords: seniorCategory.seoKeywords,
     alternates: {
       canonical: "https://www.rescuedogs.me/dogs/senior",
     },
     openGraph: {
-      title: `${count.toLocaleString()}+ Senior Rescue Dogs Available for Adoption`,
-      description: `Give an older dog a loving home. ${count.toLocaleString()} senior dogs currently available from trusted organizations.`,
+      title: `${formatCount(count)}+ Senior Rescue Dogs Available for Adoption`,
+      description: `Give an older dog a loving home. ${formatCount(count)} senior dogs currently available from trusted organizations.`,
       type: "website",
       images: ["/og-image.png"],
     },

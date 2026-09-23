@@ -1,3 +1,4 @@
+import { formatCount } from "@/utils/formatCount";
 import type { AgeStructuredDataProps } from "@/types/pageComponents";
 
 export default function AgeStructuredData(props: AgeStructuredDataProps): React.ReactElement {
@@ -14,7 +15,7 @@ export default function AgeStructuredData(props: AgeStructuredDataProps): React.
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       name: "Rescue Dogs by Age",
-      description: `Browse ${totalDogs.toLocaleString()} rescue dogs by age category. Find ${puppyCount.toLocaleString()} playful puppies or ${seniorCount.toLocaleString()} wise senior dogs waiting for their forever homes.`,
+      description: `Browse ${formatCount(totalDogs)} rescue dogs by age category. Find ${formatCount(puppyCount)} playful puppies or ${formatCount(seniorCount)} wise senior dogs waiting for their forever homes.`,
       url: `${baseUrl}/dogs/age`,
       numberOfItems: totalDogs,
       hasPart: [

@@ -1,3 +1,4 @@
+import { formatCount } from "@/utils/formatCount";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import AgeHubClient from "./AgeHubClient";
@@ -14,8 +15,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const seniorCount = stats?.ageCategories?.find((c: { slug: string }) => c.slug === "senior")?.count || 500;
 
   return {
-    title: `Browse Dogs by Age | ${puppyCount.toLocaleString()} Puppies & ${seniorCount.toLocaleString()} Seniors`,
-    description: `Find your perfect match by age. Browse ${puppyCount.toLocaleString()} playful puppies ready for adventure or ${seniorCount.toLocaleString()} wise senior dogs with so much love to give.`,
+    title: `Browse Dogs by Age | ${formatCount(puppyCount)} Puppies & ${formatCount(seniorCount)} Seniors`,
+    description: `Find your perfect match by age. Browse ${formatCount(puppyCount)} playful puppies ready for adventure or ${formatCount(seniorCount)} wise senior dogs with so much love to give.`,
     keywords:
       "rescue puppies, senior rescue dogs, adopt puppy, adopt senior dog, older dogs for adoption, young rescue dogs",
     alternates: {
@@ -23,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       title: "Browse Rescue Dogs by Age",
-      description: `${puppyCount.toLocaleString()} puppies and ${seniorCount.toLocaleString()} senior dogs waiting for their forever homes`,
+      description: `${formatCount(puppyCount)} puppies and ${formatCount(seniorCount)} senior dogs waiting for their forever homes`,
       type: "website",
       images: ["/og-image.png"],
     },

@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect, useState } from "react";
+import React, { useMemo, useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -30,6 +30,10 @@ import { trackDogCardClick } from "@/lib/monitoring/breadcrumbs";
 import type { DogCardOptimizedProps } from "@/types/dogComponents";
 import type { Dog } from "@/types/dog";
 
+const emptySubscribe = (): (() => void) => () => {};
+const getClientSnapshot = (): boolean => true;
+const getServerSnapshot = (): boolean => false;
+
 const DogCardOptimized = React.memo(
   function DogCardOptimized({
     dog,
@@ -54,7 +58,10 @@ const DogCardOptimized = React.memo(
   const genderData = formatGender(dog);
   const organizationName = getOrganizationName(dog);
   const shipsToCountries = getShipsToCountries(dog);
-  const showNewBadge = isRecentDog(dog);
+  // "Recent" depends on the clock, which differs between an ISR render and
+  // the visitor's browser, so the badge is decided after hydration only.
+  const hydrated = useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
+  const showNewBadge = hydrated && isRecentDog(dog);
 
   const experienceLevel = formatExperienceLevel(dog);
   const compatibility = formatCompatibility(dog);

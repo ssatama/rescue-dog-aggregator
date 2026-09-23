@@ -1,3 +1,4 @@
+import { formatCount } from "@/utils/formatCount";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import PuppiesClient from "./PuppiesClient";
@@ -17,15 +18,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const count = puppyCategoryStat?.count || 0;
 
   return {
-    title: `${count.toLocaleString()}+ Rescue Puppies for Adoption | Find Your Perfect Puppy`,
-    description: `Adopt a rescue puppy today. Browse ${count.toLocaleString()} puppies under 1 year old from verified rescue organizations across Europe. ${puppyCategory.tagline}`,
+    title: `${formatCount(count)}+ Rescue Puppies for Adoption | Find Your Perfect Puppy`,
+    description: `Adopt a rescue puppy today. Browse ${formatCount(count)} puppies under 1 year old from verified rescue organizations across Europe. ${puppyCategory.tagline}`,
     keywords: puppyCategory.seoKeywords,
     alternates: {
       canonical: "https://www.rescuedogs.me/dogs/puppies",
     },
     openGraph: {
-      title: `${count.toLocaleString()}+ Rescue Puppies Available for Adoption`,
-      description: `Find your perfect rescue puppy. ${count.toLocaleString()} puppies currently available from trusted organizations.`,
+      title: `${formatCount(count)}+ Rescue Puppies Available for Adoption`,
+      description: `Find your perfect rescue puppy. ${formatCount(count)} puppies currently available from trusted organizations.`,
       type: "website",
       images: ["/og-image.png"],
     },

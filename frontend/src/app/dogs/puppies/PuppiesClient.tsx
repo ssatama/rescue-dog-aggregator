@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCount } from "@/utils/formatCount";
 import { Sparkles } from "lucide-react";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import AgeQuickNav from "@/components/age/AgeQuickNav";
@@ -52,7 +53,7 @@ export default function PuppiesClient({
             <p className="text-lg md:text-xl text-white/90 max-w-2xl drop-shadow-sm">
               {ageCategory.tagline} &mdash;{" "}
               <span className="font-semibold">
-                {totalCount.toLocaleString()}
+                {formatCount(totalCount)}
               </span>{" "}
               puppies waiting for their forever homes
             </p>
