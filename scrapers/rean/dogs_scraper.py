@@ -1092,11 +1092,14 @@ class REANScraper(BaseScraper):
                 for dog_data in enriched_dog_data_list:
                     try:
                         standardized_data = self.standardize_animal_data(dog_data, page_type)
-                        # Two dogs listed under one name must not share a row
+                        # Two dogs listed under one name must not share a row. The
+                        # suffix follows page order, so it is only stable while
+                        # both stay listed; no REAN name has been reused yet.
                         external_id = standardized_data["external_id"]
                         ids_on_page[external_id] = ids_on_page.get(external_id, 0) + 1
                         if ids_on_page[external_id] > 1:
                             standardized_data["external_id"] = f"{external_id}-{ids_on_page[external_id]}"
+                            self.logger.warning(f"Two REAN dogs named {standardized_data['name']} on {page_type}; the second is {standardized_data['external_id']}")
                         all_animals.append(standardized_data)
                     except Exception as e:
                         self.logger.error(f"Error processing dog entry: {e}")

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Move existing REAN rows onto the photo-keyed external_id (#421).
+"""Move existing REAN rows onto the name-keyed external_id (#421).
 
     uv run python management/rean_rekey.py
     uv run python management/rean_rekey.py --apply
 
 Dry run by default. Run it right after the scraper change deploys: a scrape
 under the new IDs that finds no matching row inserts the dog again. Rows with
-the same name on the same page are the same dog re-keyed by an age change; the
+the same name on the same page are the same dog re-keyed by an age change (true
+of every such group in production on 2026-09-23); the
 most recently seen one takes the new ID, keeping its slug and profile, and the
 older duplicates are left as they are (inactive).
 """
