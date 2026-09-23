@@ -4,6 +4,7 @@ import os
 import re
 import time
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -67,6 +68,32 @@ NON_NAME_WORDS = frozenset(
         "they",
     }
 )
+
+
+def rean_image_key(image_url: str | None) -> str | None:
+    """The photo's file name, which REAN keeps while a dog stays listed.
+
+    wsimg URLs arrive protocol-relative or not, with or without "/:/"
+    transformation suffixes, so only the file name is compared.
+    """
+    if not image_url:
+        return None
+    path = urlparse(image_url).path.split("/:")[0]
+    filename = path.rstrip("/").rsplit("/", 1)[-1].lower()
+    return filename or None
+
+
+def rean_external_id(name: str, page_type: str, image_url: str | None, breed: Any, age: Any, sex: Any) -> str:
+    """ID for a REAN dog, which has no ID or page of its own on the site.
+
+    Keyed on the photo, because the age text changes as the dog gets older and
+    hashing it gave the same dog a new row on every birthday (#421). Without a
+    photo the old field hash is kept, so those dogs keep their existing rows.
+    """
+    image_key = rean_image_key(image_url)
+    identity = image_key or f"{name}-{breed}-{age}-{sex}-{page_type}"
+    hash_suffix = hashlib.md5(identity.encode()).hexdigest()[:6]
+    return f"rean-{page_type}-{name.lower().replace(' ', '-')}-{hash_suffix}"
 
 
 class REANScraper(BaseScraper):
@@ -1679,7 +1706,11 @@ class REANScraper(BaseScraper):
                 return None
 
             # Try shared utilities first, fallback to REAN-specific methods
-            age_years = shared_extract_age(entry_text)
+            # The heading ("George - 4.5 years old - Norfolk") states the age;
+            # GoDaddy can leave a neighbour's "around 7 months old" inside the
+            # same block, and the shared extractor prefers months (#421).
+            heading = re.split(r"(?<=\bold)\b", entry_text, maxsplit=1)[0]
+            age_years = shared_extract_age(heading) or shared_extract_age(entry_text)
             age_text = self.normalize_age_text_from_years(age_years) if age_years else self.extract_age(entry_text)
 
             weight_kg = shared_extract_weight(entry_text)
@@ -1804,18 +1835,14 @@ class REANScraper(BaseScraper):
         if name is None:
             name = "Unknown"
 
-        # Create more stable external ID using name + breed + age + page type for
-        # uniqueness
-        name_slug = name.lower().replace(" ", "-")
-        breed = dog_data.get("breed", "unknown")
-        age = dog_data.get("age_text", "unknown")
-        sex = dog_data.get("sex", "unknown")
-
-        # Create a hash of combined data for uniqueness
-        combined_data = f"{name}-{breed}-{age}-{sex}-{page_type}"
-        hash_suffix = hashlib.md5(combined_data.encode()).hexdigest()[:6]
-
-        external_id = f"rean-{page_type}-{name_slug}-{hash_suffix}"
+        external_id = rean_external_id(
+            name=name,
+            page_type=page_type,
+            image_url=dog_data.get("primary_image_url"),
+            breed=dog_data.get("breed", "unknown"),
+            age=dog_data.get("age_text", "unknown"),
+            sex=dog_data.get("sex", "unknown"),
+        )
 
         # Build adoption URL (link to organization contact)
         if self.org_config:
