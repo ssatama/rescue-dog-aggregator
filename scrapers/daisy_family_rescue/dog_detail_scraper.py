@@ -405,7 +405,7 @@ class DaisyFamilyRescueDogDetailScraper:
             value = re.sub(rf"^{re.escape(field_pattern)}\s*", "", value).strip()
             # A blank field lets the match run onto the next line; that is the
             # next field ("Alter:" -> "Geschlecht: weiblich"), not a value.
-            if value.startswith(tuple(self.steckbrief_patterns)):
+            if value.startswith(tuple(self.steckbrief_patterns) + UNPARSED_STECKBRIEF_LABELS):
                 return None
             return value if value else None
 

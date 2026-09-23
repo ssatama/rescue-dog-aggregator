@@ -986,3 +986,11 @@ class TestSanterPawsDetailPageLayout:
 
         assert "sex" not in result["properties"]
         assert result.get("sex") is None
+
+    def test_comments_and_styles_beside_the_story_stay_out(self, scraper, serve):
+        story = "<!-- wp:paragraph --><style>.x{color:red}</style><h2>Meet Marley</h2><p>Marley loves people.</p><script>track()</script>"
+        serve(_dog_page(KEVIN_FIELDS, [], story_html=story))
+
+        result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/marley/")
+
+        assert result["description"] == "Meet Marley Marley loves people."

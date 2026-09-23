@@ -5,7 +5,7 @@ from typing import Any
 from urllib.parse import urljoin
 
 import requests
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, Comment, Tag
 
 from scrapers.base_scraper import BaseScraper
 
@@ -35,6 +35,8 @@ def _story_paragraphs(element: Tag) -> list[str]:
             else:
                 inline.append(child.get_text())
                 flush()
+        elif isinstance(child, Comment) or (isinstance(child, Tag) and child.name in ("script", "style")):
+            continue
         else:
             inline.append(child.get_text() if isinstance(child, Tag) else str(child))
     flush()

@@ -123,3 +123,8 @@ class TestDaisySteckbriefFields:
         scraper = DaisyFamilyRescueDogDetailScraper()
 
         assert scraper._extract_field_value("Alter:\n10/2020\nGeschlecht: weiblich", "Alter:") == "10/2020"
+
+    def test_blank_field_does_not_take_an_unparsed_label_line(self):
+        scraper = DaisyFamilyRescueDogDetailScraper()
+
+        assert scraper._extract_field_value("Halter:\nAls Zweithund geeignet: ja", "Halter:") is None
