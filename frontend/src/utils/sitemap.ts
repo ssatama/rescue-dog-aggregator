@@ -292,7 +292,7 @@ export const generateOrganizationSitemap = async (): Promise<string> => {
 
 export const generateCountrySitemap = async (): Promise<string> => {
   const baseUrl = getBaseUrl();
-  const countries = ["uk", "de", "sr", "ba", "bg", "it", "tr", "cy"];
+  const countries = ["uk", "de", "rs", "ba", "bg", "it", "tr", "cy"];
 
   try {
     const countryEntries = [

@@ -19,7 +19,7 @@ jest.mock("next/navigation", () => ({
 const mockCountries = [
   { code: "UK", name: "United Kingdom", shortName: "UK", flag: "🇬🇧" },
   { code: "DE", name: "Germany", shortName: "Germany", flag: "🇩🇪" },
-  { code: "SR", name: "Serbia", shortName: "Serbia", flag: "🇷🇸" },
+  { code: "RS", name: "Serbia", shortName: "Serbia", flag: "🇷🇸" },
 ];
 
 describe("CountryQuickNav", () => {

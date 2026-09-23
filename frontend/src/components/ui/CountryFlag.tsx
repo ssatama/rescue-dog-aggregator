@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import FlagErrorBoundary from "./FlagErrorBoundary";
-import { normalizeCountryCode } from "../../utils/countries";
+import { normalizeCountryCode } from "../../utils/countryNames";
 
 export type CountryFlagSize = "small" | "medium" | "large";
 

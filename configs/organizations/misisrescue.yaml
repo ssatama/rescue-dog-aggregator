@@ -24,9 +24,9 @@ metadata:
     There are lots of dogs in these parts of the world who need our help, and whilst we would love to keep them all and it is so hard to say goodbye, we know that
     their lives will be amazing with their new families and that the more dogs we re-home, the more we can bring in to foster and help find their forever homes too.
   location:
-    country: "SR" # Organization's base country
+    country: "RS" # Organization's base country
     city: "Belgrade" # Organization's base city
-  service_regions: ["SR", "MK"]
+  service_regions: ["RS", "MK"]
   ships_to: [
       "UK",
       "CH",
