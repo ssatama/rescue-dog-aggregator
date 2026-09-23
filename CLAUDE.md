@@ -20,17 +20,19 @@ Only tooling notes that apply to Claude Code and nowhere else belong below.
 
 ### MCP servers
 
-Configured for this project in `.mcp.json`:
+Configured for this project in `.mcp.json` (gitignored, so each machine keeps
+its own copy):
 
-- `postgres` - read-only SQL against the database. Prefer it over shelling out
-  to `psql` for inspection.
+- `postgres` - read-only SQL against the **production** Railway database. Its
+  URL is read from `RAILWAY_DATABASE_URL` in `.env` at startup, never written
+  into `.mcp.json`. Prefer it over shelling out to `psql` for inspection.
 - `rescuedogs` - this repo's own MCP server (`rescuedogs-mcp-server/`): dog
   search, filter counts, statistics against the live API.
-- `pal` - `precommit` validation, used in the PR workflow above.
-- `lighthouse` - performance audits.
+- `Railway` - deployment status, logs, variables.
 
-Railway and Sentry MCP servers may also be available from user-level config for
-deployment status and production error triage.
+Vercel (plugin), Context7 and chrome-devtools come from user-level config;
+chrome-devtools also covers Lighthouse audits. Sentry is a local-scope server
+until a claude.ai Sentry connector replaces it.
 
 ### Review
 
