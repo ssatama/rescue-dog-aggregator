@@ -508,7 +508,8 @@ class BaseScraper(ABC):
             # Apply full standardization (handles breed, age, size)
             standardized = self.standardizer.apply_full_standardization(
                 breed=processed_data.get("breed"),
-                age=processed_data.get("age"),
+                # Scrapers that only set age_text would otherwise have it overwritten with None
+                age=processed_data.get("age") or processed_data.get("age_text"),
                 size=processed_data.get("size"),
             )
 

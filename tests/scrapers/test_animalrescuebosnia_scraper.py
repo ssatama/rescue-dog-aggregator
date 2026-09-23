@@ -86,6 +86,30 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
         assert "construction site" in result["properties"]["description"]
 
     @patch("requests.get")
+    def test_properties_found_without_short_description_heading(self, mock_get, scraper):
+        """Some pages (e.g. /dwayne/) put the property paragraph straight under the name (#453)."""
+        mock_html = """
+        <html><body>
+            <h1>Dwayne</h1>
+            <h2>Dwayne</h2>
+            <p>Breed: Mix<br>Gender: Male<br>Date of birth: August 2024<br>Height: 53 cm<br>Weight: 17 kg</p>
+            <h2>About Dwayne</h2>
+            <p>Dwayne is a friendly boy.</p>
+        </body></html>
+        """
+        mock_response = Mock()
+        mock_response.content = mock_html.encode("utf-8")
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        result = scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/dwayne/")
+
+        assert result["sex"] == "Male"
+        assert result["properties"]["date_of_birth"] == "August 2024"
+        assert result["properties"]["weight"] == "17 kg"
+        assert result["age_text"] is not None
+
+    @patch("requests.get")
     def test_external_id_generation(self, mock_get, scraper):
         mock_html = """
         <html><body>
