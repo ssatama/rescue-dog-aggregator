@@ -276,3 +276,120 @@ class TestWoofProjectScraperOptimized:
 
             # Verify wp-content image is prioritized
             assert "wp-content/uploads" in result["primary_image_url"]
+
+
+def _labelled_page(name, looks_like, sex, location, age, size, story):
+    """Detail page in the site's current Elementor layout: all labels, then all values (#454)."""
+    heading = '<h2 class="elementor-heading-title">{}</h2>'
+    value = '<h4 class="elementor-heading-title">{}</h4>'
+    labels = "".join(heading.format(t) for t in ["Looks like:", "Sex:", "Location:", "Estimated age:", "Size:"])
+    values = "".join(value.format(t) for t in [looks_like, sex, location, age, size])
+    return f"""
+    <html><body>
+    <h2 class="elementor-heading-title">{name}</h2>
+    {labels}{values}
+    <p>{story}</p>
+    <h2>LET'S HOME THEM ALL</h2>
+    <h2>Hello! Welcome to our family. We love sharing our good news with you, WOOF WOOF!</h2>
+    <p>First Name Last Name Please wait... Subscribe</p>
+    </body></html>
+    """
+
+
+@pytest.mark.unit
+class TestWoofProjectLabelledFields:
+    @pytest.fixture
+    def scraper(self):
+        return WoofProjectScraper(config_id="woof-project")
+
+    def _scrape(self, scraper, html, slug):
+        with patch.object(scraper, "_fetch_detail_page", return_value=BeautifulSoup(html, "html.parser")):
+            return scraper.scrape_animal_details(f"https://woofproject.eu/adoption/{slug}/")
+
+    def test_sex_and_age_come_from_labels_not_pronouns(self, scraper):
+        html = _labelled_page(
+            "MIRAN",
+            "Small Pointer Hound/Beagle Mix",
+            "Male",
+            "Cyprus",
+            "2 years old",
+            "Medium size dog",
+            "Hi, I am Miran, a playful rescue dog for adoption who loves to run and play with other dogs.",
+        )
+
+        result = self._scrape(scraper, html, "miran")
+
+        assert result["sex"] == "Male"
+        assert result["age_text"] == "2 years old"
+        assert result["age_min_months"] == 24
+        assert result["size"] == "Medium"
+        assert result["properties"]["location"] == "Cyprus"
+
+    def test_dutch_page_values_and_story(self, scraper):
+        html = _labelled_page(
+            "AREAN",
+            "Pointer GSP Kruising",
+            "Male",
+            "Cyprus",
+            "2 jaar",
+            "Middelgroot",
+            "Hoi, ik ben Arean. Ik ben een vriendelijke en speelse adoptiehond die van het leven geniet.",
+        )
+
+        result = self._scrape(scraper, html, "arean")
+
+        assert result["sex"] == "Male"
+        assert result["age_text"] == "2 years"
+        assert result["age_min_months"] == 24
+        assert result["size"] == "Medium"
+        assert result["description"].startswith("Hoi, ik ben Arean")
+        assert "Subscribe" not in result["description"]
+        assert "Welcome to our family" not in result["description"]
+
+    def test_missing_values_stay_none(self, scraper):
+        html = """
+        <html><body><h1>GHOST</h1>
+        <p>Hi, I am Ghost. I am a quiet rescue dog waiting for a loving family to call my own.</p>
+        </body></html>
+        """
+
+        result = self._scrape(scraper, html, "ghost")
+
+        assert result["sex"] is None
+        assert result["age_text"] is None
+        assert result["size"] is None
+        assert result["properties"]["breed"] is None
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            ("Small size dog", "Small"),
+            ("Small to Medium size dog", "Medium"),
+            ("Medium size dog", "Medium"),
+            ("Middelgroot", "Medium"),
+            ("Large dog", "Large"),
+            ("Medium to large when fully grown", "Large"),
+            ("Medium-Large size dog", "Large"),
+            ("Xtra Small size dog", "Tiny"),
+            ("XSmall", "Tiny"),
+            ("X Small", "Tiny"),
+            ("", None),
+        ],
+    )
+    def test_size_normalization(self, scraper, value, expected):
+        assert scraper._normalize_size(value) == expected
+
+    def test_unrecognised_size_label_is_not_guessed_from_page_text(self, scraper):
+        html = _labelled_page(
+            "BIG",
+            "Mastiff mix",
+            "Male",
+            "Cyprus",
+            "3 years",
+            "Enormous",
+            "Hi, I am Big. I was a small little puppy once but now I love long walks with my family.",
+        )
+
+        result = self._scrape(scraper, html, "big")
+
+        assert result["size"] is None
