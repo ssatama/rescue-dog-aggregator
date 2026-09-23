@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCount } from "@/utils/formatCount";
 import { useMemo } from "react";
 import Link from "next/link";
 import { MapPin, Dog, Building2, ArrowRight } from "lucide-react";
@@ -32,7 +33,7 @@ function CountryCard({ country }: { country: CountryData & { count: number; orga
             <div className="flex items-center gap-1.5 text-sm">
               <Dog className="h-4 w-4 text-orange-500" />
               <span className="font-semibold">
-                {country.count?.toLocaleString() || 0}
+                {formatCount(country.count ?? 0)}
               </span>
               <span className="text-muted-foreground">dogs</span>
             </div>
@@ -99,7 +100,7 @@ export default function CountriesHubClient({ initialStats }: CountriesHubClientP
               Rescue Dogs by Country
             </h1>
             <p className="text-lg md:text-xl opacity-95 max-w-2xl mx-auto mb-8">
-              {totalDogs.toLocaleString()} dogs waiting across{" "}
+              {formatCount(totalDogs)} dogs waiting across{" "}
               {countriesWithStats.length} countries. Find your perfect match by
               location.
             </p>
@@ -114,7 +115,7 @@ export default function CountriesHubClient({ initialStats }: CountriesHubClientP
                 <div className="bg-white/20 backdrop-blur-sm rounded-xl px-5 py-3 hover:bg-white/30 transition-colors cursor-pointer">
                   <span className="text-2xl mr-2">{country.flag}</span>
                   <span className="font-semibold">
-                    {country.count.toLocaleString()}
+                    {formatCount(country.count)}
                   </span>
                   <span className="text-sm opacity-90 ml-1">dogs</span>
                 </div>

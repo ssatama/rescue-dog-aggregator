@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCount } from "@/utils/formatCount";
 import Link from "next/link";
 import { Sparkles, Heart, ArrowRight, Calendar } from "lucide-react";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
@@ -38,7 +39,7 @@ function AgeCategoryCard({ category }: { category: AgeCategory & { count: number
             <div className="flex items-center gap-1.5 text-sm">
               <Icon className="h-4 w-4 text-orange-500" />
               <span className="font-semibold">
-                {category.count?.toLocaleString() || 0}
+                {formatCount(category.count ?? 0)}
               </span>
               <span className="text-muted-foreground">dogs</span>
             </div>
@@ -109,7 +110,7 @@ export default function AgeHubClient({ initialStats }: AgeHubClientProps) {
                 <div className="bg-white/20 backdrop-blur-sm rounded-xl px-5 py-3 hover:bg-white/30 transition-colors cursor-pointer">
                   <span className="text-2xl mr-2">{puppies.emoji}</span>
                   <span className="font-semibold">
-                    {puppies.count.toLocaleString()}
+                    {formatCount(puppies.count)}
                   </span>
                   <span className="text-sm opacity-90 ml-1">puppies</span>
                 </div>
@@ -120,7 +121,7 @@ export default function AgeHubClient({ initialStats }: AgeHubClientProps) {
                 <div className="bg-white/20 backdrop-blur-sm rounded-xl px-5 py-3 hover:bg-white/30 transition-colors cursor-pointer">
                   <span className="text-2xl mr-2">{seniors.emoji}</span>
                   <span className="font-semibold">
-                    {seniors.count.toLocaleString()}
+                    {formatCount(seniors.count)}
                   </span>
                   <span className="text-sm opacity-90 ml-1">seniors</span>
                 </div>

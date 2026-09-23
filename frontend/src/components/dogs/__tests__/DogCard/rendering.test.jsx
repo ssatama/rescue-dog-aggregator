@@ -1,4 +1,5 @@
 import React from "react";
+import { renderToString } from "react-dom/server";
 import { render, screen, within } from "../../../../test-utils";
 import DogCard from "../../DogCardOptimized";
 import {
@@ -76,6 +77,14 @@ describe("DogCard Rendering", () => {
   });
 
   describe("NEW Badge for Recent Dogs", () => {
+    test("leaves the NEW badge out of the server render so cached HTML hydrates", () => {
+      // An ISR render and the browser disagree about "now", so a dog crossing
+      // the 7-day line inside the cache window would mismatch on hydration.
+      const html = renderToString(<DogCard dog={recentDog(1)} />);
+
+      expect(html).not.toContain('data-testid="new-badge"');
+    });
+
     test("shows NEW badge for dogs added within last 7 days", () => {
       const recentDogData = recentDog(6);
       render(<DogCard dog={recentDogData} />);

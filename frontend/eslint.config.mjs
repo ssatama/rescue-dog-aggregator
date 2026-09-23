@@ -13,6 +13,11 @@ export default [
       "no-restricted-syntax": [
         "error",
         {
+          selector: 'CallExpression[callee.property.name="toLocaleString"][arguments.length=0]',
+          message:
+            "Bare toLocaleString() uses the visitor's locale and breaks hydration. Use formatCount from @/utils/formatCount.",
+        },
+        {
           selector: 'Property[key.name="type"][value.value="organization"]',
           message:
             'Invalid OpenGraph type "organization". Use valid types like "website", "article", "profile", etc.',
