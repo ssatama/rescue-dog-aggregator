@@ -882,52 +882,52 @@ class WoofProjectScraper(BaseScraper):
             if not soup:
                 return None
 
-            # Extract all data from detail page
+            # Extract all data from detail page. The labelled "Looks like / Sex / Estimated age /
+            # Size" block is authoritative; the free-text extractors are only fallbacks.
             external_id = self._generate_external_id(url)
             name = self._extract_name_from_detail(soup)
-            breed = self._extract_breed_from_detail(soup)
-            age = self._extract_age_from_detail(soup)
-            size = self._extract_size_from_detail(soup)
+            fields = self._extract_labelled_fields(soup)
+            breed = fields.get("looks like") or self._extract_breed_from_detail(soup)
+            age = self._normalize_age(fields.get("estimated age")) or self._extract_age_from_detail(soup)
+            size = self._normalize_size(fields.get("size")) or self._extract_size_from_detail(soup)
             description = self._extract_description_from_detail(soup)
             primary_image_url = self._extract_primary_image_from_detail(soup)
-
-            # Extract sex from description patterns
-            sex = self._extract_sex_from_description(description or "")
+            sex = self._normalize_sex(fields.get("sex")) or self._extract_sex_from_description(description or "")
 
             # Apply standardization to name only (breed/size/age handled by unified standardizer)
             standardized_name = self._standardize_name(name or "Unknown")
 
-            # Build result dictionary with raw data (unified standardization will process it)
+            # Missing values stay None: never store a breed, size, age or sex the rescue didn't state
             result = {
                 "name": standardized_name,
                 "external_id": external_id,
                 "adoption_url": url,
                 "primary_image_url": primary_image_url,
                 "description": description or "Rescue dog from Woof Project available for adoption",
-                "breed": breed or "Mixed Breed",
-                "age": age or "Unknown age",  # Using age for standardizer
-                "size": size or "Medium",
-                "sex": sex or "Unknown",
+                "breed": breed,
+                "age": age,
+                "size": size,
+                "sex": sex,
                 "animal_type": "dog",
                 "status": "available",
             }
 
-            # Additional properties for enhanced data - include actual content like working orgs
             properties = {
                 "description": description or "No description available",
                 "raw_name": name or "Unknown",
                 "raw_description": description or "No description available",
-                "breed": breed or "Mixed Breed",
-                "age_text": age or "Unknown age",
-                "size": size or "Medium",
-                "sex": sex or "Unknown",
+                "breed": breed,
+                "age_text": age,
+                "size": size,
+                "sex": sex,
+                "location": fields.get("location"),
                 "page_url": url,
                 "source_page": url,
                 "extracted_fields": {
                     "name_source": "title" if name else "default",
-                    "breed_source": "pattern" if breed else "default",
-                    "age_source": "pattern" if age else "default",
-                    "size_source": "pattern" if size else "default",
+                    "breed_source": "label" if fields.get("looks like") else ("pattern" if breed else "default"),
+                    "age_source": "label" if fields.get("estimated age") else ("pattern" if age else "default"),
+                    "size_source": "label" if fields.get("size") else ("pattern" if size else "default"),
                 },
             }
 
@@ -941,6 +941,48 @@ class WoofProjectScraper(BaseScraper):
         except Exception as e:
             self.logger.error(f"Error scraping detail page {url}: {e}")
             return None
+
+    def _extract_labelled_fields(self, soup: BeautifulSoup) -> dict[str, str]:
+        """Read the "Looks like: / Sex: / Location: / Estimated age: / Size:" block.
+
+        The page renders all labels as consecutive headings, then the values in the same order.
+        Returns lower-cased label -> value, or {} if the block is absent.
+        """
+        headings = [h.get_text(" ", strip=True) for h in soup.find_all(class_="elementor-heading-title")]
+        labels: list[str] = []
+        for i, text in enumerate(headings):
+            if text.endswith(":"):
+                labels.append(text[:-1].strip().lower())
+            elif labels:
+                values = headings[i : i + len(labels)]
+                return {label: value for label, value in zip(labels, values) if value}
+        return {}
+
+    def _normalize_sex(self, value: str | None) -> str | None:
+        text = (value or "").strip().lower()
+        if text in ("male", "reu"):
+            return "Male"
+        if text in ("female", "teef"):
+            return "Female"
+        return None
+
+    def _normalize_age(self, value: str | None) -> str | None:
+        """Pass the stated age through, translating the Dutch units some pages use ("2 jaar")."""
+        if not value:
+            return None
+        text = re.sub(r"\bjaar\b", "years", value, flags=re.IGNORECASE)
+        return re.sub(r"\bmaand(en)?\b", "months", text, flags=re.IGNORECASE)
+
+    def _normalize_size(self, value: str | None) -> str | None:
+        """Map "Medium size dog", "Small to Medium size dog", "Middelgroot" etc. to a size category."""
+        text = (value or "").lower()
+        if "medium" in text or "middel" in text:
+            return "Medium"
+        if "small" in text or "klein" in text:
+            return "Small"
+        if "large" in text or "groot" in text:
+            return "Large"
+        return None
 
     def _extract_sex_from_description(self, description: str) -> str | None:
         """Extract sex from description text using pronoun analysis.
@@ -1302,6 +1344,7 @@ class WoofProjectScraper(BaseScraper):
             r"hello,?\s+(my\s+name\s+is|i\s+am)",
             r"let\s+me\s+tell\s+you",
             r"my\s+name\s+is",
+            r"hoi,?\s+ik\s+ben",
         ]
 
         description = None
@@ -1341,6 +1384,7 @@ class WoofProjectScraper(BaseScraper):
             "let's home them all",
             "site map",
             "legal",
+            "welcome to our family",  # newsletter sign-up form
         ]
 
         earliest_end_index = len(description)
