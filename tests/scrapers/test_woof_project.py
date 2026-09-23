@@ -368,8 +368,28 @@ class TestWoofProjectLabelledFields:
             ("Medium size dog", "Medium"),
             ("Middelgroot", "Medium"),
             ("Large dog", "Large"),
+            ("Medium to large when fully grown", "Large"),
+            ("Medium-Large size dog", "Large"),
+            ("Xtra Small size dog", "Tiny"),
+            ("XSmall", "Tiny"),
+            ("X Small", "Tiny"),
             ("", None),
         ],
     )
     def test_size_normalization(self, scraper, value, expected):
         assert scraper._normalize_size(value) == expected
+
+    def test_unrecognised_size_label_is_not_guessed_from_page_text(self, scraper):
+        html = _labelled_page(
+            "BIG",
+            "Mastiff mix",
+            "Male",
+            "Cyprus",
+            "3 years",
+            "Enormous",
+            "Hi, I am Big. I was a small little puppy once but now I love long walks with my family.",
+        )
+
+        result = self._scrape(scraper, html, "big")
+
+        assert result["size"] is None

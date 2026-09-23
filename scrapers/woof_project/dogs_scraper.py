@@ -888,8 +888,9 @@ class WoofProjectScraper(BaseScraper):
             name = self._extract_name_from_detail(soup)
             fields = self._extract_labelled_fields(soup)
             breed = fields.get("looks like") or self._extract_breed_from_detail(soup)
-            age = self._normalize_age(fields.get("estimated age")) or self._extract_age_from_detail(soup)
-            size = self._normalize_size(fields.get("size")) or self._extract_size_from_detail(soup)
+            # A present label is authoritative even when unrecognised: don't guess from page text
+            age = self._normalize_age(fields["estimated age"]) if "estimated age" in fields else self._extract_age_from_detail(soup)
+            size = self._normalize_size(fields["size"]) if "size" in fields else self._extract_size_from_detail(soup)
             description = self._extract_description_from_detail(soup)
             primary_image_url = self._extract_primary_image_from_detail(soup)
             sex = self._normalize_sex(fields.get("sex")) or self._extract_sex_from_description(description or "")
@@ -973,16 +974,27 @@ class WoofProjectScraper(BaseScraper):
         text = re.sub(r"\bjaar\b", "years", value, flags=re.IGNORECASE)
         return re.sub(r"\bmaand(en)?\b", "months", text, flags=re.IGNORECASE)
 
+    # Checked in this order so "extra small" isn't read as small and "middelgroot" isn't read as groot
+    _SIZE_PATTERNS = (
+        ("Tiny", r"\b(tiny|x[- ]?small|xtra small|extra small)\b"),
+        ("Medium", r"medium|middel\w*"),
+        ("Small", r"small|klein"),
+        ("Large", r"large|groot|giant"),
+    )
+    _SIZE_ORDER = ("Tiny", "Small", "Medium", "Large")
+
     def _normalize_size(self, value: str | None) -> str | None:
-        """Map "Medium size dog", "Small to Medium size dog", "Middelgroot" etc. to a size category."""
+        """Map "Medium size dog", "Middelgroot", "Xtra Small" etc. to a size category.
+
+        A range ("Small to Medium", "Medium to large") takes its upper end, the size the dog grows to.
+        """
         text = (value or "").lower()
-        if "medium" in text or "middel" in text:
-            return "Medium"
-        if "small" in text or "klein" in text:
-            return "Small"
-        if "large" in text or "groot" in text:
-            return "Large"
-        return None
+        found = set()
+        for category, pattern in self._SIZE_PATTERNS:
+            if re.search(pattern, text):
+                found.add(category)
+                text = re.sub(pattern, " ", text)
+        return max(found, key=self._SIZE_ORDER.index) if found else None
 
     def _extract_sex_from_description(self, description: str) -> str | None:
         """Extract sex from description text using pronoun analysis.
