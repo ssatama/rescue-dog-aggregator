@@ -30,7 +30,7 @@ CLOUDFLARE_IMAGES_DELIVERY_URL=https://imagedelivery.net/your-account-hash
 ```bash
 # Core LLM API
 OPENROUTER_API_KEY=sk-or-v1-xxx...  # Required
-LLM_DEFAULT_MODEL=openrouter/auto
+LLM_DEFAULT_MODEL=google/gemini-3.8-flash  # Pinned; code default is openrouter/auto
 LLM_BASE_URL=https://openrouter.ai/api/v1
 LLM_TIMEOUT_SECONDS=30.0
 

@@ -10,7 +10,7 @@ The LLM Data Enrichment feature powers the intelligence behind www.rescuedogs.me
 - **Multi-language Support**: Processes descriptions in German, French, Spanish, and other languages
 - **Smart Matching**: Enables personality-based filtering and compatibility assessment
 - **Swipe Interface**: Powers the Tinder-like swipe feature with AI-generated insights
-- **Cost Efficiency**: ~$0.005-0.009 per dog with the model pinned to `google/gemini-3.8-flash`
+- **Cost Efficiency**: ~$0.0085 per dog with the model pinned to `google/gemini-3.8-flash`
 
 ## Architecture
 
@@ -350,7 +350,7 @@ RetryConfig(
 
 - **Processing Success Rate**: 97%+ (with automatic retries)
 - **Quality Score Average**: 85-95% per profile
-- **Cost per Dog**: ~$0.005-0.009 (pinned `google/gemini-3.8-flash`; the auto-router's medium tier measured ~$0.024)
+- **Cost per Dog**: ~$0.0085 (pinned `google/gemini-3.8-flash`; the auto-router's medium tier measured ~$0.024)
 - **Processing Time**: 2-5 seconds per dog
 - **Batch Efficiency**: 5 dogs concurrent
 

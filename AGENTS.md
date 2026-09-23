@@ -64,7 +64,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 3. Pre-commit review: Use PAL MCP `precommit` tool with external validation
 4. Commit to branch: `git commit -m "type(scope): description"`
 5. Push & create PR: `git push -u origin HEAD && gh pr create`
-6. Run `/code-review` for automated review (includes guideline compliance check)
+6. Run `/code-review` for automated review
 7. Merge via GitHub (1 review required)
 
 Branch naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
@@ -85,7 +85,6 @@ configs/          # Organization YAMLs (13 active, 12 LLM-enabled)
 migrations/railway/  # Alembic migrations for production
 management/       # CLI tools (11 scripts)
 docs/
-├── guidelines/   # Code guidelines (Python, TypeScript, React, Web Design)
 ├── features/     # Feature documentation
 ├── technical/    # Architecture docs
 ```
@@ -246,7 +245,7 @@ pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
 ## LLM Integration
 
 - Model: pinned to `google/gemini-3.8-flash` via `LLM_DEFAULT_MODEL` on the
-  cron service `thriving-appreciation` (measured ~$0.005-0.009/dog, 12/12 on a
+  cron service `thriving-appreciation` (measured $0.0085/dog, 12/12 on a
   like-for-like test). The code default is still `openrouter/auto`, so a
   missing env var silently falls back to the router
 - Tuning: `LLM_DEFAULT_MODEL` (and `LLM_COST_TIER`, which only applies to
@@ -256,8 +255,9 @@ pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
   the budget so the JSON answer was truncated (#409). Re-check for a newer
   Flash roughly monthly
 - Reasoning is capped at `effort: low`, never disabled; profile requests get
-  8000 tokens / 60s so reasoning cannot crowd out the answer, and
-  `finish_reason=length` raises `TruncatedLLMResponseError`
+  8000 tokens / 60s so reasoning cannot crowd out the answer. A completion cut
+  off by the limit raises `TruncatedLLMResponseError` (or
+  `EmptyLLMResponseError` if nothing came back at all)
 - Config: `configs/llm_organizations.yaml`
 - Prompts: `prompts/organizations/*.yaml`
 - Details: `docs/features/llm-data-enrichment.md`
