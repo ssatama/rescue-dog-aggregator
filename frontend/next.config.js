@@ -87,6 +87,22 @@ const nextConfig = {
         destination: '/breeds/german-shepherd-dog',
         permanent: true,
       },
+      // Two registry entries for one breed split its dogs across two pages (#455).
+      {
+        source: '/breeds/galgo',
+        destination: '/breeds/galgo-espanol',
+        permanent: true,
+      },
+      {
+        source: '/breeds/ratonero-bodeguero-andaluz',
+        destination: '/breeds/bodeguero-andaluz',
+        permanent: true,
+      },
+      {
+        source: '/breeds/goldenretriever',
+        destination: '/breeds/golden-retriever',
+        permanent: true,
+      },
     ];
   },
 

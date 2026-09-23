@@ -7,7 +7,7 @@ import {
 describe("Breed Descriptions", () => {
   describe("getBreedDescription", () => {
     it("returns description for known breed", () => {
-      const description = getBreedDescription("Galgo");
+      const description = getBreedDescription("Galgo Español");
       expect(description).toBeDefined();
       expect(description).toContain("Spanish Greyhounds");
       expect(description).toContain("gentle");
@@ -58,9 +58,9 @@ describe("Breed Descriptions", () => {
     });
 
     it("handles case-insensitive breed names", () => {
-      const description1 = getBreedDescription("galgo");
-      const description2 = getBreedDescription("GALGO");
-      const description3 = getBreedDescription("Galgo");
+      const description1 = getBreedDescription("galgo español");
+      const description2 = getBreedDescription("GALGO ESPAÑOL");
+      const description3 = getBreedDescription("Galgo Español");
 
       expect(description1).toEqual(description2);
       expect(description2).toEqual(description3);
@@ -69,11 +69,11 @@ describe("Breed Descriptions", () => {
 
     it("handles breed name variations", () => {
       // Test for breed name with trailing spaces
-      const description1 = getBreedDescription("Galgo ");
+      const description1 = getBreedDescription("Galgo Español ");
       expect(description1).toBeDefined();
 
       // Test for breed name with leading spaces
-      const description2 = getBreedDescription(" Galgo");
+      const description2 = getBreedDescription(" Galgo Español");
       expect(description2).toBeDefined();
     });
   });
@@ -90,7 +90,7 @@ describe("Breed Descriptions", () => {
     it("includes all major breeds from PRD", () => {
       const allDescriptions = getAllBreedDescriptions();
       const expectedBreeds = [
-        "Galgo",
+        "Galgo Español",
         "Podenco",
         "Greyhound",
         "Collie",
@@ -125,7 +125,7 @@ describe("Breed Descriptions", () => {
 
   describe("hasBreedDescription", () => {
     it("returns true for breeds with descriptions", () => {
-      expect(hasBreedDescription("Galgo")).toBe(true);
+      expect(hasBreedDescription("Galgo Español")).toBe(true);
       expect(hasBreedDescription("Podenco")).toBe(true);
       expect(hasBreedDescription("Collie")).toBe(true);
     });
@@ -137,15 +137,15 @@ describe("Breed Descriptions", () => {
     });
 
     it("handles case-insensitive checking", () => {
-      expect(hasBreedDescription("galgo")).toBe(true);
-      expect(hasBreedDescription("GALGO")).toBe(true);
-      expect(hasBreedDescription("GaLgO")).toBe(true);
+      expect(hasBreedDescription("galgo español")).toBe(true);
+      expect(hasBreedDescription("GALGO ESPAÑOL")).toBe(true);
+      expect(hasBreedDescription("GaLgO eSpAñOl")).toBe(true);
     });
   });
 
   describe("Breed description content quality", () => {
     it("descriptions contain key breed characteristics", () => {
-      const galgoDesc = getBreedDescription("Galgo");
+      const galgoDesc = getBreedDescription("Galgo Español");
       // Should mention key traits like calm, gentle, exercise needs
       expect(galgoDesc).toMatch(/calm|gentle|lazy|exercise|nap/i);
 

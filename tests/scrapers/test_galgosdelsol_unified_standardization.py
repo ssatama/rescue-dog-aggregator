@@ -41,7 +41,7 @@ class TestGalgosDelSolUnifiedStandardization:
 
         result = galgosdelsol_scraper.process_animal(animal)
 
-        assert result["breed"] == "Galgo"
+        assert result["breed"] == "Galgo Español"
         assert result["breed_category"] == "Hound"
         assert result["standardized_size"] == "Large"
         assert result["standardization_confidence"] > 0.8
@@ -89,8 +89,8 @@ class TestGalgosDelSolUnifiedStandardization:
 
         result = galgosdelsol_scraper.process_animal(animal)
 
-        # The cross marker is a facet; the identity stays Galgo
-        assert result["breed"] == "Galgo Cross"
+        # The cross marker is a facet; the identity stays Galgo Español
+        assert result["breed"] == "Galgo Español Cross"
         assert result["breed_category"] == "Hound"
         assert result["breed_type"] == "crossbreed"
         assert result["standardized_size"] == "Large"
@@ -141,10 +141,10 @@ class TestGalgosDelSolUnifiedStandardization:
     def test_spanish_breed_variety_handling(self, galgosdelsol_scraper):
         """Test that various Spanish breed names are handled correctly."""
         test_breeds = [
-            ("Galgo", "Galgo", "Hound"),
+            ("Galgo", "Galgo Español", "Hound"),
             ("Podenco", "Podenco", "Hound"),
             ("galgo español", "Galgo Español", "Hound"),
-            ("GALGO", "Galgo", "Hound"),
+            ("GALGO", "Galgo Español", "Hound"),
             (
                 "podenco mix",
                 "Podenco Cross",
@@ -176,7 +176,7 @@ class TestGalgosDelSolUnifiedStandardization:
         # With flag enabled (default in fixture)
         result_enabled = galgosdelsol_scraper.process_animal(animal)
         assert "breed" in result_enabled
-        assert result_enabled["breed"] == "Galgo"
+        assert result_enabled["breed"] == "Galgo Español"
         assert "breed_category" in result_enabled
 
         # With flag disabled
