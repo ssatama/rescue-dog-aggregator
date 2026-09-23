@@ -47,7 +47,7 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
             "name": "Luna",
             "breed": "bulgarian shepherd mix",
             "age": "2 years",
-            "gender": "Female",
+            "sex": "Female",
             "size": "Large",
             "description": "Sweet Bulgarian shepherd mix",
             "adoption_url": "https://example.com/luna",
@@ -86,7 +86,7 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
             "name": "Boris",
             "breed": "karakachan",
             "age": "4 years old",
-            "gender": "Male",
+            "sex": "Male",
             "size": "XLarge",
         }
 
