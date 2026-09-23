@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import os
 import re
 import time
@@ -67,6 +66,16 @@ NON_NAME_WORDS = frozenset(
         "they",
     }
 )
+
+
+def rean_external_id(name: str, page_type: str) -> str:
+    """ID for a REAN dog, which has no ID or page of its own on the site.
+
+    The name and page are the only fields every scrape reads reliably. Hashing
+    the age text gave the same dog a new row on every birthday (#421), and the
+    photo is lazy-loaded, so keying on it flips the ID whenever a run misses it.
+    """
+    return f"rean-{page_type}-{name.lower().replace(' ', '-')}"
 
 
 class REANScraper(BaseScraper):
@@ -1079,9 +1088,18 @@ class REANScraper(BaseScraper):
                 # World-class logging: Page results handled by centralized system
 
                 # Convert to standardized format and add to results
+                ids_on_page: dict[str, int] = {}
                 for dog_data in enriched_dog_data_list:
                     try:
                         standardized_data = self.standardize_animal_data(dog_data, page_type)
+                        # Two dogs listed under one name must not share a row. The
+                        # suffix follows page order, so it is only stable while
+                        # both stay listed; no REAN name has been reused yet.
+                        external_id = standardized_data["external_id"]
+                        ids_on_page[external_id] = ids_on_page.get(external_id, 0) + 1
+                        if ids_on_page[external_id] > 1:
+                            standardized_data["external_id"] = f"{external_id}-{ids_on_page[external_id]}"
+                            self.logger.warning(f"Two REAN dogs named {standardized_data['name']} on {page_type}; the second is {standardized_data['external_id']}")
                         all_animals.append(standardized_data)
                     except Exception as e:
                         self.logger.error(f"Error processing dog entry: {e}")
@@ -1679,7 +1697,11 @@ class REANScraper(BaseScraper):
                 return None
 
             # Try shared utilities first, fallback to REAN-specific methods
-            age_years = shared_extract_age(entry_text)
+            # The heading ("George - 4.5 years old - Norfolk") states the age;
+            # GoDaddy can leave a neighbour's "around 7 months old" inside the
+            # same block, and the shared extractor prefers months (#421).
+            heading = re.split(r"(?<=\bold)\b", entry_text, maxsplit=1)[0]
+            age_years = shared_extract_age(heading) or shared_extract_age(entry_text)
             age_text = self.normalize_age_text_from_years(age_years) if age_years else self.extract_age(entry_text)
 
             weight_kg = shared_extract_weight(entry_text)
@@ -1804,18 +1826,7 @@ class REANScraper(BaseScraper):
         if name is None:
             name = "Unknown"
 
-        # Create more stable external ID using name + breed + age + page type for
-        # uniqueness
-        name_slug = name.lower().replace(" ", "-")
-        breed = dog_data.get("breed", "unknown")
-        age = dog_data.get("age_text", "unknown")
-        sex = dog_data.get("sex", "unknown")
-
-        # Create a hash of combined data for uniqueness
-        combined_data = f"{name}-{breed}-{age}-{sex}-{page_type}"
-        hash_suffix = hashlib.md5(combined_data.encode()).hexdigest()[:6]
-
-        external_id = f"rean-{page_type}-{name_slug}-{hash_suffix}"
+        external_id = rean_external_id(name, page_type)
 
         # Build adoption URL (link to organization contact)
         if self.org_config:
