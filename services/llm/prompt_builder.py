@@ -14,6 +14,13 @@ from typing import Any
 
 import yaml
 
+from services.llm.schemas.dog_profiler import DESCRIPTION_MIN_CHARS
+
+# Org prompts say "150-250 characters, MUST be under 250", which pulls answers to
+# the floor; a schema-rejected short description cost a retry on ~1 in 13 dogs in
+# the 2026-09-23 backfill (#431). The margin keeps a near miss above the floor.
+DESCRIPTION_MINIMUM_RULE = f"HARD MINIMUM: the description must be at least {DESCRIPTION_MIN_CHARS + 10} characters long. A shorter description is rejected."
+
 
 class PromptBuilder:
     """Builder for constructing LLM prompts from dog data and templates."""
@@ -93,7 +100,7 @@ class PromptBuilder:
             properties=properties_str,
         )
 
-        return prompt
+        return f"{prompt}\n\n{DESCRIPTION_MINIMUM_RULE}"
 
     def build_messages(self, dog_data: dict[str, Any], prompt_adjustment: str = "") -> list:
         """

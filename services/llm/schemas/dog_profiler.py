@@ -13,6 +13,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+DESCRIPTION_MIN_CHARS = 150
+
 
 class DogProfilerData(BaseModel):
     """
@@ -29,7 +31,7 @@ class DogProfilerData(BaseModel):
     # ===== CORE DESCRIPTION =====
     description: str = Field(
         ...,
-        min_length=150,
+        min_length=DESCRIPTION_MIN_CHARS,
         max_length=500,
         description="Engaging English description of the dog",
     )

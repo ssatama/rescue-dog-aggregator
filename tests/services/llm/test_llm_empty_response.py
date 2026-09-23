@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from services.llm.dog_profiler import DogProfilerPipeline
-from services.llm.llm_client import EmptyLLMResponseError, LLMClient, TruncatedLLMResponseError
+from services.llm.llm_client import EmptyLLMResponseError, LLMClient, TruncatedLLMResponseError, UpstreamLLMError
 
 
 @pytest.fixture
@@ -114,3 +114,40 @@ class TestProfileTokenBudget:
 
         timeout = pipeline.retry_handler.execute_with_retry.call_args.kwargs["timeout"]
         assert timeout >= 60.0, f"profile timeout {timeout}s cannot fit an 8000-token completion"
+
+
+@pytest.mark.unit
+class TestUpstreamFailure:
+    """#431: Gemini 3.8 Flash's "Unterminated string" first attempts were upstream
+    429s. OpenRouter sends them as HTTP 200 with finish_reason "error" and the
+    partial answer, which then failed json.loads and read as a model bug."""
+
+    RATE_LIMITED = {"code": 429, "message": "google/gemini-3.8-flash is temporarily rate-limited upstream."}
+
+    def test_a_generation_that_errored_midway_is_an_upstream_error(self, client):
+        response = _response('{\n  "description": "Rescued from a busy ', finish_reason="error", model="google/gemini-3.8-flash")
+        response["choices"][0]["error"] = self.RATE_LIMITED
+
+        with pytest.raises(UpstreamLLMError) as exc:
+            client.extract_content_from_response(response)
+
+        message = str(exc.value)
+        assert "google/gemini-3.8-flash" in message
+        assert "429" in message
+        assert "rate-limited" in message
+
+    def test_an_errored_choice_with_no_content_is_not_reported_as_empty(self, client):
+        response = _response("", finish_reason="error")
+        response["choices"][0]["error"] = self.RATE_LIMITED
+
+        with pytest.raises(UpstreamLLMError):
+            client.extract_content_from_response(response)
+
+    def test_a_response_with_only_an_error_names_it(self, client):
+        """Seen as a bare KeyError: 'choices' for a PROHIBITED_CONTENT block."""
+        response = {"error": {"code": 403, "message": "Gemini blocked the request: PROHIBITED_CONTENT"}}
+
+        with pytest.raises(UpstreamLLMError) as exc:
+            client.extract_content_from_response(response)
+
+        assert "PROHIBITED_CONTENT" in str(exc.value)
