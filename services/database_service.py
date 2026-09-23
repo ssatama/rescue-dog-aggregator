@@ -555,7 +555,10 @@ class DatabaseService:
             return False
 
     def get_existing_external_ids(self, organization_id: int) -> set[str]:
-        """Get external IDs of this organization's available animals.
+        """Get external IDs of this organization's available animals that a skip-existing scrape may skip.
+
+        A dog whose primary image never reached our CDN is left out, so the next scrape
+        processes it again and retries the upload (#457).
 
         Args:
             organization_id: Organization ID
@@ -572,7 +575,7 @@ class DatabaseService:
         try:
             cursor = self.conn.cursor()
             cursor.execute(
-                "SELECT external_id FROM animals WHERE organization_id = %s AND status = 'available'",
+                "SELECT external_id FROM animals WHERE organization_id = %s AND status = 'available' AND primary_image_url LIKE 'https://images.rescuedogs.me/%%'",
                 (organization_id,),
             )
             results = cursor.fetchall()
