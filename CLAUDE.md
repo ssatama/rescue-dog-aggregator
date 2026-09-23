@@ -28,7 +28,6 @@ Configured for this project in `.mcp.json`:
   search, filter counts, statistics against the live API.
 - `pal` - `precommit` validation, used in the PR workflow above.
 - `lighthouse` - performance audits.
-- `sequential-thinking` - structured reasoning helper.
 
 Railway and Sentry MCP servers may also be available from user-level config for
 deployment status and production error triage.
