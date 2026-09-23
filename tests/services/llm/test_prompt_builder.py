@@ -201,3 +201,16 @@ class TestPromptBuilder:
 
         system_prompt = builder.get_system_prompt()
         assert system_prompt == "You are an expert dog behavioral analyst."
+
+
+@pytest.mark.unit
+def test_every_prompt_states_the_schema_description_minimum():
+    """#431: org prompts stress the maximum, so answers landed under the schema's 150-char floor."""
+    from services.llm.schemas.dog_profiler import DESCRIPTION_MIN_CHARS
+
+    builder = PromptBuilder.__new__(PromptBuilder)
+    builder.prompt_template = {"extraction_prompt": "Dog: {name} {breed} {age_text} {properties}"}
+
+    prompt = builder.build_prompt({"name": "Max"})
+
+    assert f"at least {DESCRIPTION_MIN_CHARS + 10} characters" in prompt

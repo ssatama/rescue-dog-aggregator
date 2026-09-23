@@ -54,6 +54,21 @@ class TruncatedLLMResponseError(ValueError):
     """
 
 
+class UpstreamLLMError(RuntimeError):
+    """The provider failed the request, before or partway through the answer.
+
+    OpenRouter reports this as HTTP 200: a top-level `error` with no choices,
+    or a choice with `finish_reason: "error"` carrying the partial text. The
+    partial text used to reach json.loads and read as malformed JSON - about
+    1 in 12 Gemini 3.8 Flash calls, nearly all upstream 429s (#431).
+    """
+
+
+def _describe_error(error: dict[str, Any] | None) -> str:
+    error = error or {}
+    return f"{error.get('code', 'unknown code')} {error.get('message', 'no message')}"
+
+
 def build_request_body(
     messages: list[dict[str, str]],
     model: str,
@@ -188,17 +203,26 @@ class LLMClient:
             Extracted content string
 
         Raises:
+            UpstreamLLMError: If the provider failed the request or the generation
             EmptyLLMResponseError: If the completion carries no content
             TruncatedLLMResponseError: If the completion was cut off by max_tokens
         """
+        model = response_data.get("model") or "unknown model"
+
+        if not response_data.get("choices"):
+            raise UpstreamLLMError(f"{model} returned no choices: {_describe_error(response_data.get('error'))}")
+
         choice = response_data["choices"][0]
         content = choice["message"].get("content")
 
+        if choice.get("finish_reason") == "error" or choice.get("error"):
+            raise UpstreamLLMError(f"{model} failed after {len(content or '')} chars of content: {_describe_error(choice.get('error'))}")
+
         if not (content or "").strip():
-            raise EmptyLLMResponseError(f"{response_data.get('model') or 'unknown model'} returned no content (finish_reason={choice.get('finish_reason')})")
+            raise EmptyLLMResponseError(f"{model} returned no content (finish_reason={choice.get('finish_reason')})")
 
         if choice.get("finish_reason") == "length":
-            raise TruncatedLLMResponseError(f"{response_data.get('model') or 'unknown model'} hit max_tokens after {len(content)} chars of content")
+            raise TruncatedLLMResponseError(f"{model} hit max_tokens after {len(content)} chars of content")
 
         # Handle markdown wrapping if present
         if content.startswith("```"):
