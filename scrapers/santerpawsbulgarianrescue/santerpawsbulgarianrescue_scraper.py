@@ -5,7 +5,7 @@ from typing import Any
 from urllib.parse import urljoin
 
 import requests
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, Comment, Tag
 
 from scrapers.base_scraper import BaseScraper
 
@@ -14,6 +14,34 @@ from scrapers.base_scraper import BaseScraper
 from utils.standardization import standardize_age
 
 STORY_BLOCK_TAGS = ["p", "div", "li", "blockquote"]
+
+
+def _story_paragraphs(element: Tag) -> list[str]:
+    """Split an element into paragraphs: its innermost blocks, and the inline runs between them."""
+    paragraphs: list[str] = []
+    inline: list[str] = []
+
+    def flush() -> None:
+        text = " ".join(" ".join(inline).split())
+        if text:
+            paragraphs.append(text)
+        inline.clear()
+
+    for child in element.children:
+        if isinstance(child, Tag) and (child.name in STORY_BLOCK_TAGS or child.find(STORY_BLOCK_TAGS)):
+            flush()
+            if child.find(STORY_BLOCK_TAGS):
+                paragraphs.extend(_story_paragraphs(child))
+            else:
+                inline.append(child.get_text())
+                flush()
+        elif isinstance(child, Comment) or (isinstance(child, Tag) and child.name in ("script", "style")):
+            continue
+        else:
+            inline.append(child.get_text() if isinstance(child, Tag) else str(child))
+    flush()
+
+    return paragraphs
 
 
 class SanterPawsBulgarianRescueScraper(BaseScraper):
@@ -454,7 +482,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                 elif label == "Size":
                     properties["size"] = value or "Medium"
                 elif label == "Sex":
-                    properties["sex"] = value or "Unknown"
+                    # Blank stays absent, like D.O.B: "Unknown" would read as scraped (#349)
+                    if value:
+                        properties["sex"] = value
                 elif label == "Breed":
                     # Store raw breed for unified standardization
                     properties["breed"] = value or "Mixed Breed"
@@ -471,7 +501,8 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         """Extract the story from the dog's column.
 
         Stories arrive as <p>s, as Facebook-pasted <div>s, and with <ul> lists,
-        so every innermost block element is a paragraph.
+        so every innermost block element is a paragraph. Text beside those
+        blocks - an <h2> or bare <strong> title - is a paragraph of its own.
 
         Args:
             soup: BeautifulSoup object of the detail page
@@ -483,11 +514,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         if not column:
             return ""
 
-        paragraphs = [
-            " ".join(leaf.get_text().split()) for block in column.find_all(class_="bde-text", recursive=False) for leaf in block.find_all(STORY_BLOCK_TAGS) if not leaf.find(STORY_BLOCK_TAGS)
-        ]
+        paragraphs = [text for block in column.find_all(class_="bde-text", recursive=False) for text in _story_paragraphs(block)]
 
-        return " ".join(text for text in paragraphs if text)
+        return " ".join(paragraphs)
 
     def _extract_hero_image(self, soup: BeautifulSoup) -> str | None:
         """Extract hero image URL from detail page.
@@ -589,7 +618,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                 if "breed" in properties:
                     result["breed"] = properties["breed"] or "Mixed Breed"
                 if "sex" in properties:
-                    result["sex"] = properties["sex"] or "Unknown"
+                    result["sex"] = properties["sex"]
                 # Rename age_text to age for unified standardization API
                 if "age_text" in properties:
                     result["age"] = properties["age_text"]

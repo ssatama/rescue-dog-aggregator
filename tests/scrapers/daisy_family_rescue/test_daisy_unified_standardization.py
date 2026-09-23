@@ -110,3 +110,17 @@ class TestDaisyFamilyRescueUnifiedStandardization:
                 assert result["age"] == birth_date, f"Original age not preserved: {birth_date}"
                 # Check category matches (case-insensitive) - currently all default to Adult
                 assert result["age_category"].lower() == expected_category.lower(), f"Wrong category for {birth_date}: got {result.get('age_category')}, expected {expected_category}"
+
+
+def test_german_year_ranges_parse_to_a_month_range():
+    """hund-malenka "4-5 Jahre" and hund-mika "8-9 Jahre" stayed unparsed: the
+    range pattern knew only English units, and the single-year pattern refuses
+    a number preceded by "-"."""
+    from utils.unified_standardization import UnifiedStandardizer
+
+    standardizer = UnifiedStandardizer()
+
+    assert standardizer._parse_age_text("4-5 Jahre") == ("Adult", 48, 60)
+    assert standardizer._parse_age_text("8-9 Jahre") == ("Senior", 96, 108)
+    assert standardizer._parse_age_text("ca. 2–3 Jahre") == ("Young", 24, 36)
+    assert standardizer._parse_age_text("2-3 Monate") == ("Puppy", 2, 3)

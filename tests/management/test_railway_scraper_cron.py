@@ -162,3 +162,22 @@ class TestGracefulShutdown:
             assert cron.shutdown_requested is True
         finally:
             cron.shutdown_requested = original
+
+
+@pytest.mark.unit
+def test_info_logs_go_to_stdout_and_warnings_to_stderr(capsys):
+    """Railway marks every stderr line as severity error, which buried the real errors (#428)."""
+    test_logger = cron.logging.getLogger("cron-severity-test")
+    test_logger.propagate = False
+    test_logger.setLevel(cron.logging.INFO)
+    for handler in cron._log_handlers():
+        test_logger.addHandler(handler)
+
+    test_logger.info("scraped 12 dogs")
+    test_logger.warning("possible external_id mismatch")
+
+    captured = capsys.readouterr()
+    assert "scraped 12 dogs" in captured.out
+    assert "scraped 12 dogs" not in captured.err
+    assert "possible external_id mismatch" in captured.err
+    assert "possible external_id mismatch" not in captured.out
