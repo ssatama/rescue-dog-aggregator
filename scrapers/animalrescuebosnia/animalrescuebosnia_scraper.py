@@ -183,7 +183,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             properties = {}
 
             property_paragraph = next(
-                (p for p in soup.find_all("p") if "Gender:" in p.get_text() or "Date of birth:" in p.get_text()),
+                (p for p in soup.find_all("p") if any(label in p.get_text() for label in ("Breed:", "Gender:", "Date of birth:"))),
                 None,
             )
             if property_paragraph:
@@ -240,13 +240,13 @@ class AnimalRescueBosniaScraper(BaseScraper):
             if about_heading:
                 # Get all text after the About heading until next heading
                 desc_parts = []
-                property_paragraph = about_heading.find_next_sibling()
-                while property_paragraph and hasattr(property_paragraph, "name") and property_paragraph.name not in ["h1", "h2", "h3"]:
-                    if hasattr(property_paragraph, "name") and property_paragraph.name == "p":
-                        text = property_paragraph.get_text().strip()
+                next_elem = about_heading.find_next_sibling()
+                while next_elem and hasattr(next_elem, "name") and next_elem.name not in ["h1", "h2", "h3"]:
+                    if hasattr(next_elem, "name") and next_elem.name == "p":
+                        text = next_elem.get_text().strip()
                         if text:
                             desc_parts.append(text)
-                    property_paragraph = property_paragraph.find_next_sibling()
+                    next_elem = next_elem.find_next_sibling()
 
                 description = " ".join(desc_parts)
 
