@@ -61,7 +61,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 1. Create branch: `git checkout -b type/description`
 2. Make changes
-3. Pre-commit review: Use PAL MCP `precommit` tool with external validation
+3. Pre-commit validation: run the commands under Quality Gates below
 4. Commit to branch: `git commit -m "type(scope): description"`
 5. Push & create PR: `git push -u origin HEAD && gh pr create`
 6. Run `/code-review` for automated review
