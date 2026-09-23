@@ -1,3 +1,5 @@
+import { getIndexableBreeds } from "@/utils/indexableBreeds";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
@@ -50,37 +52,12 @@ export async function GET(): Promise<Response> {
     } else {
       const breedStats: BreedStatsResponse = await response.json();
 
-      if (
-        breedStats.qualifying_breeds &&
-        Array.isArray(breedStats.qualifying_breeds)
-      ) {
-        const seenSlugs = new Set<string>();
-        const indexableBreeds = breedStats.qualifying_breeds.filter(
-          (breed: BreedStat) => {
-            const isMixed =
-              breed.breed_type === "mixed" ||
-              breed.breed_group === "Mixed" ||
-              breed.primary_breed?.toLowerCase().includes("mix");
-            // "Unknown" is the absence of a breed, not a breed. Indexing it
-            // offers a searcher nothing and is thin by construction.
-            const isUnknown =
-              breed.breed_type === "unknown" ||
-              breed.breed_slug === "unknown" ||
-              breed.primary_breed?.toLowerCase() === "unknown";
-            if (isMixed || isUnknown || !breed.breed_slug) return false;
-            if (seenSlugs.has(breed.breed_slug)) return false;
-            seenSlugs.add(breed.breed_slug);
-            return true;
-          },
-        );
-
-        indexableBreeds.forEach((breed: BreedStat) => {
-          urls.push({
-            url: `${baseUrl}/breeds/${breed.breed_slug}`,
-            lastModified: now,
-          });
+      getIndexableBreeds(breedStats.qualifying_breeds).forEach((breed: BreedStat) => {
+        urls.push({
+          url: `${baseUrl}/breeds/${breed.breed_slug}`,
+          lastModified: now,
         });
-      }
+      });
     }
   } catch (error: unknown) {
     const errorDetails =

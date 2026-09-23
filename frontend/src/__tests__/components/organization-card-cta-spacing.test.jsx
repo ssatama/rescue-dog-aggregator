@@ -94,7 +94,7 @@ describe("OrganizationCard CTA Button Spacing Tests", () => {
       render(<OrganizationCard organization={mockOrganization} size="small" />);
 
       const visitButton = screen.getByText("Visit Website");
-      const viewDogsButton = screen.getByText("Meet 25").closest("button");
+      const viewDogsButton = screen.getByText("Meet 25").closest("a");
 
       // Both buttons should have responsive height: 44px mobile, 48px desktop
       expect(visitButton).toHaveClass("min-h-[44px]");
@@ -144,10 +144,10 @@ describe("OrganizationCard CTA Button Spacing Tests", () => {
       );
 
       const visitButton = screen.getByText("Visit Website");
-      const buttons = screen.getAllByRole("button");
+      const buttons = screen.getAllByRole("link");
       const viewDogsButton = buttons.find(
         (button) =>
-          button.tagName === "BUTTON" &&
+          button.tagName === "A" &&
           button.textContent.includes("View") &&
           button.textContent.includes("25") &&
           button.textContent.includes("Dogs"),
@@ -174,10 +174,10 @@ describe("OrganizationCard CTA Button Spacing Tests", () => {
       render(<OrganizationCard organization={mockOrganization} size="large" />);
 
       const visitButton = screen.getByText("Visit Website");
-      const buttons = screen.getAllByRole("button");
+      const buttons = screen.getAllByRole("link");
       const viewDogsButton = buttons.find(
         (button) =>
-          button.tagName === "BUTTON" &&
+          button.tagName === "A" &&
           button.textContent.includes("View") &&
           button.textContent.includes("25") &&
           button.textContent.includes("Dogs"),
@@ -193,7 +193,7 @@ describe("OrganizationCard CTA Button Spacing Tests", () => {
       render(<OrganizationCard organization={mockOrganization} size="small" />);
 
       const visitButton = screen.getByText("Visit Website");
-      const viewDogsButton = screen.getByText("Meet 25").closest("button");
+      const viewDogsButton = screen.getByText("Meet 25").closest("a");
 
       // Buttons should have flex-1 for consistent widths in grid layout
       expect(visitButton).toHaveClass("flex-1");
@@ -204,7 +204,7 @@ describe("OrganizationCard CTA Button Spacing Tests", () => {
       render(<OrganizationCard organization={mockOrganization} size="small" />);
 
       const visitButton = screen.getByText("Visit Website");
-      const viewDogsButton = screen.getByText("Meet 25").closest("button");
+      const viewDogsButton = screen.getByText("Meet 25").closest("a");
 
       // Visit button should be secondary (outline) - it's an <a> tag with focus:ring-2
       expect(visitButton.closest("a")).toHaveClass("focus:ring-2");
@@ -217,21 +217,21 @@ describe("OrganizationCard CTA Button Spacing Tests", () => {
       render(<OrganizationCard organization={mockOrganization} size="small" />);
 
       const visitButton = screen.getByText("Visit Website");
-      const viewDogsButton = screen.getByText("Meet 25").closest("button");
+      const viewDogsButton = screen.getByText("Meet 25").closest("a");
 
       // Visit button (link) should have focus ring for accessibility
       expect(visitButton.closest("a")).toHaveClass("focus:ring-2");
 
       // View Dogs button should be focusable
       expect(viewDogsButton).toBeInTheDocument();
-      expect(viewDogsButton.closest("button")).toBeInTheDocument();
+      expect(viewDogsButton.closest("a")).toBeInTheDocument();
     });
 
     test("buttons handle keyboard navigation", () => {
       render(<OrganizationCard organization={mockOrganization} size="small" />);
 
       const visitButton = screen.getByText("Visit Website");
-      const viewDogsButton = screen.getByText("Meet 25").closest("button");
+      const viewDogsButton = screen.getByText("Meet 25").closest("a");
 
       // Test Tab navigation
       visitButton.focus();
@@ -283,7 +283,7 @@ describe("OrganizationCard CTA Button Spacing Tests", () => {
 
       render(<OrganizationCard organization={longOrganization} size="small" />);
 
-      const viewDogsButton = screen.getByText("Meet 9999").closest("button");
+      const viewDogsButton = screen.getByText("Meet 9999").closest("a");
 
       // Button should handle long text without breaking layout
       expect(viewDogsButton).toBeInTheDocument();
@@ -296,7 +296,7 @@ describe("OrganizationCard CTA Button Spacing Tests", () => {
       render(<OrganizationCard organization={mockOrganization} size="small" />);
 
       const visitButton = screen.getByText("Visit Website");
-      const viewDogsButton = screen.getByText("Meet 25").closest("button");
+      const viewDogsButton = screen.getByText("Meet 25").closest("a");
 
       // Both buttons should have min-h-[44px] for accessibility
       expect(visitButton).toHaveClass("min-h-[44px]");
@@ -343,17 +343,17 @@ describe("OrganizationCard CTA Button Spacing Tests", () => {
         );
 
         const visitButton = screen.getByText("Visit Website");
-        const buttons = screen.getAllByRole("button");
+        const buttons = screen.getAllByRole("link");
         const viewDogsButton =
           size === "small"
             ? buttons.find(
                 (button) =>
-                  button.tagName === "BUTTON" &&
+                  button.tagName === "A" &&
                   button.textContent.includes("Meet 25"),
               )
             : buttons.find(
                 (button) =>
-                  button.tagName === "BUTTON" &&
+                  button.tagName === "A" &&
                   button.textContent.includes("View") &&
                   button.textContent.includes("25") &&
                   button.textContent.includes("Dogs"),

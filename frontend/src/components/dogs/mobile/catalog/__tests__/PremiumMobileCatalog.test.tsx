@@ -345,6 +345,43 @@ describe("PremiumMobileCatalog", () => {
       expect(container.textContent).toContain("Young"); // Age category is capitalized in display
       expect(container.textContent).toContain("Golden Retriever");
     });
+
+    it("each card is a real link to the dog page for crawlers (#438)", () => {
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
+
+      expect(container.querySelector('[role="button"][aria-label^="View details"]')).toBeNull();
+      expect(
+        container.querySelector(`a[href="/dogs/${mockDog.slug}"]`),
+      ).toBeInTheDocument();
+    });
+
+    it("a plain tap opens the modal instead of navigating", () => {
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
+      const link = container.querySelector(`a[href="/dogs/${mockDog.slug}"]`)!;
+
+      const notPrevented = fireEvent.click(link);
+
+      expect(notPrevented).toBe(false);
+      expect(screen.getByTestId("dog-modal")).toBeInTheDocument();
+    });
+
+    it("a modifier click is left to the browser", () => {
+      // The previous test's tap left #dog=… in the URL, which reopens the modal on mount
+      window.history.replaceState(null, "", window.location.pathname);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
+      const link = container.querySelector(`a[href="/dogs/${mockDog.slug}"]`)!;
+
+      const notPrevented = fireEvent.click(link, { metaKey: true });
+
+      expect(notPrevented).toBe(true);
+      expect(screen.queryByTestId("dog-modal")).not.toBeInTheDocument();
+    });
   });
 
   describe("Personality traits display", () => {

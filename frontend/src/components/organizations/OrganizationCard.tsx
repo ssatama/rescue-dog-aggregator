@@ -101,16 +101,7 @@ const OrganizationCard = memo(
 
     return (
       <Card
-        className="group flex flex-col overflow-hidden cursor-pointer transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 content-fade-in"
-        onClick={() => (window.location.href = `/organizations/${slug}`)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e: React.KeyboardEvent) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            window.location.href = `/organizations/${slug}`;
-          }
-        }}
+        className="group relative flex flex-col overflow-hidden cursor-pointer transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-orange-600 focus-within:ring-offset-2 content-fade-in"
         data-testid="organization-card"
       >
         <CardHeader className={styles.padding}>
@@ -267,7 +258,7 @@ const OrganizationCard = memo(
 
           {/* 5. Social Media Links in Row */}
           {socialMedia && Object.keys(socialMedia).length > 0 && (
-            <div className="pt-3 border-t border-border">
+            <div className="relative z-10 pt-3 border-t border-border">
               <SocialMediaLinks
                 socialMedia={socialMedia}
                 className="flex space-x-2 justify-start"
@@ -290,17 +281,23 @@ const OrganizationCard = memo(
                 href={websiteUrl}
                 target="_blank"
                 rel="noopener"
-                className="inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 rounded"
-                onClick={(e: React.MouseEvent) => e.stopPropagation()} // Prevent navigation when clicking button
+                className="relative z-10 inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 rounded"
               >
                 Visit Website
               </a>
             </Button>
 
+            {/* The card's one real link: its ::after stretches over the whole card so the
+                card is clickable, while crawlers and middle-click see a plain <a href> (#438) */}
             <Button
+              asChild
               size="sm"
               className={`flex-1 bg-orange-600 hover:bg-orange-700 text-white animate-button-hover ${styles.buttonHeight} text-center`}
             >
+              <Link
+                href={`/organizations/${slug}`}
+                className="after:absolute after:inset-0 after:content-[''] focus:outline-none"
+              >
               {size === "small" ? (
                 <span>Meet {totalDogs}</span>
               ) : (
@@ -312,6 +309,7 @@ const OrganizationCard = memo(
                   <span> →</span>
                 </>
               )}
+              </Link>
             </Button>
           </div>
         </CardFooter>

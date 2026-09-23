@@ -96,9 +96,9 @@ describe("EnhancedOrganizationCard", () => {
       expect(screen.getByText("Pets in Turkey")).toBeInTheDocument();
       expect(screen.getByText("Istanbul, TR")).toBeInTheDocument();
 
-      // Check if it's clickable as a button (should find the main card button)
-      const buttons = screen.getAllByRole("button");
-      expect(buttons.length).toBeGreaterThanOrEqual(1); // Card + View Dogs button
+      // The card navigates through a real link crawlers can follow (#438)
+      const link = screen.getByRole("link", { name: /View .*Dogs/ });
+      expect(link.getAttribute("href")).toMatch(/^\/organizations\//);
     });
 
     test("renders with minimal organization data", () => {
@@ -352,10 +352,7 @@ describe("EnhancedOrganizationCard", () => {
     test("has correct hover state classes", () => {
       render(<OrganizationCard organization={mockOrganization} />);
 
-      const cardButtons = screen.getAllByRole("button");
-      const mainCard = cardButtons.find(
-        (button) => button.getAttribute("tabindex") === "0",
-      );
+      const mainCard = screen.getByTestId("organization-card");
       expect(mainCard).toHaveClass(
         "hover:shadow-xl",
         "hover:-translate-y-1",
@@ -366,12 +363,12 @@ describe("EnhancedOrganizationCard", () => {
     test("entire card is clickable", () => {
       render(<OrganizationCard organization={mockOrganization} />);
 
-      const cardButtons = screen.getAllByRole("button");
-      const mainCard = cardButtons.find(
-        (button) => button.getAttribute("tabindex") === "0",
-      );
-      expect(mainCard).toBeInTheDocument();
-      expect(mainCard).toHaveAttribute("role", "button");
+      // A stretched link: the card is positioned and the link's ::after covers it
+      const mainCard = screen.getByTestId("organization-card");
+      expect(mainCard).toHaveClass("relative");
+      expect(mainCard).not.toHaveAttribute("role", "button");
+      const link = screen.getByRole("link", { name: /View .*Dogs/ });
+      expect(link).toHaveClass("after:absolute", "after:inset-0");
     });
 
     test("logo has correct 64px size", () => {

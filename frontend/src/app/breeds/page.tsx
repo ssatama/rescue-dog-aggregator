@@ -11,6 +11,7 @@ import {
   getBreedGroupsWithTopBreeds,
 } from "@/services/breedImagesService";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
+import AllBreedsIndex from "@/components/breeds/AllBreedsIndex";
 import { logger, reportError } from "@/utils/logger";
 
 export const revalidate = 604800;
@@ -102,6 +103,7 @@ export default async function BreedsPage() {
           breedGroups={breedGroups}
         />
       </ErrorBoundary>
+      <AllBreedsIndex breeds={breedStats?.qualifying_breeds} />
     </Layout>
   );
 }

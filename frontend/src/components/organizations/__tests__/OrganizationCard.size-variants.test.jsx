@@ -386,7 +386,7 @@ describe("OrganizationCard Size Variants", () => {
       const visitLink = screen.getByText("Visit Website").closest("a");
       expect(visitLink).toHaveClass("min-h-[44px]");
       // Check the actual button
-      const viewButton = screen.getByText("Meet 25").closest("button");
+      const viewButton = screen.getByText("Meet 25").closest("a");
       expect(viewButton).toHaveClass("min-h-[44px]");
 
       rerender(
@@ -394,10 +394,10 @@ describe("OrganizationCard Size Variants", () => {
       );
       const visitLinkMed = screen.getByText("Visit Website").closest("a");
       expect(visitLinkMed).toHaveClass("min-h-[44px]");
-      const buttonsMed = screen.getAllByRole("button");
+      const buttonsMed = screen.getAllByRole("link");
       const viewButtonMed = buttonsMed.find(
         (button) =>
-          button.tagName === "BUTTON" &&
+          button.tagName === "A" &&
           button.textContent.includes("View") &&
           button.textContent.includes("25") &&
           button.textContent.includes("Dogs"),
@@ -409,10 +409,10 @@ describe("OrganizationCard Size Variants", () => {
       );
       const visitLinkLarge = screen.getByText("Visit Website").closest("a");
       expect(visitLinkLarge).toHaveClass("min-h-[44px]");
-      const buttonsLarge = screen.getAllByRole("button");
+      const buttonsLarge = screen.getAllByRole("link");
       const viewButtonLarge = buttonsLarge.find(
         (button) =>
-          button.tagName === "BUTTON" &&
+          button.tagName === "A" &&
           button.textContent.includes("View") &&
           button.textContent.includes("25") &&
           button.textContent.includes("Dogs"),
@@ -430,10 +430,10 @@ describe("OrganizationCard Size Variants", () => {
       rerender(
         <OrganizationCard organization={mockOrganization} size="medium" />,
       );
-      const buttonsForVisibility = screen.getAllByRole("button");
+      const buttonsForVisibility = screen.getAllByRole("link");
       viewDogsBtn = buttonsForVisibility.find(
         (button) =>
-          button.tagName === "BUTTON" &&
+          button.tagName === "A" &&
           button.textContent.includes("View") &&
           button.textContent.includes("25") &&
           button.textContent.includes("Dogs"),
@@ -443,10 +443,10 @@ describe("OrganizationCard Size Variants", () => {
       rerender(
         <OrganizationCard organization={mockOrganization} size="large" />,
       );
-      const buttonsForVisibilityLarge = screen.getAllByRole("button");
+      const buttonsForVisibilityLarge = screen.getAllByRole("link");
       viewDogsBtn = buttonsForVisibilityLarge.find(
         (button) =>
-          button.tagName === "BUTTON" &&
+          button.tagName === "A" &&
           button.textContent.includes("View") &&
           button.textContent.includes("25") &&
           button.textContent.includes("Dogs"),
@@ -531,7 +531,7 @@ describe("OrganizationCard Size Variants", () => {
         const { container } = render(
           <OrganizationCard organization={mockOrganization} size={size} />,
         );
-        const card = container.querySelector('[role="button"]');
+        const card = container.querySelector('[data-testid="organization-card"]');
         expect(card).toBeInTheDocument();
         expect(card).toHaveClass("will-change-transform", "shadow-sm");
       });
@@ -542,18 +542,14 @@ describe("OrganizationCard Size Variants", () => {
     test("maintains minimum touch targets at small size", () => {
       render(<OrganizationCard organization={mockOrganization} size="small" />);
 
-      // Check main card button
-      const buttons = screen.getAllByRole("button");
-      const mainCard = buttons.find(
-        (button) => button.getAttribute("tabindex") === "0",
-      );
+      const mainCard = screen.getByTestId("organization-card");
       expect(mainCard).toHaveClass("shadow-sm");
 
       // Check footer buttons/links maintain touch targets
       const visitLink = screen.getByText("Visit Website").closest("a");
       expect(visitLink).toHaveClass("min-h-[44px]");
 
-      const viewButton = screen.getByText("Meet 25").closest("button");
+      const viewButton = screen.getByText("Meet 25").closest("a");
       expect(viewButton).toHaveClass("min-h-[44px]");
     });
 
@@ -562,10 +558,9 @@ describe("OrganizationCard Size Variants", () => {
         const { container } = render(
           <OrganizationCard organization={mockOrganization} size={size} />,
         );
-        const mainCard = container.querySelector(
-          '[role="button"][tabIndex="0"]',
-        );
-        expect(mainCard).toBeInTheDocument();
+        // The card is reached through its link, which is natively focusable (#438)
+        const cardLink = container.querySelector('a[href^="/organizations/"]');
+        expect(cardLink).toBeInTheDocument();
       });
     });
   });

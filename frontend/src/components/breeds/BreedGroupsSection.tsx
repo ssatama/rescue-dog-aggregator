@@ -147,9 +147,11 @@ export default function BreedGroupsSection({ breedGroups }: BreedGroupsSectionPr
                   </p>
                 </div>
 
-                {/* Expandable Top Breeds */}
-                {isExpanded && (
-                  <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-2">
+                {/* Expandable Top Breeds: always rendered so crawlers see the links (#438) */}
+                <div
+                  hidden={!isExpanded}
+                  className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-2"
+                >
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 px-2">
                       {group.name.replace(" Group", "")} breeds
                     </p>
@@ -196,8 +198,7 @@ export default function BreedGroupsSection({ breedGroups }: BreedGroupsSectionPr
                         <ChevronRight className="h-4 w-4" />
                       </Link>
                     )}
-                  </div>
-                )}
+                </div>
               </div>
             );
           })}
