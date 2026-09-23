@@ -137,8 +137,9 @@ class ImageProcessingService:
 
         current_primary_url, current_original_url = current_image_data
 
-        # Don't upload if original URL hasn't changed
-        if current_original_url == original_url:
+        # Don't upload if original URL hasn't changed and the earlier upload reached our CDN.
+        # A failed upload left the source URL in primary_image_url; retry it.
+        if current_original_url == original_url and current_primary_url and "images.rescuedogs.me" in current_primary_url:
             processed_data["primary_image_url"] = current_primary_url
             processed_data["original_image_url"] = current_original_url
             self.logger.info(f"🔄 Image unchanged for {processed_data.get('name')}, using existing R2 URL")

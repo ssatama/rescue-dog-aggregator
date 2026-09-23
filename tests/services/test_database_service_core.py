@@ -186,6 +186,17 @@ class TestReadPathsDegradeRatherThanRaise:
         assert "status = 'available'" in sql
         assert params == (5,)
 
+    def test_external_id_lookup_leaves_out_dogs_whose_image_is_not_on_the_cdn(self, service):
+        """A skip-existing scrape must reprocess a dog whose image upload failed (#457)."""
+        cursor = Mock()
+        cursor.fetchall.return_value = []
+        service.conn = Mock(cursor=Mock(return_value=cursor))
+
+        service.get_existing_external_ids(28)
+
+        sql, _ = cursor.execute.call_args.args
+        assert "primary_image_url LIKE 'https://images.rescuedogs.me/%%'" in sql
+
     def test_external_id_lookup_returns_an_empty_set_on_a_query_error(self, service):
         """An empty set means 'nothing seen'; it must not be a partial answer."""
         service.conn = Mock()
