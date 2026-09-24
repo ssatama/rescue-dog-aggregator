@@ -216,8 +216,9 @@ export default function DogGallery({
       setIndex(next);
       const track = trackRef.current;
       if (!track?.scrollTo) return;
-      // Already there: no scroll will run, so nothing to guard
-      if (Math.abs(track.scrollLeft - next * track.clientWidth) <= 1) return;
+      // Already there with no scroll running: nothing to guard. While one
+      // runs, always scroll, so reversing mid-way replaces it.
+      if (heading.current === null && Math.abs(track.scrollLeft - next * track.clientWidth) <= 1) return;
       heading.current = next;
       clearTimeout(headingTimer.current);
       // A swipe can interrupt the scroll short of the target; after a while
@@ -279,7 +280,8 @@ export default function DogGallery({
   const touchStart = useRef<{ x: number; y: number; index: number } | null>(null);
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
-      const t = e.touches[0];
+      // A second finger makes it a pinch, never a swipe
+      const t = e.touches.length === 1 ? e.touches[0] : undefined;
       touchStart.current = t ? { x: t.clientX, y: t.clientY, index } : null;
     },
     [index],
@@ -289,7 +291,7 @@ export default function DogGallery({
       const start = touchStart.current;
       const t = e.changedTouches[0];
       touchStart.current = null;
-      if (!start || !t) return;
+      if (!start || !t || e.touches.length > 0) return;
       const dx = t.clientX - start.x;
       if (Math.abs(dx) < EDGE_SWIPE_PX || Math.abs(dx) < Math.abs(t.clientY - start.y)) return;
       if (dx > 0 && start.index === 0) onSwipePastStart?.();

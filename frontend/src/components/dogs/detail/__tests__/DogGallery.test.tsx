@@ -304,4 +304,34 @@ describe("DogGallery", () => {
     expect(fireEvent.keyDown(next, { key: "ArrowLeft" })).toBe(false);
     expect(screen.getByText("1 / 2")).toBeInTheDocument();
   });
+
+  it("never treats a pinch as a swipe past the end", () => {
+    const onSwipePastStart = jest.fn();
+    render(<DogGallery dogId={7} dogName="Dolly" images={photos(3)} onSwipePastStart={onSwipePastStart} />);
+    const track = screen.getByTestId("dog-gallery").querySelector(".snap-x") as HTMLDivElement;
+
+    fireEvent.touchStart(track, { touches: [{ clientX: 100, clientY: 100 }] });
+    fireEvent.touchStart(track, { touches: [{ clientX: 100, clientY: 100 }, { clientX: 200, clientY: 100 }] });
+    // One finger lifts far to the right while the other is still down
+    fireEvent.touchEnd(track, { touches: [{ clientX: 90, clientY: 100 }], changedTouches: [{ clientX: 300, clientY: 100 }] });
+    fireEvent.touchEnd(track, { touches: [], changedTouches: [{ clientX: 90, clientY: 100 }] });
+
+    expect(onSwipePastStart).not.toHaveBeenCalled();
+  });
+
+  it("reverses a scroll still under way", () => {
+    renderGallery(photos(3));
+    const track = screen.getByTestId("dog-gallery").querySelector(".snap-x") as HTMLDivElement;
+    Object.defineProperty(track, "clientWidth", { value: 400 });
+    Object.defineProperty(track, "scrollLeft", { get: () => 0 });
+    track.scrollTo = jest.fn();
+    const gallery = screen.getByTestId("dog-gallery");
+
+    fireEvent.keyDown(gallery, { key: "ArrowRight" });
+    // Before the frame has moved, go back
+    fireEvent.keyDown(gallery, { key: "ArrowLeft" });
+
+    expect(track.scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ left: 0 }));
+    expect(screen.getByText("1 / 3")).toBeInTheDocument();
+  });
 });
