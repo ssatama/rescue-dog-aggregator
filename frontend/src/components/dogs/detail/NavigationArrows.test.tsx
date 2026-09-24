@@ -214,8 +214,8 @@ describe("NavigationArrows Component", () => {
       const nextButton = screen.getByTestId("nav-arrow-next");
 
       // Should be hidden on mobile (md: classes for show on desktop)
-      expect(prevButton).toHaveClass("hidden", "min-[1320px]:flex");
-      expect(nextButton).toHaveClass("hidden", "min-[1320px]:flex");
+      expect(prevButton).toHaveClass("hidden", "lg:flex");
+      expect(nextButton).toHaveClass("hidden", "lg:flex");
     });
 
     test("applies fixed positioning", () => {

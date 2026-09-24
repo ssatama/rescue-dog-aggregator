@@ -214,6 +214,8 @@ export default function DogGallery({
       setIndex(next);
       const track = trackRef.current;
       if (!track?.scrollTo) return;
+      // Already there: no scroll will run, so nothing to guard
+      if (Math.abs(track.scrollLeft - next * track.clientWidth) <= 1) return;
       heading.current = next;
       clearTimeout(headingTimer.current);
       // A swipe can interrupt the scroll short of the target; after a while

@@ -269,4 +269,22 @@ describe("DogGallery", () => {
     expect(screen.getByTestId("gallery-photo-missing")).toBeInTheDocument();
     expect(reportError).toHaveBeenCalledWith(expect.any(Error), { imageUrl: `${CDN}/broken.jpg` });
   });
+
+  it("doesn't hold the index when asked for the photo already shown", () => {
+    renderGallery(photos(3));
+    const track = screen.getByTestId("dog-gallery").querySelector(".snap-x") as HTMLDivElement;
+    let left = 0;
+    Object.defineProperty(track, "clientWidth", { value: 400 });
+    Object.defineProperty(track, "scrollLeft", { get: () => left });
+    track.scrollTo = jest.fn();
+
+    // Home on the first photo: nothing to scroll
+    fireEvent.keyDown(screen.getByTestId("dog-gallery"), { key: "Home" });
+    expect(track.scrollTo).not.toHaveBeenCalled();
+
+    // so a swipe right after is counted at once
+    left = 400;
+    fireEvent.scroll(track);
+    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+  });
 });

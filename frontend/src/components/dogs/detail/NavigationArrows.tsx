@@ -24,11 +24,11 @@ const NavigationArrows: React.FC<NavigationArrowsProps> = ({
     return null;
   }
 
-  // Only where the page leaves a margin for them; on narrower screens they
-  // would cover the photo gallery's own arrows (#489)
+  // From lg, where the page leaves a margin for them; below it they would
+  // cover the photo gallery's own arrows (#489)
   const buttonClasses = `
     fixed top-1/2 -translate-y-1/2 z-50
-    hidden min-[1320px]:flex items-center justify-center
+    hidden lg:flex items-center justify-center
     w-12 h-12 rounded-full
     bg-white shadow-lg
     hover:bg-gray-50 hover:shadow-xl
