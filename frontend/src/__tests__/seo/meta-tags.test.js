@@ -44,13 +44,12 @@ describe("SEO Meta Tags", () => {
         params: { slug: "buddy-labrador-retriever-1" },
       });
 
-      expect(metadata.title).toBe(
-        "Buddy - Labrador Retriever Available for Adoption | Rescue Dog Aggregator",
-      );
-      // Quality-first implementation: uses actual description + organization context
-      expect(metadata.description).toBe(
-        "A friendly dog looking for a loving home with lots of space to run and play. This beautiful and energetic dog loves to fetch, go on long walks, and spend time with families. Would be perfect for an active household with children who can provide the attention and exercise this wonderful companion deserves. Available from Happy Paws Rescue in San Francisco, USA.",
-      );
+      // Name, breed and location first, no site suffix, within 65 characters (#444)
+      expect(metadata.title).toBe("Buddy, Labrador Retriever for Adoption in USA");
+      // The real description, clamped to one line of at most 160 characters
+      expect(metadata.description.length).toBeLessThanOrEqual(160);
+      expect(metadata.description).not.toMatch(/\n/);
+      expect(metadata.description).toMatch(/^A friendly dog looking for a loving home/);
 
       // Check canonical URL
       expect(metadata.alternates.canonical).toBe(
@@ -149,12 +148,10 @@ describe("SEO Meta Tags", () => {
         params: { slug: "happy-paws-rescue-1" },
       });
 
-      expect(metadata.title).toBe(
-        "Happy Paws Rescue - Dog Rescue Organization | Rescue Dog Aggregator",
-      );
-      expect(metadata.description).toBe(
-        "Learn about Happy Paws Rescue and their available dogs for adoption. Dedicated to rescuing and rehoming dogs in need. Located in San Francisco, USA.",
-      );
+      expect(metadata.title).toBe("Happy Paws Rescue: Rescue Dogs for Adoption");
+      // A short third-person summary, not the rescue's own blurb (#444)
+      expect(metadata.description).toMatch(/available for adoption from Happy Paws Rescue, a rescue in San Francisco/);
+      expect(metadata.description.length).toBeLessThanOrEqual(160);
 
       // Check canonical URL
       expect(metadata.alternates.canonical).toBe(
@@ -166,7 +163,7 @@ describe("SEO Meta Tags", () => {
         "Happy Paws Rescue - Dog Rescue Organization",
       );
       expect(metadata.openGraph.description).toBe(
-        "Learn about Happy Paws Rescue and their available dogs for adoption. Dedicated to rescuing and rehoming dogs in need.",
+        "Dogs available for adoption from Happy Paws Rescue, a rescue in San Francisco, USA.",
       );
       expect(metadata.openGraph.type).toBe("website");
       expect(metadata.openGraph.siteName).toBe("Rescue Dog Aggregator");

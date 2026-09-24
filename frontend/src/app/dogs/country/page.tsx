@@ -1,4 +1,5 @@
 import { formatCount } from "@/utils/formatCount";
+import { clampDescription } from "@/utils/seoMeta";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import CountriesHubClient from "./CountriesHubClient";
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: `Rescue Dogs by Country | ${formatCount(totalDogs)} Dogs Across ${countryCount} Countries`,
-    description: `Find rescue dogs by location. Browse ${formatCount(totalDogs)} dogs from ${countryCount} European countries. Filter by UK, Germany, Italy, Turkey, and more.`,
+    description: clampDescription(`Find rescue dogs by location. Browse ${formatCount(totalDogs)} dogs from ${countryCount} European countries. Pick a country to see its dogs.`),
     keywords:
       "rescue dogs by country, European rescue dogs, dogs from abroad, international dog adoption, rescue dogs UK, rescue dogs Germany",
     alternates: {
