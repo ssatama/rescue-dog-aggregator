@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import CountryDogsClient from "./CountryDogsClient";
 import Layout from "@/components/layout/Layout";
+import ServerDogListing from "@/components/dogs/ServerDogListing";
 import CountryStructuredData from "@/components/countries/CountryStructuredData";
 import {
   getAnimals,
@@ -15,7 +16,6 @@ import {
   getAllCountryCodes,
   COUNTRIES,
 } from "@/utils/countryData";
-import DogCardSkeletonOptimized from "@/components/ui/DogCardSkeletonOptimized";
 
 export const revalidate = 86400;
 
@@ -62,17 +62,6 @@ export async function generateMetadata(props: CountryPageProps): Promise<Metadat
   };
 }
 
-function LoadingFallback(): React.JSX.Element {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, i) => (
-          <DogCardSkeletonOptimized key={i} priority={i < 4} />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default async function CountryDogsPage(props: CountryPageProps): Promise<React.JSX.Element> {
   const params = await props.params;
@@ -102,7 +91,7 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
         dogCount={countryCount}
         pageType="country"
       />
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<ServerDogListing title={`Rescue Dogs in ${country.name}`} intro={country.description} dogs={initialDogs} />}>
         <CountryDogsClient
           country={country}
           initialDogs={initialDogs}
