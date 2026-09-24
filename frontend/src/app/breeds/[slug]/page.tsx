@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import BreedDetailClient from "./BreedDetailClient";
 import Layout from "@/components/layout/Layout";
 import ServerDogListing from "@/components/dogs/ServerDogListing";
-import BreedDetailSkeleton from "@/components/ui/BreedDetailSkeleton";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {

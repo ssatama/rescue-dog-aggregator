@@ -138,11 +138,16 @@ export async function OrganizationDetailPageAsync(props: OrganizationDetailPageP
     }
   }
 
-  // Only for the server-rendered fallback crawlers read (#437); the client fetches its own
-  const initialDogs =
-    initialOrganization?.id != null
-      ? await getAnimals({ organization_id: initialOrganization.id, limit: 20, offset: 0 })
-      : [];
+  // Only for the server-rendered fallback crawlers read (#437); the client fetches its own.
+  // A failure here must not fail the page, which is ISR-cached and prerendered at build.
+  let initialDogs: Awaited<ReturnType<typeof getAnimals>> = [];
+  if (initialOrganization?.id != null) {
+    try {
+      initialDogs = await getAnimals({ organization_id: initialOrganization.id, limit: 20, offset: 0 });
+    } catch (error) {
+      reportError(error, { context: "OrganizationDetailPageAsync", operation: "fallbackDogs" });
+    }
+  }
 
   const breadcrumbItems = initialOrganization
     ? [
