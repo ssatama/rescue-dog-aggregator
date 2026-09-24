@@ -116,7 +116,12 @@ class ImageProcessingService:
             with ThreadPoolExecutor(max_workers=GALLERY_UPLOAD_WORKERS) as pool:
                 futures = {pool.submit(self.r2_service.upload_image_with_size, source, name, organization_name): source for source, name in pending.items()}
                 for future in as_completed(futures):
-                    uploaded[futures[future]] = future.result()
+                    try:
+                        uploaded[futures[future]] = future.result()
+                    except Exception as e:
+                        # One photo's failure must not cost the rest of the run
+                        self.logger.warning(f"Gallery photo {futures[future]} failed: {e}")
+                        uploaded[futures[future]] = None
             stored = sum(1 for photo in uploaded.values() if photo)
             self.logger.info(f"🖼️ Gallery photos stored: {stored}/{len(pending)}")
 

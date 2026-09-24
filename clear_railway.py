@@ -24,7 +24,6 @@ def clear_railway_database():
             # Clear in reverse dependency order
             tables = [
                 "service_regions",
-                "animal_images",
                 "scrape_logs",
                 "animals",
                 "organizations",

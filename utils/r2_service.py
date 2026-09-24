@@ -338,10 +338,21 @@ class R2Service:
 
         The size is kept in the object's metadata, so checking a photo again
         (including one a quality floor rejected) costs one HEAD request, not a
-        download. Returns None when the photo can't be fetched, read or stored.
+        download. Returns None when the photo can't be fetched, read or stored;
+        it never raises, so one bad photo can't stop a rescue's gallery run.
         """
         if not image_url or not cls._check_configuration() or cls.is_circuit_breaker_open():
             return None
+        try:
+            return cls._store_image_with_size(image_url, animal_name, organization_name)
+        except Exception as e:
+            # R2 connection errors, bad metadata, oversized images: skip this photo
+            logger.warning(f"Unexpected error storing gallery photo {image_url}: {e}")
+            cls.track_upload_failure("gallery_upload_failed")
+            return None
+
+    @classmethod
+    def _store_image_with_size(cls, image_url: str, animal_name: str, organization_name: str) -> dict | None:
 
         image_key = cls._generate_image_key(image_url, animal_name, organization_name)
         bucket_name = os.getenv("R2_BUCKET_NAME")
@@ -398,11 +409,6 @@ class R2Service:
             return None
         except (requests.exceptions.RequestException, UnidentifiedImageError) as e:
             logger.warning(f"Could not fetch gallery photo {image_url}: {e}")
-            return None
-        except Exception as e:
-            # R2 connection errors, oversized images: skip this photo, never the run
-            logger.warning(f"Unexpected error storing gallery photo {image_url}: {e}")
-            cls.track_upload_failure("gallery_upload_failed")
             return None
 
     @staticmethod

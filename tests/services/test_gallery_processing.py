@@ -171,3 +171,33 @@ class TestUploadImageWithSize:
 
         with patch("utils.r2_service.requests.get", return_value=response):
             assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") is None
+
+    def test_a_connection_error_on_the_head_request_skips_the_photo(self, s3):
+        from botocore.exceptions import EndpointConnectionError
+
+        s3.head_object.side_effect = EndpointConnectionError(endpoint_url="https://r2.example")
+
+        assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") is None
+
+    def test_bad_size_metadata_skips_the_photo(self, s3):
+        s3.head_object.return_value = {"Metadata": {"width": "wide", "height": "480"}}
+
+        assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") is None
+
+
+@pytest.mark.unit
+def test_one_failing_photo_does_not_cost_the_rest_of_the_batch():
+    second = "https://rescue.example/2.jpg"
+
+    def upload(source, name, org):
+        if source == HERO:
+            raise RuntimeError("boom")
+        return photo(source)
+
+    r2 = Mock()
+    r2.upload_image_with_size.side_effect = upload
+    dog = {"name": "Rex", "primary_image_url": HERO, "image_urls": [HERO, second]}
+
+    ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {})
+
+    assert dog["images"] == [photo(second)]
