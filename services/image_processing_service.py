@@ -41,7 +41,8 @@ def _gallery_sources(animal_data: dict[str, Any]) -> list[str]:
 # nothing whose shorter side is under 300px unless it is the dog's only photo.
 MAX_GALLERY_PHOTOS = 8
 MIN_GALLERY_SIDE = 300
-GALLERY_UPLOAD_WORKERS = 6
+# Matches the R2 client's connection pool (max_pool_connections=5)
+GALLERY_UPLOAD_WORKERS = 5
 
 
 def build_gallery(sources: list[str], photos: dict[str, dict[str, Any] | None]) -> list[dict[str, Any]] | None:
@@ -112,6 +113,9 @@ class ImageProcessingService:
                     pending[source] = animal.get("name", "unknown")
 
         uploaded: dict[str, dict[str, Any] | None] = {}
+        if pending and not self.r2_service.prepare_for_parallel_uploads():
+            self.logger.info("R2 not configured; keeping stored galleries")
+            return
         if pending:
             self.logger.info(f"🖼️ Checking {len(pending)} new gallery photos ({len(known)} already stored)")
             with ThreadPoolExecutor(max_workers=GALLERY_UPLOAD_WORKERS) as pool:

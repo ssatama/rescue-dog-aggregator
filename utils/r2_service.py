@@ -290,6 +290,19 @@ class R2Service:
             safe_animal_name = unicodedata.normalize("NFKD", animal_name).encode("ascii", "ignore").decode("ascii")
             safe_org_name = unicodedata.normalize("NFKD", organization_name).encode("ascii", "ignore").decode("ascii")
 
+            metadata = {
+                "original_url": image_url,
+                "animal_name": safe_animal_name,
+                "organization": safe_org_name,
+            }
+            # Record the size too, so the gallery step reuses this object with one
+            # HEAD request instead of writing the same key again seconds later
+            try:
+                with PILImage.open(BytesIO(response.content)) as img:
+                    metadata["width"], metadata["height"] = (str(side) for side in img.size)
+            except Exception:
+                pass
+
             image_data = BytesIO(response.content)
             s3_client.upload_fileobj(
                 image_data,
@@ -298,11 +311,7 @@ class R2Service:
                 ExtraArgs={
                     "ContentType": content_type,
                     "CacheControl": "public, max-age=86400, s-maxage=604800",
-                    "Metadata": {
-                        "original_url": image_url,
-                        "animal_name": safe_animal_name,
-                        "organization": safe_org_name,
-                    },
+                    "Metadata": metadata,
                 },
             )
 
@@ -331,6 +340,18 @@ class R2Service:
         except Exception as e:
             logger.warning(f"Unexpected error uploading image {image_url}: {e}")
             return image_url, False
+
+    @classmethod
+    def prepare_for_parallel_uploads(cls) -> bool:
+        """Check the configuration and create the client on the calling thread.
+
+        Both are lazily initialised and neither is safe to initialise from
+        several threads at once, so call this before starting a worker pool.
+        """
+        if not cls._check_configuration():
+            return False
+        cls._get_s3_client()
+        return True
 
     @classmethod
     def upload_image_with_size(cls, image_url: str, animal_name: str, organization_name: str = "unknown") -> dict | None:

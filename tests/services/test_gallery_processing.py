@@ -226,3 +226,46 @@ def test_a_dog_whose_hero_failed_this_run_keeps_its_stored_gallery():
     ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {})
 
     assert "images" not in dog
+
+
+@pytest.mark.unit
+def test_a_hero_upload_records_its_size_so_the_gallery_step_needs_no_second_write():
+    s3 = Mock()
+    s3.head_object.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadObject")
+    response = Mock(content=_jpeg(640, 480), headers={"content-type": "image/jpeg"}, status_code=200)
+    with (
+        patch.object(R2Service, "_check_configuration", return_value=True),
+        patch.object(R2Service, "_get_s3_client", return_value=s3),
+        patch.object(R2Service, "_enforce_rate_limit"),
+        patch("utils.r2_service.requests.get", return_value=response),
+    ):
+        R2Service.upload_image_from_url(HERO, "Rex", "Rescue")
+
+    metadata = s3.upload_fileobj.call_args.kwargs["ExtraArgs"]["Metadata"]
+    assert (metadata["width"], metadata["height"]) == ("640", "480")
+
+
+@pytest.mark.unit
+def test_galleries_are_skipped_when_r2_is_not_configured():
+    r2 = Mock()
+    r2.prepare_for_parallel_uploads.return_value = False
+    dog = {"name": "Rex", "primary_image_url": HERO}
+
+    ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {})
+
+    r2.upload_image_with_size.assert_not_called()
+    assert "images" not in dog
+
+
+@pytest.mark.unit
+def test_a_dog_without_a_gallery_is_not_skipped_by_a_skip_existing_scrape():
+    """Galleries fill in, and failed ones retry, on normal runs, not only forced ones."""
+    from services.database_service import DatabaseService
+
+    cursor = Mock()
+    cursor.fetchall.return_value = [("has-gallery",)]
+    service = DatabaseService(db_config={"host": "localhost", "database": "test"})
+    service.conn = Mock(cursor=Mock(return_value=cursor))
+
+    assert service.get_existing_external_ids(1) == {"has-gallery"}
+    assert "images IS NOT NULL" in cursor.execute.call_args.args[0]
