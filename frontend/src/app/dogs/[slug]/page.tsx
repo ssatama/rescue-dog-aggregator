@@ -162,29 +162,24 @@ function DogDetailPage(_props: DogDetailPageProps): React.JSX.Element {
   return <Layout><DogDetailClient /></Layout>;
 }
 
+// Neither helper throws: the cached server fetches return a fallback on API failure.
 async function fetchRelatedDogs(dog: Dog): Promise<Dog[] | undefined> {
   if (!dog.organization_id) return undefined;
-  try {
-    const { getAnimals } = await import("../../../services/serverAnimalsService");
-    const dogs = await getAnimals({ organization_id: dog.organization_id, limit: 4, offset: 0 });
-    return dogs.filter((other) => other.id !== dog.id).slice(0, 3);
-  } catch (error) {
-    reportError(error, { context: "DogDetailPageAsync.relatedDogs", dogId: dog.id });
-    return undefined;
-  }
+  const { getAnimals } = await import("../../../services/serverAnimalsService");
+  const dogs = await getAnimals({ organization_id: dog.organization_id, limit: 4, offset: 0 });
+  const related = dogs.filter((other) => other.id !== dog.id).slice(0, 3);
+  // getAnimals answers [] both for "none" and for a failed request. Pass nothing then, so
+  // the client fetches and decides, rather than caching "No other dogs" for the ISR window.
+  return related.length > 0 ? related : undefined;
 }
 
 async function fetchBreedPageSlug(dog: Dog): Promise<string | null> {
   if (!dog.breed_slug) return null;
-  try {
-    const { getBreedStats } = await import("../../../services/serverAnimalsService");
-    const stats = await getBreedStats();
-    const hasPage = getIndexableBreeds(stats?.qualifying_breeds).some((b) => b.breed_slug === dog.breed_slug);
-    return hasPage ? dog.breed_slug : null;
-  } catch (error) {
-    reportError(error, { context: "DogDetailPageAsync.breedPage", dogId: dog.id });
-    return null;
-  }
+  const { getBreedStats } = await import("../../../services/serverAnimalsService");
+  const stats = await getBreedStats();
+  // On a failed stats request the breed stays plain text until the page revalidates
+  const hasPage = getIndexableBreeds(stats?.qualifying_breeds).some((b) => b.breed_slug === dog.breed_slug);
+  return hasPage ? dog.breed_slug : null;
 }
 
 export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<React.JSX.Element> {
@@ -229,8 +224,7 @@ export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<Rea
   }
 
   // Server-fetched so the HTML carries real links to the dog's breed page and to three more
-  // dogs from its rescue (#439). Neither may fail the page: the client refetches related
-  // dogs itself, and without a breed page the breed stays plain text.
+  // dogs from its rescue (#439).
   const [initialRelatedDogs, breedPageSlug] = initialDog
     ? await Promise.all([fetchRelatedDogs(initialDog), fetchBreedPageSlug(initialDog)])
     : [undefined, null];
