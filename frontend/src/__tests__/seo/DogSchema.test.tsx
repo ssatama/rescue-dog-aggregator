@@ -81,27 +81,10 @@ describe("DogSchema Component", () => {
     const script = container.querySelector('script[type="application/ld+json"]');
     const schema = JSON.parse(script?.innerHTML || "{}");
 
-    expect(schema.about.additionalProperty).toBeDefined();
-    expect(Array.isArray(schema.about.additionalProperty)).toBe(true);
-
-    const properties = schema.about.additionalProperty;
-    const ageProperty = properties.find(
-      (p: { name: string }) => p.name === "Age"
+    // additionalProperty isn't valid on Thing, so the facts are one disambiguating line (#443)
+    expect(schema.about.disambiguatingDescription).toBe(
+      "Age: Adult, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
     );
-    const breedProperty = properties.find(
-      (p: { name: string }) => p.name === "Breed"
-    );
-    const genderProperty = properties.find(
-      (p: { name: string }) => p.name === "Gender"
-    );
-    const locationProperty = properties.find(
-      (p: { name: string }) => p.name === "Location"
-    );
-
-    expect(ageProperty?.value).toBe("Adult");
-    expect(breedProperty?.value).toBe("Labrador Retriever");
-    expect(genderProperty?.value).toBe("Male");
-    expect(locationProperty?.value).toBe("San Francisco, USA");
   });
 
   test("returns null for invalid dog data", () => {

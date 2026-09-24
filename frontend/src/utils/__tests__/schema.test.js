@@ -57,28 +57,8 @@ describe("Schema.org Pet Markup", () => {
         name: "Buddy",
         description,
         image: "https://images.rescuedogs.me/buddy.jpg",
-        additionalProperty: [
-        {
-          "@type": "PropertyValue",
-          name: "Age",
-          value: "Adult",
-        },
-        {
-          "@type": "PropertyValue",
-          name: "Breed",
-          value: "Labrador Retriever",
-        },
-        {
-          "@type": "PropertyValue",
-          name: "Gender",
-          value: "Male",
-        },
-          {
-            "@type": "PropertyValue",
-            name: "Location",
-            value: "San Francisco, USA",
-          },
-        ],
+        disambiguatingDescription:
+          "Age: Adult, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
       },
     });
   });
@@ -102,20 +82,8 @@ describe("Schema.org Pet Markup", () => {
     expect(schema.offers).toBeUndefined();
     expect(schema.isBasedOn.name).toBe("City Shelter");
 
-    // Check additionalProperty array contains Gender but not Age/Breed
-    const genderProperty = schema.about.additionalProperty.find(
-      (prop) => prop.name === "Gender",
-    );
-    const ageProperty = schema.about.additionalProperty.find(
-      (prop) => prop.name === "Age",
-    );
-    const breedProperty = schema.about.additionalProperty.find(
-      (prop) => prop.name === "Breed",
-    );
-
-    expect(genderProperty.value).toBe("Female");
-    expect(ageProperty).toBeUndefined();
-    expect(breedProperty).toBeUndefined();
+    // The facts line has Gender but not Age/Breed
+    expect(schema.about.disambiguatingDescription).toBe("Gender: Female");
   });
 
   test("should sanitize and format gender correctly", () => {
@@ -130,9 +98,9 @@ describe("Schema.org Pet Markup", () => {
     testCases.forEach(({ input, expected }) => {
       const dog = { ...mockDog, sex: input };
       const schema = generatePetSchema(dog);
-      const genderProperty = schema.about.additionalProperty.find(
-        (prop) => prop.name === "Gender",
-      );
+      const facts = schema.about.disambiguatingDescription || "";
+      const match = /Gender: (\w+)/.exec(facts);
+      const genderProperty = match ? { value: match[1] } : undefined;
 
       if (expected) {
         expect(genderProperty.value).toBe(expected);

@@ -222,8 +222,12 @@ export const generatePetSchema = (dog: DogForSchema | null | undefined): Record<
     });
   }
 
+  // additionalProperty isn't valid on Thing (only Product, Place and a few others), and
+  // no schema.org type fits a dog, so the facts go in a plain disambiguating line (#443)
   if (additionalProperty.length > 0) {
-    dogEntity.additionalProperty = additionalProperty;
+    dogEntity.disambiguatingDescription = additionalProperty
+      .map((property) => `${property.name}: ${property.value}`)
+      .join(", ");
   }
 
   return schema;

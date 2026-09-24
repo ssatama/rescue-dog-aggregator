@@ -97,8 +97,8 @@ MCP endpoint is rate limited per IP at 120 requests/minute and 3,000/hour.
 Every page carries the site's `Organization` (`@id`
 https://www.rescuedogs.me/#organization) and `WebSite` (`#website`) nodes.
 Dog pages embed an `ItemPage` whose `about` is the dog (a `Thing` with
-`additionalType` dbpedia Dog, plus age, breed, sex and location as
-`additionalProperty`), and one `BreadcrumbList`. Dogs are not `Product`s and
+`additionalType` dbpedia Dog; age, breed, sex and location are in its
+`disambiguatingDescription`), and one `BreadcrumbList`. Dogs are not `Product`s and
 carry no price: adoption fees are set by each rescue. The listing rescue appears
 as an `isBasedOn` link; organization pages carry the full
 `LocalBusiness`/`AnimalShelter` node, so follow through to resolve a rescue as

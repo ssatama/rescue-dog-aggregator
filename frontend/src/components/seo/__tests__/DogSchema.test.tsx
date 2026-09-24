@@ -67,9 +67,9 @@ describe("DogSchema Component", () => {
       name: "Happy Paws Rescue",
     });
 
-    // Check additionalProperty array
-    expect(Array.isArray(schemaData.about.additionalProperty)).toBe(true);
-    expect(schemaData.about.additionalProperty.length).toBeGreaterThan(0);
+    // The dog's facts, as one disambiguating line (additionalProperty isn't valid on Thing)
+    expect(schemaData.about.disambiguatingDescription).toMatch(/Breed: /);
+    expect(schemaData.about.additionalProperty).toBeUndefined();
   });
 
   test("should handle minimal dog data gracefully", () => {

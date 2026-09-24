@@ -15,7 +15,6 @@ import {
   getOrganizationDogs,
 } from "../../../services/organizationsService";
 import { reportError } from "../../../utils/logger";
-import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
 import OrganizationDogsViewportWrapper from "../../../components/organizations/OrganizationDogsViewportWrapper";
 import DogsGrid from "../../../components/dogs/DogsGrid";
@@ -150,7 +149,7 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
 
   // Fetch organization dogs with pagination and filtering
   const fetchOrganizationDogs = useCallback(
-     
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Intentionally using organization?.id instead of organization to avoid re-creating callback on non-id property changes
     async (currentPage = 1, loadMore = false) => {
       if (!loadMore) {
         setLoading(true);
@@ -332,12 +331,6 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
       </>
     );
   }
-
-  const breadcrumbItems = [
-    { name: "Home", url: "/" },
-    { name: "Organizations", url: "/organizations" },
-    { name: organization.name },
-  ];
 
   return (
     <>
