@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import BreedDetailClient from "./BreedDetailClient";
 import Layout from "@/components/layout/Layout";
-import BreedDetailSkeleton from "@/components/ui/BreedDetailSkeleton";
+import ServerDogListing from "@/components/dogs/ServerDogListing";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
@@ -168,7 +168,15 @@ export default async function BreedDetailPage(props: BreedPageProps) {
         pageType="detail"
       />
       <ErrorBoundary fallbackMessage="Unable to load breed details. Please try refreshing the page.">
-        <Suspense fallback={<BreedDetailSkeleton />}>
+        <Suspense
+          fallback={
+            <ServerDogListing
+              title={breedData.primary_breed}
+              intro={breedData.description}
+              dogs={initialDogs}
+            />
+          }
+        >
           <BreedDetailClient
             initialBreedData={breedData}
             initialDogs={initialDogs}

@@ -3,10 +3,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import SeniorDogsClient from "./SeniorDogsClient";
 import Layout from "@/components/layout/Layout";
+import ServerDogListing from "@/components/dogs/ServerDogListing";
 import AgeStructuredData from "@/components/age/AgeStructuredData";
 import { getAnimals, getAllMetadata, getAgeStats } from "@/services/serverAnimalsService";
 import { AGE_CATEGORIES } from "@/utils/ageData";
-import DogCardSkeletonOptimized from "@/components/ui/DogCardSkeletonOptimized";
 
 export const revalidate = 86400;
 
@@ -38,17 +38,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-function LoadingFallback(): React.JSX.Element {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, i) => (
-          <DogCardSkeletonOptimized key={i} priority={i < 4} />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default async function SeniorDogsPage(): Promise<React.JSX.Element> {
   const [initialDogs, metadata, ageStats] = await Promise.all([
@@ -67,7 +56,7 @@ export default async function SeniorDogsPage(): Promise<React.JSX.Element> {
   return (
     <Layout>
       <AgeStructuredData ageCategory={seniorCategory} dogCount={totalCount} />
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<ServerDogListing title="Senior Rescue Dogs" intro={seniorCategory.tagline} dogs={initialDogs} />}>
         <SeniorDogsClient
           ageCategory={seniorCategory}
           initialDogs={initialDogs}

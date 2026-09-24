@@ -6,6 +6,8 @@ import {
 } from "../../../services/organizationsService";
 import { reportError } from "../../../utils/logger";
 import Layout from "../../../components/layout/Layout";
+import ServerDogListing from "@/components/dogs/ServerDogListing";
+import { getAnimals } from "@/services/serverAnimalsService";
 import OrganizationDetailClient from "./OrganizationDetailClient";
 import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
 import { notFound } from "next/navigation";
@@ -136,6 +138,17 @@ export async function OrganizationDetailPageAsync(props: OrganizationDetailPageP
     }
   }
 
+  // Only for the server-rendered fallback crawlers read (#437); the client fetches its own.
+  // A failure here must not fail the page, which is ISR-cached and prerendered at build.
+  let initialDogs: Awaited<ReturnType<typeof getAnimals>> = [];
+  if (initialOrganization?.id != null) {
+    try {
+      initialDogs = await getAnimals({ organization_id: initialOrganization.id, limit: 20, offset: 0 });
+    } catch (error) {
+      reportError(error, { context: "OrganizationDetailPageAsync", operation: "fallbackDogs" });
+    }
+  }
+
   const breadcrumbItems = initialOrganization
     ? [
         { name: "Home", url: "/" },
@@ -150,7 +163,17 @@ export async function OrganizationDetailPageAsync(props: OrganizationDetailPageP
         <OrganizationSchema organization={{ ...initialOrganization, id: initialOrganization.id }} />
       )}
       {breadcrumbItems && <BreadcrumbSchema items={breadcrumbItems} />}
-      <Suspense>
+      <Suspense
+        fallback={
+          initialOrganization ? (
+            <ServerDogListing
+              title={initialOrganization.name}
+              intro={initialOrganization.description ?? undefined}
+              dogs={initialDogs}
+            />
+          ) : null
+        }
+      >
         <OrganizationDetailClient initialOrganization={initialOrganization} />
       </Suspense>
     </Layout>

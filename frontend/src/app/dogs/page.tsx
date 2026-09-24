@@ -5,8 +5,8 @@ import {
   getAllMetadata,
 } from "../../services/serverAnimalsService";
 import DogsPageClientSimplified from "./DogsPageClientSimplified";
-import DogCardSkeletonOptimized from "../../components/ui/DogCardSkeletonOptimized";
 import Layout from "../../components/layout/Layout";
+import ServerDogListing from "@/components/dogs/ServerDogListing";
 import "../../styles/animations.css";
 
 export const revalidate = 21600;
@@ -33,17 +33,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-function LoadingFallback(): React.JSX.Element {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, i) => (
-          <DogCardSkeletonOptimized key={i} priority={i < 4} />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default async function DogsPageOptimized(): Promise<React.JSX.Element> {
   // Deliberately independent of searchParams so this route stays statically
@@ -74,7 +63,7 @@ export default async function DogsPageOptimized(): Promise<React.JSX.Element> {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: collectionJsonLd }}
       />
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<ServerDogListing title="Find Your New Best Friend" intro="Browse adoptable dogs from verified European rescue organizations." dogs={initialDogs} />}>
         <DogsPageClientSimplified
           initialDogs={initialDogs}
           metadata={metadata}
