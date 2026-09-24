@@ -381,7 +381,15 @@ def main():
             if any_processed and not args.dry_run:
                 from services.revalidation_client import invalidate_sync
 
-                invalidate_sync(tags=["animals", "statistics", *command.changed_slugs()])
+                changed_slugs = command.changed_slugs()
+                invalidate_sync(tags=["animals", "statistics", *changed_slugs])
+                # Adopted dogs are noindexed (#359); tell IndexNow engines to recrawl them (#440)
+                try:
+                    from services.indexnow_client import submit_dog_urls_sync
+                except ImportError as e:
+                    print(f"⚠️ IndexNow hook unavailable: {e}")
+                else:
+                    submit_dog_urls_sync(changed_slugs)
 
         print("\n✅ Adoption checking complete!")
 
