@@ -115,9 +115,13 @@ class TestBatchProcessGalleries:
         assert "images" not in dog
 
 
-def _jpeg(width: int, height: int) -> bytes:
+def _jpeg(width: int, height: int, orientation: int | None = None) -> bytes:
     buffer = BytesIO()
-    Image.new("RGB", (width, height)).save(buffer, format="JPEG")
+    image = Image.new("RGB", (width, height))
+    exif = Image.Exif()
+    if orientation:
+        exif[0x0112] = orientation
+    image.save(buffer, format="JPEG", exif=exif)
     return buffer.getvalue()
 
 
@@ -269,3 +273,20 @@ def test_a_dog_without_a_gallery_is_not_skipped_by_a_skip_existing_scrape():
 
     assert service.get_existing_external_ids(1) == {"has-gallery"}
     assert "images IS NOT NULL" in cursor.execute.call_args.args[0]
+
+
+@pytest.mark.unit
+def test_a_phone_photo_rotated_by_exif_is_measured_as_displayed():
+    """Stored 4:3 landscape with "rotate 90°": a browser shows it portrait."""
+    s3 = Mock()
+    s3.head_object.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadObject")
+    response = Mock(content=_jpeg(1200, 900, orientation=6), headers={"content-type": "image/jpeg"})
+    with (
+        patch.object(R2Service, "_check_configuration", return_value=True),
+        patch.object(R2Service, "is_circuit_breaker_open", return_value=False),
+        patch.object(R2Service, "_get_s3_client", return_value=s3),
+        patch("utils.r2_service.requests.get", return_value=response),
+    ):
+        result = R2Service.upload_image_with_size(HERO, "Rex", "Rescue")
+
+    assert (result["width"], result["height"]) == (900, 1200)

@@ -21,6 +21,22 @@ from PIL import UnidentifiedImageError
 logger = logging.getLogger(__name__)
 
 
+# EXIF orientations that turn the stored pixels a quarter turn for display
+_QUARTER_TURN_ORIENTATIONS = {5, 6, 7, 8}
+
+
+def _display_size(img: "PILImage.Image") -> tuple[int, int]:
+    """Width and height as a browser shows the photo, honouring EXIF rotation.
+
+    Phone photos are often stored landscape with an orientation flag that
+    browsers apply, so the raw pixel size would call a portrait landscape.
+    """
+    width, height = img.size
+    if img.getexif().get(0x0112) in _QUARTER_TURN_ORIENTATIONS:
+        return height, width
+    return width, height
+
+
 class R2ConfigurationError(Exception):
     """Raised when R2 is not properly configured."""
 
@@ -299,7 +315,7 @@ class R2Service:
             # HEAD request instead of writing the same key again seconds later
             try:
                 with PILImage.open(BytesIO(response.content)) as img:
-                    metadata["width"], metadata["height"] = (str(side) for side in img.size)
+                    metadata["width"], metadata["height"] = (str(side) for side in _display_size(img))
             except Exception:
                 pass
 
@@ -402,7 +418,7 @@ class R2Service:
                 return None
 
             with PILImage.open(BytesIO(response.content)) as img:
-                width, height = img.size
+                width, height = _display_size(img)
             if already_stored:
                 # Record the size on the existing object (a copy onto itself), so the
                 # next check is one HEAD request even if this photo is never kept
