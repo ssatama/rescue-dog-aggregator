@@ -129,4 +129,57 @@ describe("DogGallery", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByText("2 / 4")).toBeInTheDocument();
   });
+
+  it("keeps the target photo while its smooth scroll passes the others", () => {
+    renderGallery(photos(3));
+    const track = screen.getByTestId("dog-gallery").querySelector(".snap-x") as HTMLDivElement;
+    let left = 0;
+    Object.defineProperty(track, "clientWidth", { value: 400 });
+    Object.defineProperty(track, "scrollLeft", { get: () => left });
+    track.scrollTo = jest.fn();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
+    // Mid-way the frame is nearer photo 1; the counter must not go back
+    left = 150;
+    fireEvent.scroll(track);
+    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+
+    // A second click during the scroll still moves on from photo 2
+    fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
+    expect(screen.getByText("3 / 3")).toBeInTheDocument();
+
+    left = 800;
+    fireEvent.scroll(track);
+    expect(screen.getByText("3 / 3")).toBeInTheDocument();
+
+    // After arriving, a swipe updates it again
+    left = 400;
+    fireEvent.scroll(track);
+    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+  });
+
+  it("changes photo in full screen without scrolling the page frame behind it", () => {
+    renderGallery(photos(3));
+    const track = screen.getByTestId("dog-gallery").querySelector(".snap-x") as HTMLDivElement;
+    track.scrollTo = jest.fn();
+
+    fireEvent.click(screen.getByRole("button", { name: "View photo 1 of Dolly full screen" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.keyDown(dialog, { key: "ArrowRight" });
+    fireEvent.keyDown(dialog, { key: "ArrowRight" });
+
+    expect(within(dialog).getByAltText("Dolly, photo 3 of 3")).toBeInTheDocument();
+    expect(track.scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("keeps arrow keys from the page while a single photo is full screen", () => {
+    renderGallery(photos(1));
+    const gallery = screen.getByTestId("dog-gallery");
+
+    // Closed: the page's prev/next-dog keys still work
+    expect(fireEvent.keyDown(gallery, { key: "ArrowRight" })).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "View photo 1 of Dolly full screen" }));
+    expect(fireEvent.keyDown(screen.getByRole("dialog"), { key: "ArrowRight" })).toBe(false);
+  });
 });

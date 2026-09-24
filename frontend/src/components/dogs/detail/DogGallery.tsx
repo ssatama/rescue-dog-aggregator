@@ -12,6 +12,7 @@ const MAX_THUMBS = 6;
 // Full screen is black in both themes, so its buttons stay light
 const ON_BLACK = "dark:bg-white/90 dark:text-gray-900";
 const TRACK_DELAY_MS = 300;
+const SCROLL_SETTLE_MS = 1000;
 // The frame spans the dog page's max-w-4xl column, minus its padding
 const FRAME_SIZES = "(min-width: 896px) 832px, 100vw";
 
@@ -179,25 +180,52 @@ export default function DogGallery({
     return () => clearTimeout(timer);
   }, [index, dogId, total]);
 
+  // While goTo's smooth scroll runs, the frame passes through other photos;
+  // `heading` holds the target so those scroll events don't reset the index.
+  const heading = useRef<number | null>(null);
+  const headingTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(headingTimer.current), []);
+
+  const indexFromScroll = useCallback(() => {
+    const track = trackRef.current;
+    if (!track || track.clientWidth === 0) return null;
+    return Math.max(0, Math.min(Math.round(track.scrollLeft / track.clientWidth), total - 1));
+  }, [total]);
+
   const goTo = useCallback(
     (target: number, behavior?: ScrollBehavior) => {
       const next = Math.max(0, Math.min(target, total - 1));
       setIndex(next);
       const track = trackRef.current;
-      track?.scrollTo?.({
+      if (!track?.scrollTo) return;
+      heading.current = next;
+      clearTimeout(headingTimer.current);
+      // A swipe can interrupt the scroll short of the target; after a while
+      // trust wherever the frame actually is.
+      headingTimer.current = setTimeout(() => {
+        heading.current = null;
+        const settled = indexFromScroll();
+        if (settled !== null) setIndex(settled);
+      }, SCROLL_SETTLE_MS);
+      track.scrollTo({
         left: next * track.clientWidth,
         behavior: behavior ?? (prefersReducedMotion() ? "auto" : "smooth"),
       });
     },
-    [total],
+    [total, indexFromScroll],
   );
 
   const handleScroll = useCallback(() => {
     const track = trackRef.current;
-    if (!track || track.clientWidth === 0) return;
-    const current = Math.round(track.scrollLeft / track.clientWidth);
-    setIndex(Math.max(0, Math.min(current, total - 1)));
-  }, [total]);
+    const current = indexFromScroll();
+    if (!track || current === null) return;
+    if (heading.current !== null) {
+      if (Math.abs(track.scrollLeft - heading.current * track.clientWidth) > 1) return;
+      heading.current = null;
+      clearTimeout(headingTimer.current);
+    }
+    setIndex(current);
+  }, [indexFromScroll]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -207,11 +235,17 @@ export default function DogGallery({
         Home: 0,
         End: total - 1,
       };
-      if (!(e.key in keys)) return;
+      if (!(e.key in keys) || (!multiple && !fullscreen)) return;
+      // Handled here, so the page's prev/next-dog keys leave it alone, even
+      // for a single photo open full screen.
       e.preventDefault();
-      goTo(keys[e.key]);
+      if (!multiple) return;
+      const next = Math.max(0, Math.min(keys[e.key], total - 1));
+      // Full screen only changes the photo; the page frame catches up on close.
+      if (fullscreen) setIndex(next);
+      else goTo(next);
     },
-    [index, total, goTo],
+    [index, total, multiple, fullscreen, goTo],
   );
 
   const closeFullscreen = useCallback(
@@ -235,7 +269,7 @@ export default function DogGallery({
     <section
       aria-label={`Photos of ${dogName}`}
       aria-roledescription={multiple ? "carousel" : undefined}
-      onKeyDown={multiple ? handleKeyDown : undefined}
+      onKeyDown={handleKeyDown}
       className={cn("grid gap-2", className)}
       data-testid="dog-gallery"
     >
