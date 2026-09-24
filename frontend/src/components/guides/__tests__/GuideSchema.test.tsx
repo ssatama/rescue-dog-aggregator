@@ -69,7 +69,7 @@ describe("GuideSchema", () => {
     );
     const schema = JSON.parse(scriptTag?.textContent || "{}");
 
-    expect(schema.image).toBe("/test-hero.jpg");
+    expect(schema.image).toBe("https://www.rescuedogs.me/test-hero.jpg");
   });
 
   it("takes datePublished from frontmatter and dateModified from lastUpdated", () => {
@@ -104,7 +104,7 @@ describe("GuideSchema", () => {
     expect(schema.dateModified).toBe("2026-03-15");
   });
 
-  it("includes author with Person type", () => {
+  it("references the site Organization as author", () => {
     const { container } = render(<GuideSchema guide={mockGuide} />);
     const scriptTag = container.querySelector(
       'script[type="application/ld+json"]',
@@ -112,11 +112,12 @@ describe("GuideSchema", () => {
     const schema = JSON.parse(scriptTag?.textContent || "{}");
 
     expect(schema.author).toBeDefined();
-    expect(schema.author["@type"]).toBe("Person");
-    expect(schema.author.name).toBe("Test Author");
+    // Written by the site: the author is the site Organization (#443)
+    expect(schema.author["@type"]).toBe("Organization");
+    expect(schema.author["@id"]).toBe("https://www.rescuedogs.me/#organization");
   });
 
-  it("includes publisher with Rescue Dog Aggregator", () => {
+  it("references the site Organization as publisher", () => {
     const { container } = render(<GuideSchema guide={mockGuide} />);
     const scriptTag = container.querySelector(
       'script[type="application/ld+json"]',
@@ -124,11 +125,7 @@ describe("GuideSchema", () => {
     const schema = JSON.parse(scriptTag?.textContent || "{}");
 
     expect(schema.publisher).toBeDefined();
-    expect(schema.publisher["@type"]).toBe("Organization");
-    expect(schema.publisher.name).toBe("Rescue Dog Aggregator");
-    expect(schema.publisher.logo).toBeDefined();
-    expect(schema.publisher.logo["@type"]).toBe("ImageObject");
-    expect(schema.publisher.logo.url).toBe("https://www.rescuedogs.me/logo.jpeg");
+    expect(schema.publisher).toEqual({ "@id": "https://www.rescuedogs.me/#organization" });
   });
 
   it("includes mainEntityOfPage with guide URL", () => {

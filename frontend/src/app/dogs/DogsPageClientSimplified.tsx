@@ -15,7 +15,6 @@ import { Filter, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
-import { BreadcrumbSchema } from "../../components/seo";
 import useScrollRestoration from "../../hooks/dogs/useScrollRestoration";
 import useDogsFilters from "../../hooks/dogs/useDogsFilters";
 import useDogsPagination from "../../hooks/dogs/useDogsPagination";
@@ -126,7 +125,6 @@ export default function DogsPageClientSimplified({
 
   const content = (
     <>
-      {!hideBreadcrumbs && <BreadcrumbSchema items={breadcrumbItems} />}
 
       {/* Mobile Sticky Header with Breadcrumb and Filter Button */}
       {!hideHero && (

@@ -42,8 +42,10 @@ export const PersonSchema: React.FC<PersonSchemaProps> = ({
     "@type": "Person",
     name,
     jobTitle,
+    // Same @id as the site Organization in the root layout, so it's one entity (#443)
     worksFor: {
       "@type": "Organization",
+      "@id": `${organization.url.replace(/\/$/, "")}/#organization`,
       name: organization.name,
       url: organization.url,
     },

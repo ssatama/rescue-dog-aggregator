@@ -150,7 +150,7 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
 
   // Fetch organization dogs with pagination and filtering
   const fetchOrganizationDogs = useCallback(
-    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Intentionally using organization?.id instead of organization to avoid re-creating callback on non-id property changes
+     
     async (currentPage = 1, loadMore = false) => {
       if (!loadMore) {
         setLoading(true);
@@ -344,8 +344,6 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
       <OrganizationHero organization={organization} />
 
       <div className="max-w-7xl mx-auto p-4">
-        {/* Breadcrumb Navigation */}
-        <Breadcrumbs items={breadcrumbItems} />
         {/* Contact Information (if available in properties) */}
         {organization.properties && (
           <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 mb-8">

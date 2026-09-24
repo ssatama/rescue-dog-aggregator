@@ -3,14 +3,15 @@ import Link from "next/link";
 import type { BreadcrumbsProps } from "@/types/uiComponents";
 import { generateBreadcrumbSchema } from "../../utils/schema";
 
-export default function Breadcrumbs({ items }: BreadcrumbsProps): React.ReactElement | null {
+export default function Breadcrumbs({ items, schema = true }: BreadcrumbsProps): React.ReactElement | null {
   // Don't render if no items or empty array
   if (!items || !Array.isArray(items) || items.length === 0) {
     return null;
   }
 
-  // Generate structured data using existing schema utility
-  const breadcrumbSchema = generateBreadcrumbSchema({ items });
+  // This component is the page's one BreadcrumbList unless the page emits it server-side,
+  // in which case it passes schema={false} (#443)
+  const breadcrumbSchema = schema ? generateBreadcrumbSchema({ items }) : null;
 
   return (
     <>

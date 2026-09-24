@@ -1,5 +1,6 @@
 import { formatCount } from "@/utils/formatCount";
 import type { AgeStructuredDataProps } from "@/types/pageComponents";
+import { WEBSITE_ID } from "@/utils/schema";
 
 export default function AgeStructuredData(props: AgeStructuredDataProps): React.ReactElement {
   const baseUrl = "https://www.rescuedogs.me";
@@ -32,11 +33,7 @@ export default function AgeStructuredData(props: AgeStructuredDataProps): React.
           numberOfItems: seniorCount,
         },
       ],
-      isPartOf: {
-        "@type": "WebSite",
-        name: "RescueDogs.me",
-        url: baseUrl,
-      },
+      isPartOf: { "@id": WEBSITE_ID },
     };
 
     return (
@@ -64,11 +61,7 @@ export default function AgeStructuredData(props: AgeStructuredDataProps): React.
       name: ageCategory.name,
       description: `${ageCategory.ageRange} rescue dogs available for adoption`,
     },
-    isPartOf: {
-      "@type": "WebSite",
-      name: "RescueDogs.me",
-      url: baseUrl,
-    },
+    isPartOf: { "@id": WEBSITE_ID },
   };
 
   return (

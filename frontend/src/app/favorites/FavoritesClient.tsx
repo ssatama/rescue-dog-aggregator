@@ -15,7 +15,6 @@ import ShareButton from "../../components/ui/ShareButton";
 import FavoritesInsights from "../../components/favorites/FavoritesInsights";
 import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
-import { BreadcrumbSchema } from "../../components/seo";
 import type { Dog } from "../../types/dog";
 import { getAnimalsByIds } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
@@ -372,7 +371,6 @@ function FavoritesPageContent(): React.JSX.Element {
 
     return (
       <>
-        <BreadcrumbSchema items={breadcrumbItems} />
         <div className="container mx-auto px-4 py-6">
           <Breadcrumbs items={breadcrumbItems} />
           <div className="min-h-[60vh] flex items-center justify-center">
@@ -408,7 +406,6 @@ function FavoritesPageContent(): React.JSX.Element {
 
   return (
     <>
-      <BreadcrumbSchema items={breadcrumbItems} />
       <div>
         {/* Breadcrumbs */}
         <div className="container mx-auto px-4 pt-6">

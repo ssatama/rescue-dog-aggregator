@@ -24,7 +24,7 @@ import { formatBreed, getAgeCategory } from "../../../utils/dogHelpers";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
 import DogDetailErrorBoundary from "../../../components/error/DogDetailErrorBoundary";
 import { ScrollAnimationWrapper } from "../../../hooks/useScrollAnimation";
-import { DogSchema, BreadcrumbSchema } from "../../../components/seo";
+import { DogSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import RetiredListingNotice from "../../../components/dogs/RetiredListingNotice";
 import {
@@ -312,7 +312,6 @@ export default function DogDetailClient({
       <DogDetailErrorBoundary dogSlug={dogSlug}>
         {/* SEO: Schema.org structured data for search engines */}
         <DogSchema dog={dog} />
-        <BreadcrumbSchema items={breadcrumbItems} />
         <div
           data-testid="dog-detail-container"
           className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8"

@@ -84,7 +84,7 @@ describe("DogDetailClient - Schema Integration", () => {
       expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
     });
 
-    // Check for JSON-LD script tag with Product schema
+    // Check for JSON-LD script tag with ItemPage schema
     const schemaScript = container.querySelector(
       'script[type="application/ld+json"]',
     );
@@ -92,12 +92,12 @@ describe("DogDetailClient - Schema Integration", () => {
 
     const schemaData = JSON.parse(schemaScript?.textContent || "{}");
     expect(schemaData["@context"]).toBe("https://schema.org");
-    expect(schemaData["@type"]).toBe("Product");
-    expect(schemaData.additionalType).toBe("http://dbpedia.org/ontology/Dog");
+    expect(schemaData["@type"]).toBe("ItemPage");
+    expect(schemaData.about.additionalType).toBe("http://dbpedia.org/ontology/Dog");
     expect(schemaData.name).toBe("Buddy - Labrador Retriever");
   });
 
-  test("should include offers and source attribution in schema", async () => {
+  test("should include source attribution and no offers in schema", async () => {
     getAnimalBySlug.mockResolvedValue(mockDog);
 
     const { container } = render(<DogDetailClient />);
@@ -165,7 +165,7 @@ describe("DogDetailClient - Schema Integration", () => {
     expect(schemaScript).toBeInTheDocument();
 
     const schemaData = JSON.parse(schemaScript?.textContent || "{}");
-    expect(schemaData["@type"]).toBe("Product");
+    expect(schemaData["@type"]).toBe("ItemPage");
     expect(schemaData.name).toBe("Luna");
     expect(schemaData.isBasedOn.name).toBe("City Shelter");
   });

@@ -3,6 +3,50 @@ import type { Dog } from "@/types/dog";
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
 
+/**
+ * The site's one Organization and WebSite entities (#443). Output once in the root layout;
+ * everything else (publisher, author, worksFor, isPartOf) references them by @id, so search
+ * engines and LLMs see a single, consistently named entity.
+ */
+export const SITE_NAME = "Rescue Dog Aggregator";
+export const SITE_ORGANIZATION_ID = `${BASE_URL}/#organization`;
+export const WEBSITE_ID = `${BASE_URL}/#website`;
+
+export const siteOrganizationRef = { "@id": SITE_ORGANIZATION_ID } as const;
+
+export const generateSiteGraph = (): Record<string, unknown> => ({
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": SITE_ORGANIZATION_ID,
+      name: SITE_NAME,
+      url: BASE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${BASE_URL}/logo.jpeg`,
+        width: 512,
+        height: 512,
+      },
+      sameAs: [
+        "https://github.com/ssatama/rescue-dog-aggregator",
+        "https://github.com/ssatama/rescuedogs-mcp-server",
+        "https://www.npmjs.com/package/rescuedogs-mcp-server",
+      ],
+    },
+    {
+      "@type": "WebSite",
+      "@id": WEBSITE_ID,
+      name: SITE_NAME,
+      url: BASE_URL,
+      description:
+        "Find adoptable rescue dogs from verified organizations across Europe. Browse dogs available for adoption from shelters and rescues.",
+      publisher: siteOrganizationRef,
+      inLanguage: "en-US",
+    },
+  ],
+});
+
 export const getAvailability = (status: string | undefined): string => {
   switch (status) {
     case "available":
@@ -102,11 +146,20 @@ export const generatePetSchema = (dog: DogForSchema | null | undefined): Record<
     return breed ? `${dog.name} - ${breed}` : dog.name!;
   };
 
+  // A dog is not a Product: Google requires offers/review/aggregateRating on Products, and
+  // adoption fees vary and aren't ours to state. The page is an ItemPage about the dog (#443).
+  const dogEntity: Record<string, unknown> = {
+    "@type": "Thing",
+    additionalType: "http://dbpedia.org/ontology/Dog",
+    name: dog.name,
+  };
+
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "Product",
-    additionalType: "http://dbpedia.org/ontology/Dog",
+    "@type": "ItemPage",
     name: buildName(),
+    about: dogEntity,
+    isPartOf: { "@id": WEBSITE_ID },
   };
 
   if (dog.slug) {
@@ -115,28 +168,12 @@ export const generatePetSchema = (dog: DogForSchema | null | undefined): Record<
 
   if (description) {
     schema.description = description;
+    dogEntity.description = description;
   }
 
   if (dog.primary_image_url) {
     schema.image = dog.primary_image_url;
-  }
-
-  const hasValidFees =
-    dog.organization?.adoption_fees &&
-    dog.organization.adoption_fees.usual_fee != null &&
-    dog.organization.adoption_fees.usual_fee > 0 &&
-    dog.organization.adoption_fees.currency;
-
-  if (hasValidFees) {
-    schema.offers = {
-      "@type": "Offer",
-      price: dog.organization!.adoption_fees!.usual_fee!.toString(),
-      priceCurrency: dog.organization!.adoption_fees!.currency,
-      availability: getAvailability(dog.status),
-      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-    };
+    dogEntity.image = dog.primary_image_url;
   }
 
   if (dog.organization) {
@@ -186,7 +223,7 @@ export const generatePetSchema = (dog: DogForSchema | null | undefined): Record<
   }
 
   if (additionalProperty.length > 0) {
-    schema.additionalProperty = additionalProperty;
+    dogEntity.additionalProperty = additionalProperty;
   }
 
   return schema;
@@ -316,8 +353,8 @@ export const validateSchemaData = (schemaType: string, data: Record<string, unkn
     case "Pet":
       return !!(
         data.name &&
-        data["@type"] === "Product" &&
-        data.additionalType
+        data["@type"] === "ItemPage" &&
+        (data.about as Record<string, unknown> | undefined)?.additionalType
       );
 
     case "Organization":

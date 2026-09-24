@@ -107,7 +107,7 @@ describe("generatePetSchema with LLM data", () => {
     const schema = generatePetSchema(dog);
 
     expect(schema).toMatchObject({
-      "@type": "Product",
+      "@type": "ItemPage",
       name: "Luna: The perfect family companion!",
       description: "Luna is a gentle Golden Retriever who adores children.",
     });
@@ -159,7 +159,7 @@ describe("generatePetSchema with LLM data", () => {
     const schema = generatePetSchema(dog);
 
     expect(schema).toMatchObject({
-      "@type": "Product",
+      "@type": "ItemPage",
       name: "Charlie",
     });
     expect(schema.description).toBeUndefined();

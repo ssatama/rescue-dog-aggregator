@@ -10,7 +10,6 @@ import {
 } from "../../hooks/useOrganizations";
 import { reportError, logger } from "../../utils/logger";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
-import { BreadcrumbSchema } from "../../components/seo";
 import { useEffect, useMemo } from "react";
 import type { OrganizationsClientProps } from "@/types/pageComponents";
 import type { OrganizationCardData } from "@/types/organizationComponents";
@@ -66,8 +65,6 @@ export default function OrganizationsClient({
 
   return (
     <>
-      {/* SEO: Breadcrumb structured data */}
-      <BreadcrumbSchema items={breadcrumbItems} />
 
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}

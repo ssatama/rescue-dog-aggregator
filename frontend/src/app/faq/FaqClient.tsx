@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BreadcrumbSchema } from "../../components/seo";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { ChevronDown } from "lucide-react";
 
@@ -228,7 +227,6 @@ export default function FaqClient(): React.JSX.Element {
 
   return (
     <>
-      <BreadcrumbSchema items={breadcrumbItems} />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <Breadcrumbs items={breadcrumbItems} />
         <div className="text-center mb-12 sm:mb-16">

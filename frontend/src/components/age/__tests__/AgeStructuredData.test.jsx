@@ -57,9 +57,7 @@ describe("AgeStructuredData", () => {
       );
 
       const schema = getJsonLd(container);
-      expect(schema.isPartOf["@type"]).toBe("WebSite");
-      expect(schema.isPartOf.name).toBe("RescueDogs.me");
-      expect(schema.isPartOf.url).toBe("https://www.rescuedogs.me");
+      expect(schema.isPartOf).toEqual({ "@id": "https://www.rescuedogs.me/#website" });
     });
   });
 

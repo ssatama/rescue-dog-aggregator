@@ -156,8 +156,9 @@ describe("Privacy Page", () => {
       expect(screen.getByText(/last updated.*december 2025/i)).toBeInTheDocument();
     });
 
-    test("renders BreadcrumbSchema for SEO", () => {
-      expect(screen.getByTestId("breadcrumb-schema")).toBeInTheDocument();
+    test("gets its BreadcrumbList from the Breadcrumbs component only (#443)", () => {
+      expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
+      expect(screen.queryByTestId("breadcrumb-schema")).not.toBeInTheDocument();
     });
   });
 

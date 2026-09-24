@@ -29,7 +29,7 @@ describe("DogSchema Component", () => {
     },
   };
 
-  test("should render JSON-LD script with Product schema", () => {
+  test("should render JSON-LD script with ItemPage schema", () => {
     const { container } = render(<DogSchema dog={mockDog} />);
 
     const script = container.querySelector(
@@ -39,8 +39,8 @@ describe("DogSchema Component", () => {
 
     const schemaData = JSON.parse(script?.textContent || "{}");
     expect(schemaData["@context"]).toBe("https://schema.org");
-    expect(schemaData["@type"]).toBe("Product");
-    expect(schemaData.additionalType).toBe("http://dbpedia.org/ontology/Dog");
+    expect(schemaData["@type"]).toBe("ItemPage");
+    expect(schemaData.about.additionalType).toBe("http://dbpedia.org/ontology/Dog");
     expect(schemaData.name).toBe("Buddy - Labrador Retriever");
   });
 
@@ -68,8 +68,8 @@ describe("DogSchema Component", () => {
     });
 
     // Check additionalProperty array
-    expect(Array.isArray(schemaData.additionalProperty)).toBe(true);
-    expect(schemaData.additionalProperty.length).toBeGreaterThan(0);
+    expect(Array.isArray(schemaData.about.additionalProperty)).toBe(true);
+    expect(schemaData.about.additionalProperty.length).toBeGreaterThan(0);
   });
 
   test("should handle minimal dog data gracefully", () => {
@@ -89,7 +89,7 @@ describe("DogSchema Component", () => {
     expect(script).toBeInTheDocument();
 
     const schemaData = JSON.parse(script?.textContent || "{}");
-    expect(schemaData["@type"]).toBe("Product");
+    expect(schemaData["@type"]).toBe("ItemPage");
     expect(schemaData.name).toBe("Luna");
     expect(schemaData.isBasedOn.name).toBe("City Shelter");
   });
