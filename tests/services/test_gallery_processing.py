@@ -223,7 +223,7 @@ class TestUploadImageWithSize:
 
 
 @pytest.mark.unit
-def test_a_failing_photo_keeps_the_stored_gallery_and_spares_other_dogs():
+def test_a_failing_photo_is_left_out_and_spares_other_dogs():
     second = "https://rescue.example/2.jpg"
     third = "https://rescue.example/3.jpg"
 
@@ -241,7 +241,7 @@ def test_a_failing_photo_keeps_the_stored_gallery_and_spares_other_dogs():
 
     assert other["images"] == [photo(third)]
 
-    assert "images" not in dog  # kept for a retry, never saved short
+    assert dog["images"] == [photo(HERO), photo(third)]  # saved without the failed photo
 
 
 @pytest.mark.unit
