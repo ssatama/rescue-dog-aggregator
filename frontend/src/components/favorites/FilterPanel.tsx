@@ -516,7 +516,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
                       : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300"
                   }`}
                 >
-                  {filteredDogs.length} of {dogs.length} dogs
+                  {filteredDogs.length} of {dogCountLabel(dogs.length)}
                 </div>
                 {hasActiveFilters && (
                   <div className="text-xs text-gray-500 dark:text-gray-400">

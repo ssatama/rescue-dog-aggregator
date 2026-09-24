@@ -197,7 +197,7 @@ function FavoritesPageContent(): React.JSX.Element {
       setFilteredDogs(filtered);
       // Only show toast if user actively changed filters
       if (isUserInitiated) {
-        showToast("success", `Filtered to ${filtered.length} dogs`);
+        showToast("success", `Filtered to ${dogCountLabel(filtered.length)}`);
       }
     },
     [showToast],
