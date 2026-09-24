@@ -49,6 +49,12 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // Serbia was stored as SR, which is Suriname's ISO code (#450).
+      {
+        source: '/dogs/country/sr',
+        destination: '/dogs/country/rs',
+        permanent: true,
+      },
       {
         source: '/en-:locale(AT|BE|BG|CH|CY|CZ|DE|DK|EE|ES|FI|FR|GB|GR|HR|HU|IE|IT|LT|LU|LV|MT|NL|NO|PL|PT|RO|SE|SI|SK)/:path*',
         destination: '/:path*',

@@ -166,6 +166,33 @@ class TestOrganizationSyncEnabledCascade:
 
         assert service.should_update_organization(db_org, config) is False
 
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [("country", "SR"), ("city", "Belgrade"), ("service_regions", ["SR", "MK"])],
+    )
+    def test_should_update_when_location_or_regions_change(self, field, value):
+        """A corrected country code must reach the database (#450)."""
+        service = OrganizationSyncService(logo_service=NullLogoUploadService())
+        config = _make_config(enabled=True)
+        fields = {
+            "id": 42,
+            "name": "Test Org",
+            "website_url": "https://example.com",
+            "description": "desc",
+            "social_media": {"website": "https://example.com"},
+            "ships_to": ["DE"],
+            "established_year": 2020,
+            "logo_url": None,
+            "country": "DE",
+            "city": "Berlin",
+            "service_regions": ["DE"],
+            "adoption_fees": {},
+            "active": True,
+        }
+        fields[field] = value
+
+        assert service.should_update_organization(OrganizationRecord(**fields), config) is True
+
     def test_sync_single_organization_flips_active_false_for_existing_row(self):
         """End-to-end: flipping config.enabled to False must UPDATE the row with active=False.
 

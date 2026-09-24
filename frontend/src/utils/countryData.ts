@@ -32,8 +32,8 @@ export const COUNTRIES: Record<string, CountryConfig> = {
     description:
       "Dogs rescued by Tierschutzverein Europa and other German organizations",
   },
-  SR: {
-    code: "SR",
+  RS: {
+    code: "RS",
     name: "Serbia",
     shortName: "Serbia",
     flag: "\u{1F1F7}\u{1F1F8}",

@@ -33,7 +33,7 @@ const mockInitialStats = {
   countries: [
     { code: "UK", count: 3000, organizations: 5 },
     { code: "DE", count: 800, organizations: 3 },
-    { code: "SR", count: 200, organizations: 2 },
+    { code: "RS", count: 200, organizations: 2 },
   ],
 };
 

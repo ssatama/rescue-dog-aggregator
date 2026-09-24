@@ -4,9 +4,10 @@ import os
 import sys
 
 # Add the project root directory to Python path BEFORE imports
+# Always first: run as a script, this file's own directory is sys.path[0], and its
+# management/services package would otherwise shadow the top-level services package.
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+sys.path.insert(0, project_root)
 
 from management.cli.config_cli import ConfigCLI  # noqa: E402
 from management.formatters.config_formatter import ConfigFormatter  # noqa: E402

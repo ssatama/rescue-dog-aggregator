@@ -4,7 +4,7 @@ import type { ApiDog } from "../types/apiDog";
 import type { Dog } from "../types/dog";
 import type { SwipeFilters } from "../hooks/useSwipeFilters";
 import { transformApiDogsToDogs } from "../utils/dogTransformer";
-import { getCountryFlag } from "../utils/countryUtils";
+import { getFlagEmoji } from "../utils/countryNames";
 import { stripNulls } from "../utils/api";
 import { SwipeResponseSchema } from "../schemas/animals";
 import { SwipeCountrySchema } from "../schemas/swipe";
@@ -120,7 +120,7 @@ export async function getAvailableCountries(): Promise<CountryOption[]> {
       (country) => ({
         value: country.code,
         label: country.name,
-        flag: getCountryFlag(country.code) || "\u{1F3F3}\u{FE0F}",
+        flag: getFlagEmoji(country.code) || "\u{1F3F3}\u{FE0F}",
         count: country.dogCount || 0,
       }),
     );

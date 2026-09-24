@@ -6,6 +6,7 @@ import { safeStorage } from "../../utils/safeStorage";
 import { get } from "../../utils/api";
 import type { CountryOption } from "../../services/serverSwipeService";
 import { reportError } from "../../utils/logger";
+import { getFlagEmoji } from "../../utils/countryNames";
 
 interface SwipeOnboardingProps {
   onComplete: (skipped: boolean, filters?: SwipeFilters) => void;
@@ -20,48 +21,6 @@ interface SizeOption {
 }
 
 // Country flags mapping
-const COUNTRY_FLAGS: Record<string, string> = {
-  UK: "🇬🇧",
-  GB: "🇬🇧",
-  US: "🇺🇸",
-  DE: "🇩🇪",
-  FR: "🇫🇷",
-  ES: "🇪🇸",
-  IT: "🇮🇹",
-  NL: "🇳🇱",
-  BE: "🇧🇪",
-  AT: "🇦🇹",
-  CH: "🇨🇭",
-  SE: "🇸🇪",
-  NO: "🇳🇴",
-  DK: "🇩🇰",
-  FI: "🇫🇮",
-  PL: "🇵🇱",
-  CZ: "🇨🇿",
-  HU: "🇭🇺",
-  RO: "🇷🇴",
-  BG: "🇧🇬",
-  GR: "🇬🇷",
-  PT: "🇵🇹",
-  IE: "🇮🇪",
-  LU: "🇱🇺",
-  MT: "🇲🇹",
-  CY: "🇨🇾",
-  EE: "🇪🇪",
-  LV: "🇱🇻",
-  LT: "🇱🇹",
-  SK: "🇸🇰",
-  SI: "🇸🇮",
-  HR: "🇭🇷",
-  BA: "🇧🇦",
-  RS: "🇷🇸",
-  ME: "🇲🇪",
-  MK: "🇲🇰",
-  AL: "🇦🇱",
-  TR: "🇹🇷",
-  SR: "🇸🇷",
-};
-
 const SIZES: SizeOption[] = [
   { value: "small", label: "Small", icon: "🐕" },
   { value: "medium", label: "Medium", icon: "🐕‍🦺" },
@@ -113,7 +72,7 @@ export default function SwipeOnboarding({
           (country: CountryResponse) => ({
             value: country.code,
             label: country.name,
-            flag: COUNTRY_FLAGS[country.code] || "\u{1F3F3}\u{FE0F}",
+            flag: getFlagEmoji(country.code) || "\u{1F3F3}\u{FE0F}",
             count: country.dog_count || country.dogCount || 0,
           }),
         );

@@ -16,7 +16,7 @@ const mockCountryStats = [
   { code: "UK", count: 1500 },
   { code: "DE", count: 800 },
   { code: "BG", count: 600 },
-  { code: "SR", count: 400 },
+  { code: "RS", count: 400 },
   { code: "BA", count: 200 },
 ];
 

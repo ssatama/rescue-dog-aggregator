@@ -19,7 +19,7 @@ import {
   getSortFilterOptions,
   getDefaultFilters,
 } from "@/utils/dogFilters";
-import { getCountryName } from "@/utils/countryHelpers";
+import { getCountryName } from "@/utils/countryNames";
 import { FILTER_DEFAULTS } from "@/constants/filters";
 import {
   trackFilterChange,

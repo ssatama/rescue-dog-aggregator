@@ -8,7 +8,7 @@ import {
 describe("countryData", () => {
   describe("COUNTRIES", () => {
     it("should contain all expected countries", () => {
-      const expectedCodes = ["UK", "DE", "SR", "BA", "BG", "IT", "TR", "CY"];
+      const expectedCodes = ["UK", "DE", "RS", "BA", "BG", "IT", "TR", "CY"];
       expectedCodes.forEach((code) => {
         expect(COUNTRIES[code]).toBeDefined();
       });

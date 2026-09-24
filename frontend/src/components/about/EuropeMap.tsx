@@ -22,7 +22,7 @@ const COUNTRY_CODE_TO_NAME: Record<string, string> = {
   BA: "Bosnia and Herzegovina",
   BG: "Bulgaria",
   IT: "Italy",
-  SR: "Serbia",
+  RS: "Serbia",
   TR: "Turkey",
   DE: "Germany",
   CY: "Cyprus",
