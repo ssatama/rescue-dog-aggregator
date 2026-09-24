@@ -106,6 +106,7 @@ const BreedDogsViewportWrapper: React.FC<BreedDogsViewportWrapperProps> = ({
   return (
     <MobileCatalogErrorBoundary>
       <PremiumMobileCatalog
+        listContext="breed-page"
         dogs={dogs}
         loading={loading}
         error={null}

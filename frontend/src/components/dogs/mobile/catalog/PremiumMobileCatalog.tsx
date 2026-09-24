@@ -1,45 +1,14 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useRef,
-} from "react";
-import Image from "next/image";
-import { isPlainLeftClick } from "@/utils/linkClick";
+import React, { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
-import {
-  Heart,
-  X,
-  MapPin,
-  Calendar,
-  ChevronDown,
-  ChevronLeft,
-  Filter,
-  Grid3X3,
-  Building2,
-  Dog as DogIcon,
-  Loader2,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useFavorites } from "@/hooks/useFavorites";
-import { cn } from "@/lib/utils";
-import { safeStorage } from "@/utils/safeStorage";
-import { getPersonalityTraitColor } from "@/utils/personalityColors";
-import {
-  formatBreed,
-  getPersonalityTraits,
-  getAgeCategory,
-  formatAge,
-} from "@/utils/dogHelpers";
-import { IMAGE_SIZES } from "@/constants/imageSizes";
+import { Loader2 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { type Dog } from "@/types/dog";
+import type { ListContext } from "@/types/dogComponents";
+import DogCard from "@/components/dogs/DogCard";
 import MobileFilterDrawer from "@/components/filters/MobileFilterDrawer";
 import { Button } from "@/components/ui/button";
-import { UI_CONSTANTS } from "@/constants/viewport";
 import DogDetailModalSkeleton from "@/components/ui/DogDetailModalSkeleton";
 
 // Dynamic imports for large components (code splitting)
@@ -72,120 +41,8 @@ interface PremiumMobileCatalogProps {
   loadingMore?: boolean;
   totalCount?: number;
   viewMode?: "grid" | "list";
+  listContext?: ListContext;
 }
-
-// Personality trait colors
-const traitColors = [
-  "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-700",
-  "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700",
-  "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700",
-  "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700",
-  "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700",
-  "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700",
-];
-
-// Helper to get dog image
-const getDogImage = (dog: Dog): string => {
-  if (dog.primary_image_url) return dog.primary_image_url;
-  if (dog.photos && dog.photos.length > 0) return dog.photos[0];
-  return "/placeholder_dog.svg";
-};
-
-// Dog Card Component
-const DogCard: React.FC<{
-  dog: Dog;
-  onToggleFavorite: (id: string) => void;
-  onClick: () => void;
-  index: number;
-  isFavorite: boolean;
-  priority?: boolean;
-}> = ({ dog, onToggleFavorite, onClick, index, isFavorite, priority = false }) => {
-  const imageUrl = getDogImage(dog);
-  const displayTraits = getPersonalityTraits(dog).slice(0, 2);
-  const extraTraitsCount = getPersonalityTraits(dog).length - 2;
-  const ageGroup = getAgeCategory(dog);
-  const formattedBreed = formatBreed(dog);
-
-  const shouldAnimate = !priority;
-
-  return (
-    <motion.div
-      initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
-      animate={shouldAnimate ? { opacity: 1, y: 0 } : undefined}
-      transition={shouldAnimate ? { delay: index * 0.05 } : undefined}
-      className="bg-white dark:bg-gray-800 relative rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow focus-within:ring-2 focus-within:ring-rose-500"
-      style={{ borderRadius: UI_CONSTANTS.BORDER_RADIUS }}
-    >
-      <div className="relative aspect-square">
-        <Image
-          src={imageUrl}
-          alt={dog.name}
-          className="w-full h-full object-cover"
-          priority={priority}
-          loading={priority ? undefined : "lazy"}
-          fill
-          sizes={IMAGE_SIZES.CATALOG_CARD}
-        />
-        <button
-          className="absolute top-2 right-2 z-10 w-8 h-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(String(dog.id));
-          }}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-        >
-          <Heart
-            className={cn(
-              "w-4 h-4 transition-colors",
-              isFavorite
-                ? "fill-red-500 text-red-500"
-                : "text-gray-600 dark:text-gray-400",
-            )}
-          />
-        </button>
-      </div>
-      <div className="p-3">
-        <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-          {/* A real link for crawlers and new-tab clicks; its ::after covers the card.
-              A plain tap still opens the modal (#438). */}
-          <a
-            href={`/dogs/${dog.slug || `unknown-dog-${dog.id}`}`}
-            className="stretched-link after:absolute after:inset-0 after:z-[1] after:content-[''] focus:outline-none"
-            onClick={(e) => {
-              if (!isPlainLeftClick(e)) return;
-              e.preventDefault();
-              onClick();
-            }}
-          >
-            {dog.name}
-            {ageGroup !== "Unknown" && `, ${ageGroup}`}
-          </a>
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-          {formattedBreed}
-        </p>
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {displayTraits.map((trait, i) => (
-            <span
-              key={i}
-              className={cn(
-                "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize",
-                traitColors[i % traitColors.length],
-              )}
-            >
-              {trait}
-            </span>
-          ))}
-          {extraTraitsCount > 0 && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-              +{extraTraitsCount}
-            </span>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
 
 // Main component
 const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
@@ -201,12 +58,9 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   loadingMore = false,
   totalCount = 0,
   viewMode = "grid",
+  listContext = "search",
 }) => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { favorites, toggleFavorite } = useFavorites();
-  const [isHydrated, setIsHydrated] = useState(false);
 
   // Initialize selected dog from hash on mount
   const [selectedDog, setSelectedDog] = useState<Dog | null>(() => {
@@ -221,12 +75,6 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   });
 
   const [isModalOpen, setIsModalOpen] = useState(!!selectedDog);
-
-  // Track hydration for client-side features
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydration flag pattern for SSR/client mismatch prevention
-    setIsHydrated(true);
-  }, []);
 
   // Listen for hash changes (back/forward navigation)
   useEffect(() => {
@@ -275,14 +123,6 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
       setIsModalOpen(true);
     }
   }, [dogs]);
-
-  const handleToggleFavorite = async (dogId: string) => {
-    const numericId = parseInt(dogId, 10);
-    if (!isNaN(numericId)) {
-      const dog = dogs.find((d) => d.id === dogId);
-      await toggleFavorite(numericId, dog?.name);
-    }
-  };
 
   const handleDogClick = (dog: Dog) => {
     setSelectedDog(dog);
@@ -392,14 +232,10 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                   <DogCard
                     key={dog.id}
                     dog={dog}
-                    index={index}
                     priority={index < 4}
-                    isFavorite={
-                      isHydrated &&
-                      favorites.includes(parseInt(String(dog.id), 10))
-                    }
-                    onToggleFavorite={handleToggleFavorite}
-                    onClick={() => handleDogClick(dog)}
+                    position={index}
+                    listContext={listContext}
+                    onOpen={handleDogClick}
                   />
                 ))}
               </div>

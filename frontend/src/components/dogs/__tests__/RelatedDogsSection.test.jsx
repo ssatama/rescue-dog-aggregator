@@ -7,9 +7,9 @@ import { getRelatedDogs } from "../../../services/relatedDogsService";
 // Mock the relatedDogsService
 jest.mock("../../../services/relatedDogsService");
 
-// Mock DogCardOptimized component
-jest.mock("../DogCardOptimized", () => {
-  return function MockDogCardOptimized({ dog }) {
+// Mock DogCard component
+jest.mock("../DogCard", () => {
+  return function MockDogCard({ dog }) {
     return (
       <div data-testid={`dog-card-${dog.id}`}>
         <span>{dog.name}</span>

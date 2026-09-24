@@ -384,40 +384,23 @@ describe("PremiumMobileCatalog", () => {
     });
   });
 
-  describe("Personality traits display", () => {
-    it("displays personality traits from dog_profiler_data", () => {
+  describe("Dog cards", () => {
+    it("leaves personality tags off the card", () => {
       const { container } = render(
         <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
       );
 
-      expect(container.textContent).toContain("Playful");
-      expect(container.textContent).toContain("Friendly");
+      expect(container.textContent).not.toContain("Playful");
+      expect(container.textContent).not.toContain("Friendly");
     });
 
-    it("limits personality traits display for mobile", () => {
-      const dogWithManyTraits = {
-        ...mockDog,
-        personality_traits: [
-          "Playful",
-          "Friendly",
-          "Active",
-          "Cuddly",
-          "Smart",
-          "Energetic",
-        ],
-        dog_profiler_data: {
-          personality_traits: ["Playful", "Friendly", "Active"], // Helper limits to 3, component shows 2
-        },
-      };
+    it("renders each dog with the shared DogCard", () => {
+      render(<PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />);
 
-      const { container } = render(
-        <PremiumMobileCatalog dogs={[dogWithManyTraits]} />,
+      expect(screen.getByTestId(`dog-card-${mockDog.id}`)).toHaveAttribute(
+        "data-size",
+        "grid",
       );
-
-      // Should show first 2 traits and a +N indicator
-      expect(container.textContent).toContain("Playful");
-      expect(container.textContent).toContain("Friendly");
-      expect(container.textContent).toContain("+1"); // Only 1 extra trait (Active) since helper limits to 3
     });
   });
 

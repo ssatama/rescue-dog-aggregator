@@ -21,12 +21,12 @@ jest.mock("next/link", () => {
   };
 });
 
-// Mock DogCardOptimized component
+// Mock DogCard component
 interface MockDogCardProps {
   dog: { id: number; name: string; breed: string };
 }
 
-jest.mock("../../dogs/DogCardOptimized", () => {
+jest.mock("../../dogs/DogCard", () => {
   return function MockDogCard({ dog }: MockDogCardProps) {
     return <div data-testid={`dog-card-${dog.id}`}>{dog.name}</div>;
   };

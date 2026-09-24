@@ -70,8 +70,8 @@ jest.mock("../../../components/seo", () => ({
 }));
 
 // Mock other components
-jest.mock("../../../components/dogs/DogCardOptimized", () => {
-  return function DogCardOptimized({ dog }) {
+jest.mock("../../../components/dogs/DogCard", () => {
+  return function DogCard({ dog }) {
     return <div data-testid="dog-card">{dog.name}</div>;
   };
 });

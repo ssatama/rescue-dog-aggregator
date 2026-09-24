@@ -43,8 +43,8 @@ jest.mock("../../../contexts/ToastContext", () => ({
   }),
 }));
 
-jest.mock("../../../components/dogs/DogCardOptimized", () => {
-  return function DogCardOptimized({ dog }: { dog: Dog }) {
+jest.mock("../../../components/dogs/DogCard", () => {
+  return function DogCard({ dog }: { dog: Dog }) {
     return <div data-testid="dog-card">{dog.name}</div>;
   };
 });

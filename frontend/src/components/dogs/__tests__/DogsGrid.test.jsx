@@ -2,9 +2,9 @@ import React from "react";
 import { render, screen } from "../../../test-utils";
 import DogsGrid from "../DogsGrid";
 
-// Mock DogCardOptimized component
-jest.mock("../DogCardOptimized", () => {
-  return function MockDogCardOptimized({ dog }) {
+// Mock DogCard component
+jest.mock("../DogCard", () => {
+  return function MockDogCard({ dog }) {
     return (
       <div data-testid={`dog-card-${dog.id}`}>Mock DogCard: {dog.name}</div>
     );

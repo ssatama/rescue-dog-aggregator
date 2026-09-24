@@ -2,7 +2,7 @@ import React from "react";
 import { render } from "../../test-utils";
 import "@testing-library/jest-dom";
 import { axe, toHaveNoViolations } from "jest-axe";
-import DogCard from "../../components/dogs/DogCardOptimized";
+import DogCard from "../../components/dogs/DogCard";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 
@@ -135,37 +135,19 @@ describe("Session 7: Color Contrast & Visual Accessibility", () => {
   });
 
   describe("Color Blind Accessibility", () => {
-    test("status indicators use more than color", () => {
-      const { getByText } = render(
-        <DogCard dog={{ ...mockDog, status: "adopted" }} />,
+    test("lives-with facts use a symbol and words, not just colour", () => {
+      const { getByRole } = render(
+        <DogCard
+          dog={{
+            ...mockDog,
+            dog_profiler_data: { good_with_dogs: "yes", good_with_cats: "no" },
+          }}
+        />,
       );
 
-      // Status should have text label, not just color
-      const statusBadge = getByText("Adopted");
-      expect(statusBadge).toBeInTheDocument();
-    });
-
-    test("NEW badge uses shape and position in addition to color", () => {
-      const { getByTestId } = render(<DogCard dog={mockDog} />);
-
-      // NEW badge should be positioned and have text
-      const newBadge = getByTestId("new-badge");
-      expect(newBadge).toHaveTextContent("NEW");
-      expect(newBadge).toHaveClass("absolute", "top-2", "left-2");
-    });
-
-    test("gender icons use symbols not just color", () => {
-      const { container } = render(<DogCard dog={mockDog} />);
-
-      // Gender should be displayed with icon when available
-      // In this test, we verify the age-gender-row exists
-      const ageGenderRow = container.querySelector(
-        '[data-testid="age-gender-row"]',
-      );
-      expect(ageGenderRow).toBeInTheDocument();
-
-      // Gender uses emoji icons (♂️/♀️) which are accessible symbols
-      expect(true).toBe(true); // Gender icons in the app use emoji symbols
+      const list = getByRole("list", { name: "Lives with" });
+      expect(list).toHaveTextContent("✓ Dogs: yes");
+      expect(list).toHaveTextContent("✗ Cats: no");
     });
   });
 
@@ -180,15 +162,15 @@ describe("Session 7: Color Contrast & Visual Accessibility", () => {
     });
 
     test("font sizes create clear hierarchy", () => {
-      const { getByTestId } = render(<DogCard dog={mockDog} />);
+      const { getByRole, container } = render(<DogCard dog={mockDog} />);
 
-      // Name should be largest
-      const dogName = getByTestId("dog-name");
-      expect(dogName).toHaveClass("text-card-title");
+      // Name is the largest text, in the display face
+      expect(getByRole("heading", { level: 3 })).toHaveClass("text-lg", "font-display");
 
-      // Other text should be smaller
-      const breed = getByTestId("dog-breed");
-      expect(breed).toHaveClass("text-sm");
+      // The facts under it are smaller
+      container.querySelectorAll("article p").forEach((p) => {
+        expect(p).toHaveClass("text-sm");
+      });
     });
   });
 

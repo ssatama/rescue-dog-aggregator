@@ -9,20 +9,7 @@ import { type Dog } from "@/types/dog";
 import DogDetailModalSkeleton from "@/components/ui/DogDetailModalSkeleton";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 
-// Type declaration for the JavaScript component
-interface DogCardOptimizedProps {
-  dog: Dog;
-  onClick: () => void;
-  priority?: boolean;
-  isVirtualized?: boolean;
-  position?: number;
-}
-
-// Import JavaScript component with proper typing
-const DogCardOptimized = dynamic<DogCardOptimizedProps>(
-  () => import("./DogCardOptimized"),
-  { ssr: true },
-);
+const DogCard = dynamic(() => import("./DogCard"), { ssr: true });
 
 const DogCardErrorBoundary = dynamic(
   () => import("../error/DogCardErrorBoundary"),
@@ -67,7 +54,7 @@ const DogBottomNav = dynamic(
 
 // Constants for virtualization
 const DESKTOP_COLUMNS = 4;
-const ROW_HEIGHT = 620; // Card (~580px) + gap-4 (16px) + margin
+const ROW_HEIGHT = 360; // Card (~330px) + gap-4 (16px); rows are measured after render
 const OVERSCAN = 2; // Number of extra rows to render above/below viewport
 
 interface VirtualizedDesktopGridProps {
@@ -128,12 +115,11 @@ function VirtualizedDesktopGrid({
             >
               {rowDogs.map((dog, i) => (
                 <DogCardErrorBoundary key={dog.id}>
-                  <DogCardOptimized
+                  <DogCard
                     dog={dog}
-                    onClick={() => onDogClick(dog)}
                     priority={startIndex + i < 8}
-                    isVirtualized={true}
                     position={startIndex + i}
+                    listContext="search"
                   />
                 </DogCardErrorBoundary>
               ))}
@@ -163,7 +149,7 @@ interface DogsPageViewportWrapperProps {
 
 /**
  * Viewport-aware wrapper component that routes to appropriate UI
- * Desktop (1024px+): VirtualizedDesktopGrid with DogCardOptimized
+ * Desktop (1024px+): VirtualizedDesktopGrid with DogCard
  * Mobile/Tablet (<1024px): PremiumMobileCatalog
  */
 const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
@@ -207,10 +193,11 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {dogs.map((dog, index) => (
             <DogCardErrorBoundary key={dog.id}>
-              <DogCardOptimized
+              <DogCard
                 dog={dog}
-                onClick={() => handleDogClick(dog)}
                 priority={index < 8}
+                position={index}
+                listContext="search"
               />
             </DogCardErrorBoundary>
           ))}

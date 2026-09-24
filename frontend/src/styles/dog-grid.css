@@ -74,7 +74,7 @@
 
 /* Desktop (1024px+) - NO CHANGES, existing styles apply */
 @media (min-width: 1024px) {
-  /* Desktop continues to use existing DogCardOptimized styles */
+  /* Desktop continues to use existing DogCard styles */
   /* This media query is here as a reminder that desktop is unchanged */
   .dog-grid {
     display: none; /* Grid component should not be used on desktop */

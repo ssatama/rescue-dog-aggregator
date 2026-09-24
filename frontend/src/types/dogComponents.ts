@@ -8,17 +8,6 @@ export type { DogStatus };
 export type ListContext = "home" | "search" | "org-page" | "favorites" | "breed-page";
 export type LoadingType = "initial" | "filter" | "pagination";
 
-export interface DogCardOptimizedProps {
-  dog: Dog;
-  priority?: boolean;
-  compact?: boolean;
-  embedded?: boolean;
-  isVirtualized?: boolean;
-  position?: number;
-  listContext?: ListContext;
-  disableContainment?: boolean;
-}
-
 export interface DogCardSkeletonOptimizedProps {
   compact?: boolean;
   priority?: boolean;

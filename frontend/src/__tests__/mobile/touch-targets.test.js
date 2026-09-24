@@ -1,6 +1,6 @@
 import { render, screen } from "../../test-utils";
 import HeroSection from "../../components/home/HeroSection";
-import DogCard from "../../components/dogs/DogCardOptimized";
+import DogCard from "../../components/dogs/DogCard";
 
 // Mock services and utilities
 jest.mock("../../utils/imageUtils", () => ({
@@ -197,15 +197,20 @@ describe("Mobile Touch Targets Validation", () => {
       expect(validateTouchTarget(dogCard)).toBe(true);
     });
 
-    test("Meet [Name] button should be ≥48px in all dimensions", () => {
+    test("favorite heart has a 44px tap target", () => {
+      const { container } = render(<DogCard dog={mockDog} />);
+
+      // getComputedStyle is mocked in this file, so query by attribute not role
+      const heart = container.querySelector('button[aria-label="Add Buddy to favorites"]');
+      expect(heart).toHaveClass("h-11", "w-11");
+    });
+
+    test("the name link's tap area covers the whole card", () => {
       render(<DogCard dog={mockDog} />);
 
-      const ctaButton = screen.getByText("Meet Buddy →");
-      expect(validateTouchTarget(ctaButton)).toBe(true);
-
-      const rect = ctaButton.getBoundingClientRect();
-      expect(rect.width).toBeGreaterThanOrEqual(48);
-      expect(rect.height).toBeGreaterThanOrEqual(48);
+      const nameLink = screen.getByText(mockDog.name).closest("a");
+      expect(nameLink.className).toMatch(/after:absolute/);
+      expect(nameLink.className).toMatch(/after:inset-0/);
     });
 
     test("dog name link should be tappable", () => {
@@ -249,24 +254,14 @@ describe("Mobile Touch Targets Validation", () => {
       expect(styles.border).not.toBe("none");
     });
 
-    test("touch targets should be visible in dark mode", async () => {
-      // Mock dark mode preference
-      Object.defineProperty(window, "matchMedia", {
-        writable: true,
-        value: jest.fn().mockImplementation((query) => ({
-          matches: query === "(prefers-color-scheme: dark)",
-          media: query,
-        })),
-      });
+    test("favorite heart keeps a solid disc in dark mode", () => {
+      const { container } = render(<DogCard dog={mockDog} />);
 
-      render(<DogCard dog={mockDog} />);
-
-      const ctaButton = screen.getByText("Meet Buddy →");
-      const styles = window.getComputedStyle(ctaButton);
-
-      // Ensure button has sufficient contrast in dark mode
-      expect(styles.backgroundColor).not.toBe("transparent");
-      expect(styles.color).not.toBe("inherit");
+      const disc = container.querySelector(
+        'button[aria-label="Add Buddy to favorites"] span',
+      );
+      expect(disc.className).toMatch(/dark:bg-gray-900\/90/);
+      expect(disc.className).toMatch(/dark:text-gray-50/);
     });
   });
 });
