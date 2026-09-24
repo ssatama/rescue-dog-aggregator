@@ -127,6 +127,18 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
 
         assert result["external_id"] == "arb-ksenon-dog"
 
+    @pytest.mark.parametrize("dob", ["January 2022", "Januar 2022", "Jan 2022"])
+    def test_age_from_english_or_german_month(self, scraper, dob):
+        """Some pages give the date of birth in German (#453)."""
+        assert scraper._calculate_age_text(dob) == scraper._calculate_age_text("January 2022")
+        assert scraper._calculate_age_text(dob) is not None
+
+    def test_age_from_misspelt_month(self, scraper):
+        assert scraper._calculate_age_text("Augist 2024") == scraper._calculate_age_text("August 2024")
+
+    def test_unknown_month_gives_no_age(self, scraper):
+        assert scraper._calculate_age_text("Sometime 2022") is None
+
     def test_weight_to_size_standardization(self, scraper):
         assert scraper._extract_size_from_weight("10 kg") == "Small"
         assert scraper._extract_size_from_weight("25 kg") == "Medium"
