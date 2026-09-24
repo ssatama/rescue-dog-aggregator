@@ -57,16 +57,21 @@ describe("PlatformCapabilities", () => {
     });
 
     test("should render Advanced Search card with correct content", () => {
-      render(<PlatformCapabilities />);
+      render(<PlatformCapabilities organizationCount={11} countryCount={7} />);
 
       expect(screen.getByText("Advanced Search")).toBeInTheDocument();
       expect(
         screen.getByText(/Filter dogs by breed, age, size/),
       ).toBeInTheDocument();
-      expect(
-        screen.getByText("50+ breeds · 13 rescues · 9 countries"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("11 rescues · 7 countries")).toBeInTheDocument();
       expect(screen.getByText("Start Searching →")).toBeInTheDocument();
+    });
+
+    test("badge falls back to count-free copy without statistics (#452)", () => {
+      render(<PlatformCapabilities />);
+
+      expect(screen.getByText("Rescues across Europe")).toBeInTheDocument();
+      expect(screen.queryByText(/13 rescues|9 countries/)).not.toBeInTheDocument();
     });
 
     test("should render Match by Personality card with correct content", () => {

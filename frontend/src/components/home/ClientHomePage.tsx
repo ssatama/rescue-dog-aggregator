@@ -54,7 +54,10 @@ export default function ClientHomePage({
       <div className="hidden sm:block">
         {/* Platform Capabilities Section - Three Ways to Find Your Dog */}
         <ErrorBoundary fallbackMessage="Unable to load platform capabilities section. Please refresh the page.">
-          <PlatformCapabilities />
+          <PlatformCapabilities
+            organizationCount={initialStatistics?.total_organizations}
+            countryCount={initialStatistics?.countries?.length}
+          />
         </ErrorBoundary>
 
         {/* Featured Dogs Section - 6 dogs (moved up for better UX) */}

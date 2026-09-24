@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Swipe to Find Your Perfect Rescue Dog",
     description:
-      "Discover rescue dogs one swipe at a time. Find your perfect match from thousands of dogs looking for homes.",
+      "Discover rescue dogs one swipe at a time. Find your perfect match from over a thousand dogs looking for homes.",
     images: ["/swipe-og-image.png"],
   },
 };
