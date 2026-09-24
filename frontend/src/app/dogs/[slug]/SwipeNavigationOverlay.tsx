@@ -70,9 +70,11 @@ export default function SwipeNavigationOverlay({
 
   return (
     <>
+      {/* Above the gallery's full-screen button, or it would swallow the
+          swipe. Touch only, so it steps aside where a mouse clicks the photo. */}
       {swipeable && (
         <div
-          className="absolute inset-0 z-[1]"
+          className="absolute inset-0 z-[2] lg:hidden"
           {...handlers}
           aria-hidden="true"
         />
