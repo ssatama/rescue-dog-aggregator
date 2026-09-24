@@ -120,7 +120,7 @@ export default function DogDetailClient({
           if (data?.id) {
             trackDogViewed(data as Dog, "detail_page");
             // One photo per dog until the gallery (#489) reports real indexes
-            trackGalleryPhotoViewed(data.id, 0, 1);
+            if (data.primary_image_url) trackGalleryPhotoViewed(data.id, 0, 1);
           }
         }
       } catch (err: unknown) {
@@ -199,7 +199,9 @@ export default function DogDetailClient({
         );
       }
       trackDogViewed(initialDog, "detail_page");
-      trackGalleryPhotoViewed(initialDog.id, 0, 1);
+      if (initialDog.primary_image_url) {
+        trackGalleryPhotoViewed(initialDog.id, 0, 1);
+      }
       return;
     }
 
