@@ -103,6 +103,8 @@ breeds:
   size: Small
   aliases:
   - bodeguero andaluz espanol
+  - ratonero
+  - ratonero bodeguero andaluz
 - canonical: Boerboel
   group: Guardian
   size: XLarge
@@ -280,15 +282,12 @@ breeds:
   size: Small
   aliases:
   - französische bulldogge
-- canonical: Galgo
-  group: Hound
-  size: Large
-  aliases: []
 - canonical: Galgo Español
   group: Hound
   size: Large
   aliases:
   - galga
+  - galgo
   - galgo espagnol
   - galgo espaniol
 - canonical: German Hunting Terrier
@@ -328,6 +327,7 @@ breeds:
   size: Large
   aliases:
   - golden
+  - goldenretriever
   - retriever (golden)
 - canonical: Grand Basset Griffon Vendeen
   group: Hound
@@ -522,11 +522,6 @@ breeds:
   group: Toy
   size: Small
   aliases: []
-- canonical: Ratonero Bodeguero Andaluz
-  group: Terrier
-  size: Small
-  aliases:
-  - ratonero
 - canonical: Rhodesian Ridgeback
   group: Hound
   size: Large

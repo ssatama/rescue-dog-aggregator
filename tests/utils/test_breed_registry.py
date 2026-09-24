@@ -45,6 +45,12 @@ class TestPurebredResolution:
             ("staffie", "Staffordshire Bull Terrier"),
             ("SBT", "Staffordshire Bull Terrier"),
             ("amstaff", "American Staffordshire Terrier"),
+            # One breed, one page (#455)
+            ("Galgo", "Galgo Español"),
+            ("Galgo Campero", "Galgo Español"),
+            ("Ratonero Bodeguero Andaluz", "Bodeguero Andaluz"),
+            ("Ratonero", "Bodeguero Andaluz"),
+            ("Goldenretriever", "Golden Retriever"),
         ],
     )
     def test_purebred_resolves_to_canonical(self, raw, canonical):
