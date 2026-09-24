@@ -108,7 +108,7 @@ const FAQ_SECTIONS: FAQSectionData[] = [
       {
         question: "Which countries do your rescue organizations cover?",
         answer:
-          "We include rescues from across Europe: Romania, Spain, Greece, Bulgaria, Montenegro, Malta, Turkey, Germany, Bosnia, Italy, and the UK. We've selected organizations that maintain high standards for health screening and post-adoption support, covering the diverse landscape of European rescue dogs.",
+          "We include rescues from across Europe and the UK. The rescues we currently list, and the countries their dogs are in, are on our Organizations page and under Browse by country. We've selected organizations that maintain high standards for health screening and post-adoption support, covering the diverse landscape of European rescue dogs.",
       },
     ],
   },

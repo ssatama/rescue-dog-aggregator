@@ -5,7 +5,18 @@ import AdvancedSearchPreview from "./previews/AdvancedSearchPreview";
 import PersonalityBarsPreview from "./previews/PersonalityBarsPreview";
 import SwipePreview from "./previews/SwipePreview";
 
-export default function PlatformCapabilities() {
+interface PlatformCapabilitiesProps {
+  organizationCount?: number;
+  countryCount?: number;
+}
+
+export default function PlatformCapabilities({ organizationCount = 0, countryCount = 0 }: PlatformCapabilitiesProps) {
+  // Same live statistics as the rest of the homepage, so the badge can't go stale (#452)
+  const searchBadge =
+    organizationCount > 0 && countryCount > 0
+      ? `${organizationCount} rescues · ${countryCount} countries`
+      : "Rescues across Europe";
+
   return (
     <section
       className="bg-[#FFF8F0] dark:bg-gray-900 py-32"
@@ -31,7 +42,7 @@ export default function PlatformCapabilities() {
             visual={<AdvancedSearchPreview />}
             headline="Advanced Search"
             description="Filter dogs by breed, age, size, gender, and location to find your perfect match"
-            badge="50+ breeds · 13 rescues · 9 countries"
+            badge={searchBadge}
             ctaText="Start Searching →"
             ctaHref="/dogs"
             accentColor="blue"
