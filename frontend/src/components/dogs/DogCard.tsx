@@ -262,8 +262,11 @@ function DogCard({
       <div className={cn("min-w-0", compact ? "flex-1 py-1 pr-1" : "px-3 pb-3 pt-2.5")}>
         <h3 className="truncate font-display text-lg font-bold leading-tight text-ink">
           {/* The link's ::after covers the whole card, so the card is one tap target */}
+          {/* A card that opens a modal (mobile) almost never navigates, so it must
+              not prefetch: that would render a dog page per card scrolled past */}
           <Link
             href={href}
+            prefetch={onOpen ? false : undefined}
             onClick={handleClick}
             className="after:absolute after:inset-0 after:z-[1] after:content-[''] focus:outline-none"
           >

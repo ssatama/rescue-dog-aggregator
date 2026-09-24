@@ -15,6 +15,19 @@ jest.mock("@/hooks/useFavorites", () => ({
 }));
 
 jest.mock("@/lib/analytics", () => ({ trackDogCardClicked: jest.fn() }));
+
+const mockLinkPrefetch = jest.fn();
+jest.mock("next/link", () => {
+  const Link = ({
+    prefetch,
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { prefetch?: boolean }) => {
+    mockLinkPrefetch(prefetch);
+    return <a {...props}>{children}</a>;
+  };
+  return { __esModule: true, default: Link };
+});
 jest.mock("@/lib/monitoring/breadcrumbs", () => ({
   trackDogCardClick: jest.fn(),
   trackFavoriteToggle: jest.fn(),
@@ -205,6 +218,14 @@ describe("DogCard", () => {
 
       expect(onOpen).toHaveBeenCalledWith(fullDog);
       expect(plainClick).toBe(false); // default prevented
+    });
+
+    it("does not prefetch the dog page when a tap opens a modal", () => {
+      const { rerender } = render(<DogCard dog={fullDog} onOpen={jest.fn()} />);
+      expect(mockLinkPrefetch).toHaveBeenLastCalledWith(false);
+
+      rerender(<DogCard dog={fullDog} />);
+      expect(mockLinkPrefetch).toHaveBeenLastCalledWith(undefined);
     });
 
     it("lets a new-tab click follow the link", () => {
