@@ -90,15 +90,31 @@ export default function PrivacyPage(): React.JSX.Element {
                   >
                     Vercel Analytics
                   </Link>{" "}
-                  to understand how people use the site.
+                  and{" "}
+                  <Link
+                    href="https://posthog.com/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-orange-600 dark:text-orange-400 hover:underline"
+                  >
+                    PostHog
+                  </Link>{" "}
+                  (data stored in the EU, in Frankfurt) to understand how people
+                  use the site.
                 </p>
                 <ul className="text-sm text-gray-500 dark:text-gray-500 space-y-1 mt-3">
                   <li>• Page views & timestamps</li>
+                  <li>• Clicks, such as which dogs you open</li>
+                  <li>• Anonymous session recordings, with form inputs masked</li>
                   <li>• Device type (mobile/desktop/tablet)</li>
                   <li>• Country/city (aggregate)</li>
                   <li>• Browser & OS</li>
                   <li>• Referrer source</li>
                 </ul>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-3">
+                  Nothing is stored on your device, so each visit starts
+                  fresh and is never linked to you or to earlier visits.
+                </p>
                 <p className="text-sm font-medium text-green-600 dark:text-green-400 mt-3">
                   No cookies • No personal identification • No cross-site
                   tracking

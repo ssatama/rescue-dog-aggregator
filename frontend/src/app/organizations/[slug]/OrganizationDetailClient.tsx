@@ -16,6 +16,7 @@ import {
 } from "../../../services/organizationsService";
 import { reportError } from "../../../utils/logger";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
+import { trackOrganizationViewed } from "@/lib/analytics";
 import OrganizationDogsViewportWrapper from "../../../components/organizations/OrganizationDogsViewportWrapper";
 import DogsGrid from "../../../components/dogs/DogsGrid";
 import type { OrganizationDetailClientProps } from "@/types/pageComponents";
@@ -234,7 +235,9 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
 
           // Track organization page view
           if (orgData?.slug) {
-            trackOrgPageView(orgData.slug, (orgData as OrganizationWithDetails).total_dogs || 0);
+            const dogCount = (orgData as OrganizationWithDetails).total_dogs || 0;
+            trackOrgPageView(orgData.slug, dogCount);
+            trackOrganizationViewed(orgData.slug, dogCount);
           }
         }
 

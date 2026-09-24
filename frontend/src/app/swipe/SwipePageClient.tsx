@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import SwipeErrorBoundary from "../../components/swipe/SwipeErrorBoundary";
 import { useSwipeDevice } from "../../hooks/useSwipeDevice";
 import { swipeMetrics } from "../../utils/swipeMetrics";
+import { trackDogSwiped } from "@/lib/analytics";
 import { get } from "../../utils/api";
 import * as Sentry from "@sentry/nextjs";
 import { type Dog } from "../../types/dog";
@@ -116,6 +117,7 @@ export default function SwipePageClient({
 
   const handleSwipe = (direction: "left" | "right", dog: Dog) => {
     swipeMetrics.trackSwipe(direction, dog.id.toString());
+    trackDogSwiped(direction, dog);
     setTotalSwiped((prev) => {
       const newTotal = prev + 1;
 

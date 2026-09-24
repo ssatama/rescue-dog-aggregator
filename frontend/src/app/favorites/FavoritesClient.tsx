@@ -14,6 +14,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import ShareButton from "../../components/ui/ShareButton";
 import FavoritesInsights from "../../components/favorites/FavoritesInsights";
 import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
+import { trackFavoritesViewed } from "@/lib/analytics";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import type { Dog } from "../../types/dog";
 import { getAnimalsByIds } from "../../services/animalsService";
@@ -117,6 +118,7 @@ function FavoritesPageContent(): React.JSX.Element {
   useEffect(() => {
     try {
       trackFavoritesPageView(favorites.length);
+      trackFavoritesViewed(favorites.length);
     } catch (trackError) {
       reportError(trackError, { context: "trackFavoritesPageView" });
     }

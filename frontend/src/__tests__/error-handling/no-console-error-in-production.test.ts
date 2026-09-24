@@ -14,6 +14,9 @@ const ALLOWED_FILES = new Set([
   "utils/imageUtils.ts",
   // Network utils - non-prod preload warnings
   "utils/networkUtils.ts",
+  // PostHog opt-out - the developer sets ?posthog_optout=1 on production, where
+  // logger.warn is silent, so a failed write must still reach the console
+  "lib/posthogOptOut.ts",
   // Error boundaries with Sentry.captureException - console.error is dev-only supplementary logging
   "components/swipe/SwipeErrorBoundary.tsx",
   "components/error/MobileCatalogErrorBoundary.tsx",
