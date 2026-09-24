@@ -202,7 +202,7 @@ class TestUploadImageWithSize:
 
 
 @pytest.mark.unit
-def test_one_failing_photo_does_not_cost_the_rest_of_the_batch():
+def test_a_failing_photo_keeps_the_stored_gallery_and_spares_other_dogs():
     second = "https://rescue.example/2.jpg"
     third = "https://rescue.example/3.jpg"
 
@@ -214,10 +214,13 @@ def test_one_failing_photo_does_not_cost_the_rest_of_the_batch():
     r2 = Mock()
     r2.upload_image_with_size.side_effect = upload
     dog = {"name": "Rex", "primary_image_url": HERO, "image_urls": [HERO, second, third]}
+    other = {"name": "Max", "primary_image_url": third}
 
-    ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {})
+    ImageProcessingService(r2_service=r2).batch_process_galleries([dog, other], {})
 
-    assert dog["images"] == [photo(HERO), photo(third)]
+    assert other["images"] == [photo(third)]
+
+    assert "images" not in dog  # kept for a retry, never saved short
 
 
 @pytest.mark.unit

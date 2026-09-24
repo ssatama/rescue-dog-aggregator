@@ -135,10 +135,10 @@ class ImageProcessingService:
             sources = _gallery_sources(animal)
             if not sources:
                 continue
-            # A hero that failed this run would put another photo first: keep the
-            # stored gallery until it can be fetched. Other failed photos are left
-            # out and retried on the next run.
-            if uploaded.get(sources[0], True) is None:
+            # Save only a complete gallery. A skip-existing scrape skips a dog once it
+            # has one, so a gallery saved with a photo missing would stay short;
+            # instead the stored gallery is kept and the dog is retried next run.
+            if any(uploaded.get(source, True) is None for source in sources[: MAX_GALLERY_PHOTOS * 2]):
                 continue
             images = build_gallery(sources, photos)
             if images is not None:
