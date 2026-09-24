@@ -113,7 +113,7 @@ const DogCard: React.FC<{
       initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
       animate={shouldAnimate ? { opacity: 1, y: 0 } : undefined}
       transition={shouldAnimate ? { delay: index * 0.05 } : undefined}
-      className="bg-white dark:bg-gray-800 relative rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow"
+      className="bg-white dark:bg-gray-800 relative rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow focus-within:ring-2 focus-within:ring-rose-500"
       style={{ borderRadius: UI_CONSTANTS.BORDER_RADIUS }}
     >
       <div className="relative aspect-square">

@@ -2283,7 +2283,7 @@
      transform makes every element a containing block and stacking context, which
      shrinks the link's ::after to its parent and traps the z-index of the
      controls layered above it (#438). */
-  & *:not(:where(:has(.stretched-link), :has(.stretched-link) *)) {
+  &:not(:has(.stretched-link)) * {
     transform: translateZ(0);
     backface-visibility: hidden;
   }
