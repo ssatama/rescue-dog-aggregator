@@ -3,6 +3,17 @@ import type { DogProfilerData } from "./dogProfiler";
 export type DogStatus = "available" | "unknown" | "adopted" | "reserved";
 
 /**
+ * One photo in a dog's gallery (#488). Width and height are missing for a hero
+ * that hasn't been re-scraped since galleries were added (the API sends null,
+ * which stripNulls removes).
+ */
+export interface DogImage {
+  url: string;
+  width?: number;
+  height?: number;
+}
+
+/**
  * Base Dog interface used across the application
  * This is the canonical Dog type that should be imported everywhere
  */
@@ -57,6 +68,8 @@ export interface Dog {
   main_image?: string;
   primary_image_url?: string;
   photos?: string[];
+  // Gallery, hero first. Lists carry the first 3 photos, the dog page all.
+  images?: DogImage[];
 
   // Descriptions and summaries
   description?: string;

@@ -100,6 +100,15 @@ class AnimalBase(BaseModel):
         return self
 
 
+class AnimalImage(BaseModel):
+    """One photo in a dog's gallery. Width and height are unknown for a hero
+    that hasn't been re-scraped since galleries were added."""
+
+    url: str
+    width: int | None = None
+    height: int | None = None
+
+
 class Animal(AnimalBase):
     """Complete animal schema including database fields."""
 
@@ -120,6 +129,20 @@ class Animal(AnimalBase):
     breed_slug: str | None = None
     organization: Organization | None = None
     adoption_check_data: dict[str, Any] | None = None
+    # The gallery in the rescue's order (#488). Lists carry the first 3 photos,
+    # the dog page all of them. Never empty for a dog with a hero photo.
+    images: list[AnimalImage] = Field(default_factory=list)
+
+    @field_validator("images", mode="before")
+    @classmethod
+    def images_may_be_null(cls, v):
+        return v or []
+
+    @model_validator(mode="after")
+    def gallery_falls_back_to_the_hero(self):
+        if not self.images and self.primary_image_url:
+            self.images = [AnimalImage(url=str(self.primary_image_url))]
+        return self
 
 
 class AnimalFilter(BaseModel):

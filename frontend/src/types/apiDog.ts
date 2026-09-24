@@ -2,6 +2,7 @@
  * API response types for dog data from backend
  * Backend returns camelCase, frontend uses snake_case
  */
+import type { DogImage } from "./dog";
 
 export interface ApiDogProfilerData {
   name?: string;
@@ -80,6 +81,7 @@ export interface ApiDog {
   primary_image_url?: string;
   image?: string;
   main_image?: string;
+  images?: DogImage[];
   location?: string;
   city?: string;
   state?: string;

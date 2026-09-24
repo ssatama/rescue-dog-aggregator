@@ -80,6 +80,20 @@ def age_category_condition(category: str) -> str | None:
     return f"({' AND '.join(clauses)})"
 
 
+LIST_GALLERY_PHOTOS = 3
+
+
+def list_images_sql(table: str = "a") -> str:
+    """The gallery's first photos for list responses, sliced in SQL (#488).
+
+    Cards show at most 3 photos, so lists never fetch whole galleries, and
+    `original_url` stays in the database.
+    """
+    return f"""(SELECT jsonb_agg(jsonb_build_object('url', photo->'url', 'width', photo->'width', 'height', photo->'height') ORDER BY n)
+                   FROM jsonb_array_elements({table}.images) WITH ORDINALITY AS gallery(photo, n)
+                   WHERE n <= {LIST_GALLERY_PHOTOS}) AS images"""
+
+
 def _normalize_url(url: str | None) -> str | None:
     """Normalize protocol-relative URLs to HTTPS."""
     if isinstance(url, str) and url.startswith("//"):
@@ -500,7 +514,7 @@ class AnimalService:
             return []
 
         try:
-            query = """
+            query = f"""
                 SELECT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
                        a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
                        a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
@@ -508,6 +522,7 @@ class AnimalService:
                        a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
                        a.active, a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
                        a.dog_profiler_data,
+                       {list_images_sql()},
                        o.name as org_name,
                        o.slug as org_slug,
                        o.city as org_city,
@@ -589,6 +604,8 @@ class AnimalService:
             "consecutive_scrapes_missing": row.get("consecutive_scrapes_missing"),
             "dog_profiler_data": row_dict.get("dog_profiler_data"),
             "organization": organization,
+            # The whole gallery on the dog page (#488)
+            "images": row_dict.get("images"),
         }
 
         # Add adoption check data if available
@@ -1308,7 +1325,7 @@ class AnimalService:
         """Build the animals query with filters."""
         # Base query selects distinct animals and joins with organizations
         # Include dog_profiler_data for sitemap and other requests that need LLM content
-        query_base = """
+        query_base = f"""
             SELECT DISTINCT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
                    a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
                    a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
@@ -1316,6 +1333,7 @@ class AnimalService:
                    a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
                    a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
                    a.dog_profiler_data,
+                   {list_images_sql()},
                    o.name as org_name,
                    o.slug as org_slug,
                    o.city as org_city,
@@ -1464,6 +1482,7 @@ class AnimalService:
                        a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
                        a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
                        a.dog_profiler_data,
+                       {list_images_sql()},
                        o.name as org_name,
                        o.slug as org_slug,
                        o.city as org_city,

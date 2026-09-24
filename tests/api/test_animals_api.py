@@ -185,7 +185,8 @@ class TestAnimalsAPI:
             first_dog = data[0]
             assert "id" in first_dog
             assert "name" in first_dog
-            assert "images" not in first_dog  # /random uses Animal model, not AnimalWithImages
+            # Every dog carries a gallery, capped for lists (#488)
+            assert 1 <= len(first_dog["images"]) <= 3 or not first_dog.get("primary_image_url")
             assert "organization_id" in first_dog  # Check for organization ID
 
     def test_get_animals_includes_organization_social_media(self, client: TestClient):
@@ -475,8 +476,9 @@ class TestAnimalsAPI:
         assert isinstance(data.get("name"), str) and data["name"]
         assert data["animal_type"] == "dog"
         assert data["status"] == "available"
-        # images key removed in refactoring - now using primary_image_url only
-        assert "images" not in data  # Multi-image support removed
+        # The dog page carries its gallery, falling back to the hero (#488)
+        if data.get("primary_image_url"):
+            assert data["images"][0]["url"]
         # Should have primary_image_url instead
         if data.get("primary_image_url"):
             assert isinstance(data["primary_image_url"], str)
