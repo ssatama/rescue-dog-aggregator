@@ -6,6 +6,9 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 const nextConfig = {
   compress: true,
   poweredByHeader: false,
+  // Stop `next dev` writing frontend/AGENTS.md and CLAUDE.md. Agent
+  // instructions live in the root AGENTS.md only.
+  agentRules: false,
 
   // Generate unique build IDs for better chunk cache invalidation
   generateBuildId: async () => {
