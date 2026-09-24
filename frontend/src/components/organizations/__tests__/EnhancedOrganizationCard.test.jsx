@@ -367,8 +367,10 @@ describe("EnhancedOrganizationCard", () => {
       const mainCard = screen.getByTestId("organization-card");
       expect(mainCard).toHaveClass("relative");
       expect(mainCard).not.toHaveAttribute("role", "button");
-      const link = screen.getByRole("link", { name: /View .*Dogs/ });
+      const link = screen.getByRole("link", { name: "Pets in Turkey" });
       expect(link).toHaveClass("after:absolute", "after:inset-0");
+      // The stretch must not sit on the CTA: its hover translate would shrink the ::after
+      expect(screen.getByRole("link", { name: /View .*Dogs/ })).not.toHaveClass("after:absolute");
     });
 
     test("logo has correct 64px size", () => {
@@ -430,7 +432,8 @@ describe("EnhancedOrganizationCard", () => {
 
       render(<OrganizationCard organization={longNameOrg} />);
 
-      const nameElement = screen.getByText(
+      const nameElement = screen.getByTestId("org-name");
+      expect(nameElement).toHaveTextContent(
         "Very Long Organization Name That Should Be Truncated Properly",
       );
       expect(nameElement).toHaveClass("truncate");

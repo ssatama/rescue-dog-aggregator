@@ -162,21 +162,21 @@ describe("OrganizationCard Size Variants", () => {
       const { rerender } = render(
         <OrganizationCard organization={mockOrganization} size="small" />,
       );
-      expect(screen.getByText("Test Organization")).toHaveClass(
+      expect(screen.getByTestId("org-name")).toHaveClass(
         "text-card-title",
       ); // Consistent across sizes
 
       rerender(
         <OrganizationCard organization={mockOrganization} size="medium" />,
       );
-      expect(screen.getByText("Test Organization")).toHaveClass(
+      expect(screen.getByTestId("org-name")).toHaveClass(
         "text-card-title",
       ); // Consistent
 
       rerender(
         <OrganizationCard organization={mockOrganization} size="large" />,
       );
-      expect(screen.getByText("Test Organization")).toHaveClass(
+      expect(screen.getByTestId("org-name")).toHaveClass(
         "text-card-title",
       ); // Consistent
     });

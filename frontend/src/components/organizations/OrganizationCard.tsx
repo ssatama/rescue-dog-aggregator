@@ -110,7 +110,7 @@ const OrganizationCard = memo(
             {/* 1. Organization Logo (64px with fallback to initials) */}
             <div className="flex-shrink-0">
               {logoUrl ? (
-                <div className={`${styles.logo} rounded-lg overflow-hidden`}>
+                <div className={`relative ${styles.logo} rounded-lg overflow-hidden`}>
                   <NextImage
                     src={logoUrl}
                     alt={`${name} logo`}
@@ -140,7 +140,15 @@ const OrganizationCard = memo(
                 className={`text-card-title text-foreground mb-1 truncate`}
                 data-testid="org-name"
               >
-                {name}
+                {/* The card's link for crawlers and new-tab clicks; its ::after covers the
+                    card (#438). It lives on the name, not the CTA, because the CTA's hover
+                    translate would make the CTA the ::after's containing block. */}
+                <Link
+                  href={`/organizations/${slug}`}
+                  className="stretched-link after:absolute after:inset-0 after:z-[1] after:content-[''] focus:outline-none"
+                >
+                  {name}
+                </Link>
               </h3>
               {city && country && (
                 <p
@@ -227,7 +235,7 @@ const OrganizationCard = memo(
                 {recentDogs.slice(0, 3).map((dog, index) => (
                   <div key={dog.id || index} className="flex-shrink-0">
                     <div
-                      className={`${styles.dogThumbnail} rounded-lg overflow-hidden`}
+                      className={`relative ${styles.dogThumbnail} rounded-lg overflow-hidden`}
                     >
                       <NextImage
                         src={dog.thumbnail_url || dog.primary_image_url}
@@ -258,10 +266,10 @@ const OrganizationCard = memo(
 
           {/* 5. Social Media Links in Row */}
           {socialMedia && Object.keys(socialMedia).length > 0 && (
-            <div className="relative z-10 pt-3 border-t border-border">
+            <div className="pt-3 border-t border-border">
               <SocialMediaLinks
                 socialMedia={socialMedia}
-                className="flex space-x-2 justify-start"
+                className="relative z-10 w-fit flex space-x-2 justify-start"
                 size={styles.socialSize}
               />
             </div>
@@ -287,17 +295,12 @@ const OrganizationCard = memo(
               </a>
             </Button>
 
-            {/* The card's one real link: its ::after stretches over the whole card so the
-                card is clickable, while crawlers and middle-click see a plain <a href> (#438) */}
             <Button
               asChild
               size="sm"
-              className={`flex-1 bg-orange-600 hover:bg-orange-700 text-white animate-button-hover ${styles.buttonHeight} text-center`}
+              className={`relative z-10 flex-1 bg-orange-600 hover:bg-orange-700 text-white animate-button-hover ${styles.buttonHeight} text-center`}
             >
-              <Link
-                href={`/organizations/${slug}`}
-                className="after:absolute after:inset-0 after:content-[''] focus:outline-none"
-              >
+              <Link href={`/organizations/${slug}`}>
               {size === "small" ? (
                 <span>Meet {totalDogs}</span>
               ) : (

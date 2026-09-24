@@ -107,8 +107,8 @@ const DogCard = React.memo<{
           {/* A real link for crawlers and new-tab clicks; its ::after covers the card.
               A plain tap still opens the modal (#438). */}
           <a
-            href={`/dogs/${dog.slug}`}
-            className="after:absolute after:inset-0 after:content-[''] focus:outline-none"
+            href={`/dogs/${dog.slug || `unknown-dog-${dog.id}`}`}
+            className="stretched-link after:absolute after:inset-0 after:z-[1] after:content-[''] focus:outline-none"
             onClick={(e) => {
               if (!isPlainLeftClick(e)) return;
               e.preventDefault();
