@@ -42,6 +42,11 @@ def _as_float(value: object) -> float | None:
         return None
 
 
+def _images_json(images: list[dict[str, Any]] | None) -> str | None:
+    """The gallery as stable JSON, for both writing and change detection."""
+    return json.dumps(images, sort_keys=True) if images else None
+
+
 class DatabaseService:
     """Service for all database operations extracted from BaseScraper."""
 
@@ -144,6 +149,24 @@ class DatabaseService:
                 self.conn.rollback()
             return None
 
+    def get_images_by_external_id(self, organization_id: int) -> dict[str, list[dict[str, Any]]]:
+        """Every stored photo gallery for one rescue, keyed by external_id."""
+        if not self.conn and not self.connect():
+            return {}
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "SELECT external_id, images FROM animals WHERE organization_id = %s AND images IS NOT NULL",
+                (organization_id,),
+            )
+            rows = cursor.fetchall()
+            cursor.close()
+            return {external_id: images for external_id, images in rows}
+        except Exception as e:
+            self.logger.error(f"Error reading stored galleries for organization {organization_id}: {e}")
+            self.conn.rollback()
+            return {}
+
     def create_animal(self, animal_data: dict[str, Any]) -> tuple[int | None, str]:
         """Create a new animal in the database.
 
@@ -202,10 +225,10 @@ class DatabaseService:
                 sex, size, standardized_size, language, properties, slug,
                 created_at, updated_at, last_scraped_at, last_seen_at,
                 consecutive_scrapes_missing, availability_confidence, active,
-                breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence
+                breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence, images
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             )
             RETURNING id
             """,
@@ -243,6 +266,7 @@ class DatabaseService:
                 prepared.secondary_breed,
                 prepared.breed_slug,
                 prepared.breed_confidence,
+                _images_json(animal_data.get("images")),
             ),
         )
 
@@ -280,7 +304,7 @@ class DatabaseService:
                 SELECT name, breed, age_text, sex, primary_image_url, status,
                        standardized_breed, age_min_months, age_max_months, standardized_size, properties,
                        breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence,
-                       breed_raw
+                       breed_raw, images
                 FROM animals WHERE id = %s
                 """,
                 (animal_id,),
@@ -309,6 +333,7 @@ class DatabaseService:
                 current_breed_slug,
                 current_breed_confidence,
                 current_breed_raw,
+                current_images,
             ) = current_data
 
             # Process the properties (sanitize to remove null bytes that PostgreSQL rejects)
@@ -340,6 +365,8 @@ class DatabaseService:
             new_breed_slug = animal_data.get("breed_slug")
             new_breed_confidence = animal_data.get("breed_confidence")
             new_breed_raw = animal_data.get("breed_raw") or animal_data.get("breed")
+            # No "images" key means the gallery step had nothing new; keep what is stored
+            new_images_json = _images_json(animal_data["images"]) if "images" in animal_data else _images_json(current_images)
 
             # Check if there are actual changes
             has_changes = (
@@ -360,6 +387,7 @@ class DatabaseService:
                 or new_breed_slug != current_breed_slug
                 or _as_float(new_breed_confidence) != _as_float(current_breed_confidence)
                 or new_breed_raw != current_breed_raw
+                or new_images_json != _images_json(current_images)
             )
 
             if not has_changes:
@@ -381,7 +409,7 @@ class DatabaseService:
                     consecutive_scrapes_missing = 0, availability_confidence = 'high',
                     active = %s,
                     breed_type = %s, primary_breed = %s, secondary_breed = %s,
-                    breed_slug = %s, breed_confidence = %s
+                    breed_slug = %s, breed_confidence = %s, images = %s
                 WHERE id = %s
                 """,
                 (
@@ -409,6 +437,7 @@ class DatabaseService:
                     new_secondary_breed,
                     new_breed_slug,
                     new_breed_confidence,
+                    new_images_json,
                     animal_id,
                 ),
             )

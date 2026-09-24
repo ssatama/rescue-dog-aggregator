@@ -329,7 +329,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Drop all tables"""
-    op.execute("DROP TABLE IF EXISTS animal_images CASCADE;")
     op.execute("DROP TABLE IF EXISTS animals CASCADE;")
     op.execute("DROP TABLE IF EXISTS scrape_logs CASCADE;")
     op.execute("DROP TABLE IF EXISTS service_regions CASCADE;")

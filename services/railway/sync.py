@@ -140,7 +140,7 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, breed_group, breed_confidence, breed_type, primary_breed, secondary_breed, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, active, slug, dog_profiler_data, translations, llm_processing_flags, breed_slug, adoption_check_data, adoption_checked_at
+                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, breed_group, breed_confidence, breed_type, primary_breed, secondary_breed, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, active, slug, dog_profiler_data, translations, llm_processing_flags, breed_slug, adoption_check_data, adoption_checked_at, images
                     FROM animals
                     ORDER BY id
                 """
@@ -165,13 +165,13 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
                  primary_image_url, organization_id, created_at, updated_at,
                  availability_confidence, last_seen_at, consecutive_scrapes_missing,
                  status, properties, adoption_url, external_id, slug, dog_profiler_data,
-                 breed_confidence, breed_type, primary_breed, secondary_breed, breed_slug)
+                 breed_confidence, breed_type, primary_breed, secondary_breed, breed_slug, images)
                 VALUES
                 (:id, :name, :animal_type, :size, :age_text, :sex, :breed,
                  :primary_image_url, :organization_id, :created_at, :updated_at,
                  :availability_confidence, :last_seen_at, :consecutive_scrapes_missing,
                  :status, :properties, :adoption_url, :external_id, :slug, :dog_profiler_data,
-                 :breed_confidence, :breed_type, :primary_breed, :secondary_breed, :breed_slug)
+                 :breed_confidence, :breed_type, :primary_breed, :secondary_breed, :breed_slug, :images)
                 ON CONFLICT (external_id, organization_id) DO UPDATE SET
                     name = EXCLUDED.name,
                     animal_type = EXCLUDED.animal_type,
@@ -194,6 +194,7 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
                     primary_breed = EXCLUDED.primary_breed,
                     secondary_breed = EXCLUDED.secondary_breed,
                     breed_slug = EXCLUDED.breed_slug,
+                    images = EXCLUDED.images,
                 adoption_check_data = EXCLUDED.adoption_check_data,
                 adoption_checked_at = EXCLUDED.adoption_checked_at
             """
@@ -240,6 +241,7 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
                             "slug": animal[31],
                             "dog_profiler_data": json.dumps(animal[32]) if animal[32] is not None else None,
                             "breed_slug": animal[35] if len(animal) > 35 else None,
+                            "images": json.dumps(animal[38]) if animal[38] is not None else None,
                         }
                     )
 
@@ -651,7 +653,7 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, breed_group, breed_confidence, breed_type, primary_breed, secondary_breed, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, active, slug, dog_profiler_data, translations, llm_processing_flags, breed_slug, adoption_check_data, adoption_checked_at
+                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, breed_group, breed_confidence, breed_type, primary_breed, secondary_breed, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, active, slug, dog_profiler_data, translations, llm_processing_flags, breed_slug, adoption_check_data, adoption_checked_at, images
                     FROM animals
                     ORDER BY id
                 """
@@ -671,9 +673,9 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
         insert_sql = text(
             """
             INSERT INTO animals
-            (id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, breed_group, breed_confidence, breed_type, primary_breed, secondary_breed, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, active, slug, dog_profiler_data, breed_slug, adoption_check_data, adoption_checked_at)
+            (id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, breed_group, breed_confidence, breed_type, primary_breed, secondary_breed, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, active, slug, dog_profiler_data, breed_slug, adoption_check_data, adoption_checked_at, images)
             VALUES
-            (:id, :name, :organization_id, :animal_type, :external_id, :primary_image_url, :adoption_url, :status, :breed, :standardized_breed, :age_text, :age_min_months, :age_max_months, :sex, :size, :standardized_size, :language, :properties, :created_at, :updated_at, :last_scraped_at, :breed_group, :breed_confidence, :breed_type, :primary_breed, :secondary_breed, :original_image_url, :last_seen_at, :consecutive_scrapes_missing, :availability_confidence, :active, :slug, :dog_profiler_data, :breed_slug, :adoption_check_data, :adoption_checked_at)
+            (:id, :name, :organization_id, :animal_type, :external_id, :primary_image_url, :adoption_url, :status, :breed, :standardized_breed, :age_text, :age_min_months, :age_max_months, :sex, :size, :standardized_size, :language, :properties, :created_at, :updated_at, :last_scraped_at, :breed_group, :breed_confidence, :breed_type, :primary_breed, :secondary_breed, :original_image_url, :last_seen_at, :consecutive_scrapes_missing, :availability_confidence, :active, :slug, :dog_profiler_data, :breed_slug, :adoption_check_data, :adoption_checked_at, :images)
             ON CONFLICT (external_id, organization_id) DO UPDATE SET
                 name = EXCLUDED.name,
                 animal_type = EXCLUDED.animal_type,
@@ -697,7 +699,8 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
                 secondary_breed = EXCLUDED.secondary_breed,
                 breed_slug = EXCLUDED.breed_slug,
                 adoption_check_data = EXCLUDED.adoption_check_data,
-                adoption_checked_at = EXCLUDED.adoption_checked_at
+                adoption_checked_at = EXCLUDED.adoption_checked_at,
+                images = EXCLUDED.images
         """
         )
 
@@ -751,6 +754,7 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
                         "breed_slug": animal[35] if len(animal) > 35 else None,
                         "adoption_check_data": json.dumps(animal[36]) if len(animal) > 36 and animal[36] is not None else None,
                         "adoption_checked_at": animal[37] if len(animal) > 37 else None,
+                        "images": json.dumps(animal[38]) if animal[38] is not None else None,
                     }
                 )
 

@@ -38,6 +38,7 @@ CURRENT_ROW = (
     "beagle",  # breed_slug
     0.9,  # breed_confidence
     "Beagle",  # breed_raw
+    [{"url": "https://images.rescuedogs.me/a.jpg", "original_url": "http://img/1.jpg", "width": 800, "height": 600}],  # images
 )
 
 INCOMING = {
@@ -100,6 +101,17 @@ class TestUpdateAnimalChangeDetection:
     )
     def test_a_changed_field_is_written(self, service, field, new_value):
         assert update_with(service, **{field: new_value}) == "updated"
+
+    def test_a_scrape_without_a_gallery_keeps_the_stored_one(self, service):
+        """No "images" key means the gallery step had nothing new, not "delete it"."""
+        assert update_with(service) == "no_change"
+
+    def test_the_same_gallery_writes_nothing(self, service):
+        assert update_with(service, images=list(CURRENT_ROW[-1])) == "no_change"
+
+    def test_a_changed_gallery_is_written(self, service):
+        second = {"url": "https://images.rescuedogs.me/b.jpg", "original_url": "http://img/2.jpg", "width": 800, "height": 600}
+        assert update_with(service, images=[*CURRENT_ROW[-1], second]) == "updated"
 
     def test_an_age_that_was_never_known_and_still_is_not_writes_nothing(self, service):
         """Both sides NULL after the fabricated-age backfill. Must not churn."""

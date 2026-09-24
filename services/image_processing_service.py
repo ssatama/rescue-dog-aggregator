@@ -14,9 +14,55 @@ Following CLAUDE.md principles:
 """
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from utils.r2_service import R2Service
+
+
+def _gallery_sources(animal_data: dict[str, Any]) -> list[str]:
+    """Source URLs in the rescue's order, hero first, without duplicates.
+
+    By the time this runs the primary image may already point at R2, so the
+    hero's source is `original_image_url` when set.
+    """
+    hero = animal_data.get("original_image_url") or animal_data.get("primary_image_url")
+    urls = [hero, *(animal_data.get("image_urls") or [])]
+    seen: set[str] = set()
+    sources = []
+    for url in urls:
+        if url and url.startswith(("http://", "https://")) and url not in seen:
+            seen.add(url)
+            sources.append(url)
+    return sources
+
+
+# Gallery rules (#487): the rescue's order, hero first, at most 8 photos, and
+# nothing whose shorter side is under 300px unless it is the dog's only photo.
+MAX_GALLERY_PHOTOS = 8
+MIN_GALLERY_SIDE = 300
+GALLERY_UPLOAD_WORKERS = 6
+
+
+def build_gallery(sources: list[str], photos: dict[str, dict[str, Any] | None]) -> list[dict[str, Any]] | None:
+    """The dog's `images` array from its source URLs and the photos known for them.
+
+    Missing or unreadable photos are skipped, small ones only survive as the
+    sole photo, and the rescue's order is kept.
+    """
+    kept: list[dict[str, Any]] = []
+    too_small: list[dict[str, Any]] = []
+    for source in sources:
+        if len(kept) >= MAX_GALLERY_PHOTOS:
+            break
+        photo = photos.get(source)
+        if photo is None:
+            continue
+        if min(photo.get("width") or 0, photo.get("height") or 0) < MIN_GALLERY_SIDE:
+            too_small.append(photo)
+            continue
+        kept.append(photo)
+    return kept or too_small[:1] or None
 
 
 class ImageProcessingService:
@@ -35,6 +81,54 @@ class ImageProcessingService:
         """
         self.r2_service = r2_service or R2Service()
         self.logger = logger or logging.getLogger(__name__)
+
+    def batch_process_galleries(
+        self,
+        animals_data: list[dict[str, Any]],
+        stored_images: dict[str, list[dict[str, Any]]],
+        organization_name: str = "unknown",
+    ) -> None:
+        """Set each dog's `images` from its scraped source URLs, in one batch (in place).
+
+        Scrapers set `image_urls` (source URLs, hero first); those that don't
+        get a one-photo gallery from the hero. `stored_images` maps
+        external_id to the gallery already on the row: photos in it are reused
+        without any network call, so an unchanged gallery costs nothing and a
+        changed one is rewritten, never appended. Every new photo across the
+        run is uploaded once, in parallel. A dog with no usable photo gets no
+        `images` key, and the stored one is kept.
+        """
+        known: dict[str, dict[str, Any]] = {}
+        for images in stored_images.values():
+            for photo in images or []:
+                if photo.get("original_url"):
+                    known[photo["original_url"]] = photo
+
+        pending: dict[str, str] = {}  # source URL -> dog name for the R2 key
+        for animal in animals_data:
+            for source in _gallery_sources(animal)[: MAX_GALLERY_PHOTOS * 2]:
+                if source not in known and source not in pending:
+                    pending[source] = animal.get("name", "unknown")
+
+        uploaded: dict[str, dict[str, Any] | None] = {}
+        if pending:
+            self.logger.info(f"🖼️ Checking {len(pending)} new gallery photos ({len(known)} already stored)")
+            with ThreadPoolExecutor(max_workers=GALLERY_UPLOAD_WORKERS) as pool:
+                futures = {pool.submit(self.r2_service.upload_image_with_size, source, name, organization_name): source for source, name in pending.items()}
+                for future in as_completed(futures):
+                    uploaded[futures[future]] = future.result()
+            stored = sum(1 for photo in uploaded.values() if photo)
+            self.logger.info(f"🖼️ Gallery photos stored: {stored}/{len(pending)}")
+
+        photos = {**known, **uploaded}
+        for animal in animals_data:
+            sources = _gallery_sources(animal)
+            if not sources:
+                continue
+            # A photo that failed this run is left out and retried on the next
+            images = build_gallery(sources, photos)
+            if images is not None:
+                animal["images"] = images
 
     def process_primary_image(
         self,

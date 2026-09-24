@@ -15,6 +15,8 @@ from io import BytesIO
 import boto3
 import requests
 from botocore.exceptions import ClientError
+from PIL import Image as PILImage
+from PIL import UnidentifiedImageError
 
 logger = logging.getLogger(__name__)
 
@@ -329,6 +331,74 @@ class R2Service:
         except Exception as e:
             logger.warning(f"Unexpected error uploading image {image_url}: {e}")
             return image_url, False
+
+    @classmethod
+    def upload_image_with_size(cls, image_url: str, animal_name: str, organization_name: str = "unknown") -> dict | None:
+        """Upload a gallery photo and return {"url", "original_url", "width", "height"}.
+
+        The size is kept in the object's metadata, so checking a photo again
+        (including one a quality floor rejected) costs one HEAD request, not a
+        download. Returns None when the photo can't be fetched, read or stored.
+        """
+        if not image_url or not cls._check_configuration() or cls.is_circuit_breaker_open():
+            return None
+
+        image_key = cls._generate_image_key(image_url, animal_name, organization_name)
+        bucket_name = os.getenv("R2_BUCKET_NAME")
+        s3_client = cls._get_s3_client()
+        r2_url = cls._build_custom_domain_url(image_key)
+
+        try:
+            metadata = s3_client.head_object(Bucket=bucket_name, Key=image_key).get("Metadata", {})
+            if metadata.get("width") and metadata.get("height"):
+                return {"url": r2_url, "original_url": image_url, "width": int(metadata["width"]), "height": int(metadata["height"])}
+        except ClientError as e:
+            if e.response["Error"]["Code"] not in ("404", "NoSuchKey"):
+                logger.warning(f"Could not check existing image {image_key}: {e}")
+
+        try:
+            headers = {"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}
+            response = requests.get(image_url, timeout=(10, 20), headers=headers)
+            response.raise_for_status()
+            content_type = response.headers.get("content-type", "").lower()
+            if not any(t in content_type for t in ("image/jpeg", "image/jpg", "image/png", "image/webp")):
+                logger.warning(f"Invalid content type for image {image_url}: {content_type}")
+                return None
+
+            with PILImage.open(BytesIO(response.content)) as img:
+                width, height = img.size
+
+            # R2 has no per-bucket write limit, only one write per second per
+            # key, and every photo has its own key; gallery uploads therefore
+            # run in parallel and only back off after R2 has pushed back.
+            if cls._consecutive_failures > 0:
+                cls._enforce_rate_limit()
+            s3_client.upload_fileobj(
+                BytesIO(response.content),
+                bucket_name,
+                image_key,
+                ExtraArgs={
+                    "ContentType": content_type,
+                    "CacheControl": "public, max-age=86400, s-maxage=604800",
+                    "Metadata": {
+                        "original_url": image_url,
+                        "width": str(width),
+                        "height": str(height),
+                    },
+                },
+            )
+            cls.track_upload_success()
+            return {"url": r2_url, "original_url": image_url, "width": width, "height": height}
+        except ClientError as e:
+            if e.response.get("Error", {}).get("Code") in ("SlowDown", "TooManyRequests", "RequestLimitExceeded"):
+                with cls._state_lock:
+                    cls._consecutive_failures = min(cls._consecutive_failures + 1, 5)
+            logger.warning(f"Could not store gallery photo {image_url}: {e}")
+            cls.track_upload_failure("gallery_upload_failed")
+            return None
+        except (requests.exceptions.RequestException, UnidentifiedImageError) as e:
+            logger.warning(f"Could not fetch gallery photo {image_url}: {e}")
+            return None
 
     @staticmethod
     def get_optimized_url(r2_url: str, transformation_options: dict | None = None) -> str:

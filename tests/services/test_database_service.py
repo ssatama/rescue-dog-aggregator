@@ -287,6 +287,7 @@ class TestDatabaseServiceRawBreedPersistence:
             "mixed-breed",
             "0.5",
             None,
+            None,
         )
 
         db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"})
