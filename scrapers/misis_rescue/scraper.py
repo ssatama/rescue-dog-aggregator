@@ -993,8 +993,12 @@ class MisisRescueScraper(BaseScraper):
         """
         image_urls = []
 
+        # The post's own gallery (#487). Without this scope the site logo and
+        # the footer's social icons were collected as dog photos.
+        gallery = soup.select('[data-hook="gallery-media-image"] img')
+
         # Look for Wix static images
-        for img in soup.find_all("img"):
+        for img in gallery or soup.find_all("img"):
             if not isinstance(img, Tag):
                 continue
 

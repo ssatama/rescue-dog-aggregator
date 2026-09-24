@@ -359,10 +359,14 @@ class R2Service:
         s3_client = cls._get_s3_client()
         r2_url = cls._build_custom_domain_url(image_key)
 
+        already_stored = False
         try:
             metadata = s3_client.head_object(Bucket=bucket_name, Key=image_key).get("Metadata", {})
             if metadata.get("width") and metadata.get("height"):
                 return {"url": r2_url, "original_url": image_url, "width": int(metadata["width"]), "height": int(metadata["height"])}
+            # Stored by the hero upload, which records no size: measure it, but
+            # don't write the same key again (R2 allows one write per key a second)
+            already_stored = True
         except ClientError as e:
             if e.response["Error"]["Code"] not in ("404", "NoSuchKey"):
                 logger.warning(f"Could not check existing image {image_key}: {e}")
@@ -378,6 +382,8 @@ class R2Service:
 
             with PILImage.open(BytesIO(response.content)) as img:
                 width, height = img.size
+            if already_stored:
+                return {"url": r2_url, "original_url": image_url, "width": width, "height": height}
 
             # R2 has no per-bucket write limit, only one write per second per
             # key, and every photo has its own key; gallery uploads therefore

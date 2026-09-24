@@ -155,6 +155,16 @@ class TestUploadImageWithSize:
         metadata = s3.upload_fileobj.call_args.kwargs["ExtraArgs"]["Metadata"]
         assert (metadata["width"], metadata["height"]) == ("1200", "900")
 
+    def test_a_photo_stored_by_the_hero_upload_is_measured_not_rewritten(self, s3):
+        s3.head_object.return_value = {"Metadata": {"original_url": HERO}}
+        response = Mock(content=_jpeg(1024, 768), headers={"content-type": "image/jpeg"})
+
+        with patch("utils.r2_service.requests.get", return_value=response):
+            result = R2Service.upload_image_with_size(HERO, "Rex", "Rescue")
+
+        assert (result["width"], result["height"]) == (1024, 768)
+        s3.upload_fileobj.assert_not_called()
+
     def test_a_non_image_response_is_skipped(self, s3):
         s3.head_object.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadObject")
         response = Mock(content=b"<html>", headers={"content-type": "text/html"})
