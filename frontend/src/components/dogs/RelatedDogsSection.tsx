@@ -15,11 +15,16 @@ const RelatedDogsSection = memo(
     organizationId,
     currentDogId,
     organization,
+    initialDogs,
   }: RelatedDogsSectionProps): React.ReactElement | null {
-    const [relatedDogs, setRelatedDogs] = useState<Dog[]>([]);
+    // Server-provided dogs render straight into the HTML; otherwise fetch on scroll. Until
+    // a fetch finishes, show the loading state: the empty-state copy used to be the first
+    // render, so crawlers read "No other dogs" for rescues with hundreds (#439).
+    const [relatedDogs, setRelatedDogs] = useState<Dog[]>(initialDogs ?? []);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
-    const [hasStartedLoading, setHasStartedLoading] = useState(false);
+    const [hasStartedLoading, setHasStartedLoading] = useState(initialDogs !== undefined);
+    const [hasFetched, setHasFetched] = useState(initialDogs !== undefined);
 
     const [sectionRef, isVisible] = useScrollAnimation({
       threshold: 0.1,
@@ -47,6 +52,7 @@ const RelatedDogsSection = memo(
         setError(true);
       } finally {
         setLoading(false);
+        setHasFetched(true);
       }
     }, [organizationId, currentDogId]);
 
@@ -63,6 +69,9 @@ const RelatedDogsSection = memo(
 
     const organizationName = organization?.name || "this rescue";
     const limitedRelatedDogs = relatedDogs.slice(0, 3);
+    const showLoading = loading || !hasFetched;
+    // The organization page, not /dogs?organization_id=…, which robots.txt disallows
+    const viewAllHref = organization?.slug ? `/organizations/${organization.slug}` : null;
 
     return (
       <div ref={sectionRef} className="mb-8">
@@ -72,7 +81,7 @@ const RelatedDogsSection = memo(
         </h2>
 
         {/* Enhanced Loading State */}
-        {loading && (
+        {showLoading && (
           <div data-testid="related-dogs-loading" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
@@ -101,7 +110,7 @@ const RelatedDogsSection = memo(
         )}
 
         {/* Enhanced Error State */}
-        {error && !loading && (
+        {error && !showLoading && (
           <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
             <div className="mb-4">
               <svg
@@ -124,8 +133,9 @@ const RelatedDogsSection = memo(
                 There was an issue loading more dogs from this organization.
               </p>
             </div>
+            {viewAllHref && (
             <Link
-              href={`/dogs?organization_id=${organizationId}`}
+              href={viewAllHref}
               className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-lg transition-all duration-300 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
             >
               View all available dogs
@@ -143,11 +153,12 @@ const RelatedDogsSection = memo(
                 />
               </svg>
             </Link>
+            )}
           </div>
         )}
 
         {/* Success State with Dogs */}
-        {!loading && !error && limitedRelatedDogs.length > 0 && (
+        {!showLoading && !error && limitedRelatedDogs.length > 0 && (
           <>
             <div
               data-testid="related-dogs-grid"
@@ -164,19 +175,21 @@ const RelatedDogsSection = memo(
             </div>
 
             {/* View All Link */}
-            <div className="text-center">
-              <Link
-                href={`/dogs?organization_id=${organizationId}`}
-                className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-300"
-              >
-                View all available dogs →
-              </Link>
-            </div>
+            {viewAllHref && (
+              <div className="text-center">
+                <Link
+                  href={viewAllHref}
+                  className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-300"
+                >
+                  View all available dogs →
+                </Link>
+              </div>
+            )}
           </>
         )}
 
         {/* Empty State */}
-        {!loading && !error && limitedRelatedDogs.length === 0 && (
+        {!showLoading && !error && limitedRelatedDogs.length === 0 && (
           <div
             data-testid="related-dogs-empty-state"
             className="text-center py-8"
@@ -184,12 +197,14 @@ const RelatedDogsSection = memo(
             <p className="text-gray-600 mb-4">
               No other dogs available from this rescue
             </p>
-            <Link
-              href={`/dogs?organization_id=${organizationId}`}
-              className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-300"
-            >
-              View all available dogs →
-            </Link>
+            {viewAllHref && (
+              <Link
+                href={viewAllHref}
+                className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-300"
+              >
+                View all available dogs →
+              </Link>
+            )}
           </div>
         )}
       </div>
@@ -200,7 +215,9 @@ const RelatedDogsSection = memo(
       prevProps.organizationId === nextProps.organizationId &&
       prevProps.currentDogId === nextProps.currentDogId &&
       prevProps.organization?.id === nextProps.organization?.id &&
-      prevProps.organization?.name === nextProps.organization?.name
+      prevProps.organization?.name === nextProps.organization?.name &&
+      prevProps.organization?.slug === nextProps.organization?.slug &&
+      prevProps.initialDogs === nextProps.initialDogs
     );
   },
 );

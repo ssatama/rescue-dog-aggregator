@@ -45,6 +45,7 @@ describe("RelatedDogsSection", () => {
   const mockOrganization = {
     id: 456,
     name: "Pets in Turkey",
+    slug: "pets-in-turkey",
   };
 
   const mockRelatedDogs = [
@@ -210,7 +211,7 @@ describe("RelatedDogsSection", () => {
         expect(viewAllLink).toBeInTheDocument();
         expect(viewAllLink.closest("a")).toHaveAttribute(
           "href",
-          "/dogs?organization_id=456",
+          "/organizations/pets-in-turkey",
         );
       });
     });
@@ -404,6 +405,53 @@ describe("RelatedDogsSection", () => {
 
       // Assert
       expect(screen.queryByText("More Dogs from")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Server-rendered related dogs (#439)", () => {
+    it("renders server-provided dogs on the first render without fetching", () => {
+      const { renderToString } = require("react-dom/server");
+      const html = renderToString(
+        <RelatedDogsSection
+          organizationId={456}
+          currentDogId={123}
+          organization={mockOrganization}
+          initialDogs={mockRelatedDogs.slice(0, 3)}
+        />,
+      );
+
+      expect(html).toContain(`dog-card-${mockRelatedDogs[0].id}`);
+      expect(html).toContain('href="/organizations/pets-in-turkey"');
+      expect(html).not.toContain("No other dogs available");
+      expect(getRelatedDogs).not.toHaveBeenCalled();
+    });
+
+    it("shows the loading state, not the empty state, before its first fetch finishes", () => {
+      getRelatedDogs.mockReturnValue(new Promise(() => {}));
+      const { renderToString } = require("react-dom/server");
+
+      const html = renderToString(
+        <RelatedDogsSection organizationId={456} currentDogId={123} organization={mockOrganization} />,
+      );
+
+      expect(html).toContain("related-dogs-loading");
+      expect(html).not.toContain("No other dogs available");
+    });
+
+    it("links nowhere robots.txt disallows, and omits View all without an org slug", () => {
+      const { renderToString } = require("react-dom/server");
+      const html = renderToString(
+        <RelatedDogsSection
+          organizationId={456}
+          currentDogId={123}
+          organization={{ id: 456, name: "Pets in Turkey" }}
+          initialDogs={[]}
+        />,
+      );
+
+      expect(html).toContain("No other dogs available");
+      expect(html).not.toContain("organization_id=");
+      expect(html).not.toContain("View all available dogs");
     });
   });
 });

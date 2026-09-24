@@ -16,6 +16,7 @@ export interface Dog {
   name: string;
   breed?: string;
   primary_breed?: string;
+  breed_slug?: string;
   standardized_breed?: string;
 
   // Age information
