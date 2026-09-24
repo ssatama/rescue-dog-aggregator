@@ -182,4 +182,15 @@ describe("DogGallery", () => {
     fireEvent.click(screen.getByRole("button", { name: "View photo 1 of Dolly full screen" }));
     expect(fireEvent.keyDown(screen.getByRole("dialog"), { key: "ArrowRight" })).toBe(false);
   });
+
+  it("moves keyboard focus with the photo, so Enter opens the one shown", () => {
+    renderGallery(photos(3));
+    const first = screen.getByRole("button", { name: "View photo 1 of Dolly full screen" });
+    first.focus();
+
+    fireEvent.keyDown(first, { key: "ArrowRight" });
+    const second = screen.getByRole("button", { name: "View photo 2 of Dolly full screen" });
+    expect(second).toHaveFocus();
+    expect(second).toHaveAttribute("tabindex", "0");
+  });
 });

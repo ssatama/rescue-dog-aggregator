@@ -242,8 +242,16 @@ export default function DogGallery({
       if (!multiple) return;
       const next = Math.max(0, Math.min(keys[e.key], total - 1));
       // Full screen only changes the photo; the page frame catches up on close.
-      if (fullscreen) setIndex(next);
-      else goTo(next);
+      if (fullscreen) {
+        setIndex(next);
+        return;
+      }
+      goTo(next);
+      // Keyboard focus on a photo follows it, so Enter opens the photo shown
+      const track = trackRef.current;
+      if (track?.contains(document.activeElement)) {
+        track.querySelectorAll<HTMLElement>("[data-open-photo]")[next]?.focus({ preventScroll: true });
+      }
     },
     [index, total, multiple, fullscreen, goTo],
   );
@@ -296,6 +304,7 @@ export default function DogGallery({
               <button
                 type="button"
                 onClick={() => openAt(i)}
+                data-open-photo
                 aria-label={`View photo ${i + 1} of ${dogName} full screen`}
                 tabIndex={i === index ? 0 : -1}
                 className="absolute inset-0 z-[1] cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"

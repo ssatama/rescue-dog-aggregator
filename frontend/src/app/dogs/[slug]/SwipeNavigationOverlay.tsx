@@ -71,12 +71,12 @@ export default function SwipeNavigationOverlay({
   return (
     <>
       {/* Above the gallery's full-screen button, or the button would swallow
-          the swipe. Only for touch pointers, which is where swipes come from, so
-          a mouse can still click a single photo open; on touch that tap is
-          given up for swipe-to-next-dog. */}
+          the swipe. Only on devices with a touch pointer (including touch
+          laptops), so a mouse-only device can still click a single photo open;
+          with touch, that tap is given up for swipe-to-next-dog. */}
       {swipeable && (
         <div
-          className="absolute inset-0 z-[2] hidden pointer-coarse:block"
+          className="absolute inset-0 z-[2] hidden [@media(any-pointer:coarse)]:block"
           {...handlers}
           aria-hidden="true"
         />
