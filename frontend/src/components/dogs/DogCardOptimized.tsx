@@ -334,7 +334,7 @@ const DogCardOptimized = React.memo(
         >
           {showNewBadge && (
             <Badge
-              className="absolute top-2 left-2 z-10 bg-green-500 text-white"
+              className="absolute top-2 left-2 z-10 bg-green-700 text-white"
               data-testid="new-badge"
               aria-label="Recently added dog"
             >

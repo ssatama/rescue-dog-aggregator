@@ -210,7 +210,7 @@ describe("OrganizationCard CTA Button Spacing Tests", () => {
       expect(visitButton.closest("a")).toHaveClass("focus:ring-2");
 
       // View Dogs button should be primary (solid orange)
-      expect(viewDogsButton).toHaveClass("bg-orange-600");
+      expect(viewDogsButton).toHaveClass("bg-orange-700");
     });
 
     test("buttons have proper focus states", () => {

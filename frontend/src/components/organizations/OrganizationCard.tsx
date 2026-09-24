@@ -298,7 +298,7 @@ const OrganizationCard = memo(
             <Button
               asChild
               size="sm"
-              className={`relative z-10 flex-1 bg-orange-600 hover:bg-orange-700 text-white animate-button-hover ${styles.buttonHeight} text-center`}
+              className={`relative z-10 flex-1 bg-orange-700 hover:bg-orange-800 text-white animate-button-hover ${styles.buttonHeight} text-center`}
             >
               <Link href={`/organizations/${slug}`}>
               {size === "small" ? (

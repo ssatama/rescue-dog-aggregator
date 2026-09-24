@@ -153,7 +153,7 @@ export default function HeaderDesktopNav(): React.JSX.Element {
       {/* Start Swiping CTA Button */}
       <Link
         href="/swipe"
-        className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600/50 focus-visible:ring-offset-2"
+        className="bg-orange-700 hover:bg-orange-800 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600/50 focus-visible:ring-offset-2"
       >
         Start Swiping
         <ArrowRight className="h-4 w-4" />

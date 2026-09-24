@@ -327,7 +327,7 @@ export default function DogDetailClient({
             <Button
               onClick={() => router.back()}
               variant="link"
-              className="inline-flex items-center text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 mb-6 p-2 h-auto transition-all duration-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+              className="inline-flex items-center text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 mb-6 p-2 h-auto transition-all duration-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
               data-testid="back-button"
             >
               ← Back to all dogs
@@ -486,7 +486,7 @@ export default function DogDetailClient({
                               ? "♀️"
                               : "❓"}
                         </div>
-                        <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">
+                        <p className="text-xs text-orange-700 dark:text-orange-400 font-medium mb-1">
                           Gender
                         </p>
                         <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
@@ -503,7 +503,7 @@ export default function DogDetailClient({
                           data-testid="dog-breed-card"
                         >
                           <div className="text-3xl mb-2">🐕</div>
-                          <p className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">
+                          <p className="text-xs text-green-700 dark:text-green-400 font-medium mb-1">
                             Breed
                           </p>
                           <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
@@ -529,7 +529,7 @@ export default function DogDetailClient({
                           data-testid="dog-size-card"
                         >
                           <div className="text-3xl mb-2">📏</div>
-                          <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">
+                          <p className="text-xs text-orange-700 dark:text-orange-400 font-medium mb-1">
                             Size
                           </p>
                           <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
@@ -642,7 +642,7 @@ export default function DogDetailClient({
                             return (
                               <Button
                                 asChild
-                                className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] bg-orange-600 dark:bg-orange-600 hover:bg-orange-700 dark:hover:bg-orange-700 text-white text-lg py-4 px-8 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg transform hover:scale-105 focus:ring-4 focus:ring-orange-500 focus:ring-offset-2"
+                                className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] bg-orange-700 dark:bg-orange-700 hover:bg-orange-800 dark:hover:bg-orange-800 text-white text-lg py-4 px-8 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg transform hover:scale-105 focus:ring-4 focus:ring-orange-500 focus:ring-offset-2"
                               >
                                 <a
                                   href={safeUrl}
