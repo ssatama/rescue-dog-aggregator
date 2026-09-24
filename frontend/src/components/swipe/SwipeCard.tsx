@@ -155,7 +155,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
       {/* Content Section — Compact */}
       <div className="p-4 flex flex-col gap-3 dark:bg-gray-800 overflow-y-auto flex-1">
-        {/* Tagline in Caveat handwritten font */}
+        {/* Tagline in the display face */}
         {tagline ? (
           <p className="font-display text-lg text-gray-700 dark:text-gray-300 line-clamp-2 leading-snug">
             {tagline}
