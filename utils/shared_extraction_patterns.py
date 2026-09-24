@@ -22,6 +22,7 @@ Design principles:
 """
 
 import re
+from urllib.parse import urlparse
 
 
 def extract_age_from_text(text: str | None) -> float | None:
@@ -505,12 +506,16 @@ _UNVIEWABLE_IMAGE_SUFFIXES = (".heic", ".heif", ".tif", ".tiff", ".pdf")
 
 
 def wordpress_original(url: str) -> str:
-    """The upload a WordPress resize was made from: ".../a-600x600.jpg" -> "a.jpg".
+    """The upload a WordPress resize was made from: "host/2026/05/a-600x600.jpg" -> "host/2026/05/a.jpg".
 
     Used to spot the same photo in two sizes, e.g. a hero resize and its
-    full-size gallery original.
+    full-size gallery original. WordPress keeps resizes next to their
+    original, so the folder is part of the key: "2025/03/1.jpg" and
+    "2025/04/1.jpg" are different photos.
     """
-    return _WORDPRESS_SIZE_SUFFIX.sub("", url.split("?", 1)[0].rsplit("/", 1)[-1])
+    parsed = urlparse(url)
+    folder, _, name = parsed.path.rpartition("/")
+    return f"{parsed.netloc}{folder}/{_WORDPRESS_SIZE_SUFFIX.sub('', name)}"
 
 
 def gallery_urls(hero: str | None, candidates: list[str]) -> list[str]:

@@ -108,6 +108,15 @@ class TestMisisGallery:
         assert len(urls) == 33
         assert all("ef9e05_" in url for url in urls)
 
+    def test_a_post_without_a_gallery_block_still_leaves_out_the_site_chrome(self):
+        page = soup("misis_freya")
+        for node in page.select('[data-hook="gallery-media-image"]'):
+            node.decompose()
+
+        urls = self.scraper._extract_static_image_urls(page)
+
+        assert not any("9f9c321c" in url or "0fdef751" in url or "c09b7a83" in url for url in urls)
+
     def test_site_logo_and_footer_icons_are_not_photos(self):
         urls = self.scraper._extract_static_image_urls(soup("misis_freya"))
 
@@ -199,7 +208,12 @@ class TestWoofProjectGallery:
 class TestGalleryUrls:
     def test_a_wordpress_resize_is_the_same_photo_as_its_original(self):
         assert wordpress_original("https://x/wp/a-600x600.jpg") == wordpress_original("https://x/wp/a.jpg")
-        assert wordpress_original("https://x/wp/a-320x240_c.jpg?ver=2") == "a.jpg"
+        assert wordpress_original("https://x/wp/a-320x240_c.jpg?ver=2") == wordpress_original("https://x/wp/a.jpg")
+
+    def test_same_file_name_in_another_folder_is_another_photo(self):
+        urls = gallery_urls(None, ["https://x/2025/03/1.jpg", "https://x/2025/04/1.jpg", "https://x/2025/03/1-150x150.jpg"])
+
+        assert urls == ["https://x/2025/03/1.jpg", "https://x/2025/04/1.jpg"]
 
     def test_hero_first_each_photo_once_unviewable_formats_skipped(self):
         urls = gallery_urls("https://x/a-600x600.jpg", ["https://x/a.jpg", "https://x/b.jpg", "https://x/c.heic", "https://x/b.jpg"])

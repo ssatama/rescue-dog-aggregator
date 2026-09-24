@@ -994,11 +994,13 @@ class MisisRescueScraper(BaseScraper):
         image_urls = []
 
         # The post's own gallery (#487). Without this scope the site logo and
-        # the footer's social icons were collected as dog photos.
+        # the footer's social icons were collected as dog photos. A post with no
+        # gallery block falls back to its other images, never the site chrome.
         gallery = soup.select('[data-hook="gallery-media-image"] img')
+        candidates = gallery or [img for img in soup.find_all("img") if not img.find_parent(id=["SITE_HEADER", "SITE_FOOTER"])]
 
         # Look for Wix static images
-        for img in gallery or soup.find_all("img"):
+        for img in candidates:
             if not isinstance(img, Tag):
                 continue
 
