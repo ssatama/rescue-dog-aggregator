@@ -1,5 +1,5 @@
 import Link from "next/link";
-import DogCardOptimized from "../dogs/DogCardOptimized";
+import DogCard from "../dogs/DogCard";
 import { Button } from "../ui/button";
 import type { FeaturedDogsSectionProps } from "@/types/homeComponents";
 import { formatCount } from "@/utils/formatCount";
@@ -27,11 +27,11 @@ export default function FeaturedDogsSection({ dogs, totalCount }: FeaturedDogsSe
         {/* Dogs Grid */}
         <div className="grid grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
           {dogs.slice(0, 6).map((dog, index) => (
-            <DogCardOptimized
+            <DogCard
               key={dog.id}
               dog={dog}
               priority={index < 3}
-              disableContainment
+              position={index}
             />
           ))}
         </div>

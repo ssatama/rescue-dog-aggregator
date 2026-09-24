@@ -1,5 +1,5 @@
 import React from "react";
-import DogCardOptimized from "./DogCardOptimized";
+import DogCard from "./DogCard";
 import DogCardErrorBoundary from "../error/DogCardErrorBoundary";
 import DogCardSkeletonOptimized from "../ui/DogCardSkeletonOptimized";
 import EmptyState from "../ui/EmptyState";
@@ -67,7 +67,7 @@ const DogsGrid = React.memo(function DogsGrid({
 
         return (
           <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-            <DogCardOptimized
+            <DogCard
               dog={dog}
               priority={index < 4}
               position={index}

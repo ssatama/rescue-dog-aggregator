@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, waitFor } from "../../test-utils";
-import DogCard from "../../components/dogs/DogCardOptimized";
+import DogCard from "../../components/dogs/DogCard";
 import OrganizationCard from "../../components/organizations/OrganizationCard";
 import TrustSection from "../../components/home/TrustSection";
 import RelatedDogsSection from "../../components/dogs/RelatedDogsSection";
@@ -50,7 +50,7 @@ describe("Typography Consistency Tests", () => {
   });
 
   describe("Typography Class Usage", () => {
-    it("should use .text-card-title for all card titles", () => {
+    it("dog card titles use the display face", () => {
       const mockDog = {
         id: 1,
         name: "Test Dog",
@@ -64,9 +64,9 @@ describe("Typography Consistency Tests", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const dogName = screen.getByText("Test Dog");
-      expect(dogName).toHaveClass("text-card-title");
-      expect(dogName.tagName).toBe("H3");
+      // Dog names use the display face (docs/technical/design-system.md)
+      const dogName = screen.getByRole("heading", { level: 3, name: "Test Dog" });
+      expect(dogName).toHaveClass("font-display");
     });
 
     it("should use .text-card-title for organization card titles", () => {
@@ -132,7 +132,7 @@ describe("Typography Consistency Tests", () => {
   });
 
   describe("Font Weight Consistency", () => {
-    it("should use font-semibold for card titles", () => {
+    it("dog card titles are bold", () => {
       const mockDog = {
         id: 1,
         name: "Test Dog",
@@ -146,9 +146,8 @@ describe("Typography Consistency Tests", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const dogName = screen.getByText("Test Dog");
-      // text-card-title class includes font-semibold
-      expect(dogName).toHaveClass("text-card-title");
+      const dogName = screen.getByRole("heading", { level: 3, name: "Test Dog" });
+      expect(dogName).toHaveClass("font-bold");
     });
 
     it("should use font-bold for section headings", () => {
@@ -226,10 +225,8 @@ describe("Typography Consistency Tests", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const cardContent = screen
-        .getByText("Test Dog")
-        .closest(".p-4, .p-5, .p-6");
-      expect(cardContent).toHaveClass(/p-[46]/);
+      const cardContent = screen.getByText("Test Dog").closest(".px-3");
+      expect(cardContent).toHaveClass("px-3", "pb-3");
     });
 
     it("should use consistent section spacing", () => {
@@ -264,9 +261,8 @@ describe("Typography Consistency Tests", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      // Dog name should be h3 with text-card-title class in DogCardOptimized (changed for accessibility)
-      const dogName = screen.getByText("Test Dog");
-      expect(dogName.tagName).toBe("H3");
+      // Dog name is an h3 inside the card
+      expect(screen.getByRole("heading", { level: 3, name: "Test Dog" })).toBeInTheDocument();
     });
 
     it("should not have h1 elements in card components", () => {
@@ -372,9 +368,9 @@ describe("Typography Consistency Tests", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      // Verify the text-card-title class is actually used in components
-      const dogName = screen.getByText("Test Dog");
-      expect(dogName).toHaveClass("text-card-title");
+      // The card uses the design system's type tokens
+      const dogName = screen.getByRole("heading", { level: 3, name: "Test Dog" });
+      expect(dogName).toHaveClass("font-display", "text-ink");
     });
 
     it("should verify section typography classes are used by components", async () => {
@@ -414,9 +410,8 @@ describe("Typography Consistency Tests", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const dogName = screen.getByText("Test Dog");
-      // text-card-title should include proper color contrast
-      expect(dogName).toHaveClass("text-card-title");
+      // Names use the ink token, the highest-contrast text colour
+      expect(screen.getByRole("heading", { level: 3, name: "Test Dog" })).toHaveClass("text-ink");
     });
 
     it("should use semantic heading structure", async () => {

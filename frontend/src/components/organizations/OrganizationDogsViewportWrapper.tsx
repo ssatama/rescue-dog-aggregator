@@ -130,6 +130,7 @@ const OrganizationDogsViewportWrapper: React.FC<
   return (
     <MobileCatalogErrorBoundary>
       <PremiumMobileCatalog
+        listContext={listContext}
         dogs={dogs}
         loading={loading}
         error={null}

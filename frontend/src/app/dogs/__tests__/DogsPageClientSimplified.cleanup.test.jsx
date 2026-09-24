@@ -36,9 +36,9 @@ jest.mock('../../../components/layout/Layout', () => {
   };
 });
 
-// Mock DogCardOptimized to avoid FavoritesContext requirements
-jest.mock('../../../components/dogs/DogCardOptimized', () => {
-  return function DogCardOptimized({ dog }) {
+// Mock DogCard to avoid FavoritesContext requirements
+jest.mock('../../../components/dogs/DogCard', () => {
+  return function DogCard({ dog }) {
     return (
       <div data-testid="dog-card" data-dog-id={dog.id}>
         {dog.name}

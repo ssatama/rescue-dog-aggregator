@@ -277,44 +277,16 @@ describe("DogGrid", () => {
     });
   });
 
-  it("renders in embedded mode when embedded prop is true", async () => {
+  it("renders one DogCard per dog", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
 
-    const { container } = render(<DogGrid breed="galgo" embedded={true} />, {
+    const { container } = render(<DogGrid breed="galgo" />, {
       wrapper: Wrapper,
     });
 
     await waitFor(() => {
-      // Embedded cards should have max height constraint
-      const cards = container.querySelectorAll('[data-testid^="dog-card-"]');
-      expect(cards.length).toBe(2);
-
-      // Check that cards have embedded styling (compact height)
-      // This will be implemented with a specific class or attribute
-      expect(cards[0]).toBeInTheDocument();
+      expect(container.querySelectorAll('[data-testid^="dog-card-"]')).toHaveLength(2);
     });
-  });
-
-  it("uses embedded mode by default (for guide pages)", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
-
-    // When no embedded prop is provided, it should default to true
-    render(<DogGrid breed="galgo" />, { wrapper: Wrapper });
-
-    await waitFor(() => {
-      expect(screen.getByText("Buddy")).toBeInTheDocument();
-      // Component should render dogs successfully
-    });
-  });
-
-  it("can disable embedded mode with embedded=false", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
-
-    render(<DogGrid breed="galgo" embedded={false} />, { wrapper: Wrapper });
-
-    await waitFor(() => {
-      expect(screen.getByText("Buddy")).toBeInTheDocument();
-      // Full cards should be rendered
-    });
+    expect(screen.getByText("Buddy")).toBeInTheDocument();
   });
 });

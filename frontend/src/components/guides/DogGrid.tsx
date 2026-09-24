@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import DogCardOptimized from "@/components/dogs/DogCardOptimized";
+import DogCard from "@/components/dogs/DogCard";
 import DogCardSkeletonOptimized from "@/components/dogs/DogCardSkeletonOptimized";
 import { getAnimals } from "@/services/serverAnimalsService";
 import type { Dog } from "@/types/dog";
@@ -51,7 +51,6 @@ interface DogGridProps {
   limit?: number;
   caption?: string;
   layout?: "grid" | "carousel";
-  embedded?: boolean; // Compact mode for guide pages (default true)
 }
 
 export function DogGrid({
@@ -71,7 +70,6 @@ export function DogGrid({
   limit = 4,
   caption,
   layout = "grid",
-  embedded = true, // Default to compact for guide pages
 }: DogGridProps) {
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -190,13 +188,7 @@ export function DogGrid({
       {layout === "grid" ? (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 sm:gap-6">
           {dogs.map((dog, index) => (
-            <DogCardOptimized
-              key={dog.id}
-              dog={dog}
-              priority={index < 2}
-              compact={false}
-              embedded={embedded}
-            />
+            <DogCard key={dog.id} dog={dog} priority={index < 2} position={index} />
           ))}
         </div>
       ) : (
@@ -206,12 +198,7 @@ export function DogGrid({
               key={dog.id}
               className="flex-none min-w-[260px] max-w-[360px] w-[80%] sm:w-[320px] snap-start"
             >
-              <DogCardOptimized
-                dog={dog}
-                priority={index < 2}
-                compact={true}
-                embedded={embedded}
-              />
+              <DogCard dog={dog} priority={index < 2} position={index} />
             </div>
           ))}
         </div>

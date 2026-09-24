@@ -59,22 +59,27 @@ jest.mock("../mobile/detail/DogDetailModalUpgraded", () => ({
     isOpen && dog ? <div data-testid="dog-modal">{dog.name} Modal</div> : null,
 }));
 
-interface MockDogCardPropsExtended extends MockDogCardProps {
-  isVirtualized?: boolean;
+interface MockDogCardPropsExtended {
+  dog: MockDog;
   position?: number;
+  listContext?: string;
+  onOpen?: (dog: MockDog) => void;
 }
 
-jest.mock("../DogCardOptimized", () => ({
+// DogCard is a real link to the dog page, so the mock renders one
+jest.mock("../DogCard", () => ({
   __esModule: true,
-  default: ({ dog, onClick, isVirtualized, position }: MockDogCardPropsExtended) => (
-    <div
+  default: ({ dog, position, listContext, onOpen }: MockDogCardPropsExtended) => (
+    <a
+      href={`/dogs/${dog.slug}`}
       data-testid="dog-card-desktop"
-      data-virtualized={isVirtualized ? "true" : "false"}
       data-position={position}
-      onClick={onClick}
+      data-list-context={listContext}
+      data-opens-modal={onOpen ? "true" : "false"}
+      onClick={(e) => e.preventDefault()}
     >
       {dog.name} - Desktop Card
-    </div>
+    </a>
   ),
 }));
 
@@ -204,7 +209,7 @@ describe("DogsPageViewportWrapper", () => {
       });
     });
 
-    it("renders existing DogCardOptimized components for desktop with virtualization", async () => {
+    it("renders existing DogCard components for desktop with virtualization", async () => {
       const { container } = render(<DogsPageViewportWrapper dogs={mockDogs} />);
 
       // Wait for dynamic imports to load
@@ -231,16 +236,14 @@ describe("DogsPageViewportWrapper", () => {
       expect(gridContainer).toBeInTheDocument();
     });
 
-    it("navigates to separate detail page on desktop click", () => {
+    it("links each desktop card to its detail page instead of the modal", () => {
       render(<DogsPageViewportWrapper dogs={mockDogs} />);
 
       const firstCard = screen.getByText("Max - Desktop Card");
+      expect(firstCard).toHaveAttribute("href", "/dogs/max-golden-retriever-1");
+      expect(firstCard).toHaveAttribute("data-opens-modal", "false");
+
       fireEvent.click(firstCard);
-
-      // Should use router.push to navigate with slug
-      expect(mockPush).toHaveBeenCalledWith("/dogs/max-golden-retriever-1");
-
-      // Should NOT open modal
       expect(screen.queryByTestId("dog-modal")).not.toBeInTheDocument();
     });
 
@@ -435,18 +438,18 @@ describe("DogsPageViewportWrapper", () => {
       });
     });
 
-    it("passes isVirtualized=true to DogCardOptimized in virtualized grid", async () => {
+    it("reports catalog card clicks as the search list", async () => {
       render(<DogsPageViewportWrapper dogs={mockDogs} />);
 
       await waitFor(() => {
         const cards = screen.getAllByTestId("dog-card-desktop");
         cards.forEach((card) => {
-          expect(card).toHaveAttribute("data-virtualized", "true");
+          expect(card).toHaveAttribute("data-list-context", "search");
         });
       });
     });
 
-    it("passes correct position to each DogCardOptimized", async () => {
+    it("passes correct position to each DogCard", async () => {
       render(<DogsPageViewportWrapper dogs={mockDogs} />);
 
       await waitFor(() => {
@@ -465,13 +468,15 @@ describe("DogsPageViewportWrapper", () => {
       });
     });
 
-    it("maintains click functionality within virtualized rows", async () => {
+    it("keeps card links inside virtualized rows", async () => {
       render(<DogsPageViewportWrapper dogs={mockDogs} />);
 
-      const firstCard = screen.getByText("Max - Desktop Card");
-      fireEvent.click(firstCard);
-
-      expect(mockPush).toHaveBeenCalledWith("/dogs/max-golden-retriever-1");
+      await waitFor(() => {
+        expect(screen.getByText("Max - Desktop Card")).toHaveAttribute(
+          "href",
+          "/dogs/max-golden-retriever-1",
+        );
+      });
     });
 
     it("renders rows without fixed height style for dynamic measurement", async () => {

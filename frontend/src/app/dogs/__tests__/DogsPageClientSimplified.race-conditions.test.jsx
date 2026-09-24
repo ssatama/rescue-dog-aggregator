@@ -21,8 +21,8 @@ jest.mock("../../../components/layout/Layout", () => {
   };
 });
 
-jest.mock("../../../components/dogs/DogCardOptimized", () => {
-  return function DogCardOptimized({ dog }) {
+jest.mock("../../../components/dogs/DogCard", () => {
+  return function DogCard({ dog }) {
     return (
       <div data-testid="dog-card" data-dog-id={dog.id}>
         {dog.name}

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, memo } from "react";
 import Link from "next/link";
-import DogCardOptimized from "./DogCardOptimized";
+import DogCard from "./DogCard";
 import { getRelatedDogs } from "../../services/relatedDogsService";
 import { sanitizeText } from "../../utils/security";
 import { reportError } from "../../utils/logger";
@@ -165,12 +165,7 @@ const RelatedDogsSection = memo(
               className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"
             >
               {limitedRelatedDogs.map((dog) => (
-                <DogCardOptimized
-                  key={dog.id}
-                  dog={dog}
-                  priority={false}
-                  compact={false}
-                />
+                <DogCard key={dog.id} dog={dog} />
               ))}
             </div>
 
