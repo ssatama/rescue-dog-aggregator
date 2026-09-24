@@ -19,6 +19,7 @@ import {
 import { Dog } from "./types";
 import Image from "next/image";
 import { FallbackImage } from "../ui/FallbackImage";
+import { trackAdoptionLinkClicked } from "@/lib/analytics";
 
 interface ComparisonViewProps {
   dogs: Dog[];
@@ -188,6 +189,7 @@ const DogComparisonCard = ({
 
   const handleVisit = () => {
     if (dog.adoption_url) {
+      trackAdoptionLinkClicked(dog, "comparison");
       window.open(dog.adoption_url, "_blank", "noopener");
     }
   };

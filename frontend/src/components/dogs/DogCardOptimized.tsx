@@ -27,6 +27,7 @@ import {
   getPersonalityTraits,
 } from "../../utils/dogHelpers";
 import { trackDogCardClick } from "@/lib/monitoring/breadcrumbs";
+import { trackDogCardClicked } from "@/lib/analytics";
 import type { DogCardOptimizedProps } from "@/types/dogComponents";
 import type { Dog } from "@/types/dog";
 
@@ -93,6 +94,7 @@ const DogCardOptimized = React.memo(
   const handleCardClick = useCallback(() => {
     if (id && id !== "0" && name && name !== "Unknown Dog") {
       trackDogCardClick(id.toString(), name, position, listContext);
+      trackDogCardClicked(id.toString(), position, listContext);
     }
   }, [id, name, position, listContext]);
 

@@ -24,6 +24,7 @@ import { getAgeCategory } from "@/utils/dogHelpers";
 import { capitalizeFirst } from "@/utils/breedDisplayUtils";
 import { hasCompatibilitySection } from "@/components/dogs/detail";
 import ShareButton from "@/components/ui/ShareButton";
+import { trackAdoptionLinkClicked, trackDogViewed } from "@/lib/analytics";
 
 interface DogDetailModalUpgradedProps {
   dog: Dog | null;
@@ -179,6 +180,14 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     setIsDescriptionExpanded(false);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [dog?.id]);
+
+  // Each dog shown in the modal counts as a view, including prev/next paging.
+  useEffect(() => {
+    if (isOpen && dog) {
+      trackDogViewed(dog, "modal");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per dog shown, not per re-render of the same dog
+  }, [isOpen, dog?.id]);
 
   // Reset image error when photo changes
   useEffect(() => {
@@ -808,6 +817,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                     className="w-full bg-gradient-to-r from-orange-500 to-orange-600 dark:bg-orange-600 hover:from-orange-600 hover:to-orange-700 dark:hover:from-orange-700 dark:hover:to-orange-800 text-white py-4 px-6 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                     onClick={() => {
                       if (dog.adoption_url) {
+                        trackAdoptionLinkClicked(dog, "modal");
                         window.open(dog.adoption_url, "_blank", "noopener");
                       }
                     }}

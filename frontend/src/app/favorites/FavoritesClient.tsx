@@ -14,6 +14,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import ShareButton from "../../components/ui/ShareButton";
 import FavoritesInsights from "../../components/favorites/FavoritesInsights";
 import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
+import { trackFavoritesViewed } from "@/lib/analytics";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import type { Dog } from "../../types/dog";
 import { getAnimalsByIds } from "../../services/animalsService";
@@ -122,6 +123,16 @@ function FavoritesPageContent(): React.JSX.Element {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Track only on mount
   }, []);
+
+  // Once, after favorites load from localStorage: on a direct load the mount
+  // effect above runs before the provider's and would always report 0.
+  const favoritesViewTracked = useRef(false);
+  useEffect(() => {
+    if (isHydrated && !favoritesViewTracked.current) {
+      favoritesViewTracked.current = true;
+      trackFavoritesViewed(favorites.length);
+    }
+  }, [isHydrated, favorites.length]);
 
   // Fetch dog data for favorites — only refetch when new IDs are added
   useEffect(() => {

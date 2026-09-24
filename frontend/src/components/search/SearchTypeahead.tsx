@@ -16,6 +16,7 @@ import type { IconName } from "@/components/ui/Icon";
 import { useDebouncedCallback } from "use-debounce";
 import { logger, reportError } from "@/utils/logger";
 import { trackSearch } from "@/lib/monitoring/breadcrumbs";
+import { trackSearchSubmitted } from "@/lib/analytics";
 import {
   fuzzySearch,
   generateDidYouMeanSuggestions,
@@ -242,6 +243,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
 
         // Track search with basic filters (empty object for now)
         trackSearch(inputValue, {}, filteredSuggestions.length);
+        trackSearchSubmitted(inputValue, filteredSuggestions.length);
 
         onSearch?.(inputValue);
         setIsOpen(false);

@@ -105,6 +105,15 @@ describe("Privacy Page", () => {
       expect(vercelLink).toHaveAttribute("target", "_blank");
     });
 
+    test("renders PostHog info with link and no-storage promise", () => {
+      const posthogLink = screen.getByRole("link", { name: /posthog/i });
+      expect(posthogLink).toHaveAttribute("href", "https://posthog.com/privacy");
+      expect(screen.getByText(/stored in the eu/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/analytics store nothing on your device/i)
+      ).toBeInTheDocument();
+    });
+
     test("renders What We Don't Collect section", () => {
       expect(
         screen.getByRole("heading", { name: /what we don't collect/i })

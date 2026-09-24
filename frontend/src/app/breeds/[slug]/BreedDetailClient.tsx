@@ -34,6 +34,7 @@ import type {
   SampleDog,
 } from "@/types/breeds";
 import type { FilterCountsResponse } from "@/schemas/common";
+import { trackFiltersChanged } from "@/lib/analytics";
 
 const MobileFilterDrawer = dynamic(
   () => import("@/components/filters/MobileFilterDrawer"),
@@ -241,6 +242,7 @@ export default function BreedDetailClient({
     (filterKey: string, value: string) => {
       const newFilters = { ...filters, [filterKey]: value };
       updateURL(newFilters);
+      trackFiltersChanged({ [filterKey]: value });
 
       startTransition(() => {
         setPage(1);
@@ -263,6 +265,11 @@ export default function BreedDetailClient({
       }
 
       router.push(buildURLFromFilters(newFilters, pathname), { scroll: false });
+      trackFiltersChanged(
+        typeof filterKeyOrBatch === "object"
+          ? filterKeyOrBatch
+          : { [filterKeyOrBatch]: value },
+      );
 
       fetchDogsWithFilters(newFilters);
     },

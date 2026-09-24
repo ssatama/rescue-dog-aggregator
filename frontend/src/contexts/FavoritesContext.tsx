@@ -11,6 +11,7 @@ import React, {
 import { useToast } from "./ToastContext";
 import { generateFavoritesUrl, parseSharedUrl } from "../utils/sharing";
 import { logger, reportError } from "../utils/logger";
+import { trackFavoriteChanged } from "../lib/analytics";
 
 interface FavoritesContextType {
   favorites: number[];
@@ -253,6 +254,10 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const addFavorite = useCallback(
     async (dogId: number | string, dogName?: string): Promise<void> => {
       const numId = toNumericId(dogId);
+      // Tracked outside the updater, which React may run twice.
+      if (!favorites.includes(numId) && favorites.length < MAX_FAVORITES) {
+        trackFavoriteChanged("add", numId);
+      }
       setFavorites((prev) => {
         if (prev.includes(numId)) {
           return prev;
@@ -278,12 +283,15 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         return newFavorites;
       });
     },
-    [saveToLocalStorage],
+    [favorites, saveToLocalStorage],
   );
 
   const removeFavorite = useCallback(
     async (dogId: number | string, dogName?: string): Promise<void> => {
       const numId = toNumericId(dogId);
+      if (favorites.includes(numId)) {
+        trackFavoriteChanged("remove", numId);
+      }
       setFavorites((prev) => {
         const newFavorites = prev.filter((id) => id !== numId);
         saveToLocalStorage(newFavorites);
@@ -297,7 +305,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         return newFavorites;
       });
     },
-    [saveToLocalStorage],
+    [favorites, saveToLocalStorage],
   );
 
   const removeFavoritesBatch = useCallback(

@@ -32,6 +32,7 @@ import {
   trackDogImageView,
   trackExternalLinkClick,
 } from "@/lib/monitoring/breadcrumbs";
+import { trackAdoptionLinkClicked, trackDogViewed } from "@/lib/analytics";
 import {
   PersonalityTraits,
   EnergyTrainability,
@@ -112,6 +113,9 @@ export default function DogDetailClient({
           if (data?.id && data?.name && typeof org === "object" && org?.slug) {
             trackDogView(data.id.toString(), data.name, org.slug);
           }
+          if (data?.id) {
+            trackDogViewed(data as Dog, "detail_page");
+          }
         }
       } catch (err: unknown) {
         const error = err instanceof Error ? err : new Error(String(err));
@@ -188,6 +192,7 @@ export default function DogDetailClient({
           initialDog.organization.slug,
         );
       }
+      trackDogViewed(initialDog, "detail_page");
       return;
     }
 
@@ -651,8 +656,20 @@ export default function DogDetailClient({
                                   className="flex items-center justify-center"
                                   data-testid="adopt-button"
                                   aria-label={`Start adoption process for ${dog.name}`}
+                                  onAuxClick={(e) => {
+                                    // Middle-click opens the link too
+                                    if (e.button === 1) {
+                                      trackAdoptionLinkClicked(
+                                        dog,
+                                        "detail_page",
+                                      );
+                                    }
+                                  }}
                                   onClick={() => {
-                                    // Track external link click
+                                    trackAdoptionLinkClicked(
+                                      dog,
+                                      "detail_page",
+                                    );
                                     if (dog?.organization?.slug && dog?.id) {
                                       trackExternalLinkClick(
                                         "adopt",

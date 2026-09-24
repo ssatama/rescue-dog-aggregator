@@ -3,6 +3,8 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import posthog from "posthog-js";
+import { resolvePosthogOptOut } from "@/lib/posthogOptOut";
 import {
   isChunkLoadError,
   setupChunkErrorHandler,
@@ -27,6 +29,67 @@ const isProduction = environment === "production";
 const isPreview = environment === "preview";
 
 logger.log("[Sentry] Client instrumentation file loaded");
+
+// PostHog product analytics. Production only, so previews and local builds
+// don't pollute the numbers; `?debug=posthog` enables it anywhere for testing.
+// `?posthog_optout=1` permanently excludes this browser (see posthogOptOut.ts).
+//
+// `window.localStorage` is read inside a try because Safari with strict privacy
+// throws on the property access itself, and a throw here would take Sentry
+// init down with it.
+let posthogStorage: Storage | null = null;
+try {
+  posthogStorage = window.localStorage;
+} catch {
+  // Blocked storage: the opt-out cannot be read, so capture as normal.
+}
+let posthogInitError: unknown = null;
+let posthogEnabled =
+  typeof window !== "undefined" &&
+  !!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN &&
+  (isProduction || window.location.search.includes("debug=posthog")) &&
+  !resolvePosthogOptOut(window.location.search, posthogStorage);
+
+// Guarded so a PostHog failure can never stop Sentry from starting below.
+if (posthogEnabled) {
+  try {
+    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
+      // PostHog-managed reverse proxy (CNAME to PostHog EU), so ad blockers
+      // don't drop events. It also serves the replay recorder script.
+      api_host: "https://e.rescuedogs.me",
+      ui_host: "https://eu.posthog.com",
+      // Pageviews on App Router navigations via the history API, plus current
+      // recommended defaults for everything else.
+      defaults: "2026-08-30",
+      // No cookies, no localStorage: the privacy page promises no cookies and
+      // there is no consent banner. The cost is that a full page reload starts
+      // a new anonymous visitor, so unique-visitor counts run high. We don't use
+      // `cookieless_mode: "always"` because it doesn't record session replays.
+      persistence: "memory",
+      // Sentry owns errors; the sentryIntegration below links the two.
+      capture_exceptions: false,
+      // The recorder bundle is large, so it starts once the page is idle
+      // (below), keeping it off the critical path for LCP.
+      disable_session_recording: true,
+    });
+
+    const startRecording = () => {
+      try {
+        posthog.startSessionRecording();
+      } catch {
+        // Replays are best effort; a blocked recorder script is not a bug.
+      }
+    };
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(startRecording, { timeout: 2000 });
+    } else {
+      setTimeout(startRecording, 2000);
+    }
+  } catch (error) {
+    posthogEnabled = false;
+    posthogInitError = error;
+  }
+}
 
 // Initialize Sentry in production and preview environments
 if (
@@ -65,8 +128,9 @@ if (
       /^https:\/\/api\.rescuedogs\.me/,
     ],
 
-    // Session Replay - 10% baseline, 100% on errors
-    replaysSessionSampleRate: isProduction ? 0.1 : 0,
+    // Session Replay - errors only. PostHog records every session, and the
+    // posthog.sentryIntegration below links a Sentry issue to that replay.
+    replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: isProduction ? 1.0 : 0,
 
     // Integrations
@@ -87,6 +151,11 @@ if (
           ]
         : []),
       Sentry.browserTracingIntegration(),
+      // Tags each Sentry event with the PostHog person and session URL.
+      // Exceptions are not copied into PostHog: Sentry stays the error tracker.
+      ...(posthogEnabled
+        ? [posthog.sentryIntegration({ sendExceptionsToPostHog: false })]
+        : []),
     ],
 
     // Note: tunnelRoute in next.config.js handles tunnel - no transportOptions needed
@@ -251,6 +320,12 @@ if (
       trackThemeChange();
     }
   });
+
+  if (posthogInitError) {
+    Sentry.captureException(posthogInitError, {
+      tags: { component: "posthog-init" },
+    });
+  }
 
   // Setup chunk error handler for auto-reload on stale chunks
   setupChunkErrorHandler();

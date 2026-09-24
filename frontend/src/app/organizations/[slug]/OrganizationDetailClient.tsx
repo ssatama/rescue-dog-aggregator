@@ -16,6 +16,7 @@ import {
 } from "../../../services/organizationsService";
 import { reportError } from "../../../utils/logger";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
+import { trackOrganizationViewed } from "@/lib/analytics";
 import OrganizationDogsViewportWrapper from "../../../components/organizations/OrganizationDogsViewportWrapper";
 import DogsGrid from "../../../components/dogs/DogsGrid";
 import type { OrganizationDetailClientProps } from "@/types/pageComponents";
@@ -214,6 +215,16 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
       fetchOrganizationDogs(page + 1, true);
     }
   };
+
+  // Separate from the fetch below, which skips the org request (and anything
+  // inside it) when the server already rendered the organization.
+  const viewedOrgSlug = organization?.slug;
+  useEffect(() => {
+    if (viewedOrgSlug) {
+      trackOrganizationViewed(viewedOrgSlug, organization?.total_dogs ?? 0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per organization
+  }, [viewedOrgSlug]);
 
   useEffect(() => {
     const fetchData = async () => {

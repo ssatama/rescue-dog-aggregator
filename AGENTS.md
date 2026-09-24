@@ -11,7 +11,9 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Testing: pytest (backend), Jest (frontend)
 - AI: OpenRouter, pinned to `google/gemini-3.8-flash` for LLM enrichment
 - Browser Automation: Playwright (Browserless v2 in production)
-- Monitoring: Sentry (dev/prod)
+- Monitoring: Sentry (dev/prod) for errors; PostHog (EU, cookieless) for
+  product analytics and session replay. All events go through
+  `frontend/src/lib/analytics.ts`; `adoption_link_clicked` is the conversion event
 - Package Management: **uv** (backend), **pnpm** (frontend)
 - Linting: **ruff** (replaces black/isort/flake8)
 - Current: 155 backend test files, 250 frontend test files, 1,500+ active dogs
@@ -270,6 +272,7 @@ imports it; do not duplicate content between them.
 - Architecture: `docs/technical/architecture.md`
 - Scrapers: `docs/technical/scraper-architecture.md`
 - LLM pipeline: `docs/features/llm-data-enrichment.md`
+- Product analytics (PostHog): `docs/features/product-analytics.md`
 - Setup: `docs/guides/installation.md`
 - Deployment: `docs/guides/deployment.md`
 - Testing: `docs/guides/testing.md`
