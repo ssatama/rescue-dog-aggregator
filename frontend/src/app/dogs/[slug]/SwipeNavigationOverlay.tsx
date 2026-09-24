@@ -1,20 +1,30 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, type MutableRefObject } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSwipeNavigation } from "../../../hooks/useSwipeNavigation";
 import { NavigationArrows } from "../../../components/dogs/detail";
+
+export interface DogNavigation {
+  prev?: () => void;
+  next?: () => void;
+}
 
 interface SwipeNavigationOverlayProps {
   dogSlug: string;
   /** Swipe on the photo to change dog. Off when the photo is a gallery, whose
    * own swipe changes photo. */
   gestures?: boolean;
+  /** Filled with prev/next dog, so a gallery can change dog when swiped past
+   * its first or last photo. A ref rather than a render prop: this overlay
+   * sits in a Suspense boundary the gallery must stay out of. */
+  navigationRef?: MutableRefObject<DogNavigation>;
 }
 
 export default function SwipeNavigationOverlay({
   dogSlug,
   gestures = true,
+  navigationRef,
 }: SwipeNavigationOverlayProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -64,6 +74,17 @@ export default function SwipeNavigationOverlay({
       router.push(url);
     }
   }, [nextDog, searchParams, router]);
+
+  useEffect(() => {
+    if (!navigationRef) return;
+    navigationRef.current = {
+      prev: prevDog ? handlePrevDog : undefined,
+      next: nextDog ? handleNextDog : undefined,
+    };
+    return () => {
+      navigationRef.current = {};
+    };
+  }, [navigationRef, prevDog, nextDog, handlePrevDog, handleNextDog]);
 
   const hasNavigation = prevDog || nextDog;
   const swipeable = gestures && hasNavigation;

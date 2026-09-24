@@ -24,9 +24,11 @@ const NavigationArrows: React.FC<NavigationArrowsProps> = ({
     return null;
   }
 
+  // Only where the page leaves a margin for them; on narrower screens they
+  // would cover the photo gallery's own arrows (#489)
   const buttonClasses = `
     fixed top-1/2 -translate-y-1/2 z-50
-    hidden md:flex items-center justify-center
+    hidden min-[1320px]:flex items-center justify-center
     w-12 h-12 rounded-full
     bg-white shadow-lg
     hover:bg-gray-50 hover:shadow-xl
@@ -46,7 +48,7 @@ const NavigationArrows: React.FC<NavigationArrowsProps> = ({
           disabled={isLoading}
           aria-label="Previous dog"
           type="button"
-          title="Go to previous dog (or use right arrow key)"
+          title="Go to previous dog (or use left arrow key)"
         >
           <Icon
             name="chevron-left"
@@ -65,7 +67,7 @@ const NavigationArrows: React.FC<NavigationArrowsProps> = ({
           disabled={isLoading}
           aria-label="Next dog"
           type="button"
-          title="Go to next dog (or use left arrow key)"
+          title="Go to next dog (or use right arrow key)"
         >
           <Icon
             name="chevron-right"

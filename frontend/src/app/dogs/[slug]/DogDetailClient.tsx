@@ -49,7 +49,7 @@ import {
 } from "../../../components/dogs/detail";
 import DogStatusBadge from "../../../components/dogs/DogStatusBadge";
 import AdoptedCelebration from "../../../components/dogs/AdoptedCelebration";
-import SwipeNavigationOverlay from "./SwipeNavigationOverlay";
+import SwipeNavigationOverlay, { type DogNavigation } from "./SwipeNavigationOverlay";
 import { hasAnyProfileSection } from "../../../utils/dogProfiler";
 
 export default function DogDetailClient({
@@ -68,6 +68,7 @@ export default function DogDetailClient({
   const [error, setError] = useState(false);
   const [retryInProgress, setRetryInProgress] = useState(false);
   const mountedRef = useRef<boolean>(true);
+  const dogNavigation = useRef<DogNavigation>({});
 
   // Enhanced fetchDogData with comprehensive error handling and retry logic
   const fetchDogData = useCallback(
@@ -364,6 +365,7 @@ export default function DogDetailClient({
                         key={dogSlug}
                         dogSlug={dogSlug ?? ""}
                         gestures={gallery.length <= 1}
+                        navigationRef={dogNavigation}
                       />
                     </Suspense>
 
@@ -373,6 +375,8 @@ export default function DogDetailClient({
                       dogName={dog.name}
                       images={gallery}
                       className="mb-6"
+                      onSwipePastStart={() => dogNavigation.current.prev?.()}
+                      onSwipePastEnd={() => dogNavigation.current.next?.()}
                     />
                   </div>
                 </div>

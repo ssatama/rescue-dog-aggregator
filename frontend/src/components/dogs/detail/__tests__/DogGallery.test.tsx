@@ -1,12 +1,16 @@
 import React from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import DogGallery from "../DogGallery";
 import { trackGalleryPhotoViewed } from "@/lib/analytics";
+import { reportError } from "@/utils/logger";
 import type { DogImage } from "@/types/dog";
 
 jest.mock("@/lib/analytics", () => ({
   trackGalleryPhotoViewed: jest.fn(),
+}));
+jest.mock("@/utils/logger", () => ({
+  reportError: jest.fn(),
 }));
 
 const CDN = "https://images.rescuedogs.me/rescue_dogs/test";
@@ -192,5 +196,77 @@ describe("DogGallery", () => {
     const second = screen.getByRole("button", { name: "View photo 2 of Dolly full screen" });
     expect(second).toHaveFocus();
     expect(second).toHaveAttribute("tabindex", "0");
+  });
+
+  describe("swiping past the first or last photo", () => {
+    const swipe = (el: Element, dx: number, dy = 0) => {
+      fireEvent.touchStart(el, { touches: [{ clientX: 200, clientY: 100 }] });
+      fireEvent.touchEnd(el, { changedTouches: [{ clientX: 200 + dx, clientY: 100 + dy }] });
+    };
+
+    function setup() {
+      const onSwipePastStart = jest.fn();
+      const onSwipePastEnd = jest.fn();
+      render(
+        <DogGallery
+          dogId={7}
+          dogName="Dolly"
+          images={photos(3)}
+          onSwipePastStart={onSwipePastStart}
+          onSwipePastEnd={onSwipePastEnd}
+        />,
+      );
+      const track = screen.getByTestId("dog-gallery").querySelector(".snap-x") as HTMLDivElement;
+      return { track, onSwipePastStart, onSwipePastEnd };
+    }
+
+    it("goes to the previous dog from the first photo", () => {
+      const { track, onSwipePastStart, onSwipePastEnd } = setup();
+      swipe(track, 120);
+      expect(onSwipePastStart).toHaveBeenCalledTimes(1);
+      expect(onSwipePastEnd).not.toHaveBeenCalled();
+    });
+
+    it("goes to the next dog from the last photo only", () => {
+      const { track, onSwipePastEnd } = setup();
+      swipe(track, -120);
+      expect(onSwipePastEnd).not.toHaveBeenCalled();
+
+      fireEvent.keyDown(screen.getByTestId("dog-gallery"), { key: "End" });
+      swipe(track, -120);
+      expect(onSwipePastEnd).toHaveBeenCalledTimes(1);
+    });
+
+    it("ignores short and mostly vertical swipes", () => {
+      const { track, onSwipePastStart } = setup();
+      swipe(track, 30);
+      swipe(track, 80, 200);
+      expect(onSwipePastStart).not.toHaveBeenCalled();
+    });
+  });
+
+  it("returns focus to the photo shown when full screen closes", async () => {
+    renderGallery(photos(3));
+    fireEvent.click(screen.getByRole("button", { name: "View photo 1 of Dolly full screen" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.keyDown(dialog, { key: "ArrowRight" });
+    fireEvent.keyDown(dialog, { key: "ArrowRight" });
+
+    fireEvent.keyDown(dialog, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // Radix restores focus on a timer after the dialog unmounts
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "View photo 3 of Dolly full screen" })).toHaveFocus(),
+    );
+  });
+
+  it("reports a photo that fails to load", () => {
+    renderGallery([{ url: `${CDN}/broken.jpg`, width: 800, height: 600 }]);
+
+    fireEvent.error(screen.getByAltText("Dolly"));
+
+    expect(screen.getByTestId("gallery-photo-missing")).toBeInTheDocument();
+    expect(reportError).toHaveBeenCalledWith(expect.any(Error), { imageUrl: `${CDN}/broken.jpg` });
   });
 });

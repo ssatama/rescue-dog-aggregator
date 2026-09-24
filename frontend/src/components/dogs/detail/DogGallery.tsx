@@ -6,6 +6,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trackGalleryPhotoViewed } from "@/lib/analytics";
+import { reportError } from "@/utils/logger";
 import type { DogImage } from "@/types/dog";
 
 const MAX_THUMBS = 6;
@@ -13,6 +14,8 @@ const MAX_THUMBS = 6;
 const ON_BLACK = "dark:bg-white/90 dark:text-gray-900";
 const TRACK_DELAY_MS = 300;
 const SCROLL_SETTLE_MS = 1000;
+// A horizontal swipe at least this long past the first or last photo changes dog
+const EDGE_SWIPE_PX = 60;
 // The frame spans the dog page's max-w-4xl column, minus its padding
 const FRAME_SIZES = "(min-width: 896px) 832px, 100vw";
 
@@ -82,7 +85,10 @@ function FramedPhoto({
             fill
             sizes={sizes}
             priority={priority}
-            onError={() => setFailed(true)}
+            onError={() => {
+              setFailed(true);
+              reportError(new Error("Gallery photo failed to load"), { imageUrl: image.url });
+            }}
             className={sized ? "object-contain" : "object-scale-down"}
           />
         </div>
@@ -149,6 +155,10 @@ export interface DogGalleryProps {
   dogName: string;
   images: DogImage[];
   className?: string;
+  /** Swiped right on the first photo: the previous dog, like a one-photo dog. */
+  onSwipePastStart?: () => void;
+  /** Swiped left on the last photo: the next dog. */
+  onSwipePastEnd?: () => void;
 }
 
 /**
@@ -161,6 +171,8 @@ export default function DogGallery({
   dogName,
   images,
   className,
+  onSwipePastStart,
+  onSwipePastEnd,
 }: DogGalleryProps): React.ReactElement | null {
   const [index, setIndex] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -191,6 +203,10 @@ export default function DogGallery({
     if (!track || track.clientWidth === 0) return null;
     return Math.max(0, Math.min(Math.round(track.scrollLeft / track.clientWidth), total - 1));
   }, [total]);
+
+  const focusPhoto = useCallback((i: number) => {
+    trackRef.current?.querySelectorAll<HTMLElement>("[data-open-photo]")[i]?.focus({ preventScroll: true });
+  }, []);
 
   const goTo = useCallback(
     (target: number, behavior?: ScrollBehavior) => {
@@ -249,11 +265,33 @@ export default function DogGallery({
       goTo(next);
       // Keyboard focus on a photo follows it, so Enter opens the photo shown
       const track = trackRef.current;
-      if (track?.contains(document.activeElement)) {
-        track.querySelectorAll<HTMLElement>("[data-open-photo]")[next]?.focus({ preventScroll: true });
-      }
+      if (track?.contains(document.activeElement)) focusPhoto(next);
     },
-    [index, total, multiple, fullscreen, goTo],
+    [index, total, multiple, fullscreen, goTo, focusPhoto],
+  );
+
+  // Where a touch started, and on which photo: a swipe at the first or last
+  // photo can't scroll the frame, so it changes dog instead.
+  const touchStart = useRef<{ x: number; y: number; index: number } | null>(null);
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      const t = e.touches[0];
+      touchStart.current = t ? { x: t.clientX, y: t.clientY, index } : null;
+    },
+    [index],
+  );
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const start = touchStart.current;
+      const t = e.changedTouches[0];
+      touchStart.current = null;
+      if (!start || !t) return;
+      const dx = t.clientX - start.x;
+      if (Math.abs(dx) < EDGE_SWIPE_PX || Math.abs(dx) < Math.abs(t.clientY - start.y)) return;
+      if (dx > 0 && start.index === 0) onSwipePastStart?.();
+      if (dx < 0 && start.index === total - 1) onSwipePastEnd?.();
+    },
+    [total, onSwipePastStart, onSwipePastEnd],
   );
 
   const closeFullscreen = useCallback(
@@ -285,6 +323,8 @@ export default function DogGallery({
         <div
           ref={trackRef}
           onScroll={multiple ? handleScroll : undefined}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           className="flex h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {images.map((image, i) => (
@@ -386,6 +426,11 @@ export default function DogGallery({
           <Dialog.Content
             className="fixed inset-0 z-50 focus:outline-none"
             aria-describedby={undefined}
+            // Return focus to the photo now on screen, not the one opened
+            onCloseAutoFocus={(e) => {
+              e.preventDefault();
+              focusPhoto(index);
+            }}
           >
             <Dialog.Title className="sr-only">Photos of {dogName}</Dialog.Title>
             <div className="absolute inset-4 sm:inset-12">
