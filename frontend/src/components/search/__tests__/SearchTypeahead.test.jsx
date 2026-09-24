@@ -7,7 +7,13 @@ import {
   act,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import posthog from "posthog-js";
 import SearchTypeahead from "../SearchTypeahead";
+
+jest.mock("posthog-js", () => ({
+  __esModule: true,
+  default: { __loaded: true, capture: jest.fn() },
+}));
 
 // Mock framer-motion to avoid animation issues in tests
 jest.mock("framer-motion", () => ({
@@ -643,6 +649,68 @@ describe("SearchTypeahead", () => {
 
       // Check if large size styles are applied
       expect(input.className).toMatch(/h-12/);
+    });
+  });
+
+  describe("Analytics", () => {
+    const typed = "Bella near 10115 Berlin";
+
+    it("sends search_performed on submit without the typed text", async () => {
+      const user = userEvent.setup();
+      render(
+        <SearchTypeahead
+          {...defaultProps}
+          fetchSuggestions={jest.fn(() => Promise.resolve([]))}
+          debounceMs={0}
+          analytics={{ surface: "catalog", suggestionGroup: "dog" }}
+        />,
+      );
+
+      const input = screen.getByPlaceholderText("Search dogs...");
+      await user.type(input, typed);
+      fireEvent.keyDown(input, { key: "Enter" });
+
+      expect(posthog.capture).toHaveBeenCalledWith(
+        "search_performed",
+        { surface: "catalog", result_group_chosen: "none", result_count: 0 },
+        undefined,
+      );
+      const sent = JSON.stringify(posthog.capture.mock.calls);
+      expect(sent).not.toContain("Bella");
+      expect(sent).not.toContain("10115");
+    });
+
+    it("records the suggestion group when a suggestion is picked", async () => {
+      const user = userEvent.setup();
+      render(
+        <SearchTypeahead
+          {...defaultProps}
+          value="Be"
+          debounceMs={0}
+          analytics={{ surface: "mobile", suggestionGroup: "dog" }}
+        />,
+      );
+
+      fireEvent.focus(screen.getByPlaceholderText("Search dogs..."));
+      await user.click(await screen.findByText("Bella"));
+
+      expect(posthog.capture).toHaveBeenCalledWith(
+        "search_performed",
+        expect.objectContaining({ surface: "mobile", result_group_chosen: "dog" }),
+        undefined,
+      );
+      expect(JSON.stringify(posthog.capture.mock.calls)).not.toContain("Bella");
+    });
+
+    it("sends nothing from a box without the analytics prop", async () => {
+      const user = userEvent.setup();
+      render(<SearchTypeahead {...defaultProps} debounceMs={0} />);
+
+      const input = screen.getByPlaceholderText("Search dogs...");
+      await user.type(input, typed);
+      fireEvent.keyDown(input, { key: "Enter" });
+
+      expect(posthog.capture).not.toHaveBeenCalled();
     });
   });
 });

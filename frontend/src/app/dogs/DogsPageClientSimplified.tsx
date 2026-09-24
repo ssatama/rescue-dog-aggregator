@@ -18,7 +18,7 @@ import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import useScrollRestoration from "../../hooks/dogs/useScrollRestoration";
 import useDogsFilters from "../../hooks/dogs/useDogsFilters";
 import useDogsPagination from "../../hooks/dogs/useDogsPagination";
-import { trackFiltersChanged } from "@/lib/analytics";
+import { trackFiltersApplied } from "@/lib/analytics";
 import type {
   DogsPageClientSimplifiedProps,
   Filters,
@@ -78,26 +78,40 @@ export default function DogsPageClientSimplified({
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const handleFilterChange = useCallback(
-    (filterKey: string | Record<string, string>, value?: string) => {
-      const newFilters: Filters = typeof filterKey === "object"
-        ? { ...filterState.filters, ...filterKey }
-        : { ...filterState.filters, [filterKey]: value };
+  const applyFilters = useCallback(
+    (changes: Record<string, string | undefined>) => {
+      const newFilters: Filters = { ...filterState.filters, ...changes };
 
       filterState.updateURL(newFilters, 1, false);
       pagination.resetForNewFilters(newFilters, scrollPositionRef);
-      trackFiltersChanged(
-        typeof filterKey === "object" ? filterKey : { [filterKey]: value },
-      );
     },
     [filterState, pagination, scrollPositionRef],
   );
 
+  const handleFilterChange = useCallback(
+    (filterKey: string | Record<string, string>, value?: string) => {
+      const changes =
+        typeof filterKey === "object" ? filterKey : { [filterKey]: value };
+      applyFilters(changes);
+      trackFiltersApplied(changes, "catalog");
+    },
+    [applyFilters],
+  );
+
+  // A breed picked from the list or a suggestion is tracked; text typed into
+  // the breed box is free text, so it filters without an analytics event.
   const handleBreedChange = useCallback(
     (breed: string) => {
       handleFilterChange("breedFilter", breed);
     },
     [handleFilterChange],
+  );
+
+  const handleBreedTyped = useCallback(
+    (breed: string) => {
+      applyFilters({ breedFilter: breed });
+    },
+    [applyFilters],
   );
 
   const handleBreedClear = useCallback(() => {
@@ -260,9 +274,9 @@ export default function DogsPageClientSimplified({
               // Breed (using actual filter state like Name filter)
               standardizedBreedFilter={filterState.filters.breedFilter}
               setStandardizedBreedFilter={handleBreedChange}
-              handleBreedSearch={handleBreedChange}
+              handleBreedSearch={handleBreedTyped}
               handleBreedClear={handleBreedClear}
-              handleBreedValueChange={handleBreedChange}
+              handleBreedValueChange={handleBreedTyped}
               standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
               // Pet Details
               sexFilter={filterState.filters.sexFilter}
@@ -417,9 +431,9 @@ export default function DogsPageClientSimplified({
         // Breed (using actual filter state like Name filter)
         standardizedBreedFilter={filterState.filters.breedFilter}
         setStandardizedBreedFilter={handleBreedChange}
-        handleBreedSearch={handleBreedChange}
+        handleBreedSearch={handleBreedTyped}
         handleBreedClear={handleBreedClear}
-        handleBreedValueChange={handleBreedChange}
+        handleBreedValueChange={handleBreedTyped}
         standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
         // Pet Details
         sexFilter={filterState.filters.sexFilter}

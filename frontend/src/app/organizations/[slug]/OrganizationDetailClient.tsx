@@ -16,7 +16,10 @@ import {
 } from "../../../services/organizationsService";
 import { reportError } from "../../../utils/logger";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
-import { trackOrganizationViewed } from "@/lib/analytics";
+import {
+  trackFiltersApplied,
+  trackOrganizationViewed,
+} from "@/lib/analytics";
 import OrganizationDogsViewportWrapper from "../../../components/organizations/OrganizationDogsViewportWrapper";
 import DogsGrid from "../../../components/dogs/DogsGrid";
 import type { OrganizationDetailClientProps } from "@/types/pageComponents";
@@ -489,19 +492,26 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
         setOrganizationFilter={() => {}}
         organizations={[]}
         standardizedBreedFilter={filters.breed || "Any breed"}
-        setStandardizedBreedFilter={(breed: string) =>
-          setFilters((prev) => ({ ...prev, breed }))
-        }
+        setStandardizedBreedFilter={(breed: string) => {
+          setFilters((prev) => ({ ...prev, breed }));
+          trackFiltersApplied({ breed }, "org_page");
+        }}
         standardizedBreeds={availableBreeds || []}
         useSimpleBreedDropdown={true}
         sexFilter={filters.sex || "Any"}
-        setSexFilter={(sex: string) => setFilters((prev) => ({ ...prev, sex }))}
+        setSexFilter={(sex: string) => {
+          setFilters((prev) => ({ ...prev, sex }));
+          trackFiltersApplied({ sex }, "org_page");
+        }}
         sexOptions={["Any", "Male", "Female"]}
         sizeFilter="Any size"
         setSizeFilter={() => {}}
         sizeOptions={["Any size"]}
         ageCategoryFilter={filters.age || "Any age"}
-        setAgeCategoryFilter={(age: string) => setFilters((prev) => ({ ...prev, age: age as AgeCategory }))}
+        setAgeCategoryFilter={(age: string) => {
+          setFilters((prev) => ({ ...prev, age: age as AgeCategory }));
+          trackFiltersApplied({ age }, "org_page");
+        }}
         ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"]}
         availableCountryFilter="Any country"
         setAvailableCountryFilter={() => {}}

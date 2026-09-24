@@ -16,7 +16,7 @@ import type { IconName } from "@/components/ui/Icon";
 import { useDebouncedCallback } from "use-debounce";
 import { logger, reportError } from "@/utils/logger";
 import { trackSearch } from "@/lib/monitoring/breadcrumbs";
-import { trackSearchSubmitted } from "@/lib/analytics";
+import { trackSearchPerformed } from "@/lib/analytics";
 import {
   fuzzySearch,
   generateDidYouMeanSuggestions,
@@ -57,6 +57,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
       fetchSuggestions = null,
       skipLocalFuzzySearch = false,
       enableHistory = false,
+      analytics,
       ...props
     },
     ref,
@@ -229,11 +230,24 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
         setIsOpen(false);
         setSelectedIndex(-1);
         saveToHistory(suggestion);
+        if (analytics) {
+          trackSearchPerformed(
+            analytics.surface,
+            analytics.suggestionGroup,
+            filteredSuggestions.length,
+          );
+        }
         onSuggestionSelect?.(suggestion);
         onValueChange?.(suggestion);
         inputRef.current?.focus();
       },
-      [onSuggestionSelect, onValueChange, saveToHistory],
+      [
+        onSuggestionSelect,
+        onValueChange,
+        saveToHistory,
+        analytics,
+        filteredSuggestions.length,
+      ],
     );
 
     // Search handler
@@ -243,12 +257,24 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
 
         // Track search with basic filters (empty object for now)
         trackSearch(inputValue, {}, filteredSuggestions.length);
-        trackSearchSubmitted(inputValue, filteredSuggestions.length);
+        if (analytics) {
+          trackSearchPerformed(
+            analytics.surface,
+            "none",
+            filteredSuggestions.length,
+          );
+        }
 
         onSearch?.(inputValue);
         setIsOpen(false);
       }
-    }, [inputValue, onSearch, saveToHistory, filteredSuggestions.length]);
+    }, [
+      inputValue,
+      onSearch,
+      saveToHistory,
+      filteredSuggestions.length,
+      analytics,
+    ]);
 
     // Keyboard navigation
     const handleKeyDown = useCallback(

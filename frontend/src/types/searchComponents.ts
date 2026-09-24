@@ -1,3 +1,5 @@
+import type { SearchResultGroup, SearchSurface } from "@/lib/analytics";
+
 export interface SearchTypeaheadProps {
   value?: string;
   placeholder?: string;
@@ -29,6 +31,9 @@ export interface SearchTypeaheadProps {
     | null;
   skipLocalFuzzySearch?: boolean;
   enableHistory?: boolean;
+  /** Set on search boxes (not filter boxes) to send `search_performed`.
+   * `suggestionGroup` is the kind of result its suggestions are. */
+  analytics?: { surface: SearchSurface; suggestionGroup: SearchResultGroup };
   "data-testid"?: string;
   "aria-label"?: string;
 }

@@ -125,26 +125,92 @@ export function trackFavoritesViewed(count: number): void {
   capture("favorites_viewed", { favorites_count: count });
 }
 
-export function trackSearchSubmitted(
-  query: string,
-  suggestionCount: number,
+// Search, filter and location events. Their properties are closed sets so no
+// free text can reach PostHog: nothing a visitor types is ever sent, only which
+// kind of result they picked and how many results they saw.
+
+/** Where a search box sits: the global header search, the catalog sidebar, or
+ * the mobile layout. */
+export type SearchSurface = "header" | "catalog" | "mobile";
+/** What the visitor chose from a search: a suggestion of that kind, a filter,
+ * or `none` when they submitted the typed text. */
+export type SearchResultGroup = "breed" | "rescue" | "dog" | "filter" | "none";
+export type FilterSurface = "catalog" | "breed_page" | "org_page";
+export type LocationSource = "geo" | "picker";
+
+/** `resultCount` is null where the page does not know its result total yet. */
+export function trackSearchPerformed(
+  surface: SearchSurface,
+  resultGroupChosen: SearchResultGroup,
+  resultCount: number | null,
 ): void {
-  capture("search_submitted", {
-    query,
-    suggestion_count: suggestionCount,
+  capture("search_performed", {
+    surface,
+    result_group_chosen: resultGroupChosen,
+    result_count: resultCount,
   });
 }
 
-/** One event per changed filter. Typed search is left out: it would send an
- * event per keystroke, and submitted searches have their own event. */
-export function trackFiltersChanged(changes: Record<string, unknown>): void {
-  for (const [filterType, value] of Object.entries(changes)) {
-    if (filterType === "searchQuery") continue;
-    capture("filter_changed", {
-      filter_type: filterType,
-      value: typeof value === "string" ? value : JSON.stringify(value),
+// The filter state keys each page uses, mapped to one name per filter. A key
+// that is not here (typed search, sort) never becomes a filter_applied event.
+const FILTER_NAMES: Record<string, string> = {
+  sizeFilter: "size",
+  ageFilter: "age",
+  age: "age",
+  sexFilter: "sex",
+  sex: "sex",
+  breedFilter: "breed",
+  breed: "breed",
+  breedGroupFilter: "breed_group",
+  organizationFilter: "organization",
+  locationCountryFilter: "location_country",
+  availableCountryFilter: "available_country",
+  shipsTo: "available_country",
+  availableRegionFilter: "available_region",
+};
+
+/** One event per changed filter. Only pass values picked from a fixed list:
+ * a breed typed into a box is free text and must not be tracked. */
+export function trackFiltersApplied(
+  changes: Record<string, string | undefined>,
+  surface: FilterSurface,
+  resultCount: number | null = null,
+): void {
+  for (const [key, value] of Object.entries(changes)) {
+    const filter = FILTER_NAMES[key];
+    if (!filter) continue;
+    capture("filter_applied", {
+      filter,
+      value: value ?? null,
+      result_count: resultCount,
+      surface,
     });
   }
+}
+
+export function trackSortChanged(sort: string): void {
+  capture("sort_changed", { sort });
+}
+
+export function trackGalleryPhotoViewed(
+  dogId: number | string,
+  index: number,
+  total: number,
+): void {
+  capture("gallery_photo_viewed", { dog_id: String(dogId), index, total });
+}
+
+/** `country` is the ISO code the visitor lives in, or null for "Anywhere". */
+export function trackLocationSet(
+  source: LocationSource,
+  country: string | null,
+  onlyAdoptable: boolean,
+): void {
+  capture("location_set", {
+    source,
+    country,
+    only_adoptable: onlyAdoptable,
+  });
 }
 
 export function trackOrganizationViewed(

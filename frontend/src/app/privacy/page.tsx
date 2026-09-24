@@ -106,7 +106,7 @@ export default function PrivacyPage(): React.JSX.Element {
                 <ul className="text-sm text-gray-500 dark:text-gray-500 space-y-1 mt-3">
                   <li>• Page views & timestamps</li>
                   <li>• Clicks, such as which dogs you open or save</li>
-                  <li>• Searches and filters you use</li>
+                  <li>• Filters you use, and that you searched (never what you typed)</li>
                   <li>• Anonymous session recordings, with form inputs masked</li>
                   <li>• Device type (mobile/desktop/tablet)</li>
                   <li>• Country/city (aggregate)</li>
