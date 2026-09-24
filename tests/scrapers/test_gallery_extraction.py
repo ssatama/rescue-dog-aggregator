@@ -222,3 +222,13 @@ class TestGalleryUrls:
 
     def test_no_hero_and_no_candidates_is_an_empty_gallery(self):
         assert gallery_urls(None, []) == []
+
+
+@pytest.mark.unit
+def test_misis_hero_and_its_cleaned_gallery_copy_are_one_photo():
+    from scrapers.misis_rescue.scraper import _one_per_wix_media
+
+    base = "https://static.wixstatic.com/media/ef9e05_abc~mv2.jpg/v1/fill"
+    urls = _one_per_wix_media([f"{base}/w_640,blur_2,q_30/ef9e05_abc.jpg", f"{base}/w_800,q_90/ef9e05_abc.jpg", "https://static.wixstatic.com/media/ef9e05_def~mv2.jpg/v1/fill/w_800/x.jpg"])
+
+    assert len(urls) == 2 and "blur_2" in urls[0]

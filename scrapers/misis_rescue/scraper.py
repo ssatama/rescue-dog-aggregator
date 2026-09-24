@@ -37,6 +37,19 @@ else:
     from services.browser_service import BrowserOptions, get_browser_service
 
 
+def _one_per_wix_media(urls: list[str]) -> list[str]:
+    """Each photo once, compared by Wix media id: the raw hero URL and its cleaned
+    gallery copy differ only in size and quality parameters."""
+    seen: set[str] = set()
+    unique = []
+    for url in urls:
+        media_id = url.split("/media/", 1)[-1].split("/", 1)[0]
+        if media_id not in seen:
+            seen.add(media_id)
+            unique.append(url)
+    return unique
+
+
 class MisisRescueScraper(BaseScraper):
     """Scraper for MISI's Rescue organization.
 
@@ -759,7 +772,7 @@ class MisisRescueScraper(BaseScraper):
             # Extract the main image - try hero image first, then grid fallback
             main_image_url = self._extract_main_image(driver, soup)
             if main_image_url:
-                dog_data["image_urls"] = [main_image_url, *self._extract_static_image_urls(soup)]
+                dog_data["image_urls"] = _one_per_wix_media([main_image_url, *self._extract_static_image_urls(soup)])
                 dog_data["primary_image_url"] = main_image_url
             else:
                 self.logger.warning(f"No image found for dog at {url}")
@@ -839,7 +852,7 @@ class MisisRescueScraper(BaseScraper):
             # Extract the main image using BeautifulSoup-only method
             main_image_url = self._extract_main_image_soup(soup)
             if main_image_url:
-                dog_data["image_urls"] = [main_image_url, *self._extract_static_image_urls(soup)]
+                dog_data["image_urls"] = _one_per_wix_media([main_image_url, *self._extract_static_image_urls(soup)])
                 dog_data["primary_image_url"] = main_image_url
             else:
                 self.logger.warning(f"No image found for dog at {url}")
