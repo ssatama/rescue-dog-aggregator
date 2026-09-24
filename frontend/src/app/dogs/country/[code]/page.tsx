@@ -14,6 +14,7 @@ import {
 import {
   getCountryByCode,
   getAllCountryCodes,
+  getCountriesWithDogs,
   COUNTRIES,
 } from "@/utils/countryData";
 
@@ -84,6 +85,18 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
   const countryCount =
     countryStats?.countries?.find((c: { code: string }) => c.code === country.code)?.count || 0;
 
+  // A country with no dogs has no page, so it returns on its own when a rescue there comes
+  // back (#442). Only trust a zero when the stats loaded: on an API failure getCountryStats
+  // returns no countries, and caching a 404 for a country that has dogs would be worse.
+  if (countryStats?.countries?.length && countryCount === 0 && initialDogs.length === 0) {
+    notFound();
+  }
+
+  const countriesWithDogs = getCountriesWithDogs(countryStats);
+  const chipCountries = countriesWithDogs.length
+    ? Object.fromEntries(countriesWithDogs.map((c) => [c.code, c]))
+    : COUNTRIES;
+
   return (
     <Layout>
       <CountryStructuredData
@@ -96,7 +109,7 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
           country={country}
           initialDogs={initialDogs}
           metadata={metadata}
-          allCountries={COUNTRIES}
+          allCountries={chipCountries}
           totalCount={countryCount}
         />
       </Suspense>

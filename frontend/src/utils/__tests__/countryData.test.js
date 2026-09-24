@@ -67,3 +67,18 @@ describe("countryData", () => {
     });
   });
 });
+
+describe("getCountriesWithDogs (#442)", () => {
+  const { getCountriesWithDogs } = require("../countryData");
+
+  it("keeps only configured countries whose stats count is above zero", () => {
+    const stats = { countries: [{ code: "UK", count: 588 }, { code: "IT", count: 0 }, { code: "RS", count: 155 }, { code: "XX", count: 9 }] };
+
+    expect(getCountriesWithDogs(stats).map((c) => c.code)).toEqual(["UK", "RS"]);
+  });
+
+  it("returns nothing when stats are missing", () => {
+    expect(getCountriesWithDogs(undefined)).toEqual([]);
+    expect(getCountriesWithDogs({ countries: [] })).toEqual([]);
+  });
+});
