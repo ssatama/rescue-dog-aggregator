@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
+from utils.shared_extraction_patterns import gallery_urls
 
 from .normalizer import extract_qa_data, extract_size_and_weight_from_qa
 
@@ -282,6 +283,7 @@ class TheUnderdogScraper(BaseScraper):
                 "external_id": external_id,
                 "adoption_url": url,
                 "primary_image_url": hero_image_url,
+                "image_urls": self._extract_image_urls(soup, hero_image_url),
                 "description": description,
                 "properties": {
                     "raw_qa_data": properties,  # Store Q&A pairs
@@ -460,6 +462,23 @@ class TheUnderdogScraper(BaseScraper):
         name = re.sub(r"\s+", " ", name).strip()
 
         return name
+
+    def _extract_image_urls(self, soup: BeautifulSoup, hero_image_url: str | None) -> list[str]:
+        """The dog's photos in the Squarespace gallery's order, hero first (#487).
+
+        The slides hold every photo; the thumbnail strip repeats them and the
+        header's label is not in the gallery. Photos are requested at the same
+        1500w size as the hero so the hero is recognised in the list.
+        """
+        slides = []
+        for img in soup.select(".ProductItem-gallery-slides img[data-src]"):
+            src = img["data-src"]
+            if not src.startswith("http") or "primary_ud_label" in src.lower():
+                continue
+            if "?format=" not in src and src.lower().endswith((".jpg", ".jpeg", ".png")):
+                src += "?format=1500w"
+            slides.append(src)
+        return gallery_urls(hero_image_url, slides)
 
     def _extract_hero_image(self, soup: BeautifulSoup) -> str | None:
         """Extract main hero image URL from detail page.

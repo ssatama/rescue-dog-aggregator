@@ -1,11 +1,13 @@
 """Animal Rescue Bosnia scraper implementation."""
 
 from typing import Any
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
+from utils.shared_extraction_patterns import gallery_urls
 
 
 class AnimalRescueBosniaScraper(BaseScraper):
@@ -257,6 +259,8 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 "adoption_url": url,
                 "primary_image_url": hero_image_url,
                 "original_image_url": hero_image_url,  # Same as primary for R2 comparison
+                # The dog's photos: the hero, then the post's WordPress gallery (#487)
+                "image_urls": gallery_urls(hero_image_url, [urljoin(self.base_url, img["src"]) for img in soup.select("figure.wp-block-gallery img[src]")]),
                 "animal_type": "dog",
                 "status": "available",
                 # Raw fields for standardization by BaseScraper

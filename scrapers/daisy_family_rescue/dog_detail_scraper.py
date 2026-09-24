@@ -6,6 +6,8 @@ from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 
+from utils.shared_extraction_patterns import gallery_urls
+
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
 # The footer is excluded by position, so this floor only has to keep out short
@@ -143,6 +145,7 @@ class DaisyFamilyRescueDogDetailScraper:
             image_url = self._extract_main_image(driver, logger)
             if image_url:
                 dog_data["primary_image_url"] = image_url
+                dog_data["image_urls"] = self._extract_image_urls_soup(BeautifulSoup(driver.page_source, "html.parser"), image_url)
 
             # Extract additional description text
             description = self._extract_description(driver, logger)
@@ -215,6 +218,7 @@ class DaisyFamilyRescueDogDetailScraper:
                 image_url = self._extract_main_image_soup(soup, logger)
                 if image_url:
                     dog_data["primary_image_url"] = image_url
+                    dog_data["image_urls"] = self._extract_image_urls_soup(soup, image_url)
 
                 # Extract description
                 description = self._extract_description_soup(soup, logger)
@@ -304,6 +308,19 @@ class DaisyFamilyRescueDogDetailScraper:
             if logger:
                 logger.error(f"Error extracting main image: {e}")
         return None
+
+    def _extract_image_urls_soup(self, soup: BeautifulSoup, hero_image_url: str | None) -> list[str]:
+        """The dog's photos: the hero, then the Elementor gallery and slider (#487).
+
+        Both link to full-size uploads. The site logo lives in the header
+        template and is left out, as are links that aren't images.
+        """
+        links = [
+            a["href"]
+            for a in soup.select(".elementor-gallery__container a[href], .swiper-slide a[href]")
+            if not a.find_parent(attrs={"data-elementor-type": ["header", "footer"]}) and a["href"].lower().split("?", 1)[0].endswith((".jpg", ".jpeg", ".png", ".webp"))
+        ]
+        return gallery_urls(hero_image_url, links)
 
     def _extract_description_soup(self, soup: BeautifulSoup, logger=None) -> str | None:
         """Extract the dog's story from the page's Elementor text widgets.

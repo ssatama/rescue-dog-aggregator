@@ -11,6 +11,7 @@ from scrapers.base_scraper import BaseScraper
 
 # Migrated to unified standardization - using BaseScraper.process_animal()
 # Legacy standardize_age kept for date-of-birth calculations
+from utils.shared_extraction_patterns import gallery_urls
 from utils.standardization import standardize_age
 
 STORY_BLOCK_TAGS = ["p", "div", "li", "blockquote"]
@@ -607,11 +608,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                 "description": description,
             }
 
-            # Add image_urls for R2 integration through BaseScraper template method
-            if hero_image_url:
-                result["image_urls"] = [hero_image_url]
-            else:
-                result["image_urls"] = []
+            # The dog's photos: the hero, then the gallery's full-size originals (#487)
+            gallery_links = [urljoin(self.base_url, a["href"]) for a in soup.select("a.ee-gallery-item[href]")]
+            result["image_urls"] = gallery_urls(hero_image_url, gallery_links)
 
             # Extract individual fields from properties for compatibility with zero NULLs compliance
             if properties:

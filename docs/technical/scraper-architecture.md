@@ -326,6 +326,25 @@ def _process_images(self, animals: List[Dict]) -> None:
     """
 ```
 
+### Photo galleries (`animals.images`)
+
+A scraper sets `primary_image_url` (the hero) and `image_urls`: the dog's own
+photos as source URLs, in the rescue's order, hero first. After the hero batch,
+`ImageProcessingService.batch_process_galleries` turns them into
+`animals.images`, `[{"url", "original_url", "width", "height"}]`:
+
+- at most 8 photos; a shorter side under 300px is dropped unless it is the only photo
+- photos already on the row are reused with no network call, so re-scrapes are cheap
+- new photos are uploaded in parallel under the same deterministic R2 key as the
+  hero, with their size in the object metadata
+
+Scrapers that only know the hero still produce a one-photo gallery. Scope the
+extraction to the dog's own gallery (site logos, footer icons and related-dog
+thumbnails are the usual leaks) and use
+`utils.shared_extraction_patterns.gallery_urls(hero, candidates)` to put the hero
+first, drop WordPress resizes of the same upload and skip HEIC/TIFF files.
+Fixture-based tests live in `tests/scrapers/test_gallery_extraction.py`.
+
 ### Error Handling & Recovery
 
 ```python
