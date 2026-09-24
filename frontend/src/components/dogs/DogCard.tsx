@@ -103,9 +103,13 @@ function CardPhoto({
   const handleLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     const frameWidth = img.clientWidth;
+    // The loaded copy is min(requested width, original width). If it came back
+    // at the requested width the original is at least that big, so only a copy
+    // narrower than requested says the source itself is small.
+    const requested = Number(/[?,/]width=(\d+)/.exec(img.currentSrc)?.[1]) || Infinity;
     measure(img, (width, height) => {
       const ratio = width / height;
-      const smallerThanFrame = width < frameWidth;
+      const smallerThanFrame = width < frameWidth && width < requested;
       setFit(
         ratio >= FILL_MIN_RATIO && ratio <= FILL_MAX_RATIO && !smallerThanFrame
           ? "fill"

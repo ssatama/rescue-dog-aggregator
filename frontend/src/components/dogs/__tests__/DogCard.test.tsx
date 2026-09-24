@@ -168,6 +168,23 @@ describe("DogCard", () => {
       expect(loadPhoto(1600, 500)).toHaveAttribute("data-fit", "whole");
     });
 
+    it("does not call a photo small just because a narrower copy was requested", () => {
+      render(<DogCard dog={fullDog} />);
+      const img = screen.getByAltText("Bella");
+      Object.defineProperty(img, "currentSrc", {
+        value: "https://images.rescuedogs.me/cdn-cgi/image/width=640,quality=75/bella.jpg",
+      });
+      const probe = { naturalWidth: 640, naturalHeight: 480, onload: null as null | (() => void), src: "" };
+      const ImageSpy = jest.spyOn(window, "Image").mockImplementation(() => probe as unknown as HTMLImageElement);
+      Object.defineProperty(img, "clientWidth", { value: 670 });
+
+      fireEvent.load(img);
+      probe.onload?.();
+
+      expect(img).toHaveAttribute("data-fit", "fill");
+      ImageSpy.mockRestore();
+    });
+
     it("never stretches a photo smaller than the frame", () => {
       render(<DogCard dog={fullDog} />);
       expect(loadPhoto(160, 120, 300)).toHaveAttribute("data-fit", "whole");
