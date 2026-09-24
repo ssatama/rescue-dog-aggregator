@@ -399,6 +399,11 @@ class R2Service:
         except (requests.exceptions.RequestException, UnidentifiedImageError) as e:
             logger.warning(f"Could not fetch gallery photo {image_url}: {e}")
             return None
+        except Exception as e:
+            # R2 connection errors, oversized images: skip this photo, never the run
+            logger.warning(f"Unexpected error storing gallery photo {image_url}: {e}")
+            cls.track_upload_failure("gallery_upload_failed")
+            return None
 
     @staticmethod
     def get_optimized_url(r2_url: str, transformation_options: dict | None = None) -> str:

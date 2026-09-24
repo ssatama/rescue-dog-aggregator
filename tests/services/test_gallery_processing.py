@@ -163,3 +163,11 @@ class TestUploadImageWithSize:
             assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") is None
 
         s3.upload_fileobj.assert_not_called()
+
+    def test_an_unexpected_error_skips_the_photo_not_the_run(self, s3):
+        s3.head_object.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadObject")
+        s3.upload_fileobj.side_effect = ConnectionError("R2 endpoint unreachable")
+        response = Mock(content=_jpeg(1200, 900), headers={"content-type": "image/jpeg"})
+
+        with patch("utils.r2_service.requests.get", return_value=response):
+            assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") is None
