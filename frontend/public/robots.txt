@@ -20,9 +20,13 @@ User-agent: WhatsApp
 User-agent: Pinterest
 User-agent: GPTBot
 User-agent: ChatGPT-User
-User-agent: anthropic-ai
-User-agent: Claude-Web
+User-agent: OAI-SearchBot
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
 User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Applebot-Extended
 User-agent: CCBot
 User-agent: Google-Extended
 User-agent: *

@@ -36,8 +36,11 @@ describe("Static Robots.txt File", () => {
   test("should include AI and LLM crawlers", () => {
     expect(robotsTxtContent).toContain("User-agent: GPTBot");
     expect(robotsTxtContent).toContain("User-agent: ChatGPT-User");
-    expect(robotsTxtContent).toContain("User-agent: anthropic-ai");
-    expect(robotsTxtContent).toContain("User-agent: Claude-Web");
+    // Current agent tokens; anthropic-ai and Claude-Web are retired (#446)
+    expect(robotsTxtContent).toContain("User-agent: ClaudeBot");
+    expect(robotsTxtContent).toContain("User-agent: Claude-SearchBot");
+    expect(robotsTxtContent).toContain("User-agent: OAI-SearchBot");
+    expect(robotsTxtContent).not.toContain("User-agent: anthropic-ai");
     expect(robotsTxtContent).toContain("User-agent: PerplexityBot");
     expect(robotsTxtContent).toContain("User-agent: CCBot");
   });
