@@ -516,6 +516,19 @@ class TestScopedCacheInvalidation:
 
         assert command.changed_animal_ids == [1, 2]
 
+    def test_unchanged_status_is_not_tracked(self, mock_db_connection):
+        """Re-confirming a dog's status must not purge or resubmit its page (#440)."""
+        mock_conn, mock_cursor = mock_db_connection
+        command = CheckAdoptionsCommand(dry_run=False)
+        command.conn = mock_conn
+        command.cursor = mock_cursor
+        unchanged = self._result(1)
+        unchanged.detected_status = unchanged.previous_status
+
+        command.update_dog_status(1, unchanged)
+
+        assert command.changed_animal_ids == []
+
     def test_dry_run_tracks_nothing(self, mock_db_connection):
         mock_conn, mock_cursor = mock_db_connection
         command = CheckAdoptionsCommand(dry_run=True)

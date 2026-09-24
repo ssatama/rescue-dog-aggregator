@@ -42,6 +42,21 @@ def build_payloads(slugs: Iterable[str], key: str, frontend_url: str = _DEFAULT_
     ]
 
 
+def _warm(client: httpx.Client, urls: list[str]) -> None:
+    """Request each page once before pinging.
+
+    The cache purge that precedes this is stale-while-revalidate: the next request still
+    gets the old page and only triggers the rebuild. Without this, that request would
+    often be Bing's own crawl, and it would index the stale page (e.g. an adopted dog
+    without its noindex) right after being told to look.
+    """
+    for url in urls:
+        try:
+            client.get(url)
+        except httpx.HTTPError as e:
+            logger.debug("IndexNow warm-up failed for %s: %s", url, e)
+
+
 def submit_dog_urls_sync(slugs: Iterable[str]) -> None:
     """Submit the dog pages for ``slugs``. Skips quietly without ``INDEXNOW_KEY``."""
     key = os.getenv("INDEXNOW_KEY")
@@ -53,6 +68,7 @@ def submit_dog_urls_sync(slugs: Iterable[str]) -> None:
     try:
         with httpx.Client(timeout=_HTTP_TIMEOUT_SECONDS) as client:
             for payload in payloads:
+                _warm(client, payload["urlList"])
                 response = client.post(_ENDPOINT, json=payload)
                 # 200 = accepted and verified, 202 = accepted, key check pending
                 if response.status_code in (200, 202):

@@ -269,7 +269,10 @@ class CheckAdoptionsCommand:
             (result.detected_status, json.dumps(check_data), result.checked_at, dog_id),
         )
         self.conn.commit()
-        self.changed_animal_ids.append(dog_id)
+        # Only a real status change needs its page purged and pushed to IndexNow; resubmitting
+        # unchanged URLs every run can get the key's submissions deprioritised (#440)
+        if result.detected_status != result.previous_status:
+            self.changed_animal_ids.append(dog_id)
 
     def changed_slugs(self) -> list[str]:
         """Detail-page cache tags for the dogs this run updated.

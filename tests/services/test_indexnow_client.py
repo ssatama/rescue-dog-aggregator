@@ -70,6 +70,23 @@ class TestSubmitDogUrls:
         assert body["urlList"] == ["https://www.rescuedogs.me/dogs/rex-terrier-101"]
         assert "IndexNow submitted 1 URL(s): HTTP 202" in caplog.text
 
+    def test_warms_each_page_before_pinging(self, monkeypatch):
+        """The purge is stale-while-revalidate; Bing must not be the one to get the stale page."""
+        monkeypatch.setenv("INDEXNOW_KEY", KEY)
+        client = _client_returning(200)
+        calls = []
+        client.get.side_effect = lambda url: calls.append(("get", url))
+        client.post.side_effect = lambda url, json: calls.append(("post", url)) or httpx.Response(200)
+
+        with patch("services.indexnow_client.httpx.Client", return_value=client):
+            submit_dog_urls_sync(["rex-terrier-101", "bella-lab-102"])
+
+        assert calls == [
+            ("get", "https://www.rescuedogs.me/dogs/rex-terrier-101"),
+            ("get", "https://www.rescuedogs.me/dogs/bella-lab-102"),
+            ("post", "https://api.indexnow.org/indexnow"),
+        ]
+
     def test_rejection_is_logged_not_raised(self, monkeypatch, caplog):
         monkeypatch.setenv("INDEXNOW_KEY", KEY)
 
