@@ -42,8 +42,6 @@ const ALLOWED_FILES = new Set([
   "app/sitemap.xml/route.ts",
   // ShareButton - user-facing clipboard/share API failures
   "components/ui/ShareButton.tsx",
-  // Dev/test pages - not user-facing production code
-  "app/test-images/page.tsx",
 ]);
 
 function findConsoleUsages(): Array<{ file: string; line: number; content: string }> {
