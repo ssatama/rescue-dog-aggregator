@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import type { Dog as DogType } from "../../types/dog";
+import { dogCountLabel } from "@/utils/formatCount";
 
 // Debounce hook for filter performance
 function useDebounce<T>(value: T, delay: number): T {
@@ -390,7 +391,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
             onValueChange={setOrganizationFilter}
           >
             <SelectTrigger
-              className={`w-[200px] pl-10 pr-10 py-2.5 text-sm font-medium rounded-lg transition-all
+              className={`w-[240px] pl-10 pr-3 py-2.5 text-sm font-medium rounded-lg transition-all [&>span]:truncate
               ${
                 organizationFilter
                   ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-400 dark:border-blue-600 text-blue-900 dark:text-blue-100"
@@ -723,7 +724,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
               className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white rounded-lg py-3 font-semibold shadow-lg hover:shadow-xl transition-all"
             >
               Apply Filters
-              {hasActiveFilters && ` (${filteredDogs.length} dogs)`}
+              {hasActiveFilters && ` (${dogCountLabel(filteredDogs.length)})`}
             </Button>
 
             {hasActiveFilters && (

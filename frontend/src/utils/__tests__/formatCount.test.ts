@@ -19,3 +19,17 @@ describe("formatCount", () => {
     expect(formatCount(999)).toBe("999");
   });
 });
+
+describe("dogCountLabel (#458)", () => {
+  const { dogCountLabel } = require("../formatCount");
+
+  it("uses the singular for one dog", () => {
+    expect(dogCountLabel(1)).toBe("1 dog");
+  });
+
+  it("uses the plural otherwise, with thousands separators", () => {
+    expect(dogCountLabel(0)).toBe("0 dogs");
+    expect(dogCountLabel(2)).toBe("2 dogs");
+    expect(dogCountLabel(1312)).toBe("1,312 dogs");
+  });
+});

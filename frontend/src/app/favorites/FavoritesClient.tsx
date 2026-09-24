@@ -21,6 +21,7 @@ import { reportError } from "../../utils/logger";
 import { useViewport } from "../../hooks/useViewport";
 import FilterPanelSkeleton from "../../components/ui/FilterPanelSkeleton";
 import CompareSkeleton from "../../components/ui/CompareSkeleton";
+import { dogCountLabel } from "@/utils/formatCount";
 
 // Dynamic imports for large components (code splitting)
 const FilterPanel = dynamic(
@@ -273,7 +274,7 @@ function FavoritesPageContent(): React.JSX.Element {
     }
 
     return {
-      topOrganization: topOrg ? `${topOrg[0]} (${topOrg[1]} dogs)` : undefined,
+      topOrganization: topOrg ? `${topOrg[0]} (${dogCountLabel(topOrg[1])})` : undefined,
       sizePreference: hasStrongSizePreference
         ? `Mostly ${topSize[0]} dogs`
         : "Mixed sizes",
