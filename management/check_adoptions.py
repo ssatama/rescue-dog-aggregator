@@ -269,7 +269,10 @@ class CheckAdoptionsCommand:
             (result.detected_status, json.dumps(check_data), result.checked_at, dog_id),
         )
         self.conn.commit()
-        self.changed_animal_ids.append(dog_id)
+        # Only a real status change needs its page purged and pushed to IndexNow; resubmitting
+        # unchanged URLs every run can get the key's submissions deprioritised (#440)
+        if result.detected_status != result.previous_status:
+            self.changed_animal_ids.append(dog_id)
 
     def changed_slugs(self) -> list[str]:
         """Detail-page cache tags for the dogs this run updated.
@@ -381,7 +384,15 @@ def main():
             if any_processed and not args.dry_run:
                 from services.revalidation_client import invalidate_sync
 
-                invalidate_sync(tags=["animals", "statistics", *command.changed_slugs()])
+                changed_slugs = command.changed_slugs()
+                invalidate_sync(tags=["animals", "statistics", *changed_slugs])
+                # Adopted dogs are noindexed (#359); tell IndexNow engines to recrawl them (#440)
+                try:
+                    from services.indexnow_client import submit_dog_urls_sync
+                except ImportError as e:
+                    print(f"⚠️ IndexNow hook unavailable: {e}")
+                else:
+                    submit_dog_urls_sync(changed_slugs)
 
         print("\n✅ Adoption checking complete!")
 

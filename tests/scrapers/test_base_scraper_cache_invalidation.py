@@ -172,3 +172,23 @@ class TestInvalidationIsScopedToChangedDogs:
         scraper.complete_scrape_log(status="success", animals_found=1)
 
         mock_db.get_slugs_for_animals.assert_not_called()
+
+
+@pytest.mark.unit
+class TestIndexNowNotification:
+    """Changed dog pages are pushed to IndexNow alongside the cache purge (#440)."""
+
+    def test_submits_the_changed_dog_slugs(self, scraper, mock_db, mock_invalidate_sync):
+        scraper.mark_animal_changed(101)
+        mock_db.get_slugs_for_animals.return_value = ["rex-terrier-101"]
+
+        with patch("services.indexnow_client.submit_dog_urls_sync") as submit:
+            scraper.complete_scrape_log(status="success", animals_found=1)
+
+        submit.assert_called_once_with(["rex-terrier-101"])
+
+    def test_nothing_changed_submits_nothing(self, scraper, mock_db, mock_invalidate_sync):
+        with patch("services.indexnow_client.submit_dog_urls_sync") as submit:
+            scraper.complete_scrape_log(status="success", animals_found=50)
+
+        submit.assert_not_called()

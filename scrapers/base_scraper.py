@@ -446,6 +446,24 @@ class BaseScraper(ABC):
             ]
         )
         self.logger.info("Cache invalidation: listings + %d changed dog page(s)", len(slug_tags))
+        self._notify_search_engines(slug_tags)
+
+    def _notify_search_engines(self, slugs: list[str]) -> None:
+        """Push the changed dog pages to IndexNow (Bing, DuckDuckGo's main source) (#440).
+
+        Imported lazily behind an ImportError guard like the cache hook above: the cron
+        container has failed to import new modules before, and a missing module must
+        cost a log line, not the scrape.
+        """
+        if not slugs:
+            return
+        try:
+            from services.indexnow_client import submit_dog_urls_sync
+        except ImportError as e:
+            self.logger.warning("IndexNow hook unavailable: %s", e)
+            return
+
+        submit_dog_urls_sync(slugs)
 
     def detect_language(self, text):
         """Detect the language of the text.
