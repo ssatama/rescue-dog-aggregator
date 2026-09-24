@@ -927,6 +927,14 @@ class BaseScraper(ABC):
                 except Exception as e:
                     self.logger.warning(f"Batch image processing failed; per-animal processing will handle images: {e}")
 
+                # Galleries after heroes, so each hero's source URL is known. A failure
+                # here leaves every dog's stored gallery as it is.
+                try:
+                    stored_images = self.database_service.get_images_by_external_id(self.organization_id) if self.database_service else {}
+                    self.image_processing_service.batch_process_galleries(animals_data, stored_images, self.organization_name)
+                except Exception as e:
+                    self.logger.warning(f"Gallery processing failed; keeping stored galleries: {e}")
+
         if not self.session_manager:
             self._log_service_unavailable("SessionManager", "mark animal as seen disabled")
 

@@ -75,6 +75,7 @@ Main table storing animal (primarily dog) listings with availability tracking an
 | `external_id` | VARCHAR(255) | | Original identifier from source organization |
 | `primary_image_url` | TEXT | | Optimized primary image URL |
 | `original_image_url` | TEXT | | Original image URL for fallback |
+| `images` | JSONB | | Photo gallery in the rescue's order, up to 8: `[{"url", "original_url", "width", "height"}]` (#487) |
 | `adoption_url` | TEXT | NOT NULL | Direct link to adoption page |
 | `status` | VARCHAR(50) | DEFAULT 'available' | Adoption status (available, pending, adopted) |
 | `breed` | VARCHAR(255) | | Original breed information from source |
@@ -154,7 +155,7 @@ Main table storing animal (primarily dog) listings with availability tracking an
 ```
 
 ### ~~animal_images~~ (REMOVED)
-Removed in favor of direct URL storage in the animals table (`primary_image_url` and `original_image_url` fields).
+Removed in favor of direct URL storage in the animals table (`primary_image_url`, `original_image_url` and the `images` gallery). The empty table was dropped by migration `d4a8b2c6e913`.
 
 ### scrape_logs
 Comprehensive logging of scraping operations with quality metrics.

@@ -72,6 +72,9 @@ CREATE TABLE IF NOT EXISTS animals (
 
     -- Add column to store original image URLs for fallback
     original_image_url TEXT,
+
+    -- Photo gallery in the rescue's order (hero first unless under the size floor): [{"url", "original_url", "width", "height"}]
+    images JSONB,
     
     -- Active status
     active BOOLEAN NOT NULL DEFAULT TRUE,

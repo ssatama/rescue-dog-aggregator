@@ -278,6 +278,7 @@ class TestDatabaseServiceSlugIntegration:
                 "old-breed-slug",  # breed_slug
                 0.95,  # breed_confidence
                 "Old Breed",  # breed_raw
+                None,  # images
             ),
             # No second call needed for updates
         ]

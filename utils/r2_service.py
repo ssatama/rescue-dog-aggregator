@@ -11,12 +11,41 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
+from urllib.parse import quote
 
 import boto3
 import requests
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
+from PIL import Image as PILImage
+from PIL import UnidentifiedImageError
 
 logger = logging.getLogger(__name__)
+
+
+# EXIF orientations that turn the stored pixels a quarter turn for display
+_QUARTER_TURN_ORIENTATIONS = {5, 6, 7, 8}
+
+
+def _display_size(img: "PILImage.Image") -> tuple[int, int]:
+    """Width and height as a browser shows the photo, honouring EXIF rotation.
+
+    Phone photos are often stored landscape with an orientation flag that
+    browsers apply, so the raw pixel size would call a portrait landscape.
+    """
+    width, height = img.size
+    if img.getexif().get(0x0112) in _QUARTER_TURN_ORIENTATIONS:
+        return height, width
+    return width, height
+
+
+# upload_image_with_size's answer for a photo that can never be used (dead
+# link, not an image): skip it like a missing photo. None means "try again".
+UNUSABLE_PHOTO: dict = {}
+
+
+def _ascii_url(url: str) -> str:
+    """S3 metadata must be ASCII; rescue URLs sometimes aren't ("Pequeño.jpg")."""
+    return quote(url, safe=":/?&=%#@+,;~")
 
 
 class R2ConfigurationError(Exception):
@@ -288,6 +317,19 @@ class R2Service:
             safe_animal_name = unicodedata.normalize("NFKD", animal_name).encode("ascii", "ignore").decode("ascii")
             safe_org_name = unicodedata.normalize("NFKD", organization_name).encode("ascii", "ignore").decode("ascii")
 
+            metadata = {
+                "original_url": image_url,
+                "animal_name": safe_animal_name,
+                "organization": safe_org_name,
+            }
+            # Record the size too, so the gallery step reuses this object with one
+            # HEAD request instead of writing the same key again seconds later
+            try:
+                with PILImage.open(BytesIO(response.content)) as img:
+                    metadata["width"], metadata["height"] = (str(side) for side in _display_size(img))
+            except Exception:
+                pass
+
             image_data = BytesIO(response.content)
             s3_client.upload_fileobj(
                 image_data,
@@ -296,11 +338,7 @@ class R2Service:
                 ExtraArgs={
                     "ContentType": content_type,
                     "CacheControl": "public, max-age=86400, s-maxage=604800",
-                    "Metadata": {
-                        "original_url": image_url,
-                        "animal_name": safe_animal_name,
-                        "organization": safe_org_name,
-                    },
+                    "Metadata": metadata,
                 },
             )
 
@@ -329,6 +367,128 @@ class R2Service:
         except Exception as e:
             logger.warning(f"Unexpected error uploading image {image_url}: {e}")
             return image_url, False
+
+    @classmethod
+    def prepare_for_parallel_uploads(cls) -> bool:
+        """Check the configuration and create the client on the calling thread.
+
+        Both are lazily initialised and neither is safe to initialise from
+        several threads at once, so call this before starting a worker pool.
+        """
+        if not cls._check_configuration():
+            return False
+        cls._get_s3_client()
+        return True
+
+    @classmethod
+    def upload_image_with_size(cls, image_url: str, animal_name: str, organization_name: str = "unknown") -> dict | None:
+        """Upload a gallery photo and return {"url", "original_url", "width", "height"}.
+
+        The size is kept in the object's metadata, so checking a photo again
+        (including one a quality floor rejected) costs one HEAD request, not a
+        download. Returns None when the photo can't be fetched, read or stored;
+        it never raises, so one bad photo can't stop a rescue's gallery run.
+        """
+        if not image_url or not cls._check_configuration() or cls.is_circuit_breaker_open():
+            return None
+        try:
+            return cls._store_image_with_size(image_url, animal_name, organization_name)
+        except BotoCoreError as e:
+            # R2 unreachable or timing out: worth retrying next run
+            logger.warning(f"R2 connection error storing gallery photo {image_url}: {e}")
+            cls.track_upload_failure("gallery_upload_failed")
+            return None
+        except Exception as e:
+            # Oversized or corrupt images and the like fail the same way every run,
+            # so they are skipped rather than retried forever
+            logger.warning(f"Unusable gallery photo {image_url}: {e}")
+            return UNUSABLE_PHOTO
+
+    @classmethod
+    def _store_image_with_size(cls, image_url: str, animal_name: str, organization_name: str) -> dict | None:
+
+        image_key = cls._generate_image_key(image_url, animal_name, organization_name)
+        bucket_name = os.getenv("R2_BUCKET_NAME")
+        s3_client = cls._get_s3_client()
+        r2_url = cls._build_custom_domain_url(image_key)
+
+        already_stored = False
+        metadata: dict = {}
+        try:
+            metadata = s3_client.head_object(Bucket=bucket_name, Key=image_key).get("Metadata", {})
+            if metadata.get("width") and metadata.get("height"):
+                return {"url": r2_url, "original_url": image_url, "width": int(metadata["width"]), "height": int(metadata["height"])}
+            # Stored by the hero upload, which records no size: measure it, but
+            # don't write the same key again (R2 allows one write per key a second)
+            already_stored = True
+        except ClientError as e:
+            if e.response["Error"]["Code"] not in ("404", "NoSuchKey"):
+                logger.warning(f"Could not check existing image {image_key}: {e}")
+
+        try:
+            headers = {"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}
+            response = requests.get(image_url, timeout=(10, 20), headers=headers)
+            response.raise_for_status()
+            content_type = response.headers.get("content-type", "").lower()
+            if not any(t in content_type for t in ("image/jpeg", "image/jpg", "image/png", "image/webp")):
+                logger.warning(f"Invalid content type for image {image_url}: {content_type}")
+                return UNUSABLE_PHOTO
+
+            with PILImage.open(BytesIO(response.content)) as img:
+                width, height = _display_size(img)
+            if already_stored:
+                # Record the size on the existing object (a copy onto itself), so the
+                # next check is one HEAD request even if this photo is never kept
+                s3_client.copy_object(
+                    Bucket=bucket_name,
+                    Key=image_key,
+                    CopySource={"Bucket": bucket_name, "Key": image_key},
+                    MetadataDirective="REPLACE",
+                    ContentType=content_type,
+                    CacheControl="public, max-age=86400, s-maxage=604800",
+                    Metadata={**metadata, "original_url": _ascii_url(image_url), "width": str(width), "height": str(height)},
+                )
+                return {"url": r2_url, "original_url": image_url, "width": width, "height": height}
+
+            # R2 has no per-bucket write limit, only one write per second per
+            # key, and every photo has its own key; gallery uploads therefore
+            # run in parallel and only back off after R2 has pushed back.
+            if cls._consecutive_failures > 0:
+                cls._enforce_rate_limit()
+            s3_client.upload_fileobj(
+                BytesIO(response.content),
+                bucket_name,
+                image_key,
+                ExtraArgs={
+                    "ContentType": content_type,
+                    "CacheControl": "public, max-age=86400, s-maxage=604800",
+                    "Metadata": {
+                        "original_url": _ascii_url(image_url),
+                        "width": str(width),
+                        "height": str(height),
+                    },
+                },
+            )
+            cls.track_upload_success()
+            return {"url": r2_url, "original_url": image_url, "width": width, "height": height}
+        except ClientError as e:
+            if e.response.get("Error", {}).get("Code") in ("SlowDown", "TooManyRequests", "RequestLimitExceeded"):
+                with cls._state_lock:
+                    cls._consecutive_failures = min(cls._consecutive_failures + 1, 5)
+            logger.warning(f"Could not store gallery photo {image_url}: {e}")
+            cls.track_upload_failure("gallery_upload_failed")
+            return None
+        except UnidentifiedImageError as e:
+            logger.warning(f"Gallery photo is not a readable image {image_url}: {e}")
+            return UNUSABLE_PHOTO
+        except requests.exceptions.HTTPError as e:
+            status = e.response.status_code if e.response is not None else None
+            logger.warning(f"Could not fetch gallery photo {image_url}: {e}")
+            # A 4xx won't fix itself (dead link, removed photo); a 5xx might
+            return UNUSABLE_PHOTO if status and 400 <= status < 500 and status != 429 else None
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Could not fetch gallery photo {image_url}: {e}")
+            return None
 
     @staticmethod
     def get_optimized_url(r2_url: str, transformation_options: dict | None = None) -> str:
