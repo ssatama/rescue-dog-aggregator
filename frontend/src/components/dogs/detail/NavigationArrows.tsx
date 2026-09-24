@@ -24,11 +24,11 @@ const NavigationArrows: React.FC<NavigationArrowsProps> = ({
     return null;
   }
 
-  // From lg, where the page leaves a margin for them; below it they would
-  // cover the photo gallery's own arrows (#489)
+  // Close to the screen edge (8–56px), clear of the photo gallery's own
+  // arrows, which start where the page's padding ends (#489)
   const buttonClasses = `
     fixed top-1/2 -translate-y-1/2 z-50
-    hidden lg:flex items-center justify-center
+    hidden md:flex items-center justify-center
     w-12 h-12 rounded-full
     bg-white shadow-lg
     hover:bg-gray-50 hover:shadow-xl
@@ -43,7 +43,7 @@ const NavigationArrows: React.FC<NavigationArrowsProps> = ({
       {showPrev && (
         <button
           data-testid="nav-arrow-prev"
-          className={`${buttonClasses} left-12`}
+          className={`${buttonClasses} left-2`}
           onClick={onPrev}
           disabled={isLoading}
           aria-label="Previous dog"
@@ -62,7 +62,7 @@ const NavigationArrows: React.FC<NavigationArrowsProps> = ({
       {showNext && (
         <button
           data-testid="nav-arrow-next"
-          className={`${buttonClasses} right-12`}
+          className={`${buttonClasses} right-2`}
           onClick={onNext}
           disabled={isLoading}
           aria-label="Next dog"
