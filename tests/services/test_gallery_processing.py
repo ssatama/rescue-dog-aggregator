@@ -191,8 +191,10 @@ class TestUploadImageWithSize:
         s3.upload_fileobj.assert_not_called()
 
     def test_an_unexpected_error_skips_the_photo_not_the_run(self, s3):
+        from botocore.exceptions import EndpointConnectionError
+
         s3.head_object.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadObject")
-        s3.upload_fileobj.side_effect = ConnectionError("R2 endpoint unreachable")
+        s3.upload_fileobj.side_effect = EndpointConnectionError(endpoint_url="https://r2.example")
         response = Mock(content=_jpeg(1200, 900), headers={"content-type": "image/jpeg"})
 
         with patch("utils.r2_service.requests.get", return_value=response):
@@ -205,10 +207,19 @@ class TestUploadImageWithSize:
 
         assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") is None
 
-    def test_bad_size_metadata_skips_the_photo(self, s3):
+    def test_bad_size_metadata_is_unusable_not_retried_forever(self, s3):
         s3.head_object.return_value = {"Metadata": {"width": "wide", "height": "480"}}
 
-        assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") is None
+        assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") == UNUSABLE_PHOTO
+
+    def test_a_non_ascii_source_url_is_stored_with_ascii_metadata(self, s3):
+        s3.head_object.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadObject")
+        response = Mock(content=_jpeg(800, 600), headers={"content-type": "image/jpeg"})
+
+        with patch("utils.r2_service.requests.get", return_value=response):
+            R2Service.upload_image_with_size("https://rescue.example/Pequeño.jpg", "Rex", "Rescue")
+
+        s3.upload_fileobj.call_args.kwargs["ExtraArgs"]["Metadata"]["original_url"].encode("ascii")
 
 
 @pytest.mark.unit

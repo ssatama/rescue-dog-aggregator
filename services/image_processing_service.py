@@ -110,7 +110,7 @@ class ImageProcessingService:
         for animal in animals_data:
             for source in _gallery_sources(animal)[: MAX_GALLERY_PHOTOS * 2]:
                 if source not in known and source not in pending:
-                    pending[source] = animal.get("name", "unknown")
+                    pending[source] = animal.get("name") or "unknown"
 
         uploaded: dict[str, dict[str, Any] | None] = {}
         if pending and not self.r2_service.prepare_for_parallel_uploads():

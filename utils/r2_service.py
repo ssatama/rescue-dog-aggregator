@@ -11,10 +11,11 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
+from urllib.parse import quote
 
 import boto3
 import requests
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 from PIL import Image as PILImage
 from PIL import UnidentifiedImageError
 
@@ -40,6 +41,11 @@ def _display_size(img: "PILImage.Image") -> tuple[int, int]:
 # upload_image_with_size's answer for a photo that can never be used (dead
 # link, not an image): skip it like a missing photo. None means "try again".
 UNUSABLE_PHOTO: dict = {}
+
+
+def _ascii_url(url: str) -> str:
+    """S3 metadata must be ASCII; rescue URLs sometimes aren't ("Pequeño.jpg")."""
+    return quote(url, safe=":/?&=%#@+,;~")
 
 
 class R2ConfigurationError(Exception):
@@ -387,11 +393,16 @@ class R2Service:
             return None
         try:
             return cls._store_image_with_size(image_url, animal_name, organization_name)
-        except Exception as e:
-            # R2 connection errors, bad metadata, oversized images: skip this photo
-            logger.warning(f"Unexpected error storing gallery photo {image_url}: {e}")
+        except BotoCoreError as e:
+            # R2 unreachable or timing out: worth retrying next run
+            logger.warning(f"R2 connection error storing gallery photo {image_url}: {e}")
             cls.track_upload_failure("gallery_upload_failed")
             return None
+        except Exception as e:
+            # Oversized or corrupt images and the like fail the same way every run,
+            # so they are skipped rather than retried forever
+            logger.warning(f"Unusable gallery photo {image_url}: {e}")
+            return UNUSABLE_PHOTO
 
     @classmethod
     def _store_image_with_size(cls, image_url: str, animal_name: str, organization_name: str) -> dict | None:
@@ -435,7 +446,7 @@ class R2Service:
                     MetadataDirective="REPLACE",
                     ContentType=content_type,
                     CacheControl="public, max-age=86400, s-maxage=604800",
-                    Metadata={**metadata, "original_url": image_url, "width": str(width), "height": str(height)},
+                    Metadata={**metadata, "original_url": _ascii_url(image_url), "width": str(width), "height": str(height)},
                 )
                 return {"url": r2_url, "original_url": image_url, "width": width, "height": height}
 
@@ -452,7 +463,7 @@ class R2Service:
                     "ContentType": content_type,
                     "CacheControl": "public, max-age=86400, s-maxage=604800",
                     "Metadata": {
-                        "original_url": image_url,
+                        "original_url": _ascii_url(image_url),
                         "width": str(width),
                         "height": str(height),
                     },
