@@ -10,44 +10,40 @@ export default function Header() {
       {/* Skip to main content link for accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-orange-600 dark:bg-orange-500 text-white px-4 py-2 rounded z-50"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-orange-600 dark:bg-orange-400 text-white dark:text-gray-950 px-4 py-2 rounded z-50"
       >
         Skip to main content
       </a>
 
-      <header className="bg-background border-b border-border shadow-orange-md dark:shadow-purple-md sticky top-0 z-50">
+      <header className="bg-background/95 backdrop-blur border-b border-border sticky top-0 z-50">
         <nav
-          className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4"
+          className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-6"
           aria-label="Main navigation"
         >
-          <div className="flex justify-between items-center">
-            {/* Logo/Home link */}
-            <div className="shrink-0 max-w-fit">
-              <Link
-                href="/"
-                className="flex items-center gap-2 text-section font-extrabold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-300 hover:scale-105 transform focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2 rounded"
-              >
-                <Image
-                  src={logo}
-                  alt="Rescue Dog Aggregator logo"
-                  width={80}
-                  height={80}
-                  className="rounded-full object-cover md:w-20 md:h-20 w-16 h-16"
-                  priority
-                />
-                <span className="sr-only lg:not-sr-only">
-                  Rescue Dog Aggregator
-                </span>
-              </Link>
-            </div>
+          <Link
+            href="/"
+            aria-label="rescuedogs home"
+            className="flex shrink-0 items-center gap-2 rounded-md font-display text-xl font-bold tracking-tight text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <Image
+              src={logo}
+              alt=""
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-full object-cover"
+              priority
+            />
+            rescuedogs
+          </Link>
 
-            {/* Desktop Navigation */}
-            <HeaderDesktopNav />
+          {/* Global search goes here (#492) */}
+          <div className="flex-1" />
 
-            {/* Mobile: Only show theme toggle (no hamburger menu) */}
-            <div className="lg:hidden flex items-center gap-2">
-              <ThemeToggle />
-            </div>
+          <HeaderDesktopNav />
+
+          {/* Below lg the mobile tab bar carries navigation */}
+          <div className="lg:hidden">
+            <ThemeToggle />
           </div>
         </nav>
       </header>

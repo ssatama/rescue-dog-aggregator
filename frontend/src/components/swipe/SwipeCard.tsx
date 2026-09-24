@@ -157,7 +157,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       <div className="p-4 flex flex-col gap-3 dark:bg-gray-800 overflow-y-auto flex-1">
         {/* Tagline in Caveat handwritten font */}
         {tagline ? (
-          <p className="font-[family-name:var(--font-caveat)] text-lg text-gray-700 dark:text-gray-300 line-clamp-2 leading-snug">
+          <p className="font-display text-lg text-gray-700 dark:text-gray-300 line-clamp-2 leading-snug">
             {tagline}
           </p>
         ) : null}

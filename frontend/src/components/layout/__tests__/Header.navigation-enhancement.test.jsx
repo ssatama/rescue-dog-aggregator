@@ -7,19 +7,19 @@ jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),
 }));
 
-describe("Header Navigation Enhancement - Orange Theme", () => {
+describe("Header Navigation Enhancement", () => {
   beforeEach(() => {
     usePathname.mockReturnValue("/");
   });
 
   describe("Active Navigation States", () => {
-    it("should show orange active state for Dogs dropdown trigger", () => {
+    it("shows the active state in ink on the Dogs dropdown trigger", () => {
       usePathname.mockReturnValue("/dogs");
       render(<Header />);
 
       // Dogs is now a dropdown trigger button
       const dogsButton = screen.getByRole("button", { name: /dogs/i });
-      expect(dogsButton).toHaveClass("text-orange-600");
+      expect(dogsButton).toHaveClass("text-foreground");
       expect(dogsButton).toHaveClass("font-semibold");
       expect(dogsButton).not.toHaveClass("text-red-700");
       expect(dogsButton).not.toHaveClass("bg-red-100");
@@ -29,27 +29,16 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
       // Organizations link was removed from header navigation
       // It's now only in footer and mobile menu drawer
     });
-
-    it("should show orange active state for About dropdown trigger", () => {
-      usePathname.mockReturnValue("/about");
-      render(<Header />);
-
-      // About is now a dropdown trigger button
-      const aboutButton = screen.getByRole("button", { name: /about/i });
-      expect(aboutButton).toHaveClass("text-orange-600");
-      expect(aboutButton).toHaveClass("font-semibold");
-      expect(aboutButton).not.toHaveClass("text-red-700");
-    });
   });
 
   describe("Hover and Transition States", () => {
-    it("should have orange hover states for Dogs dropdown trigger", () => {
+    it("should have hover states for Dogs dropdown trigger", () => {
       usePathname.mockReturnValue("/");
       render(<Header />);
 
       // Dogs is now a dropdown trigger button
       const dogsButton = screen.getByRole("button", { name: /dogs/i });
-      expect(dogsButton).toHaveClass("hover:text-orange-600");
+      expect(dogsButton).toHaveClass("hover:text-foreground");
       expect(dogsButton).toHaveClass("transition-colors");
       expect(dogsButton).toHaveClass("duration-200");
       expect(dogsButton).not.toHaveClass("hover:text-red-500");

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Grid3X3, Heart, Dna, Star, Menu } from "lucide-react";
+import { Grid3X3, Heart, Dna, Layers, Menu } from "lucide-react";
+import { FavoriteBadge } from "../favorites/FavoriteBadge";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -25,8 +26,8 @@ const TOP_Y_SHOW = 20; // Always show nav when scrolled to top
 const navItems: NavItem[] = [
   { id: "browse", label: "Browse", icon: Grid3X3, path: "/dogs" },
   { id: "breeds", label: "Breeds", icon: Dna, path: "/breeds" },
-  { id: "swipe", label: "Swipe", icon: Heart, path: "/swipe" },
-  { id: "saved", label: "Saved", icon: Star, path: "/favorites" },
+  { id: "swipe", label: "Swipe", icon: Layers, path: "/swipe" },
+  { id: "saved", label: "Saved", icon: Heart, path: "/favorites" },
   { id: "menu", label: "Menu", icon: Menu, path: "#" },
 ];
 
@@ -184,7 +185,7 @@ const MobileBottomNav: React.FC = () => {
                       onClick={() => setMenuDrawerOpen(true)}
                       className={cn(
                         "relative flex flex-col items-center justify-center min-h-[56px] min-w-[44px] px-2 py-1 rounded-lg transition-colors",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4714A]",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                         "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100",
                       )}
                       aria-label={item.label}
@@ -202,9 +203,9 @@ const MobileBottomNav: React.FC = () => {
                     href={item.path}
                     className={cn(
                       "relative flex flex-col items-center justify-center min-h-[56px] min-w-[44px] px-2 py-1 rounded-lg transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4714A]",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isActive
-                        ? "text-[#D4714A] dark:text-[#E8805A]"
+                        ? "text-orange-600 dark:text-orange-400"
                         : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100",
                     )}
                     aria-label={item.label}
@@ -213,13 +214,16 @@ const MobileBottomNav: React.FC = () => {
                     {/* Active indicator bar */}
                     {isActive && (
                       <motion.div
-                        className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-[3px] bg-[#D4714A] dark:bg-[#E8805A] rounded-full"
+                        className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-[3px] bg-orange-600 dark:bg-orange-400 rounded-full"
                         initial={{ scaleX: 0 }}
                         animate={{ scaleX: 1 }}
                         transition={{ duration: 0.2 }}
                       />
                     )}
                     <Icon className="w-5 h-5 mb-1" />
+                    {item.id === "saved" && (
+                      <FavoriteBadge className="absolute top-1 left-1/2 ml-1" />
+                    )}
                     <span className="text-xs font-medium">{item.label}</span>
                   </Link>
                 );

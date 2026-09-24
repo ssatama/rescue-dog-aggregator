@@ -21,12 +21,75 @@
   --animate-pulse-gentle: pulseGentle 3s ease-in-out infinite;
   --animate-pulse-slow: pulseSlow 4s ease-in-out infinite;
 
-  --font-inter:
-    var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, Segoe UI,
-    sans-serif;
+  /* Design system tokens: docs/technical/design-system.md */
   --font-sans:
-    var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, Segoe UI,
-    sans-serif;
+    var(--font-figtree), system-ui, -apple-system, BlinkMacSystemFont,
+    Segoe UI, sans-serif;
+  --font-display:
+    var(--font-bricolage), var(--font-figtree), system-ui, sans-serif;
+
+  /* The Tailwind gray, zinc and slate ramps are retuned to one set of warm
+     neutrals, and orange to the accent, so every existing utility picks up
+     the new look. orange-600 carries white text at 4.9:1. */
+  --color-gray-50: #faf9f6;
+  --color-gray-100: #f2efea;
+  --color-gray-200: #e5e1da;
+  --color-gray-300: #d3cec5;
+  --color-gray-400: #a39d94;
+  --color-gray-500: #736d66;
+  --color-gray-600: #5c5750;
+  --color-gray-700: #45413c;
+  --color-gray-800: #2f2c28;
+  --color-gray-900: #1c1a18;
+  --color-gray-950: #131211;
+  --color-zinc-50: var(--color-gray-50);
+  --color-zinc-100: var(--color-gray-100);
+  --color-zinc-200: var(--color-gray-200);
+  --color-zinc-300: var(--color-gray-300);
+  --color-zinc-400: var(--color-gray-400);
+  --color-zinc-500: var(--color-gray-500);
+  --color-zinc-600: var(--color-gray-600);
+  --color-zinc-700: var(--color-gray-700);
+  --color-zinc-800: var(--color-gray-800);
+  --color-zinc-900: var(--color-gray-900);
+  --color-zinc-950: var(--color-gray-950);
+  --color-slate-50: var(--color-gray-50);
+  --color-slate-100: var(--color-gray-100);
+  --color-slate-200: var(--color-gray-200);
+  --color-slate-300: var(--color-gray-300);
+  --color-slate-400: var(--color-gray-400);
+  --color-slate-500: var(--color-gray-500);
+  --color-slate-600: var(--color-gray-600);
+  --color-slate-700: var(--color-gray-700);
+  --color-slate-800: var(--color-gray-800);
+  --color-slate-900: var(--color-gray-900);
+  --color-slate-950: var(--color-gray-950);
+  --color-orange-50: #fff5ec;
+  --color-orange-100: #ffe6d4;
+  --color-orange-200: #ffc9a3;
+  --color-orange-300: #ffa066;
+  --color-orange-400: #ff7a33;
+  --color-orange-500: #e0560e;
+  --color-orange-600: #c4470a;
+  --color-orange-700: #a63c08;
+  --color-orange-800: #85320a;
+  --color-orange-900: #6b2a0b;
+  --color-orange-950: #3a1405;
+
+  /* Semantic colours for new code. Values switch with the theme (:root/.dark). */
+  --color-ink: var(--ds-ink);
+  --color-subtle: var(--ds-subtle);
+  --color-line: var(--ds-line);
+  --color-soft: var(--ds-soft);
+  --color-surface: var(--ds-surface);
+  --color-good: var(--ds-good);
+  --color-good-soft: var(--ds-good-soft);
+  --color-bad: var(--ds-bad);
+  --color-bad-soft: var(--ds-bad-soft);
+  --color-unknown: var(--ds-unknown);
+
+  --shadow-card:
+    0 1px 2px rgb(40 25 10 / 0.05), 0 12px 32px -18px rgb(40 25 10 / 0.35);
 
   --text-hero: var(--font-size-hero);
   --text-hero--line-height: var(--line-height-tight);
@@ -57,11 +120,13 @@
   --text-tiny--letter-spacing: var(--letter-spacing-wide);
   --text-tiny--font-weight: var(--font-weight-medium);
 
-  --font-weight-normal: var(--font-weight-normal);
-  --font-weight-medium: var(--font-weight-medium);
-  --font-weight-semibold: var(--font-weight-semibold);
-  --font-weight-bold: var(--font-weight-bold);
-  --font-weight-extrabold: var(--font-weight-extrabold);
+  /* Literal values: these once pointed at themselves, a cycle that made every
+     font-medium/semibold/bold render at 400 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
 
   --tracking-tight: var(--letter-spacing-tight);
   --tracking-normal: var(--letter-spacing-normal);
@@ -2362,32 +2427,43 @@
 
 @layer base {
   :root {
-    /* Updated warm color scheme */
-    --background: 31 100% 98%; /* #FDFBF7 warm off-white */
-    --foreground: 222.2 84% 4.9%;
-    --card: 31 100% 99%; /* Slightly warmer card background */
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 31 100% 99%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 25 95% 53%; /* Orange #F97316 - matches site theme */
-    --primary-foreground: 0 0% 100%; /* White text on orange */
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Warm white, one ink colour, orange only for things you can press */
+    --background: 43 27% 97%; /* #FAF9F6 */
+    --foreground: 36 10% 10%; /* #1D1B18 ink */
+    --card: 0 0% 100%;
+    --card-foreground: 36 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 36 10% 10%;
+    --primary: 20 90% 40%; /* #C4470A, white text 4.9:1 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 24% 93%; /* #F2EFEA */
+    --secondary-foreground: 36 10% 10%;
+    --muted: 36 24% 93%;
+    --muted-foreground: 32 6% 42%; /* #736D66 */
+    --accent: 36 24% 93%;
+    --accent-foreground: 36 10% 10%;
+    --destructive: 4 76% 40%; /* #B42318 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 37 18% 88%; /* #E5E1DA */
+    --input: 37 18% 88%;
+    --ring: 20 90% 40%;
+
+    --ds-ink: #1d1b18;
+    --ds-subtle: #736d66;
+    --ds-line: #e5e1da;
+    --ds-soft: #f2efea;
+    --ds-surface: #ffffff;
+    --ds-good: #1f7a4d;
+    --ds-good-soft: #e8f4ec;
+    --ds-bad: #b42318;
+    --ds-bad-soft: #fbecea;
+    --ds-unknown: #736d66;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     /* Orange-tinted shadows for premium feel */
     --shadow-orange-xs: 0 1px 2px rgba(249, 115, 22, 0.05);
@@ -2455,25 +2531,36 @@
     --font-weight-extrabold: 800;
   }
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 30 6% 7%; /* #131211 */
+    --foreground: 37 22% 91%; /* #EEEAE3 */
+    --card: 30 8% 10%; /* #1C1A18 */
+    --card-foreground: 37 22% 91%;
+    --popover: 30 8% 10%;
+    --popover-foreground: 37 22% 91%;
+    --primary: 21 100% 60%; /* #FF7A33, dark text on it */
+    --primary-foreground: 24 63% 6%;
+    --secondary: 30 10% 13%; /* #24211E */
+    --secondary-foreground: 37 22% 91%;
+    --muted: 30 10% 13%;
+    --muted-foreground: 36 8% 61%; /* #A39D94 */
+    --accent: 30 10% 13%;
+    --accent-foreground: 37 22% 91%;
+    --destructive: 6 82% 71%; /* #F2877B */
+    --destructive-foreground: 30 6% 7%;
+    --border: 34 9% 17%; /* #2F2C28 */
+    --input: 34 9% 17%;
+    --ring: 21 100% 60%;
+
+    --ds-ink: #eeeae3;
+    --ds-subtle: #a39d94;
+    --ds-line: #2f2c28;
+    --ds-soft: #24211e;
+    --ds-surface: #1c1a18;
+    --ds-good: #5bc48a;
+    --ds-good-soft: #17281e;
+    --ds-bad: #f2877b;
+    --ds-bad-soft: #2e1916;
+    --ds-unknown: #a39d94;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -2502,6 +2589,12 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
 }
 

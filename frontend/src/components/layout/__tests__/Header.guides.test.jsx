@@ -37,6 +37,6 @@ describe("Header - Guides Navigation", () => {
     render(<Header />);
     const guidesLinks = screen.getAllByText("Guides");
     const desktopLink = guidesLinks[0].closest("a");
-    expect(desktopLink).toHaveClass("text-orange-600");
+    expect(desktopLink).toHaveAttribute("aria-current", "page");
   });
 });
