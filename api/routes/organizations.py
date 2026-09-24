@@ -320,10 +320,10 @@ def get_organization_recent_dogs(
     """
     try:
         cursor.execute(
-            """
+            f"""
             SELECT id, name, primary_image_url
             FROM animals
-            WHERE organization_id = %s AND status = 'available' AND active = true AND primary_image_url IS NOT NULL
+            WHERE organization_id = %s AND {publicly_available(None)} AND primary_image_url IS NOT NULL
             ORDER BY created_at DESC
             LIMIT %s
             """,

@@ -39,6 +39,10 @@ def test_counts_agree_with_the_lists(client: TestClient, low_confidence_dog):
     org = client.get("/api/organizations/mock-test-org").json()
     assert org["total_dogs"] == len(listed)
 
+    beagle = next(b for b in client.get("/api/animals/breeds/with-images?min_count=1&limit=50").json() if b["breed_slug"] == "beagle")
+    listed_beagles = client.get("/api/animals/?primary_breed=Beagle&limit=1000").json()
+    assert beagle["count"] == len(listed_beagles)
+
     total = client.get("/api/animals/statistics").json()["total_dogs"]
     assert client.get("/api/animals/breeds/stats").json()["total_dogs"] == total
     assert client.get("/api/animals/stats/by-country").json()["total"] == total

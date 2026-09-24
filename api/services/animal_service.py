@@ -676,8 +676,11 @@ class AnimalService:
             self.cursor.execute(
                 f"""
                 SELECT COUNT(*) as total
-                FROM animals
-                WHERE {publicly_available(None)}
+                FROM animals a
+                JOIN organizations o ON a.organization_id = o.id
+                WHERE {publicly_available("a")}
+                  AND a.animal_type = 'dog'
+                  AND o.active = TRUE
             """
             )
             stats["total_dogs"] = self.cursor.fetchone()["total"]
@@ -1098,16 +1101,14 @@ class AnimalService:
             # Build WHERE conditions for counting ALL dogs (not just with images)
             count_conditions = [
                 "a.animal_type = 'dog'",
-                "a.status = 'available'",
-                "a.active = true",
+                publicly_available("a"),
                 "o.active = TRUE",
             ]
 
             # Build WHERE conditions for sample dogs (must have images)
             sample_conditions = [
                 "a.animal_type = 'dog'",
-                "a.status = 'available'",
-                "a.active = true",
+                publicly_available("a"),
                 "o.active = TRUE",
                 "a.primary_image_url IS NOT NULL",
             ]
