@@ -16,7 +16,7 @@ describe("llms-full.txt (#446)", () => {
       "  limit={4}",
       "/>",
       "",
-      "Small dogs (\\<25 lbs) are cheaper.",
+      "Small dogs (\\<25 lbs) are cheaper; large dogs (\\>60 lbs) cost more.",
     ].join("\n");
 
     const out = mdxToPlainMarkdown(mdx);
@@ -24,6 +24,7 @@ describe("llms-full.txt (#446)", () => {
     expect(out).toContain("- UK adoption + transport range: £380-£750");
     expect(out).toContain("**Quick Summary:** Costs vary.");
     expect(out).toContain("Small dogs (<25 lbs)");
+    expect(out).toContain("large dogs (>60 lbs)");
     expect(out).not.toMatch(/<\/?(Callout|DogGrid|Stats|div)\b/);
   });
 

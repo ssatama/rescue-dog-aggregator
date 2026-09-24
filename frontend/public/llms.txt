@@ -99,7 +99,7 @@ Long-form adoption guides, about 3,600 words each. Their full text is in
 
 - [European Rescue Guide: Everything You Need to Know](https://www.rescuedogs.me/guides/european-rescue-guide): adopting a rescue dog from Europe; what the law requires in the UK, EU and Switzerland, plus transport, costs and what to expect on arrival
 - [First-Time Owner Guide: Are You Ready for a Rescue Dog?](https://www.rescuedogs.me/guides/first-time-owner-guide): an honest readiness check for first-time owners, choosing the right rescue dog, the 3-3-3 rule and building trust with a dog from abroad
-- [Rescue Dog Adoption Costs: A European Budget Guide](https://www.rescuedogs.me/guides/costs-and-preparation): adoption fees, first-year setup, monthly budgets and how to save when adopting a European rescue dog
+- [Costs and Preparation: Financial Guide to European Rescue Adoption](https://www.rescuedogs.me/guides/costs-and-preparation): adoption fees, first-year setup, monthly budgets and how to save when adopting a European rescue dog
 
 ## Structured data
 

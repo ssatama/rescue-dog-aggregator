@@ -9,7 +9,7 @@ export function mdxToPlainMarkdown(mdx: string): string {
     .replace(/<Stats\s+value="([^"]*)"\s+label="([^"]*)"\s*\/>/g, "- $2: $1")
     .replace(/<\/?Callout\b[^>]*>/g, "")
     .replace(/<\/?div\b[^>]*>/g, "")
-    .replace(/\\</g, "<")
+    .replace(/\\([<>{}])/g, "$1")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
