@@ -12,6 +12,7 @@ from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import BreedStatsResponse, FilterCountsResponse
 from api.services import AnimalService
+from api.utils.availability import publicly_available
 from api.utils.sql_utils import escape_like_pattern
 
 logger = logging.getLogger(__name__)
@@ -259,7 +260,7 @@ async def get_stats_by_country(
         - countries: List of countries with dog counts and organization counts
     """
     try:
-        query = """
+        query = f"""
             SELECT
                 o.country as code,
                 o.country as name,
@@ -267,7 +268,7 @@ async def get_stats_by_country(
                 COUNT(DISTINCT a.organization_id) as organizations
             FROM animals a
             JOIN organizations o ON a.organization_id = o.id
-            WHERE a.active = true AND o.active = true AND a.animal_type = 'dog'
+            WHERE {publicly_available("a")} AND o.active = true AND a.animal_type = 'dog'
             GROUP BY o.country
             ORDER BY COUNT(a.id) DESC
         """
