@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { isPlainLeftClick } from "@/utils/linkClick";
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -68,20 +69,7 @@ const DogCard = React.memo<{
       initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
       animate={shouldAnimate ? { opacity: 1, y: 0 } : undefined}
       transition={shouldAnimate ? { delay: index * 0.05 } : undefined}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.06)] border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none"
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (
-          (e.key === "Enter" || e.key === " ") &&
-          e.target === e.currentTarget
-        ) {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
-      aria-label={`View details for ${dog.name}`}
+      className="bg-white dark:bg-gray-800 relative rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.06)] border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow focus-within:ring-2 focus-within:ring-rose-500"
     >
       <div className="relative aspect-square">
         <Image
@@ -96,7 +84,7 @@ const DogCard = React.memo<{
         />
         <button
           type="button"
-          className="absolute top-2 right-2 w-8 h-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+          className="absolute top-2 right-2 z-10 w-8 h-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
           onClick={(e) => {
             e.stopPropagation();
             onFavoriteToggle?.(String(dog.id));
@@ -116,7 +104,19 @@ const DogCard = React.memo<{
       </div>
       <div className="p-3">
         <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-          {dog.name}, {ageGroup}
+          {/* A real link for crawlers and new-tab clicks; its ::after covers the card.
+              A plain tap still opens the modal (#438). */}
+          <a
+            href={`/dogs/${dog.slug || `unknown-dog-${dog.id}`}`}
+            className="stretched-link after:absolute after:inset-0 after:z-[1] after:content-[''] focus:outline-none"
+            onClick={(e) => {
+              if (!isPlainLeftClick(e)) return;
+              e.preventDefault();
+              onClick?.();
+            }}
+          >
+            {dog.name}, {ageGroup}
+          </a>
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
           {formattedBreed}

@@ -80,7 +80,7 @@ describe("Typography Consistency Tests", () => {
 
       render(<OrganizationCard organization={mockOrg} size="medium" />);
 
-      const orgName = screen.getByText("Test Organization");
+      const orgName = screen.getByTestId("org-name");
       expect(orgName).toHaveClass("text-card-title");
       expect(orgName.tagName).toBe("H3");
     });

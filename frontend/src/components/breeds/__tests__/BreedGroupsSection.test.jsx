@@ -163,7 +163,8 @@ describe("BreedGroupsSection", () => {
 
     // Second click - collapse
     fireEvent.click(houndGroup);
-    expect(screen.queryByText("Galgo")).not.toBeInTheDocument();
+    // Collapsed groups keep their links in the DOM for crawlers, just hidden (#438)
+    expect(screen.getByText("Galgo")).not.toBeVisible();
   });
 
   it("allows multiple groups to be expanded simultaneously", () => {
@@ -213,9 +214,16 @@ describe("BreedGroupsSection", () => {
   it("displays group icons", () => {
     render(<BreedGroupsSection breedGroups={mockBreedGroups} />);
 
-    expect(screen.getByText("🐕")).toBeInTheDocument();
+    // 🐕 also marks breeds without a photo in the (hidden) breed lists
+    expect(screen.getAllByText("🐕").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("🦮")).toBeInTheDocument();
     expect(screen.getByText("🐑")).toBeInTheDocument();
     expect(screen.getByText("💪")).toBeInTheDocument();
+  });
+
+  it("renders breed links for collapsed groups so crawlers can follow them", () => {
+    const { container } = render(<BreedGroupsSection breedGroups={mockBreedGroups} />);
+
+    expect(container.querySelector('a[href="/breeds/galgo"]')).toBeInTheDocument();
   });
 });

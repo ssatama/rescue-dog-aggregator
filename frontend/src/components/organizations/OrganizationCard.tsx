@@ -101,16 +101,7 @@ const OrganizationCard = memo(
 
     return (
       <Card
-        className="group flex flex-col overflow-hidden cursor-pointer transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 content-fade-in"
-        onClick={() => (window.location.href = `/organizations/${slug}`)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e: React.KeyboardEvent) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            window.location.href = `/organizations/${slug}`;
-          }
-        }}
+        className="group relative flex flex-col overflow-hidden cursor-pointer transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-orange-600 focus-within:ring-offset-2 content-fade-in"
         data-testid="organization-card"
       >
         <CardHeader className={styles.padding}>
@@ -119,7 +110,7 @@ const OrganizationCard = memo(
             {/* 1. Organization Logo (64px with fallback to initials) */}
             <div className="flex-shrink-0">
               {logoUrl ? (
-                <div className={`${styles.logo} rounded-lg overflow-hidden`}>
+                <div className={`relative ${styles.logo} rounded-lg overflow-hidden`}>
                   <NextImage
                     src={logoUrl}
                     alt={`${name} logo`}
@@ -149,7 +140,15 @@ const OrganizationCard = memo(
                 className={`text-card-title text-foreground mb-1 truncate`}
                 data-testid="org-name"
               >
-                {name}
+                {/* The card's link for crawlers and new-tab clicks; its ::after covers the
+                    card (#438). It lives on the name, not the CTA, because the CTA's hover
+                    translate would make the CTA the ::after's containing block. */}
+                <Link
+                  href={`/organizations/${slug}`}
+                  className="stretched-link after:absolute after:inset-0 after:z-[1] after:content-[''] focus:outline-none"
+                >
+                  {name}
+                </Link>
               </h3>
               {city && country && (
                 <p
@@ -236,7 +235,7 @@ const OrganizationCard = memo(
                 {recentDogs.slice(0, 3).map((dog, index) => (
                   <div key={dog.id || index} className="flex-shrink-0">
                     <div
-                      className={`${styles.dogThumbnail} rounded-lg overflow-hidden`}
+                      className={`relative ${styles.dogThumbnail} rounded-lg overflow-hidden`}
                     >
                       <NextImage
                         src={dog.thumbnail_url || dog.primary_image_url}
@@ -270,7 +269,7 @@ const OrganizationCard = memo(
             <div className="pt-3 border-t border-border">
               <SocialMediaLinks
                 socialMedia={socialMedia}
-                className="flex space-x-2 justify-start"
+                className="relative z-10 w-fit flex space-x-2 justify-start"
                 size={styles.socialSize}
               />
             </div>
@@ -290,17 +289,18 @@ const OrganizationCard = memo(
                 href={websiteUrl}
                 target="_blank"
                 rel="noopener"
-                className="inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 rounded"
-                onClick={(e: React.MouseEvent) => e.stopPropagation()} // Prevent navigation when clicking button
+                className="relative z-10 inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 rounded"
               >
                 Visit Website
               </a>
             </Button>
 
             <Button
+              asChild
               size="sm"
-              className={`flex-1 bg-orange-600 hover:bg-orange-700 text-white animate-button-hover ${styles.buttonHeight} text-center`}
+              className={`relative z-10 flex-1 bg-orange-600 hover:bg-orange-700 text-white animate-button-hover ${styles.buttonHeight} text-center`}
             >
+              <Link href={`/organizations/${slug}`}>
               {size === "small" ? (
                 <span>Meet {totalDogs}</span>
               ) : (
@@ -312,6 +312,7 @@ const OrganizationCard = memo(
                   <span> →</span>
                 </>
               )}
+              </Link>
             </Button>
           </div>
         </CardFooter>

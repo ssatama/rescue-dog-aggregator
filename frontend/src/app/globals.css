@@ -2279,8 +2279,11 @@
   animation: content-fade-in 300ms ease-out forwards;
   will-change: opacity;
 
-  /* Ensure no layout shift during transition */
-  & * {
+  /* Ensure no layout shift during transition. Not around stretched links: a
+     transform makes every element a containing block and stacking context, which
+     shrinks the link's ::after to its parent and traps the z-index of the
+     controls layered above it (#438). */
+  &:not(:has(.stretched-link)) * {
     transform: translateZ(0);
     backface-visibility: hidden;
   }
