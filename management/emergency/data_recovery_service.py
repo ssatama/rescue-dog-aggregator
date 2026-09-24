@@ -140,15 +140,8 @@ class DataRecoveryService:
                 )
                 duplicate_ids = cursor.fetchone()[0]
 
-                # Check for orphaned images
-                cursor.execute(
-                    """
-                    SELECT COUNT(*) FROM animal_images ai
-                    LEFT JOIN animals a ON ai.animal_id = a.id
-                    WHERE a.id IS NULL
-                """
-                )
-                orphaned_images = cursor.fetchone()[0]
+                # Photos live on the animals row (animals.images, #487), so none can be orphaned
+                orphaned_images = 0
 
                 # Check for corrupted records (basic heuristics)
                 cursor.execute(
@@ -332,11 +325,10 @@ class DataRecoveryService:
                 # Count animals with images
                 cursor.execute(
                     """
-                    SELECT COUNT(DISTINCT a.id)
+                    SELECT COUNT(*)
                     FROM animals a
-                    LEFT JOIN animal_images ai ON a.id = ai.animal_id
                     WHERE a.organization_id = %s
-                    AND ai.id IS NOT NULL
+                    AND (a.images IS NOT NULL OR a.primary_image_url IS NOT NULL)
                 """,
                     (organization_id,),
                 )

@@ -155,7 +155,7 @@ class TestUploadImageWithSize:
         metadata = s3.upload_fileobj.call_args.kwargs["ExtraArgs"]["Metadata"]
         assert (metadata["width"], metadata["height"]) == ("1200", "900")
 
-    def test_a_photo_stored_by_the_hero_upload_is_measured_not_rewritten(self, s3):
+    def test_a_photo_stored_by_the_hero_upload_gets_its_size_recorded_not_reuploaded(self, s3):
         s3.head_object.return_value = {"Metadata": {"original_url": HERO}}
         response = Mock(content=_jpeg(1024, 768), headers={"content-type": "image/jpeg"})
 
@@ -164,6 +164,8 @@ class TestUploadImageWithSize:
 
         assert (result["width"], result["height"]) == (1024, 768)
         s3.upload_fileobj.assert_not_called()
+        metadata = s3.copy_object.call_args.kwargs["Metadata"]
+        assert (metadata["width"], metadata["height"]) == ("1024", "768")
 
     def test_a_non_image_response_is_skipped(self, s3):
         s3.head_object.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadObject")
@@ -198,16 +200,29 @@ class TestUploadImageWithSize:
 @pytest.mark.unit
 def test_one_failing_photo_does_not_cost_the_rest_of_the_batch():
     second = "https://rescue.example/2.jpg"
+    third = "https://rescue.example/3.jpg"
 
     def upload(source, name, org):
-        if source == HERO:
+        if source == second:
             raise RuntimeError("boom")
         return photo(source)
 
     r2 = Mock()
     r2.upload_image_with_size.side_effect = upload
+    dog = {"name": "Rex", "primary_image_url": HERO, "image_urls": [HERO, second, third]}
+
+    ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {})
+
+    assert dog["images"] == [photo(HERO), photo(third)]
+
+
+@pytest.mark.unit
+def test_a_dog_whose_hero_failed_this_run_keeps_its_stored_gallery():
+    second = "https://rescue.example/2.jpg"
+    r2 = Mock()
+    r2.upload_image_with_size.side_effect = lambda source, name, org: None if source == HERO else photo(source)
     dog = {"name": "Rex", "primary_image_url": HERO, "image_urls": [HERO, second]}
 
     ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {})
 
-    assert dog["images"] == [photo(second)]
+    assert "images" not in dog

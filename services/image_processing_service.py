@@ -47,8 +47,9 @@ GALLERY_UPLOAD_WORKERS = 6
 def build_gallery(sources: list[str], photos: dict[str, dict[str, Any] | None]) -> list[dict[str, Any]] | None:
     """The dog's `images` array from its source URLs and the photos known for them.
 
-    Missing or unreadable photos are skipped, small ones only survive as the
-    sole photo, and the rescue's order is kept.
+    The rescue's order is kept, so the hero comes first unless it is under the
+    size floor while better photos exist. Missing or unreadable photos are
+    skipped, and small ones only survive as the sole photo.
     """
     kept: list[dict[str, Any]] = []
     too_small: list[dict[str, Any]] = []
@@ -130,7 +131,11 @@ class ImageProcessingService:
             sources = _gallery_sources(animal)
             if not sources:
                 continue
-            # A photo that failed this run is left out and retried on the next
+            # A hero that failed this run would put another photo first: keep the
+            # stored gallery until it can be fetched. Other failed photos are left
+            # out and retried on the next run.
+            if uploaded.get(sources[0], True) is None:
+                continue
             images = build_gallery(sources, photos)
             if images is not None:
                 animal["images"] = images

@@ -1,7 +1,7 @@
 """Store photo galleries in animals.images; drop animal_images
 
 Scrapers kept only the hero photo although most rescues publish several per
-dog. The gallery lives on the animals row as JSONB, hero first:
+dog. The gallery lives on the animals row as JSONB, in the rescue's order:
 [{"url": <R2 url>, "original_url": ..., "width": ..., "height": ...}].
 NULL means the dog has not been scraped since this column existed.
 

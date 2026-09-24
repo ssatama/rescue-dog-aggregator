@@ -383,6 +383,17 @@ class R2Service:
             with PILImage.open(BytesIO(response.content)) as img:
                 width, height = img.size
             if already_stored:
+                # Record the size on the existing object (a copy onto itself), so the
+                # next check is one HEAD request even if this photo is never kept
+                s3_client.copy_object(
+                    Bucket=bucket_name,
+                    Key=image_key,
+                    CopySource={"Bucket": bucket_name, "Key": image_key},
+                    MetadataDirective="REPLACE",
+                    ContentType=content_type,
+                    CacheControl="public, max-age=86400, s-maxage=604800",
+                    Metadata={"original_url": image_url, "width": str(width), "height": str(height)},
+                )
                 return {"url": r2_url, "original_url": image_url, "width": width, "height": height}
 
             # R2 has no per-bucket write limit, only one write per second per
