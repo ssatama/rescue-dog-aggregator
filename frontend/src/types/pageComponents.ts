@@ -7,6 +7,10 @@ import type { CountryStatsResponse } from "@/schemas/animals";
 export interface DogDetailClientProps {
   params?: { slug?: string };
   initialDog?: Dog | null;
+  /** Server-fetched dogs from the same rescue; when absent the section fetches its own */
+  initialRelatedDogs?: Dog[];
+  /** The dog's breed page slug, or null when the breed has no indexable page */
+  breedPageSlug?: string | null;
 }
 
 export interface OrganizationDetailClientProps {

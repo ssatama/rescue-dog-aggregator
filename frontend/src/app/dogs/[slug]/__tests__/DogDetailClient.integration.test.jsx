@@ -607,6 +607,37 @@ describe("Breed Display - Simplified without legacy text", () => {
     expect(screen.queryByText("Lab Mix")).not.toBeInTheDocument();
   });
 
+  describe("Breed page link (#439)", () => {
+    const pomeranian = {
+      id: 11671,
+      slug: "odessa-pomeranian-11671",
+      name: "Odessa",
+      primary_breed: "Pomeranian",
+      standardized_breed: "Pomeranian",
+      breed: "Pomeranian",
+      breed_slug: "pomeranian",
+      sex: "Female",
+      organization: { id: 27, name: "Many Tears", slug: "many-tears-animal-rescue" },
+      images: [],
+    };
+
+    it("links the breed, shown once, to its breed page when one exists", () => {
+      render(<DogDetailClient initialDog={pomeranian} breedPageSlug="pomeranian" />);
+
+      const breedLinks = screen.getAllByRole("link", { name: "Pomeranian" });
+      expect(breedLinks).toHaveLength(1);
+      expect(breedLinks[0]).toHaveAttribute("href", "/breeds/pomeranian");
+      expect(screen.queryByRole("heading", { name: "Breed" })).not.toBeInTheDocument();
+    });
+
+    it("leaves the breed as text when the breed has no page", () => {
+      render(<DogDetailClient initialDog={pomeranian} breedPageSlug={null} />);
+
+      expect(screen.getByText("Pomeranian")).toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Pomeranian" })).not.toBeInTheDocument();
+    });
+  });
+
   describe("Swipe overlay placement (CTA click regression)", () => {
     // The touch swipe overlay must be scoped to the hero image. When it covered
     // the whole card it intercepted every click, breaking the adoption CTA and

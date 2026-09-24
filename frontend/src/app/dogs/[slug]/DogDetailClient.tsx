@@ -50,11 +50,15 @@ import { hasAnyProfileSection } from "../../../utils/dogProfiler";
 export default function DogDetailClient({
   params = {},
   initialDog = null,
+  initialRelatedDogs,
+  breedPageSlug = null,
 }: DogDetailClientProps) {
   const urlParams = useParams();
   const rawSlug = params?.slug || urlParams?.slug;
   const dogSlug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
   const [dog, setDog] = useState<Dog | null>(initialDog);
+  // Server-fetched extras belong to the dog this page was rendered for, not one reached by swiping
+  const isInitialDog = dog != null && initialDog != null && dog.id === initialDog.id;
   const [loading, setLoading] = useState(!initialDog);
   const [error, setError] = useState(false);
   const [retryInProgress, setRetryInProgress] = useState(false);
@@ -451,34 +455,6 @@ export default function DogDetailClient({
                     </div>
                   </header>
 
-                  {/* Only show breed section if we have a known breed */}
-                  {(() => {
-                    const breed = formatBreed(dog);
-                    const isUnknownBreed =
-                      !breed ||
-                      breed === "Unknown" ||
-                      breed.toLowerCase() === "unknown";
-
-                    if (isUnknownBreed) {
-                      return null; // Hide the entire breed section for unknown breeds
-                    }
-
-                    return (
-                      <div>
-                        <div className="mb-6">
-                          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                            Breed
-                          </h2>
-                          <div className="flex flex-wrap gap-1 items-center">
-                            <span className="text-base leading-relaxed text-gray-800 dark:text-gray-100">
-                              {sanitizeText(breed)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
                   {/* Quick Info Cards */}
                   <section aria-label="Dog Information Summary">
                     <div
@@ -532,7 +508,17 @@ export default function DogDetailClient({
                             Breed
                           </p>
                           <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                            {formatBreed(dog)}
+                            {/* Link up into the breed cluster when the breed has a page (#439) */}
+                            {isInitialDog && breedPageSlug ? (
+                              <Link
+                                href={`/breeds/${breedPageSlug}`}
+                                className="underline decoration-green-400 underline-offset-2 hover:text-green-700 dark:hover:text-green-300"
+                              >
+                                {formatBreed(dog)}
+                              </Link>
+                            ) : (
+                              formatBreed(dog)
+                            )}
                           </p>
                         </div>
                       )}
@@ -738,6 +724,7 @@ export default function DogDetailClient({
                           organizationId={dog.organization_id}
                           currentDogId={dog.id}
                           organization={dog.organization}
+                          initialDogs={isInitialDog ? initialRelatedDogs : undefined}
                         />
                       </div>
                     </ScrollAnimationWrapper>

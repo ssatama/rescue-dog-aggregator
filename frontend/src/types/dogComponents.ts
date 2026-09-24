@@ -56,7 +56,9 @@ export interface DogsGridProps
 export interface RelatedDogsSectionProps {
   organizationId: number | string;
   currentDogId: number | string;
-  organization?: Pick<NonNullable<Dog["organization"]>, "id" | "name">;
+  organization?: Pick<NonNullable<Dog["organization"]>, "id" | "name" | "slug">;
+  /** Server-fetched related dogs; when given, no client fetch happens */
+  initialDogs?: Dog[];
 }
 
 export interface DogCardErrorBoundaryProps {
