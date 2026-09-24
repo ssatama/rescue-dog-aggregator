@@ -116,4 +116,25 @@ describe("MobileBottomNav", () => {
       expect(container.firstChild).toBeNull();
     });
   });
+
+  describe("Visibility on dog pages", () => {
+    it("steps aside on a dog page, whose own bar holds the adopt button", () => {
+      (usePathname as jest.Mock).mockReturnValue("/dogs/lexi-lurcher-2419");
+
+      const { container } = render(<MobileBottomNav />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it.each(["/dogs", "/dogs/puppies", "/dogs/senior", "/dogs/country/gb"])(
+      "still shows on the dog list page %s",
+      (path) => {
+        (usePathname as jest.Mock).mockReturnValue(path);
+
+        render(<MobileBottomNav />);
+
+        expect(screen.getByRole("button", { name: /menu/i })).toBeInTheDocument();
+      },
+    );
+  });
 });

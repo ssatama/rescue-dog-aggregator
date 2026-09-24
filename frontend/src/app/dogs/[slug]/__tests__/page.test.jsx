@@ -145,10 +145,9 @@ describe("DogDetailPage – organization integration", () => {
     );
 
     // Verify page renders correctly (this proves organization section integration didn't break anything)
-    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { level: 2, name: /About Rover/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Rover" })).toBeInTheDocument();
+    // No description, so no About section (missing data is left out)
+    expect(screen.queryByRole("heading", { level: 2, name: /About Rover/i })).not.toBeInTheDocument();
   });
 
   it("handles missing organization data gracefully", async () => {
@@ -291,31 +290,27 @@ describe("DogDetailPage - Hero Layout", () => {
     ).toBeTruthy();
   });
 
-  it("uses full-width hero image container", async () => {
-    const mockDog = {
+  it("puts the photo, the facts panel and the story on one page", async () => {
+    getAnimalBySlug.mockResolvedValue({
       id: 1,
       name: "Rover",
       primary_image_url: "https://img.test/rover.jpg",
       status: "available",
       properties: {},
       sex: "Male",
-    };
-    getAnimalBySlug.mockResolvedValue(mockDog);
+      llm_description: "Rover loves long walks.",
+    });
 
-    const { container } = render(<DogDetailPage />);
+    render(<DogDetailPage />);
 
     await waitFor(() =>
       expect(screen.queryByTestId("loading")).not.toBeInTheDocument(),
     );
 
-    // Hero image container should be full width
-    const heroContainer = container.querySelector(
-      '[data-testid="hero-section"]',
-    );
-    expect(heroContainer).toBeInTheDocument();
-    expect(heroContainer).toHaveClass("w-full");
+    expect(screen.getByTestId("hero-section")).toBeInTheDocument();
+    expect(screen.getByTestId("dog-facts-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("about-section")).toHaveTextContent("Rover loves long walks.");
   });
-
   it("displays breadcrumb navigation above hero image", async () => {
     const mockDog = {
       id: 1,
@@ -357,16 +352,15 @@ describe("DogDetailPage - Hero Layout", () => {
     expect(dogsLinks[0]).toHaveAttribute("href", "/dogs");
   });
 
-  it("displays heart and share icons in top-right of content area", async () => {
-    const mockDog = {
+  it("offers Save and Share", async () => {
+    getAnimalBySlug.mockResolvedValue({
       id: 1,
       name: "Shadow",
       primary_image_url: "https://img.test/shadow.jpg",
       status: "available",
       properties: {},
       sex: "Male",
-    };
-    getAnimalBySlug.mockResolvedValue(mockDog);
+    });
 
     render(<DogDetailPage />);
 
@@ -374,15 +368,11 @@ describe("DogDetailPage - Hero Layout", () => {
       expect(screen.queryByTestId("loading")).not.toBeInTheDocument(),
     );
 
-    // Check for share icon (should be in the action bar, not at bottom)
-    const actionBar = screen.getByTestId("action-bar");
-    expect(actionBar).toBeInTheDocument();
-
-    // Share button should be in the action bar
+    expect(screen.getAllByRole("button", { name: /add to favorites/i }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByTestId("share-button").length).toBeGreaterThanOrEqual(1);
   });
-
-  it("displays metadata cards with icons in new layout", async () => {
-    const mockDog = {
+  it("lists the known facts in one line and leaves out the unknown ones", async () => {
+    getAnimalBySlug.mockResolvedValue({
       id: 1,
       name: "Shadow",
       primary_image_url: "https://img.test/shadow.jpg",
@@ -392,70 +382,69 @@ describe("DogDetailPage - Hero Layout", () => {
       age_text: "Unknown",
       standardized_breed: "Terrier Mix",
       standardized_size: "Medium Size",
-    };
-    getAnimalBySlug.mockResolvedValue(mockDog);
+    });
 
-    const { container } = render(<DogDetailPage />);
+    render(<DogDetailPage />);
 
     await waitFor(() =>
       expect(screen.queryByTestId("loading")).not.toBeInTheDocument(),
     );
 
-    // Check for metadata cards container
-    const metadataCards = container.querySelector(
-      '[data-testid="metadata-cards"]',
-    );
-    expect(metadataCards).toBeInTheDocument();
+    const meta = screen.getByTestId("dog-meta");
+    expect(meta).toHaveTextContent("Terrier Mix");
+    expect(meta).toHaveTextContent("Male");
+    expect(meta).toHaveTextContent("Medium Size");
+    expect(meta).not.toHaveTextContent("Unknown");
+  });
+  it("shows the adopt button in the desktop panel and the phone bar", async () => {
+    getAnimalBySlug.mockResolvedValue({
+      id: 1,
+      name: "Shadow",
+      primary_image_url: "https://img.test/shadow.jpg",
+      status: "available",
+      adoption_url: "https://www.rescue.example/dogs/shadow",
+      organization: { id: 1, name: "Test Rescue" },
+      properties: {},
+      sex: "Male",
+    });
 
-    // Check for individual metadata badges - using getAllByText for items that appear multiple times
-    expect(screen.getByText("Unknown")).toBeInTheDocument(); // Age (age_text: 'Unknown')
-    expect(screen.getByText("Male")).toBeInTheDocument(); // Gender
-    expect(screen.getAllByText("Terrier Mix").length).toBeGreaterThanOrEqual(1); // Breed (appears in multiple places)
-    expect(screen.getByText("Medium Size")).toBeInTheDocument(); // Size
+    render(<DogDetailPage />);
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument(),
+    );
+
+    for (const id of ["adopt-button-panel", "adopt-button-bar"]) {
+      const link = screen.getByTestId(id);
+      expect(link).toHaveAttribute("href", "https://www.rescue.example/dogs/shadow");
+      expect(link).toHaveTextContent("Meet Shadow at Test Rescue");
+    }
+    expect(screen.getByText(/Opens Shadow's page on rescue.example/)).toBeInTheDocument();
   });
 
-  it("maintains responsive layout structure on all screen sizes", async () => {
-    const mockDog = {
+  it("shows no adopt button without a usable adoption link", async () => {
+    getAnimalBySlug.mockResolvedValue({
       id: 1,
       name: "Shadow",
       primary_image_url: "https://img.test/shadow.jpg",
       status: "available",
       properties: {},
       sex: "Male",
-      standardized_breed: "Terrier Mix",
-    };
-    getAnimalBySlug.mockResolvedValue(mockDog);
+    });
 
-    const { container } = render(<DogDetailPage />);
+    render(<DogDetailPage />);
 
     await waitFor(() =>
       expect(screen.queryByTestId("loading")).not.toBeInTheDocument(),
     );
 
-    // Hero image should always be full width
-    const heroContainer = container.querySelector(
-      '[data-testid="hero-section"]',
-    );
-    expect(heroContainer).toHaveClass("w-full");
-
-    // Main layout should be flex-col (vertical) on all screen sizes
-    const mainLayout = container.querySelector(".flex.flex-col.gap-8");
-    expect(mainLayout).toBeInTheDocument();
-
-    // Metadata cards should use grid layout
-    const metadataCards = container.querySelector(
-      '[data-testid="metadata-cards"]',
-    );
-    expect(metadataCards).toHaveClass("grid", "grid-cols-2", "md:grid-cols-4");
-
-    // Action bar should use flexbox for proper icon alignment
-    const actionBar = container.querySelector('[data-testid="action-bar"]');
-    expect(actionBar).toHaveClass("flex", "items-center");
+    expect(screen.queryByTestId("adopt-button-panel")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("mobile-adopt-bar")).not.toBeInTheDocument();
   });
 });
 
 describe("DogDetailPage - Enhanced Description Section", () => {
-  it("always displays About section with proper header", async () => {
+  it("displays the About section when there is a description", async () => {
     const mockDog = {
       id: 1,
       name: "Rover",
@@ -507,16 +496,15 @@ describe("DogDetailPage - Enhanced Description Section", () => {
     );
   });
 
-  it("shows empty state message when no description exists", async () => {
-    const mockDog = {
+  it("leaves out About when there is no description", async () => {
+    getAnimalBySlug.mockResolvedValue({
       id: 1,
       name: "Rover",
       primary_image_url: "https://img.test/rover.jpg",
       status: "available",
       properties: {}, // No description
       sex: "Male",
-    };
-    getAnimalBySlug.mockResolvedValue(mockDog);
+    });
 
     render(<DogDetailPage />);
 
@@ -524,14 +512,9 @@ describe("DogDetailPage - Enhanced Description Section", () => {
       expect(screen.queryByTestId("loading")).not.toBeInTheDocument(),
     );
 
-    // Should show empty state
-    const emptyDescription = screen.getByTestId("fallback-description");
-    expect(emptyDescription).toBeInTheDocument();
-    expect(emptyDescription).toHaveTextContent(
-      "Rover is looking for a loving forever home",
-    );
+    expect(screen.queryByTestId("about-section")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("fallback-description")).not.toBeInTheDocument();
   });
-
   it("shows read more button for long descriptions", async () => {
     const longDescription =
       "A lovely dog who loves to play and run around. ".repeat(10); // > 200 chars

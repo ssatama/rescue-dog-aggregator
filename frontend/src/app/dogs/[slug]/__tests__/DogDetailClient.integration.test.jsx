@@ -153,12 +153,6 @@ jest.mock("../../../../hooks/useScrollAnimation", () => ({
   ScrollAnimationWrapper: ({ children }) => <div>{children}</div>,
 }));
 
-jest.mock("../../../../components/ui/HeroImageWithBlurredBackground", () => {
-  return function MockHeroImage() {
-    return <div data-testid="hero-image">Hero Image</div>;
-  };
-});
-
 describe("DogDetailClient Dog Detail Integration", () => {
   const mockDogData = {
     id: "test-dog-1",
@@ -305,15 +299,12 @@ describe("DogDetailClient Dog Detail Integration", () => {
       render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
 
       await waitFor(() => {
-        // Should show loading placeholder when no organization data
-        const orgContainer = screen.getByTestId("organization-container");
-        expect(orgContainer).toBeInTheDocument();
-
-        // Should not render OrganizationCard without data
-        expect(
-          screen.queryByTestId("organization-card-mock"),
-        ).not.toBeInTheDocument();
+        expect(screen.getByRole("heading", { level: 1, name: "Buddy" })).toBeInTheDocument();
       });
+
+      // No rescue data: the rescue card is left out rather than a placeholder
+      expect(screen.queryByTestId("organization-container")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("organization-card-mock")).not.toBeInTheDocument();
     });
 
     test("preserves all organization features in medium size", async () => {
@@ -331,15 +322,6 @@ describe("DogDetailClient Dog Detail Integration", () => {
   });
 
   describe("Layout and Styling", () => {
-    test("maintains proper spacing and margins", async () => {
-      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
-
-      await waitFor(() => {
-        const orgContainer = screen.getByTestId("organization-container");
-        expect(orgContainer).toHaveClass("mb-8");
-      });
-    });
-
     test("organization section and related dogs section both render", async () => {
       render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
 
@@ -416,20 +398,15 @@ describe("DogDetailClient Dog Detail Integration", () => {
   });
 
   describe("Dark Mode Support", () => {
-    test("applies dark mode classes to tagline", async () => {
+    test("shows no placeholder tagline when the dog has none", async () => {
       render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
 
       await waitFor(() => {
-        // Find the tagline element - it should have the dark mode class
-        const taglineElements = screen.getAllByText(
-          "Looking for a loving home",
-        );
-        // There should be at least one tagline element with dark mode class
-        const taglineWithDarkMode = taglineElements.find((element) =>
-          element.classList.contains("dark:text-gray-300"),
-        );
-        expect(taglineWithDarkMode).toBeDefined();
+        expect(screen.getByRole("heading", { level: 1, name: "Buddy" })).toBeInTheDocument();
       });
+
+      // Missing data is left out, not apologised for (#484)
+      expect(screen.queryByText("Looking for a loving home")).not.toBeInTheDocument();
     });
 
     test("maintains accessibility in dark mode", async () => {
@@ -446,22 +423,6 @@ describe("DogDetailClient Dog Detail Integration", () => {
       });
     });
 
-    test("ensures tagline remains visible with proper contrast in dark mode", async () => {
-      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
-
-      await waitFor(() => {
-        // Check that tagline exists and has correct classes for visibility
-        const taglineElements = screen.getAllByText(
-          "Looking for a loving home",
-        );
-        const taglineWithDarkMode = taglineElements.find(
-          (element) =>
-            element.classList.contains("text-gray-600") &&
-            element.classList.contains("dark:text-gray-300"),
-        );
-        expect(taglineWithDarkMode).toBeDefined();
-      });
-    });
   });
 
   describe("retired listings and outbound referrer", () => {
@@ -469,7 +430,7 @@ describe("DogDetailClient Dog Detail Integration", () => {
       render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
 
       await waitFor(() => {
-        expect(screen.getByTestId("adopt-button")).toBeInTheDocument();
+        expect(screen.getByTestId("adopt-button-panel")).toBeInTheDocument();
       });
 
       expect(
@@ -507,8 +468,8 @@ describe("DogDetailClient Dog Detail Integration", () => {
         ).toBeInTheDocument();
       });
 
-      expect(screen.queryByTestId("cta-section")).not.toBeInTheDocument();
-      expect(screen.queryByTestId("adopt-button")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("adopt-button-panel")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("mobile-adopt-bar")).not.toBeInTheDocument();
       // The green "Available" badge, not the notice's "Browse available dogs".
       expect(screen.queryByText("Available")).not.toBeInTheDocument();
     });
@@ -520,12 +481,14 @@ describe("DogDetailClient Dog Detail Integration", () => {
       render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
 
       await waitFor(() => {
-        expect(screen.getByTestId("adopt-button")).toBeInTheDocument();
+        expect(screen.getByTestId("adopt-button-panel")).toBeInTheDocument();
       });
 
-      const adoptLink = screen.getByTestId("adopt-button");
-      expect(adoptLink).toHaveAttribute("rel", "noopener");
-      expect(adoptLink.getAttribute("rel")).not.toMatch(/noreferrer/);
+      for (const id of ["adopt-button-panel", "adopt-button-bar"]) {
+        const adoptLink = screen.getByTestId(id);
+        expect(adoptLink).toHaveAttribute("rel", "noopener");
+        expect(adoptLink.getAttribute("rel")).not.toMatch(/noreferrer/);
+      }
     });
   });
 });
@@ -658,10 +621,10 @@ describe("Breed Display - Simplified without legacy text", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestId("adopt-button")).toBeInTheDocument();
+        expect(screen.getByTestId("adopt-button-panel")).toBeInTheDocument();
       });
 
-      const overlay = container.querySelector('[aria-hidden="true"].inset-0');
+      const overlay = container.querySelector('[aria-hidden="true"].inset-0.z-\\[2\\]');
       expect(overlay).toBeInTheDocument();
 
       // The overlay is scoped to the hero image section...
@@ -671,8 +634,8 @@ describe("Breed Display - Simplified without legacy text", () => {
       // ...and the CTA / action buttons live OUTSIDE that section, so the
       // image-scoped overlay cannot sit on top of them. (In the previous
       // layout the overlay was a sibling of the whole content column.)
-      expect(heroSection).not.toContainElement(screen.getByTestId("adopt-button"));
-      expect(heroSection).not.toContainElement(screen.getByTestId("action-bar"));
+      expect(heroSection).not.toContainElement(screen.getByTestId("adopt-button-panel"));
+      expect(heroSection).not.toContainElement(screen.getByTestId("dog-facts-panel"));
     });
   });
 });

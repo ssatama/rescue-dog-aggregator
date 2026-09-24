@@ -32,6 +32,8 @@ export interface AnalyticsDog {
 
 export type DogViewSource = "detail_page" | "modal";
 export type AdoptionSource = "detail_page" | "modal" | "comparison";
+/** Which adopt button on the dog page: the desktop panel or the phone bar (#489). */
+export type AdoptionPlacement = "panel" | "bar";
 
 // Outbound clicks send at once instead of joining the 3-second batch: opening
 // the rescue's site backgrounds this tab, and a mobile browser may suspend it
@@ -88,12 +90,14 @@ export function trackDogViewed(dog: AnalyticsDog, source: DogViewSource): void {
 export function trackAdoptionLinkClicked(
   dog: AnalyticsDog,
   source: AdoptionSource,
+  placement?: AdoptionPlacement,
 ): void {
   capture(
     "adoption_link_clicked",
     {
       ...dogProperties(dog),
       source,
+      ...(placement && { placement }),
       destination_domain: hostname(dog.adoption_url),
     },
     OUTBOUND,

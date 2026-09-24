@@ -50,20 +50,23 @@ const MobileBottomNav: React.FC = () => {
     isVisibleRef.current = isVisible;
   }, [isVisible]);
 
-  // NEVER show on swipe page - simplified check
+  // Never on the swipe page, nor on a dog page, whose own bottom bar holds the
+  // adopt button (#489). Dog slugs always end in the id; /dogs/puppies etc. don't.
   const isSwipePage = pathname?.startsWith("/swipe");
+  const isDogPage = /^\/dogs\/[^/]+-\d+$/.test(pathname ?? "");
+  const navHidden = isSwipePage || isDogPage;
 
   // Viewport check
   useEffect(() => {
     const checkViewport = () => {
       const width = window.innerWidth;
-      setShouldRender(width < 1024 && !isSwipePage);
+      setShouldRender(width < 1024 && !navHidden);
     };
 
     checkViewport();
     window.addEventListener("resize", checkViewport);
     return () => window.removeEventListener("resize", checkViewport);
-  }, [isSwipePage]);
+  }, [navHidden]);
 
   // Optimized scroll handler with proper direction detection
   const handleScroll = useCallback(() => {
@@ -122,7 +125,7 @@ const MobileBottomNav: React.FC = () => {
 
   // Attach scroll listener
   useEffect(() => {
-    if (isSwipePage) {
+    if (navHidden) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Hiding nav on swipe page requires effect to check pathname
       setIsVisible(false);
       return;
@@ -144,10 +147,10 @@ const MobileBottomNav: React.FC = () => {
         clearTimeout(showTimeout.current);
       }
     };
-  }, [isSwipePage, handleScroll]);
+  }, [navHidden, handleScroll]);
 
   // Don't render on desktop or swipe page
-  if (!shouldRender || isSwipePage) {
+  if (!shouldRender || navHidden) {
     return null;
   }
 

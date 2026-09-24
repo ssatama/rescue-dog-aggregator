@@ -92,24 +92,6 @@ jest.mock("../../components/organizations/OrganizationCard", () => {
   };
 });
 
-// Keep image loading real but simplified for testing
-jest.mock("../../components/ui/HeroImageWithBlurredBackground", () => {
-  return function MockHeroImage({ src, alt, onError }) {
-    if (!src) {
-      return <div data-testid="hero-image-error">No image available</div>;
-    }
-    return (
-      <img
-        data-testid="hero-image"
-        src={src}
-        alt={alt}
-        onError={onError}
-        role="img"
-      />
-    );
-  };
-});
-
 describe("Hero Page Integration - Critical Tests", () => {
   const mockAnimals = [
     {
