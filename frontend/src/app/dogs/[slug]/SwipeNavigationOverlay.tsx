@@ -7,9 +7,15 @@ import { NavigationArrows } from "../../../components/dogs/detail";
 
 interface SwipeNavigationOverlayProps {
   dogSlug: string;
+  /** Swipe on the photo to change dog. Off when the photo is a gallery, whose
+   * own swipe changes photo. */
+  gestures?: boolean;
 }
 
-export default function SwipeNavigationOverlay({ dogSlug }: SwipeNavigationOverlayProps) {
+export default function SwipeNavigationOverlay({
+  dogSlug,
+  gestures = true,
+}: SwipeNavigationOverlayProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [showSwipeHint, setShowSwipeHint] = useState(true);
@@ -60,10 +66,11 @@ export default function SwipeNavigationOverlay({ dogSlug }: SwipeNavigationOverl
   }, [nextDog, searchParams, router]);
 
   const hasNavigation = prevDog || nextDog;
+  const swipeable = gestures && hasNavigation;
 
   return (
     <>
-      {hasNavigation && (
+      {swipeable && (
         <div
           className="absolute inset-0 z-[1]"
           {...handlers}
@@ -71,7 +78,7 @@ export default function SwipeNavigationOverlay({ dogSlug }: SwipeNavigationOverl
         />
       )}
 
-      {hasNavigation && (
+      {swipeable && (
         <div className="lg:hidden">
           <div
             className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-10 transition-opacity duration-500 ${

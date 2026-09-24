@@ -8,10 +8,8 @@ import {
   generateSEODescription,
   generateFallbackDescription,
 } from "../../../utils/descriptionQuality";
-import { getDetailHeroImageWithPosition } from "../../../utils/imageUtils";
 import DogDetailClient from "./DogDetailClient";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
-import ImagePreload from "../../../components/seo/ImagePreload";
 import Layout from "../../../components/layout/Layout";
 import { prioritizeDogsForStaticParams } from "./prioritizeDogsForStaticParams";
 import { getIndexableBreeds } from "@/utils/indexableBreeds";
@@ -220,15 +218,6 @@ export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<Rea
     }
   }
 
-  let heroImageUrl: string | null = null;
-  if (initialDog?.primary_image_url) {
-    try {
-      heroImageUrl = getDetailHeroImageWithPosition(initialDog.primary_image_url, false).src;
-    } catch (error) {
-      reportError(error, { context: "DogDetailPageAsync.heroImage" });
-    }
-  }
-
   // Server-fetched so the HTML carries real links to the dog's breed page and to three more
   // dogs from its rescue (#439).
   const [initialRelatedDogs, breedPageSlug] = initialDog
@@ -237,7 +226,6 @@ export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<Rea
 
   return (
     <Layout>
-      {heroImageUrl && <ImagePreload src={heroImageUrl} />}
       <Suspense fallback={<DogDetailSkeleton />}>
         <DogDetailClient
           initialDog={initialDog}

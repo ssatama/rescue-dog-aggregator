@@ -1,0 +1,132 @@
+import React from "react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import DogGallery from "../DogGallery";
+import { trackGalleryPhotoViewed } from "@/lib/analytics";
+import type { DogImage } from "@/types/dog";
+
+jest.mock("@/lib/analytics", () => ({
+  trackGalleryPhotoViewed: jest.fn(),
+}));
+
+const CDN = "https://images.rescuedogs.me/rescue_dogs/test";
+const photos = (n: number): DogImage[] =>
+  Array.from({ length: n }, (_, i) => ({ url: `${CDN}/p${i + 1}.jpg`, width: 1200, height: 900 }));
+
+function renderGallery(images: DogImage[]) {
+  return render(<DogGallery dogId={7} dogName="Dolly" images={images} />);
+}
+
+describe("DogGallery", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("shows a single photo without any gallery chrome", () => {
+    renderGallery(photos(1));
+
+    expect(screen.getByAltText("Dolly")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Next photo" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("gallery-thumbs")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("gallery-dots")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dog-gallery")).not.toHaveAttribute("aria-roledescription");
+  });
+
+  it("renders nothing without photos", () => {
+    const { container } = renderGallery([]);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("steps through photos with the arrows and announces the position", () => {
+    renderGallery(photos(4));
+    const prev = screen.getByRole("button", { name: "Previous photo" });
+    const next = screen.getByRole("button", { name: "Next photo" });
+
+    expect(screen.getByText("1 / 4")).toBeInTheDocument();
+    expect(prev).toBeDisabled();
+
+    fireEvent.click(next);
+    expect(screen.getByText("2 / 4")).toBeInTheDocument();
+    expect(screen.getByText("2 / 4").closest("[aria-live]")).toHaveAttribute("aria-live", "polite");
+    expect(prev).toBeEnabled();
+  });
+
+  it("moves with the arrow, Home and End keys", () => {
+    renderGallery(photos(5));
+    const gallery = screen.getByTestId("dog-gallery");
+
+    fireEvent.keyDown(gallery, { key: "End" });
+    expect(screen.getByText("5 / 5")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next photo" })).toBeDisabled();
+
+    fireEvent.keyDown(gallery, { key: "ArrowLeft" });
+    expect(screen.getByText("4 / 5")).toBeInTheDocument();
+
+    fireEvent.keyDown(gallery, { key: "Home" });
+    expect(screen.getByText("1 / 5")).toBeInTheDocument();
+  });
+
+  it("shows at most six thumbnails, the last one counting the rest", () => {
+    renderGallery(photos(11));
+    const thumbs = within(screen.getByTestId("gallery-thumbs")).getAllByRole("button");
+
+    expect(thumbs).toHaveLength(6);
+    expect(thumbs[5]).toHaveAccessibleName("View all 11 photos full screen");
+    expect(thumbs[5]).toHaveTextContent("+6");
+
+    fireEvent.click(thumbs[2]);
+    expect(thumbs[2]).toHaveAttribute("aria-current", "true");
+    expect(screen.getByText("3 / 11")).toBeInTheDocument();
+  });
+
+  it("never draws a photo larger than its stored size", () => {
+    renderGallery([{ url: `${CDN}/tiny.jpg`, width: 300, height: 300 }]);
+
+    const box = screen.getByTestId("gallery-photo-box");
+    expect(box).toHaveStyle({ maxWidth: "300px", maxHeight: "300px" });
+    expect(within(box).getByRole("img")).toHaveClass("object-contain");
+  });
+
+  it("uses object-scale-down for a photo without a stored size", () => {
+    renderGallery([{ url: `${CDN}/hero.jpg` }]);
+
+    const box = screen.getByTestId("gallery-photo-box");
+    expect(box).not.toHaveAttribute("style");
+    expect(within(box).getByRole("img")).toHaveClass("object-scale-down");
+  });
+
+  it("reports each photo view once, after the frame settles", () => {
+    jest.useFakeTimers();
+    try {
+      renderGallery(photos(3));
+      const next = screen.getByRole("button", { name: "Next photo" });
+
+      fireEvent.click(next);
+      fireEvent.click(next);
+      act(() => jest.advanceTimersByTime(500));
+      // Photo 2 was passed on the way to photo 3, so only photo 3 counts
+      expect(trackGalleryPhotoViewed).toHaveBeenCalledTimes(1);
+      expect(trackGalleryPhotoViewed).toHaveBeenCalledWith(7, 2, 3);
+
+      fireEvent.click(screen.getByRole("button", { name: "Previous photo" }));
+      fireEvent.click(next);
+      act(() => jest.advanceTimersByTime(500));
+      expect(trackGalleryPhotoViewed).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("opens full screen on the clicked photo and moves one photo per key press", () => {
+    renderGallery(photos(4));
+
+    fireEvent.click(screen.getByRole("button", { name: "View photo 1 of Dolly full screen" }));
+    const dialog = screen.getByRole("dialog", { name: "Photos of Dolly" });
+    expect(within(dialog).getByAltText("Dolly, photo 1 of 4")).toBeInTheDocument();
+
+    fireEvent.keyDown(dialog, { key: "ArrowRight" });
+    expect(within(dialog).getByAltText("Dolly, photo 2 of 4")).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close full screen" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("2 / 4")).toBeInTheDocument();
+  });
+});

@@ -13,7 +13,8 @@ import {
 } from "../../../components/ui/alert";
 import ShareButton from "../../../components/ui/ShareButton";
 import { FavoriteButton } from "../../../components/favorites/FavoriteButton";
-import HeroImageWithBlurredBackground from "../../../components/ui/HeroImageWithBlurredBackground";
+import DogGallery from "../../../components/dogs/detail/DogGallery";
+import { getGallery } from "../../../utils/dogImageHelpers";
 import OrganizationCard from "../../../components/organizations/OrganizationCard";
 import { ToastProvider } from "../../../contexts/ToastContext";
 import RelatedDogsSection from "../../../components/dogs/RelatedDogsSection";
@@ -29,7 +30,6 @@ import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import RetiredListingNotice from "../../../components/dogs/RetiredListingNotice";
 import {
   trackDogView,
-  trackDogImageView,
   trackExternalLinkClick,
 } from "@/lib/monitoring/breadcrumbs";
 import {
@@ -119,8 +119,9 @@ export default function DogDetailClient({
           }
           if (data?.id) {
             trackDogViewed(data as Dog, "detail_page");
-            // One photo per dog until the gallery (#489) reports real indexes
-            if (data.primary_image_url) trackGalleryPhotoViewed(data.id, 0, 1);
+            // The first photo is on screen at load; DogGallery reports the rest
+            const photos = getGallery(data as Dog).length;
+            if (photos > 0) trackGalleryPhotoViewed(data.id, 0, photos);
           }
         }
       } catch (err: unknown) {
@@ -199,9 +200,8 @@ export default function DogDetailClient({
         );
       }
       trackDogViewed(initialDog, "detail_page");
-      if (initialDog.primary_image_url) {
-        trackGalleryPhotoViewed(initialDog.id, 0, 1);
-      }
+      const photos = getGallery(initialDog).length;
+      if (photos > 0) trackGalleryPhotoViewed(initialDog.id, 0, photos);
       return;
     }
 
@@ -315,6 +315,8 @@ export default function DogDetailClient({
     );
   }
 
+  const gallery = getGallery(dog);
+
   const breadcrumbItems = [
     { name: "Home", url: "/" },
     { name: "Find Dogs", url: "/dogs" },
@@ -361,45 +363,17 @@ export default function DogDetailClient({
                       <SwipeNavigationOverlay
                         key={dogSlug}
                         dogSlug={dogSlug ?? ""}
+                        gestures={gallery.length <= 1}
                       />
                     </Suspense>
 
-                    {(() => {
-                      if (!dog || !dog.primary_image_url) {
-                        return (
-                          <div className="w-full aspect-[16/9] bg-gray-100 rounded-lg flex items-center justify-center">
-                            <div className="text-center">
-                              <p className="text-gray-500">Loading image...</p>
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <HeroImageWithBlurredBackground
-                          key={`hero-${dogSlug}-${dog.id}`}
-                          src={dog.primary_image_url}
-                          alt={`${dog.name} - Hero Image`}
-                          className="mb-6 shadow-xl"
-                          priority={true}
-                          onClick={() => {
-                            // Track image view when hero image is clicked
-                            if (dog?.id) {
-                              trackDogImageView(dog.id.toString(), 0, 1);
-                            }
-                          }}
-                          onError={() => {
-                            reportError(
-                              new Error("Hero image failed to load"),
-                              {
-                                dogSlug: dog.slug,
-                                imageUrl: dog.primary_image_url,
-                              },
-                            );
-                          }}
-                        />
-                      );
-                    })()}
+                    <DogGallery
+                      key={`gallery-${dog.id}`}
+                      dogId={dog.id}
+                      dogName={dog.name}
+                      images={gallery}
+                      className="mb-6"
+                    />
                   </div>
                 </div>
 

@@ -1,4 +1,4 @@
-import { type Dog } from "../types/dog";
+import { type Dog, type DogImage } from "../types/dog";
 
 /**
  * Gets the main image URL from a dog object, handling all possible field names
@@ -9,6 +9,16 @@ export function getMainImage(dog: Dog): string | undefined {
     dog.main_image ||
     (dog.photos && dog.photos.length > 0 ? dog.photos[0] : undefined)
   );
+}
+
+/**
+ * The dog's photo gallery, hero first (#488). The API already falls back to
+ * the hero, but a dog cached before galleries existed has no `images`.
+ */
+export function getGallery(dog: Dog): DogImage[] {
+  if (dog.images && dog.images.length > 0) return dog.images;
+  const hero = getMainImage(dog);
+  return hero ? [{ url: hero }] : [];
 }
 
 /**
