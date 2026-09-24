@@ -723,6 +723,7 @@ export default function MobileFilterDrawer({
                       showClearButton={true}
                       showDidYouMean={true}
                       historyKey="dog-search-history"
+                      analytics={{ surface: "mobile", suggestionGroup: "dog" }}
                       size="lg"
                       className="w-full"
                       inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 placeholder:text-gray-500 dark:placeholder:text-gray-400"

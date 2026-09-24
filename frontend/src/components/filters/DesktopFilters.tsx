@@ -143,6 +143,7 @@ export default function DesktopFilters({
             showClearButton={true}
             showDidYouMean={true}
             historyKey="dog-search-history"
+            analytics={{ surface: "catalog", suggestionGroup: "dog" }}
             className="w-full"
             inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
             aria-label="Search dogs by name or breed"

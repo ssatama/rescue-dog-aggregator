@@ -2,7 +2,11 @@ import posthog from "posthog-js";
 import {
   trackAdoptionLinkClicked,
   trackDogViewed,
-  trackFiltersChanged,
+  trackFiltersApplied,
+  trackGalleryPhotoViewed,
+  trackLocationSet,
+  trackSearchPerformed,
+  trackSortChanged,
 } from "../analytics";
 
 jest.mock("posthog-js", () => ({
@@ -93,22 +97,67 @@ describe("analytics", () => {
     );
   });
 
-  it("sends one event per changed filter and skips typed search", () => {
-    trackFiltersChanged({
-      sizeFilter: "Large",
-      ageFilter: { min: 1, max: 3 },
-      searchQuery: "bel",
-    });
+  it("sends one filter_applied per changed filter and skips typed search and sort", () => {
+    trackFiltersApplied(
+      {
+        sizeFilter: "Large",
+        breedFilter: "Labrador Retriever",
+        searchQuery: "bel",
+        sort: "oldest",
+      },
+      "catalog",
+    );
 
     expect(mockPosthog.capture.mock.calls).toEqual([
       [
-        "filter_changed",
-        { filter_type: "sizeFilter", value: "Large" },
+        "filter_applied",
+        { filter: "size", value: "Large", result_count: null, surface: "catalog" },
         undefined,
       ],
       [
-        "filter_changed",
-        { filter_type: "ageFilter", value: '{"min":1,"max":3}' },
+        "filter_applied",
+        {
+          filter: "breed",
+          value: "Labrador Retriever",
+          result_count: null,
+          surface: "catalog",
+        },
+        undefined,
+      ],
+    ]);
+  });
+
+  it("gives each page's filter keys the same filter name", () => {
+    trackFiltersApplied({ ageFilter: "Puppy" }, "breed_page", 12);
+    trackFiltersApplied({ age: "Puppy" }, "org_page");
+    trackFiltersApplied({ shipsTo: "GB" }, "org_page");
+
+    const names = mockPosthog.capture.mock.calls.map(([, props]) => props.filter);
+    expect(names).toEqual(["age", "age", "available_country"]);
+    expect(mockPosthog.capture.mock.calls[0][1].result_count).toBe(12);
+  });
+
+  it("sends search_performed without anything the visitor typed", () => {
+    trackSearchPerformed("catalog", "dog", 4);
+
+    expect(mockPosthog.capture).toHaveBeenCalledWith(
+      "search_performed",
+      { surface: "catalog", result_group_chosen: "dog", result_count: 4 },
+      undefined,
+    );
+  });
+
+  it("sends sort, gallery and location events with closed-set properties", () => {
+    trackSortChanged("oldest");
+    trackGalleryPhotoViewed(42, 0, 1);
+    trackLocationSet("geo", "GB", false);
+
+    expect(mockPosthog.capture.mock.calls).toEqual([
+      ["sort_changed", { sort: "oldest" }, undefined],
+      ["gallery_photo_viewed", { dog_id: "42", index: 0, total: 1 }, undefined],
+      [
+        "location_set",
+        { source: "geo", country: "GB", only_adoptable: false },
         undefined,
       ],
     ]);

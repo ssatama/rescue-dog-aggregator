@@ -46,10 +46,23 @@ events:
 | `dog_card_clicked` | Dog card in any list | `dog_id`, `position`, `list_context` |
 | `dog_favorited` / `dog_unfavorited` | `FavoritesContext`, so it covers the heart button, modal and swipe-right | `dog_id` |
 | `favorites_viewed` | /favorites, after favorites load | `favorites_count` |
-| `search_submitted` | Search typeahead submit | `query`, `suggestion_count` |
-| `filter_changed` | /dogs, breed pages, org pages (typed search excluded) | `filter_type`, `value` |
+| `search_performed` | Dog-name search box, on Enter or a picked suggestion: /dogs sidebar (`catalog`) and the filter drawer on /dogs and breed pages (`mobile`). The global header search (#492) will send `header` | `surface` (`header` / `catalog` / `mobile`), `result_group_chosen` (`breed` / `rescue` / `dog` / `filter` / `none`), `result_count` |
+| `filter_applied` | /dogs, breed pages, org pages (desktop and mobile drawer) | `filter`, `value`, `result_count`, `surface` (`catalog` / `breed_page` / `org_page`) |
+| `sort_changed` | Sort control in `DogFilters` (hidden on org pages today) | `sort` |
+| `gallery_photo_viewed` | Dog detail page load, as photo 1 of 1 | `dog_id`, `index`, `total` |
+| `location_set` | Not wired yet: the "I live in" picker (#493) | `source` (`geo` / `picker`), `country`, `only_adoptable` |
 | `organization_viewed` | Organization page | `org_slug`, `dog_count` |
 | `organization_website_clicked` | "Visit Original Website" on an org page | `org_slug`, `destination_domain` |
+
+Search and filter events never carry free text. `search_performed` has no
+query property at all: it records which kind of result was picked (`none`
+means the typed text was submitted) and how many suggestions were shown.
+`filter_applied` is sent only for values picked from a fixed list; text typed
+into a breed box filters the page without an event. Typed search and sort are
+not filters (`sort_changed` covers sort). `result_count` is null until the
+catalog shows a result total (#494); older `search_submitted` and
+`filter_changed` events (before 2026-09-24) carried the raw query and are
+superseded.
 
 "Dog props" are shared by `dog_viewed` and `adoption_link_clicked`, so a funnel
 between them can be broken down by any of them: `dog_id`, `dog_slug`,

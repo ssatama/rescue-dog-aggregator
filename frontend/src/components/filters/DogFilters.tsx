@@ -25,7 +25,7 @@ import {
   trackFilterChange,
   trackSortChange,
 } from "@/lib/monitoring/breadcrumbs";
-import { trackFiltersChanged } from "@/lib/analytics";
+import { trackFiltersApplied, trackSortChanged } from "@/lib/analytics";
 import type { DogFilterValues } from "@/types/filterComponents";
 import { logger } from "@/utils/logger";
 
@@ -67,8 +67,10 @@ export default function DogFilters({
   const router = useRouter();
   const rawSearchParams = useSearchParams();
 
+  // `track` is false for text typed into the breed box: free text never goes
+  // to analytics.
   const handleFilterChange = useCallback(
-    (filterType: keyof DogFilterValues, value: string) => {
+    (filterType: keyof DogFilterValues, value: string, track = true) => {
       const newFilters = {
         ...filters,
         [filterType]: value,
@@ -79,10 +81,11 @@ export default function DogFilters({
       try {
         if (filterType === "sort") {
           trackSortChange(value || "newest");
+          if (track) trackSortChanged(value || "newest");
         } else {
           trackFilterChange(filterType, value, totalCount || 0);
+          if (track) trackFiltersApplied({ [filterType]: value }, "org_page");
         }
-        trackFiltersChanged({ [filterType]: value });
       } catch (error) {
         logger.error("Failed to track filter change:", error);
       }
@@ -277,7 +280,7 @@ export default function DogFilters({
                 onValueChange={
                   handleBreedValueChange ||
                   ((value: string) => {
-                    handleFilterChange("breed", value);
+                    handleFilterChange("breed", value, false);
                   })
                 }
                 onSuggestionSelect={
@@ -291,7 +294,7 @@ export default function DogFilters({
                   handleBreedSearch
                     ? handleBreedSearch
                     : (value: string) => {
-                        handleFilterChange("breed", value);
+                        handleFilterChange("breed", value, false);
                       }
                 }
                 onClear={
