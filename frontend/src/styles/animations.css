@@ -1,16 +1,6 @@
 /* Performance-optimized CSS animations */
 
-/* Fade in animation for cards */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* fadeInUp is defined once, in app/globals.css (#447) */
 
 /* Card hover effect - GPU accelerated with content-visibility optimization */
 .dog-card {

@@ -2546,14 +2546,16 @@
     }
   }
 
+  /* The one fadeInUp (#447). A second, translateX(-50%) definition in the same name used
+     to win the cascade outside /dogs and shoved EmptyState off its card. */
   @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateX(-50%) translateY(10px);
+      transform: translateY(20px);
     }
     to {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translateY(0);
     }
   }
 
