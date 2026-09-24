@@ -10,7 +10,7 @@
  */
 
 import React from "react";
-import { render, screen, waitFor } from "../../test-utils";
+import { render, screen, waitFor, within } from "../../test-utils";
 import "@testing-library/jest-dom";
 import DogDetailClient from "../../app/dogs/[slug]/DogDetailClient";
 
@@ -345,16 +345,11 @@ describe("Hero Page Integration - Critical Tests", () => {
           { timeout: 5000 },
         );
 
-        // Hero image should be present
-        const heroImage = screen.getByTestId("hero-image");
-        expect(heroImage).toBeInTheDocument();
-        expect(heroImage).toHaveAttribute(
-          "src",
-          animalWithImage.primary_image_url,
-        );
-        expect(heroImage).toHaveAttribute(
-          "alt",
-          expect.stringContaining(animalWithImage.name),
+        // The gallery shows the hero photo, named after the dog
+        const gallery = screen.getByTestId("dog-gallery");
+        const heroImage = within(gallery).getByAltText(animalWithImage.name);
+        expect(heroImage.getAttribute("src")).toContain(
+          new URL(animalWithImage.primary_image_url).pathname,
         );
       } finally {
         // Restore default behavior
@@ -400,11 +395,9 @@ describe("Hero Page Integration - Critical Tests", () => {
           { timeout: 5000 },
         );
 
-        // Should show error state, not crash - check for the Loading image... text instead
-        // since the animal without image shows the loading state
-        const heroContainer = screen.getByTestId("hero-section");
-        expect(heroContainer).toBeInTheDocument();
-        expect(screen.getByText("Loading image...")).toBeInTheDocument();
+        // The page renders without a gallery rather than a stuck placeholder
+        expect(screen.getByTestId("hero-section")).toBeInTheDocument();
+        expect(screen.queryByTestId("dog-gallery")).not.toBeInTheDocument();
       } finally {
         // Restore default behavior
         mockGetAnimalBySlug.mockImplementation((slug) => {

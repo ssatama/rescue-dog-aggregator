@@ -1,15 +1,31 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, type MutableRefObject } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSwipeNavigation } from "../../../hooks/useSwipeNavigation";
 import { NavigationArrows } from "../../../components/dogs/detail";
 
-interface SwipeNavigationOverlayProps {
-  dogSlug: string;
+export interface DogNavigation {
+  prev?: () => void;
+  next?: () => void;
 }
 
-export default function SwipeNavigationOverlay({ dogSlug }: SwipeNavigationOverlayProps) {
+interface SwipeNavigationOverlayProps {
+  dogSlug: string;
+  /** Swipe on the photo to change dog. Off when the photo is a gallery, whose
+   * own swipe changes photo. */
+  gestures?: boolean;
+  /** Filled with prev/next dog, so a gallery can change dog when swiped past
+   * its first or last photo. A ref rather than a render prop: this overlay
+   * sits in a Suspense boundary the gallery must stay out of. */
+  navigationRef?: MutableRefObject<DogNavigation>;
+}
+
+export default function SwipeNavigationOverlay({
+  dogSlug,
+  gestures = true,
+  navigationRef,
+}: SwipeNavigationOverlayProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [showSwipeHint, setShowSwipeHint] = useState(true);
@@ -59,19 +75,35 @@ export default function SwipeNavigationOverlay({ dogSlug }: SwipeNavigationOverl
     }
   }, [nextDog, searchParams, router]);
 
+  useEffect(() => {
+    if (!navigationRef) return;
+    navigationRef.current = {
+      prev: prevDog ? handlePrevDog : undefined,
+      next: nextDog ? handleNextDog : undefined,
+    };
+    return () => {
+      navigationRef.current = {};
+    };
+  }, [navigationRef, prevDog, nextDog, handlePrevDog, handleNextDog]);
+
   const hasNavigation = prevDog || nextDog;
+  const swipeable = gestures && hasNavigation;
 
   return (
     <>
-      {hasNavigation && (
+      {/* Above the gallery's full-screen button, or the button would swallow
+          the swipe. Only on devices with a touch pointer (including touch
+          laptops), so a mouse-only device can still click a single photo open;
+          with touch, that tap is given up for swipe-to-next-dog. */}
+      {swipeable && (
         <div
-          className="absolute inset-0 z-[1]"
+          className="absolute inset-0 z-[2] hidden [@media(any-pointer:coarse)]:block"
           {...handlers}
           aria-hidden="true"
         />
       )}
 
-      {hasNavigation && (
+      {swipeable && (
         <div className="lg:hidden">
           <div
             className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-10 transition-opacity duration-500 ${

@@ -239,6 +239,10 @@ export function useSwipeNavigation({
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // The photo gallery handles its own arrows and prevents the default;
+      // React's root listener runs before this document one.
+      if (event.defaultPrevented) return;
+
       // Only handle arrow keys if no input is focused
       if (
         event.target instanceof HTMLInputElement ||

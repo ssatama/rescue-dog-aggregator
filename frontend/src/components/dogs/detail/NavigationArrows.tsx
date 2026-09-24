@@ -24,6 +24,8 @@ const NavigationArrows: React.FC<NavigationArrowsProps> = ({
     return null;
   }
 
+  // Close to the screen edge (8–56px), clear of the photo gallery's own
+  // arrows, which start where the page's padding ends (#489)
   const buttonClasses = `
     fixed top-1/2 -translate-y-1/2 z-50
     hidden md:flex items-center justify-center
@@ -41,12 +43,12 @@ const NavigationArrows: React.FC<NavigationArrowsProps> = ({
       {showPrev && (
         <button
           data-testid="nav-arrow-prev"
-          className={`${buttonClasses} left-12`}
+          className={`${buttonClasses} left-2`}
           onClick={onPrev}
           disabled={isLoading}
           aria-label="Previous dog"
           type="button"
-          title="Go to previous dog (or use right arrow key)"
+          title="Go to previous dog (or use left arrow key)"
         >
           <Icon
             name="chevron-left"
@@ -60,12 +62,12 @@ const NavigationArrows: React.FC<NavigationArrowsProps> = ({
       {showNext && (
         <button
           data-testid="nav-arrow-next"
-          className={`${buttonClasses} right-12`}
+          className={`${buttonClasses} right-2`}
           onClick={onNext}
           disabled={isLoading}
           aria-label="Next dog"
           type="button"
-          title="Go to next dog (or use left arrow key)"
+          title="Go to next dog (or use right arrow key)"
         >
           <Icon
             name="chevron-right"

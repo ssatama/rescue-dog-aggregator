@@ -289,6 +289,29 @@ describe("useSwipeNavigation", () => {
       expect(mockPush).toHaveBeenCalledWith("/dogs/dog-4");
     });
 
+    it("leaves an arrow key alone when something already handled it", async () => {
+      let keyboardHandler: ((event: KeyboardEvent) => void) | null = null;
+      jest.spyOn(document, "addEventListener").mockImplementation((eventType, handler) => {
+        if (eventType === "keydown") {
+          keyboardHandler = handler as (event: KeyboardEvent) => void;
+        }
+      });
+
+      const { result } = renderHook(() => useSwipeNavigation(defaultProps));
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // The photo gallery prevents the default for the arrows it uses
+      act(() => {
+        const event = new KeyboardEvent("keydown", { key: "ArrowRight", cancelable: true });
+        event.preventDefault();
+        keyboardHandler?.(event);
+      });
+
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+
     it("should preserve URL parameters when navigating", async () => {
       (mockGet as jest.Mock).mockImplementation((key: string) => {
         if (key === "breed") return "labrador";

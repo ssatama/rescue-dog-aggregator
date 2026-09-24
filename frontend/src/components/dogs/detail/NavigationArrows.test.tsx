@@ -249,9 +249,9 @@ describe("NavigationArrows Component", () => {
       const nextButton = screen.getByTestId("nav-arrow-next");
 
       // Previous button should be on the left
-      expect(prevButton).toHaveClass("left-12");
+      expect(prevButton).toHaveClass("left-2");
       // Next button should be on the right
-      expect(nextButton).toHaveClass("right-12");
+      expect(nextButton).toHaveClass("right-2");
       // Both should be vertically centered
       expect(prevButton).toHaveClass("top-1/2");
       expect(nextButton).toHaveClass("top-1/2");
