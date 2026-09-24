@@ -1,3 +1,4 @@
+import { SITE_NAME, SITE_ORGANIZATION_ID, siteOrganizationRef } from "@/utils/schema";
 import type { Guide } from "@/types/guide";
 
 interface GuideSchemaProps {
@@ -12,21 +13,14 @@ export function GuideSchema({ guide }: GuideSchemaProps) {
     "@type": "Article",
     headline: guide.frontmatter.title,
     description: guide.frontmatter.description,
-    image: guide.frontmatter.heroImage,
+    image: guide.frontmatter.heroImage.startsWith("/")
+      ? `https://www.rescuedogs.me${guide.frontmatter.heroImage}`
+      : guide.frontmatter.heroImage,
     ...(datePublished ? { datePublished } : {}),
     dateModified: guide.frontmatter.lastUpdated,
-    author: {
-      "@type": "Person",
-      name: guide.frontmatter.author,
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Rescue Dog Aggregator",
-      logo: {
-        "@type": "ImageObject",
-        url: "https://www.rescuedogs.me/logo.jpeg",
-      },
-    },
+    // Written by the site, not a named person: point at the site Organization (#443)
+    author: { "@type": "Organization", "@id": SITE_ORGANIZATION_ID, name: SITE_NAME },
+    publisher: siteOrganizationRef,
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": `https://www.rescuedogs.me/guides/${guide.slug}`,

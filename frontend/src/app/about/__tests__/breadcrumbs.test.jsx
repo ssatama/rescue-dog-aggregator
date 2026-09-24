@@ -109,18 +109,11 @@ describe("AboutPage Breadcrumbs", () => {
     expect(breadcrumbAbout).toBeInTheDocument();
   });
 
-  test("should include breadcrumb schema structured data", () => {
+  test("gets its BreadcrumbList from the Breadcrumbs component only (#443)", () => {
     render(<AboutPage />);
 
-    const schema = screen.getByTestId("breadcrumb-schema");
-    expect(schema).toBeInTheDocument();
-
-    const schemaContent = JSON.parse(schema.innerHTML);
-    expect(schemaContent["@context"]).toBe("https://schema.org");
-    expect(schemaContent["@type"]).toBe("BreadcrumbList");
-    expect(schemaContent.itemListElement).toHaveLength(2);
-    expect(schemaContent.itemListElement[0].name).toBe("Home");
-    expect(schemaContent.itemListElement[1].name).toBe("About");
+    expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
+    expect(screen.queryByTestId("breadcrumb-schema")).not.toBeInTheDocument();
   });
 
   test("should render breadcrumbs above the page content", () => {

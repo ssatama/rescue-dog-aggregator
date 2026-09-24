@@ -69,37 +69,18 @@ export default function BreedStructuredData({
           "@type": "ItemList",
           name: `Available ${breedData.primary_breed || "Mixed Breed"} Dogs`,
           numberOfItems: dogs.length,
+          // Plain ListItems pointing at the dog pages; dogs aren't Products (#443)
           itemListElement: dogs.map((dog, index) => ({
             "@type": "ListItem",
             position: index + 1,
-            item: {
-              "@type": "Product",
-              name: dog.name,
-              description:
-                dog.properties?.description ||
-                `Meet ${dog.name}, a ${dog.breed || "mixed breed"} dog available for adoption`,
-              image: dog.primary_image_url,
-            },
+            name: dog.name,
+            ...(dog.slug && { url: `${baseUrl}/dogs/${dog.slug}` }),
           })),
         }
       : null;
 
-  // Build Organization schema for rescue network
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "Rescue Dog Aggregator",
-    url: baseUrl,
-    description: "Aggregating rescue dogs from multiple verified organizations",
-  };
-
-  // Combine all schemas
-  const schemas = [
-    breadcrumbList,
-    collectionSchema,
-    itemListSchema,
-    organizationSchema,
-  ].filter(Boolean);
+  // The site Organization is output once, in the root layout (#443)
+  const schemas = [breadcrumbList, collectionSchema, itemListSchema].filter(Boolean);
 
   return (
     <>

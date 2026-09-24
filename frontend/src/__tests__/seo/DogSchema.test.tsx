@@ -31,14 +31,14 @@ describe("DogSchema Component", () => {
     expect(script).toBeInTheDocument();
   });
 
-  test("includes Product schema with Dog additionalType", () => {
+  test("is an ItemPage about a Dog, not a Product", () => {
     const { container } = render(<DogSchema dog={mockDog} />);
     const script = container.querySelector('script[type="application/ld+json"]');
     const schema = JSON.parse(script?.innerHTML || "{}");
 
     expect(schema["@context"]).toBe("https://schema.org");
-    expect(schema["@type"]).toBe("Product");
-    expect(schema.additionalType).toBe("http://dbpedia.org/ontology/Dog");
+    expect(schema["@type"]).toBe("ItemPage");
+    expect(schema.about.additionalType).toBe("http://dbpedia.org/ontology/Dog");
   });
 
   test("includes dog name and breed in schema", () => {
@@ -51,7 +51,7 @@ describe("DogSchema Component", () => {
     expect(schema.image).toBe("https://images.rescuedogs.me/buddy.jpg");
   });
 
-  test("includes offers with availability when adoption fees exist", () => {
+  test("never states a price, even when the rescue lists a usual fee", () => {
     const dogWithFees = {
       ...mockDog,
       organization: {
@@ -63,11 +63,9 @@ describe("DogSchema Component", () => {
     const script = container.querySelector('script[type="application/ld+json"]');
     const schema = JSON.parse(script?.innerHTML || "{}");
 
-    expect(schema.offers).toBeDefined();
-    expect(schema.offers["@type"]).toBe("Offer");
-    expect(schema.offers.price).toBe("350");
-    expect(schema.offers.priceCurrency).toBe("EUR");
-    expect(schema.offers.availability).toBe("https://schema.org/InStock");
+    // Fees vary per dog and are the rescue's to state, so no Offer even when listed (#443)
+    expect(schema.offers).toBeUndefined();
+    expect(JSON.stringify(schema)).not.toContain("price");
   });
 
   test("omits offers when no adoption fees exist", () => {
@@ -83,27 +81,10 @@ describe("DogSchema Component", () => {
     const script = container.querySelector('script[type="application/ld+json"]');
     const schema = JSON.parse(script?.innerHTML || "{}");
 
-    expect(schema.additionalProperty).toBeDefined();
-    expect(Array.isArray(schema.additionalProperty)).toBe(true);
-
-    const properties = schema.additionalProperty;
-    const ageProperty = properties.find(
-      (p: { name: string }) => p.name === "Age"
+    // additionalProperty isn't valid on Thing, so the facts are one disambiguating line (#443)
+    expect(schema.about.disambiguatingDescription).toBe(
+      "Age: Adult, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
     );
-    const breedProperty = properties.find(
-      (p: { name: string }) => p.name === "Breed"
-    );
-    const genderProperty = properties.find(
-      (p: { name: string }) => p.name === "Gender"
-    );
-    const locationProperty = properties.find(
-      (p: { name: string }) => p.name === "Location"
-    );
-
-    expect(ageProperty?.value).toBe("Adult");
-    expect(breedProperty?.value).toBe("Labrador Retriever");
-    expect(genderProperty?.value).toBe("Male");
-    expect(locationProperty?.value).toBe("San Francisco, USA");
   });
 
   test("returns null for invalid dog data", () => {

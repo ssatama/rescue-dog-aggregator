@@ -31,7 +31,7 @@ metadata:
     facebook: "https://www.facebook.com/DogsTrust"
     instagram: "https://www.instagram.com/dogstrust/"
     twitter: "https://twitter.com/DogsTrust"
-  established_year: 1900 # Dogs Trust was actually established in 1891 but schema requires >= 1900
+  established_year: 1891
   logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/logo_dogstrust_dfe80b4f.jpg"
   adoption_fees:
     usual_fee: 450 # Approximate adoption fee in GBP

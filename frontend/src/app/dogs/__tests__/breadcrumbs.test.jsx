@@ -120,15 +120,11 @@ describe("DogsPageClientSimplified Breadcrumbs", () => {
     expect(findDogsElements.length).toBeGreaterThan(0);
   });
 
-  it("should include breadcrumb schema structured data", () => {
+  it("gets its BreadcrumbList from the Breadcrumbs component only (#443)", () => {
     render(<DogsPageClientSimplified initialDogs={mockInitialDogs} />);
 
-    const schema = screen.getByTestId("breadcrumb-schema");
-    expect(schema).toBeInTheDocument();
-
-    const schemaContent = JSON.parse(schema.innerHTML);
-    expect(schemaContent["@type"]).toBe("BreadcrumbList");
-    expect(schemaContent.itemListElement).toHaveLength(2);
+    expect(screen.getAllByTestId("breadcrumbs").length).toBeGreaterThan(0);
+    expect(screen.queryByTestId("breadcrumb-schema")).not.toBeInTheDocument();
   });
 
   it("should render breadcrumbs even with no dogs", () => {

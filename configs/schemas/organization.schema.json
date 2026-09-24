@@ -174,7 +174,7 @@
         },
         "established_year": {
           "type": "integer",
-          "minimum": 1900,
+          "minimum": 1800,
           "maximum": 2030,
           "description": "Year the organization was established"
         },

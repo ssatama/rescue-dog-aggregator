@@ -9,6 +9,7 @@ import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
 import SentryInitializer from "@/components/SentryInitializer";
+import { generateSiteGraph } from "@/utils/schema";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -112,37 +113,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              name: "Rescue Dog Aggregator",
-              url: "https://www.rescuedogs.me",
-              description:
-                "Find adoptable rescue dogs from verified organizations across Europe. Browse dogs available for adoption from shelters and rescues.",
-              potentialAction: {
-                "@type": "SearchAction",
-                target: {
-                  "@type": "EntryPoint",
-                  urlTemplate:
-                    "https://www.rescuedogs.me/dogs?search={search_term_string}",
-                },
-                "query-input": "required name=search_term_string",
-              },
-              publisher: {
-                "@type": "Organization",
-                name: "Rescue Dog Aggregator",
-                logo: {
-                  "@type": "ImageObject",
-                  url: "https://www.rescuedogs.me/logo.jpeg",
-                  width: 512,
-                  height: 512,
-                },
-              },
-              inLanguage: "en-US",
-              copyrightYear: new Date().getFullYear(),
-              keywords:
-                "rescue dogs, dog adoption, pet rescue, animal shelter, adopt a dog",
-            }).replace(/</g, "\\u003c"),
+            __html: JSON.stringify(generateSiteGraph()).replace(/</g, "\\u003c"),
           }}
         />
       </head>

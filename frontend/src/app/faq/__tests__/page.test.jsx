@@ -134,8 +134,9 @@ describe("FAQ Page", () => {
       expect(orgsLink).toHaveAttribute("href", "/organizations");
     });
 
-    test("renders BreadcrumbSchema for SEO", () => {
-      expect(screen.getByTestId("breadcrumb-schema")).toBeInTheDocument();
+    test("gets its BreadcrumbList from the Breadcrumbs component only (#443)", () => {
+      expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
+      expect(screen.queryByTestId("breadcrumb-schema")).not.toBeInTheDocument();
     });
   });
 

@@ -85,7 +85,7 @@ export default function BreedsHubClient({
     <>
       {/* Breadcrumb Navigation */}
       <div className="container mx-auto px-4 pt-4">
-        <Breadcrumbs items={breadcrumbItems} />
+        <Breadcrumbs items={breadcrumbItems} schema={false} />
       </div>
 
       {mixedBreedData && (

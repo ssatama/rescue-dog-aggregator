@@ -23,5 +23,7 @@ export interface BreadcrumbItem {
 }
 
 export interface BreadcrumbsProps {
+  /** Emit BreadcrumbList JSON-LD (default). False when the page already does, server-side. */
+  schema?: boolean;
   items: BreadcrumbItem[];
 }

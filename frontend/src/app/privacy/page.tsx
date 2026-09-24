@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Layout from "../../components/layout/Layout";
-import { BreadcrumbSchema } from "../../components/seo";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 
 export const metadata: Metadata = {
@@ -31,7 +30,6 @@ export default function PrivacyPage(): React.JSX.Element {
 
   return (
     <Layout>
-      <BreadcrumbSchema items={breadcrumbItems} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Breadcrumbs items={breadcrumbItems} />
 

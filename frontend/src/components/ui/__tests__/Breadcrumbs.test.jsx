@@ -229,3 +229,22 @@ describe("Dark Mode Support Tests", () => {
     expect(separator).toHaveClass("dark:text-gray-500"); // Will fail
   });
 });
+
+describe("Breadcrumbs structured data (#443)", () => {
+  const items = [{ name: "Home", url: "/" }, { name: "Breeds" }];
+
+  it("emits exactly one BreadcrumbList by default", () => {
+    const { container } = render(<Breadcrumbs items={items} />);
+
+    const scripts = container.querySelectorAll('script[type="application/ld+json"]');
+    expect(scripts).toHaveLength(1);
+    expect(JSON.parse(scripts[0].innerHTML)["@type"]).toBe("BreadcrumbList");
+  });
+
+  it("emits none when the page already outputs it server-side", () => {
+    const { container } = render(<Breadcrumbs items={items} schema={false} />);
+
+    expect(container.querySelector('script[type="application/ld+json"]')).toBeNull();
+    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
+  });
+});

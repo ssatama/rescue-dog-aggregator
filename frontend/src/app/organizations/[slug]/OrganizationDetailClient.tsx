@@ -15,7 +15,6 @@ import {
   getOrganizationDogs,
 } from "../../../services/organizationsService";
 import { reportError } from "../../../utils/logger";
-import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
 import OrganizationDogsViewportWrapper from "../../../components/organizations/OrganizationDogsViewportWrapper";
 import DogsGrid from "../../../components/dogs/DogsGrid";
@@ -333,19 +332,11 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
     );
   }
 
-  const breadcrumbItems = [
-    { name: "Home", url: "/" },
-    { name: "Organizations", url: "/organizations" },
-    { name: organization.name },
-  ];
-
   return (
     <>
       <OrganizationHero organization={organization} />
 
       <div className="max-w-7xl mx-auto p-4">
-        {/* Breadcrumb Navigation */}
-        <Breadcrumbs items={breadcrumbItems} />
         {/* Contact Information (if available in properties) */}
         {organization.properties && (
           <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 mb-8">

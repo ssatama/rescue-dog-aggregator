@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Layout from "../../components/layout/Layout";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
-import { BreadcrumbSchema, PersonSchema } from "../../components/seo";
+import { PersonSchema } from "../../components/seo";
 import HarleyStory from "../../components/about/HarleyStory";
 import StatsDisplay from "../../components/about/StatsDisplay";
 import EuropeMap from "../../components/about/EuropeMap";
@@ -34,11 +34,10 @@ export default function AboutPage(): React.JSX.Element {
 
   return (
     <Layout>
-      <BreadcrumbSchema items={breadcrumbItems} />
       <PersonSchema
         name="Sampo Satama"
         jobTitle="Founder"
-        organization={{ name: "RescueDogs.me", url: "https://www.rescuedogs.me" }}
+        organization={{ name: "Rescue Dog Aggregator", url: "https://www.rescuedogs.me" }}
         sameAs={[
           "https://www.linkedin.com/in/sampo-satama-data-scientist/",
           "https://github.com/ssatama",
