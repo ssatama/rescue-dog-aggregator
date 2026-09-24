@@ -37,7 +37,7 @@ describe("Header - Swipe Navigation Visibility", () => {
       expect(swipeButton).toBeInTheDocument();
       expect(swipeButton).toHaveAttribute("href", "/swipe");
       // Should have orange button styling
-      expect(swipeButton).toHaveClass("bg-orange-600");
+      expect(swipeButton).toHaveClass("bg-orange-700");
     });
   });
 

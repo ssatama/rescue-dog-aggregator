@@ -309,7 +309,7 @@ describe("DogCard Accessibility", () => {
       render(<DogCard dog={badgeDog} />);
 
       const newBadge = screen.getByTestId("new-badge");
-      expect(newBadge).toHaveClass("bg-green-500");
+      expect(newBadge).toHaveClass("bg-green-700");
       expect(newBadge).toHaveClass("text-white");
     });
 

@@ -31,21 +31,42 @@ const getCompatibilityIcon = (value: string): string => {
   }
 };
 
+// Explicit text colours with dark variants: the marks used to inherit the dark theme's
+// near-white foreground on these pale backgrounds, a 1.05:1 contrast (#448)
 const getCompatibilityColor = (value: string): string => {
   switch (value) {
     case "yes":
-      return "bg-green-100";
+      return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300";
     case "no":
-      return "bg-red-100";
+      return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300";
     case "maybe":
     case "selective":
     case "with_training":
-      return "bg-yellow-100";
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300";
     case "older_children":
-      return "bg-blue-100";
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
     case "unknown":
     default:
-      return "bg-gray-100";
+      return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+  }
+};
+
+// What a screen reader should say instead of ✓ / ✗ / ? / -
+const getCompatibilityText = (value: string): string => {
+  switch (value) {
+    case "yes":
+      return "yes";
+    case "no":
+      return "no";
+    case "maybe":
+    case "selective":
+      return "maybe";
+    case "with_training":
+      return "with training";
+    case "older_children":
+      return "older children only";
+    default:
+      return "unknown";
   }
 };
 
@@ -128,9 +149,11 @@ const CompatibilityIcons: React.FC<CompatibilityIconsProps> = ({
           >
             <div
               data-testid={`compatibility-icon-${item.key}`}
+              role="img"
+              aria-label={`Good with ${item.label.toLowerCase()}: ${getCompatibilityText(item.value!)}`}
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${colorClass}`}
             >
-              {icon}
+              <span aria-hidden="true">{icon}</span>
             </div>
             <span className="text-xs text-gray-600 dark:text-gray-400">
               {item.label}

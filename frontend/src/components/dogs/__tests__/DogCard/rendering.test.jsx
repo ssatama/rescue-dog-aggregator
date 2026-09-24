@@ -92,7 +92,7 @@ describe("DogCard Rendering", () => {
       const newBadge = screen.getByTestId("new-badge");
       expect(newBadge).toBeInTheDocument();
       expect(newBadge).toHaveTextContent("NEW");
-      expect(newBadge).toHaveClass("bg-green-500");
+      expect(newBadge).toHaveClass("bg-green-700");
       expect(newBadge).toHaveClass("text-white");
       expect(newBadge).toHaveClass("absolute");
       expect(newBadge).toHaveClass("top-2");

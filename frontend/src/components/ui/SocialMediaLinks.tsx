@@ -62,14 +62,15 @@ export default function SocialMediaLinks({
   }
 
   return (
-    <div className={`flex gap-3 ${className}`}>
+    <div className={`flex gap-1 ${className}`}>
       {Object.entries(socialMedia).map(([platform, url]) => (
         <a
           key={platform}
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+          // A 36px hit area around the 20px icon: Lighthouse target-size wants ≥24px (#448)
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
           aria-label={`Visit our ${platform} page`}
         >
           <SocialIcon platform={platform} />

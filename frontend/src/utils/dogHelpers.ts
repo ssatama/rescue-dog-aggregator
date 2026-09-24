@@ -188,13 +188,13 @@ export const formatCompatibility = (dog: DogInput | null | undefined): {
   const getCompatibilityDisplay = (value: string): CompatibilityDisplay => {
     switch (value) {
       case "yes":
-        return { icon: "✓", text: "Good", color: "text-green-600" };
+        return { icon: "✓", text: "Good", color: "text-green-700 dark:text-green-400" };
       case "maybe":
-        return { icon: "?", text: "Maybe", color: "text-yellow-600" };
+        return { icon: "?", text: "Maybe", color: "text-yellow-700 dark:text-yellow-400" };
       case "no":
-        return { icon: "✗", text: "No", color: "text-red-600" };
+        return { icon: "✗", text: "No", color: "text-red-700 dark:text-red-400" };
       default:
-        return { icon: "", text: "Not yet assessed", color: "text-gray-400" };
+        return { icon: "", text: "Not yet assessed", color: "text-gray-500 dark:text-gray-400" };
     }
   };
 
