@@ -1145,11 +1145,8 @@ class DogsTrustScraper(BaseScraper):
             "properties": properties,  # Following Many Tears pattern
         }
 
-        # Add image_urls for R2 integration
-        if primary_image_url:
-            raw_result["image_urls"] = [primary_image_url]
-        else:
-            raw_result["image_urls"] = []
+        # The dog's photo gallery, hero first (#487)
+        raw_result["image_urls"] = self._extract_image_urls(soup, dog_id)
 
         # Apply unified standardization
         return self.process_animal(raw_result)
@@ -1256,6 +1253,30 @@ class DogsTrustScraper(BaseScraper):
             return ""
 
         return ""
+
+    def _extract_image_urls(self, soup: BeautifulSoup, dog_id: str | None = None) -> list[str]:
+        """All of this dog's photos in page order, hero first.
+
+        Same rule as the hero: only /images/{size}/dogs/{dog_id}/ belongs to
+        this dog. Promotional images live under /assets/, and related-dog cards
+        use other ids (400x300 thumbnails of other dogs). Each photo appears in
+        several sizes and as .webp; one URL per file is kept.
+        """
+        if not dog_id:
+            return []
+        id_path = f"/dogs/{dog_id}/"
+        urls: list[str] = []
+        seen_files: set[str] = set()
+        for img in soup.find_all("img"):
+            src = img.get("src", "") if hasattr(img, "get") else ""
+            if not src or id_path not in src:
+                continue
+            file_name = src.rsplit("/", 1)[-1].removesuffix(".webp")
+            if file_name in seen_files:
+                continue
+            seen_files.add(file_name)
+            urls.append(f"{self.base_url}{src}" if src.startswith("/") else src)
+        return urls
 
     def _extract_additional_properties(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract additional Dogs Trust-specific properties.

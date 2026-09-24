@@ -11,6 +11,7 @@ import requests
 from bs4 import BeautifulSoup, Tag
 
 from scrapers.base_scraper import BaseScraper
+from utils.shared_extraction_patterns import gallery_urls
 
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
@@ -904,6 +905,7 @@ class WoofProjectScraper(BaseScraper):
                 "external_id": external_id,
                 "adoption_url": url,
                 "primary_image_url": primary_image_url,
+                "image_urls": self._extract_image_urls_from_detail(soup, primary_image_url),
                 "description": description or "Rescue dog from Woof Project available for adoption",
                 "breed": breed,
                 "age": age,
@@ -1439,6 +1441,20 @@ class WoofProjectScraper(BaseScraper):
 
         self.logger.debug(f"Extracted {len(description)} chars using multi-stage pipeline")
         return description
+
+    def _extract_image_urls_from_detail(self, soup: BeautifulSoup, primary_image_url: str | None) -> list[str]:
+        """The dog's photos: the chosen hero, then each linked upload in page order (#487).
+
+        Every photo on the page is an image linking to its full-size upload.
+        The site's icons and logo are plain images, not links, and video
+        thumbnails link elsewhere.
+        """
+        links = []
+        for link in soup.find_all("a", href=True):
+            href = urljoin(self.base_url, link["href"])
+            if "/wp-content/uploads/" in href and link.find("img") and href.lower().split("?", 1)[0].endswith((".jpg", ".jpeg", ".png", ".webp")):
+                links.append(href)
+        return gallery_urls(primary_image_url, links)
 
     def _extract_primary_image_from_detail(self, soup: BeautifulSoup) -> str | None:
         """Extract primary image URL from detail page.

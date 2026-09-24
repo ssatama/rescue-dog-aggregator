@@ -759,7 +759,7 @@ class MisisRescueScraper(BaseScraper):
             # Extract the main image - try hero image first, then grid fallback
             main_image_url = self._extract_main_image(driver, soup)
             if main_image_url:
-                dog_data["image_urls"] = [main_image_url]
+                dog_data["image_urls"] = [main_image_url, *self._extract_static_image_urls(soup)]
                 dog_data["primary_image_url"] = main_image_url
             else:
                 self.logger.warning(f"No image found for dog at {url}")
@@ -839,7 +839,7 @@ class MisisRescueScraper(BaseScraper):
             # Extract the main image using BeautifulSoup-only method
             main_image_url = self._extract_main_image_soup(soup)
             if main_image_url:
-                dog_data["image_urls"] = [main_image_url]
+                dog_data["image_urls"] = [main_image_url, *self._extract_static_image_urls(soup)]
                 dog_data["primary_image_url"] = main_image_url
             else:
                 self.logger.warning(f"No image found for dog at {url}")

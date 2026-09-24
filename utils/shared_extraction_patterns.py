@@ -496,3 +496,36 @@ def calculate_age_range_months(
         return max(12, age_months - 12), min(age_months + 12, 84)
     else:  # Senior
         return max(84, age_months - 24), age_months + 24
+
+
+# Photo galleries (#487)
+
+_WORDPRESS_SIZE_SUFFIX = re.compile(r"-\d+x\d+(_c)?(?=\.[a-z]+$)", re.I)
+_UNVIEWABLE_IMAGE_SUFFIXES = (".heic", ".heif", ".tif", ".tiff", ".pdf")
+
+
+def wordpress_original(url: str) -> str:
+    """The upload a WordPress resize was made from: ".../a-600x600.jpg" -> "a.jpg".
+
+    Used to spot the same photo in two sizes, e.g. a hero resize and its
+    full-size gallery original.
+    """
+    return _WORDPRESS_SIZE_SUFFIX.sub("", url.split("?", 1)[0].rsplit("/", 1)[-1])
+
+
+def gallery_urls(hero: str | None, candidates: list[str]) -> list[str]:
+    """Hero first, then the candidates in page order, each photo once.
+
+    Photos are compared by their WordPress original, so resizes don't count
+    twice, and formats a browser can't show are skipped.
+    """
+    urls: list[str] = []
+    seen: set[str] = set()
+    for url in [hero, *candidates]:
+        if not url or url.lower().split("?", 1)[0].endswith(_UNVIEWABLE_IMAGE_SUFFIXES):
+            continue
+        original = wordpress_original(url)
+        if original not in seen:
+            seen.add(original)
+            urls.append(url)
+    return urls

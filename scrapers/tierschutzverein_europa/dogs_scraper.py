@@ -15,6 +15,7 @@ from scrapers.tierschutzverein_europa.translations import (
     translate_breed,
     translate_gender,
 )
+from utils.shared_extraction_patterns import gallery_urls
 
 
 class TierschutzvereinEuropaScraper(BaseScraper):
@@ -199,7 +200,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 "properties": properties,
                 "primary_image_url": hero_image_url,
                 "original_image_url": hero_image_url,
-                "image_urls": [hero_image_url] if hero_image_url else [],
+                "image_urls": self._extract_image_urls(soup, hero_image_url),
             }
 
             # Extract key fields for BaseScraper standardization
@@ -294,6 +295,18 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 return src
 
         return None
+
+    def _extract_image_urls(self, soup: BeautifulSoup, hero_image_url: str | None) -> list[str]:
+        """The dog's gallery in the page's order, hero first (#487).
+
+        Full-size photos are the Envira gallery's link targets. The hero is a
+        WordPress resize of the first of them ("-600x600"), so photos are
+        compared without the size suffix. Files named "<Name>-<Shelter>-vom-
+        <date>-NNNN" are the shelter's photo updates, not documents: they stay.
+        HEIC files are skipped because browsers can't show them.
+        """
+        links = [urljoin(self.base_url, a["href"]) for a in soup.select("a.envira-gallery-link") if a.get("href")]
+        return gallery_urls(hero_image_url, links)
 
     def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Process animals in parallel batches for efficient detail scraping."""
