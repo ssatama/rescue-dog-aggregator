@@ -97,6 +97,7 @@ function CardPhoto({
   sizes: string;
 }): React.ReactElement {
   const [fit, setFit] = useState<"fill" | "whole">("fill");
+  const [failed, setFailed] = useState(false);
   const src = dog.primary_image_url;
 
   const handleLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -113,7 +114,7 @@ function CardPhoto({
     });
   }, []);
 
-  if (!src) {
+  if (!src || failed) {
     return (
       <div
         className="absolute inset-0 grid place-items-center bg-soft text-subtle"
@@ -145,6 +146,7 @@ function CardPhoto({
         sizes={sizes}
         priority={priority}
         onLoad={handleLoad}
+        onError={() => setFailed(true)}
         data-fit={fit}
         className={cn(
           "transition-transform duration-300 motion-reduce:transition-none",

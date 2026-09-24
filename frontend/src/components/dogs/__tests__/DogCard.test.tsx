@@ -86,6 +86,15 @@ describe("DogCard", () => {
     expect(screen.queryByRole("img", { name: "Max" })).not.toBeInTheDocument();
   });
 
+  it("falls back to the placeholder when the photo fails to load", () => {
+    render(<DogCard dog={fullDog} />);
+
+    fireEvent.error(screen.getByAltText("Bella"));
+
+    expect(screen.getByTestId("dog-photo-missing")).toBeInTheDocument();
+    expect(screen.queryByAltText("Bella")).not.toBeInTheDocument();
+  });
+
   it("shows at most two known lives-with facts, good ones first", () => {
     render(<DogCard dog={fullDog} />);
 

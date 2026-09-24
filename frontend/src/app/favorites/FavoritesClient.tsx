@@ -500,6 +500,7 @@ function FavoritesPageContent(): React.JSX.Element {
             dogs={filteredDogs}
             loading={false}
             totalCount={filteredDogs.length}
+            listContext="favorites"
           />
         ) : (
           <div className="container mx-auto px-4 max-w-5xl">
