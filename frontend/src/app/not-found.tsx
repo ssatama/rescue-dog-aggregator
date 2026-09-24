@@ -27,7 +27,7 @@ export default async function NotFound() {
 
   return (
     <Layout>
-      <main className="container mx-auto px-4 py-16">
+      <div className="container mx-auto py-8">
         <div className="max-w-2xl mx-auto text-center">
           <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">404</p>
           <h1 className="mt-2 text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
@@ -96,7 +96,7 @@ export default async function NotFound() {
             </ul>
           </section>
         )}
-      </main>
+      </div>
     </Layout>
   );
 }
