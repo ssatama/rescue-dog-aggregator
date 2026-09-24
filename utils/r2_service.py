@@ -37,6 +37,11 @@ def _display_size(img: "PILImage.Image") -> tuple[int, int]:
     return width, height
 
 
+# upload_image_with_size's answer for a photo that can never be used (dead
+# link, not an image): skip it like a missing photo. None means "try again".
+UNUSABLE_PHOTO: dict = {}
+
+
 class R2ConfigurationError(Exception):
     """Raised when R2 is not properly configured."""
 
@@ -397,6 +402,7 @@ class R2Service:
         r2_url = cls._build_custom_domain_url(image_key)
 
         already_stored = False
+        metadata: dict = {}
         try:
             metadata = s3_client.head_object(Bucket=bucket_name, Key=image_key).get("Metadata", {})
             if metadata.get("width") and metadata.get("height"):
@@ -415,7 +421,7 @@ class R2Service:
             content_type = response.headers.get("content-type", "").lower()
             if not any(t in content_type for t in ("image/jpeg", "image/jpg", "image/png", "image/webp")):
                 logger.warning(f"Invalid content type for image {image_url}: {content_type}")
-                return None
+                return UNUSABLE_PHOTO
 
             with PILImage.open(BytesIO(response.content)) as img:
                 width, height = _display_size(img)
@@ -429,7 +435,7 @@ class R2Service:
                     MetadataDirective="REPLACE",
                     ContentType=content_type,
                     CacheControl="public, max-age=86400, s-maxage=604800",
-                    Metadata={"original_url": image_url, "width": str(width), "height": str(height)},
+                    Metadata={**metadata, "original_url": image_url, "width": str(width), "height": str(height)},
                 )
                 return {"url": r2_url, "original_url": image_url, "width": width, "height": height}
 
@@ -461,7 +467,15 @@ class R2Service:
             logger.warning(f"Could not store gallery photo {image_url}: {e}")
             cls.track_upload_failure("gallery_upload_failed")
             return None
-        except (requests.exceptions.RequestException, UnidentifiedImageError) as e:
+        except UnidentifiedImageError as e:
+            logger.warning(f"Gallery photo is not a readable image {image_url}: {e}")
+            return UNUSABLE_PHOTO
+        except requests.exceptions.HTTPError as e:
+            status = e.response.status_code if e.response is not None else None
+            logger.warning(f"Could not fetch gallery photo {image_url}: {e}")
+            # A 4xx won't fix itself (dead link, removed photo); a 5xx might
+            return UNUSABLE_PHOTO if status and 400 <= status < 500 and status != 429 else None
+        except requests.exceptions.RequestException as e:
             logger.warning(f"Could not fetch gallery photo {image_url}: {e}")
             return None
 

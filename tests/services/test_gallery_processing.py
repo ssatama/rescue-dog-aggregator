@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 from PIL import Image
 
 from services.image_processing_service import MAX_GALLERY_PHOTOS, ImageProcessingService, build_gallery
-from utils.r2_service import R2Service
+from utils.r2_service import UNUSABLE_PHOTO, R2Service
 
 HERO = "https://rescue.example/dogs/rex/hero.jpg"
 
@@ -171,12 +171,22 @@ class TestUploadImageWithSize:
         metadata = s3.copy_object.call_args.kwargs["Metadata"]
         assert (metadata["width"], metadata["height"]) == ("1024", "768")
 
-    def test_a_non_image_response_is_skipped(self, s3):
+    def test_a_non_image_response_is_unusable_not_retried(self, s3):
         s3.head_object.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadObject")
         response = Mock(content=b"<html>", headers={"content-type": "text/html"})
 
         with patch("utils.r2_service.requests.get", return_value=response):
-            assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") is None
+            assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") == UNUSABLE_PHOTO
+
+    def test_a_dead_link_is_unusable_but_a_server_error_is_retried(self, s3):
+        import requests
+
+        s3.head_object.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadObject")
+        for status, expected in ((404, UNUSABLE_PHOTO), (503, None)):
+            response = Mock(status_code=status)
+            response.raise_for_status.side_effect = requests.exceptions.HTTPError(response=response)
+            with patch("utils.r2_service.requests.get", return_value=response):
+                assert R2Service.upload_image_with_size(HERO, "Rex", "Rescue") == expected
 
         s3.upload_fileobj.assert_not_called()
 
@@ -293,3 +303,15 @@ def test_a_phone_photo_rotated_by_exif_is_measured_as_displayed():
         result = R2Service.upload_image_with_size(HERO, "Rex", "Rescue")
 
     assert (result["width"], result["height"]) == (900, 1200)
+
+
+@pytest.mark.unit
+def test_an_unusable_photo_is_skipped_and_the_gallery_still_saved():
+    dead = "https://rescue.example/dead.jpg"
+    r2 = Mock()
+    r2.upload_image_with_size.side_effect = lambda source, name, org: UNUSABLE_PHOTO if source == dead else photo(source)
+    dog = {"name": "Rex", "primary_image_url": HERO, "image_urls": [HERO, dead]}
+
+    ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {})
+
+    assert dog["images"] == [photo(HERO)]

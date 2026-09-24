@@ -58,7 +58,7 @@ def build_gallery(sources: list[str], photos: dict[str, dict[str, Any] | None]) 
         if len(kept) >= MAX_GALLERY_PHOTOS:
             break
         photo = photos.get(source)
-        if photo is None:
+        if not photo:  # unknown, failed, or unusable (UNUSABLE_PHOTO is empty)
             continue
         if min(photo.get("width") or 0, photo.get("height") or 0) < MIN_GALLERY_SIDE:
             too_small.append(photo)
@@ -138,6 +138,7 @@ class ImageProcessingService:
             # Save only a complete gallery. A skip-existing scrape skips a dog once it
             # has one, so a gallery saved with a photo missing would stay short;
             # instead the stored gallery is kept and the dog is retried next run.
+            # Only transient failures (None) count: an unusable photo is just skipped.
             if any(uploaded.get(source, True) is None for source in sources[: MAX_GALLERY_PHOTOS * 2]):
                 continue
             images = build_gallery(sources, photos)
