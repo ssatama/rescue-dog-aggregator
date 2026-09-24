@@ -76,8 +76,9 @@ MCP endpoint is rate limited per IP at 120 requests/minute and 3,000/hour.
 - https://www.rescuedogs.me/dogs/senior — senior dogs
 - https://www.rescuedogs.me/dogs/country/{code} — dogs currently located in a
   country. This is a location filter, not an adoption-destination one, and
-  pages exist only for uk, de, rs, ba, bg, it, tr and cy. For "can I adopt to
-  X", use the API's `available_to_country` filter instead.
+  only countries that currently have dogs have a page; /dogs/country lists
+  them. For "can I adopt to X", use the API's `available_to_country` filter
+  instead.
 - https://www.rescuedogs.me/breeds — breeds with availability
 - https://www.rescuedogs.me/breeds/{slug} — a specific breed
 - https://www.rescuedogs.me/organizations — rescue organizations

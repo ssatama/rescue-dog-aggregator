@@ -100,3 +100,15 @@ export const getCountryByCode = (code: string | null | undefined): CountryConfig
 export const getAllCountryCodes = (): string[] => Object.keys(COUNTRIES);
 
 export const getCountriesArray = (): CountryConfig[] => Object.values(COUNTRIES);
+
+/**
+ * Configured country pages that currently have dogs, from the /stats/by-country
+ * response. A country with none (e.g. Italy while its only rescue is inactive) gets
+ * no sitemap entry, no chip and a 404 page (#442).
+ */
+export const getCountriesWithDogs = (
+  stats: { countries?: Array<{ code: string; count: number }> } | null | undefined,
+): CountryConfig[] => {
+  const counts = new Map((stats?.countries ?? []).map((c) => [c.code.toUpperCase(), c.count]));
+  return getCountriesArray().filter((country) => (counts.get(country.code) ?? 0) > 0);
+};

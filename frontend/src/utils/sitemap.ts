@@ -1,6 +1,8 @@
 import { getAllAnimalsForSitemap } from "../services/animalsService";
 import { getAllOrganizations } from "../services/organizationsService";
 import { fetchWithRetry } from "./serverFetch";
+import { getCountryStats } from "../services/serverAnimalsService";
+import { getAllCountryCodes, getCountriesWithDogs } from "./countryData";
 
 const getBaseUrl = (): string =>
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
@@ -292,9 +294,15 @@ export const generateOrganizationSitemap = async (): Promise<string> => {
 
 export const generateCountrySitemap = async (): Promise<string> => {
   const baseUrl = getBaseUrl();
-  const countries = ["uk", "de", "rs", "ba", "bg", "it", "tr", "cy"];
-
   try {
+    // Only countries with dogs; if the stats call failed, keep every configured page
+    // rather than dropping them all from the sitemap
+    const stats = await getCountryStats();
+    const withDogs = getCountriesWithDogs(stats);
+    const countries = (stats.countries?.length ? withDogs.map((c) => c.code) : getAllCountryCodes()).map((code) =>
+      code.toLowerCase(),
+    );
+
     const countryEntries = [
       formatSitemapEntry({
         url: `${baseUrl}/dogs/country`,
