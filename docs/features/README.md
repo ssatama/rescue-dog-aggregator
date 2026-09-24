@@ -10,6 +10,7 @@ Documentation for the platform's user-facing capabilities. See
 | [adoption-detection.md](adoption-detection.md) | Detecting adopted dogs and preserving their SEO value |
 | [country-hub-pages.md](country-hub-pages.md) | Country landing pages |
 | [railway-database-sync.md](railway-database-sync.md) | Syncing data between local and Railway |
+| [product-analytics.md](product-analytics.md) | PostHog events, the adoption-click conversion, session replay, privacy model |
 | [analytics-self-exclusion.md](analytics-self-exclusion.md) | Excluding own traffic from analytics |
 
 ## Platform summary

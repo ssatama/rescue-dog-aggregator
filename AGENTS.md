@@ -272,6 +272,7 @@ imports it; do not duplicate content between them.
 - Architecture: `docs/technical/architecture.md`
 - Scrapers: `docs/technical/scraper-architecture.md`
 - LLM pipeline: `docs/features/llm-data-enrichment.md`
+- Product analytics (PostHog): `docs/features/product-analytics.md`
 - Setup: `docs/guides/installation.md`
 - Deployment: `docs/guides/deployment.md`
 - Testing: `docs/guides/testing.md`

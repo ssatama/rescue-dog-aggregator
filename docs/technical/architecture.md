@@ -11,7 +11,8 @@ Backend:       Python 3.12+/FastAPI + PostgreSQL 15 + Alembic
 Frontend:      Next.js 16 App Router + React 19 + TypeScript 5
 MCP Server:    TypeScript + @modelcontextprotocol/sdk (npm: rescuedogs-mcp-server)
 LLM:           OpenRouter, pinned to google/gemini-3.8-flash (LLM_DEFAULT_MODEL)
-Monitoring:    Sentry (dev + prod)
+Monitoring:    Sentry (dev + prod) for errors
+Analytics:     PostHog EU (cookieless, via e.rescuedogs.me), Vercel Analytics
 Hosting:       Vercel (frontend) + Railway (backend + DB + cron)
 Packages:      uv (Python) + pnpm (Node.js)
 Linting:       ruff (Python) + ESLint (TypeScript)
@@ -576,6 +577,7 @@ BROWSERLESS_TOKEN=xxx
 # Frontend (required)
 NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_SENTRY_DSN=xxx
+NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=phc_xxx   # production only; see docs/features/product-analytics.md
 NEXT_PUBLIC_R2_CUSTOM_DOMAIN=images.rescuedogs.me
 NEXT_PUBLIC_R2_IMAGE_PATH=rescue_dogs
 ```
