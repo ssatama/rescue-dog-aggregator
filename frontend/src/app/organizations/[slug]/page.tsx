@@ -41,7 +41,7 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
     const count = organization.total_dogs ?? 0;
     const description = clampDescription(
       [
-        `${count > 0 ? `${count} dogs` : "Dogs"} available for adoption from ${organization.name}${location ? `, a rescue in ${location}` : ""}.`,
+        `${count > 0 ? `${count} ${count === 1 ? "dog" : "dogs"}` : "Dogs"} available for adoption from ${organization.name}${location ? `, a rescue in ${location}` : ""}.`,
         shipsTo.length === 1 ? `Adopts to ${shipsTo[0]}.` : shipsTo.length > 1 ? `Adopts to ${shipsTo.length} countries.` : "",
       ].join(" "),
     );
