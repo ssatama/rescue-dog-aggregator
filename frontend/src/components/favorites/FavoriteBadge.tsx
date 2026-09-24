@@ -18,9 +18,9 @@ export function FavoriteBadge({ className = "" }: FavoriteBadgeProps) {
     <span
       className={`
         inline-flex items-center justify-center
-        min-w-[20px] h-5 px-1.5
-        text-xs font-semibold
-        bg-red-500 text-white
+        min-w-[18px] h-[18px] px-1.5
+        text-[11px] font-semibold tabular-nums
+        bg-foreground text-background
         rounded-full
         ${className}
       `}

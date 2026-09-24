@@ -37,67 +37,58 @@ describe("Header", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("should display 'Start Swiping' CTA button instead of 'Quick Browse'", () => {
+    it("has no Start Swiping button: swipe lives in the mobile tab bar", () => {
       render(<Header />);
 
-      const swipeButton = screen.getByRole("link", { name: /start swiping/i });
-      expect(swipeButton).toBeInTheDocument();
-      expect(swipeButton).toHaveAttribute("href", "/swipe");
-      expect(screen.queryByText(/quick browse/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("link", { name: /start swiping/i }),
+      ).not.toBeInTheDocument();
     });
 
-    it("should NOT display Organizations link in desktop navigation", () => {
+    it("links Breeds, Rescues and Guides in the main nav", () => {
       render(<Header />);
 
-      // Organizations should not be in desktop nav (will be in footer)
-      const organizationsLinks = screen.queryAllByRole("link", {
-        name: /^organizations$/i,
-      });
-      expect(organizationsLinks.length).toBe(0);
+      expect(screen.getByRole("link", { name: "Breeds" })).toHaveAttribute("href", "/breeds");
+      expect(screen.getByRole("link", { name: "Rescues" })).toHaveAttribute(
+        "href",
+        "/organizations",
+      );
+      expect(screen.getByRole("link", { name: "Guides" })).toHaveAttribute("href", "/guides");
     });
-  });
 
-  describe("Favorites Navigation Link", () => {
-    it("should display heart icon without text label", () => {
+    it("has no About menu: About, FAQ and Privacy live in the footer", () => {
       render(<Header />);
 
-      // Favorites is now icon-only with aria-label
-      const favoritesLink = screen.getByRole("link", { name: /favorites/i });
-      expect(favoritesLink).toBeInTheDocument();
-      expect(favoritesLink).toHaveAttribute("href", "/favorites");
+      expect(screen.queryByRole("button", { name: /about/i })).not.toBeInTheDocument();
     });
 
-    it("should show count badge on favorites icon", () => {
+    it("shows the compact rescuedogs wordmark linking home", () => {
       render(<Header />);
 
-      const favoritesLink = screen.getByRole("link", { name: /favorites/i });
-      const badge = screen.getByTestId("favorite-badge");
-
-      // Badge should be within the link
-      expect(favoritesLink.contains(badge)).toBe(true);
-    });
-
-    it.skip("favorites icon styling is consistent regardless of route", () => {
-      // Favorites is now icon-only with consistent red heart styling
-      // No longer changes based on active route
+      const home = screen.getByRole("link", { name: /rescuedogs home/i });
+      expect(home).toHaveAttribute("href", "/");
+      expect(home).toHaveTextContent("rescuedogs");
     });
   });
 
-  describe("About Dropdown", () => {
-    it("should display About as dropdown trigger", () => {
+  describe("Saved Navigation Link", () => {
+    it("links to favorites with a heart, a label and the count badge", () => {
       render(<Header />);
 
-      // About is now a dropdown trigger button
-      const aboutButton = screen.getByRole("button", { name: /about/i });
-      expect(aboutButton).toBeInTheDocument();
+      const saved = screen.getByRole("link", { name: /saved/i });
+      expect(saved).toHaveAttribute("href", "/favorites");
+      expect(saved.contains(screen.getByTestId("favorite-badge"))).toBe(true);
     });
 
-    it("should show orange active state when on /about route", () => {
-      mockUsePathname.mockReturnValue("/about");
+    it("marks the current page", () => {
+      mockUsePathname.mockReturnValue("/organizations/some-rescue");
       render(<Header />);
 
-      const aboutButton = screen.getByRole("button", { name: /about/i });
-      expect(aboutButton).toHaveClass("text-orange-600");
+      expect(screen.getByRole("link", { name: "Rescues" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      expect(screen.getByTestId("nav-underline-rescues")).toBeInTheDocument();
     });
   });
 

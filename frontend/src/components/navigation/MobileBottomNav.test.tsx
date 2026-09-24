@@ -11,6 +11,10 @@ jest.mock("next/navigation", () => ({
   })),
 }));
 
+jest.mock("../favorites/FavoriteBadge", () => ({
+  FavoriteBadge: () => <span data-testid="favorite-badge">2</span>,
+}));
+
 describe("MobileBottomNav", () => {
   beforeEach(() => {
     (usePathname as jest.Mock).mockReturnValue("/");

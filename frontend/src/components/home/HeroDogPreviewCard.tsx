@@ -51,7 +51,7 @@ export default function HeroDogPreviewCard({ dog, index = 0, priority = false }:
         <p
           className="
             mt-2 text-center
-            font-[family-name:var(--font-caveat)]
+            font-display
             text-2xl font-semibold
             text-gray-800 dark:text-gray-200
             truncate px-1

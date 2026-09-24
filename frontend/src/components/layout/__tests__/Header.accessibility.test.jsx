@@ -31,12 +31,11 @@ describe("Header accessibility and responsive breakpoints", () => {
     expect(themeToggleContainer).toBeTruthy();
   });
 
-  test("logo text uses lg:not-sr-only breakpoint", () => {
+  test("wordmark stays visible at every width", () => {
     render(<Header />);
 
-    const logoText = screen.getByText("Rescue Dog Aggregator");
-    expect(logoText).toHaveClass("sr-only");
-    expect(logoText).toHaveClass("lg:not-sr-only");
-    expect(logoText).not.toHaveClass("md:not-sr-only");
+    const home = screen.getByRole("link", { name: /rescuedogs home/i });
+    expect(home).toHaveTextContent("rescuedogs");
+    expect(home.className).not.toMatch(/sr-only/);
   });
 });

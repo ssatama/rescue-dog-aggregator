@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter, Caveat } from "next/font/google";
+import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
@@ -11,17 +11,17 @@ import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapp
 import SentryInitializer from "@/components/SentryInitializer";
 import { generateSiteGraph } from "@/utils/schema";
 
-const inter = Inter({
+// Figtree for text, Bricolage Grotesque for dog names and headings. Both are
+// variable fonts, so no weight list is needed.
+const figtree = Figtree({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-inter",
+  variable: "--font-figtree",
   display: "swap",
 });
 
-const caveat = Caveat({
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-caveat",
+  variable: "--font-bricolage",
   display: "swap",
 });
 
@@ -96,7 +96,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <html lang="en" className={`${inter.variable} ${caveat.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${figtree.variable} ${bricolage.variable}`} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://images.rescuedogs.me" />
         <link rel="dns-prefetch" href="https://images.rescuedogs.me" />
@@ -118,7 +118,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.className} min-h-screen bg-background font-sans`}
+        className="min-h-screen bg-background font-sans"
       >
         <ThemeProvider>
           <ToastProvider>
