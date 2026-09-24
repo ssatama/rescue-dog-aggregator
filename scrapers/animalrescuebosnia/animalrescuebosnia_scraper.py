@@ -304,23 +304,14 @@ class AnimalRescueBosniaScraper(BaseScraper):
             month_name, year = match.groups()
             year = int(year)
 
-            # Map month names
-            month_map = {
-                "january": 1,
-                "february": 2,
-                "march": 3,
-                "april": 4,
-                "may": 5,
-                "june": 6,
-                "july": 7,
-                "august": 8,
-                "september": 9,
-                "october": 10,
-                "november": 11,
-                "december": 12,
-            }
+            # Match on the first three letters: pages mix English and German month names
+            # ("January" / "Januar", "October" / "Oktober") and carry the odd typo ("Augist")
+            month_prefixes = {
+                "jan": 1, "feb": 2, "mar": 3, "mär": 3, "apr": 4, "may": 5, "mai": 5, "jun": 6,
+                "jul": 7, "aug": 8, "sep": 9, "oct": 10, "okt": 10, "nov": 11, "dec": 12, "dez": 12,
+            }  # fmt: skip
 
-            month = month_map.get(month_name.lower())
+            month = month_prefixes.get(month_name.lower()[:3])
             if not month:
                 return None
 
