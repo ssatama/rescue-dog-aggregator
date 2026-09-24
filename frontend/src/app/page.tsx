@@ -13,7 +13,7 @@ import { reportError } from "../utils/logger";
 export const revalidate = 21600;
 
 export async function generateMetadata(): Promise<Metadata> {
-  let stats = { total_dogs: 4500, total_organizations: 13 };
+  let stats: { total_dogs?: number; total_organizations?: number } = {};
   try {
     const data = await getHomePageData();
     stats = data.statistics || stats;
@@ -21,24 +21,35 @@ export async function generateMetadata(): Promise<Metadata> {
     reportError(e, { context: "metadata_generation", component: "Home" });
   }
 
-  const totalDogs = stats.total_dogs || 4500;
-  const totalOrgs = stats.total_organizations || 13;
+  // No invented fallback numbers: this route is ISR-cached for 6 hours, so a made-up
+  // "4,500+ dogs" would be served that long. Without live stats, say nothing numeric (#444).
+  const totalDogs = stats.total_dogs ?? 0;
+  const totalOrgs = stats.total_organizations ?? 0;
+  const hasStats = totalDogs > 0 && totalOrgs > 0;
 
   return {
-    title: `Find Rescue Dogs | ${formatCount(totalDogs)}+ Dogs Available`,
-    description: `Browse ${formatCount(totalDogs)}+ rescue dogs from ${totalOrgs} European organizations. Filter by breed, size, age, and location to find your perfect companion.`,
+    title: hasStats
+      ? `Find Rescue Dogs | ${formatCount(totalDogs)}+ Dogs Available`
+      : "Find Rescue Dogs from Across Europe | Rescue Dog Aggregator",
+    description: hasStats
+      ? `Browse ${formatCount(totalDogs)}+ rescue dogs from ${totalOrgs} European organizations. Filter by breed, size, age and location to find your companion.`
+      : "Browse rescue dogs from verified European organizations. Filter by breed, size, age and location to find your companion.",
     alternates: {
       canonical: "https://www.rescuedogs.me",
     },
     openGraph: {
       title: "Find Your Perfect Rescue Dog",
-      description: `${formatCount(totalDogs)}+ dogs from verified rescue organizations across Europe.`,
+      description: hasStats
+        ? `${formatCount(totalDogs)}+ dogs from verified rescue organizations across Europe.`
+        : "Rescue dogs from verified rescue organizations across Europe.",
       images: ["/og-image.png"],
     },
     twitter: {
       card: "summary_large_image",
       title: "Find Rescue Dogs",
-      description: `Browse ${formatCount(totalDogs)}+ rescue dogs from ${totalOrgs}+ European organizations.`,
+      description: hasStats
+        ? `Browse ${formatCount(totalDogs)}+ rescue dogs from ${totalOrgs} European organizations.`
+        : "Browse rescue dogs from verified European organizations.",
     },
   };
 }

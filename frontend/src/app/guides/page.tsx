@@ -17,7 +17,7 @@ const collectionSchema = {
 export const metadata: Metadata = {
   title: "Adoption Guides | Rescue Dog Aggregator",
   description:
-    "Comprehensive guides to help you navigate rescue dog adoption from European organizations. From first-time owner preparation to understanding costs and cross-border logistics.",
+    "Guides to adopting a rescue dog from Europe: first-time owner preparation, costs and budgets, and the rules and logistics of bringing a dog home.",
   alternates: {
     canonical: "https://www.rescuedogs.me/guides",
   },

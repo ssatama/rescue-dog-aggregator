@@ -35,9 +35,13 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }: BreedsH
 
       <div className="relative max-w-7xl mx-auto">
         <div className="text-center mb-6 md:mb-8">
-          <h1 className="text-3xl md:text-5xl font-bold mb-2">
-            Every Dog is Unique
+          {/* The hub's H1 names the page; the mixed-breed hero line is a subheading (#444) */}
+          <h1 className="text-sm md:text-base font-semibold uppercase tracking-wide opacity-90 mb-2">
+            Rescue Dogs by Breed
           </h1>
+          <h2 className="text-3xl md:text-5xl font-bold mb-2">
+            Every Dog is Unique
+          </h2>
           <p className="text-base md:text-lg opacity-95 max-w-2xl mx-auto">
             Discover {formatCount(mixedBreedCount)} one-of-a-kind mixed breed
             companions waiting for their forever homes

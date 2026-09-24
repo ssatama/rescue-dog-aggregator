@@ -2,6 +2,10 @@ export interface GuideFrontmatter {
   title: string;
   slug: string;
   description: string;
+  /** Search-result title (≤65 chars) when `title` is too long for one (#444) */
+  seoTitle?: string;
+  /** Search-result description (≤160 chars) when `description` is too long for one */
+  seoDescription?: string;
   heroImage: string;
   heroImageAlt?: string;
   readTime: number;

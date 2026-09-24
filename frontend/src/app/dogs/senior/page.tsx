@@ -1,4 +1,5 @@
 import { formatCount } from "@/utils/formatCount";
+import { clampDescription } from "@/utils/seoMeta";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import SeniorDogsClient from "./SeniorDogsClient";
@@ -19,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: `${formatCount(count)}+ Senior Rescue Dogs for Adoption | Give an Older Dog a Home`,
-    description: `Adopt a senior rescue dog (8+ years). ${formatCount(count)} gentle, loving older dogs seeking their forever homes. Often house-trained with calm temperaments. ${seniorCategory.tagline}`,
+    description: clampDescription(`Adopt a senior rescue dog (8+ years). ${formatCount(count)} gentle, loving older dogs seeking their forever homes. Often house-trained with calm temperaments. ${seniorCategory.tagline}`),
     keywords: seniorCategory.seoKeywords,
     alternates: {
       canonical: "https://www.rescuedogs.me/dogs/senior",

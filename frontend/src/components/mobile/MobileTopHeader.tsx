@@ -31,12 +31,14 @@ export default function MobileTopHeader() {
 
         {/* Text Content */}
         <div className="flex flex-col">
-          <h1 className="text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          {/* The mobile homepage's only visible H1, so it carries the keywords and the brand
+              is plain text; the look is unchanged (#444) */}
+          <p className="text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             Rescue Dog Aggregator
-          </h1>
-          <p className="text-[13px] text-[#6B7280] dark:text-zinc-400 leading-tight mt-0.5">
-            Your gateway to European rescue dogs
           </p>
+          <h1 className="text-[13px] font-normal text-[#6B7280] dark:text-zinc-400 leading-tight mt-0.5">
+            Your gateway to European rescue dogs
+          </h1>
         </div>
       </div>
     </header>

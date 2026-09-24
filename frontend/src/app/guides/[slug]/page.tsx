@@ -1,4 +1,5 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
+import { clampDescription, clampTitle } from "@/utils/seoMeta";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
@@ -41,8 +42,8 @@ export async function generateMetadata({
   const { frontmatter } = guide;
 
   return {
-    title: `${frontmatter.title} | Rescue Dog Aggregator`,
-    description: frontmatter.description,
+    title: clampTitle(frontmatter.seoTitle ?? frontmatter.title),
+    description: clampDescription(frontmatter.seoDescription ?? frontmatter.description),
     keywords: frontmatter.keywords,
     authors: [{ name: frontmatter.author }],
 

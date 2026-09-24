@@ -1,4 +1,5 @@
 import { formatCount } from "@/utils/formatCount";
+import { clampDescription } from "@/utils/seoMeta";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import PuppiesClient from "./PuppiesClient";
@@ -19,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: `${formatCount(count)}+ Rescue Puppies for Adoption | Find Your Perfect Puppy`,
-    description: `Adopt a rescue puppy today. Browse ${formatCount(count)} puppies under 1 year old from verified rescue organizations across Europe. ${puppyCategory.tagline}`,
+    description: clampDescription(`Adopt a rescue puppy today. Browse ${formatCount(count)} puppies under 1 year old from verified rescue organizations across Europe. ${puppyCategory.tagline}`),
     keywords: puppyCategory.seoKeywords,
     alternates: {
       canonical: "https://www.rescuedogs.me/dogs/puppies",

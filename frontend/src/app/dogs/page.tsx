@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { clampDescription } from "@/utils/seoMeta";
+import { formatCount } from "@/utils/formatCount";
 import { Suspense } from "react";
 import {
   getAnimals,
   getAllMetadata,
+  getStatistics,
 } from "../../services/serverAnimalsService";
 import DogsPageClientSimplified from "./DogsPageClientSimplified";
 import Layout from "../../components/layout/Layout";
@@ -12,10 +15,15 @@ import "../../styles/animations.css";
 export const revalidate = 21600;
 
 export async function generateMetadata(): Promise<Metadata> {
+  const stats = await getStatistics();
   return {
     title: "Find Your New Best Friend | Rescue Dog Aggregator",
-    description:
-      "Browse hundreds of rescue dogs looking for their forever homes. Filter by breed, size, age, location, and personality traits from 13 verified European organizations.",
+    // Live figures, as on the homepage; the hardcoded "hundreds … 13 organizations" went stale (#444)
+    description: clampDescription(
+      stats.total_dogs > 0
+        ? `Browse ${formatCount(stats.total_dogs)} rescue dogs from ${stats.total_organizations} verified European rescues. Filter by breed, size, age, location and personality.`
+        : "Browse rescue dogs from verified European rescues. Filter by breed, size, age, location and personality.",
+    ),
     alternates: {
       canonical: "https://www.rescuedogs.me/dogs",
     },

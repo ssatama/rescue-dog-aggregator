@@ -39,7 +39,8 @@ describe("Social Sharing Optimization - Phase 3B", () => {
 
       // Should have meaningful fallbacks - page uses hardcoded fallback currently
       expect(metadata.title).toContain("Dog");
-      expect(metadata.title).toContain("Available for Adoption");
+      expect(metadata.title).toContain("for Adoption");
+      expect(metadata.title).not.toContain("null");
       expect(metadata.description).toBeDefined();
       expect(metadata.openGraph).toBeDefined();
       expect(metadata.twitter).toBeDefined();

@@ -49,6 +49,7 @@ export interface ApiOrganization {
   country?: string;
   city?: string;
   ships_to?: string[];
+  total_dogs?: number;
 }
 
 export interface ApiDog {

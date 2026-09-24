@@ -7,6 +7,8 @@ import {
 import { reportError } from "../../../utils/logger";
 import Layout from "../../../components/layout/Layout";
 import ServerDogListing from "@/components/dogs/ServerDogListing";
+import { clampDescription, clampTitle } from "@/utils/seoMeta";
+import { getCountryName } from "@/utils/countryNames";
 import { getAnimals } from "@/services/serverAnimalsService";
 import OrganizationDetailClient from "./OrganizationDetailClient";
 import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
@@ -28,20 +30,21 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
     const resolvedParams = await props.params;
     const organization = await getOrganizationBySlug(resolvedParams.slug);
 
-    const title = `${organization.name} - Dog Rescue Organization | Rescue Dog Aggregator`;
+    const title = clampTitle(`${organization.name}: Rescue Dogs for Adoption`);
 
-    let description = `Learn about ${organization.name} and their available dogs for adoption.`;
-
-    if (organization.description) {
-      description += ` ${organization.description}`;
-    }
-
-    if (organization.city || organization.country) {
-      const location = [organization.city, organization.country]
-        .filter(Boolean)
-        .join(", ");
-      description += ` Located in ${location}.`;
-    }
+    // A short third-person summary, not the rescue's own (often first-person, 1,000-char,
+    // multi-line) blurb, which search results cut off mid-sentence (#444)
+    const location = [organization.city, organization.country ? getCountryName(organization.country) : null]
+      .filter(Boolean)
+      .join(", ");
+    const shipsTo = (organization.ships_to ?? []).map((code) => getCountryName(code));
+    const count = organization.total_dogs ?? 0;
+    const description = clampDescription(
+      [
+        `${count > 0 ? `${count} ${count === 1 ? "dog" : "dogs"}` : "Dogs"} available for adoption from ${organization.name}${location ? `, a rescue in ${location}` : ""}.`,
+        shipsTo.length === 1 ? `Adopts to ${shipsTo[0]}.` : shipsTo.length > 1 ? `Adopts to ${shipsTo.length} countries.` : "",
+      ].join(" "),
+    );
 
     const openGraphType = "website";
 
@@ -53,7 +56,7 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
       },
       openGraph: {
         title: `${organization.name} - Dog Rescue Organization`,
-        description: `Learn about ${organization.name} and their available dogs for adoption.${organization.description ? ` ${organization.description}` : ""}`,
+        description,
         type: openGraphType,
         locale: "en_US",
         siteName: "Rescue Dog Aggregator",

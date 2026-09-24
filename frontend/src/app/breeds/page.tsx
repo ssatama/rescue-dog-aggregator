@@ -1,4 +1,5 @@
 import { formatCount } from "@/utils/formatCount";
+import { clampDescription } from "@/utils/seoMeta";
 import type { Metadata } from "next";
 
 import BreedsHubClient from "./BreedsHubClient";
@@ -24,8 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: `Dog Breeds | ${formatCount(totalDogs)} Rescue Dogs Across ${uniqueBreeds} Breeds`,
-    description:
-      `Discover rescue dogs by breed. Browse ${qualifyingBreedsCount} popular breeds with dedicated pages, personality profiles, and real-time availability from verified rescue organizations.`,
+    description: clampDescription(`Discover rescue dogs by breed. Browse ${qualifyingBreedsCount} popular breeds with dedicated pages, personality profiles, and real-time availability from verified rescue organizations.`),
     keywords:
       "rescue dogs by breed, dog breeds for adoption, breed-specific rescue, purebred rescue dogs, mixed breed dogs, dog breed finder, rescue dog breeds, adoptable dog breeds",
     openGraph: {

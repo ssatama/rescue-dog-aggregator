@@ -15,6 +15,8 @@ import ImagePreload from "../../../components/seo/ImagePreload";
 import Layout from "../../../components/layout/Layout";
 import { prioritizeDogsForStaticParams } from "./prioritizeDogsForStaticParams";
 import { getIndexableBreeds } from "@/utils/indexableBreeds";
+import { clampDescription, clampTitle } from "@/utils/seoMeta";
+import { getCountryName } from "@/utils/countryNames";
 
 const STATIC_PARAMS_LIMIT = 500;
 
@@ -54,14 +56,18 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
       };
     }
 
-    const titleBase = dog.llm_tagline
-      ? `${dog.name}: ${dog.llm_tagline}`
-      : `${dog.name} - ${dog.standardized_breed || dog.breed || "Dog"} Available for Adoption`;
-    const title = `${titleBase} | Rescue Dog Aggregator`;
+    // Name, breed and location first, no site suffix: search engines cut titles past ~65
+    // characters, and the suffix used to push every dog page over (#444)
+    const breedLabel = dog.standardized_breed || dog.breed;
+    const breedText = breedLabel && breedLabel.toLowerCase() !== "unknown" ? breedLabel : "Rescue Dog";
+    const country = dog.organization?.country ? getCountryName(dog.organization.country) : null;
+    const title = clampTitle(
+      `${dog.name || "Rescue Dog"}, ${breedText} for Adoption${country && country !== "Unknown" ? ` in ${country}` : ""}`,
+    );
 
     const seoDescription = generateSEODescription(dog);
 
-    const description = seoDescription || generateFallbackDescription(dog);
+    const description = clampDescription(seoDescription || generateFallbackDescription(dog));
 
     const truncateDescription = (text: string | null, maxLength: number): string | undefined => {
       if (!text) return undefined;
