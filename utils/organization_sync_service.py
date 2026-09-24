@@ -166,6 +166,13 @@ class OrganizationSyncService:
         if db_org.active != config.enabled:
             return True
 
+        # Check location and service regions (#450: a country code fix never synced)
+        if db_org.country != config.metadata.location.country or db_org.city != config.metadata.location.city:
+            return True
+
+        if set(db_org.service_regions or []) != set(config.metadata.service_regions or []):
+            return True
+
         return False
 
     def _build_social_media_dict(self, config: OrganizationConfig) -> dict[str, str]:
