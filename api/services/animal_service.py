@@ -18,6 +18,7 @@ from api.exceptions import APIException
 from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse, FilterOption
+from api.utils.availability import publicly_available
 from api.utils.json_parser import build_organization_object, parse_json_field, parse_optional_json_field
 from api.utils.sql_utils import escape_like_pattern
 from utils.breed_utils import QUALIFYING_BREED_MIN_COUNT, generate_breed_slug
@@ -366,7 +367,7 @@ class AnimalService:
         try:
             # Don't filter by status - allow all dogs to be viewed
             # Include organization stats and recent dogs for the organization card
-            query = """
+            query = f"""
                 SELECT a.*,
                        o.name as org_name,
                        o.slug as org_slug,
@@ -377,8 +378,8 @@ class AnimalService:
                        o.social_media as org_social_media,
                        o.ships_to as org_ships_to,
                        o.service_regions as org_service_regions,
-                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND active = true) as org_total_dogs,
-                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND active = true AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND {publicly_available(None)}) as org_total_dogs,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND {publicly_available(None)} AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
                        (
                            SELECT COALESCE(
                                json_agg(
@@ -397,8 +398,7 @@ class AnimalService:
                            FROM (
                                SELECT * FROM animals
                                WHERE organization_id = o.id
-                               AND status = 'available'
-                               AND active = true
+                               AND {publicly_available(None)}
                                ORDER BY created_at DESC
                                LIMIT 3
                            ) a2
@@ -435,7 +435,7 @@ class AnimalService:
         try:
             # Don't filter by status - allow all dogs to be viewed
             # Include organization stats and recent dogs for the organization card
-            query = """
+            query = f"""
                 SELECT a.*,
                        o.name as org_name,
                        o.slug as org_slug,
@@ -446,8 +446,8 @@ class AnimalService:
                        o.social_media as org_social_media,
                        o.ships_to as org_ships_to,
                        o.service_regions as org_service_regions,
-                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND active = true) as org_total_dogs,
-                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND active = true AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND {publicly_available(None)}) as org_total_dogs,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND {publicly_available(None)} AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
                        (
                            SELECT COALESCE(
                                json_agg(
@@ -466,8 +466,7 @@ class AnimalService:
                            FROM (
                                SELECT * FROM animals
                                WHERE organization_id = o.id
-                               AND status = 'available'
-                               AND active = true
+                               AND {publicly_available(None)}
                                ORDER BY created_at DESC
                                LIMIT 3
                            ) a2
@@ -675,12 +674,10 @@ class AnimalService:
 
             # Get total available dogs count
             self.cursor.execute(
-                """
+                f"""
                 SELECT COUNT(*) as total
                 FROM animals
-                WHERE status = 'available'
-                  AND active = true
-                  AND availability_confidence IN ('high', 'medium')
+                WHERE {publicly_available(None)}
             """
             )
             stats["total_dogs"] = self.cursor.fetchone()["total"]
@@ -697,13 +694,11 @@ class AnimalService:
 
             # Get countries with dog counts
             self.cursor.execute(
-                """
+                f"""
                 SELECT o.country, COUNT(a.id) as count
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
-                WHERE a.status = 'available'
-                  AND a.active = true
-                  AND a.availability_confidence IN ('high', 'medium')
+                WHERE {publicly_available("a")}
                   AND o.active = TRUE
                   AND o.country IS NOT NULL
                 GROUP BY o.country
@@ -714,16 +709,14 @@ class AnimalService:
 
             # Get organizations with statistics
             self.cursor.execute(
-                """
+                f"""
                 SELECT o.id, o.name, o.slug, o.logo_url, o.country, o.city, o.ships_to, o.service_regions,
                        o.social_media, o.website_url, o.description,
                        COUNT(a.id) as dog_count,
                        COUNT(CASE WHEN a.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as new_this_week
                 FROM organizations o
                 LEFT JOIN animals a ON o.id = a.organization_id
-                    AND a.status = 'available'
-                    AND a.active = true
-                    AND a.availability_confidence IN ('high', 'medium')
+                    AND {publicly_available("a")}
                 WHERE o.active = TRUE
                 GROUP BY o.id, o.name, o.slug, o.logo_url, o.country, o.city, o.ships_to, o.service_regions,
                          o.social_media, o.website_url, o.description
@@ -773,13 +766,12 @@ class AnimalService:
         try:
             # Get total dog count
             self.cursor.execute(
-                """
+                f"""
                 SELECT COUNT(*) as total
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
                 WHERE a.animal_type = 'dog'
-                AND a.status = 'available'
-                AND a.active = true
+                AND {publicly_available("a")}
                 AND o.active = TRUE
             """
             )
@@ -787,13 +779,12 @@ class AnimalService:
 
             # Get unique breed count (where primary_breed is not null)
             self.cursor.execute(
-                """
+                f"""
                 SELECT COUNT(DISTINCT primary_breed) as count
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
                 WHERE a.animal_type = 'dog'
-                AND a.status = 'available'
-                AND a.active = true
+                AND {publicly_available("a")}
                 AND o.active = TRUE
                 AND a.primary_breed IS NOT NULL
             """
@@ -802,15 +793,14 @@ class AnimalService:
 
             # Get breed groups distribution
             self.cursor.execute(
-                """
+                f"""
                 SELECT
                     COALESCE(breed_group, 'Unknown') as group_name,
                     COUNT(*) as count
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
                 WHERE a.animal_type = 'dog'
-                AND a.status = 'available'
-                AND a.active = true
+                AND {publicly_available("a")}
                 AND o.active = TRUE
                 GROUP BY COALESCE(breed_group, 'Unknown')
                 ORDER BY count DESC
@@ -820,7 +810,7 @@ class AnimalService:
 
             # Get qualifying breeds with organization distribution
             self.cursor.execute(
-                """
+                f"""
                 WITH breed_stats AS (
                     SELECT
                         a.primary_breed,
@@ -873,8 +863,7 @@ class AnimalService:
                     FROM animals a
                     JOIN organizations o ON a.organization_id = o.id
                     WHERE a.animal_type = 'dog'
-                    AND a.status = 'available'
-                    AND a.active = true
+                    AND {publicly_available("a")}
                     AND o.active = TRUE
                     AND a.primary_breed IS NOT NULL
                     GROUP BY a.primary_breed, a.breed_slug, a.breed_group
@@ -893,12 +882,11 @@ class AnimalService:
                         COALESCE(a.dog_profiler_data->'personality_traits', '[]'::jsonb)
                     ) AS trait
                     WHERE a.animal_type = 'dog'
-                    AND a.status = 'available'
-                    AND a.active = true
+                    AND {publicly_available("a")}
                     AND o.active = TRUE
                     AND a.primary_breed IS NOT NULL
                     AND a.dog_profiler_data IS NOT NULL
-                    AND a.dog_profiler_data != '{}'::jsonb
+                    AND a.dog_profiler_data != '{{}}'::jsonb
                     AND jsonb_typeof(a.dog_profiler_data->'personality_traits') = 'array'
                     GROUP BY a.primary_breed, LOWER(trait)
                 ),
@@ -1068,14 +1056,14 @@ class AnimalService:
 
             # Get purebred and crossbreed counts
             self.cursor.execute(
-                """
+                f"""
                 SELECT
                     COUNT(*) FILTER (WHERE breed_type = 'purebred') as purebred_count,
                     COUNT(*) FILTER (WHERE breed_type = 'crossbreed') as crossbreed_count
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
                 WHERE a.animal_type = 'dog'
-                AND a.status = 'available'
+                AND {publicly_available("a")}
                 AND o.active = TRUE
             """
             )
