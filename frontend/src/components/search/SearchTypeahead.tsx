@@ -251,12 +251,13 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
     );
 
     // Search handler
-    const handleSearch = useCallback(() => {
-      if (inputValue.trim()) {
-        saveToHistory(inputValue);
+    const submitSearch = useCallback(
+      (term: string) => {
+        if (!term.trim()) return;
+        saveToHistory(term);
 
         // Track search with basic filters (empty object for now)
-        trackSearch(inputValue, {}, filteredSuggestions.length);
+        trackSearch(term, {}, filteredSuggestions.length);
         if (analytics) {
           trackSearchPerformed(
             analytics.surface,
@@ -265,16 +266,28 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
           );
         }
 
-        onSearch?.(inputValue);
+        onSearch?.(term);
         setIsOpen(false);
-      }
-    }, [
-      inputValue,
-      onSearch,
-      saveToHistory,
-      filteredSuggestions.length,
-      analytics,
-    ]);
+      },
+      [onSearch, saveToHistory, filteredSuggestions.length, analytics],
+    );
+
+    const handleSearch = useCallback(() => {
+      submitSearch(inputValue);
+    }, [submitSearch, inputValue]);
+
+    // A recent search is text the visitor typed earlier, not a suggestion
+    // from the list, so it re-runs as a typed search.
+    const handleHistorySelect = useCallback(
+      (term: string) => {
+        setInputValue(term);
+        setSelectedIndex(-1);
+        onValueChange?.(term);
+        submitSearch(term);
+        inputRef.current?.focus();
+      },
+      [onValueChange, submitSearch],
+    );
 
     // Keyboard navigation
     const handleKeyDown = useCallback(
@@ -308,7 +321,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
                 handleSuggestionSelect(filteredSuggestions[selectedIndex]);
               } else {
                 const historyIndex = selectedIndex - filteredSuggestions.length;
-                handleSuggestionSelect(searchHistory[historyIndex]);
+                handleHistorySelect(searchHistory[historyIndex]);
               }
             } else {
               handleSearch();
@@ -331,6 +344,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
         filteredSuggestions,
         searchHistory,
         handleSuggestionSelect,
+        handleHistorySelect,
         handleSearch,
       ],
     );
@@ -521,7 +535,7 @@ const SearchTypeahead = forwardRef<SearchTypeaheadRef, SearchTypeaheadProps>(
                             ? "bg-gray-100 dark:bg-gray-700"
                             : ""
                         }`}
-                        onClick={() => handleSuggestionSelect(item)}
+                        onClick={() => handleHistorySelect(item)}
                         role="option"
                         aria-selected={selectedIndex === actualIndex}
                       >

@@ -702,6 +702,35 @@ describe("SearchTypeahead", () => {
       expect(JSON.stringify(posthog.capture.mock.calls)).not.toContain("Bella");
     });
 
+    it("re-runs a recent search as typed text, not as a picked suggestion", async () => {
+      const user = userEvent.setup();
+      const onSuggestionSelect = jest.fn();
+      const onSearch = jest.fn();
+      localStorageMock.setItem("search-history", JSON.stringify([typed]));
+
+      render(
+        <SearchTypeahead
+          {...defaultProps}
+          showHistory={true}
+          onSuggestionSelect={onSuggestionSelect}
+          onSearch={onSearch}
+          analytics={{ surface: "catalog", suggestionGroup: "breed" }}
+        />,
+      );
+
+      fireEvent.focus(screen.getByPlaceholderText("Search dogs..."));
+      await user.click(await screen.findByText(typed));
+
+      expect(onSuggestionSelect).not.toHaveBeenCalled();
+      expect(onSearch).toHaveBeenCalledWith(typed);
+      expect(posthog.capture).toHaveBeenCalledWith(
+        "search_performed",
+        expect.objectContaining({ result_group_chosen: "none" }),
+        undefined,
+      );
+      expect(JSON.stringify(posthog.capture.mock.calls)).not.toContain("10115");
+    });
+
     it("sends nothing from a box without the analytics prop", async () => {
       const user = userEvent.setup();
       render(<SearchTypeahead {...defaultProps} debounceMs={0} />);
