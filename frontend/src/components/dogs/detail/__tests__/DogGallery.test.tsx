@@ -45,12 +45,12 @@ describe("DogGallery", () => {
     const next = screen.getByRole("button", { name: "Next photo" });
 
     expect(screen.getByText("1 / 4")).toBeInTheDocument();
-    expect(prev).toBeDisabled();
+    expect(prev).toHaveAttribute("aria-disabled", "true");
 
     fireEvent.click(next);
     expect(screen.getByText("2 / 4")).toBeInTheDocument();
     expect(screen.getByText("2 / 4").closest("[aria-live]")).toHaveAttribute("aria-live", "polite");
-    expect(prev).toBeEnabled();
+    expect(prev).not.toHaveAttribute("aria-disabled");
   });
 
   it("moves with the arrow, Home and End keys", () => {
@@ -59,7 +59,7 @@ describe("DogGallery", () => {
 
     fireEvent.keyDown(gallery, { key: "End" });
     expect(screen.getByText("5 / 5")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Next photo" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next photo" })).toHaveAttribute("aria-disabled", "true");
 
     fireEvent.keyDown(gallery, { key: "ArrowLeft" });
     expect(screen.getByText("4 / 5")).toBeInTheDocument();
@@ -286,5 +286,22 @@ describe("DogGallery", () => {
     left = 400;
     fireEvent.scroll(track);
     expect(screen.getByText("2 / 3")).toBeInTheDocument();
+  });
+
+  it("keeps focus on an arrow that reaches the end, so keys stay with the gallery", () => {
+    renderGallery(photos(2));
+    const next = screen.getByRole("button", { name: "Next photo" });
+    next.focus();
+
+    fireEvent.click(next);
+    expect(screen.getByText("2 / 2")).toBeInTheDocument();
+    expect(next).toHaveFocus();
+    expect(next).toHaveAttribute("aria-disabled", "true");
+
+    // A click at the end does nothing; ← still goes back a photo
+    fireEvent.click(next);
+    expect(screen.getByText("2 / 2")).toBeInTheDocument();
+    expect(fireEvent.keyDown(next, { key: "ArrowLeft" })).toBe(false);
+    expect(screen.getByText("1 / 2")).toBeInTheDocument();
   });
 });
