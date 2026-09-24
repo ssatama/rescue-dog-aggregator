@@ -12,6 +12,7 @@ from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import BreedStatsResponse, FilterCountsResponse
 from api.services import AnimalService
+from api.services.animal_service import list_images_sql
 from api.utils.availability import publicly_available
 from api.utils.sql_utils import escape_like_pattern
 
@@ -521,14 +522,15 @@ async def get_random_animals(
 ):
     """Get random available dogs for featured section."""
     try:
-        query = """
+        query = f"""
             SELECT id, name, slug, animal_type, breed, standardized_breed, breed_group,
                    primary_breed, breed_type, breed_confidence, secondary_breed, breed_slug,
                    age_text, age_min_months, age_max_months, sex, size, standardized_size,
                    status, primary_image_url, adoption_url, organization_id, external_id,
                    language, properties, created_at, updated_at, last_scraped_at,
                    availability_confidence, last_seen_at, consecutive_scrapes_missing,
-                   dog_profiler_data
+                   dog_profiler_data,
+                   {list_images_sql("animals")}
             FROM animals
             WHERE animal_type = 'dog' AND status = %s AND active = true
             ORDER BY (abs(hashtext(id::text || to_char(now(), 'IYYY-IW'))) %% 1000)

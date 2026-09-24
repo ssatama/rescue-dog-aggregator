@@ -73,6 +73,12 @@ export const ApiOrganizationEmbeddedSchema = z
   })
   .passthrough();
 
+export const DogImageSchema = z.object({
+  url: z.string(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+
 export const ApiDogSchema = z
   .object({
     id: z.union([z.number(), z.string()]),
@@ -102,6 +108,7 @@ export const ApiDogSchema = z
     primary_image_url: z.string().optional(),
     image: z.string().optional(),
     main_image: z.string().optional(),
+    images: z.array(DogImageSchema).optional(),
     location: z.string().optional(),
     city: z.string().optional(),
     state: z.string().optional(),

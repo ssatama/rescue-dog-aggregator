@@ -106,6 +106,22 @@ describe("ApiDogSchema", () => {
     expect(withSnakeCase.dog_profiler_data?.confidence).toBe("shy");
   });
 
+  it("parses a gallery, including a hero with no size after stripNulls", () => {
+    const result = ApiDogSchema.parse(
+      stripNulls({
+        ...validDog,
+        images: [
+          { url: "https://example.com/1.jpg", width: 800, height: 600 },
+          { url: "https://example.com/hero.jpg", width: null, height: null },
+        ],
+      }),
+    );
+    expect(result.images).toEqual([
+      { url: "https://example.com/1.jpg", width: 800, height: 600 },
+      { url: "https://example.com/hero.jpg" },
+    ]);
+  });
+
   it("handles null values after stripNulls preprocessing", () => {
     const apiResponse = {
       id: 1,
