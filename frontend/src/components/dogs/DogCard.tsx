@@ -71,8 +71,21 @@ function getWhere(dog: Dog): string | null {
 // A photo close to the 4:3 frame fills it. Anything taller, wider or smaller
 // than the frame is shown whole over a blurred copy of itself, so heads are
 // never cropped and small photos are never stretched.
-const FILL_MIN_RATIO = 1.1;
+const FILL_MIN_RATIO = 0.95;
 const FILL_MAX_RATIO = 1.6;
+
+/** The photo's real pixel size. With a srcset the browser scales
+ * naturalWidth by the chosen candidate's density, so a 600px photo can
+ * report 108; a plain Image of the same (cached) URL reports the truth. */
+function measure(img: HTMLImageElement, done: (w: number, h: number) => void): void {
+  if (!img.currentSrc) {
+    done(img.naturalWidth, img.naturalHeight);
+    return;
+  }
+  const probe = new window.Image();
+  probe.onload = () => done(probe.naturalWidth, probe.naturalHeight);
+  probe.src = img.currentSrc;
+}
 
 function CardPhoto({
   dog,
@@ -88,13 +101,16 @@ function CardPhoto({
 
   const handleLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    const ratio = img.naturalWidth / img.naturalHeight;
-    const smallerThanFrame = img.naturalWidth < img.clientWidth;
-    setFit(
-      ratio >= FILL_MIN_RATIO && ratio <= FILL_MAX_RATIO && !smallerThanFrame
-        ? "fill"
-        : "whole",
-    );
+    const frameWidth = img.clientWidth;
+    measure(img, (width, height) => {
+      const ratio = width / height;
+      const smallerThanFrame = width < frameWidth;
+      setFit(
+        ratio >= FILL_MIN_RATIO && ratio <= FILL_MAX_RATIO && !smallerThanFrame
+          ? "fill"
+          : "whole",
+      );
+    });
   }, []);
 
   if (!src) {
@@ -252,7 +268,7 @@ function DogCard({
             {dog.name}
           </Link>
         </h3>
-        {summary && <p className="mt-0.5 truncate text-sm text-subtle">{summary}</p>}
+        {summary && <p className="mt-0.5 line-clamp-2 text-sm text-subtle">{summary}</p>}
         {where && <p className="mt-0.5 truncate text-sm text-subtle">{where}</p>}
         <LivesWith facts={facts} />
       </div>

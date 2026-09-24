@@ -130,6 +130,11 @@ describe("DogCard", () => {
       expect(loadPhoto(1200, 900)).toHaveAttribute("data-fit", "fill");
     });
 
+    it("fills the frame with a square photo", () => {
+      render(<DogCard dog={fullDog} />);
+      expect(loadPhoto(600, 600, 139)).toHaveAttribute("data-fit", "fill");
+    });
+
     it("shows a very tall photo whole over a blurred copy", () => {
       render(<DogCard dog={fullDog} />);
       expect(loadPhoto(600, 1200)).toHaveAttribute("data-fit", "whole");
