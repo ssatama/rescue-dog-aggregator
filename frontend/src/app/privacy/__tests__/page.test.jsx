@@ -110,7 +110,7 @@ describe("Privacy Page", () => {
       expect(posthogLink).toHaveAttribute("href", "https://posthog.com/privacy");
       expect(screen.getByText(/stored in the eu/i)).toBeInTheDocument();
       expect(
-        screen.getByText(/nothing is stored on your device/i)
+        screen.getByText(/analytics store nothing on your device/i)
       ).toBeInTheDocument();
     });
 

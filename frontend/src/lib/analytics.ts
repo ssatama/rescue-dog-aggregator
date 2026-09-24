@@ -1,4 +1,6 @@
-import posthog from "posthog-js";
+import posthog, { type CaptureOptions } from "posthog-js";
+import { getAgeCategory } from "@/utils/dogHelpers";
+import { reportError } from "@/utils/logger";
 
 // Product analytics events for PostHog. Every posthog.capture() goes through
 // this file so the event names and their properties live in one place.
@@ -19,7 +21,8 @@ export interface AnalyticsDog {
   slug?: string;
   standardized_breed?: string;
   breed?: string;
-  age_category?: string;
+  age_min_months?: number;
+  age_text?: string;
   sex?: string;
   standardized_size?: string;
   size?: string;
@@ -30,9 +33,23 @@ export interface AnalyticsDog {
 export type DogViewSource = "detail_page" | "modal";
 export type AdoptionSource = "detail_page" | "modal" | "comparison";
 
-function capture(event: string, properties: Record<string, unknown>): void {
+// Outbound clicks send at once instead of joining the 3-second batch: opening
+// the rescue's site backgrounds this tab, and a mobile browser may suspend it
+// before the batch flushes.
+const OUTBOUND: CaptureOptions = { send_instantly: true };
+
+/** Never throws: tracking runs inside click handlers that must still work. */
+function capture(
+  event: string,
+  properties: Record<string, unknown>,
+  options?: CaptureOptions,
+): void {
   if (!posthog.__loaded) return;
-  posthog.capture(event, properties);
+  try {
+    posthog.capture(event, properties, options);
+  } catch (error) {
+    reportError(error, { context: "analytics.capture", event });
+  }
 }
 
 function hostname(url: string | undefined): string | null {
@@ -50,7 +67,11 @@ export function dogProperties(dog: AnalyticsDog): Record<string, unknown> {
     dog_slug: dog.slug ?? null,
     dog_name: dog.name ?? null,
     breed: dog.standardized_breed || dog.breed || null,
-    age_category: dog.age_category ?? null,
+    // The API has no age category, so derive it the way the UI does
+    age_category: getAgeCategory({
+      age_min_months: dog.age_min_months,
+      age_text: dog.age_text,
+    }),
     sex: dog.sex ?? null,
     size: dog.standardized_size || dog.size || null,
     org_slug: dog.organization?.slug ?? null,
@@ -68,11 +89,15 @@ export function trackAdoptionLinkClicked(
   dog: AnalyticsDog,
   source: AdoptionSource,
 ): void {
-  capture("adoption_link_clicked", {
-    ...dogProperties(dog),
-    source,
-    destination_domain: hostname(dog.adoption_url),
-  });
+  capture(
+    "adoption_link_clicked",
+    {
+      ...dogProperties(dog),
+      source,
+      destination_domain: hostname(dog.adoption_url),
+    },
+    OUTBOUND,
+  );
 }
 
 export function trackDogCardClicked(
@@ -100,34 +125,32 @@ export function trackFavoritesViewed(count: number): void {
   capture("favorites_viewed", { favorites_count: count });
 }
 
-export function trackSearchSubmitted(query: string, suggestionCount: number): void {
+export function trackSearchSubmitted(
+  query: string,
+  suggestionCount: number,
+): void {
   capture("search_submitted", {
     query,
     suggestion_count: suggestionCount,
   });
 }
 
-/** `filterType` is "sort" for sort changes, so one event covers the toolbar. */
-export function trackFilterChanged(
-  filterType: string,
-  value: unknown,
-  resultCount: number,
-): void {
-  capture("filter_changed", {
-    filter_type: filterType,
-    value: typeof value === "string" ? value : JSON.stringify(value),
-    result_count: resultCount,
-  });
+/** One event per changed filter. Typed search is left out: it would send an
+ * event per keystroke, and submitted searches have their own event. */
+export function trackFiltersChanged(changes: Record<string, unknown>): void {
+  for (const [filterType, value] of Object.entries(changes)) {
+    if (filterType === "searchQuery") continue;
+    capture("filter_changed", {
+      filter_type: filterType,
+      value: typeof value === "string" ? value : JSON.stringify(value),
+    });
+  }
 }
 
-export function trackDogSwiped(
-  direction: "left" | "right",
-  dog: AnalyticsDog,
+export function trackOrganizationViewed(
+  orgSlug: string,
+  dogCount: number,
 ): void {
-  capture("dog_swiped", { ...dogProperties(dog), direction });
-}
-
-export function trackOrganizationViewed(orgSlug: string, dogCount: number): void {
   capture("organization_viewed", { org_slug: orgSlug, dog_count: dogCount });
 }
 
@@ -135,8 +158,12 @@ export function trackOrganizationWebsiteClicked(
   orgSlug: string,
   websiteUrl: string,
 ): void {
-  capture("organization_website_clicked", {
-    org_slug: orgSlug,
-    destination_domain: hostname(websiteUrl),
-  });
+  capture(
+    "organization_website_clicked",
+    {
+      org_slug: orgSlug,
+      destination_domain: hostname(websiteUrl),
+    },
+    OUTBOUND,
+  );
 }

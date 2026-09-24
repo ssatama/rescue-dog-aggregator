@@ -32,10 +32,7 @@ import {
   trackDogImageView,
   trackExternalLinkClick,
 } from "@/lib/monitoring/breadcrumbs";
-import {
-  trackAdoptionLinkClicked,
-  trackDogViewed,
-} from "@/lib/analytics";
+import { trackAdoptionLinkClicked, trackDogViewed } from "@/lib/analytics";
 import {
   PersonalityTraits,
   EnergyTrainability,
@@ -659,8 +656,20 @@ export default function DogDetailClient({
                                   className="flex items-center justify-center"
                                   data-testid="adopt-button"
                                   aria-label={`Start adoption process for ${dog.name}`}
+                                  onAuxClick={(e) => {
+                                    // Middle-click opens the link too
+                                    if (e.button === 1) {
+                                      trackAdoptionLinkClicked(
+                                        dog,
+                                        "detail_page",
+                                      );
+                                    }
+                                  }}
                                   onClick={() => {
-                                    trackAdoptionLinkClicked(dog, "detail_page");
+                                    trackAdoptionLinkClicked(
+                                      dog,
+                                      "detail_page",
+                                    );
                                     if (dog?.organization?.slug && dog?.id) {
                                       trackExternalLinkClick(
                                         "adopt",

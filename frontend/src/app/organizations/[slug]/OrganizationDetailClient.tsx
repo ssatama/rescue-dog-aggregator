@@ -216,6 +216,16 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
     }
   };
 
+  // Separate from the fetch below, which skips the org request (and anything
+  // inside it) when the server already rendered the organization.
+  const viewedOrgSlug = organization?.slug;
+  useEffect(() => {
+    if (viewedOrgSlug) {
+      trackOrganizationViewed(viewedOrgSlug, organization?.total_dogs ?? 0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per organization
+  }, [viewedOrgSlug]);
+
   useEffect(() => {
     const fetchData = async () => {
       if (!organizationSlug) return;
@@ -235,9 +245,7 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
 
           // Track organization page view
           if (orgData?.slug) {
-            const dogCount = (orgData as OrganizationWithDetails).total_dogs || 0;
-            trackOrgPageView(orgData.slug, dogCount);
-            trackOrganizationViewed(orgData.slug, dogCount);
+            trackOrgPageView(orgData.slug, (orgData as OrganizationWithDetails).total_dogs || 0);
           }
         }
 

@@ -18,6 +18,7 @@ import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import useScrollRestoration from "../../hooks/dogs/useScrollRestoration";
 import useDogsFilters from "../../hooks/dogs/useDogsFilters";
 import useDogsPagination from "../../hooks/dogs/useDogsPagination";
+import { trackFiltersChanged } from "@/lib/analytics";
 import type {
   DogsPageClientSimplifiedProps,
   Filters,
@@ -85,6 +86,9 @@ export default function DogsPageClientSimplified({
 
       filterState.updateURL(newFilters, 1, false);
       pagination.resetForNewFilters(newFilters, scrollPositionRef);
+      trackFiltersChanged(
+        typeof filterKey === "object" ? filterKey : { [filterKey]: value },
+      );
     },
     [filterState, pagination, scrollPositionRef],
   );

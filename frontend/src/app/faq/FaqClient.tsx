@@ -33,7 +33,7 @@ const FAQ_SECTIONS: FAQSectionData[] = [
       {
         question: "What are your core principles?",
         answer:
-          "Three simple principles guide everything we do: First, your privacy matters – no cookies, no tracking, no accounts required. Second, we'll never commercialize this platform. Third, dogs come first – we showcase them beautifully to give them the best chance of finding their forever families.",
+          "Three simple principles guide everything we do: First, your privacy matters – no cookies, no personal tracking, no accounts required. Second, we'll never commercialize this platform. Third, dogs come first – we showcase them beautifully to give them the best chance of finding their forever families.",
       },
       {
         question: "Are you affiliated with the rescue organizations?",
@@ -120,7 +120,7 @@ const FAQ_SECTIONS: FAQSectionData[] = [
       {
         question: "Do you track users or use cookies?",
         answer:
-          "No, and we mean it. We don't use cookies, don't require accounts, and don't track personal information. Your favorites are stored locally in your browser and never leave your device. We use only anonymous analytics to understand general usage patterns.",
+          "No, and we mean it. We don't use cookies, don't require accounts, and don't track personal information. Your favorites list is stored locally in your browser. We use only anonymous, cookie-free analytics to understand general usage patterns.",
       },
       {
         question: "How can I contact you?",

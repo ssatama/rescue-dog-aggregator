@@ -118,12 +118,21 @@ function FavoritesPageContent(): React.JSX.Element {
   useEffect(() => {
     try {
       trackFavoritesPageView(favorites.length);
-      trackFavoritesViewed(favorites.length);
     } catch (trackError) {
       reportError(trackError, { context: "trackFavoritesPageView" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Track only on mount
   }, []);
+
+  // Once, after favorites load from localStorage: on a direct load the mount
+  // effect above runs before the provider's and would always report 0.
+  const favoritesViewTracked = useRef(false);
+  useEffect(() => {
+    if (isHydrated && !favoritesViewTracked.current) {
+      favoritesViewTracked.current = true;
+      trackFavoritesViewed(favorites.length);
+    }
+  }, [isHydrated, favorites.length]);
 
   // Fetch dog data for favorites — only refetch when new IDs are added
   useEffect(() => {

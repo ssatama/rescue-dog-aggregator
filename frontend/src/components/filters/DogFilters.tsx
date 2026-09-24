@@ -25,7 +25,7 @@ import {
   trackFilterChange,
   trackSortChange,
 } from "@/lib/monitoring/breadcrumbs";
-import { trackFilterChanged } from "@/lib/analytics";
+import { trackFiltersChanged } from "@/lib/analytics";
 import type { DogFilterValues } from "@/types/filterComponents";
 import { logger } from "@/utils/logger";
 
@@ -82,7 +82,7 @@ export default function DogFilters({
         } else {
           trackFilterChange(filterType, value, totalCount || 0);
         }
-        trackFilterChanged(filterType, value, totalCount || 0);
+        trackFiltersChanged({ [filterType]: value });
       } catch (error) {
         logger.error("Failed to track filter change:", error);
       }

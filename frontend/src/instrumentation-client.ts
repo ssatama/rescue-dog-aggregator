@@ -43,44 +43,51 @@ try {
 } catch {
   // Blocked storage: the opt-out cannot be read, so capture as normal.
 }
-const posthogEnabled =
+let posthogInitError: unknown = null;
+let posthogEnabled =
   typeof window !== "undefined" &&
   !!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN &&
   (isProduction || window.location.search.includes("debug=posthog")) &&
   !resolvePosthogOptOut(window.location.search, posthogStorage);
 
+// Guarded so a PostHog failure can never stop Sentry from starting below.
 if (posthogEnabled) {
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
-    // PostHog-managed reverse proxy (CNAME to PostHog EU), so ad blockers
-    // don't drop events. It also serves the replay recorder script.
-    api_host: "https://e.rescuedogs.me",
-    ui_host: "https://eu.posthog.com",
-    // Pageviews on App Router navigations via the history API, plus current
-    // recommended defaults for everything else.
-    defaults: "2026-08-30",
-    // No cookies, no localStorage: the privacy page promises no cookies and
-    // there is no consent banner. The cost is that a full page reload starts
-    // a new anonymous visitor, so unique-visitor counts run high. We don't use
-    // `cookieless_mode: "always"` because it doesn't record session replays.
-    persistence: "memory",
-    // Sentry owns errors; the sentryIntegration below links the two.
-    capture_exceptions: false,
-    // The recorder bundle is large, so it starts once the page is idle
-    // (below), keeping it off the critical path for LCP.
-    disable_session_recording: true,
-  });
+  try {
+    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
+      // PostHog-managed reverse proxy (CNAME to PostHog EU), so ad blockers
+      // don't drop events. It also serves the replay recorder script.
+      api_host: "https://e.rescuedogs.me",
+      ui_host: "https://eu.posthog.com",
+      // Pageviews on App Router navigations via the history API, plus current
+      // recommended defaults for everything else.
+      defaults: "2026-08-30",
+      // No cookies, no localStorage: the privacy page promises no cookies and
+      // there is no consent banner. The cost is that a full page reload starts
+      // a new anonymous visitor, so unique-visitor counts run high. We don't use
+      // `cookieless_mode: "always"` because it doesn't record session replays.
+      persistence: "memory",
+      // Sentry owns errors; the sentryIntegration below links the two.
+      capture_exceptions: false,
+      // The recorder bundle is large, so it starts once the page is idle
+      // (below), keeping it off the critical path for LCP.
+      disable_session_recording: true,
+    });
 
-  const startRecording = () => {
-    try {
-      posthog.startSessionRecording();
-    } catch {
-      // Replays are best effort; a blocked recorder script is not a bug.
+    const startRecording = () => {
+      try {
+        posthog.startSessionRecording();
+      } catch {
+        // Replays are best effort; a blocked recorder script is not a bug.
+      }
+    };
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(startRecording, { timeout: 2000 });
+    } else {
+      setTimeout(startRecording, 2000);
     }
-  };
-  if ("requestIdleCallback" in window) {
-    window.requestIdleCallback(startRecording, { timeout: 2000 });
-  } else {
-    setTimeout(startRecording, 2000);
+  } catch (error) {
+    posthogEnabled = false;
+    posthogInitError = error;
   }
 }
 
@@ -313,6 +320,12 @@ if (
       trackThemeChange();
     }
   });
+
+  if (posthogInitError) {
+    Sentry.captureException(posthogInitError, {
+      tags: { component: "posthog-init" },
+    });
+  }
 
   // Setup chunk error handler for auto-reload on stale chunks
   setupChunkErrorHandler();
