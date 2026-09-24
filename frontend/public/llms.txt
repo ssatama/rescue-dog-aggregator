@@ -27,9 +27,9 @@ An official Model Context Protocol server exposes this catalogue as tools. It
 is the best interface for an assistant: results come back structured and
 pre-filtered to dogs that are actually still available.
 
-- Remote endpoint (streamable HTTP, no authentication): https://mcp.rescuedogs.me/mcp
-- Local install: `npx -y rescuedogs-mcp-server`
-- Source and docs: https://github.com/ssatama/rescuedogs-mcp-server
+- [Remote endpoint](https://mcp.rescuedogs.me/mcp): streamable HTTP, no authentication
+- [npm package](https://www.npmjs.com/package/rescuedogs-mcp-server): local install with `npx -y rescuedogs-mcp-server`
+- [Source and docs](https://github.com/ssatama/rescuedogs-mcp-server)
 
 Tools: `rescuedogs_search_dogs`, `rescuedogs_get_dog_details`,
 `rescuedogs_match_preferences`, `rescuedogs_list_breeds`,
@@ -41,28 +41,28 @@ All are read-only.
 ## REST API
 
 Public, read-only, no authentication or API key. Base URL:
-https://api.rescuedogs.me — OpenAPI spec at /openapi.json, docs at /docs.
+https://api.rescuedogs.me — [OpenAPI spec](https://api.rescuedogs.me/openapi.json), [interactive docs](https://api.rescuedogs.me/docs).
 
-- /api/animals/ — search and list dogs. Filters include `search`, `breed`,
+- [/api/animals/](https://api.rescuedogs.me/api/animals/): search and list dogs. Filters include `search`, `breed`,
   `breed_group`, `standardized_size`, `age_category`, `sex`, `energy_level`,
   `experience_level`, `home_type`, `available_to_country`, `organization_id`,
   `good_with_kids`, `good_with_dogs`, `good_with_cats`, `limit`, `offset`.
   Pass `status=available` and `availability_confidence=high,medium` to exclude
   dogs that are likely already adopted.
-- /api/animals/{slug} — one dog in full, including its AI personality profile
-- /api/animals/random — a random selection
-- /api/animals/statistics — totals by country and organization
-- /api/animals/breeds/stats — breed counts and distributions
-- /api/animals/meta/breeds — breed names
-- /api/animals/meta/breed_groups — breed groups. These are AKC-style plus two
+- `/api/animals/{slug}`: one dog in full, including its AI personality profile
+- [/api/animals/random](https://api.rescuedogs.me/api/animals/random): a random selection
+- [/api/animals/statistics](https://api.rescuedogs.me/api/animals/statistics): totals by country and organization
+- [/api/animals/breeds/stats](https://api.rescuedogs.me/api/animals/breeds/stats): breed counts and distributions
+- [/api/animals/meta/breeds](https://api.rescuedogs.me/api/animals/meta/breeds): breed names
+- [/api/animals/meta/breed_groups](https://api.rescuedogs.me/api/animals/meta/breed_groups): breed groups. These are AKC-style plus two
   custom values, not FCI: Designer/Hybrid, Guardian, Herding, Hound, Mixed,
   Non-Sporting, Sporting, Terrier, Toy, Working. Passing an FCI group name
   matches nothing.
-- /api/animals/meta/filter_counts — valid filter values with counts, given a
+- [/api/animals/meta/filter_counts](https://api.rescuedogs.me/api/animals/meta/filter_counts): valid filter values with counts, given a
   current filter context. Useful for avoiding searches that return nothing.
-- /api/organizations/ — rescue organizations
-- /api/organizations/{slug} — one organization, including where it ships to
-- /health — service health
+- [/api/organizations/](https://api.rescuedogs.me/api/organizations/): rescue organizations
+- `/api/organizations/{slug}`: one organization, including where it ships to
+- [/health](https://api.rescuedogs.me/health): service health
 
 The REST API publishes no hard quota, but please be reasonable with request
 volume - this is a small charity-adjacent project on modest infrastructure. The
@@ -70,27 +70,36 @@ MCP endpoint is rate limited per IP at 120 requests/minute and 3,000/hour.
 
 ## Key pages
 
-- https://www.rescuedogs.me/dogs — browse all available dogs
-- https://www.rescuedogs.me/dogs/{slug} — individual dog profile
-- https://www.rescuedogs.me/dogs/puppies — puppies
-- https://www.rescuedogs.me/dogs/senior — senior dogs
-- https://www.rescuedogs.me/dogs/country/{code} — dogs currently located in a
+- [/dogs](https://www.rescuedogs.me/dogs): browse all available dogs
+- `/dogs/{slug}`: individual dog profile
+- [/dogs/puppies](https://www.rescuedogs.me/dogs/puppies): puppies
+- [/dogs/senior](https://www.rescuedogs.me/dogs/senior): senior dogs
+- `/dogs/country/{code}`: dogs currently located in a
   country. This is a location filter, not an adoption-destination one, and
   only countries that currently have dogs have a page; /dogs/country lists
   them. For "can I adopt to X", use the API's `available_to_country` filter
   instead.
-- https://www.rescuedogs.me/breeds — breeds with availability
-- https://www.rescuedogs.me/breeds/{slug} — a specific breed
-- https://www.rescuedogs.me/organizations — rescue organizations
-- https://www.rescuedogs.me/organizations/{slug} — one organization
-- https://www.rescuedogs.me/guides — adoption guides
-- https://www.rescuedogs.me/faq — frequently asked questions
-- https://www.rescuedogs.me/about — mission and how the platform works
-- https://www.rescuedogs.me/privacy — privacy policy
-- https://www.rescuedogs.me/sitemap_index.xml — sitemap index, and the right
+- [/breeds](https://www.rescuedogs.me/breeds): breeds with availability
+- `/breeds/{slug}`: a specific breed
+- [/organizations](https://www.rescuedogs.me/organizations): rescue organizations
+- `/organizations/{slug}`: one organization
+- [/guides](https://www.rescuedogs.me/guides): adoption guides
+- [/faq](https://www.rescuedogs.me/faq): frequently asked questions
+- [/about](https://www.rescuedogs.me/about): mission and how the platform works
+- [/privacy](https://www.rescuedogs.me/privacy): privacy policy
+- [/sitemap_index.xml](https://www.rescuedogs.me/sitemap_index.xml): sitemap index, and the right
   entry point for crawling. It fans out to separate sitemaps for dogs, breeds,
   guides, organizations, countries and images. `/sitemap.xml` holds only the
   nine static pages and is not the full index.
+
+## Guides
+
+Long-form adoption guides, about 3,600 words each. Their full text is in
+[llms-full.txt](https://www.rescuedogs.me/llms-full.txt).
+
+- [European Rescue Guide: Everything You Need to Know](https://www.rescuedogs.me/guides/european-rescue-guide): adopting a rescue dog from Europe; what the law requires in the UK, EU and Switzerland, plus transport, costs and what to expect on arrival
+- [First-Time Owner Guide: Are You Ready for a Rescue Dog?](https://www.rescuedogs.me/guides/first-time-owner-guide): an honest readiness check for first-time owners, choosing the right rescue dog, the 3-3-3 rule and building trust with a dog from abroad
+- [Rescue Dog Adoption Costs: A European Budget Guide](https://www.rescuedogs.me/guides/costs-and-preparation): adoption fees, first-year setup, monthly budgets and how to save when adopting a European rescue dog
 
 ## Structured data
 
