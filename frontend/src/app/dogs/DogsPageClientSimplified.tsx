@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import GlobalSearch from "../../components/search/GlobalSearch";
+import OnlyAdoptableSwitch from "../../components/location/OnlyAdoptableSwitch";
 import useScrollRestoration from "../../hooks/dogs/useScrollRestoration";
 import useDogsFilters from "../../hooks/dogs/useDogsFilters";
 import useDogsPagination from "../../hooks/dogs/useDogsPagination";
@@ -131,6 +132,11 @@ export default function DogsPageClientSimplified({
   const handleBreedClear = useCallback(() => {
     handleFilterChange("breedFilter", "Any breed");
   }, [handleFilterChange]);
+
+  const setAvailableCountry = useCallback(
+    (value: string) => handleFilterChange("availableCountryFilter", value),
+    [handleFilterChange],
+  );
 
   const handleResetFilters = useCallback(() => {
     const defaultFilters: Filters = {
@@ -343,6 +349,14 @@ export default function DogsPageClientSimplified({
                 <AlertDescription>{pagination.error}</AlertDescription>
               </Alert>
             )}
+
+            {/* Labels come from the visitor's country; hiding the rest is opt-in (#493) */}
+            <OnlyAdoptableSwitch
+              countryOptions={metadata?.availableCountries || []}
+              value={filterState.filters.availableCountryFilter}
+              onChange={setAvailableCountry}
+              className="mb-4"
+            />
 
             {/* Dogs Grid */}
             <div

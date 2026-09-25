@@ -6,7 +6,9 @@ import { safeStorage } from "../../utils/safeStorage";
 import { get } from "../../utils/api";
 import type { CountryOption } from "../../services/serverSwipeService";
 import { reportError } from "../../utils/logger";
-import { getFlagEmoji } from "../../utils/countryNames";
+import { getFlagEmoji, normalizeCountryCode } from "../../utils/countryNames";
+import { catalogCountryValue } from "../../utils/adoptability";
+import { setVisitorCountry, useVisitorLocation } from "@/lib/visitorLocation";
 
 interface SwipeOnboardingProps {
   onComplete: (skipped: boolean, filters?: SwipeFilters) => void;
@@ -39,8 +41,9 @@ export default function SwipeOnboarding({
   onComplete,
   availableCountries,
 }: SwipeOnboardingProps) {
-  const [step, setStep] = useState(1);
-  const [selectedCountry, setSelectedCountry] = useState("");
+  // null until the visitor moves between steps themselves
+  const [chosenStep, setStep] = useState<number | null>(null);
+  const [pickedCountry, setSelectedCountry] = useState("");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedAges, setSelectedAges] = useState<string[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -50,6 +53,18 @@ export default function SwipeOnboarding({
   const [sizesWithCounts, setSizesWithCounts] = useState<SizeOption[]>(SIZES);
   const [loading, setLoading] = useState(!availableCountries);
   const [showAllCountries, setShowAllCountries] = useState(false);
+  const { country: visitorCountry, choice } = useVisitorLocation();
+
+  // Where the visitor lives is asked once, site-wide (#493). A country they
+  // chose is taken as the answer and onboarding starts at the size step; a
+  // guess from the connection is only pre-selected. The guess can arrive
+  // while step 1 is on screen, so it must not move the visitor on.
+  const knownCountry = catalogCountryValue(
+    countries.map((country) => country.value),
+    visitorCountry,
+  );
+  const selectedCountry = pickedCountry || knownCountry || "";
+  const step = chosenStep ?? (choice && knownCountry ? 2 : 1);
 
   // Fetch available countries dynamically if not provided via props
   useEffect(() => {
@@ -160,6 +175,8 @@ export default function SwipeOnboarding({
 
     safeStorage.set("swipeOnboardingComplete", "true");
     safeStorage.stringify("swipeFilters", filters);
+    // A country answered here is where they live for the rest of the site too
+    if (!choice && pickedCountry) setVisitorCountry(normalizeCountryCode(pickedCountry));
 
     onComplete(false, filters);
   };

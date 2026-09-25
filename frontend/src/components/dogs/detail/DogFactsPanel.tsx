@@ -22,6 +22,7 @@ import {
   listedAgo,
   medicalNote,
 } from "@/utils/dogFacts";
+import AdoptableBadge from "@/components/location/AdoptableBadge";
 import type { Dog } from "@/types/dog";
 
 const ENERGY: Record<string, string> = {
@@ -310,6 +311,7 @@ export default function DogFactsPanel({
       )}
 
       <Where dog={dog} />
+      <AdoptableBadge dog={dog} className="-mt-1 w-fit" />
       <LivesWith dog={dog} />
       <GoodToKnow dog={dog} />
 

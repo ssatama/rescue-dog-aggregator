@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import GlobalSearch from "../search/GlobalSearch";
+import LocationPicker from "../location/LocationPicker";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import HeaderDesktopNav from "./HeaderDesktopNav";
 import logo from "../../../public/logo.jpeg";
@@ -44,6 +45,8 @@ export default function Header() {
               <GlobalSearch surface="header" className="hidden w-full max-w-md sm:block" />
             </Suspense>
           </div>
+
+          <LocationPicker />
 
           <HeaderDesktopNav />
 

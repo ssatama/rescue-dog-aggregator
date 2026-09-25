@@ -80,3 +80,11 @@ export function getFlagEmoji(code: string | null | undefined): string {
   if (!/^[A-Z]{2}$/.test(normalized)) return "";
   return String.fromCodePoint(...[...normalized].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
+
+/** "🇬🇧 United Kingdom" for a country code in a filter; any other option
+ * ("Any country") is shown as it is. */
+export function countryOptionLabel(value: string): string {
+  const code = normalizeCountryCode(value);
+  if (!COUNTRY_NAMES[code]) return value;
+  return `${getFlagEmoji(code)} ${COUNTRY_NAMES[code]}`;
+}
