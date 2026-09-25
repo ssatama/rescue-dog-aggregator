@@ -82,109 +82,49 @@ const mockPopularBreeds = [
   },
 ];
 
-describe("PopularBreedsSection", () => {
-  it("renders section with title", () => {
-    render(<PopularBreedsSection popularBreeds={mockPopularBreeds} />);
-    expect(
-      screen.getByText("Popular Breeds Available Now"),
-    ).toBeInTheDocument();
-  });
+const mixed = {
+  primary_breed: "Mixed Breed",
+  breed_slug: "mixed",
+  breed_type: "mixed",
+  breed_group: "Mixed",
+  count: 70,
+  sample_dogs: [{ name: "Pip", primary_image_url: "https://example.com/pip.jpg" }],
+};
 
-  it("displays breed cards with images", () => {
-    render(<PopularBreedsSection popularBreeds={mockPopularBreeds} />);
-
-    // Check Galgo card
-    expect(screen.getByText("Galgo")).toBeInTheDocument();
-    expect(screen.getByText("120 available")).toBeInTheDocument();
-    const galgoImage = screen.getByAltText("Galgo rescue dog");
-    expect(galgoImage).toHaveAttribute("src", "https://example.com/shadow.jpg");
-
-    // Check Podenco card
-    expect(screen.getByText("Podenco")).toBeInTheDocument();
-    expect(screen.getByText("68 available")).toBeInTheDocument();
-    const podencoImage = screen.getByAltText("Podenco rescue dog");
-    expect(podencoImage).toHaveAttribute("src", "https://example.com/max.jpg");
-  });
-
-  it("displays breed group and characteristics", () => {
+describe("PopularBreedsSection (#500)", () => {
+  it("links each breed tile to its page with its count and group", () => {
     render(<PopularBreedsSection popularBreeds={mockPopularBreeds} />);
 
-    // Check breed groups are displayed (use getAllByText since there are multiple)
-    // A breed page covers the breed and its crosses, so a flat "Purebred"
-    // label would misdescribe it.
-    expect(screen.getAllByText(/Hound Group/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Herding Group/)).toBeInTheDocument();
-    expect(screen.queryByText(/Group • Purebred$/)).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Most dogs listed" })).toBeInTheDocument();
+    const galgo = screen.getByRole("link", { name: /Galgo/ });
+    expect(galgo).toHaveAttribute("href", "/breeds/galgo");
+    expect(galgo).toHaveTextContent("120 dogs · Hound");
+    expect(screen.getAllByTestId("breed-card")).toHaveLength(4);
   });
 
-  it("shows the breed's own traits, not one sample dog's", () => {
-    // The card used to read firstDog.personality_traits, presenting a single
-    // dog's traits as if they characterised the whole breed.
-    const breeds = [
-      {
-        ...mockPopularBreeds[0],
-        personality_traits: ["Steady", "Watchful"],
-      },
-    ];
-    render(<PopularBreedsSection popularBreeds={breeds} />);
+  it("shows mixed breeds as one tile among the breeds, placed by count", () => {
+    render(<PopularBreedsSection popularBreeds={[...mockPopularBreeds, mixed]} mixedBreed={mixed} />);
 
-    expect(screen.getByText("Steady")).toBeInTheDocument();
-    expect(screen.getByText("Watchful")).toBeInTheDocument();
+    const names = screen.getAllByTestId("breed-card").map((tile) => tile.querySelector("h3")?.textContent);
+    expect(names).toEqual(["Galgo", "Mixed breeds", "Podenco", "Collie", "Cocker Spaniel"]);
+    expect(screen.getByRole("link", { name: /Mixed breeds/ })).toHaveAttribute("href", "/breeds/mixed");
+  });
+
+  it("drops the generic trait chips every breed shared", () => {
+    render(<PopularBreedsSection popularBreeds={mockPopularBreeds} />);
+
     expect(screen.queryByText("Gentle")).not.toBeInTheDocument();
+    expect(screen.queryByText("Playful")).not.toBeInTheDocument();
   });
 
-  it("links to individual breed pages", () => {
+  it("links to the A–Z list", () => {
     render(<PopularBreedsSection popularBreeds={mockPopularBreeds} />);
 
-    const galgoLink = screen.getByRole("link", { name: /Galgo/i });
-    expect(galgoLink).toHaveAttribute("href", "/breeds/galgo");
-
-    const podencoLink = screen.getByRole("link", { name: /Podenco/i });
-    expect(podencoLink).toHaveAttribute("href", "/breeds/podenco");
+    expect(screen.getByRole("link", { name: /All breeds A–Z/ })).toHaveAttribute("href", "#all-breeds");
   });
 
-  it("displays Browse All Breeds link", () => {
-    render(<PopularBreedsSection popularBreeds={mockPopularBreeds} />);
-
-    const browseAllButton = screen.getByRole("button", {
-      name: /Browse All Breeds/i,
-    });
-    expect(browseAllButton).toBeInTheDocument();
-  });
-
-  it("renders empty state when no breeds provided", () => {
-    render(<PopularBreedsSection popularBreeds={[]} />);
-    expect(
-      screen.queryByText("Popular Breeds Available Now"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("shows correct count badges", () => {
-    render(<PopularBreedsSection popularBreeds={mockPopularBreeds} />);
-
-    // All breeds should show their counts as badges
-    mockPopularBreeds.forEach((breed) => {
-      expect(screen.getByText(`${breed.count} available`)).toBeInTheDocument();
-    });
-  });
-
-  it("limits display to 4 breeds on desktop", () => {
-    const manyBreeds = [...mockPopularBreeds, ...mockPopularBreeds]; // 8 breeds
-    render(<PopularBreedsSection popularBreeds={manyBreeds} />);
-
-    // Should only show first 4 breed names
-    const breedNames = screen.getAllByTestId("breed-card");
-    expect(breedNames).toHaveLength(4);
-  });
-
-  it("applies responsive grid layout", () => {
-    const { container } = render(
-      <PopularBreedsSection popularBreeds={mockPopularBreeds} />,
-    );
-
-    const grid = container.querySelector(".grid");
-    expect(grid).toHaveClass("grid-cols-1");
-    expect(grid).toHaveClass("md:grid-cols-2");
-    expect(grid).toHaveClass("lg:grid-cols-4");
+  it("renders nothing without breeds", () => {
+    const { container } = render(<PopularBreedsSection popularBreeds={[]} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

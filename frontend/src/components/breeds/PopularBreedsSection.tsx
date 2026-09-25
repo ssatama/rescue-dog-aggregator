@@ -1,134 +1,100 @@
-"use client";
-
 import Link from "next/link";
-import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { CardPhoto } from "@/components/dogs/DogCard";
 import type { PopularBreedsSectionProps } from "@/types/breeds";
-import { BREED_PASTEL_COLORS, capitalizeFirst } from "@/utils/breedDisplayUtils";
+import type { BreedWithImages } from "@/schemas/animals";
 
-export default function PopularBreedsSection({ popularBreeds }: PopularBreedsSectionProps) {
-  if (!popularBreeds || popularBreeds.length === 0) {
-    return null;
+const POPULAR_TILES = 7;
+
+function isMixedOrUnknown(breed: BreedWithImages): boolean {
+  return (
+    ["Mixed Breed", "Mix", "Unknown"].includes(breed.primary_breed) ||
+    breed.breed_group === "Mixed" ||
+    breed.breed_group === "Unknown"
+  );
+}
+
+interface Tile {
+  name: string;
+  href: string;
+  count?: number;
+  note?: string;
+  image?: string;
+}
+
+function BreedTile({ tile, priority }: { tile: Tile; priority: boolean }): React.JSX.Element {
+  return (
+    <Link
+      href={tile.href}
+      className="group overflow-hidden rounded-2xl border border-line bg-surface transition-colors hover:bg-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      data-testid="breed-card"
+    >
+      <div className="relative aspect-[4/3] overflow-hidden bg-soft">
+        <CardPhoto
+          dog={{ name: tile.name, primary_image_url: tile.image }}
+          priority={priority}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+        />
+      </div>
+      <div className="p-3">
+        <h3 className="font-display text-base font-bold text-ink sm:text-lg">{tile.name}</h3>
+        <p className="text-sm text-subtle">
+          {[tile.count ? `${tile.count} dogs` : null, tile.note].filter(Boolean).join(" · ")}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+/**
+ * The breeds with most dogs listed, with mixed breeds as one tile among them
+ * rather than a hero of their own (#500).
+ */
+export default function PopularBreedsSection({ popularBreeds, mixedBreed }: PopularBreedsSectionProps) {
+  const tiles: Tile[] = (popularBreeds ?? [])
+    .filter((breed) => !isMixedOrUnknown(breed) && breed.breed_slug)
+    .slice(0, mixedBreed ? POPULAR_TILES : POPULAR_TILES + 1)
+    .map((breed) => ({
+      name: breed.primary_breed,
+      href: `/breeds/${breed.breed_slug}`,
+      count: breed.count,
+      note: breed.breed_group && breed.breed_group !== "Unknown" ? breed.breed_group : undefined,
+      image: breed.sample_dogs?.find((dog) => dog.primary_image_url)?.primary_image_url,
+    }));
+
+  if (mixedBreed) {
+    // Mixed breeds are the biggest group, so they take their place by count
+    const mixedTile: Tile = {
+      name: "Mixed breeds",
+      href: "/breeds/mixed",
+      count: mixedBreed.count,
+      note: "Every one unique",
+      image: mixedBreed.sample_dogs?.find((dog) => dog.primary_image_url)?.primary_image_url,
+    };
+    const at = tiles.findIndex((tile) => (tile.count ?? 0) < (mixedTile.count ?? 0));
+    tiles.splice(at === -1 ? tiles.length : at, 0, mixedTile);
   }
 
-  // Filter out Mixed and Unknown breeds and take first 5 pure/crossbreeds for display
-  const displayBreeds = popularBreeds
-    .filter(
-      (breed) =>
-        breed.primary_breed !== "Mixed Breed" &&
-        breed.primary_breed !== "Mix" &&
-        breed.primary_breed !== "Unknown" &&
-        breed.breed_group !== "Mixed" &&
-        breed.breed_group !== "Unknown",
-    )
-    .slice(0, 4);
-
-  const handleBrowseAllClick = (): void => {
-    // Dispatch event to expand all breed groups
-    window.dispatchEvent(new CustomEvent("expandAllBreedGroups"));
-
-    // Smooth scroll to breed groups section
-    setTimeout(() => {
-      const breedGroupsSection = document.getElementById("breed-groups");
-      if (breedGroupsSection) {
-        breedGroupsSection.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }
-    }, 100); // Small delay to ensure expansion happens first
-  };
+  if (tiles.length === 0) return null;
 
   return (
-    <section
-      className="py-12 bg-white dark:bg-gray-900"
-      aria-labelledby="popular-breeds-heading"
-    >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <h2
-            id="popular-breeds-heading"
-            className="text-3xl font-bold dark:text-white"
-          >
-            Popular Breeds Available Now
-          </h2>
-          <button
-            onClick={handleBrowseAllClick}
-            className="text-primary hover:underline flex items-center gap-1 font-medium transition-colors"
-            aria-label="Browse all breeds and expand breed groups"
-          >
-            Browse All Breeds
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {displayBreeds.map((breed, index) => {
-            const firstDog = breed.sample_dogs?.[0];
-            const imageUrl =
-              firstDog?.primary_image_url || "/images/dog-placeholder.jpg";
-            const traits = breed.personality_traits ?? [];
-
-            return (
-              <Link
-                key={breed.breed_slug}
-                href={`/breeds/${breed.breed_slug}`}
-                className="group"
-                data-testid="breed-card"
-              >
-                <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg dark:hover:shadow-xl dark:hover:shadow-gray-700/20 transition-all duration-200 hover:scale-[1.02] h-full">
-                  {/* Dog Image */}
-                  <div className="relative h-64 w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
-                    <Image
-                      src={imageUrl}
-                      alt={`${breed.primary_breed} rescue dog`}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                      priority={index < 2}
-                    />
-                    <Badge className="absolute top-3 right-3 bg-orange-500 dark:bg-orange-600 text-white">
-                      {breed.count} available
-                    </Badge>
-                  </div>
-
-                  {/* Breed Info */}
-                  <div className="p-4">
-                    <h3 className="text-xl font-semibold mb-1 group-hover:text-primary dark:text-gray-100">
-                      {breed.primary_breed}
-                    </h3>
-
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      {breed.breed_group} Group
-                      {typeof breed.crossbreed_count === "number" &&
-                        breed.crossbreed_count > 0 &&
-                        ` • ${breed.purebred_count} purebred, ${breed.crossbreed_count} cross`}
-                    </p>
-
-                    {/* Personality Traits */}
-                    {traits.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {traits.slice(0, 3).map((trait, index) => {
-                          const colors =
-                            BREED_PASTEL_COLORS[index % BREED_PASTEL_COLORS.length];
-                          return (
-                            <span
-                              key={trait}
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text}`}
-                            >
-                              {capitalizeFirst(trait)}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+    <section aria-labelledby="popular-breeds-heading" className="py-8">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h2 id="popular-breeds-heading" className="font-display text-xl font-bold tracking-tight text-ink sm:text-2xl">
+          Most dogs listed
+        </h2>
+        <Link
+          href="#all-breeds"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-orange-700 hover:underline dark:text-orange-400"
+        >
+          All breeds A–Z
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+        {tiles.map((tile, index) => (
+          <BreedTile key={tile.href} tile={tile} priority={index < 2} />
+        ))}
       </div>
     </section>
   );

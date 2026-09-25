@@ -13,6 +13,7 @@ import {
 } from "@/services/breedImagesService";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import AllBreedsIndex from "@/components/breeds/AllBreedsIndex";
+import { getIndexableBreeds } from "@/utils/indexableBreeds";
 import { logger, reportError } from "@/utils/logger";
 
 export const revalidate = 604800;
@@ -79,6 +80,14 @@ export default async function BreedsPage() {
   }
 
   const { breedStats, mixedBreedData, popularBreeds, breedGroups } = data;
+  const searchableBreeds = [
+    ...getIndexableBreeds(breedStats?.qualifying_breeds).map((breed) => ({
+      name: breed.primary_breed,
+      slug: breed.breed_slug,
+      count: breed.count,
+    })),
+    ...(mixedBreedData?.count ? [{ name: "Mixed breeds", slug: "mixed", count: mixedBreedData.count }] : []),
+  ];
 
   return (
     <Layout>
@@ -101,6 +110,7 @@ export default async function BreedsPage() {
           mixedBreedData={mixedBreedData}
           popularBreedsWithImages={popularBreeds}
           breedGroups={breedGroups}
+          searchableBreeds={searchableBreeds}
         />
       </ErrorBoundary>
       <AllBreedsIndex breeds={breedStats?.qualifying_breeds} />

@@ -1,6 +1,7 @@
 import type { BreedGroupDisplay } from "../services/breedImagesService";
 import type { BreedWithImages, BreedStats } from "../schemas/animals";
 import type { Dog } from "./dog";
+import type { BreedLink } from "../components/breeds/BreedSearch";
 import type { FilterCountsResponse } from "../schemas/common";
 
 export type { BreedGroupDisplay } from "../services/breedImagesService";
@@ -105,13 +106,10 @@ export interface BreedGroupsSectionProps {
   breedGroups: BreedGroupDisplay[];
 }
 
-export interface BreedsHeroSectionProps {
-  mixedBreedData: BreedWithImages | null;
-  totalDogs: number;
-}
-
 export interface PopularBreedsSectionProps {
   popularBreeds: BreedWithImages[];
+  /** Shown as one tile among the breeds */
+  mixedBreed?: BreedWithImages | null;
 }
 
 export interface BreedStructuredDataProps {
@@ -139,6 +137,8 @@ export type BreedDetailFilters = Record<BreedDetailFilterKey, string>;
 export interface BreedDetailClientProps {
   initialBreedData: BreedPageData;
   initialDogs: Dog[];
+  /** Unfiltered counts for the breed: practical stats and per-country totals (#500) */
+  breedCounts?: FilterCountsResponse | null;
   lastUpdated?: string;
 }
 
@@ -151,4 +151,6 @@ export interface BreedsHubClientProps {
   mixedBreedData: BreedWithImages | null;
   popularBreedsWithImages: BreedWithImages[];
   breedGroups: BreedGroupDisplay[];
+  /** Every breed with a page, for the search at the top */
+  searchableBreeds: BreedLink[];
 }

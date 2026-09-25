@@ -21,9 +21,8 @@ import { useDebouncedCallback } from "use-debounce";
 import BreedFilterBar from "@/components/breeds/BreedFilterBar";
 import { getBreedFilterOptions } from "@/utils/breedFilterUtils";
 import EmptyState from "@/components/ui/EmptyState";
-import PersonalityBarChart from "@/components/breeds/PersonalityBarChart";
-import CommonTraits from "@/components/breeds/CommonTraits";
-import ExperienceLevelChart from "@/components/breeds/ExperienceLevelChart";
+import BreedPracticalStats from "@/components/breeds/BreedPracticalStats";
+import { buildPracticalStats } from "@/utils/breedPracticalStats";
 import DogsGrid from "@/components/dogs/DogsGrid";
 import type { Dog } from "@/types/dog";
 import type {
@@ -96,6 +95,7 @@ function buildURLFromFilters(
 export default function BreedDetailClient({
   initialBreedData,
   initialDogs,
+  breedCounts,
   lastUpdated,
 }: BreedDetailClientProps) {
   const router = useRouter();
@@ -384,6 +384,17 @@ export default function BreedDetailClient({
     },
   ];
 
+  const showAdoptable = useCallback(
+    (countryValue: string) => {
+      handleFilterChange("availableCountryFilter", countryValue);
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document.getElementById("dogs-grid")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+    },
+    [handleFilterChange],
+  );
+
+  const practicalStats = useMemo(() => buildPracticalStats(breedCounts), [breedCounts]);
+
   const filterOptions = React.useMemo(
     () => getBreedFilterOptions(breedData, { organizations: [] }),
     [breedData],
@@ -410,35 +421,16 @@ export default function BreedDetailClient({
             className="w-full order-2 lg:order-1"
           />
 
-          <BreedInfo breedData={breedData} lastUpdated={lastUpdated} className="order-1 lg:order-2" />
+          <BreedInfo
+            breedData={breedData}
+            adoptableOptions={breedCounts?.available_country_options}
+            onShowAdoptable={showAdoptable}
+            lastUpdated={lastUpdated}
+            className="order-1 lg:order-2"
+          />
         </div>
 
-        {(breedData.personality_metrics ||
-          (breedData.personality_traits && breedData.personality_traits.length > 0) ||
-          breedData.experience_distribution) && (
-          <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 mb-10 space-y-6 divide-y divide-gray-100 dark:divide-gray-700/50 [&>div:not(:first-child)]:pt-6">
-            {breedData.personality_metrics && (
-              <div>
-                <PersonalityBarChart breedData={breedData} />
-              </div>
-            )}
-
-            {breedData.personality_traits &&
-              breedData.personality_traits.length > 0 && (
-                <div>
-                  <CommonTraits personalityTraits={breedData.personality_traits} />
-                </div>
-              )}
-
-            {breedData.experience_distribution && (
-              <div>
-                <ExperienceLevelChart
-                  experienceDistribution={breedData.experience_distribution}
-                />
-              </div>
-            )}
-          </section>
-        )}
+        <BreedPracticalStats stats={practicalStats} />
 
         <BreedFilterBar
           breedData={breedData}

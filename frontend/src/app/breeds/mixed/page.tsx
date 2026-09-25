@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import BreedDetailClient from "../[slug]/BreedDetailClient";
+import Layout from "@/components/layout/Layout";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import BreedDetailSkeleton from "@/components/ui/BreedDetailSkeleton";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
   getBreedBySlug,
   getAnimals,
+  getBreedCounts,
 } from "@/services/serverAnimalsService";
 import { logger, reportError } from "@/utils/logger";
 
@@ -104,13 +107,12 @@ async function fetchMixedBreedData() {
     return null;
   }
 
-  const initialDogs = await getAnimals({
-    breed_group: "Mixed",
-    limit: 12,
-    offset: 0,
-  });
+  const [initialDogs, breedCounts] = await Promise.all([
+    getAnimals({ breed_group: "Mixed", limit: 12, offset: 0 }),
+    getBreedCounts({ breed_group: "Mixed" }),
+  ]);
 
-  return { breedData, initialDogs };
+  return { breedData, initialDogs, breedCounts };
 }
 
 export default async function MixedBreedsPage() {
@@ -120,21 +122,25 @@ export default async function MixedBreedsPage() {
     notFound();
   }
 
-  const { breedData, initialDogs } = data;
+  const { breedData, initialDogs, breedCounts } = data;
 
+  // The same frame as every other breed page: the site header was missing here
   return (
-    <>
+    <Layout>
       <BreedStructuredData
         breedData={breedData}
         dogs={initialDogs}
         pageType="detail"
       />
-      <Suspense fallback={<BreedDetailSkeleton />}>
-        <BreedDetailClient
-          initialBreedData={breedData}
-          initialDogs={initialDogs}
-        />
-      </Suspense>
-    </>
+      <ErrorBoundary fallbackMessage="Unable to load mixed breeds. Please try refreshing the page.">
+        <Suspense fallback={<BreedDetailSkeleton />}>
+          <BreedDetailClient
+            initialBreedData={breedData}
+            initialDogs={initialDogs}
+            breedCounts={breedCounts}
+          />
+        </Suspense>
+      </ErrorBoundary>
+    </Layout>
   );
 }

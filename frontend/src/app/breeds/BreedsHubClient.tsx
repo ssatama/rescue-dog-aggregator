@@ -1,133 +1,67 @@
 "use client";
 
-import { useMemo } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/EmptyState";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-import BreedsHeroSection from "@/components/breeds/BreedsHeroSection";
+import BreedSearch from "@/components/breeds/BreedSearch";
 import PopularBreedsSection from "@/components/breeds/PopularBreedsSection";
 import BreedGroupsSection from "@/components/breeds/BreedGroupsSection";
-import { Dog, Heart, Home } from "lucide-react";
+import { formatCount } from "@/utils/formatCount";
 import type { BreedsHubClientProps } from "@/types/breeds";
-import type { ReactNode } from "react";
 
-interface BreedTypeCard {
-  title: string;
-  count: number;
-  href: string;
-  icon: ReactNode;
-  description: string;
-}
+const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Breeds" }];
 
+/**
+ * The breeds index (#500): search first, so any breed is two taps away on a
+ * phone, then the breeds with most dogs (mixed breeds among them), groups,
+ * and the A–Z list the page renders after this.
+ */
 export default function BreedsHubClient({
-  initialBreedStats,
+  initialBreedStats: breedStats,
   mixedBreedData,
   popularBreedsWithImages,
   breedGroups,
+  searchableBreeds,
 }: BreedsHubClientProps) {
-  const breedStats = initialBreedStats;
   const router = useRouter();
-
-  // Breadcrumb items
-  const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Breeds" }];
-
-  // Breed type cards configuration (3 cards as specified in PRD)
-  const breedTypeCards = useMemo((): BreedTypeCard[] => {
-    const breedGroupsArray = Array.isArray(breedStats?.breed_groups)
-      ? breedStats.breed_groups
-      : [];
-
-    return [
-      {
-        title: "Mixed Breeds",
-        count: breedGroupsArray.find((g) => g.name === "Mixed")?.count ?? 0,
-        href: "/breeds/mixed",
-        icon: <Heart className="h-5 w-5" />,
-        description: "Unique personalities from diverse backgrounds",
-      },
-      {
-        title: "Pure Breeds",
-        count: breedStats?.purebred_count ?? 0,
-        href: "/breeds?type=purebred",
-        icon: <Dog className="h-5 w-5" />,
-        description: "Known temperaments and characteristics",
-      },
-      {
-        title: "Crossbreeds",
-        count: breedStats?.crossbreed_count ?? 0,
-        href: "/breeds?type=crossbreed",
-        icon: <Home className="h-5 w-5" />,
-        description: "Best of both worlds combinations",
-      },
-    ];
-  }, [breedStats]);
 
   if (!breedStats) {
     return (
-      <>
-        <div className="container mx-auto px-4 py-8">
-          <EmptyState
-            title="Unable to load breed data"
-            description="We're having trouble loading breed information. Please try again later."
-            actionButton={{
-              text: "Go to Homepage",
-              onClick: () => router.push("/"),
-            }}
-          />
-        </div>
-      </>
+      <div className="container mx-auto px-4 py-8">
+        <EmptyState
+          title="Unable to load breed data"
+          description="We're having trouble loading breed information. Please try again later."
+          actionButton={{ text: "Browse all dogs", onClick: () => router.push("/dogs") }}
+        />
+      </div>
     );
   }
 
+  const totalDogs = breedStats.total_dogs ?? 0;
+
   return (
-    <>
-      {/* Breadcrumb Navigation */}
-      <div className="container mx-auto px-4 pt-4">
+    <div className="container mx-auto px-4">
+      <div className="pt-4">
         <Breadcrumbs items={breadcrumbItems} schema={false} />
       </div>
 
-      {mixedBreedData && (
-        <BreedsHeroSection
-          mixedBreedData={mixedBreedData}
-          totalDogs={breedStats?.total_dogs || 0}
-        />
-      )}
+      <header className="flex flex-col gap-3 pb-2 pt-4 sm:pt-6">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Rescue dogs by breed</h1>
+        {totalDogs > 0 && (
+          <p className="text-subtle">
+            {formatCount(totalDogs)} dogs listed now, from Labradors to one-of-a-kind mixes.{" "}
+            <Link href="/dogs" className="font-semibold text-orange-700 hover:underline dark:text-orange-400">
+              Browse them all
+            </Link>
+          </p>
+        )}
+        <BreedSearch breeds={searchableBreeds} />
+      </header>
 
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4 py-8">
-          {popularBreedsWithImages && popularBreedsWithImages.length > 0 && (
-            <PopularBreedsSection
-              popularBreeds={popularBreedsWithImages}
-            />
-          )}
+      <PopularBreedsSection popularBreeds={popularBreedsWithImages} mixedBreed={mixedBreedData} />
 
-          {/* Expandable Breed Groups with Top Breeds */}
-          {breedGroups && breedGroups.length > 0 && (
-            <BreedGroupsSection breedGroups={breedGroups} />
-          )}
-
-          {/* Call to Action Section */}
-          <div className="mt-16 text-center">
-            <Card className="p-8 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-950/30">
-              <h3 className="text-2xl font-semibold mb-4 dark:text-gray-100">
-                Can&apos;t find your perfect match?
-              </h3>
-              <p className="text-lg text-muted-foreground mb-6">
-                Browse all available rescue dogs or use our advanced filters
-              </p>
-              <Button
-                size="lg"
-                onClick={() => router.push("/dogs")}
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-              >
-                Browse All Dogs
-              </Button>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </>
+      {breedGroups && breedGroups.length > 0 && <BreedGroupsSection breedGroups={breedGroups} />}
+    </div>
   );
 }

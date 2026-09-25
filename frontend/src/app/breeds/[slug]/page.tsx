@@ -10,6 +10,7 @@ import {
   getBreedBySlug,
   getAnimals,
   getBreedStats,
+  getBreedCounts,
 } from "@/services/serverAnimalsService";
 import { logger, reportError } from "@/utils/logger";
 
@@ -141,13 +142,13 @@ async function fetchBreedPageData(slug: string) {
     return null;
   }
 
-  const initialDogs = await getAnimals(
-    slug === "mixed"
-      ? { breed_group: "Mixed", limit: 12, offset: 0 }
-      : { primary_breed: breedData.primary_breed, limit: 12, offset: 0 },
-  );
+  const breedFilter = slug === "mixed" ? { breed_group: "Mixed" } : { primary_breed: breedData.primary_breed };
+  const [initialDogs, breedCounts] = await Promise.all([
+    getAnimals({ ...breedFilter, limit: 12, offset: 0 }),
+    getBreedCounts(breedFilter),
+  ]);
 
-  return { breedData, initialDogs };
+  return { breedData, initialDogs, breedCounts };
 }
 
 export default async function BreedDetailPage(props: BreedPageProps) {
@@ -158,7 +159,7 @@ export default async function BreedDetailPage(props: BreedPageProps) {
     notFound();
   }
 
-  const { breedData, initialDogs } = data;
+  const { breedData, initialDogs, breedCounts } = data;
 
   return (
     <Layout>
@@ -180,6 +181,7 @@ export default async function BreedDetailPage(props: BreedPageProps) {
           <BreedDetailClient
             initialBreedData={breedData}
             initialDogs={initialDogs}
+            breedCounts={breedCounts}
             lastUpdated={new Date().toISOString()}
           />
         </Suspense>

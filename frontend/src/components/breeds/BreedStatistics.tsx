@@ -3,121 +3,90 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ExpandableText from "@/components/ui/ExpandableText";
+import { useVisitorLocation } from "@/lib/visitorLocation";
+import { catalogCountryValue } from "@/utils/adoptability";
+import { getCountryName } from "@/utils/countryNames";
 import type { BreedData } from "@/types/breeds";
+import type { FilterCount } from "@/schemas/common";
 
 interface BreedStatisticsProps {
   breedData: BreedData | null;
   className?: string;
 }
 
+function formatAge(months: number): string {
+  if (months < 12) return `${months} mo`;
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+  if (remainingMonths === 0) return `${years} yr${years === 1 ? "" : "s"}`;
+  return `${years}.${Math.floor((remainingMonths / 12) * 10)} yrs`;
+}
+
+/** How many are listed and their average age; an unknown age is left out. */
 export default function BreedStatistics({ breedData, className = "" }: BreedStatisticsProps) {
   if (!breedData) return null;
 
-  const getAgeDisplay = (): string => {
-    if (!breedData.average_age_months) {
-      return "N/A";
-    }
-
-    const months = breedData.average_age_months;
-
-    if (months < 12) {
-      return `${months} mo`;
-    }
-
-    const years = Math.floor(months / 12);
-    const remainingMonths = months % 12;
-
-    if (remainingMonths === 0) {
-      return `${years} yr${years === 1 ? "" : "s"}`;
-    }
-    return `${years}.${Math.floor((remainingMonths / 12) * 10)} yrs`;
-  };
-
-  const getSexDistributionDisplay = (): { male: number; female: number; malePercentage: number; femalePercentage: number; total: number } | null => {
-    if (!breedData.sex_distribution) return null;
-
-    const { male = 0, female = 0 } = breedData.sex_distribution;
-    const total = male + female;
-
-    if (total === 0) return null;
-
-    const malePercentage = Math.round((male / total) * 100);
-    const femalePercentage = Math.round((female / total) * 100);
-
-    return {
-      male,
-      female,
-      malePercentage,
-      femalePercentage,
-      total,
-    };
-  };
-
-  const sexData = getSexDistributionDisplay();
-
   return (
     <div className={`breed-statistics ${className}`}>
-      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-gray-700 dark:text-gray-300">
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-ink">
         <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {breedData.count || 0}
-          </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">available</span>
+          <span className="font-display text-2xl font-bold text-ink">{breedData.count || 0}</span>
+          <span className="text-sm text-subtle">available</span>
         </div>
 
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {getAgeDisplay()}
-          </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">avg age</span>
-        </div>
+        {breedData.average_age_months ? (
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-display text-2xl font-bold text-ink">{formatAge(breedData.average_age_months)}</span>
+            <span className="text-sm text-subtle">avg age</span>
+          </div>
+        ) : null}
       </div>
-
-      {sexData && (
-        <div className="mt-4">
-          <div className="flex items-center gap-3 text-sm mb-2">
-            <div className="flex items-center gap-1">
-              <span className="text-teal-600 dark:text-teal-400">♂</span>
-              <span className="font-medium">{sexData.male}</span>
-              <span className="text-gray-500 dark:text-gray-400">
-                ({sexData.malePercentage}%)
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-pink-500 dark:text-pink-400">♀</span>
-              <span className="font-medium">{sexData.female}</span>
-              <span className="text-gray-500 dark:text-gray-400">
-                ({sexData.femalePercentage}%)
-              </span>
-            </div>
-          </div>
-          <div className="relative w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              data-testid="male-bar"
-              className="absolute left-0 top-0 h-full bg-teal-500 dark:bg-teal-400 rounded-full transition-all duration-700 ease-out motion-reduce:transition-none"
-              style={{ width: `${sexData.malePercentage}%` }}
-              aria-label={`${sexData.male} males out of ${sexData.total} dogs`}
-            />
-            <div
-              data-testid="female-bar"
-              className="absolute right-0 top-0 h-full bg-pink-400 dark:bg-pink-300 rounded-full transition-all duration-700 ease-out motion-reduce:transition-none"
-              style={{ width: `${sexData.femalePercentage}%` }}
-              aria-label={`${sexData.female} females out of ${sexData.total} dogs`}
-            />
-          </div>
-        </div>
-      )}
     </div>
+  );
+}
+
+/**
+ * "N adoptable to you" for the visitor's country (#493, #500), from the
+ * breed's per-country counts. Says nothing without a country or a match,
+ * like the dog badge: never a "not adoptable" line.
+ */
+export function BreedAdoptableToYou({
+  options,
+  onShow,
+}: {
+  options?: FilterCount[];
+  onShow?: (countryValue: string) => void;
+}): React.JSX.Element | null {
+  const { country } = useVisitorLocation();
+  const value = catalogCountryValue((options ?? []).map((option) => String(option.value)), country);
+  const count = options?.find((option) => String(option.value) === value)?.count ?? 0;
+  if (!value || count === 0) return null;
+
+  const label = (
+    <>
+      <span aria-hidden="true">✓</span> {count} adoptable to you in {getCountryName(country)}
+    </>
+  );
+  const style = "inline-flex items-center gap-1.5 rounded-full bg-good-soft px-3 py-1 text-sm font-semibold text-good";
+  return onShow ? (
+    <button type="button" onClick={() => onShow(value)} className={`${style} hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring`}>
+      {label}
+    </button>
+  ) : (
+    <p className={style}>{label}</p>
   );
 }
 
 interface BreedInfoProps {
   breedData: BreedData;
+  /** The breed's per-country counts, for "adoptable to you" */
+  adoptableOptions?: FilterCount[];
+  onShowAdoptable?: (countryValue: string) => void;
   lastUpdated?: string;
   className?: string;
 }
 
-export function BreedInfo({ breedData, lastUpdated, className = "" }: BreedInfoProps) {
+export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, lastUpdated, className = "" }: BreedInfoProps) {
   const handleScrollToDogs = (): void => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document
@@ -146,7 +115,10 @@ export function BreedInfo({ breedData, lastUpdated, className = "" }: BreedInfoP
         </div>
       </div>
 
-      <BreedStatistics breedData={breedData} />
+      <div className="flex flex-col items-start gap-3">
+        <BreedStatistics breedData={breedData} />
+        <BreedAdoptableToYou options={adoptableOptions} onShow={onShowAdoptable} />
+      </div>
 
       {breedData.description && (
         <ExpandableText

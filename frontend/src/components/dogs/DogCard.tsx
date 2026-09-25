@@ -95,12 +95,12 @@ function measure(img: HTMLImageElement, done: (w: number, h: number) => void): v
   probe.src = img.currentSrc;
 }
 
-function CardPhoto({
+export function CardPhoto({
   dog,
   priority,
   sizes,
 }: {
-  dog: Dog;
+  dog: Pick<Dog, "name" | "primary_image_url">;
   priority: boolean;
   sizes: string;
 }): React.ReactElement {
