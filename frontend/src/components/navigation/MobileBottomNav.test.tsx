@@ -116,4 +116,27 @@ describe("MobileBottomNav", () => {
       expect(container.firstChild).toBeNull();
     });
   });
+
+  describe("Visibility on dog pages", () => {
+    it("renders on a dog page, and steps aside by CSS only while an adopt bar is present", () => {
+      // A reserved or inactive dog has no adopt bar, so the site nav must stay (#514)
+      (usePathname as jest.Mock).mockReturnValue("/dogs/lexi-lurcher-2419");
+
+      render(<MobileBottomNav />);
+
+      const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
+      expect(nav.className).toContain("[body:has([data-adopt-bar])_&]:hidden");
+    });
+
+    it.each(["/dogs", "/dogs/puppies", "/dogs/senior", "/dogs/country/gb"])(
+      "still shows on the dog list page %s",
+      (path) => {
+        (usePathname as jest.Mock).mockReturnValue(path);
+
+        render(<MobileBottomNav />);
+
+        expect(screen.getByRole("button", { name: /menu/i })).toBeInTheDocument();
+      },
+    );
+  });
 });

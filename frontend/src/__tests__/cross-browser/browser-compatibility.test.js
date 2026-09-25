@@ -100,28 +100,6 @@ jest.mock("../../services/relatedDogsService", () => ({
   getRelatedDogs: jest.fn(() => Promise.resolve([])),
 }));
 
-// Mock the HeroImageWithBlurredBackground to avoid loading issues
-jest.mock("../../components/ui/HeroImageWithBlurredBackground", () => {
-  return function MockHeroImage({ src, alt }) {
-    return (
-      <div data-testid="mock-hero-image">
-        <img src={src} alt={alt} data-testid="hero-image" />
-      </div>
-    );
-  };
-});
-
-// Mock useAdvancedImage hook to avoid infinite loops
-jest.mock("../../hooks/useAdvancedImage", () => ({
-  useAdvancedImage: jest.fn(() => ({
-    src: "https://example.com/dog.jpg",
-    isLoading: false,
-    hasError: false,
-    onLoad: jest.fn(),
-    onError: jest.fn(),
-  })),
-}));
-
 // Mock additional complex components that might cause loading issues
 jest.mock("../../components/dogs/RelatedDogsSection", () => {
   return function MockRelatedDogsSection() {
@@ -222,12 +200,12 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(screen.getByTestId("metadata-cards")).toBeInTheDocument();
+          expect(screen.getByTestId("dog-facts-panel")).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
 
-      const gridContainer = screen.getByTestId("metadata-cards");
+      const gridContainer = screen.getByTestId("dog-facts-panel");
 
       // In test environment, just verify the element exists with proper classes
       expect(gridContainer).toBeInTheDocument();
@@ -275,12 +253,12 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(screen.getByTestId("action-bar")).toBeInTheDocument();
+          expect(screen.getByTestId("dog-facts-panel")).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
 
-      const actionBar = screen.getByTestId("action-bar");
+      const actionBar = screen.getByTestId("dog-facts-panel");
       const buttons = actionBar.querySelectorAll("button");
 
       if (buttons.length > 0) {
@@ -333,12 +311,12 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(screen.getByTestId("metadata-cards")).toBeInTheDocument();
+          expect(screen.getByTestId("dog-facts-panel")).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
 
-      const gridContainer = screen.getByTestId("metadata-cards");
+      const gridContainer = screen.getByTestId("dog-facts-panel");
       expect(gridContainer).toHaveClass("grid");
     });
 
@@ -514,12 +492,12 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(screen.getByTestId("action-bar")).toBeInTheDocument();
+          expect(screen.getByTestId("dog-facts-panel")).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
 
-      const actionBar = screen.getByTestId("action-bar");
+      const actionBar = screen.getByTestId("dog-facts-panel");
       const buttons = actionBar.querySelectorAll("button");
 
       if (buttons.length > 0) {

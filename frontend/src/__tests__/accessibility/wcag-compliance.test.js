@@ -99,28 +99,6 @@ jest.mock("../../services/relatedDogsService", () => ({
   getRelatedDogs: jest.fn(() => Promise.resolve([])),
 }));
 
-// Mock the HeroImageWithBlurredBackground to avoid loading issues
-jest.mock("../../components/ui/HeroImageWithBlurredBackground", () => {
-  return function MockHeroImage({ src, alt }) {
-    return (
-      <div data-testid="hero-section">
-        <img src={src} alt={alt} data-testid="hero-image" />
-      </div>
-    );
-  };
-});
-
-// Mock useAdvancedImage hook to avoid infinite loops
-jest.mock("../../hooks/useAdvancedImage", () => ({
-  useAdvancedImage: jest.fn(() => ({
-    src: "https://example.com/dog.jpg",
-    isLoading: false,
-    hasError: false,
-    onLoad: jest.fn(),
-    onError: jest.fn(),
-  })),
-}));
-
 // Mock additional complex components that might cause loading issues
 jest.mock("../../components/dogs/RelatedDogsSection", () => {
   return function MockRelatedDogsSection() {

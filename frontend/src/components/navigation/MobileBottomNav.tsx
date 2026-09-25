@@ -50,20 +50,22 @@ const MobileBottomNav: React.FC = () => {
     isVisibleRef.current = isVisible;
   }, [isVisible]);
 
-  // NEVER show on swipe page - simplified check
-  const isSwipePage = pathname?.startsWith("/swipe");
+  // Never on the swipe page. A dog page's own adopt bar (#489) also replaces it,
+  // via the CSS below, which only applies while that bar is on the page: dogs
+  // that can't be adopted have no bar and keep the site nav.
+  const navHidden = pathname?.startsWith("/swipe");
 
   // Viewport check
   useEffect(() => {
     const checkViewport = () => {
       const width = window.innerWidth;
-      setShouldRender(width < 1024 && !isSwipePage);
+      setShouldRender(width < 1024 && !navHidden);
     };
 
     checkViewport();
     window.addEventListener("resize", checkViewport);
     return () => window.removeEventListener("resize", checkViewport);
-  }, [isSwipePage]);
+  }, [navHidden]);
 
   // Optimized scroll handler with proper direction detection
   const handleScroll = useCallback(() => {
@@ -122,7 +124,7 @@ const MobileBottomNav: React.FC = () => {
 
   // Attach scroll listener
   useEffect(() => {
-    if (isSwipePage) {
+    if (navHidden) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Hiding nav on swipe page requires effect to check pathname
       setIsVisible(false);
       return;
@@ -144,10 +146,10 @@ const MobileBottomNav: React.FC = () => {
         clearTimeout(showTimeout.current);
       }
     };
-  }, [isSwipePage, handleScroll]);
+  }, [navHidden, handleScroll]);
 
   // Don't render on desktop or swipe page
-  if (!shouldRender || isSwipePage) {
+  if (!shouldRender || navHidden) {
     return null;
   }
 
@@ -165,7 +167,7 @@ const MobileBottomNav: React.FC = () => {
               stiffness: 300,
               mass: 0.8,
             }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 will-change-transform"
+            className="fixed bottom-0 left-0 right-0 z-50 [body:has([data-adopt-bar])_&]:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 will-change-transform"
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
             role="navigation"
             aria-label="Mobile navigation"

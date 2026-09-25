@@ -12,6 +12,7 @@ import { formatBreed, getAgeCategory } from "@/utils/dogHelpers";
 import { IMAGE_SIZES } from "@/constants/imageSizes";
 import { trackDogCardClick, trackFavoriteToggle } from "@/lib/monitoring/breadcrumbs";
 import { trackDogCardClicked } from "@/lib/analytics";
+import { companionAnswer } from "@/utils/dogFacts";
 import type { Dog } from "@/types/dog";
 import type { ListContext } from "@/types/dogComponents";
 
@@ -42,9 +43,9 @@ const LIVES_WITH: { field: "good_with_children" | "good_with_dogs" | "good_with_
 export function getLivesWithFacts(dog: Dog, limit = 2): Fact[] {
   const known: Fact[] = [];
   for (const { field, label } of LIVES_WITH) {
-    const value = dog.dog_profiler_data?.[field] ?? dog.properties?.[field];
-    if (value === "yes" || value === true) known.push({ label, good: true });
-    if (value === "no" || value === false) known.push({ label, good: false });
+    const answer = companionAnswer(dog, field);
+    if (answer === "yes") known.push({ label, good: true });
+    if (answer === "no") known.push({ label, good: false });
   }
   return known.sort((a, b) => Number(b.good) - Number(a.good)).slice(0, limit);
 }

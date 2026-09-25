@@ -2,12 +2,6 @@
 // This file provides a single entry point for importing hooks
 
 // Image processing hooks
-export { useAdvancedImage } from "./useAdvancedImage";
-export type {
-  UseAdvancedImageOptions,
-  UseAdvancedImageReturn,
-} from "./useAdvancedImage";
-
 export { useLazyImage } from "./useLazyImage";
 export type { UseLazyImageOptions, UseLazyImageReturn } from "./useLazyImage";
 

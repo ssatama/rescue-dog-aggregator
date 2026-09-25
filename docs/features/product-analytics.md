@@ -41,7 +41,7 @@ events:
 
 | Event | Fired from | Key properties |
 | --- | --- | --- |
-| `adoption_link_clicked` | **Conversion.** Adopt button on the detail page (click and middle-click), mobile modal, favorites comparison | dog props, `source`, `destination_domain` |
+| `adoption_link_clicked` | **Conversion.** Adopt button on the detail page (click and middle-click), mobile modal, favorites comparison | dog props, `source`, `destination_domain`; on the detail page also `placement` (`panel` = desktop side panel, `bar` = phone and tablet bottom bar) |
 | `dog_viewed` | Detail page load, each dog shown in the mobile modal | dog props, `source` (`detail_page` / `modal`) |
 | `dog_card_clicked` | Dog card in any list | `dog_id`, `position`, `list_context` |
 | `dog_favorited` / `dog_unfavorited` | `FavoritesContext`, so it covers the heart button, modal and swipe-right | `dog_id` |
@@ -49,7 +49,7 @@ events:
 | `search_performed` | Dog-name search box, on Enter or a picked suggestion: /dogs sidebar (`catalog`) and the filter drawer on /dogs and breed pages (`mobile`). The global header search (#492) will send `header` | `surface` (`header` / `catalog` / `mobile`), `result_group_chosen` (`breed` / `rescue` / `dog` / `filter` / `none`), `result_count` |
 | `filter_applied` | /dogs, breed pages, org pages (desktop and mobile drawer) | `filter`, `value`, `result_count`, `surface` (`catalog` / `breed_page` / `org_page`) |
 | `sort_changed` | Sort control in `DogFilters` (hidden on org pages today) | `sort` |
-| `gallery_photo_viewed` | Dog detail page load, as photo 1 of 1 | `dog_id`, `index`, `total` |
+| `gallery_photo_viewed` | Dog detail page: photo 1 on load, then each other photo once, after the gallery settles on it (arrows, thumbnails, keys, swipe, full screen) | `dog_id`, `index` (0-based), `total` |
 | `location_set` | Not wired yet: the "I live in" picker (#493) | `source` (`geo` / `picker`), `country`, `only_adoptable` |
 | `organization_viewed` | Organization page | `org_slug`, `dog_count` |
 | `organization_website_clicked` | "Visit Original Website" on an org page | `org_slug`, `destination_domain` |

@@ -118,7 +118,7 @@ function ArrowButton({
       aria-disabled={disabled || undefined}
       aria-label={direction === "prev" ? "Previous photo" : "Next photo"}
       className={cn(
-        "absolute top-1/2 z-[2] grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-gray-900 shadow-sm transition-opacity hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-disabled:cursor-default aria-disabled:opacity-0 aria-disabled:focus-visible:opacity-50 dark:bg-gray-900/90 dark:text-gray-50",
+        "absolute top-1/2 z-[2] grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-gray-900 shadow-sm transition-opacity hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-disabled:pointer-events-none aria-disabled:opacity-0 aria-disabled:focus-visible:opacity-50 dark:bg-gray-900/90 dark:text-gray-50",
         direction === "prev" ? "left-3" : "right-3",
         className,
       )}
