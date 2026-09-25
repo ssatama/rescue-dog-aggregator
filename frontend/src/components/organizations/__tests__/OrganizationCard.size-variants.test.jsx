@@ -377,6 +377,21 @@ describe("OrganizationCard Size Variants", () => {
     });
   });
 
+  describe("Secondary dogs link (dog page, #489)", () => {
+    const viewDogsLink = () => screen.getByRole("link", { name: /View\s*25 Dogs/ });
+
+    test("is the filled primary button by default", () => {
+      render(<OrganizationCard organization={mockOrganization} size="medium" />);
+      expect(viewDogsLink()).toHaveClass("bg-orange-700");
+    });
+
+    test("is an outline button that doesn't compete with adopting", () => {
+      render(<OrganizationCard organization={mockOrganization} size="medium" secondaryDogsLink />);
+      expect(viewDogsLink()).not.toHaveClass("bg-orange-700");
+      expect(viewDogsLink()).toHaveClass("border-border");
+    });
+  });
+
   describe("CTA Buttons Scaling", () => {
     test("button sizes scale appropriately", () => {
       const { rerender } = render(

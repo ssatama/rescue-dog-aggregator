@@ -5,7 +5,7 @@ import type { ErrorBoundaryState } from "./uiComponents";
 
 export type { ErrorBoundaryProps, ErrorBoundaryState, ExpandableTextProps } from "./uiComponents";
 export type { DogStatus };
-export type ListContext = "home" | "search" | "org-page" | "favorites" | "breed-page";
+export type ListContext = "home" | "search" | "org-page" | "favorites" | "breed-page" | "similar";
 export type LoadingType = "initial" | "filter" | "pagination";
 
 export interface DogCardSkeletonOptimizedProps {
@@ -42,11 +42,9 @@ export interface DogsGridProps
   listContext?: ListContext;
 }
 
-export interface RelatedDogsSectionProps {
-  organizationId: number | string;
-  currentDogId: number | string;
-  organization?: Pick<NonNullable<Dog["organization"]>, "id" | "name" | "slug">;
-  /** Server-fetched related dogs; when given, no client fetch happens */
+export interface SimilarDogsSectionProps {
+  dog: Dog;
+  /** Server-fetched similar dogs; when given, no client fetch happens */
   initialDogs?: Dog[];
 }
 

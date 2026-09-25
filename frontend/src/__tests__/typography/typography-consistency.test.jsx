@@ -3,7 +3,6 @@ import { render, screen, waitFor } from "../../test-utils";
 import DogCard from "../../components/dogs/DogCard";
 import OrganizationCard from "../../components/organizations/OrganizationCard";
 import TrustSection from "../../components/home/TrustSection";
-import RelatedDogsSection from "../../components/dogs/RelatedDogsSection";
 
 // Mock Next.js components
 jest.mock("next/link", () => {
@@ -32,11 +31,6 @@ jest.mock("next/image", () => {
 
 // Mock API calls
 global.fetch = jest.fn();
-
-// Mock relatedDogsService
-jest.mock("../../services/relatedDogsService", () => ({
-  getRelatedDogs: jest.fn(),
-}));
 
 // Mock useScrollAnimation hook for lazy loading
 jest.mock("../../hooks/useScrollAnimation", () => ({
@@ -105,30 +99,6 @@ describe("Typography Consistency Tests", () => {
       expect(sectionHeading.tagName).toBe("H2");
     });
 
-    it("should use .text-section for related dogs section heading", () => {
-      const mockDogs = [
-        {
-          id: 1,
-          name: "Dog 1",
-          breed: "Breed 1",
-          images: ["image1.jpg"],
-          organization: { name: "Org 1" },
-        },
-      ];
-
-      render(
-        <RelatedDogsSection
-          dogs={mockDogs}
-          currentDogId={2}
-          organizationId={1}
-          organization={{ name: "Test Organization" }}
-        />,
-      );
-
-      const sectionHeading = screen.getByText(/more dogs from/i);
-      expect(sectionHeading).toHaveClass("text-section");
-      expect(sectionHeading.tagName).toBe("H2");
-    });
   });
 
   describe("Font Weight Consistency", () => {
@@ -150,66 +120,9 @@ describe("Typography Consistency Tests", () => {
       expect(dogName).toHaveClass("font-bold");
     });
 
-    it("should use font-bold for section headings", () => {
-      const mockDogs = [
-        {
-          id: 1,
-          name: "Dog 1",
-          breed: "Breed 1",
-          images: ["image1.jpg"],
-          organization: { name: "Org 1" },
-        },
-      ];
-
-      render(
-        <RelatedDogsSection
-          dogs={mockDogs}
-          currentDogId={2}
-          organizationId={1}
-          organization={{ name: "Test Organization" }}
-        />,
-      );
-
-      const sectionHeading = screen.getByText(/more dogs from/i);
-      // text-section class includes font-bold
-      expect(sectionHeading).toHaveClass("text-section");
-    });
   });
 
   describe("Spacing Consistency", () => {
-    it("should use gap-6 for grid layouts", async () => {
-      const mockDogs = [
-        {
-          id: 1,
-          name: "Dog 1",
-          breed: "Breed 1",
-          images: ["image1.jpg"],
-          organization: { name: "Org 1" },
-        },
-        {
-          id: 2,
-          name: "Dog 2",
-          breed: "Breed 2",
-          images: ["image2.jpg"],
-          organization: { name: "Org 2" },
-        },
-      ];
-
-      const { getRelatedDogs } = require("../../services/relatedDogsService");
-      getRelatedDogs.mockResolvedValue(mockDogs);
-
-      render(
-        <RelatedDogsSection
-          currentDogId={3}
-          organizationId={1}
-          organization={{ name: "Test Organization" }}
-        />,
-      );
-
-      // Wait for the component to load and render the grid
-      const gridContainer = await screen.findByTestId("related-dogs-grid");
-      expect(gridContainer).toHaveClass("gap-6");
-    });
 
     it("should use standardized card padding", () => {
       const mockDog = {
@@ -282,57 +195,9 @@ describe("Typography Consistency Tests", () => {
       expect(h1Elements).toHaveLength(0);
     });
 
-    it("should use appropriate heading levels for sections", () => {
-      const mockDogs = [
-        {
-          id: 1,
-          name: "Dog 1",
-          breed: "Breed 1",
-          images: ["image1.jpg"],
-          organization: { name: "Org 1" },
-        },
-      ];
-
-      render(
-        <RelatedDogsSection
-          dogs={mockDogs}
-          currentDogId={2}
-          organizationId={1}
-          organization={{ name: "Test Organization" }}
-        />,
-      );
-
-      // Section heading should be h2
-      const sectionHeading = screen.getByText(/more dogs from/i);
-      expect(sectionHeading.tagName).toBe("H2");
-    });
   });
 
   describe("Responsive Typography", () => {
-    it("should apply responsive classes for typography", () => {
-      const mockDogs = [
-        {
-          id: 1,
-          name: "Dog 1",
-          breed: "Breed 1",
-          images: ["image1.jpg"],
-          organization: { name: "Org 1" },
-        },
-      ];
-
-      render(
-        <RelatedDogsSection
-          dogs={mockDogs}
-          currentDogId={2}
-          organizationId={1}
-          organization={{ name: "Test Organization" }}
-        />,
-      );
-
-      const sectionHeading = screen.getByText(/more dogs from/i);
-      // text-section class should include responsive sizing
-      expect(sectionHeading).toHaveClass("text-section");
-    });
 
     it("should apply responsive padding for cards", () => {
       const mockOrg = {
@@ -414,39 +279,5 @@ describe("Typography Consistency Tests", () => {
       expect(screen.getByRole("heading", { level: 3, name: "Test Dog" })).toHaveClass("text-ink");
     });
 
-    it("should use semantic heading structure", async () => {
-      const mockDogs = [
-        {
-          id: 1,
-          name: "Dog 1",
-          breed: "Breed 1",
-          images: ["image1.jpg"],
-          organization: { name: "Org 1" },
-        },
-      ];
-
-      const { getRelatedDogs } = require("../../services/relatedDogsService");
-      getRelatedDogs.mockResolvedValue(mockDogs);
-
-      const { container } = render(
-        <div>
-          <h1>Page Title</h1>
-          <RelatedDogsSection
-            currentDogId={2}
-            organizationId={1}
-            organization={{ name: "Test Organization" }}
-          />
-        </div>,
-      );
-
-      const h1 = container.querySelector("h1");
-      expect(h1).toBeInTheDocument();
-
-      // Wait for h2 to appear after component loads
-      const h2 = await screen.findByRole("heading", { level: 2 });
-      expect(h2).toBeInTheDocument();
-
-      // Proper heading hierarchy: h1 → h2 → h3
-    });
   });
 });

@@ -95,14 +95,14 @@ jest.mock("../../hooks/useSwipeNavigation", () => ({
   },
 }));
 
-jest.mock("../../services/relatedDogsService", () => ({
-  getRelatedDogs: jest.fn(() => Promise.resolve([])),
+jest.mock("../../services/similarDogsService", () => ({
+  getSimilarDogs: jest.fn(() => Promise.resolve([])),
 }));
 
 // Mock additional complex components that might cause loading issues
-jest.mock("../../components/dogs/RelatedDogsSection", () => {
-  return function MockRelatedDogsSection() {
-    return <div data-testid="related-dogs-section">Related Dogs</div>;
+jest.mock("../../components/dogs/SimilarDogsSection", () => {
+  return function MockSimilarDogsSection() {
+    return <div data-testid="similar-dogs-section">Similar Dogs</div>;
   };
 });
 
