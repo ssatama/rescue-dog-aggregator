@@ -329,3 +329,5 @@ describe("MobileHomePage", () => {
     }
   });
 });
+// The search field has its own tests (GlobalSearch.test.tsx)
+jest.mock("../../search/GlobalSearch", () => ({ __esModule: true, default: () => null }));

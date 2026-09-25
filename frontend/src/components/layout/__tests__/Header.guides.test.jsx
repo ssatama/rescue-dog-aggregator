@@ -40,3 +40,6 @@ describe("Header - Guides Navigation", () => {
     expect(desktopLink).toHaveAttribute("aria-current", "page");
   });
 });
+
+// The search field has its own tests (GlobalSearch.test.tsx)
+jest.mock("../../search/GlobalSearch", () => ({ __esModule: true, default: () => null }));

@@ -25,9 +25,11 @@ export interface FilterConfig {
 }
 
 export interface SharedFilterProps {
+  /** The catalog's text search. It counts as an active filter; the field that
+   * edits it is the global search, or the drawer's own box on breed pages. */
   searchQuery: string;
-  handleSearchChange: (value: string) => void;
-  clearSearch: () => void;
+  handleSearchChange?: (value: string) => void;
+  clearSearch?: () => void;
 
   organizationFilter: string;
   setOrganizationFilter: (value: string) => void;

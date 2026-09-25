@@ -174,6 +174,7 @@ class SuggestBreed(BaseModel):
 
 
 class SuggestRescue(BaseModel):
+    id: int
     name: str
     slug: str
     count: int

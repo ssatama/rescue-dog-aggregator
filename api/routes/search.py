@@ -12,7 +12,7 @@ router = APIRouter(tags=["search"])
 
 @router.get("/suggest", response_model=SuggestResponse)
 async def get_suggestions(
-    q: str = Query(..., min_length=1, max_length=100, description="What the visitor has typed so far"),
+    q: str = Query("", max_length=100, description="What the visitor has typed so far; empty returns popular breeds"),
     limit: int = Query(5, ge=1, le=10, description="Maximum results per group"),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):

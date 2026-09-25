@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { Suspense, useMemo } from "react";
 import MobileTopHeader from "./MobileTopHeader";
+import GlobalSearch from "../search/GlobalSearch";
 import MobileNavCards from "./MobileNavCards";
 import MobileStats from "./MobileStats";
 import MobileCountryBrowse from "./MobileCountryBrowse";
@@ -143,6 +144,12 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
     >
       {/* Top Header with branding */}
       <MobileTopHeader />
+
+      <div className="px-4 pb-2">
+        <Suspense fallback={<div className="h-10" />}>
+          <GlobalSearch surface="mobile" />
+        </Suspense>
+      </div>
 
       {/* Main content */}
       <main className="relative">

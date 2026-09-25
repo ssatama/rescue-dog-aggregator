@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import GlobalSearch from "../search/GlobalSearch";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import HeaderDesktopNav from "./HeaderDesktopNav";
 import logo from "../../../public/logo.jpeg";
@@ -36,8 +38,12 @@ export default function Header() {
             rescuedogs
           </Link>
 
-          {/* Global search goes here (#492) */}
-          <div className="flex-1" />
+          {/* Phones get the field at the top of home and the catalog instead */}
+          <div className="flex flex-1 justify-center">
+            <Suspense fallback={<div className="hidden h-10 w-full max-w-md sm:block" />}>
+              <GlobalSearch surface="header" className="hidden w-full max-w-md sm:block" />
+            </Suspense>
+          </div>
 
           <HeaderDesktopNav />
 

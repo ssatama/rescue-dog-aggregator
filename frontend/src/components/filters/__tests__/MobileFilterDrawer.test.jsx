@@ -73,7 +73,7 @@ describe("MobileFilterDrawer Component", () => {
     const searchInput = screen.getByTestId("search-input");
     expect(searchInput).toHaveAttribute(
       "aria-label",
-      "Search dogs by name or breed",
+      "Search these dogs by name or breed",
     );
   });
 
