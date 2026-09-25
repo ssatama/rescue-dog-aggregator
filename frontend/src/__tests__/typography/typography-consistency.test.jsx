@@ -1,8 +1,7 @@
 import React from "react";
-import { render, screen, waitFor } from "../../test-utils";
+import { render, screen } from "../../test-utils";
 import DogCard from "../../components/dogs/DogCard";
 import OrganizationCard from "../../components/organizations/OrganizationCard";
-import TrustSection from "../../components/home/TrustSection";
 
 // Mock Next.js components
 jest.mock("next/link", () => {
@@ -79,26 +78,6 @@ describe("Typography Consistency Tests", () => {
       expect(orgName.tagName).toBe("H3");
     });
 
-    it("should use .text-section for section headings", async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          total_dogs: 100,
-          total_organizations: 10,
-          countries_served: 5,
-        }),
-      });
-
-      render(<TrustSection />);
-
-      // Wait for the component to render with fetched data
-      const sectionHeading = await screen.findByText(
-        /dogs available from these organizations:/i,
-      );
-      expect(sectionHeading).toHaveClass("text-section");
-      expect(sectionHeading.tagName).toBe("H2");
-    });
-
   });
 
   describe("Font Weight Consistency", () => {
@@ -140,22 +119,6 @@ describe("Typography Consistency Tests", () => {
 
       const cardContent = screen.getByText("Test Dog").closest(".px-3");
       expect(cardContent).toHaveClass("px-3", "pb-3");
-    });
-
-    it("should use consistent section spacing", () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          total_dogs: 100,
-          total_organizations: 10,
-          countries_served: 5,
-        }),
-      });
-
-      render(<TrustSection />);
-
-      const section = screen.getByTestId("trust-section");
-      expect(section).toHaveClass(/py-12|py-16|py-20/);
     });
   });
 
@@ -236,27 +199,6 @@ describe("Typography Consistency Tests", () => {
       // The card uses the design system's type tokens
       const dogName = screen.getByRole("heading", { level: 3, name: "Test Dog" });
       expect(dogName).toHaveClass("font-display", "text-ink");
-    });
-
-    it("should verify section typography classes are used by components", async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          total_dogs: 100,
-          total_organizations: 10,
-          countries_served: 5,
-        }),
-      });
-
-      render(<TrustSection />);
-
-      // Wait for the component to render with fetched data
-      await waitFor(() => {
-        const sectionHeading = screen.getByText(
-          "Dogs available from these organizations:",
-        );
-        expect(sectionHeading).toHaveClass("text-section");
-      });
     });
   });
 

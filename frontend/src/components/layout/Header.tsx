@@ -39,8 +39,9 @@ export default function Header() {
             rescuedogs
           </Link>
 
-          {/* Phones get the field at the top of home and the catalog instead */}
-          <div className="flex flex-1 justify-center">
+          {/* Phones get the field at the top of the catalog instead; home has
+              its own big field in the hero, so this one steps aside there */}
+          <div className="flex flex-1 justify-center [body:has([data-home-search])_&]:invisible">
             <Suspense fallback={<div className="hidden h-10 w-full max-w-md sm:block" />}>
               <GlobalSearch surface="header" className="hidden w-full max-w-md sm:block" />
             </Suspense>

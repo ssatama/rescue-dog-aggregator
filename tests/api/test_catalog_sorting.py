@@ -54,6 +54,13 @@ class TestCatalogSorting:
         names = [dog["name"] for dog in dogs(client, sort="oldest")[:4]]
         assert names == ["Other 4", "Other 3", "Other 2", "Other 1"]
 
+    def test_longest_waiting_curation_takes_each_rescues_longest_listed_dog(self, client: TestClient):
+        # The home's "Waiting longest" row (#497): "oldest" alone would be all Other Rescue
+        page = dogs(client, curation_type="longest_waiting")
+        assert len({dog["organization_id"] for dog in page}) == len(page)
+        assert [dog["name"] for dog in page[:2]] == ["Other 4", "Busy 12"]
+        assert [dog["created_at"] for dog in page] == sorted(dog["created_at"] for dog in page)
+
     def test_recommended_never_lets_one_rescue_run_more_than_three_in_a_row(self, client: TestClient):
         page = dogs(client, sort="recommended")
         assert len(page) == 20

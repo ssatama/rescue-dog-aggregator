@@ -148,6 +148,15 @@ describe("GlobalSearch", () => {
     expect(input()).toHaveValue("staffy");
   });
 
+  it("the home hero's field takes ⌘K in place of the header's and reports as home", async () => {
+    render(<GlobalSearch surface="home" />);
+
+    await userEvent.keyboard("{Meta>}k{/Meta}");
+    expect(input()).toHaveFocus();
+    await userEvent.keyboard("staffy{Enter}");
+    expect(trackSearchPerformed).toHaveBeenCalledWith("home", "none", null);
+  });
+
   it("⌘K and / focus the header field", async () => {
     render(<GlobalSearch surface="header" />);
 

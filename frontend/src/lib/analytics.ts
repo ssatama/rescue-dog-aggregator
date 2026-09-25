@@ -135,7 +135,7 @@ export function trackFavoritesViewed(count: number): void {
 
 /** Where a search box sits: the global header search, the catalog sidebar, or
  * the mobile layout. */
-export type SearchSurface = "header" | "catalog" | "mobile";
+export type SearchSurface = "header" | "catalog" | "mobile" | "home";
 /** What the visitor chose from a search: a suggestion of that kind, a filter,
  * or `none` when they submitted the typed text. */
 export type SearchResultGroup = "breed" | "rescue" | "dog" | "filter" | "none";

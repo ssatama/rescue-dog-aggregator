@@ -241,36 +241,3 @@ export async function getBreedGroupsWithTopBreeds(): Promise<
     return [];
   }
 }
-
-export async function getBreedsWithImagesForHomePage(
-  params: BreedImageParams = {},
-): Promise<z.infer<typeof BreedWithImagesSchema>[] | null> {
-  const queryParams = new URLSearchParams();
-
-  if (params.minCount) queryParams.append("min_count", String(params.minCount));
-  if (params.limit) queryParams.append("limit", String(params.limit));
-
-  const queryString = queryParams.toString();
-  const url = `${API_URL}/api/animals/breeds/with-images${queryString ? `?${queryString}` : ""}`;
-
-  try {
-    const response = await fetchWithRetry(url, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      next: { revalidate: 604800, tags: ["breed-images"] },
-    } as RequestInit);
-
-    if (!response.ok) {
-      logger.error(`Failed to fetch breeds with images: ${response.status}`);
-      return null;
-    }
-
-    const data: unknown = await response.json();
-    return z.array(BreedWithImagesSchema).parse(stripNulls(data));
-  } catch (error) {
-    logger.error("Error fetching breeds with images:", error);
-    reportError(error, { context: "getBreedsWithImagesForHomePage" });
-    return null;
-  }
-}

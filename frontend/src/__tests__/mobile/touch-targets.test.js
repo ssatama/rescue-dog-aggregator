@@ -1,5 +1,4 @@
 import { render, screen } from "../../test-utils";
-import HeroSection from "../../components/home/HeroSection";
 import DogCard from "../../components/dogs/DogCard";
 
 // Mock services and utilities
@@ -18,17 +17,6 @@ describe("Mobile Touch Targets Validation", () => {
     name: "Buddy",
     breed: "Golden Retriever",
     organization: { name: "Test Rescue", city: "Test City", country: "TC" },
-  };
-
-  const mockStats = {
-    total_dogs: 237,
-    total_organizations: 12,
-    total_countries: 2,
-    countries: ["Turkey", "United States"],
-    organizations: [
-      { id: 1, name: "Test Rescue 1", dog_count: 5 },
-      { id: 2, name: "Test Rescue 2", dog_count: 7 },
-    ],
   };
 
   beforeEach(() => {
@@ -60,34 +48,6 @@ describe("Mobile Touch Targets Validation", () => {
           right: 320,
           x: 0,
           y: 0,
-          toJSON: jest.fn(),
-        };
-      }
-
-      if (testId === "hero-primary-cta") {
-        return {
-          width: 120,
-          height: 48,
-          top: 100,
-          left: 50,
-          bottom: 148,
-          right: 170,
-          x: 50,
-          y: 100,
-          toJSON: jest.fn(),
-        };
-      }
-
-      if (testId === "hero-secondary-cta") {
-        return {
-          width: 100,
-          height: 48,
-          top: 100,
-          left: 190, // Spaced 20px from primary button
-          bottom: 148,
-          right: 290,
-          x: 190,
-          y: 100,
           toJSON: jest.fn(),
         };
       }
@@ -132,63 +92,6 @@ describe("Mobile Touch Targets Validation", () => {
     return rect.width >= 48 && rect.height >= 48;
   };
 
-  /**
-   * Helper function to check element spacing
-   * @param {HTMLElement} element1
-   * @param {HTMLElement} element2
-   * @returns {number}
-   */
-  const getElementSpacing = (element1, element2) => {
-    const rect1 = element1.getBoundingClientRect();
-    const rect2 = element2.getBoundingClientRect();
-
-    // Calculate minimum distance between elements
-    const horizontalDistance = Math.max(
-      0,
-      Math.max(rect1.left - rect2.right, rect2.left - rect1.right),
-    );
-    const verticalDistance = Math.max(
-      0,
-      Math.max(rect1.top - rect2.bottom, rect2.top - rect1.bottom),
-    );
-
-    return Math.sqrt(horizontalDistance ** 2 + verticalDistance ** 2);
-  };
-
-  describe("Hero Section Touch Targets", () => {
-    test("primary CTA button should be ≥48px in all dimensions", () => {
-      render(<HeroSection statistics={mockStats} />);
-
-      const ctaButton = screen.getByTestId("hero-primary-cta");
-      expect(validateTouchTarget(ctaButton)).toBe(true);
-
-      const rect = ctaButton.getBoundingClientRect();
-      expect(rect.width).toBeGreaterThanOrEqual(48);
-      expect(rect.height).toBeGreaterThanOrEqual(48);
-    });
-
-    test("secondary CTA button should be ≥48px in all dimensions", () => {
-      render(<HeroSection statistics={mockStats} />);
-
-      const secondaryButton = screen.getByTestId("hero-secondary-cta");
-      expect(validateTouchTarget(secondaryButton)).toBe(true);
-
-      const rect = secondaryButton.getBoundingClientRect();
-      expect(rect.width).toBeGreaterThanOrEqual(48);
-      expect(rect.height).toBeGreaterThanOrEqual(48);
-    });
-
-    test("CTA buttons should have adequate spacing on mobile", () => {
-      render(<HeroSection statistics={mockStats} />);
-
-      const primaryButton = screen.getByTestId("hero-primary-cta");
-      const secondaryButton = screen.getByTestId("hero-secondary-cta");
-
-      const spacing = getElementSpacing(primaryButton, secondaryButton);
-      expect(spacing).toBeGreaterThanOrEqual(8); // Minimum 8px spacing
-    });
-  });
-
   describe("Dog Card Touch Targets", () => {
     test("dog card should be tappable with adequate size", () => {
       render(<DogCard dog={mockDog} />);
@@ -222,38 +125,7 @@ describe("Mobile Touch Targets Validation", () => {
     });
   });
 
-  describe("Accessibility and Focus States", () => {
-    test("all touch targets should have visible focus states", () => {
-      render(<HeroSection statistics={mockStats} />);
-
-      const ctaButton = screen.getByTestId("hero-primary-cta");
-      ctaButton.focus();
-
-      const styles = window.getComputedStyle(ctaButton, ":focus");
-      expect(styles.outline).not.toBe("none");
-    });
-  });
-
   describe("High Contrast and Dark Mode Support", () => {
-    test("touch targets should maintain adequate contrast in high contrast mode", () => {
-      // Mock high contrast media query
-      Object.defineProperty(window, "matchMedia", {
-        writable: true,
-        value: jest.fn().mockImplementation((query) => ({
-          matches: query === "(prefers-contrast: high)",
-          media: query,
-        })),
-      });
-
-      render(<HeroSection statistics={mockStats} />);
-
-      const ctaButton = screen.getByTestId("hero-primary-cta");
-      const styles = window.getComputedStyle(ctaButton);
-
-      // In high contrast mode, ensure proper border/outline visibility
-      expect(styles.border).not.toBe("none");
-    });
-
     test("favorite heart keeps a solid disc in dark mode", () => {
       const { container } = render(<DogCard dog={mockDog} />);
 

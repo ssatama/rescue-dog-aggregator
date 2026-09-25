@@ -119,7 +119,7 @@ class AnimalFilterRequest(BaseModel):
     # Curation
     curation_type: str = Field(
         default="random",
-        description="Curation type: 'recent' (last 7 days), 'recent_with_fallback' (recent or latest), 'diverse' (one per org), or 'random' (default)",
+        description="Curation type: 'recent' (last 7 days), 'recent_with_fallback' (recent or latest), 'diverse' (one per org), 'longest_waiting' (each org's longest-listed dog, longest first), or 'random' (default)",
     )
 
     # Sorting
@@ -138,7 +138,7 @@ class AnimalFilterRequest(BaseModel):
     @classmethod
     def validate_curation_type(cls, v):
         """Validate curation_type field."""
-        valid_types = ["recent", "recent_with_fallback", "diverse", "random"]
+        valid_types = ["recent", "recent_with_fallback", "diverse", "longest_waiting", "random"]
         if v not in valid_types:
             raise ValueError(f"Invalid curation_type: {v}. Must be one of: {', '.join(valid_types)}")
         return v
