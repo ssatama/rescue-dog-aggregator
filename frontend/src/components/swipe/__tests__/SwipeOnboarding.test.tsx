@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SwipeOnboarding from "../SwipeOnboarding";
+import { resetVisitorLocationForTests, setVisitorCountry } from "@/lib/visitorLocation";
 
 // Mock lucide-react PawPrint
 jest.mock("lucide-react", () => ({
@@ -19,6 +20,9 @@ describe("SwipeOnboarding", () => {
   beforeEach(() => {
     mockOnComplete.mockClear();
     localStorage.clear();
+    sessionStorage.clear();
+    // The visitor's country is shared site-wide state; each test starts without one
+    resetVisitorLocationForTests();
 
     // Mock fetch responses for country and size counts
     (global.fetch as jest.Mock).mockImplementation((url: string) => {
@@ -378,6 +382,27 @@ describe("SwipeOnboarding", () => {
         const announcement = screen.getByRole("status");
         expect(announcement).toHaveAttribute("aria-label", "Step 2 of 2");
       });
+    });
+  });
+  describe("visitor country (#493)", () => {
+    it("starts at the size step when the visitor's country is known", async () => {
+      setVisitorCountry("DE");
+      render(<SwipeOnboarding onComplete={mockOnComplete} />);
+
+      expect(await screen.findByText(/Size preference/i)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Germany/i })).not.toBeInTheDocument();
+    });
+
+    it("remembers a country answered here for the rest of the site", async () => {
+      render(<SwipeOnboarding onComplete={mockOnComplete} />);
+      await waitFor(() => expect(screen.getByText(/Germany/)).toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
+      await screen.findByText(/Size preference/i);
+      fireEvent.click(screen.getByRole("button", { name: "Start Browsing" }));
+
+      expect(localStorage.getItem("visitorCountry")).toBe("DE");
     });
   });
 });

@@ -16,6 +16,7 @@ import {
   getBreedSuggestions,
 } from "@/services/animalsService";
 import { FILTER_DEFAULTS, ageFilterLabel } from "@/constants/filters";
+import { countryOptionLabel } from "@/utils/countryNames";
 import { useFilterOptions } from "@/hooks/useFilterOptions";
 import type { MobileFilterDrawerProps, FilterConfig } from "@/types/filterComponents";
 import FilterSection from "./FilterSection";
@@ -288,7 +289,7 @@ export default function MobileFilterDrawer({
                       >
                         {availableCountries.map((country) => (
                           <option key={country} value={country}>
-                            {country}
+                            {countryOptionLabel(country)}
                           </option>
                         ))}
                       </select>
@@ -309,7 +310,7 @@ export default function MobileFilterDrawer({
                         <SelectContent className="max-h-48">
                           {availableCountries.map((country) => (
                             <SelectItem key={country} value={country}>
-                              {country}
+                              {countryOptionLabel(country)}
                             </SelectItem>
                           ))}
                         </SelectContent>

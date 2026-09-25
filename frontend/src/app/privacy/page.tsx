@@ -122,6 +122,26 @@ export default function PrivacyPage(): React.JSX.Element {
                   tracking
                 </p>
               </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 rounded-lg md:col-span-2">
+                <div className="text-3xl mb-3">📍</div>
+                <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-3">
+                  Where You Live
+                </h3>
+                <p className="text-body text-gray-600 dark:text-gray-400 mb-2">
+                  To mark the dogs you can adopt, we guess your country from
+                  your internet connection. The guess is made fresh on each
+                  visit and never stored on our servers; your browser keeps it
+                  only until you close the tab.
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-500">
+                  If you pick a country yourself, or choose &ldquo;Anywhere&rdquo;, that choice is
+                  saved in your browser&apos;s localStorage and nowhere else.
+                  Analytics record the country you set, never anything more
+                  precise. It only labels dogs: we never hide dogs by location
+                  unless you turn on &ldquo;Only dogs I can adopt&rdquo;.
+                </p>
+              </div>
             </div>
           </section>
 

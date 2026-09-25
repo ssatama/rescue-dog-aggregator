@@ -13,6 +13,7 @@ import { IMAGE_SIZES } from "@/constants/imageSizes";
 import { trackDogCardClick, trackFavoriteToggle } from "@/lib/monitoring/breadcrumbs";
 import { trackDogCardClicked } from "@/lib/analytics";
 import { companionAnswer } from "@/utils/dogFacts";
+import AdoptableBadge from "@/components/location/AdoptableBadge";
 import type { Dog } from "@/types/dog";
 import type { ListContext } from "@/types/dogComponents";
 
@@ -262,6 +263,7 @@ function DogCard({
           sizes={compact ? IMAGE_SIZES.THUMBNAIL : IMAGE_SIZES.CATALOG_CARD}
         />
         {!compact && <FavoriteHeart dog={dog} />}
+        {!compact && <AdoptableBadge dog={dog} className="absolute left-2 top-2 z-[2] bg-surface/95 shadow-sm" />}
       </div>
 
       <div className={cn("min-w-0", compact ? "flex-1 py-1 pr-1" : "px-3 pb-3 pt-2.5")}>

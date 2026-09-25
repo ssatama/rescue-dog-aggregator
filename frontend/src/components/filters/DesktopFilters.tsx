@@ -15,6 +15,7 @@ import {
   getBreedSuggestions,
 } from "@/services/animalsService";
 import { FILTER_DEFAULTS, ageFilterLabel } from "@/constants/filters";
+import { countryOptionLabel } from "@/utils/countryNames";
 import { useFilterOptions } from "@/hooks/useFilterOptions";
 import type { DesktopFiltersProps } from "@/types/filterComponents";
 
@@ -151,7 +152,7 @@ export default function DesktopFilters({
               >
                 {availableCountries.map((country) => (
                   <option key={country} value={country}>
-                    {country}
+                    {countryOptionLabel(country)}
                   </option>
                 ))}
               </select>
@@ -171,7 +172,7 @@ export default function DesktopFilters({
               <SelectContent className="max-h-48">
                 {availableCountries.map((country) => (
                   <SelectItem key={country} value={country}>
-                    {country}
+                    {countryOptionLabel(country)}
                   </SelectItem>
                 ))}
               </SelectContent>
