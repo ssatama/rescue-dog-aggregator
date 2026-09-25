@@ -50,21 +50,11 @@ describe("DogsGrid Component", () => {
       expect(screen.getByTestId("dog-card-3")).toBeInTheDocument();
     });
 
-    test("applies correct grid classes with auto-fill responsive layout", () => {
+    test("uses the site's one dog grid: 2, then 3, then 4 columns", () => {
       render(<DogsGrid dogs={mockDogs} />);
 
       const gridContainer = screen.getByTestId("dogs-grid");
-      expect(gridContainer).toHaveClass("grid");
-      expect(gridContainer).toHaveClass("justify-center");
-      expect(gridContainer).toHaveClass("grid-cols-[repeat(auto-fill,minmax(min(100%,300px),340px))]");
-    });
-
-    test("applies correct gap spacing with updated desktop spacing", () => {
-      render(<DogsGrid dogs={mockDogs} />);
-
-      const gridContainer = screen.getByTestId("dogs-grid");
-      expect(gridContainer).toHaveClass("gap-4"); // Mobile gap (unchanged)
-      expect(gridContainer).toHaveClass("md:gap-6"); // Desktop gap (increased from gap-4)
+      expect(gridContainer).toHaveClass("grid", "grid-cols-2", "sm:grid-cols-3", "xl:grid-cols-4");
     });
   });
 

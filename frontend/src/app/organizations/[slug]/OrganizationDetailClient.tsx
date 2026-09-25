@@ -21,7 +21,6 @@ import {
   trackFiltersApplied,
   trackOrganizationViewed,
 } from "@/lib/analytics";
-import OrganizationDogsViewportWrapper from "../../../components/organizations/OrganizationDogsViewportWrapper";
 import DogsGrid from "../../../components/dogs/DogsGrid";
 import type { OrganizationDetailClientProps } from "@/types/pageComponents";
 import type { ApiOrganization } from "@/types/apiDog";
@@ -125,35 +124,6 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
       sort: defaultFilters.sort || "newest",
     });
   };
-
-  // Handle filter changes from mobile catalog quick filters
-  const handleFilterChange = useCallback((filterKeyOrBatch: string | Record<string, string>, value?: string) => {
-    if (typeof filterKeyOrBatch === "object") {
-      // Batch update (multiple filters at once)
-      // Map PremiumMobileCatalog keys to OrganizationDetailClient keys
-      const mappedBatch: Record<string, string> = {};
-      Object.entries(filterKeyOrBatch).forEach(([key, val]) => {
-        if (key === "sexFilter") {
-          mappedBatch.sex = val;
-        } else if (key === "ageFilter") {
-          mappedBatch.age = val;
-        } else {
-          mappedBatch[key] = val;
-        }
-      });
-      setFilters((prev) => ({ ...prev, ...mappedBatch }));
-    } else {
-      // Single filter update
-      // Map PremiumMobileCatalog keys to OrganizationDetailClient keys
-      const mappedKey =
-        filterKeyOrBatch === "sexFilter"
-          ? "sex"
-          : filterKeyOrBatch === "ageFilter"
-            ? "age"
-            : filterKeyOrBatch;
-      setFilters((prev) => ({ ...prev, [mappedKey]: value ?? "" }));
-    }
-  }, []);
 
   // Fetch organization dogs with pagination and filtering
   const fetchOrganizationDogs = useCallback(
@@ -438,15 +408,10 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
 
           {/* Dogs Grid with filtered results */}
           <div className="mt-6">
-            <OrganizationDogsViewportWrapper
+            <DogsGrid
               dogs={filteredDogs}
               loading={loading && dogs.length === 0}
-              loadingMore={loadingMore}
-              onLoadMore={handleLoadMore}
-              hasMore={hasMore}
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              onOpenFilter={handleMobileFilterOpen}
+              loadingType="filter"
               emptyStateVariant={
                 hasActiveFilters ? "noDogsFiltered" : "noDogsOrganization"
               }
@@ -457,9 +422,8 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
               listContext="org-page"
             />
 
-            {/* Load More Button - Hidden on mobile since PremiumMobileCatalog handles it */}
             {hasMore && !loading && !loadingMore && (
-              <div className="hidden lg:flex justify-center mt-8 mb-12">
+              <div className="flex justify-center mt-8 mb-12">
                 <button
                   data-testid="load-more-button"
                   onClick={handleLoadMore}

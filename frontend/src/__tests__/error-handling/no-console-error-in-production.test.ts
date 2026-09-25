@@ -19,7 +19,6 @@ const ALLOWED_FILES = new Set([
   "lib/posthogOptOut.ts",
   // Error boundaries with Sentry.captureException - console.error is dev-only supplementary logging
   "components/swipe/SwipeErrorBoundary.tsx",
-  "components/error/MobileCatalogErrorBoundary.tsx",
   // UI ErrorBoundary - dev-only componentDidCatch logging (no Sentry integration)
   "components/ui/ErrorBoundary.tsx",
   // FallbackImage - image load warnings are expected UX events

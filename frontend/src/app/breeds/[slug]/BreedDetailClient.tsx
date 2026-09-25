@@ -24,7 +24,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import PersonalityBarChart from "@/components/breeds/PersonalityBarChart";
 import CommonTraits from "@/components/breeds/CommonTraits";
 import ExperienceLevelChart from "@/components/breeds/ExperienceLevelChart";
-import BreedDogsViewportWrapper from "@/components/breeds/BreedDogsViewportWrapper";
+import DogsGrid from "@/components/dogs/DogsGrid";
 import type { Dog } from "@/types/dog";
 import type {
   BreedDetailClientProps,
@@ -475,21 +475,17 @@ export default function BreedDetailClient({
             )
           ) : (
             <div id="dogs-grid">
-              <BreedDogsViewportWrapper
+              <DogsGrid
                 dogs={dogs}
                 loading={loading && dogs.length === 0}
-                loadingMore={loadingMore}
-                onLoadMore={loadMoreDogs}
-                hasMore={hasMore}
-                filters={filters}
-                onFilterChange={handleMobileFilterChange}
-                onOpenFilter={() => setIsFilterDrawerOpen(true)}
+                loadingType="filter"
+                listContext="breed-page"
               />
             </div>
           )}
 
           {hasMore && !loading && dogs.length > 0 && (
-            <div className="hidden lg:flex justify-center mt-8">
+            <div className="flex justify-center mt-8">
               <Button
                 onClick={loadMoreDogs}
                 disabled={loadingMore}

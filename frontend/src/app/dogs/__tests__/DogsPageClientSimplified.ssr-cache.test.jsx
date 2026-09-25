@@ -31,8 +31,8 @@ jest.mock("../../../components/dogs/DogCard", () => {
   };
 });
 
-jest.mock("../../../components/dogs/DogsPageViewportWrapper", () => {
-  return function DogsPageViewportWrapper({ dogs }) {
+jest.mock("../../../components/dogs/CatalogDogGrid", () => {
+  return function CatalogDogGrid({ dogs }) {
     return (
       <div data-testid="viewport-wrapper">
         {dogs.map(dog => (

@@ -120,3 +120,24 @@ describe("lifestyle chips", () => {
     expect(onRemove).toHaveBeenCalledWith("energyFilter", "");
   });
 });
+
+describe("filter sidebar toggle", () => {
+  it("hides and shows the sidebar", async () => {
+    const onToggle = jest.fn();
+    const { rerender } = render(
+      <CatalogToolbar filters={NONE} total={3} onRemove={jest.fn()} onClearAll={jest.fn()} onSortChange={jest.fn()} sidebar={{ shown: true, onToggle }} />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Hide filters" }));
+    expect(onToggle).toHaveBeenCalled();
+
+    rerender(
+      <CatalogToolbar filters={NONE} total={3} onRemove={jest.fn()} onClearAll={jest.fn()} onSortChange={jest.fn()} sidebar={{ shown: false, onToggle }} />,
+    );
+    expect(screen.getByRole("button", { name: "Show filters" })).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("has no toggle where there is no sidebar", () => {
+    renderToolbar();
+    expect(screen.queryByRole("button", { name: /filters/ })).not.toBeInTheDocument();
+  });
+});

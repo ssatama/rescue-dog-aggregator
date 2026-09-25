@@ -1,9 +1,13 @@
+"use client";
+
 import React from "react";
 import DogCard from "./DogCard";
 import DogCardErrorBoundary from "../error/DogCardErrorBoundary";
 import DogCardSkeletonOptimized from "../ui/DogCardSkeletonOptimized";
 import EmptyState from "../ui/EmptyState";
 import type { DogsGridProps } from "@/types/dogComponents";
+import { DOG_GRID } from "@/constants/layout";
+import { useLegacyDogHash } from "@/hooks/useLegacyDogHash";
 
 const DogsGrid = React.memo(function DogsGrid({
   dogs = [],
@@ -17,6 +21,8 @@ const DogsGrid = React.memo(function DogsGrid({
   listContext = "home",
   ...props
 }: DogsGridProps): React.ReactElement {
+  useLegacyDogHash();
+
   if (loading) {
     const animationClass =
       loadingType === "filter"
@@ -28,7 +34,7 @@ const DogsGrid = React.memo(function DogsGrid({
     return (
       <div
         data-testid="dogs-grid-skeleton"
-        className={`grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),340px))] justify-center gap-4 md:gap-6 ${className} ${animationClass}`}
+        className={`${DOG_GRID} ${className} ${animationClass}`}
         aria-label="Dogs available for adoption"
         {...props}
       >
@@ -56,7 +62,7 @@ const DogsGrid = React.memo(function DogsGrid({
   return (
     <div
       data-testid="dogs-grid"
-      className={`grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),340px))] justify-center gap-4 md:gap-6 ${className}`}
+      className={`${DOG_GRID} ${className}`}
       aria-label="Dogs available for adoption"
       {...props}
     >
