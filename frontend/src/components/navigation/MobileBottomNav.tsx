@@ -222,10 +222,13 @@ const MobileBottomNav: React.FC = () => {
                         transition={{ duration: 0.2 }}
                       />
                     )}
-                    <Icon className="w-5 h-5 mb-1" />
-                    {item.id === "saved" && (
-                      <FavoriteBadge className="absolute top-1 left-1/2 ml-1" />
-                    )}
+                    {/* The badge hangs off the icon's top-right corner, not the tab's centre line */}
+                    <span className="relative mb-1">
+                      <Icon className="w-5 h-5" />
+                      {item.id === "saved" && (
+                        <FavoriteBadge className="absolute -top-1.5 left-4 ring-2 ring-background" />
+                      )}
+                    </span>
                     <span className="text-xs font-medium">{item.label}</span>
                   </Link>
                 );

@@ -89,7 +89,8 @@ frontend/src/components/swipe/
 All state is managed client-side using browser storage:
 
 **localStorage**:
-- `rescue-dogs-favorites`: Array of favorited dog IDs (persists across sessions)
+- `rescue-dogs-favorites:v1`: Array of favorited dog IDs (persists across sessions)
+- `rescue-dogs-favorites-snapshots:v1`: Last known name, photo, rescue and breed per saved dog, so /favorites can still show a dog the API no longer returns (#498)
 - `swipeFilters`: User's filter preferences (size, age, country)
 
 **sessionStorage**:

@@ -29,6 +29,11 @@ export interface DogCardProps {
   /** Called on a plain click instead of following the link (the mobile
    * catalog opens its modal). New-tab and modified clicks still follow it. */
   onOpen?: (dog: Dog) => void;
+  /** Compact only: buttons beside the text, or in a full-width row below on phones. */
+  actions?: React.ReactNode;
+  /** Compact only: replaces the facts and greys the row, for a saved dog that
+   * is no longer listed (#498). */
+  notice?: React.ReactNode;
 }
 
 type Fact = { label: string; good: boolean };
@@ -178,7 +183,7 @@ function FavoriteHeart({ dog }: { dog: Dog }): React.ReactElement {
       onClick={async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        await toggleFavorite(dog.id, dog.name);
+        await toggleFavorite(dog.id, dog.name, dog);
         if (dog.organization?.slug) {
           trackFavoriteToggle(isFav ? "remove" : "add", String(dog.id), dog.name, dog.organization.slug);
         }
@@ -222,12 +227,16 @@ function DogCard({
   position = 0,
   listContext = "home",
   onOpen,
+  actions,
+  notice,
 }: DogCardProps): React.ReactElement {
   const href = `/dogs/${dog.slug || `unknown-dog-${dog.id}`}`;
   const summary = getDogSummary(dog);
   const where = getWhere(dog);
   const facts = getLivesWithFacts(dog);
   const compact = size === "compact";
+  // A dog known only from its favorites snapshot has no page to link to
+  const linked = Boolean(dog.slug) || !notice;
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -247,13 +256,17 @@ function DogCard({
       data-size={size}
       className={cn(
         "group relative overflow-hidden rounded-xl border border-line bg-surface transition-shadow hover:shadow-card focus-within:ring-2 focus-within:ring-ring",
-        compact ? "flex gap-3 p-2" : "flex h-full flex-col",
+        compact
+          ? cn("grid grid-cols-[6rem_minmax(0,1fr)] gap-x-3 p-2", actions && "sm:grid-cols-[6rem_minmax(0,1fr)_auto]")
+          : "flex h-full flex-col",
+        notice && "border-dashed bg-soft",
       )}
     >
       <div
         className={cn(
           "relative shrink-0 overflow-hidden bg-soft",
-          compact ? "aspect-square w-24 rounded-lg" : "aspect-[4/3] w-full",
+          compact ? "aspect-square w-24 self-start rounded-lg" : "aspect-[4/3] w-full",
+          notice && "opacity-60 grayscale",
         )}
         data-testid="dog-photo"
       >
@@ -266,24 +279,38 @@ function DogCard({
         {!compact && <AdoptableBadge dog={dog} className="absolute left-2 top-2 z-[2] bg-surface/95 shadow-sm" />}
       </div>
 
-      <div className={cn("min-w-0", compact ? "flex-1 py-1 pr-1" : "px-3 pb-3 pt-2.5")}>
+      <div className={cn("min-w-0", compact ? "py-1 pr-1" : "px-3 pb-3 pt-2.5")}>
         <h3 className="truncate font-display text-lg font-bold leading-tight text-ink">
-          {/* The link's ::after covers the whole card, so the card is one tap target */}
-          {/* A card that opens a modal (mobile) almost never navigates, so it must
-              not prefetch: that would render a dog page per card scrolled past */}
-          <Link
-            href={href}
-            prefetch={onOpen ? false : undefined}
-            onClick={handleClick}
-            className="after:absolute after:inset-0 after:z-[1] after:content-[''] focus:outline-none"
-          >
-            {dog.name}
-          </Link>
+          {linked ? (
+            // The link's ::after covers the whole card, so the card is one tap target.
+            // A card that opens a modal (mobile) almost never navigates, so it must
+            // not prefetch: that would render a dog page per card scrolled past
+            <Link
+              href={href}
+              prefetch={onOpen ? false : undefined}
+              onClick={handleClick}
+              className="after:absolute after:inset-0 after:z-[1] after:content-[''] focus:outline-none"
+            >
+              {dog.name}
+            </Link>
+          ) : (
+            dog.name
+          )}
         </h3>
-        {summary && <p className="mt-0.5 line-clamp-2 text-sm text-subtle">{summary}</p>}
-        {where && <p className="mt-0.5 truncate text-sm text-subtle">{where}</p>}
-        <LivesWith facts={facts} />
+        {notice ?? (
+          <>
+            {summary && <p className="mt-0.5 line-clamp-2 text-sm text-subtle">{summary}</p>}
+            {where && <p className="mt-0.5 truncate text-sm text-subtle">{where}</p>}
+            <LivesWith facts={facts} />
+          </>
+        )}
       </div>
+      {compact && actions && (
+        // Above the card's link, so the buttons stay clickable
+        <div className="relative z-[2] col-span-2 mt-2 flex items-center gap-2 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:mt-0 sm:self-center sm:pr-1">
+          {actions}
+        </div>
+      )}
     </article>
   );
 }

@@ -294,7 +294,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     if (!dog) return;
     const numericId = parseInt(String(dog.id), 10);
     if (!isNaN(numericId)) {
-      await toggleFav(numericId, dog.name);
+      await toggleFav(numericId, dog.name, dog);
     }
   };
 

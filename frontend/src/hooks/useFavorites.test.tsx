@@ -167,6 +167,32 @@ describe("useFavorites", () => {
     });
   });
 
+  describe("snapshots (#498)", () => {
+    const SNAPSHOTS = "rescue-dogs-favorites-snapshots:v1";
+
+    it("saves the dog's last known look beside the id list, and forgets it on remove", async () => {
+      const { result } = renderHook(() => useFavorites(), { wrapper });
+      await waitFor(() => expect(result.current.isHydrated).toBe(true));
+
+      await act(async () => {
+        await result.current.addFavorite(5, "Dolly", {
+          id: 5,
+          name: "Dolly",
+          organization: { name: "Dogs Trust" },
+        });
+      });
+      expect(JSON.parse(localStorageMock.getItem("rescue-dogs-favorites:v1") ?? "[]")).toEqual([5]);
+      expect(JSON.parse(localStorageMock.getItem(SNAPSHOTS) ?? "{}")).toEqual({
+        5: { name: "Dolly", rescue: "Dogs Trust" },
+      });
+
+      await act(async () => {
+        await result.current.removeFavorite(5, "Dolly");
+      });
+      expect(JSON.parse(localStorageMock.getItem(SNAPSHOTS) ?? "{}")).toEqual({});
+    });
+  });
+
   describe("removeFavorite", () => {
     it("should remove a dog from favorites", async () => {
       localStorageMock.setItem(

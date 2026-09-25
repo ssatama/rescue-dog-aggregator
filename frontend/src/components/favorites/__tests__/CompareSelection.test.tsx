@@ -40,6 +40,14 @@ const mockDogs: Dog[] = [
     sex: "Female",
     organization_name: "Another Rescue",
   },
+  {
+    id: 5,
+    name: "Rex",
+    breed: "Collie",
+    age_text: "4 years",
+    sex: "Male",
+    organization_name: "Another Rescue",
+  },
 ];
 
 describe("CompareSelection", () => {
@@ -77,7 +85,7 @@ describe("CompareSelection", () => {
         />,
       );
 
-      expect(screen.getByText("2 of 3 selected")).toBeInTheDocument();
+      expect(screen.getByText("2 of 4 selected")).toBeInTheDocument();
     });
 
     it("shows dog images when available", () => {
@@ -141,17 +149,17 @@ describe("CompareSelection", () => {
       expect(mockOnSelectionChange).toHaveBeenCalledWith(new Set());
     });
 
-    it("enforces maximum selection limit of 3", () => {
+    it("enforces maximum selection limit of 4", () => {
       render(
         <CompareSelection
           dogs={mockDogs}
-          selectedDogs={new Set([1, 2, 3])}
+          selectedDogs={new Set([1, 2, 3, 4])}
           onSelectionChange={mockOnSelectionChange}
           onCompare={mockOnCompare}
         />,
       );
 
-      const bellaCard = screen.getByTestId("dog-card-4");
+      const bellaCard = screen.getByTestId("dog-card-5");
       expect(bellaCard).toHaveClass("opacity-40", "cursor-not-allowed");
 
       fireEvent.click(bellaCard);
@@ -168,7 +176,7 @@ describe("CompareSelection", () => {
         />,
       );
 
-      expect(screen.getByText("2 of 3 selected")).toBeInTheDocument();
+      expect(screen.getByText("2 of 4 selected")).toBeInTheDocument();
     });
 
     it("applies selected styling to selected dogs", () => {
@@ -271,13 +279,13 @@ describe("CompareSelection", () => {
       render(
         <CompareSelection
           dogs={mockDogs}
-          selectedDogs={new Set([1, 2, 3])}
+          selectedDogs={new Set([1, 2, 3, 4])}
           onSelectionChange={mockOnSelectionChange}
           onCompare={mockOnCompare}
         />,
       );
 
-      const bellaCard = screen.getByTestId("dog-card-4");
+      const bellaCard = screen.getByTestId("dog-card-5");
       expect(bellaCard).toHaveAttribute("aria-disabled", "true");
     });
   });

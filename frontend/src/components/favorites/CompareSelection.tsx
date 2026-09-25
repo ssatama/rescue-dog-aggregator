@@ -14,7 +14,7 @@ interface CompareSelectionProps {
   onCompare: () => void;
 }
 
-const MAX_SELECTIONS = 3;
+const MAX_SELECTIONS = 4;
 const MIN_SELECTIONS = 2;
 
 export default function CompareSelection({

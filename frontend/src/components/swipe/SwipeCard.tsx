@@ -31,7 +31,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
       const wasAlreadyFavorited = isFavorited(dog.id);
 
-      await toggleFavorite(dog.id, dog.name);
+      await toggleFavorite(dog.id, dog.name, dog);
 
       if (!wasAlreadyFavorited) {
         setShowHeartAnimation(true);
@@ -50,7 +50,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         },
       });
     },
-    [dog.id, dog.name, toggleFavorite, isFavorited],
+    [dog, toggleFavorite, isFavorited],
   );
 
   // Access enriched LLM data

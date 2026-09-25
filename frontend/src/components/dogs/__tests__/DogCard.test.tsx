@@ -197,7 +197,7 @@ describe("DogCard", () => {
 
       fireEvent.click(screen.getByRole("button", { name: "Add Bella to favorites" }));
 
-      expect(mockToggleFavorite).toHaveBeenCalledWith(7, "Bella");
+      expect(mockToggleFavorite).toHaveBeenCalledWith(7, "Bella", expect.objectContaining({ id: 7 }));
     });
 
     it("reflects a saved dog", () => {
@@ -252,6 +252,31 @@ describe("DogCard", () => {
       fireEvent.click(screen.getByRole("link", { name: "Bella" }), { metaKey: true });
 
       expect(onOpen).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("compact row with actions and a notice (#498)", () => {
+    it("renders the actions above the card link", () => {
+      render(<DogCard dog={fullDog} size="compact" actions={<button type="button">Remove</button>} />);
+
+      const remove = screen.getByRole("button", { name: "Remove" });
+      expect(remove.parentElement).toHaveClass("relative", "z-[2]");
+    });
+
+    it("replaces the facts with the notice and greys the row", () => {
+      render(<DogCard dog={fullDog} size="compact" notice={<p>No longer listed</p>} />);
+
+      expect(screen.getByText("No longer listed")).toBeInTheDocument();
+      expect(screen.queryByText(/Labrador/)).not.toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-7")).toHaveClass("border-dashed");
+      expect(screen.getByRole("link", { name: "Bella" })).toBeInTheDocument();
+    });
+
+    it("does not link a dog known only from its snapshot", () => {
+      render(<DogCard dog={{ id: 8, name: "Narla" }} size="compact" notice={<p>No longer listed</p>} />);
+
+      expect(screen.getByRole("heading", { name: "Narla" })).toBeInTheDocument();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
     });
   });
 });

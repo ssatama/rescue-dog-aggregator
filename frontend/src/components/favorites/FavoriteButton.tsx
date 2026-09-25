@@ -4,6 +4,7 @@ import React, { useState, useCallback, memo } from "react";
 import { Heart } from "lucide-react";
 import { useFavorites } from "../../hooks/useFavorites";
 import { trackFavoriteToggle } from "@/lib/monitoring/breadcrumbs";
+import type { Dog } from "@/types/dog";
 
 interface FavoriteButtonProps {
   dogId: number | string;
@@ -11,6 +12,8 @@ interface FavoriteButtonProps {
   className?: string;
   compact?: boolean;
   orgSlug?: string;
+  /** Saved with the favorite so the favorites page can show it later (#498). */
+  dog?: Dog;
 }
 
 export const FavoriteButton = memo(
@@ -20,6 +23,7 @@ export const FavoriteButton = memo(
     className = "",
     compact = false,
     orgSlug,
+    dog,
   }: FavoriteButtonProps) {
   const { isFavorited, toggleFavorite } = useFavorites();
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +38,7 @@ export const FavoriteButton = memo(
       setIsLoading(true);
       try {
         const wasFavorited = isFav;
-        await toggleFavorite(dogId, dogName);
+        await toggleFavorite(dogId, dogName, dog);
 
         // Track favorite toggle
         if (dogName && orgSlug) {
@@ -45,7 +49,7 @@ export const FavoriteButton = memo(
         setIsLoading(false);
       }
     },
-    [dogId, dogName, toggleFavorite, isFav, orgSlug],
+    [dogId, dogName, dog, toggleFavorite, isFav, orgSlug],
   );
 
   const handleKeyDown = useCallback(
@@ -57,7 +61,7 @@ export const FavoriteButton = memo(
         setIsLoading(true);
         try {
           const wasFavorited = isFav;
-          await toggleFavorite(dogId, dogName);
+          await toggleFavorite(dogId, dogName, dog);
 
           // Track favorite toggle for keyboard interaction
           if (dogName && orgSlug) {
@@ -69,7 +73,7 @@ export const FavoriteButton = memo(
         }
       }
     },
-    [dogId, dogName, toggleFavorite, isFav, orgSlug],
+    [dogId, dogName, dog, toggleFavorite, isFav, orgSlug],
   );
 
   return (

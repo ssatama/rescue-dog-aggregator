@@ -246,6 +246,7 @@ function SaveAndShare({ dog, saveInBar }: { dog: Dog; saveInBar: boolean }) {
           dogId={dog.id}
           dogName={dog.name}
           orgSlug={dog.organization?.slug}
+          dog={dog}
           className="rounded-xl border border-line hover:bg-soft"
         />
       </span>
@@ -344,6 +345,7 @@ export function MobileAdoptBar({ dog }: { dog: Dog }): React.ReactElement | null
         dogId={dog.id}
         dogName={dog.name}
         orgSlug={dog.organization?.slug}
+        dog={dog}
         className="flex-none rounded-xl border border-line"
       />
       <AdoptLink dog={dog} placement="bar" className="min-w-0 flex-1" />

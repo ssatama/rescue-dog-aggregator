@@ -11,11 +11,16 @@ interface CompareModeProps {
   onClose: () => void;
 }
 
+/** The most dogs ComparisonView shows side by side. */
+const MAX_COMPARED = 4;
+
 export default function CompareMode({ dogs, onClose }: CompareModeProps) {
+  // Up to four dogs are compared straight away; picking only happens with more (#498)
+  const direct = dogs.length <= MAX_COMPARED;
   const [selectedDogs, setSelectedDogs] = useState<Set<string | number>>(
-    new Set(),
+    () => new Set(direct ? dogs.map((dog) => dog.id) : []),
   );
-  const [isComparing, setIsComparing] = useState(false);
+  const [isComparing, setIsComparing] = useState(direct);
 
   // Handle backdrop click
   const handleBackdropClick = useCallback(
@@ -50,7 +55,8 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
   };
 
   const handleBackToSelection = () => {
-    setIsComparing(false);
+    if (direct) onClose();
+    else setIsComparing(false);
   };
 
   const getSelectedDogs = (): Dog[] => {
@@ -62,9 +68,9 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
     newSelection.delete(dogId);
     setSelectedDogs(newSelection);
 
-    // If less than 2 dogs selected, go back to selection
+    // Fewer than 2 dogs is no comparison
     if (newSelection.size < 2) {
-      setIsComparing(false);
+      handleBackToSelection();
     }
   };
 

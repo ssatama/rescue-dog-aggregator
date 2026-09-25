@@ -12,15 +12,18 @@ import { useToast } from "./ToastContext";
 import { generateFavoritesUrl, parseSharedUrl } from "../utils/sharing";
 import { logger, reportError } from "../utils/logger";
 import { trackFavoriteChanged } from "../lib/analytics";
+import { forgetDogs, rememberDogs } from "../utils/favoriteSnapshots";
+import type { Dog } from "../types/dog";
 
 interface FavoritesContextType {
   favorites: number[];
   count: number;
   isFavorited: (dogId: number | string) => boolean;
-  addFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
+  /** Pass the dog when you have it: its snapshot keeps the favorites row
+   * working after the rescue stops listing it (#498). */
+  addFavorite: (dogId: number | string, dogName?: string, dog?: Dog) => Promise<void>;
   removeFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
-  removeFavoritesBatch: (dogIds: number[]) => void;
-  toggleFavorite: (dogId: number | string, dogName?: string) => Promise<void>;
+  toggleFavorite: (dogId: number | string, dogName?: string, dog?: Dog) => Promise<void>;
   clearFavorites: () => void;
   getShareableUrl: () => string;
   loadFromUrl: (url: string) => void;
@@ -252,11 +255,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addFavorite = useCallback(
-    async (dogId: number | string, dogName?: string): Promise<void> => {
+    async (dogId: number | string, dogName?: string, dog?: Dog): Promise<void> => {
       const numId = toNumericId(dogId);
       // Tracked outside the updater, which React may run twice.
       if (!favorites.includes(numId) && favorites.length < MAX_FAVORITES) {
         trackFavoriteChanged("add", numId);
+        if (dog) rememberDogs([dog]);
       }
       setFavorites((prev) => {
         if (prev.includes(numId)) {
@@ -291,6 +295,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       const numId = toNumericId(dogId);
       if (favorites.includes(numId)) {
         trackFavoriteChanged("remove", numId);
+        forgetDogs([numId]);
       }
       setFavorites((prev) => {
         const newFavorites = prev.filter((id) => id !== numId);
@@ -308,38 +313,22 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     [favorites, saveToLocalStorage],
   );
 
-  const removeFavoritesBatch = useCallback(
-    (dogIds: number[]): void => {
-      if (dogIds.length === 0) return;
-      const idsToRemove = new Set(dogIds);
-      setFavorites((prev) => {
-        const newFavorites = prev.filter((id) => !idsToRemove.has(id));
-        saveToLocalStorage(newFavorites);
-        return newFavorites;
-      });
-      setToastMessage({
-        type: "remove",
-        message: `Removed ${dogIds.length} unavailable dog${dogIds.length !== 1 ? "s" : ""} from favorites`,
-      });
-    },
-    [saveToLocalStorage],
-  );
-
   const toggleFavorite = useCallback(
-    async (dogId: number | string, dogName?: string): Promise<void> => {
+    async (dogId: number | string, dogName?: string, dog?: Dog): Promise<void> => {
       if (isFavorited(dogId)) {
         await removeFavorite(dogId, dogName);
       } else {
-        await addFavorite(dogId, dogName);
+        await addFavorite(dogId, dogName, dog);
       }
     },
     [isFavorited, addFavorite, removeFavorite],
   );
 
   const clearFavorites = useCallback(() => {
+    forgetDogs(favorites);
     setFavorites([]);
     saveToLocalStorage([]);
-  }, [saveToLocalStorage]);
+  }, [favorites, saveToLocalStorage]);
 
   const getShareableUrl = useCallback((): string => {
     // Use the new tiered URL generation strategy
@@ -414,7 +403,6 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     isFavorited,
     addFavorite,
     removeFavorite,
-    removeFavoritesBatch,
     toggleFavorite,
     clearFavorites,
     getShareableUrl,
