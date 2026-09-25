@@ -1,7 +1,8 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import BreedStatistics, { BreedInfo } from "../BreedStatistics";
+import BreedStatistics, { BreedInfo, BreedAdoptableToYou } from "../BreedStatistics";
+import { resetVisitorLocationForTests } from "@/lib/visitorLocation";
 
 describe("BreedStatistics", () => {
   const mockBreedData = {
@@ -32,105 +33,57 @@ describe("BreedStatistics", () => {
       expect(screen.getByText("8 mo")).toBeInTheDocument();
     });
 
-    it("should handle missing age data", () => {
-      const noAgeData = { ...mockBreedData, average_age_months: undefined };
-      render(<BreedStatistics breedData={noAgeData} />);
+    it("leaves the age out when it is unknown, never N/A", () => {
+      render(<BreedStatistics breedData={{ ...mockBreedData, average_age_months: null }} />);
 
-      expect(screen.getByText("N/A")).toBeInTheDocument();
+      expect(screen.queryByText("N/A")).not.toBeInTheDocument();
+      expect(screen.queryByText("avg age")).not.toBeInTheDocument();
+      expect(screen.getByText("42")).toBeInTheDocument();
     });
-  });
 
-  describe("Sex Distribution Visualization", () => {
-    it("should display sex distribution with both counts and percentages", () => {
+    it("no longer shows the sex ratio (#500)", () => {
       render(<BreedStatistics breedData={mockBreedData} />);
-
-      expect(screen.getByText("25")).toBeInTheDocument();
-      expect(screen.getAllByText(/60%/)[0]).toBeInTheDocument();
-      expect(screen.getByText("17")).toBeInTheDocument();
-      expect(screen.getAllByText(/40%/)[0]).toBeInTheDocument();
-    });
-
-    it("should render a visual bar chart for sex distribution", () => {
-      render(<BreedStatistics breedData={mockBreedData} />);
-
-      const maleBar = screen.getByTestId("male-bar");
-      const femaleBar = screen.getByTestId("female-bar");
-
-      expect(maleBar).toBeInTheDocument();
-      expect(femaleBar).toBeInTheDocument();
-
-      expect(maleBar).toHaveStyle("width: 60%");
-      expect(femaleBar).toHaveStyle("width: 40%");
-    });
-
-    it("should handle all-male edge case gracefully", () => {
-      const allMaleData = {
-        ...mockBreedData,
-        count: 42,
-        sex_distribution: {
-          male: 42,
-          female: 0,
-        },
-      };
-
-      render(<BreedStatistics breedData={allMaleData} />);
-
-      const allTexts = screen.getAllByText("42");
-      expect(allTexts.length).toBeGreaterThan(0);
-      const hundredPercentTexts = screen.getAllByText(/100%/);
-      expect(hundredPercentTexts.length).toBeGreaterThan(0);
-
-      const zeroTexts = screen.getAllByText("0");
-      expect(zeroTexts.length).toBeGreaterThan(0);
-      const zeroPercentTexts = screen.getAllByText(/0%/);
-      expect(zeroPercentTexts.length).toBeGreaterThan(0);
-    });
-
-    it("should handle all-female edge case gracefully", () => {
-      const allFemaleData = {
-        ...mockBreedData,
-        count: 42,
-        sex_distribution: {
-          male: 0,
-          female: 42,
-        },
-      };
-
-      render(<BreedStatistics breedData={allFemaleData} />);
-
-      const zeroTexts = screen.getAllByText("0");
-      expect(zeroTexts.length).toBeGreaterThan(0);
-      const zeroPercentTexts = screen.getAllByText(/0%/);
-      expect(zeroPercentTexts.length).toBeGreaterThan(0);
-
-      const allTexts = screen.getAllByText("42");
-      expect(allTexts.length).toBeGreaterThan(0);
-      const hundredPercentTexts = screen.getAllByText(/100%/);
-      expect(hundredPercentTexts.length).toBeGreaterThan(0);
-    });
-
-    it("should handle missing sex distribution data", () => {
-      const noSexData = {
-        ...mockBreedData,
-        sex_distribution: undefined,
-      };
-
-      render(<BreedStatistics breedData={noSexData} />);
 
       expect(screen.queryByTestId("male-bar")).not.toBeInTheDocument();
-      expect(screen.queryByTestId("female-bar")).not.toBeInTheDocument();
+      expect(screen.queryByText("25")).not.toBeInTheDocument();
     });
+  });
+});
 
-    it("should use accessible labels for screen readers", () => {
-      render(<BreedStatistics breedData={mockBreedData} />);
+describe("BreedAdoptableToYou (#500)", () => {
+  const options = [
+    { value: "DE", label: "Germany", count: 12 },
+    { value: "UK", label: "United Kingdom", count: 30 },
+  ];
 
-      expect(
-        screen.getByLabelText(/25 males out of 42 dogs/i),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByLabelText(/17 females out of 42 dogs/i),
-      ).toBeInTheDocument();
-    });
+  afterEach(() => {
+    localStorage.clear();
+    resetVisitorLocationForTests();
+  });
+
+  it("counts the dogs adoptable to the visitor's country and filters to them", () => {
+    localStorage.setItem("visitorCountry", "DE");
+    const onShow = jest.fn();
+    render(<BreedAdoptableToYou options={options} onShow={onShow} />);
+
+    const button = screen.getByRole("button", { name: /12 adoptable to you in Germany/ });
+    fireEvent.click(button);
+    expect(onShow).toHaveBeenCalledWith("DE");
+  });
+
+  it("says nothing without a country, for Anywhere, or when none are adoptable there", () => {
+    const { container, rerender } = render(<BreedAdoptableToYou options={options} />);
+    expect(container).toBeEmptyDOMElement();
+
+    localStorage.setItem("visitorCountry", "ANYWHERE");
+    resetVisitorLocationForTests();
+    rerender(<BreedAdoptableToYou options={options} />);
+    expect(container).toBeEmptyDOMElement();
+
+    localStorage.setItem("visitorCountry", "FR");
+    resetVisitorLocationForTests();
+    rerender(<BreedAdoptableToYou options={options} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });
 

@@ -73,7 +73,7 @@ const mockBreedGroups = [
 describe("BreedGroupsSection", () => {
   it("renders section with title", () => {
     render(<BreedGroupsSection breedGroups={mockBreedGroups} />);
-    expect(screen.getByText("Explore by Breed Group")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Breed groups" })).toBeInTheDocument();
   });
 
   it("initially shows 4 breed groups", () => {
@@ -107,7 +107,7 @@ describe("BreedGroupsSection", () => {
     render(<BreedGroupsSection breedGroups={mockBreedGroups} />);
 
     const showMoreButton = screen.getByRole("button", {
-      name: /Show More Groups/i,
+      name: /Show all 6 groups/i,
     });
     fireEvent.click(showMoreButton);
 
@@ -117,7 +117,7 @@ describe("BreedGroupsSection", () => {
 
     // Button should change to Show Less
     expect(
-      screen.getByRole("button", { name: /Show Less/i }),
+      screen.getByRole("button", { name: /Show fewer groups/i }),
     ).toBeInTheDocument();
   });
 
@@ -126,12 +126,12 @@ describe("BreedGroupsSection", () => {
 
     // Expand first
     const showMoreButton = screen.getByRole("button", {
-      name: /Show More Groups/i,
+      name: /Show all 6 groups/i,
     });
     fireEvent.click(showMoreButton);
 
     // Then collapse
-    const showLessButton = screen.getByRole("button", { name: /Show Less/i });
+    const showLessButton = screen.getByRole("button", { name: /Show fewer groups/i });
     fireEvent.click(showLessButton);
 
     // Should be back to 4 groups
@@ -147,9 +147,9 @@ describe("BreedGroupsSection", () => {
 
     // Should show top breeds for Hound Group
     expect(screen.getByText("Galgo")).toBeInTheDocument();
-    expect(screen.getByText("101 available")).toBeInTheDocument();
+    expect(screen.getByText("101 dogs")).toBeInTheDocument();
     expect(screen.getByText("Podenco")).toBeInTheDocument();
-    expect(screen.getByText("68 available")).toBeInTheDocument();
+    expect(screen.getByText("68 dogs")).toBeInTheDocument();
   });
 
   it("toggles breed display when group is clicked again", () => {
@@ -188,7 +188,7 @@ describe("BreedGroupsSection", () => {
     fireEvent.click(houndGroup);
 
     const galgoLink = screen.getByRole("link", {
-      name: /Galgo.*101 available/i,
+      name: /Galgo.*101 dogs/i,
     });
     expect(galgoLink).toHaveAttribute("href", "/breeds/galgo");
   });
@@ -196,26 +196,24 @@ describe("BreedGroupsSection", () => {
   it("renders empty state when no groups provided", () => {
     render(<BreedGroupsSection breedGroups={[]} />);
     expect(
-      screen.queryByText("Explore by Breed Group"),
+      screen.queryByText("Breed groups"),
     ).not.toBeInTheDocument();
   });
 
-  it("applies responsive grid layout", () => {
-    const { container } = render(
-      <BreedGroupsSection breedGroups={mockBreedGroups} />,
-    );
+  it("toggles each group with a button that says whether it is open", () => {
+    render(<BreedGroupsSection breedGroups={mockBreedGroups} />);
 
-    const grid = container.querySelector(".grid");
-    expect(grid).toHaveClass("grid-cols-1");
-    expect(grid).toHaveClass("md:grid-cols-2");
-    expect(grid).toHaveClass("lg:grid-cols-4");
+    const houndGroup = screen.getByTestId("breed-group-hound-group");
+    expect(houndGroup.tagName).toBe("BUTTON");
+    expect(houndGroup).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(houndGroup);
+    expect(houndGroup).toHaveAttribute("aria-expanded", "true");
   });
 
   it("displays group icons", () => {
     render(<BreedGroupsSection breedGroups={mockBreedGroups} />);
 
-    // 🐕 also marks breeds without a photo in the (hidden) breed lists
-    expect(screen.getAllByText("🐕").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("🐕")).toBeInTheDocument();
     expect(screen.getByText("🦮")).toBeInTheDocument();
     expect(screen.getByText("🐑")).toBeInTheDocument();
     expect(screen.getByText("💪")).toBeInTheDocument();

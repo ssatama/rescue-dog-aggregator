@@ -16,25 +16,23 @@ export default function AllBreedsIndex({ breeds }: AllBreedsIndexProps) {
   if (indexable.length === 0) return null;
 
   return (
-    <section id="all-breeds" className="py-12 bg-white dark:bg-gray-900" aria-labelledby="all-breeds-heading">
-      <div className="container mx-auto px-4">
-        <h2 id="all-breeds-heading" className="text-3xl font-bold mb-8 text-center dark:text-white">
-          All Breeds A–Z
-        </h2>
-        <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2">
-          {indexable.map((breed) => (
-            <li key={breed.breed_slug}>
-              <Link
-                href={`/breeds/${breed.breed_slug}`}
-                className="text-gray-700 dark:text-gray-300 hover:text-primary hover:underline"
-              >
-                {breed.primary_breed}
-              </Link>
-              {breed.count ? <span className="text-sm text-gray-500 dark:text-gray-400"> ({breed.count})</span> : null}
-            </li>
-          ))}
-        </ul>
-      </div>
+    <section id="all-breeds" className="container mx-auto scroll-mt-20 px-4 pb-12 pt-8" aria-labelledby="all-breeds-heading">
+      <h2 id="all-breeds-heading" className="mb-4 font-display text-xl font-bold tracking-tight text-ink sm:text-2xl">
+        All breeds A–Z
+      </h2>
+      <ul className="grid grid-cols-2 gap-x-6 md:grid-cols-3 lg:grid-cols-4">
+        {indexable.map((breed) => (
+          <li key={breed.breed_slug}>
+            <Link
+              href={`/breeds/${breed.breed_slug}`}
+              className="block py-2.5 text-ink hover:text-orange-700 hover:underline dark:hover:text-orange-400"
+            >
+              {breed.primary_breed}
+              {breed.count ? <span className="text-sm text-subtle"> ({breed.count})</span> : null}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

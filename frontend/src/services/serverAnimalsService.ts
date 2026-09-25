@@ -793,34 +793,17 @@ export const getBreedDogs = cache(
   [],
 );
 
-export const getBreedFilterCounts = cache(
-  async (breedSlug: string): Promise<FilterCountsResponse | null> => {
+/**
+ * Unfiltered counts for one breed page (#500): its practical stats and how
+ * many are adoptable to each country. Ages count only dogs with a recorded
+ * age. A failure leaves the stats out rather than failing the page.
+ */
+export const getBreedCounts = cache(
+  async (breedFilter: { primary_breed: string } | { breed_group: string }): Promise<FilterCountsResponse | null> => {
     try {
-      const breedStats = await getBreedStats();
-       
-      const breedData = breedStats.qualifying_breeds?.find(
-        (breed) => breed.breed_slug === breedSlug,
-      );
-
-      if (!breedData) {
-        return null;
-      }
-
-      return getFilterCounts({
-        primary_breed: breedData.primary_breed,
-      });
+      return await getFilterCounts({ ...breedFilter, age_known: "true" });
     } catch (error) {
-      logger.error(
-        `Error fetching breed filter counts for ${breedSlug}:`,
-        error,
-      );
-      reportError(error, { context: "getBreedFilterCounts", breedSlug });
-      Sentry.withScope((scope) => {
-        scope.setTag("feature", "animals");
-        scope.setTag("operation", "getBreedFilterCounts");
-        scope.setContext("request", { breedSlug });
-        Sentry.captureException(error);
-      });
+      reportError(error, { context: "getBreedCounts", ...breedFilter });
       return null;
     }
   },
