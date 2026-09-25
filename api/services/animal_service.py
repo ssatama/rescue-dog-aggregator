@@ -18,9 +18,9 @@ from api.exceptions import APIException
 from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse, FilterOption
+from api.services.search_service import search_condition
 from api.utils.availability import publicly_available
 from api.utils.json_parser import build_organization_object, parse_json_field, parse_optional_json_field
-from api.utils.sql_utils import escape_like_pattern
 from utils.breed_utils import QUALIFYING_BREED_MIN_COUNT, generate_breed_slug
 
 logger = logging.getLogger(__name__)
@@ -1400,9 +1400,7 @@ class AnimalService:
                 params.extend(confidence_levels)
 
         if filters.search:
-            conditions.append("(a.name ILIKE %s OR a.breed ILIKE %s OR a.standardized_breed ILIKE %s)")
-            search_term = f"%{escape_like_pattern(filters.search)}%"
-            params.extend([search_term, search_term, search_term])
+            conditions.append(search_condition(filters.search, params))
 
         if filters.breed:
             conditions.append("a.breed = %s")
@@ -1644,11 +1642,8 @@ class AnimalService:
                 conditions.append(f"a.availability_confidence IN ({placeholders})")
                 params.extend(confidence_levels)
 
-        # Add search filter
         if filters.search:
-            conditions.append("(a.name ILIKE %s OR a.breed ILIKE %s OR a.standardized_breed ILIKE %s)")
-            search_term = f"%{escape_like_pattern(filters.search)}%"
-            params.extend([search_term, search_term, search_term])
+            conditions.append(search_condition(filters.search, params))
 
         # Add other filters (excluding the one we're counting)
         if filters.breed:

@@ -1,3 +1,6 @@
+-- Trigram similarity for fuzzy name matching in search suggestions (#491)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- Source Organizations
 CREATE TABLE IF NOT EXISTS organizations (
     id SERIAL PRIMARY KEY,
