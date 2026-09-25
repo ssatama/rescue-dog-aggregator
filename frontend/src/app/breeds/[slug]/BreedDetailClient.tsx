@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
@@ -50,6 +50,17 @@ export default function BreedDetailClient({
     },
     [router, pathname, searchParams],
   );
+
+  // Links from before #500 filtered by ?available_to_country=; the catalog
+  // reads available_country, so carry the old name over once
+  useEffect(() => {
+    const legacy = searchParams?.get("available_to_country");
+    if (!searchParams || !legacy || searchParams.get("available_country")) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("available_to_country");
+    params.set("available_country", legacy);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [searchParams, router, pathname]);
 
   const practicalStats = useMemo(() => buildPracticalStats(breedCounts), [breedCounts]);
   const initialParams = useMemo(

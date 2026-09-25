@@ -8,19 +8,20 @@ import { DOG_GRID } from "@/constants/layout";
 import { useGridColumns } from "@/hooks/useGridColumns";
 import { useLegacyDogHash } from "@/hooks/useLegacyDogHash";
 import type { Dog } from "@/types/dog";
+import type { ListContext } from "@/types/dogComponents";
 
 const ROW_HEIGHT = 360; // A first guess; rows are measured once rendered
 const OVERSCAN = 2; // Extra rows rendered above and below the screen
 
-function Card({ dog, position }: { dog: Dog; position: number }): React.JSX.Element {
+function Card({ dog, position, listContext }: { dog: Dog; position: number; listContext: ListContext }): React.JSX.Element {
   return (
     <DogCardErrorBoundary dogId={dog.id}>
-      <DogCard dog={dog} priority={position < 8} position={position} listContext="search" />
+      <DogCard dog={dog} priority={position < 8} position={position} listContext={listContext} />
     </DogCardErrorBoundary>
   );
 }
 
-function VirtualRows({ dogs, columns }: { dogs: Dog[]; columns: number }): React.JSX.Element {
+function VirtualRows({ dogs, columns, listContext }: { dogs: Dog[]; columns: number; listContext: ListContext }): React.JSX.Element {
   const listRef = useRef<HTMLDivElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
   const gap = columns === 2 ? 12 : 16; // DOG_GRID's gap-3 / sm:gap-4
@@ -61,7 +62,7 @@ function VirtualRows({ dogs, columns }: { dogs: Dog[]; columns: number }): React
               style={{ transform: `translateY(${row.start - scrollMargin}px)` }}
             >
               {dogs.slice(start, start + columns).map((dog, i) => (
-                <Card key={dog.id} dog={dog} position={start + i} />
+                <Card key={dog.id} dog={dog} position={start + i} listContext={listContext} />
               ))}
             </div>
           );
@@ -73,7 +74,14 @@ function VirtualRows({ dogs, columns }: { dogs: Dog[]; columns: number }): React
 
 /** The catalog's dogs: one responsive grid at every width (#496), virtualized
  * by rows once the browser knows how many columns fit. */
-export default function CatalogDogGrid({ dogs }: { dogs: Dog[] }): React.JSX.Element {
+/** `listContext` tells analytics which page the cards are on */
+export default function CatalogDogGrid({
+  dogs,
+  listContext = "search",
+}: {
+  dogs: Dog[];
+  listContext?: ListContext;
+}): React.JSX.Element {
   const columns = useGridColumns();
   useLegacyDogHash();
 
@@ -82,11 +90,11 @@ export default function CatalogDogGrid({ dogs }: { dogs: Dog[] }): React.JSX.Ele
     return (
       <div className={DOG_GRID}>
         {dogs.map((dog, i) => (
-          <Card key={dog.id} dog={dog} position={i} />
+          <Card key={dog.id} dog={dog} position={i} listContext={listContext} />
         ))}
       </div>
     );
   }
 
-  return <VirtualRows dogs={dogs} columns={columns} />;
+  return <VirtualRows dogs={dogs} columns={columns} listContext={listContext} />;
 }

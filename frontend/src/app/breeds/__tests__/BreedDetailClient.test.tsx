@@ -5,9 +5,10 @@ import BreedDetailClient from "../[slug]/BreedDetailClient";
 import { resetVisitorLocationForTests } from "@/lib/visitorLocation";
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 let mockSearch = "";
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   usePathname: () => "/breeds/lurcher",
   useSearchParams: () => new URLSearchParams(mockSearch),
 }));
@@ -64,5 +65,11 @@ describe("BreedDetailClient (#500)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /7 adoptable to you in Germany/ }));
     expect(mockPush).toHaveBeenCalledWith("/breeds/lurcher?size=Large&available_country=DE", { scroll: false });
+  });
+
+  it("carries an old ?available_to_country= link over to the catalog's filter", () => {
+    mockSearch = "available_to_country=DE&size=Large";
+    render(<BreedDetailClient initialBreedData={lurcher as never} initialDogs={[]} />);
+    expect(mockReplace).toHaveBeenCalledWith("/breeds/lurcher?size=Large&available_country=DE", { scroll: false });
   });
 });

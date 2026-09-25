@@ -20,8 +20,8 @@ jest.mock("../../../services/animalsService", () => ({
 }));
 
 jest.mock("../../../components/dogs/DogCard", () => {
-  return function DogCard({ dog }) {
-    return <div data-testid="dog-card">{dog.name}</div>;
+  return function DogCard({ dog, listContext }) {
+    return <div data-testid="dog-card" data-list={listContext}>{dog.name}</div>;
   };
 });
 
@@ -105,6 +105,8 @@ describe("the catalog on a breed page (#500)", () => {
     );
     expect(screen.queryByRole("button", { name: /Lurcher/ })).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText("Search breeds, rescues or names")).not.toBeInTheDocument();
+    // Card clicks are reported as the breed page's, not the catalog's
+    expect((await screen.findByTestId("dog-card")).dataset.list).toBe("breed-page");
   });
 
   it("says none are listed, not that filters matched nothing, when the breed has no dogs", async () => {

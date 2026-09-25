@@ -133,6 +133,11 @@ export default function DogsPageClientSimplified({
     pathname,
   });
 
+  // On a breed page the breed is the page's own, so there is no breed to pick,
+  // and analytics keeps breed-page traffic apart from the catalog's
+  const breedIsFixed = Boolean(initialParams?.primary_breed || initialParams?.breed_group);
+  const analyticsSurface = breedIsFixed ? "breed_page" : "catalog";
+
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [sidebarHidden, toggleSidebar] = useSidebarHidden();
 
@@ -156,9 +161,9 @@ export default function DogsPageClientSimplified({
       const changes =
         typeof filterKey === "object" ? filterKey : { [filterKey]: value };
       applyFilters(changes);
-      trackFiltersApplied(changes, "catalog");
+      trackFiltersApplied(changes, analyticsSurface);
     },
-    [applyFilters],
+    [applyFilters, analyticsSurface],
   );
 
   // A breed picked from the list or a suggestion is tracked; text typed into
@@ -208,8 +213,6 @@ export default function DogsPageClientSimplified({
       initialParams?.breed_group,
     ],
   );
-  // On a breed page the breed is the page's own, so there is no breed to pick
-  const breedIsFixed = Boolean(initialParams?.primary_breed || initialParams?.breed_group);
   const drawerConfig = useMemo(
     () => (breedIsFixed ? { ...CATALOG_DRAWER_CONFIG, showBreed: false } : CATALOG_DRAWER_CONFIG),
     [breedIsFixed],
@@ -493,7 +496,7 @@ export default function DogsPageClientSimplified({
                       </div>
                     </div>
                   )}
-                  <CatalogDogGrid dogs={pagination.dogs} />
+                  <CatalogDogGrid dogs={pagination.dogs} listContext={breedIsFixed ? "breed-page" : "search"} />
                 </div>
               )}
 
