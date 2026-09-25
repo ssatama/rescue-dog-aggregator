@@ -171,6 +171,27 @@ describe("GlobalSearch", () => {
     expect(push).toHaveBeenCalledWith("/dogs?size=Small&breed=Staffordshire+Bull+Terrier");
   });
 
+  it("shows the text search of a catalog landing page", () => {
+    pathname = "/dogs/puppies";
+    searchParams = new URLSearchParams("search=bella");
+    render(<GlobalSearch surface="header" />);
+
+    expect(input()).toHaveValue("bella");
+  });
+
+  it("retries a failed load the next time the field is focused", async () => {
+    mockGetSuggestions.mockRejectedValueOnce(new Error("down"));
+    render(<GlobalSearch surface="header" />);
+
+    await userEvent.click(input());
+    await waitFor(() => expect(mockGetSuggestions).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+
+    input().blur();
+    await userEvent.click(input());
+    expect(await screen.findByRole("option", { name: /German Shepherd Dog/ })).toBeInTheDocument();
+  });
+
   it("says so when suggestions cannot load, and still searches on Enter", async () => {
     mockGetSuggestions.mockRejectedValue(new Error("down"));
     render(<GlobalSearch surface="header" />);

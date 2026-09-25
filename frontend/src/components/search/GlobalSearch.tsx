@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PawPrint, Search, SlidersHorizontal, Home, X } from "lucide-react";
 import { getSuggestions, type SuggestResponse } from "@/services/searchService";
 import { trackSearchPerformed, type SearchResultGroup } from "@/lib/analytics";
-import { breedHref, catalogBase, filterHref, rescueHref, textSearchHref } from "./searchHrefs";
+import { breedHref, catalogBase, filterHref, isCatalogPath, rescueHref, textSearchHref, type CatalogBase } from "./searchHrefs";
 
 const DEBOUNCE_MS = 200;
 
@@ -47,7 +47,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
 }
 
-function buildOptions(results: Results | null, query: string, base: URLSearchParams): Option[] {
+function buildOptions(results: Results | null, query: string, base: CatalogBase): Option[] {
   const options: Option[] = [];
   // Popular breeds answer an empty box; once something is typed they only get in the way
   const data = results && (results.query || !query) ? results.data : null;
@@ -143,7 +143,7 @@ export default function GlobalSearch({ surface, className = "" }: GlobalSearchPr
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const urlSearch = pathname === "/dogs" ? (searchParams?.get("search") ?? "") : "";
+  const urlSearch = isCatalogPath(pathname) ? (searchParams?.get("search") ?? "") : "";
 
   const [text, setText] = useState(urlSearch);
   const [open, setOpen] = useState(false);
@@ -282,7 +282,11 @@ export default function GlobalSearch({ surface, className = "" }: GlobalSearchPr
               setOpen(true);
             }}
             onFocus={() => setOpen(true)}
-            onBlur={() => setOpen(false)}
+            onBlur={() => {
+              setOpen(false);
+              // A failed load is retried the next time the field is focused
+              if (results?.data === null) setResults(null);
+            }}
             onKeyDown={onKeyDown}
             className="h-full min-w-0 flex-1 border-0 bg-transparent text-base text-foreground shadow-none placeholder:text-muted-foreground focus:border-0 focus:outline-none focus:ring-0 sm:text-sm"
           />

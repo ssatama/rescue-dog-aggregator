@@ -156,7 +156,9 @@ export default function MobileFilterDrawer({
 
   const activeFilterCount = useMemo((): number => {
     let count = 0;
-    if (filterConfig.showSearch && searchQuery && searchQuery.trim() !== "") count++;
+    // An active text search counts even where the drawer has no box for it
+    // (the catalog edits it at the top of the page), so Clear all still shows
+    if (searchQuery && searchQuery.trim() !== "") count++;
     if (filterConfig.showOrganization) count += sectionCounts.organization;
     if (filterConfig.showBreed) count += sectionCounts.breed;
     if (filterConfig.showSex) count += sectionCounts.sex;
