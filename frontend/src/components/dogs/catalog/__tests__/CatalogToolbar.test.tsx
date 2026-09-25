@@ -133,7 +133,7 @@ describe("filter sidebar toggle", () => {
     rerender(
       <CatalogToolbar filters={NONE} total={3} onRemove={jest.fn()} onClearAll={jest.fn()} onSortChange={jest.fn()} sidebar={{ shown: false, onToggle }} />,
     );
-    expect(screen.getByRole("button", { name: "Show filters" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Show filters" })).toHaveAttribute("aria-expanded", "false");
   });
 
   it("has no toggle where there is no sidebar", () => {

@@ -117,7 +117,7 @@ export default function CatalogToolbar({
             <button
               type="button"
               onClick={sidebar.onToggle}
-              aria-pressed={sidebar.shown}
+              aria-expanded={sidebar.shown}
               className="hidden h-9 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink hover:bg-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
             >
               <SlidersHorizontal className="h-4 w-4 text-subtle" aria-hidden="true" />

@@ -486,7 +486,7 @@ function FavoritesPageContent(): React.JSX.Element {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 max-w-5xl">
+        <div className="container mx-auto max-w-5xl sm:px-4">
           {filteredDogs.length === 0 && dogs.length > 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 dark:text-gray-400 mb-4">
