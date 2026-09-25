@@ -405,6 +405,9 @@ describe("SwipeContainer (#499)", () => {
       }
       expect(screen.getByRole("heading", { name: "We couldn't load the dogs" })).toBeInTheDocument();
       expect(screen.queryByText("You've seen every dog here")).not.toBeInTheDocument();
+      // The dogs already loaded stay reachable if the page keeps failing
+      expect(screen.getByRole("button", { name: "Start over" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Change filters" })).toBeInTheDocument();
 
       fetchDogs.mockResolvedValueOnce([{ id: 4, name: "Dog 4" }]);
       await act(async () => {

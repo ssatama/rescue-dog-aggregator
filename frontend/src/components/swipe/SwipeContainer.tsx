@@ -51,42 +51,42 @@ function isTyping(target: EventTarget | null): boolean {
 function EndOfStack({
   empty,
   failed,
+  onRetry,
   onStartOver,
   onChangeFilters,
 }: {
   empty: boolean;
-  /** Nothing loaded because the request failed, not because nothing matched */
+  /** The last request failed, so this may not be the end: offer a retry */
   failed: boolean;
+  onRetry: () => void;
   onStartOver: () => void;
   onChangeFilters: () => void;
 }): React.ReactElement {
-  if (failed) {
-    return (
-      <div className="flex max-w-sm flex-col items-center gap-3 text-center" data-testid="swipe-end">
-        <h2 className="font-display text-2xl font-bold text-ink">We couldn&apos;t load the dogs</h2>
-        <p className="text-subtle">Check your connection and try again.</p>
-        <button type="button" onClick={onStartOver} className={`${PRIMARY} mt-2`}>
-          Try again
-        </button>
-      </div>
-    );
-  }
   return (
     <div className="flex max-w-sm flex-col items-center gap-3 text-center" data-testid="swipe-end">
-      <span className="grid h-16 w-16 place-items-center rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
-        <PawPrint className="h-8 w-8" aria-hidden="true" />
-      </span>
+      {!failed && (
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+          <PawPrint className="h-8 w-8" aria-hidden="true" />
+        </span>
+      )}
       <h2 className="font-display text-2xl font-bold text-ink">
-        {empty ? "No dogs match these filters" : "You've seen every dog here"}
+        {failed ? "We couldn't load the dogs" : empty ? "No dogs match these filters" : "You've seen every dog here"}
       </h2>
       <p className="text-subtle">
-        {empty
-          ? "Try more sizes or ages, or browse every dog in the catalog."
-          : "That's everyone matching your filters for now. Rescues add new dogs three times a week."}
+        {failed
+          ? "Check your connection and try again."
+          : empty
+            ? "Try more sizes or ages, or browse every dog in the catalog."
+            : "That's everyone matching your filters for now. Rescues add new dogs three times a week."}
       </p>
       <div className="mt-2 flex flex-wrap justify-center gap-2">
+        {failed && (
+          <button type="button" onClick={onRetry} className={PRIMARY}>
+            Try again
+          </button>
+        )}
         {!empty && (
-          <button type="button" onClick={onStartOver} className={PRIMARY}>
+          <button type="button" onClick={onStartOver} className={failed ? SECONDARY : PRIMARY}>
             Start over
           </button>
         )}
@@ -405,7 +405,8 @@ export function SwipeContainer({
             <EndOfStack
               empty={dogs.length === 0}
               failed={(loadFailed && dogs.length === 0) || loadMoreFailed}
-              onStartOver={loadMoreFailed ? loadMore : startOver}
+              onRetry={loadMoreFailed ? loadMore : startOver}
+              onStartOver={startOver}
               onChangeFilters={() => setShowFilters(true)}
             />
           ) : (
