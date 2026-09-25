@@ -10,7 +10,6 @@ import { trackExternalLinkClick } from "@/lib/monitoring/breadcrumbs";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import ShareButton from "@/components/ui/ShareButton";
 import DogStatusBadge from "@/components/dogs/DogStatusBadge";
-import { getLivesWithFacts } from "@/components/dogs/DogCard";
 import { formatBreed, getAgeCategory } from "@/utils/dogHelpers";
 import { safeExternalUrl } from "@/utils/security";
 import { getCountryName } from "@/utils/countryNames";
@@ -37,7 +36,11 @@ const EXPERIENCE: Record<string, string> = {
   experienced_only: "Experienced owners only",
 };
 
-const COMPANIONS = ["Children", "Dogs", "Cats"];
+const COMPANIONS = [
+  { field: "good_with_children", label: "Children" },
+  { field: "good_with_dogs", label: "Dogs" },
+  { field: "good_with_cats", label: "Cats" },
+] as const;
 
 function Chip({
   children,
@@ -72,19 +75,41 @@ function FactRow({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
+/** "yes"/"no", a rescue's qualifier ("selective", "older_children"), or null when not assessed. */
+function companionAnswer(value: unknown): string | null {
+  if (value === true || value === "yes" || value === "true") return "yes";
+  if (value === false || value === "no" || value === "false") return "no";
+  if (typeof value !== "string" || !value.trim() || value.toLowerCase() === "unknown") return null;
+  return value.replace(/_/g, " ");
+}
+
+const ANSWER_ORDER = (answer: string) => (answer === "yes" ? 0 : answer === "no" ? 2 : 1);
+
 /** Known companions, plus one quiet chip for the rest (never three). */
 function LivesWith({ dog }: { dog: Dog }) {
-  const known = getLivesWithFacts(dog, 3);
+  const answers: { label: string; answer: string | null }[] = COMPANIONS.map(({ field, label }) => ({
+    label,
+    answer: companionAnswer(dog.dog_profiler_data?.[field] ?? dog.properties?.[field]),
+  }));
+  const known = answers
+    .filter((a): a is { label: string; answer: string } => a.answer !== null)
+    .sort((a, b) => ANSWER_ORDER(a.answer) - ANSWER_ORDER(b.answer));
   if (known.length === 0) return null;
-  const unknown = COMPANIONS.filter((c) => !known.some((f) => f.label === c));
+  const unknown = answers.filter((a) => a.answer === null).map((a) => a.label);
   return (
     <FactRow label="Lives with">
-      {known.map((fact) => (
-        <Chip key={fact.label} tone={fact.good ? "good" : "bad"}>
-          {fact.good ? "✓" : "✗"} {fact.label}
-          <span className="sr-only">{fact.good ? ": yes" : ": no"}</span>
-        </Chip>
-      ))}
+      {known.map(({ label, answer }) =>
+        answer === "yes" || answer === "no" ? (
+          <Chip key={label} tone={answer === "yes" ? "good" : "bad"}>
+            {answer === "yes" ? "✓" : "✗"} {label}
+            <span className="sr-only">: {answer}</span>
+          </Chip>
+        ) : (
+          <Chip key={label}>
+            {label}: {answer}
+          </Chip>
+        ),
+      )}
       {unknown.length > 0 && (
         <Chip tone="quiet">
           {unknown.map((c, i) => (i === 0 ? c : c.toLowerCase())).join(", ")} not assessed
@@ -215,15 +240,22 @@ export function AdoptLink({
   );
 }
 
-function SaveAndShare({ dog }: { dog: Dog }) {
+/**
+ * Below lg, phones share from the button over the photo, and an adoptable dog
+ * is saved from the bottom bar; this row fills in whatever those don't cover.
+ */
+function SaveAndShare({ dog, saveInBar }: { dog: Dog; saveInBar: boolean }) {
   return (
-    <div className="flex items-center gap-2">
-      <FavoriteButton
-        dogId={dog.id}
-        dogName={dog.name}
-        orgSlug={dog.organization?.slug}
-        className="rounded-xl border border-line hover:bg-soft"
-      />
+    <div className={cn("items-center gap-2", saveInBar ? "hidden sm:flex" : "flex")}>
+      <span className={saveInBar ? "hidden lg:contents" : "contents"}>
+        <FavoriteButton
+          dogId={dog.id}
+          dogName={dog.name}
+          orgSlug={dog.organization?.slug}
+          className="rounded-xl border border-line hover:bg-soft"
+        />
+      </span>
+      <span className="hidden sm:contents">
       <ShareButton
         url={typeof window !== "undefined" ? window.location.href : ""}
         title={`Meet ${dog.name} - Available for Adoption`}
@@ -232,6 +264,7 @@ function SaveAndShare({ dog }: { dog: Dog }) {
         size="sm"
         className="min-h-11 rounded-xl border border-line px-3 hover:bg-soft"
       />
+      </span>
     </div>
   );
 }
@@ -298,9 +331,7 @@ export default function DogFactsPanel({
         </div>
       )}
 
-      <div className="hidden lg:block">
-        <SaveAndShare dog={dog} />
-      </div>
+      <SaveAndShare dog={dog} saveInBar={adoptable} />
     </div>
   );
 }
@@ -312,6 +343,7 @@ export function MobileAdoptBar({ dog }: { dog: Dog }): React.ReactElement | null
     <div
       className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-line bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur dark:bg-gray-950/95 lg:hidden"
       data-testid="mobile-adopt-bar"
+      data-adopt-bar
     >
       <FavoriteButton
         dogId={dog.id}

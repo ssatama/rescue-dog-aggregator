@@ -58,6 +58,18 @@ describe("DogFactsPanel", () => {
     expect(chips).toEqual(["✓ Dogs: yes", "✗ Children: no", "Cats not assessed"]);
   });
 
+  it("shows a rescue's qualified answer instead of calling it not assessed", () => {
+    render(
+      <DogFactsPanel
+        dog={dog({ properties: { good_with_dogs: "selective", good_with_children: "true" } })}
+      />,
+    );
+
+    const livesWith = screen.getByRole("list", { name: "Lives with" });
+    const chips = within(livesWith).getAllByRole("listitem").map((li) => li.textContent);
+    expect(chips).toEqual(["✓ Children: yes", "Dogs: selective", "Cats not assessed"]);
+  });
+
   it("joins several unknown companions into that one quiet chip", () => {
     render(<DogFactsPanel dog={dog({ dog_profiler_data: { good_with_dogs: "no" } })} />);
 
@@ -127,5 +139,9 @@ describe("DogFactsPanel", () => {
 
     expect(screen.queryByTestId("adopt-button-panel")).not.toBeInTheDocument();
     expect(screen.queryByTestId("mobile-adopt-bar")).not.toBeInTheDocument();
+    // With no bottom bar, the panel's Save must show at every width
+    const save = screen.getByRole("button", { name: /favorites/i });
+    expect(save.closest("span")).toHaveClass("contents");
+    expect(save.closest("span")).not.toHaveClass("hidden");
   });
 });

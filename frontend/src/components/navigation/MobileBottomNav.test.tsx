@@ -118,12 +118,14 @@ describe("MobileBottomNav", () => {
   });
 
   describe("Visibility on dog pages", () => {
-    it("steps aside on a dog page, whose own bar holds the adopt button", () => {
+    it("renders on a dog page, and steps aside by CSS only while an adopt bar is present", () => {
+      // A reserved or inactive dog has no adopt bar, so the site nav must stay (#514)
       (usePathname as jest.Mock).mockReturnValue("/dogs/lexi-lurcher-2419");
 
-      const { container } = render(<MobileBottomNav />);
+      render(<MobileBottomNav />);
 
-      expect(container.firstChild).toBeNull();
+      const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
+      expect(nav.className).toContain("[body:has([data-adopt-bar])_&]:hidden");
     });
 
     it.each(["/dogs", "/dogs/puppies", "/dogs/senior", "/dogs/country/gb"])(
