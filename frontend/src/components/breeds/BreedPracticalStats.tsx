@@ -3,8 +3,6 @@ import { hasPracticalStats } from "@/utils/breedPracticalStats";
 
 interface BreedPracticalStatsProps {
   stats: Stats;
-  /** Plural noun for the dogs, e.g. "Labradors" */
-  dogsLabel: string;
 }
 
 const TILE = "rounded-2xl border border-line bg-surface p-4";
@@ -42,13 +40,13 @@ function MixTile({ title, stat }: { title: string; stat: MixStat }): React.JSX.E
  * Stats on fewer than five dogs are already left out; with none left, so is
  * the section.
  */
-export default function BreedPracticalStats({ stats, dogsLabel }: BreedPracticalStatsProps): React.JSX.Element | null {
+export default function BreedPracticalStats({ stats }: BreedPracticalStatsProps): React.JSX.Element | null {
   if (!hasPracticalStats(stats)) return null;
 
   return (
     <section aria-labelledby="breed-stats-heading" className="mb-10">
       <h2 id="breed-stats-heading" className="font-display text-xl font-bold tracking-tight text-ink sm:text-2xl">
-        What the rescues say about their {dogsLabel}
+        What the rescues say about these dogs
       </h2>
       <p className="mt-1 text-sm text-subtle">From the dogs listed now. Rescues don&apos;t record every detail for every dog.</p>
 

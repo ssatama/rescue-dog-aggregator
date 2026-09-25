@@ -801,7 +801,17 @@ export const getBreedDogs = cache(
 export const getBreedCounts = cache(
   async (breedFilter: { primary_breed: string } | { breed_group: string }): Promise<FilterCountsResponse | null> => {
     try {
-      return await getFilterCounts({ ...breedFilter, age_known: "true" });
+      // Its own fetch: getFilterCounts revalidates every minute, and a page
+      // regenerates at its shortest fetch revalidate, not its own weekly one
+      const query = new URLSearchParams({ ...breedFilter, age_known: "true" });
+      const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts?${query.toString()}`, {
+        next: { revalidate: 86400, tags: ["breed-counts"] },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch breed counts: ${response.statusText}`);
+      }
+      const raw: unknown = await response.json();
+      return FilterCountsResponseSchema.parse(stripNulls(raw));
     } catch (error) {
       reportError(error, { context: "getBreedCounts", ...breedFilter });
       return null;

@@ -10,7 +10,6 @@ describe("BreedPracticalStats (#500)", () => {
   it("labels every stat with the dogs it comes from", () => {
     render(
       <BreedPracticalStats
-        dogsLabel="Lurchers"
         stats={{
           compatibility: [{ key: "good_with_cats", label: "Good with cats", count: 6, known: 23, percent: 26 }],
           energy: { known: 8, parts: [{ label: "High", count: 8, percent: 100 }] },
@@ -20,7 +19,7 @@ describe("BreedPracticalStats (#500)", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "What the rescues say about their Lurchers" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "What the rescues say about these dogs" })).toBeInTheDocument();
     expect(screen.getByText("26%")).toBeInTheDocument();
     expect(screen.getByText("6 of 23 dogs with this info")).toBeInTheDocument();
     expect(screen.getByText("of 8 dogs with this info")).toBeInTheDocument();
@@ -29,7 +28,7 @@ describe("BreedPracticalStats (#500)", () => {
   });
 
   it("renders nothing for a breed without enough profiled dogs", () => {
-    const { container } = render(<BreedPracticalStats dogsLabel="Galgos" stats={empty} />);
+    const { container } = render(<BreedPracticalStats stats={empty} />);
     expect(container).toBeEmptyDOMElement();
   });
 });

@@ -394,8 +394,6 @@ export default function BreedDetailClient({
   );
 
   const practicalStats = useMemo(() => buildPracticalStats(breedCounts), [breedCounts]);
-  const isMixed = breedData.breed_slug === "mixed" || breedData.breed_type === "mixed";
-  const dogsLabel = isMixed ? "mixed breeds" : `${breedData.primary_breed}s`;
 
   const filterOptions = React.useMemo(
     () => getBreedFilterOptions(breedData, { organizations: [] }),
@@ -432,7 +430,7 @@ export default function BreedDetailClient({
           />
         </div>
 
-        <BreedPracticalStats stats={practicalStats} dogsLabel={dogsLabel} />
+        <BreedPracticalStats stats={practicalStats} />
 
         <BreedFilterBar
           breedData={breedData}
