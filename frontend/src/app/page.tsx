@@ -1,6 +1,5 @@
 import { formatCount } from "@/utils/formatCount";
 import type { Metadata } from "next";
-import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import Layout from "../components/layout/Layout";
 import HomeHero from "../components/home/HomeHero";
 import AdoptableNowRow from "../components/home/AdoptableNowRow";
@@ -72,14 +71,16 @@ export default async function Home(): Promise<React.JSX.Element> {
     getAllGuides(),
   ]);
 
-  // The service answers a failed fetch with empty lists. This page is cached for
-  // hours, so a home without dogs must fail the render instead (the last good
-  // page keeps being served). A build without an API, as in CI, renders it anyway.
+  // The service answers a failed fetch with empty lists and zero counts. This
+  // page is cached for hours, so a home without dogs or statistics must fail the
+  // render instead: ISR keeps serving the last good page, and a Vercel build that
+  // hits the API mid-deploy fails rather than shipping it. Only CI, which builds
+  // with no API at all, renders it anyway.
   if (
-    (lookingForHomes.length === 0 || waitingLongest.length === 0) &&
-    process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD
+    (statistics.total_dogs === 0 || lookingForHomes.length === 0 || waitingLongest.length === 0) &&
+    process.env.GITHUB_ACTIONS !== "true"
   ) {
-    throw new Error("Home: no dogs came back from the API");
+    throw new Error("Home: no dogs or statistics came back from the API");
   }
 
   const rescues = statistics.organizations ?? [];
