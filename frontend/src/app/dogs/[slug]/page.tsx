@@ -219,8 +219,8 @@ export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<Rea
     }
   }
 
-  // Server-fetched so the HTML carries real links to the dog's breed page and to three more
-  // dogs from its rescue (#439).
+  // Server-fetched so the HTML carries real links to the dog's breed page and to three
+  // similar dogs (#439, #489).
   const [initialSimilarDogs, breedPageSlug] = initialDog
     ? await Promise.all([fetchSimilarDogs(initialDog), fetchBreedPageSlug(initialDog)])
     : [undefined, null];
