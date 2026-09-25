@@ -10,7 +10,7 @@ from api.dependencies import get_pooled_db_cursor
 from api.exceptions import APIException, InvalidInputError, handle_database_error, handle_validation_error
 from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
-from api.models.responses import BreedStatsResponse, FilterCountsResponse
+from api.models.responses import BreedStatsResponse, FilterCountsResponse, NeighborsResponse
 from api.services import AnimalService
 from api.services.animal_service import list_images_sql
 from api.utils.availability import publicly_available
@@ -616,6 +616,20 @@ async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(
             detail=f"Internal server error fetching animal {animal_slug}",
             error_code="INTERNAL_ERROR",
         )
+
+
+@router.get("/{animal_slug}/neighbors", response_model=NeighborsResponse)
+async def get_animal_neighbors(
+    animal_slug: str,
+    filters: AnimalFilterRequest = Depends(),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
+):
+    """Previous and next dog for prev/next on the dog page (#490), in the list's
+    order and under the same filters, instead of downloading 300 dogs."""
+    try:
+        return AnimalService(cursor).get_neighbors(animal_slug, filters)
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, f"get_animal_neighbors({animal_slug})")
 
 
 # --- Legacy ID Route (Explicit Redirect) ---

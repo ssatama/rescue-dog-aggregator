@@ -19,7 +19,8 @@ jest.mock("../../services/animalsService", () => ({
   getAllAnimals: jest.fn(),
   getAllAnimalsForSitemap: jest.fn(),
   getAnimalBySlug: jest.fn(),
-  getAnimals: jest.fn(), // Add getAnimals mock for useSwipeNavigation
+  getAnimals: jest.fn(),
+  getDogNeighbors: jest.fn(() => Promise.resolve({ prev: null, next: null })), // For useSwipeNavigation
 }));
 
 // Mock the API layer to return test data
@@ -140,7 +141,6 @@ describe("Hero Page Integration - Critical Tests", () => {
         mockAnimals.find((animal) => animal.slug === slug) || null,
       );
     });
-    // Mock getAnimals for useSwipeNavigation hook
     mockGetAnimals.mockResolvedValue(mockAnimals);
 
     // Default mock - getAllAnimals returns all animals

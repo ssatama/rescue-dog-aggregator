@@ -149,3 +149,18 @@ class BreedStatsResponse(BaseModel):
     qualifying_breeds: list[QualifyingBreed] = Field(default_factory=list, description="Breeds meeting the qualifying threshold")
     purebred_count: int = Field(default=0, description="Number of purebred dogs", ge=0)
     crossbreed_count: int = Field(default=0, description="Number of crossbreed dogs", ge=0)
+
+
+class DogNeighbor(BaseModel):
+    """Just enough of a dog to link to it and prefetch its photo."""
+
+    slug: str
+    name: str
+    primary_image_url: str | None = None
+
+
+class NeighborsResponse(BaseModel):
+    """The previous and next dog in the list, or None when there is none."""
+
+    prev: DogNeighbor | None = None
+    next: DogNeighbor | None = None

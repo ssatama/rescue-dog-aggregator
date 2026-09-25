@@ -101,6 +101,17 @@ def _normalize_url(url: str | None) -> str | None:
     return url
 
 
+def order_clause(sort: str | None) -> str:
+    """ORDER BY for the dog list; every sort ends on the id so the order is total."""
+    if sort == "name-asc":
+        return "ORDER BY a.name ASC, a.id ASC"
+    if sort == "name-desc":
+        return "ORDER BY a.name DESC, a.id DESC"
+    if sort == "oldest":
+        return "ORDER BY a.created_at ASC, a.id ASC"
+    return "ORDER BY a.id DESC"  # newest (default): ids are auto-incrementing
+
+
 class AnimalService:
     """Service layer for animal operations."""
 
@@ -1321,31 +1332,41 @@ class AnimalService:
                 error_code="INTERNAL_ERROR",
             )
 
-    def _build_animals_query(self, filters: AnimalFilterRequest) -> tuple[str, list[Any]]:
-        """Build the animals query with filters."""
-        # Base query selects distinct animals and joins with organizations
-        # Include dog_profiler_data for sitemap and other requests that need LLM content
-        query_base = f"""
-            SELECT DISTINCT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
-                   a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
-                   a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
-                   a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
-                   a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
-                   a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
-                   a.dog_profiler_data,
-                   {list_images_sql()},
-                   o.name as org_name,
-                   o.slug as org_slug,
-                   o.city as org_city,
-                   o.country as org_country,
-                   o.website_url as org_website_url,
-                   o.logo_url as org_logo_url,
-                   o.social_media as org_social_media,
-                   o.ships_to as org_ships_to
-            FROM animals a
-            LEFT JOIN organizations o ON a.organization_id = o.id
-        """
+    def get_neighbors(self, slug: str, filters: AnimalFilterRequest) -> dict[str, dict[str, Any] | None]:
+        """The dogs before and after this one in the list, as filtered and sorted.
 
+        Wraps at the ends, so the newest dog's "previous" is the oldest. Both are
+        None when the dog is not in the filtered list or is the only dog in it.
+        """
+        joins, conditions, params = self._build_filter_clause(filters)
+        where_clause = " AND ".join(conditions)
+        query = f"""
+            WITH listed AS (
+                SELECT DISTINCT a.id, a.slug, a.name, a.primary_image_url, a.created_at
+                FROM animals a
+                LEFT JOIN organizations o ON a.organization_id = o.id
+                {joins}
+                WHERE {where_clause}
+            ), ordered AS (
+                SELECT a.*, ROW_NUMBER() OVER ({order_clause(filters.sort)}) AS rn, COUNT(*) OVER () AS total
+                FROM listed a
+            )
+            SELECT side, n.slug, n.name, n.primary_image_url
+            FROM ordered cur
+            CROSS JOIN LATERAL (VALUES
+                ('prev', CASE WHEN cur.rn = 1 THEN cur.total ELSE cur.rn - 1 END),
+                ('next', CASE WHEN cur.rn = cur.total THEN 1 ELSE cur.rn + 1 END)
+            ) AS s(side, target)
+            JOIN ordered n ON n.rn = s.target
+            WHERE cur.slug = %s AND cur.total > 1
+        """
+        self.cursor.execute(query, [*params, slug])
+        found = {row["side"]: {k: row[k] for k in ("slug", "name", "primary_image_url")} for row in self.cursor.fetchall()}
+        return {"prev": found.get("prev"), "next": found.get("next")}
+
+    def _build_filter_clause(self, filters: AnimalFilterRequest) -> tuple[str, list[str], list[Any]]:
+        """Joins, WHERE conditions and their params for the list filters, shared
+        by the list query and the prev/next neighbours query."""
         # Conditionally join service_regions if needed for filtering
         joins = ""
         conditions = [
@@ -1451,26 +1472,42 @@ class AnimalService:
 
         self._apply_compatibility_filters(filters, conditions, params)
 
-        # Build WHERE clause
-        where_clause = " AND ".join(conditions)
+        return joins, conditions, params
 
-        # Build ORDER BY clause based on sort parameter
-        def get_order_clause():
-            if filters.sort == "name-asc":
-                return "ORDER BY a.name ASC, a.id ASC"
-            elif filters.sort == "name-desc":
-                return "ORDER BY a.name DESC, a.id DESC"
-            elif filters.sort == "oldest":
-                return "ORDER BY a.created_at ASC, a.id ASC"
-            else:  # newest (default)
-                return "ORDER BY a.id DESC"  # Use ID as proxy for newest (IDs are auto-incrementing)
+    def _build_animals_query(self, filters: AnimalFilterRequest) -> tuple[str, list[Any]]:
+        """Build the animals query with filters."""
+        # Base query selects distinct animals and joins with organizations
+        # Include dog_profiler_data for sitemap and other requests that need LLM content
+        query_base = f"""
+            SELECT DISTINCT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                   a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
+                   a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
+                   a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
+                   a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
+                   a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
+                   a.dog_profiler_data,
+                   {list_images_sql()},
+                   o.name as org_name,
+                   o.slug as org_slug,
+                   o.city as org_city,
+                   o.country as org_country,
+                   o.website_url as org_website_url,
+                   o.logo_url as org_logo_url,
+                   o.social_media as org_social_media,
+                   o.ships_to as org_ships_to
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+        """
+
+        joins, conditions, params = self._build_filter_clause(filters)
+        where_clause = " AND ".join(conditions)
+        order_by = order_clause(filters.sort)
 
         # Handle different curation types
         if filters.curation_type == "recent":
             conditions.append("a.created_at >= NOW() - INTERVAL '7 days'")
             where_clause = " AND ".join(conditions)
-            order_clause = get_order_clause()
-            query = f"{query_base}{joins} WHERE {where_clause} {order_clause} LIMIT %s OFFSET %s"
+            query = f"{query_base}{joins} WHERE {where_clause} {order_by} LIMIT %s OFFSET %s"
         elif filters.curation_type == "diverse":
             # For diverse curation, maintain original random ordering per organization
             query = f"""
@@ -1499,8 +1536,7 @@ class AnimalService:
                 LIMIT %s OFFSET %s
             """
         else:
-            order_clause = get_order_clause()
-            query = f"{query_base}{joins} WHERE {where_clause} {order_clause} LIMIT %s OFFSET %s"
+            query = f"{query_base}{joins} WHERE {where_clause} {order_by} LIMIT %s OFFSET %s"
 
         params.extend([filters.limit, filters.offset])
 

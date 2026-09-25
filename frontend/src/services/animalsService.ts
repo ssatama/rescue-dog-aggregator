@@ -60,6 +60,23 @@ export async function getAnimals(
   return transformApiDogsToDogs(raw);
 }
 
+const DogNeighborSchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  primary_image_url: z.string().nullish(),
+});
+const DogNeighborsSchema = z.object({
+  prev: DogNeighborSchema.nullable(),
+  next: DogNeighborSchema.nullable(),
+});
+export type DogNeighbor = z.infer<typeof DogNeighborSchema>;
+export type DogNeighbors = z.infer<typeof DogNeighborsSchema>;
+
+/** The dogs before and after this one in the list, under the same filters (#490). */
+export function getDogNeighbors(slug: string, params: Record<string, string> = {}): Promise<DogNeighbors> {
+  return get(`/api/animals/${encodeURIComponent(slug)}/neighbors`, params, { schema: DogNeighborsSchema });
+}
+
 export async function getAnimalsByIds(ids: number[]): Promise<Dog[]> {
   if (ids.length === 0) return [];
   logger.log(`Batch fetching ${ids.length} animals by IDs`);
