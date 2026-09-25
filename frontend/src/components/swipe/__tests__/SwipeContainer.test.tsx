@@ -140,7 +140,7 @@ describe("SwipeContainer (#499)", () => {
       await act(async () => {
         fireEvent.keyDown(window, { key: "ArrowRight" });
       });
-      expect(fetchDogs).toHaveBeenLastCalledWith("adoptable_to_country=UK&offset=3&randomize=true");
+      expect(fetchDogs).toHaveBeenLastCalledWith("adoptable_to_country=UK&offset=3");
 
       for (const name of ["Dog 3", "Dog 4"]) {
         await act(async () => {
@@ -169,7 +169,7 @@ describe("SwipeContainer (#499)", () => {
       expect(current()).toBe("Dog 3");
     });
 
-    it("Start over reshuffles from the first dog", async () => {
+    it("Start over reloads from the first dog", async () => {
       const fetchDogs = jest.fn().mockResolvedValue(dogs);
       render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
       await screen.findByText("Dog 1");
@@ -182,7 +182,7 @@ describe("SwipeContainer (#499)", () => {
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: "Start over" }));
       });
-      expect(fetchDogs).toHaveBeenLastCalledWith("adoptable_to_country=UK&randomize=true");
+      expect(fetchDogs).toHaveBeenLastCalledWith("adoptable_to_country=UK");
       expect(current()).toBe("Dog 1");
       expect(localStorage.getItem("swipeCurrentIndex")).toBe("0");
     });
@@ -229,6 +229,34 @@ describe("SwipeContainer (#499)", () => {
       expect(screen.getByRole("heading", { name: "We couldn't load the dogs" })).toBeInTheDocument();
       expect(screen.queryByText("No dogs match these filters")).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+    });
+
+    it("drops a load-more response that arrives after the filters changed", async () => {
+      let resolveMore: (value: Dog[]) => void = () => {};
+      const fetchDogs = jest
+        .fn()
+        .mockResolvedValue(dogs)
+        .mockResolvedValueOnce(dogs)
+        .mockImplementationOnce(() => new Promise<Dog[]>((resolve) => (resolveMore = resolve)));
+      const { rerender } = render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      await screen.findByText("Dog 1");
+      await act(async () => {
+        fireEvent.keyDown(window, { key: "ArrowRight" });
+      });
+
+      (useSwipeFilters as jest.Mock).mockReturnValue({ ...validFilters, toQueryString: () => "adoptable_to_country=DE" });
+      await act(async () => {
+        rerender(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      });
+      await act(async () => {
+        resolveMore([{ id: 9, name: "Old filters dog" }]);
+      });
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          fireEvent.keyDown(window, { key: "ArrowRight" });
+        });
+      }
+      expect(screen.queryByText("Old filters dog")).not.toBeInTheDocument();
     });
   });
 });

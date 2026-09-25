@@ -160,8 +160,11 @@ The system parses various age formats using complex regex patterns:
 
 1. The server renders the first 20 dogs for the URL's filters (`/swipe?country=UK`).
 2. Next moves one dog on; when 5 or fewer are left, the next batch is fetched
-   with `offset` and `randomize=true`, and dogs already in the stack are dropped.
-3. Next on the last dog shows the end state. Start over reshuffles from the top.
+   with `offset` = dogs loaded so far, in the API's stable order. `randomize`
+   is not used for paging: each random page is a fresh shuffle, so offsets
+   would skip and repeat dogs and the end state would come too early.
+   A batch that arrives after the filters changed is dropped.
+3. Next on the last dog shows the end state. Start over reloads from the top.
 4. Saving (heart or F) goes through `FavoritesContext`, like everywhere else.
 
 ## User Experience Flow

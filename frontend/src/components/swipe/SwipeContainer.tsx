@@ -131,7 +131,6 @@ export function SwipeContainer({
   const [isLoading, setIsLoading] = useState(!initialDogs);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [offset, setOffset] = useState(0);
   const [loadFailed, setLoadFailed] = useState(false);
   const dragged = useRef(false);
   // The first load restores the saved position; new filters start at the top
@@ -182,7 +181,6 @@ export function SwipeContainer({
           safeStorage.set("swipeCurrentIndex", String(index));
           return index;
         });
-        setOffset(0);
         Sentry.addBreadcrumb({
           message: "swipe.queue.loaded",
           category: "swipe",
@@ -204,14 +202,22 @@ export function SwipeContainer({
     };
   }, [isValid, queryString, fetchDogs]);
 
+  // The filters the stack on screen belongs to, for requests still in flight
+  const queryRef = useRef(queryString);
+  useEffect(() => {
+    queryRef.current = queryString;
+  }, [queryString]);
+
+  // Pages follow the API's stable order (no randomize), so offset = dogs
+  // loaded: no page is skipped or repeated, and an empty page really is the end
   const loadMore = useCallback(() => {
     if (!fetchDogs || isLoadingMore || !queryString) return;
     setIsLoadingMore(true);
-    const newOffset = offset + dogs.length;
-    setOffset(newOffset);
-    fetchDogs(`${queryString}&offset=${newOffset}&randomize=true`)
+    const sentFor = queryString;
+    fetchDogs(`${queryString}&offset=${dogs.length}`)
       .then((fetched) => {
-        // A random batch can repeat dogs already in the stack
+        // Filters changed meanwhile: these dogs belong to the old stack
+        if (queryRef.current !== sentFor) return;
         setDogs((prev) => {
           const seen = new Set(prev.map((dog) => dog.id));
           const fresh = fetched.filter((dog) => !seen.has(dog.id));
@@ -220,7 +226,7 @@ export function SwipeContainer({
       })
       .catch((error) => Sentry.captureException(error))
       .finally(() => setIsLoadingMore(false));
-  }, [fetchDogs, isLoadingMore, queryString, offset, dogs.length]);
+  }, [fetchDogs, isLoadingMore, queryString, dogs.length]);
 
   const currentDog: Dog | undefined = dogs[currentIndex];
 
@@ -258,10 +264,9 @@ export function SwipeContainer({
 
   const startOver = useCallback(() => {
     setIndex(0);
-    setOffset(0);
     if (!fetchDogs || !queryString) return;
     setIsLoading(true);
-    fetchDogs(`${queryString}&randomize=true`)
+    fetchDogs(queryString)
       .then((fetched) => {
         setDogs(fetched);
         setLoadFailed(false);
