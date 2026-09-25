@@ -300,6 +300,42 @@ describe("SwipeContainer (#499)", () => {
       expect(screen.getByTestId("swipe-end")).toBeInTheDocument();
     });
 
+    it("ignores a Start over response when the filters changed and changed back", async () => {
+      let resolveStartOver: (value: Dog[]) => void = () => {};
+      let ukLoads = 0;
+      const fetchDogs = jest.fn((query: string) => {
+        if (query.includes("offset=") || query.includes("DE")) return Promise.resolve([]);
+        ukLoads += 1;
+        // The second UK load is Start over, held back; the reload after DE is the third
+        return ukLoads === 2 ? new Promise<Dog[]>((resolve) => (resolveStartOver = resolve)) : Promise.resolve(dogs);
+      });
+      const { rerender } = render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      await screen.findByText("Dog 1");
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          fireEvent.keyDown(window, { key: "ArrowRight" });
+        });
+      }
+      fireEvent.click(screen.getByRole("button", { name: "Start over" }));
+
+      for (const country of ["DE", "UK"]) {
+        (useSwipeFilters as jest.Mock).mockReturnValue({
+          ...validFilters,
+          toQueryString: () => `adoptable_to_country=${country}`,
+        });
+        await act(async () => {
+          rerender(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+        });
+      }
+      await act(async () => {
+        fireEvent.keyDown(window, { key: "ArrowRight" });
+      });
+      await act(async () => {
+        resolveStartOver([{ id: 9, name: "Stale Start over dog" }]);
+      });
+      expect(current()).toBe("Dog 2");
+    });
+
     it("starts at the top when the saved position is past the first page", async () => {
       localStorage.setItem("swipeCurrentIndex", "35");
       const fetchDogs = jest.fn().mockResolvedValue(dogs);

@@ -221,12 +221,6 @@ export function SwipeContainer({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setIndex is stable
   }, [isValid, queryString, fetchDogs]);
 
-  // The filters the stack on screen belongs to, for requests still in flight
-  const queryRef = useRef(queryString);
-  useEffect(() => {
-    queryRef.current = queryString;
-  }, [queryString]);
-
   // Pages follow the API's stable order (no randomize), so offset = dogs
   // loaded: no page is skipped or repeated, and an empty page really is the end
   const loadMore = useCallback(() => {
@@ -291,14 +285,13 @@ export function SwipeContainer({
   const startOver = useCallback(() => {
     setIndex(0);
     if (!fetchDogs || !queryString) return;
-    stackLoads.current += 1;
+    const load = (stackLoads.current += 1);
     setIsLoading(true);
     setIsLoadingMore(false);
-    const sentFor = queryString;
     fetchDogs(queryString)
       .then((fetched) => {
         // Filters changed meanwhile: their own fetch owns the stack now
-        if (queryRef.current !== sentFor) return;
+        if (stackLoads.current !== load) return;
         setDogs(fetched);
         setLoadFailed(false);
         setLoadMoreFailed(false);
@@ -306,11 +299,11 @@ export function SwipeContainer({
       .catch((error) => {
         // On failure the current stack stays, from its first dog
         Sentry.captureException(error);
-        if (queryRef.current === sentFor) setLoadFailed(true);
+        if (stackLoads.current === load) setLoadFailed(true);
       })
       .finally(() => {
         // A filter change meanwhile is loading its own stack; leave its spinner on
-        if (queryRef.current === sentFor) setIsLoading(false);
+        if (stackLoads.current === load) setIsLoading(false);
       });
   }, [fetchDogs, queryString, setIndex]);
 
