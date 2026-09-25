@@ -66,6 +66,7 @@ class AnimalFilterRequest(BaseModel):
     size: str | None = Field(default=None, description="Filter by size")
     standardized_size: StandardizedSize | None = Field(default=None, description="Filter by standardized size")
     age_category: str | None = Field(default=None, description="Filter by age category")
+    age_known: bool = Field(default=False, description="Age buckets match only dogs with a recorded age (no-age dogs otherwise match every bucket)")
 
     # Location filters
     location_country: str | None = Field(default=None, description="Filter by country where animal is located")
@@ -247,6 +248,7 @@ class AnimalFilterCountRequest(BaseModel):
     size: str | None = Field(default=None, description="Size context for counting")
     standardized_size: StandardizedSize | None = Field(default=None, description="Standardized size context for counting")
     age_category: str | None = Field(default=None, description="Age category context for counting")
+    age_known: bool = Field(default=False, description="Age buckets count only dogs with a recorded age")
 
     # Location filters (context for counting)
     location_country: str | None = Field(default=None, description="Location country context for counting")

@@ -81,14 +81,31 @@ export default function MobileFilterDrawer({
   const [searchText, setSearchText] = useState(searchQuery);
   const [sentSearch, setSentSearch] = useState(searchQuery);
   const [lastSearchQuery, setLastSearchQuery] = useState(searchQuery);
+  const [outsideSearches, setOutsideSearches] = useState(0);
   if (searchQuery !== lastSearchQuery) {
     setLastSearchQuery(searchQuery);
-    if (searchQuery !== sentSearch) setSearchText(searchQuery);
+    if (searchQuery !== sentSearch) {
+      setSearchText(searchQuery);
+      setOutsideSearches((n) => n + 1);
+    }
   }
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setSentSearch(value);
     handleSearchChange?.(value);
   }, SEARCH_DEBOUNCE_MS);
+  // A search set from outside wins over one still waiting to be sent
+  useEffect(() => {
+    if (outsideSearches > 0) debouncedSearch.cancel();
+  }, [outsideSearches, debouncedSearch]);
+
+  const handleReset = useCallback(() => {
+    // Typed text not yet sent would otherwise come back after the reset
+    debouncedSearch.cancel();
+    setSearchText("");
+    setSentSearch("");
+    resetFilters();
+    onClose();
+  }, [debouncedSearch, resetFilters, onClose]);
   // Closing the drawer applies what was typed straight away
   useEffect(() => {
     if (!isOpen) debouncedSearch.flush();
@@ -267,10 +284,7 @@ export default function MobileFilterDrawer({
                 </Button>
                 {activeFilterCount > 0 && (
                   <Button
-                    onClick={() => {
-                      resetFilters();
-                      onClose();
-                    }}
+                    onClick={handleReset}
                     variant="outline"
                     className="w-full border-orange-600 text-orange-600 hover:bg-orange-50 dark:border-orange-400 dark:text-orange-400 dark:hover:bg-orange-950/30 font-medium py-3"
                   >
@@ -714,10 +728,7 @@ export default function MobileFilterDrawer({
                 <button
                   data-testid="clear-all-filters"
                   className="w-full text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 font-medium py-3 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-600"
-                  onClick={() => {
-                    resetFilters();
-                    onClose();
-                  }}
+                  onClick={handleReset}
                 >
                   Clear All Filters
                 </button>

@@ -45,6 +45,7 @@ export default async function PuppiesPage(): Promise<React.JSX.Element> {
   const [initialDogs, metadata, ageStats] = await Promise.all([
     getAnimals({
       age_category: puppyCategory.apiValue,
+      age_known: true,
       sort: FILTER_DEFAULTS.SORT,
       limit: 20,
       offset: 0,

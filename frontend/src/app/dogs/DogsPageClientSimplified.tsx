@@ -83,11 +83,23 @@ export default function DogsPageClientSimplified({
     scrollPositionRef: scrollPositionRef,
   });
 
+  // A page that fixes the age (/dogs/puppies) promises it, so dogs without a
+  // recorded age stay off it; in the catalog they appear under every age
+  const ageIsFixed = Boolean(initialParams?.age_category);
+  const { buildAPIParams: buildFilterParams } = filterState;
+  const buildAPIParams = useCallback(
+    (filters: Filters) => {
+      const params = buildFilterParams(filters);
+      return ageIsFixed && params.age_category ? { ...params, age_known: "true" } : params;
+    },
+    [buildFilterParams, ageIsFixed],
+  );
+
   const pagination = useDogsPagination({
     initialDogs,
     initialParams,
     filters: filterState.filters,
-    buildAPIParams: filterState.buildAPIParams,
+    buildAPIParams,
     scrollPositionRef: scrollPositionRef,
     searchParams,
     pathname,

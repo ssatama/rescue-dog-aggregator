@@ -132,6 +132,7 @@ interface AnimalQueryParams {
   sort_by?: string;
   sort_order?: string;
   sort?: string;
+  age_known?: boolean;
   curation_type?: string;
   animal_type?: string;
   status?: string;
@@ -168,6 +169,7 @@ export const getAnimals = cache(
     if (params.sort_by) queryParams.append("sort_by", params.sort_by);
     if (params.sort_order) queryParams.append("sort_order", params.sort_order);
     if (params.sort) queryParams.append("sort", params.sort);
+    if (params.age_known) queryParams.append("age_known", "true");
     if (params.curation_type)
       queryParams.append("curation_type", params.curation_type);
     if (params.animal_type)
@@ -1016,7 +1018,8 @@ interface AgeStats {
 
 export const getAgeStats = cache(
   async (): Promise<AgeStats> => {
-    const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts`, {
+    // Puppy and senior pages promise an age, so dogs without one are not counted
+    const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts?age_known=true`, {
       next: {
         revalidate: 86400,
         tags: ["age-stats"],

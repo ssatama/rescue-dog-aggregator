@@ -55,10 +55,19 @@ describe("catalog chips (#494)", () => {
         expect.anything(),
       ),
     );
+    // The page promises puppies, so dogs without a recorded age stay off it
     expect(api.getAnimals).toHaveBeenLastCalledWith(
-      expect.objectContaining({ age_category: "Puppy" }),
+      expect.objectContaining({ age_category: "Puppy", age_known: "true" }),
       expect.anything(),
     );
+  });
+
+  it("the catalog's own age filter still includes dogs without an age", async () => {
+    renderAt("/dogs", "age=Adult");
+    await waitFor(() =>
+      expect(api.getAnimals).toHaveBeenCalledWith(expect.objectContaining({ age_category: "Adult" }), expect.anything()),
+    );
+    expect(api.getAnimals).not.toHaveBeenCalledWith(expect.objectContaining({ age_known: expect.anything() }), expect.anything());
   });
 
   it("removing the country chip drops its region too", async () => {

@@ -164,3 +164,7 @@ class TestNoRecordedAge:
     def test_the_sql_includes_dogs_with_no_age(self):
         for category in AGE_CATEGORIES:
             assert "age_min_months IS NULL AND a.age_max_months IS NULL" in age_category_condition(category)
+
+    def test_age_known_drops_the_no_age_clause(self):
+        for category in AGE_CATEGORIES:
+            assert "IS NULL" not in age_category_condition(category, age_known=True)

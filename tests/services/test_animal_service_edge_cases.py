@@ -119,3 +119,15 @@ class TestAnimalServiceAgeFilter:
         for category in ("Puppy", "Young", "Adult", "Senior"):
             bucket_ids = {a["id"] for a in client.get(f"/api/animals/?age_category={category}&limit=1000").json()}
             assert no_age <= bucket_ids, f"dog without an age missing from {category}"
+
+    def test_age_known_keeps_dogs_without_an_age_out(self, client):
+        """Pages that promise an age (/dogs/puppies) ask for age_known."""
+        ids = {a["id"] for a in client.get("/api/animals/?age_category=Adult&age_known=true&limit=100").json()}
+        assert 9014 not in ids
+        assert 9003 in ids
+
+    def test_age_known_counts_match_the_strict_filter(self, client):
+        counts = {opt["value"]: opt["count"] for opt in client.get("/api/animals/meta/filter_counts?age_known=true").json()["age_options"]}
+        for category, count in counts.items():
+            strict = client.get(f"/api/animals/?age_category={category}&age_known=true&limit=1000").json()
+            assert len(strict) == count, category

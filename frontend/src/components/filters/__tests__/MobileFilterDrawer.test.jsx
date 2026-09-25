@@ -113,6 +113,29 @@ describe("MobileFilterDrawer Component", () => {
     jest.useRealTimers();
   });
 
+  test("resetting drops a search that was still waiting to be sent", () => {
+    jest.useFakeTimers();
+    const handleSearchChange = jest.fn();
+    const resetFilters = jest.fn();
+    render(
+      <MobileFilterDrawer
+        {...mockProps}
+        sizeFilter="Small"
+        handleSearchChange={handleSearchChange}
+        resetFilters={resetFilters}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId("search-input"), { target: { value: "bel" } });
+    fireEvent.click(screen.getByTestId("clear-all-filters"));
+    act(() => jest.advanceTimersByTime(1000));
+
+    expect(resetFilters).toHaveBeenCalled();
+    expect(handleSearchChange).not.toHaveBeenCalled();
+    expect(screen.getByTestId("search-input")).toHaveValue("");
+    jest.useRealTimers();
+  });
+
   test("search input is labelled for accessibility", () => {
     render(<MobileFilterDrawer {...mockProps} />);
 

@@ -7,7 +7,7 @@ import DogFilters from "../../../components/filters/DogFilters";
 import OrganizationHero from "../../../components/organizations/OrganizationHero";
 import MobileFilterDrawer from "../../../components/filters/MobileFilterDrawer";
 import useFilteredDogs from "../../../hooks/useFilteredDogs";
-import { getDefaultFilters } from "../../../utils/dogFilters";
+import { getAgeFilterOptions, getDefaultFilters } from "../../../utils/dogFilters";
 import type { AgeCategory, SortOption } from "../../../utils/dogFilters";
 import { AGE_OPTIONS, RESCUE_PAGE_SORTS } from "@/constants/filters";
 import { Button } from "../../../components/ui/button";
@@ -72,7 +72,10 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
 
     if (urlAge || urlBreed || urlSex || urlSort) {
       return {
-        age: (urlAge as AgeCategory) || defaultFilters.age || "All",
+        // An old link can carry an age the filter no longer offers (Unknown)
+        age: getAgeFilterOptions().some((option) => option.value === urlAge)
+          ? (urlAge as AgeCategory)
+          : defaultFilters.age || "All",
         breed: urlBreed || defaultFilters.breed || "",
         sex: urlSex || "Any",
         // An old link can carry a sort the menu no longer offers (name-asc)

@@ -52,7 +52,7 @@ def size_scale_values(size: StandardizedSize) -> list[str]:
     return list(SIZE_SCALE_MEMBERS.get(size.value, (size.value,)))
 
 
-def age_category_condition(category: str) -> str | None:
+def age_category_condition(category: str, age_known: bool = False) -> str | None:
     """SQL predicate selecting dogs in an age bucket, or None if unrecognised.
 
     A dog matches a bucket when its estimated age range genuinely overlaps it.
@@ -72,7 +72,8 @@ def age_category_condition(category: str) -> str | None:
     matching a dog whose range really does span two.
 
     A dog with no recorded age matches every bucket, so an age search never
-    hides it (#494). A half-populated row (one bound set) is not treated
+    hides it (#494). ``age_known`` turns that off for pages that promise an
+    age, such as /dogs/puppies, where an unknown-age adult does not belong. A half-populated row (one bound set) is not treated
     as unknown; it still has a usable bound, so it lands in a real bucket.
     """
     bounds = AGE_CATEGORIES.get(category)
@@ -86,7 +87,8 @@ def age_category_condition(category: str) -> str | None:
     if high is not None:
         clauses.append(f"a.age_min_months < {high}")
 
-    return f"(({' AND '.join(clauses)}) OR {NO_RECORDED_AGE})"
+    bucket = f"({' AND '.join(clauses)})"
+    return bucket if age_known else f"({bucket} OR {NO_RECORDED_AGE})"
 
 
 LIST_GALLERY_PHOTOS = 3
@@ -1459,7 +1461,7 @@ class AnimalService:
             params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
-            age_condition = age_category_condition(filters.age_category)
+            age_condition = age_category_condition(filters.age_category, filters.age_known)
             if age_condition:
                 conditions.append(age_condition)
 
@@ -1773,7 +1775,7 @@ class AnimalService:
             params.append(filters.sex)
 
         if filters.age_category:
-            age_condition = age_category_condition(filters.age_category)
+            age_condition = age_category_condition(filters.age_category, filters.age_known)
             if age_condition:
                 conditions.append(age_condition)
 
@@ -1815,7 +1817,7 @@ class AnimalService:
         # One aggregate per bucket rather than a CASE: a dog whose estimated age
         # range straddles a boundary belongs to both adjacent buckets, which a
         # single-assignment CASE cannot express.
-        selects = ",\n                ".join(f'COUNT(*) FILTER (WHERE {age_category_condition(category)}) AS "{category}"' for category in AGE_CATEGORIES)
+        selects = ",\n                ".join(f'COUNT(*) FILTER (WHERE {age_category_condition(category, filters.age_known)}) AS "{category}"' for category in AGE_CATEGORIES)
 
         query = f"""
             SELECT
@@ -1849,7 +1851,7 @@ class AnimalService:
             params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
-            age_condition = age_category_condition(filters.age_category)
+            age_condition = age_category_condition(filters.age_category, filters.age_known)
             if age_condition:
                 conditions.append(age_condition)
 
@@ -1889,7 +1891,7 @@ class AnimalService:
             params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
-            age_condition = age_category_condition(filters.age_category)
+            age_condition = age_category_condition(filters.age_category, filters.age_known)
             if age_condition:
                 conditions.append(age_condition)
 
@@ -1939,7 +1941,7 @@ class AnimalService:
             params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
-            age_condition = age_category_condition(filters.age_category)
+            age_condition = age_category_condition(filters.age_category, filters.age_known)
             if age_condition:
                 conditions.append(age_condition)
 
@@ -1978,7 +1980,7 @@ class AnimalService:
             params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
-            age_condition = age_category_condition(filters.age_category)
+            age_condition = age_category_condition(filters.age_category, filters.age_known)
             if age_condition:
                 conditions.append(age_condition)
 
@@ -2018,7 +2020,7 @@ class AnimalService:
             params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
-            age_condition = age_category_condition(filters.age_category)
+            age_condition = age_category_condition(filters.age_category, filters.age_known)
             if age_condition:
                 conditions.append(age_condition)
 
@@ -2063,7 +2065,7 @@ class AnimalService:
             params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
-            age_condition = age_category_condition(filters.age_category)
+            age_condition = age_category_condition(filters.age_category, filters.age_known)
             if age_condition:
                 conditions.append(age_condition)
 
@@ -2105,7 +2107,7 @@ class AnimalService:
             params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
-            age_condition = age_category_condition(filters.age_category)
+            age_condition = age_category_condition(filters.age_category, filters.age_known)
             if age_condition:
                 conditions.append(age_condition)
 
@@ -2156,7 +2158,7 @@ class AnimalService:
             params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
-            age_condition = age_category_condition(filters.age_category)
+            age_condition = age_category_condition(filters.age_category, filters.age_known)
             if age_condition:
                 conditions.append(age_condition)
 
