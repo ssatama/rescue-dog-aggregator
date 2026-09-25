@@ -3,7 +3,7 @@
 import React from "react";
 import { X } from "lucide-react";
 import SortMenu from "./SortMenu";
-import { FILTER_DEFAULTS } from "@/constants/filters";
+import { ENERGY_BANDS, FILTER_DEFAULTS, FIRST_TIME_FRIENDLY, LIVES_WELL_WITH } from "@/constants/filters";
 import { countryOptionLabel, getCountryName } from "@/utils/countryNames";
 import type { Filters, OrganizationMetadata } from "@/types/dogsPage";
 
@@ -21,7 +21,16 @@ export const FILTER_RESET: Record<FilterKey, string> = {
   locationCountryFilter: FILTER_DEFAULTS.COUNTRY,
   availableCountryFilter: FILTER_DEFAULTS.COUNTRY,
   availableRegionFilter: FILTER_DEFAULTS.REGION,
+  goodWithKidsFilter: "",
+  goodWithDogsFilter: "",
+  goodWithCatsFilter: "",
+  firstTimeFriendlyFilter: "",
+  energyFilter: "",
 };
+
+const LIFESTYLE_CHIPS = Object.fromEntries(
+  [...LIVES_WELL_WITH, FIRST_TIME_FRIENDLY].map(({ key, chip }) => [key, () => chip]),
+) as Record<(typeof LIVES_WELL_WITH)[number]["key"] | typeof FIRST_TIME_FRIENDLY.key, () => string>;
 
 export interface FilterChip {
   key: FilterKey;
@@ -48,6 +57,9 @@ export function activeFilterChips(
     organizationFilter: (value) =>
       organizations.find((org) => String(org.id) === value)?.name ?? "One rescue",
     locationCountryFilter: (value) => `In ${getCountryName(value)}`,
+    ...LIFESTYLE_CHIPS,
+    energyFilter: (value) =>
+      `${ENERGY_BANDS.find((band) => band.value === value)?.label ?? value} energy`,
   };
   return (Object.keys(label) as FilterKey[])
     .filter((key) => !fixed.includes(key))

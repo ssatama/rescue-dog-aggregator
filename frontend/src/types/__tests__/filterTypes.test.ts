@@ -22,6 +22,11 @@ describe("Filter type hierarchy", () => {
       locationCountryFilter: "",
       availableCountryFilter: dogFilterParams.shipsTo ?? "",
       availableRegionFilter: "",
+      goodWithKidsFilter: "",
+      goodWithDogsFilter: "",
+      goodWithCatsFilter: "",
+      firstTimeFriendlyFilter: "",
+      energyFilter: "",
     };
 
     expect(pageFilters.ageFilter).toBe("Puppy");

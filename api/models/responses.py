@@ -22,6 +22,25 @@ class FilterOption(BaseModel):
     count: int = Field(..., description="Number of animals matching this option", ge=0)
 
 
+class LifestyleCount(BaseModel):
+    """A lifestyle filter's counts, given every other active filter."""
+
+    count: int = Field(..., ge=0, description="Dogs the filter would show")
+    known: int = Field(..., ge=0, description="Dogs whose profile records this at all")
+
+
+class LifestyleCounts(BaseModel):
+    """Counts for the catalog's "Lives well with" and "Suits" filters."""
+
+    good_with_kids: LifestyleCount
+    good_with_dogs: LifestyleCount
+    good_with_cats: LifestyleCount
+    first_time_friendly: LifestyleCount
+    energy_low: LifestyleCount
+    energy_medium: LifestyleCount
+    energy_high: LifestyleCount
+
+
 class FilterCountsResponse(BaseModel):
     """
     Response model for filter counts endpoint.
@@ -48,6 +67,7 @@ class FilterCountsResponse(BaseModel):
         default_factory=list,
         description="Available adoption region options with counts",
     )
+    lifestyle: LifestyleCounts | None = Field(default=None, description="Counts for the lifestyle filters")
 
     model_config = ConfigDict(
         # Add custom encoders if needed in the future

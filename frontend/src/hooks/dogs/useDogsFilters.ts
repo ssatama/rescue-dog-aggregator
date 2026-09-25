@@ -3,7 +3,18 @@ import { useRouter } from "next/navigation";
 import { useDebouncedCallback, type DebouncedState } from "use-debounce";
 import { getAvailableRegions } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
-import { AGE_OPTIONS, FILTER_DEFAULTS, SIZE_API_MAPPING, SIZE_OPTIONS, isCatalogSort, isDefaultFilterValue, scaleValue } from "@/constants/filters";
+import {
+  AGE_OPTIONS,
+  FILTER_DEFAULTS,
+  FIRST_TIME_FRIENDLY,
+  LIVES_WELL_WITH,
+  SIZE_API_MAPPING,
+  SIZE_OPTIONS,
+  isCatalogSort,
+  isDefaultFilterValue,
+  isEnergyBand,
+  scaleValue,
+} from "@/constants/filters";
 import type {
   Filters,
   DogsPageMetadata,
@@ -71,6 +82,13 @@ export default function useDogsFilters({
       initialParams?.available_country ||
       FILTER_DEFAULTS.COUNTRY,
     availableRegionFilter: searchParams.get("available_region") || FILTER_DEFAULTS.REGION,
+    ...Object.fromEntries(
+      [...LIVES_WELL_WITH, FIRST_TIME_FRIENDLY].map(({ key, url }) => [
+        key,
+        searchParams.get(url) === "true" ? "true" : "",
+      ]),
+    ) as Pick<Filters, "goodWithKidsFilter" | "goodWithDogsFilter" | "goodWithCatsFilter" | "firstTimeFriendlyFilter">,
+    energyFilter: isEnergyBand(searchParams.get("energy")) ? (searchParams.get("energy") as string) : "",
     sortFilter: isCatalogSort(searchParams.get("sort")) ? (searchParams.get("sort") as string) : FILTER_DEFAULTS.SORT,
   }), [searchParams, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, validateOrganizationId]);
 
@@ -90,6 +108,10 @@ export default function useDogsFilters({
         sexFilter: "sex",
         breedFilter: "breed",
         sortFilter: "sort",
+        energyFilter: "energy",
+        ...Object.fromEntries(
+          [...LIVES_WELL_WITH, FIRST_TIME_FRIENDLY].map(({ key, url }) => [key, url]),
+        ),
       };
 
       Object.entries(newFilters).forEach(([key, value]) => {
@@ -238,6 +260,16 @@ function buildAPIParams(filterValues: Filters): Record<string, string> {
   const availableRegion = (filterValues.availableRegionFilter || "").trim();
   if (availableRegion && availableRegion !== FILTER_DEFAULTS.REGION) {
     params.available_to_region = availableRegion;
+  }
+
+  LIVES_WELL_WITH.forEach(({ key, url }) => {
+    if (filterValues[key] === "true") params[url] = "true";
+  });
+  if (filterValues.firstTimeFriendlyFilter === "true") {
+    params.experience_level = "first_time_ok";
+  }
+  if (isEnergyBand(filterValues.energyFilter)) {
+    params.energy = filterValues.energyFilter;
   }
 
   return params;

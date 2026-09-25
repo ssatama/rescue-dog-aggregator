@@ -78,8 +78,7 @@ describe("GlobalSearch", () => {
     expect(screen.getByRole("option", { name: /Dogs Trust/ })).toHaveTextContent("438 dogs");
     expect(screen.getByRole("option", { name: /Taffy/ })).toHaveTextContent("Mixed Breed · The Underdog");
     expect(screen.getByRole("option", { name: "Puppies" })).toBeInTheDocument();
-    // The catalog URL cannot express good_with_* yet (#495), so it is not offered
-    expect(screen.queryByRole("option", { name: "Good with cats" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Good with cats" })).toBeInTheDocument();
   });
 
   it("works with the keyboard: arrows choose, Enter opens", async () => {

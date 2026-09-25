@@ -17,7 +17,7 @@ from api.database import create_batch_executor
 from api.exceptions import APIException
 from api.models.dog import Animal, StandardizedSize
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
-from api.models.responses import FilterCountsResponse, FilterOption
+from api.models.responses import FilterCountsResponse, FilterOption, LifestyleCount, LifestyleCounts
 from api.services.search_service import search_condition
 from api.utils.availability import publicly_available
 from api.utils.json_parser import build_organization_object, parse_json_field, parse_optional_json_field
@@ -45,6 +45,27 @@ NO_RECORDED_AGE = "(a.age_min_months IS NULL AND a.age_max_months IS NULL)"
 # of dogs are stored as Tiny, so Tiny sits inside Small; XLarge is Giant.
 SIZE_SCALE_MEMBERS: dict[str, tuple[str, ...]] = {"Small": ("Tiny", "Small")}
 SIZE_SCALE_LABELS = {"Tiny": "Small", "Small": "Small", "Medium": "Medium", "Large": "Large", "XLarge": "Giant"}
+
+
+# Lifestyle filters (#495) read the LLM profile, never the scraped
+# properties.good_with_*, and match only dogs whose profile records a positive
+# value: an unknown is never a yes. Filter name -> (profile key, matching values).
+COMPATIBILITY_FILTERS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "good_with_kids": ("good_with_children", ("yes", "older_children")),
+    "good_with_dogs": ("good_with_dogs", ("yes",)),
+    "good_with_cats": ("good_with_cats", ("yes", "with_training")),
+}
+ENERGY_BANDS: dict[str, tuple[str, ...]] = {"low": ("low",), "medium": ("medium",), "high": ("high", "very_high")}
+
+
+def profile_value_in(key: str) -> str:
+    """SQL predicate: the profile's ``key`` is one of a list passed as one param."""
+    return f"a.dog_profiler_data->>'{key}' = ANY(%s)"
+
+
+def profile_value_known(key: str) -> str:
+    """SQL predicate: the profile records ``key`` as anything but unknown."""
+    return f"COALESCE(a.dog_profiler_data->>'{key}', 'unknown') <> 'unknown'"
 
 
 def size_scale_values(size: StandardizedSize) -> list[str]:
@@ -1482,19 +1503,11 @@ class AnimalService:
             params.append(filters.available_to_region)
 
         # Profiler-based filters (LLM-enriched dog_profiler_data JSONB)
-        if filters.energy_level:
-            conditions.append("a.dog_profiler_data->>'energy_level' = %s")
-            params.append(filters.energy_level)
-
         if filters.home_type:
             conditions.append("a.dog_profiler_data->>'home_type' = %s")
             params.append(filters.home_type)
 
-        if filters.experience_level:
-            conditions.append("a.dog_profiler_data->>'experience_level' = %s")
-            params.append(filters.experience_level)
-
-        self._apply_compatibility_filters(filters, conditions, params)
+        self._apply_lifestyle_filters(filters, conditions, params)
 
         return joins, conditions, params
 
@@ -1634,6 +1647,8 @@ class AnimalService:
             if filters.available_to_country:
                 response.available_region_options = self._get_available_region_counts(base_conditions, base_params, filters)
 
+            response.lifestyle = self._get_lifestyle_counts(filters)
+
             return response
 
         except Exception as e:
@@ -1661,24 +1676,76 @@ class AnimalService:
         )
         return self.cursor.fetchone()["total"]
 
-    def _apply_compatibility_filters(
+    @staticmethod
+    def _lifestyle_conditions(
+        filters: AnimalFilterRequest | AnimalFilterCountRequest,
+    ) -> dict[str, list[tuple[str, list[Any]]]]:
+        """The active lifestyle filters as (SQL, params) pairs, grouped by the
+        dimension a lifestyle count leaves out when counting its own options."""
+        active: dict[str, list[tuple[str, list[Any]]]] = {}
+        for name, (key, values) in COMPATIBILITY_FILTERS.items():
+            if getattr(filters, name) is True:
+                active[name] = [(profile_value_in(key), [list(values)])]
+        if filters.experience_level:
+            active["experience"] = [(profile_value_in("experience_level"), [[filters.experience_level]])]
+        energy = []
+        if filters.energy_level:
+            energy.append((profile_value_in("energy_level"), [[filters.energy_level]]))
+        if filters.energy:
+            energy.append((profile_value_in("energy_level"), [list(ENERGY_BANDS[filters.energy])]))
+        if energy:
+            active["energy"] = energy
+        return active
+
+    def _apply_lifestyle_filters(
         self,
         filters: AnimalFilterRequest | AnimalFilterCountRequest,
         conditions: list[str],
         params: list[Any],
     ) -> None:
-        """Append JSONB compatibility conditions for good_with_kids/dogs/cats."""
-        if filters.good_with_kids is True:
-            conditions.append("a.dog_profiler_data->>'good_with_children' IN (%s, %s)")
-            params.extend(["yes", "older_children"])
+        """Append the compatibility, experience and energy conditions."""
+        for group in self._lifestyle_conditions(filters).values():
+            for sql, sql_params in group:
+                conditions.append(sql)
+                params.extend(sql_params)
 
-        if filters.good_with_dogs is True:
-            conditions.append("a.dog_profiler_data->>'good_with_dogs' = %s")
-            params.append("yes")
+    def _get_lifestyle_counts(self, filters: AnimalFilterCountRequest) -> LifestyleCounts:
+        """Per lifestyle option: how many dogs it would show and how many have
+        the information at all, each given every other active filter (the
+        other lifestyle filters included, but never the option's own)."""
+        lifestyle_fields = {*COMPATIBILITY_FILTERS, "experience_level", "energy_level", "energy"}
+        shared = {key: value for key, value in filters.model_dump().items() if key in AnimalFilterRequest.model_fields and key not in lifestyle_fields}
+        joins, conditions, params = self._build_filter_clause(AnimalFilterRequest(**shared))
+        active = self._lifestyle_conditions(filters)
 
-        if filters.good_with_cats is True:
-            conditions.append("a.dog_profiler_data->>'good_with_cats' IN (%s, %s)")
-            params.extend(["yes", "with_training"])
+        # (option, dimension it belongs to, profile key, values that match)
+        options = [(name, name, key, values) for name, (key, values) in COMPATIBILITY_FILTERS.items()]
+        options.append(("first_time_friendly", "experience", "experience_level", ("first_time_ok",)))
+        options += [(f"energy_{band}", "energy", "energy_level", values) for band, values in ENERGY_BANDS.items()]
+
+        selects: list[str] = []
+        select_params: list[Any] = []
+        for name, dimension, key, values in options:
+            others = [pair for dim, group in active.items() if dim != dimension for pair in group]
+            other_sql = "".join(f" AND {sql}" for sql, _ in others)
+            other_params = [p for _, sql_params in others for p in sql_params]
+            selects.append(f'COUNT(DISTINCT a.id) FILTER (WHERE {profile_value_in(key)}{other_sql}) AS "{name}"')
+            select_params += [list(values), *other_params]
+            selects.append(f'COUNT(DISTINCT a.id) FILTER (WHERE {profile_value_known(key)}{other_sql}) AS "{name}_known"')
+            select_params += other_params
+
+        self.cursor.execute(
+            f"""
+            SELECT {", ".join(selects)}
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            {joins}
+            WHERE {" AND ".join(conditions)}
+            """,
+            select_params + params,
+        )
+        row = self.cursor.fetchone()
+        return LifestyleCounts(**{name: LifestyleCount(count=row[name], known=row[f"{name}_known"]) for name, *_ in options})
 
     def _build_count_base_conditions(self, filters: AnimalFilterCountRequest) -> tuple[list[str], list[Any]]:
         """Build base WHERE conditions for filter counting queries."""
@@ -1742,19 +1809,11 @@ class AnimalService:
             params.append(filters.organization_id)
 
         # Profiler-based filters (LLM-enriched dog_profiler_data JSONB)
-        if filters.energy_level:
-            conditions.append("a.dog_profiler_data->>'energy_level' = %s")
-            params.append(filters.energy_level)
-
         if filters.home_type:
             conditions.append("a.dog_profiler_data->>'home_type' = %s")
             params.append(filters.home_type)
 
-        if filters.experience_level:
-            conditions.append("a.dog_profiler_data->>'experience_level' = %s")
-            params.append(filters.experience_level)
-
-        self._apply_compatibility_filters(filters, conditions, params)
+        self._apply_lifestyle_filters(filters, conditions, params)
 
         return conditions, params
 
