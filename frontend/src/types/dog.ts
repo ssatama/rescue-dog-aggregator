@@ -85,6 +85,8 @@ export interface Dog {
   status?: DogStatus;
   /** False once the scrapers stop finding the listing at its source. */
   active?: boolean;
+  /** When the scrapers last found the listing at its source. */
+  last_seen_at?: string;
   blur_data_url?: string;
   breed_group?: string;
 

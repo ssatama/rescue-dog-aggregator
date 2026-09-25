@@ -136,17 +136,12 @@ Enriched profiles stored in PostgreSQL JSONB column:
 
 ### 4. Frontend Features Enabled
 
-#### Personality-Based Filtering
-Users can filter dogs by personality traits:
-
-```typescript
-// frontend/src/utils/dogProfilerAnalyzer.ts
-function analyzePersonalityPatterns(dogs: DogWithProfiler[]) {
-  // Finds common traits across favorites
-  // Identifies personality themes
-  // Provides matching recommendations
-}
-```
+#### Favorites: what the saved dogs share
+`frontend/src/utils/favoritesInCommon.ts` lists what every saved dog has in
+common (energy, experience level, home type, shared personality traits, plus
+rescue, size, age and companions). A line appears only when every dog's data
+backs it: nothing is averaged, and one dog with the value missing drops the
+line (#498).
 
 #### Swipe Interface
 Powers the Tinder-like swipe feature with AI insights:
@@ -155,18 +150,6 @@ Powers the Tinder-like swipe feature with AI insights:
 - Displays energy/trainability meters
 - Highlights compatibility factors
 - Suggests ideal home situations
-
-#### Compatibility Scoring
-Analyzes user preferences from favorites:
-
-```typescript
-interface LifestyleCompatibility {
-  apartmentSuitability: number;
-  activeFamilySuitability: number;
-  firstTimeOwnerSuitability: number;
-  workFromHomeSuitability: number;
-}
-```
 
 ## Integration Points
 
@@ -466,7 +449,7 @@ frontend/src/components/dogs/detail/ActivitiesQuirks.tsx
 
 // Pages
 frontend/src/app/swipe/page.tsx          # Swipe interface
-frontend/src/app/favorites/page.tsx      # Favorites analysis
+frontend/src/utils/favoritesInCommon.ts  # What saved dogs share
 ```
 
 ### User Experience Features

@@ -41,7 +41,7 @@ events:
 
 | Event | Fired from | Key properties |
 | --- | --- | --- |
-| `adoption_link_clicked` | **Conversion.** Adopt button on the detail page (click and middle-click), mobile modal, favorites comparison | dog props, `source`, `destination_domain`; on the detail page also `placement` (`panel` = desktop side panel, `bar` = phone and tablet bottom bar) |
+| `adoption_link_clicked` | **Conversion.** Adopt button on the detail page (click and middle-click), mobile modal, favorites comparison, and "Meet {name}" on each /favorites row (#498) | dog props, `source` (`detail_page` / `modal` / `comparison` / `favorites`), `destination_domain`; on the detail page also `placement` (`panel` = desktop side panel, `bar` = phone and tablet bottom bar) |
 | `dog_viewed` | Detail page load, each dog shown in the mobile modal | dog props, `source` (`detail_page` / `modal`) |
 | `dog_card_clicked` | Dog card in any list | `dog_id`, `position`, `list_context` |
 | `dog_favorited` / `dog_unfavorited` | `FavoritesContext`, so it covers the heart button, modal and swipe-right | `dog_id` |

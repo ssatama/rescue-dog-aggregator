@@ -388,7 +388,7 @@ export function SwipeContainer({
       }
 
       if (direction === "right") {
-        await addFavorite(currentDogId, currentDog.name);
+        await addFavorite(currentDogId, currentDog.name, currentDog);
         Sentry.addBreadcrumb({
           message: "swipe.card.favorited",
           category: "swipe",

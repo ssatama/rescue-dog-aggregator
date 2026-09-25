@@ -59,7 +59,7 @@ describe("FavoriteButton", () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(mockToggleFavorite).toHaveBeenCalledWith(123, undefined);
+      expect(mockToggleFavorite).toHaveBeenCalledWith(123, undefined, undefined);
     });
   });
 
@@ -87,7 +87,7 @@ describe("FavoriteButton", () => {
     const button = screen.getByRole("button");
     fireEvent.keyDown(button, { key: "Enter", code: "Enter" });
 
-    expect(mockToggleFavorite).toHaveBeenCalledWith(1, undefined);
+    expect(mockToggleFavorite).toHaveBeenCalledWith(1, undefined, undefined);
   });
 
   it("should handle keyboard interaction (Space key)", () => {
@@ -98,7 +98,7 @@ describe("FavoriteButton", () => {
     const button = screen.getByRole("button");
     fireEvent.keyDown(button, { key: " ", code: "Space" });
 
-    expect(mockToggleFavorite).toHaveBeenCalledWith(1, undefined);
+    expect(mockToggleFavorite).toHaveBeenCalledWith(1, undefined, undefined);
   });
 
   it("should show loading state while toggling", async () => {

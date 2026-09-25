@@ -31,7 +31,7 @@ export interface AnalyticsDog {
 }
 
 export type DogViewSource = "detail_page" | "modal";
-export type AdoptionSource = "detail_page" | "modal" | "comparison";
+export type AdoptionSource = "detail_page" | "modal" | "comparison" | "favorites";
 /** Which adopt button on the dog page: the desktop panel or the phone bar (#489). */
 export type AdoptionPlacement = "panel" | "bar";
 

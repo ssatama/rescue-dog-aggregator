@@ -58,6 +58,13 @@ describe("CompareMode", () => {
     },
   ];
 
+  // More than four: the visitor picks which to compare
+  const manyDogs = [
+    ...mockDogs,
+    { ...mockDogs[0], id: 4, name: "Rex" },
+    { ...mockDogs[0], id: 5, name: "Extra" },
+  ];
+
   const mockOnClose = jest.fn();
 
   beforeEach(() => {
@@ -66,7 +73,7 @@ describe("CompareMode", () => {
 
   describe("Selection View", () => {
     it("should render selection view with all dogs", () => {
-      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
       expect(screen.getByText("Select Dogs to Compare")).toBeInTheDocument();
       expect(
@@ -80,33 +87,32 @@ describe("CompareMode", () => {
     });
 
     it("should allow selecting dogs", () => {
-      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
       // Click on dog card instead of checkbox
       const buddyCard = screen.getByTestId("dog-card-1");
       fireEvent.click(buddyCard);
 
-      expect(screen.getByText("1 of 3 selected")).toBeInTheDocument();
+      expect(screen.getByText("1 of 4 selected")).toBeInTheDocument();
     });
 
-    it("should limit selection to 3 dogs", () => {
-      const fourDogs = [...mockDogs, { ...mockDogs[0], id: 4, name: "Extra" }];
-      render(<CompareMode dogs={fourDogs} onClose={mockOnClose} />);
+    it("should limit selection to 4 dogs", () => {
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
-      // Select 3 dogs using cards
       fireEvent.click(screen.getByTestId("dog-card-1"));
       fireEvent.click(screen.getByTestId("dog-card-2"));
       fireEvent.click(screen.getByTestId("dog-card-3"));
+      fireEvent.click(screen.getByTestId("dog-card-4"));
 
-      expect(screen.getByText("3 of 3 selected")).toBeInTheDocument();
+      expect(screen.getByText("4 of 4 selected")).toBeInTheDocument();
 
-      // Fourth dog card should be disabled
-      const extraCard = screen.getByTestId("dog-card-4");
+      // Fifth dog card should be disabled
+      const extraCard = screen.getByTestId("dog-card-5");
       expect(extraCard).toHaveAttribute("aria-disabled", "true");
     });
 
     it("should enable compare button when 2+ dogs selected", () => {
-      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
       const compareButton = screen.getByRole("button", {
         name: /Compare Selected/i,
@@ -123,7 +129,7 @@ describe("CompareMode", () => {
 
   describe("Comparison View", () => {
     it("should switch to comparison view when compare is clicked", () => {
-      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
       // Select dogs and compare
       fireEvent.click(screen.getByTestId("dog-card-1"));
@@ -137,7 +143,7 @@ describe("CompareMode", () => {
     });
 
     it("should display comparison view with selected dogs", () => {
-      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
       // Select dogs and compare
       fireEvent.click(screen.getByTestId("dog-card-1"));
@@ -154,9 +160,27 @@ describe("CompareMode", () => {
     });
   });
 
+  describe("Direct comparison (#498)", () => {
+    it("opens straight on the comparison with 2-4 dogs", () => {
+      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+
+      expect(screen.getByText("Compare Your Favorites")).toBeInTheDocument();
+      expect(screen.queryByText("Select Dogs to Compare")).not.toBeInTheDocument();
+      expect(screen.getAllByTestId("card-wrapper")).toHaveLength(3);
+    });
+
+    it("going back closes it instead of showing a selection", () => {
+      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("Modal Behavior", () => {
     it("should close on backdrop click", () => {
-      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
       const backdrop = document.querySelector(".fixed.inset-0");
       fireEvent.click(backdrop!);
@@ -165,7 +189,7 @@ describe("CompareMode", () => {
     });
 
     it("should close on X button click", () => {
-      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
       const closeButton = screen.getByLabelText("Close");
       fireEvent.click(closeButton);
@@ -174,7 +198,7 @@ describe("CompareMode", () => {
     });
 
     it("should close on Escape key", () => {
-      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
       fireEvent.keyDown(document, { key: "Escape" });
 
@@ -196,7 +220,7 @@ describe("CompareMode", () => {
     });
 
     it("should show proper mobile comparison view", () => {
-      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
       // Select dogs and compare
       fireEvent.click(screen.getByTestId("dog-card-1"));
@@ -210,7 +234,7 @@ describe("CompareMode", () => {
     });
 
     it("should show 2-column grid in selection view on mobile", () => {
-      render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
+      render(<CompareMode dogs={manyDogs} onClose={mockOnClose} />);
 
       const grid = screen.getByText("Buddy").closest('div[class*="grid"]');
       expect(grid).toHaveClass("grid-cols-2");
