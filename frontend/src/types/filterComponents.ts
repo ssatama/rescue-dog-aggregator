@@ -1,4 +1,5 @@
-import type { OrganizationMetadata } from "./dogsPage";
+import type { Filters, OrganizationMetadata } from "./dogsPage";
+import type { LifestyleFilterKey } from "../constants/filters";
 import type { FilterCountsResponse } from "../schemas/common";
 import type { DogFilterParams } from "../utils/dogFilters";
 
@@ -57,6 +58,10 @@ export interface SharedFilterProps {
   availableCountryFilter: string;
   setAvailableCountryFilter: (value: string) => void;
   availableCountries: string[];
+
+  /** Lifestyle filters (#495): shown only where both are given */
+  lifestyleFilters?: Pick<Filters, LifestyleFilterKey>;
+  setLifestyleFilter?: (key: LifestyleFilterKey, value: string) => void;
 
   resetFilters: () => void;
   filterCounts?: FilterCountsResponse | null;

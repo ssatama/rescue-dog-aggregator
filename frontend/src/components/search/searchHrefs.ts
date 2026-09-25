@@ -1,8 +1,8 @@
-import { SIZE_API_MAPPING } from "@/constants/filters";
+import { LIVES_WELL_WITH, SIZE_API_MAPPING } from "@/constants/filters";
 
 // The suggest endpoint names filters by their /api/animals params; the catalog
-// URL uses its own keys. A filter the catalog URL cannot express yet (the
-// good_with_* ones, until #495) has no href and is not offered.
+// URL uses its own keys. A filter the catalog URL cannot express has no href
+// and is not offered.
 const SIZE_FROM_API: Record<string, string> = Object.fromEntries(
   Object.entries(SIZE_API_MAPPING).map(([label, api]) => [api, label]),
 );
@@ -10,6 +10,10 @@ const SIZE_FROM_API: Record<string, string> = Object.fromEntries(
 const URL_PARAM_FROM_API: Record<string, (value: string) => [string, string] | null> = {
   age_category: (value) => ["age", value],
   standardized_size: (value) => (SIZE_FROM_API[value] ? ["size", SIZE_FROM_API[value]] : null),
+  // The lifestyle toggles use the API's own names in the URL
+  ...Object.fromEntries(
+    LIVES_WELL_WITH.map(({ url }) => [url, (value: string) => (value === "true" ? [url, "true"] : null)]),
+  ),
 };
 
 // Pages that render the dog catalog: /dogs and its landing pages. A search

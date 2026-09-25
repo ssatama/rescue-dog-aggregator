@@ -58,3 +58,36 @@ export function isDefaultFilterValue(
   if (value == null || value === "") return true
   return DEFAULT_VALUES.has(value)
 }
+
+/** Lifestyle filters (#495). Each is on ("true", or an energy band) or off
+ * (""), and matches only dogs whose profile records a positive value. `url`
+ * is the catalog URL key, `count` the key in filter_counts' `lifestyle`. */
+export const LIVES_WELL_WITH = [
+  { key: "goodWithKidsFilter", url: "good_with_kids", count: "good_with_kids", label: "Children", chip: "Good with children" },
+  { key: "goodWithDogsFilter", url: "good_with_dogs", count: "good_with_dogs", label: "Other dogs", chip: "Good with other dogs" },
+  { key: "goodWithCatsFilter", url: "good_with_cats", count: "good_with_cats", label: "Cats", chip: "Good with cats" },
+] as const
+
+export const FIRST_TIME_FRIENDLY = {
+  key: "firstTimeFriendlyFilter",
+  url: "first_time_friendly",
+  count: "first_time_friendly",
+  label: "First-time owners",
+  chip: "Suits first-time owners",
+} as const
+
+/** Energy bands, in order; the API's high includes very high. */
+export const ENERGY_BANDS = [
+  { value: "low", label: "Low", count: "energy_low" },
+  { value: "medium", label: "Medium", count: "energy_medium" },
+  { value: "high", label: "High", count: "energy_high" },
+] as const
+
+export type LifestyleFilterKey =
+  | (typeof LIVES_WELL_WITH)[number]["key"]
+  | typeof FIRST_TIME_FRIENDLY.key
+  | "energyFilter"
+
+export function isEnergyBand(value: string | null): value is (typeof ENERGY_BANDS)[number]["value"] {
+  return ENERGY_BANDS.some((band) => band.value === value)
+}

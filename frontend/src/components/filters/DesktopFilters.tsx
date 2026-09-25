@@ -18,6 +18,7 @@ import { FILTER_DEFAULTS } from "@/constants/filters";
 import { countryOptionLabel } from "@/utils/countryNames";
 import { useFilterOptions } from "@/hooks/useFilterOptions";
 import type { DesktopFiltersProps } from "@/types/filterComponents";
+import LifestyleFilters, { activeLifestyleCount } from "./LifestyleFilters";
 
 export default function DesktopFilters({
   searchQuery,
@@ -58,6 +59,9 @@ export default function DesktopFilters({
   setAvailableRegionFilter,
   availableRegions,
 
+  lifestyleFilters,
+  setLifestyleFilter,
+
   resetFilters,
 
   filterCounts,
@@ -67,7 +71,7 @@ export default function DesktopFilters({
     dynamicAgeOptions,
     dynamicSexOptions,
     sectionCounts,
-    activeFilterCount,
+    activeFilterCount: basicFilterCount,
   } = useFilterOptions({
     filterValues: {
       searchQuery,
@@ -85,6 +89,9 @@ export default function DesktopFilters({
     ageOptions,
     sexOptions,
   });
+
+  const activeFilterCount =
+    basicFilterCount + (lifestyleFilters ? activeLifestyleCount(lifestyleFilters) : 0);
 
   const handleBreedClear = useCallback(() => {
     if (handleBreedClearFromParent) {
@@ -372,6 +379,14 @@ export default function DesktopFilters({
               })}
             </div>
           </div>
+
+          {lifestyleFilters && setLifestyleFilter && (
+            <LifestyleFilters
+              values={lifestyleFilters}
+              onChange={setLifestyleFilter}
+              counts={filterCounts?.lifestyle}
+            />
+          )}
 
           {/* 5. Breed Filter - Direct search like Name filter */}
           {showBreed && (

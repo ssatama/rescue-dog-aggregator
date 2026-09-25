@@ -17,6 +17,7 @@ import { countryOptionLabel } from "@/utils/countryNames";
 import { useFilterOptions } from "@/hooks/useFilterOptions";
 import type { MobileFilterDrawerProps, FilterConfig } from "@/types/filterComponents";
 import FilterSection from "./FilterSection";
+import LifestyleFilters, { activeLifestyleCount } from "./LifestyleFilters";
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -66,6 +67,9 @@ export default function MobileFilterDrawer({
   availableCountryFilter,
   setAvailableCountryFilter,
   availableCountries,
+
+  lifestyleFilters,
+  setLifestyleFilter,
 
   resetFilters,
 
@@ -204,8 +208,9 @@ export default function MobileFilterDrawer({
     if (filterConfig.showSize) count += sectionCounts.size;
     if (filterConfig.showAge) count += sectionCounts.age;
     if (filterConfig.showShipsTo) count += sectionCounts.shipsToCountry;
+    if (lifestyleFilters) count += activeLifestyleCount(lifestyleFilters);
     return count;
-  }, [filterConfig, searchQuery, sectionCounts]);
+  }, [filterConfig, searchQuery, sectionCounts, lifestyleFilters]);
 
   if (!isOpen) {
     return null;
@@ -560,6 +565,14 @@ export default function MobileFilterDrawer({
                       })}
                     </div>
                   </div>
+                )}
+
+                {lifestyleFilters && setLifestyleFilter && (
+                  <LifestyleFilters
+                    values={lifestyleFilters}
+                    onChange={setLifestyleFilter}
+                    counts={filterCounts?.lifestyle}
+                  />
                 )}
 
                 {/* 5. Breed Filter - Direct search like Name filter */}

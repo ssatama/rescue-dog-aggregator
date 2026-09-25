@@ -71,6 +71,11 @@ describe("useDogsFilters", () => {
         locationCountryFilter: "Any country",
         availableCountryFilter: "Any country",
         availableRegionFilter: "Any region",
+        goodWithKidsFilter: "",
+        goodWithDogsFilter: "",
+        goodWithCatsFilter: "",
+        firstTimeFriendlyFilter: "",
+        energyFilter: "",
         sortFilter: "recommended",
       });
     });
@@ -92,6 +97,11 @@ describe("useDogsFilters", () => {
         locationCountryFilter: "Germany",
         availableCountryFilter: "Finland",
         availableRegionFilter: "Uusimaa",
+        goodWithKidsFilter: "",
+        goodWithDogsFilter: "",
+        goodWithCatsFilter: "",
+        firstTimeFriendlyFilter: "",
+        energyFilter: "",
         sortFilter: "recommended",
       });
     });
@@ -149,6 +159,11 @@ describe("useDogsFilters", () => {
         locationCountryFilter: "Any country",
         availableCountryFilter: "Any country",
         availableRegionFilter: "Any region",
+        goodWithKidsFilter: "",
+        goodWithDogsFilter: "",
+        goodWithCatsFilter: "",
+        firstTimeFriendlyFilter: "",
+        energyFilter: "",
       };
 
       expect(buildAPIParams(defaultFilters)).toEqual({ sort: "recommended" });
@@ -166,6 +181,11 @@ describe("useDogsFilters", () => {
         locationCountryFilter: "Germany",
         availableCountryFilter: "Finland",
         availableRegionFilter: "Uusimaa",
+        goodWithKidsFilter: "",
+        goodWithDogsFilter: "",
+        goodWithCatsFilter: "",
+        firstTimeFriendlyFilter: "",
+        energyFilter: "",
       };
 
       expect(buildAPIParams(filters)).toEqual({
@@ -195,6 +215,11 @@ describe("useDogsFilters", () => {
         locationCountryFilter: "Any country",
         availableCountryFilter: "Any country",
         availableRegionFilter: "Any region",
+        goodWithKidsFilter: "",
+        goodWithDogsFilter: "",
+        goodWithCatsFilter: "",
+        firstTimeFriendlyFilter: "",
+        energyFilter: "",
       };
 
       expect(buildAPIParams(filters)).toEqual({
@@ -215,6 +240,11 @@ describe("useDogsFilters", () => {
         locationCountryFilter: "Any country",
         availableCountryFilter: "Any country",
         availableRegionFilter: "Any region",
+        goodWithKidsFilter: "",
+        goodWithDogsFilter: "",
+        goodWithCatsFilter: "",
+        firstTimeFriendlyFilter: "",
+        energyFilter: "",
       };
 
       expect(buildAPIParams(filters)).toEqual({
@@ -235,6 +265,11 @@ describe("useDogsFilters", () => {
         locationCountryFilter: "Any country",
         availableCountryFilter: "Any country",
         availableRegionFilter: "Any region",
+        goodWithKidsFilter: "",
+        goodWithDogsFilter: "",
+        goodWithCatsFilter: "",
+        firstTimeFriendlyFilter: "",
+        energyFilter: "",
       };
 
       expect(buildAPIParams(filters)).toEqual({ sort: "recommended" });
@@ -252,6 +287,11 @@ describe("useDogsFilters", () => {
         locationCountryFilter: "Any country",
         availableCountryFilter: "Any country",
         availableRegionFilter: "Any region",
+        goodWithKidsFilter: "",
+        goodWithDogsFilter: "",
+        goodWithCatsFilter: "",
+        firstTimeFriendlyFilter: "",
+        energyFilter: "",
       };
 
       expect(buildAPIParams(filters)).toEqual({ sort: "recommended", search: "Rex" });
@@ -276,6 +316,11 @@ describe("useDogsFilters", () => {
             locationCountryFilter: "Any country",
             availableCountryFilter: "Any country",
             availableRegionFilter: "Any region",
+            goodWithKidsFilter: "",
+            goodWithDogsFilter: "",
+            goodWithCatsFilter: "",
+            firstTimeFriendlyFilter: "",
+            energyFilter: "",
           },
           1,
           false,
@@ -311,6 +356,11 @@ describe("useDogsFilters", () => {
             locationCountryFilter: "Any country",
             availableCountryFilter: "Any country",
             availableRegionFilter: "Any region",
+            goodWithKidsFilter: "",
+            goodWithDogsFilter: "",
+            goodWithCatsFilter: "",
+            firstTimeFriendlyFilter: "",
+            energyFilter: "",
           },
           3,
           false,
@@ -352,6 +402,11 @@ describe("useDogsFilters", () => {
             locationCountryFilter: "Any country",
             availableCountryFilter: "Any country",
             availableRegionFilter: "Any region",
+            goodWithKidsFilter: "",
+            goodWithDogsFilter: "",
+            goodWithCatsFilter: "",
+            firstTimeFriendlyFilter: "",
+            energyFilter: "",
           },
           1,
           true,
@@ -446,6 +501,11 @@ describe("breed filter uses the canonical breed", () => {
     locationCountryFilter: "Any country",
     availableCountryFilter: "Any country",
     availableRegionFilter: "Any region",
+    goodWithKidsFilter: "",
+    goodWithDogsFilter: "",
+    goodWithCatsFilter: "",
+    firstTimeFriendlyFilter: "",
+    energyFilter: "",
   });
 
   it("sends primary_breed, not the display label", () => {

@@ -8,6 +8,13 @@ export const FilterCountSchema = z
   })
   .passthrough();
 
+const LifestyleCountSchema = z.object({
+  /** Dogs the filter would show, given every other filter */
+  count: z.number(),
+  /** Dogs whose profile records this at all, given every other filter */
+  known: z.number(),
+});
+
 export const FilterCountsResponseSchema = z
   .object({
     total_count: z.number().optional(),
@@ -21,6 +28,17 @@ export const FilterCountsResponseSchema = z
     location_country_options: z.array(FilterCountSchema).optional(),
     available_country_options: z.array(FilterCountSchema).optional(),
     available_region_options: z.array(FilterCountSchema).optional(),
+    lifestyle: z
+      .object({
+        good_with_kids: LifestyleCountSchema,
+        good_with_dogs: LifestyleCountSchema,
+        good_with_cats: LifestyleCountSchema,
+        first_time_friendly: LifestyleCountSchema,
+        energy_low: LifestyleCountSchema,
+        energy_medium: LifestyleCountSchema,
+        energy_high: LifestyleCountSchema,
+      })
+      .nullish(),
   })
   .passthrough();
 
@@ -37,3 +55,4 @@ export const SearchSuggestionSchema = z.union([
 
 export type FilterCount = z.infer<typeof FilterCountSchema>;
 export type FilterCountsResponse = z.infer<typeof FilterCountsResponseSchema>;
+export type LifestyleCount = z.infer<typeof LifestyleCountSchema>;

@@ -18,6 +18,11 @@ const NONE: Filters = {
   locationCountryFilter: "Any country",
   availableCountryFilter: "Any country",
   availableRegionFilter: "Any region",
+  goodWithKidsFilter: "",
+  goodWithDogsFilter: "",
+  goodWithCatsFilter: "",
+  firstTimeFriendlyFilter: "",
+  energyFilter: "",
   sortFilter: "recommended",
 };
 
@@ -96,5 +101,22 @@ describe("activeFilterChips", () => {
       "Adoptable to 🇬🇧 United Kingdom",
       "In Germany",
     ]);
+  });
+});
+
+describe("lifestyle chips", () => {
+  it("names each lifestyle filter and resets it to off", async () => {
+    const { onRemove } = renderToolbar({
+      goodWithCatsFilter: "true",
+      firstTimeFriendlyFilter: "true",
+      energyFilter: "high",
+    });
+    expect(activeFilterChips({ ...NONE, goodWithCatsFilter: "true", firstTimeFriendlyFilter: "true", energyFilter: "high" }).map((chip) => chip.label)).toEqual([
+      "Good with cats",
+      "Suits first-time owners",
+      "High energy",
+    ]);
+    await userEvent.click(screen.getByRole("button", { name: /High energy/ }));
+    expect(onRemove).toHaveBeenCalledWith("energyFilter", "");
   });
 });

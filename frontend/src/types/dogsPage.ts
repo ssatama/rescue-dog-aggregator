@@ -31,6 +31,13 @@ export interface Filters {
   locationCountryFilter: string;
   availableCountryFilter: string;
   availableRegionFilter: string;
+  /** Lifestyle filters (#495): "true" when on, "" when off */
+  goodWithKidsFilter: string;
+  goodWithDogsFilter: string;
+  goodWithCatsFilter: string;
+  firstTimeFriendlyFilter: string;
+  /** An energy band (low, medium, high), or "" */
+  energyFilter: string;
   /** Not a filter: the list's order. Never counted as an active filter. */
   sortFilter?: string;
 }

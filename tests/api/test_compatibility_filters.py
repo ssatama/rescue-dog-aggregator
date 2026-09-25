@@ -125,23 +125,21 @@ class TestCompatibilityFilterSQLConditions:
         filters = AnimalFilterRequest(good_with_kids=True, status="all")
         query, params = service._build_animals_query(filters)
         assert "good_with_children" in query
-        assert "yes" in params
-        assert "older_children" in params
+        assert ["yes", "older_children"] in params
 
     def test_good_with_dogs_true_adds_jsonb_condition(self):
         service = self._get_service_with_mock_cursor()
         filters = AnimalFilterRequest(good_with_dogs=True, status="all")
         query, params = service._build_animals_query(filters)
         assert "good_with_dogs" in query
-        assert "yes" in params
+        assert ["yes"] in params
 
     def test_good_with_cats_true_adds_jsonb_condition(self):
         service = self._get_service_with_mock_cursor()
         filters = AnimalFilterRequest(good_with_cats=True, status="all")
         query, params = service._build_animals_query(filters)
         assert "good_with_cats" in query
-        assert "yes" in params
-        assert "with_training" in params
+        assert ["yes", "with_training"] in params
 
     def test_none_filters_add_no_conditions(self):
         service = self._get_service_with_mock_cursor()
@@ -167,7 +165,7 @@ class TestCompatibilityFilterSQLConditions:
         conditions, params = service._build_count_base_conditions(filters)
         condition_str = " ".join(conditions)
         assert "good_with_children" in condition_str
-        assert "yes" in params
+        assert ["yes", "older_children"] in params
 
 
 @pytest.mark.database

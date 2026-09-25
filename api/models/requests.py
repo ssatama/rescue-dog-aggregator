@@ -6,6 +6,8 @@ Request models for API endpoints.
 This module contains Pydantic models for request parameters and filters.
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 from utils.breed_utils import validate_breed_type
@@ -94,6 +96,10 @@ class AnimalFilterRequest(BaseModel):
     experience_level: str | None = Field(
         default=None,
         description="Filter by experience level (first_time_ok, some_experience, experienced_only)",
+    )
+    energy: Literal["low", "medium", "high"] | None = Field(
+        default=None,
+        description="Filter by energy band (low, medium, high); high includes very_high",
     )
 
     # Compatibility filters (LLM-enriched dog_profiler_data JSONB)
@@ -276,6 +282,10 @@ class AnimalFilterCountRequest(BaseModel):
     experience_level: str | None = Field(
         default=None,
         description="Filter by experience level (first_time_ok, some_experience, experienced_only)",
+    )
+    energy: Literal["low", "medium", "high"] | None = Field(
+        default=None,
+        description="Filter by energy band (low, medium, high); high includes very_high",
     )
 
     # Compatibility filters (LLM-enriched dog_profiler_data JSONB)

@@ -23,6 +23,11 @@ const defaultFilters: Filters = {
   locationCountryFilter: "Any country",
   availableCountryFilter: "Any country",
   availableRegionFilter: "Any region",
+  goodWithKidsFilter: "",
+  goodWithDogsFilter: "",
+  goodWithCatsFilter: "",
+  firstTimeFriendlyFilter: "",
+  energyFilter: "",
 };
 
 const mockBuildAPIParams = jest.fn().mockReturnValue({});

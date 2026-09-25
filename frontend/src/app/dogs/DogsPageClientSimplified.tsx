@@ -166,6 +166,13 @@ export default function DogsPageClientSimplified({
     [initialParams?.age_category, initialParams?.location_country, initialParams?.available_country],
   );
 
+  const { goodWithKidsFilter, goodWithDogsFilter, goodWithCatsFilter, firstTimeFriendlyFilter, energyFilter } =
+    filterState.filters;
+  const lifestyleFilters = useMemo(
+    () => ({ goodWithKidsFilter, goodWithDogsFilter, goodWithCatsFilter, firstTimeFriendlyFilter, energyFilter }),
+    [goodWithKidsFilter, goodWithDogsFilter, goodWithCatsFilter, firstTimeFriendlyFilter, energyFilter],
+  );
+
   const setAvailableCountry = useCallback(
     (value: string) => handleFilterChange("availableCountryFilter", value),
     [handleFilterChange],
@@ -184,6 +191,11 @@ export default function DogsPageClientSimplified({
       locationCountryFilter: initialParams?.location_country || FILTER_DEFAULTS.COUNTRY,
       availableCountryFilter: initialParams?.available_country || FILTER_DEFAULTS.COUNTRY,
       availableRegionFilter: FILTER_DEFAULTS.REGION,
+      goodWithKidsFilter: "",
+      goodWithDogsFilter: "",
+      goodWithCatsFilter: "",
+      firstTimeFriendlyFilter: "",
+      energyFilter: "",
       // Clearing filters keeps the chosen order
       sortFilter: filterState.filters.sortFilter,
     };
@@ -365,6 +377,8 @@ export default function DogsPageClientSimplified({
                 handleFilterChange("availableRegionFilter", value)
               }
               availableRegions={filterState.availableRegions}
+              lifestyleFilters={lifestyleFilters}
+              setLifestyleFilter={handleFilterChange}
               // Filter management
               resetFilters={handleResetFilters}
               // Dynamic filter counts
@@ -514,6 +528,8 @@ export default function DogsPageClientSimplified({
           handleFilterChange("availableCountryFilter", value)
         }
         availableCountries={metadata?.availableCountries || ["Any country"]}
+        lifestyleFilters={lifestyleFilters}
+        setLifestyleFilter={handleFilterChange}
         // Filter management
         resetFilters={handleResetFilters}
         // Dynamic filter counts

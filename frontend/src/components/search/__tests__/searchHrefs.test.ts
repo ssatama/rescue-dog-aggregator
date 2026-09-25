@@ -25,10 +25,12 @@ describe("searchHrefs", () => {
   it("maps API filter params to catalog URL keys", () => {
     expect(filterHref(offCatalog, { age_category: "Senior" })).toBe("/dogs?age=Senior");
     expect(filterHref(offCatalog, { standardized_size: "XLarge" })).toBe("/dogs?size=Giant");
+    expect(filterHref(offCatalog, { good_with_kids: "true" })).toBe("/dogs?good_with_kids=true");
   });
 
   it("offers no link for a filter the catalog URL cannot express", () => {
-    expect(filterHref(offCatalog, { good_with_kids: "true" })).toBeNull();
+    expect(filterHref(offCatalog, { home_type: "apartment_ok" })).toBeNull();
+    expect(filterHref(offCatalog, { good_with_cats: "false" })).toBeNull();
   });
 
   it("clears the text search when the field is empty", () => {
