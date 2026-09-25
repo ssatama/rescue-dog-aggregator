@@ -23,6 +23,16 @@ MIN_SWIPE_QUALITY_SCORE = 65
 
 router = APIRouter()
 
+# The catalog's size scale (#494), keyed by the lower-case names swipe sends.
+# Filters on standardized_size: the raw size column holds whatever each rescue
+# wrote ("Giant", "XLarge", "Tiny"), which split dogs across names.
+SWIPE_SIZE_SCALE: dict[str, tuple[str, ...]] = {
+    "small": ("Tiny", "Small"),
+    "medium": ("Medium",),
+    "large": ("Large",),
+    "giant": ("XLarge",),
+}
+
 
 def build_age_conditions(age_groups):
     """Build SQL conditions for age filtering based on age groups."""
@@ -86,13 +96,11 @@ def apply_filters_to_query(query_parts, params, filter_country, size, age, exclu
         params.append(filter_country)
 
     if size:
-        if isinstance(size, list) and len(size) > 0:
-            placeholders = ",".join(["%s"] * len(size))
-            query_parts.append(f"AND LOWER(a.size) IN ({placeholders})")
-            params.extend([s.lower() for s in size])
-        elif isinstance(size, str):
-            query_parts.append("AND LOWER(a.size) = %s")
-            params.append(size.lower())
+        sizes = size if isinstance(size, list) else [size]
+        stored = [value for s in sizes for value in SWIPE_SIZE_SCALE.get(s.lower(), ())]
+        if stored:
+            query_parts.append("AND a.standardized_size = ANY(%s)")
+            params.append(stored)
 
     if age:
         if isinstance(age, list) and len(age) > 0:

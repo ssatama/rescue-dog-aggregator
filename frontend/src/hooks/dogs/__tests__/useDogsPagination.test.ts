@@ -128,6 +128,20 @@ describe("useDogsPagination", () => {
       );
     });
 
+    it("reuses the counts when the same filters are fetched again, e.g. only re-sorted (#494)", async () => {
+      (animalsService.getFilterCounts as jest.Mock).mockResolvedValue({ total: 10 });
+      const { result } = renderPagination();
+
+      await waitFor(() => expect(result.current.filterCounts).toEqual({ total: 10 }));
+      expect(animalsService.getFilterCounts).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        await result.current.fetchDogsWithFilters(defaultFilters, 1);
+      });
+      expect(animalsService.getFilterCounts).toHaveBeenCalledTimes(1);
+      expect(result.current.filterCounts).toEqual({ total: 10 });
+    });
+
     it("should hydrate deep link pages when URL page > 1", async () => {
       const page1Dogs = makeDogs(20, 1);
       const page2Dogs = makeDogs(20, 21);

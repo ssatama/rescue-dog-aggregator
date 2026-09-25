@@ -142,11 +142,12 @@ describe("similarDogsQuery", () => {
     expect(similarDogsQuery({ standardized_size: "Large", age_min_months: 40 } as Dog)).toEqual({
       standardized_size: "Large",
       age_category: "Adult",
+      age_known: true,
     });
   });
 
   it("uses whichever of the two is known", () => {
-    expect(similarDogsQuery({ age_min_months: 6 } as Dog)).toEqual({ age_category: "Puppy" });
+    expect(similarDogsQuery({ age_min_months: 6 } as Dog)).toEqual({ age_category: "Puppy", age_known: true });
     expect(similarDogsQuery({ standardized_size: "Small" } as Dog)).toEqual({ standardized_size: "Small" });
   });
 

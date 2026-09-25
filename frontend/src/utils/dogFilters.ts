@@ -1,4 +1,3 @@
-import { AGE_FILTER_LABELS } from "@/constants/filters";
 import type { Dog } from "@/types/dog";
 import { FILTER_DEFAULTS } from "@/constants/filters";
 
@@ -7,7 +6,7 @@ interface DogWithAgeFields extends Partial<Dog> {
   ageMaxMonths?: number;
 }
 
-export type AgeCategory = "All" | "Puppy" | "Young" | "Adult" | "Senior" | "Unknown";
+export type AgeCategory = "All" | "Puppy" | "Young" | "Adult" | "Senior";
 export type SortOption = "newest" | "name-asc" | "name-desc" | "oldest" | "age-asc" | "age-desc";
 
 export interface DogFilterParams {
@@ -29,12 +28,11 @@ export const filterByAge = (dogs: DogWithAgeFields[], ageFilter: string | undefi
   const filtered = dogs.filter((dog) => {
     if (!dog) return false;
 
-    const ageMin = dog.age_min_months || dog.ageMinMonths;
-    const ageMax = dog.age_max_months || dog.ageMaxMonths;
+    const ageMin = dog.age_min_months ?? dog.ageMinMonths;
+    const ageMax = dog.age_max_months ?? dog.ageMaxMonths;
 
-    if (ageFilter === "Unknown") {
-      return !ageMin && !ageMax;
-    }
+    // No recorded age: shown under every age, as the API does (#494)
+    if (ageMin == null && ageMax == null) return true;
 
     if (!ageMin && ageMin !== 0) return false;
 
@@ -230,12 +228,4 @@ export const getAgeFilterOptions = (): FilterOption[] => [
   { value: "Young", label: "Young (1-3 years)" },
   { value: "Adult", label: "Adult (3-8 years)" },
   { value: "Senior", label: "Senior (8+ years)" },
-  { value: "Unknown", label: AGE_FILTER_LABELS.Unknown },
-];
-
-export const getSortFilterOptions = (): FilterOption[] => [
-  { value: "newest", label: "Newest First" },
-  { value: "name-asc", label: "Name A-Z" },
-  { value: "name-desc", label: "Name Z-A" },
-  { value: "oldest", label: "Oldest First" },
 ];

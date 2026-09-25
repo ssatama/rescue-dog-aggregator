@@ -43,7 +43,6 @@ describe("MobileFilterDrawer without breed props", () => {
     availableCountries: ["Any country"],
     resetFilters: jest.fn(),
     filterCounts: null,
-    totalDogsCount: 100,
   };
 
   it("renders without breed props when showBreed is false", () => {

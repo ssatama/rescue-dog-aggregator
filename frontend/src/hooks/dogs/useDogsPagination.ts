@@ -13,6 +13,12 @@ import type { Dog, Filters, DogsPageInitialParams, FilterCountsResponse } from "
 
 const ITEMS_PER_PAGE = 20;
 
+/** What filter_counts depends on: the filters, not the page or the order. */
+function countsKeyOf(apiParams: Record<string, unknown>): string {
+  const { limit: _limit, offset: _offset, sort: _sort, ...filters } = apiParams;
+  return JSON.stringify(Object.entries(filters).sort(([a], [b]) => a.localeCompare(b)));
+}
+
 interface UseDogsPaginationParams {
   initialDogs: Dog[];
   initialParams: DogsPageInitialParams;
@@ -75,6 +81,8 @@ export default function useDogsPagination({
   const fetchDogsWithFiltersRef = useRef<((filters: Filters, pageNum?: number, shouldAppend?: boolean) => Promise<void>) | null>(null);
   const hydrateDeepLinkPagesRef = useRef<((targetPage: number, currentFilters: Filters) => Promise<void>) | null>(null);
   const lastQueryKey = useRef("");
+  // Filters the counts on screen belong to; paging or re-sorting keeps them (#494)
+  const countsKeyRef = useRef<string | null>(null);
 
   const abortCurrentFetch = useCallback(() => {
     if (currentAbortControllerRef.current) {
@@ -100,7 +108,11 @@ export default function useDogsPagination({
 
     try {
       const baseParams = buildAPIParams(currentFilters);
-      const countsPromise = getFilterCounts(baseParams, { signal: abortController.signal });
+      const countsKey = countsKeyOf(baseParams);
+      const countsPromise =
+        countsKey === countsKeyRef.current
+          ? null
+          : getFilterCounts(baseParams, { signal: abortController.signal });
 
       const requests = [];
       for (let p = 1; p <= targetPage; p++) {
@@ -126,12 +138,15 @@ export default function useDogsPagination({
         setHasMore(lastPage.length === ITEMS_PER_PAGE);
       });
 
-      try {
-        const counts = await countsPromise;
-        setFilterCounts(counts);
-      } catch (countsErr) {
-        if (!(countsErr instanceof Error && countsErr.name === 'AbortError')) {
-          reportError(countsErr, { context: "hydrateDeepLinkPages:filterCounts" });
+      if (countsPromise) {
+        try {
+          const counts = await countsPromise;
+          setFilterCounts(counts);
+          countsKeyRef.current = countsKey;
+        } catch (countsErr) {
+          if (!(countsErr instanceof Error && countsErr.name === 'AbortError')) {
+            reportError(countsErr, { context: "hydrateDeepLinkPages:filterCounts" });
+          }
         }
       }
     } catch (err) {
@@ -164,10 +179,11 @@ export default function useDogsPagination({
         ...buildAPIParams(currentFilters),
       };
       const fetchOptions = { signal: abortController.signal };
+      const countsKey = countsKeyOf(params);
 
       const [newDogs, counts] = await Promise.all([
         getAnimals(params, fetchOptions),
-        getFilterCounts(params, fetchOptions),
+        countsKey === countsKeyRef.current ? null : getFilterCounts(params, fetchOptions),
       ]);
 
       startTransition(() => {
@@ -177,7 +193,10 @@ export default function useDogsPagination({
           setDogs(newDogs as Dog[]);
         }
         setHasMore(newDogs.length === ITEMS_PER_PAGE);
-        setFilterCounts(counts);
+        if (counts) {
+          setFilterCounts(counts);
+          countsKeyRef.current = countsKey;
+        }
         setPage(pageNum);
         setIsFilterTransition(false);
       });

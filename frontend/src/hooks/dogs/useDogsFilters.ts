@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useDebouncedCallback, type DebouncedState } from "use-debounce";
 import { getAvailableRegions } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
-import { FILTER_DEFAULTS, SIZE_API_MAPPING, isCatalogSort, isDefaultFilterValue } from "@/constants/filters";
+import { AGE_OPTIONS, FILTER_DEFAULTS, SIZE_API_MAPPING, SIZE_OPTIONS, isCatalogSort, isDefaultFilterValue, scaleValue } from "@/constants/filters";
 import type {
   Filters,
   DogsPageMetadata,
@@ -50,9 +50,12 @@ export default function useDogsFilters({
 
   const filters: Filters = useMemo(() => ({
     searchQuery: searchParams.get("search") || "",
-    sizeFilter: searchParams.get("size") || FILTER_DEFAULTS.SIZE,
-    ageFilter:
-      searchParams.get("age") || initialParams?.age_category || FILTER_DEFAULTS.AGE,
+    sizeFilter: scaleValue(searchParams.get("size"), SIZE_OPTIONS, FILTER_DEFAULTS.SIZE),
+    ageFilter: scaleValue(
+      searchParams.get("age") || initialParams?.age_category || null,
+      AGE_OPTIONS,
+      FILTER_DEFAULTS.AGE,
+    ),
     sexFilter: searchParams.get("sex") || FILTER_DEFAULTS.SEX,
     organizationFilter: validateOrganizationId(
       searchParams.get("organization_id"),
@@ -188,7 +191,7 @@ function buildAPIParams(filterValues: Filters): Record<string, string> {
 
   const size = (filterValues.sizeFilter || "").trim();
   if (size && size !== FILTER_DEFAULTS.SIZE) {
-    const mappedSize = SIZE_API_MAPPING[size as keyof typeof SIZE_API_MAPPING];
+    const mappedSize = SIZE_API_MAPPING[size];
     if (mappedSize) {
       params.standardized_size = mappedSize;
     }

@@ -54,10 +54,10 @@ describe("Filter type hierarchy", () => {
 
   test("AgeCategory union constrains age values", () => {
     const validAge: AgeCategory = "Puppy";
-    const allAges: AgeCategory[] = ["All", "Puppy", "Young", "Adult", "Senior", "Unknown"];
+    const allAges: AgeCategory[] = ["All", "Puppy", "Young", "Adult", "Senior"];
 
     expect(validAge).toBe("Puppy");
-    expect(allAges).toHaveLength(6);
+    expect(allAges).toHaveLength(5);
   });
 
   test("SortOption union constrains sort values", () => {

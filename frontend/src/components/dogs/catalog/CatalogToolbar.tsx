@@ -3,7 +3,7 @@
 import React from "react";
 import { X } from "lucide-react";
 import SortMenu from "./SortMenu";
-import { FILTER_DEFAULTS, ageFilterLabel } from "@/constants/filters";
+import { FILTER_DEFAULTS } from "@/constants/filters";
 import { countryOptionLabel, getCountryName } from "@/utils/countryNames";
 import type { Filters, OrganizationMetadata } from "@/types/dogsPage";
 
@@ -41,7 +41,7 @@ export function activeFilterChips(
     availableCountryFilter: (value) => `Adoptable to ${countryOptionLabel(value)}`,
     availableRegionFilter: (value) => value,
     sizeFilter: (value) => value,
-    ageFilter: (value) => ageFilterLabel(value),
+    ageFilter: (value) => value,
     sexFilter: (value) => value,
     breedFilter: (value) => value,
     breedGroupFilter: (value) => `${value} group`,

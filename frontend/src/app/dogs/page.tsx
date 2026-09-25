@@ -8,6 +8,7 @@ import {
   getStatistics,
 } from "../../services/serverAnimalsService";
 import DogsPageClientSimplified from "./DogsPageClientSimplified";
+import { FILTER_DEFAULTS } from "@/constants/filters";
 import Layout from "../../components/layout/Layout";
 import ServerDogListing from "@/components/dogs/ServerDogListing";
 import "../../styles/animations.css";
@@ -53,7 +54,7 @@ export default async function DogsPageOptimized(): Promise<React.JSX.Element> {
   // initialParams. The server-side filtered fetch was work the client threw
   // away.
   const [initialDogs, metadata] = await Promise.all([
-    getAnimals({ limit: 20, offset: 0 }),
+    getAnimals({ limit: 20, offset: 0, sort: FILTER_DEFAULTS.SORT }),
     getAllMetadata(),
   ]);
 

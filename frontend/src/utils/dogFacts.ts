@@ -122,13 +122,14 @@ export function adoptionDomain(url: string | undefined): string | null {
  */
 export function similarDogsQuery(
   dog: Dog,
-): { standardized_size?: string; age_category?: string } | null {
+): { standardized_size?: string; age_category?: string; age_known?: boolean } | null {
   const size = dog.standardized_size && dog.standardized_size !== "Unknown" ? dog.standardized_size : null;
   const age = getAgeCategory(dog);
   if (!size && age === "Unknown") return null;
   return {
     ...(size && { standardized_size: size }),
-    ...(age !== "Unknown" && { age_category: age }),
+    // Same age group means a known age: dogs without one match every group
+    ...(age !== "Unknown" && { age_category: age, age_known: true }),
   };
 }
 

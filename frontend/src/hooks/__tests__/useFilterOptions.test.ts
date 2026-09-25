@@ -15,7 +15,7 @@ const DEFAULT_FILTER_VALUES = {
   availableRegionFilter: FILTER_DEFAULTS.REGION,
 }
 
-const BASE_SIZE_OPTIONS = [FILTER_DEFAULTS.SIZE, "Tiny", "Small", "Medium", "Large", "Extra Large"]
+const BASE_SIZE_OPTIONS = [FILTER_DEFAULTS.SIZE, "Small", "Medium", "Large", "Giant"]
 const BASE_AGE_OPTIONS = [FILTER_DEFAULTS.AGE, "Puppy", "Young", "Adult", "Senior"]
 const BASE_SEX_OPTIONS = [FILTER_DEFAULTS.SEX, "Male", "Female"]
 
@@ -85,15 +85,14 @@ describe("useFilterOptions", () => {
       expect(result.current.dynamicSizeOptions).toContain("Small")
       expect(result.current.dynamicSizeOptions).toContain("Medium")
       expect(result.current.dynamicSizeOptions).toContain("Large")
-      expect(result.current.dynamicSizeOptions).toContain("Extra Large")
-      expect(result.current.dynamicSizeOptions).not.toContain("Tiny")
+      expect(result.current.dynamicSizeOptions).toContain("Giant")
     })
 
     it("handles size mapping from UI to API values", () => {
       const countsWithTiny: FilterCountsResponse = {
         ...MOCK_FILTER_COUNTS,
         size_options: [
-          { value: "Tiny", count: 2 },
+          { value: "Small", count: 2 },
           { value: "XLarge", count: 0 },
         ],
       }
@@ -108,8 +107,8 @@ describe("useFilterOptions", () => {
         }),
       )
 
-      expect(result.current.dynamicSizeOptions).toContain("Tiny")
-      expect(result.current.dynamicSizeOptions).not.toContain("Extra Large")
+      expect(result.current.dynamicSizeOptions).toContain("Small")
+      expect(result.current.dynamicSizeOptions).not.toContain("Giant")
     })
 
     it("filters zero-count age options", () => {

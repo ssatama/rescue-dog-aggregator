@@ -7,8 +7,9 @@ import DogFilters from "../../../components/filters/DogFilters";
 import OrganizationHero from "../../../components/organizations/OrganizationHero";
 import MobileFilterDrawer from "../../../components/filters/MobileFilterDrawer";
 import useFilteredDogs from "../../../hooks/useFilteredDogs";
-import { getDefaultFilters } from "../../../utils/dogFilters";
+import { getAgeFilterOptions, getDefaultFilters } from "../../../utils/dogFilters";
 import type { AgeCategory, SortOption } from "../../../utils/dogFilters";
+import { AGE_OPTIONS, RESCUE_PAGE_SORTS } from "@/constants/filters";
 import { Button } from "../../../components/ui/button";
 import {
   getOrganizationBySlug,
@@ -60,9 +61,6 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [totalDogs, setTotalDogs] = useState(
-    (initialOrganization as OrganizationWithDetails | null)?.total_dogs ?? 0,
-  );
 
   const [filters, setFilters] = useState<OrgFilters>(() => {
     const defaultFilters = getDefaultFilters();
@@ -74,10 +72,16 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
 
     if (urlAge || urlBreed || urlSex || urlSort) {
       return {
-        age: (urlAge as AgeCategory) || defaultFilters.age || "All",
+        // An old link can carry an age the filter no longer offers (Unknown)
+        age: getAgeFilterOptions().some((option) => option.value === urlAge)
+          ? (urlAge as AgeCategory)
+          : defaultFilters.age || "All",
         breed: urlBreed || defaultFilters.breed || "",
         sex: urlSex || "Any",
-        sort: (urlSort as SortOption) || defaultFilters.sort || "newest",
+        // An old link can carry a sort the menu no longer offers (name-asc)
+        sort: RESCUE_PAGE_SORTS.some((option) => option.value === urlSort)
+          ? (urlSort as SortOption)
+          : defaultFilters.sort || "newest",
       };
     }
     return {
@@ -244,7 +248,6 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
         if (isInitialLoad) {
           const orgData = await getOrganizationBySlug(organizationSlug as string);
           setOrganization(orgData as OrganizationWithDetails);
-          setTotalDogs((orgData as OrganizationWithDetails).total_dogs || 0);
 
           // Track organization page view
           if (orgData?.slug) {
@@ -497,7 +500,6 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
           trackFiltersApplied({ breed }, "org_page");
         }}
         standardizedBreeds={availableBreeds || []}
-        useSimpleBreedDropdown={true}
         sexFilter={filters.sex || "Any"}
         setSexFilter={(sex: string) => {
           setFilters((prev) => ({ ...prev, sex }));
@@ -512,13 +514,12 @@ export default function OrganizationDetailClient({ initialOrganization = null }:
           setFilters((prev) => ({ ...prev, age: age as AgeCategory }));
           trackFiltersApplied({ age }, "org_page");
         }}
-        ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"]}
+        ageOptions={AGE_OPTIONS}
         availableCountryFilter="Any country"
         setAvailableCountryFilter={() => {}}
         availableCountries={["Any country"]}
         resetFilters={handleClearAllFilters}
         filterCounts={null}
-        totalDogsCount={totalDogs}
       />
     </>
   );

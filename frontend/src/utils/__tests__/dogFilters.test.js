@@ -88,40 +88,34 @@ describe("dogFilters", () => {
   ];
 
   describe("filterByAge", () => {
+    // Bella has no recorded age, so she appears under every age (#494)
+    const names = (dogs) => dogs.map((dog) => dog.name);
+
     test("filters puppies correctly", () => {
-      const result = filterByAge(mockDogs, "Puppy");
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe("Buddy");
+      expect(names(filterByAge(mockDogs, "Puppy"))).toEqual(["Buddy", "Bella"]);
     });
 
     test("filters young dogs correctly", () => {
-      const result = filterByAge(mockDogs, "Young");
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe("Max");
+      expect(names(filterByAge(mockDogs, "Young"))).toEqual(["Max", "Bella"]);
     });
 
     test("filters adult dogs correctly", () => {
-      const result = filterByAge(mockDogs, "Adult");
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe("Luna");
+      expect(names(filterByAge(mockDogs, "Adult"))).toEqual(["Luna", "Bella"]);
     });
 
     test("filters senior dogs correctly", () => {
-      const result = filterByAge(mockDogs, "Senior");
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe("Charlie");
+      expect(names(filterByAge(mockDogs, "Senior"))).toEqual(["Charlie", "Bella"]);
+    });
+
+    test("an age of 0 months is a recorded age, not a missing one", () => {
+      const newborn = { name: "Pip", age_min_months: 0, age_max_months: null };
+      expect(names(filterByAge([newborn], "Senior"))).toEqual([]);
     });
 
     test('returns all dogs when filter is "All" or empty', () => {
       expect(filterByAge(mockDogs, "All")).toHaveLength(5);
       expect(filterByAge(mockDogs, "")).toHaveLength(5);
       expect(filterByAge(mockDogs, null)).toHaveLength(5);
-    });
-
-    test("handles dogs with unknown age gracefully", () => {
-      const result = filterByAge(mockDogs, "Unknown");
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe("Bella");
     });
   });
 

@@ -44,7 +44,8 @@ jest.mock("../DogsPageClientSimplified", () => {
   };
 });
 
-const FILTERLESS_QUERY = { limit: 20, offset: 0 };
+// In the client's default order, so the first paint does not reshuffle (#494)
+const FILTERLESS_QUERY = { limit: 20, offset: 0, sort: "recommended" };
 
 describe("DogsPage is cacheable", () => {
   beforeEach(() => {
