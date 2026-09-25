@@ -74,7 +74,7 @@ jest.mock("../../services/animalsService", () => ({
       adoption_url: "https://testrescue.org/adopt",
     }),
   ),
-  getAnimals: jest.fn(() => Promise.resolve([])), // Mock immediately resolved for useSwipeNavigation
+  getAnimals: jest.fn(() => Promise.resolve([])),
 }));
 
 // Mock the useSwipeNavigation hook to prevent real API calls
@@ -88,12 +88,6 @@ jest.mock("../../hooks/useSwipeNavigation", () => ({
     nextDog: null,
     isLoading: false,
   })),
-  navigationCache: {
-    clear: jest.fn(),
-    get: jest.fn(),
-    set: jest.fn(),
-    has: jest.fn(),
-  },
 }));
 
 jest.mock("../../services/similarDogsService", () => ({

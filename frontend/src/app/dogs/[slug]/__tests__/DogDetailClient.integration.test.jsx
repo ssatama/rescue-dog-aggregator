@@ -10,7 +10,7 @@ import { getAnimalBySlug } from "../../../../services/animalsService";
 // Mock the animalsService
 jest.mock("../../../../services/animalsService", () => ({
   getAnimalBySlug: jest.fn(),
-  getAnimals: jest.fn(() => Promise.resolve({ data: [] })), // For useSwipeNavigation hook
+  getDogNeighbors: jest.fn(() => Promise.resolve({ prev: null, next: null })), // For useSwipeNavigation
 }));
 
 // next/navigation is mocked globally in jest.setup.js

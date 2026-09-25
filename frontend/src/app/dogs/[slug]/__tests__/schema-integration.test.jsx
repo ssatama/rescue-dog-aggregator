@@ -12,7 +12,7 @@ import { getAnimalBySlug } from "../../../../services/animalsService";
 // Mock the service
 jest.mock("../../../../services/animalsService", () => ({
   getAnimalBySlug: jest.fn(),
-  getAnimals: jest.fn(() => Promise.resolve({ data: [] })), // For useSwipeNavigation hook
+  getDogNeighbors: jest.fn(() => Promise.resolve({ prev: null, next: null })), // For useSwipeNavigation
 }));
 
 // Override useParams to provide slug for DogDetailClient
