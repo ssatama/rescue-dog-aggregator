@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import SortMenu from "./SortMenu";
 import { ENERGY_BANDS, FILTER_DEFAULTS, FIRST_TIME_FRIENDLY, LIVES_WELL_WITH } from "@/constants/filters";
 import { countryOptionLabel, getCountryName } from "@/utils/countryNames";
@@ -79,6 +79,8 @@ interface CatalogToolbarProps {
   onRemove: (key: FilterKey, value: string) => void;
   onClearAll: () => void;
   onSortChange: (sort: string) => void;
+  /** The filter sidebar, which shows from 1024px and can be hidden there */
+  sidebar?: { shown: boolean; onToggle: () => void };
 }
 
 /** "214 dogs match", the sort menu and a removable chip per active filter (#494). */
@@ -90,6 +92,7 @@ export default function CatalogToolbar({
   onRemove,
   onClearAll,
   onSortChange,
+  sidebar,
 }: CatalogToolbarProps): React.JSX.Element {
   const chips = activeFilterChips(filters, organizations, fixed);
   const country = filters.availableCountryFilter;
@@ -109,7 +112,20 @@ export default function CatalogToolbar({
             </>
           )}
         </p>
-        <SortMenu value={filters.sortFilter ?? FILTER_DEFAULTS.SORT} onChange={onSortChange} />
+        <div className="flex items-center gap-2">
+          {sidebar && (
+            <button
+              type="button"
+              onClick={sidebar.onToggle}
+              aria-pressed={sidebar.shown}
+              className="hidden h-9 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink hover:bg-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
+            >
+              <SlidersHorizontal className="h-4 w-4 text-subtle" aria-hidden="true" />
+              {sidebar.shown ? "Hide filters" : "Show filters"}
+            </button>
+          )}
+          <SortMenu value={filters.sortFilter ?? FILTER_DEFAULTS.SORT} onChange={onSortChange} />
+        </div>
       </div>
 
       {chips.length > 0 && (

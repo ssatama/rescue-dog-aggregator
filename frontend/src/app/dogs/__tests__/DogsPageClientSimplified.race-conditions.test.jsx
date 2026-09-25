@@ -31,8 +31,8 @@ jest.mock("../../../components/dogs/DogCard", () => {
   };
 });
 
-jest.mock("../../../components/dogs/DogsPageViewportWrapper", () => {
-  return function DogsPageViewportWrapper({ dogs }) {
+jest.mock("../../../components/dogs/CatalogDogGrid", () => {
+  return function CatalogDogGrid({ dogs }) {
     // Mock matches real desktop behavior: just renders dog cards
     // Load More button is handled by parent component (DogsPageClientSimplified)
     return (

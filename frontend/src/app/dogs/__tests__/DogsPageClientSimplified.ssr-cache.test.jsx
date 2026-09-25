@@ -31,8 +31,8 @@ jest.mock("../../../components/dogs/DogCard", () => {
   };
 });
 
-jest.mock("../../../components/dogs/DogsPageViewportWrapper", () => {
-  return function DogsPageViewportWrapper({ dogs }) {
+jest.mock("../../../components/dogs/CatalogDogGrid", () => {
+  return function CatalogDogGrid({ dogs }) {
     return (
       <div data-testid="viewport-wrapper">
         {dogs.map(dog => (
@@ -202,5 +202,16 @@ describe("DogsPageClientSimplified - SSR Cache Conflict (Bug #3)", () => {
         expect(dogCards.length).toBeGreaterThanOrEqual(15);
       }
     });
+  });
+
+  it("sends an old #dog=<slug> overlay link to the dog's own page (#496)", async () => {
+    useSearchParams.mockReturnValue(new URLSearchParams());
+    getAnimals.mockResolvedValue(createMockDogs(1, 20));
+    window.history.replaceState(null, "", "/dogs#dog=rex-12");
+
+    render(<DogsPageClientSimplified initialDogs={createMockDogs(1, 20)} metadata={{}} initialParams={{}} />);
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith("/dogs/rex-12"));
+    window.history.replaceState(null, "", "/");
   });
 });

@@ -13,8 +13,7 @@ describe("<Footer />", () => {
       const brandLinks = screen.getAllByRole("link", {
         name: /Rescue Dog Aggregator/i,
       });
-      // There are 2 brand links (desktop and mobile)
-      expect(brandLinks.length).toBeGreaterThan(0);
+      expect(brandLinks).toHaveLength(1);
       brandLinks.forEach((link) => {
         expect(link).toHaveAttribute("href", "/");
       });
@@ -107,6 +106,14 @@ describe("<Footer />", () => {
     it("does not render copyright text", () => {
       expect(screen.queryByText(/© 2025/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/copyright/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("One footer at every width (#496)", () => {
+    it("renders one tree, with no section hidden on small screens", () => {
+      const footer = screen.getByRole("contentinfo");
+      expect(footer.querySelectorAll(".hidden, .md\\:hidden")).toHaveLength(0);
+      expect(screen.getAllByText(/Made with/)).toHaveLength(1);
     });
   });
 });

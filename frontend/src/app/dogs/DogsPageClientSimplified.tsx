@@ -3,12 +3,13 @@
 import React, {
   useState,
   useCallback,
+  useEffect,
   useMemo,
 } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import DogCardSkeletonOptimized from "../../components/ui/DogCardSkeletonOptimized";
-import DogsPageViewportWrapper from "../../components/dogs/DogsPageViewportWrapper";
+import CatalogDogGrid from "../../components/dogs/CatalogDogGrid";
 import EmptyState from "../../components/ui/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Filter, Loader2 } from "lucide-react";
@@ -29,6 +30,33 @@ import type {
 
 import type { FilterConfig } from "../../types/filterComponents";
 import { AGE_OPTIONS, FILTER_DEFAULTS, SIZE_OPTIONS } from "@/constants/filters";
+import { DOG_GRID } from "@/constants/layout";
+
+const SIDEBAR_KEY = "catalog-filters-hidden";
+
+/** Whether the visitor hid the filter sidebar, remembered in this browser. */
+function useSidebarHidden(): [boolean, () => void] {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration; the server cannot know
+      if (localStorage.getItem(SIDEBAR_KEY) === "1") setHidden(true);
+    } catch {
+      // Storage blocked: the sidebar just starts shown
+    }
+  }, []);
+  const toggle = useCallback(() => {
+    setHidden((was) => {
+      try {
+        localStorage.setItem(SIDEBAR_KEY, was ? "0" : "1");
+      } catch {
+        // Storage blocked: the choice lasts for this visit only
+      }
+      return !was;
+    });
+  }, []);
+  return [hidden, toggle];
+}
 
 // The field at the top of the page edits the text search, so the drawer leaves it out
 const CATALOG_DRAWER_CONFIG: FilterConfig = {
@@ -106,6 +134,14 @@ export default function DogsPageClientSimplified({
   });
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [sidebarHidden, toggleSidebar] = useSidebarHidden();
+
+  // Phones used to open dogs in an overlay at #dog=<slug>; shared links like
+  // that now go to the dog's own page
+  useEffect(() => {
+    const match = window.location.hash.match(/^#dog=(.+)$/);
+    if (match) router.replace(`/dogs/${match[1]}`);
+  }, [router]);
 
   const applyFilters = useCallback(
     (changes: Record<string, string | undefined>) => {
@@ -216,7 +252,7 @@ export default function DogsPageClientSimplified({
 
       {/* Mobile Sticky Header with Breadcrumb and Filter Button */}
       {!hideHero && (
-        <div className="lg:hidden sticky top-[80px] z-20 bg-background dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="lg:hidden sticky top-16 z-20 bg-background dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           {/* Add spacing at the top */}
           <div className="h-2 bg-background dark:bg-gray-900"></div>
 
@@ -268,7 +304,7 @@ export default function DogsPageClientSimplified({
 
       {/* Mobile Filter Button (when hero is hidden) */}
       {hideHero && (
-        <div className="lg:hidden sticky top-[80px] z-20 bg-background dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex justify-end">
+        <div className="lg:hidden sticky top-16 z-20 bg-background dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex justify-end">
           <Button
             onClick={() => setIsSheetOpen(true)}
             variant="default"
@@ -291,7 +327,7 @@ export default function DogsPageClientSimplified({
 
       <div
         data-testid="dogs-page-container"
-        className="container mx-auto px-4 py-6 lg:py-8"
+        className="mx-auto max-w-7xl py-6 sm:px-2 lg:px-4 lg:py-8"
       >
         {/* Phones: the header has no search field, so it sits at the top */}
         <GlobalSearch surface="mobile" className="mb-4 sm:hidden" />
@@ -325,8 +361,8 @@ export default function DogsPageClientSimplified({
         )}
 
         <div className="flex gap-8">
-          {/* Desktop filters sidebar */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
+          {/* Filter sidebar from 1024px, which the visitor can hide; a sheet below */}
+          <aside className={sidebarHidden ? "hidden" : "hidden lg:block w-72 flex-shrink-0"}>
             <DesktopFilters
               // Search is edited in the header; it still counts as a filter
               searchQuery={filterState.filters.searchQuery}
@@ -403,6 +439,7 @@ export default function DogsPageClientSimplified({
               onRemove={handleFilterChange}
               onClearAll={handleResetFilters}
               onSortChange={setSort}
+              sidebar={{ shown: !sidebarHidden, onToggle: toggleSidebar }}
             />
 
             {/* Labels come from the visitor's country; hiding the rest is opt-in (#493) */}
@@ -415,12 +452,12 @@ export default function DogsPageClientSimplified({
 
             {/* Dogs Grid */}
             <div
-              className="relative flex-1 pb-8 -mx-4 px-4 md:mx-0 md:px-0 overflow-x-hidden"
+              className="relative flex-1 pb-8"
               id="dogs-catalog"
             >
               {/* Loading state */}
               {pagination.loading && !pagination.dogs.length && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className={DOG_GRID}>
                   {[...Array(8)].map((_, i) => (
                     <DogCardSkeletonOptimized key={i} />
                   ))}
@@ -438,17 +475,7 @@ export default function DogsPageClientSimplified({
                       </div>
                     </div>
                   )}
-                  <DogsPageViewportWrapper
-                    dogs={pagination.dogs}
-                    loading={pagination.loading}
-                    loadingMore={pagination.loadingMore}
-                    onOpenFilter={() => setIsSheetOpen(true)}
-                    onResetFilters={handleResetFilters}
-                    onLoadMore={pagination.loadMoreDogs}
-                    hasMore={pagination.hasMore}
-                    filters={filterState.filters}
-                    onFilterChange={handleFilterChange}
-                  />
+                  <CatalogDogGrid dogs={pagination.dogs} />
                 </div>
               )}
 
@@ -460,8 +487,7 @@ export default function DogsPageClientSimplified({
                 />
               )}
 
-              {/* Load more button - Hidden on mobile since it's handled in PremiumMobileCatalog */}
-              <div className="hidden lg:block">
+              <div>
                 {pagination.hasMore && !pagination.loading && pagination.dogs.length > 0 && (
                   <div className="flex justify-center mt-8">
                     <Button
