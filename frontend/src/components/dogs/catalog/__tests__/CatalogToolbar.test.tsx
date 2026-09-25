@@ -141,3 +141,12 @@ describe("filter sidebar toggle", () => {
     expect(screen.queryByRole("button", { name: /filters/ })).not.toBeInTheDocument();
   });
 });
+
+describe("quick browse (#499)", () => {
+  it("links to swipe from desktop widths, where the header no longer does", () => {
+    renderToolbar();
+    const link = screen.getByRole("link", { name: "Quick browse" });
+    expect(link).toHaveAttribute("href", "/swipe");
+    expect(link).toHaveClass("hidden", "lg:inline-flex");
+  });
+});

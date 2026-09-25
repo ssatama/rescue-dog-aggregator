@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -192,3 +193,24 @@ class TestSwipeEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "dogs" in data
+
+
+class TestSwipeGallery:
+    """The swipe card's photos come from animals.images, not properties (#499)."""
+
+    @pytest.mark.unit
+    def test_keeps_the_first_photos_in_order(self):
+        from api.routes.swipe import SWIPE_GALLERY_PHOTOS, swipe_gallery
+
+        images = [{"url": f"https://img/{n}.jpg", "width": 800, "height": 600, "original_url": "x"} for n in range(10)]
+        photos = swipe_gallery(images, "https://img/0.jpg")
+        assert len(photos) == SWIPE_GALLERY_PHOTOS
+        assert photos[0] == {"url": "https://img/0.jpg", "width": 800, "height": 600}
+        assert [p["url"] for p in photos] == [f"https://img/{n}.jpg" for n in range(SWIPE_GALLERY_PHOTOS)]
+
+    @pytest.mark.unit
+    def test_falls_back_to_the_hero(self):
+        from api.routes.swipe import swipe_gallery
+
+        assert swipe_gallery(None, "https://img/hero.jpg") == [{"url": "https://img/hero.jpg", "width": None, "height": None}]
+        assert swipe_gallery([], None) == []

@@ -29,4 +29,9 @@ describe("HomeHero", () => {
     const { container } = render(<HomeHero totalDogs={0} totalRescues={0} />);
     expect(container).not.toHaveTextContent(/\d/);
   });
+
+  it("offers swipe as Quick browse, since the desktop header no longer links it (#499)", () => {
+    render(<HomeHero totalDogs={1722} totalRescues={11} />);
+    expect(screen.getByRole("link", { name: "Quick browse" })).toHaveAttribute("href", "/swipe");
+  });
 });

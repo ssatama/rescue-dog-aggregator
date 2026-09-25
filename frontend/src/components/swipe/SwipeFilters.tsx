@@ -157,7 +157,7 @@ export default function SwipeFilters({
       : "bg-[#FDFBF7] border border-orange-200/80 text-orange-800";
 
     return (
-      <div className="flex gap-2 items-center flex-wrap">
+      <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
         {selectedCountry && (
           <span className={`px-3 py-1 rounded-full text-sm ${pillClass}`}>
             {selectedCountry.flag} {selectedCountry.label}

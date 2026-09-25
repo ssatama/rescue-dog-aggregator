@@ -34,6 +34,19 @@ SWIPE_SIZE_SCALE: dict[str, tuple[str, ...]] = {
 }
 
 
+# Photos per dog in the swipe stack (#499): enough to step through, without
+# shipping 30-photo galleries for every dog in a 20-dog batch.
+SWIPE_GALLERY_PHOTOS = 6
+
+
+def swipe_gallery(images: list[dict] | None, primary_image_url: str | None) -> list[dict]:
+    """The first gallery photos as url/width/height, or the hero when there is no gallery."""
+    photos = [{"url": photo["url"], "width": photo.get("width"), "height": photo.get("height")} for photo in (images or [])[:SWIPE_GALLERY_PHOTOS] if isinstance(photo, dict) and photo.get("url")]
+    if not photos and primary_image_url:
+        photos = [{"url": primary_image_url, "width": None, "height": None}]
+    return photos
+
+
 def build_age_conditions(age_groups):
     """Build SQL conditions for age filtering based on age groups."""
     age_conditions = []
@@ -349,7 +362,7 @@ async def get_swipe_stack(
                         "status": animal_dict["status"],
                         "adoption_url": animal_dict.get("adoption_url"),
                         "primary_image_url": animal_dict.get("primary_image_url"),
-                        "images": properties.get("images", []),
+                        "images": swipe_gallery(animal_dict.get("images"), animal_dict.get("primary_image_url")),
                         "videos": properties.get("videos", []),
                         "location": properties.get("location"),
                         "city": properties.get("city") or org_data.get("city"),

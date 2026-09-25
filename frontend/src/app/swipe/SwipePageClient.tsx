@@ -7,7 +7,6 @@ import SwipeErrorBoundary from "../../components/swipe/SwipeErrorBoundary";
 import { useSwipeDevice } from "../../hooks/useSwipeDevice";
 import { swipeMetrics } from "../../utils/swipeMetrics";
 import { get } from "../../utils/api";
-import * as Sentry from "@sentry/nextjs";
 import { type Dog } from "../../types/dog";
 import type { ApiDog } from "../../types/apiDog";
 import { transformApiDogsToDogs } from "../../utils/dogTransformer";
@@ -58,7 +57,6 @@ export default function SwipePageClient({
   const canUseSwipe = useSwipeDevice();
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [totalSwiped, setTotalSwiped] = useState(0);
   const [dogs, setDogs] = useState<Dog[]>(initialDogs || []);
   const [currentDogIndex, setCurrentDogIndex] = useState<number>(0);
   const migrationAttemptedRef = useRef(false);
@@ -114,35 +112,6 @@ export default function SwipePageClient({
     [],
   );
 
-  const handleSwipe = (direction: "left" | "right", dog: Dog) => {
-    swipeMetrics.trackSwipe(direction, dog.id.toString());
-    setTotalSwiped((prev) => {
-      const newTotal = prev + 1;
-
-      if (newTotal % 20 === 0) {
-        swipeMetrics.trackQueueExhausted(newTotal);
-      }
-
-      return newTotal;
-    });
-
-    if (direction === "right") {
-      swipeMetrics.trackFavoriteAdded(dog.id.toString(), "swipe");
-
-      Sentry.addBreadcrumb({
-        message: "swipe.favorite.added",
-        category: "swipe",
-        level: "info",
-        data: {
-          dogId: dog.id,
-          dogName: dog.name,
-          breed: dog.breed,
-          source: "swipe_gesture",
-        },
-      });
-    }
-  };
-
   const handleCardExpanded = (dog: Dog, index: number) => {
     setSelectedDog(dog);
     setCurrentDogIndex(index);
@@ -176,10 +145,10 @@ export default function SwipePageClient({
 
   return (
     <SwipeErrorBoundary>
-      <div className="min-h-[100dvh] bg-gray-50">
+      <div className="min-h-[100dvh] bg-background">
         <SwipeContainer
           fetchDogs={fetchDogsWithFilters}
-          onSwipe={handleSwipe}
+          keyboardEnabled={!showDetails}
           onCardExpanded={handleCardExpanded}
           onDogsLoaded={setDogs}
           initialDogs={initialDogs}

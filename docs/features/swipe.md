@@ -2,16 +2,25 @@
 
 ## Overview
 
-The swipe feature is the core engagement mechanism of RescueDogs.me, providing a mobile-first, Tinder-like interface for discovering rescue dogs. Users can swipe right to save dogs to their favorites or left to pass, creating an intuitive and engaging way to browse through thousands of available rescue dogs.
+Swipe shows rescue dogs one at a time, filtered to a country the visitor can
+adopt in (plus optional sizes and ages). It is mobile-first and in the phone
+tab bar; on desktop it is reached as "Quick browse" from the home hero and the
+catalog toolbar, not from the header (#499).
 
 ## Key Features
 
-- **Mobile-only experience** - Desktop users are redirected to a mobile prompt
-- **Smart prioritization** - Shows high-quality, recently added dogs first
-- **Advanced filtering** - Filter by size, age, and country eligibility
-- **Stateless architecture** - No user accounts required; all data stored locally
-- **Performance optimized** - Image preloading, batch loading, FPS monitoring
-- **Privacy-focused** - No tracking across sessions, local storage only
+- **One dog, whole card on screen** - the photo takes whatever height is left,
+  so the card, Back and Next fit at 390x844 and 1440x900 without scrolling
+- **Controls** - Back / Next buttons; swipe left for the next dog and right to
+  go back; tap the photo's left or right quarter to step through up to 6
+  gallery photos; tap anywhere else for the details modal
+- **Keyboard** - left/right arrows browse, F saves or unsaves, Enter opens the
+  details (not while the details or the filter modal are open)
+- **Card facts** - breed · age · sex, rescue · country, "Adoptable to you",
+  tagline and up to three traits; missing facts are left out
+- **End of the stack** - a "You've seen every dog here" state with Start over,
+  Change filters and Browse all dogs; no "1 of 20" counter
+- **Stateless** - no accounts; filters and position live in localStorage
 
 ## Architecture
 
@@ -95,7 +104,6 @@ All state is managed client-side using browser storage:
 
 **sessionStorage**:
 - `swipeCurrentIndex`: Current position in the swipe stack
-- `swipedDogIds`: Set of already-swiped dog IDs (prevents duplicates)
 
 ### Database Schema
 
@@ -148,70 +156,26 @@ The system parses various age formats using complex regex patterns:
 | `adult` | "adult", "3-7 years" | 3-7 years |
 | `senior` | "senior", "8+ years", "> 8 years" | 8+ years |
 
-### Swipe Flow Algorithm
+### Swipe Flow
 
-```javascript
-// Simplified swipe flow logic
-function swipeFlow() {
-  // 1. Load initial stack
-  const dogs = await fetchDogs({ limit: 20, filters });
-
-  // 2. Filter out already swiped
-  const filtered = dogs.filter(dog => !swipedIds.has(dog.id));
-
-  // 3. Display current dog
-  showDog(filtered[currentIndex]);
-
-  // 4. Preload next images
-  preloadImages(filtered.slice(currentIndex + 1, currentIndex + 4));
-
-  // 5. Handle swipe
-  onSwipe((direction) => {
-    if (direction === 'right') {
-      addToFavorites(currentDog.id);
-    }
-    swipedIds.add(currentDog.id);
-    currentIndex++;
-
-    // 6. Load more when running low
-    if (filtered.length - currentIndex <= 5) {
-      const moreDogs = await fetchDogs({
-        limit: 20,
-        offset: totalLoaded,
-        randomize: true,
-        excluded: Array.from(swipedIds)
-      });
-      filtered.push(...moreDogs);
-    }
-  });
-}
-```
+1. The server renders the first 20 dogs for the URL's filters (`/swipe?country=UK`).
+2. Next moves one dog on; when 5 or fewer are left, the next batch is fetched
+   with `offset` and `randomize=true`, and dogs already in the stack are dropped.
+3. Next on the last dog shows the end state. Start over reshuffles from the top.
+4. Saving (heart or F) goes through `FavoritesContext`, like everywhere else.
 
 ## User Experience Flow
 
 ### First-Time User
-1. User visits `/swipe` on mobile device
-2. Onboarding overlay explains swipe mechanics
-3. Initial stack of 20 high-quality dogs loads
-4. User can immediately start swiping
+1. Onboarding asks where they live (pre-filled from the site-wide "I live in"
+   choice, #493) and optional sizes on the catalog's scale
+2. The stack loads and the first card shows
 
 ### Returning User
-1. Filter preferences load from localStorage
-2. Favorites persist from previous sessions
-3. New session starts fresh (no swipe history)
-4. Can access favorites via `/favorites` page
-
-### Desktop Redirect
-1. Desktop users see mobile-only message
-2. QR code provided for easy mobile access
-3. Explanation of mobile-first decision
+1. Filters load from localStorage and the URL
+2. The last position in the stack is restored
 
 ## Performance Optimizations
-
-### Image Preloading
-- Preloads next 3 dog images in background
-- Cleanup mechanism prevents memory leaks
-- Progressive JPEG loading for faster initial display
 
 ### Batch Loading Strategy
 - Initial load: 20 dogs
