@@ -136,6 +136,8 @@ export function SwipeContainer({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  // The next page failed: the end of the stack offers a retry, not "seen every dog"
+  const [loadMoreFailed, setLoadMoreFailed] = useState(false);
   const dragged = useRef(false);
   // The first load restores the saved position; new filters start at the top
   const restorePosition = useRef(true);
@@ -179,6 +181,7 @@ export function SwipeContainer({
         if (cancelled) return;
         setDogs(fetched);
         setLoadFailed(false);
+        setLoadMoreFailed(false);
         setCurrentIndex((prev) => {
           const index = restore && prev < fetched.length ? prev : 0;
           safeStorage.set("swipeCurrentIndex", String(index));
@@ -197,6 +200,7 @@ export function SwipeContainer({
         Sentry.captureException(error);
         if (cancelled) return;
         setLoadFailed(true);
+        setLoadMoreFailed(false);
         if (!restore) {
           setDogs([]);
           setIndex(0);
@@ -229,13 +233,17 @@ export function SwipeContainer({
       .then((fetched) => {
         // Filters changed meanwhile: these dogs belong to the old stack
         if (queryRef.current !== sentFor) return;
+        setLoadMoreFailed(false);
         setDogs((prev) => {
           const seen = new Set(prev.map((dog) => dog.id));
           const fresh = fetched.filter((dog) => !seen.has(dog.id));
           return fresh.length > 0 ? [...prev, ...fresh] : prev;
         });
       })
-      .catch((error) => Sentry.captureException(error))
+      .catch((error) => {
+        Sentry.captureException(error);
+        if (queryRef.current === sentFor) setLoadMoreFailed(true);
+      })
       .finally(() => setIsLoadingMore(false));
   }, [fetchDogs, isLoadingMore, queryString, dogs.length]);
 
@@ -284,13 +292,17 @@ export function SwipeContainer({
         if (queryRef.current !== sentFor) return;
         setDogs(fetched);
         setLoadFailed(false);
+        setLoadMoreFailed(false);
       })
       .catch((error) => {
         // On failure the current stack stays, from its first dog
         Sentry.captureException(error);
         if (queryRef.current === sentFor) setLoadFailed(true);
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        // A filter change meanwhile is loading its own stack; leave its spinner on
+        if (queryRef.current === sentFor) setIsLoading(false);
+      });
   }, [fetchDogs, queryString, setIndex]);
 
   // ← → browse, F saves, Enter opens the details (#499)
@@ -390,8 +402,8 @@ export function SwipeContainer({
           ) : atEnd ? (
             <EndOfStack
               empty={dogs.length === 0}
-              failed={loadFailed && dogs.length === 0}
-              onStartOver={startOver}
+              failed={(loadFailed && dogs.length === 0) || loadMoreFailed}
+              onStartOver={loadMoreFailed ? loadMore : startOver}
               onChangeFilters={() => setShowFilters(true)}
             />
           ) : (

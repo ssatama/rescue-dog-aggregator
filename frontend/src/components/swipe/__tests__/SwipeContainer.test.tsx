@@ -206,7 +206,12 @@ describe("SwipeContainer (#499)", () => {
     });
 
     it("keeps the stack when a request fails instead of saying nothing matches", async () => {
-      const fetchDogs = jest.fn().mockResolvedValueOnce(dogs).mockRejectedValue(new Error("down"));
+      let loads = 0;
+      const fetchDogs = jest.fn((query: string) => {
+        if (query.includes("offset=")) return Promise.resolve([]);
+        loads += 1;
+        return loads === 1 ? Promise.resolve(dogs) : Promise.reject(new Error("down"));
+      });
       render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
       await screen.findByText("Dog 1");
       for (let i = 0; i < 3; i++) {
@@ -313,6 +318,61 @@ describe("SwipeContainer (#499)", () => {
       });
       await act(async () => {
         resolveStartOver(dogs);
+      });
+      expect(current()).toBe("DE dog");
+    });
+
+    it("offers a retry, not the end, when the next page fails", async () => {
+      const fetchDogs = jest.fn().mockRejectedValue(new Error("down")).mockResolvedValueOnce(dogs);
+      render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      await screen.findByText("Dog 1");
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          fireEvent.keyDown(window, { key: "ArrowRight" });
+        });
+      }
+      expect(screen.getByRole("heading", { name: "We couldn't load the dogs" })).toBeInTheDocument();
+      expect(screen.queryByText("You've seen every dog here")).not.toBeInTheDocument();
+
+      fetchDogs.mockResolvedValueOnce([{ id: 4, name: "Dog 4" }]);
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+      });
+      expect(fetchDogs).toHaveBeenLastCalledWith("adoptable_to_country=UK&offset=3");
+      expect(current()).toBe("Dog 4");
+    });
+
+    it("keeps loading new filters when an earlier Start over finishes first", async () => {
+      let resolveDe: (value: Dog[]) => void = () => {};
+      let resolveStartOver: (value: Dog[]) => void = () => {};
+      let ukLoads = 0;
+      const fetchDogs = jest.fn((query: string) => {
+        if (query.includes("offset=")) return Promise.resolve([]);
+        if (query.includes("DE")) return new Promise<Dog[]>((resolve) => (resolveDe = resolve));
+        ukLoads += 1;
+        return ukLoads === 1 ? Promise.resolve(dogs) : new Promise<Dog[]>((resolve) => (resolveStartOver = resolve));
+      });
+      const { rerender } = render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      await screen.findByText("Dog 1");
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          fireEvent.keyDown(window, { key: "ArrowRight" });
+        });
+      }
+      fireEvent.click(screen.getByRole("button", { name: "Start over" }));
+
+      (useSwipeFilters as jest.Mock).mockReturnValue({ ...validFilters, toQueryString: () => "adoptable_to_country=DE" });
+      await act(async () => {
+        rerender(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      });
+      await act(async () => {
+        resolveStartOver(dogs);
+      });
+      expect(screen.getByLabelText("Loading dogs")).toBeInTheDocument();
+      expect(screen.queryByTestId("swipe-card")).not.toBeInTheDocument();
+
+      await act(async () => {
+        resolveDe([{ id: 20, name: "DE dog" }]);
       });
       expect(current()).toBe("DE dog");
     });
