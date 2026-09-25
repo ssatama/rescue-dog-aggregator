@@ -191,8 +191,28 @@ export default function DogsPageClientSimplified({
         initialParams?.age_category && "ageFilter",
         initialParams?.location_country && "locationCountryFilter",
         initialParams?.available_country && "availableCountryFilter",
-      ].filter(Boolean) as ("ageFilter" | "locationCountryFilter" | "availableCountryFilter")[],
-    [initialParams?.age_category, initialParams?.location_country, initialParams?.available_country],
+        initialParams?.primary_breed && "breedFilter",
+        initialParams?.breed_group && "breedGroupFilter",
+      ].filter(Boolean) as (
+        | "ageFilter"
+        | "locationCountryFilter"
+        | "availableCountryFilter"
+        | "breedFilter"
+        | "breedGroupFilter"
+      )[],
+    [
+      initialParams?.age_category,
+      initialParams?.location_country,
+      initialParams?.available_country,
+      initialParams?.primary_breed,
+      initialParams?.breed_group,
+    ],
+  );
+  // On a breed page the breed is the page's own, so there is no breed to pick
+  const breedIsFixed = Boolean(initialParams?.primary_breed || initialParams?.breed_group);
+  const drawerConfig = useMemo(
+    () => (breedIsFixed ? { ...CATALOG_DRAWER_CONFIG, showBreed: false } : CATALOG_DRAWER_CONFIG),
+    [breedIsFixed],
   );
 
   const { goodWithKidsFilter, goodWithDogsFilter, goodWithCatsFilter, firstTimeFriendlyFilter, energyFilter } =
@@ -215,8 +235,8 @@ export default function DogsPageClientSimplified({
       ageFilter: initialParams?.age_category || FILTER_DEFAULTS.AGE,
       sexFilter: FILTER_DEFAULTS.SEX,
       organizationFilter: FILTER_DEFAULTS.ORGANIZATION,
-      breedFilter: FILTER_DEFAULTS.BREED,
-      breedGroupFilter: FILTER_DEFAULTS.GROUP,
+      breedFilter: initialParams?.primary_breed || FILTER_DEFAULTS.BREED,
+      breedGroupFilter: initialParams?.breed_group || FILTER_DEFAULTS.GROUP,
       locationCountryFilter: initialParams?.location_country || FILTER_DEFAULTS.COUNTRY,
       availableCountryFilter: initialParams?.available_country || FILTER_DEFAULTS.COUNTRY,
       availableRegionFilter: FILTER_DEFAULTS.REGION,
@@ -236,7 +256,7 @@ export default function DogsPageClientSimplified({
     router.replace(sort === FILTER_DEFAULTS.SORT ? pathname : `${pathname}?sort=${sort}`, { scroll: false });
     scrollPositionRef.current = 0;
     pagination.resetAll(defaultFilters);
-  }, [router, pathname, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, filterState, saveScrollPosition, scrollPositionRef, pagination]);
+  }, [router, pathname, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, initialParams?.primary_breed, initialParams?.breed_group, filterState, saveScrollPosition, scrollPositionRef, pagination]);
 
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Find Dogs" }];
 
@@ -371,13 +391,15 @@ export default function DogsPageClientSimplified({
                   { id: null, name: "Any organization" },
                 ]
               }
-              // Breed (using actual filter state like Name filter)
-              standardizedBreedFilter={filterState.filters.breedFilter}
+              // Breed (using actual filter state like Name filter). A breed
+              // page's own breed is hidden here and not counted as active
+              standardizedBreedFilter={breedIsFixed ? FILTER_DEFAULTS.BREED : filterState.filters.breedFilter}
               setStandardizedBreedFilter={handleBreedChange}
               handleBreedSearch={handleBreedTyped}
               handleBreedClear={handleBreedClear}
               handleBreedValueChange={handleBreedTyped}
               standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
+              showBreed={!breedIsFixed}
               // Pet Details
               sexFilter={filterState.filters.sexFilter}
               setSexFilter={(value: string) => handleFilterChange("sexFilter", value)}
@@ -521,7 +543,7 @@ export default function DogsPageClientSimplified({
         onClose={() => setIsSheetOpen(false)}
         // Search is edited in the field at the top of the page
         searchQuery={filterState.filters.searchQuery}
-        filterConfig={CATALOG_DRAWER_CONFIG}
+        filterConfig={drawerConfig}
         // Organization
         organizationFilter={filterState.filters.organizationFilter}
         setOrganizationFilter={(value: string) =>

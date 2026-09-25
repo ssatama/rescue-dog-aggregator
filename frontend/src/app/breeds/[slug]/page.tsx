@@ -11,7 +11,9 @@ import {
   getAnimals,
   getBreedStats,
   getBreedCounts,
+  getAllMetadata,
 } from "@/services/serverAnimalsService";
+import { FILTER_DEFAULTS } from "@/constants/filters";
 import { logger, reportError } from "@/utils/logger";
 
 interface BreedPageProps {
@@ -143,12 +145,14 @@ async function fetchBreedPageData(slug: string) {
   }
 
   const breedFilter = slug === "mixed" ? { breed_group: "Mixed" } : { primary_breed: breedData.primary_breed };
-  const [initialDogs, breedCounts] = await Promise.all([
-    getAnimals({ ...breedFilter, limit: 12, offset: 0 }),
+  // The catalog's first page, in its default order
+  const [initialDogs, breedCounts, metadata] = await Promise.all([
+    getAnimals({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
     getBreedCounts(breedFilter),
+    getAllMetadata(),
   ]);
 
-  return { breedData, initialDogs, breedCounts };
+  return { breedData, initialDogs, breedCounts, metadata };
 }
 
 export default async function BreedDetailPage(props: BreedPageProps) {
@@ -159,7 +163,7 @@ export default async function BreedDetailPage(props: BreedPageProps) {
     notFound();
   }
 
-  const { breedData, initialDogs, breedCounts } = data;
+  const { breedData, initialDogs, breedCounts, metadata } = data;
 
   return (
     <Layout>
@@ -182,6 +186,7 @@ export default async function BreedDetailPage(props: BreedPageProps) {
             initialBreedData={breedData}
             initialDogs={initialDogs}
             breedCounts={breedCounts}
+            metadata={metadata}
             lastUpdated={new Date().toISOString()}
           />
         </Suspense>

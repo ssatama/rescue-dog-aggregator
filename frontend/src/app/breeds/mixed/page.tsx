@@ -10,7 +10,9 @@ import {
   getBreedBySlug,
   getAnimals,
   getBreedCounts,
+  getAllMetadata,
 } from "@/services/serverAnimalsService";
+import { FILTER_DEFAULTS } from "@/constants/filters";
 import { logger, reportError } from "@/utils/logger";
 
 export const revalidate = 604800;
@@ -107,12 +109,14 @@ async function fetchMixedBreedData() {
     return null;
   }
 
-  const [initialDogs, breedCounts] = await Promise.all([
-    getAnimals({ breed_group: "Mixed", limit: 12, offset: 0 }),
+  // The catalog's first page, in its default order
+  const [initialDogs, breedCounts, metadata] = await Promise.all([
+    getAnimals({ breed_group: "Mixed", sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
     getBreedCounts({ breed_group: "Mixed" }),
+    getAllMetadata(),
   ]);
 
-  return { breedData, initialDogs, breedCounts };
+  return { breedData, initialDogs, breedCounts, metadata };
 }
 
 export default async function MixedBreedsPage() {
@@ -122,7 +126,7 @@ export default async function MixedBreedsPage() {
     notFound();
   }
 
-  const { breedData, initialDogs, breedCounts } = data;
+  const { breedData, initialDogs, breedCounts, metadata } = data;
 
   // The same frame as every other breed page: the site header was missing here
   return (
@@ -138,6 +142,7 @@ export default async function MixedBreedsPage() {
             initialBreedData={breedData}
             initialDogs={initialDogs}
             breedCounts={breedCounts}
+            metadata={metadata}
           />
         </Suspense>
       </ErrorBoundary>

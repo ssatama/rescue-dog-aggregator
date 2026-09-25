@@ -18,6 +18,9 @@ export interface DogsPageInitialParams {
   age_category?: string;
   location_country?: string;
   available_country?: string;
+  /** A breed page's own breed (its primary_breed) or group (#500) */
+  primary_breed?: string;
+  breed_group?: string;
 }
 
 export interface Filters {
