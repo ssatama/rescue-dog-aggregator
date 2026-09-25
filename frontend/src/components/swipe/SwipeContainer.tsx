@@ -127,7 +127,11 @@ export function SwipeContainer({
   const showOnboarding = needsOnboardingProp ?? needsOnboardingFromHook;
 
   const [dogs, setDogs] = useState<Dog[]>(() => initialDogs ?? []);
-  const [currentIndex, setCurrentIndex] = useState(() => safeStorage.parse("swipeCurrentIndex", 0));
+  // Only a position inside the first page can be restored: later pages aren't loaded yet
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    const saved = safeStorage.parse("swipeCurrentIndex", 0);
+    return !initialDogs || saved < initialDogs.length ? saved : 0;
+  });
   const [isLoading, setIsLoading] = useState(!initialDogs);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -166,18 +170,17 @@ export function SwipeContainer({
     if (!isValid || !fetchDogs || !queryString) return;
     let cancelled = false;
 
+    const restore = restorePosition.current;
+    restorePosition.current = false;
     const loadDogs = async () => {
       setIsLoading(true);
       try {
         const fetched = await fetchDogs(queryString);
         if (cancelled) return;
-        const restore = restorePosition.current;
-        restorePosition.current = false;
         setDogs(fetched);
         setLoadFailed(false);
-        // Up to fetched.length: a visitor who had reached the end stays there
         setCurrentIndex((prev) => {
-          const index = restore ? Math.min(prev, fetched.length) : 0;
+          const index = restore && prev < fetched.length ? prev : 0;
           safeStorage.set("swipeCurrentIndex", String(index));
           return index;
         });
@@ -188,9 +191,16 @@ export function SwipeContainer({
           data: { dogCount: fetched.length },
         });
       } catch (error) {
-        // Keep whatever stack is showing rather than an empty "no matches"
+        // On the first load the server's stack for these filters stays. After a
+        // filter change the old stack no longer matches the pills, so clear it
+        // and offer a retry, never an empty "no matches"
         Sentry.captureException(error);
-        if (!cancelled) setLoadFailed(true);
+        if (cancelled) return;
+        setLoadFailed(true);
+        if (!restore) {
+          setDogs([]);
+          setIndex(0);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -200,6 +210,7 @@ export function SwipeContainer({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setIndex is stable
   }, [isValid, queryString, fetchDogs]);
 
   // The filters the stack on screen belongs to, for requests still in flight
@@ -266,15 +277,18 @@ export function SwipeContainer({
     setIndex(0);
     if (!fetchDogs || !queryString) return;
     setIsLoading(true);
+    const sentFor = queryString;
     fetchDogs(queryString)
       .then((fetched) => {
+        // Filters changed meanwhile: their own fetch owns the stack now
+        if (queryRef.current !== sentFor) return;
         setDogs(fetched);
         setLoadFailed(false);
       })
       .catch((error) => {
         // On failure the current stack stays, from its first dog
         Sentry.captureException(error);
-        setLoadFailed(true);
+        if (queryRef.current === sentFor) setLoadFailed(true);
       })
       .finally(() => setIsLoading(false));
   }, [fetchDogs, queryString, setIndex]);

@@ -7,6 +7,7 @@ import SwipeErrorBoundary from "../../components/swipe/SwipeErrorBoundary";
 import { useSwipeDevice } from "../../hooks/useSwipeDevice";
 import { swipeMetrics } from "../../utils/swipeMetrics";
 import { get } from "../../utils/api";
+import { queryToParams } from "../../utils/queryParams";
 import { type Dog } from "../../types/dog";
 import type { ApiDog } from "../../types/apiDog";
 import { transformApiDogsToDogs } from "../../utils/dogTransformer";
@@ -98,8 +99,7 @@ export default function SwipePageClient({
   const fetchDogsWithFilters = useCallback(
     async (queryString: string): Promise<Dog[]> => {
       // Errors propagate: an empty list would read as "no dogs match" (#499)
-      const params = Object.fromEntries(new URLSearchParams(queryString));
-      const data = await get<{ dogs?: ApiDog[] }>("/api/dogs/swipe", params);
+      const data = await get<{ dogs?: ApiDog[] }>("/api/dogs/swipe", queryToParams(queryString));
       return transformApiDogsToDogs(data.dogs || []);
     },
     [],

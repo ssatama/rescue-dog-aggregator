@@ -258,5 +258,63 @@ describe("SwipeContainer (#499)", () => {
       }
       expect(screen.queryByText("Old filters dog")).not.toBeInTheDocument();
     });
+
+    it("starts at the top when the saved position is past the first page", async () => {
+      localStorage.setItem("swipeCurrentIndex", "35");
+      const fetchDogs = jest.fn().mockResolvedValue(dogs);
+      render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      expect(await screen.findByText("Dog 1")).toBeInTheDocument();
+      expect(screen.queryByTestId("swipe-end")).not.toBeInTheDocument();
+    });
+
+    it("restores a saved position inside the first page", async () => {
+      localStorage.setItem("swipeCurrentIndex", "2");
+      const fetchDogs = jest.fn().mockResolvedValue(dogs);
+      render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      expect(await screen.findByText("Dog 3")).toBeInTheDocument();
+    });
+
+    it("clears the old stack when the fetch for new filters fails", async () => {
+      const fetchDogs = jest.fn().mockResolvedValueOnce(dogs).mockRejectedValue(new Error("down"));
+      const { rerender } = render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      await screen.findByText("Dog 1");
+
+      (useSwipeFilters as jest.Mock).mockReturnValue({ ...validFilters, toQueryString: () => "adoptable_to_country=DE" });
+      await act(async () => {
+        rerender(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      });
+      expect(screen.queryByTestId("swipe-card")).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "We couldn't load the dogs" })).toBeInTheDocument();
+    });
+
+    it("ignores a Start over response that lands after the filters changed", async () => {
+      let resolveStartOver: (value: Dog[]) => void = () => {};
+      const deDogs: Dog[] = [{ id: 20, name: "DE dog" }];
+      let ukLoads = 0;
+      const fetchDogs = jest.fn((query: string) => {
+        if (query.includes("offset=")) return Promise.resolve([]);
+        if (query.includes("DE")) return Promise.resolve(deDogs);
+        ukLoads += 1;
+        // The first UK load fills the stack; the second is Start over, held back
+        return ukLoads === 1 ? Promise.resolve(dogs) : new Promise<Dog[]>((resolve) => (resolveStartOver = resolve));
+      });
+      const { rerender } = render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      await screen.findByText("Dog 1");
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          fireEvent.keyDown(window, { key: "ArrowRight" });
+        });
+      }
+      fireEvent.click(screen.getByRole("button", { name: "Start over" }));
+
+      (useSwipeFilters as jest.Mock).mockReturnValue({ ...validFilters, toQueryString: () => "adoptable_to_country=DE" });
+      await act(async () => {
+        rerender(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      });
+      await act(async () => {
+        resolveStartOver(dogs);
+      });
+      expect(current()).toBe("DE dog");
+    });
   });
 });
