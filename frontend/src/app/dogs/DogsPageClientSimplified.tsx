@@ -344,8 +344,9 @@ export default function DogsPageClientSimplified({
         data-testid="dogs-page-container"
         className="mx-auto max-w-7xl py-6 sm:px-2 lg:px-4 lg:py-8"
       >
-        {/* Phones: the header has no search field, so it sits at the top */}
-        <GlobalSearch surface="mobile" className="mb-4 sm:hidden" />
+        {/* Phones: the header has no search field, so it sits at the top. Not
+            on a breed page: its search would leave for /dogs and the breed */}
+        {!breedIsFixed && <GlobalSearch surface="mobile" className="mb-4 sm:hidden" />}
 
         {/* Desktop Breadcrumbs - Hidden on Mobile */}
         {!hideBreadcrumbs && (
@@ -497,12 +498,20 @@ export default function DogsPageClientSimplified({
               )}
 
               {/* Empty state */}
-              {!pagination.loading && pagination.dogs.length === 0 && (
-                <EmptyState
-                  variant="noDogsFiltered"
-                  onClearFilters={handleResetFilters}
-                />
-              )}
+              {!pagination.loading && pagination.dogs.length === 0 &&
+                (breedIsFixed && filterState.activeFilterCount === 0 ? (
+                  // Nothing to clear: the breed itself has no dogs listed now
+                  <EmptyState
+                    title="None listed right now"
+                    description="Rescues add new dogs three times a week. Every other dog is in the catalog."
+                    actionButton={{ text: "Browse all dogs", onClick: () => router.push("/dogs") }}
+                  />
+                ) : (
+                  <EmptyState
+                    variant="noDogsFiltered"
+                    onClearFilters={handleResetFilters}
+                  />
+                ))}
 
               <div>
                 {pagination.hasMore && !pagination.loading && pagination.dogs.length > 0 && (
