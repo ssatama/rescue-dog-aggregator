@@ -59,6 +59,17 @@ export function forgetDogs(ids: number[]): void {
   write(snapshots);
 }
 
+/** Drops snapshots of dogs no longer saved: removals the page never saw
+ * (another tab, a shared link) or a fetch that resolved after a removal. */
+export function pruneSnapshots(savedIds: number[]): void {
+  const saved = new Set(savedIds.map(String));
+  const snapshots = readSnapshots();
+  const stale = Object.keys(snapshots).filter((id) => !saved.has(id));
+  if (stale.length === 0) return;
+  for (const id of stale) delete snapshots[id];
+  write(snapshots);
+}
+
 /** A saved dog the API returned nothing for, rebuilt from its snapshot. */
 export function dogFromSnapshot(id: number, snapshot: FavoriteSnapshot): Dog {
   return {

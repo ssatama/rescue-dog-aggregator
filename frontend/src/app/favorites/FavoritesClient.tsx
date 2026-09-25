@@ -22,7 +22,7 @@ import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
 import { trackAdoptionLinkClicked, trackFavoritesViewed } from "@/lib/analytics";
 import { useVisitorLocation } from "@/lib/visitorLocation";
 import { catalogCountryValue } from "@/utils/adoptability";
-import { dogFromSnapshot, readSnapshots, rememberDogs } from "@/utils/favoriteSnapshots";
+import { dogFromSnapshot, pruneSnapshots, readSnapshots, rememberDogs } from "@/utils/favoriteSnapshots";
 import { safeExternalUrl } from "@/utils/security";
 import { dogCountLabel } from "@/utils/formatCount";
 import { getAnimalsByIds, getAvailableCountries, getFilterCounts } from "../../services/animalsService";
@@ -118,6 +118,11 @@ function FavoritesPageContent(): React.JSX.Element {
   const [missing, setMissing] = useState<Map<number, Dog>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
   const requested = useRef(new Set<number>());
+  // The saved ids when a fetch resolves, which may differ from when it started
+  const favoritesRef = useRef(favorites);
+  useEffect(() => {
+    favoritesRef.current = favorites;
+  }, [favorites]);
   const [filterIds, setFilterIds] = useState<Set<string | number> | null>(null);
   const [showCompareMode, setShowCompareMode] = useState(false);
 
@@ -160,6 +165,7 @@ function FavoritesPageContent(): React.JSX.Element {
         rememberDogs(dogs);
         const returned = new Set(dogs.map((dog) => Number(dog.id)));
         const snapshots = readSnapshots();
+        pruneSnapshots(favoritesRef.current);
         setFetched((prev) => new Map([...prev, ...dogs.map((dog): [number, Dog] => [Number(dog.id), dog])]));
         setMissing(
           (prev) =>
