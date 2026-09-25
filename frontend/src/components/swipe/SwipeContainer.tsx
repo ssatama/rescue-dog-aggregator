@@ -141,6 +141,8 @@ export function SwipeContainer({
   const dragged = useRef(false);
   // The first load restores the saved position; new filters start at the top
   const restorePosition = useRef(true);
+  // Counts stack loads, so a next page that lands after a reload is dropped
+  const stackLoads = useRef(0);
 
   const onDogsLoadedRef = useRef(onDogsLoaded);
   useEffect(() => {
@@ -174,8 +176,10 @@ export function SwipeContainer({
 
     const restore = restorePosition.current;
     restorePosition.current = false;
+    stackLoads.current += 1;
     const loadDogs = async () => {
       setIsLoading(true);
+      setIsLoadingMore(false);
       try {
         const fetched = await fetchDogs(queryString);
         if (cancelled) return;
@@ -228,11 +232,12 @@ export function SwipeContainer({
   const loadMore = useCallback(() => {
     if (!fetchDogs || isLoadingMore || !queryString) return;
     setIsLoadingMore(true);
-    const sentFor = queryString;
+    const load = stackLoads.current;
     fetchDogs(`${queryString}&offset=${dogs.length}`)
       .then((fetched) => {
-        // Filters changed meanwhile: these dogs belong to the old stack
-        if (queryRef.current !== sentFor) return;
+        // The stack was reloaded meanwhile (new filters, even ones changed and
+        // changed back, or Start over): this page belongs to the old one
+        if (stackLoads.current !== load) return;
         setLoadMoreFailed(false);
         setDogs((prev) => {
           const seen = new Set(prev.map((dog) => dog.id));
@@ -242,9 +247,11 @@ export function SwipeContainer({
       })
       .catch((error) => {
         Sentry.captureException(error);
-        if (queryRef.current === sentFor) setLoadMoreFailed(true);
+        if (stackLoads.current === load) setLoadMoreFailed(true);
       })
-      .finally(() => setIsLoadingMore(false));
+      .finally(() => {
+        if (stackLoads.current === load) setIsLoadingMore(false);
+      });
   }, [fetchDogs, isLoadingMore, queryString, dogs.length]);
 
   const currentDog: Dog | undefined = dogs[currentIndex];
@@ -284,7 +291,9 @@ export function SwipeContainer({
   const startOver = useCallback(() => {
     setIndex(0);
     if (!fetchDogs || !queryString) return;
+    stackLoads.current += 1;
     setIsLoading(true);
+    setIsLoadingMore(false);
     const sentFor = queryString;
     fetchDogs(queryString)
       .then((fetched) => {

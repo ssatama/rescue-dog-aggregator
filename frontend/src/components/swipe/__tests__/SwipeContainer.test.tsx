@@ -264,6 +264,42 @@ describe("SwipeContainer (#499)", () => {
       expect(screen.queryByText("Old filters dog")).not.toBeInTheDocument();
     });
 
+    it("drops a load-more response when the filters changed and changed back", async () => {
+      let resolveMore: (value: Dog[]) => void = () => {};
+      let pending = true;
+      const fetchDogs = jest.fn((query: string) => {
+        if (!query.includes("offset=")) return Promise.resolve(dogs);
+        if (!pending) return Promise.resolve([]);
+        pending = false;
+        return new Promise<Dog[]>((resolve) => (resolveMore = resolve));
+      });
+      const { rerender } = render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      await screen.findByText("Dog 1");
+      await act(async () => {
+        fireEvent.keyDown(window, { key: "ArrowRight" });
+      });
+
+      for (const country of ["DE", "UK"]) {
+        (useSwipeFilters as jest.Mock).mockReturnValue({
+          ...validFilters,
+          toQueryString: () => `adoptable_to_country=${country}`,
+        });
+        await act(async () => {
+          rerender(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+        });
+      }
+      await act(async () => {
+        resolveMore([{ id: 9, name: "Stale page dog" }]);
+      });
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          fireEvent.keyDown(window, { key: "ArrowRight" });
+        });
+      }
+      expect(screen.queryByText("Stale page dog")).not.toBeInTheDocument();
+      expect(screen.getByTestId("swipe-end")).toBeInTheDocument();
+    });
+
     it("starts at the top when the saved position is past the first page", async () => {
       localStorage.setItem("swipeCurrentIndex", "35");
       const fetchDogs = jest.fn().mockResolvedValue(dogs);
