@@ -1573,6 +1573,19 @@ class AnimalService:
                 ORDER BY a.organization_id, (abs(hashtext(a.id::text || to_char(now(), 'IYYY-IW'))) %% 1000)
                 LIMIT %s OFFSET %s
             """
+        elif filters.curation_type == "longest_waiting":
+            # Each rescue's longest-listed dog, longest first: the plain
+            # "oldest" sort is one rescue's backlog for the first hundred dogs
+            one_per_rescue = query_base.replace("SELECT DISTINCT", "SELECT DISTINCT ON (a.organization_id)", 1)
+            query = f"""
+                SELECT * FROM (
+                    {one_per_rescue}{joins}
+                    WHERE {where_clause}
+                    ORDER BY a.organization_id, a.created_at ASC, a.id ASC
+                ) longest
+                ORDER BY longest.created_at ASC, longest.id ASC
+                LIMIT %s OFFSET %s
+            """
         elif filters.sort == "recommended":
             # Rank and page the ids alone, then load the full rows for that page:
             # ranking the full rows costs a DISTINCT over every listed dog

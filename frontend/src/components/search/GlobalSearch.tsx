@@ -33,8 +33,9 @@ interface Results {
 }
 
 interface GlobalSearchProps {
-  /** "header" also listens for ⌘K / Ctrl+K and "/" to focus the field. */
-  surface: "header" | "mobile";
+  /** "header" and "home" (the home hero's big field, which stands in for the
+   * header's there) also listen for ⌘K / Ctrl+K and "/" to focus the field. */
+  surface: "header" | "mobile" | "home";
   className?: string;
 }
 
@@ -192,7 +193,7 @@ export default function GlobalSearch({ surface, className = "" }: GlobalSearchPr
   }, [activeIndex, optionId]);
 
   useEffect(() => {
-    if (surface !== "header") return;
+    if (surface === "mobile") return;
     setShortcut(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘K" : "Ctrl K");
     const onKeyDown = (event: KeyboardEvent): void => {
       const isShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
@@ -274,8 +275,14 @@ export default function GlobalSearch({ surface, className = "" }: GlobalSearchPr
         <label htmlFor={`${id}-input`} className="sr-only">
           Search breeds, rescues and dogs
         </label>
-        <div className="flex h-10 items-center gap-2 rounded-lg border border-border bg-muted/60 px-3 text-muted-foreground transition-colors focus-within:border-ring focus-within:bg-background focus-within:ring-2 focus-within:ring-ring/25">
-          <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <div
+          className={`flex items-center gap-2 border text-muted-foreground transition-colors focus-within:border-ring focus-within:bg-background focus-within:ring-2 focus-within:ring-ring/25 ${
+            surface === "home"
+              ? "h-12 rounded-xl border-line bg-surface px-4 shadow-sm sm:h-14"
+              : "h-10 rounded-lg border-border bg-muted/60 px-3"
+          }`}
+        >
+          <Search className={`shrink-0 ${surface === "home" ? "h-5 w-5" : "h-4 w-4"}`} aria-hidden="true" />
           <input
             ref={inputRef}
             id={`${id}-input`}
@@ -289,7 +296,7 @@ export default function GlobalSearch({ surface, className = "" }: GlobalSearchPr
             autoCorrect="off"
             spellCheck={false}
             enterKeyHint="search"
-            placeholder="Search breeds, rescues or names"
+            placeholder={surface === "home" ? "Try “staffy”, “lurcher” or “Dogs Trust”" : "Search breeds, rescues or names"}
             value={text}
             onChange={(event) => {
               setText(event.target.value);
@@ -302,7 +309,7 @@ export default function GlobalSearch({ surface, className = "" }: GlobalSearchPr
               if (results?.data === null) setResults(null);
             }}
             onKeyDown={onKeyDown}
-            className="h-full min-w-0 flex-1 border-0 bg-transparent text-base text-foreground shadow-none placeholder:text-muted-foreground focus:border-0 focus:outline-none focus:ring-0 sm:text-sm"
+            className={`h-full min-w-0 flex-1 border-0 bg-transparent text-base text-foreground shadow-none placeholder:text-muted-foreground focus:border-0 focus:outline-none focus:ring-0 ${surface === "home" ? "" : "sm:text-sm"}`}
           />
           {text ? (
             <button
@@ -370,7 +377,7 @@ export default function GlobalSearch({ surface, className = "" }: GlobalSearchPr
             {failed ? "Suggestions aren't available right now." : `No breeds, rescues or dogs match “${query}”.`}
           </p>
         )}
-        {surface === "header" && (
+        {surface !== "mobile" && (
           <p aria-hidden="true" className="hidden gap-3 border-t border-border px-3.5 py-2 text-[11px] text-muted-foreground lg:flex">
             <span><kbd className="font-mono">↑</kbd> <kbd className="font-mono">↓</kbd> choose</span>
             <span><kbd className="font-mono">↵</kbd> open</span>

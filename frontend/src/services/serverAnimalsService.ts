@@ -432,29 +432,6 @@ export const getAnimalsByCuration = cache(
   [],
 );
 
-interface HomePageData {
-  statistics: z.infer<typeof StatisticsSchema>;
-  recentDogs: Dog[];
-  diverseDogs: Dog[];
-  fetchedAt: string;
-  error?: boolean;
-}
-
-export async function getHomePageData(): Promise<HomePageData> {
-  const [statistics, recentDogs, diverseDogs] = await Promise.all([
-    getStatistics(),
-    getAnimalsByCuration("recent", 8),
-    getAnimalsByCuration("diverse", 4),
-  ]);
-
-  return {
-    statistics,
-    recentDogs,
-    diverseDogs,
-    fetchedAt: new Date().toISOString(),
-  };
-}
-
 interface AllMetadata {
   standardizedBreeds: string[];
   locationCountries: string[];

@@ -400,13 +400,6 @@
     );
   }
 
-  /* Dark mode hero gradient - subtle dark tones matching organization pages */
-  & .hero-gradient {
-    background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #4b5563 100%);
-    background-size: 400% 400%;
-    animation: gradient-shift 20s ease infinite;
-  }
-
   /* Dark mode variant for skeleton element */
   & .skeleton-element {
     background: linear-gradient(
@@ -553,46 +546,6 @@
 @utility skeleton-shimmer {
   /* DEPRECATED: Use .skeleton-element instead */
   animation: skeleton-shimmer 2s ease-in-out infinite;
-}
-
-@utility bg-dot-pattern {
-  /* Dot pattern background for Trust Section */
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    rgb(229 231 235 / 0.5) 1px,
-    transparent 1px
-  );
-  background-size: 20px 20px;
-}
-
-@utility hero-gradient {
-  /* Hero gradient background - peach/cream tones */
-  background: linear-gradient(
-    135deg,
-    #fef7ed 0%,
-    #fed7aa 30%,
-    #fdba74 60%,
-    #f97316 100%
-  );
-  background-size: 400% 400%;
-  animation: gradient-shift 20s ease infinite;
-
-  /* Dark mode hero gradient - subtle dark tones matching organization pages */
-  .dark & {
-    background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #4b5563 100%);
-    background-size: 400% 400%;
-    animation: gradient-shift 20s ease infinite;
-  }
-  @media (max-width: 768px) {
-    background-size: 300% 300%;
-  }
-  @media (prefers-contrast: high) {
-    background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 50%, #e5e7eb 100%);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-    background: #fef7ed; /* Static background */
-  }
 }
 
 @utility animate-pulse-dot {
@@ -2608,15 +2561,6 @@
     }
   }
 
-  @keyframes gradient-shift {
-    0%,
-    100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-  }
   @keyframes pulse-dot {
     0%,
     100% {

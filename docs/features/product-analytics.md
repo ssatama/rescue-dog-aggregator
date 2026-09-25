@@ -46,7 +46,7 @@ events:
 | `dog_card_clicked` | Dog card in any list | `dog_id`, `position`, `list_context` |
 | `dog_favorited` / `dog_unfavorited` | `FavoritesContext`, so it covers the heart button, modal and swipe-right | `dog_id` |
 | `favorites_viewed` | /favorites, after favorites load | `favorites_count` |
-| `search_performed` | Dog-name search box, on Enter or a picked suggestion: /dogs sidebar (`catalog`) and the filter drawer on /dogs and breed pages (`mobile`). The global header search (#492) will send `header` | `surface` (`header` / `catalog` / `mobile`), `result_group_chosen` (`breed` / `rescue` / `dog` / `filter` / `none`), `result_count` |
+| `search_performed` | A search box, on Enter or a picked suggestion: the global search in the header (`header`), at the top of /dogs on phones (`mobile`) and in the home hero (`home`, #497); the dog-name box in the /dogs sidebar (`catalog`) and in the filter drawer on /dogs and breed pages (`mobile`) | `surface` (`header` / `catalog` / `mobile` / `home`), `result_group_chosen` (`breed` / `rescue` / `dog` / `filter` / `none`), `result_count` |
 | `filter_applied` | /dogs, breed pages, org pages (desktop and mobile drawer) | `filter`, `value`, `result_count`, `surface` (`catalog` / `breed_page` / `org_page`) |
 | `sort_changed` | Sort control in `DogFilters` (hidden on org pages today) | `sort` |
 | `gallery_photo_viewed` | Dog detail page: photo 1 on load, then each other photo once, after the gallery settles on it (arrows, thumbnails, keys, swipe, full screen) | `dog_id`, `index` (0-based), `total` |

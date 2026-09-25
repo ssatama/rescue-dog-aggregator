@@ -1,13 +1,20 @@
 import { formatCount } from "@/utils/formatCount";
 import type { Metadata } from "next";
-import type { OrganizationCardData } from "../types/organizationComponents";
 import Layout from "../components/layout/Layout";
-import ErrorBoundary from "../components/ui/ErrorBoundary";
-import HeroSection from "../components/home/HeroSection";
-import ClientHomePage from "../components/home/ClientHomePage";
-import { getHomePageData, getCountryStats, getAgeStats } from "../services/serverAnimalsService";
-import { getBreedsWithImagesForHomePage } from "../services/breedImagesService";
-import { getEnhancedOrganizationsSSR } from "../services/organizationsService";
+import HomeHero from "../components/home/HomeHero";
+import AdoptableNowRow from "../components/home/AdoptableNowRow";
+import HomeDogRow from "../components/home/HomeDogRow";
+import { HOME_ROW_DOGS } from "../constants/layout";
+import AgeEntryPoints from "../components/home/AgeEntryPoints";
+import RescuesStrip from "../components/home/RescuesStrip";
+import GuidesTeaser from "../components/home/GuidesTeaser";
+import {
+  getAgeStats,
+  getAnimals,
+  getAnimalsByCuration,
+  getStatistics,
+} from "../services/serverAnimalsService";
+import { getAllGuides } from "../lib/guides";
 import { reportError } from "../utils/logger";
 
 export const revalidate = 21600;
@@ -15,8 +22,7 @@ export const revalidate = 21600;
 export async function generateMetadata(): Promise<Metadata> {
   let stats: { total_dogs?: number; total_organizations?: number } = {};
   try {
-    const data = await getHomePageData();
-    stats = data.statistics || stats;
+    stats = await getStatistics();
   } catch (e) {
     reportError(e, { context: "metadata_generation", component: "Home" });
   }
@@ -30,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: hasStats
       ? `Find Rescue Dogs | ${formatCount(totalDogs)}+ Dogs Available`
-      : "Find Rescue Dogs from Across Europe | Rescue Dog Aggregator",
+      : "Find Rescue Dogs from Across Europe | rescuedogs.me",
     description: hasStats
       ? `Browse ${formatCount(totalDogs)}+ rescue dogs from ${totalOrgs} European organizations. Filter by breed, size, age and location to find your companion.`
       : "Browse rescue dogs from verified European organizations. Filter by breed, size, age and location to find your companion.",
@@ -55,80 +61,60 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home(): Promise<React.JSX.Element> {
-  // Fetch all data in parallel for optimal performance
-  const fallbackHomePageData = {
-    statistics: {
-      total_dogs: 0,
-      total_organizations: 0,
-      countries: [],
-      organizations: [],
-    },
-    recentDogs: [],
-    diverseDogs: [],
-  };
+  const [statistics, lookingForHomes, waitingLongest, ageStats, guides] = await Promise.all([
+    getStatistics(),
+    // Rescues dealt out in turn, so one rescue's latest batch cannot fill the row
+    getAnimals({ sort: "recommended", limit: HOME_ROW_DOGS, animal_type: "dog", status: "available" }),
+    // Each rescue's longest-listed dog, longest first
+    getAnimalsByCuration("longest_waiting", HOME_ROW_DOGS),
+    getAgeStats(),
+    getAllGuides(),
+  ]);
 
-  const [homePageData, breedsWithImages, organizations, countryData, ageData] =
-    await Promise.all([
-      getHomePageData().catch((error) => {
-        reportError(error, { context: "homepage_data_fetch", component: "Home" });
-        return fallbackHomePageData;
-      }),
-      getBreedsWithImagesForHomePage({ minCount: 5, limit: 20 }).catch(
-        (error) => {
-          reportError(error, { context: "breeds_with_images_fetch", component: "Home" });
-          return null;
-        }
-      ),
-      getEnhancedOrganizationsSSR().catch((error) => {
-        reportError(error, { context: "organizations_fetch", component: "Home" });
-        return [];
-      }),
-      getCountryStats().catch((error) => {
-        reportError(error, { context: "country_stats_fetch", component: "Home" });
-        return { countries: [] };
-      }),
-      getAgeStats().catch((error) => {
-        reportError(error, { context: "age_stats_fetch", component: "Home" });
-        return { ageCategories: [] };
-      }),
-    ]);
+  // The service answers a failed fetch with empty lists and zero counts. This
+  // page is cached for hours, so a home without dogs or statistics must fail the
+  // render instead: ISR keeps serving the last good page, and a Vercel build that
+  // hits the API mid-deploy fails rather than shipping it. Only CI, which builds
+  // with no API at all, renders it anyway.
+  if (
+    (statistics.total_dogs === 0 || lookingForHomes.length === 0 || waitingLongest.length === 0) &&
+    process.env.GITHUB_ACTIONS !== "true"
+  ) {
+    throw new Error("Home: no dogs or statistics came back from the API");
+  }
 
-  const { statistics, recentDogs } = homePageData;
-  const countryStats = countryData?.countries || [];
-  const ageStats = ageData?.ageCategories || [];
-
-  const fallbackStats = {
-    total_dogs: 0,
-    total_organizations: 0,
-    countries: [],
-    organizations: [],
-  };
-
-  const heroStats = statistics ?? fallbackStats;
-  const heroPreviewDogs = recentDogs?.slice(0, 3) ?? [];
-  const firstDogImage = heroPreviewDogs[0]?.primary_image_url;
+  const rescues = statistics.organizations ?? [];
+  const age = (slug: string): number =>
+    ageStats.ageCategories.find((category) => category.slug === slug)?.count ?? 0;
+  const oldestListing = waitingLongest[0]?.created_at;
+  const waitingSince = oldestListing
+    ? new Date(oldestListing).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" })
+    : null;
 
   return (
     <Layout>
-      {firstDogImage && (
-        <link rel="preload" as="image" href={firstDogImage} />
-      )}
-      <div className="hidden sm:block">
-        <ErrorBoundary fallbackMessage="Unable to load hero section. Please refresh the page.">
-          <HeroSection
-            statistics={heroStats}
-            previewDogs={heroPreviewDogs}
-          />
-        </ErrorBoundary>
+      <HomeHero totalDogs={statistics.total_dogs} totalRescues={statistics.total_organizations} />
+      <div className="mx-auto grid max-w-7xl gap-10 pt-2 sm:gap-12 sm:px-2 lg:px-4">
+        <AdoptableNowRow dogs={lookingForHomes} totalDogs={statistics.total_dogs} rescues={rescues} />
+        <HomeDogRow
+          id="home-waiting"
+          title="Waiting longest"
+          meta={waitingSince ? `Some listed since ${waitingSince}` : null}
+          href="/dogs?sort=oldest"
+          linkLabel="See all"
+          dogs={waitingLongest}
+        />
+        <AgeEntryPoints puppies={age("puppies")} seniors={age("senior")} />
+        <GuidesTeaser
+          guides={guides.map(({ slug, frontmatter }) => ({
+            slug,
+            title: frontmatter.title,
+            description: frontmatter.description,
+            readTime: frontmatter.readTime,
+          }))}
+        />
+        <RescuesStrip rescues={rescues} />
       </div>
-      <ClientHomePage
-        initialStatistics={statistics}
-        initialRecentDogs={recentDogs}
-        initialBreedsWithImages={breedsWithImages}
-        initialOrganizations={organizations as unknown as OrganizationCardData[]}
-        initialCountryStats={countryStats}
-        initialAgeStats={ageStats}
-      />
     </Layout>
   );
 }

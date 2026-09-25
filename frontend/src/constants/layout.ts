@@ -8,3 +8,6 @@ export const DOG_GRID_BREAKPOINTS: readonly [string, number][] = [
   ["(min-width: 640px)", 3],
 ];
 export const DOG_GRID_MIN_COLUMNS = 2;
+
+/** Dogs per home row (#497): two full rows at 2 and at 4 columns. */
+export const HOME_ROW_DOGS = 8;
