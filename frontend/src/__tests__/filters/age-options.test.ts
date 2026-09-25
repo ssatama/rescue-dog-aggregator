@@ -53,7 +53,7 @@ describe("age filters offer no Unknown option", () => {
   it("guards every file that declares its own age options", () => {
     // Pinned, not just non-empty: a reformat or a rename that drops a file out
     // of the scan would otherwise leave it silently unguarded.
-    expect(filesDeclaringAgeOptions()).toEqual(["components/breeds/BreedFilterBar.tsx", "utils/dogFilters.ts"]);
+    expect(filesDeclaringAgeOptions()).toEqual(["utils/dogFilters.ts"]);
   });
 
   it("has no age option list offering Unknown", () => {

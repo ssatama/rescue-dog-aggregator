@@ -35,9 +35,12 @@ describe("breed listings query the canonical breed, not the display label", () =
   );
 
   it("uses primary_breed for the breed page listing", () => {
+    // The page fixes the catalog's breed as its primary_breed (#500), and the
+    // catalog sends a breed to the API as primary_breed
     expect(sources["BreedDetailClient.tsx"]).toMatch(
-      /params\.primary_breed\s*=\s*breedData\.primary_breed/,
+      /primary_breed:\s*breedData\.primary_breed/,
     );
+    expect(read("hooks/dogs/useDogsFilters.ts")).toMatch(/params\.primary_breed\s*=\s*breed;/);
     expect(sources["serverAnimalsService.ts"]).toMatch(
       /primary_breed:\s*breedData\.primary_breed/,
     );

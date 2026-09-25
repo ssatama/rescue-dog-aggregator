@@ -1,6 +1,7 @@
 import type { BreedGroupDisplay } from "../services/breedImagesService";
 import type { BreedWithImages, BreedStats } from "../schemas/animals";
 import type { Dog } from "./dog";
+import type { DogsPageMetadata } from "./dogsPage";
 import type { BreedLink } from "../components/breeds/BreedSearch";
 import type { FilterCountsResponse } from "../schemas/common";
 
@@ -73,35 +74,6 @@ export interface BreedDog {
   properties?: { description?: string };
 }
 
-export interface FilterOption {
-  value: string;
-  count?: number;
-}
-
-export interface BreedFilterCounts {
-  total_count?: number;
-  sex_options?: FilterOption[];
-  size_options?: FilterOption[];
-  age_options?: FilterOption[];
-}
-
-export interface BreedFilters {
-  sexFilter?: string;
-  sizeFilter?: string;
-  ageFilter?: string;
-  [key: string]: string | undefined;
-}
-
-export interface BreedFilterBarProps {
-  breedData: BreedData;
-  filters: BreedFilters;
-  filterCounts: FilterCountsResponse | null;
-  onFilterChange: (key: string, value: string) => void;
-  onClearFilters: () => void;
-  onOpenMobileFilters: () => void;
-  activeFilterCount: number;
-}
-
 export interface BreedGroupsSectionProps {
   breedGroups: BreedGroupDisplay[];
 }
@@ -124,21 +96,13 @@ export interface BreedPageData extends BreedData {
   available_countries?: string[];
 }
 
-export type BreedDetailFilterKey =
-  | "searchQuery"
-  | "sizeFilter"
-  | "ageFilter"
-  | "sexFilter"
-  | "organizationFilter"
-  | "availableCountryFilter";
-
-export type BreedDetailFilters = Record<BreedDetailFilterKey, string>;
-
 export interface BreedDetailClientProps {
   initialBreedData: BreedPageData;
   initialDogs: Dog[];
   /** Unfiltered counts for the breed: practical stats and per-country totals (#500) */
   breedCounts?: FilterCountsResponse | null;
+  /** The catalog's filter options (rescues, countries) */
+  metadata?: DogsPageMetadata;
   lastUpdated?: string;
 }
 

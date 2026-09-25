@@ -71,8 +71,8 @@ export default function useDogsFilters({
     organizationFilter: validateOrganizationId(
       searchParams.get("organization_id"),
     ),
-    breedFilter: searchParams.get("breed") || FILTER_DEFAULTS.BREED,
-    breedGroupFilter: searchParams.get("breed_group") || FILTER_DEFAULTS.GROUP,
+    breedFilter: searchParams.get("breed") || initialParams?.primary_breed || FILTER_DEFAULTS.BREED,
+    breedGroupFilter: searchParams.get("breed_group") || initialParams?.breed_group || FILTER_DEFAULTS.GROUP,
     locationCountryFilter:
       searchParams.get("location_country") ||
       initialParams?.location_country ||
@@ -90,7 +90,7 @@ export default function useDogsFilters({
     ) as Pick<Filters, "goodWithKidsFilter" | "goodWithDogsFilter" | "goodWithCatsFilter" | "firstTimeFriendlyFilter">,
     energyFilter: isEnergyBand(searchParams.get("energy")) ? (searchParams.get("energy") as string) : "",
     sortFilter: isCatalogSort(searchParams.get("sort")) ? (searchParams.get("sort") as string) : FILTER_DEFAULTS.SORT,
-  }), [searchParams, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, validateOrganizationId]);
+  }), [searchParams, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, initialParams?.primary_breed, initialParams?.breed_group, validateOrganizationId]);
 
   const updateURL = useDebouncedCallback(
     (newFilters: Filters, newPage = 1, preserveScroll = false) => {
@@ -114,7 +114,14 @@ export default function useDogsFilters({
         ),
       };
 
+      // A breed page's own breed comes from the page, so the URL leaves it out
+      const pageOwn: Record<string, string | undefined> = {
+        breedFilter: initialParams?.primary_breed,
+        breedGroupFilter: initialParams?.breed_group,
+      };
+
       Object.entries(newFilters).forEach(([key, value]) => {
+        if (pageOwn[key] && value === pageOwn[key]) return;
         const paramKey =
           urlKeyMap[key] ||
           key
@@ -154,8 +161,13 @@ export default function useDogsFilters({
     DEBOUNCE_URL_UPDATE_MS,
   );
 
+  // A breed page's own breed is not a filter the visitor set
   const activeFilterCount = Object.entries(filters).filter(
-    ([key, value]) => key !== "sortFilter" && !isDefaultFilterValue(value),
+    ([key, value]) =>
+      key !== "sortFilter" &&
+      !isDefaultFilterValue(value) &&
+      !(key === "breedFilter" && value === initialParams?.primary_breed) &&
+      !(key === "breedGroupFilter" && value === initialParams?.breed_group),
   ).length;
 
   const [availableRegions, setAvailableRegions] = useState<string[]>([FILTER_DEFAULTS.REGION]);

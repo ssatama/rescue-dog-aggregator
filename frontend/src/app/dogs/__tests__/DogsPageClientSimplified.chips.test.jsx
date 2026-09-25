@@ -20,8 +20,8 @@ jest.mock("../../../services/animalsService", () => ({
 }));
 
 jest.mock("../../../components/dogs/DogCard", () => {
-  return function DogCard({ dog }) {
-    return <div data-testid="dog-card">{dog.name}</div>;
+  return function DogCard({ dog, listContext }) {
+    return <div data-testid="dog-card" data-list={listContext}>{dog.name}</div>;
   };
 });
 
@@ -80,5 +80,42 @@ describe("catalog chips (#494)", () => {
     const url = router.push.mock.calls.at(-1)[0];
     expect(url).not.toContain("available_country");
     expect(url).not.toContain("available_region");
+  });
+});
+
+describe("the catalog on a breed page (#500)", () => {
+  let router;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    router = { push: jest.fn(), replace: jest.fn() };
+    useRouter.mockReturnValue(router);
+    usePathname.mockReturnValue("/breeds/lurcher");
+    useSearchParams.mockReturnValue(new URLSearchParams(""));
+    api.getFilterCounts.mockResolvedValue({ total: 0 });
+    api.getAvailableRegions.mockResolvedValue([]);
+  });
+
+  it("lists the page's breed with no chip for it and no site search that would leave the breed", async () => {
+    api.getAnimals.mockResolvedValue([{ id: 1, name: "Rex", slug: "rex-1" }]);
+    render(<DogsPageClientSimplified initialDogs={[]} metadata={{}} initialParams={{ primary_breed: "Lurcher" }} hideHero hideBreadcrumbs />);
+
+    await waitFor(() =>
+      expect(api.getAnimals).toHaveBeenCalledWith(expect.objectContaining({ primary_breed: "Lurcher" }), expect.anything()),
+    );
+    expect(screen.queryByRole("button", { name: /Lurcher/ })).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Search breeds, rescues or names")).not.toBeInTheDocument();
+    // Card clicks are reported as the breed page's, not the catalog's
+    expect((await screen.findByTestId("dog-card")).dataset.list).toBe("breed-page");
+  });
+
+  it("says none are listed, not that filters matched nothing, when the breed has no dogs", async () => {
+    api.getAnimals.mockResolvedValue([]);
+    render(<DogsPageClientSimplified initialDogs={[]} metadata={{}} initialParams={{ primary_breed: "Lurcher" }} hideHero hideBreadcrumbs />);
+
+    expect(await screen.findByText("None listed right now")).toBeInTheDocument();
+    expect(screen.queryByText("No dogs match your filters")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Browse all dogs" }));
+    expect(router.push).toHaveBeenCalledWith("/dogs");
   });
 });

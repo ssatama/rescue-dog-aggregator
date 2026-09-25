@@ -519,3 +519,41 @@ describe("breed filter uses the canonical breed", () => {
     expect(buildAPIParams(withBreed("Any breed")).primary_breed).toBeUndefined();
   });
 });
+
+describe("a breed page's own breed (#500)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (useRouter as jest.Mock).mockReturnValue(mockRouter);
+    (animalsService.getAvailableRegions as jest.Mock).mockResolvedValue([]);
+  });
+
+  it("filters by it, sends it as primary_breed and does not count it as active", () => {
+    const { result } = renderDogsFilters(new URLSearchParams(), {
+      initialParams: { primary_breed: "Lurcher" },
+      pathname: "/breeds/lurcher",
+    });
+
+    expect(result.current.filters.breedFilter).toBe("Lurcher");
+    expect(buildAPIParams(result.current.filters).primary_breed).toBe("Lurcher");
+    expect(result.current.activeFilterCount).toBe(0);
+  });
+
+  it("keeps it out of the URL, which already names the breed", () => {
+    jest.useFakeTimers();
+    const { result } = renderDogsFilters(new URLSearchParams(), {
+      initialParams: { breed_group: "Mixed" },
+      pathname: "/breeds/mixed",
+    });
+
+    act(() => {
+      result.current.updateURL({ ...result.current.filters, sizeFilter: "Large" }, 1, false);
+    });
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    expect(result.current.filters.breedGroupFilter).toBe("Mixed");
+    expect(mockRouter.push).toHaveBeenCalledWith("/breeds/mixed?size=Large", { scroll: false });
+    jest.useRealTimers();
+  });
+});

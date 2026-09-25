@@ -133,6 +133,11 @@ export default function DogsPageClientSimplified({
     pathname,
   });
 
+  // On a breed page the breed is the page's own, so there is no breed to pick,
+  // and analytics keeps breed-page traffic apart from the catalog's
+  const breedIsFixed = Boolean(initialParams?.primary_breed || initialParams?.breed_group);
+  const analyticsSurface = breedIsFixed ? "breed_page" : "catalog";
+
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [sidebarHidden, toggleSidebar] = useSidebarHidden();
 
@@ -156,9 +161,9 @@ export default function DogsPageClientSimplified({
       const changes =
         typeof filterKey === "object" ? filterKey : { [filterKey]: value };
       applyFilters(changes);
-      trackFiltersApplied(changes, "catalog");
+      trackFiltersApplied(changes, analyticsSurface);
     },
-    [applyFilters],
+    [applyFilters, analyticsSurface],
   );
 
   // A breed picked from the list or a suggestion is tracked; text typed into
@@ -191,8 +196,26 @@ export default function DogsPageClientSimplified({
         initialParams?.age_category && "ageFilter",
         initialParams?.location_country && "locationCountryFilter",
         initialParams?.available_country && "availableCountryFilter",
-      ].filter(Boolean) as ("ageFilter" | "locationCountryFilter" | "availableCountryFilter")[],
-    [initialParams?.age_category, initialParams?.location_country, initialParams?.available_country],
+        initialParams?.primary_breed && "breedFilter",
+        initialParams?.breed_group && "breedGroupFilter",
+      ].filter(Boolean) as (
+        | "ageFilter"
+        | "locationCountryFilter"
+        | "availableCountryFilter"
+        | "breedFilter"
+        | "breedGroupFilter"
+      )[],
+    [
+      initialParams?.age_category,
+      initialParams?.location_country,
+      initialParams?.available_country,
+      initialParams?.primary_breed,
+      initialParams?.breed_group,
+    ],
+  );
+  const drawerConfig = useMemo(
+    () => (breedIsFixed ? { ...CATALOG_DRAWER_CONFIG, showBreed: false } : CATALOG_DRAWER_CONFIG),
+    [breedIsFixed],
   );
 
   const { goodWithKidsFilter, goodWithDogsFilter, goodWithCatsFilter, firstTimeFriendlyFilter, energyFilter } =
@@ -215,8 +238,8 @@ export default function DogsPageClientSimplified({
       ageFilter: initialParams?.age_category || FILTER_DEFAULTS.AGE,
       sexFilter: FILTER_DEFAULTS.SEX,
       organizationFilter: FILTER_DEFAULTS.ORGANIZATION,
-      breedFilter: FILTER_DEFAULTS.BREED,
-      breedGroupFilter: FILTER_DEFAULTS.GROUP,
+      breedFilter: initialParams?.primary_breed || FILTER_DEFAULTS.BREED,
+      breedGroupFilter: initialParams?.breed_group || FILTER_DEFAULTS.GROUP,
       locationCountryFilter: initialParams?.location_country || FILTER_DEFAULTS.COUNTRY,
       availableCountryFilter: initialParams?.available_country || FILTER_DEFAULTS.COUNTRY,
       availableRegionFilter: FILTER_DEFAULTS.REGION,
@@ -236,7 +259,7 @@ export default function DogsPageClientSimplified({
     router.replace(sort === FILTER_DEFAULTS.SORT ? pathname : `${pathname}?sort=${sort}`, { scroll: false });
     scrollPositionRef.current = 0;
     pagination.resetAll(defaultFilters);
-  }, [router, pathname, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, filterState, saveScrollPosition, scrollPositionRef, pagination]);
+  }, [router, pathname, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, initialParams?.primary_breed, initialParams?.breed_group, filterState, saveScrollPosition, scrollPositionRef, pagination]);
 
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Find Dogs" }];
 
@@ -324,8 +347,9 @@ export default function DogsPageClientSimplified({
         data-testid="dogs-page-container"
         className="mx-auto max-w-7xl py-6 sm:px-2 lg:px-4 lg:py-8"
       >
-        {/* Phones: the header has no search field, so it sits at the top */}
-        <GlobalSearch surface="mobile" className="mb-4 sm:hidden" />
+        {/* Phones: the header has no search field, so it sits at the top. Not
+            on a breed page: its search would leave for /dogs and the breed */}
+        {!breedIsFixed && <GlobalSearch surface="mobile" className="mb-4 sm:hidden" />}
 
         {/* Desktop Breadcrumbs - Hidden on Mobile */}
         {!hideBreadcrumbs && (
@@ -371,13 +395,15 @@ export default function DogsPageClientSimplified({
                   { id: null, name: "Any organization" },
                 ]
               }
-              // Breed (using actual filter state like Name filter)
-              standardizedBreedFilter={filterState.filters.breedFilter}
+              // Breed (using actual filter state like Name filter). A breed
+              // page's own breed is hidden here and not counted as active
+              standardizedBreedFilter={breedIsFixed ? FILTER_DEFAULTS.BREED : filterState.filters.breedFilter}
               setStandardizedBreedFilter={handleBreedChange}
               handleBreedSearch={handleBreedTyped}
               handleBreedClear={handleBreedClear}
               handleBreedValueChange={handleBreedTyped}
               standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
+              showBreed={!breedIsFixed}
               // Pet Details
               sexFilter={filterState.filters.sexFilter}
               setSexFilter={(value: string) => handleFilterChange("sexFilter", value)}
@@ -470,17 +496,25 @@ export default function DogsPageClientSimplified({
                       </div>
                     </div>
                   )}
-                  <CatalogDogGrid dogs={pagination.dogs} />
+                  <CatalogDogGrid dogs={pagination.dogs} listContext={breedIsFixed ? "breed-page" : "search"} />
                 </div>
               )}
 
               {/* Empty state */}
-              {!pagination.loading && pagination.dogs.length === 0 && (
-                <EmptyState
-                  variant="noDogsFiltered"
-                  onClearFilters={handleResetFilters}
-                />
-              )}
+              {!pagination.loading && pagination.dogs.length === 0 &&
+                (breedIsFixed && filterState.activeFilterCount === 0 ? (
+                  // Nothing to clear: the breed itself has no dogs listed now
+                  <EmptyState
+                    title="None listed right now"
+                    description="Rescues add new dogs three times a week. Every other dog is in the catalog."
+                    actionButton={{ text: "Browse all dogs", onClick: () => router.push("/dogs") }}
+                  />
+                ) : (
+                  <EmptyState
+                    variant="noDogsFiltered"
+                    onClearFilters={handleResetFilters}
+                  />
+                ))}
 
               <div>
                 {pagination.hasMore && !pagination.loading && pagination.dogs.length > 0 && (
@@ -521,7 +555,7 @@ export default function DogsPageClientSimplified({
         onClose={() => setIsSheetOpen(false)}
         // Search is edited in the field at the top of the page
         searchQuery={filterState.filters.searchQuery}
-        filterConfig={CATALOG_DRAWER_CONFIG}
+        filterConfig={drawerConfig}
         // Organization
         organizationFilter={filterState.filters.organizationFilter}
         setOrganizationFilter={(value: string) =>
