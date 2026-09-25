@@ -1,4 +1,4 @@
-import { adoptionDomain, dogLocation, isNeutered, isVaccinated, listedAgo, medicalNote } from "../dogFacts";
+import { adoptionDomain, companionAnswer, dogLocation, isNeutered, isVaccinated, listedAgo, medicalNote } from "../dogFacts";
 import type { Dog } from "../../types/dog";
 
 const dog = (properties: Record<string, unknown>): Dog =>
@@ -71,6 +71,15 @@ describe("medicalNote", () => {
     expect(medicalNote(dog({ medical_issues: text }))).toBeNull();
   });
 
+  it.each([
+    "I have a Grade 2 heart murmur & I will be spayed.",
+    "I have a fused hind leg, please read more info below.",
+    "I am being treated for sore ears and will be neutered before adoption.",
+    "I’m fully vaccinated and neutered. I have received treatment for an ear infection.",
+  ])("keeps a real note that also mentions routine care %p", (text) => {
+    expect(medicalNote(dog({ medical_issues: text }))).toBe(text);
+  });
+
   it("turns the Dogs Trust flag into a short note", () => {
     expect(medicalNote(dog({ medical_care: "Medical care" }))).toBe("Has ongoing medical care");
   });
@@ -106,5 +115,25 @@ describe("adoptionDomain", () => {
   it("is null for a missing or broken URL", () => {
     expect(adoptionDomain(undefined)).toBeNull();
     expect(adoptionDomain("not a url")).toBeNull();
+  });
+});
+
+describe("companionAnswer", () => {
+  it("prefers what the rescue published over the AI profile", () => {
+    const d = { properties: { good_with_cats: true }, dog_profiler_data: { good_with_cats: "no" } } as unknown as Dog;
+    expect(companionAnswer(d, "good_with_cats")).toBe("yes");
+  });
+
+  it("falls back to the profile when the rescue said nothing", () => {
+    const d = { properties: { good_with_cats: "unknown" }, dog_profiler_data: { good_with_cats: "no" } } as unknown as Dog;
+    expect(companionAnswer(d, "good_with_cats")).toBe("no");
+  });
+
+  it("keeps a rescue's qualifier in plain words", () => {
+    expect(companionAnswer(dog({ good_with_children: "older_children" }), "good_with_children")).toBe("older children");
+  });
+
+  it("is null when neither source assessed it", () => {
+    expect(companionAnswer(dog({ good_with_dogs: "Unknown" }), "good_with_dogs")).toBeNull();
   });
 });

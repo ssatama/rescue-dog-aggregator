@@ -44,18 +44,48 @@ export function isVaccinated(dog: Dog): boolean {
   return /\bfully vaccinated\b/i.test(prop(dog, "medical_issues") ?? "");
 }
 
-// Many Tears writes neuter and vaccination status into the medical field;
-// those sentences are covered by the chips above, not a medical note.
-const ROUTINE_MEDICAL =
-  /spayed|neutered|vaccinat|please read|forever home|ready for adoption/i;
+// Many Tears writes neuter and vaccination status into the medical field, which
+// the chips above already cover. A note is routine only when nothing is left once
+// those words are gone: "I have a heart murmur & I will be spayed" is still real.
+const ROUTINE_WORDS = new Set(
+  (
+    "i i'm im i've ive am have has had been will be being and before after going to my " +
+    "a the for find finding ready forever new home adoption already started fully " +
+    "spayed neutered vaccinated vaccinations please read below more info information"
+  ).split(" "),
+);
+
+function isRoutineMedical(text: string): boolean {
+  const words = text.toLowerCase().replace(/[’]/g, "'").match(/[a-z']+/g) ?? [];
+  return words.every((w) => ROUTINE_WORDS.has(w));
+}
 
 /** A real medical note, e.g. "I have Grade 3 bilateral luxating patellas." */
 export function medicalNote(dog: Dog): string | null {
   const manyTears = prop(dog, "medical_issues");
-  if (manyTears && !ROUTINE_MEDICAL.test(manyTears)) return manyTears;
+  if (manyTears && !isRoutineMedical(manyTears)) return manyTears;
   // Dogs Trust only flags that the dog has ongoing medical care
   if (prop(dog, "medical_care")) return "Has ongoing medical care";
   return null;
+}
+
+function answerOf(value: unknown): string | null {
+  if (value === true || value === "yes" || value === "true") return "yes";
+  if (value === false || value === "no" || value === "false") return "no";
+  if (typeof value !== "string" || !value.trim() || value.toLowerCase() === "unknown") return null;
+  return value.replace(/_/g, " ");
+}
+
+/**
+ * Whether the dog lives with children, dogs or cats: "yes", "no", a rescue's
+ * qualifier ("selective", "older children"), or null when not assessed. What
+ * the rescue published wins over the AI profile, whose default is "unknown".
+ */
+export function companionAnswer(
+  dog: Dog,
+  field: "good_with_children" | "good_with_dogs" | "good_with_cats",
+): string | null {
+  return answerOf(dog.properties?.[field]) ?? answerOf(dog.dog_profiler_data?.[field]);
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;

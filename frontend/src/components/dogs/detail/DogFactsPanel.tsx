@@ -15,6 +15,7 @@ import { safeExternalUrl } from "@/utils/security";
 import { getCountryName } from "@/utils/countryNames";
 import {
   adoptionDomain,
+  companionAnswer,
   dogLocation,
   isNeutered,
   isVaccinated,
@@ -75,21 +76,13 @@ function FactRow({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-/** "yes"/"no", a rescue's qualifier ("selective", "older_children"), or null when not assessed. */
-function companionAnswer(value: unknown): string | null {
-  if (value === true || value === "yes" || value === "true") return "yes";
-  if (value === false || value === "no" || value === "false") return "no";
-  if (typeof value !== "string" || !value.trim() || value.toLowerCase() === "unknown") return null;
-  return value.replace(/_/g, " ");
-}
-
 const ANSWER_ORDER = (answer: string) => (answer === "yes" ? 0 : answer === "no" ? 2 : 1);
 
 /** Known companions, plus one quiet chip for the rest (never three). */
 function LivesWith({ dog }: { dog: Dog }) {
   const answers: { label: string; answer: string | null }[] = COMPANIONS.map(({ field, label }) => ({
     label,
-    answer: companionAnswer(dog.dog_profiler_data?.[field] ?? dog.properties?.[field]),
+    answer: companionAnswer(dog, field),
   }));
   const known = answers
     .filter((a): a is { label: string; answer: string } => a.answer !== null)
