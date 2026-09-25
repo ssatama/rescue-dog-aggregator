@@ -45,8 +45,19 @@ export default function OnlyAdoptableSwitch({
     if (value !== FILTER_DEFAULTS.COUNTRY) return;
     const params = new URLSearchParams(searchParams?.toString() ?? "");
     params.set(COUNTRY_URL_KEY, target);
+    // A narrower list starts at the top, like any other filter change
+    params.delete("page");
+    params.delete("scroll");
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }, [target, onlyAdoptable, value, pathname, router, searchParams]);
+
+  // Clearing the country some other way (Reset, the filter panel) turns the
+  // remembered switch off too, so it does not come back on the next visit
+  const previous = useRef(value);
+  useEffect(() => {
+    if (previous.current === target && value !== target && onlyAdoptable) setOnlyAdoptable(false);
+    previous.current = value;
+  }, [value, target, onlyAdoptable]);
 
   if (!target || !country) return null;
   const checked = value === target;

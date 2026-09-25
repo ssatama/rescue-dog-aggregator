@@ -55,14 +55,16 @@ export default function SwipeOnboarding({
   const [showAllCountries, setShowAllCountries] = useState(false);
   const { country: visitorCountry, choice } = useVisitorLocation();
 
-  // Where the visitor lives is asked once, site-wide (#493): with a country
-  // known, it is chosen already and onboarding starts at the size step
+  // Where the visitor lives is asked once, site-wide (#493). A country they
+  // chose is taken as the answer and onboarding starts at the size step; a
+  // guess from the connection is only pre-selected. The guess can arrive
+  // while step 1 is on screen, so it must not move the visitor on.
   const knownCountry = catalogCountryValue(
     countries.map((country) => country.value),
     visitorCountry,
   );
   const selectedCountry = pickedCountry || knownCountry || "";
-  const step = chosenStep ?? (knownCountry ? 2 : 1);
+  const step = chosenStep ?? (choice && knownCountry ? 2 : 1);
 
   // Fetch available countries dynamically if not provided via props
   useEffect(() => {

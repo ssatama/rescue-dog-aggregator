@@ -10,7 +10,7 @@ const replace = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace }),
   usePathname: () => "/dogs/senior",
-  useSearchParams: () => new URLSearchParams("sex=Male"),
+  useSearchParams: () => new URLSearchParams("sex=Male&page=4&scroll=2300"),
 }));
 
 const OPTIONS = ["Any country", "DE", "UK"];
@@ -61,6 +61,24 @@ describe("OnlyAdoptableSwitch", () => {
     renderSwitch();
 
     expect(replace).toHaveBeenCalledWith("/dogs/senior?sex=Male&available_country=UK", { scroll: false });
+  });
+
+  it("turns the remembered switch off when the country filter is cleared elsewhere", () => {
+    localStorage.setItem("visitorCountry", "GB");
+    localStorage.setItem("onlyAdoptable", "true");
+    const onChange = jest.fn();
+    const { rerender } = render(<OnlyAdoptableSwitch countryOptions={OPTIONS} value="UK" onChange={onChange} />);
+
+    // e.g. "Clear all" in the filter panel
+    rerender(<OnlyAdoptableSwitch countryOptions={OPTIONS} value="Any country" onChange={onChange} />);
+    expect(localStorage.getItem("onlyAdoptable")).toBeNull();
+  });
+
+  it("picking another country turns the switch off", () => {
+    localStorage.setItem("visitorCountry", "GB");
+    localStorage.setItem("onlyAdoptable", "true");
+    act(() => setVisitorCountry("DE"));
+    expect(localStorage.getItem("onlyAdoptable")).toBeNull();
   });
 
   it("leaves a list alone that already has a country filter", () => {

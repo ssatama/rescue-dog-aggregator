@@ -393,6 +393,16 @@ describe("SwipeOnboarding", () => {
       expect(screen.queryByRole("button", { name: /Germany/i })).not.toBeInTheDocument();
     });
 
+    it("only pre-selects a country guessed from the connection", async () => {
+      sessionStorage.setItem("visitorCountryGeo", "DE");
+      resetVisitorLocationForTests();
+      render(<SwipeOnboarding onComplete={mockOnComplete} />);
+
+      const germany = await screen.findByRole("button", { name: /Germany/i });
+      expect(germany).toHaveClass("border-orange-500");
+      expect(screen.getByRole("button", { name: /Continue/i })).not.toBeDisabled();
+    });
+
     it("remembers a country answered here for the rest of the site", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
       await waitFor(() => expect(screen.getByText(/Germany/)).toBeInTheDocument());

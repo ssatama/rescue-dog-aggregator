@@ -99,8 +99,10 @@ function subscribe(listener: () => void): () => void {
 
 export function setVisitorCountry(choice: string): void {
   write(local, CHOICE_KEY, choice);
-  update({ choice });
-  trackLocationSet("picker", choice === ANYWHERE ? null : choice, state.onlyAdoptable);
+  // The switch was about the old country; the visitor turns it on again for the new one
+  write(local, ONLY_ADOPTABLE_KEY, null);
+  update({ choice, onlyAdoptable: false });
+  trackLocationSet("picker", choice === ANYWHERE ? null : choice, false);
 }
 
 export function setOnlyAdoptable(onlyAdoptable: boolean): void {
