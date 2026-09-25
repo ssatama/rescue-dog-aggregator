@@ -74,6 +74,14 @@ describe("OnlyAdoptableSwitch", () => {
     expect(localStorage.getItem("onlyAdoptable")).toBeNull();
   });
 
+  it("picking the same country again keeps the switch", () => {
+    localStorage.setItem("visitorCountry", "GB");
+    localStorage.setItem("onlyAdoptable", "true");
+    renderSwitch("UK");
+    act(() => setVisitorCountry("GB"));
+    expect(localStorage.getItem("onlyAdoptable")).toBe("true");
+  });
+
   it("picking another country turns the switch off", () => {
     localStorage.setItem("visitorCountry", "GB");
     localStorage.setItem("onlyAdoptable", "true");
