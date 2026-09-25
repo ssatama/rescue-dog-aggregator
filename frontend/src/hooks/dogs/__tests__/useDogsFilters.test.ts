@@ -71,6 +71,7 @@ describe("useDogsFilters", () => {
         locationCountryFilter: "Any country",
         availableCountryFilter: "Any country",
         availableRegionFilter: "Any region",
+        sortFilter: "recommended",
       });
     });
 
@@ -91,6 +92,7 @@ describe("useDogsFilters", () => {
         locationCountryFilter: "Germany",
         availableCountryFilter: "Finland",
         availableRegionFilter: "Uusimaa",
+        sortFilter: "recommended",
       });
     });
 
@@ -123,6 +125,17 @@ describe("useDogsFilters", () => {
     });
   });
 
+  describe("sort (#494)", () => {
+    it("reads a known sort from the URL and ignores anything else", () => {
+      expect(renderDogsFilters(new URLSearchParams("sort=oldest")).result.current.filters.sortFilter).toBe("oldest");
+      expect(renderDogsFilters(new URLSearchParams("sort=bogus")).result.current.filters.sortFilter).toBe("recommended");
+    });
+
+    it("is never counted as an active filter", () => {
+      expect(renderDogsFilters(new URLSearchParams("sort=newest")).result.current.activeFilterCount).toBe(0);
+    });
+  });
+
   describe("buildAPIParams", () => {
     it("should return empty params for default filters", () => {
       const defaultFilters: Filters = {
@@ -138,7 +151,7 @@ describe("useDogsFilters", () => {
         availableRegionFilter: "Any region",
       };
 
-      expect(buildAPIParams(defaultFilters)).toEqual({});
+      expect(buildAPIParams(defaultFilters)).toEqual({ sort: "recommended" });
     });
 
     it("should map filter values to API parameter names", () => {
@@ -156,6 +169,7 @@ describe("useDogsFilters", () => {
       };
 
       expect(buildAPIParams(filters)).toEqual({
+        sort: "recommended",
         search: "Rex",
         standardized_size: "Large",
         age_category: "Puppy",
@@ -184,6 +198,7 @@ describe("useDogsFilters", () => {
       };
 
       expect(buildAPIParams(filters)).toEqual({
+        sort: "recommended",
         standardized_size: "XLarge",
       });
     });
@@ -203,6 +218,7 @@ describe("useDogsFilters", () => {
       };
 
       expect(buildAPIParams(filters)).toEqual({
+        sort: "recommended",
         standardized_size: "Small",
       });
     });
@@ -221,7 +237,7 @@ describe("useDogsFilters", () => {
         availableRegionFilter: "Any region",
       };
 
-      expect(buildAPIParams(filters)).toEqual({});
+      expect(buildAPIParams(filters)).toEqual({ sort: "recommended" });
     });
 
     it("should trim whitespace from values", () => {
@@ -238,7 +254,7 @@ describe("useDogsFilters", () => {
         availableRegionFilter: "Any region",
       };
 
-      expect(buildAPIParams(filters)).toEqual({ search: "Rex" });
+      expect(buildAPIParams(filters)).toEqual({ sort: "recommended", search: "Rex" });
     });
   });
 

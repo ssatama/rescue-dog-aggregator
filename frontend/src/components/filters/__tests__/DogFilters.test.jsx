@@ -76,7 +76,7 @@ describe("DogFilters Component", () => {
           age: "Puppy",
           breed: "golden",
           shipsTo: "DE",
-          sort: "name-asc",
+          sort: "oldest",
         },
       };
 
@@ -88,7 +88,7 @@ describe("DogFilters Component", () => {
       const breedInput = screen.getByTestId("breed-filter");
       expect(breedInput).toHaveValue("golden");
       expect(screen.getByText("Germany (DE)")).toBeInTheDocument();
-      expect(screen.getByText("Name A-Z")).toBeInTheDocument();
+      expect(screen.getByText("Waiting longest")).toBeInTheDocument();
     });
 
     test("shows results count correctly", () => {
@@ -252,22 +252,19 @@ describe("DogFilters Component", () => {
   });
 
   describe("Sort Filter", () => {
-    test("displays all sort options", async () => {
+    test("offers the catalog's sorts, less Recommended on a single rescue", async () => {
       const user = userEvent.setup();
       render(<DogFilters {...defaultProps} />);
 
       const sortSelect = screen.getByTestId("sort-filter");
       await user.click(sortSelect);
 
-      expect(
-        screen.getByRole("option", { name: "Newest First" }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("option", { name: "Name A-Z" }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("option", { name: "Name Z-A" }),
-      ).toBeInTheDocument();
+      expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+        "Newest",
+        "Waiting longest",
+        "Youngest",
+        "Oldest",
+      ]);
     });
 
     test("calls onFiltersChange when sort changes", async () => {
@@ -279,11 +276,11 @@ describe("DogFilters Component", () => {
 
       const sortSelect = screen.getByTestId("sort-filter");
       await user.click(sortSelect);
-      await user.click(screen.getByText("Name A-Z"));
+      await user.click(screen.getByRole("option", { name: "Youngest" }));
 
       expect(onFiltersChange).toHaveBeenCalledWith({
         ...defaultProps.filters,
-        sort: "name-asc",
+        sort: "age-asc",
       });
     });
   });

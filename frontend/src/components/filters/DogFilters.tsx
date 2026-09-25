@@ -26,6 +26,10 @@ import {
   trackSortChange,
 } from "@/lib/monitoring/breadcrumbs";
 import { trackFiltersApplied, trackSortChanged } from "@/lib/analytics";
+import SortMenu from "@/components/dogs/catalog/SortMenu";
+import { CATALOG_SORTS } from "@/constants/filters";
+
+const RESCUE_PAGE_SORTS = CATALOG_SORTS.filter((sort) => sort.value !== "recommended");
 import type { DogFilterValues } from "@/types/filterComponents";
 import { logger } from "@/utils/logger";
 
@@ -81,6 +85,7 @@ export default function DogFilters({
       try {
         if (filterType === "sort") {
           trackSortChange(value || "newest");
+          // SortMenu sends sort_changed itself; track is false for it
           if (track) trackSortChanged(value || "newest");
         } else {
           trackFilterChange(filterType, value, totalCount || 0);
@@ -110,7 +115,6 @@ export default function DogFilters({
   }, [onFiltersChange, router]);
 
   const ageOptions = getAgeFilterOptions();
-  const sortOptions = getSortFilterOptions();
 
   const activeFilterCount = useMemo((): number => {
     if (!filters) return 0;
@@ -350,32 +354,13 @@ export default function DogFilters({
             </div>
           )}
 
-          {/* Sort Filter */}
-          <div className="flex-shrink-0 min-w-[160px]">
-            <label htmlFor="sort-filter" className="sr-only">
-              Sort dogs
-            </label>
-            <Select
+          {/* Sort: the same menu as the catalog, less "Recommended" (one rescue) */}
+          <div className="flex-shrink-0">
+            <SortMenu
               value={filters?.sort || "newest"}
-              onValueChange={(value: string) => handleFilterChange("sort", value)}
-            >
-              <SelectTrigger
-                id="sort-filter"
-                data-testid="sort-filter"
-                className="w-full"
-                aria-label="Sort dogs"
-              >
-                <Icon name="sort-desc" size="small" className="text-gray-500" />
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                {sortOptions.map((option: { value: string; label: string }) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={RESCUE_PAGE_SORTS}
+              onChange={(value: string) => handleFilterChange("sort", value, false)}
+            />
           </div>
         </div>
       </div>

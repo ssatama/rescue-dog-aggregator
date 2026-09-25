@@ -67,7 +67,7 @@ export default function HeaderDesktopNav(): React.JSX.Element {
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link
-              href="/dogs?sort_by=created_at&sort_order=desc"
+              href="/dogs?sort=newest"
               className="w-full cursor-pointer"
             >
               New Arrivals

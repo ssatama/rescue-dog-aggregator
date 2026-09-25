@@ -8,7 +8,7 @@ interface DogWithAgeFields extends Partial<Dog> {
 }
 
 export type AgeCategory = "All" | "Puppy" | "Young" | "Adult" | "Senior" | "Unknown";
-export type SortOption = "newest" | "name-asc" | "name-desc" | "oldest";
+export type SortOption = "newest" | "name-asc" | "name-desc" | "oldest" | "age-asc" | "age-desc";
 
 export interface DogFilterParams {
   age?: AgeCategory;

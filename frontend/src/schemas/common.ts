@@ -11,6 +11,8 @@ export const FilterCountSchema = z
 export const FilterCountsResponseSchema = z
   .object({
     total_count: z.number().optional(),
+    /** Dogs matching every filter, as the list returns them (#494). */
+    total: z.number().optional(),
     sex_options: z.array(FilterCountSchema).optional(),
     size_options: z.array(FilterCountSchema).optional(),
     age_options: z.array(FilterCountSchema).optional(),

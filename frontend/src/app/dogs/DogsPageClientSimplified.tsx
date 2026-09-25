@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import GlobalSearch from "../../components/search/GlobalSearch";
 import OnlyAdoptableSwitch from "../../components/location/OnlyAdoptableSwitch";
+import CatalogToolbar from "../../components/dogs/catalog/CatalogToolbar";
 import useScrollRestoration from "../../hooks/dogs/useScrollRestoration";
 import useDogsFilters from "../../hooks/dogs/useDogsFilters";
 import useDogsPagination from "../../hooks/dogs/useDogsPagination";
@@ -27,6 +28,7 @@ import type {
 } from "../../types/dogsPage";
 
 import type { FilterConfig } from "../../types/filterComponents";
+import { FILTER_DEFAULTS } from "@/constants/filters";
 
 // The field at the top of the page edits the text search, so the drawer leaves it out
 const CATALOG_DRAWER_CONFIG: FilterConfig = {
@@ -133,6 +135,20 @@ export default function DogsPageClientSimplified({
     handleFilterChange("breedFilter", "Any breed");
   }, [handleFilterChange]);
 
+  // Sort is not a filter: it fires sort_changed (in SortMenu), not filter_applied
+  const setSort = useCallback((sort: string) => applyFilters({ sortFilter: sort }), [applyFilters]);
+
+  // Filters the landing page itself sets (age on /dogs/puppies) cannot be removed there
+  const pageFixedFilters = useMemo(
+    () =>
+      [
+        initialParams?.age_category && "ageFilter",
+        initialParams?.location_country && "locationCountryFilter",
+        initialParams?.available_country && "availableCountryFilter",
+      ].filter(Boolean) as ("ageFilter" | "locationCountryFilter" | "availableCountryFilter")[],
+    [initialParams?.age_category, initialParams?.location_country, initialParams?.available_country],
+  );
+
   const setAvailableCountry = useCallback(
     (value: string) => handleFilterChange("availableCountryFilter", value),
     [handleFilterChange],
@@ -150,11 +166,14 @@ export default function DogsPageClientSimplified({
       locationCountryFilter: "Any country",
       availableCountryFilter: "Any country",
       availableRegionFilter: "Any region",
+      // Clearing filters keeps the chosen order
+      sortFilter: filterState.filters.sortFilter,
     };
 
     filterState.updateURL?.cancel?.();
     saveScrollPosition?.cancel?.();
-    router.replace("/dogs", { scroll: false });
+    const sort = defaultFilters.sortFilter;
+    router.replace(sort === FILTER_DEFAULTS.SORT ? "/dogs" : `/dogs?sort=${sort}`, { scroll: false });
     scrollPositionRef.current = 0;
     pagination.resetAll(defaultFilters);
   }, [router, filterState, saveScrollPosition, scrollPositionRef, pagination]);
@@ -349,6 +368,16 @@ export default function DogsPageClientSimplified({
                 <AlertDescription>{pagination.error}</AlertDescription>
               </Alert>
             )}
+
+            <CatalogToolbar
+              filters={filterState.filters}
+              total={pagination.filterCounts?.total ?? null}
+              organizations={metadata?.organizations}
+              fixed={pageFixedFilters}
+              onRemove={handleFilterChange}
+              onClearAll={handleResetFilters}
+              onSortChange={setSort}
+            />
 
             {/* Labels come from the visitor's country; hiding the rest is opt-in (#493) */}
             <OnlyAdoptableSwitch
