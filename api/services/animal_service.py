@@ -101,13 +101,25 @@ def _normalize_url(url: str | None) -> str | None:
     return url
 
 
+# "Recommended" deals rescues out in turn: each rescue's newest dog, then each
+# one's second newest, and so on, so one rescue's latest batch cannot fill the
+# first screen. Queries that use it must expose this rank as a.org_rank.
+ORG_RANK_SQL = "ROW_NUMBER() OVER (PARTITION BY {t}.organization_id ORDER BY {t}.id DESC)"
+
+
 def order_clause(sort: str | None) -> str:
     """ORDER BY for the dog list; every sort ends on the id so the order is total."""
+    if sort == "recommended":
+        return "ORDER BY a.org_rank ASC, a.id DESC"
+    if sort == "age-asc":
+        return "ORDER BY a.age_min_months ASC NULLS LAST, a.id DESC"
+    if sort == "age-desc":
+        return "ORDER BY a.age_max_months DESC NULLS LAST, a.id DESC"
     if sort == "name-asc":
         return "ORDER BY a.name ASC, a.id ASC"
     if sort == "name-desc":
         return "ORDER BY a.name DESC, a.id DESC"
-    if sort == "oldest":
+    if sort == "oldest":  # waiting longest
         return "ORDER BY a.created_at ASC, a.id ASC"
     return "ORDER BY a.id DESC"  # newest (default): ids are auto-incrementing
 
@@ -1342,14 +1354,17 @@ class AnimalService:
         where_clause = " AND ".join(conditions)
         query = f"""
             WITH listed AS (
-                SELECT DISTINCT a.id, a.slug, a.name, a.primary_image_url, a.created_at
+                SELECT DISTINCT a.id, a.slug, a.name, a.primary_image_url, a.created_at,
+                       a.organization_id, a.age_min_months, a.age_max_months
                 FROM animals a
                 LEFT JOIN organizations o ON a.organization_id = o.id
                 {joins}
                 WHERE {where_clause}
+            ), ranked AS (
+                SELECT l.*, {ORG_RANK_SQL.format(t="l")} AS org_rank FROM listed l
             ), ordered AS (
                 SELECT a.*, ROW_NUMBER() OVER ({order_clause(filters.sort)}) AS rn, COUNT(*) OVER () AS total
-                FROM listed a
+                FROM ranked a
             )
             SELECT side, n.slug, n.name, n.primary_image_url
             FROM ordered cur
@@ -1505,7 +1520,8 @@ class AnimalService:
         if filters.curation_type == "recent":
             conditions.append("a.created_at >= NOW() - INTERVAL '7 days'")
             where_clause = " AND ".join(conditions)
-            query = f"{query_base}{joins} WHERE {where_clause} {order_by} LIMIT %s OFFSET %s"
+            recent_order = order_clause("newest") if filters.sort == "recommended" else order_by
+            query = f"{query_base}{joins} WHERE {where_clause} {recent_order} LIMIT %s OFFSET %s"
         elif filters.curation_type == "diverse":
             # For diverse curation, maintain original random ordering per organization
             query = f"""
@@ -1533,6 +1549,27 @@ class AnimalService:
                 ORDER BY a.organization_id, (abs(hashtext(a.id::text || to_char(now(), 'IYYY-IW'))) %% 1000)
                 LIMIT %s OFFSET %s
             """
+        elif filters.sort == "recommended":
+            # Rank and page the ids alone, then load the full rows for that page:
+            # ranking the full rows costs a DISTINCT over every listed dog
+            query = f"""
+                WITH page AS (
+                    SELECT f.id, {ORG_RANK_SQL.format(t="f")} AS org_rank
+                    FROM (
+                        SELECT DISTINCT a.id, a.organization_id
+                        FROM animals a
+                        LEFT JOIN organizations o ON a.organization_id = o.id
+                        {joins}
+                        WHERE {where_clause}
+                    ) f
+                    ORDER BY org_rank ASC, f.id DESC
+                    LIMIT %s OFFSET %s
+                )
+                SELECT listed.*
+                FROM ({query_base} WHERE a.id IN (SELECT id FROM page)) listed
+                JOIN page ON page.id = listed.id
+                ORDER BY page.org_rank ASC, listed.id DESC
+            """
         else:
             query = f"{query_base}{joins} WHERE {where_clause} {order_by} LIMIT %s OFFSET %s"
 
@@ -1558,6 +1595,8 @@ class AnimalService:
 
             # Build base query conditions for context
             base_conditions, base_params = self._build_count_base_conditions(filters)
+
+            response.total = self._count_matching(filters)
 
             # Get size counts
             response.size_options = self._get_size_counts(base_conditions, base_params, filters)
@@ -1593,6 +1632,23 @@ class AnimalService:
                 detail="Failed to fetch filter counts",
                 error_code="INTERNAL_ERROR",
             )
+
+    def _count_matching(self, filters: AnimalFilterCountRequest) -> int:
+        """Dogs matching every filter, counted with the list's own WHERE clause so
+        the catalog's "N dogs match" can never disagree with the list."""
+        shared = {key: value for key, value in filters.model_dump().items() if key in AnimalFilterRequest.model_fields}
+        joins, conditions, params = self._build_filter_clause(AnimalFilterRequest(**shared))
+        self.cursor.execute(
+            f"""
+            SELECT COUNT(DISTINCT a.id) AS total
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            {joins}
+            WHERE {" AND ".join(conditions)}
+            """,
+            params,
+        )
+        return self.cursor.fetchone()["total"]
 
     def _apply_compatibility_filters(
         self,

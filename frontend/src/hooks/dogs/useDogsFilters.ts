@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useDebouncedCallback, type DebouncedState } from "use-debounce";
 import { getAvailableRegions } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
-import { FILTER_DEFAULTS, SIZE_API_MAPPING, isDefaultFilterValue } from "@/constants/filters";
+import { FILTER_DEFAULTS, SIZE_API_MAPPING, isCatalogSort, isDefaultFilterValue } from "@/constants/filters";
 import type {
   Filters,
   DogsPageMetadata,
@@ -68,6 +68,7 @@ export default function useDogsFilters({
       initialParams?.available_country ||
       FILTER_DEFAULTS.COUNTRY,
     availableRegionFilter: searchParams.get("available_region") || FILTER_DEFAULTS.REGION,
+    sortFilter: isCatalogSort(searchParams.get("sort")) ? (searchParams.get("sort") as string) : FILTER_DEFAULTS.SORT,
   }), [searchParams, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, validateOrganizationId]);
 
   const updateURL = useDebouncedCallback(
@@ -85,6 +86,7 @@ export default function useDogsFilters({
         ageFilter: "age",
         sexFilter: "sex",
         breedFilter: "breed",
+        sortFilter: "sort",
       };
 
       Object.entries(newFilters).forEach(([key, value]) => {
@@ -104,7 +106,8 @@ export default function useDogsFilters({
           value !== FILTER_DEFAULTS.COUNTRY &&
           value !== FILTER_DEFAULTS.REGION &&
           value !== FILTER_DEFAULTS.GROUP &&
-          value !== FILTER_DEFAULTS.ORGANIZATION
+          value !== FILTER_DEFAULTS.ORGANIZATION &&
+          value !== FILTER_DEFAULTS.SORT
         ) {
           params.set(paramKey, value);
         }
@@ -127,7 +130,7 @@ export default function useDogsFilters({
   );
 
   const activeFilterCount = Object.entries(filters).filter(
-    ([_key, value]) => !isDefaultFilterValue(value),
+    ([key, value]) => key !== "sortFilter" && !isDefaultFilterValue(value),
   ).length;
 
   const [availableRegions, setAvailableRegions] = useState<string[]>([FILTER_DEFAULTS.REGION]);
@@ -174,6 +177,9 @@ export default function useDogsFilters({
 
 function buildAPIParams(filterValues: Filters): Record<string, string> {
   const params: Record<string, string> = {};
+
+  // Always sent: the API's own default is newest-first
+  params.sort = filterValues.sortFilter || FILTER_DEFAULTS.SORT;
 
   const searchQuery = (filterValues.searchQuery || "").trim();
   if (searchQuery) {

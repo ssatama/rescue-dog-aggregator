@@ -8,7 +8,21 @@ export const FILTER_DEFAULTS = {
   ORGANIZATION: "any",
   ALL: "All",
   GROUP: "Any group",
+  SORT: "recommended",
 } as const
+
+/** Sorts the catalog offers, in menu order; values are the API's `sort`. */
+export const CATALOG_SORTS = [
+  { value: "recommended", label: "Recommended" },
+  { value: "newest", label: "Newest" },
+  { value: "oldest", label: "Waiting longest" },
+  { value: "age-asc", label: "Youngest" },
+  { value: "age-desc", label: "Oldest" },
+] as const
+
+export function isCatalogSort(value: string | null | undefined): boolean {
+  return CATALOG_SORTS.some((sort) => sort.value === value)
+}
 
 export const SIZE_API_MAPPING = {
   Tiny: "Tiny",

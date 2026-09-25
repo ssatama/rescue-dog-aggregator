@@ -30,6 +30,7 @@ class FilterCountsResponse(BaseModel):
     Only includes options that have at least one matching animal.
     """
 
+    total: int = Field(default=0, ge=0, description="Dogs matching every filter in the request, as the list returns them")
     size_options: list[FilterOption] = Field(default_factory=list, description="Available size options with counts")
     age_options: list[FilterOption] = Field(default_factory=list, description="Available age options with counts")
     sex_options: list[FilterOption] = Field(default_factory=list, description="Available sex options with counts")

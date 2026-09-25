@@ -118,7 +118,7 @@ class AnimalFilterRequest(BaseModel):
     # Sorting
     sort: str | None = Field(
         default="newest",
-        description="Sort order: 'newest', 'oldest', 'name-asc', 'name-desc'",
+        description=("Sort order: 'recommended' (mixes rescues), 'newest', 'oldest' (waiting longest), 'age-asc' (youngest), 'age-desc' (oldest dogs), 'name-asc', 'name-desc'"),
     )
 
     # SEO/Sitemap filtering
@@ -142,7 +142,7 @@ class AnimalFilterRequest(BaseModel):
         """Validate sort field."""
         if v is None:
             return "newest"
-        valid_sorts = ["newest", "oldest", "name-asc", "name-desc"]
+        valid_sorts = ["recommended", "newest", "oldest", "age-asc", "age-desc", "name-asc", "name-desc"]
         if v not in valid_sorts:
             raise ValueError(f"Invalid sort value: {v}. Must be one of: {', '.join(valid_sorts)}")
         return v

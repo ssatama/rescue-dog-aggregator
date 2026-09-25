@@ -31,6 +31,8 @@ export interface Filters {
   locationCountryFilter: string;
   availableCountryFilter: string;
   availableRegionFilter: string;
+  /** Not a filter: the list's order. Never counted as an active filter. */
+  sortFilter?: string;
 }
 
 export interface DogsPageClientSimplifiedProps {
