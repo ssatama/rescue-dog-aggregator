@@ -39,3 +39,6 @@ describe("Header accessibility and responsive breakpoints", () => {
     expect(home.className).not.toMatch(/sr-only/);
   });
 });
+
+// The search field has its own tests (GlobalSearch.test.tsx)
+jest.mock("../../search/GlobalSearch", () => ({ __esModule: true, default: () => null }));

@@ -64,12 +64,10 @@ describe("DesktopFilters Component", () => {
     expect(screen.getByTestId("filters-title")).toHaveTextContent("Filters");
   });
 
-  test("renders search input", () => {
+  test("has no search box: the header search edits the catalog search (#492)", () => {
     render(<DesktopFilters {...mockProps} />);
 
-    const searchInput = screen.getByTestId("search-input");
-    expect(searchInput).toBeInTheDocument();
-    expect(searchInput).toHaveAttribute("placeholder", "Search dogs...");
+    expect(screen.queryByTestId("search-input")).not.toBeInTheDocument();
   });
 
   test("renders all filter sections", () => {
@@ -82,16 +80,6 @@ describe("DesktopFilters Component", () => {
     expect(screen.getByText("Breed")).toBeInTheDocument();
     expect(screen.getByText("Organization")).toBeInTheDocument();
     expect(screen.getByText("Adoptable to Country")).toBeInTheDocument();
-  });
-
-  test("search input has aria-label for accessibility", () => {
-    render(<DesktopFilters {...mockProps} />);
-
-    const searchInput = screen.getByTestId("search-input");
-    expect(searchInput).toHaveAttribute(
-      "aria-label",
-      "Search dogs by name or breed",
-    );
   });
 
   test("country filter select trigger has aria-label for accessibility", () => {

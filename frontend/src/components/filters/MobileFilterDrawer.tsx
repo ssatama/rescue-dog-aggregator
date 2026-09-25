@@ -13,7 +13,6 @@ import {
 import { Icon } from "../ui/Icon";
 import SearchTypeahead from "@/components/search/SearchTypeahead";
 import {
-  getSearchSuggestions,
   getBreedSuggestions,
 } from "@/services/animalsService";
 import { FILTER_DEFAULTS, ageFilterLabel } from "@/constants/filters";
@@ -157,7 +156,9 @@ export default function MobileFilterDrawer({
 
   const activeFilterCount = useMemo((): number => {
     let count = 0;
-    if (filterConfig.showSearch && searchQuery && searchQuery.trim() !== "") count++;
+    // An active text search counts even where the drawer has no box for it
+    // (the catalog edits it at the top of the page), so Clear all still shows
+    if (searchQuery && searchQuery.trim() !== "") count++;
     if (filterConfig.showOrganization) count += sectionCounts.organization;
     if (filterConfig.showBreed) count += sectionCounts.breed;
     if (filterConfig.showSex) count += sectionCounts.sex;
@@ -713,21 +714,14 @@ export default function MobileFilterDrawer({
                     <SearchTypeahead
                       data-testid="search-input"
                       value={searchQuery}
-                      placeholder="Search dogs..."
+                      placeholder="Search these dogs by name..."
                       onValueChange={handleSearchChange}
                       onClear={clearSearch}
-                      fetchSuggestions={getSearchSuggestions}
-                      debounceMs={300}
-                      maxSuggestions={5}
-                      showHistory={true}
                       showClearButton={true}
-                      showDidYouMean={true}
-                      historyKey="dog-search-history"
-                      analytics={{ surface: "mobile", suggestionGroup: "dog" }}
                       size="lg"
                       className="w-full"
                       inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 placeholder:text-gray-500 dark:placeholder:text-gray-400"
-                      aria-label="Search dogs by name or breed"
+                      aria-label="Search these dogs by name or breed"
                     />
                   </div>
                 )}

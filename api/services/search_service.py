@@ -24,6 +24,8 @@ WORD_MATCH = 0.8
 
 # Never a useful suggestion: it is where unresolvable breed text ends up.
 HIDDEN_BREEDS = frozenset({"Unknown"})
+# Not a breed anyone searches for, so left out of the popular list.
+NOT_POPULAR = HIDDEN_BREEDS | {"Mixed Breed"}
 
 # Phrases people type for things the catalog can filter on. Params are
 # /api/animals filter params.
@@ -124,9 +126,12 @@ def _match_filters(query: str, limit: int) -> list[dict]:
 
 
 def suggest(cursor: RealDictCursor, q: str, limit: int) -> dict:
-    """Grouped suggestions for a search box; each group holds at most `limit`."""
+    """Grouped suggestions for a search box; each group holds at most `limit`.
+
+    An empty query returns the breeds with the most dogs, for the box's empty state.
+    """
     query = _normalize(q)
-    if not query:
+    if not query and q.strip():
         return {"breeds": [], "rescues": [], "dogs": [], "filters": []}
 
     cursor.execute(
@@ -138,11 +143,16 @@ def suggest(cursor: RealDictCursor, q: str, limit: int) -> dict:
         GROUP BY a.primary_breed, a.breed_slug
         """
     )
-    breeds = _match_breeds(query, cursor.fetchall(), limit)
+    breed_rows = cursor.fetchall()
+    if not query:
+        popular = sorted((row for row in breed_rows if row["name"] not in NOT_POPULAR), key=lambda row: (-row["count"], row["name"]))
+        breeds = [{**row, "matched_synonym": None} for row in popular[:limit]]
+        return {"breeds": breeds, "rescues": [], "dogs": [], "filters": []}
+    breeds = _match_breeds(query, breed_rows, limit)
 
     cursor.execute(
         f"""
-        SELECT o.name, o.slug, COUNT(a.id) AS count
+        SELECT o.id, o.name, o.slug, COUNT(a.id) AS count
         FROM organizations o
         JOIN animals a ON a.organization_id = o.id AND {publicly_available("a")} AND a.animal_type = 'dog'
         WHERE o.active
@@ -154,7 +164,8 @@ def suggest(cursor: RealDictCursor, q: str, limit: int) -> dict:
     escaped = escape_like_pattern(q.strip())
     cursor.execute(
         f"""
-        SELECT a.name, a.slug, a.standardized_breed AS breed, o.name AS rescue, a.primary_image_url AS image
+        SELECT a.name, a.slug, a.standardized_breed AS breed, o.name AS rescue, a.primary_image_url AS image,
+               (a.name ILIKE %(prefix)s OR a.name ILIKE %(word)s) AS direct
         FROM animals a JOIN organizations o ON o.id = a.organization_id
         WHERE {publicly_available("a")} AND a.animal_type = 'dog' AND o.active AND a.name IS NOT NULL
           AND (
@@ -174,6 +185,10 @@ def suggest(cursor: RealDictCursor, q: str, limit: int) -> dict:
             "limit": limit,
         },
     )
-    dogs = [dict(row) for row in cursor.fetchall()]
+    rows = cursor.fetchall()
+    # As with breeds, a typo match only shows when nothing matched properly:
+    # "collie" finds Poppy Collie, not every Ollie
+    direct = [row for row in rows if row["direct"]]
+    dogs = [{key: value for key, value in row.items() if key != "direct"} for row in (direct or rows)]
 
     return {"breeds": breeds, "rescues": rescues, "dogs": dogs, "filters": _match_filters(query, limit)}

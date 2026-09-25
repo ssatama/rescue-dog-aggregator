@@ -263,31 +263,6 @@ export async function getFilterCounts(
   });
 }
 
-export async function getSearchSuggestions(
-  query: string,
-  limit: number = 5,
-): Promise<string[]> {
-  if (!query || query.trim().length === 0) {
-    return [];
-  }
-
-  logger.log(`Fetching search suggestions for query: "${query}"`);
-
-  try {
-    const params = {
-      q: query.trim(),
-      limit: Math.min(Math.max(limit, 1), 10),
-    };
-
-    const suggestions = await get("/api/animals/search/suggestions", params);
-    return Array.isArray(suggestions) ? (suggestions as string[]) : [];
-  } catch (error) {
-    logger.error("Error fetching search suggestions:", error);
-    reportError(error, { context: "getSearchSuggestions", query });
-    return [];
-  }
-}
-
 export async function getBreedSuggestions(
   query: string,
   limit: number = 5,

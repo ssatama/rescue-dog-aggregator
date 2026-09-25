@@ -67,13 +67,34 @@ describe("MobileFilterDrawer Component", () => {
     expect(screen.queryByText("Filters")).not.toBeInTheDocument();
   });
 
+  test("an active text search still counts where the drawer has no box for it", () => {
+    render(
+      <MobileFilterDrawer
+        {...mockProps}
+        searchQuery="bella"
+        filterConfig={{
+          showAge: true,
+          showBreed: true,
+          showSize: true,
+          showSex: true,
+          showShipsTo: true,
+          showOrganization: true,
+          showSearch: false,
+        }}
+      />,
+    );
+
+    expect(screen.queryByTestId("search-input")).not.toBeInTheDocument();
+    expect(screen.getByTestId("clear-all-filters")).toBeInTheDocument();
+  });
+
   test("search input has aria-label for accessibility", () => {
     render(<MobileFilterDrawer {...mockProps} />);
 
     const searchInput = screen.getByTestId("search-input");
     expect(searchInput).toHaveAttribute(
       "aria-label",
-      "Search dogs by name or breed",
+      "Search these dogs by name or breed",
     );
   });
 

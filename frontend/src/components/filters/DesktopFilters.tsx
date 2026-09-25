@@ -12,7 +12,6 @@ import {
 import { Icon } from "../ui/Icon";
 import SearchTypeahead from "@/components/search/SearchTypeahead";
 import {
-  getSearchSuggestions,
   getBreedSuggestions,
 } from "@/services/animalsService";
 import { FILTER_DEFAULTS, ageFilterLabel } from "@/constants/filters";
@@ -21,8 +20,6 @@ import type { DesktopFiltersProps } from "@/types/filterComponents";
 
 export default function DesktopFilters({
   searchQuery,
-  handleSearchChange,
-  clearSearch,
 
   organizationFilter,
   setOrganizationFilter,
@@ -126,28 +123,6 @@ export default function DesktopFilters({
               {activeFilterCount} active
             </span>
           )}
-        </div>
-
-        {/* Enhanced Search Bar with Typeahead */}
-        <div className="mb-6">
-          <SearchTypeahead
-            data-testid="search-input"
-            value={searchQuery}
-            placeholder="Search dogs..."
-            onValueChange={handleSearchChange}
-            onClear={clearSearch}
-            fetchSuggestions={getSearchSuggestions}
-            debounceMs={300}
-            maxSuggestions={5}
-            showHistory={true}
-            showClearButton={true}
-            showDidYouMean={true}
-            historyKey="dog-search-history"
-            analytics={{ surface: "catalog", suggestionGroup: "dog" }}
-            className="w-full"
-            inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-            aria-label="Search dogs by name or breed"
-          />
         </div>
 
         {/* Filters container with collapsible sections */}

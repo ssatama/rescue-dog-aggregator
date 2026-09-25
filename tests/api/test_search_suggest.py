@@ -28,6 +28,8 @@ def dogs_trust():
              'Staffie', 'Staffordshire Bull Terrier', 'Staffordshire Bull Terrier', 'staffordshire-bull-terrier', 'purebred'),
             (9202, 'Bella', 'bella-9202', 'dog', 'available', TRUE, 'high', 902, 'http://example.com/9202',
              'French Bulldog', 'French Bulldog', 'French Bulldog', 'french-bulldog', 'purebred'),
+            (9204, 'Brocky', 'brocky-9204', 'dog', 'available', TRUE, 'high', 902, 'http://example.com/9204',
+             'Beagle', 'Beagle', 'Beagle', 'beagle', 'purebred'),
             (9203, 'Gone Staffy', 'gone-9203', 'dog', 'unknown', TRUE, 'high', 902, 'http://example.com/9203',
              'Staffie', 'Staffordshire Bull Terrier', 'Staffordshire Bull Terrier', 'staffordshire-bull-terrier', 'purebred');
         """
@@ -70,7 +72,7 @@ class TestSuggest:
         assert suggest(client, "Frenchie")["breeds"][0]["slug"] == "french-bulldog"
 
     def test_rescue_by_name(self, client: TestClient):
-        assert suggest(client, "dogs trust")["rescues"] == [{"name": "Dogs Trust", "slug": "dogs-trust", "count": 2}]
+        assert suggest(client, "dogs trust")["rescues"] == [{"id": 902, "name": "Dogs Trust", "slug": "dogs-trust", "count": 3}]
 
     def test_dog_by_name(self, client: TestClient):
         assert suggest(client, "roc")["dogs"] == [{"name": "Rocky", "slug": "rocky-9201", "breed": "Staffordshire Bull Terrier", "rescue": "Dogs Trust", "image": None}]
@@ -79,6 +81,10 @@ class TestSuggest:
         body = suggest(client, "labardor")
         assert body["breeds"][0]["name"] == "Labrador Retriever"
         assert suggest(client, "Rockyy")["dogs"][0]["name"] == "Rocky"
+
+    def test_typo_name_matches_are_dropped_when_a_name_matches(self, client: TestClient):
+        # Brocky is typo-close to "rocky" but Rocky itself matches
+        assert [d["name"] for d in suggest(client, "rocky")["dogs"]] == ["Rocky"]
 
     def test_nothing_matches(self, client: TestClient):
         assert suggest(client, "zzqx") == {"breeds": [], "rescues": [], "dogs": [], "filters": []}
@@ -90,6 +96,12 @@ class TestSuggest:
     def test_limit_applies_per_group(self, client: TestClient):
         body = suggest(client, "terrier", limit=1)
         assert len(body["breeds"]) == 1
+
+    def test_empty_query_offers_the_breeds_with_most_dogs(self, client: TestClient):
+        # Mixed Breed has the most fixture dogs but is not something people search for
+        body = suggest(client, "", limit=2)
+        assert [b["name"] for b in body["breeds"]] == ["Beagle", "Border Collie"]
+        assert body["rescues"] == body["dogs"] == body["filters"] == []
 
     def test_query_of_only_punctuation_returns_nothing(self, client: TestClient):
         assert suggest(client, "%") == {"breeds": [], "rescues": [], "dogs": [], "filters": []}
@@ -110,7 +122,7 @@ class TestCatalogSearchSynonyms:
 
     def test_plain_text_search_is_unchanged(self, client: TestClient):
         dogs = client.get("/api/animals/", params={"search": "rock"}).json()
-        assert [d["name"] for d in dogs] == ["Rocky"]
+        assert sorted(d["name"] for d in dogs) == ["Brocky", "Rocky"]
 
 
 @pytest.mark.unit

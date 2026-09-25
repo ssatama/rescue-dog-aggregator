@@ -15,6 +15,7 @@ import { Filter, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
+import GlobalSearch from "../../components/search/GlobalSearch";
 import useScrollRestoration from "../../hooks/dogs/useScrollRestoration";
 import useDogsFilters from "../../hooks/dogs/useDogsFilters";
 import useDogsPagination from "../../hooks/dogs/useDogsPagination";
@@ -23,6 +24,19 @@ import type {
   DogsPageClientSimplifiedProps,
   Filters,
 } from "../../types/dogsPage";
+
+import type { FilterConfig } from "../../types/filterComponents";
+
+// The field at the top of the page edits the text search, so the drawer leaves it out
+const CATALOG_DRAWER_CONFIG: FilterConfig = {
+  showAge: true,
+  showBreed: true,
+  showSize: true,
+  showSex: true,
+  showShipsTo: true,
+  showOrganization: true,
+  showSearch: false,
+};
 
 // Lazy load filter components for better initial load
 const DesktopFilters = dynamic(
@@ -223,6 +237,9 @@ export default function DogsPageClientSimplified({
         data-testid="dogs-page-container"
         className="container mx-auto px-4 py-6 lg:py-8"
       >
+        {/* Phones: the header has no search field, so it sits at the top */}
+        <GlobalSearch surface="mobile" className="mb-4 sm:hidden" />
+
         {/* Desktop Breadcrumbs - Hidden on Mobile */}
         {!hideBreadcrumbs && (
           <div className="hidden lg:block">
@@ -255,12 +272,8 @@ export default function DogsPageClientSimplified({
           {/* Desktop filters sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
             <DesktopFilters
-              // Search
+              // Search is edited in the header; it still counts as a filter
               searchQuery={filterState.filters.searchQuery}
-              handleSearchChange={(value: string) =>
-                handleFilterChange("searchQuery", value)
-              }
-              clearSearch={() => handleFilterChange("searchQuery", "")}
               // Organization
               organizationFilter={filterState.filters.organizationFilter}
               setOrganizationFilter={(value: string) =>
@@ -416,10 +429,9 @@ export default function DogsPageClientSimplified({
       <MobileFilterDrawer
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
-        // Search
+        // Search is edited in the field at the top of the page
         searchQuery={filterState.filters.searchQuery}
-        handleSearchChange={(value: string) => handleFilterChange("searchQuery", value)}
-        clearSearch={() => handleFilterChange("searchQuery", "")}
+        filterConfig={CATALOG_DRAWER_CONFIG}
         // Organization
         organizationFilter={filterState.filters.organizationFilter}
         setOrganizationFilter={(value: string) =>
