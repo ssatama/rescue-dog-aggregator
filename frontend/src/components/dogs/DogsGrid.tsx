@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import DogCard from "./DogCard";
 import DogCardErrorBoundary from "../error/DogCardErrorBoundary";
@@ -5,6 +7,7 @@ import DogCardSkeletonOptimized from "../ui/DogCardSkeletonOptimized";
 import EmptyState from "../ui/EmptyState";
 import type { DogsGridProps } from "@/types/dogComponents";
 import { DOG_GRID } from "@/constants/layout";
+import { useLegacyDogHash } from "@/hooks/useLegacyDogHash";
 
 const DogsGrid = React.memo(function DogsGrid({
   dogs = [],
@@ -18,6 +21,8 @@ const DogsGrid = React.memo(function DogsGrid({
   listContext = "home",
   ...props
 }: DogsGridProps): React.ReactElement {
+  useLegacyDogHash();
+
   if (loading) {
     const animationClass =
       loadingType === "filter"

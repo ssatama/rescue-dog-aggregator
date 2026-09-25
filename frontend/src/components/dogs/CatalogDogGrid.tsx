@@ -6,6 +6,7 @@ import DogCard from "./DogCard";
 import DogCardErrorBoundary from "../error/DogCardErrorBoundary";
 import { DOG_GRID } from "@/constants/layout";
 import { useGridColumns } from "@/hooks/useGridColumns";
+import { useLegacyDogHash } from "@/hooks/useLegacyDogHash";
 import type { Dog } from "@/types/dog";
 
 const ROW_HEIGHT = 360; // A first guess; rows are measured once rendered
@@ -32,12 +33,19 @@ function VirtualRows({ dogs, columns }: { dogs: Dog[]; columns: number }): React
     scrollMargin,
   });
 
-  // Where the list starts on the page, so the right rows count as on screen
+  // Where the list starts on the page, so the right rows count as on screen.
+  // Chips, the adoptable switch or an alert above it move it, and each of
+  // those changes the page's height, so watch that.
   useLayoutEffect(() => {
-    if (listRef.current) {
-      setScrollMargin(listRef.current.getBoundingClientRect().top + window.scrollY);
-    }
-  }, [columns]);
+    const measure = (): void => {
+      if (listRef.current) setScrollMargin(listRef.current.getBoundingClientRect().top + window.scrollY);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(document.body);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div ref={listRef}>
@@ -67,6 +75,7 @@ function VirtualRows({ dogs, columns }: { dogs: Dog[]; columns: number }): React
  * by rows once the browser knows how many columns fit. */
 export default function CatalogDogGrid({ dogs }: { dogs: Dog[] }): React.JSX.Element {
   const columns = useGridColumns();
+  useLegacyDogHash();
 
   // Server render and hydration: the CSS alone lays out the grid
   if (columns === null) {

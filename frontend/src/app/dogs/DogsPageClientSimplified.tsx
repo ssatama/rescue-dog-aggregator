@@ -136,13 +136,6 @@ export default function DogsPageClientSimplified({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [sidebarHidden, toggleSidebar] = useSidebarHidden();
 
-  // Phones used to open dogs in an overlay at #dog=<slug>; shared links like
-  // that now go to the dog's own page
-  useEffect(() => {
-    const match = window.location.hash.match(/^#dog=(.+)$/);
-    if (match) router.replace(`/dogs/${match[1]}`);
-  }, [router]);
-
   const applyFilters = useCallback(
     (changes: Record<string, string | undefined>) => {
       // A region belongs to one country, so a new country (or none) drops it
@@ -325,6 +318,8 @@ export default function DogsPageClientSimplified({
         </div>
       )}
 
+      {/* Layout's <main> gives the 16px phone gutter; this lines the edges up
+          with the header's from 640px */}
       <div
         data-testid="dogs-page-container"
         className="mx-auto max-w-7xl py-6 sm:px-2 lg:px-4 lg:py-8"
