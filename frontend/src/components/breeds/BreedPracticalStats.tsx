@@ -50,20 +50,22 @@ export default function BreedPracticalStats({ stats }: BreedPracticalStatsProps)
       </h2>
       <p className="mt-1 text-sm text-subtle">From the dogs listed now. Rescues don&apos;t record every detail for every dog.</p>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {stats.compatibility.map((stat) => (
-          <div key={stat.key} className={TILE}>
-            <p className="font-display text-3xl font-bold text-ink">{stat.percent}%</p>
-            <h3 className="mt-1 text-sm font-semibold text-ink">{stat.label}</h3>
-            <p className="mt-1 text-xs text-subtle">
-              {stat.count} {sample(stat.known)}
-            </p>
-          </div>
-        ))}
-      </div>
+      {stats.compatibility.length > 0 && (
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {stats.compatibility.map((stat) => (
+            <div key={stat.key} className={TILE}>
+              <p className="font-display text-3xl font-bold text-ink">{stat.percent}%</p>
+              <h3 className="mt-1 text-sm font-semibold text-ink">{stat.label}</h3>
+              <p className="mt-1 text-xs text-subtle">
+                {stat.count} {sample(stat.known)}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {(stats.energy || stats.size || stats.age) && (
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
+        <div className={`${stats.compatibility.length > 0 ? "mt-3" : "mt-4"} grid gap-3 md:grid-cols-3`}>
           {stats.energy && <MixTile title="Energy" stat={stats.energy} />}
           {stats.size && <MixTile title="Size" stat={stats.size} />}
           {stats.age && (
