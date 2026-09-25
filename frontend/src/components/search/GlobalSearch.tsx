@@ -212,11 +212,18 @@ export default function GlobalSearch({ surface, className = "" }: GlobalSearchPr
       trackSearchPerformed(surface, option?.kind ?? "none", option?.count ?? null);
       setOpen(false);
       inputRef.current?.blur();
-      if (option && option.kind !== "none") setText("");
+      // Only a text search leaves its words in the field
+      if (option && option.key !== "search") setText("");
       router.push(href);
     },
     [base, query, router, surface],
   );
+
+  // Emptying the field also drops the catalog search it was showing
+  const clearText = useCallback(() => {
+    setText("");
+    if (urlSearch) router.push(textSearchHref(base, ""));
+  }, [base, router, urlSearch]);
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -237,14 +244,21 @@ export default function GlobalSearch({ surface, className = "" }: GlobalSearchPr
         setOpen(false);
       } else if (text) {
         event.preventDefault();
-        setText("");
+        clearText();
       }
     }
   };
 
   const onSubmit = (event: React.FormEvent): void => {
     event.preventDefault();
-    choose(activeIndex >= 0 ? options[activeIndex] : undefined);
+    if (activeIndex >= 0) {
+      choose(options[activeIndex]);
+    } else if (query) {
+      choose(undefined);
+    } else if (urlSearch) {
+      // Enter on an emptied field clears the catalog search; otherwise it does nothing
+      clearText();
+    }
   };
 
   const loaded = loadedQuery === query;
@@ -296,7 +310,7 @@ export default function GlobalSearch({ surface, className = "" }: GlobalSearchPr
               aria-label="Clear search"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
-                setText("");
+                clearText();
                 inputRef.current?.focus();
               }}
               className="grid h-6 w-6 place-items-center rounded-full hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"

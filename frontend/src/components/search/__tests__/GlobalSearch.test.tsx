@@ -136,6 +136,7 @@ describe("GlobalSearch", () => {
     expect(await screen.findByText("No breeds, rescues or dogs match “zzqx”.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("option", { name: "Browse all dogs" }));
     expect(push).toHaveBeenCalledWith("/dogs");
+    expect(input()).toHaveValue("");
   });
 
   it("Escape closes the list", async () => {
@@ -190,6 +191,26 @@ describe("GlobalSearch", () => {
     input().blur();
     await userEvent.click(input());
     expect(await screen.findByRole("option", { name: /German Shepherd Dog/ })).toBeInTheDocument();
+  });
+
+  it("clearing the field drops the catalog search it showed", async () => {
+    pathname = "/dogs";
+    searchParams = new URLSearchParams("size=Small&search=luna");
+    render(<GlobalSearch surface="header" />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(push).toHaveBeenCalledWith("/dogs?size=Small");
+    expect(input()).toHaveValue("");
+  });
+
+  it("Enter on an empty field stays put and records nothing", async () => {
+    render(<GlobalSearch surface="header" />);
+    await userEvent.click(input());
+    await screen.findByRole("option", { name: /German Shepherd Dog/ });
+
+    await userEvent.keyboard("{Enter}");
+    expect(push).not.toHaveBeenCalled();
+    expect(trackSearchPerformed).not.toHaveBeenCalled();
   });
 
   it("says so when suggestions cannot load, and still searches on Enter", async () => {
