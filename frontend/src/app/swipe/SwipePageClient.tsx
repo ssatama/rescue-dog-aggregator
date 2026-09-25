@@ -7,12 +7,11 @@ import SwipeErrorBoundary from "../../components/swipe/SwipeErrorBoundary";
 import { useSwipeDevice } from "../../hooks/useSwipeDevice";
 import { swipeMetrics } from "../../utils/swipeMetrics";
 import { get } from "../../utils/api";
-import * as Sentry from "@sentry/nextjs";
+import { queryToParams } from "../../utils/queryParams";
 import { type Dog } from "../../types/dog";
 import type { ApiDog } from "../../types/apiDog";
 import { transformApiDogsToDogs } from "../../utils/dogTransformer";
 import { safeStorage } from "../../utils/safeStorage";
-import { reportError } from "../../utils/logger";
 import SwipeContainerSkeleton from "../../components/ui/SwipeContainerSkeleton";
 import DogDetailModalSkeleton from "../../components/ui/DogDetailModalSkeleton";
 import type { SwipeFilters } from "../../hooks/useSwipeFilters";
@@ -58,7 +57,6 @@ export default function SwipePageClient({
   const canUseSwipe = useSwipeDevice();
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [totalSwiped, setTotalSwiped] = useState(0);
   const [dogs, setDogs] = useState<Dog[]>(initialDogs || []);
   const [currentDogIndex, setCurrentDogIndex] = useState<number>(0);
   const migrationAttemptedRef = useRef(false);
@@ -100,48 +98,12 @@ export default function SwipePageClient({
 
   const fetchDogsWithFilters = useCallback(
     async (queryString: string): Promise<Dog[]> => {
-      try {
-        const params = Object.fromEntries(new URLSearchParams(queryString));
-        const data = await get<{ dogs?: ApiDog[] }>("/api/dogs/swipe", params);
-
-        const transformedDogs = transformApiDogsToDogs(data.dogs || []);
-        return transformedDogs;
-      } catch (error) {
-        reportError(error, { context: "SwipePageClient.fetchDogs" });
-        return [];
-      }
+      // Errors propagate: an empty list would read as "no dogs match" (#499)
+      const data = await get<{ dogs?: ApiDog[] }>("/api/dogs/swipe", queryToParams(queryString));
+      return transformApiDogsToDogs(data.dogs || []);
     },
     [],
   );
-
-  const handleSwipe = (direction: "left" | "right", dog: Dog) => {
-    swipeMetrics.trackSwipe(direction, dog.id.toString());
-    setTotalSwiped((prev) => {
-      const newTotal = prev + 1;
-
-      if (newTotal % 20 === 0) {
-        swipeMetrics.trackQueueExhausted(newTotal);
-      }
-
-      return newTotal;
-    });
-
-    if (direction === "right") {
-      swipeMetrics.trackFavoriteAdded(dog.id.toString(), "swipe");
-
-      Sentry.addBreadcrumb({
-        message: "swipe.favorite.added",
-        category: "swipe",
-        level: "info",
-        data: {
-          dogId: dog.id,
-          dogName: dog.name,
-          breed: dog.breed,
-          source: "swipe_gesture",
-        },
-      });
-    }
-  };
 
   const handleCardExpanded = (dog: Dog, index: number) => {
     setSelectedDog(dog);
@@ -176,10 +138,10 @@ export default function SwipePageClient({
 
   return (
     <SwipeErrorBoundary>
-      <div className="min-h-[100dvh] bg-gray-50">
+      <div className="min-h-[100dvh] bg-background">
         <SwipeContainer
           fetchDogs={fetchDogsWithFilters}
-          onSwipe={handleSwipe}
+          keyboardEnabled={!showDetails}
           onCardExpanded={handleCardExpanded}
           onDogsLoaded={setDogs}
           initialDogs={initialDogs}

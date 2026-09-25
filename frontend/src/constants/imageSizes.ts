@@ -13,14 +13,14 @@ export type ImageSizeKey =
 export const IMAGE_SIZES: Record<ImageSizeKey, string> = {
   // Swipe cards and main dog cards
   SWIPE_CARD:
-    "(max-width: 640px) 100vw, (max-width: 768px) 90vw, (max-width: 1024px) 80vw, 600px",
+    "(max-width: 480px) 100vw, 448px",
 
   // Catalog cards in grid
   CATALOG_CARD: "(max-width: 640px) 50vw, 33vw",
 
   // Image carousels - optimized for different viewport sizes
   CAROUSEL:
-    "(max-width: 640px) 100vw, (max-width: 768px) 90vw, (max-width: 1024px) 80vw, 600px",
+    "(max-width: 480px) 100vw, 448px",
 
   // Thumbnails for related dogs or small previews
   THUMBNAIL: "128px",

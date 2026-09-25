@@ -1,16 +1,11 @@
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from "react";
-import { useFavorites } from "../../hooks/useFavorites";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
-import { X, PawPrint } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, PawPrint, SlidersHorizontal } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { useFavorites } from "../../hooks/useFavorites";
 import { SwipeCard } from "./SwipeCard";
 import SwipeOnboarding from "./SwipeOnboarding";
 import { FilterModal } from "./FilterModal";
@@ -19,17 +14,11 @@ import useSwipeFilters from "../../hooks/useSwipeFilters";
 import type { SwipeFilters as Filters } from "../../hooks/useSwipeFilters";
 import { safeStorage } from "../../utils/safeStorage";
 import { useTheme } from "../providers/ThemeProvider";
-import { safeToNumber } from "../../utils/dogImageHelpers";
-import { reportError } from "../../utils/logger";
 import { type Dog } from "../../types/dog";
 import type { CountryOption } from "../../services/serverSwipeService";
 
-// Constants
-const DOUBLE_TAP_DELAY = 300;
-
 interface SwipeContainerProps {
   fetchDogs?: (queryString: string) => Promise<Dog[]>;
-  onSwipe?: (direction: "left" | "right", dog: Dog) => void;
   onCardExpanded?: (dog: Dog, index: number) => void;
   onDogsLoaded?: (dogs: Dog[]) => void;
   initialDogs?: Dog[] | null;
@@ -37,11 +26,83 @@ interface SwipeContainerProps {
   needsOnboarding?: boolean;
   onFiltersChange?: (filters: Filters) => void;
   availableCountries?: CountryOption[];
+  /** Arrow keys, F and Enter act on the card; off while the details are open. */
+  keyboardEnabled?: boolean;
+}
+
+// A drag this far, or this fast, changes the dog; anything less springs back
+const SWIPE_DISTANCE = 80;
+const SWIPE_VELOCITY = 500;
+// Fetch the next batch while this many dogs are still ahead
+const PREFETCH_AHEAD = 5;
+
+const PILL_BUTTON =
+  "inline-flex h-12 min-w-[7.5rem] items-center justify-center gap-1.5 rounded-full px-5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-40";
+const SECONDARY = `${PILL_BUTTON} border border-line bg-surface text-ink hover:bg-soft`;
+const PRIMARY = `${PILL_BUTTON} bg-orange-700 text-white hover:bg-orange-800`;
+
+function isTyping(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+  );
+}
+
+function EndOfStack({
+  empty,
+  failed,
+  onRetry,
+  onStartOver,
+  onChangeFilters,
+}: {
+  empty: boolean;
+  /** The last request failed, so this may not be the end: offer a retry */
+  failed: boolean;
+  onRetry: () => void;
+  onStartOver: () => void;
+  onChangeFilters: () => void;
+}): React.ReactElement {
+  return (
+    <div className="flex max-w-sm flex-col items-center gap-3 text-center" data-testid="swipe-end">
+      {!failed && (
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+          <PawPrint className="h-8 w-8" aria-hidden="true" />
+        </span>
+      )}
+      <h2 className="font-display text-2xl font-bold text-ink">
+        {failed ? "We couldn't load the dogs" : empty ? "No dogs match these filters" : "You've seen every dog here"}
+      </h2>
+      <p className="text-subtle">
+        {failed
+          ? "Check your connection and try again."
+          : empty
+            ? "Try more sizes or ages, or browse every dog in the catalog."
+            : "That's everyone matching your filters for now. Rescues add new dogs three times a week."}
+      </p>
+      <div className="mt-2 flex flex-wrap justify-center gap-2">
+        {failed && (
+          <button type="button" onClick={onRetry} className={PRIMARY}>
+            Try again
+          </button>
+        )}
+        {!empty && (
+          <button type="button" onClick={onStartOver} className={failed ? SECONDARY : PRIMARY}>
+            Start over
+          </button>
+        )}
+        <button type="button" onClick={onChangeFilters} className={SECONDARY}>
+          Change filters
+        </button>
+        <Link href="/dogs" className={SECONDARY}>
+          Browse all dogs
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 export function SwipeContainer({
   fetchDogs,
-  onSwipe,
   onCardExpanded,
   onDogsLoaded,
   initialDogs,
@@ -49,10 +110,11 @@ export function SwipeContainer({
   needsOnboarding: needsOnboardingProp,
   onFiltersChange,
   availableCountries,
+  keyboardEnabled = true,
 }: SwipeContainerProps) {
   const { theme } = useTheme();
   const prefersReducedMotion = useReducedMotion();
-  const { addFavorite, isFavorited } = useFavorites();
+  const { toggleFavorite } = useFavorites();
   const {
     filters,
     setFilters,
@@ -64,48 +126,40 @@ export function SwipeContainer({
 
   const showOnboarding = needsOnboardingProp ?? needsOnboardingFromHook;
 
-  const [dogs, setDogs] = useState<Dog[]>(() => {
-    if (initialDogs && initialDogs.length > 0) {
-      const swipedIds = new Set(
-        safeStorage.parse<number[]>("swipedDogIds", []),
-      );
-      return initialDogs.filter((dog) => {
-        const dogId = safeToNumber(dog.id);
-        return dogId !== null && !swipedIds.has(dogId);
-      });
-    }
-    return [];
-  });
+  const [dogs, setDogs] = useState<Dog[]>(() => initialDogs ?? []);
+  // Only a position inside the first page can be restored: later pages aren't loaded yet
   const [currentIndex, setCurrentIndex] = useState(() => {
-    return safeStorage.parse("swipeCurrentIndex", 0);
+    const saved = safeStorage.parse("swipeCurrentIndex", 0);
+    return !initialDogs || saved < initialDogs.length ? saved : 0;
   });
   const [isLoading, setIsLoading] = useState(!initialDogs);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [lastTap, setLastTap] = useState<number>(0);
-  const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [swipedDogIds, setSwipedDogIds] = useState<Set<number>>(() => {
-    const storedIds = safeStorage.parse<number[]>("swipedDogIds", []);
-    return new Set(storedIds);
-  });
-  const swipedDogIdsRef = useRef(swipedDogIds);
-  swipedDogIdsRef.current = swipedDogIds;
-  const isProcessingSwipe = useRef(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  // The next page failed: the end of the stack offers a retry, not "seen every dog"
+  const [loadMoreFailed, setLoadMoreFailed] = useState(false);
+  const dragged = useRef(false);
+  // The first load restores the saved position; new filters start at the top
+  const restorePosition = useRef(true);
+  // Counts stack loads, so a next page that lands after a reload is dropped
+  const stackLoads = useRef(0);
 
-  // Refs for callback and filter values to avoid stale closures in effects
   const onDogsLoadedRef = useRef(onDogsLoaded);
-  onDogsLoadedRef.current = onDogsLoaded;
-  const filtersRef = useRef(filters);
-  filtersRef.current = filters;
-  const [offset, setOffset] = useState(0);
+  useEffect(() => {
+    onDogsLoadedRef.current = onDogsLoaded;
+  }, [onDogsLoaded]);
 
-  // Memoize the query string to prevent unnecessary re-renders
-  const queryString = useMemo(() => {
-    if (isValid) {
-      return toQueryString();
-    }
-    return "";
-  }, [isValid, toQueryString]);
+  // The page keeps its own copy for the details modal's prev/next
+  useEffect(() => {
+    onDogsLoadedRef.current?.(dogs);
+  }, [dogs]);
+
+  const queryString = useMemo(() => (isValid ? toQueryString() : ""), [isValid, toQueryString]);
+
+  const setIndex = useCallback((index: number) => {
+    setCurrentIndex(index);
+    safeStorage.set("swipeCurrentIndex", String(index));
+  }, []);
 
   // Sync initialFilters with hook state on mount
   useEffect(() => {
@@ -115,125 +169,48 @@ export function SwipeContainer({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only sync initialFilters on mount, setFilters is stable
   }, []);
 
-  // Notify parent of initial dogs on mount
-  useEffect(() => {
-    if (initialDogs && initialDogs.length > 0 && onDogsLoadedRef.current) {
-      const swipedIds = new Set(
-        safeStorage.parse<number[]>("swipedDogIds", []),
-      );
-      const filteredDogs = initialDogs.filter((dog) => {
-        const dogId = safeToNumber(dog.id);
-        return dogId !== null && !swipedIds.has(dogId);
-      });
-      onDogsLoadedRef.current(filteredDogs);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only notify parent of initial dogs on mount
-  }, []);
-
-  // Preload next images when dogs change or current index changes
-  useEffect(() => {
-    const preloadCount = 3; // Preload next 3 images
-    const imagesToPreload: string[] = [];
-    const imageElements: HTMLImageElement[] = [];
-    let mounted = true;
-
-    for (let i = 1; i <= preloadCount; i++) {
-      const nextIndex = currentIndex + i;
-      const nextDog = dogs[nextIndex];
-      if (nextDog) {
-        const imageUrl = nextDog.primary_image_url || nextDog.main_image;
-        if (imageUrl) {
-          imagesToPreload.push(imageUrl);
-        }
-      }
-    }
-
-    // Preload images using Image constructor with proper cleanup
-    imagesToPreload.forEach((src) => {
-      if (!mounted) return;
-
-      const img = new Image();
-
-      // Set up handlers before setting src to avoid race conditions
-      img.onload = () => {
-        if (!mounted) {
-          img.src = "";
-        }
-      };
-
-      img.onerror = () => {
-        if (!mounted) {
-          img.src = "";
-        }
-      };
-
-      img.src = src;
-      imageElements.push(img);
-    });
-
-    // Cleanup function to prevent memory leaks
-    return () => {
-      mounted = false;
-      imageElements.forEach((img) => {
-        // Cancel any in-flight image loads
-        img.src = "";
-        img.onload = null;
-        img.onerror = null;
-      });
-    };
-  }, [currentIndex, dogs]);
-
   // Fetch dogs when filters change
   useEffect(() => {
     if (!isValid || !fetchDogs || !queryString) return;
     let cancelled = false;
 
+    const restore = restorePosition.current;
+    restorePosition.current = false;
+    stackLoads.current += 1;
     const loadDogs = async () => {
       setIsLoading(true);
+      setIsLoadingMore(false);
       try {
-        const fetchedDogs = await fetchDogs(queryString);
+        const fetched = await fetchDogs(queryString);
         if (cancelled) return;
-
-        const swipedIds = new Set(
-          safeStorage.parse<number[]>("swipedDogIds", []),
-        );
-
-        const newDogs = fetchedDogs.filter((dog) => {
-          const dogId = safeToNumber(dog.id);
-          return dogId !== null && !swipedIds.has(dogId);
+        setDogs(fetched);
+        setLoadFailed(false);
+        setLoadMoreFailed(false);
+        setCurrentIndex((prev) => {
+          const index = restore && prev < fetched.length ? prev : 0;
+          safeStorage.set("swipeCurrentIndex", String(index));
+          return index;
         });
-
-        setDogs(newDogs);
-        if (onDogsLoadedRef.current) {
-          onDogsLoadedRef.current(newDogs);
-        }
-
-        setCurrentIndex((prevIndex) => {
-          const clampedIndex = Math.min(
-            prevIndex,
-            Math.max(0, newDogs.length - 1),
-          );
-          safeStorage.set("swipeCurrentIndex", clampedIndex.toString());
-          return clampedIndex;
-        });
-        setOffset(0);
-
         Sentry.addBreadcrumb({
           message: "swipe.queue.loaded",
           category: "swipe",
           level: "info",
-          data: {
-            filtersData: filtersRef.current,
-            dogCount: newDogs.length,
-            filteredOut: fetchedDogs.length - newDogs.length,
-          },
+          data: { dogCount: fetched.length },
         });
       } catch (error) {
+        // On the first load the server's stack for these filters stays. After a
+        // filter change the old stack no longer matches the pills, so clear it
+        // and offer a retry, never an empty "no matches"
         Sentry.captureException(error);
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
+        if (cancelled) return;
+        setLoadFailed(true);
+        setLoadMoreFailed(false);
+        if (!restore) {
+          setDogs([]);
+          setIndex(0);
         }
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
     };
 
@@ -241,377 +218,145 @@ export function SwipeContainer({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setIndex is stable
   }, [isValid, queryString, fetchDogs]);
 
-  // Allow natural scrolling - no swipe gestures used
-  // Body scroll lock removed to enable vertical scrolling to reach all controls
+  // Pages follow the API's stable order (no randomize), so offset = dogs
+  // loaded: no page is skipped or repeated, and an empty page really is the end
+  const loadMore = useCallback(() => {
+    if (!fetchDogs || isLoadingMore || !queryString) return;
+    setIsLoadingMore(true);
+    const load = stackLoads.current;
+    fetchDogs(`${queryString}&offset=${dogs.length}`)
+      .then((fetched) => {
+        // The stack was reloaded meanwhile (new filters, even ones changed and
+        // changed back, or Start over): this page belongs to the old one
+        if (stackLoads.current !== load) return;
+        setLoadMoreFailed(false);
+        setDogs((prev) => {
+          const seen = new Set(prev.map((dog) => dog.id));
+          const fresh = fetched.filter((dog) => !seen.has(dog.id));
+          return fresh.length > 0 ? [...prev, ...fresh] : prev;
+        });
+      })
+      .catch((error) => {
+        Sentry.captureException(error);
+        if (stackLoads.current === load) setLoadMoreFailed(true);
+      })
+      .finally(() => {
+        if (stackLoads.current === load) setIsLoadingMore(false);
+      });
+  }, [fetchDogs, isLoadingMore, queryString, dogs.length]);
 
-  // Log session start
-  useEffect(() => {
-    Sentry.addBreadcrumb({
-      message: "swipe.session.started",
-      category: "swipe",
-      level: "info",
-      data: { timestamp: new Date().toISOString() },
-    });
+  const currentDog: Dog | undefined = dogs[currentIndex];
 
-    return () => {
-      // Clear any pending tap timeout on unmount
-      if (tapTimeoutRef.current) {
-        clearTimeout(tapTimeoutRef.current);
-        tapTimeoutRef.current = null;
-      }
-
+  // Next can step past the last dog, onto the end of the stack
+  const goToNext = useCallback(() => {
+    if (currentIndex >= dogs.length) return;
+    const next = currentIndex + 1;
+    setIndex(next);
+    if (next >= dogs.length - PREFETCH_AHEAD) loadMore();
+    const nextDog = dogs[next];
+    if (nextDog) {
       Sentry.addBreadcrumb({
-        message: "swipe.session.ended",
+        message: "swipe.card.viewed",
         category: "swipe",
         level: "info",
-        data: { timestamp: new Date().toISOString() },
+        data: { dogId: nextDog.id, dogName: nextDog.name },
       });
+    }
+  }, [currentIndex, dogs, setIndex, loadMore]);
+
+  const goToPrevious = useCallback(() => {
+    if (currentIndex > 0) setIndex(Math.min(currentIndex, dogs.length) - 1);
+  }, [currentIndex, dogs.length, setIndex]);
+
+  const openDetails = useCallback(() => {
+    if (!currentDog) return;
+    onCardExpanded?.(currentDog, currentIndex);
+    Sentry.addBreadcrumb({
+      message: "swipe.card.expanded",
+      category: "swipe",
+      level: "info",
+      data: { dogId: currentDog.id, dogName: currentDog.name },
+    });
+  }, [currentDog, currentIndex, onCardExpanded]);
+
+  const startOver = useCallback(() => {
+    setIndex(0);
+    if (!fetchDogs || !queryString) return;
+    const load = (stackLoads.current += 1);
+    setIsLoading(true);
+    setIsLoadingMore(false);
+    fetchDogs(queryString)
+      .then((fetched) => {
+        // Filters changed meanwhile: their own fetch owns the stack now
+        if (stackLoads.current !== load) return;
+        setDogs(fetched);
+        setLoadFailed(false);
+        setLoadMoreFailed(false);
+      })
+      .catch((error) => {
+        // On failure the current stack stays, from its first dog
+        Sentry.captureException(error);
+        if (stackLoads.current === load) setLoadFailed(true);
+      })
+      .finally(() => {
+        // A filter change meanwhile is loading its own stack; leave its spinner on
+        if (stackLoads.current === load) setIsLoading(false);
+      });
+  }, [fetchDogs, queryString, setIndex]);
+
+  // ← → browse, F saves, Enter opens the details (#499)
+  useEffect(() => {
+    if (!keyboardEnabled || showFilters || showOnboarding) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || isTyping(e.target)) return;
+      switch (e.key) {
+        case "ArrowRight":
+          goToNext();
+          break;
+        case "ArrowLeft":
+          goToPrevious();
+          break;
+        case "f":
+        case "F":
+          if (!currentDog) return;
+          void toggleFavorite(currentDog.id, currentDog.name, currentDog);
+          break;
+        case "Enter":
+          // Enter on a focused button or link belongs to that control
+          if (!currentDog || (e.target instanceof HTMLElement && e.target.closest("button, a"))) return;
+          openDetails();
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
     };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [keyboardEnabled, showFilters, showOnboarding, currentDog, goToNext, goToPrevious, openDetails, toggleFavorite]);
+
+  useEffect(() => {
+    Sentry.addBreadcrumb({ message: "swipe.session.started", category: "swipe", level: "info" });
   }, []);
 
   const handleOnboardingComplete = useCallback(
     (skipped: boolean, onboardingFilters?: Filters) => {
       if (!skipped && onboardingFilters) {
         completeOnboarding(onboardingFilters);
-        if (onFiltersChange) {
-          onFiltersChange(onboardingFilters);
-        }
+        onFiltersChange?.(onboardingFilters);
       }
     },
     [completeOnboarding, onFiltersChange],
   );
 
-  const goToNext = useCallback(() => {
-    if (currentIndex < dogs.length - 1) {
-      setCurrentIndex((prev) => {
-        const newIndex = prev + 1;
-        safeStorage.set("swipeCurrentIndex", newIndex.toString());
-        return newIndex;
-      });
-      const nextDog = dogs[currentIndex + 1];
-      if (nextDog) {
-        Sentry.addBreadcrumb({
-          message: "swipe.card.viewed",
-          category: "swipe",
-          level: "info",
-          data: {
-            dogId: nextDog.id,
-            dogName: nextDog.name,
-          },
-        });
-      }
-
-      // Check if we need to load more dogs
-      if (
-        currentIndex >= dogs.length - 5 &&
-        fetchDogs &&
-        !isLoadingMore &&
-        queryString
-      ) {
-        setIsLoadingMore(true);
-        const newOffset = offset + dogs.length;
-        setOffset(newOffset);
-
-        // Add randomize parameter when fetching more dogs
-        fetchDogs(queryString + `&offset=${newOffset}&randomize=true`)
-          .then((fetchedDogs) => {
-            if (fetchedDogs && fetchedDogs.length > 0) {
-              setDogs((prevDogs) => {
-                const swipedIds = new Set(
-                  safeStorage.parse<number[]>("swipedDogIds", []),
-                );
-                const newDogs = fetchedDogs.filter((dog) => {
-                  const dogId = safeToNumber(dog.id);
-                  return dogId !== null && !swipedIds.has(dogId);
-                });
-
-                if (newDogs.length > 0) {
-                  const updatedDogs = [...prevDogs, ...newDogs];
-                  // Notify parent of updated dogs array for modal navigation
-                  if (onDogsLoaded) {
-                    onDogsLoaded(updatedDogs);
-                  }
-                  return updatedDogs;
-                }
-                return prevDogs;
-              });
-            }
-            setIsLoadingMore(false);
-          })
-          .catch((error) => {
-            Sentry.captureException(error);
-            setIsLoadingMore(false);
-          });
-      }
-    }
-  }, [
-    currentIndex,
-    dogs,
-    fetchDogs,
-    queryString,
-    isLoadingMore,
-    offset,
-    onDogsLoaded,
-  ]);
-
-  const goToPrevious = useCallback(() => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => {
-        const newIndex = prev - 1;
-        safeStorage.set("swipeCurrentIndex", newIndex.toString());
-        return newIndex;
-      });
-    }
-  }, [currentIndex]);
-
-  const handleSwipeComplete = useCallback(
-    async (direction: "left" | "right") => {
-      // Prevent concurrent swipes
-      if (isProcessingSwipe.current) return;
-      isProcessingSwipe.current = true;
-
-      const currentDog = dogs[currentIndex];
-      if (!currentDog) {
-        isProcessingSwipe.current = false;
-        return;
-      }
-
-      // Track this dog as swiped AFTER we move to next index
-      // to avoid filtering issues
-      const currentDogId = safeToNumber(currentDog.id);
-
-      if (!currentDogId) {
-        reportError(new Error("Invalid dog ID"), { context: "SwipeContainer", dogId: currentDog.id });
-        return;
-      }
-
-      if (direction === "right") {
-        await addFavorite(currentDogId, currentDog.name, currentDog);
-        Sentry.addBreadcrumb({
-          message: "swipe.card.favorited",
-          category: "swipe",
-          level: "info",
-          data: {
-            dogId: currentDog.id,
-            dogName: currentDog.name,
-            source: "double_tap",
-          },
-        });
-      }
-
-      if (onSwipe) {
-        onSwipe(direction, currentDog);
-      }
-
-      // Update index FIRST, before updating swipedDogIds
-      setCurrentIndex((prev) => {
-        const newIndex = prev + 1;
-        safeStorage.set("swipeCurrentIndex", newIndex.toString());
-        return newIndex;
-      });
-
-      // Track the dog we just swiped BEFORE updating the index
-      // This ensures we track the correct dog even if a re-render happens
-      const dogToTrack = dogs[currentIndex];
-      if (dogToTrack?.id) {
-        const trackId = safeToNumber(dogToTrack.id);
-        if (trackId !== null) {
-          setSwipedDogIds((prev) => {
-            const newSet = new Set(prev);
-            newSet.add(trackId);
-            // Save to storage safely
-            safeStorage.stringify("swipedDogIds", Array.from(newSet));
-            return newSet;
-          });
-        }
-      }
-
-      // Check if we need to load more dogs
-      if (
-        currentIndex >= dogs.length - 5 &&
-        fetchDogs &&
-        !isLoadingMore &&
-        queryString
-      ) {
-        setIsLoadingMore(true);
-        const newOffset = offset + dogs.length;
-        setOffset(newOffset);
-
-        // Add randomize parameter when fetching more dogs
-        fetchDogs(queryString + `&offset=${newOffset}&randomize=true`)
-          .then((fetchedDogs) => {
-            if (fetchedDogs && fetchedDogs.length > 0) {
-              // Use functional update to get latest swipedDogIds
-              setDogs((prevDogs) => {
-                // Get the current swiped IDs from storage to be safe
-                const swipedIds = new Set(
-                  safeStorage.parse<number[]>("swipedDogIds", []),
-                );
-
-                // Filter out dogs that have been swiped, but NOT the dog at current viewing index
-                const currentViewingIndex = prevDogs.length; // This will be the index after we append
-                const newDogs = fetchedDogs.filter((dog, idx) => {
-                  // Don't filter if this will be the immediate next dog to view
-                  if (idx === 0 && currentViewingIndex === prevDogs.length) {
-                    return true;
-                  }
-                  const dogId = safeToNumber(dog.id);
-                  return dogId !== null && !swipedIds.has(dogId);
-                });
-
-                if (newDogs.length > 0) {
-                  return [...prevDogs, ...newDogs];
-                }
-                return prevDogs;
-              });
-            }
-            setIsLoadingMore(false);
-          })
-          .catch((error) => {
-            Sentry.captureException(error);
-            setIsLoadingMore(false);
-          })
-          .finally(() => {
-            // Reset processing flag after all operations complete
-            isProcessingSwipe.current = false;
-          });
-      } else {
-        // Reset processing flag if not loading more
-        isProcessingSwipe.current = false;
-      }
-    },
-    [
-      currentIndex,
-      dogs,
-      addFavorite,
-      onSwipe,
-      fetchDogs,
-      queryString,
-      isLoadingMore,
-      offset,
-    ],
-  );
-
-  const handleCardTap = useCallback(() => {
-    const currentDog = dogs[currentIndex];
-    if (!currentDog) return;
-
-    const now = Date.now();
-
-    // Check if this is a double tap
-    if (now - lastTap < DOUBLE_TAP_DELAY && tapTimeoutRef.current) {
-      // Double tap detected - clear the pending single tap and favorite
-      clearTimeout(tapTimeoutRef.current);
-      tapTimeoutRef.current = null;
-      setLastTap(0);
-
-      handleSwipeComplete("right");
-      Sentry.addBreadcrumb({
-        message: "swipe.card.double_tapped",
-        category: "swipe",
-        level: "info",
-        data: {
-          dogId: currentDog.id,
-          dogName: currentDog.name,
-        },
-      });
-    } else {
-      // First tap - set timeout to open details if no second tap comes
-      setLastTap(now);
-
-      tapTimeoutRef.current = setTimeout(() => {
-        // Single tap confirmed - expand details
-        if (onCardExpanded) {
-          onCardExpanded(currentDog, currentIndex);
-        }
-        Sentry.addBreadcrumb({
-          message: "swipe.card.expanded",
-          category: "swipe",
-          level: "info",
-          data: {
-            dogId: currentDog.id,
-            dogName: currentDog.name,
-          },
-        });
-        tapTimeoutRef.current = null;
-      }, DOUBLE_TAP_DELAY);
-    }
-  }, [dogs, currentIndex, lastTap, onCardExpanded, handleSwipeComplete]);
-
-  // Onboarding state - check this first, before loading or empty states
   if (showOnboarding) {
-    return (
-      <SwipeOnboarding
-        onComplete={handleOnboardingComplete}
-        availableCountries={availableCountries}
-      />
-    );
+    return <SwipeOnboarding onComplete={handleOnboardingComplete} availableCountries={availableCountries} />;
   }
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-8 bg-[#FDFBF7] dark:bg-gray-950">
-        <div className="animate-pulse">
-          <div className="w-80 h-96 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Empty state - but show loading if we're fetching more
-  if (dogs.length === 0 || (currentIndex >= dogs.length && !isLoadingMore)) {
-    return (
-      <>
-        <FilterModal
-          show={showFilters}
-          filters={filters}
-          onClose={() => setShowFilters(false)}
-          onFiltersChange={setFilters}
-          isDarkMode={theme === "dark"}
-        />
-        <div className="flex flex-col items-center justify-center h-full p-8 bg-[#FDFBF7] dark:bg-gray-950">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🐕</div>
-            <h3 className="text-2xl font-bold mb-2 dark:text-gray-100">
-              More dogs coming!
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Check back soon or adjust your filters
-            </p>
-            <button
-              onClick={() => setShowFilters(true)}
-              className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              Change Filters
-            </button>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  // If we're at the end but loading more, show a loading state
-  if (currentIndex >= dogs.length && isLoadingMore) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-8 bg-[#FDFBF7] dark:bg-gray-950">
-        <div className="animate-pulse">
-          <div className="w-80 h-96 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-        </div>
-        <p className="text-gray-600 dark:text-gray-400 mt-4">
-          Loading more dogs...
-        </p>
-      </div>
-    );
-  }
-
-  const currentDog = dogs[currentIndex];
+  const atEnd = !isLoading && !currentDog && !isLoadingMore;
 
   return (
     <>
@@ -623,139 +368,100 @@ export function SwipeContainer({
         isDarkMode={theme === "dark"}
       />
 
-      <div className="relative flex flex-col min-h-[100dvh] overflow-y-auto bg-[#FDFBF7] dark:bg-gray-950">
-        {/* Header with Filter Bar and Exit Button */}
-        <div className="flex-shrink-0 p-4 flex justify-between items-center bg-[#FDFBF7]/80 dark:bg-gray-950/80 backdrop-blur-sm relative">
-          {/* Exit button - absolute positioned */}
+      <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
+        <header className="flex flex-none items-center gap-2 px-3 py-3 sm:px-4">
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <SwipeFilters compact onFiltersChange={() => {}} />
+          </div>
           <button
+            type="button"
+            onClick={() => setShowFilters(true)}
+            className="inline-flex h-10 flex-none items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-sm font-medium text-ink hover:bg-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+            Filters
+          </button>
+          <button
+            type="button"
             onClick={() => {
               // Use window.location to avoid Next.js 15 navigation bugs
               window.location.href = "/";
             }}
-            className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors z-50"
+            className="grid h-10 w-10 flex-none place-items-center rounded-full bg-soft text-ink hover:bg-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Exit to home"
           >
-            <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
+        </header>
 
-          <div className="flex-1 flex justify-between items-center pr-12">
-            <div className="cursor-pointer">
-              <SwipeFilters compact onFiltersChange={() => {}} />
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  // Clear swiped dogs history
-                  setSwipedDogIds(new Set());
-                  safeStorage.remove("swipedDogIds");
-                  setCurrentIndex(0);
-                  safeStorage.set("swipeCurrentIndex", "0");
-                  setOffset(0);
-                  setDogs([]);
-                  setIsLoading(true);
+        <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4">
+          {isLoading || (!currentDog && isLoadingMore) ? (
+            <div
+              className="h-full max-h-[48rem] w-full max-w-md animate-pulse rounded-2xl bg-soft"
+              aria-busy="true"
+              aria-label="Loading dogs"
+            />
+          ) : atEnd ? (
+            <EndOfStack
+              empty={dogs.length === 0}
+              failed={(loadFailed && dogs.length === 0) || loadMoreFailed}
+              onRetry={loadMoreFailed ? loadMore : startOver}
+              onStartOver={startOver}
+              onChangeFilters={() => setShowFilters(true)}
+            />
+          ) : (
+            currentDog && (
+              <>
+                <motion.div
+                  key={`dog-${currentDog.id}`}
+                  className="min-h-0 w-full max-w-md flex-1 lg:max-h-[48rem]"
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.5}
+                  onDragStart={() => {
+                    dragged.current = true;
+                  }}
+                  onDragEnd={(_, info) => {
+                    if (info.offset.x < -SWIPE_DISTANCE || info.velocity.x < -SWIPE_VELOCITY) goToNext();
+                    else if (info.offset.x > SWIPE_DISTANCE || info.velocity.x > SWIPE_VELOCITY) goToPrevious();
+                    // The click that ends a drag must not open the details
+                    setTimeout(() => {
+                      dragged.current = false;
+                    }, 0);
+                  }}
+                  onClickCapture={(e) => {
+                    if (dragged.current) {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }
+                  }}
+                  onClick={openDetails}
+                  style={{ touchAction: "pan-y" }}
+                  initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                >
+                  <SwipeCard dog={currentDog} onOpenDetails={openDetails} />
+                </motion.div>
 
-                  // Fetch dogs after reset if we have valid filters
-                  if (isValid && fetchDogs && queryString) {
-                    // Add randomize parameter to re-randomize the queue
-                    const randomizedQuery = queryString + "&randomize=true";
-                    fetchDogs(randomizedQuery)
-                      .then((fetchedDogs) => {
-                        setDogs(fetchedDogs);
-                        setCurrentIndex(0);
-                        safeStorage.set("swipeCurrentIndex", "0");
-                        setIsLoading(false);
-                      })
-                      .catch((error) => {
-                        Sentry.captureException(error);
-                        setIsLoading(false);
-                      });
-                  } else {
-                    setIsLoading(false);
-                  }
-                }}
-                className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg transition-colors"
-                title="Start fresh with all dogs"
-              >
-                Reset
-              </button>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowFilters(true);
-                }}
-                className="px-4 py-2 text-sm bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors"
-              >
-                + Filters
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Main swipe container - responsive for small screens */}
-        <div className="flex-1 flex flex-col items-center justify-start p-2 sm:p-4 pb-8">
-          <div
-            className="relative w-full flex flex-col max-w-[calc(100vw-1rem)] sm:max-w-[min(500px,calc(100vw-1.5rem))] md:max-w-[min(600px,calc(100vw-2rem))] lg:max-w-[700px] xl:max-w-[600px] 2xl:max-w-[650px] min-h-[300px]"
-          >
-            <motion.div
-              key={`dog-${currentDog.id}`}
-              className="relative touch-none"
-              onClick={handleCardTap}
-              style={{ touchAction: "pan-y" }}
-              initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-            >
-              <SwipeCard dog={currentDog} />
-            </motion.div>
-
-            {/* Progress Indicator */}
-            <div className="flex flex-col items-center mt-4 mb-2">
-              {/* Progress dots */}
-              <div className="flex gap-1.5 mb-2">
-                {Array.from({ length: Math.min(dogs.length, 10) }).map(
-                  (_, idx) => (
-                    <div
-                      key={idx}
-                      className={`rounded-full w-2.5 h-2.5 transition-[transform,background-color,box-shadow] duration-200 ${
-                        idx === currentIndex % 10
-                          ? "bg-orange-500 scale-[1.75] shadow-[0_0_6px_rgba(249,115,22,0.4)]"
-                          : idx < currentIndex % 10
-                            ? "bg-orange-300 scale-100"
-                            : "bg-gray-300 dark:bg-gray-600 scale-100"
-                      }`}
-                    />
-                  ),
-                )}
-              </div>
-              {/* Progress text */}
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Dog {currentIndex + 1} of {dogs.length}
-              </p>
-            </div>
-
-            {/* Paw Navigation */}
-            <div className="flex justify-center gap-6 sm:gap-10 mt-2 sm:mt-4 pb-[env(safe-area-inset-bottom)]">
-              <button
-                onClick={goToPrevious}
-                disabled={currentIndex === 0}
-                className="paw-btn paw-left w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-[transform,background-color,opacity,box-shadow] duration-200 bg-orange-500 dark:bg-orange-600 text-white shadow-[var(--shadow-orange-md)] hover:bg-orange-600 dark:hover:bg-orange-500 hover:scale-105 disabled:bg-gray-100 disabled:dark:bg-gray-800 disabled:text-gray-300 disabled:dark:text-gray-600 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:scale-100"
-                aria-label="Previous dog"
-              >
-                <PawPrint className="w-6 h-6 sm:w-7 sm:h-7 transform rotate-180" />
-              </button>
-
-              <button
-                onClick={goToNext}
-                disabled={currentIndex === dogs.length - 1}
-                className="paw-btn paw-right w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-[transform,background-color,opacity,box-shadow] duration-200 bg-orange-500 dark:bg-orange-600 text-white shadow-[var(--shadow-orange-md)] hover:bg-orange-600 dark:hover:bg-orange-500 hover:scale-105 disabled:bg-gray-100 disabled:dark:bg-gray-800 disabled:text-gray-300 disabled:dark:text-gray-600 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:scale-100"
-                aria-label="Next dog"
-              >
-                <PawPrint className="w-6 h-6 sm:w-7 sm:h-7" />
-              </button>
-            </div>
-          </div>
-        </div>
+                <div className="flex w-full max-w-md flex-none items-center justify-center gap-3 pt-3">
+                  <button type="button" onClick={goToPrevious} disabled={currentIndex === 0} className={SECONDARY}>
+                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                    Back
+                  </button>
+                  <button type="button" onClick={goToNext} className={PRIMARY}>
+                    Next
+                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </div>
+                <p className="hidden pt-2 text-xs text-subtle lg:block" data-testid="keyboard-hint">
+                  <kbd className="font-sans">←</kbd> <kbd className="font-sans">→</kbd> browse ·{" "}
+                  <kbd className="font-sans">F</kbd> save · <kbd className="font-sans">Enter</kbd> details
+                </p>
+              </>
+            )
+          )}
+        </main>
       </div>
     </>
   );

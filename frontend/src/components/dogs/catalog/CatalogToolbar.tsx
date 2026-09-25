@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { SlidersHorizontal, X } from "lucide-react";
+import Link from "next/link";
+import { Layers, SlidersHorizontal, X } from "lucide-react";
 import SortMenu from "./SortMenu";
 import { ENERGY_BANDS, FILTER_DEFAULTS, FIRST_TIME_FRIENDLY, LIVES_WELL_WITH } from "@/constants/filters";
 import { countryOptionLabel, getCountryName } from "@/utils/countryNames";
@@ -124,6 +125,14 @@ export default function CatalogToolbar({
               {sidebar.shown ? "Hide filters" : "Show filters"}
             </button>
           )}
+          {/* Swipe left the desktop header (#486); phones reach it from the tab bar (#499) */}
+          <Link
+            href="/swipe"
+            className="hidden h-9 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink hover:bg-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
+          >
+            <Layers className="h-4 w-4 text-subtle" aria-hidden="true" />
+            Quick browse
+          </Link>
           <SortMenu value={filters.sortFilter ?? FILTER_DEFAULTS.SORT} onChange={onSortChange} />
         </div>
       </div>

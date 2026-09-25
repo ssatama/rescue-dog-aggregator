@@ -11,6 +11,8 @@ export const QUICK_CHIPS = [
   { label: "Good with cats", href: "/dogs?good_with_cats=true" },
   { label: "Small dogs", href: "/dogs?size=Small" },
   { label: "First-time owners", href: "/dogs?first_time_friendly=true" },
+  // One dog at a time; the desktop header no longer links it (#499)
+  { label: "Quick browse", href: "/swipe" },
 ] as const;
 
 interface HomeHeroProps {

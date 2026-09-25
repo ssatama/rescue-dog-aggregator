@@ -69,7 +69,8 @@ export function getDogSummary(dog: Dog): string {
     .join(" · ");
 }
 
-function getWhere(dog: Dog): string | null {
+/** "Rescue · Country", leaving out whatever is unknown. */
+export function getWhere(dog: Dog): string | null {
   const org = dog.organization;
   const country = org?.country ? getCountryName(org.country) : null;
   return [org?.name, country].filter(Boolean).join(" · ") || null;

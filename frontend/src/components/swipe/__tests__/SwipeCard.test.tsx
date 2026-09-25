@@ -1,259 +1,135 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { SwipeCard } from "../SwipeCard";
 import { FavoritesProvider } from "../../../contexts/FavoritesContext";
 import { ToastProvider } from "../../../contexts/ToastContext";
+import type { Dog } from "@/types/dog";
 
 jest.mock("../../ui/ShareButton", () => {
-  return function MockShareButton({ url, title, text, compact }: { url?: string; title?: string; text?: string; compact?: boolean }) {
+  return function MockShareButton({ url }: { url?: string }) {
     return (
-      <button
-        data-testid="share-button"
-        data-url={url}
-        data-title={title}
-        data-text={text}
-        data-compact={compact ? "true" : "false"}
-        aria-label="Share"
-      >
+      <button data-testid="share-button" data-url={url} aria-label="Share">
         Share
       </button>
     );
   };
 });
 
-const renderWithProvider = (component: React.ReactElement) => {
-  return render(
+jest.mock("@/lib/visitorLocation", () => ({
+  useVisitorLocation: () => ({ country: "GB", choice: "GB", onlyAdoptable: false }),
+}));
+
+const renderCard = (dog: Dog, onOpenDetails = jest.fn()) =>
+  render(
     <ToastProvider>
-      <FavoritesProvider>{component}</FavoritesProvider>
+      <FavoritesProvider>
+        <SwipeCard dog={dog} onOpenDetails={onOpenDetails} />
+      </FavoritesProvider>
     </ToastProvider>,
   );
+
+const buddy: Dog = {
+  id: 1,
+  name: "Buddy",
+  primary_breed: "Golden Retriever",
+  standardized_breed: "Golden Retriever",
+  age_min_months: 30,
+  age_max_months: 36,
+  sex: "Male",
+  primary_image_url: "https://example.com/buddy.jpg",
+  organization: { name: "Happy Paws Rescue", country: "UK", ships_to: ["UK"] },
+  slug: "buddy-golden",
+  dog_profiler_data: {
+    tagline: "Your next adventure companion",
+    personality_traits: ["playful", "loyal", "gentle", "calm"],
+  },
 };
 
-describe("SwipeCard", () => {
-  const mockDog = {
-    id: 1,
-    name: "Buddy",
-    breed: "Golden Retriever",
-    age: "2 years",
-    primary_image_url: "https://example.com/buddy.jpg",
-    organization: { name: "Happy Paws Rescue" },
-    location: "San Francisco, CA",
-    slug: "buddy-golden",
-    description: "A friendly and energetic companion",
-    dog_profiler_data: {
-      tagline: "Buddy: Your next adventure companion!",
-      unique_quirk: "Loves to play fetch for hours",
-      personality_traits: ["Playful", "Loyal", "Gentle"],
-      favorite_activities: ["fetch", "swimming"],
-      quality_score: 90,
-    },
-    created_at: new Date().toISOString(),
-  };
+describe("SwipeCard (#499)", () => {
+  beforeEach(() => localStorage.clear());
 
-  it("should display dog name and tagline", () => {
-    renderWithProvider(<SwipeCard dog={mockDog} />);
-
-    expect(screen.getByText("Buddy")).toBeInTheDocument();
-    // Shows enriched tagline
-    expect(
-      screen.getByText(/Buddy: Your next adventure companion!/),
-    ).toBeInTheDocument();
+  it("shows name, breed · age · sex and where the dog is", () => {
+    renderCard(buddy);
+    expect(screen.getByRole("heading", { name: "Buddy" })).toBeInTheDocument();
+    expect(screen.getByText("Golden Retriever · Young · Male")).toBeInTheDocument();
+    expect(screen.getByText("Happy Paws Rescue · United Kingdom")).toBeInTheDocument();
+    expect(screen.getByText(/Adoptable to you/)).toBeInTheDocument();
   });
 
-  it("should show personality traits", () => {
-    renderWithProvider(<SwipeCard dog={mockDog} />);
-
+  it("shows the tagline and at most three traits", () => {
+    renderCard(buddy);
+    expect(screen.getByText("Your next adventure companion")).toBeInTheDocument();
     expect(screen.getByText("Playful")).toBeInTheDocument();
-    expect(screen.getByText("Loyal")).toBeInTheDocument();
     expect(screen.getByText("Gentle")).toBeInTheDocument();
+    expect(screen.queryByText("Calm")).not.toBeInTheDocument();
   });
 
-  it("should have heart and share action buttons", () => {
-    renderWithProvider(<SwipeCard dog={mockDog} />);
-
-    expect(screen.getByLabelText("Add to favorites")).toBeInTheDocument();
-    expect(screen.getByLabelText("Share")).toBeInTheDocument();
+  it("leaves out facts that are missing instead of showing Unknown", () => {
+    renderCard({ id: 2, name: "Nameonly", primary_breed: "Unknown" });
+    expect(screen.getByRole("heading", { name: "Nameonly" })).toBeInTheDocument();
+    expect(screen.queryByText(/Unknown/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Personality" })).not.toBeInTheDocument();
   });
 
-  it("should not display energy level when dog lacks energy_level data", () => {
-    renderWithProvider(<SwipeCard dog={mockDog} />);
-
-    expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
+  it("has a labelled heart that toggles the favorite", () => {
+    renderCard(buddy);
+    const heart = screen.getByRole("button", { name: "Add Buddy to favorites" });
+    expect(heart).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(heart);
+    expect(screen.getByRole("button", { name: "Remove Buddy from favorites" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("should not display energy level (removed from card in redesign, preserved in detail modal)", () => {
-    const dogWithEnergy = {
-      ...mockDog,
-      dog_profiler_data: {
-        ...mockDog.dog_profiler_data,
-        energy_level: "high" as const,
-      },
-    };
-    renderWithProvider(<SwipeCard dog={dogWithEnergy} />);
-
-    expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
+  it("puts the heart on a solid disc so it reads on light photos", () => {
+    renderCard(buddy);
+    const heart = screen.getByRole("button", { name: "Add Buddy to favorites" });
+    expect(heart).toHaveClass("bg-white", "shadow-md");
+    expect(heart.className).not.toMatch(/bg-white\//);
   });
 
-  it("should show unique quirk", () => {
-    renderWithProvider(<SwipeCard dog={mockDog} />);
-
-    expect(screen.getByText(/Loves to play fetch/)).toBeInTheDocument();
-    expect(screen.getByText(/✨/)).toBeInTheDocument();
+  it("shares the dog's page", () => {
+    renderCard(buddy);
+    expect(screen.getByTestId("share-button").getAttribute("data-url")).toMatch(/\/dogs\/buddy-golden$/);
   });
 
-  it("should show NEW badge for recent dogs", () => {
-    const newDog = {
-      ...mockDog,
-      created_at: new Date().toISOString(),
-    };
-
-    renderWithProvider(<SwipeCard dog={newDog} />);
-
-    expect(screen.getByText("NEW")).toBeInTheDocument();
+  it("offers a details button", () => {
+    const onOpenDetails = jest.fn();
+    renderCard(buddy, onOpenDetails);
+    fireEvent.click(screen.getByRole("button", { name: "Tap for details" }));
+    expect(onOpenDetails).toHaveBeenCalledTimes(1);
   });
 
-  it("should not show NEW badge for dogs older than 7 days", () => {
-    const oldDate = new Date();
-    oldDate.setDate(oldDate.getDate() - 8);
-    const oldDog = {
-      ...mockDog,
-      created_at: oldDate.toISOString(),
+  describe("gallery", () => {
+    const withGallery: Dog = {
+      ...buddy,
+      images: [{ url: "https://example.com/1.jpg" }, { url: "https://example.com/2.jpg" }, { url: "https://example.com/3.jpg" }],
     };
 
-    renderWithProvider(<SwipeCard dog={oldDog} />);
-
-    expect(screen.queryByText("NEW")).not.toBeInTheDocument();
-  });
-
-  it("should not display organization and location (removed in redesign)", () => {
-    renderWithProvider(<SwipeCard dog={mockDog} />);
-
-    expect(screen.queryByText(/Happy Paws Rescue/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/San Francisco, CA/)).not.toBeInTheDocument();
-  });
-
-  it("should show placeholder when no image provided", () => {
-    const dogWithoutImage = {
-      ...mockDog,
-      primary_image_url: undefined,
-      main_image: undefined,
-    };
-
-    renderWithProvider(<SwipeCard dog={dogWithoutImage} />);
-
-    // The FallbackImage component will render a placeholder
-    // Check for the fallback image or placeholder element
-    const container = screen.getByTestId("image-container");
-    expect(container).toBeInTheDocument();
-
-    // The FallbackImage should still render an img element with fallback src
-    const img = container.querySelector("img");
-    expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute("src", "/placeholder_dog.svg");
-  });
-
-  it("should handle missing optional fields gracefully", () => {
-    const minimalDog = {
-      id: 2,
-      name: "Max",
-      slug: "max",
-    };
-
-    renderWithProvider(<SwipeCard dog={minimalDog} />);
-
-    expect(screen.getByText("Max")).toBeInTheDocument();
-    expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
-    expect(screen.queryByText("🦴")).not.toBeInTheDocument();
-  });
-
-  it("should apply proper styling with rounded corners and warm shadow", () => {
-    const { container } = renderWithProvider(<SwipeCard dog={mockDog} />);
-
-    const card = container.querySelector(".rounded-2xl");
-    expect(card).toBeInTheDocument();
-    expect(card).toHaveClass("shadow-[var(--shadow-orange-lg)]");
-  });
-
-  it("should have 3:4 portrait aspect ratio for image-hero layout", () => {
-    renderWithProvider(<SwipeCard dog={mockDog} />);
-
-    const imageContainer = screen.getByTestId("image-container");
-    expect(imageContainer).toHaveClass("aspect-[3/4]");
-  });
-
-  describe("CLS Prevention", () => {
-    it("should render image container with min-height for layout stability", () => {
-      renderWithProvider(<SwipeCard dog={mockDog} />);
-
-      const imageContainer = screen.getByTestId("image-container");
-      expect(imageContainer).toHaveClass("min-h-[280px]");
+    it("has no dots or photo steps for a single photo", () => {
+      renderCard(buddy);
+      expect(screen.queryByTestId("photo-dots")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Next photo" })).not.toBeInTheDocument();
     });
 
-    it("should render content area with flex layout", () => {
-      renderWithProvider(<SwipeCard dog={mockDog} />);
+    it("steps through the photos with the edge buttons, wrapping around", () => {
+      const onOpenDetails = jest.fn();
+      renderCard(withGallery, onOpenDetails);
+      expect(screen.getByTestId("photo-dots").children).toHaveLength(3);
+      expect(screen.getByAltText("Buddy, photo 1 of 3")).toBeInTheDocument();
 
-      const imageContainer = screen.getByTestId("image-container");
-      const contentArea = imageContainer.nextElementSibling;
-      expect(contentArea).toHaveClass("flex-1");
-      expect(contentArea).toHaveClass("flex");
-    });
+      fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
+      expect(screen.getByAltText("Buddy, photo 2 of 3")).toBeInTheDocument();
 
-    it("should overlay name on image via gradient when no age/breed info", () => {
-      const minimalDog = {
-        id: 2,
-        name: "Max",
-        slug: "max",
-      };
-      renderWithProvider(<SwipeCard dog={minimalDog} />);
-
-      // Name is now overlaid on the image gradient, not in the content section
-      const imageContainer = screen.getByTestId("image-container");
-      const nameHeading = imageContainer.querySelector("h3");
-      expect(nameHeading).toBeInTheDocument();
-      expect(nameHeading).toHaveTextContent("Max");
+      fireEvent.click(screen.getByRole("button", { name: "Previous photo" }));
+      fireEvent.click(screen.getByRole("button", { name: "Previous photo" }));
+      expect(screen.getByAltText("Buddy, photo 3 of 3")).toBeInTheDocument();
+      // Stepping photos never opens the details
+      expect(onOpenDetails).not.toHaveBeenCalled();
     });
   });
 
-  it("should have accessible touch target sizes for favorite button", () => {
-    renderWithProvider(<SwipeCard dog={mockDog} />);
-
-    const favoriteButton = screen.getByLabelText("Add to favorites");
-
-    expect(favoriteButton).toHaveClass("w-12");
-    expect(favoriteButton).toHaveClass("h-12");
-    expect(favoriteButton).toHaveClass("sm:w-14");
-    expect(favoriteButton).toHaveClass("sm:h-14");
-  });
-
-  it("should have aria-pressed attribute on favorite button", () => {
-    renderWithProvider(<SwipeCard dog={mockDog} />);
-
-    const favoriteButton = screen.getByLabelText("Add to favorites");
-    expect(favoriteButton).toHaveAttribute("aria-pressed", "false");
-  });
-
-  describe("Share URL construction", () => {
-    it("should pass slug-based URL to ShareButton", () => {
-      renderWithProvider(<SwipeCard dog={mockDog} />);
-
-      const shareButton = screen.getByTestId("share-button");
-      const url = shareButton.getAttribute("data-url");
-      expect(url).toContain("/dogs/buddy-golden");
-      expect(url).not.toMatch(/\/dog\/\d+/);
-    });
-
-    it("should fall back to /dogs when dog has no slug", () => {
-      const dogWithoutSlug = {
-        id: 3,
-        name: "Rex",
-      };
-
-      renderWithProvider(<SwipeCard dog={dogWithoutSlug} />);
-
-      const shareButton = screen.getByTestId("share-button");
-      const url = shareButton.getAttribute("data-url");
-      expect(url).toMatch(/\/dogs$/);
-    });
+  it("shows a placeholder when there is no photo at all", () => {
+    renderCard({ id: 3, name: "Nophoto" });
+    expect(screen.getByTestId("image-container")).toHaveTextContent("🐾");
   });
 });
