@@ -137,6 +137,17 @@ describe("analytics", () => {
     expect(mockPosthog.capture.mock.calls[0][1].result_count).toBe(12);
   });
 
+  it("names the lifestyle filters (#495)", () => {
+    trackFiltersApplied({ goodWithCatsFilter: "true", energyFilter: "high", firstTimeFriendlyFilter: "" }, "catalog");
+
+    const events = mockPosthog.capture.mock.calls.map(([, props]) => [props.filter, props.value]);
+    expect(events).toEqual([
+      ["good_with_cats", "true"],
+      ["energy", "high"],
+      ["first_time_friendly", ""],
+    ]);
+  });
+
   it("sends search_performed without anything the visitor typed", () => {
     trackSearchPerformed("catalog", "dog", 4);
 

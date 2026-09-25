@@ -171,6 +171,11 @@ const FILTER_NAMES: Record<string, string> = {
   availableCountryFilter: "available_country",
   shipsTo: "available_country",
   availableRegionFilter: "available_region",
+  goodWithKidsFilter: "good_with_kids",
+  goodWithDogsFilter: "good_with_dogs",
+  goodWithCatsFilter: "good_with_cats",
+  firstTimeFriendlyFilter: "first_time_friendly",
+  energyFilter: "energy",
 };
 
 /** One event per changed filter. Only pass values picked from a fixed list:

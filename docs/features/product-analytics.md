@@ -59,7 +59,9 @@ query property at all: it records which kind of result was picked (`none`
 means the typed text was submitted) and how many suggestions were shown.
 `filter_applied` is sent only for values picked from a fixed list; text typed
 into a breed box filters the page without an event. Typed search and sort are
-not filters (`sort_changed` covers sort). `result_count` is null until the
+not filters (`sort_changed` covers sort). The lifestyle filters (#495) send
+`good_with_kids`, `good_with_dogs`, `good_with_cats`, `first_time_friendly`
+(value `"true"`, or `""` when turned off) and `energy` (`low` / `medium` / `high`, or `""`). `result_count` is null until the
 catalog shows a result total (#494); older `search_submitted` and
 `filter_changed` events (before 2026-09-24) carried the raw query and are
 superseded.
