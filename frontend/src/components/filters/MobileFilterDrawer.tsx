@@ -86,6 +86,7 @@ export default function MobileFilterDrawer({
     setLastSearchQuery(searchQuery);
     if (searchQuery !== sentSearch) {
       setSearchText(searchQuery);
+      setSentSearch(searchQuery);
       setOutsideSearches((n) => n + 1);
     }
   }

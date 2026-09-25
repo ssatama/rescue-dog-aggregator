@@ -14,7 +14,7 @@ describe("getSimilarDogs", () => {
     (getAnimals as jest.Mock).mockResolvedValue([]);
     await getSimilarDogs(dog);
 
-    expect(getAnimals).toHaveBeenCalledWith({ standardized_size: "Large", age_category: "Adult", limit: 20 });
+    expect(getAnimals).toHaveBeenCalledWith({ standardized_size: "Large", age_category: "Adult", age_known: true, limit: 20 });
     expect(getAnimals).not.toHaveBeenCalledWith(expect.objectContaining({ organization_id: expect.anything() }));
   });
 

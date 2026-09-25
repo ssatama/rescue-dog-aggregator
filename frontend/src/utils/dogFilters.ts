@@ -28,11 +28,11 @@ export const filterByAge = (dogs: DogWithAgeFields[], ageFilter: string | undefi
   const filtered = dogs.filter((dog) => {
     if (!dog) return false;
 
-    const ageMin = dog.age_min_months || dog.ageMinMonths;
-    const ageMax = dog.age_max_months || dog.ageMaxMonths;
+    const ageMin = dog.age_min_months ?? dog.ageMinMonths;
+    const ageMax = dog.age_max_months ?? dog.ageMaxMonths;
 
     // No recorded age: shown under every age, as the API does (#494)
-    if (!ageMin && !ageMax) return true;
+    if (ageMin == null && ageMax == null) return true;
 
     if (!ageMin && ageMin !== 0) return false;
 

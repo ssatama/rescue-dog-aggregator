@@ -107,6 +107,11 @@ describe("dogFilters", () => {
       expect(names(filterByAge(mockDogs, "Senior"))).toEqual(["Charlie", "Bella"]);
     });
 
+    test("an age of 0 months is a recorded age, not a missing one", () => {
+      const newborn = { name: "Pip", age_min_months: 0, age_max_months: null };
+      expect(names(filterByAge([newborn], "Senior"))).toEqual([]);
+    });
+
     test('returns all dogs when filter is "All" or empty', () => {
       expect(filterByAge(mockDogs, "All")).toHaveLength(5);
       expect(filterByAge(mockDogs, "")).toHaveLength(5);
