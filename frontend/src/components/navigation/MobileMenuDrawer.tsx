@@ -36,6 +36,9 @@ interface MenuSection {
   items: MenuItem[];
 }
 
+// The top level, above the sections: rescues are one tap away (#501)
+const topItems: MenuItem[] = [{ label: "Rescues", href: "/organizations", icon: Building2 }];
+
 const menuSections: MenuSection[] = [
   {
     id: "quick-filters",
@@ -54,7 +57,6 @@ const menuSections: MenuSection[] = [
     items: [
       { label: "Guides", href: "/guides", icon: BookOpen },
       { label: "FAQ", href: "/faq", icon: HelpCircle },
-      { label: "Organizations", href: "/organizations", icon: Building2 },
     ],
   },
   {
@@ -169,8 +171,13 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
               className="flex-1 overflow-y-auto p-6 pt-14"
               aria-label="Mobile drawer navigation"
             >
-              {menuSections.map((section, index) => (
-                <div key={section.id} className={index > 0 ? "mt-6" : ""}>
+              <div className="space-y-1">
+                {topItems.map((item) => (
+                  <MenuLink key={item.href} item={item} onClose={onClose} />
+                ))}
+              </div>
+              {menuSections.map((section) => (
+                <div key={section.id} className="mt-6">
                   <SectionHeader title={section.title} icon={section.icon} />
                   <div className="space-y-1">
                     {section.items.map((item) => (

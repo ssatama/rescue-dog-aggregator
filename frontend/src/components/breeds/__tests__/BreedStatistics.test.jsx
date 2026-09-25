@@ -1,8 +1,7 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import BreedStatistics, { BreedInfo, BreedAdoptableToYou } from "../BreedStatistics";
-import { resetVisitorLocationForTests } from "@/lib/visitorLocation";
+import BreedStatistics, { BreedInfo } from "../BreedStatistics";
 
 describe("BreedStatistics", () => {
   const mockBreedData = {
@@ -47,43 +46,6 @@ describe("BreedStatistics", () => {
       expect(screen.queryByTestId("male-bar")).not.toBeInTheDocument();
       expect(screen.queryByText("25")).not.toBeInTheDocument();
     });
-  });
-});
-
-describe("BreedAdoptableToYou (#500)", () => {
-  const options = [
-    { value: "DE", label: "Germany", count: 12 },
-    { value: "UK", label: "United Kingdom", count: 30 },
-  ];
-
-  afterEach(() => {
-    localStorage.clear();
-    resetVisitorLocationForTests();
-  });
-
-  it("counts the dogs adoptable to the visitor's country and filters to them", () => {
-    localStorage.setItem("visitorCountry", "DE");
-    const onShow = jest.fn();
-    render(<BreedAdoptableToYou options={options} onShow={onShow} />);
-
-    const button = screen.getByRole("button", { name: /12 adoptable to you in Germany/ });
-    fireEvent.click(button);
-    expect(onShow).toHaveBeenCalledWith("DE");
-  });
-
-  it("says nothing without a country, for Anywhere, or when none are adoptable there", () => {
-    const { container, rerender } = render(<BreedAdoptableToYou options={options} />);
-    expect(container).toBeEmptyDOMElement();
-
-    localStorage.setItem("visitorCountry", "ANYWHERE");
-    resetVisitorLocationForTests();
-    rerender(<BreedAdoptableToYou options={options} />);
-    expect(container).toBeEmptyDOMElement();
-
-    localStorage.setItem("visitorCountry", "FR");
-    resetVisitorLocationForTests();
-    rerender(<BreedAdoptableToYou options={options} />);
-    expect(container).toBeEmptyDOMElement();
   });
 });
 

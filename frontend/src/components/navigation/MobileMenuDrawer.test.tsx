@@ -68,9 +68,14 @@ describe("MobileMenuDrawer", () => {
 
       expect(screen.getByRole("link", { name: /guides/i })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /faq/i })).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /organizations/i }),
-      ).toBeInTheDocument();
+    });
+
+    it("lists Rescues first, above the sections (#501)", () => {
+      render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
+
+      const links = screen.getAllByRole("link");
+      expect(links[0]).toHaveAccessibleName("Rescues");
+      expect(links[0]).toHaveAttribute("href", "/organizations");
     });
 
     it("should contain About section link", () => {
@@ -113,9 +118,6 @@ describe("MobileMenuDrawer", () => {
         "href",
         "/faq",
       );
-      expect(
-        screen.getByRole("link", { name: /organizations/i }),
-      ).toHaveAttribute("href", "/organizations");
     });
 
     it("should have correct href attributes for About and Footer", () => {

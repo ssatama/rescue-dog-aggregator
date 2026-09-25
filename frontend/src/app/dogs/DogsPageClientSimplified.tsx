@@ -133,10 +133,12 @@ export default function DogsPageClientSimplified({
     pathname,
   });
 
-  // On a breed page the breed is the page's own, so there is no breed to pick,
-  // and analytics keeps breed-page traffic apart from the catalog's
+  // On a breed or rescue page the breed or rescue is the page's own, so there
+  // is none to pick, and analytics keeps that page's traffic apart from the catalog's
   const breedIsFixed = Boolean(initialParams?.primary_breed || initialParams?.breed_group);
-  const analyticsSurface = breedIsFixed ? "breed_page" : "catalog";
+  const orgIsFixed = Boolean(initialParams?.organization_id);
+  const analyticsSurface = breedIsFixed ? "breed_page" : orgIsFixed ? "org_page" : "catalog";
+  const listContext = breedIsFixed ? "breed-page" : orgIsFixed ? "org-page" : "search";
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [sidebarHidden, toggleSidebar] = useSidebarHidden();
@@ -198,12 +200,14 @@ export default function DogsPageClientSimplified({
         initialParams?.available_country && "availableCountryFilter",
         initialParams?.primary_breed && "breedFilter",
         initialParams?.breed_group && "breedGroupFilter",
+        initialParams?.organization_id && "organizationFilter",
       ].filter(Boolean) as (
         | "ageFilter"
         | "locationCountryFilter"
         | "availableCountryFilter"
         | "breedFilter"
         | "breedGroupFilter"
+        | "organizationFilter"
       )[],
     [
       initialParams?.age_category,
@@ -211,11 +215,12 @@ export default function DogsPageClientSimplified({
       initialParams?.available_country,
       initialParams?.primary_breed,
       initialParams?.breed_group,
+      initialParams?.organization_id,
     ],
   );
   const drawerConfig = useMemo(
-    () => (breedIsFixed ? { ...CATALOG_DRAWER_CONFIG, showBreed: false } : CATALOG_DRAWER_CONFIG),
-    [breedIsFixed],
+    () => ({ ...CATALOG_DRAWER_CONFIG, showBreed: !breedIsFixed, showOrganization: !orgIsFixed }),
+    [breedIsFixed, orgIsFixed],
   );
 
   const { goodWithKidsFilter, goodWithDogsFilter, goodWithCatsFilter, firstTimeFriendlyFilter, energyFilter } =
@@ -237,7 +242,7 @@ export default function DogsPageClientSimplified({
       // A landing page's own filter (age on /dogs/puppies) stays
       ageFilter: initialParams?.age_category || FILTER_DEFAULTS.AGE,
       sexFilter: FILTER_DEFAULTS.SEX,
-      organizationFilter: FILTER_DEFAULTS.ORGANIZATION,
+      organizationFilter: initialParams?.organization_id || FILTER_DEFAULTS.ORGANIZATION,
       breedFilter: initialParams?.primary_breed || FILTER_DEFAULTS.BREED,
       breedGroupFilter: initialParams?.breed_group || FILTER_DEFAULTS.GROUP,
       locationCountryFilter: initialParams?.location_country || FILTER_DEFAULTS.COUNTRY,
@@ -259,7 +264,7 @@ export default function DogsPageClientSimplified({
     router.replace(sort === FILTER_DEFAULTS.SORT ? pathname : `${pathname}?sort=${sort}`, { scroll: false });
     scrollPositionRef.current = 0;
     pagination.resetAll(defaultFilters);
-  }, [router, pathname, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, initialParams?.primary_breed, initialParams?.breed_group, filterState, saveScrollPosition, scrollPositionRef, pagination]);
+  }, [router, pathname, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, initialParams?.primary_breed, initialParams?.breed_group, initialParams?.organization_id, filterState, saveScrollPosition, scrollPositionRef, pagination]);
 
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Find Dogs" }];
 
@@ -348,8 +353,8 @@ export default function DogsPageClientSimplified({
         className="mx-auto max-w-7xl py-6 sm:px-2 lg:px-4 lg:py-8"
       >
         {/* Phones: the header has no search field, so it sits at the top. Not
-            on a breed page: its search would leave for /dogs and the breed */}
-        {!breedIsFixed && <GlobalSearch surface="mobile" className="mb-4 sm:hidden" />}
+            on a breed or rescue page: its search would leave for /dogs and them */}
+        {!breedIsFixed && !orgIsFixed && <GlobalSearch surface="mobile" className="mb-4 sm:hidden" />}
 
         {/* Desktop Breadcrumbs - Hidden on Mobile */}
         {!hideBreadcrumbs && (
@@ -385,8 +390,10 @@ export default function DogsPageClientSimplified({
             <DesktopFilters
               // Search is edited in the header; it still counts as a filter
               searchQuery={filterState.filters.searchQuery}
-              // Organization
-              organizationFilter={filterState.filters.organizationFilter}
+              // Organization. A rescue page's own rescue is hidden here and not
+              // counted as active, like a breed page's breed
+              organizationFilter={orgIsFixed ? FILTER_DEFAULTS.ORGANIZATION : filterState.filters.organizationFilter}
+              showOrganization={!orgIsFixed}
               setOrganizationFilter={(value: string) =>
                 handleFilterChange("organizationFilter", value)
               }
@@ -496,17 +503,17 @@ export default function DogsPageClientSimplified({
                       </div>
                     </div>
                   )}
-                  <CatalogDogGrid dogs={pagination.dogs} listContext={breedIsFixed ? "breed-page" : "search"} />
+                  <CatalogDogGrid dogs={pagination.dogs} listContext={listContext} />
                 </div>
               )}
 
               {/* Empty state */}
               {!pagination.loading && pagination.dogs.length === 0 &&
-                (breedIsFixed && filterState.activeFilterCount === 0 ? (
-                  // Nothing to clear: the breed itself has no dogs listed now
+                ((breedIsFixed || orgIsFixed) && filterState.activeFilterCount === 0 ? (
+                  // Nothing to clear: the breed or rescue itself has no dogs listed now
                   <EmptyState
                     title="None listed right now"
-                    description="Rescues add new dogs three times a week. Every other dog is in the catalog."
+                    description={`${orgIsFixed ? "This rescue's list is updated" : "Rescues add new dogs"} three times a week. Every other dog is in the catalog.`}
                     actionButton={{ text: "Browse all dogs", onClick: () => router.push("/dogs") }}
                   />
                 ) : (

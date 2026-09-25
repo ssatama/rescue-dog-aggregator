@@ -1,7 +1,7 @@
 import type { Dog } from "./dog";
 import type { DogsPageMetadata } from "./dogsPage";
-import type { OrganizationCardData } from "./organizationComponents";
-import type { ApiOrganization } from "./apiDog";
+import type { OrganizationCardData, RescueHeaderOrganization } from "./organizationComponents";
+import type { FilterCountsResponse } from "@/schemas/common";
 import type { CountryStatsResponse } from "@/schemas/animals";
 
 export interface DogDetailClientProps {
@@ -14,7 +14,13 @@ export interface DogDetailClientProps {
 }
 
 export interface OrganizationDetailClientProps {
-  initialOrganization?: ApiOrganization | null;
+  organization: RescueHeaderOrganization;
+  /** The catalog's first page for this rescue */
+  initialDogs: Dog[];
+  /** The catalog's filter options (rescues, countries) */
+  metadata?: DogsPageMetadata;
+  /** Unfiltered counts for the rescue: per-country totals for "adoptable to you" */
+  counts?: FilterCountsResponse | null;
 }
 
 export interface OrganizationsClientProps {

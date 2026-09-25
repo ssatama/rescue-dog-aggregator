@@ -794,26 +794,29 @@ export const getBreedDogs = cache(
 );
 
 /**
- * Unfiltered counts for one breed page (#500): its practical stats and how
- * many are adoptable to each country. Ages count only dogs with a recorded
- * age. A failure leaves the stats out rather than failing the page.
+ * Unfiltered counts for one breed or rescue page (#500, #501): a breed's
+ * practical stats, and how many are adoptable to each country. Ages count
+ * only dogs with a recorded age. A failure leaves the counts out rather than
+ * failing the page.
  */
-export const getBreedCounts = cache(
-  async (breedFilter: { primary_breed: string } | { breed_group: string }): Promise<FilterCountsResponse | null> => {
+export const getListCounts = cache(
+  async (
+    listFilter: { primary_breed: string } | { breed_group: string } | { organization_id: string },
+  ): Promise<FilterCountsResponse | null> => {
     try {
       // Its own fetch: getFilterCounts revalidates every minute, and a page
       // regenerates at its shortest fetch revalidate, not its own weekly one
-      const query = new URLSearchParams({ ...breedFilter, age_known: "true" });
+      const query = new URLSearchParams({ ...listFilter, age_known: "true" });
       const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts?${query.toString()}`, {
-        next: { revalidate: 86400, tags: ["breed-counts"] },
+        next: { revalidate: 86400, tags: ["list-counts"] },
       });
       if (!response.ok) {
-        throw new Error(`Failed to fetch breed counts: ${response.statusText}`);
+        throw new Error(`Failed to fetch list counts: ${response.statusText}`);
       }
       const raw: unknown = await response.json();
       return FilterCountsResponseSchema.parse(stripNulls(raw));
     } catch (error) {
-      reportError(error, { context: "getBreedCounts", ...breedFilter });
+      reportError(error, { context: "getListCounts", ...listFilter });
       return null;
     }
   },

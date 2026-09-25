@@ -73,27 +73,6 @@ export function useOrganizations(filters?: Record<string, any>) {
   });
 }
 
-// Hook for prefetching organizations (useful for hover prefetch)
-export function usePrefetchOrganization() {
-  const queryClient = useQueryClient();
-
-  return (organizationSlug: string) => {
-    queryClient.prefetchQuery({
-      queryKey: organizationKeys.detail(organizationSlug),
-      queryFn: async () => {
-        // This would fetch organization detail
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/organizations/${organizationSlug}`,
-        );
-        if (!response.ok) throw new Error("Failed to fetch organization");
-        return response.json();
-      },
-      staleTime: 5 * 60 * 1000,
-    });
-  };
-}
-
-// Hook for invalidating organization queries (useful after mutations)
 export function useInvalidateOrganizations() {
   const queryClient = useQueryClient();
 

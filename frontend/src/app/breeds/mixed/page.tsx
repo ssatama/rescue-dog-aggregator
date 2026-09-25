@@ -9,7 +9,7 @@ import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
   getBreedBySlug,
   getAnimals,
-  getBreedCounts,
+  getListCounts,
   getAllMetadata,
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
@@ -112,7 +112,7 @@ async function fetchMixedBreedData() {
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([
     getAnimals({ breed_group: "Mixed", sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
-    getBreedCounts({ breed_group: "Mixed" }),
+    getListCounts({ breed_group: "Mixed" }),
     getAllMetadata(),
   ]);
 

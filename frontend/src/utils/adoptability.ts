@@ -4,7 +4,10 @@ import type { Dog } from "@/types/dog";
 /** Whether the dog's rescue adopts out to `country` (an ISO code). Rescues
  * list where they ship as codes with aliases ("UK"), so both sides are
  * normalised. No country means no claim either way. */
-export function isAdoptableTo(dog: Pick<Dog, "organization">, country: string | null): boolean {
+export function isAdoptableTo(
+  dog: { organization?: Pick<NonNullable<Dog["organization"]>, "ships_to"> },
+  country: string | null,
+): boolean {
   if (!country) return false;
   const target = normalizeCountryCode(country);
   return (dog.organization?.ships_to ?? []).some((code) => normalizeCountryCode(code) === target);

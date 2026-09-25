@@ -33,6 +33,18 @@ export interface OrganizationCardProps {
   secondaryDogsLink?: boolean;
 }
 
-export interface OrganizationHeroProps {
-  organization: OrganizationCardData;
+/** What a rescue page shows about the rescue (#501) */
+export interface RescueHeaderOrganization {
+  id: number;
+  name: string;
+  slug?: string;
+  description?: string | null;
+  logo_url?: string | null;
+  website_url?: string | null;
+  country?: string | null;
+  city?: string | null;
+  service_regions?: string[] | null;
+  ships_to?: string[] | null;
+  social_media?: Record<string, string> | null;
+  total_dogs?: number | null;
 }

@@ -10,7 +10,7 @@
  * This is the same rule already applied to dog pages in page.errorCaching.test.jsx.
  */
 import { notFound } from "next/navigation";
-import { OrganizationDetailPageAsync } from "../page";
+import OrganizationDetailPage from "../page";
 import { getOrganizationBySlug } from "../../../../services/organizationsService";
 
 jest.mock("../../../../services/organizationsService", () => ({
@@ -43,7 +43,7 @@ describe("organization detail page — a retired org is a 404, not an empty 200"
   it("calls notFound() when the API says the organization does not exist", async () => {
     getOrganizationBySlug.mockRejectedValue(notFoundError());
 
-    await expect(OrganizationDetailPageAsync(props)).rejects.toThrow(
+    await expect(OrganizationDetailPage(props)).rejects.toThrow(
       "NEXT_NOT_FOUND",
     );
     expect(notFound).toHaveBeenCalled();
@@ -56,14 +56,14 @@ describe("organization detail page — failed fetches must not be cached", () =>
   it("propagates a transient API failure instead of rendering a shell", async () => {
     getOrganizationBySlug.mockRejectedValue(new Error("HTTP 503"));
 
-    await expect(OrganizationDetailPageAsync(props)).rejects.toThrow("HTTP 503");
+    await expect(OrganizationDetailPage(props)).rejects.toThrow("HTTP 503");
     expect(notFound).not.toHaveBeenCalled();
   });
 
   it("propagates a params resolution failure instead of rendering a shell", async () => {
     const badProps = { params: Promise.reject(new Error("params unavailable")) };
 
-    await expect(OrganizationDetailPageAsync(badProps)).rejects.toThrow(
+    await expect(OrganizationDetailPage(badProps)).rejects.toThrow(
       "params unavailable",
     );
     expect(getOrganizationBySlug).not.toHaveBeenCalled();

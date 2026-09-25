@@ -1,55 +1,35 @@
 "use client";
 
-import OrganizationCard from "../../components/organizations/OrganizationCard";
+import { useEffect, useMemo } from "react";
+import RescueCard from "../../components/organizations/RescueCard";
 import OrganizationCardSkeleton from "../../components/ui/OrganizationCardSkeleton";
 import EmptyState from "../../components/ui/EmptyState";
 import type { Organization } from "../../hooks/useOrganizations";
-import {
-  useEnhancedOrganizations,
-  usePrefetchOrganization,
-} from "../../hooks/useOrganizations";
-import { reportError, logger } from "../../utils/logger";
+import { useEnhancedOrganizations } from "../../hooks/useOrganizations";
+import { reportError } from "../../utils/logger";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
-import { useEffect, useMemo } from "react";
 import type { OrganizationsClientProps } from "@/types/pageComponents";
 import type { OrganizationCardData } from "@/types/organizationComponents";
 
+const GRID = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6";
+
+/** The rescues index (#501): every rescue as one calm card. */
 export default function OrganizationsClient({
   initialData = [],
 }: OrganizationsClientProps) {
-  // Use React Query hook with SSR initial data
   const {
-    data: organizations = initialData,
+    data = initialData,
     isLoading,
     error,
     refetch,
   } = useEnhancedOrganizations(initialData as unknown as Organization[]);
-
-  // Prefetch hook for hover optimization
-  const prefetchOrganization = usePrefetchOrganization();
+  const organizations = data as unknown as OrganizationCardData[];
 
   const countryCount = useMemo(
-    () =>
-      new Set(organizations.map((org) => org.country).filter(Boolean)).size,
+    () => new Set(organizations.map((org) => org.country).filter(Boolean)).size,
     [organizations],
   );
 
-  // Log successful data loads
-  useEffect(() => {
-    if (organizations && organizations.length > 0 && !isLoading) {
-      logger.info("Organizations loaded via React Query", {
-        count: organizations.length,
-        withStats: organizations.filter((org) => org.total_dogs !== undefined)
-          .length,
-        withRecentDogs: organizations.filter(
-          (org) => org.recent_dogs && org.recent_dogs.length > 0,
-        ).length,
-        source: initialData.length ? "SSR" : "client-fetch",
-      });
-    }
-  }, [organizations, isLoading, initialData.length]);
-
-  // Log errors
   useEffect(() => {
     if (error) {
       reportError(error, {
@@ -58,76 +38,52 @@ export default function OrganizationsClient({
     }
   }, [error]);
 
-  const breadcrumbItems = [
-    { name: "Home", url: "/" },
-    { name: "Organizations" },
-  ];
-
   return (
-    <>
+    <div className="mx-auto max-w-7xl py-6 lg:py-8">
+      <Breadcrumbs items={[{ name: "Home", url: "/" }, { name: "Rescues" }]} />
 
-      <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb Navigation */}
-        <Breadcrumbs items={breadcrumbItems} />
+      <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+        Rescue organizations
+      </h1>
+      <p className="mt-2 max-w-2xl text-base text-subtle">
+        {organizations.length > 0 && countryCount > 0
+          ? `${organizations.length} rescues in ${countryCount} ${countryCount === 1 ? "country" : "countries"}. `
+          : ""}
+        Every dog here is listed by one of them, and you adopt through the rescue.
+      </p>
 
-        <h1 className="text-title text-gray-900 mb-4">Rescue Organizations</h1>
-        <p className="text-body text-gray-600 mb-8">
-          {organizations.length > 0 ? (
-            <>
-              {organizations.length} verified rescue organizations working
-              tirelessly across {countryCount} countries to rescue and rehome
-              dogs. By adopting through them, you&apos;re supporting their
-              mission to save more animals.
-            </>
-          ) : (
-            <>
-              Verified rescue organizations working tirelessly to rescue and
-              rehome dogs. By adopting through them, you&apos;re supporting
-              their mission to save more animals.
-            </>
-          )}
-        </p>
+      {error && (
+        <div className="mt-6 rounded-lg border border-line bg-bad-soft px-4 py-3 text-bad">
+          <p>We couldn&apos;t load the rescues. Please try again.</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-2 text-sm font-medium underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
-        {/* Error state */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-            <p>
-              There was an error loading organizations. Please try again later.
-            </p>
-            <button
-              onClick={() => refetch()}
-              className="mt-2 text-small font-medium text-red-700 underline"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Loading state */}
+      <div className="mt-6">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-300">
+          <div className={GRID}>
             {Array.from({ length: 6 }, (_, index) => (
               <OrganizationCardSkeleton key={`skeleton-${index}`} />
             ))}
           </div>
         ) : organizations.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 content-fade-in">
-            {organizations.map((org) => {
-              const orgData = org as unknown as OrganizationCardData;
-              return (
-                <div
-                  key={orgData.id}
-                  onMouseEnter={() => prefetchOrganization(orgData.slug ?? "")}
-                >
-                  <OrganizationCard organization={orgData} />
-                </div>
-              );
-            })}
-          </div>
+          <ul className={GRID}>
+            {organizations.map((org) => (
+              <li key={org.id}>
+                <RescueCard organization={org} />
+              </li>
+            ))}
+          </ul>
         ) : (
           <EmptyState variant="noOrganizations" onRefresh={() => refetch()} />
         )}
       </div>
-    </>
+    </div>
   );
 }

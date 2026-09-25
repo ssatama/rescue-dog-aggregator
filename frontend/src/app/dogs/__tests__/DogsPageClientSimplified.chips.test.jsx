@@ -119,3 +119,58 @@ describe("the catalog on a breed page (#500)", () => {
     expect(router.push).toHaveBeenCalledWith("/dogs");
   });
 });
+
+describe("the catalog on a rescue page (#501)", () => {
+  let router;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    router = { push: jest.fn(), replace: jest.fn() };
+    useRouter.mockReturnValue(router);
+    usePathname.mockReturnValue("/organizations/some-rescue");
+    useSearchParams.mockReturnValue(new URLSearchParams(""));
+    api.getFilterCounts.mockResolvedValue({ total: 0 });
+    api.getAvailableRegions.mockResolvedValue([]);
+  });
+
+  const metadata = { organizations: [{ id: null, name: "Any organization" }, { id: 7, name: "Some Rescue" }] };
+
+  it("lists the rescue's dogs with no chip or picker for the rescue and no site search", async () => {
+    api.getAnimals.mockResolvedValue([{ id: 1, name: "Rex", slug: "rex-1" }]);
+    render(<DogsPageClientSimplified initialDogs={[]} metadata={metadata} initialParams={{ organization_id: "7" }} hideHero hideBreadcrumbs />);
+
+    await waitFor(() =>
+      expect(api.getAnimals).toHaveBeenCalledWith(expect.objectContaining({ organization_id: "7" }), expect.anything()),
+    );
+    expect(screen.queryByRole("button", { name: /Some Rescue/ })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("organization-filter")).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Search breeds, rescues or names")).not.toBeInTheDocument();
+    // Card clicks are reported as the rescue page's, not the catalog's
+    expect((await screen.findByTestId("dog-card")).dataset.list).toBe("org-page");
+  });
+
+  it("says none are listed when the rescue has no dogs", async () => {
+    api.getAnimals.mockResolvedValue([]);
+    render(<DogsPageClientSimplified initialDogs={[]} metadata={metadata} initialParams={{ organization_id: "7" }} hideHero hideBreadcrumbs />);
+
+    expect(await screen.findByText("None listed right now")).toBeInTheDocument();
+    expect(screen.getByText(/This rescue's list is updated three times a week/)).toBeInTheDocument();
+  });
+
+  it("Clear all keeps the rescue", async () => {
+    useSearchParams.mockReturnValue(new URLSearchParams("age=Puppy"));
+    api.getAnimals.mockResolvedValue([{ id: 1, name: "Rex", slug: "rex-1" }]);
+    render(<DogsPageClientSimplified initialDogs={[]} metadata={metadata} initialParams={{ organization_id: "7" }} hideHero hideBreadcrumbs />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Clear all" }));
+
+    expect(router.replace).toHaveBeenCalledWith("/organizations/some-rescue", { scroll: false });
+    await waitFor(() =>
+      expect(api.getAnimals).toHaveBeenLastCalledWith(
+        expect.not.objectContaining({ age_category: expect.anything() }),
+        expect.anything(),
+      ),
+    );
+    expect(api.getAnimals).toHaveBeenLastCalledWith(expect.objectContaining({ organization_id: "7" }), expect.anything());
+  });
+});

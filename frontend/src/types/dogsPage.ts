@@ -21,6 +21,8 @@ export interface DogsPageInitialParams {
   /** A breed page's own breed (its primary_breed) or group (#500) */
   primary_breed?: string;
   breed_group?: string;
+  /** A rescue page's own rescue (#501) */
+  organization_id?: string;
 }
 
 export interface Filters {
