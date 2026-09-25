@@ -77,15 +77,16 @@ function answerOf(value: unknown): string | null {
 }
 
 /**
- * Whether the dog lives with children, dogs or cats: "yes", "no", a rescue's
- * qualifier ("selective", "older children"), or null when not assessed. What
- * the rescue published wins over the AI profile, whose default is "unknown".
+ * Whether the dog lives with children, dogs or cats: "yes", "no", a qualifier
+ * ("selective", "older children"), or null when not assessed. The AI profile
+ * wins, and scraped properties only fill in when it has no value: Dogs Trust's
+ * scraped good_with_dogs is true for almost every dog, even "only dog" ones.
  */
 export function companionAnswer(
   dog: Dog,
   field: "good_with_children" | "good_with_dogs" | "good_with_cats",
 ): string | null {
-  return answerOf(dog.properties?.[field]) ?? answerOf(dog.dog_profiler_data?.[field]);
+  return answerOf(dog.dog_profiler_data?.[field] ?? dog.properties?.[field]);
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;

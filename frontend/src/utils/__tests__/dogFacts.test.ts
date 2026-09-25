@@ -119,14 +119,13 @@ describe("adoptionDomain", () => {
 });
 
 describe("companionAnswer", () => {
-  it("prefers what the rescue published over the AI profile", () => {
-    const d = { properties: { good_with_cats: true }, dog_profiler_data: { good_with_cats: "no" } } as unknown as Dog;
-    expect(companionAnswer(d, "good_with_cats")).toBe("yes");
+  it("trusts the AI profile over a scraped property", () => {
+    const d = { properties: { good_with_dogs: true }, dog_profiler_data: { good_with_dogs: "no" } } as unknown as Dog;
+    expect(companionAnswer(d, "good_with_dogs")).toBe("no");
   });
 
-  it("falls back to the profile when the rescue said nothing", () => {
-    const d = { properties: { good_with_cats: "unknown" }, dog_profiler_data: { good_with_cats: "no" } } as unknown as Dog;
-    expect(companionAnswer(d, "good_with_cats")).toBe("no");
+  it("falls back to the scraped property when the profile has no value", () => {
+    expect(companionAnswer(dog({ good_with_cats: "true" }), "good_with_cats")).toBe("yes");
   });
 
   it("keeps a rescue's qualifier in plain words", () => {
