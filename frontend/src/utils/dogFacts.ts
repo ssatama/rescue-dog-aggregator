@@ -1,4 +1,5 @@
 import type { Dog } from "../types/dog";
+import { getAgeCategory } from "./dogHelpers";
 
 /**
  * Facts some rescues publish in `properties` (#489). Each rescue names and
@@ -113,4 +114,43 @@ export function adoptionDomain(url: string | undefined): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Filters for "Similar dogs" (#489): the same size and age group, from any
+ * rescue. Null when neither is known, since that would match every dog.
+ */
+export function similarDogsQuery(
+  dog: Dog,
+): { standardized_size?: string; age_category?: string } | null {
+  const size = dog.standardized_size && dog.standardized_size !== "Unknown" ? dog.standardized_size : null;
+  const age = getAgeCategory(dog);
+  if (!size && age === "Unknown") return null;
+  return {
+    ...(size && { standardized_size: size }),
+    ...(age !== "Unknown" && { age_category: age }),
+  };
+}
+
+/** How many candidates to fetch: the newest few are usually all from one rescue. */
+export const SIMILAR_CANDIDATES = 20;
+
+/**
+ * Three of the candidates, one per rescue first and other rescues before this
+ * dog's own, so "Similar dogs" is not just "More from {rescue}" again.
+ */
+export function pickSimilarDogs(dog: Dog, candidates: Dog[]): Dog[] {
+  const seen = new Set([dog.organization_id]);
+  const spread: Dog[] = [];
+  const rest: Dog[] = [];
+  for (const other of candidates) {
+    if (other.id === dog.id) continue;
+    if (seen.has(other.organization_id)) {
+      rest.push(other);
+    } else {
+      seen.add(other.organization_id);
+      spread.push(other);
+    }
+  }
+  return [...spread, ...rest].slice(0, 3);
 }

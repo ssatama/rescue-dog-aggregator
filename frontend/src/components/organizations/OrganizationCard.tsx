@@ -19,7 +19,7 @@ import {
 import type { OrganizationCardProps, OrganizationCardSize } from "@/types/organizationComponents";
 
 const OrganizationCard = memo(
-  function OrganizationCard({ organization, size = "large" }: OrganizationCardProps) {
+  function OrganizationCard({ organization, size = "large", secondaryDogsLink = false }: OrganizationCardProps) {
     // Extract organization data with enhanced fields
     const name = organization?.name || "Sample Organization";
     const websiteUrl = organization?.website_url || "#";
@@ -298,7 +298,12 @@ const OrganizationCard = memo(
             <Button
               asChild
               size="sm"
-              className={`relative z-10 flex-1 bg-orange-700 hover:bg-orange-800 text-white animate-button-hover ${styles.buttonHeight} text-center`}
+              variant={secondaryDogsLink ? "outline" : "default"}
+              className={`relative z-10 flex-1 animate-button-hover ${styles.buttonHeight} text-center ${
+                secondaryDogsLink
+                  ? "text-foreground border-border hover:bg-muted"
+                  : "bg-orange-700 hover:bg-orange-800 text-white"
+              }`}
             >
               <Link href={`/organizations/${slug}`}>
               {size === "small" ? (
@@ -323,6 +328,7 @@ const OrganizationCard = memo(
     // Custom comparison for React.memo - only re-render if these props change
     return (
       prevProps.size === nextProps.size &&
+      prevProps.secondaryDogsLink === nextProps.secondaryDogsLink &&
       prevProps.organization?.id === nextProps.organization?.id &&
       prevProps.organization?.name === nextProps.organization?.name &&
       prevProps.organization?.total_dogs ===

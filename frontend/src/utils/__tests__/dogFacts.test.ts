@@ -1,4 +1,4 @@
-import { adoptionDomain, companionAnswer, dogLocation, isNeutered, isVaccinated, listedAgo, medicalNote } from "../dogFacts";
+import { adoptionDomain, companionAnswer, dogLocation, pickSimilarDogs, similarDogsQuery, isNeutered, isVaccinated, listedAgo, medicalNote } from "../dogFacts";
 import type { Dog } from "../../types/dog";
 
 const dog = (properties: Record<string, unknown>): Dog =>
@@ -134,5 +134,38 @@ describe("companionAnswer", () => {
 
   it("is null when neither source assessed it", () => {
     expect(companionAnswer(dog({ good_with_dogs: "Unknown" }), "good_with_dogs")).toBeNull();
+  });
+});
+
+describe("similarDogsQuery", () => {
+  it("matches size and age group", () => {
+    expect(similarDogsQuery({ standardized_size: "Large", age_min_months: 40 } as Dog)).toEqual({
+      standardized_size: "Large",
+      age_category: "Adult",
+    });
+  });
+
+  it("uses whichever of the two is known", () => {
+    expect(similarDogsQuery({ age_min_months: 6 } as Dog)).toEqual({ age_category: "Puppy" });
+    expect(similarDogsQuery({ standardized_size: "Small" } as Dog)).toEqual({ standardized_size: "Small" });
+  });
+
+  it("is null when neither is known, rather than matching every dog", () => {
+    expect(similarDogsQuery({ standardized_size: "Unknown" } as Dog)).toBeNull();
+  });
+});
+
+describe("pickSimilarDogs", () => {
+  const cand = (id: number, org: number) => ({ id, name: `Dog ${id}`, organization_id: org }) as Dog;
+  const me = cand(7, 1);
+
+  it("takes one dog per rescue, other rescues first", () => {
+    const picked = pickSimilarDogs(me, [cand(10, 1), cand(11, 1), cand(12, 2), cand(13, 2), cand(14, 3)]);
+    expect(picked.map((d) => d.id)).toEqual([12, 14, 10]);
+  });
+
+  it("fills up from the same rescues when few others match", () => {
+    const picked = pickSimilarDogs(me, [cand(7, 1), cand(10, 1), cand(11, 1), cand(12, 1)]);
+    expect(picked.map((d) => d.id)).toEqual([10, 11, 12]);
   });
 });

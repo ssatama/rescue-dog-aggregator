@@ -18,13 +18,12 @@ import DogFactsPanel, { MobileAdoptBar } from "../../../components/dogs/detail/D
 import { getGallery } from "../../../utils/dogImageHelpers";
 import OrganizationCard from "../../../components/organizations/OrganizationCard";
 import { ToastProvider } from "../../../contexts/ToastContext";
-import RelatedDogsSection from "../../../components/dogs/RelatedDogsSection";
+import SimilarDogsSection from "../../../components/dogs/SimilarDogsSection";
 import DogDescription from "../../../components/dogs/DogDescription";
 import { reportError } from "../../../utils/logger";
 import { formatBreed } from "../../../utils/dogHelpers";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
 import DogDetailErrorBoundary from "../../../components/error/DogDetailErrorBoundary";
-import { ScrollAnimationWrapper } from "../../../hooks/useScrollAnimation";
 import { DogSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import RetiredListingNotice from "../../../components/dogs/RetiredListingNotice";
@@ -47,7 +46,7 @@ import SwipeNavigationOverlay, { type DogNavigation } from "./SwipeNavigationOve
 export default function DogDetailClient({
   params = {},
   initialDog = null,
-  initialRelatedDogs,
+  initialSimilarDogs,
   breedPageSlug = null,
 }: DogDetailClientProps) {
   const urlParams = useParams();
@@ -448,22 +447,16 @@ export default function DogDetailClient({
                     id: dog.organization.id ?? 0,
                   }}
                   size="medium"
+                  secondaryDogsLink
                 />
               </div>
             )}
 
-            {dog.organization_id && (
-              <ScrollAnimationWrapper delay={150} threshold={0.1}>
-                <div data-testid="related-dogs-section">
-                  <RelatedDogsSection
-                    organizationId={dog.organization_id}
-                    currentDogId={dog.id}
-                    organization={dog.organization}
-                    initialDogs={isInitialDog ? initialRelatedDogs : undefined}
-                  />
-                </div>
-              </ScrollAnimationWrapper>
-            )}
+            <SimilarDogsSection
+              key={dog.id}
+              dog={dog}
+              initialDogs={isInitialDog ? initialSimilarDogs : undefined}
+            />
           </div>
         </div>
 

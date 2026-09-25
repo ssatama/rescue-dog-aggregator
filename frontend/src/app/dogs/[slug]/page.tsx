@@ -15,6 +15,7 @@ import { prioritizeDogsForStaticParams } from "./prioritizeDogsForStaticParams";
 import { getIndexableBreeds } from "@/utils/indexableBreeds";
 import { clampDescription, clampTitle } from "@/utils/seoMeta";
 import { getCountryName } from "@/utils/countryNames";
+import { pickSimilarDogs, similarDogsQuery, SIMILAR_CANDIDATES } from "@/utils/dogFacts";
 
 const STATIC_PARAMS_LIMIT = 500;
 
@@ -167,14 +168,14 @@ function DogDetailPage(_props: DogDetailPageProps): React.JSX.Element {
 }
 
 // Neither helper throws: the cached server fetches return a fallback on API failure.
-async function fetchRelatedDogs(dog: Dog): Promise<Dog[] | undefined> {
-  if (!dog.organization_id) return undefined;
+async function fetchSimilarDogs(dog: Dog): Promise<Dog[] | undefined> {
+  const query = similarDogsQuery(dog);
+  if (!query) return undefined;
   const { getAnimals } = await import("../../../services/serverAnimalsService");
-  const dogs = await getAnimals({ organization_id: dog.organization_id, limit: 4, offset: 0 });
-  const related = dogs.filter((other) => other.id !== dog.id).slice(0, 3);
+  const similar = pickSimilarDogs(dog, await getAnimals({ ...query, limit: SIMILAR_CANDIDATES, offset: 0 }));
   // getAnimals answers [] both for "none" and for a failed request. Pass nothing then, so
-  // the client fetches and decides, rather than caching "No other dogs" for the ISR window.
-  return related.length > 0 ? related : undefined;
+  // the client fetches and decides, rather than caching an empty section for the ISR window.
+  return similar.length > 0 ? similar : undefined;
 }
 
 async function fetchBreedPageSlug(dog: Dog): Promise<string | null> {
@@ -220,8 +221,8 @@ export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<Rea
 
   // Server-fetched so the HTML carries real links to the dog's breed page and to three more
   // dogs from its rescue (#439).
-  const [initialRelatedDogs, breedPageSlug] = initialDog
-    ? await Promise.all([fetchRelatedDogs(initialDog), fetchBreedPageSlug(initialDog)])
+  const [initialSimilarDogs, breedPageSlug] = initialDog
+    ? await Promise.all([fetchSimilarDogs(initialDog), fetchBreedPageSlug(initialDog)])
     : [undefined, null];
 
   return (
@@ -229,7 +230,7 @@ export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<Rea
       <Suspense fallback={<DogDetailSkeleton />}>
         <DogDetailClient
           initialDog={initialDog}
-          initialRelatedDogs={initialRelatedDogs}
+          initialSimilarDogs={initialSimilarDogs}
           breedPageSlug={breedPageSlug}
         />
       </Suspense>

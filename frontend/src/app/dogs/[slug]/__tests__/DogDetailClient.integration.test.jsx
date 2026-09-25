@@ -137,9 +137,9 @@ jest.mock("../../../../hooks/useSwipeNavigation", () => ({
 // next/navigation is mocked globally in jest.setup.js
 
 // Mock all other potentially problematic components
-jest.mock("../../../../components/dogs/RelatedDogsSection", () => {
-  return function MockRelatedDogsSection() {
-    return <div data-testid="related-dogs-section">Related Dogs</div>;
+jest.mock("../../../../components/dogs/SimilarDogsSection", () => {
+  return function MockSimilarDogsSection() {
+    return <div data-testid="similar-dogs-section">Similar Dogs</div>;
   };
 });
 
@@ -322,15 +322,15 @@ describe("DogDetailClient Dog Detail Integration", () => {
   });
 
   describe("Layout and Styling", () => {
-    test("organization section and related dogs section both render", async () => {
+    test("organization section and similar dogs section both render", async () => {
       render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
 
       await waitFor(() => {
         const orgContainer = screen.getByTestId("organization-container");
-        const relatedSections = screen.queryAllByTestId("related-dogs-section");
+        const similarSections = screen.queryAllByTestId("similar-dogs-section");
 
         expect(orgContainer).toBeInTheDocument();
-        expect(relatedSections.length).toBeGreaterThan(0);
+        expect(similarSections.length).toBeGreaterThan(0);
       });
     });
   });

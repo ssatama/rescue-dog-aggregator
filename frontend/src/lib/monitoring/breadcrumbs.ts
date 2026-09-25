@@ -44,7 +44,7 @@ export function trackDogCardClick(
   dogId: string,
   dogName: string,
   position: number,
-  listContext: "search" | "org-page" | "home" | "favorites" | "breed-page",
+  listContext: "search" | "org-page" | "home" | "favorites" | "breed-page" | "similar",
 ): void {
   try {
     Sentry.addBreadcrumb({

@@ -29,6 +29,8 @@ export interface OrganizationCardData {
 export interface OrganizationCardProps {
   organization: OrganizationCardData;
   size?: OrganizationCardSize;
+  /** On a dog page, "View N dogs" must not compete with the adopt button (#489) */
+  secondaryDogsLink?: boolean;
 }
 
 export interface OrganizationHeroProps {

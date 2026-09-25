@@ -80,9 +80,9 @@ jest.mock("../../components/ui/DogDetailSkeleton", () => {
 });
 
 // Mock complex components but keep service integration real
-jest.mock("../../components/dogs/RelatedDogsSection", () => {
-  return function MockRelatedDogsSection() {
-    return <div data-testid="related-dogs">Related Dogs</div>;
+jest.mock("../../components/dogs/SimilarDogsSection", () => {
+  return function MockSimilarDogsSection() {
+    return <div data-testid="similar-dogs">Similar Dogs</div>;
   };
 });
 
