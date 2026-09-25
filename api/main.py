@@ -24,7 +24,7 @@ from api.middleware.sentry_middleware import (  # Only keep timeout middleware
 from api.monitoring import init_sentry
 
 # Import routes
-from api.routes import animals, enhanced_animals, llm, monitoring, organizations, swipe
+from api.routes import animals, enhanced_animals, llm, monitoring, organizations, search, swipe
 
 # Import CORS configuration
 from config import (
@@ -253,6 +253,7 @@ logger.info(f"  Allowed methods: {CORS_ALLOW_METHODS}")
 app.include_router(animals.router, prefix="/api/animals")
 app.include_router(enhanced_animals.router, prefix="/api/animals")
 app.include_router(organizations.router, prefix="/api/organizations")
+app.include_router(search.router, prefix="/api/search")
 app.include_router(swipe.router, prefix="/api/dogs")
 app.include_router(llm.router, prefix="/api/llm")
 app.include_router(monitoring.router, prefix="/api/monitoring")

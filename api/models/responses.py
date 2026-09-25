@@ -164,3 +164,38 @@ class NeighborsResponse(BaseModel):
 
     prev: DogNeighbor | None = None
     next: DogNeighbor | None = None
+
+
+class SuggestBreed(BaseModel):
+    name: str
+    slug: str
+    count: int
+    matched_synonym: str | None = None
+
+
+class SuggestRescue(BaseModel):
+    name: str
+    slug: str
+    count: int
+
+
+class SuggestDog(BaseModel):
+    name: str
+    slug: str
+    breed: str | None = None
+    rescue: str
+    image: str | None = None
+
+
+class SuggestFilter(BaseModel):
+    label: str
+    params: dict[str, str]
+
+
+class SuggestResponse(BaseModel):
+    """Search-box suggestions, grouped by what a result would open (#491)."""
+
+    breeds: list[SuggestBreed]
+    rescues: list[SuggestRescue]
+    dogs: list[SuggestDog]
+    filters: list[SuggestFilter]

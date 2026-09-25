@@ -179,7 +179,9 @@ breeds:
 - canonical: Cavalier King Charles Spaniel
   group: Toy
   size: Small
-  aliases: []
+  aliases:
+  - cavalier
+  - cavalier king charles
 - canonical: Chihuahua
   group: Toy
   size: Tiny
@@ -220,6 +222,8 @@ breeds:
   - dachshund (smooth haired)
   - dackel
   - dackel (kurzhaar)
+  - doxie
+  - sausage dog
 - canonical: Dalmatian
   group: Non-Sporting
   size: Large
@@ -234,6 +238,7 @@ breeds:
   group: Working
   size: Large
   aliases:
+  - doberman
   - dobermann
 - canonical: Dogo Canario
   group: Working
@@ -282,6 +287,7 @@ breeds:
   size: Small
   aliases:
   - französische bulldogge
+  - frenchie
 - canonical: Galgo Español
   group: Hound
   size: Large
@@ -299,9 +305,11 @@ breeds:
   group: Herding
   size: Large
   aliases:
+  - alsatian
   - deutscher schaferhund
   - german shepherd
   - german shepherd dog
+  - gsd
   - schaeferhund
   - schaferhund
 - canonical: German Shorthaired Pointer
@@ -367,6 +375,7 @@ breeds:
   size: Small
   aliases:
   - jack russell
+  - jrt
   - terrier (jack russell)
 - canonical: Kangal
   group: Guardian
@@ -665,7 +674,8 @@ breeds:
 - canonical: West Highland White Terrier
   group: Terrier
   size: Small
-  aliases: []
+  aliases:
+  - westie
 - canonical: Whippet
   group: Hound
   size: Medium
@@ -686,6 +696,7 @@ breeds:
   size: Tiny
   aliases:
   - terrier (yorkshire)
+  - yorkie
 designer_breeds:
 - canonical: Cavachon
   group: Designer/Hybrid
