@@ -7,7 +7,8 @@ Two defects motivated these tests, both of which silently hid dogs:
    "6 - 12 months" matched nothing: ``age_max < 12`` fails at exactly 12, and
    ``age_min >= 12`` fails at 6. 253 available dogs sat in no bucket.
 2. A NULL age failed every comparison, so 230 dogs with no age data were
-   excluded from every age-filtered query with no way to reach them.
+   excluded from every age-filtered query with no way to reach them. Since
+   #494 a dog with no recorded age appears under every age instead.
 """
 
 import pytest
@@ -56,8 +57,8 @@ def matches(category: str, age_min: int | None, age_max: int | None) -> bool:
             return unknown
         return True if (a or b) else False
 
-    if category == "Unknown":
-        return age_min is None and age_max is None
+    if age_min is None and age_max is None:
+        return True
 
     low, high = AGE_CATEGORIES[category]
     result: object = True
@@ -123,16 +124,12 @@ class TestClampedUpperBounds:
 class TestPartiallyRecordedAge:
     """Nothing in the schema stops one bound being set without the other."""
 
-    def test_half_populated_row_is_not_unknown(self):
-        assert matches("Unknown", 6, None) is False
-        assert matches("Unknown", None, 6) is False
-
     def test_half_populated_row_still_reaches_a_bucket(self):
         assert matches("Puppy", 6, None) is True
         assert matches("Senior", 120, None) is True
 
     def test_half_populated_row_is_not_double_counted(self):
-        """The OR form put this row in Unknown and Puppy at once."""
+        """A single bound is still an age, not a missing one."""
         hits = [c for c in AGE_CATEGORIES if matches(c, 6, None)]
         assert hits == ["Puppy"]
 
@@ -153,19 +150,17 @@ class TestBoundaries:
         assert matches("Senior", 200, 240) is True
 
 
-class TestUnknownAge:
-    def test_unknown_is_a_selectable_category(self):
-        assert "Unknown" in AGE_CATEGORIES
-        assert age_category_condition("Unknown") is not None
+class TestNoRecordedAge:
+    """#494: a dog with no age appears under every age, not behind "Age Unknown"."""
 
-    def test_unknown_matches_a_dog_with_no_age(self):
-        assert matches("Unknown", None, None) is True
+    def test_unknown_is_no_longer_a_category(self):
+        assert "Unknown" not in AGE_CATEGORIES
+        assert age_category_condition("Unknown") is None
 
-    def test_unknown_does_not_match_a_dog_with_an_age(self):
-        assert matches("Unknown", 24, 48) is False
+    def test_a_dog_with_no_age_matches_every_bucket(self):
+        for category in AGE_CATEGORIES:
+            assert matches(category, None, None) is True
 
-    def test_a_dog_with_no_age_is_not_swept_into_the_real_buckets(self):
-        """The product decision: buckets stay honest, unknowns are reachable
-        through their own option rather than diluting every other one."""
-        for category in ("Puppy", "Young", "Adult", "Senior"):
-            assert matches(category, None, None) is False
+    def test_the_sql_includes_dogs_with_no_age(self):
+        for category in AGE_CATEGORIES:
+            assert "age_min_months IS NULL AND a.age_max_months IS NULL" in age_category_condition(category)

@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { render, screen } from "../../../test-utils";
+import { render, screen, fireEvent, act } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import MobileFilterDrawer from "../MobileFilterDrawer";
 
@@ -88,14 +88,35 @@ describe("MobileFilterDrawer Component", () => {
     expect(screen.getByTestId("clear-all-filters")).toBeInTheDocument();
   });
 
-  test("search input has aria-label for accessibility", () => {
+  test("the apply button shows how many dogs match (#494)", () => {
+    const { rerender } = render(<MobileFilterDrawer {...mockProps} matchCount={214} />);
+    expect(screen.getByRole("button", { name: "Show 214 dogs" })).toBeInTheDocument();
+
+    rerender(<MobileFilterDrawer {...mockProps} matchCount={1} />);
+    expect(screen.getByRole("button", { name: "Show 1 dog" })).toBeInTheDocument();
+
+    rerender(<MobileFilterDrawer {...mockProps} matchCount={null} />);
+    expect(screen.getByRole("button", { name: "Show dogs" })).toBeInTheDocument();
+  });
+
+  test("the search box waits for a pause before searching", () => {
+    jest.useFakeTimers();
+    const handleSearchChange = jest.fn();
+    render(<MobileFilterDrawer {...mockProps} handleSearchChange={handleSearchChange} />);
+
+    fireEvent.change(screen.getByTestId("search-input"), { target: { value: "bel" } });
+    expect(screen.getByTestId("search-input")).toHaveValue("bel");
+    expect(handleSearchChange).not.toHaveBeenCalled();
+
+    act(() => jest.advanceTimersByTime(400));
+    expect(handleSearchChange).toHaveBeenCalledWith("bel");
+    jest.useRealTimers();
+  });
+
+  test("search input is labelled for accessibility", () => {
     render(<MobileFilterDrawer {...mockProps} />);
 
-    const searchInput = screen.getByTestId("search-input");
-    expect(searchInput).toHaveAttribute(
-      "aria-label",
-      "Search these dogs by name or breed",
-    );
+    expect(screen.getByLabelText("Search these dogs")).toBe(screen.getByTestId("search-input"));
   });
 
   test("country filter select trigger has aria-label for accessibility", () => {

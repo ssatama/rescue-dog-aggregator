@@ -1,7 +1,10 @@
 import {
+  AGE_OPTIONS,
   FILTER_DEFAULTS,
   SIZE_API_MAPPING,
+  SIZE_OPTIONS,
   isDefaultFilterValue,
+  scaleValue,
 } from "../filters"
 
 describe("FILTER_DEFAULTS", () => {
@@ -19,16 +22,31 @@ describe("FILTER_DEFAULTS", () => {
 })
 
 describe("SIZE_API_MAPPING", () => {
-  it("maps all 5 UI sizes to API values", () => {
-    expect(SIZE_API_MAPPING["Tiny"]).toBe("Tiny")
+  it("maps the four sizes of the one scale to API values", () => {
     expect(SIZE_API_MAPPING["Small"]).toBe("Small")
     expect(SIZE_API_MAPPING["Medium"]).toBe("Medium")
     expect(SIZE_API_MAPPING["Large"]).toBe("Large")
-    expect(SIZE_API_MAPPING["Extra Large"]).toBe("XLarge")
+    expect(SIZE_API_MAPPING["Giant"]).toBe("XLarge")
   })
 
   it("returns undefined for unknown sizes", () => {
     expect(SIZE_API_MAPPING["Huge" as keyof typeof SIZE_API_MAPPING]).toBeUndefined()
+  })
+})
+
+describe("scaleValue", () => {
+  it("keeps a value on today's scale", () => {
+    expect(scaleValue("Giant", SIZE_OPTIONS, "Any size")).toBe("Giant")
+  })
+
+  it("moves sizes from old links onto the scale", () => {
+    expect(scaleValue("Tiny", SIZE_OPTIONS, "Any size")).toBe("Small")
+    expect(scaleValue("Extra Large", SIZE_OPTIONS, "Any size")).toBe("Giant")
+  })
+
+  it("drops values the scale no longer has, such as the old Unknown age", () => {
+    expect(scaleValue("Unknown", AGE_OPTIONS, "Any age")).toBe("Any age")
+    expect(scaleValue(null, AGE_OPTIONS, "Any age")).toBe("Any age")
   })
 })
 

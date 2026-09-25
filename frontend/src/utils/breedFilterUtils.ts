@@ -1,3 +1,5 @@
+import { AGE_OPTIONS, SIZE_OPTIONS } from "@/constants/filters";
+
 interface BreedData {
   primary_breed?: string;
   organizations?: (number | string)[];
@@ -50,15 +52,8 @@ export function getBreedFilterConfig(_breedData: BreedData): FilterConfig {
 export function getBreedFilterOptions(breedData: BreedData, metadata?: FilterMetadata): FilterOptions {
   return {
     sexOptions: ["Any", "Male", "Female"],
-    sizeOptions: [
-      "Any size",
-      "Tiny",
-      "Small",
-      "Medium",
-      "Large",
-      "Extra Large",
-    ],
-    ageOptions: ["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"],
+    sizeOptions: SIZE_OPTIONS,
+    ageOptions: AGE_OPTIONS,
 
     organizations: metadata?.organizations?.filter((org) =>
       breedData.organizations?.includes(org.id),

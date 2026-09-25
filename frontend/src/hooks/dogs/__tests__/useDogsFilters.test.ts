@@ -183,10 +183,10 @@ describe("useDogsFilters", () => {
       });
     });
 
-    it("should map 'Extra Large' size to 'XLarge' API value", () => {
+    it("should map 'Giant' size to 'XLarge' API value", () => {
       const filters: Filters = {
         searchQuery: "",
-        sizeFilter: "Extra Large",
+        sizeFilter: "Giant",
         ageFilter: "Any age",
         sexFilter: "Any",
         organizationFilter: "any",

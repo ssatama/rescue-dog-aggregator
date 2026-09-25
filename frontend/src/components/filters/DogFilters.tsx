@@ -16,7 +16,6 @@ import SearchTypeahead from "@/components/search/SearchTypeahead";
 import { getBreedSuggestions } from "@/services/animalsService";
 import {
   getAgeFilterOptions,
-  getSortFilterOptions,
   getDefaultFilters,
 } from "@/utils/dogFilters";
 import { getCountryName } from "@/utils/countryNames";
@@ -27,9 +26,7 @@ import {
 } from "@/lib/monitoring/breadcrumbs";
 import { trackFiltersApplied, trackSortChanged } from "@/lib/analytics";
 import SortMenu from "@/components/dogs/catalog/SortMenu";
-import { CATALOG_SORTS } from "@/constants/filters";
-
-const RESCUE_PAGE_SORTS = CATALOG_SORTS.filter((sort) => sort.value !== "recommended");
+import { RESCUE_PAGE_SORTS } from "@/constants/filters";
 import type { DogFilterValues } from "@/types/filterComponents";
 import { logger } from "@/utils/logger";
 

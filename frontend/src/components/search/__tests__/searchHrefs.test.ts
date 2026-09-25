@@ -24,7 +24,7 @@ describe("searchHrefs", () => {
 
   it("maps API filter params to catalog URL keys", () => {
     expect(filterHref(offCatalog, { age_category: "Senior" })).toBe("/dogs?age=Senior");
-    expect(filterHref(offCatalog, { standardized_size: "XLarge" })).toBe("/dogs?size=Extra+Large");
+    expect(filterHref(offCatalog, { standardized_size: "XLarge" })).toBe("/dogs?size=Giant");
   });
 
   it("offers no link for a filter the catalog URL cannot express", () => {

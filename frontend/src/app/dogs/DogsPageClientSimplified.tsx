@@ -28,7 +28,7 @@ import type {
 } from "../../types/dogsPage";
 
 import type { FilterConfig } from "../../types/filterComponents";
-import { FILTER_DEFAULTS } from "@/constants/filters";
+import { AGE_OPTIONS, FILTER_DEFAULTS, SIZE_OPTIONS } from "@/constants/filters";
 
 // The field at the top of the page edits the text search, so the drawer leaves it out
 const CATALOG_DRAWER_CONFIG: FilterConfig = {
@@ -97,7 +97,12 @@ export default function DogsPageClientSimplified({
 
   const applyFilters = useCallback(
     (changes: Record<string, string | undefined>) => {
-      const newFilters: Filters = { ...filterState.filters, ...changes };
+      // A region belongs to one country, so a new country (or none) drops it
+      const regionReset =
+        "availableCountryFilter" in changes && !("availableRegionFilter" in changes)
+          ? { availableRegionFilter: FILTER_DEFAULTS.REGION }
+          : {};
+      const newFilters: Filters = { ...filterState.filters, ...changes, ...regionReset };
 
       filterState.updateURL(newFilters, 1, false);
       pagination.resetForNewFilters(newFilters, scrollPositionRef);
@@ -157,15 +162,16 @@ export default function DogsPageClientSimplified({
   const handleResetFilters = useCallback(() => {
     const defaultFilters: Filters = {
       searchQuery: "",
-      sizeFilter: "Any size",
-      ageFilter: "Any age",
-      sexFilter: "Any",
-      organizationFilter: "any",
-      breedFilter: "Any breed",
-      breedGroupFilter: "Any group",
-      locationCountryFilter: "Any country",
-      availableCountryFilter: "Any country",
-      availableRegionFilter: "Any region",
+      sizeFilter: FILTER_DEFAULTS.SIZE,
+      // A landing page's own filter (age on /dogs/puppies) stays
+      ageFilter: initialParams?.age_category || FILTER_DEFAULTS.AGE,
+      sexFilter: FILTER_DEFAULTS.SEX,
+      organizationFilter: FILTER_DEFAULTS.ORGANIZATION,
+      breedFilter: FILTER_DEFAULTS.BREED,
+      breedGroupFilter: FILTER_DEFAULTS.GROUP,
+      locationCountryFilter: initialParams?.location_country || FILTER_DEFAULTS.COUNTRY,
+      availableCountryFilter: initialParams?.available_country || FILTER_DEFAULTS.COUNTRY,
+      availableRegionFilter: FILTER_DEFAULTS.REGION,
       // Clearing filters keeps the chosen order
       sortFilter: filterState.filters.sortFilter,
     };
@@ -173,10 +179,11 @@ export default function DogsPageClientSimplified({
     filterState.updateURL?.cancel?.();
     saveScrollPosition?.cancel?.();
     const sort = defaultFilters.sortFilter;
-    router.replace(sort === FILTER_DEFAULTS.SORT ? "/dogs" : `/dogs?sort=${sort}`, { scroll: false });
+    // Stay on this page: the fixed filters come from it, not from the URL
+    router.replace(sort === FILTER_DEFAULTS.SORT ? pathname : `${pathname}?sort=${sort}`, { scroll: false });
     scrollPositionRef.current = 0;
     pagination.resetAll(defaultFilters);
-  }, [router, filterState, saveScrollPosition, scrollPositionRef, pagination]);
+  }, [router, pathname, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, filterState, saveScrollPosition, scrollPositionRef, pagination]);
 
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Find Dogs" }];
 
@@ -322,19 +329,12 @@ export default function DogsPageClientSimplified({
               sexOptions={["Any", "Male", "Female"]}
               sizeFilter={filterState.filters.sizeFilter}
               setSizeFilter={(value: string) => handleFilterChange("sizeFilter", value)}
-              sizeOptions={[
-                "Any size",
-                "Tiny",
-                "Small",
-                "Medium",
-                "Large",
-                "Extra Large",
-              ]}
+              sizeOptions={SIZE_OPTIONS}
               ageCategoryFilter={filterState.filters.ageFilter}
               setAgeCategoryFilter={(value: string) =>
                 handleFilterChange("ageFilter", value)
               }
-              ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"]}
+              ageOptions={AGE_OPTIONS}
               // Location
               locationCountryFilter={filterState.filters.locationCountryFilter}
               setLocationCountryFilter={(value: string) =>
@@ -483,12 +483,8 @@ export default function DogsPageClientSimplified({
         organizations={
           metadata?.organizations || [{ id: null, name: "Any organization" }]
         }
-        // Breed (using actual filter state like Name filter)
         standardizedBreedFilter={filterState.filters.breedFilter}
         setStandardizedBreedFilter={handleBreedChange}
-        handleBreedSearch={handleBreedTyped}
-        handleBreedClear={handleBreedClear}
-        handleBreedValueChange={handleBreedTyped}
         standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
         // Pet Details
         sexFilter={filterState.filters.sexFilter}
@@ -496,17 +492,10 @@ export default function DogsPageClientSimplified({
         sexOptions={["Any", "Male", "Female"]}
         sizeFilter={filterState.filters.sizeFilter}
         setSizeFilter={(value: string) => handleFilterChange("sizeFilter", value)}
-        sizeOptions={[
-          "Any size",
-          "Tiny",
-          "Small",
-          "Medium",
-          "Large",
-          "Extra Large",
-        ]}
+        sizeOptions={SIZE_OPTIONS}
         ageCategoryFilter={filterState.filters.ageFilter}
         setAgeCategoryFilter={(value: string) => handleFilterChange("ageFilter", value)}
-        ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"]}
+        ageOptions={AGE_OPTIONS}
         // Location
         availableCountryFilter={filterState.filters.availableCountryFilter}
         setAvailableCountryFilter={(value: string) =>
@@ -517,8 +506,7 @@ export default function DogsPageClientSimplified({
         resetFilters={handleResetFilters}
         // Dynamic filter counts
         filterCounts={pagination.filterCounts}
-        // Currently loaded dogs count for mobile "Apply Filters" button
-        totalDogsCount={pagination.dogs.length}
+        matchCount={pagination.filterCounts?.total ?? null}
       />
     </>
   );

@@ -73,7 +73,8 @@ class TestAnimalServiceAgeFilter:
         ids = sorted(a["id"] for a in animals)
         # 9008 is exactly 96 months. The bucket boundary is Senior at 96, so it
         # is Senior only; containment semantics previously put it in both.
-        assert ids == [9003, 9005, 9007, 9009, 9011, 9012]
+        # 9014 has no recorded age, so it appears under every age (#494).
+        assert ids == [9003, 9005, 9007, 9009, 9011, 9012, 9014]
 
     def test_ninety_six_months_is_senior(self, client):
         response = client.get("/api/animals/?age_category=Senior&limit=100")
@@ -88,18 +89,14 @@ class TestAnimalServiceAgeFilter:
         all_ids = {a["id"] for a in client.get("/api/animals/?limit=1000").json()}
 
         reachable: set[int] = set()
-        for category in ("Puppy", "Young", "Adult", "Senior", "Unknown"):
+        for category in ("Puppy", "Young", "Adult", "Senior"):
             response = client.get(f"/api/animals/?age_category={category}&limit=1000")
             assert response.status_code == 200
             reachable.update(a["id"] for a in response.json())
 
         assert all_ids - reachable == set()
 
-    def test_unknown_category_is_accepted(self, client):
-        response = client.get("/api/animals/?age_category=Unknown&limit=100")
-        assert response.status_code == 200
-
-    def test_age_filter_counts_include_unknown_and_match_the_filter(self, client):
+    def test_age_filter_counts_match_the_filter(self, client):
         """_get_age_counts had no coverage, and it is easy for the counts query
         and the filter query to drift apart. They are built from the same
         helper, so a count must equal the number of dogs the filter returns."""
@@ -107,17 +104,18 @@ class TestAnimalServiceAgeFilter:
         assert response.status_code == 200
 
         counts = {opt["value"]: opt["count"] for opt in response.json()["age_options"]}
-        assert "Unknown" in counts, "unknown-age dogs have no reachable option"
+        assert "Unknown" not in counts
 
         for category, count in counts.items():
             filtered = client.get(f"/api/animals/?age_category={category}&limit=1000")
             assert filtered.status_code == 200
             assert len(filtered.json()) == count, f"{category}: count {count} != {len(filtered.json())} returned"
 
-    def test_unknown_age_dogs_stay_out_of_the_real_buckets(self, client):
-        """Buckets stay honest: a missing age is not evidence of puppyhood."""
-        unknown_ids = {a["id"] for a in client.get("/api/animals/?age_category=Unknown&limit=1000").json()}
+    def test_dogs_without_an_age_appear_under_every_age(self, client):
+        """#494: no "Age Unknown" option; every age search includes them."""
+        no_age = {a["id"] for a in client.get("/api/animals/?limit=1000").json() if a["age_min_months"] is None and a["age_max_months"] is None}
+        assert no_age, "fixture has no dog without an age"
 
         for category in ("Puppy", "Young", "Adult", "Senior"):
             bucket_ids = {a["id"] for a in client.get(f"/api/animals/?age_category={category}&limit=1000").json()}
-            assert unknown_ids & bucket_ids == set(), f"unknown-age dog leaked into {category}"
+            assert no_age <= bucket_ids, f"dog without an age missing from {category}"

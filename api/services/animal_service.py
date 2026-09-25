@@ -15,7 +15,7 @@ from psycopg2.extras import RealDictCursor
 
 from api.database import create_batch_executor
 from api.exceptions import APIException
-from api.models.dog import Animal
+from api.models.dog import Animal, StandardizedSize
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse, FilterOption
 from api.services.search_service import search_condition
@@ -33,8 +33,23 @@ AGE_CATEGORIES: dict[str, tuple[int, int | None]] = {
     "Young": (12, 36),
     "Adult": (36, 96),
     "Senior": (96, None),
-    "Unknown": (0, 0),  # sentinel; handled separately below
 }
+
+# Dogs with no recorded age at all. They appear under every age bucket (#494)
+# rather than behind an "Age Unknown" option that kept them out of every age
+# search.
+NO_RECORDED_AGE = "(a.age_min_months IS NULL AND a.age_max_months IS NULL)"
+
+
+# One size scale everywhere (#494): Small, Medium, Large, Giant. Only a handful
+# of dogs are stored as Tiny, so Tiny sits inside Small; XLarge is Giant.
+SIZE_SCALE_MEMBERS: dict[str, tuple[str, ...]] = {"Small": ("Tiny", "Small")}
+SIZE_SCALE_LABELS = {"Tiny": "Small", "Small": "Small", "Medium": "Medium", "Large": "Large", "XLarge": "Giant"}
+
+
+def size_scale_values(size: StandardizedSize) -> list[str]:
+    """The stored standardized_size values a size filter matches."""
+    return list(SIZE_SCALE_MEMBERS.get(size.value, (size.value,)))
 
 
 def age_category_condition(category: str) -> str | None:
@@ -56,16 +71,10 @@ def age_category_condition(category: str) -> str | None:
     at or above it, keeps clamped values in their own bucket while still
     matching a dog whose range really does span two.
 
-    "Unknown" selects dogs with no recorded age. Those dogs are deliberately
-    not swept into the other buckets: a null age is not evidence that a dog is
-    a puppy, so the buckets stay accurate and the unknowns stay reachable
-    through their own option instead of diluting every other one.
+    A dog with no recorded age matches every bucket, so an age search never
+    hides it (#494). A half-populated row (one bound set) is not treated
+    as unknown; it still has a usable bound, so it lands in a real bucket.
     """
-    if category == "Unknown":
-        # AND, not OR: a half-populated row still has a usable bound, so it
-        # belongs in a real bucket rather than in both that bucket and this one.
-        return "(a.age_min_months IS NULL AND a.age_max_months IS NULL)"
-
     bounds = AGE_CATEGORIES.get(category)
     if bounds is None:
         return None
@@ -77,7 +86,7 @@ def age_category_condition(category: str) -> str | None:
     if high is not None:
         clauses.append(f"a.age_min_months < {high}")
 
-    return f"({' AND '.join(clauses)})"
+    return f"(({' AND '.join(clauses)}) OR {NO_RECORDED_AGE})"
 
 
 LIST_GALLERY_PHOTOS = 3
@@ -1446,8 +1455,8 @@ class AnimalService:
             params.append(filters.size)
 
         if filters.standardized_size:
-            conditions.append("a.standardized_size = %s")
-            params.append(filters.standardized_size.value)
+            conditions.append("a.standardized_size = ANY(%s)")
+            params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
             age_condition = age_category_condition(filters.age_category)
@@ -1768,46 +1777,21 @@ class AnimalService:
             if age_condition:
                 conditions.append(age_condition)
 
+        # Tiny folds into Small, so the scale's own order decides the order
         query = f"""
-            SELECT a.standardized_size, COUNT(*) as count
+            SELECT CASE WHEN a.standardized_size = 'Tiny' THEN 'Small' ELSE a.standardized_size END AS size,
+                   COUNT(*) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
             WHERE {" AND ".join(conditions)}
               AND a.standardized_size IS NOT NULL
-            GROUP BY a.standardized_size
-            HAVING COUNT(*) > 0
-            ORDER BY
-                CASE a.standardized_size
-                    WHEN 'Tiny' THEN 1
-                    WHEN 'Small' THEN 2
-                    WHEN 'Medium' THEN 3
-                    WHEN 'Large' THEN 4
-                    WHEN 'XLarge' THEN 5
-                    ELSE 6
-                END
+            GROUP BY 1
         """
 
         self.cursor.execute(query, params)
-        results = self.cursor.fetchall()
+        counts = {row["size"]: row["count"] for row in self.cursor.fetchall()}
 
-        # Map standardized sizes to UI labels
-        size_labels = {
-            "Tiny": "Tiny",
-            "Small": "Small",
-            "Medium": "Medium",
-            "Large": "Large",
-            "XLarge": "Extra Large",
-        }
-
-        return [
-            FilterOption(
-                value=row["standardized_size"],
-                label=size_labels.get(row["standardized_size"], row["standardized_size"]),
-                count=row["count"],
-            )
-            for row in results
-            if row["count"] > 0
-        ]
+        return [FilterOption(value=size, label=SIZE_SCALE_LABELS[size], count=counts[size]) for size in ("Small", "Medium", "Large", "XLarge") if counts.get(size, 0) > 0]
 
     def _get_age_counts(
         self,
@@ -1825,8 +1809,8 @@ class AnimalService:
             params.append(filters.sex)
 
         if filters.standardized_size:
-            conditions.append("a.standardized_size = %s")
-            params.append(filters.standardized_size.value)
+            conditions.append("a.standardized_size = ANY(%s)")
+            params.append(size_scale_values(filters.standardized_size))
 
         # One aggregate per bucket rather than a CASE: a dog whose estimated age
         # range straddles a boundary belongs to both adjacent buckets, which a
@@ -1861,8 +1845,8 @@ class AnimalService:
 
         # Add other non-sex filters
         if filters.standardized_size:
-            conditions.append("a.standardized_size = %s")
-            params.append(filters.standardized_size.value)
+            conditions.append("a.standardized_size = ANY(%s)")
+            params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
             age_condition = age_category_condition(filters.age_category)
@@ -1901,8 +1885,8 @@ class AnimalService:
             params.append(filters.sex)
 
         if filters.standardized_size:
-            conditions.append("a.standardized_size = %s")
-            params.append(filters.standardized_size.value)
+            conditions.append("a.standardized_size = ANY(%s)")
+            params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
             age_condition = age_category_condition(filters.age_category)
@@ -1951,8 +1935,8 @@ class AnimalService:
             params.append(filters.sex)
 
         if filters.standardized_size:
-            conditions.append("a.standardized_size = %s")
-            params.append(filters.standardized_size.value)
+            conditions.append("a.standardized_size = ANY(%s)")
+            params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
             age_condition = age_category_condition(filters.age_category)
@@ -1990,8 +1974,8 @@ class AnimalService:
             params.append(filters.sex)
 
         if filters.standardized_size:
-            conditions.append("a.standardized_size = %s")
-            params.append(filters.standardized_size.value)
+            conditions.append("a.standardized_size = ANY(%s)")
+            params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
             age_condition = age_category_condition(filters.age_category)
@@ -2030,8 +2014,8 @@ class AnimalService:
             params.append(filters.sex)
 
         if filters.standardized_size:
-            conditions.append("a.standardized_size = %s")
-            params.append(filters.standardized_size.value)
+            conditions.append("a.standardized_size = ANY(%s)")
+            params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
             age_condition = age_category_condition(filters.age_category)
@@ -2075,8 +2059,8 @@ class AnimalService:
             params.append(filters.sex)
 
         if filters.standardized_size:
-            conditions.append("a.standardized_size = %s")
-            params.append(filters.standardized_size.value)
+            conditions.append("a.standardized_size = ANY(%s)")
+            params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
             age_condition = age_category_condition(filters.age_category)
@@ -2117,8 +2101,8 @@ class AnimalService:
             params.append(filters.sex)
 
         if filters.standardized_size:
-            conditions.append("a.standardized_size = %s")
-            params.append(filters.standardized_size.value)
+            conditions.append("a.standardized_size = ANY(%s)")
+            params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
             age_condition = age_category_condition(filters.age_category)
@@ -2168,8 +2152,8 @@ class AnimalService:
             params.append(filters.sex)
 
         if filters.standardized_size:
-            conditions.append("a.standardized_size = %s")
-            params.append(filters.standardized_size.value)
+            conditions.append("a.standardized_size = ANY(%s)")
+            params.append(size_scale_values(filters.standardized_size))
 
         if filters.age_category:
             age_condition = age_category_condition(filters.age_category)

@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Filter, X } from "lucide-react";
 import type { BreedFilterBarProps } from "@/types/breeds";
-import { AGE_FILTER_LABELS } from "@/constants/filters";
 
 export default function BreedFilterBar({
   breedData,
@@ -111,13 +110,6 @@ export default function BreedFilterBar({
           label: "Seniors",
           count: filterCounts?.age_options?.find(
             (opt) => opt.value === "Senior",
-          )?.count,
-        },
-        {
-          value: "Unknown",
-          label: AGE_FILTER_LABELS.Unknown,
-          count: filterCounts?.age_options?.find(
-            (opt) => opt.value === "Unknown",
           )?.count,
         },
       ].filter((opt) => {

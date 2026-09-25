@@ -24,25 +24,30 @@ export function isCatalogSort(value: string | null | undefined): boolean {
   return CATALOG_SORTS.some((sort) => sort.value === value)
 }
 
-export const SIZE_API_MAPPING = {
-  Tiny: "Tiny",
+/** Rescue pages list one rescue, so "Recommended" (which mixes rescues) is left out. */
+export const RESCUE_PAGE_SORTS = CATALOG_SORTS.filter((sort) => sort.value !== "recommended")
+
+/** One size scale everywhere, catalog and swipe alike (#494). */
+export const SIZE_OPTIONS = [FILTER_DEFAULTS.SIZE, "Small", "Medium", "Large", "Giant"]
+
+/** Dogs with no recorded age appear under every age, so there is no "Age Unknown" (#494). */
+export const AGE_OPTIONS = [FILTER_DEFAULTS.AGE, "Puppy", "Young", "Adult", "Senior"]
+
+/** Size names to the API's standardized_size; the API's Small includes Tiny. */
+export const SIZE_API_MAPPING: Record<string, string> = {
   Small: "Small",
   Medium: "Medium",
   Large: "Large",
-  "Extra Large": "XLarge",
-} as const
-
-// Display-only overrides for age options. The option string doubles as the
-// state value, the URL parameter and the age_category sent to the API, so it
-// has to stay exactly what the API expects; only the text shown changes.
-// "Unknown" alone reads as a chip with no noun, which is useless out of
-// context and worse for a screen reader.
-export const AGE_FILTER_LABELS: Record<string, string> = {
-  Unknown: "Age Unknown",
+  Giant: "XLarge",
 }
 
-export function ageFilterLabel(option: string): string {
-  return AGE_FILTER_LABELS[option] ?? option
+/** Size and age values links from before #494 can still carry. */
+const LEGACY_FILTER_VALUES: Record<string, string> = { Tiny: "Small", "Extra Large": "Giant" }
+
+/** A size or age from the URL, on today's scale; anything else is the default. */
+export function scaleValue(value: string | null, options: readonly string[], fallback: string): string {
+  const current = value ? (LEGACY_FILTER_VALUES[value] ?? value) : null
+  return current && options.includes(current) ? current : fallback
 }
 
 const DEFAULT_VALUES = new Set<string>(Object.values(FILTER_DEFAULTS))

@@ -1,3 +1,4 @@
+import { FILTER_DEFAULTS } from "@/constants/filters";
 import { formatCount } from "@/utils/formatCount";
 import { clampDescription } from "@/utils/seoMeta";
 import type { Metadata } from "next";
@@ -44,6 +45,7 @@ export default async function SeniorDogsPage(): Promise<React.JSX.Element> {
   const [initialDogs, metadata, ageStats] = await Promise.all([
     getAnimals({
       age_category: seniorCategory.apiValue,
+      sort: FILTER_DEFAULTS.SORT,
       limit: 20,
       offset: 0,
     }),

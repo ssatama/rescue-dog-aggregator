@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useCallback, useMemo } from "react";
+import React, { useEffect, useCallback, useMemo, useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,15 +12,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Icon } from "../ui/Icon";
-import SearchTypeahead from "@/components/search/SearchTypeahead";
-import {
-  getBreedSuggestions,
-} from "@/services/animalsService";
-import { FILTER_DEFAULTS, ageFilterLabel } from "@/constants/filters";
+import { FILTER_DEFAULTS } from "@/constants/filters";
 import { countryOptionLabel } from "@/utils/countryNames";
 import { useFilterOptions } from "@/hooks/useFilterOptions";
 import type { MobileFilterDrawerProps, FilterConfig } from "@/types/filterComponents";
 import FilterSection from "./FilterSection";
+
+const SEARCH_DEBOUNCE_MS = 400;
+
+function applyLabel(matchCount: number | null | undefined): string {
+  if (matchCount == null) return "Show dogs";
+  if (matchCount === 0) return "No dogs match";
+  return `Show ${matchCount.toLocaleString("en-GB")} ${matchCount === 1 ? "dog" : "dogs"}`;
+}
 
 const DEFAULT_FILTER_CONFIG: FilterConfig = {
   showAge: true,
@@ -37,7 +42,6 @@ export default function MobileFilterDrawer({
 
   searchQuery,
   handleSearchChange,
-  clearSearch,
 
   organizationFilter,
   setOrganizationFilter,
@@ -45,9 +49,6 @@ export default function MobileFilterDrawer({
 
   standardizedBreedFilter = "",
   setStandardizedBreedFilter,
-  handleBreedSearch,
-  handleBreedClear: handleBreedClearFromParent,
-  handleBreedValueChange,
   standardizedBreeds = [],
 
   sexFilter,
@@ -72,10 +73,37 @@ export default function MobileFilterDrawer({
 
   filterConfig = DEFAULT_FILTER_CONFIG,
 
-  useSimpleBreedDropdown = false,
-
-  totalDogsCount,
+  matchCount,
 }: MobileFilterDrawerProps) {
+  // The box shows what is typed at once; the search itself waits for a pause.
+  // A new search from outside (Clear all) replaces the text, but the echo of
+  // one this box sent does not, or it would undo letters typed since.
+  const [searchText, setSearchText] = useState(searchQuery);
+  const [sentSearch, setSentSearch] = useState(searchQuery);
+  const [lastSearchQuery, setLastSearchQuery] = useState(searchQuery);
+  if (searchQuery !== lastSearchQuery) {
+    setLastSearchQuery(searchQuery);
+    if (searchQuery !== sentSearch) setSearchText(searchQuery);
+  }
+  const debouncedSearch = useDebouncedCallback((value: string) => {
+    setSentSearch(value);
+    handleSearchChange?.(value);
+  }, SEARCH_DEBOUNCE_MS);
+  // Closing the drawer applies what was typed straight away
+  useEffect(() => {
+    if (!isOpen) debouncedSearch.flush();
+  }, [isOpen, debouncedSearch]);
+  useEffect(() => () => debouncedSearch.flush(), [debouncedSearch]);
+
+  // A breed typed in the catalog's search can be missing from the list; keep it selectable
+  const breedOptions = useMemo(() => {
+    const breeds = standardizedBreeds.filter((breed) => breed !== FILTER_DEFAULTS.BREED);
+    const current = standardizedBreedFilter;
+    return current && current !== FILTER_DEFAULTS.BREED && !breeds.includes(current)
+      ? [current, ...breeds]
+      : breeds;
+  }, [standardizedBreeds, standardizedBreedFilter]);
+
   const {
     dynamicSizeOptions,
     dynamicAgeOptions,
@@ -137,14 +165,6 @@ export default function MobileFilterDrawer({
       return () => document.removeEventListener("keydown", handleEscape);
     }
   }, [isOpen, onClose]);
-
-  const handleBreedClear = useCallback(() => {
-    if (handleBreedClearFromParent) {
-      handleBreedClearFromParent();
-    } else {
-      setStandardizedBreedFilter?.(FILTER_DEFAULTS.BREED);
-    }
-  }, [handleBreedClearFromParent, setStandardizedBreedFilter]);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
@@ -243,8 +263,7 @@ export default function MobileFilterDrawer({
                   onClick={onClose}
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-3"
                 >
-                  Apply Filters{" "}
-                  {totalDogsCount > 0 && `(${totalDogsCount} dogs)`}
+                  {applyLabel(matchCount)}
                 </Button>
                 {activeFilterCount > 0 && (
                   <Button
@@ -453,7 +472,7 @@ export default function MobileFilterDrawer({
                             style={{ minHeight: "48px" }}
                             aria-pressed={isActive}
                           >
-                            {ageFilterLabel(age)}
+                            {age}
                           </Button>
                         );
                       })}
@@ -573,68 +592,25 @@ export default function MobileFilterDrawer({
                       </select>
                     </div>
 
-                    {/* Breed Input - Conditional rendering */}
-                    {useSimpleBreedDropdown ? (
-                      <Select
-                        value={
-                          standardizedBreedFilter === FILTER_DEFAULTS.BREED
-                            ? FILTER_DEFAULTS.BREED
-                            : standardizedBreedFilter
-                        }
-                        onValueChange={(value: string) =>
-                          setStandardizedBreedFilter?.(value)
-                        }
+                    <Select
+                      value={standardizedBreedFilter || FILTER_DEFAULTS.BREED}
+                      onValueChange={(value: string) => setStandardizedBreedFilter?.(value)}
+                    >
+                      <SelectTrigger
+                        aria-label="Filter by breed"
+                        className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200 h-12"
                       >
-                        <SelectTrigger className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200 h-12">
-                          <SelectValue placeholder="Select breed" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-48">
-                          <SelectItem value={FILTER_DEFAULTS.BREED}>{FILTER_DEFAULTS.BREED}</SelectItem>
-                          {standardizedBreeds
-                            .filter((breed) => breed !== FILTER_DEFAULTS.BREED)
-                            .map((breed) => (
-                              <SelectItem key={breed} value={breed}>
-                                {breed}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <SearchTypeahead
-                        data-testid="breed-search-input"
-                        placeholder="Search breeds..."
-                        value={
-                          standardizedBreedFilter === FILTER_DEFAULTS.BREED
-                            ? ""
-                            : standardizedBreedFilter
-                        }
-                        onValueChange={handleBreedValueChange}
-                        onSuggestionSelect={(breed: string) => {
-                          if (setStandardizedBreedFilter) {
-                            setStandardizedBreedFilter(breed);
-                          }
-                        }}
-                        onSearch={(breed: string) => {
-                          if (handleBreedSearch) {
-                            handleBreedSearch(breed);
-                          } else {
-                            setStandardizedBreedFilter?.(breed);
-                          }
-                        }}
-                        onClear={handleBreedClear}
-                        fetchSuggestions={getBreedSuggestions}
-                        debounceMs={300}
-                        maxSuggestions={8}
-                        showHistory={true}
-                        showClearButton={true}
-                        showDidYouMean={true}
-                        historyKey="mobile-breed-search-history"
-                        size="lg"
-                        className="w-full"
-                        inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
-                        skipLocalFuzzySearch={true}
-                      />
-                    )}
+                        <SelectValue placeholder="Select breed" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        <SelectItem value={FILTER_DEFAULTS.BREED}>{FILTER_DEFAULTS.BREED}</SelectItem>
+                        {breedOptions.map((breed) => (
+                          <SelectItem key={breed} value={breed}>
+                            {breed}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
 
@@ -704,25 +680,28 @@ export default function MobileFilterDrawer({
                   </div>
                 )}
 
-                {/* 7. Search Bar */}
+                {/* 7. Search these dogs (breed pages; the catalog uses the search at the top) */}
                 {filterConfig.showSearch && (
                   <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="mb-2">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                        Search Dogs by Name
-                      </h4>
-                    </div>
-                    <SearchTypeahead
+                    <label
+                      htmlFor="drawer-search"
+                      className="mb-2 block text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider"
+                    >
+                      Search these dogs
+                    </label>
+                    <input
+                      id="drawer-search"
                       data-testid="search-input"
-                      value={searchQuery}
-                      placeholder="Search these dogs by name..."
-                      onValueChange={handleSearchChange}
-                      onClear={clearSearch}
-                      showClearButton={true}
-                      size="lg"
-                      className="w-full"
-                      inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 placeholder:text-gray-500 dark:placeholder:text-gray-400"
-                      aria-label="Search these dogs by name or breed"
+                      type="search"
+                      value={searchText}
+                      placeholder="Name or breed"
+                      autoComplete="off"
+                      enterKeyHint="search"
+                      onChange={(e) => {
+                        setSearchText(e.target.value);
+                        debouncedSearch(e.target.value);
+                      }}
+                      className="mobile-form-input h-12 w-full rounded-lg border border-gray-300 bg-white px-3 text-base text-gray-900 placeholder:text-gray-500 focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                     />
                   </div>
                 )}

@@ -1,3 +1,4 @@
+import { FILTER_DEFAULTS } from "@/constants/filters";
 import { formatCount } from "@/utils/formatCount";
 import { clampDescription } from "@/utils/seoMeta";
 import type { Metadata } from "next";
@@ -76,6 +77,7 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
   const [initialDogs, metadata, countryStats] = await Promise.all([
     getAnimals({
       location_country: country.code,
+      sort: FILTER_DEFAULTS.SORT,
       limit: 20,
       offset: 0,
     }),

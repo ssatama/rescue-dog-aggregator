@@ -1,0 +1,75 @@
+/**
+ * Chip and "Clear all" fixes from the #526 review (#494 part 2).
+ */
+
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import DogsPageClientSimplified from "../DogsPageClientSimplified";
+import * as api from "../../../services/animalsService";
+
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(),
+  usePathname: jest.fn(),
+  useSearchParams: jest.fn(),
+}));
+
+jest.mock("../../../services/animalsService", () => ({
+  getAnimals: jest.fn(),
+  getFilterCounts: jest.fn(),
+  getAvailableRegions: jest.fn(),
+}));
+
+jest.mock("../../../components/dogs/DogCard", () => {
+  return function DogCard({ dog }) {
+    return <div data-testid="dog-card">{dog.name}</div>;
+  };
+});
+
+describe("catalog chips (#494)", () => {
+  let router;
+
+  function renderAt(pathname, query, initialParams = {}) {
+    usePathname.mockReturnValue(pathname);
+    useSearchParams.mockReturnValue(new URLSearchParams(query));
+    return render(<DogsPageClientSimplified initialDogs={[]} metadata={{}} initialParams={initialParams} />);
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    router = { push: jest.fn(), replace: jest.fn() };
+    useRouter.mockReturnValue(router);
+    api.getAnimals.mockResolvedValue([{ id: 1, name: "Rex", slug: "rex-1" }]);
+    api.getFilterCounts.mockResolvedValue({ total: 1 });
+    api.getAvailableRegions.mockResolvedValue(["London"]);
+  });
+
+  it("Clear all on a landing page stays there and keeps its fixed filter", async () => {
+    renderAt("/dogs/puppies", "breed=Labrador", { age_category: "Puppy" });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Clear all" }));
+
+    expect(router.replace).toHaveBeenCalledWith("/dogs/puppies", { scroll: false });
+    await waitFor(() =>
+      expect(api.getAnimals).toHaveBeenLastCalledWith(
+        expect.not.objectContaining({ primary_breed: expect.anything() }),
+        expect.anything(),
+      ),
+    );
+    expect(api.getAnimals).toHaveBeenLastCalledWith(
+      expect.objectContaining({ age_category: "Puppy" }),
+      expect.anything(),
+    );
+  });
+
+  it("removing the country chip drops its region too", async () => {
+    renderAt("/dogs", "available_country=UK&available_region=London");
+
+    const countryChip = await screen.findByRole("button", { name: /^Adoptable to/ });
+    fireEvent.click(countryChip);
+
+    await waitFor(() => expect(router.push).toHaveBeenCalled(), { timeout: 1500 });
+    const url = router.push.mock.calls.at(-1)[0];
+    expect(url).not.toContain("available_country");
+    expect(url).not.toContain("available_region");
+  });
+});

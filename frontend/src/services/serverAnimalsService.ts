@@ -131,6 +131,7 @@ interface AnimalQueryParams {
   available_to_region?: string;
   sort_by?: string;
   sort_order?: string;
+  sort?: string;
   curation_type?: string;
   animal_type?: string;
   status?: string;
@@ -166,6 +167,7 @@ export const getAnimals = cache(
       queryParams.append("available_to_region", params.available_to_region);
     if (params.sort_by) queryParams.append("sort_by", params.sort_by);
     if (params.sort_order) queryParams.append("sort_order", params.sort_order);
+    if (params.sort) queryParams.append("sort", params.sort);
     if (params.curation_type)
       queryParams.append("curation_type", params.curation_type);
     if (params.animal_type)

@@ -35,6 +35,7 @@ import type {
 } from "@/types/breeds";
 import type { FilterCountsResponse } from "@/schemas/common";
 import { trackFiltersApplied } from "@/lib/analytics";
+import { AGE_OPTIONS, SIZE_API_MAPPING, SIZE_OPTIONS, scaleValue } from "@/constants/filters";
 
 const MobileFilterDrawer = dynamic(
   () => import("@/components/filters/MobileFilterDrawer"),
@@ -45,14 +46,6 @@ const MobileFilterDrawer = dynamic(
 );
 
 const ITEMS_PER_PAGE = 12;
-
-const SIZE_MAPPING: Record<string, string> = {
-  Tiny: "Tiny",
-  Small: "Small",
-  Medium: "Medium",
-  Large: "Large",
-  "Extra Large": "XLarge",
-};
 
 const PARAM_MAPPING: Record<BreedDetailFilterKey, string> = {
   searchQuery: "search",
@@ -113,8 +106,8 @@ export default function BreedDetailClient({
   const filters = useMemo(
     (): BreedDetailFilters => ({
       searchQuery: searchParams?.get("search") || "",
-      sizeFilter: searchParams?.get("size") || "Any size",
-      ageFilter: searchParams?.get("age") || "Any age",
+      sizeFilter: scaleValue(searchParams?.get("size") ?? null, SIZE_OPTIONS, "Any size"),
+      ageFilter: scaleValue(searchParams?.get("age") ?? null, AGE_OPTIONS, "Any age"),
       sexFilter: searchParams?.get("sex") || "Any",
       organizationFilter: searchParams?.get("organization_id") || "any",
       availableCountryFilter:
@@ -157,8 +150,7 @@ export default function BreedDetailClient({
       if (currentFilters.searchQuery)
         params.search = currentFilters.searchQuery;
       if (currentFilters.sizeFilter !== "Any size")
-        params.standardized_size =
-          SIZE_MAPPING[currentFilters.sizeFilter] || currentFilters.sizeFilter;
+        params.standardized_size = SIZE_API_MAPPING[currentFilters.sizeFilter];
       if (currentFilters.ageFilter !== "Any age")
         params.age_category = currentFilters.ageFilter;
       if (currentFilters.sexFilter !== "Any")
@@ -538,7 +530,7 @@ export default function BreedDetailClient({
             showOrganization: true,
             showSearch: true,
           }}
-          totalDogsCount={dogs.length}
+          matchCount={filterCounts?.total ?? null}
           searchQuery={filters.searchQuery}
           handleSearchChange={(value: string) =>
             handleMobileFilterChange("searchQuery", value)
@@ -558,19 +550,12 @@ export default function BreedDetailClient({
           setSizeFilter={(value: string) =>
             handleMobileFilterChange("sizeFilter", value)
           }
-          sizeOptions={[
-            "Any size",
-            "Tiny",
-            "Small",
-            "Medium",
-            "Large",
-            "Extra Large",
-          ]}
+          sizeOptions={SIZE_OPTIONS}
           ageCategoryFilter={filters.ageFilter}
           setAgeCategoryFilter={(value: string) =>
             handleMobileFilterChange("ageFilter", value)
           }
-          ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior", "Unknown"]}
+          ageOptions={AGE_OPTIONS}
           availableCountryFilter={filters.availableCountryFilter}
           setAvailableCountryFilter={(value: string) =>
             handleMobileFilterChange("availableCountryFilter", value)

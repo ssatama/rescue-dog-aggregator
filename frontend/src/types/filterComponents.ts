@@ -78,6 +78,6 @@ export interface MobileFilterDrawerProps extends SharedFilterProps {
   isOpen: boolean;
   onClose: () => void;
   filterConfig?: FilterConfig;
-  useSimpleBreedDropdown?: boolean;
-  totalDogsCount: number;
+  /** Dogs matching the current filters, shown on the apply button; null until known. */
+  matchCount?: number | null;
 }
