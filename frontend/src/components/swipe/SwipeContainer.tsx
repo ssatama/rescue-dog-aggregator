@@ -50,13 +50,27 @@ function isTyping(target: EventTarget | null): boolean {
 
 function EndOfStack({
   empty,
+  failed,
   onStartOver,
   onChangeFilters,
 }: {
   empty: boolean;
+  /** Nothing loaded because the request failed, not because nothing matched */
+  failed: boolean;
   onStartOver: () => void;
   onChangeFilters: () => void;
 }): React.ReactElement {
+  if (failed) {
+    return (
+      <div className="flex max-w-sm flex-col items-center gap-3 text-center" data-testid="swipe-end">
+        <h2 className="font-display text-2xl font-bold text-ink">We couldn&apos;t load the dogs</h2>
+        <p className="text-subtle">Check your connection and try again.</p>
+        <button type="button" onClick={onStartOver} className={`${PRIMARY} mt-2`}>
+          Try again
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="flex max-w-sm flex-col items-center gap-3 text-center" data-testid="swipe-end">
       <span className="grid h-16 w-16 place-items-center rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
@@ -118,7 +132,10 @@ export function SwipeContainer({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [offset, setOffset] = useState(0);
+  const [loadFailed, setLoadFailed] = useState(false);
   const dragged = useRef(false);
+  // The first load restores the saved position; new filters start at the top
+  const restorePosition = useRef(true);
 
   const onDogsLoadedRef = useRef(onDogsLoaded);
   useEffect(() => {
@@ -155,11 +172,15 @@ export function SwipeContainer({
       try {
         const fetched = await fetchDogs(queryString);
         if (cancelled) return;
+        const restore = restorePosition.current;
+        restorePosition.current = false;
         setDogs(fetched);
+        setLoadFailed(false);
+        // Up to fetched.length: a visitor who had reached the end stays there
         setCurrentIndex((prev) => {
-          const clamped = Math.min(prev, Math.max(0, fetched.length - 1));
-          safeStorage.set("swipeCurrentIndex", String(clamped));
-          return clamped;
+          const index = restore ? Math.min(prev, fetched.length) : 0;
+          safeStorage.set("swipeCurrentIndex", String(index));
+          return index;
         });
         setOffset(0);
         Sentry.addBreadcrumb({
@@ -169,7 +190,9 @@ export function SwipeContainer({
           data: { dogCount: fetched.length },
         });
       } catch (error) {
+        // Keep whatever stack is showing rather than an empty "no matches"
         Sentry.captureException(error);
+        if (!cancelled) setLoadFailed(true);
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -239,8 +262,15 @@ export function SwipeContainer({
     if (!fetchDogs || !queryString) return;
     setIsLoading(true);
     fetchDogs(`${queryString}&randomize=true`)
-      .then(setDogs)
-      .catch((error) => Sentry.captureException(error))
+      .then((fetched) => {
+        setDogs(fetched);
+        setLoadFailed(false);
+      })
+      .catch((error) => {
+        // On failure the current stack stays, from its first dog
+        Sentry.captureException(error);
+        setLoadFailed(true);
+      })
       .finally(() => setIsLoading(false));
   }, [fetchDogs, queryString, setIndex]);
 
@@ -339,7 +369,12 @@ export function SwipeContainer({
               aria-label="Loading dogs"
             />
           ) : atEnd ? (
-            <EndOfStack empty={dogs.length === 0} onStartOver={startOver} onChangeFilters={() => setShowFilters(true)} />
+            <EndOfStack
+              empty={dogs.length === 0}
+              failed={loadFailed && dogs.length === 0}
+              onStartOver={startOver}
+              onChangeFilters={() => setShowFilters(true)}
+            />
           ) : (
             currentDog && (
               <>

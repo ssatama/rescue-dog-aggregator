@@ -11,7 +11,6 @@ import { type Dog } from "../../types/dog";
 import type { ApiDog } from "../../types/apiDog";
 import { transformApiDogsToDogs } from "../../utils/dogTransformer";
 import { safeStorage } from "../../utils/safeStorage";
-import { reportError } from "../../utils/logger";
 import SwipeContainerSkeleton from "../../components/ui/SwipeContainerSkeleton";
 import DogDetailModalSkeleton from "../../components/ui/DogDetailModalSkeleton";
 import type { SwipeFilters } from "../../hooks/useSwipeFilters";
@@ -98,16 +97,10 @@ export default function SwipePageClient({
 
   const fetchDogsWithFilters = useCallback(
     async (queryString: string): Promise<Dog[]> => {
-      try {
-        const params = Object.fromEntries(new URLSearchParams(queryString));
-        const data = await get<{ dogs?: ApiDog[] }>("/api/dogs/swipe", params);
-
-        const transformedDogs = transformApiDogsToDogs(data.dogs || []);
-        return transformedDogs;
-      } catch (error) {
-        reportError(error, { context: "SwipePageClient.fetchDogs" });
-        return [];
-      }
+      // Errors propagate: an empty list would read as "no dogs match" (#499)
+      const params = Object.fromEntries(new URLSearchParams(queryString));
+      const data = await get<{ dogs?: ApiDog[] }>("/api/dogs/swipe", params);
+      return transformApiDogsToDogs(data.dogs || []);
     },
     [],
   );

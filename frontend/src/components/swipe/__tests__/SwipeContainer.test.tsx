@@ -186,5 +186,49 @@ describe("SwipeContainer (#499)", () => {
       expect(current()).toBe("Dog 1");
       expect(localStorage.getItem("swipeCurrentIndex")).toBe("0");
     });
+
+    it("starts new filters at the first dog, even from the end screen", async () => {
+      const fetchDogs = jest.fn().mockResolvedValue(dogs);
+      const { rerender } = render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      await screen.findByText("Dog 1");
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          fireEvent.keyDown(window, { key: "ArrowRight" });
+        });
+      }
+      expect(screen.getByTestId("swipe-end")).toBeInTheDocument();
+
+      (useSwipeFilters as jest.Mock).mockReturnValue({ ...validFilters, toQueryString: () => "adoptable_to_country=DE" });
+      await act(async () => {
+        rerender(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      });
+      expect(current()).toBe("Dog 1");
+    });
+
+    it("keeps the stack when a request fails instead of saying nothing matches", async () => {
+      const fetchDogs = jest.fn().mockResolvedValueOnce(dogs).mockRejectedValue(new Error("down"));
+      render(<SwipeContainer initialDogs={dogs} fetchDogs={fetchDogs} />);
+      await screen.findByText("Dog 1");
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          fireEvent.keyDown(window, { key: "ArrowRight" });
+        });
+      }
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Start over" }));
+      });
+      expect(current()).toBe("Dog 1");
+      expect(screen.queryByText("No dogs match these filters")).not.toBeInTheDocument();
+    });
+
+    it("offers to retry when the first load fails", async () => {
+      const fetchDogs = jest.fn().mockRejectedValue(new Error("down"));
+      await act(async () => {
+        render(<SwipeContainer initialDogs={[]} fetchDogs={fetchDogs} />);
+      });
+      expect(screen.getByRole("heading", { name: "We couldn't load the dogs" })).toBeInTheDocument();
+      expect(screen.queryByText("No dogs match these filters")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+    });
   });
 });
