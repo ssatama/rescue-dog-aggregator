@@ -1,5 +1,3 @@
-"use client";
-
 import type { GuideSummary } from "@/types/guide";
 import { GuideCard } from "./GuideCard";
 
@@ -13,15 +11,17 @@ export function RelatedGuides({ relatedGuides }: RelatedGuidesProps) {
   }
 
   return (
-    <footer className="mt-12 pt-8 border-t border-gray-200 dark:border-guide-dark-border">
-      <h3 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-        Related Guides
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <section aria-labelledby="related-guides" className="mt-12 border-t border-line pt-8">
+      <h2 id="related-guides" className="mb-4 font-display text-2xl font-bold text-ink">
+        Related guides
+      </h2>
+      <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {relatedGuides.map((guide) => (
-          <GuideCard key={guide.slug} guide={guide} />
+          <li key={guide.slug}>
+            <GuideCard guide={guide} />
+          </li>
         ))}
-      </div>
-    </footer>
+      </ul>
+    </section>
   );
 }

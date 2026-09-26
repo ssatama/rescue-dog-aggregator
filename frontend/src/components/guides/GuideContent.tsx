@@ -1,145 +1,102 @@
 "use client";
 
 import { useState, useEffect, type ReactNode } from "react";
-import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import type { GuideSummary } from "@/types/guide";
-import { TableOfContents } from "./TableOfContents";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import { formatGuideDate, guideCategoryLabel } from "@/lib/guideLabels";
+import { TableOfContents, InlineContents, type TOCSection } from "./TableOfContents";
 import { RelatedGuides } from "./RelatedGuides";
-import { FontSizeProvider } from "@/contexts/FontSizeContext";
-import { FontSizeControl } from "./FontSizeControl";
-import { Breadcrumb } from "./Breadcrumb";
+import { GuideDogStrip } from "./GuideDogStrip";
 
 interface GuideContentProps {
   guide: GuideSummary;
-  fullPage?: boolean;
   relatedGuides?: GuideSummary[];
   /** MDX body, rendered on the server by the route. */
   children?: ReactNode;
 }
 
-interface TOCSection {
-  id: string;
-  title: string;
-  level: number;
-}
+const DOGS_LINK =
+  "inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-orange-700 underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-orange-400";
 
-
-export function GuideContent({
-  guide,
-  fullPage = false,
-  relatedGuides = [],
-  children,
-}: GuideContentProps) {
-  const { frontmatter } = guide;
+/**
+ * A guide (#503): what it covers, real dogs listed now and a link into the
+ * matching catalog view, its contents, the body, and related guides.
+ */
+export function GuideContent({ guide, relatedGuides = [], children }: GuideContentProps) {
+  const { frontmatter, dogs = [] } = guide;
   const [sections, setSections] = useState<TOCSection[]>([]);
-  const [readingProgress, setReadingProgress] = useState(0);
 
-  // Extract H2 sections after MDX renders
+  // The body is server-rendered, so its headings are in the document already
   useEffect(() => {
-    const extractSections = () => {
-      const headings = document.querySelectorAll("article h2");
-      const extracted = Array.from(headings).map((h) => ({
-        id: h.id,
-        title: h.textContent || "",
-        level: 2,
-      }));
-      setSections(extracted);
-    };
-
-    // The body is server-rendered, so the headings are already in the document.
-    // This used to wait 100ms for the client-side MDX bundle.
-    extractSections();
-  }, [guide]);
-
-  // Calculate reading progress on scroll
-  useEffect(() => {
-    const calculateProgress = () => {
-      const article = document.querySelector("article");
-      if (!article) return;
-
-      const articleTop = article.offsetTop;
-      const articleHeight = article.scrollHeight;
-      const scrollPosition = window.scrollY;
-      const windowHeight = window.innerHeight;
-
-      const progress = Math.min(
-        100,
-        Math.max(
-          0,
-          ((scrollPosition - articleTop + windowHeight) / articleHeight) * 100,
-        ),
-      );
-
-      setReadingProgress(progress);
-    };
-
-    window.addEventListener("scroll", calculateProgress);
-    calculateProgress(); // Initial calculation
-
-    return () => window.removeEventListener("scroll", calculateProgress);
-  }, []);
+    const headings = document.querySelectorAll("article [data-guide-body] h2");
+    setSections(Array.from(headings).map((h) => ({ id: h.id, title: h.textContent || "" })));
+  }, [guide.slug]);
 
   return (
-    <FontSizeProvider>
-      {fullPage && <FontSizeControl />}
-      <div className={fullPage ? "container mx-auto px-4 py-12" : "px-8 py-6"}>
-        <div className="flex gap-8 max-w-7xl mx-auto">
-          {/* Desktop TOC Sidebar */}
-          {fullPage && sections.length > 0 && (
-            <TableOfContents
-              sections={sections}
-              readingProgress={readingProgress}
-            />
+    <div className="mx-auto max-w-7xl py-6 lg:py-8">
+      <div className="flex gap-10">
+        {sections.length > 0 && <TableOfContents sections={sections} />}
+
+        <article className="min-w-0 max-w-3xl flex-1">
+          {/* The route's BreadcrumbSchema is this page's BreadcrumbList */}
+          <Breadcrumbs
+            items={[{ name: "Home", url: "/" }, { name: "Guides", url: "/guides" }, { name: frontmatter.title }]}
+            schema={false}
+          />
+
+          <header className="grid gap-3">
+            <p className="text-sm font-semibold text-subtle">{guideCategoryLabel(frontmatter.category)}</p>
+            <h1 className="font-display text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl lg:text-5xl">
+              {frontmatter.title}
+            </h1>
+            <p className="text-lg text-subtle">{frontmatter.description}</p>
+            <p className="text-sm text-subtle">
+              {frontmatter.readTime} min read ·{" "}
+              <time dateTime={frontmatter.lastUpdated}>Updated {formatGuideDate(frontmatter.lastUpdated)}</time> ·{" "}
+              {frontmatter.author}
+            </p>
+          </header>
+
+          {(dogs.length > 0 || frontmatter.dogs) && (
+            <div className="mt-6 grid gap-3">
+              <GuideDogStrip dogs={dogs} linked className="max-w-md" />
+              {frontmatter.dogs && (
+                <Link href={frontmatter.dogs.href} className={DOGS_LINK}>
+                  {frontmatter.dogs.label}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              )}
+            </div>
           )}
 
-          {/* Main Content */}
-          <article className="flex-1 max-w-4xl">
-            {/* Breadcrumb Navigation */}
-            {fullPage && <Breadcrumb guideName={frontmatter.title} />}
-
-            {/* Hero Image */}
-            <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden mb-8">
-              <Image
-                src={frontmatter.heroImage}
-                alt={frontmatter.heroImageAlt || frontmatter.title}
-                fill
-                className="object-cover"
-                priority
-              />
+          {sections.length > 0 && (
+            <div className="mt-6">
+              <InlineContents sections={sections} />
             </div>
+          )}
 
-            {/* Title and Meta */}
-            <header className="mb-8">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                {frontmatter.title}
-              </h1>
-              <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400">
-                <span>{frontmatter.readTime} min read</span>
-                <span>•</span>
-                <span>Updated {frontmatter.lastUpdated}</span>
-                <span>•</span>
-                <span>{frontmatter.author}</span>
-              </div>
-            </header>
+          <div
+            data-guide-body
+            className="prose prose-lg mt-8 max-w-none text-ink dark:prose-invert prose-headings:font-display prose-headings:text-ink prose-strong:text-ink [&_h2]:scroll-mt-24 [&_h3]:scroll-mt-24"
+          >
+            {children}
+          </div>
 
-            {/* MDX Content */}
-            <div
-              className="prose prose-lg dark:prose-invert max-w-none
-              dark:prose-headings:text-gray-100
-              dark:prose-p:text-gray-300
-              dark:prose-a:text-orange-400"
-              style={{ fontSize: "var(--guide-font-size, 16px)" }}
-            >
-              {children}
+          {frontmatter.dogs && (
+            <div className="mt-10 rounded-xl border border-line bg-surface p-5">
+              <p className="font-display text-lg font-bold text-ink">Ready to look?</p>
+              <Link href={frontmatter.dogs.href} className={`mt-2 ${DOGS_LINK}`}>
+                {frontmatter.dogs.label}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
             </div>
+          )}
 
-            {/* Related Guides */}
-            {relatedGuides.length > 0 && (
-              <RelatedGuides relatedGuides={relatedGuides} />
-            )}
-          </article>
-        </div>
+          {relatedGuides.length > 0 && <RelatedGuides relatedGuides={relatedGuides} />}
+        </article>
       </div>
-    </FontSizeProvider>
+    </div>
   );
 }

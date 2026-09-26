@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeHighlight from "rehype-highlight";
-import { getGuide, getAllGuideSlugs, getAllGuides } from "@/lib/guides";
+import { getGuide, getAllGuideSlugs, getAllGuides, getGuideDogs } from "@/lib/guides";
 import { mdxComponents } from "@/components/guides/mdxComponents";
 import { GuideContent } from "@/components/guides/GuideContent";
 import { GuideSchema } from "@/components/guides/GuideSchema";
@@ -15,8 +15,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { GuideSummary } from "@/types/guide";
 
-// Force static generation for guides (content doesn't change frequently)
+// Static, but regenerated daily for the real dogs it shows (#503)
 export const dynamic = "force-static";
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   const slugs = getAllGuideSlugs();
@@ -90,6 +91,8 @@ export default async function GuidePage({
     notFound();
   }
 
+  const dogs = await getGuideDogs(guide.frontmatter);
+
   let relatedGuides: GuideSummary[] = [];
   if (
     guide.frontmatter.relatedGuides &&
@@ -101,6 +104,10 @@ export default async function GuidePage({
       // Drop the body: RelatedGuides renders cards from frontmatter alone, and
       // these cross the client boundary.
       .map(({ slug: relatedSlug, frontmatter }) => ({ slug: relatedSlug, frontmatter }));
+    // Each card shows its guide's own real dogs, as on the index
+    relatedGuides = await Promise.all(
+      relatedGuides.map(async (related) => ({ ...related, dogs: await getGuideDogs(related.frontmatter) })),
+    );
   }
 
   return (
@@ -115,8 +122,7 @@ export default async function GuidePage({
       />
       <ReadingProgress />
       <GuideContent
-        guide={{ slug: guide.slug, frontmatter: guide.frontmatter }}
-        fullPage={true}
+        guide={{ slug: guide.slug, frontmatter: guide.frontmatter, dogs }}
         relatedGuides={relatedGuides}
       >
         {/* Rendered here, on the server, so the guide body is in the static

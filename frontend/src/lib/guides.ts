@@ -1,7 +1,9 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
-import { Guide, GuideFrontmatter } from "@/types/guide";
+import { Guide, GuideDog, GuideFrontmatter } from "@/types/guide";
+import { getAnimals } from "@/services/serverAnimalsService";
+import { reportError } from "@/utils/logger";
 
 const guidesDirectory = path.join(process.cwd(), "content/guides");
 
@@ -45,4 +47,23 @@ export async function getAllGuides(): Promise<Guide[]> {
     };
   });
   return guides;
+}
+
+export const GUIDE_DOG_COUNT = 3;
+
+/**
+ * Real listed dogs to show with a guide instead of a stock photo (#503), from
+ * the guide's own filter. A failure leaves them out rather than failing the page.
+ */
+export async function getGuideDogs(frontmatter: GuideFrontmatter): Promise<GuideDog[]> {
+  try {
+    const dogs = await getAnimals({ sort: "recommended", ...frontmatter.dogs?.query, limit: 12 });
+    return dogs
+      .filter((dog) => dog.primary_image_url && dog.slug)
+      .slice(0, GUIDE_DOG_COUNT)
+      .map((dog) => ({ id: dog.id, name: dog.name, slug: dog.slug as string, image: dog.primary_image_url as string }));
+  } catch (error) {
+    reportError(error, { context: "getGuideDogs", slug: frontmatter.slug });
+    return [];
+  }
 }

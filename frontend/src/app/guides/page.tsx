@@ -1,9 +1,12 @@
-import { getAllGuides } from "@/lib/guides";
+import { getAllGuides, getGuideDogs } from "@/lib/guides";
 import { GuideCard } from "@/components/guides/GuideCard";
 import { BreadcrumbSchema } from "@/components/seo";
 import Layout from "@/components/layout/Layout";
-import Link from "next/link";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import type { Metadata } from "next";
+
+// The cards show real listed dogs, which change daily
+export const revalidate = 86400;
 
 const collectionSchema = {
   "@context": "https://schema.org",
@@ -37,6 +40,9 @@ export const metadata: Metadata = {
 
 export default async function GuidesPage() {
   const guides = await getAllGuides();
+  const cards = await Promise.all(
+    guides.map(async ({ slug, frontmatter }) => ({ slug, frontmatter, dogs: await getGuideDogs(frontmatter) })),
+  );
 
   return (
     <Layout>
@@ -51,47 +57,25 @@ export default async function GuidesPage() {
         ]}
       />
 
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-6xl mx-auto">
-          <nav className="mb-6 text-sm" aria-label="Breadcrumb">
-            <ol className="flex items-center gap-2">
-              <li>
-                <Link
-                  href="/"
-                  className="text-orange-500 hover:text-orange-600 hover:underline transition-colors"
-                >
-                  Home
-                </Link>
-              </li>
-              <li>
-                <span className="mx-2 text-gray-400">/</span>
-              </li>
-              <li>
-                <span
-                  className="text-gray-900 dark:text-white font-medium"
-                  aria-current="page"
-                >
-                  Guides
-                </span>
-              </li>
-            </ol>
-          </nav>
+      <div className="mx-auto max-w-7xl py-6 lg:py-8">
+        {/* BreadcrumbSchema above is this page's BreadcrumbList */}
+        <Breadcrumbs items={[{ name: "Home", url: "/" }, { name: "Guides" }]} schema={false} />
 
-          <h1 className="text-4xl font-bold mb-4">Adoption Guides</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-3xl">
-            Comprehensive guides to help you navigate rescue dog adoption from
-            European organizations. From first-time owner preparation to
-            understanding costs and cross-border logistics.
-          </p>
-        </div>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Adoption guides</h1>
+        <p className="mt-2 max-w-2xl text-base text-subtle">
+          Comprehensive guides to help you navigate rescue dog adoption from European organizations. From first-time
+          owner preparation to understanding costs and cross-border logistics.
+        </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-          {guides.map((guide, index) => (
-            <GuideCard key={guide.slug} guide={guide} priority={index < 4} />
+        <ul className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+          {cards.map((guide) => (
+            <li key={guide.slug}>
+              <GuideCard guide={guide} />
+            </li>
           ))}
-        </div>
+        </ul>
 
-        <div className="mt-16 max-w-3xl mx-auto text-sm text-gray-500 dark:text-gray-400 space-y-3">
+        <div className="mt-12 max-w-3xl space-y-3 text-sm text-subtle">
           <p>
             Whether you are considering adopting a rescue dog for the first time
             or adding another companion to your family, these guides walk you

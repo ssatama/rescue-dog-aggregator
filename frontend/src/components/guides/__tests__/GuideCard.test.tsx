@@ -11,7 +11,7 @@ const mockGuide: Guide = {
     heroImage: "/test-hero.jpg",
     heroImageAlt: "Test hero image",
     readTime: 10,
-    category: "Getting Started",
+    category: "financial-planning",
     keywords: ["test", "guide"],
     lastUpdated: "2025-10-03",
     author: "Test Author",
@@ -20,42 +20,35 @@ const mockGuide: Guide = {
   content: "",
 };
 
-describe("GuideCard", () => {
-  it("renders guide title", () => {
+describe("GuideCard (#503)", () => {
+  it("is one link to the guide, named by its title", () => {
     render(<GuideCard guide={mockGuide} />);
-    expect(screen.getByText("Test Guide Title")).toBeInTheDocument();
+
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/guides/test-guide");
+    expect(screen.getByRole("link")).toHaveTextContent("Test Guide Title");
   });
 
-  it("displays read time", () => {
+  it("names the category in words, never the slug", () => {
     render(<GuideCard guide={mockGuide} />);
-    expect(screen.getByText(/10 min/i)).toBeInTheDocument();
+
+    expect(screen.getByText("Costs")).toBeInTheDocument();
+    expect(screen.queryByText(/financial-planning/i)).not.toBeInTheDocument();
   });
 
-  it("displays category badge", () => {
+  it("gives read time and a readable date", () => {
     render(<GuideCard guide={mockGuide} />);
-    expect(screen.getByText("Getting Started")).toBeInTheDocument();
+
+    expect(screen.getByText(/10 min read/)).toHaveTextContent("10 min read · Updated 3 Oct 2025");
   });
 
-  it("displays last updated date", () => {
-    render(<GuideCard guide={mockGuide} />);
-    expect(screen.getByText(/Updated/i)).toBeInTheDocument();
-  });
+  it("shows real dogs, not the stock hero image", () => {
+    render(
+      <GuideCard guide={{ ...mockGuide, dogs: [{ id: 1, name: "Rex", slug: "rex-1", image: "https://images.rescuedogs.me/rex.jpg" }] }} />,
+    );
 
-  it("links to correct guide page", () => {
-    render(<GuideCard guide={mockGuide} />);
-    const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", "/guides/test-guide");
-  });
-
-  it("has proper accessibility attributes", () => {
-    render(<GuideCard guide={mockGuide} />);
-    const link = screen.getByRole("link");
-    expect(link).toHaveClass("group");
-  });
-
-  it("renders hero image with alt text", () => {
-    render(<GuideCard guide={mockGuide} />);
-    const image = screen.getByAltText("Test hero image");
-    expect(image).toBeInTheDocument();
+    expect(screen.getByAltText("Rex")).toBeInTheDocument();
+    expect(screen.queryByAltText("Test hero image")).not.toBeInTheDocument();
+    // The card is one link; its photos are not links of their own
+    expect(screen.getAllByRole("link")).toHaveLength(1);
   });
 });

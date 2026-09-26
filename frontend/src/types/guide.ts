@@ -15,6 +15,12 @@ export interface GuideFrontmatter {
   datePublished?: string;
   author: string;
   relatedGuides: string[];
+  /** The catalog view the guide leads to, and the API filter for the real dogs it shows (#503) */
+  dogs?: {
+    label: string;
+    href: string;
+    query?: Record<string, string>;
+  };
 }
 
 export interface Guide {
@@ -28,4 +34,15 @@ export interface Guide {
  * so passing a whole Guide across the boundary serialises 18-40KB of raw MDX
  * per guide into the RSC payload that nothing reads.
  */
-export type GuideSummary = Pick<Guide, "slug" | "frontmatter">;
+export type GuideSummary = Pick<Guide, "slug" | "frontmatter"> & {
+  /** Real listed dogs shown with the guide in place of a stock photo (#503) */
+  dogs?: GuideDog[];
+};
+
+/** Only what a photo strip needs, since these cross the client boundary */
+export interface GuideDog {
+  id: number | string;
+  name: string;
+  slug: string;
+  image: string;
+}
