@@ -1,71 +1,88 @@
 "use client";
 
-import { formatCount } from "@/utils/formatCount";
+import { useMemo } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-import CountryQuickNav from "@/components/countries/CountryQuickNav";
+import LandingNav from "@/components/landing/LandingNav";
 import type { CountryDogsClientProps } from "@/types/pageComponents";
 import DogsPageClientSimplified from "../../DogsPageClientSimplified";
 
+/**
+ * A country page (#502): the dogs that live in the country, in the catalog
+ * itself. The intro says plainly that this is not the same as the dogs
+ * someone living there can adopt, and links to those.
+ */
 export default function CountryDogsClient({
   country,
   initialDogs,
   metadata,
   allCountries,
   totalCount,
+  adoptableCount,
 }: CountryDogsClientProps) {
-  const breadcrumbItems = [
-    { name: "Home", url: "/" },
-    { name: "Dogs", url: "/dogs" },
-    { name: "Countries", url: "/dogs/country" },
-    { name: country.name },
+  const place = country.placeName ?? country.name;
+  const initialParams = useMemo(() => ({ location_country: country.code }), [country.code]);
+  const navItems = [
+    { href: "/dogs/country", label: "All countries" },
+    ...Object.values(allCountries).map((c) => ({
+      href: `/dogs/country/${c.code.toLowerCase()}`,
+      label: `${c.flag} ${c.shortName}`,
+      current: c.code === country.code,
+    })),
   ];
 
-  const totalDogs = totalCount || 0;
-
   return (
-    <>
-      <div className="container mx-auto px-4 pt-4">
-        <Breadcrumbs items={breadcrumbItems} />
-      </div>
+    <div className="mx-auto max-w-7xl py-6 lg:py-8">
+      <Breadcrumbs
+        items={[
+          { name: "Home", url: "/" },
+          { name: "Dogs", url: "/dogs" },
+          { name: "Countries", url: "/dogs/country" },
+          { name: country.name },
+        ]}
+      />
 
-      <section
-        className={`relative bg-gradient-to-br ${country.gradient} py-6 md:py-10 px-4 overflow-hidden`}
-      >
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_50%,white_1px,transparent_1px)] bg-[length:20px_20px]" />
-
-        <div className="absolute top-4 right-4 md:top-8 md:right-8 text-6xl md:text-8xl opacity-20">
-          {country.flag}
-        </div>
-
-        <div className="relative max-w-6xl mx-auto">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl md:text-4xl">{country.flag}</span>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white drop-shadow-md">
-              Rescue Dogs in {country.name}
-            </h1>
-          </div>
-          <p className="text-base md:text-lg text-white/95 max-w-2xl drop-shadow-sm">
-            {country.tagline} &mdash;{" "}
-            <span className="font-semibold">
-              {formatCount(totalDogs)}
-            </span>{" "}
-            dogs waiting for their forever homes
+      <header className="grid gap-3">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          Rescue dogs in {place}
+        </h1>
+        <p className="max-w-2xl text-base text-subtle">{country.description}.</p>
+        {totalCount > 0 && (
+          <p className="max-w-2xl text-base text-ink">
+            <strong className="font-semibold">{totalCount.toLocaleString("en-GB")}</strong>{" "}
+            {totalCount === 1 ? "dog is" : "dogs are"} in {place} right now.
+            {adoptableCount > 0 && (
+              <>
+                {" "}
+                <strong className="font-semibold">{adoptableCount.toLocaleString("en-GB")}</strong>{" "}
+                {adoptableCount === 1 ? "dog" : "dogs"} can be adopted by someone living in {place}, counting
+                rescues abroad that rehome there.
+              </>
+            )}
           </p>
-        </div>
+        )}
+        {adoptableCount > 0 && (
+          <Link
+            href={`/dogs?available_country=${encodeURIComponent(country.code)}`}
+            className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-orange-700 underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-orange-400"
+          >
+            See every dog you can adopt in {place}
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        )}
+        <LandingNav label="Browse by country" items={navItems} />
+      </header>
+
+      <section id="dogs-grid" aria-label={`Rescue dogs in ${place}`} className="scroll-mt-20">
+        <DogsPageClientSimplified
+          initialDogs={initialDogs}
+          metadata={metadata}
+          initialParams={initialParams}
+          hideHero
+          hideBreadcrumbs
+        />
       </section>
-
-      <CountryQuickNav
-        currentCountry={country.code}
-        allCountries={allCountries}
-      />
-
-      <DogsPageClientSimplified
-        initialDogs={initialDogs}
-        metadata={metadata}
-        initialParams={{ location_country: country.code }}
-        hideHero={true}
-        hideBreadcrumbs={true}
-      />
-    </>
+    </div>
   );
 }

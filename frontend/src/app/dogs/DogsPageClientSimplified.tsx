@@ -218,9 +218,10 @@ export default function DogsPageClientSimplified({
       initialParams?.organization_id,
     ],
   );
+  const countryIsFixed = Boolean(initialParams?.location_country);
   const drawerConfig = useMemo(
-    () => ({ ...CATALOG_DRAWER_CONFIG, showBreed: !breedIsFixed, showOrganization: !orgIsFixed }),
-    [breedIsFixed, orgIsFixed],
+    () => ({ ...CATALOG_DRAWER_CONFIG, showAge: !ageIsFixed, showBreed: !breedIsFixed, showOrganization: !orgIsFixed }),
+    [ageIsFixed, breedIsFixed, orgIsFixed],
   );
 
   const { goodWithKidsFilter, goodWithDogsFilter, goodWithCatsFilter, firstTimeFriendlyFilter, energyFilter } =
@@ -353,8 +354,8 @@ export default function DogsPageClientSimplified({
         className="mx-auto max-w-7xl py-6 sm:px-2 lg:px-4 lg:py-8"
       >
         {/* Phones: the header has no search field, so it sits at the top. Not
-            on a breed or rescue page: its search would leave for /dogs and them */}
-        {!breedIsFixed && !orgIsFixed && <GlobalSearch surface="mobile" className="mb-4 sm:hidden" />}
+            on a breed, rescue or landing page: its search would leave for /dogs and them */}
+        {pageFixedFilters.length === 0 && <GlobalSearch surface="mobile" className="mb-4 sm:hidden" />}
 
         {/* Desktop Breadcrumbs - Hidden on Mobile */}
         {!hideBreadcrumbs && (
@@ -418,13 +419,15 @@ export default function DogsPageClientSimplified({
               sizeFilter={filterState.filters.sizeFilter}
               setSizeFilter={(value: string) => handleFilterChange("sizeFilter", value)}
               sizeOptions={SIZE_OPTIONS}
-              ageCategoryFilter={filterState.filters.ageFilter}
+              // A landing page's own age or country is hidden and not counted, like a breed page's breed
+              ageCategoryFilter={ageIsFixed ? FILTER_DEFAULTS.AGE : filterState.filters.ageFilter}
               setAgeCategoryFilter={(value: string) =>
                 handleFilterChange("ageFilter", value)
               }
               ageOptions={AGE_OPTIONS}
+              showAge={!ageIsFixed}
               // Location
-              locationCountryFilter={filterState.filters.locationCountryFilter}
+              locationCountryFilter={countryIsFixed ? FILTER_DEFAULTS.COUNTRY : filterState.filters.locationCountryFilter}
               setLocationCountryFilter={(value: string) =>
                 handleFilterChange("locationCountryFilter", value)
               }
@@ -509,8 +512,8 @@ export default function DogsPageClientSimplified({
 
               {/* Empty state */}
               {!pagination.loading && pagination.dogs.length === 0 &&
-                ((breedIsFixed || orgIsFixed) && filterState.activeFilterCount === 0 ? (
-                  // Nothing to clear: the breed or rescue itself has no dogs listed now
+                (pageFixedFilters.length > 0 && filterState.activeFilterCount === 0 ? (
+                  // Nothing to clear: the page's own breed, rescue, age or country has no dogs listed now
                   <EmptyState
                     title="None listed right now"
                     description={`${orgIsFixed ? "This rescue's list is updated" : "Rescues add new dogs"} three times a week. Every other dog is in the catalog.`}

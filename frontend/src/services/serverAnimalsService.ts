@@ -794,14 +794,19 @@ export const getBreedDogs = cache(
 );
 
 /**
- * Unfiltered counts for one breed or rescue page (#500, #501): a breed's
- * practical stats, and how many are adoptable to each country. Ages count
- * only dogs with a recorded age. A failure leaves the counts out rather than
- * failing the page.
+ * Unfiltered counts for one breed, rescue or age page, or for every dog
+ * (country pages) (#500, #501, #502): a breed's practical stats, and how many
+ * are adoptable to each country. Ages count only dogs with a recorded age. A
+ * failure leaves the counts out rather than failing the page.
  */
 export const getListCounts = cache(
   async (
-    listFilter: { primary_breed: string } | { breed_group: string } | { organization_id: string },
+    listFilter:
+      | { primary_breed: string }
+      | { breed_group: string }
+      | { organization_id: string }
+      | { age_category: string }
+      | Record<string, never>,
   ): Promise<FilterCountsResponse | null> => {
     try {
       // Its own fetch: getFilterCounts revalidates every minute, and a page

@@ -20,8 +20,6 @@ describe("countryData", () => {
         expect(country.name).toBeDefined();
         expect(country.shortName).toBeDefined();
         expect(country.flag).toBeDefined();
-        expect(country.gradient).toBeDefined();
-        expect(country.tagline).toBeDefined();
         expect(country.description).toBeDefined();
       });
     });

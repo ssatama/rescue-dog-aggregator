@@ -1,6 +1,5 @@
 import { formatCount } from "@/utils/formatCount";
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import AgeHubClient from "./AgeHubClient";
 import Layout from "@/components/layout/Layout";
 import AgeStructuredData from "@/components/age/AgeStructuredData";
@@ -31,27 +30,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-function LoadingFallback(): React.JSX.Element {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {[...Array(2)].map((_, i) => (
-          <div key={i} className="h-64 bg-muted animate-pulse rounded-3xl" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default async function AgeHubPage(): Promise<React.JSX.Element> {
   const ageStats = await getAgeStats();
 
   return (
     <Layout>
       <AgeStructuredData stats={ageStats} pageType="index" />
-      <Suspense fallback={<LoadingFallback />}>
-        <AgeHubClient initialStats={ageStats} />
-      </Suspense>
+      <AgeHubClient initialStats={ageStats} />
     </Layout>
   );
 }

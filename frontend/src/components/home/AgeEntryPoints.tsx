@@ -6,13 +6,15 @@ interface AgeEntryPointsProps {
   /** Dogs with a known age only: these pages promise one. */
   puppies: number;
   seniors: number;
+  /** Link an age even with no count (a hub whose stats failed), leaving the count out */
+  keepEmpty?: boolean;
 }
 
-export default function AgeEntryPoints({ puppies, seniors }: AgeEntryPointsProps): React.JSX.Element | null {
+export default function AgeEntryPoints({ puppies, seniors, keepEmpty = false }: AgeEntryPointsProps): React.JSX.Element | null {
   const entries = [
     { title: "Puppies", note: "Under a year old", count: puppies, href: "/dogs/puppies" },
     { title: "Seniors", note: "Calm company, often overlooked", count: seniors, href: "/dogs/senior" },
-  ].filter((entry) => entry.count > 0);
+  ].filter((entry) => keepEmpty || entry.count > 0);
   if (entries.length === 0) return null;
 
   return (
@@ -26,7 +28,8 @@ export default function AgeEntryPoints({ puppies, seniors }: AgeEntryPointsProps
           <span className="min-w-0 flex-1">
             <span className="block font-display text-lg font-bold text-ink sm:text-xl">{entry.title}</span>
             <span className="block text-sm text-subtle">
-              {formatCount(entry.count)} dogs · {entry.note}
+              {entry.count > 0 && `${formatCount(entry.count)} dogs · `}
+              {entry.note}
             </span>
           </span>
           <ArrowRight className="h-5 w-5 shrink-0 text-subtle transition-transform group-hover:translate-x-0.5" aria-hidden="true" />

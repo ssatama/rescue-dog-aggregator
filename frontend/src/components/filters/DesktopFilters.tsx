@@ -27,6 +27,7 @@ export default function DesktopFilters({
   setOrganizationFilter,
   organizations,
 
+  showAge = true,
   showBreed = true,
   showOrganization = true,
   standardizedBreedFilter = "",
@@ -252,70 +253,72 @@ export default function DesktopFilters({
           </div>
 
           {/* 3. Age Filter - LIFE STAGE PREFERENCE */}
-          <div
-            className={`space-y-3 ${sectionCounts.age > 0 ? "filter-section-active" : ""}`}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                Age
-              </h4>
-              {sectionCounts.age > 0 && (
-                <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
-                  ({sectionCounts.age})
-                </span>
-              )}
-            </div>
-
-            {/* Hidden Age Select for E2E Tests */}
-            <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-              <select
-                data-testid="age-filter"
-                value={
-                  ageCategoryFilter === FILTER_DEFAULTS.AGE ? "any" : ageCategoryFilter
-                }
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                  setAgeCategoryFilter(
-                    e.target.value === "any" ? FILTER_DEFAULTS.AGE : e.target.value,
-                  )
-                }
-              >
-                <option value="any">{FILTER_DEFAULTS.AGE}</option>
-                {dynamicAgeOptions
-                  .filter((age) => age !== FILTER_DEFAULTS.AGE)
-                  .map((age) => (
-                    <option key={age} value={age}>
-                      {age}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
+          {showAge && (
             <div
-              data-testid="age-button-grid"
-              className="grid grid-cols-2 gap-2"
+              className={`space-y-3 ${sectionCounts.age > 0 ? "filter-section-active" : ""}`}
             >
-              {dynamicAgeOptions.map((age) => {
-                const isActive = ageCategoryFilter === age;
-                return (
-                  <Button
-                    key={age}
-                    data-testid={`age-button-${age}`}
-                    variant="outline"
-                    onClick={() => setAgeCategoryFilter(age)}
-                    aria-pressed={isActive}
-                    className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
-                      isActive
-                        ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
-                        : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
-                    }`}
-                    style={{ minHeight: "48px" }}
-                  >
-                    {age}
-                  </Button>
-                );
-              })}
+              <div className="flex items-center gap-2 mb-3">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                  Age
+                </h4>
+                {sectionCounts.age > 0 && (
+                  <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
+                    ({sectionCounts.age})
+                  </span>
+                )}
+              </div>
+
+              {/* Hidden Age Select for E2E Tests */}
+              <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
+                <select
+                  data-testid="age-filter"
+                  value={
+                    ageCategoryFilter === FILTER_DEFAULTS.AGE ? "any" : ageCategoryFilter
+                  }
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                    setAgeCategoryFilter(
+                      e.target.value === "any" ? FILTER_DEFAULTS.AGE : e.target.value,
+                    )
+                  }
+                >
+                  <option value="any">{FILTER_DEFAULTS.AGE}</option>
+                  {dynamicAgeOptions
+                    .filter((age) => age !== FILTER_DEFAULTS.AGE)
+                    .map((age) => (
+                      <option key={age} value={age}>
+                        {age}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div
+                data-testid="age-button-grid"
+                className="grid grid-cols-2 gap-2"
+              >
+                {dynamicAgeOptions.map((age) => {
+                  const isActive = ageCategoryFilter === age;
+                  return (
+                    <Button
+                      key={age}
+                      data-testid={`age-button-${age}`}
+                      variant="outline"
+                      onClick={() => setAgeCategoryFilter(age)}
+                      aria-pressed={isActive}
+                      className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
+                        isActive
+                          ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
+                          : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
+                      }`}
+                      style={{ minHeight: "48px" }}
+                    >
+                      {age}
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 4. Sex Filter - BASIC PREFERENCE */}
           <div

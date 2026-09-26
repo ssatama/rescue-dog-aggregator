@@ -1,111 +1,76 @@
 import { render, screen } from "@testing-library/react";
 import CountryDogsClient from "../CountryDogsClient";
+import { COUNTRIES } from "@/utils/countryData";
 
-// Mock Breadcrumbs component
 jest.mock("@/components/ui/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }) {
-    return <nav data-testid="breadcrumbs">{items.length} items</nav>;
+    return <nav data-testid="breadcrumbs">{items.map((item) => item.name).join(" / ")}</nav>;
   };
 });
 
-// Mock CountryQuickNav component
-jest.mock("@/components/countries/CountryQuickNav", () => {
-  return function MockCountryQuickNav({ currentCountry }) {
-    return <nav data-testid="country-quick-nav">{currentCountry}</nav>;
-  };
-});
-
-// Mock DogsPageClientSimplified component
 jest.mock("../../../DogsPageClientSimplified", () => {
   return function MockDogsPageClientSimplified({ initialParams }) {
-    return (
-      <div data-testid="dogs-page-client">
-        Filter: {initialParams.location_country}
-      </div>
-    );
+    return <div data-testid="dogs-page-client">Filter: {initialParams.location_country}</div>;
   };
 });
 
-const mockCountry = {
-  code: "UK",
-  name: "United Kingdom",
-  shortName: "UK",
-  flag: "🇬🇧",
-  gradient: "from-rose-500 via-orange-500 to-amber-400",
-  tagline: "From the British Isles with love",
-};
-
-const mockInitialDogs = [
-  { slug: "max-1", name: "Max", breed: "Labrador" },
-  { slug: "bella-2", name: "Bella", breed: "German Shepherd" },
-];
-
-const mockAllCountries = [
-  { code: "UK", shortName: "UK", flag: "🇬🇧", count: 3000 },
-  { code: "DE", shortName: "Germany", flag: "🇩🇪", count: 800 },
-];
-
-const mockMetadata = {
-  total: 3000,
-  page: 1,
-  limit: 24,
+const defaultProps = {
+  country: COUNTRIES.UK,
+  initialDogs: [],
+  metadata: {},
+  allCountries: { UK: COUNTRIES.UK, DE: COUNTRIES.DE },
+  totalCount: 579,
+  adoptableCount: 924,
 };
 
 describe("CountryDogsClient", () => {
-  const defaultProps = {
-    country: mockCountry,
-    initialDogs: mockInitialDogs,
-    metadata: mockMetadata,
-    allCountries: mockAllCountries,
-    totalCount: 3000,
-  };
-
-  it("renders country name in hero", () => {
+  it("names the country in its heading", () => {
     render(<CountryDogsClient {...defaultProps} />);
 
-    expect(screen.getByText(/Rescue Dogs in United Kingdom/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Rescue dogs in the UK");
   });
 
-  it("displays country flag", () => {
+  it("explains both numbers in plain words", () => {
     render(<CountryDogsClient {...defaultProps} />);
 
-    const flags = screen.getAllByText("🇬🇧");
-    expect(flags.length).toBeGreaterThan(0);
+    expect(screen.getByText(/dogs are in the UK right now/)).toHaveTextContent(
+      "579 dogs are in the UK right now. 924 dogs can be adopted by someone living in the UK",
+    );
   });
 
-  it("displays dog count", () => {
+  it("links to the dogs someone living there can adopt", () => {
     render(<CountryDogsClient {...defaultProps} />);
 
-    expect(screen.getByText("3,000")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /See every dog you can adopt in the UK/ })).toHaveAttribute(
+      "href",
+      "/dogs?available_country=UK",
+    );
   });
 
-  it("displays country tagline", () => {
+  it("leaves the adoptable number and link out when there is none", () => {
+    render(<CountryDogsClient {...defaultProps} adoptableCount={0} />);
+
+    expect(screen.getByText(/dogs are in the UK right now/)).not.toHaveTextContent("can be adopted");
+    expect(screen.queryByRole("link", { name: /you can adopt/ })).not.toBeInTheDocument();
+  });
+
+  it("keeps the breadcrumb trail", () => {
     render(<CountryDogsClient {...defaultProps} />);
 
-    expect(screen.getByText(/From the British Isles with love/i)).toBeInTheDocument();
+    expect(screen.getByTestId("breadcrumbs")).toHaveTextContent("Home / Dogs / Countries / United Kingdom");
   });
 
-  it("renders breadcrumbs", () => {
+  it("links the other countries and marks this one", () => {
     render(<CountryDogsClient {...defaultProps} />);
 
-    expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: "Browse by country" });
+    expect(nav.querySelector('[aria-current="page"]')).toHaveAttribute("href", "/dogs/country/uk");
+    expect(nav.querySelector('a[href="/dogs/country/de"]')).toBeInTheDocument();
   });
 
-  it("renders country quick nav", () => {
-    render(<CountryDogsClient {...defaultProps} />);
-
-    expect(screen.getByTestId("country-quick-nav")).toBeInTheDocument();
-  });
-
-  it("passes country filter to DogsPageClientSimplified", () => {
+  it("fixes the catalog to dogs in the country", () => {
     render(<CountryDogsClient {...defaultProps} />);
 
     expect(screen.getByTestId("dogs-page-client")).toHaveTextContent("Filter: UK");
-  });
-
-  it("does not render Layout wrapper (Layout is at server page level)", () => {
-    render(<CountryDogsClient {...defaultProps} />);
-
-    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
   });
 });

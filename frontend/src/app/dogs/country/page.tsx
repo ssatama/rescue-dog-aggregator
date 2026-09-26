@@ -1,11 +1,10 @@
 import { formatCount } from "@/utils/formatCount";
 import { clampDescription } from "@/utils/seoMeta";
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import CountriesHubClient from "./CountriesHubClient";
 import Layout from "@/components/layout/Layout";
 import CountryStructuredData from "@/components/countries/CountryStructuredData";
-import { getCountryStats } from "@/services/serverAnimalsService";
+import { getCountryStats, getListCounts } from "@/services/serverAnimalsService";
 
 export const revalidate = 604800;
 
@@ -31,20 +30,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-function LoadingFallback(): React.JSX.Element {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="h-48 bg-muted animate-pulse rounded-xl" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default async function CountriesPage(): Promise<React.JSX.Element> {
-  const countryStats = await getCountryStats();
+  const [countryStats, allCounts] = await Promise.all([getCountryStats(), getListCounts({})]);
 
   return (
     <Layout>
@@ -52,9 +39,10 @@ export default async function CountriesPage(): Promise<React.JSX.Element> {
         stats={countryStats}
         pageType="index"
       />
-      <Suspense fallback={<LoadingFallback />}>
-        <CountriesHubClient initialStats={countryStats} />
-      </Suspense>
+      <CountriesHubClient
+        initialStats={countryStats}
+        adoptableOptions={allCounts?.available_country_options}
+      />
     </Layout>
   );
 }

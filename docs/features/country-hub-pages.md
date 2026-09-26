@@ -9,7 +9,8 @@ Country Hub Pages are SEO-optimized landing pages that allow users to browse res
 - **SEO-optimized URLs** - Clean, semantic URLs like `/dogs/country/uk`
 - **Static generation with ISR** - Pages are pre-rendered with 5-minute revalidation
 - **Country-specific metadata** - Dynamic titles, descriptions, and structured data
-- **Mobile-responsive navigation** - Horizontal pills on desktop, dropdown on mobile
+- **Two numbers, in plain words** - dogs *in* the country, and dogs someone *living* there can adopt (any rescue that rehomes there), with a link to `/dogs?available_country=<code>` (#502)
+- **Country links** - one row of pills (`LandingNav`) that scrolls sideways on phones
 - **Real-time statistics** - Live dog counts per country from API
 
 ## URLs
@@ -43,9 +44,9 @@ Country Hub Pages are SEO-optimized landing pages that allow users to browse res
 - `frontend/src/app/dogs/country/[code]/CountryDogsClient.tsx` - Client component for detail
 
 #### Shared Components
-- `CountryQuickNav` - Horizontal pill navigation / mobile dropdown for switching countries
+- `LandingNav` (`components/landing/`) - Row of links to the other countries, shared with the age pages
 - `CountryStructuredData` - JSON-LD structured data for SEO
-- `countryData.ts` - Country configuration (names, flags, gradients, taglines)
+- `countryData.ts` - Country configuration (names, flags, descriptions)
 
 ### Backend API
 
@@ -79,12 +80,13 @@ Country Hub Pages are SEO-optimized landing pages that allow users to browse res
 
 ```
 1. Server Component (page.tsx)
-   └── Fetches: getCountryStats(), getAnimals(), getAllMetadata()
+   └── Fetches: getCountryStats(), getAnimals(), getAllMetadata(),
+       getListCounts({}) (every dog's available_country counts)
    └── Passes data to Client Component
 
 2. Client Component (CountryDogsClient.tsx)
-   └── Renders hero with country info
-   └── Renders CountryQuickNav for navigation
+   └── Renders the intro: description and both numbers
+   └── Renders LandingNav for the other countries
    └── Renders DogsPageClientSimplified with country filter
 
 3. DogsPageClientSimplified
@@ -166,8 +168,7 @@ export const COUNTRIES = {
     name: "United Kingdom",
     shortName: "UK",
     flag: "🇬🇧",
-    gradient: "from-rose-500 via-orange-500 to-amber-400",
-    tagline: "From the British Isles with love",
+    placeName: "the UK",  // how a sentence names it, when not `name`
     description: "Rescue dogs from UK-based organizations..."
   },
   // ... other countries
@@ -184,7 +185,6 @@ To add a new country:
 Test files cover:
 - `CountryDogsClient.test.jsx` - Country detail page rendering
 - `CountriesHubClient.test.jsx` - Hub page rendering and navigation
-- `CountryQuickNav.test.jsx` - Navigation component behavior
 - `CountryStructuredData.test.jsx` - Schema.org markup
 - `countryData.test.js` - Utility functions
 
@@ -199,8 +199,9 @@ frontend/
 │   │   ├── page.tsx               # Detail server component
 │   │   └── CountryDogsClient.tsx  # Detail client component
 ├── src/components/countries/
-│   ├── CountryQuickNav.tsx        # Navigation component
 │   └── CountryStructuredData.tsx  # SEO structured data
+├── src/components/landing/
+│   └── LandingNav.tsx             # Links to the other countries
 ├── src/utils/
 │   └── countryData.ts             # Country configuration
 ├── src/services/
