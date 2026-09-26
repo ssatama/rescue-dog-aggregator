@@ -50,6 +50,12 @@ describe("dogHelpers", () => {
     });
   });
 
+  describe("getAgeCategory with a zero minimum", () => {
+    it('treats 0 months as a real age ("Under 6 months" is 0-6)', () => {
+      expect(getAgeCategory({ age_min_months: 0, age_max_months: 6 })).toBe("Puppy");
+    });
+  });
+
   describe("formatBreed", () => {
     it("shows the display label rather than the grouping key", () => {
       // primary_breed is the canonical identity used for breed pages and

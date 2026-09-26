@@ -50,6 +50,14 @@ export function transformApiDogToDog(apiDog: ApiDog): Dog {
       apiDog.personality_traits ||
       [],
     description: transformedProfilerData?.description || apiDog.description,
+    // The swipe API sends scraped facts at the top level; the dog page's
+    // components read them from properties
+    properties: apiDog.properties ?? {
+      good_with_children: apiDog.good_with_children,
+      good_with_dogs: apiDog.good_with_dogs,
+      good_with_cats: apiDog.good_with_cats,
+      spayed_neutered: apiDog.spayed_neutered,
+    },
     status: apiDog.status as DogStatus | undefined,
   };
 }

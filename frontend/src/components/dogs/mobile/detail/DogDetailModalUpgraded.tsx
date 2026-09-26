@@ -181,6 +181,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   const description =
     profilerData?.description ||
     dog.llm_description ||
+    dog.description ||
     dog.summary ||
     (dog.properties?.description as string | undefined) ||
     (dog.properties?.raw_description as string | undefined) ||
@@ -331,17 +332,19 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                     </div>
                   </div>
 
-                  {meta.length > 0 && (
-                    <p className="text-sm text-ink" data-testid="modal-dog-meta">
-                      {meta.join(" · ")}
-                    </p>
+                  {(meta.length > 0 || profilerData?.tagline || where) && (
+                    <div className="grid gap-1">
+                      {meta.length > 0 && (
+                        <p className="text-sm text-ink" data-testid="modal-dog-meta">
+                          {meta.join(" · ")}
+                        </p>
+                      )}
+                      {profilerData?.tagline && (
+                        <p className="text-subtle">{profilerData.tagline}</p>
+                      )}
+                      {where && <p className="text-sm text-subtle">{where}</p>}
+                    </div>
                   )}
-
-                  {profilerData?.tagline && (
-                    <p className="-mt-4 text-subtle">{profilerData.tagline}</p>
-                  )}
-
-                  {where && <p className="-mt-4 text-sm text-subtle">{where}</p>}
 
                   <LivesWith dog={dog} />
                   <GoodToKnow dog={dog} />
@@ -349,9 +352,9 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                   {/* About Section */}
                   {description && (
                     <div>
-                      <h3 className="font-semibold mb-2 text-ink">
+                      <h2 className="font-semibold mb-2 text-ink">
                         About {dog.name}
-                      </h3>
+                      </h2>
                       <p
                         className={cn(
                           "text-sm text-gray-700 dark:text-gray-300 leading-relaxed",
@@ -375,21 +378,21 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
 
                   {hasPersonalitySection(profilerData) && (
                     <div>
-                      <h3 className="font-semibold mb-3 text-ink">Personality</h3>
+                      <h2 className="font-semibold mb-3 text-ink">Personality</h2>
                       <PersonalityTraits profilerData={profilerData} />
                     </div>
                   )}
 
                   {hasEnergyTrainabilitySection(profilerData) && (
                     <div>
-                      <h3 className="font-semibold mb-3 text-ink">Energy & Training</h3>
+                      <h2 className="font-semibold mb-3 text-ink">Energy & Training</h2>
                       <EnergyTrainability profilerData={profilerData} />
                     </div>
                   )}
 
                   {hasActivitiesSection(profilerData) && (
                     <div>
-                      <h3 className="font-semibold mb-3 text-ink">Activities & Quirks</h3>
+                      <h2 className="font-semibold mb-3 text-ink">Activities & Quirks</h2>
                       <ActivitiesQuirks profilerData={profilerData} />
                     </div>
                   )}

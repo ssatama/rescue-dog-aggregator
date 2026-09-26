@@ -349,6 +349,7 @@ async def get_swipe_stack(
                         "age_max_months": animal_dict.get("age_max_months"),
                         "sex": animal_dict.get("sex") or properties.get("sex"),
                         "size": animal_dict.get("size") or properties.get("size"),
+                        "standardized_size": animal_dict.get("standardized_size"),
                         "coat": properties.get("coat"),
                         "color": properties.get("color"),
                         "spayed_neutered": properties.get("spayed_neutered"),

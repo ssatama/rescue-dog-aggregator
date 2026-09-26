@@ -19,6 +19,9 @@ import { FallbackImage } from "../ui/FallbackImage";
 import { trackAdoptionLinkClicked } from "@/lib/analytics";
 import { formatBreed } from "@/utils/dogHelpers";
 import { companionAnswer } from "@/utils/dogFacts";
+import { safeExternalUrl } from "@/utils/security";
+import { EXPERIENCE, canAdopt } from "@/components/dogs/detail/DogFactsPanel";
+import { getAgeDisplay } from "./compareUtils";
 
 interface ComparisonViewProps {
   dogs: Dog[];
@@ -29,16 +32,10 @@ interface ComparisonViewProps {
 const ENERGY_LEVELS: Record<string, { label: string; width: string }> = {
   low: { label: "Low", width: "25%" },
   medium: { label: "Medium", width: "50%" },
-  moderate: { label: "Medium", width: "50%" },
   high: { label: "High", width: "75%" },
   very_high: { label: "Very high", width: "100%" },
 };
 
-const EXPERIENCE_LABELS: Record<string, string> = {
-  first_time_ok: "First-time owners OK",
-  some_experience: "Some experience",
-  experienced_only: "Experienced owners",
-};
 
 const COMPANIONS = [
   { field: "good_with_children", label: "Kids", Icon: Baby },
@@ -95,12 +92,14 @@ const DogComparisonCard = ({
     const answer = companionAnswer(dog, field);
     return answer ? [{ key: field, label, Icon, answer }] : [];
   });
-  const age = dog.age_text && dog.age_text.toLowerCase() !== "unknown" ? dog.age_text : null;
+  const age = getAgeDisplay(dog);
 
+  // Same rule as the dog page: only a listed dog with a safe link
+  const adoptionUrl = canAdopt(dog) ? safeExternalUrl(dog.adoption_url) : null;
   const handleVisit = () => {
-    if (dog.adoption_url) {
+    if (adoptionUrl) {
       trackAdoptionLinkClicked(dog, "comparison");
-      window.open(dog.adoption_url, "_blank", "noopener");
+      window.open(adoptionUrl, "_blank", "noopener");
     }
   };
 
@@ -224,13 +223,13 @@ const DogComparisonCard = ({
           </div>
         )}
 
-        {experience && EXPERIENCE_LABELS[experience] && (
+        {experience && EXPERIENCE[experience] && (
           <div>
             <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
               Experience
             </h4>
             <span className="inline-block px-3 py-1.5 rounded-full text-xs font-medium bg-soft text-ink">
-              {EXPERIENCE_LABELS[experience]}
+              {EXPERIENCE[experience]}
             </span>
           </div>
         )}
@@ -270,15 +269,16 @@ const DogComparisonCard = ({
           </div>
         )}
 
-        {/* Action Button */}
-        <button
-          onClick={handleVisit}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-          aria-label={`Visit ${dog.name}`}
-        >
-          <span>Visit {dog.name}</span>
-          <ExternalLink className="w-3.5 h-3.5" />
-        </button>
+        {adoptionUrl && (
+          <button
+            onClick={handleVisit}
+            className="w-full bg-orange-700 hover:bg-orange-800 text-white py-2.5 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+            aria-label={`Visit ${dog.name}`}
+          >
+            <span>Visit {dog.name}</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     </div>
   );

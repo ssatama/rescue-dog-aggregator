@@ -22,6 +22,7 @@ const mockDogs: Dog[] = [
       unique_quirk: "Loves to carry her favorite tennis ball everywhere",
     },
     organization_name: "Happy Tails Rescue",
+    status: "available",
     adoption_url: "https://example.com/adopt/luna",
   },
   {
@@ -41,6 +42,7 @@ const mockDogs: Dog[] = [
       unique_quirk: "Can solve puzzle toys in under 2 minutes",
     },
     organization_name: "Border Collie Rescue",
+    status: "available",
     adoption_url: "https://example.com/adopt/max",
   },
   {
@@ -60,6 +62,7 @@ const mockDogs: Dog[] = [
       unique_quirk: "Snores like a tiny freight train",
     },
     organization_name: "City Pet Rescue",
+    status: "available",
     adoption_url: "https://example.com/adopt/bella",
   },
 ];
@@ -167,8 +170,8 @@ describe("ComparisonView", () => {
       />,
     );
 
-    expect(screen.getAllByText("First-time owners OK").length).toBeGreaterThan(0);
-    expect(screen.getByText("Experienced owners")).toBeInTheDocument();
+    expect(screen.getAllByText("Good for first-time owners").length).toBeGreaterThan(0);
+    expect(screen.getByText("Experienced owners only")).toBeInTheDocument();
   });
 
   it("displays compatibility icons correctly", () => {
@@ -391,6 +394,21 @@ describe("ComparisonView", () => {
       // own analytics, which is the only proof we send them traffic.
       "noopener",
     );
+  });
+
+  it("offers no rescue link for a dog that is no longer listed or has an unsafe link", () => {
+    render(
+      <ComparisonView
+        dogs={[
+          { ...mockDogs[0], status: "adopted" },
+          { ...mockDogs[1], adoption_url: "javascript:alert(1)" },
+        ]}
+        onClose={mockOnClose}
+        onRemoveFavorite={mockOnRemoveFavorite}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /Visit .*/i })).not.toBeInTheDocument();
   });
 
   it("disables navigation buttons appropriately", () => {

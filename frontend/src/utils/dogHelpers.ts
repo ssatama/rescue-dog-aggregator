@@ -3,7 +3,8 @@ import type { Dog } from "@/types/dog";
 type DogInput = Partial<Dog>;
 
 export const getAgeCategory = (dog: DogInput | null | undefined): string => {
-  if (dog?.age_min_months && dog.age_min_months > 0) {
+  // 0 is a real age: "Under 6 months" is recorded as 0-6
+  if (typeof dog?.age_min_months === "number" && dog.age_min_months >= 0) {
     const months = dog.age_min_months;
 
     if (months < 12) {

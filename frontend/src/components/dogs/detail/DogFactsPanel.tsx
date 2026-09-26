@@ -32,7 +32,7 @@ const ENERGY: Record<string, string> = {
   very_high: "Very high energy",
 };
 
-const EXPERIENCE: Record<string, string> = {
+export const EXPERIENCE: Record<string, string> = {
   first_time_ok: "Good for first-time owners",
   some_experience: "Some experience helpful",
   experienced_only: "Experienced owners only",

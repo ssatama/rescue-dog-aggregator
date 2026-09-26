@@ -14,6 +14,11 @@ describe("DogStatusBadge", () => {
     expect(screen.getByText(label)).toBeInTheDocument();
   });
 
+  it("uses the theme tokens, so it reads in dark mode too", () => {
+    render(<DogStatusBadge status="available" />);
+    expect(screen.getByText("Available")).toHaveClass("bg-good-soft", "text-good");
+  });
+
   it("never claims a dog was adopted", () => {
     const { container } = render(<DogStatusBadge status="adopted" />);
     expect(container.textContent).not.toMatch(/adopt|forever home/i);

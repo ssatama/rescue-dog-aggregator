@@ -38,6 +38,9 @@ class TestSwipeEndpoint:
         # Dogs may be empty if test data doesn't have profiler data
         assert len(data["dogs"]) >= 0
         assert len(data["dogs"]) <= 20
+        # The details sheet sizes dogs on the catalog's scale, like the dog page (#504)
+        for dog in data["dogs"]:
+            assert "standardized_size" in dog
         assert "hasMore" in data
         assert isinstance(data["hasMore"], bool)
         assert "nextOffset" in data
