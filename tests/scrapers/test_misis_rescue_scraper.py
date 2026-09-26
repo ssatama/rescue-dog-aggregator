@@ -1,6 +1,5 @@
 import asyncio
 from contextlib import asynccontextmanager
-from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -9,17 +8,14 @@ from bs4 import BeautifulSoup
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.base_scraper import ListingIncompleteError
-from scrapers.misis_rescue.detail_parser import MisisRescueDetailParser
 from scrapers.misis_rescue.normalizer import (
-    calculate_age_years,
-    extract_birth_date,
+    extract_age_from_text_legacy as extract_age_from_text,
+)
+from scrapers.misis_rescue.normalizer import (
     extract_breed,
     extract_sex,
     normalize_name,
     normalize_size,
-)
-from scrapers.misis_rescue.normalizer import (
-    extract_age_from_text_legacy as extract_age_from_text,
 )
 from scrapers.misis_rescue.normalizer import (
     extract_breed_from_text_legacy as extract_breed_from_text,
@@ -51,147 +47,17 @@ class TestMisisRescueScraper(ScraperTestBase):
         </body></html>
         """
         soup = BeautifulSoup(html_with_reserved, "html.parser")
-        reserved_heading = soup.find("h2", string=lambda text: text and "reserved" in text.lower())
-        assert scraper._is_reserved_section(reserved_heading)
         available_dogs = scraper._extract_dogs_before_reserved(soup)
         assert len(available_dogs) == 2
-
-    def test_extract_dog_urls_from_page(self, scraper):
-        mock_html = '<html><main class="PAGES_CONTAINER"><a href="/post/dog-1" class="O16KGI">Dog 1</a><a href="/post/dog-2" class="O16KGI">Dog 2</a></main></html>'
-        mock_driver_instance = Mock()
-        mock_driver_instance.page_source = mock_html
-        mock_driver_instance.quit = Mock()
-
-        with patch.object(scraper, "_setup_selenium_driver", return_value=mock_driver_instance):
-            urls = scraper._extract_dog_urls_from_page(1)
-            assert len(urls) == 2
-            assert all("/post/" in url for url in urls)
-
-    def test_pagination_logic(self, scraper):
-        with patch.object(scraper, "_extract_dog_urls_from_page") as mock_extract:
-            mock_extract.side_effect = [["url1", "url2"], ["url3"], []]
-            all_urls = scraper._get_all_dog_urls()
-            assert len(all_urls) == 3
-            assert mock_extract.call_count == 3
 
     def test_external_id_generation(self, scraper):
         test_url = "https://www.misisrescue.com/post/amena-123"
         external_id = scraper._generate_external_id(test_url)
         assert external_id == "mar-amena-123"
 
-    def test_reserved_section_detection_variations(self, scraper):
-        test_cases = ["💙⭐Reserved⭐💙", "Reserved", "RESERVED DOGS"]
-        for reserved_text in test_cases:
-            mock_element = Mock()
-            mock_element.get_text.return_value = reserved_text
-            assert scraper._is_reserved_section(mock_element)
-
-    def test_detail_page_scraping(self, scraper):
-        mock_html = "<html><body><h1>Test Dog</h1><div><ul><li>DOB: 2022</li><li>Mixed breed</li><li>weighs 15kg</li></ul></div></body></html>"
-        mock_driver_instance = Mock()
-        mock_driver_instance.page_source = mock_html
-        mock_driver_instance.title = "Test Dog - MISIs Animal Rescue"
-        mock_driver_instance.quit = Mock()
-
-        with patch.object(scraper, "_setup_selenium_driver", return_value=mock_driver_instance):
-            dog_data = scraper._scrape_dog_detail("https://example.com/post/test-dog")
-            assert dog_data["name"] == "Test Dog"
-            assert dog_data["external_id"] == "mar-test-dog"
-
-    def test_no_pagination_loop(self, scraper):
-        with patch.object(scraper, "_extract_dog_urls_from_page") as mock_extract:
-            mock_extract.side_effect = [
-                [
-                    "/post/dog1",
-                    "/post/dog2",
-                    "/post/dog3",
-                    "/post/dog4",
-                    "/post/dog5",
-                    "/post/dog6",
-                    "/post/dog7",
-                ],
-                [],
-            ]
-
-            all_urls = scraper._get_all_dog_urls()
-
-            assert len(all_urls) == 7
-            assert len(set(all_urls)) == 7
-            assert mock_extract.call_count == 2
-
 
 @pytest.mark.unit
 class TestMisisRescueNormalizer:
-    def test_extract_birth_date_various_formats(self):
-        assert extract_birth_date("rough estimate DOB 2021") == "2021"
-        assert extract_birth_date("DOB: March 2023") == "March 2023"
-        assert extract_birth_date("DOB: April/May 2024") == "April/May 2024"
-        assert extract_birth_date("no date info") is None
-        assert extract_birth_date("born in 2022") == "2022"
-        assert extract_birth_date("birthday: June 2023") == "June 2023"
-        assert extract_birth_date("") is None
-        assert extract_birth_date(None) is None
-
-    def test_extract_birth_date_comprehensive(self):
-        test_cases = [
-            ("rough estimate DOB 2021", "2021"),
-            ("DOB: March 2023", "March 2023"),
-            ("DOB: April/May 2024", "April/May 2024"),
-            ("born in 2022", "2022"),
-            ("birthday: June 2023", "June 2023"),
-            ("date of birth: 2020", "2020"),
-            ("DOB 2019", "2019"),
-            ("born: December 2021", "December 2021"),
-            ("no date information", None),
-            ("just some text", None),
-        ]
-
-        for input_text, expected in test_cases:
-            result = extract_birth_date(input_text)
-            assert result == expected, f"Failed for input: {input_text}"
-
-    def test_extract_birth_date_dob_dash_format(self):
-        assert extract_birth_date("DOB- 2023") == "2023"
-        assert extract_birth_date("DOB 2022") == "2022"
-        assert extract_birth_date("DOB: 2021") == "2021"
-        assert extract_birth_date("DOB - october 2022") == "october 2022"
-        assert extract_birth_date("born: December 2021") == "December 2021"
-
-    def test_extract_birth_date_dash_before_month_range(self):
-        text = "rough estimate DOB -April /May 2024"
-        birth_date = extract_birth_date(text)
-        assert birth_date == "April /May 2024"
-
-    def test_extract_birth_date_spaces_in_month_range(self):
-        test_cases = [
-            "DOB -April /May 2024",
-            "DOB: April/May 2024",
-            "DOB - April / May 2024",
-            "DOB:April /May 2024",
-        ]
-
-        for text in test_cases:
-            birth_date = extract_birth_date(text)
-            assert birth_date is not None, f"Failed to extract from: {text}"
-            assert "2024" in birth_date, f"Year not found in result from: {text}"
-
-    def test_calculate_age_years(self):
-        current_year = datetime.now().year
-        assert calculate_age_years("2021") == float(current_year - 2021)
-        assert calculate_age_years("2023") == float(current_year - 2023)
-
-        march_2023_age = calculate_age_years("March 2023")
-        assert march_2023_age is not None
-        assert march_2023_age > 0
-
-        april_2024_age = calculate_age_years("April/May 2024")
-        assert april_2024_age is not None
-        assert april_2024_age > 0
-
-        assert calculate_age_years("no date") is None
-        assert calculate_age_years("") is None
-        assert calculate_age_years(None) is None
-
     def test_extract_breed(self):
         assert extract_breed(["rough estimate DOB 2021", "10kg", "mixed breed"]) == "Mixed Breed"
         assert extract_breed(["DOB: March 2023", "Mixed breed", "weighs 2-3kg"]) == "Mixed Breed"
@@ -338,7 +204,6 @@ class TestMisisRescueNormalizer:
             "It's crazy how much she loves & trusts people. She can't get enough of the cuddles. So we need someone who will be ready for his cuddle marathons! So far, she is chilled with unfamiliar people!",
         ]
 
-        assert extract_birth_date(amena_bullets[0]) == "2021"
         assert extract_breed(amena_bullets) == "Mixed Breed"
         assert extract_sex(amena_bullets) == "Female"
         assert extract_weight_kg(amena_bullets[1]) == 10.0
@@ -352,7 +217,6 @@ class TestMisisRescueNormalizer:
             "not tested on kids, chilling, is active and would probably enjoy walks and outdoor environments",
         ]
 
-        assert extract_birth_date(leo_bullets[0]) == "March 2023"
         assert extract_breed(leo_bullets) == "Mixed Breed"
         assert extract_weight_kg(leo_bullets[2]) == 2.5
         assert normalize_size(leo_bullets[2]) == "Tiny"
@@ -652,476 +516,6 @@ class TestEnhancedBreedDetection:
 
 
 @pytest.mark.unit
-class TestDetailParser:
-    @pytest.fixture
-    def parser(self):
-        return MisisRescueDetailParser()
-
-    @pytest.fixture
-    def amena_detail_html(self):
-        return """
-        <html>
-        <body>
-            <h1>AMENA</h1>
-            <div class="things-section">
-                <h2>Things you should know about AMENA</h2>
-                <ul>
-                    <li>rough estimate DOB 2021</li>
-                    <li>10kg, height 35 cm, length 55cm</li>
-                    <li>mixed breed</li>
-                    <li>Amena lives in a pen where she has her doggie house placed but she goes out to the yard during the day to play with other dogs or do whatever she pleases</li>
-                    <li>not house & toilet trained, will need some practice</li>
-                    <li>she is great with other dogs from the boarding house</li>
-                    <li>not tested on cats</li>
-                    <li>It's crazy how much she loves & trusts people. She can't get enough of the cuddles. So we need someone who will be ready for his cuddle marathons! So far, she is chilled with unfamiliar people!</li>
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-
-    @pytest.fixture
-    def leo_detail_html(self):
-        return """
-        <html>
-        <body>
-            <h1>LEO</h1>
-            <div class="things-section">
-                <h2>Things you should know about LEO</h2>
-                <ul>
-                    <li>DOB: March 2023</li>
-                    <li>Mixed breed</li>
-                    <li>Currently weighs 2-3kg; expected to be around 5-8 kg when fully grown-maybe 10kg if he surprises us!</li>
-                    <li>Playful and full of energy, loves playing with siblings and grown-up dogs</li>
-                    <li>Adores cats and is happy around them (thanks to his dog-savvy feline friends)</li>
-                    <li>not tested on kids, chilling, is active and would probably enjoy walks and outdoor environments</li>
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-
-    @pytest.fixture
-    def naomi_detail_html(self):
-        return """
-        <html>
-        <body>
-            <h1>Naomi</h1>
-            <div class="things-section">
-                <h2>Things you should know about Naomi</h2>
-                <ul>
-                    <li>DOB: April/May 2024</li>
-                    <li>German Shepherd mix</li>
-                    <li>Currently weighs 21-22kg</li>
-                    <li>she is very energetic and needs lots of exercise</li>
-                    <li>good with children and other dogs</li>
-                    <li>needs experienced handlers</li>
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-
-    def test_parse_amena_page(self, parser, amena_detail_html):
-        soup = BeautifulSoup(amena_detail_html, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Amena"
-        assert result["age_text"] is not None
-        assert "year" in result["age_text"]
-        assert result["breed"] == "Mixed Breed"
-        assert result["size"] == "Small"
-        assert result["sex"] == "Female"
-        assert result["properties"]["weight"] == "10.0kg"
-        assert "bullet_points" in result
-        assert len(result["bullet_points"]) == 8
-
-    def test_parse_leo_page(self, parser, leo_detail_html):
-        soup = BeautifulSoup(leo_detail_html, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Leo"
-        assert result["breed"] == "Mixed Breed"
-        assert result["properties"]["weight"] == "2.5kg"
-        assert result["size"] == "Tiny"
-        assert result["age_text"] is not None
-        assert "month" in result["age_text"] or "year" in result["age_text"]
-        assert "bullet_points" in result
-        assert len(result["bullet_points"]) == 6
-
-    def test_parse_naomi_page(self, parser, naomi_detail_html):
-        soup = BeautifulSoup(naomi_detail_html, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Naomi"
-        assert result["breed"] == "German Shepherd Mix"
-        assert result["properties"]["weight"] == "21.5kg"
-        assert result["size"] == "Medium"
-        assert result["sex"] == "Female"
-        assert "bullet_points" in result
-        assert len(result["bullet_points"]) == 6
-
-    def test_extract_dog_name(self, parser):
-        html_h1 = "<html><body><h1>Bella</h1></body></html>"
-        soup = BeautifulSoup(html_h1, "html.parser")
-        assert parser._extract_dog_name(soup) == "Bella"
-
-        html_title = "<html><head><title>Max - Available for Adoption</title></head><body></body></html>"
-        soup = BeautifulSoup(html_title, "html.parser")
-        assert parser._extract_dog_name(soup) == "Max"
-
-        html_no_name = "<html><body><p>Some content</p></body></html>"
-        soup = BeautifulSoup(html_no_name, "html.parser")
-        assert parser._extract_dog_name(soup) is None
-
-    def test_extract_bullet_points(self, parser, amena_detail_html):
-        soup = BeautifulSoup(amena_detail_html, "html.parser")
-        bullets = parser._extract_bullet_points(soup)
-
-        assert len(bullets) == 8
-        assert bullets[0] == "rough estimate DOB 2021"
-        assert bullets[1] == "10kg, height 35 cm, length 55cm"
-        assert bullets[2] == "mixed breed"
-        assert "she is great with other dogs" in bullets[5]
-
-    def test_missing_things_section(self, parser):
-        html_no_section = """
-        <html>
-        <body>
-            <h1>Mystery Dog</h1>
-            <p>Some description text</p>
-        </body>
-        </html>
-        """
-        soup = BeautifulSoup(html_no_section, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Mystery Dog"
-        assert result["bullet_points"] == []
-        assert result.get("breed") is None
-        assert result.get("sex") is None
-        assert result.get("age_text") is None
-
-    def test_empty_bullet_points(self, parser):
-        html_empty_bullets = """
-        <html>
-        <body>
-            <h1>Empty Dog</h1>
-            <div class="things-section">
-                <h2>Things you should know about Empty Dog</h2>
-                <ul>
-                    <li></li>
-                    <li>   </li>
-                    <li>Some real content</li>
-                    <li></li>
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-        soup = BeautifulSoup(html_empty_bullets, "html.parser")
-        bullets = parser._extract_bullet_points(soup)
-
-        assert len(bullets) == 1
-        assert bullets[0] == "Some real content"
-
-    def test_alternative_html_structures(self, parser):
-        html_p_tags = """
-        <html>
-        <body>
-            <h1>Alternative Dog</h1>
-            <div>
-                <h2>Things you should know about Alternative Dog</h2>
-                <p>DOB: 2022</p>
-                <p>Labrador mix</p>
-                <p>weighs 15kg</p>
-                <p>he loves to play</p>
-            </div>
-        </body>
-        </html>
-        """
-        soup = BeautifulSoup(html_p_tags, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Alternative Dog"
-        assert result["breed"] == "Labrador Mix"
-        assert result["properties"]["weight"] == "15.0kg"
-        assert result["sex"] == "Male"
-
-    def test_malformed_html(self, parser):
-        malformed_html = """
-        <html>
-        <body>
-            <h1>Broken Dog</h1>
-            <div>
-                <h2>Things you should know about Broken Dog
-                <ul>
-                    <li>DOB: 2023
-                    <li>Mixed breed</li>
-                    <li>weighs 5kg
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-        soup = BeautifulSoup(malformed_html, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Broken Dog"
-        assert len(result["bullet_points"]) >= 2
-        assert result["breed"] == "Mixed Breed"
-
-    def test_multiple_things_sections(self, parser):
-        html_multiple = """
-        <html>
-        <body>
-            <h1>Multiple Dog</h1>
-            <div>
-                <h2>Things you should know about Multiple Dog</h2>
-                <ul>
-                    <li>DOB: 2022</li>
-                    <li>First section breed</li>
-                </ul>
-            </div>
-            <div>
-                <h2>Things you should know about care</h2>
-                <ul>
-                    <li>Different info</li>
-                    <li>Care instructions</li>
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-        soup = BeautifulSoup(html_multiple, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Multiple Dog"
-        assert len(result["bullet_points"]) >= 2
-        assert "DOB: 2022" in result["bullet_points"]
-
-    def test_case_insensitive_section_matching(self, parser):
-        html_case = """
-        <html>
-        <body>
-            <h1>Case Dog</h1>
-            <div>
-                <h3>THINGS YOU SHOULD KNOW ABOUT CASE DOG</h3>
-                <ul>
-                    <li>dob: january 2023</li>
-                    <li>labrador mix</li>
-                    <li>weighs 20kg</li>
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-        soup = BeautifulSoup(html_case, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Case Dog"
-        assert len(result["bullet_points"]) == 3
-        assert result["breed"] == "Labrador Mix"
-        assert result["properties"]["weight"] == "20.0kg"
-
-    def test_whitespace_handling(self, parser):
-        html_whitespace = """
-        <html>
-        <body>
-            <h1>   Whitespace Dog   </h1>
-            <div>
-                <h2>Things you should know about   Whitespace Dog</h2>
-                <ul>
-                    <li>   DOB:    2023   </li>
-                    <li>
-                        Mixed    breed
-                    </li>
-                    <li>Currently   weighs   15kg   </li>
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-        soup = BeautifulSoup(html_whitespace, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Whitespace Dog"
-        assert len(result["bullet_points"]) == 3
-        assert "DOB: 2023" in result["bullet_points"][0]
-        assert result["breed"] == "Mixed Breed"
-        assert result["properties"]["weight"] == "15.0kg"
-
-    def test_special_characters_in_name(self, parser):
-        html_special = """
-        <html>
-        <body>
-            <h1>Luna❤️🐕</h1>
-            <div>
-                <h2>Things you should know about Luna❤️🐕</h2>
-                <ul>
-                    <li>DOB: 2022</li>
-                    <li>Golden Retriever</li>
-                    <li>she loves everyone</li>
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-        soup = BeautifulSoup(html_special, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Luna"
-        assert result["breed"] == "Golden Retriever"
-        assert result["sex"] == "Female"
-
-    def test_nested_html_structures(self, parser):
-        html_nested = """
-        <html>
-        <body>
-            <h1>Nested Dog</h1>
-            <div class="content">
-                <div class="section">
-                    <h2>Things you should know about Nested Dog</h2>
-                    <div class="bullet-container">
-                        <ul class="bullets">
-                            <li><span>DOB: <strong>2023</strong></span></li>
-                            <li><em>Mixed</em> <u>breed</u></li>
-                            <li>Currently weighs <b>8kg</b></li>
-                            <li>He is <i>very</i> playful</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        soup = BeautifulSoup(html_nested, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Nested Dog"
-        assert len(result["bullet_points"]) == 4
-        assert result["breed"] == "Mixed Breed"
-        assert result["properties"]["weight"] == "8.0kg"
-        assert result["sex"] == "Male"
-
-    def test_no_structured_data(self, parser):
-        html_no_data = """
-        <html>
-        <body>
-            <h1>Minimal Dog</h1>
-            <div>
-                <h2>Things you should know about Minimal Dog</h2>
-                <ul>
-                    <li>Very friendly</li>
-                    <li>Loves walks</li>
-                    <li>Good with children</li>
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-        soup = BeautifulSoup(html_no_data, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Minimal Dog"
-        assert len(result["bullet_points"]) == 3
-        assert result["breed"] is None
-        assert result["age_text"] is None
-        assert result.get("properties", {}).get("weight") is None
-        assert result["sex"] is None
-
-    @pytest.mark.parametrize(
-        "bullets,expected",
-        [
-            (["She's a natural-born explorer", "rough estimate DOB -April /May 2024", "weighs 20kg"], "DOB -April /May 2024"),
-            (["DOB: around May 2021", "mixed breed"], "DOB: around May 2021"),
-            (["DOB: 08.12.2023.", "Castrated"], "DOB: 08.12.2023."),
-            (["3 months old", "Mixed breed"], None),
-            # A mother's litter is not her birth date
-            (["5 years old", "Her puppies were born 03/2026"], None),
-            # Only the date after the label counts
-            (["Rescued in 2024, DOB 2019"], "DOB 2019"),
-        ],
-    )
-    def test_the_dob_bullet_is_passed_on_for_the_birth_range(self, bullets, expected):
-        """#561: the save parses this into the stored birth range. "born" alone is not a DOB label."""
-        items = "".join(f"<li>{bullet}</li>" for bullet in bullets)
-        html = f"<html><body><h1>Test Dog</h1><h2>Things you should know</h2><ul>{items}</ul></body></html>"
-
-        result = MisisRescueDetailParser().parse_detail_page(BeautifulSoup(html, "html.parser"))
-
-        assert result.get("date_of_birth") == expected
-
-    def test_size_categories_via_parser(self):
-        parser = MisisRescueDetailParser()
-
-        test_cases = [
-            (3, "Tiny"),
-            (5.5, "Small"),
-            (15, "Medium"),
-            (30, "Large"),
-            (45, "XLarge"),
-        ]
-
-        for weight, expected_size in test_cases:
-            html = f"""
-            <html><body>
-            <h1>Test Dog</h1>
-            <h2>Things you should know</h2>
-            <ul><li>Weighs {weight}kg</li></ul>
-            </body></html>
-            """
-
-            soup = BeautifulSoup(html, "html.parser")
-            result = parser.parse_detail_page(soup)
-
-            assert result["size"] == expected_size, f"Weight {weight}kg should be {expected_size}"
-            assert result["properties"]["standardized_size"] == expected_size
-
-    def test_standardized_size_in_properties(self):
-        parser = MisisRescueDetailParser()
-
-        html = """
-        <html>
-        <body>
-            <h1>Tiny Tim</h1>
-            <h2>Things you should know</h2>
-            <ul>
-                <li>DOB- 2024</li>
-                <li>Weighs 4.5kg</li>
-            </ul>
-        </body>
-        </html>
-        """
-
-        soup = BeautifulSoup(html, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        assert result["name"] == "Tiny Tim"
-        assert result["size"] == "Tiny"
-        assert result["properties"]["standardized_size"] == "Tiny"
-        assert result["properties"]["weight"] == "4.5kg"
-
-    def test_normalizer_integration(self, parser, amena_detail_html):
-        soup = BeautifulSoup(amena_detail_html, "html.parser")
-        result = parser.parse_detail_page(soup)
-
-        from utils.shared_extraction_patterns import extract_weight_from_text
-
-        bullets = result["bullet_points"]
-
-        assert extract_birth_date(bullets[0]) == "2021"
-        assert extract_breed(bullets) == "Mixed Breed"
-        assert extract_sex(bullets) == "Female"
-        assert extract_weight_from_text(bullets[1]) == 10.0
-        assert normalize_size(bullets[1]) == "Small"
-
-        age = calculate_age_years("2021")
-        assert age is not None
-        assert age > 0
-
-
-@pytest.mark.unit
 class TestIntegratedNormalization:
     def test_comprehensive_normalization_pipeline(self):
         import re
@@ -1266,141 +660,6 @@ class TestIntegratedNormalization:
             assert extract_weight_kg(weight_text) == expected_weight
             assert normalize_size(weight_text) == expected_size
 
-    def test_megi_age_from_dob_2023(self):
-        dob = extract_birth_date("DOB- 2023")
-        assert dob == "2023"
-        age = calculate_age_years(dob)
-        assert age is not None
-        assert age >= 0
-
-
-@pytest.mark.browser
-@pytest.mark.integration
-class TestErrorPageDetection:
-    @patch("scrapers.misis_rescue.scraper.get_browser_service")
-    def test_error_page_detected_in_title(self, mock_browser_service):
-        scraper = MisisRescueScraper(config_id="misisrescue")
-
-        mock_service = Mock()
-        mock_browser_service.return_value = mock_service
-        mock_driver = Mock()
-        mock_browser_result = Mock()
-        mock_browser_result.driver = mock_driver
-        mock_service.create_driver.return_value = mock_browser_result
-        mock_driver.title = "This site can't be reached"
-        mock_driver.page_source = "<html><body>Error</body></html>"
-
-        with patch("scrapers.misis_rescue.scraper.WebDriverWait"):
-            result = scraper._scrape_dog_detail("https://test.com/dog")
-
-        assert result is None
-        mock_driver.quit.assert_called_once()
-
-    @patch("scrapers.misis_rescue.scraper.get_browser_service")
-    def test_error_page_detected_with_apostrophe_variation(self, mock_browser_service):
-        scraper = MisisRescueScraper(config_id="misisrescue")
-
-        mock_service = Mock()
-        mock_browser_service.return_value = mock_service
-        mock_driver = Mock()
-        mock_browser_result = Mock()
-        mock_browser_result.driver = mock_driver
-        mock_service.create_driver.return_value = mock_browser_result
-        mock_driver.title = "This Site Can\u2019T Be Reached"
-        mock_driver.page_source = "<html><body>Error</body></html>"
-
-        with patch("scrapers.misis_rescue.scraper.WebDriverWait"):
-            result = scraper._scrape_dog_detail("https://test.com/dog")
-
-        assert result is None
-
-    @patch("scrapers.misis_rescue.scraper.requests.get")
-    def test_fast_scraper_detects_error_pages(self, mock_get):
-        scraper = MisisRescueScraper(config_id="misisrescue")
-
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = "<html><head><title>This site can't be reached</title></head></html>"
-        mock_get.return_value = mock_response
-
-        result = scraper._scrape_dog_detail_fast("https://test.com/dog")
-
-        assert result is None
-
-
-@pytest.mark.integration
-class TestPerformanceOptimization:
-    @patch("scrapers.misis_rescue.scraper.requests.get")
-    def test_fast_scraper_processes_valid_pages(self, mock_get):
-        scraper = MisisRescueScraper(config_id="misisrescue")
-
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = """
-        <html>
-        <head><title>Fluffy - Adorable Puppy</title></head>
-        <body>
-            <h1>Fluffy</h1>
-            <h2>Things you should know</h2>
-            <ul>
-                <li>DOB- 2023</li>
-                <li>Mixed breed</li>
-                <li>Weighs 5.5kg</li>
-            </ul>
-            <img src="https://static.wixstatic.com/media/dog.jpg">
-        </body>
-        </html>
-        """
-        mock_get.return_value = mock_response
-
-        with patch.object(scraper.detail_parser, "parse_detail_page") as mock_parse:
-            mock_parse.return_value = {
-                "name": "Fluffy",
-                "size": "Small",
-                "properties": {"standardized_size": "Small"},
-            }
-
-            result = scraper._scrape_dog_detail_fast("https://test.com/fluffy")
-
-        assert result is not None
-        assert result["name"] == "Fluffy"
-        assert result["standardized_size"] == "Small"
-        assert "adoption_url" in result
-        assert "external_id" in result
-
-    @patch("scrapers.misis_rescue.scraper.requests.get")
-    def test_complete_flow(self, mock_get):
-        scraper = MisisRescueScraper(config_id="misisrescue")
-
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = """
-        <html>
-        <head><title>Fluffy - Adorable Puppy</title></head>
-        <body>
-            <h1>Fluffy</h1>
-            <h2>Things you should know about Fluffy</h2>
-            <ul>
-                <li>DOB- December 2024</li>
-                <li>Mixed breed</li>
-                <li>9kg</li>
-            </ul>
-            <img src="https://static.wixstatic.com/media/dog.jpg">
-        </body>
-        </html>
-        """
-        mock_get.return_value = mock_response
-
-        result = scraper._scrape_dog_detail_fast("https://www.misisrescue.com/post/fluffy-2")
-
-        assert result is not None
-        assert result["name"] == "Fluffy"
-        assert result["standardized_size"] == "Small"
-        assert result["adoption_url"] == "https://www.misisrescue.com/post/fluffy-2"
-        assert result["external_id"] == "mar-fluffy-2"
-        assert result["organization_id"] is not None
-        assert len(result.get("image_urls", [])) > 0
-
 
 @pytest.mark.integration
 @pytest.mark.external
@@ -1427,7 +686,7 @@ class TestListingExtraction:
 
             return MisisRescueScraper(config_id="misisrescue")
 
-    def test_extract_dogs_with_images_from_listing(self, scraper):
+    def test_extract_dogs_from_listing(self, scraper):
         listing_html = """
         <html>
         <body>
@@ -1451,16 +710,8 @@ class TestListingExtraction:
 
         soup = BeautifulSoup(listing_html, "html.parser")
         dogs = scraper._extract_dogs_before_reserved(soup)
-        scraper._assign_images_to_dogs(dogs, soup)
 
-        assert len(dogs) == 3
-        assert dogs[0]["name"] == "Leila"
-        assert dogs[0]["url"] == "/post/leila"
-        assert dogs[0]["image_url"] is not None
-
-        assert dogs[1]["name"] == "LEO"
-        assert dogs[1]["url"] == "/post/__leo-2"
-        assert dogs[1]["image_url"] is not None
+        assert [(dog["name"], dog["url"]) for dog in dogs] == [("Leila", "/post/leila"), ("LEO", "/post/__leo-2"), ("Aisha❣️🌷", "/post/aisha")]
 
     def test_collect_data_with_images(self, scraper):
         mock_dogs_with_images = [

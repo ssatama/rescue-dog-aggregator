@@ -174,6 +174,29 @@ birth dates that fits what the rescue said (`birth_date_min`,
 - The migration (`f1a6d8e3c520`) must be on production before the PR
   merges, or every save fails on the missing columns.
 
+## MISIs reads the post body (#562)
+
+A MISIs dog is a Wix blog post, and everything about it is inside
+`[data-hook="post-description"]`: the story, then a facts list under "Things
+you should know about X" (also "have to know"), then the adoption
+boilerplate from "How do you adopt X?". `scrapers/misis_rescue/detail_parser.py`
+reads only that element. The story is `properties.description` (the facts
+when a post has no story), the facts are `raw_bullet_points`, and
+`page_text_excerpt` is gone.
+
+- Wix renders the post on the server, so the plain-HTTP fetch
+  (`_scrape_dog_detail_fast`) is the normal path. 404/410 means the post is
+  gone (skip the dog); another non-200, or HTML without the post, falls back
+  to the browser. The browser paths skip a page without a post body. No
+  more "500"/"not found" substring checks: CSS like `font-weight:500`
+  dropped real dogs.
+- New posts had no age because "✔️DOB January 2026" has no colon or dash
+  after DOB. The DOB bullet is now the age (`date_of_birth` and `age_text`),
+  parsed by #561's `utils/birth_dates.py`; `extract_birth_date` and
+  `calculate_age_years` are deleted.
+- `navigate_with_retry` doesn't expose the HTTP status, so the browser path
+  relies on the missing post body; one fetch helper is #567.
+
 ## Gotchas
 
 - **The local dev database can lag production's schema.** Alembic only reads
@@ -188,3 +211,5 @@ birth dates that fits what the rescue said (`birth_date_min`,
     that the GoDaddy page leaked before #435, e.g. Athena's text starts with
     "Lindsey 5 years old". A fresh scrape is clean and every other field
     matches. REAN needs a forced re-scrape and a re-profile of all 11 dogs.
+  - `misisrescue` (#562): forced re-scrape of every listed dog; `apply`
+    re-profiles those whose description changed (all of them: none had one).

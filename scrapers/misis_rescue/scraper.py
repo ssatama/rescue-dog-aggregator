@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup, Tag
 
 from scrapers.base_scraper import BaseScraper, ListingIncompleteError
 
-from .detail_parser import MisisRescueDetailParser
+from .detail_parser import POST_BODY, MisisRescueDetailParser
 
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
@@ -139,7 +139,7 @@ class MisisRescueScraper(BaseScraper):
         the pagination buttons to navigate between pages. URL parameters don't work.
 
         Returns:
-            List of dog dictionaries with url, name, and image_url
+            List of dog dictionaries with url and name
         """
         if USE_PLAYWRIGHT:
             return asyncio.run(self._bounded_listing_playwright())
@@ -175,7 +175,6 @@ class MisisRescueScraper(BaseScraper):
             # Extract dogs from page 1
             soup = BeautifulSoup(driver.page_source, "html.parser")
             page_dogs = self._extract_dogs_before_reserved(soup)
-            self._assign_images_to_dogs(page_dogs, soup)
 
             all_dogs.extend(page_dogs)
             # World-class logging: Page results handled by centralized system
@@ -198,7 +197,6 @@ class MisisRescueScraper(BaseScraper):
                     # Extract dogs from this page
                     soup = BeautifulSoup(driver.page_source, "html.parser")
                     page_dogs = self._extract_dogs_before_reserved(soup)
-                    self._assign_images_to_dogs(page_dogs, soup)
 
                     if not page_dogs:
                         # World-class logging: Empty page detection handled by centralized system
@@ -256,7 +254,6 @@ class MisisRescueScraper(BaseScraper):
             content = await page.content()
             soup = BeautifulSoup(content, "html.parser")
             page_dogs = self._extract_dogs_before_reserved(soup)
-            self._assign_images_to_dogs(page_dogs, soup)
             all_dogs.extend(page_dogs)
             previous_links = self._post_links(soup)
 
@@ -280,7 +277,6 @@ class MisisRescueScraper(BaseScraper):
                 previous_links = links
 
                 page_dogs = self._extract_dogs_before_reserved(soup)
-                self._assign_images_to_dogs(page_dogs, soup)
                 all_dogs.extend(page_dogs)
                 page_num += 1
 
@@ -343,138 +339,6 @@ class MisisRescueScraper(BaseScraper):
         self.logger.debug(f"No pagination button found for page {page_num}")
         return False
 
-    def _get_all_dog_urls(self) -> list[str]:
-        """Get all dog URLs from all pages, handling pagination.
-
-        Screenshots show pages 1-4 with numbered pagination buttons.
-
-        Returns:
-            List of dog detail page URLs
-        """
-        all_urls = []
-        page_num = 1
-
-        while True:
-            try:
-                # World-class logging: URL extraction handled by centralized system
-                page_urls = self._extract_dog_urls_from_page(page_num)
-
-                if not page_urls:
-                    # World-class logging: Pagination stopping handled by centralized system
-                    break
-
-                all_urls.extend(page_urls)
-                # World-class logging: Page URL count handled by centralized system
-
-                page_num += 1
-
-                # Safety limit based on screenshots showing 4 pages
-                if page_num > 10:
-                    self.logger.warning("Reached maximum page limit (10), stopping")
-                    break
-
-            except Exception as e:
-                self.logger.error(f"Error extracting URLs from page {page_num}: {e}")
-                break
-
-        return all_urls
-
-    def _extract_dogs_from_page(self, page_num: int) -> list[dict[str, str]]:
-        """Extract dog data from a specific page including images.
-
-        Args:
-            page_num: Page number to scrape
-
-        Returns:
-            List of dog dictionaries with url, name, and image_url
-        """
-        driver = None
-
-        try:
-            driver = self._setup_selenium_driver()
-
-            # Construct page URL
-            if page_num == 1:
-                page_url = self.listing_url
-            else:
-                page_url = f"{self.listing_url}?page={page_num}"
-
-            # World-class logging: Page loading handled by centralized system
-            driver.get(page_url)
-
-            # Wait for page to load
-            WebDriverWait(driver, self.timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-
-            # Give Wix site more time to load dynamic content
-            time.sleep(5)
-
-            # Parse page with BeautifulSoup
-            soup = BeautifulSoup(driver.page_source, "html.parser")
-
-            # Extract dogs with images from available section
-            available_dogs = self._extract_dogs_before_reserved(soup)
-
-            # Extract and assign images to dogs (simplified approach for Wix sites)
-            self._assign_images_to_dogs(available_dogs, soup)
-
-            return available_dogs
-
-        except Exception as e:
-            self.logger.error(f"Error extracting dogs from page {page_num}: {e}")
-            return []
-        finally:
-            if driver:
-                driver.quit()
-
-    def _extract_dog_urls_from_page(self, page_num: int) -> list[str]:
-        """Extract dog URLs from a specific page.
-
-        CRITICAL: Must stop extraction when Reserved section is detected!
-
-        Args:
-            page_num: Page number to scrape
-
-        Returns:
-            List of dog URLs from available section only
-        """
-        driver = None
-
-        try:
-            driver = self._setup_selenium_driver()
-
-            # Construct page URL
-            if page_num == 1:
-                page_url = self.listing_url
-            else:
-                page_url = f"{self.listing_url}?page={page_num}"
-
-            # World-class logging: Page loading handled by centralized system
-            driver.get(page_url)
-
-            # Wait for page to load
-            WebDriverWait(driver, self.timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-
-            # Parse page with BeautifulSoup
-            soup = BeautifulSoup(driver.page_source, "html.parser")
-
-            # Extract dogs only from available section (before Reserved)
-            available_dogs = self._extract_dogs_before_reserved(soup)
-
-            # Convert to full URLs
-            dog_urls = []
-            for dog in available_dogs:
-                full_url = urljoin(self.base_url, dog["url"])
-                dog_urls.append(full_url)
-
-            return dog_urls
-
-        except Exception as e:
-            self.logger.error(f"Error extracting URLs from page {page_num}: {e}")
-            return []
-        finally:
-            if driver:
-                driver.quit()
-
     def _extract_dogs_before_reserved(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         """Extract dog links only from available section, stop at Reserved.
 
@@ -524,67 +388,9 @@ class MisisRescueScraper(BaseScraper):
                 self.logger.debug(f"Processing available dog: {name} at {relative_url}")
 
                 # Add available dog (image will be assigned later)
-                dogs.append({"url": relative_url, "name": name, "image_url": None})  # Will be assigned by _assign_images_to_dogs
+                dogs.append({"url": relative_url, "name": name})
 
         return dogs
-
-    def _assign_images_to_dogs(self, dogs: list[dict[str, str]], soup: BeautifulSoup) -> None:
-        """Assign images to dogs from the listing page.
-
-        For Wix sites, images are often in separate elements from links.
-        This method finds dog images on the page and assigns them to dogs in order.
-
-        Args:
-            dogs: List of dog dictionaries to update with image URLs
-            soup: BeautifulSoup object of the listing page
-        """
-        if not dogs:
-            return
-
-        # Find all potential dog images on the page
-        all_images = soup.find_all("img")
-        dog_images = []
-
-        for img in all_images:
-            if not isinstance(img, Tag):
-                continue
-            src = img.get("src")
-            if not isinstance(src, str):
-                continue
-
-            # Filter for likely dog photos from Wix static content
-            if (
-                self._is_wixstatic_url(src)
-                and any(ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"])
-                and not any(skip in src.lower() for skip in ["logo", "icon", "button", "header", "footer"])
-            ):
-                # Skip very small images (likely icons)
-                if "w_" in src:
-                    # Extract width from Wix URL parameters
-                    try:
-                        width_param = [p for p in src.split(",") if "w_" in p][0]
-                        width = int(width_param.split("w_")[1])
-                        if width < 200:  # Skip small images
-                            continue
-                    except (IndexError, ValueError):
-                        pass
-
-                dog_images.append(src)
-
-        # World-class logging: Image discovery handled by centralized system
-
-        # Assign images to dogs using deterministic matching
-        # Sort both lists to ensure consistent assignment across runs
-        sorted_dogs = sorted(dogs, key=lambda d: d["url"])  # Sort by URL for stability
-        sorted_images = sorted(dog_images)  # Sort images for stability
-
-        for i, dog in enumerate(sorted_dogs):
-            if i < len(sorted_images):
-                dog["image_url"] = sorted_images[i]
-                self.logger.debug(f"Assigned image to {dog['name']}: {sorted_images[i]}")
-            else:
-                # If we run out of images, leave image_url as None
-                self.logger.debug(f"No image available for {dog['name']}")
 
     def _is_reserved_dog(self, name: str) -> bool:
         """Check if a dog name indicates it's reserved.
@@ -616,68 +422,6 @@ class MisisRescueScraper(BaseScraper):
 
         return False
 
-    def _is_link_in_reserved_section(self, link, soup: BeautifulSoup) -> bool:
-        """Check if a dog link is in the Reserved section.
-
-        Args:
-            link: BeautifulSoup link element
-            soup: Full page soup for context
-
-        Returns:
-            True if link is in Reserved section
-        """
-        # Find any Reserved section headers
-        reserved_headers = soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"])
-
-        for header in reserved_headers:
-            if isinstance(header, Tag) and self._is_reserved_section(header):
-                # Check if this link comes after the Reserved header in DOM order
-                # Get all elements in document order
-                all_elements = soup.find_all()
-
-                try:
-                    header_index = all_elements.index(header)
-                    link_index = all_elements.index(link)
-
-                    # If link comes after reserved header, it's in reserved section
-                    if link_index > header_index:
-                        return True
-                except ValueError:
-                    # Element not found in list, continue checking
-                    continue
-
-        return False
-
-    def _is_reserved_section(self, element: Tag) -> bool:
-        """Check if element is a Reserved section header.
-
-        Screenshots show clear "Reserved" headers - must detect these!
-
-        Args:
-            element: BeautifulSoup element to check
-
-        Returns:
-            True if element indicates Reserved section
-        """
-        if not element:
-            return False
-
-        text = element.get_text().lower().strip()
-
-        # Check for various Reserved section indicators
-        reserved_indicators = [
-            "reserved",
-            "reserviert",
-            "bereits reserviert",
-            "wir sind bereits reserviert",
-        ]
-
-        for indicator in reserved_indicators:
-            if indicator in text:
-                return True
-
-        return False
-
     def _scrape_dog_detail(self, url: str) -> dict[str, Any] | None:
         """Scrape individual dog detail page.
 
@@ -690,6 +434,21 @@ class MisisRescueScraper(BaseScraper):
         if USE_PLAYWRIGHT:
             return asyncio.run(self._bounded_detail_playwright(url))
         return self._scrape_dog_detail_selenium(url)
+
+    def _dog_from_page(self, soup: BeautifulSoup, url: str) -> dict[str, Any] | None:
+        """The dog on a post page, or None for a page with no post body: an error page, not a dog."""
+        dog_data = self.detail_parser.parse_detail_page(soup)
+        if dog_data is None:
+            self.logger.warning(f"No post body on {url}; skipping it as an error page")
+            return None
+
+        dog_data["external_id"] = self._generate_external_id(url)
+        dog_data["adoption_url"] = url
+        dog_data["organization_id"] = self.organization_id
+        # Size calculated from weight goes to the top level for the database
+        if dog_data["properties"].get("standardized_size"):
+            dog_data["standardized_size"] = dog_data["properties"]["standardized_size"]
+        return dog_data
 
     async def _bounded_detail_playwright(self, url: str) -> dict[str, Any] | None:
         """One dog's page, or None (skip that dog) once it has run DETAIL_TIMEOUT_SECONDS."""
@@ -717,30 +476,6 @@ class MisisRescueScraper(BaseScraper):
                 # Give extra time for Wix to load dynamic content
                 time.sleep(3)
 
-                # CRITICAL: Check for error pages BEFORE processing
-                page_title = driver.title.lower() if driver.title else ""
-                page_source_lower = driver.page_source.lower()[:1000]  # Check first 1000 chars
-
-                # Check for various error indicators
-                error_indicators = [
-                    "this site can't be reached",
-                    "this site cant be reached",
-                    "site can't be reached",
-                    "dns_probe_finished",
-                    "err_name_not_resolved",
-                    "err_connection",
-                    "404",
-                    "500",
-                    "error",
-                    "not found",
-                    "unavailable",
-                ]
-
-                for indicator in error_indicators:
-                    if indicator in page_title or indicator in page_source_lower:
-                        self.logger.warning(f"Error page detected for {url}: '{driver.title}'")
-                        return None
-
                 # Scroll to trigger lazy loading of all content
                 self._scroll_detail_page_for_content(driver)
 
@@ -751,41 +486,13 @@ class MisisRescueScraper(BaseScraper):
                 time.sleep(2)
 
             except TimeoutException:
-                self.logger.warning(f"Timeout waiting for content on {url}, may be an error page")
-                # Check again for error indicators after timeout
-                if driver.title:
-                    title_lower = driver.title.lower()
-                    if any(
-                        err in title_lower
-                        for err in [
-                            "can't be reached",
-                            "cant be reached",
-                            "not found",
-                            "error",
-                        ]
-                    ):
-                        self.logger.warning(f"Error page detected after timeout: '{driver.title}'")
-                        return None
+                # No h1 in time: parsed anyway, and a page without a post body is skipped below
+                self.logger.warning(f"Timeout waiting for content on {url}")
 
-            # Parse with BeautifulSoup and detail parser
             soup = BeautifulSoup(driver.page_source, "html.parser")
-
-            # Double-check the parsed content for error indicators
-            h1_text = soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
-            if any(err in h1_text for err in ["can't be reached", "cant be reached", "not found"]):
-                self.logger.warning(f"Error page h1 detected: '{h1_text}'")
+            dog_data = self._dog_from_page(soup, url)
+            if dog_data is None:
                 return None
-
-            dog_data = self.detail_parser.parse_detail_page(soup)
-
-            # Add required fields for BaseScraper
-            dog_data["external_id"] = self._generate_external_id(url)
-            dog_data["adoption_url"] = url
-            dog_data["organization_id"] = self.organization_id
-
-            # If size was calculated from weight, copy it to top level for database
-            if dog_data.get("properties", {}).get("standardized_size"):
-                dog_data["standardized_size"] = dog_data["properties"]["standardized_size"]
 
             # Extract the main image - try hero image first, then grid fallback
             main_image_url = self._extract_main_image(driver, soup)
@@ -830,42 +537,10 @@ class MisisRescueScraper(BaseScraper):
 
                 content = await page.content()
 
-            # Check for error pages in content
-            content_lower = content.lower()[:2000]
-            error_indicators = [
-                "this site can't be reached",
-                "this site cant be reached",
-                "dns_probe_finished",
-                "err_name_not_resolved",
-                "404",
-                "500",
-                "not found",
-            ]
-
-            for indicator in error_indicators:
-                if indicator in content_lower:
-                    self.logger.warning(f"Error page detected for {url}")
-                    return None
-
-            # Parse with BeautifulSoup
             soup = BeautifulSoup(content, "html.parser")
-
-            # Check h1 for errors
-            h1_text = soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
-            if any(err in h1_text for err in ["can't be reached", "cant be reached", "not found"]):
-                self.logger.warning(f"Error page h1 detected: '{h1_text}'")
+            dog_data = self._dog_from_page(soup, url)
+            if dog_data is None:
                 return None
-
-            dog_data = self.detail_parser.parse_detail_page(soup)
-
-            # Add required fields for BaseScraper
-            dog_data["external_id"] = self._generate_external_id(url)
-            dog_data["adoption_url"] = url
-            dog_data["organization_id"] = self.organization_id
-
-            # If size was calculated from weight, copy it to top level for database
-            if dog_data.get("properties", {}).get("standardized_size"):
-                dog_data["standardized_size"] = dog_data["properties"]["standardized_size"]
 
             # Extract the main image using BeautifulSoup-only method
             main_image_url = self._extract_main_image_soup(soup)
@@ -941,54 +616,20 @@ class MisisRescueScraper(BaseScraper):
             self.logger.debug(f"Fast-loading detail page: {url}")
             response = requests.get(url, headers=headers, timeout=10)
 
-            # Check for HTTP errors
-            if response.status_code != 200:
-                self.logger.warning(f"HTTP {response.status_code} for {url}, falling back to Selenium")
-                return self._scrape_dog_detail(url)
-
-            # Check for error pages in content
-            content_lower = response.text.lower()[:2000]
-            error_indicators = [
-                "this site can't be reached",
-                "this site cant be reached",
-                "dns_probe_finished",
-                "err_name_not_resolved",
-                "404",
-                "500",
-                "not found",
-            ]
-
-            for indicator in error_indicators:
-                if indicator in content_lower:
-                    self.logger.warning(f"Error page detected (fast) for {url}")
-                    return None
-
-            # Parse with BeautifulSoup
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            # Check h1 for error indicators
-            h1_text = soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
-            if any(err in h1_text for err in ["can't be reached", "cant be reached", "not found"]):
-                self.logger.warning(f"Error page h1 detected (fast): '{h1_text}'")
+            # A removed post is gone; anything else non-200 may be transient, so the browser tries
+            if response.status_code in (404, 410):
+                self.logger.warning(f"HTTP {response.status_code} for {url}: the post is gone")
                 return None
-
-            # Check if we got actual dog content (Wix sometimes requires JS)
-            # If no "Things you should know" section, fall back to Selenium
-            if "things you should know" not in response.text.lower():
-                self.logger.debug(f"No dog content found with requests for {url}, falling back to Selenium")
+            if response.status_code != 200:
+                self.logger.warning(f"HTTP {response.status_code} for {url}, falling back to the browser")
                 return self._scrape_dog_detail(url)
 
-            # Parse the page
-            dog_data = self.detail_parser.parse_detail_page(soup)
-
-            # Add required fields
-            dog_data["external_id"] = self._generate_external_id(url)
-            dog_data["adoption_url"] = url
-            dog_data["organization_id"] = self.organization_id
-
-            # If size was calculated from weight, copy it to top level for database
-            if dog_data.get("properties", {}).get("standardized_size"):
-                dog_data["standardized_size"] = dog_data["properties"]["standardized_size"]
+            soup = BeautifulSoup(response.text, "html.parser")
+            # Wix renders the post server-side; if it didn't this time, the browser runs its JS
+            if soup.select_one(POST_BODY) is None:
+                self.logger.debug(f"No post body in the HTML of {url}, falling back to the browser")
+                return self._scrape_dog_detail(url)
+            dog_data = self._dog_from_page(soup, url)
 
             # For images, we'll need to extract them differently since JS won't run
             # Try to find image URLs in the static HTML
@@ -997,18 +638,18 @@ class MisisRescueScraper(BaseScraper):
                 dog_data["image_urls"] = image_urls
                 dog_data["primary_image_url"] = image_urls[0]
             else:
-                # If no images found, might need JS - fall back to Selenium
-                self.logger.debug(f"No images found with requests for {url}, falling back to Selenium")
+                # If no images found, might need JS - fall back to the browser
+                self.logger.debug(f"No images found with requests for {url}, falling back to the browser")
                 return self._scrape_dog_detail(url)
 
             self.logger.debug(f"Successfully scraped {url} with fast method")
             return dog_data
 
         except requests.RequestException as e:
-            self.logger.warning(f"Request failed for {url}: {e}, falling back to Selenium")
+            self.logger.warning(f"Request failed for {url}: {e}, falling back to the browser")
             return self._scrape_dog_detail(url)
         except Exception as e:
-            self.logger.error(f"Error in fast scraping {url}: {e}, falling back to Selenium")
+            self.logger.error(f"Error in fast scraping {url}: {e}, falling back to the browser")
             return self._scrape_dog_detail(url)
 
     def _extract_static_image_urls(self, soup: BeautifulSoup) -> list[str]:
@@ -1120,61 +761,6 @@ class MisisRescueScraper(BaseScraper):
 
         return url
 
-    def _extract_image_urls(self, soup: BeautifulSoup) -> list[str]:
-        """Extract image URLs from dog detail page.
-
-        Args:
-            soup: BeautifulSoup object of detail page
-
-        Returns:
-            List of image URLs
-        """
-        image_urls = []
-
-        # Look for images in various containers
-        img_tags = soup.find_all("img")
-
-        for img in img_tags:
-            if not isinstance(img, Tag):
-                continue
-            src = img.get("src")
-            # Ensure src is a string, as .get() can return a list for some attributes
-            if isinstance(src, str) and self._is_valid_dog_image(src):
-                # Convert relative URLs to absolute
-                full_url = urljoin(self.base_url, src)
-                image_urls.append(full_url)
-
-        return image_urls
-
-    def _is_valid_dog_image(self, src: str) -> bool:
-        """Check if image URL is likely a dog photo.
-
-        Args:
-            src: Image source URL
-
-        Returns:
-            True if likely a dog image
-        """
-        if not src:
-            return False
-
-        src_lower = src.lower()
-
-        # Skip common non-dog images
-        skip_patterns = ["logo", "icon", "button", "social", "header", "footer"]
-
-        for pattern in skip_patterns:
-            if pattern in src_lower:
-                return False
-
-        # Check for image file extensions
-        image_extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
-
-        if any(ext in src_lower for ext in image_extensions):
-            return True
-
-        return False
-
     def _generate_external_id(self, url: str) -> str:
         """Generate external ID from dog detail page URL with organization prefix.
 
@@ -1200,18 +786,6 @@ class MisisRescueScraper(BaseScraper):
         import hashlib
 
         return hashlib.md5(url.encode()).hexdigest()[:8]
-
-    def _validate_dog_data(self, dog_data: dict[str, Any]) -> bool:
-        """Validate dog data has required fields using enhanced BaseScraper validation.
-
-        Args:
-            dog_data: Dog data dictionary
-
-        Returns:
-            True if data is valid
-        """
-        # Use enhanced validation from BaseScraper that includes invalid name detection
-        return self._validate_animal_data(dog_data)
 
     def _setup_selenium_driver(self) -> "WebDriver":
         """Setup WebDriver with appropriate options.
@@ -1699,7 +1273,7 @@ class MisisRescueScraper(BaseScraper):
                 url = future_to_url[future]
                 try:
                     result = future.result()
-                    if result and self._validate_dog_data(result):
+                    if result:
                         results.append(result)
                     else:
                         self.logger.warning(f"Invalid or empty data for URL: {url}")
