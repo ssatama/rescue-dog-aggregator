@@ -28,6 +28,7 @@ import {
 import type { Dog as DogType } from "../../types/dog";
 import { dogCountLabel } from "@/utils/formatCount";
 import { formatSize, getAgeCategory } from "@/utils/dogHelpers";
+import { AGE_OPTIONS, SIZE_OPTIONS } from "@/constants/filters";
 
 // Debounce hook for filter performance
 function useDebounce<T>(value: T, delay: number): T {
@@ -93,9 +94,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
 
   const uniqueSizes = useMemo(() => {
     const sizes = new Set(dogs.map(formatSize));
-    return ["Small", "Medium", "Large", "Giant"].filter((size) =>
-      sizes.has(size),
-    );
+    return SIZE_OPTIONS.slice(1).filter((size) => sizes.has(size));
   }, [dogs]);
 
   const uniqueOrganizations = useMemo(() => {
@@ -163,8 +162,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       }
     });
     // Return in the standard order, but only if they exist in the data
-    const orderedGroups = ["Puppy", "Young", "Adult", "Senior"];
-    return orderedGroups.filter((g) => ageGroups.has(g));
+    return AGE_OPTIONS.slice(1).filter((g) => ageGroups.has(g));
   }, [dogs]);
 
   // Check if any filters are active

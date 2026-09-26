@@ -21,6 +21,20 @@ logger = logging.getLogger(__name__)
 # stylistic reasons rather than quality.
 MIN_SWIPE_QUALITY_SCORE = 65
 
+
+# Scraped facts the swipe details sheet reads the way the dog page does:
+# lives-with answers, neutered, vaccinated and a real medical note (#504)
+SWIPE_FACT_KEYS = (
+    "good_with_children",
+    "good_with_dogs",
+    "good_with_cats",
+    "neutered_spayed",
+    "spayed_neutered",
+    "medical_status",
+    "medical_issues",
+    "medical_care",
+)
+
 router = APIRouter()
 
 # The catalog's size scale (#494), keyed by the lower-case names swipe sends.
@@ -374,6 +388,8 @@ async def get_swipe_stack(
                         "updated_at": animal_dict.get("updated_at").isoformat() if animal_dict.get("updated_at") else None,
                         "organization": org_data,
                         "dogProfilerData": profiler_data,  # camelCase for frontend
+                        # The scraped facts the details sheet shares with the dog page (#504)
+                        "properties": {key: properties[key] for key in SWIPE_FACT_KEYS if key in properties},
                     }
                     dogs.append(dog)
 

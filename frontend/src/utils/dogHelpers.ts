@@ -84,6 +84,6 @@ const SIZE_SCALE: Record<string, string> = {
 
 /** Small, Medium, Large or Giant, or null when the size is unknown. */
 export const formatSize = (dog: DogInput | null | undefined): string | null => {
-  const raw = dog?.standardized_size || dog?.size;
-  return raw ? (SIZE_SCALE[raw.trim().toLowerCase()] ?? null) : null;
+  const onScale = (raw: string | undefined) => (raw ? SIZE_SCALE[raw.trim().toLowerCase()] : undefined);
+  return onScale(dog?.standardized_size) ?? onScale(dog?.size) ?? null;
 };

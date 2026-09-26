@@ -77,8 +77,8 @@ export interface ApiDog {
   good_with_children?: boolean;
   good_with_dogs?: boolean;
   good_with_cats?: boolean;
-  spayed_neutered?: boolean | string;
   description?: string;
+  // Swipe sends only the scraped facts its details sheet reads (#504)
   properties?: Dog["properties"];
   status?: string;
   adoption_url?: string;

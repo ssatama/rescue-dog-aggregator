@@ -126,6 +126,7 @@ describe("dogHelpers", () => {
       expect(formatSize({ size: "large" })).toBe("Large");
       expect(formatSize({ size: "X-Large" })).toBe("Giant");
       expect(formatSize({ size: "Toy" })).toBe("Small");
+      expect(formatSize({ standardized_size: "Unknown", size: "Large" })).toBe("Large");
     });
 
     it("returns null for unknown or off-scale sizes", () => {
