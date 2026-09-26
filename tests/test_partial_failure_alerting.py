@@ -192,7 +192,8 @@ class TestFinalizeScrapeWiringToPartialFailureAlert:
         scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats={"animals_added": 0, "animals_updated": 0})
 
         scraper._emit_partial_failure_alert.assert_called_once_with(7)
-        scraper.complete_scrape_log.assert_called_once()
+        # Completed later as "warning" with metrics, in _log_completion_metrics (#557)
+        scraper.complete_scrape_log.assert_not_called()
 
     def test_finalize_scrape_does_not_alert_when_no_partial_failure(self):
         scraper = self._make_scraper()

@@ -14,6 +14,7 @@ pinned a decision production never makes. It is deleted.
 import logging
 from unittest.mock import Mock, patch
 
+import psycopg2
 import pytest
 
 from services.database_service import DatabaseService, _as_float
@@ -246,3 +247,42 @@ class TestReadPathsDegradeRatherThanRaise:
         with patch("services.database_service.fetch_slugs_by_ids", return_value=["bella", "bello"]) as fetch:
             assert service.get_slugs_for_animals([1, 2]) == ["bella", "bello"]
             fetch.assert_called_once_with(service.conn, [1, 2])
+
+
+@pytest.mark.unit
+class TestScrapeLogCompletionSurvivesADeadConnection:
+    """The completion write ends a run; if it fails the row stays "running" (#557)."""
+
+    def test_it_writes_through_the_pool_when_there_is_one(self, service):
+        conn = Mock()
+        pool = Mock()
+        pool.get_connection_context.return_value.__enter__ = Mock(return_value=conn)
+        pool.get_connection_context.return_value.__exit__ = Mock(return_value=False)
+        service.connection_pool = pool
+        service.conn = Mock(cursor=Mock(side_effect=psycopg2.InterfaceError("connection already closed")))
+
+        assert service.complete_scrape_log(41, "success", 10, 2, 1) is True
+
+        conn.commit.assert_called_once()
+        assert conn.cursor.return_value.execute.call_args.args[1][1] == "success"
+        service.conn.cursor.assert_not_called()
+
+    def test_a_pool_failure_returns_false_rather_than_raising(self, service):
+        service.connection_pool = Mock()
+        service.connection_pool.get_connection_context.side_effect = RuntimeError("Could not acquire healthy connection")
+
+        assert service.complete_scrape_log(41, "error") is False
+
+    def test_a_broken_direct_connection_returns_false_rather_than_raising(self, service):
+        service.conn = Mock()
+        service.conn.cursor.side_effect = psycopg2.DatabaseError("SSL SYSCALL error: EOF detected")
+        service.conn.rollback.side_effect = psycopg2.InterfaceError("connection already closed")
+
+        assert service.complete_scrape_log(41, "error") is False
+
+    def test_unserialisable_metrics_still_close_the_row(self, service):
+        service.conn = Mock()
+
+        assert service.complete_scrape_log(41, "success", detailed_metrics={"when": object()}) is True
+
+        assert service.conn.cursor.return_value.execute.call_args.args[1][6] is None

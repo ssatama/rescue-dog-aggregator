@@ -569,45 +569,69 @@ class DatabaseService:
 
         Returns:
             True if successful, False otherwise
+
+        Production goes through the pool, whose connections are health-checked
+        when taken: the direct connection can sit idle through LLM enrichment
+        and be dead by now, and without this write the row stays "running".
         """
-        if not self.conn:
-            # Try to establish connection before failing
-            if not self.connect():
-                self.logger.error("No database connection available")
+        sql = """
+            UPDATE scrape_logs
+            SET completed_at = %s, status = %s,
+                dogs_found = %s, dogs_added = %s, dogs_updated = %s,
+                error_message = %s, detailed_metrics = %s,
+                duration_seconds = %s, data_quality_score = %s
+            WHERE id = %s
+        """
+        try:
+            metrics_json = json.dumps(detailed_metrics) if detailed_metrics else None
+        except (TypeError, ValueError) as e:
+            # Close the row without its metrics rather than not at all
+            self.logger.error(f"Scrape log {scrape_log_id} metrics are not JSON-serialisable, writing without them: {e}")
+            metrics_json = None
+        params = (
+            datetime.now(),
+            status,
+            animals_found,
+            animals_added,
+            animals_updated,
+            error_message,
+            metrics_json,
+            duration_seconds,
+            data_quality_score,
+            scrape_log_id,
+        )
+
+        if self.connection_pool:
+            try:
+                with self.connection_pool.get_connection_context() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(sql, params)
+                    conn.commit()
+                    cursor.close()
+                self.logger.info(f"Updated scrape log {scrape_log_id} with status: {status}")
+                return True
+            except Exception as e:
+                self.logger.error(f"Error updating scrape log: {e}")
                 return False
 
+        if not self.conn and not self.connect():
+            self.logger.error("No database connection available")
+            return False
         try:
             cursor = self.conn.cursor()
-            cursor.execute(
-                """
-                UPDATE scrape_logs
-                SET completed_at = %s, status = %s,
-                    dogs_found = %s, dogs_added = %s, dogs_updated = %s,
-                    error_message = %s, detailed_metrics = %s,
-                    duration_seconds = %s, data_quality_score = %s
-                WHERE id = %s
-                """,
-                (
-                    datetime.now(),
-                    status,
-                    animals_found,
-                    animals_added,
-                    animals_updated,
-                    error_message,
-                    json.dumps(detailed_metrics) if detailed_metrics else None,
-                    duration_seconds,
-                    data_quality_score,
-                    scrape_log_id,
-                ),
-            )
+            cursor.execute(sql, params)
             self.conn.commit()
             cursor.close()
             self.logger.info(f"Updated scrape log {scrape_log_id} with status: {status}")
             return True
         except Exception as e:
             self.logger.error(f"Error updating scrape log: {e}")
-            if self.conn:
+            try:
                 self.conn.rollback()
+            except Exception:
+                pass  # a broken connection can't roll back; the False still reports the failure
+            if self.conn.closed:
+                self.conn = None  # dead: the next call reconnects
             return False
 
     def get_existing_external_ids(self, organization_id: int) -> set[str]:

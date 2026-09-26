@@ -1,0 +1,259 @@
+"""A run completes exactly once, with its metrics, and never stays "running" (#557)."""
+
+from unittest.mock import Mock, patch
+
+import pytest
+
+from scrapers.base_scraper import BaseScraper
+from services.metrics_collector import MetricsCollector
+
+
+def _dog(external_id):
+    return {"name": f"Dog {external_id}", "external_id": external_id, "adoption_url": f"https://example.org/{external_id}", "primary_image_url": f"https://example.org/{external_id}.jpg"}
+
+
+class _Scraper(BaseScraper):
+    dogs: list = []
+
+    def collect_data(self):
+        return list(self.dogs)
+
+
+@pytest.fixture
+def scraper():
+    with (
+        patch("scrapers.base_scraper.create_default_sync_service") as sync,
+        patch("scrapers.base_scraper.ConfigLoader") as loader,
+    ):
+        sync.return_value.sync_single_organization.return_value = Mock(organization_id=1, was_created=False)
+        config = Mock()
+        config.get_scraper_config_dict.return_value = {"rate_limit_delay": 0, "max_retries": 1, "timeout": 10}
+        config.name = "Test Rescue"
+        loader.return_value.load_config.return_value = config
+        s = _Scraper(config_id="test", metrics_collector=MetricsCollector())
+    s.database_service = Mock()
+    s.database_service.create_scrape_log.return_value = 77
+    s.database_service.get_slugs_for_animals.return_value = []
+    s.image_processing_service = None
+    s.session_manager = Mock()
+    s.session_manager.get_historical_average_dogs_found.return_value = None
+    s.llm_handler = Mock()
+    s._check_robots_permission = Mock(return_value=True)
+    return s
+
+
+def _completions(scraper):
+    return [c.args for c in scraper.database_service.complete_scrape_log.call_args_list]
+
+
+@pytest.mark.unit
+class TestRunCompletion:
+    def test_a_session_start_failure_no_longer_suppresses_the_run_write(self, scraper):
+        scraper.session_manager.start_scrape_session.return_value = False
+        scraper.dogs = [_dog("a")]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "added")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            assert scraper._run_with_connection() is True
+
+        (completion,) = _completions(scraper)
+        assert completion[1] == "warning", "stale detection didn't run, so monitoring must see a warning"
+        assert "Failed to start scrape session" in completion[5], "the warning is a note in the final log"
+        assert completion[6]["animals_added"] == 1, "the run's metrics are still written"
+        assert completion[7] is not None, "duration is recorded"
+
+    def test_a_partial_failure_run_records_warning_with_metrics_and_purges_changed_dogs(self, scraper):
+        scraper.dogs = [_dog("a"), _dog("b")]
+        scraper.database_service.get_slugs_for_animals.return_value = ["dog-a-1", "dog-b-2"]
+        ids = iter([1, 2])
+
+        with (
+            patch.object(scraper, "save_animal", side_effect=lambda d: (next(ids), "added")),
+            patch.object(scraper, "detect_partial_failure", return_value=True),
+            patch("services.revalidation_client.invalidate_sync") as invalidate,
+        ):
+            assert scraper._run_with_connection() is True
+
+        (completion,) = _completions(scraper)
+        assert completion[1] == "warning"
+        assert completion[3] == 2, "animals_added"
+        assert completion[6]["animals_added"] == 2, "detailed metrics are written for a warning run"
+        assert completion[7] is not None, "duration is recorded for a warning run"
+        assert {"dog-a-1", "dog-b-2"} <= set(invalidate.call_args.kwargs["tags"])
+        scraper.session_manager.update_stale_data_detection.assert_not_called()
+
+    def test_keyboard_interrupt_in_collect_data_leaves_the_log_error(self, scraper):
+        with patch.object(scraper, "collect_data", side_effect=KeyboardInterrupt), pytest.raises(KeyboardInterrupt):
+            scraper._run_with_connection()
+
+        (completion,) = _completions(scraper)
+        assert completion[1] == "error"
+        assert "KeyboardInterrupt" in completion[5]
+
+    def test_system_exit_leaves_the_log_error(self, scraper):
+        with patch.object(scraper, "collect_data", side_effect=SystemExit(1)), pytest.raises(SystemExit):
+            scraper._run_with_connection()
+
+        assert _completions(scraper)[0][1] == "error"
+
+    def test_an_ordinary_failure_is_completed_once_as_error(self, scraper):
+        with patch.object(scraper, "collect_data", side_effect=RuntimeError("listing broke")):
+            assert scraper._run_with_connection() is False
+
+        (completion,) = _completions(scraper)
+        assert completion[1] == "error"
+        assert "listing broke" in completion[5]
+
+    def test_a_failed_completion_write_is_written_once_more_as_it_was(self, scraper):
+        scraper.dogs = [_dog("a")]
+        scraper.database_service.complete_scrape_log.side_effect = [False, True]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "added")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync") as invalidate,
+        ):
+            assert scraper._run_with_connection() is True
+
+        first, retry = _completions(scraper)
+        assert retry == first, "the same status, counts and metrics, not a generic error"
+        assert retry[1] == "success"
+        assert retry[6]["animals_added"] == 1
+        invalidate.assert_called_once()  # the retry does not purge a second time
+
+    def test_a_failed_robots_skip_write_stays_skipped(self, scraper):
+        scraper._check_robots_permission.return_value = False
+        scraper.database_service.complete_scrape_log.side_effect = [False, True]
+
+        assert scraper._run_with_connection() is False
+
+        assert [c[1] for c in _completions(scraper)] == ["skipped", "skipped"]
+
+    def test_a_failed_error_write_keeps_the_real_error(self, scraper):
+        scraper.database_service.complete_scrape_log.side_effect = [False, True]
+
+        with patch.object(scraper, "collect_data", side_effect=RuntimeError("listing broke")):
+            scraper._run_with_connection()
+
+        first, retry = _completions(scraper)
+        assert retry == first
+        assert "listing broke" in retry[5]
+
+    def test_a_reused_instance_does_not_reprofile_the_last_runs_dogs(self, scraper):
+        scraper.dogs = [_dog("a")]
+        scraper.animals_for_llm_enrichment = [{"id": 1, "data": {}, "action": "create"}]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(2, "updated")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            scraper._run_with_connection()
+
+        scraper.llm_handler.enrich_animals.assert_called_once_with([])
+
+    def test_a_failing_close_does_not_replace_system_exit(self, scraper):
+        scraper.database_service.complete_scrape_log.side_effect = RuntimeError("connection broken")
+
+        with patch.object(scraper, "collect_data", side_effect=SystemExit(1)), pytest.raises(SystemExit):
+            scraper._run_with_connection()
+
+    def test_an_interrupt_mid_save_keeps_what_was_saved(self, scraper):
+        scraper.dogs = [_dog("a"), _dog("b"), _dog("c")]
+        saves = iter([(1, "added"), (2, "updated"), KeyboardInterrupt()])
+
+        def save(_dog):
+            result = next(saves)
+            if isinstance(result, BaseException):
+                raise result
+            return result
+
+        with (
+            patch.object(scraper, "save_animal", side_effect=save),
+            patch("services.revalidation_client.invalidate_sync"),
+            pytest.raises(KeyboardInterrupt),
+        ):
+            scraper._run_with_connection()
+
+        (completion,) = _completions(scraper)
+        assert completion[1:5] == ("error", 3, 1, 1)
+
+    def test_a_reused_instance_never_rewrites_the_previous_runs_log(self, scraper):
+        scraper.dogs = [_dog("a")]
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "added")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            scraper._run_with_connection()
+        scraper._check_robots_permission.side_effect = KeyboardInterrupt
+
+        with pytest.raises(KeyboardInterrupt):
+            scraper._run_with_connection()
+
+        assert len(_completions(scraper)) == 1, "the interrupted second run had no log of its own to close"
+
+    def test_the_log_is_written_before_the_cache_purge(self, scraper):
+        scraper.dogs = [_dog("a")]
+        order = []
+        scraper.database_service.complete_scrape_log.side_effect = lambda *a: order.append("log") or True
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "added")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync", side_effect=lambda **k: order.append("purge")),
+        ):
+            scraper._run_with_connection()
+
+        assert order == ["log", "purge"]
+
+    def test_a_failing_purge_does_not_replace_an_interrupt(self, scraper):
+        scraper.dogs = [_dog("a")]
+        scraper.llm_handler.enrich_animals.side_effect = KeyboardInterrupt
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "added")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync", side_effect=RuntimeError("purge broke")),
+            pytest.raises(KeyboardInterrupt),
+        ):
+            scraper._run_with_connection()
+
+        assert _completions(scraper)[0][1] == "error"
+
+    def test_a_failure_after_saving_keeps_the_counts_and_the_partial_failure_note(self, scraper):
+        scraper.dogs = [_dog("a"), _dog("b")]
+        scraper.llm_handler.enrich_animals.side_effect = RuntimeError("enrichment broke")
+        ids = iter([1, 2])
+
+        with (
+            patch.object(scraper, "save_animal", side_effect=lambda d: (next(ids), "added")),
+            patch.object(scraper, "detect_partial_failure", return_value=True),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            assert scraper._run_with_connection() is False
+
+        (completion,) = _completions(scraper)
+        assert completion[1] == "error"
+        assert completion[2:5] == (2, 2, 0), "found, added and updated, not 0/0/0"
+        assert "enrichment broke" in completion[5]
+        assert "Potential partial failure" in completion[5]
+
+    def test_a_reused_instance_completes_each_run(self, scraper):
+        scraper.dogs = [_dog("a")]
+        scraper.session_manager.start_scrape_session.side_effect = [False, True]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "added")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            scraper._run_with_connection()
+            scraper._run_with_connection()
+
+        first, second = _completions(scraper)
+        assert first[1] == "warning"
+        assert (second[1], second[5]) == ("success", None), "no notes carried over from the first run"

@@ -205,6 +205,12 @@ class BaseScraper(ABC):
 
         # Track completion state to prevent duplicates
         self._completion_logged = False
+        # Things worth recording that don't end the run; they go into the final log
+        self._run_notes: list[str] = []
+        # This run's save counts, once the database phase has started
+        self._processing_stats: dict[str, Any] | None = None
+        # The arguments of a completion write that failed, tried once more at the end of the run
+        self._unwritten_completion: tuple | None = None
 
         # Initialize UnifiedStandardizer for breed standardization
         self.standardizer = UnifiedStandardizer()
@@ -309,68 +315,50 @@ class BaseScraper(ABC):
         animals_added=0,
         animals_updated=0,
         error_message=None,
-    ):
-        """Update the scrape log with completion information."""
-        # Prevent duplicate completions
-        if self._completion_logged:
-            self.logger.debug(f"Scrape completion already logged, skipping duplicate call (status: {status})")
-            return True
-
-        self._completion_logged = True
-        if status == "success":
-            self._invalidate_frontend_cache()
-
-        # Use injected DatabaseService if available
-        if self.database_service:
-            return self.database_service.complete_scrape_log(
-                self.scrape_log_id,
-                status,
-                animals_found,
-                animals_added,
-                animals_updated,
-                error_message,
-            )
-
-        self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
-        return True
-
-    def complete_scrape_log_with_metrics(
-        self,
-        status,
-        animals_found=0,
-        animals_added=0,
-        animals_updated=0,
-        error_message=None,
         detailed_metrics=None,
         duration_seconds=None,
         data_quality_score=None,
     ):
-        """Update the scrape log with completion information and detailed metrics."""
-        # Prevent duplicate completions
+        """The one way a run completes: the scrape-log write, its metrics and cache invalidation.
+
+        The first written completion wins; later calls are logged and ignored.
+        A write that fails leaves the run open, and the ``finally`` in
+        ``_run_with_connection`` writes the same completion once more, through
+        the pool, rather than leaving it "running". Notes gathered during the run go
+        into error_message and turn a success into a warning, since each one
+        means part of the run didn't happen (a session that failed to start
+        skips stale detection). The cache is purged after the write, so a slow
+        purge can't keep the log open: on success, and on any status when a dog
+        was added or updated, so a warning run's changed dogs don't keep stale
+        pages.
+        """
         if self._completion_logged:
-            self.logger.debug(f"Scrape completion already logged, skipping duplicate call (status: {status})")
+            self.logger.warning(f"Scrape completion already logged, ignoring a second completion (status: {status}, error: {error_message})")
             return True
 
-        self._completion_logged = True
-        if status == "success":
-            self._invalidate_frontend_cache()
+        if self._run_notes and status == "success":
+            status = "warning"
+        message = "; ".join(part for part in [error_message, *self._run_notes] if part) or None
 
-        # Use injected DatabaseService if available
-        if self.database_service:
-            return self.database_service.complete_scrape_log(
-                self.scrape_log_id,
-                status,
-                animals_found,
-                animals_added,
-                animals_updated,
-                error_message,
-                detailed_metrics,
-                duration_seconds,
-                data_quality_score,
-            )
+        write = (self.scrape_log_id, status, animals_found, animals_added, animals_updated, message, detailed_metrics, duration_seconds, data_quality_score)
+        try:
+            if self.database_service:
+                written = self.database_service.complete_scrape_log(*write)
+            else:
+                self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
+                written = True
+            self._completion_logged = bool(written)
+            self._unwritten_completion = None if written else write
+        finally:
+            # After the write, even one that raised: the changed dogs are saved either way
+            if status == "success" or self._changed_animal_ids:
+                try:
+                    self._invalidate_frontend_cache()
+                except Exception as e:
+                    # Never let the purge replace the exception a failed run is raising
+                    self.logger.error(f"Cache invalidation failed: {e}")
 
-        self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
-        return True
+        return written
 
     def _purge_if_reactivated(self, animal_id: int) -> None:
         """Invalidate a dog that has just come back from inactive.
@@ -612,6 +600,7 @@ class BaseScraper(ABC):
         """Template method orchestrating the scrape lifecycle with world-class logging."""
         # Wrap entire scrape in Sentry transaction for performance monitoring
         with scrape_transaction(self.get_organization_name(), self.organization_id) as transaction:
+            interrupted = None
             try:
                 # Initialize comprehensive progress tracker for entire scrape lifecycle
                 self.progress_tracker = None
@@ -717,6 +706,34 @@ class BaseScraper(ABC):
                 self.handle_scraper_failure(str(e))
                 return False
 
+            except BaseException as e:
+                interrupted = e
+                raise
+
+            finally:
+                # KeyboardInterrupt and SystemExit are not Exceptions and used to
+                # leave the log "running"; so did a completion write that failed,
+                # which is written once more here.
+                # The cron's SIGTERM handler only sets a flag, and its timeout kill
+                # is a SIGKILL that no finally survives: close_timed_out_scrape_log
+                # in management/railway_scraper_cron.py closes that row instead.
+                if self.scrape_log_id and not self._completion_logged:
+                    try:
+                        if self._unwritten_completion:
+                            # The same status, message and metrics, on a fresh pool connection;
+                            # the first attempt has already purged the cache
+                            self._completion_logged = bool(self.database_service.complete_scrape_log(*self._unwritten_completion))
+                        else:
+                            reason = type(interrupted).__name__ if interrupted else "no completion"
+                            self.complete_scrape_log(
+                                status="error",
+                                error_message=f"Run ended without completing ({reason})",
+                                **self._counts_so_far(),
+                            )
+                    except Exception as e:
+                        # Must not replace the KeyboardInterrupt or SystemExit in flight
+                        self.logger.error(f"Could not close scrape log {self.scrape_log_id}: {e}")
+
     # Class-level default, replaced with an instance on first use.
     _robots_checker: RobotsChecker | None = None
 
@@ -796,6 +813,17 @@ class BaseScraper(ABC):
         # Use centralized logger for setup phase
         central_logger = logging.getLogger("scraper")
         central_logger.info(f"🚀 Starting scrape for {self.get_organization_name()}")
+        # A reused instance (not a production path: the cron runs each org in a
+        # fresh process) must not close or re-profile the last run's things
+        self.scrape_log_id = None
+        self.current_scrape_session = None
+        self._completion_logged = False
+        self._unwritten_completion = None
+        self._run_notes = []
+        self._processing_stats = None
+        self.animals_found = 0
+        self.total_animals_skipped = 0
+        self.animals_for_llm_enrichment = []
 
         # Ask the source site for permission before fetching anything from it.
         if not self._check_robots_permission():
@@ -833,14 +861,8 @@ class BaseScraper(ABC):
             session_started = True
         if not session_started:
             central_logger.error("❌ Failed to start scrape session")
-            # Still continue with scraping, but log the issue
-            self.complete_scrape_log(
-                status="warning",
-                error_message="Failed to start scrape session, continuing without session tracking",
-                animals_found=0,
-                animals_added=0,
-                animals_updated=0,
-            )
+            # Continue without session tracking; the note goes into the final log.
+            self._run_notes.append("Failed to start scrape session, continued without session tracking")
 
         # Track scrape start time for metrics
         self.scrape_start_time = datetime.now()
@@ -911,6 +933,8 @@ class BaseScraper(ABC):
             "images_reused": 0,
             "images_failed": 0,
         }
+        # Visible from the first save, so a run that fails mid-loop reports what it saved
+        self._processing_stats = processing_stats
 
         # Use self.progress_tracker (created in _run_with_connection) for consistent stats
         # This ensures progress logs and completion summary use the same tracker
@@ -1083,14 +1107,9 @@ class BaseScraper(ABC):
             # Surface to Sentry — log alone doesn't page. Zero-dogs path is
             # handled earlier in run(), so this covers the drop-rate case.
             self._emit_partial_failure_alert(correct_animals_found)
-            # Complete scrape log with warning status
-            self.complete_scrape_log(
-                status="warning",
-                animals_found=correct_animals_found,
-                animals_added=processing_stats["animals_added"],
-                animals_updated=processing_stats["animals_updated"],
-                error_message="Potential partial failure - low animal count detected",
-            )
+            # A note, so the run completes as "warning" in _log_completion_metrics,
+            # or keeps saying so if it fails before then
+            self._run_notes.append("Potential partial failure - low animal count detected")
         else:
             # Fix for skip_existing_animals bug: Mark skipped animals as seen
             # before running stale data detection to prevent them from being
@@ -1144,18 +1163,16 @@ class BaseScraper(ABC):
         )
         self.metrics_collector.log_detailed_metrics(detailed_metrics)
 
-        # Update database with detailed metrics (only for successful scrapes)
-        if not processing_stats.get("potential_failure_detected", False):
-            self.complete_scrape_log_with_metrics(
-                status="success",
-                animals_found=correct_animals_found,
-                animals_added=processing_stats["animals_added"],
-                animals_updated=processing_stats["animals_updated"],
-                error_message=None,
-                detailed_metrics=detailed_metrics,
-                duration_seconds=duration,
-                data_quality_score=quality_score,
-            )
+        # A partial failure left a run note, which makes this a "warning"
+        self.complete_scrape_log(
+            status="success",
+            animals_found=correct_animals_found,
+            animals_added=processing_stats["animals_added"],
+            animals_updated=processing_stats["animals_updated"],
+            detailed_metrics=detailed_metrics,
+            duration_seconds=duration,
+            data_quality_score=quality_score,
+        )
 
         # World-class completion summary via ProgressTracker
         if hasattr(self, "progress_tracker") and self.progress_tracker:
@@ -1339,7 +1356,8 @@ class BaseScraper(ABC):
         in run(), so we skip when animals_found is 0. Missing baseline also
         skips — we can't call it a drop without one. Sentry transport errors
         are swallowed: observability plumbing must never abort a scrape
-        mid-flight or `complete_scrape_log` below won't run.
+        mid-flight, or stale detection and the run's warning completion with
+        its metrics never happen.
         """
         if animals_found <= 0:
             return
@@ -1374,6 +1392,19 @@ class BaseScraper(ABC):
         """
         return self.detect_partial_failure(animals_found, threshold_percentage, absolute_minimum)
 
+    def _counts_so_far(self) -> dict[str, int]:
+        """Found, added and updated counts for a run that ends early.
+
+        Dogs saved before the failure are in the database and get purged, so the
+        error row must say so rather than 0/0/0.
+        """
+        stats = self._processing_stats or {}
+        return {
+            "animals_found": self.animals_found,
+            "animals_added": stats.get("animals_added", 0),
+            "animals_updated": stats.get("animals_updated", 0),
+        }
+
     def handle_scraper_failure(self, error_message):
         """Handle scraper failure without affecting animal availability.
 
@@ -1389,15 +1420,9 @@ class BaseScraper(ABC):
             # Log the failure but do NOT update stale data detection
             # This prevents marking animals as stale due to scraper issues
 
-            # Complete scrape log with failure status
+            # Complete scrape log with failure status, keeping what the run already saved
             if self.scrape_log_id:
-                self.complete_scrape_log(
-                    status="error",
-                    error_message=error_message,
-                    animals_found=0,
-                    animals_added=0,
-                    animals_updated=0,
-                )
+                self.complete_scrape_log(status="error", error_message=error_message, **self._counts_so_far())
 
             # Reset scrape session to prevent stale data updates
             self.current_scrape_session = None

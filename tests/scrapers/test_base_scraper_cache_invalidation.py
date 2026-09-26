@@ -73,12 +73,20 @@ def _tags_from(mock_invalidate_sync) -> list[str]:
 
 @pytest.mark.unit
 class TestCompleteScrapeLogCacheInvalidation:
-    """``complete_scrape_log`` fires cache invalidation only on success."""
+    """``complete_scrape_log`` purges on success, and on any status when dogs changed (#557)."""
 
     def test_fires_on_success(self, scraper, mock_invalidate_sync):
         scraper.complete_scrape_log(status="success", animals_found=10)
         mock_invalidate_sync.assert_called_once()
         assert AGGREGATE_TAGS.issubset(set(_tags_from(mock_invalidate_sync)))
+
+    def test_fires_even_when_the_log_write_raises(self, scraper, mock_invalidate_sync):
+        scraper.database_service.complete_scrape_log.side_effect = RuntimeError("write failed")
+
+        with pytest.raises(RuntimeError):
+            scraper.complete_scrape_log(status="success", animals_found=10)
+
+        mock_invalidate_sync.assert_called_once()
 
     def test_skips_on_warning(self, scraper, mock_invalidate_sync):
         scraper.complete_scrape_log(status="warning", animals_found=0)
@@ -95,19 +103,23 @@ class TestCompleteScrapeLogCacheInvalidation:
 
 
 @pytest.mark.unit
-class TestCompleteScrapeLogWithMetricsCacheInvalidation:
-    """Same gating applies to the metrics variant."""
+class TestNonSuccessRunsWithChangedDogs:
+    """A warning or error run that added or updated dogs still purges them (#557)."""
 
-    def test_fires_on_success(self, scraper, mock_invalidate_sync):
-        scraper.complete_scrape_log_with_metrics(status="success", animals_found=5)
-        mock_invalidate_sync.assert_called_once()
+    def test_a_warning_run_with_changed_dogs_purges_their_pages(self, scraper, mock_invalidate_sync):
+        scraper.database_service.get_slugs_for_animals.return_value = ["rex-labrador-1", "bella-collie-2"]
+        scraper.mark_animal_changed(1)
+        scraper.mark_animal_changed(2)
 
-    def test_skips_on_warning(self, scraper, mock_invalidate_sync):
-        scraper.complete_scrape_log_with_metrics(status="warning")
-        mock_invalidate_sync.assert_not_called()
+        scraper.complete_scrape_log(status="warning", animals_added=2, detailed_metrics={"animals_added": 2}, duration_seconds=12.5)
 
-    def test_skips_on_error(self, scraper, mock_invalidate_sync):
-        scraper.complete_scrape_log_with_metrics(status="error")
+        tags = mock_invalidate_sync.call_args.kwargs["tags"]
+        assert "rex-labrador-1" in tags and "bella-collie-2" in tags
+        args = scraper.database_service.complete_scrape_log.call_args.args
+        assert args[6] == {"animals_added": 2} and args[7] == 12.5, "metrics and duration are written for a warning run"
+
+    def test_an_error_run_with_no_changed_dogs_purges_nothing(self, scraper, mock_invalidate_sync):
+        scraper.complete_scrape_log(status="error")
         mock_invalidate_sync.assert_not_called()
 
 
