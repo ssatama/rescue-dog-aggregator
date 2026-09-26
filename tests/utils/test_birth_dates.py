@@ -46,6 +46,14 @@ class TestParseBirthDate:
             ("Geburtstag: März 2020", (date(2020, 3, 1), date(2020, 3, 31))),
             # This month: the range stops at today
             ("09.2026", (date(2026, 9, 1), TODAY)),
+            # The date written first is the birth date
+            ("DOB 2019, arrived at the shelter March 2023", (date(2019, 1, 1), date(2019, 12, 31))),
+            # Only real month names: "maybe" is not May
+            ("DOB: maybe 2022", (date(2022, 1, 1), date(2022, 12, 31))),
+            ("DOB: Sept 2023", (date(2023, 9, 1), date(2023, 9, 30))),
+            # Two months across New Year
+            ("DOB Dec/Jan 2024", (date(2023, 12, 1), date(2024, 1, 31))),
+            ("Dezember/Januar 2025", (date(2024, 12, 1), date(2025, 1, 31))),
         ],
     )
     def test_formats_the_rescues_publish(self, text, expected):
@@ -137,6 +145,12 @@ class TestResolveAge:
         stored = {"age_text": "3 months", "age_min_months": "3", "age_max_months": "5", "created_at": "2025-07-05T15:42:00"}
         age = resolve_age(date_of_birth=None, age_text="3 months", min_months=3, max_months=5, today=TODAY, stored=stored)
         assert age.age_observed_at == date(2025, 7, 5)
+
+    def test_a_parser_fix_still_lands_on_an_unchanged_age_text(self):
+        """The anchor is kept, the months are the new parse: "10 weeks" once stored as 120 months."""
+        stored = {"age_text": "10 weeks", "birth_date_min": date(2015, 7, 5), "birth_date_max": date(2015, 7, 5), "age_observed_at": date(2025, 7, 5)}
+        age = resolve_age(date_of_birth=None, age_text="10 weeks", min_months=2, max_months=4, today=TODAY, stored=stored)
+        assert (age.age_observed_at, age.age_min_months, age.age_max_months) == (date(2025, 7, 5), 16, 18)
 
     def test_a_changed_age_text_is_anchored_again(self):
         stored = {"age_text": "3 months", "birth_date_min": date(2025, 4, 26), "birth_date_max": date(2025, 6, 26), "age_observed_at": date(2025, 9, 26)}

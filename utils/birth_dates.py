@@ -18,32 +18,36 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Any
 
+from utils.standardization import parse_age_text
+
 # A birth date further back than this is a typo, not an old dog
 MAX_AGE_YEARS = 25
 
+# Spelled out: calendar.month_name follows the locale
+_ENGLISH_MONTHS = "january february march april may june july august september october november december".split()
 _MONTHS = {
-    "jan": 1,
-    "feb": 2,
-    "mar": 3,
+    **{name: number for number, name in enumerate(_ENGLISH_MONTHS, 1)},
+    **{name[:3]: number for number, name in enumerate(_ENGLISH_MONTHS, 1)},
+    "sept": 9,
+    # German, for Tierschutzverein and Daisy
+    "januar": 1,
+    "februar": 2,
+    "märz": 3,
     "mär": 3,
-    "apr": 4,
-    "may": 5,
     "mai": 5,
-    "jun": 6,
-    "jul": 7,
-    "aug": 8,
-    "sep": 9,
-    "oct": 10,
+    "juni": 6,
+    "juli": 7,
+    "oktober": 10,
     "okt": 10,
-    "nov": 11,
-    "dec": 12,
+    "dezember": 12,
     "dez": 12,
 }
-_MONTH_WORD = r"\b([a-zä]{3,9})"
+_MONTH_WORD = r"\b([a-zä]+)"
 
+# In order of precedence when two start at the same place
 _DAY_MONTH_YEAR = re.compile(r"(?<!\d)(\d{1,2})[./](\d{1,2})[./](\d{4})(?!\d)")
-_MONTH_YEAR = re.compile(r"(?<![\d./])(\d{1,2})[./-](\d{4})(?!\d)")
 _MONTH_TO_MONTH_YEAR = re.compile(_MONTH_WORD + r"\s*/\s*" + _MONTH_WORD + r"\s+(\d{4})(?!\d)")
+_MONTH_YEAR = re.compile(r"(?<![\d./])(\d{1,2})[./-](\d{4})(?!\d)")
 _MONTH_NAME_YEAR = re.compile(_MONTH_WORD + r"\.?\s+(\d{4})(?!\d)")
 _YEAR = re.compile(r"(?<![\d./])(\d{4})(?![\d./])")
 
@@ -55,7 +59,7 @@ def today_utc() -> date:
 
 
 def _month_number(word: str) -> int | None:
-    return _MONTHS.get(word[:3].lower())
+    return _MONTHS.get(word.lower())
 
 
 def _month_end(year: int, month: int) -> date:
@@ -83,35 +87,42 @@ def parse_birth_date(text: str | None, today: date | None = None) -> BirthRange 
     today = today or today_utc()
     text = text.lower()
 
+    # Every date-like match; the one written first is the birth date
+    # ("DOB 2019, arrived March 2023" is 2019).
+    candidates = []
+    for rank, pattern in enumerate((_DAY_MONTH_YEAR, _MONTH_TO_MONTH_YEAR, _MONTH_YEAR, _MONTH_NAME_YEAR, _YEAR)):
+        for match in pattern.finditer(text):
+            if pattern in (_MONTH_TO_MONTH_YEAR, _MONTH_NAME_YEAR) and not all(_month_number(word) for word in match.groups()[:-1]):
+                continue
+            candidates.append((match.start(), rank, pattern, match))
+    if not candidates:
+        return None
+    _, _, pattern, match = min(candidates, key=lambda candidate: candidate[:2])
+
     try:
-        if match := _DAY_MONTH_YEAR.search(text):
+        if pattern is _DAY_MONTH_YEAR:
             day, month, year = (int(group) for group in match.groups())
-            born = date(year, month, day)
-            return _checked(born, born, today)
-
-        if match := _MONTH_YEAR.search(text):
-            month, year = int(match.group(1)), int(match.group(2))
-            return _checked(date(year, month, 1), _month_end(year, month), today)
-
-        if (match := _MONTH_TO_MONTH_YEAR.search(text)) and _month_number(match.group(1)) and _month_number(match.group(2)):
+            return _checked(date(year, month, day), date(year, month, day), today)
+        if pattern is _MONTH_TO_MONTH_YEAR:
             first, last, year = _month_number(match.group(1)), _month_number(match.group(2)), int(match.group(3))
             if first <= last:
                 return _checked(date(year, first, 1), _month_end(year, last), today)
-            return None
-
-        for match in _MONTH_NAME_YEAR.finditer(text):
-            month = _month_number(match.group(1))
-            if month:
-                year = int(match.group(2))
-                return _checked(date(year, month, 1), _month_end(year, month), today)
-
-        if match := _YEAR.search(text):
-            year = int(match.group(1))
-            return _checked(date(year, 1, 1), date(year, 12, 31), today)
+            # "Dec/Jan 2024" wraps the year: December 2023 or January 2024. A long
+            # wrap ("June/April") is more likely a typo than an 11-month guess.
+            if 12 - first + last > 2:
+                return None
+            return _checked(date(year - 1, first, 1), _month_end(year, last), today)
+        if pattern is _MONTH_YEAR:
+            month, year = int(match.group(1)), int(match.group(2))
+            return _checked(date(year, month, 1), _month_end(year, month), today)
+        if pattern is _MONTH_NAME_YEAR:
+            month, year = _month_number(match.group(1)), int(match.group(2))
+            return _checked(date(year, month, 1), _month_end(year, month), today)
+        year = int(match.group(1))
+        return _checked(date(year, 1, 1), date(year, 12, 31), today)
     except ValueError:
         # 31/02/2024, month 13
         return None
-    return None
 
 
 def months_between(earlier: date, later: date) -> int:
@@ -154,7 +165,7 @@ class Age:
     age_max_months: int | None
 
 
-def _as_date(value: Any) -> date | None:
+def as_date(value: Any) -> date | None:
     """A DATE column as read back: a date, a datetime, or ISO text from the admin query API."""
     if value is None or value == "":
         return None
@@ -165,7 +176,7 @@ def _as_date(value: Any) -> date | None:
     return date.fromisoformat(str(value)[:10])
 
 
-def _as_int(value: Any) -> int | None:
+def as_int(value: Any) -> int | None:
     return None if value is None or value == "" else int(value)
 
 
@@ -182,39 +193,49 @@ def resolve_age(
 
     date_of_birth: the rescue's date-of-birth text, when it publishes one.
     min_months, max_months: the stated age parsed from age_text.
-    stored: the saved row (age_text, age_min_months, age_max_months,
-        birth_date_min, birth_date_max, age_observed_at, created_at) when the
-        dog is already in the database.
+    stored: the saved row (age_text, birth_date_min, birth_date_max,
+        age_observed_at, created_at) when the dog is already in the database.
 
-    A date of birth wins. Otherwise a new or changed age is anchored to today.
-    An unchanged age_text keeps its anchor: a site that still says "3 months"
-    a year later hasn't re-aged the dog. Rows stored before #561 have no
-    anchor, and their age was read when the dog was first seen (every org
-    skips existing dogs), so created_at stands in.
+    A date of birth wins. Otherwise a new or changed age is read as of today.
+    An unchanged age_text keeps the day it was first read: a site that still
+    says "3 months" a year later hasn't re-aged the dog. The months are parsed
+    afresh either way, so a parser fix still lands. Rows stored before #561
+    have no age_observed_at, and their age was read when the dog was first
+    seen (every org skips existing dogs), so created_at stands in.
     """
     stored = stored or {}
-    stored_range = (_as_date(stored.get("birth_date_min")), _as_date(stored.get("birth_date_max")))
-    stored_observed = _as_date(stored.get("age_observed_at"))
+    stored_range = (as_date(stored.get("birth_date_min")), as_date(stored.get("birth_date_max")))
+    stored_observed = as_date(stored.get("age_observed_at"))
 
     born = parse_birth_date(date_of_birth, today)
     if born:
         observed = stored_observed if born == stored_range and stored_observed else today
         return Age(born[0], born[1], observed, *ages_at(born[0], born[1], today))
 
-    if stored and stored.get("age_text") == age_text:
-        if any(stored_range) and stored_observed:
-            return Age(stored_range[0], stored_range[1], stored_observed, *ages_at(*stored_range, today))
-        first_seen = _as_date(stored.get("created_at"))
-        stored_min, stored_max = _as_int(stored.get("age_min_months")), _as_int(stored.get("age_max_months"))
-        if first_seen and (stored_min is not None or stored_max is not None):
-            earliest, latest = birth_range_from_age(stored_min, stored_max, first_seen)
-            return Age(earliest, latest, first_seen, *ages_at(earliest, latest, today))
-
     if min_months is None and max_months is None:
         return Age(None, None, None, None, None)
 
-    earliest, latest = birth_range_from_age(min_months, max_months, today)
-    return Age(earliest, latest, today, *ages_at(earliest, latest, today))
+    observed = today
+    if stored and stored.get("age_text") == age_text:
+        observed = stored_observed or as_date(stored.get("created_at")) or today
+    earliest, latest = birth_range_from_age(min_months, max_months, observed)
+    return Age(earliest, latest, observed, *ages_at(earliest, latest, today))
+
+
+def age_columns(animal_data: dict[str, Any], today: date | None = None, stored: dict[str, Any] | None = None) -> Age:
+    """The age a save writes for a scraped dog: its months (precalculated or parsed from age_text), anchored."""
+    if "age_min_months" in animal_data and "age_max_months" in animal_data:
+        min_months, max_months = animal_data.get("age_min_months"), animal_data.get("age_max_months")
+    else:
+        _, min_months, max_months = parse_age_text(animal_data.get("age_text", ""))
+    return resolve_age(
+        date_of_birth=animal_data.get("date_of_birth"),
+        age_text=animal_data.get("age_text"),
+        min_months=as_int(min_months),
+        max_months=as_int(max_months),
+        today=today or today_utc(),
+        stored=stored,
+    )
 
 
 TODAY_SQL = "(now() AT TIME ZONE 'UTC')::date"

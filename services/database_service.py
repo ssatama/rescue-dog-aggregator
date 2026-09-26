@@ -28,9 +28,9 @@ from services.animal_data_preparation import (
     sanitize_properties,
     update_to_final_slug,
 )
-from utils.birth_dates import resolve_age, today_utc
+from utils.birth_dates import age_columns
 from utils.slug_generator import fetch_slugs_by_ids
-from utils.standardization import parse_age_text, standardize_breed, standardize_size_value
+from utils.standardization import standardize_breed, standardize_size_value
 
 
 def _as_float(value: object) -> float | None:
@@ -60,20 +60,7 @@ def update_columns(animal_data: dict[str, Any], stored: dict[str, Any] | None = 
     # Apply standardization for new values - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
     new_standardized_breed, new_breed_group, size_estimate = standardize_breed(animal_data.get("breed") or "")
 
-    # Use pre-calculated age values if available
-    if "age_min_months" in animal_data and "age_max_months" in animal_data:
-        age_min_months = animal_data.get("age_min_months")
-        age_max_months = animal_data.get("age_max_months")
-    else:
-        _, age_min_months, age_max_months = parse_age_text(animal_data.get("age_text", ""))
-    age = resolve_age(
-        date_of_birth=animal_data.get("date_of_birth"),
-        age_text=animal_data.get("age_text"),
-        min_months=age_min_months,
-        max_months=age_max_months,
-        today=today or today_utc(),
-        stored=stored,
-    )
+    age = age_columns(animal_data, today, stored)
 
     return {
         "name": animal_data.get("name"),

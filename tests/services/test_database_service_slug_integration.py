@@ -306,7 +306,7 @@ class TestDatabaseServiceSlugIntegration:
                 "Large",
             )
 
-            with patch("services.database_service.parse_age_text") as mock_parse_age:
+            with patch("utils.birth_dates.parse_age_text") as mock_parse_age:
                 # parse_age_text returns (age_category, min_months, max_months)
                 mock_parse_age.return_value = ("Young", 12, 24)
 

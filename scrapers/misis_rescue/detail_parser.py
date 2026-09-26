@@ -24,15 +24,20 @@ from .normalizer import extract_breed_from_text_legacy as extract_breed_from_tex
 from .normalizer import extract_sex_from_text_legacy as extract_sex_from_text
 from .normalizer import extract_weight_kg_legacy as extract_weight_kg
 
-DOB_BULLET = re.compile(r"\b(dob|born|birthday|date of birth)\b", re.IGNORECASE)
+# "born" alone is left out: "her puppies were born in March" is not her birth date
+DOB_LABEL = re.compile(r"\b(dob|date of birth|birthday)\b", re.IGNORECASE)
 
 
 def dob_bullet(bullets: list[str]) -> str | None:
-    """The bullet that gives the date of birth, as written ("rough estimate DOB -April /May 2024").
+    """The date of birth as written, from its label on ("DOB -April /May 2024"), or None.
 
-    "natural-born explorer" mentions birth but gives no date, so it is skipped.
+    Only the text after the label is kept, so a date before it can't be taken for the birth date.
     """
-    return next((bullet for bullet in bullets if DOB_BULLET.search(bullet) and parse_birth_date(bullet)), None)
+    for bullet in bullets:
+        label = DOB_LABEL.search(bullet)
+        if label and parse_birth_date(bullet[label.start() :]):
+            return bullet[label.start() :]
+    return None
 
 
 class MisisRescueDetailParser:

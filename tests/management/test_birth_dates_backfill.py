@@ -69,4 +69,4 @@ class TestDeriveBirthDates:
         sql = STEPS["derive-birth-dates"].fetch_sql
 
         assert "WHERE a.active" in sql
-        assert "to_jsonb(a)->>'birth_date_min'" in sql
+        assert "row_json->>'birth_date_min'" in sql

@@ -11,9 +11,9 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from utils.birth_dates import resolve_age, today_utc
+from utils.birth_dates import age_columns
 from utils.slug_generator import generate_unique_animal_slug
-from utils.standardization import parse_age_text, standardize_breed, standardize_size_value
+from utils.standardization import standardize_breed, standardize_size_value
 
 logger = logging.getLogger(__name__)
 
@@ -56,18 +56,7 @@ def prepare_animal_data(animal_data: dict[str, Any], today: date | None = None) 
 
     standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed") or "")
 
-    if "age_min_months" in animal_data and "age_max_months" in animal_data:
-        age_months_min = animal_data.get("age_min_months")
-        age_months_max = animal_data.get("age_max_months")
-    else:
-        _, age_months_min, age_months_max = parse_age_text(animal_data.get("age_text", ""))
-    age = resolve_age(
-        date_of_birth=animal_data.get("date_of_birth"),
-        age_text=animal_data.get("age_text"),
-        min_months=age_months_min,
-        max_months=age_months_max,
-        today=today or today_utc(),
-    )
+    age = age_columns(animal_data, today)
 
     final_size = animal_data.get("size") or animal_data.get("standardized_size")
     final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))

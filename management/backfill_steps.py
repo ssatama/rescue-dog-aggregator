@@ -19,7 +19,7 @@ from typing import Any
 
 from management.age_backfill import plan_clears, rows_from_records
 from scrapers.misis_rescue.detail_parser import dob_bullet
-from utils.birth_dates import _as_date, _as_int, resolve_age, today_utc
+from utils.birth_dates import ages_at, as_date, as_int, resolve_age, today_utc
 
 
 @dataclass(frozen=True)
@@ -94,17 +94,17 @@ def _plan_birth_dates(records: list[dict[str, Any]], today: date | None = None) 
     today = today or today_utc()
     changes = []
     for record in records:
-        age = resolve_age(
-            date_of_birth=_stored_dob(record),
-            age_text=record["age_text"],
-            min_months=_as_int(record["age_min_months"]),
-            max_months=_as_int(record["age_max_months"]),
-            today=today,
-            stored=record,
-        )
+        # The stated age as it was read: stored months are refreshed, so once a
+        # row has a range they are no longer what the rescue said.
+        observed = as_date(record["age_observed_at"])
+        if observed and (record["birth_date_min"] or record["birth_date_max"]):
+            stated = ages_at(as_date(record["birth_date_min"]), as_date(record["birth_date_max"]), observed)
+        else:
+            stated = (as_int(record["age_min_months"]), as_int(record["age_max_months"]))
+        age = resolve_age(date_of_birth=_stored_dob(record), age_text=record["age_text"], min_months=stated[0], max_months=stated[1], today=today, stored=record)
         for column in AGE_COLUMNS:
             was, now = record[column], getattr(age, column)
-            same = _as_int(was) == now if column.startswith("age_m") else _as_date(was) == now
+            same = as_int(was) == now if column.startswith("age_m") else as_date(was) == now
             if not same:
                 changes.append(Change(record["id"], record["organization"], column, was, now))
     return changes
@@ -141,16 +141,17 @@ STEPS: dict[str, Step] = {
             name="derive-birth-dates",
             summary="active dogs get a birth-date range and ages that keep up with time (#561)",
             # to_jsonb reads the #561 columns as NULL on a database without them,
-            # so the plan runs before the migration is applied.
+            # so the plan runs before the migration is applied. Once per row.
             fetch_sql=f"""
                 SELECT a.id, o.config_id AS organization, a.age_text, a.age_min_months, a.age_max_months, a.created_at,
-                       to_jsonb(a)->>'birth_date_min' AS birth_date_min,
-                       to_jsonb(a)->>'birth_date_max' AS birth_date_max,
-                       to_jsonb(a)->>'age_observed_at' AS age_observed_at,
+                       row_json->>'birth_date_min' AS birth_date_min,
+                       row_json->>'birth_date_max' AS birth_date_max,
+                       row_json->>'age_observed_at' AS age_observed_at,
                        CASE o.config_id {" ".join(f"WHEN '{org}' THEN {source}" for org, source in DOB_SOURCES.items())} END AS date_of_birth,
                        CASE WHEN o.config_id = 'misisrescue' THEN a.properties->'raw_bullet_points' END AS bullets
                 FROM animals a
                 JOIN organizations o ON o.id = a.organization_id
+                CROSS JOIN LATERAL to_jsonb(a) AS row_json
                 WHERE a.active
             """,
             plan=_plan_birth_dates,

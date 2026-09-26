@@ -77,9 +77,10 @@ def stored_rows_sql(org: str, external_ids: list[str]) -> str:
     # The #561 columns through to_jsonb, which reads them as NULL before the migration
     return f"""
         SELECT a.id, a.external_id, a.status, a.active, a.original_image_url, a.properties, a.created_at, {columns},
-               to_jsonb(a)->>'birth_date_min' AS birth_date_min, to_jsonb(a)->>'birth_date_max' AS birth_date_max,
-               to_jsonb(a)->>'age_observed_at' AS age_observed_at
+               row_json->>'birth_date_min' AS birth_date_min, row_json->>'birth_date_max' AS birth_date_max,
+               row_json->>'age_observed_at' AS age_observed_at
         FROM animals a JOIN organizations o ON o.id = a.organization_id
+        CROSS JOIN LATERAL to_jsonb(a) AS row_json
         WHERE o.config_id = {_literal(org)}
           AND ((a.status = 'available' AND a.active) {wanted})
     """
