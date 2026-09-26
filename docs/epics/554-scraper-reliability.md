@@ -196,17 +196,20 @@ when a post has no story), the facts are `raw_bullet_points`, and
   `calculate_age_years` are deleted.
 - `navigate_with_retry` doesn't expose the HTTP status, so the browser path
   relies on the missing post body; one fetch helper is #567.
-- A stated age ("3.5 months old") anchors at the post's last edit
-  (`article:modified_time`), passed as `age_stated_at`: the text was true
-  then, often years before we read it. Without it, a re-scrape whose parser
+- A stated age ("3.5 months old") anchors at the post's publication
+  (`article:published_time`), passed as `age_stated_at`: the text was
+  written then, often years before we read it. Not the last edit: a new
+  photo must not make the dog younger. A dog whose age the rescue updated
+  in an edit therefore reads a little old. Without it, a re-scrape whose parser
   renders the same text differently ("5 months" → "4 months") would count
   as a changed age and re-anchor at today.
 - **Rate:** `_process_single_batch` fetches a batch concurrently
   (`batch_size` threads) and waits `rate_limit_delay` only between batches,
   so the configured 2.5 s isn't a per-request rate. Two back-to-back dry
   runs on 2026-09-26 got 196 HTTP 429s. For #567 (one rate-limit meaning).
-  A 429 falls back to the browser, which adds load; don't run MISIs dry
-  runs back to back.
+  A 429 now backs off (4 x `rate_limit_delay`) and retries once, then skips
+  the dog; it never falls back to the browser. Don't run MISIs dry runs back
+  to back.
 
 ## Gotchas
 

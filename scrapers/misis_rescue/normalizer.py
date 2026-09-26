@@ -11,6 +11,7 @@ Age, breed, sex, and weight extraction logic has been moved to:
 import re
 
 # Import shared extraction utilities
+from utils.breed_registry import resolve_breed
 from utils.shared_extraction_patterns import extract_weight_from_text
 
 
@@ -246,7 +247,8 @@ def extract_breed(bullets: list[str] | None) -> str | None:
     # A short fact naming the breed and a mix: "Cane Corso cross", "Possibly Staff cross"
     for bullet in bullets:
         named = NAMED_MIX.match(bullet.strip())
-        if named and not NOT_A_BREED.search(named.group(1)):
+        # Only a breed the registry knows: "Probably a mix" and "Beautiful mix" name none
+        if named and not NOT_A_BREED.search(named.group(1)) and resolve_breed(named.group(1)).group != "Unknown":
             name = named.group(1).strip().title()
             return f"{'Labrador' if name == 'Lab' else name} Mix"
 

@@ -203,6 +203,8 @@ class TestFetch(ScraperTestBase):
         (["Looks like a lab mix"], "Labrador Mix"),
         (["Medium size mix"], "Mixed Breed"),
         (["Unknown mix"], "Mixed Breed"),
+        (["Probably a mix"], "Mixed Breed"),
+        (["Beautiful mix"], "Mixed Breed"),
         (["mixed breed, gun dog"], "Mixed Breed"),
         (["weights around 10kg, should be around 20 kg at full size", "mixed breed"], "Mixed Breed"),
     ],
@@ -224,7 +226,11 @@ def test_a_named_cross_is_the_breed(facts, breed):
         (["Age: 1,5-2 years", "Sex: male"], "1-2 years"),
         (["2.5 y old", "20-22kg"], "2.5 years"),
         (["nearly 4 months old", "Mixed breed"], "4 months"),
-        (["5.5 months old"], "6 months"),
+        (["5.5 months old"], "5 months"),
+        (["Spayed 2 months ago"], None),
+        (["Estimated to be around 3 years old"], "3 years"),
+        (["Arrived at 6 months, now 2 years old"], "2 years"),
+        (["2yo, mixed breed"], "2 years"),
         (["1 year old"], "1 year"),
         (["Mixed breed", "20kg"], None),
         # Durations and other people's ages are not the dog's
@@ -251,9 +257,24 @@ def test_a_dob_fact_running_into_the_next_is_cut():
 
 
 @pytest.mark.unit
-def test_the_age_is_dated_by_the_posts_last_edit():
-    """Tea's "2 years old" was written on 2023-04-16, not on the day we read it."""
-    assert _parse("tea_things_you_have_to_know")["age_stated_at"] == "2023-04-16"
+def test_the_age_is_dated_by_the_posts_publication():
+    """Tea's "2 years old" was written when the post went up (2021-10-04); her 2023 edit must not make her younger."""
+    assert _parse("tea_things_you_have_to_know")["age_stated_at"] == "2021-10-04"
+
+
+@pytest.mark.unit
+def test_a_malformed_publication_date_is_left_out():
+    html = _html("yuk_2026_story").replace("2026-07-11T19:00:03.000Z", "Sat, 11 Jul 2026", 1)
+
+    assert "age_stated_at" not in MisisRescueDetailParser().parse_detail_page(BeautifulSoup(html, "html.parser"))
+
+
+@pytest.mark.unit
+def test_a_birthday_anniversary_is_not_a_date_of_birth():
+    from scrapers.misis_rescue.detail_parser import dob_bullet
+
+    assert dob_bullet(["Celebrated her 3rd birthday in March 2025"]) is None
+    assert dob_bullet(["Birthday: March 2023"]) == "Birthday: March 2023"
 
 
 @pytest.mark.unit
@@ -268,7 +289,7 @@ def test_weights_as_the_rescue_writes_them(fact, kg):
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("heading", ["How do you adopt Rex?", "How to adopt Rex?", "Want to adopt Rex?", "Adoption process"])
+@pytest.mark.parametrize("heading", ["How do you adopt Rex?", "How to adopt Rex?", "Want to adopt Rex?", "Adoption process", "💕How do you adopt Rex?"])
 def test_the_adoption_text_is_cut_whatever_its_heading(heading):
     blocks = [("h2", "Things you should know about Rex"), ("li", "2 years old"), ("h2", heading), ("p", "Fill in the form.")]
 

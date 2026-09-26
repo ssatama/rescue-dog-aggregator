@@ -625,7 +625,11 @@ class MisisRescueScraper(BaseScraper):
                 # Rate limited: back off once, and never answer with a heavier browser load
                 self.logger.warning(f"HTTP 429 for {url}; backing off before one retry")
                 time.sleep(self.rate_limit_delay * 4)
-                response = requests.get(url, headers=headers, timeout=10)
+                try:
+                    response = requests.get(url, headers=headers, timeout=10)
+                except requests.RequestException as e:
+                    self.logger.error(f"Retry after HTTP 429 failed for {url}: {e}; skipping this dog")
+                    return None
                 if response.status_code == 429:
                     self.logger.error(f"HTTP 429 again for {url}; skipping this dog")
                     return None

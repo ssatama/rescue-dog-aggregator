@@ -43,17 +43,19 @@ FACT_SEPARATOR = re.compile(r"\s*[✔❣💕💙💛💜🧡❤️🩺🏡]+\ufe
 # "2.5 y old", "11 months old", "Age: 1,5-2 years", "Approx.2 years old"
 NOT_THE_AGE = re.compile(r"\b(?:over|under|than|for|since|after|when|at|in)\b", re.IGNORECASE)
 AGE_WORDS = re.compile(r"\bold\b|^\W*age\b|\by/?o\b", re.IGNORECASE)
-STATED_AGE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(y|yrs?|years?|months?)\b", re.IGNORECASE)
+STATED_AGE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(y/o|yo|y|yrs?|years?|months?)\b", re.IGNORECASE)
 
 
-def _is_the_dogs_age(fact: str, match: re.Match) -> bool:
+def _is_the_dogs_age(fact: str, match: re.Match, since: int) -> bool:
     """ "2 years old", "Age: 1,5-2 years", "Approx.2 years old", "3 months" read like the dog's age.
 
     "in the shelter for 3 years" and "suits children over 12 years old" don't:
     something comes before the number that makes it about something else.
+    Only the text since the previous number counts: "Arrived at 6 months, now
+    2 years old" is 2 years.
     """
-    before = fact[: match.start()]
-    if NOT_THE_AGE.search(before) or len(before.split()) > 3:
+    before, after = fact[since : match.start()], fact[match.end() :]
+    if NOT_THE_AGE.search(before) or len(before.split()) > 5 or re.match(r"\s*ago\b", after, re.IGNORECASE):
         return False
     return bool(AGE_WORDS.search(fact)) or len(fact) <= 25
 
@@ -65,8 +67,9 @@ def stated_age(facts: list[str]) -> str | None:
     ("fine with kids over 3 years old"), and the story's ages are from the past.
     """
     for fact in facts:
-        match = STATED_AGE.search(fact)
-        if not match or not _is_the_dogs_age(fact, match):
+        matches = list(STATED_AGE.finditer(fact))
+        match = next((m for i, m in enumerate(matches) if _is_the_dogs_age(fact, m, matches[i - 1].end() if i else 0)), None)
+        if not match:
             continue
         low = float(match.group(1).replace(",", "."))
         high = float(match.group(2).replace(",", ".")) if match.group(2) else None
@@ -75,20 +78,24 @@ def stated_age(facts: list[str]) -> str | None:
             # parse_age_text reads ranges of whole numbers
             return f"{math.floor(low)}-{math.ceil(high)} {unit}"
         if unit == "months":
-            # parse_age_text reads whole months: "5.5 months" would be 5
-            return f"{math.floor(low + 0.5)} months"
+            # parse_age_text reads whole months, as the lower bound of a range
+            # that must contain the stated age: "5.5 months" is 5
+            return f"{math.floor(low)} months"
         return "1 year" if low == 1 else f"{low:g} years"
     return None
 
 
 # "born" alone is left out: "her puppies were born in March" is not her birth date
-DOB_LABEL = re.compile(r"\b(dob|date of birth|birthday)\b", re.IGNORECASE)
+# "birthday" only as a label: "celebrated her 3rd birthday in March" is not one
+DOB_LABEL = re.compile(r"\bdob\b|\bdate of birth\b|\bbirthday\s*[:\-]", re.IGNORECASE)
 
 
 def dob_bullet(bullets: list[str], today: date | None = None) -> str | None:
     """The date of birth as written, from its label on ("DOB -April /May 2024"), or None.
 
-    Only the text after the label is kept, so a date before it can't be taken for the birth date.
+    Only the text after the label is kept, so a date before it can't be taken
+    for the birth date, and only up to the next fact when two run together
+    ("DOB: April/May 2024 ❣️weights around 16kg").
     """
     for bullet in bullets:
         label = DOB_LABEL.search(bullet)
@@ -121,7 +128,7 @@ def post_blocks(body: Tag) -> list[tuple[str, str]]:
 
 def split_post(blocks: list[tuple[str, str]]) -> tuple[list[str], list[str]]:
     """(story paragraphs, facts) from the post's blocks, dropping the adoption boilerplate."""
-    end = next((i for i, (_, text) in enumerate(blocks) if ADOPTION_HEADING.match(text)), len(blocks))
+    end = next((i for i, (_, text) in enumerate(blocks) if ADOPTION_HEADING.match(LEADING_SYMBOLS.sub("", text))), len(blocks))
     blocks = blocks[:end]
 
     heading = next((i for i, (_, text) in enumerate(blocks) if FACTS_HEADING.search(text) and len(text) < 80), None)
@@ -135,6 +142,14 @@ def split_post(blocks: list[tuple[str, str]]) -> tuple[list[str], list[str]]:
 
     facts = [LEADING_SYMBOLS.sub("", fact).strip() for fact in facts]
     return story, [fact for fact in facts if fact]
+
+
+def _meta_date(soup: BeautifulSoup, prop: str) -> str | None:
+    meta = soup.find("meta", property=prop)
+    try:
+        return date.fromisoformat((meta.get("content") or "")[:10]).isoformat() if meta else None
+    except ValueError:
+        return None
 
 
 class MisisRescueDetailParser:
@@ -172,8 +187,6 @@ class MisisRescueDetailParser:
         # A published date of birth is the age: the save turns it into a birth
         # range that keeps up with time (#561)
         if dob := dob_bullet(facts):
-            # A fact can run on into the next ("DOB: April/May 2024 ❣️weights around 16kg")
-            dob = FACT_SEPARATOR.split(dob)[0].strip()
             result["date_of_birth"] = dob
             result["age_text"] = dob
         else:
@@ -192,11 +205,12 @@ class MisisRescueDetailParser:
                     result["properties"]["standardized_size"] = size
                 break
 
-        # The stated age was true when the rescue last edited the post, which
-        # can be years before we read it (#561)
-        edited = soup.find("meta", property="article:modified_time") or soup.find("meta", property="article:published_time")
-        if edited and edited.get("content"):
-            result["age_stated_at"] = edited["content"][:10]
+        # The stated age was written when the rescue published the post, which
+        # can be years before we read it (#561). Published, not modified: a
+        # later edit (a new photo) must not make the dog younger. The cost is a
+        # dog whose age the rescue did update in an edit reads a little old.
+        if published := _meta_date(soup, "article:published_time"):
+            result["age_stated_at"] = published
 
         # Unified standardization reads "age", not "age_text"
         if result["age_text"]:
