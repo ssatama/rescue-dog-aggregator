@@ -225,6 +225,7 @@ def extract_breed_from_text_legacy(text: str | None) -> str | None:
     return None
 
 
+MAX_DOG_WEIGHT_KG = 100
 NAMED_MIX = re.compile(
     r"^(?:(?:possibly|probably|maybe|most likely|likely|looks like|we think(?: (?:she|he)(?:'s| is))?)\s+)?(?:an?\s+)?([a-z][a-z ]{2,30}?)\s+(?:mix|cross)(?:breed)?$",
     re.IGNORECASE,
@@ -412,10 +413,14 @@ def extract_weight_kg_legacy(text: str | None) -> float | None:
     """
     if not text:
         return None
-    match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(?:kgs?|kilos?|kilograms?)\b", text.lower())
-    if not match:
-        return None
-    low = float(match.group(1).replace(",", "."))
-    high = float(match.group(2).replace(",", ".")) if match.group(2) else None
-    # "around 21-2 kg" is a typo for 21-22, not 11.5
-    return (low + high) / 2 if high is not None and high >= low else low
+    for match in re.finditer(r"(?<![\d/.,])(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(?:kgs?|kilos?|kilograms?)\b", text.lower()):
+        low = float(match.group(1).replace(",", "."))
+        high = float(match.group(2).replace(",", ".")) if match.group(2) else None
+        # "around 21-2 kg" is a typo for 21-22, not 11.5
+        weight = (low + high) / 2 if high is not None and high >= low else low
+        # "DOB 10/2023 - 18kg": a year run into a weight is not one
+        if weight <= MAX_DOG_WEIGHT_KG:
+            return weight
+        if high is not None and high <= MAX_DOG_WEIGHT_KG:
+            return high
+    return None

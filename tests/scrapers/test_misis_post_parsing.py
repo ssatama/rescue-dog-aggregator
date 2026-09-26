@@ -283,7 +283,15 @@ def test_a_birthday_anniversary_is_not_a_date_of_birth():
 @pytest.mark.unit
 @pytest.mark.parametrize(
     "fact,kg",
-    [("weighs 20kgs", 20.0), ("weighs 12,5kg", 12.5), ("around 21-2 kg", 21.0), ("15-20 kilos", 17.5), ("current weight is 10 kg", 10.0)],
+    [
+        ("weighs 20kgs", 20.0),
+        ("weighs 12,5kg", 12.5),
+        ("around 21-2 kg", 21.0),
+        ("15-20 kilos", 17.5),
+        ("current weight is 10 kg", 10.0),
+        ("DOB 10/2023 - 18kg", 18.0),
+        ("DOB 2023 - 18kg", 18.0),
+    ],
 )
 def test_weights_as_the_rescue_writes_them(fact, kg):
     from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy
