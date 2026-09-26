@@ -112,3 +112,50 @@ class TestPlaywrightPerEventLoop:
             asyncio.run(service.create_browser())
 
         owned_playwright.stop.assert_awaited_once()
+
+
+@pytest.mark.unit
+@pytest.mark.real_clock
+class TestCloseNeverHangs:
+    def test_a_close_that_never_returns_is_abandoned(self):
+        """A dead Browserless connection can leave page.close() waiting forever."""
+        from services.playwright_browser_service import PlaywrightResult
+
+        async def never():
+            await asyncio.Event().wait()
+
+        page = MagicMock(close=AsyncMock(side_effect=never))
+        context = MagicMock(close=AsyncMock())
+        browser = MagicMock(close=AsyncMock())
+        owned = MagicMock(stop=AsyncMock())
+        result = PlaywrightResult(browser=browser, context=context, page=page, is_remote=True, _playwright=owned, _owns_playwright=True)
+        result.CLOSE_TIMEOUT_SECONDS = 0.05
+
+        asyncio.run(result.close())
+
+        context.close.assert_awaited_once()
+        browser.close.assert_awaited_once()
+        owned.stop.assert_awaited_once()
+
+    def test_a_timeout_around_a_stalled_page_returns_even_when_cleanup_stalls(self):
+        """The #580 shape: the caller's wait_for cancels, and cleanup must still finish."""
+        from services.playwright_browser_service import PlaywrightResult
+
+        async def never():
+            await asyncio.Event().wait()
+
+        page = MagicMock(close=AsyncMock(side_effect=never), content=AsyncMock(side_effect=never))
+        result = PlaywrightResult(browser=MagicMock(close=AsyncMock(side_effect=never)), context=MagicMock(close=AsyncMock(side_effect=never)), page=page, is_remote=True)
+        result.CLOSE_TIMEOUT_SECONDS = 0.05
+
+        async def scrape():
+            try:
+                await page.content()
+            finally:
+                await result.close()
+
+        async def bounded():
+            await asyncio.wait_for(scrape(), 0.05)
+
+        with pytest.raises(TimeoutError):
+            asyncio.run(bounded())

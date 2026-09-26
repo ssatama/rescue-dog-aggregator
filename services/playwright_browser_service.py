@@ -79,21 +79,22 @@ class PlaywrightResult:
     _playwright: Playwright | None = field(default=None, repr=False)
     _owns_playwright: bool = field(default=False, repr=False)  # Track if we should stop playwright
 
+    # Each close gets this long. On a connection Browserless has already
+    # dropped, a close can wait forever, and a caller's timeout cannot finish
+    # until its cleanup does (#580).
+    CLOSE_TIMEOUT_SECONDS = 10
+
     async def close(self) -> None:
-        """Safely close browser resources including playwright instance if owned."""
-        try:
-            await self.page.close()
-            await self.context.close()
-            await self.browser.close()
-        except Exception:
-            pass
-        finally:
-            # Only stop playwright if this result owns it (non-singleton usage)
-            if self._owns_playwright and self._playwright:
-                try:
-                    await self._playwright.stop()
-                except Exception:
-                    pass
+        """Safely close browser resources including playwright instance if owned. Never hangs."""
+        closers = [self.page.close, self.context.close, self.browser.close]
+        # Only stop playwright if this result owns it (non-singleton usage)
+        if self._owns_playwright and self._playwright:
+            closers.append(self._playwright.stop)
+        for close in closers:
+            try:
+                await asyncio.wait_for(close(), self.CLOSE_TIMEOUT_SECONDS)
+            except Exception:
+                pass
 
 
 @dataclass

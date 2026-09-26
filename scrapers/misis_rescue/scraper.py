@@ -58,11 +58,12 @@ class MisisRescueScraper(BaseScraper):
     metrics logging, and image uploading functionality.
     """
 
-    # Browserless ends a session after 300s, and a session it has ended can
-    # leave the scraper waiting forever (the 2026-09-26 cron, #579/#580). A
-    # normal listing takes about 60s, a detail page a few seconds.
-    LISTING_TIMEOUT_SECONDS = 240
-    DETAIL_TIMEOUT_SECONDS = 90
+    # Upper bounds, so a stall raises (listing) or skips one dog (detail)
+    # instead of hanging (#580). Both sit above the retries they wrap:
+    # navigate_with_retry spends up to ~183s (3 x 60s plus backoff). A normal
+    # listing takes about 60s, a detail page a few seconds.
+    LISTING_TIMEOUT_SECONDS = 420
+    DETAIL_TIMEOUT_SECONDS = 240
 
     def __init__(self, config_id: str = "misisrescue", organization_id=None):
         """Initialize with configuration."""
