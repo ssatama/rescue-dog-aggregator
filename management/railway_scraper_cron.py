@@ -41,9 +41,11 @@ from config import enable_world_class_scraper_logging, get_database_config  # no
 from management.breed_commands import fetch_breed_rows  # noqa: E402
 from management.breed_reconciliation import reconcile  # noqa: E402
 from scrapers.sentry_integration import add_scrape_breadcrumb, init_scraper_sentry  # noqa: E402
+from utils.birth_dates import REFRESH_AGES_SQL  # noqa: E402
 from utils.db_connection import (  # noqa: E402
     create_database_config_from_env,
     execute_command,
+    get_db_cursor,
     initialize_database_pool,
 )
 from utils.secure_config_scraper_runner import (  # noqa: E402
@@ -144,6 +146,22 @@ def report_breed_reconciliation() -> dict:
         "provisional_values": len(report.provisional),
         "top_unmatched": [[text, count] for text, count in report.unmatched[:5]],
     }
+
+
+def refresh_ages() -> dict:
+    """Bring every dog's age_min_months/age_max_months up to today from its birth range (#561).
+
+    Runs after the batch, so ages move on even for dogs no scrape touches.
+    Like the breed report, a failure is reported, never raised.
+    """
+    try:
+        with get_db_cursor() as cursor:
+            cursor.execute(REFRESH_AGES_SQL)
+            updated = cursor.rowcount
+            cursor.connection.commit()
+    except Exception as exc:
+        return {"error": str(exc)}
+    return {"rows_updated": updated}
 
 
 def _child_command(config_id: str, result_path: str) -> list[str]:
@@ -354,6 +372,7 @@ def main():
 
     batch_result = run_all_scrapers(runner)
     summary = format_batch_summary(batch_result, start_time)
+    summary["age_refresh"] = refresh_ages()
 
     if args.json:
         print(json.dumps(summary, indent=2))
@@ -369,6 +388,12 @@ def main():
 
         if summary["failed_orgs"]:
             logger.warning(f"Failed organizations: {', '.join(summary['failed_orgs'])}")
+
+        ages = summary["age_refresh"]
+        if ages.get("error"):
+            logger.warning(f"Age refresh failed: {ages['error']}")
+        else:
+            logger.info(f"Ages refreshed from birth dates: {ages['rows_updated']} dogs changed")
 
         breeds = summary["breed_reconciliation"]
         if breeds.get("error"):

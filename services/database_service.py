@@ -16,7 +16,7 @@ Following CLAUDE.md principles:
 
 import json
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 import psycopg2
@@ -28,6 +28,7 @@ from services.animal_data_preparation import (
     sanitize_properties,
     update_to_final_slug,
 )
+from utils.birth_dates import resolve_age, today_utc
 from utils.slug_generator import fetch_slugs_by_ids
 from utils.standardization import parse_age_text, standardize_breed, standardize_size_value
 
@@ -47,8 +48,11 @@ def _images_json(images: list[dict[str, Any]] | None) -> str | None:
     return json.dumps(images, sort_keys=True) if images else None
 
 
-def update_columns(animal_data: dict[str, Any]) -> dict[str, Any]:
+def update_columns(animal_data: dict[str, Any], stored: dict[str, Any] | None = None, today: date | None = None) -> dict[str, Any]:
     """The column values update_animal writes for a scraped dog, before images and timestamps.
+
+    stored: the saved row's age columns and created_at, so an unchanged age
+    keeps its anchor (utils/birth_dates.resolve_age).
 
     Pure, so a dry run (management/backfill_commands.py plan) can show what a
     save would write without writing it.
@@ -62,6 +66,14 @@ def update_columns(animal_data: dict[str, Any]) -> dict[str, Any]:
         age_max_months = animal_data.get("age_max_months")
     else:
         _, age_min_months, age_max_months = parse_age_text(animal_data.get("age_text", ""))
+    age = resolve_age(
+        date_of_birth=animal_data.get("date_of_birth"),
+        age_text=animal_data.get("age_text"),
+        min_months=age_min_months,
+        max_months=age_max_months,
+        today=today or today_utc(),
+        stored=stored,
+    )
 
     return {
         "name": animal_data.get("name"),
@@ -71,8 +83,11 @@ def update_columns(animal_data: dict[str, Any]) -> dict[str, Any]:
         "standardized_breed": animal_data.get("standardized_breed") or new_standardized_breed,
         "breed_group": animal_data.get("breed_category") or new_breed_group,
         "age_text": animal_data.get("age_text"),
-        "age_min_months": age_min_months,
-        "age_max_months": age_max_months,
+        "age_min_months": age.age_min_months,
+        "age_max_months": age.age_max_months,
+        "birth_date_min": age.birth_date_min,
+        "birth_date_max": age.birth_date_max,
+        "age_observed_at": age.age_observed_at,
         "sex": animal_data.get("sex"),
         "status": animal_data.get("status", "available"),
         # Use size estimate if no size provided
@@ -265,10 +280,11 @@ class DatabaseService:
                 sex, size, standardized_size, language, properties, slug,
                 created_at, updated_at, last_scraped_at, last_seen_at,
                 consecutive_scrapes_missing, availability_confidence, active,
-                breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence, images
+                breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence, images,
+                birth_date_min, birth_date_max, age_observed_at
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             )
             RETURNING id
             """,
@@ -307,6 +323,9 @@ class DatabaseService:
                 prepared.breed_slug,
                 prepared.breed_confidence,
                 _images_json(animal_data.get("images")),
+                prepared.birth_date_min,
+                prepared.birth_date_max,
+                prepared.age_observed_at,
             ),
         )
 
@@ -344,7 +363,7 @@ class DatabaseService:
                 SELECT name, breed, age_text, sex, primary_image_url, status,
                        standardized_breed, age_min_months, age_max_months, standardized_size, properties,
                        breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence,
-                       breed_raw, images
+                       breed_raw, images, birth_date_min, birth_date_max, age_observed_at, created_at
                 FROM animals WHERE id = %s
                 """,
                 (animal_id,),
@@ -374,11 +393,24 @@ class DatabaseService:
                 current_breed_confidence,
                 current_breed_raw,
                 current_images,
+                current_birth_date_min,
+                current_birth_date_max,
+                current_age_observed_at,
+                current_created_at,
             ) = current_data
 
             # Process the properties (sanitize to remove null bytes that PostgreSQL rejects)
             current_properties_json = json.dumps(sanitize_for_postgres(current_properties), sort_keys=True) if current_properties else None
-            new = update_columns(animal_data)
+            stored_age = {
+                "age_text": current_age,
+                "age_min_months": current_age_min_months,
+                "age_max_months": current_age_max_months,
+                "birth_date_min": current_birth_date_min,
+                "birth_date_max": current_birth_date_max,
+                "age_observed_at": current_age_observed_at,
+                "created_at": current_created_at,
+            }
+            new = update_columns(animal_data, stored=stored_age)
             new_properties_json = new["properties"]
             new_age_min_months = new["age_min_months"]
             new_age_max_months = new["age_max_months"]
@@ -415,6 +447,9 @@ class DatabaseService:
                 or _as_float(new_breed_confidence) != _as_float(current_breed_confidence)
                 or new_breed_raw != current_breed_raw
                 or new_images_json != _images_json(current_images)
+                or new["birth_date_min"] != current_birth_date_min
+                or new["birth_date_max"] != current_birth_date_max
+                or new["age_observed_at"] != current_age_observed_at
             )
 
             if not has_changes:
@@ -436,7 +471,8 @@ class DatabaseService:
                     consecutive_scrapes_missing = 0, availability_confidence = 'high',
                     active = %s,
                     breed_type = %s, primary_breed = %s, secondary_breed = %s,
-                    breed_slug = %s, breed_confidence = %s, images = %s
+                    breed_slug = %s, breed_confidence = %s, images = %s,
+                    birth_date_min = %s, birth_date_max = %s, age_observed_at = %s
                 WHERE id = %s
                 """,
                 (
@@ -465,6 +501,9 @@ class DatabaseService:
                     new_breed_slug,
                     new_breed_confidence,
                     new_images_json,
+                    new["birth_date_min"],
+                    new["birth_date_max"],
+                    new["age_observed_at"],
                     animal_id,
                 ),
             )

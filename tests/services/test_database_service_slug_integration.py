@@ -279,6 +279,10 @@ class TestDatabaseServiceSlugIntegration:
                 0.95,  # breed_confidence
                 "Old Breed",  # breed_raw
                 None,  # images
+                None,  # birth_date_min
+                None,  # birth_date_max
+                None,  # age_observed_at
+                None,  # created_at
             ),
             # No second call needed for updates
         ]

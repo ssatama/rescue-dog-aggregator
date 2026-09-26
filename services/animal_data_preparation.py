@@ -8,8 +8,10 @@ import json
 import logging
 import time
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
+from utils.birth_dates import resolve_age, today_utc
 from utils.slug_generator import generate_unique_animal_slug
 from utils.standardization import parse_age_text, standardize_breed, standardize_size_value
 
@@ -28,6 +30,9 @@ class PreparedAnimalData:
     final_standardized_size: str | None
     age_months_min: int | None
     age_months_max: int | None
+    birth_date_min: date | None
+    birth_date_max: date | None
+    age_observed_at: date | None
     breed_type: str | None
     primary_breed: str | None
     secondary_breed: str | None
@@ -35,7 +40,7 @@ class PreparedAnimalData:
     breed_confidence: float | None
 
 
-def prepare_animal_data(animal_data: dict[str, Any]) -> PreparedAnimalData:
+def prepare_animal_data(animal_data: dict[str, Any], today: date | None = None) -> PreparedAnimalData:
     """Standardize breed, age, size, and language from raw animal data.
 
     Args:
@@ -56,6 +61,13 @@ def prepare_animal_data(animal_data: dict[str, Any]) -> PreparedAnimalData:
         age_months_max = animal_data.get("age_max_months")
     else:
         _, age_months_min, age_months_max = parse_age_text(animal_data.get("age_text", ""))
+    age = resolve_age(
+        date_of_birth=animal_data.get("date_of_birth"),
+        age_text=animal_data.get("age_text"),
+        min_months=age_months_min,
+        max_months=age_months_max,
+        today=today or today_utc(),
+    )
 
     final_size = animal_data.get("size") or animal_data.get("standardized_size")
     final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))
@@ -70,8 +82,11 @@ def prepare_animal_data(animal_data: dict[str, Any]) -> PreparedAnimalData:
         breed_group=final_breed_group,
         final_size=final_size,
         final_standardized_size=final_standardized_size,
-        age_months_min=age_months_min,
-        age_months_max=age_months_max,
+        age_months_min=age.age_min_months,
+        age_months_max=age.age_max_months,
+        birth_date_min=age.birth_date_min,
+        birth_date_max=age.birth_date_max,
+        age_observed_at=age.age_observed_at,
         breed_type=animal_data.get("breed_type"),
         primary_breed=animal_data.get("primary_breed"),
         secondary_breed=animal_data.get("secondary_breed"),

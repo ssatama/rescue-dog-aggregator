@@ -106,6 +106,7 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
 
         assert result["sex"] == "Male"
         assert result["properties"]["date_of_birth"] == "August 2024"
+        assert result["date_of_birth"] == "August 2024"  # the saved birth range comes from this (#561)
         assert result["properties"]["weight"] == "17 kg"
         assert result["age_text"] is not None
 

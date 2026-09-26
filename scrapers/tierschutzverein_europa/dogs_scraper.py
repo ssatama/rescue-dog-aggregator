@@ -203,6 +203,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             if "Geburtstag" in properties:
                 result["age_text"] = properties["Geburtstag"]
                 result["age"] = properties["Geburtstag"]  # Unified standardization expects 'age' field
+                result["date_of_birth"] = properties["Geburtstag"]  # "03.2025 (1 Jahr alt)" (#561)
 
             # Add description as separate field for BaseScraper
             if "Beschreibung" in properties:

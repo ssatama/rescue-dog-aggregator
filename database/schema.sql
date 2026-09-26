@@ -51,6 +51,10 @@ CREATE TABLE IF NOT EXISTS animals (
     age_text VARCHAR(100),
     age_min_months INTEGER,
     age_max_months INTEGER,
+    -- Birth dates that fit what the rescue said; age_*_months derive from them (#561)
+    birth_date_min DATE,
+    birth_date_max DATE,
+    age_observed_at DATE,
     sex VARCHAR(50),
     size VARCHAR(50),
     standardized_size VARCHAR(50),

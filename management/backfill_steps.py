@@ -10,12 +10,16 @@ so a step that already ran plans nothing.
 To add one: write the pure planner next to the fix, then append a Step to STEPS.
 """
 
+import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
 from management.age_backfill import plan_clears, rows_from_records
+from scrapers.misis_rescue.detail_parser import dob_bullet
+from utils.birth_dates import _as_date, _as_int, resolve_age, today_utc
 
 
 @dataclass(frozen=True)
@@ -59,6 +63,53 @@ def _plan_breed_raw(records: list[dict[str, Any]]) -> list[Change]:
     return changes
 
 
+# Where each rescue that publishes a date of birth keeps it in a stored row,
+# checked against production on 2026-09-26. MISIs' is one of its bullets.
+DOB_SOURCES = {
+    "animalrescuebosnia": "a.properties->>'date_of_birth'",
+    "daisyfamilyrescue": "a.age_text",
+    "pets-in-turkey": "a.properties->>'birth_date'",
+    "santerpawsbulgarianrescue": "a.properties->>'age_text'",
+    "tierschutzverein-europa": "a.properties->>'Geburtstag'",
+}
+AGE_COLUMNS = ("birth_date_min", "birth_date_max", "age_observed_at", "age_min_months", "age_max_months")
+
+
+def _stored_dob(record: dict[str, Any]) -> str | None:
+    if record["date_of_birth"]:
+        return record["date_of_birth"]
+    bullets = record.get("bullets")
+    if isinstance(bullets, str):
+        bullets = json.loads(bullets)
+    return dob_bullet([str(bullet) for bullet in bullets]) if isinstance(bullets, list) else None
+
+
+def _plan_birth_dates(records: list[dict[str, Any]], today: date | None = None) -> list[Change]:
+    """The birth range a save would store for each active dog, and its months as of today.
+
+    The same rule as a re-scrape (utils/birth_dates.resolve_age with the row as
+    stored): a published date of birth wins; otherwise the stored age is
+    anchored where it was read, which for rows from before #561 is created_at.
+    """
+    today = today or today_utc()
+    changes = []
+    for record in records:
+        age = resolve_age(
+            date_of_birth=_stored_dob(record),
+            age_text=record["age_text"],
+            min_months=_as_int(record["age_min_months"]),
+            max_months=_as_int(record["age_max_months"]),
+            today=today,
+            stored=record,
+        )
+        for column in AGE_COLUMNS:
+            was, now = record[column], getattr(age, column)
+            same = _as_int(was) == now if column.startswith("age_m") else _as_date(was) == now
+            if not same:
+                changes.append(Change(record["id"], record["organization"], column, was, now))
+    return changes
+
+
 STEPS: dict[str, Step] = {
     step.name: step
     for step in [
@@ -85,6 +136,24 @@ STEPS: dict[str, Step] = {
                   AND btrim(a.properties->>'breed') IS DISTINCT FROM a.breed_raw
             """,
             plan=_plan_breed_raw,
+        ),
+        Step(
+            name="derive-birth-dates",
+            summary="active dogs get a birth-date range and ages that keep up with time (#561)",
+            # to_jsonb reads the #561 columns as NULL on a database without them,
+            # so the plan runs before the migration is applied.
+            fetch_sql=f"""
+                SELECT a.id, o.config_id AS organization, a.age_text, a.age_min_months, a.age_max_months, a.created_at,
+                       to_jsonb(a)->>'birth_date_min' AS birth_date_min,
+                       to_jsonb(a)->>'birth_date_max' AS birth_date_max,
+                       to_jsonb(a)->>'age_observed_at' AS age_observed_at,
+                       CASE o.config_id {" ".join(f"WHEN '{org}' THEN {source}" for org, source in DOB_SOURCES.items())} END AS date_of_birth,
+                       CASE WHEN o.config_id = 'misisrescue' THEN a.properties->'raw_bullet_points' END AS bullets
+                FROM animals a
+                JOIN organizations o ON o.id = a.organization_id
+                WHERE a.active
+            """,
+            plan=_plan_birth_dates,
         ),
     ]
 }

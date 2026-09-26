@@ -9,6 +9,8 @@ from typing import Any
 
 from bs4 import BeautifulSoup, Tag
 
+from utils.birth_dates import parse_birth_date
+
 from .normalizer import (
     calculate_age_years,
     extract_birth_date,
@@ -21,6 +23,16 @@ from .normalizer import extract_age_from_text_legacy as extract_age_from_text
 from .normalizer import extract_breed_from_text_legacy as extract_breed_from_text
 from .normalizer import extract_sex_from_text_legacy as extract_sex_from_text
 from .normalizer import extract_weight_kg_legacy as extract_weight_kg
+
+DOB_BULLET = re.compile(r"\b(dob|born|birthday|date of birth)\b", re.IGNORECASE)
+
+
+def dob_bullet(bullets: list[str]) -> str | None:
+    """The bullet that gives the date of birth, as written ("rough estimate DOB -April /May 2024").
+
+    "natural-born explorer" mentions birth but gives no date, so it is skipped.
+    """
+    return next((bullet for bullet in bullets if DOB_BULLET.search(bullet) and parse_birth_date(bullet)), None)
 
 
 class MisisRescueDetailParser:
@@ -70,6 +82,11 @@ class MisisRescueDetailParser:
 
         # Use normalizer functions to extract structured data
         if bullet_points:
+            # The DOB bullet as written ("rough estimate DOB -April /May 2024"),
+            # so the saved age keeps up with time (#561)
+            if bullet := dob_bullet(bullet_points):
+                result["date_of_birth"] = bullet
+
             # Extract age text for standardization by BaseScraper
             for bullet in bullet_points:
                 birth_date = extract_birth_date(bullet)
