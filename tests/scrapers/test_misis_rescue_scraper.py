@@ -9,9 +9,6 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.base_scraper import ListingIncompleteError
 from scrapers.misis_rescue.normalizer import (
-    extract_age_from_text_legacy as extract_age_from_text,
-)
-from scrapers.misis_rescue.normalizer import (
     extract_breed,
     extract_sex,
     normalize_name,
@@ -355,74 +352,6 @@ class TestNameNormalization:
 
 
 @pytest.mark.unit
-class TestEnhancedAgeExtraction:
-    def test_y_old_patterns(self):
-        test_cases = [
-            ("4 y old", 4.0),
-            ("roughly 3 y old", 3.0),
-            ("approximately 2 y old", 2.0),
-            ("about 5 y old", 5.0),
-            ("1.5 y old", 1.5),
-        ]
-
-        for text, expected in test_cases:
-            result = extract_age_from_text(text)
-            assert result == expected, f"Failed for text: '{text}'"
-
-    def test_years_old_patterns(self):
-        test_cases = [
-            ("nearly 2 years old", 2.0),
-            ("approximately 3 years old", 3.0),
-            ("roughly 4 years old", 4.0),
-            ("about 1.5 years old", 1.5),
-            ("exactly 2 years old", 2.0),
-            ("She is 2 years old", 2.0),
-            ("nearly 4 years old", 4.0),
-        ]
-
-        for text, expected in test_cases:
-            result = extract_age_from_text(text)
-            assert result == expected, f"Failed for text: '{text}'"
-
-    def test_months_patterns(self):
-        test_cases = [
-            ("6 months old", 0.5),
-            ("18 months old", 1.5),
-            ("24 months old", 2.0),
-            ("3 months", 0.25),
-            ("12 months", 1.0),
-        ]
-
-        for text, expected in test_cases:
-            result = extract_age_from_text(text)
-            assert result == expected, f"Failed for text: '{text}'"
-
-    def test_vet_estimates(self):
-        test_cases = [
-            ("roughly 3 y old (at least that's how the vet estimated her)", 3.0),
-            ("vet estimates around 2 years", 2.0),
-            ("veterinary assessment: 4 years old", 4.0),
-        ]
-
-        for text, expected in test_cases:
-            result = extract_age_from_text(text)
-            assert result == expected, f"Failed for text: '{text}'"
-
-    def test_no_matches(self):
-        test_cases = [
-            "good with other dogs",
-            "loves to play",
-            "mixed breed",
-            "weighs 20kg",
-            "",
-        ]
-
-        for text in test_cases:
-            result = extract_age_from_text(text)
-            assert result is None, f"Should return None for text: '{text}'"
-
-
-@pytest.mark.unit
 class TestEnhancedSexDetection:
     def test_pronoun_detection(self):
         test_cases = [
@@ -518,7 +447,6 @@ class TestEnhancedBreedDetection:
 @pytest.mark.unit
 class TestIntegratedNormalization:
     def test_comprehensive_normalization_pipeline(self):
-        import re
 
         test_cases = [
             {
@@ -565,16 +493,6 @@ class TestIntegratedNormalization:
         for case in test_cases:
             name_result = normalize_name(case["raw_name"])
             assert name_result == case["expected"]["name"], f"Name failed for {case['raw_name']}"
-
-            age_result = extract_age_from_text(case["page_text"])
-            if age_result is None and case["bullet_points"]:
-                for bullet in case["bullet_points"]:
-                    if "year" in bullet or "old" in bullet:
-                        match = re.search(r"(\d+)\s*year", bullet)
-                        if match:
-                            age_result = float(match.group(1))
-                            break
-            assert age_result == case["expected"]["age"], f"Age failed for {case['page_text']}"
 
             sex_result = extract_sex_from_text(case["page_text"])
             assert sex_result == case["expected"]["sex"], f"Sex failed for {case['page_text']}"
@@ -643,8 +561,6 @@ class TestIntegratedNormalization:
                 assert normalize_name(case["name"]) == case["expected_name"]
 
             if "text" in case:
-                if "expected_age" in case:
-                    assert extract_age_from_text(case["text"]) == case["expected_age"]
                 if "expected_sex" in case:
                     assert extract_sex_from_text(case["text"]) == case["expected_sex"]
 

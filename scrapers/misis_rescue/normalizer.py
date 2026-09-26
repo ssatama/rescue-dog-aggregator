@@ -98,55 +98,6 @@ def normalize_name(name: str | None) -> str:
     return cleaned.title()
 
 
-def extract_age_from_text_legacy(text: str | None) -> float | None:
-    """Extract age from detailed text using enhanced patterns.
-
-    Args:
-        text: Full text content to search
-
-    Returns:
-        Age in years as float or None
-    """
-    if not text:
-        return None
-
-    text = text.lower()
-
-    # Pattern 1: "4 y old", "roughly 3 y old"
-    match = re.search(r"(?:roughly|approximately|about)?\s*(\d+(?:\.\d+)?)\s*y\s+old", text)
-    if match:
-        return float(match.group(1))
-
-    # Pattern 2: "nearly 2 years old", "approximately 3 years old"
-    match = re.search(
-        r"(?:nearly|approximately|roughly|about|exactly)?\s*(\d+(?:\.\d+)?)\s*years?\s+old",
-        text,
-    )
-    if match:
-        return float(match.group(1))
-
-    # Pattern 3: "18 months old", "6 months"
-    match = re.search(r"(\d+)\s*months?\s*(?:old)?", text)
-    if match:
-        months = int(match.group(1))
-        return round(months / 12.0, 2)
-
-    # Pattern 4: Veterinary estimates
-    match = re.search(
-        r"(?:vet|veterinary).*?(?:estimates?|assessment).*?(\d+(?:\.\d+)?)\s*(?:years?|y)",
-        text,
-    )
-    if match:
-        return float(match.group(1))
-
-    # Pattern 5: "vet estimated her)" patterns
-    match = re.search(r"vet estimated.*?(\d+(?:\.\d+)?)\s*y", text)
-    if match:
-        return float(match.group(1))
-
-    return None
-
-
 def extract_sex_from_text_legacy(text: str | None) -> str | None:
     """Extract sex from detailed text with confidence scoring.
 
@@ -273,6 +224,9 @@ def extract_breed_from_text_legacy(text: str | None) -> str | None:
     return None
 
 
+NAMED_MIX = re.compile(r"^(?:possibly |probably |maybe )?(?:an? )?([a-z][a-z ]{2,30}?)\s+(?:mix|cross)(?:breed)?$", re.IGNORECASE)
+
+
 def extract_breed(bullets: list[str] | None) -> str | None:
     """Extract and normalize breed information from bullet points.
 
@@ -284,6 +238,13 @@ def extract_breed(bullets: list[str] | None) -> str | None:
     """
     if not bullets:
         return None
+
+    # A short fact naming the breed and a mix: "Cane Corso cross", "Possibly Staff cross"
+    for bullet in bullets:
+        named = NAMED_MIX.match(bullet.strip())
+        if named and not re.search(r"\bmixed\b|\bbreed\b", named.group(1), re.IGNORECASE):
+            name = named.group(1).strip().title()
+            return f"{'Labrador' if name == 'Lab' else name} Mix"
 
     # Join all bullets into single text for pattern matching
     text = " ".join(bullets).lower()
@@ -357,7 +318,7 @@ def extract_breed(bullets: list[str] | None) -> str | None:
     for pattern in breed_patterns:
         match = re.search(pattern, text)
         if match:
-            breed = match.group(1)
+            breed = match.group(1).strip()
             if breed.lower() == "lab":
                 return "Labrador"
             elif breed.lower() == "english pointer":

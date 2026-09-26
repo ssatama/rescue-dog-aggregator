@@ -176,3 +176,52 @@ class TestFetch(ScraperTestBase):
             dog = asyncio.run(scraper._scrape_dog_detail_playwright("https://www.misisrescue.com/post/__tea"))
 
         assert (dog or {}).get("name") == name
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "facts,breed",
+    [
+        (["4 months old", "Cane Corso cross", "12kg"], "Cane Corso Mix"),
+        (["Possibly Staff cross"], "Staff Mix"),
+        (["a husky mix"], "Husky Mix"),
+        (["mixed breed, gun dog"], "Mixed Breed"),
+        (["weights around 10kg, should be around 20 kg at full size", "mixed breed"], "Mixed Breed"),
+    ],
+)
+def test_a_named_cross_is_the_breed(facts, breed):
+    """ "Cane Corso cross" gave no breed, which the standardizer stores as "Unknown"."""
+    from scrapers.misis_rescue.normalizer import extract_breed
+
+    assert extract_breed(facts) == breed
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "facts,age",
+    [
+        # Iris: the first fact that gives an age, not a later "3 years"
+        (["Approx.2 years old", "hound", "fine with kids over 3 years old"], "2 years"),
+        # Blacky: a range with a decimal comma
+        (["Age: 1,5-2 years", "Sex: male"], "1-2 years"),
+        (["2.5 y old", "20-22kg"], "2.5 years"),
+        (["nearly 4 months old", "Mixed breed"], "4 months"),
+        (["5.5 months old"], "6 months"),
+        (["1 year old"], "1 year"),
+        (["Mixed breed", "20kg"], None),
+    ],
+)
+def test_the_first_stated_age_is_the_age(facts, age):
+    from scrapers.misis_rescue.detail_parser import stated_age
+
+    assert stated_age(facts) == age
+
+
+@pytest.mark.unit
+def test_a_dob_fact_running_into_the_next_is_cut():
+    html = "<html><body><h1 data-hook='post-title'>Kira</h1><div data-hook='post-description'><h2>Things you should know about Kira</h2><p>✔️DOB: April/May 2024 ❣️weights around 16kg ❣️hunting dog mix</p></div></body></html>"
+
+    dog = MisisRescueDetailParser().parse_detail_page(BeautifulSoup(html, "html.parser"))
+
+    assert dog["age_text"] == "DOB: April/May 2024"
+    assert dog["date_of_birth"].startswith("DOB: April/May 2024")

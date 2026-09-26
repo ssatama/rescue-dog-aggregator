@@ -13,6 +13,7 @@ facts when the heading wasn't found (#562). A page without a post body is not a
 dog page.
 """
 
+import math
 import re
 from datetime import date
 from typing import Any
@@ -21,7 +22,6 @@ from bs4 import BeautifulSoup, Tag
 
 from utils.birth_dates import parse_birth_date
 
-from .normalizer import extract_age_from_text_legacy as extract_age_from_text
 from .normalizer import extract_breed, extract_sex, normalize_name, normalize_size
 from .normalizer import extract_breed_from_text_legacy as extract_breed_from_text
 from .normalizer import extract_sex_from_text_legacy as extract_sex_from_text
@@ -37,6 +37,35 @@ FACTS_HEADING = re.compile(r"things\s+you\s+(?:should|have\s+to|need\s+to|must)?
 ADOPTION_HEADING = re.compile(r"^how\s+(?:do|can)\s+(?:you|i)\s+adopt", re.IGNORECASE)
 # ✔️, 💕, 🏡 and the like in front of a fact
 LEADING_SYMBOLS = re.compile(r"^[^\w(\"'“]+")
+# The same symbols between facts run together in one paragraph
+FACT_SEPARATOR = re.compile(r"\s*[✔❣💕💙💛💜🧡❤️🩺🏡]+\ufe0f?\s*")
+
+# "2.5 y old", "11 months old", "Age: 1,5-2 years", "Approx.2 years old"
+STATED_AGE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(y|yrs?|years?|months?)\b", re.IGNORECASE)
+
+
+def stated_age(facts: list[str]) -> str | None:
+    """The age the first fact that gives one states, as parse_age_text reads it ("2.5 years", "1-2 years").
+
+    The first such fact is the dog's age; later ones are about other things
+    ("fine with kids over 3 years old"), and the story's ages are from the past.
+    """
+    for fact in facts:
+        match = STATED_AGE.search(fact)
+        if not match:
+            continue
+        low = float(match.group(1).replace(",", "."))
+        high = float(match.group(2).replace(",", ".")) if match.group(2) else None
+        unit = "months" if match.group(3).lower().startswith("m") else "years"
+        if high is not None:
+            # parse_age_text reads ranges of whole numbers
+            return f"{math.floor(low)}-{math.ceil(high)} {unit}"
+        if unit == "months":
+            # parse_age_text reads whole months: "5.5 months" would be 5
+            return f"{math.floor(low + 0.5)} months"
+        return "1 year" if low == 1 else f"{low:g} years"
+    return None
+
 
 # "born" alone is left out: "her puppies were born in March" is not her birth date
 DOB_LABEL = re.compile(r"\b(dob|date of birth|birthday)\b", re.IGNORECASE)
@@ -121,16 +150,16 @@ class MisisRescueDetailParser:
         if description:
             result["properties"]["description"] = description
 
-        facts_text = " ".join(facts)
         post_text = " ".join([*story, *facts])
 
         # A published date of birth is the age: the save turns it into a birth
         # range that keeps up with time (#561)
         if dob := dob_bullet(facts):
             result["date_of_birth"] = dob
-            result["age_text"] = dob
-        elif (years := extract_age_from_text(facts_text)) is not None:
-            result["age_text"] = f"{int(years * 12)} months" if years < 1 else f"{years:g} years"
+            # A fact can run on into the next ("DOB: April/May 2024 ❣️weights around 16kg")
+            result["age_text"] = FACT_SEPARATOR.split(dob)[0].strip()
+        else:
+            result["age_text"] = stated_age(facts)
 
         result["breed"] = extract_breed(facts) or extract_breed_from_text(post_text)
         result["sex"] = extract_sex(facts) or extract_sex_from_text(post_text)
