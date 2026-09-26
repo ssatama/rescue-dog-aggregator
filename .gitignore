@@ -86,7 +86,9 @@ experimental_test_*.py
 *.sqlite3
 
 # === AI Agent Artifacts ===
-.claude/
+# .claude/settings.json is shared: it carries the cloud-session SessionStart hook.
+.claude/*
+!.claude/settings.json
 .gemini/
 .serena/
 .mypy_cache/
