@@ -279,3 +279,10 @@ class TestScrapeLogCompletionSurvivesADeadConnection:
         service.conn.rollback.side_effect = psycopg2.InterfaceError("connection already closed")
 
         assert service.complete_scrape_log(41, "error") is False
+
+    def test_unserialisable_metrics_still_close_the_row(self, service):
+        service.conn = Mock()
+
+        assert service.complete_scrape_log(41, "success", detailed_metrics={"when": object()}) is True
+
+        assert service.conn.cursor.return_value.execute.call_args.args[1][6] is None

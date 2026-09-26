@@ -152,10 +152,10 @@ this should be rare.
 
 **What closes a `scrape_logs` row** (#557, 2026-09-26). A run completes once,
 with its metrics; a partial failure or a failed session start is a
-`warning` with a note in `error_message`. An exception, a
-`KeyboardInterrupt`/`SystemExit` or a completion write that failed closes the
-row as `error` from the `finally` in `BaseScraper._run_with_connection`, and
-the cron closes a timed-out org's row after its SIGKILL. Still open: a
+`warning` with a note in `error_message`. An exception or a
+`KeyboardInterrupt`/`SystemExit` closes the row as `error` from the `finally`
+in `BaseScraper._run_with_connection`, which also writes a failed completion
+once more as it was; the cron closes a timed-out org's row after its SIGKILL. Still open: a
 Railway stop or redeploy mid-run (the cron's SIGTERM handler only sets a
 flag) and a `kill -9` leave the in-flight row `running`; close it as above.
 On 2026-09-26 38 such rows (oldest 2025-07-30) were closed as `error` with

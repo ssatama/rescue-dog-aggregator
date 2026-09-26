@@ -107,7 +107,7 @@ class TestRunCompletion:
         assert completion[1] == "error"
         assert "listing broke" in completion[5]
 
-    def test_a_failed_completion_write_is_closed_as_an_error_not_left_running(self, scraper):
+    def test_a_failed_completion_write_is_written_once_more_as_it_was(self, scraper):
         scraper.dogs = [_dog("a")]
         scraper.database_service.complete_scrape_log.side_effect = [False, True]
 
@@ -116,14 +116,31 @@ class TestRunCompletion:
             patch.object(scraper, "detect_partial_failure", return_value=False),
             patch("services.revalidation_client.invalidate_sync") as invalidate,
         ):
+            assert scraper._run_with_connection() is True
+
+        first, retry = _completions(scraper)
+        assert retry == first, "the same status, counts and metrics, not a generic error"
+        assert retry[1] == "success"
+        assert retry[6]["animals_added"] == 1
+        invalidate.assert_called_once()  # the retry does not purge a second time
+
+    def test_a_failed_robots_skip_write_stays_skipped(self, scraper):
+        scraper._check_robots_permission.return_value = False
+        scraper.database_service.complete_scrape_log.side_effect = [False, True]
+
+        assert scraper._run_with_connection() is False
+
+        assert [c[1] for c in _completions(scraper)] == ["skipped", "skipped"]
+
+    def test_a_failed_error_write_keeps_the_real_error(self, scraper):
+        scraper.database_service.complete_scrape_log.side_effect = [False, True]
+
+        with patch.object(scraper, "collect_data", side_effect=RuntimeError("listing broke")):
             scraper._run_with_connection()
 
-        first, close = _completions(scraper)
-        assert first[1] == "success"
-        assert close[1] == "error"
-        assert "completion write failed" in close[5]
-        assert close[2:5] == (1, 1, 0), "the close keeps what the run saved"
-        invalidate.assert_called_once()  # the close does not purge a second time
+        first, retry = _completions(scraper)
+        assert retry == first
+        assert "listing broke" in retry[5]
 
     def test_a_reused_instance_does_not_reprofile_the_last_runs_dogs(self, scraper):
         scraper.dogs = [_dog("a")]

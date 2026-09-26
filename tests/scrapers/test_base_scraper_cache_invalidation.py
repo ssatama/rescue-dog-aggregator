@@ -78,6 +78,7 @@ class TestCompleteScrapeLogCacheInvalidation:
     def test_fires_on_success(self, scraper, mock_invalidate_sync):
         scraper.complete_scrape_log(status="success", animals_found=10)
         mock_invalidate_sync.assert_called_once()
+        assert AGGREGATE_TAGS.issubset(set(_tags_from(mock_invalidate_sync)))
 
     def test_fires_even_when_the_log_write_raises(self, scraper, mock_invalidate_sync):
         scraper.database_service.complete_scrape_log.side_effect = RuntimeError("write failed")
@@ -86,7 +87,6 @@ class TestCompleteScrapeLogCacheInvalidation:
             scraper.complete_scrape_log(status="success", animals_found=10)
 
         mock_invalidate_sync.assert_called_once()
-        assert AGGREGATE_TAGS.issubset(set(_tags_from(mock_invalidate_sync)))
 
     def test_skips_on_warning(self, scraper, mock_invalidate_sync):
         scraper.complete_scrape_log(status="warning", animals_found=0)

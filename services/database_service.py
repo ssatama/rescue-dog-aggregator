@@ -582,6 +582,12 @@ class DatabaseService:
                 duration_seconds = %s, data_quality_score = %s
             WHERE id = %s
         """
+        try:
+            metrics_json = json.dumps(detailed_metrics) if detailed_metrics else None
+        except (TypeError, ValueError) as e:
+            # Close the row without its metrics rather than not at all
+            self.logger.error(f"Scrape log {scrape_log_id} metrics are not JSON-serialisable, writing without them: {e}")
+            metrics_json = None
         params = (
             datetime.now(),
             status,
@@ -589,7 +595,7 @@ class DatabaseService:
             animals_added,
             animals_updated,
             error_message,
-            json.dumps(detailed_metrics) if detailed_metrics else None,
+            metrics_json,
             duration_seconds,
             data_quality_score,
             scrape_log_id,
