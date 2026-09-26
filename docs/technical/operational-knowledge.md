@@ -83,28 +83,48 @@ uv run alembic -c migrations/railway/alembic.ini upgrade head
 `alembic.ini` holds a placeholder URL, so a missing variable fails loudly.
 
 **Manual production runs from the laptop** (verified 2026-09-26). Run them
-from a worktree of `origin/main`, never a feature branch, with the cron's
-environment:
+outside the cron window (Mon/Thu/Sat 15:00 UTC), from a fresh worktree of
+`origin/main`, never a feature branch, with the cron's environment. Start in
+the main checkout:
 
 ```bash
-git worktree add ../rda-prod-run origin/main && cd ../rda-prod-run
-export RAILWAY_DATABASE_URL="$(grep -E '^RAILWAY_DATABASE_URL=' ../rescue-dog-aggregator/.env | cut -d= -f2- | tr -d "\"'")"
+git fetch origin && git worktree add ../rda-prod-run origin/main
+export RAILWAY_DATABASE_URL="$(grep -E '^RAILWAY_DATABASE_URL=' .env | cut -d= -f2- | tr -d "\"'")"
+test -n "$RAILWAY_DATABASE_URL" && cd ../rda-prod-run && \
 railway run -p 947b70e4-076f-4288-833a-ed1b1409a01d -e production -s thriving-appreciation -- \
   env DATABASE_URL="$RAILWAY_DATABASE_URL" TZ=UTC \
   uv run python management/railway_scraper_cron.py --org <config_id>
+cd - && git worktree remove ../rda-prod-run
 ```
 
-`TZ=UTC` is required: the columns are naive timestamps written with
-`datetime.now()`, so without it a laptop run stores local time and its
-`scrape_logs` rows sit hours off the cron's. `DATABASE_URL` points at the
-public URL because the service's own is the private `railway.internal` host,
-which the laptop can't reach.
+- `TZ=UTC` is required. The columns are naive timestamps written with
+  `datetime.now()`, so without it a laptop run stores local time: its
+  `scrape_logs` rows and `last_seen_at` land hours off the cron's, which can
+  skip stale detection on the next cron.
+- `DATABASE_URL` is overridden because the service's own points at
+  `postgres.railway.internal`, which the laptop can't reach.
+- A single `--org` run has no timeout (the #581 limit applies only to the
+  batch), and Ctrl-C only sets a shutdown flag that it never checks. Stop a
+  stuck one with `kill`, then close its row (below).
+- `railway run` brings the cron's `ENVIRONMENT=production` and Sentry DSN, so
+  a laptop run's errors show up in Sentry as cron errors. Don't override
+  `ENVIRONMENT`: the LLM config accepts only its known values.
 
-**A hung cron run can't be stopped on its own.** Railway has no API or CLI to
-stop one cron execution. Redeploying `thriving-appreciation` ends the running
-execution without starting a new one; the next run is the next scheduled
-time. Since #581 a single hung scraper times out instead of blocking the
-batch, so this should be rare.
+**A hung cron run.** The CLI can't stop one cron execution. The tested way is
+redeploying `thriving-appreciation`: it ends the running execution without
+starting a new one, and the next run comes at the next scheduled time. The
+GraphQL API has `deploymentStop(id)` (via `railway api`), not yet tried on a
+cron execution. Either way the parent process dies, so nothing closes the
+in-flight org's log; close it by hand:
+
+```sql
+UPDATE scrape_logs SET status = 'error', completed_at = now() AT TIME ZONE 'UTC',
+  error_message = 'Run stopped by hand (redeploy)'
+WHERE status = 'running' AND started_at >= '<execution start, UTC>';
+```
+
+Since #581 a single hung scraper times out instead of blocking the batch, so
+this should be rare.
 
 ## Deploys and caching (Vercel)
 
