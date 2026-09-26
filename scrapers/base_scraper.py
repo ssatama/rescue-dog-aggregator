@@ -54,6 +54,9 @@ logger = logging.getLogger(__name__)
 
 FORCE_RESCRAPE_VALUES = ("true", "1", "yes")
 
+# Set by process_animal on data it has standardized; database writes ignore it.
+STANDARDIZED_KEY = "_standardized"
+
 # Worth retrying: the server or the network may recover. Any other 4xx won't.
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 # Transient without a response: the connection failed, stalled or dropped mid-body.
@@ -513,14 +516,18 @@ class BaseScraper(ABC):
         """
         Process animal data through standardization if enabled.
 
+        Standardizes once: most scrapers call this in collect_data and
+        save_animal calls it again, and a second pass would record the
+        standardized name as breed_raw (#560). Processed data carries
+        STANDARDIZED_KEY and passes through unchanged.
+
         Args:
             animal_data: Raw animal data dictionary
 
         Returns:
             Processed animal data with standardized breed fields if enabled
         """
-        if not self.use_unified_standardization:
-            # Feature flag disabled - return data unchanged
+        if not self.use_unified_standardization or animal_data.get(STANDARDIZED_KEY):
             return animal_data
 
         # Make a copy to avoid modifying the original
@@ -548,6 +555,7 @@ class BaseScraper(ABC):
 
             # Update processed_data with standardized fields (now returned flattened)
             processed_data.update(standardized)
+            processed_data[STANDARDIZED_KEY] = True
 
             # Log the result if breed changed
             new_breed = processed_data.get("breed")

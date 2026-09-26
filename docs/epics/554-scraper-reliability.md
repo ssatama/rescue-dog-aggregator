@@ -103,6 +103,26 @@ Galgos del Sol.
 - Site findings from this work (Woof reads only page 1; Many Tears' count
   swing is churn) are in `docs/technical/operational-knowledge.md`.
 
+## Standardize once (#560)
+
+`process_animal` marks what it returns with `STANDARDIZED_KEY`
+(`"_standardized"`), and passes marked data through unchanged. Scrapers that
+standardize in `collect_data` are no longer standardized again in
+`save_animal`, so `breed_raw` keeps the rescue's text ("Poodle (Toy)", not
+"Toy Poodle"). Database writes read named columns only, so the key is never
+stored.
+
+- Backfill step `restore-breed-raw`: for Dogs Trust, Santer Paws, Bosnia and
+  Woof, whose `properties.breed` is the site's text, it restores `breed_raw`
+  and re-resolves the derived breed columns from it. On 2026-09-26 it planned
+  750 dogs; only `breed_confidence` moves besides `breed_raw` (196 dogs), and
+  no standardized name changes.
+- Left alone: Many Tears (its `properties.breed` is sometimes another field,
+  e.g. "Can be the only dog"; #571), Tierschutzverein (`breed_raw` is the
+  scraper's English translation of `Rasse`, standardized once already), MISIs
+  (`breed_raw` is NULL for every dog; #562), and Pets in Turkey, REAN and The
+  Underdog (no source copy; #572's forced re-scrape rewrites listed dogs).
+
 ## Gotchas
 
 - **The local dev database can lag production's schema.** Alembic only reads

@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from management.age_backfill import plan_clears, rows_from_records
+from management.breed_raw_backfill import SOURCE_TEXT_ORGS, plan_breed_raw
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,10 @@ def _plan_age_clears(records: list[dict[str, Any]]) -> list[Change]:
     return [Change(clear.animal_id, clear.organization, "age_text", clear.was, None) for clear in plan_clears(rows_from_records(records))]
 
 
+def _plan_breed_raw(records: list[dict[str, Any]]) -> list[Change]:
+    return [Change(*change) for change in plan_breed_raw(records)]
+
+
 STEPS: dict[str, Step] = {
     step.name: step
     for step in [
@@ -56,6 +61,22 @@ STEPS: dict[str, Step] = {
                 WHERE a.age_text IS NOT NULL AND a.age_min_months IS NULL AND a.age_max_months IS NULL
             """,
             plan=_plan_age_clears,
+        ),
+        Step(
+            name="restore-breed-raw",
+            summary="breed_raw goes back to the rescue's text in properties.breed, and the derived breed columns are resolved from it (#560)",
+            fetch_sql=f"""
+                SELECT a.id, a.properties->>'breed' AS source_breed, a.breed_raw,
+                       a.primary_breed, a.secondary_breed, a.breed_slug, a.breed_type,
+                       a.breed_group, a.standardized_breed, a.breed_confidence,
+                       o.config_id AS organization
+                FROM animals a
+                JOIN organizations o ON o.id = a.organization_id
+                WHERE o.config_id IN ({", ".join(f"'{org}'" for org in SOURCE_TEXT_ORGS)})
+                  AND a.properties->>'breed' IS NOT NULL
+                  AND a.properties->>'breed' IS DISTINCT FROM a.breed_raw
+            """,
+            plan=_plan_breed_raw,
         ),
     ]
 }
