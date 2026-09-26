@@ -120,11 +120,15 @@ derived columns are what they were before.
 - Re-resolving the derived columns from the restored text would change no
   standardized name, slug, type or group (checked 2026-09-26), so
   `breed_restandardize.py` has nothing to do for these rows.
-- Left alone: Many Tears (its `properties.breed` is sometimes another field,
-  e.g. "Can be the only dog"; #571), Tierschutzverein (`breed_raw` is the
-  scraper's English translation of `Rasse`), MISIs (`breed_raw` is NULL for
-  every dog; #562), and Pets in Turkey, REAN and The Underdog (no source copy;
-  #572's forced re-scrape rewrites listed dogs).
+- Not in the step: Many Tears (its `properties.breed` is sometimes another
+  field, e.g. "Can be the only dog"; from now on scrapes store that text as
+  `breed_raw` too, until #571 fixes the parse), Tierschutzverein (`breed_raw`
+  is the scraper's English translation of `Rasse`), MISIs (`breed_raw` is
+  NULL for every dog; #562), Pets in Turkey, REAN and The Underdog (no source
+  copy; #572's forced re-scrape rewrites listed dogs), and the disabled Galgos
+  del Sol and Furry Rescue Italy (no row differs).
+- The step includes unlisted dogs: their `properties.breed` is the text their
+  last scrape read, which is still the rescue's wording.
 
 ## Gotchas
 

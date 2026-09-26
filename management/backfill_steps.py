@@ -51,11 +51,12 @@ BREED_SOURCE_ORGS = ("animalrescuebosnia", "dogstrust", "santerpawsbulgarianresc
 
 
 def _plan_breed_raw(records: list[dict[str, Any]]) -> list[Change]:
-    return [
-        Change(record["id"], record["organization"], "breed_raw", record["breed_raw"], record["source_breed"].strip())
-        for record in records
-        if (record["source_breed"] or "").strip() and record["source_breed"].strip() != record["breed_raw"]
-    ]
+    changes = []
+    for record in records:
+        source = (record["source_breed"] or "").strip(" ")  # spaces only, as btrim in fetch_sql
+        if source and source != record["breed_raw"]:
+            changes.append(Change(record["id"], record["organization"], "breed_raw", record["breed_raw"], source))
+    return changes
 
 
 STEPS: dict[str, Step] = {
