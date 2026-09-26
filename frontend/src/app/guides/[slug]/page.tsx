@@ -104,6 +104,10 @@ export default async function GuidePage({
       // Drop the body: RelatedGuides renders cards from frontmatter alone, and
       // these cross the client boundary.
       .map(({ slug: relatedSlug, frontmatter }) => ({ slug: relatedSlug, frontmatter }));
+    // Each card shows its guide's own real dogs, as on the index
+    relatedGuides = await Promise.all(
+      relatedGuides.map(async (related) => ({ ...related, dogs: await getGuideDogs(related.frontmatter) })),
+    );
   }
 
   return (
