@@ -234,6 +234,8 @@ def test_a_named_cross_is_the_breed(facts, breed):
         (["3 years in the shelter", "Approx 5 years old"], "5 years"),
         (["Found in March, now 8 months old"], "8 months"),
         (["approx. 3 months"], "3 months"),
+        (["Spent 3 years in a shelter, now 6 years old"], "6 years"),
+        (["Chained 4 years, she is 7 y old"], "7 years"),
         (["1 year old"], "1 year"),
         (["Mixed breed", "20kg"], None),
         # Durations and other people's ages are not the dog's

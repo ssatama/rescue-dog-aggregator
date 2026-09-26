@@ -43,7 +43,6 @@ FACT_SEPARATOR = re.compile(r"\s*[✔❣💕💙💛💜🧡❤️🩺🏡]+\ufe
 # "2.5 y old", "11 months old", "Age: 1,5-2 years", "Approx.2 years old"
 NOT_THE_AGE = re.compile(r"\b(?:over|under|than|for|since|after|when|at|in)\b", re.IGNORECASE)
 AGE_QUALIFIERS = re.compile(r"\b(?:approx|approximately|around|about|nearly|roughly|between|circa|ca)\b", re.IGNORECASE)
-AGE_WORDS = re.compile(r"\bold\b|^\W*age\b|\by/?o\b", re.IGNORECASE)
 STATED_AGE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(y/o|yo|y|yrs?|years?|months?)\b", re.IGNORECASE)
 
 
@@ -59,7 +58,11 @@ def _is_the_dogs_age(fact: str, match: re.Match, since: int) -> bool:
     # Only the words right before the number: "Found in March, now 8 months old" is 8 months
     if NOT_THE_AGE.search(" ".join(before.split()[-2:])) or len(before.split()) > 5 or re.match(r"\s*ago\b", after, re.IGNORECASE):
         return False
-    if AGE_WORDS.search(fact) or match.group(3).lower() in ("yo", "y/o"):
+    # "old" right after this number, or an "Age:" label right before it:
+    # "Spent 3 years in a shelter, now 6 years old" is 6
+    if re.match(r"\s*old\b", after, re.IGNORECASE) or re.search(r"\bage\W*$", before, re.IGNORECASE):
+        return True
+    if match.group(3).lower() in ("yo", "y/o"):
         return True
     # Without "old" or "Age:", the fact must be nothing but the age: "2 years", "approx. 3 months"
     rest = AGE_QUALIFIERS.sub("", f"{before} {after}")
