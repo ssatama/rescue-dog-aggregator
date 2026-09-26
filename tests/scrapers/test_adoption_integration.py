@@ -227,7 +227,6 @@ class TestAdoptionIntegration:
         """Test that _finalize_scrape calls adoption checking."""
         # Setup mocks
         mock_scraper_with_adoption.detect_partial_failure = MagicMock(return_value=False)
-        mock_scraper_with_adoption.mark_found_animals_as_seen = MagicMock()
         mock_scraper_with_adoption.update_stale_data_detection = MagicMock()
         mock_scraper_with_adoption.complete_scrape_log = MagicMock()
         mock_scraper_with_adoption.skip_existing_animals = False

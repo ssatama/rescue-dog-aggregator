@@ -75,10 +75,11 @@ class BaseScraper(ABC):
 
     # Sentry is warned when more than this share of collected dogs is not saved.
     LOSS_ALERT_RATE = 0.1
-    # More than this share of collected dogs failing to save makes the run a
-    # partial failure, which skips stale detection (#558). Validator rejections
-    # don't count: they repeat for the same dog every run, so counting them
-    # would switch stale detection off for good.
+    # More than this share of found dogs failing to save makes the run a
+    # partial failure, which skips stale detection (#558). Found, not collected:
+    # with skip_existing_animals only new dogs are collected, and one new dog
+    # that fails every run would otherwise be 100%. Validator rejections don't
+    # count: they repeat for the same dog every run.
     SAVE_ERROR_PARTIAL_FAILURE_RATE = 0.2
     # How many rejected or failed external_ids a run's log line lists.
     LOST_IDS_LOG_CAP = 20
@@ -1106,7 +1107,7 @@ class BaseScraper(ABC):
         correct_animals_found = self._get_correct_animals_found_count(animals_data)
         count_dropped = self.detect_partial_failure(correct_animals_found)
         save_errors = processing_stats["save_errors"]
-        too_many_save_errors = bool(animals_data) and save_errors / len(animals_data) > self.SAVE_ERROR_PARTIAL_FAILURE_RATE
+        too_many_save_errors = correct_animals_found > 0 and save_errors / correct_animals_found > self.SAVE_ERROR_PARTIAL_FAILURE_RATE
         potential_failure = count_dropped or too_many_save_errors
         processing_stats["potential_failure_detected"] = potential_failure
 
@@ -1121,7 +1122,7 @@ class BaseScraper(ABC):
                 self._run_notes.append("Potential partial failure - low animal count detected")
             if too_many_save_errors:
                 # _report_losses has already warned Sentry (dogs_not_saved)
-                self._run_notes.append(f"Potential partial failure - {save_errors} of {len(animals_data)} collected dogs failed to save")
+                self._run_notes.append(f"Potential partial failure - {save_errors} of {correct_animals_found} found dogs failed to save")
         else:
             if self.session_manager:
                 # Every dog the site listed is seen, whether it was skipped as
@@ -1130,8 +1131,8 @@ class BaseScraper(ABC):
                     # Stale detection now would count listed dogs as missing
                     self.logger.warning("Could not mark found dogs as seen - skipping stale data update")
                     self._run_notes.append("Stale detection skipped - found dogs could not be marked as seen")
-                else:
-                    self.session_manager.update_stale_data_detection()
+                elif not self.session_manager.update_stale_data_detection():
+                    self._run_notes.append("Stale detection failed")
             else:
                 self._log_service_unavailable("SessionManager", "stale data detection disabled")
 

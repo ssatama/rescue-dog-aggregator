@@ -423,7 +423,8 @@ class SessionManager:
         A dog the site lists is not stale, whatever happened to it afterwards:
         skipped as existing, rejected by the validator, or failed to save
         (#558). Only external_ids recorded via record_found_animal() count, so
-        dogs the scraper didn't find still go stale. Dogs stale detection has
+        dogs the scraper didn't find still go stale, and dogs the save loop
+        already marked this session aren't written twice. Dogs stale detection has
         already retired (status 'unknown') stay so; only a successful save
         brings one back.
 
@@ -457,11 +458,13 @@ class SessionManager:
                         WHERE organization_id = %s
                         AND status = 'available'
                         AND external_id = ANY(%s)
+                        AND (last_seen_at IS NULL OR last_seen_at < %s)
                         """,
                         (
                             self.current_scrape_session,
                             self.organization_id,
                             list(found_ids_tuple),
+                            self.current_scrape_session,
                         ),
                     )
 
@@ -497,11 +500,13 @@ class SessionManager:
                 WHERE organization_id = %s
                 AND status = 'available'
                 AND external_id = ANY(%s)
+                AND (last_seen_at IS NULL OR last_seen_at < %s)
                 """,
                 (
                     self.current_scrape_session,
                     self.organization_id,
                     list(found_ids_tuple),
+                    self.current_scrape_session,
                 ),
             )
 

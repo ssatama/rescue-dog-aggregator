@@ -101,6 +101,16 @@ class TestAgainstTheDatabase:
         assert counts[9001] == 0
         assert counts[9003] == 2
 
+    def test_dogs_the_save_loop_already_marked_are_not_written_again(self, db):
+        session_manager = SessionManager(DB_CONFIG, organization_id=ORG_ID)
+        session_manager.start_scrape_session()
+        session_manager.mark_animal_as_seen(9001)
+        session_manager.record_found_animal("ext-9001")
+        session_manager.record_found_animal("ext-9002")
+
+        assert session_manager.mark_found_animals_as_seen() == 1, "only 9002"
+        session_manager.close()
+
     def test_a_found_dog_that_is_already_inactive_stays_inactive(self, db):
         db.execute("UPDATE animals SET status = 'unknown', active = false WHERE id = 9001")
         db.connection.commit()
@@ -134,7 +144,7 @@ class TestTooManyNotSavedIsAPartialFailure:
 
         (completion,) = [c.args for c in scraper.database_service.complete_scrape_log.call_args_list]
         assert completion[1] == "warning"
-        assert "3 of 10 collected dogs failed to save" in completion[5]
+        assert "3 of 10 found dogs failed to save" in completion[5]
         session_manager.update_stale_data_detection.assert_not_called()
         session_manager.mark_found_animals_as_seen.assert_not_called()
 
@@ -193,3 +203,39 @@ class TestTooManyNotSavedIsAPartialFailure:
         (completion,) = [c.args for c in scraper.database_service.complete_scrape_log.call_args_list]
         assert completion[1] == "warning"
         assert "found dogs could not be marked" in completion[5]
+
+    def test_one_new_dog_failing_among_many_found_is_not_a_partial_failure(self):
+        """With skip_existing_animals only new dogs are collected; the rate is over found dogs."""
+        session_manager = Mock()
+        session_manager.get_historical_average_dogs_found.return_value = None
+        scraper = _scraper(session_manager)
+        scraper.dogs = [_dog("new")]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(None, "error")),
+            patch.object(scraper, "_get_correct_animals_found_count", return_value=50),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("scrapers.base_scraper.alert_dogs_not_saved"),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            scraper._run_with_connection()
+
+        session_manager.update_stale_data_detection.assert_called_once()
+
+    def test_a_failed_stale_update_is_noted(self):
+        session_manager = Mock()
+        session_manager.get_historical_average_dogs_found.return_value = None
+        session_manager.update_stale_data_detection.return_value = False
+        scraper = _scraper(session_manager)
+        scraper.dogs = [_dog("a")]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "no_change")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            scraper._run_with_connection()
+
+        (completion,) = [c.args for c in scraper.database_service.complete_scrape_log.call_args_list]
+        assert completion[1] == "warning"
+        assert "Stale detection failed" in completion[5]
