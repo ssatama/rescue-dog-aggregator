@@ -30,92 +30,86 @@ class AnimalRescueBosniaScraper(BaseScraper):
             - url: Full URL to detail page
             - thumbnail: URL to listing thumbnail image
         """
-        try:
-            # Fetch listing page
-            response = requests.get(self.listing_url, timeout=self.timeout)
-            response.raise_for_status()
+        # Fetch listing page; a failure raises rather than listing no dogs
+        response = self.get_listing_page(self.listing_url)
 
-            soup = BeautifulSoup(response.content, "html.parser")
+        soup = BeautifulSoup(response.content, "html.parser")
 
-            # Find all headings to track sections
-            all_elements = soup.find_all(["h1", "h2", "h3", "p", "img", "a"])
+        # Find all headings to track sections
+        all_elements = soup.find_all(["h1", "h2", "h3", "p", "img", "a"])
 
-            animals = []
-            in_bosnia_section = False
-            current_dog = None
+        animals = []
+        in_bosnia_section = False
+        current_dog = None
 
-            for element in all_elements:
-                # Check for section markers
-                if hasattr(element, "name") and element.name in ["h1", "h2", "h3"]:
-                    heading_text = element.get_text().strip()
+        for element in all_elements:
+            # Check for section markers
+            if hasattr(element, "name") and element.name in ["h1", "h2", "h3"]:
+                heading_text = element.get_text().strip()
 
-                    # Check if we're entering Germany section
-                    if "Germany" in heading_text and "waiting" in heading_text:
-                        in_bosnia_section = False
-                        current_dog = None
-                        continue
+                # Check if we're entering Germany section
+                if "Germany" in heading_text and "waiting" in heading_text:
+                    in_bosnia_section = False
+                    current_dog = None
+                    continue
 
-                    # Check if we're entering Bosnia section
-                    if "Bosnia" in heading_text and "waiting" in heading_text:
-                        in_bosnia_section = True
-                        current_dog = None
-                        continue
+                # Check if we're entering Bosnia section
+                if "Bosnia" in heading_text and "waiting" in heading_text:
+                    in_bosnia_section = True
+                    current_dog = None
+                    continue
 
-                    # If we're in Bosnia section and this looks like a dog name
-                    if in_bosnia_section and heading_text and len(heading_text) < 50:
-                        # Check if it's not another section header
-                        if not any(keyword in heading_text.lower() for keyword in ["waiting", "dogs", "our", "find"]):
-                            # If we have a previous dog with required info, save it
-                            if current_dog and current_dog["url"] and current_dog["name"]:
-                                animals.append(current_dog)
+                # If we're in Bosnia section and this looks like a dog name
+                if in_bosnia_section and heading_text and len(heading_text) < 50:
+                    # Check if it's not another section header
+                    if not any(keyword in heading_text.lower() for keyword in ["waiting", "dogs", "our", "find"]):
+                        # If we have a previous dog with required info, save it
+                        if current_dog and current_dog["url"] and current_dog["name"]:
+                            animals.append(current_dog)
 
-                            # Start collecting new dog info
-                            current_dog = {
-                                "name": heading_text,
-                                "url": None,
-                                "thumbnail": None,
-                            }
+                        # Start collecting new dog info
+                        current_dog = {
+                            "name": heading_text,
+                            "url": None,
+                            "thumbnail": None,
+                        }
 
-                # If we have a current dog in Bosnia section, look for its details
-                if current_dog and in_bosnia_section:
-                    # Look for thumbnail image
-                    if hasattr(element, "name") and element.name == "img" and not current_dog["thumbnail"]:
-                        src = element.get("src", "") if hasattr(element, "get") else ""
-                        if src and not src.startswith("data:"):
-                            # Make absolute URL
-                            if src.startswith("/"):
-                                src = self.base_url + src
-                            elif not src.startswith("http"):
-                                src = self.base_url + "/" + src
-                            current_dog["thumbnail"] = src
+            # If we have a current dog in Bosnia section, look for its details
+            if current_dog and in_bosnia_section:
+                # Look for thumbnail image
+                if hasattr(element, "name") and element.name == "img" and not current_dog["thumbnail"]:
+                    src = element.get("src", "") if hasattr(element, "get") else ""
+                    if src and not src.startswith("data:"):
+                        # Make absolute URL
+                        if src.startswith("/"):
+                            src = self.base_url + src
+                        elif not src.startswith("http"):
+                            src = self.base_url + "/" + src
+                        current_dog["thumbnail"] = src
 
-                    # Look for "More info" link
-                    if hasattr(element, "name") and element.name == "a":
-                        href = element.get("href", "") if hasattr(element, "get") else ""
-                        link_text = element.get_text().strip().lower()
+                # Look for "More info" link
+                if hasattr(element, "name") and element.name == "a":
+                    href = element.get("href", "") if hasattr(element, "get") else ""
+                    link_text = element.get_text().strip().lower()
 
-                        # Check if this is a detail page link
-                        if href and ("more info" in link_text or "i am interested" in link_text or href.endswith(f"/{current_dog['name'].lower()}/")):
-                            # Make absolute URL
-                            if href.startswith("/"):
-                                href = self.base_url + href
-                            elif not href.startswith("http"):
-                                href = self.base_url + "/" + href
-                            current_dog["url"] = href
+                    # Check if this is a detail page link
+                    if href and ("more info" in link_text or "i am interested" in link_text or href.endswith(f"/{current_dog['name'].lower()}/")):
+                        # Make absolute URL
+                        if href.startswith("/"):
+                            href = self.base_url + href
+                        elif not href.startswith("http"):
+                            href = self.base_url + "/" + href
+                        current_dog["url"] = href
 
-                            # Continue collecting info, don't reset yet
-                            pass
+                        # Continue collecting info, don't reset yet
+                        pass
 
-            # Don't forget the last dog if we have one
-            if current_dog and current_dog["url"] and current_dog["name"]:
-                animals.append(current_dog)
+        # Don't forget the last dog if we have one
+        if current_dog and current_dog["url"] and current_dog["name"]:
+            animals.append(current_dog)
 
-            # World-class logging: Bosnia section stats handled by centralized system
-            return animals
-
-        except Exception as e:
-            self.logger.error(f"Error fetching animal list: {e}")
-            return []
+        # World-class logging: Bosnia section stats handled by centralized system
+        return animals
 
     def scrape_animal_details(self, url: str) -> dict[str, Any] | None:
         """Scrape detailed information from a single animal page.
@@ -403,45 +397,43 @@ class AnimalRescueBosniaScraper(BaseScraper):
         - Skip existing animals (respects skip_existing_animals config)
         - Rate limiting between batches
 
+        A listing failure propagates, so the run ends as an error and stale
+        detection doesn't run.
+
         Returns:
             List of dictionaries, each containing data for one animal
         """
-        try:
-            # Get list of animals in Bosnia
-            animals_list = self.get_animal_list()
-            # World-class logging: Animal list stats handled by centralized system
+        # Get list of animals in Bosnia
+        animals_list = self.get_animal_list()
+        # World-class logging: Animal list stats handled by centralized system
 
-            # Pre-generate external_ids for stale detection
-            # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-            # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
-            for animal in animals_list:
-                if animal.get("name") and "external_id" not in animal:
-                    slug = animal["name"].lower().replace(" ", "-")
-                    animal["external_id"] = f"arb-{slug}"
-                    animal["adoption_url"] = animal["url"]
+        # Pre-generate external_ids for stale detection
+        # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
+        # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
+        for animal in animals_list:
+            if animal.get("name") and "external_id" not in animal:
+                slug = animal["name"].lower().replace(" ", "-")
+                animal["external_id"] = f"arb-{slug}"
+                animal["adoption_url"] = animal["url"]
 
-            # Filter existing animals if skip is enabled
-            if self.skip_existing_animals:
-                filtered_animals = self.filtering_service.filter_existing_animals(animals_list)
-                self._sync_filtering_stats()
-                urls_to_process = [a["url"] for a in filtered_animals]
-            else:
-                urls_to_process = [animal["url"] for animal in animals_list]
-                self.total_animals_before_filter = len(animals_list)
-                self.total_animals_skipped = 0
+        # Filter existing animals if skip is enabled
+        if self.skip_existing_animals:
+            filtered_animals = self.filtering_service.filter_existing_animals(animals_list)
+            self._sync_filtering_stats()
+            urls_to_process = [a["url"] for a in filtered_animals]
+        else:
+            urls_to_process = [animal["url"] for animal in animals_list]
+            self.total_animals_before_filter = len(animals_list)
+            self.total_animals_skipped = 0
 
-            # Process URLs in batches with parallel processing
-            if urls_to_process:
-                all_animals = self._process_dogs_in_batches(urls_to_process)
-            else:
-                all_animals = []
+        # Process URLs in batches with parallel processing
+        if urls_to_process:
+            all_animals = self._process_dogs_in_batches(urls_to_process)
+        else:
+            all_animals = []
 
-            # World-class logging: Collection results handled by centralized system
-            return all_animals
-
-        except Exception as e:
-            self.logger.error(f"Error during data collection: {e}")
-            return []
+        # World-class logging: Collection results handled by centralized system
+        return all_animals
 
     def _process_dogs_in_batches(self, urls: list[str]) -> list[dict[str, Any]]:
         """Process dog URLs in batches using parallel processing.

@@ -5,7 +5,6 @@ import time
 from typing import Any
 from urllib.parse import urljoin
 
-import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
@@ -51,90 +50,85 @@ class PetsInTurkeyScraper(BaseScraper):
     def collect_data(self) -> list[dict[str, Any]]:
         """Collect dog data from the Pets in Turkey website.
 
+        A listing failure propagates, so the run ends as an error and stale
+        detection doesn't run.
+
         Returns:
             List of dog dictionaries with standardized data
         """
         dogs_data = []
 
-        try:
-            # Fetch the page with proper headers
-            headers = {
-                "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)",
-                "Accept": "text/html,application/xhtml+xml",
-                "Accept-Language": "en-US,en;q=0.9",
-            }
+        # Fetch the page with proper headers
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)",
+            "Accept": "text/html,application/xhtml+xml",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
 
-            self.logger.info(f"Fetching dogs from {self.listing_url}")
-            response = requests.get(self.listing_url, headers=headers, timeout=30)
-            response.raise_for_status()
+        self.logger.info(f"Fetching dogs from {self.listing_url}")
+        response = self.get_listing_page(self.listing_url, headers=headers, timeout=30)
 
-            # Parse with BeautifulSoup
-            soup = BeautifulSoup(response.text, "html.parser")
+        # Parse with BeautifulSoup
+        soup = BeautifulSoup(response.text, "html.parser")
 
-            # Find all dog containers - they have "I'm" in the heading
-            # Container is 2 levels up from the heading
-            dog_sections = []
-            for heading in soup.find_all(["h4", "h3", "h2"]):
-                if "I'm " in heading.text:
-                    # Go up 2 levels to get the container with all data
-                    container = heading.parent
+        # Find all dog containers - they have "I'm" in the heading
+        # Container is 2 levels up from the heading
+        dog_sections = []
+        for heading in soup.find_all(["h4", "h3", "h2"]):
+            if "I'm " in heading.text:
+                # Go up 2 levels to get the container with all data
+                container = heading.parent
+                if container:
+                    container = container.parent
                     if container:
-                        container = container.parent
-                        if container:
-                            # Verify this container has dog data
-                            text = container.get_text()
-                            # Check for ANY data indicator (more flexible)
-                            if any(
-                                marker in text
-                                for marker in [
-                                    "Breed",
-                                    "Weight",
-                                    "kg",
-                                    "yo",
-                                    "Male",
-                                    "Female",
-                                ]
-                            ):
-                                # Also check it's not too large (full page)
-                                if len(text) < 1500:
-                                    dog_sections.append(container)
+                        # Verify this container has dog data
+                        text = container.get_text()
+                        # Check for ANY data indicator (more flexible)
+                        if any(
+                            marker in text
+                            for marker in [
+                                "Breed",
+                                "Weight",
+                                "kg",
+                                "yo",
+                                "Male",
+                                "Female",
+                            ]
+                        ):
+                            # Also check it's not too large (full page)
+                            if len(text) < 1500:
+                                dog_sections.append(container)
 
-            self.logger.info(f"Found {len(dog_sections)} dogs to process")
+        self.logger.info(f"Found {len(dog_sections)} dogs to process")
 
-            # Process each dog section
-            for idx, section in enumerate(dog_sections):
-                try:
-                    # Apply rate limiting
-                    if idx > 0:
-                        time.sleep(self.rate_limit_delay)
+        # Process each dog section
+        for idx, section in enumerate(dog_sections):
+            try:
+                # Apply rate limiting
+                if idx > 0:
+                    time.sleep(self.rate_limit_delay)
 
-                    dog_data = self._extract_dog_data(section)
-                    if dog_data and dog_data.get("name"):
-                        # Apply standardization
-                        dog_data = self._apply_standardization(dog_data)
-                        dogs_data.append(dog_data)
-                        self.logger.debug(f"Extracted dog {idx + 1}: {dog_data.get('name')}")
+                dog_data = self._extract_dog_data(section)
+                if dog_data and dog_data.get("name"):
+                    # Apply standardization
+                    dog_data = self._apply_standardization(dog_data)
+                    dogs_data.append(dog_data)
+                    self.logger.debug(f"Extracted dog {idx + 1}: {dog_data.get('name')}")
 
-                except Exception as e:
-                    self.logger.error(f"Error processing dog {idx + 1}: {e}")
-                    continue
+            except Exception as e:
+                self.logger.error(f"Error processing dog {idx + 1}: {e}")
+                continue
 
-            self.logger.info(f"Successfully extracted {len(dogs_data)} dogs")
+        self.logger.info(f"Successfully extracted {len(dogs_data)} dogs")
 
-            # Record external IDs for stale detection before setting filtering stats
-            for dog in dogs_data:
-                if dog.get("external_id") and self.session_manager:
-                    self.session_manager.record_found_animal(dog["external_id"])
+        # Record external IDs for stale detection before setting filtering stats
+        for dog in dogs_data:
+            if dog.get("external_id") and self.session_manager:
+                self.session_manager.record_found_animal(dog["external_id"])
 
-            # Set filtering stats (no DB filtering here - extraction failures tracked separately)
-            self.total_animals_before_filter = len(dogs_data)
-            self.total_animals_skipped = 0
-
-        except Exception as e:
-            self.logger.error(f"Error collecting dog data: {e}")
-            import traceback
-
-            self.logger.error(traceback.format_exc())
+        # Set filtering stats (no DB filtering here - extraction failures tracked separately)
+        self.total_animals_before_filter = len(dogs_data)
+        self.total_animals_skipped = 0
 
         return dogs_data
 

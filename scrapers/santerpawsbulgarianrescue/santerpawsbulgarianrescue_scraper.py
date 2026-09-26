@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup, Comment, Tag
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, ListingIncompleteError
 
 # Migrated to unified standardization - using BaseScraper.process_animal()
 # Legacy standardize_age kept for date-of-birth calculations
@@ -233,147 +233,133 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         skip_existing_animals, and then processes them in parallel batches
         for efficient detail scraping.
 
+        A listing failure propagates, so the run ends as an error and stale
+        detection doesn't run.
+
         Returns:
             List of dog data dictionaries for database storage
         """
-        try:
-            # Phase 1: Get and filter animals
-            animals = self._get_filtered_animals()
-            if not animals:
-                return []
-
-            # Phase 2: Process animals in parallel batches for detail scraping
-            all_dogs_data = self._process_animals_parallel(animals)
-
-            self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
-            return all_dogs_data
-
-        except Exception as e:
-            self.logger.error(f"Error collecting data: {e}")
+        # Phase 1: Get and filter animals
+        animals = self._get_filtered_animals()
+        if not animals:
             return []
+
+        # Phase 2: Process animals in parallel batches for detail scraping
+        all_dogs_data = self._process_animals_parallel(animals)
+
+        self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
+        return all_dogs_data
 
     def get_animal_list(self) -> list[dict[str, Any]]:
         """Fetch list of available dogs by paginating through all listing pages.
 
         Loops through paginated listing pages (/adopt/page/1/, /adopt/page/2/, etc.)
-        to collect all available dogs. Stops when a page returns no dogs.
+        until a page lists no dogs; a page past the end is an empty 200. That
+        empty page must come after the last page the pagination numbers, and
+        every page must load, or this raises ListingIncompleteError: the dogs
+        on a skipped page would go stale. An empty first page is left to the
+        zero-dogs alert.
 
         Returns:
             List of dictionaries containing basic dog information from all pages
         """
         all_animals = []
         page_num = 1
+        last_numbered_page = 1
         max_pages = 20  # Safety limit to prevent infinite loops
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)",
+        }
 
-        try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)",
-            }
+        while True:
+            page_url = self.listing_url if page_num == 1 else f"{self.listing_url}page/{page_num}/"
+            self.logger.debug(f"Fetching page {page_num}: {page_url}")
 
-            while page_num <= max_pages:
-                # Construct page URL
-                if page_num == 1:
-                    page_url = self.listing_url
-                else:
-                    page_url = f"{self.listing_url}page/{page_num}/"
+            response = self.get_listing_page(page_url, headers=headers, timeout=30)
+            soup = BeautifulSoup(response.text, "html.parser")
 
-                self.logger.debug(f"Fetching page {page_num}: {page_url}")
+            if page_num == 1:
+                numbers = [el["data-page"] for el in soup.select(".phox-facet-pagination [data-page]")]
+                last_numbered_page = max((int(n) for n in numbers if n.isdigit()), default=1)
 
-                # Make GET request to page
-                response = requests.get(
-                    page_url,
-                    headers=headers,
-                    timeout=30,
-                )
-                response.raise_for_status()
+            # Find all dog cards
+            dog_cards = soup.find_all("article", class_="bde-loop-item")
+            self.logger.debug(f"Found {len(dog_cards)} dog cards on page {page_num}")
 
-                # Parse HTML response
-                soup = BeautifulSoup(response.text, "html.parser")
+            if not dog_cards:
+                if 1 < page_num <= last_numbered_page:
+                    raise ListingIncompleteError(f"Santer Paws listing page {page_num} of {last_numbered_page} lists no dogs")
+                self.logger.info(f"No dogs found on page {page_num}, stopping pagination")
+                break
 
-                # Find all dog cards
-                dog_cards = soup.find_all("article", class_="bde-loop-item")
-                self.logger.debug(f"Found {len(dog_cards)} dog cards on page {page_num}")
+            if page_num == max_pages:
+                raise ListingIncompleteError(f"Santer Paws listing still lists dogs on page {max_pages}")
 
-                # Stop if no dogs found on this page
-                if not dog_cards:
-                    self.logger.info(f"No dogs found on page {page_num}, stopping pagination")
-                    break
-
-                # Process dogs from this page
-                page_animals = []
-                for card in dog_cards:
-                    try:
-                        # Skip if not a Tag element
-                        if not hasattr(card, "find"):
-                            continue
-
-                        # Skip reserved/on-hold dogs (check for status badge text)
-                        card_text = card.get_text().lower()
-                        if "reserved" in card_text or "on hold" in card_text:
-                            self.logger.debug("Skipping reserved/on-hold dog from listing page")
-                            continue
-
-                        # Find the link to the adoption page
-                        link = card.find("a", href=lambda x: x and "/dog/" in x)
-                        if not link:
-                            continue
-
-                        # Extract URL
-                        adoption_url = link.get("href")
-                        if not adoption_url:
-                            continue
-
-                        # Make URL absolute if needed
-                        if not adoption_url.startswith("http"):
-                            adoption_url = urljoin(self.base_url, adoption_url)
-
-                        # Extract name from URL
-                        name = self._extract_dog_name_from_url(adoption_url)
-                        if not name:
-                            self.logger.warning(f"Could not extract name from URL: {adoption_url}")
-                            continue
-
-                        # Extract external ID from URL
-                        external_id = self._extract_external_id(adoption_url)
-
-                        # Create animal data structure
-                        animal_data = {
-                            "name": name,
-                            "external_id": external_id,
-                            "adoption_url": adoption_url,
-                            "animal_type": "dog",
-                            "status": "available",
-                            "primary_image_url": None,
-                            "original_image_url": None,
-                        }
-
-                        page_animals.append(animal_data)
-                        self.logger.debug(f"Added dog: {name} ({external_id})")
-
-                    except Exception as e:
-                        self.logger.error(f"Error processing dog card: {e}")
+            # Process dogs from this page
+            page_animals = []
+            for card in dog_cards:
+                try:
+                    # Skip if not a Tag element
+                    if not hasattr(card, "find"):
                         continue
 
-                # Add this page's animals to the total
-                all_animals.extend(page_animals)
-                self.logger.info(f"Page {page_num}: extracted {len(page_animals)} dogs (total so far: {len(all_animals)})")
+                    # Skip reserved/on-hold dogs (check for status badge text)
+                    card_text = card.get_text().lower()
+                    if "reserved" in card_text or "on hold" in card_text:
+                        self.logger.debug("Skipping reserved/on-hold dog from listing page")
+                        continue
 
-                # Move to next page
-                page_num += 1
+                    # Find the link to the adoption page
+                    link = card.find("a", href=lambda x: x and "/dog/" in x)
+                    if not link:
+                        continue
 
-                # Small delay between pages to be respectful
-                if page_num <= max_pages:
-                    time.sleep(0.5)
+                    # Extract URL
+                    adoption_url = link.get("href")
+                    if not adoption_url:
+                        continue
 
-            self.logger.info(f"Successfully extracted {len(all_animals)} available dogs from {page_num - 1} pages")
-            return all_animals
+                    # Make URL absolute if needed
+                    if not adoption_url.startswith("http"):
+                        adoption_url = urljoin(self.base_url, adoption_url)
 
-        except requests.RequestException as e:
-            self.logger.error(f"Network error fetching animal list: {e}")
-            return all_animals  # Return what we have so far
-        except Exception as e:
-            self.logger.error(f"Error fetching animal list: {e}")
-            return all_animals  # Return what we have so far
+                    # Extract name from URL
+                    name = self._extract_dog_name_from_url(adoption_url)
+                    if not name:
+                        self.logger.warning(f"Could not extract name from URL: {adoption_url}")
+                        continue
+
+                    # Extract external ID from URL
+                    external_id = self._extract_external_id(adoption_url)
+
+                    # Create animal data structure
+                    animal_data = {
+                        "name": name,
+                        "external_id": external_id,
+                        "adoption_url": adoption_url,
+                        "animal_type": "dog",
+                        "status": "available",
+                        "primary_image_url": None,
+                        "original_image_url": None,
+                    }
+
+                    page_animals.append(animal_data)
+                    self.logger.debug(f"Added dog: {name} ({external_id})")
+
+                except Exception as e:
+                    self.logger.error(f"Error processing dog card: {e}")
+                    continue
+
+            # Add this page's animals to the total
+            all_animals.extend(page_animals)
+            self.logger.info(f"Page {page_num}: extracted {len(page_animals)} dogs (total so far: {len(all_animals)})")
+
+            page_num += 1
+            # Small delay between pages to be respectful
+            time.sleep(0.5)
+
+        self.logger.info(f"Successfully extracted {len(all_animals)} available dogs from {page_num - 1} pages")
+        return all_animals
 
     def _extract_dog_name_from_url(self, url: str) -> str:
         """Extract and format dog name from adoption URL.

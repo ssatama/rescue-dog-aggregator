@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, ListingIncompleteError
 from services.metrics_collector import MetricsCollector
 
 
@@ -106,6 +106,16 @@ class TestRunCompletion:
         (completion,) = _completions(scraper)
         assert completion[1] == "error"
         assert "listing broke" in completion[5]
+
+    def test_an_incomplete_listing_is_an_error_run_without_stale_detection(self, scraper):
+        with patch.object(scraper, "collect_data", side_effect=ListingIncompleteError("page 2 failed to load")):
+            assert scraper._run_with_connection() is False
+
+        (completion,) = _completions(scraper)
+        assert completion[1] == "error"
+        assert "page 2 failed to load" in completion[5]
+        scraper.session_manager.mark_found_animals_as_seen.assert_not_called()
+        scraper.session_manager.update_stale_data_detection.assert_not_called()
 
     def test_a_failed_completion_write_is_written_once_more_as_it_was(self, scraper):
         scraper.dogs = [_dog("a")]

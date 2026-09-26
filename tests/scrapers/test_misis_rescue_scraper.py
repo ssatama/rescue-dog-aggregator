@@ -8,6 +8,7 @@ import pytest
 from bs4 import BeautifulSoup
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
+from scrapers.base_scraper import ListingIncompleteError
 from scrapers.misis_rescue.detail_parser import MisisRescueDetailParser
 from scrapers.misis_rescue.normalizer import (
     calculate_age_years,
@@ -1649,6 +1650,45 @@ class TestMisisRescueNeverHangs(ScraperTestBase):
         ):
             with pytest.raises(RuntimeError, match="has been closed"):
                 asyncio.run(scraper._get_all_dogs_from_listing_playwright())
+
+    def _paginated_listing(self, scraper, renders, buttons):
+        """Run the Playwright listing: page 1 then each clicked page renders the next HTML."""
+        page = Mock()
+        page.content = AsyncMock(side_effect=renders)
+
+        @asynccontextmanager
+        async def fake_retry(options=None, **kwargs):
+            yield SimpleNamespace(page=page)
+
+        with (
+            patch("scrapers.misis_rescue.scraper.PlaywrightOptions", create=True),
+            patch.object(scraper, "_with_browser_retry", fake_retry),
+            patch.object(scraper.browser_manager, "navigate_with_retry", new=AsyncMock(return_value=True)),
+            patch.object(scraper, "_scroll_to_load_all_content_playwright", new=AsyncMock()),
+            patch.object(scraper, "_click_pagination_button_playwright", new=AsyncMock(side_effect=buttons)),
+            patch("scrapers.misis_rescue.scraper.asyncio.sleep", new=AsyncMock()),
+        ):
+            return asyncio.run(scraper._get_all_dogs_from_listing_playwright())
+
+    PAGE_1 = '<html><body><a href="/post/dog1">Dog 1</a><a href="/post/dog2">Dog 2</a></body></html>'
+    PAGE_2 = '<html><body><a href="/post/dog3">Dog 3</a></body></html>'
+
+    def test_no_button_for_the_next_page_ends_the_listing(self, scraper):
+        dogs = self._paginated_listing(scraper, [self.PAGE_1, self.PAGE_2], [True, False])
+        assert [d["url"] for d in dogs] == ["/post/dog1", "/post/dog2", "/post/dog3"]
+
+    def test_a_clicked_page_that_renders_no_dogs_raises(self, scraper):
+        with pytest.raises(ListingIncompleteError, match="page 3"):
+            self._paginated_listing(scraper, [self.PAGE_1, self.PAGE_2, "<html><body></body></html>"], [True, True])
+
+    def test_a_clicked_page_still_showing_the_last_page_raises(self, scraper):
+        with pytest.raises(ListingIncompleteError, match="page 2"):
+            self._paginated_listing(scraper, [self.PAGE_1, self.PAGE_1], [True])
+
+    def test_a_page_of_reserved_dogs_is_rendered_not_empty(self, scraper):
+        reserved = '<html><body><a href="/post/dog4">Dog 4 (reserved)</a></body></html>'
+        dogs = self._paginated_listing(scraper, [self.PAGE_1, reserved], [True, False])
+        assert [d["url"] for d in dogs] == ["/post/dog1", "/post/dog2"]
 
     def test_a_dead_browser_while_finding_the_next_page_raises(self, scraper):
         locator = Mock()

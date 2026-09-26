@@ -2,7 +2,9 @@ import unittest
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 
+from scrapers.base_scraper import ListingIncompleteError
 from scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper import (
     SanterPawsBulgarianRescueScraper,
 )
@@ -184,14 +186,14 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         self.assertEqual(len(animals), 0)
 
     @patch("requests.get")
-    def test_get_animal_list_handles_network_error(self, mock_get):
-        """Test that get_animal_list handles network errors gracefully."""
-        mock_get.side_effect = Exception("Network error")
+    def test_a_listing_that_fails_to_load_raises_after_retries(self, mock_get):
+        """A listing failure ends the run as an error, never as zero dogs (#559)."""
+        mock_get.side_effect = requests.ConnectionError("Network error")
 
-        animals = self.scraper.get_animal_list()
+        with self.assertRaises(ListingIncompleteError):
+            self.scraper.get_animal_list()
 
-        # Should return empty list on error
-        self.assertEqual(len(animals), 0)
+        self.assertEqual(mock_get.call_count, self.scraper.max_retries + 1)
 
     @patch("requests.get")
     def test_all_scraped_dogs_marked_available(self, mock_get):
@@ -622,15 +624,11 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             # Should return empty list
             self.assertEqual(len(result), 0)
 
-    def test_collect_data_error_handling(self):
-        """Test that collect_data handles exceptions gracefully."""
-        with patch.object(self.scraper, "_get_filtered_animals") as mock_get_filtered:
-            mock_get_filtered.side_effect = Exception("Network error")
-
-            result = self.scraper.collect_data()
-
-            # Should return empty list on error
-            self.assertEqual(len(result), 0)
+    def test_collect_data_lets_a_listing_failure_through(self):
+        """collect_data never turns a listing failure into zero dogs (#559)."""
+        with patch.object(self.scraper, "_get_filtered_animals", side_effect=ListingIncompleteError("page 2 failed")):
+            with self.assertRaises(ListingIncompleteError):
+                self.scraper.collect_data()
 
     @patch("requests.get")
     def test_scrape_animal_details_extracts_hero_image(self, mock_get):

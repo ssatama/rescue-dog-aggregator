@@ -8,7 +8,7 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, ListingIncompleteError
 from scrapers.tierschutzverein_europa.translations import (
     normalize_name,
     translate_age,
@@ -34,100 +34,92 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         self.listing_url: str = "https://tierschutzverein-europa.de/tiervermittlung/"
 
     def collect_data(self) -> list[dict[str, Any]]:
-        """Main entry point - orchestrates two-phase scraping with parallel processing."""
-        try:
-            # Phase 1: Get list of animals from listing pages
-            self.logger.info("Phase 1: Extracting animals from listing pages")
-            animals = self.get_animal_list()
+        """Main entry point - orchestrates two-phase scraping with parallel processing.
 
-            if not animals:
-                self.logger.info("No animals found on listing pages")
-                return []
+        A listing failure propagates, so the run ends as an error and stale
+        detection doesn't run; a detail page that fails skips one dog.
+        """
+        # Phase 1: Get list of animals from listing pages
+        self.logger.info("Phase 1: Extracting animals from listing pages")
+        animals = self.get_animal_list()
 
-            self.logger.info(f"Found {len(animals)} animals on listing pages")
-
-            # Filter based on skip_existing_animals if enabled
-            # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-            # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
-            if self.skip_existing_animals:
-                animals = self.filtering_service.filter_existing_animals(animals)
-                self._sync_filtering_stats()
-            else:
-                self.total_animals_before_filter = len(animals)
-                self.total_animals_skipped = 0
-
-            if not animals:
-                self.logger.info("All animals already exist - skipping detail scraping")
-                return []
-
-            # Phase 2: Process animals in parallel to get detail data
-            self.logger.info("Phase 2: Scraping detail pages in parallel")
-            enriched_animals = self._process_animals_parallel(animals)
-
-            # Phase 3: Translate German data to English
-            self.logger.info("Phase 3: Translating German data to English")
-            translated_animals = self._translate_and_normalize_dogs(enriched_animals)
-
-            self.logger.info(f"Successfully collected {len(translated_animals)} dogs")
-            return translated_animals
-
-        except Exception as e:
-            self.logger.error(f"Error in collect_data: {e}")
+        if not animals:
+            self.logger.info("No animals found on listing pages")
             return []
 
+        self.logger.info(f"Found {len(animals)} animals on listing pages")
+
+        # Filter based on skip_existing_animals if enabled
+        # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
+        # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
+        if self.skip_existing_animals:
+            animals = self.filtering_service.filter_existing_animals(animals)
+            self._sync_filtering_stats()
+        else:
+            self.total_animals_before_filter = len(animals)
+            self.total_animals_skipped = 0
+
+        if not animals:
+            self.logger.info("All animals already exist - skipping detail scraping")
+            return []
+
+        # Phase 2: Process animals in parallel to get detail data
+        self.logger.info("Phase 2: Scraping detail pages in parallel")
+        enriched_animals = self._process_animals_parallel(animals)
+
+        # Phase 3: Translate German data to English
+        self.logger.info("Phase 3: Translating German data to English")
+        translated_animals = self._translate_and_normalize_dogs(enriched_animals)
+
+        self.logger.info(f"Successfully collected {len(translated_animals)} dogs")
+        return translated_animals
+
     def get_animal_list(self) -> list[dict[str, Any]]:
-        """Phase 1: Extract dogs from all pagination pages."""
+        """Phase 1: Extract dogs from all pagination pages.
+
+        Every page a "next" link promised must load and list dogs, or this
+        raises ListingIncompleteError: the dogs on a skipped page would go stale.
+        """
         all_animals = []
         page = 1
         max_pages = 50  # Safety limit to prevent infinite loops
 
-        while page <= max_pages:
-            try:
-                page_url = self.get_page_url(page)
-                self.logger.debug(f"Fetching page {page}: {page_url}")
+        while True:
+            page_url = self.get_page_url(page)
+            self.logger.debug(f"Fetching page {page}: {page_url}")
 
-                response = requests.get(
-                    page_url,
-                    headers={"User-Agent": "Mozilla/5.0 (compatible; rescue-dog-aggregator)"},
-                    timeout=30,
-                )
-                response.raise_for_status()
+            response = self.get_listing_page(page_url, headers={"User-Agent": "Mozilla/5.0 (compatible; rescue-dog-aggregator)"}, timeout=30)
 
-                # Parse HTML and extract animals
-                soup = BeautifulSoup(response.text, "html.parser")
-                articles = soup.find_all("article", class_="tiervermittlung")
+            # Parse HTML and extract animals
+            soup = BeautifulSoup(response.text, "html.parser")
+            articles = soup.find_all("article", class_="tiervermittlung")
 
-                # If no articles found, we've reached the end
-                if not articles:
-                    self.logger.debug(f"No more articles found on page {page}, stopping pagination")
-                    break
+            if not articles:
+                if page > 1:
+                    raise ListingIncompleteError(f"Listing page {page} was linked from page {page - 1} but lists no dogs")
+                self.logger.warning("No dogs on the first listing page")
+                break
 
-                for article in articles:
-                    animal_data = self._extract_animal_from_article(article)
-                    if animal_data:
-                        all_animals.append(animal_data)
+            for article in articles:
+                animal_data = self._extract_animal_from_article(article)
+                if animal_data:
+                    all_animals.append(animal_data)
 
-                # Check if there's a next page link
-                next_link = soup.find("a", {"class": "next", "href": True}) or soup.find("a", {"rel": "next", "href": True}) or soup.find("a", text="→")
+            # Check if there's a next page link
+            next_link = soup.find("a", {"class": "next", "href": True}) or soup.find("a", {"rel": "next", "href": True}) or soup.find("a", text="→")
 
-                if not next_link:
-                    self.logger.debug(f"No next page link found on page {page}, stopping pagination")
-                    break
+            if not next_link:
+                self.logger.debug(f"No next page link found on page {page}, stopping pagination")
+                break
 
-                # Rate limiting
-                time.sleep(self.rate_limit_delay)
-                page += 1
+            if page == max_pages:
+                raise ListingIncompleteError(f"Listing still has a next page after {max_pages} pages")
 
-            except Exception as e:
-                self.logger.error(f"Error processing page {page}: {e}")
-                # Try to continue with next page
-                page += 1
-                if page > 3 and not all_animals:
-                    # If we've tried 3 pages and found nothing, stop
-                    self.logger.error("Failed to extract animals from first 3 pages, stopping")
-                    break
+            # Rate limiting
+            time.sleep(self.rate_limit_delay)
+            page += 1
 
-        self.logger.info(f"Extracted {len(all_animals)} animals from {page - 1} listing pages")
+        self.logger.info(f"Extracted {len(all_animals)} animals from {page} listing pages")
         return all_animals
 
     def _extract_animal_from_article(self, article) -> dict[str, Any] | None:

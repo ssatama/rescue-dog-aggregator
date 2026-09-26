@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from bs4 import BeautifulSoup
 
+from scrapers.base_scraper import ListingIncompleteError
 from scrapers.theunderdog.theunderdog_scraper import TheUnderdogScraper
 
 
@@ -146,13 +147,12 @@ class TestTheUnderdogScraper:
         assert info["url"] == "https://www.theunderdog.org/adopt/bella"
         assert info["thumbnail_url"] == "bella.jpg"
 
-    def test_get_animal_list_with_network_error(self, scraper):
-        scraper._fetch_listing_page = MagicMock(side_effect=Exception("Network error"))
+    def test_get_animal_list_lets_a_listing_failure_through(self, scraper):
+        """A listing failure ends the run as an error, never as zero dogs (#559)."""
+        scraper._fetch_listing_page = MagicMock(side_effect=ListingIncompleteError("503"))
 
-        animals = scraper.get_animal_list()
-
-        assert animals == []
-        scraper.logger.error.assert_called()
+        with pytest.raises(ListingIncompleteError):
+            scraper.get_animal_list()
 
     def test_single_page_no_pagination(self, scraper, listing_html):
         soup = BeautifulSoup(listing_html, "html.parser")
@@ -505,13 +505,6 @@ class TestTheUnderdogIntegration:
                 assert field in dog, f"Missing required field '{field}' in {dog['name']}"
                 assert dog[field] is not None, f"Field '{field}' is None in {dog['name']}"
                 assert dog[field] != "", f"Field '{field}' is empty in {dog['name']}"
-
-    @patch("scrapers.theunderdog.theunderdog_scraper.requests.get")
-    def test_collect_data_returns_empty_list_on_network_error(self, mock_get, scraper):
-        mock_get.side_effect = Exception("Network error")
-
-        results = scraper.collect_data()
-        assert results == []
 
     @patch("scrapers.theunderdog.theunderdog_scraper.requests.get")
     def test_fallback_extraction_from_description(self, mock_get, scraper):

@@ -9,7 +9,7 @@ from typing import Any
 
 from bs4 import BeautifulSoup, Tag
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, ListingIncompleteError
 
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
@@ -35,6 +35,9 @@ class ManyTearsRescueScraper(BaseScraper):
     This scraper uses Selenium WebDriver to bypass the protection and extract dog data
     from listing pages with pagination support.
     """
+
+    # Dogs on a full listing page (checked 2026-09-26)
+    PAGE_SIZE = 12
 
     # User agents for rotation
     USER_AGENTS = [
@@ -232,24 +235,22 @@ class ManyTearsRescueScraper(BaseScraper):
         scrapes detailed information for each dog. Supports skip_existing_animals
         and batch_size parallelism configuration parameters.
 
+        A listing failure propagates, so the run ends as an error and stale
+        detection doesn't run.
+
         Returns:
             List of dog data dictionaries for database storage
         """
-        try:
-            # Phase 1: Get and filter animals
-            animals = self._get_filtered_animals()
-            if not animals:
-                return []
-
-            # Phase 2: Process animals in parallel with individual WebDrivers per thread
-            all_dogs_data = self._process_animals_parallel(animals)
-
-            self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
-            return all_dogs_data
-
-        except Exception as e:
-            self.logger.error(f"Error collecting data from Many Tears Rescue: {e}")
+        # Phase 1: Get and filter animals
+        animals = self._get_filtered_animals()
+        if not animals:
             return []
+
+        # Phase 2: Process animals in parallel with individual WebDrivers per thread
+        all_dogs_data = self._process_animals_parallel(animals)
+
+        self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
+        return all_dogs_data
 
     def get_animal_list(self) -> list[dict[str, Any]]:
         """Fetch list of available dogs using browser automation with pagination.
@@ -374,80 +375,47 @@ class ManyTearsRescueScraper(BaseScraper):
         return all_dogs
 
     async def _get_animal_list_playwright(self) -> list[dict[str, Any]]:
-        """Playwright implementation of get_animal_list."""
+        """Playwright implementation of get_animal_list.
+
+        Every page the first page's pagination links to must load and list
+        dogs, or this raises ListingIncompleteError: the dogs on a skipped page
+        would go stale. An empty first page is left to the zero-dogs alert.
+        """
+        playwright_service = get_playwright_service()
         all_dogs = []
+        page_num = 1
+        max_pages = 1
 
-        try:
-            playwright_service = get_playwright_service()
-            page_num = 1
-            max_pages = None
-            consecutive_empty_pages = 0
-            max_empty_pages = 2
+        while page_num <= max_pages:
+            url = self.listing_url if page_num == 1 else f"{self.listing_url}?page={page_num}"
+            self.logger.info(f"Fetching page {page_num} with Playwright: {url}")
 
-            while True:
-                try:
-                    if page_num == 1:
-                        url = self.listing_url
-                    else:
-                        url = f"{self.listing_url}?page={page_num}"
+            options = PlaywrightOptions(
+                headless=True,
+                viewport_width=random.randint(1366, 1920),
+                viewport_height=random.randint(768, 1080),
+            )
+            result = await playwright_service.get_page_content(url, options)
+            if not result.success:
+                raise ListingIncompleteError(f"Many Tears listing page {page_num} failed to load: {result.error}")
 
-                    self.logger.info(f"Fetching page {page_num} with Playwright: {url}")
+            soup = BeautifulSoup(result.content, "html.parser")
+            page_dogs = self._extract_dogs_from_page(soup)
 
-                    options = PlaywrightOptions(
-                        headless=True,
-                        viewport_width=random.randint(1366, 1920),
-                        viewport_height=random.randint(768, 1080),
-                    )
+            if page_num == 1:
+                max_pages = self._detect_max_pages(soup)
+                self.logger.info(f"Detected maximum pages: {max_pages}")
+                if max_pages == 1 and len(page_dogs) >= self.PAGE_SIZE:
+                    raise ListingIncompleteError(f"Many Tears listing page 1 is full ({len(page_dogs)} dogs) but has no pagination links")
+            elif not page_dogs:
+                raise ListingIncompleteError(f"Many Tears listing page {page_num} of {max_pages} lists no dogs")
 
-                    result = await playwright_service.get_page_content(url, options)
+            all_dogs.extend(page_dogs)
+            self.logger.info(f"Found {len(page_dogs)} dogs on page {page_num}")
 
-                    if not result.success:
-                        self.logger.error(f"Playwright failed to load page {page_num}: {result.error}")
-                        consecutive_empty_pages += 1
-                        if consecutive_empty_pages >= max_empty_pages:
-                            break
-                        page_num += 1
-                        continue
-
-                    soup = BeautifulSoup(result.content, "html.parser")
-
-                    # Detect max pages on first page
-                    if max_pages is None:
-                        max_pages = self._detect_max_pages(soup)
-                        self.logger.info(f"Detected maximum pages: {max_pages}")
-
-                    # Extract dogs from current page
-                    page_dogs = self._extract_dogs_from_page(soup)
-                    if page_dogs:
-                        all_dogs.extend(page_dogs)
-                        self.logger.info(f"Found {len(page_dogs)} dogs on page {page_num}")
-                        consecutive_empty_pages = 0
-                    else:
-                        self.logger.warning(f"No dogs found on page {page_num}")
-                        consecutive_empty_pages += 1
-                        if consecutive_empty_pages >= max_empty_pages:
-                            break
-
-                    # Check if we should continue
-                    if page_num >= max_pages:
-                        self.logger.info(f"Reached max page {max_pages}")
-                        break
-
-                    page_num += 1
-
-                    # Rate limiting
-                    delay = random.uniform(self.rate_limit_delay + 2, self.rate_limit_delay + 5)
-                    await asyncio.sleep(delay)
-
-                except Exception as e:
-                    self.logger.error(f"Error processing page {page_num}: {e}")
-                    consecutive_empty_pages += 1
-                    if consecutive_empty_pages >= max_empty_pages:
-                        break
-                    continue
-
-        except Exception as e:
-            self.logger.error(f"Error during Playwright pagination scraping: {e}")
+            page_num += 1
+            if page_num <= max_pages:
+                await asyncio.sleep(random.uniform(self.rate_limit_delay + 2, self.rate_limit_delay + 5))
 
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs

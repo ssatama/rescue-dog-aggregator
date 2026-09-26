@@ -3,8 +3,10 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from bs4 import BeautifulSoup
 
+from scrapers.base_scraper import ListingIncompleteError
 from scrapers.pets_in_turkey.petsinturkey_scraper import PetsInTurkeyScraper
 
 
@@ -25,6 +27,10 @@ class TestPetsInTurkeyScraper:
             scraper.rate_limit_delay = 0.1
             scraper.batch_size = 10
             scraper.skip_existing_animals = False
+            scraper.timeout = 30
+            scraper.max_retries = 2
+            scraper.retry_backoff_factor = 2.0
+            scraper.session_manager = None
             scraper.org_config = MagicMock()
             scraper.org_config.metadata.website_url = "https://www.petsinturkey.org"
             scraper.set_filtering_stats = MagicMock()
@@ -93,7 +99,7 @@ class TestPetsInTurkeyScraper:
         assert scraper.listing_url == "https://www.petsinturkey.org/dogs"
         assert scraper.organization_name == "Pets in Turkey"
 
-    @patch("scrapers.pets_in_turkey.petsinturkey_scraper.requests.get")
+    @patch("scrapers.base_scraper.requests.get")
     def test_collect_data_success(self, mock_get, scraper, sample_html):
         """Test successful data collection from website."""
         # Mock response
@@ -211,17 +217,15 @@ class TestPetsInTurkeyScraper:
         assert standardized["status"] == "available"
         assert standardized["animal_type"] == "dog"
 
-    @patch("scrapers.pets_in_turkey.petsinturkey_scraper.requests.get")
-    def test_error_handling(self, mock_get, scraper):
-        """Test error handling during data collection."""
-        # Mock network error
-        mock_get.side_effect = Exception("Network error")
+    @patch("scrapers.base_scraper.requests.get")
+    def test_a_listing_that_fails_to_load_raises_after_retries(self, mock_get, scraper):
+        """A listing failure ends the run as an error, never as zero dogs (#559)."""
+        mock_get.side_effect = requests.ConnectionError("Network error")
 
-        dogs = scraper.collect_data()
+        with pytest.raises(ListingIncompleteError, match="after 3 attempt"):
+            scraper.collect_data()
 
-        # Should return empty list and log error
-        assert dogs == []
-        scraper.logger.error.assert_called()
+        assert mock_get.call_count == 3
 
     def test_birth_date_extraction(self, scraper):
         """Test extraction of birth date format."""

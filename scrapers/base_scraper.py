@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Any
 
 import psycopg2
+import requests
 from langdetect import detect
 
 # Import config
@@ -52,6 +53,18 @@ logger = logging.getLogger(__name__)
 
 
 FORCE_RESCRAPE_VALUES = ("true", "1", "yes")
+
+# Worth retrying: the server or the network may recover. Any other 4xx won't.
+RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+
+
+class ListingIncompleteError(RuntimeError):
+    """A listing page the scraper had to read could not be read.
+
+    Raised instead of returning the pages that did load: stale detection would
+    take the dogs on the missing pages for gone (#559). The run ends as an
+    error and stale detection doesn't run.
+    """
 
 
 def force_rescrape_enabled() -> bool:
@@ -1283,6 +1296,27 @@ class BaseScraper(ABC):
         """Sleep for the configured rate limit delay."""
         if self.rate_limit_delay > 0:
             time.sleep(self.rate_limit_delay)
+
+    def get_listing_page(self, url: str, **kwargs) -> requests.Response:
+        """GET one listing page, retried max_retries times with backoff.
+
+        A page that still fails raises ListingIncompleteError, never a partial
+        listing. Timeouts, connection errors, 429 and 5xx are retried; any
+        other 4xx fails at once.
+        """
+        kwargs.setdefault("timeout", self.timeout)
+        attempts = self.max_retries + 1
+        for attempt in range(1, attempts + 1):
+            try:
+                response = requests.get(url, **kwargs)
+                response.raise_for_status()
+                return response
+            except requests.RequestException as e:
+                status = getattr(e.response, "status_code", None)
+                if attempt == attempts or (status is not None and status not in RETRYABLE_STATUS_CODES):
+                    raise ListingIncompleteError(f"Listing page {url} failed after {attempt} attempt(s): {e}") from e
+                self.logger.warning(f"Listing page {url} failed (attempt {attempt} of {attempts}), retrying: {e}")
+                time.sleep(self.retry_backoff_factor**attempt)
 
     def _record_all_found_external_ids(self, animals_data):
         """Record all external_ids from discovered animals for accurate stale detection.

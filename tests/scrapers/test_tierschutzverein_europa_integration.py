@@ -175,6 +175,9 @@ class TestScraperCoreFunctions:
             scraper.rate_limit_delay = 0
             scraper.batch_size = 2
             scraper.skip_existing_animals = False
+            scraper.timeout = 30
+            scraper.max_retries = 2
+            scraper.retry_backoff_factor = 2.0
             return scraper
 
     @pytest.fixture
