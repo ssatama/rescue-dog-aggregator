@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: `${formatCount(count)}+ Senior Rescue Dogs for Adoption | Give an Older Dog a Home`,
-    description: clampDescription(`Adopt a senior rescue dog (8+ years). ${formatCount(count)} gentle, loving older dogs seeking their forever homes. Often house-trained with calm temperaments. ${seniorCategory.tagline}`),
+    description: clampDescription(`Adopt a senior rescue dog (8+ years). ${formatCount(count)} gentle, loving older dogs seeking their forever homes. ${seniorCategory.tagline}`),
     keywords: seniorCategory.seoKeywords,
     alternates: {
       canonical: "https://www.rescuedogs.me/dogs/senior",

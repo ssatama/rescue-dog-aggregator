@@ -5,12 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { trackAdoptionLinkClicked, type AdoptionPlacement } from "@/lib/analytics";
+import { trackAdoptionLinkClicked, type AdoptionPlacement, type AdoptionSource } from "@/lib/analytics";
 import { trackExternalLinkClick } from "@/lib/monitoring/breadcrumbs";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import ShareButton from "@/components/ui/ShareButton";
 import DogStatusBadge from "@/components/dogs/DogStatusBadge";
-import { formatBreed, getAgeCategory } from "@/utils/dogHelpers";
+import { formatBreed, formatSize, getAgeCategory } from "@/utils/dogHelpers";
 import { safeExternalUrl } from "@/utils/security";
 import { getCountryName } from "@/utils/countryNames";
 import {
@@ -32,7 +32,7 @@ const ENERGY: Record<string, string> = {
   very_high: "Very high energy",
 };
 
-const EXPERIENCE: Record<string, string> = {
+export const EXPERIENCE: Record<string, string> = {
   first_time_ok: "Good for first-time owners",
   some_experience: "Some experience helpful",
   experienced_only: "Experienced owners only",
@@ -80,7 +80,7 @@ function FactRow({ label, children }: { label: string; children: React.ReactNode
 const ANSWER_ORDER = (answer: string) => (answer === "yes" ? 0 : answer === "no" ? 2 : 1);
 
 /** Known companions, plus one quiet chip for the rest (never three). */
-function LivesWith({ dog }: { dog: Dog }) {
+export function LivesWith({ dog }: { dog: Dog }) {
   const answers: { label: string; answer: string | null }[] = COMPANIONS.map(({ field, label }) => ({
     label,
     answer: companionAnswer(dog, field),
@@ -113,7 +113,7 @@ function LivesWith({ dog }: { dog: Dog }) {
   );
 }
 
-function GoodToKnow({ dog }: { dog: Dog }) {
+export function GoodToKnow({ dog }: { dog: Dog }) {
   const profile = dog.dog_profiler_data;
   const facts = [
     profile?.energy_level && ENERGY[profile.energy_level],
@@ -145,7 +145,7 @@ export function dogMeta(dog: Dog): string[] {
     formatBreed(dog),
     sex === "male" || sex === "m" ? "Male" : sex === "female" || sex === "f" ? "Female" : null,
     age !== "Unknown" ? age : null,
-    dog.standardized_size || dog.size || null,
+    formatSize(dog),
   ].filter((v): v is string => Boolean(v));
 }
 
@@ -191,21 +191,23 @@ export function canAdopt(dog: Dog): boolean {
   return dog.status === "available" && dog.active !== false && Boolean(safeExternalUrl(dog.adoption_url));
 }
 
-/** The one adopt button, used by the desktop panel and the phone bar. */
+/** The one adopt button: the dog page's panel and phone bar, and swipe's details. */
 export function AdoptLink({
   dog,
   placement,
+  source = "detail_page",
   className,
 }: {
   dog: Dog;
-  placement: AdoptionPlacement;
+  placement?: AdoptionPlacement;
+  source?: AdoptionSource;
   className?: string;
 }): React.ReactElement | null {
   const url = safeExternalUrl(dog.adoption_url);
   if (!url) return null;
   const rescue = dog.organization?.name;
   const track = () => {
-    trackAdoptionLinkClicked(dog, "detail_page", placement);
+    trackAdoptionLinkClicked(dog, source, placement);
     if (dog.organization?.slug) {
       trackExternalLinkClick("adopt", dog.organization.slug, String(dog.id));
     }
@@ -215,7 +217,7 @@ export function AdoptLink({
       href={url}
       target="_blank"
       rel="noopener"
-      data-testid={`adopt-button-${placement}`}
+      data-testid={`adopt-button-${placement ?? source}`}
       onClick={track}
       // Middle-click opens the link too
       onAuxClick={(e) => e.button === 1 && track()}

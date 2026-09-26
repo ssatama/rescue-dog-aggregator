@@ -381,7 +381,7 @@ describe("DogDetailPage - Hero Layout", () => {
       sex: "Male",
       age_text: "Unknown",
       standardized_breed: "Terrier Mix",
-      standardized_size: "Medium Size",
+      standardized_size: "Tiny",
     });
 
     render(<DogDetailPage />);
@@ -393,7 +393,7 @@ describe("DogDetailPage - Hero Layout", () => {
     const meta = screen.getByTestId("dog-meta");
     expect(meta).toHaveTextContent("Terrier Mix");
     expect(meta).toHaveTextContent("Male");
-    expect(meta).toHaveTextContent("Medium Size");
+    expect(meta).toHaveTextContent("Small"); // the catalog's scale, whose Small includes Tiny
     expect(meta).not.toHaveTextContent("Unknown");
   });
   it("shows the adopt button in the desktop panel and the phone bar", async () => {

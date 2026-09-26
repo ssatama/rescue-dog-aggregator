@@ -4,16 +4,17 @@ interface CalloutProps {
 }
 
 export function Callout({ type = "info", children }: CalloutProps) {
+  // The site's own palette (#504): warm neutral, brand orange, and the
+  // green used for good news elsewhere.
   const styles = {
-    info: "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100",
+    info: "bg-soft border-line text-ink",
     warning:
-      "bg-yellow-50 border-yellow-200 text-yellow-900 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-100",
-    success:
-      "bg-green-50 border-green-200 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-100",
+      "bg-orange-50 border-orange-400 text-ink dark:bg-orange-950/40 dark:border-orange-700",
+    success: "bg-good-soft border-good text-ink",
   };
 
   return (
-    <div className={`my-6 p-4 border-l-4 rounded-r ${styles[type]}`}>
+    <div className={`my-6 rounded-r-xl border-l-4 p-4 ${styles[type]}`}>
       {children}
     </div>
   );

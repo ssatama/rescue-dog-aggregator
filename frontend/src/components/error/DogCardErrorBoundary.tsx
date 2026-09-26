@@ -42,7 +42,7 @@ class DogCardErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <Card
-          className="overflow-hidden flex flex-col h-full bg-red-50 border-red-200"
+          className="overflow-hidden flex flex-col h-full bg-bad-soft border-line"
           data-testid="error-dog-card"
         >
           <CardHeader className="p-4 text-center">
@@ -54,10 +54,10 @@ class DogCardErrorBoundary extends React.Component<
           </CardHeader>
 
           <CardContent className="p-4 flex flex-col flex-grow text-center">
-            <h3 className="text-lg font-semibold text-red-700 mb-2">
+            <h3 className="text-lg font-semibold text-bad mb-2">
               Error Loading Dog
             </h3>
-            <p className="text-sm text-red-600 mb-4 flex-grow">
+            <p className="text-sm text-ink mb-4 flex-grow">
               We couldn&apos;t load this dog&apos;s information. Please try again later.
             </p>
           </CardContent>
@@ -66,7 +66,7 @@ class DogCardErrorBoundary extends React.Component<
             <Button
               variant="outline"
               size="sm"
-              className="w-full border-red-300 text-red-700 hover:bg-red-100"
+              className="w-full border-line text-bad hover:bg-soft"
               onClick={this.handleRetry}
             >
               <Icon name="refresh" size="small" className="mr-2" />

@@ -1,7 +1,11 @@
 from datetime import datetime
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
+
+from api.dependencies import get_pooled_db_cursor
+from api.main import app
 
 
 def create_test_animal_dict(animal_id, name, breed="Mixed", size="medium", country="US", **kwargs):
@@ -214,3 +218,43 @@ class TestSwipeGallery:
 
         assert swipe_gallery(None, "https://img/hero.jpg") == [{"url": "https://img/hero.jpg", "width": None, "height": None}]
         assert swipe_gallery([], None) == []
+
+
+class TestSwipeDetailsFacts:
+    """The details sheet reads size and scraped facts the way the dog page does (#504)."""
+
+    def test_sends_standardized_size_and_only_the_fact_properties(self, client: TestClient):
+        cursor = MagicMock()
+        cursor.fetchall.return_value = [
+            {
+                "id": 7,
+                "name": "Rex",
+                "animal_type": "dog",
+                "status": "available",
+                "size": "Giant",
+                "standardized_size": "Large",
+                "properties": {
+                    "good_with_cats": "no",
+                    "medical_status": "Vaccinated",
+                    "description": "A long scraped story",
+                },
+                "dog_profiler_data": {"quality_score": 90},
+                "organization_id": 1,
+                "organization_name": "Test Rescue",
+            }
+        ]
+        cursor.fetchone.return_value = {"total": 1}
+
+        def mock_get_cursor():
+            yield cursor
+
+        app.dependency_overrides[get_pooled_db_cursor] = mock_get_cursor
+        try:
+            response = client.get("/api/dogs/swipe")
+        finally:
+            app.dependency_overrides.pop(get_pooled_db_cursor, None)
+
+        assert response.status_code == 200
+        dog = response.json()["dogs"][0]
+        assert dog["standardized_size"] == "Large"
+        assert dog["properties"] == {"good_with_cats": "no", "medical_status": "Vaccinated"}

@@ -25,10 +25,6 @@ export interface DogStatusBadgeProps {
   className?: string;
 }
 
-export interface AdoptedCelebrationProps {
-  dogName?: string;
-}
-
 export interface DogsGridProps
   extends React.HTMLAttributes<HTMLDivElement> {
   dogs?: Dog[];

@@ -1,7 +1,8 @@
 import type { Dog } from "./types";
 
-export function getAgeDisplay(dog: Dog): string {
-  if (dog.age_text) return dog.age_text;
+/** A dog's age in words, or null when nothing is recorded (left out, #484). */
+export function getAgeDisplay(dog: Dog): string | null {
+  if (dog.age_text && dog.age_text.toLowerCase() !== "unknown") return dog.age_text;
   if (dog.age_months) {
     const years = Math.floor(dog.age_months / 12);
     const months = dog.age_months % 12;
@@ -9,7 +10,13 @@ export function getAgeDisplay(dog: Dog): string {
     if (months === 0) return `${years} year${years !== 1 ? "s" : ""}`;
     return `${years} year${years !== 1 ? "s" : ""}, ${months} month${months !== 1 ? "s" : ""}`;
   }
-  if (dog.age_min_months && dog.age_max_months) {
+  if (dog.age_min_months != null && dog.age_max_months) {
+    // Puppies in months: "Under 6 months" is stored as 0-6
+    if (dog.age_max_months < 12) {
+      return dog.age_min_months === 0
+        ? `Under ${dog.age_max_months} months`
+        : `${dog.age_min_months}-${dog.age_max_months} months`;
+    }
     const minYears = Math.floor(dog.age_min_months / 12);
     const maxYears = Math.floor(dog.age_max_months / 12);
     if (minYears === maxYears) {
@@ -17,5 +24,5 @@ export function getAgeDisplay(dog: Dog): string {
     }
     return `${minYears}-${maxYears} years`;
   }
-  return "Unknown";
+  return null;
 }

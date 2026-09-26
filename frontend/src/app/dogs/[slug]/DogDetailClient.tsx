@@ -40,7 +40,6 @@ import {
   hasEnergyTrainabilitySection,
   hasActivitiesSection,
 } from "../../../components/dogs/detail";
-import AdoptedCelebration from "../../../components/dogs/AdoptedCelebration";
 import SwipeNavigationOverlay, { type DogNavigation } from "./SwipeNavigationOverlay";
 
 export default function DogDetailClient({
@@ -392,8 +391,6 @@ export default function DogDetailClient({
             </aside>
 
             <div className="grid gap-8 px-4 sm:px-0 lg:col-start-1 lg:row-start-2">
-              {dog.status === "adopted" && <AdoptedCelebration dogName={dog.name} />}
-
               {description && (
                 <section aria-label="About the Dog" data-testid="about-section">
                   <h2 className="mb-3 font-display text-2xl font-semibold text-ink">About {dog.name}</h2>

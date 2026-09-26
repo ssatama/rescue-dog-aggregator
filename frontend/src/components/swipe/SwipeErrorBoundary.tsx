@@ -94,19 +94,19 @@ class SwipeErrorBoundary extends Component<Props, State> {
             </div>
 
             {process.env.NODE_ENV === "development" && this.state.error && (
-              <div className="mb-6 p-4 bg-red-50 rounded-lg text-left">
-                <p className="text-sm font-semibold text-red-700 mb-2">
+              <div className="mb-6 p-4 bg-bad-soft rounded-lg text-left">
+                <p className="text-sm font-semibold text-bad mb-2">
                   Error details:
                 </p>
-                <p className="text-xs text-red-600 font-mono">
+                <p className="text-xs text-ink font-mono">
                   {this.state.error.message}
                 </p>
                 {this.state.errorInfo && (
                   <details className="mt-2">
-                    <summary className="text-xs text-red-600 cursor-pointer">
+                    <summary className="text-xs text-bad cursor-pointer">
                       Stack trace
                     </summary>
-                    <pre className="text-xs text-red-500 mt-2 overflow-auto max-h-40">
+                    <pre className="text-xs text-ink mt-2 overflow-auto max-h-40">
                       {this.state.errorInfo.componentStack}
                     </pre>
                   </details>
@@ -123,7 +123,7 @@ class SwipeErrorBoundary extends Component<Props, State> {
               </button>
               <Link
                 href="/"
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-full font-medium hover:bg-gray-300 transition-colors"
+                className="px-6 py-3 bg-soft text-ink rounded-full font-medium hover:bg-line transition-colors"
               >
                 Go to Browse
               </Link>

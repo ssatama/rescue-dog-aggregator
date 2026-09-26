@@ -217,3 +217,14 @@ describe("transformApiDogsToDogs", () => {
     expect(transformApiDogsToDogs([])).toEqual([]);
   });
 });
+
+describe("scraped facts from the swipe API", () => {
+  it("keeps the properties the API sends for the dog page's components", () => {
+    const dog = transformApiDogToDog({
+      id: 1,
+      name: "Rex",
+      properties: { good_with_cats: false, medical_status: "Vaccinated" },
+    } as ApiDog);
+    expect(dog.properties).toEqual({ good_with_cats: false, medical_status: "Vaccinated" });
+  });
+});

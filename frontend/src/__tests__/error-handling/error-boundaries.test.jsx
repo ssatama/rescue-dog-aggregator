@@ -104,7 +104,7 @@ describe("Error Boundaries", () => {
       );
 
       const errorCard = screen.getByTestId("error-dog-card");
-      expect(errorCard).toHaveClass("bg-red-50");
+      expect(errorCard).toHaveClass("bg-bad-soft");
     });
   });
 

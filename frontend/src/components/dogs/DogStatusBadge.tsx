@@ -1,30 +1,13 @@
 import React from "react";
 import type { DogStatus, DogStatusBadgeProps } from "@/types/dogComponents";
 
-const statusConfigs: Record<
-  DogStatus,
-  { label: string; className: string; icon: string }
-> = {
-  available: {
-    label: "Available",
-    className: "bg-green-100 text-green-800 border-green-200",
-    icon: "✅",
-  },
-  unknown: {
-    label: "Checking availability...",
-    className: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    icon: "🔍",
-  },
-  adopted: {
-    label: "Found their forever home!",
-    className: "bg-purple-100 text-purple-800 border-purple-200",
-    icon: "🎉",
-  },
-  reserved: {
-    label: "Reserved - Adoption pending",
-    className: "bg-blue-100 text-blue-800 border-blue-200",
-    icon: "⏳",
-  },
+// Adoption can't be detected, so no status ever claims it (#484): a dog that
+// left a rescue's site is "no longer listed".
+const statusConfigs: Record<DogStatus, { label: string; className: string }> = {
+  available: { label: "Available", className: "bg-good-soft text-good" },
+  unknown: { label: "Checking availability", className: "bg-soft text-subtle" },
+  reserved: { label: "Reserved", className: "bg-soft text-ink" },
+  adopted: { label: "No longer listed", className: "bg-soft text-subtle" },
 };
 
 export default function DogStatusBadge({
@@ -35,9 +18,8 @@ export default function DogStatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors border ${config.className} ${className}`}
+      className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${config.className} ${className}`}
     >
-      <span className="text-base">{config.icon}</span>
       {config.label}
     </span>
   );

@@ -237,9 +237,8 @@ describe("FilterPanel Component", () => {
       // Wait for dropdown to open and check age group options
       await waitFor(() => {
         expect(screen.getAllByText("All Ages")).toHaveLength(2); // placeholder + option
-        // Updated to match the emoji labels
-        expect(screen.getByText("🐕 Young (1-3 years)")).toBeInTheDocument();
-        expect(screen.getByText("🦮 Adult (3-8 years)")).toBeInTheDocument();
+        expect(screen.getByText("Young (1-3 years)")).toBeInTheDocument();
+        expect(screen.getByText("Adult (3-8 years)")).toBeInTheDocument();
       });
 
       // Puppy and Senior should NOT be present since no dogs in mock data have those ages
@@ -258,39 +257,65 @@ describe("FilterPanel Component", () => {
 
       // Wait for dropdown to open and click on "Young"
       await waitFor(() => {
-        expect(screen.getByText("🐕 Young (1-3 years)")).toBeInTheDocument();
+        expect(screen.getByText("Young (1-3 years)")).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText("🐕 Young (1-3 years)"));
+      fireEvent.click(screen.getByText("Young (1-3 years)"));
 
       // Wait for debounced filter to apply (300ms delay)
       await waitFor(
         () => {
-          // Young is 12-36 months (1-3 years, INCLUDING 36)
-          // Bella: 12 months = Young ✓ (12 >= 12 && 12 <= 36)
-          // Buddy: 24 months = Young ✓ (24 >= 12 && 24 <= 36)
-          // Luna: 36 months = Young ✓ (36 >= 12 && 36 <= 36)
-          // Max: 48 months = Adult ✗ (48 >= 36 but 48 > 36 for Young range)
+          // The shared age groups (dogHelpers.getAgeCategory), as on the dog
+          // page: Young is 12 to under 36 months, so Luna at 36 is an Adult
           const lastCall =
             onFilter.mock.calls[onFilter.mock.calls.length - 1][0];
-          expect(lastCall).toHaveLength(3);
+          expect(lastCall).toHaveLength(2);
         },
         { timeout: 2000 },
       );
 
       const lastCall = onFilter.mock.calls[onFilter.mock.calls.length - 1][0];
-      expect(lastCall).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ name: "Bella", age_months: 12 }),
-          expect.objectContaining({ name: "Buddy", age_months: 24 }),
-          expect.objectContaining({ name: "Luna", age_months: 36 }),
-        ]),
-      );
+      expect(lastCall.map((d: { name: string }) => d.name).sort()).toEqual(["Bella", "Buddy"]);
+    });
 
-      // Should not contain Max (48 months = Adult)
-      expect(
-        lastCall.find((d: { name: string }) => d.name === "Max"),
-      ).toBeUndefined();
+    test("keeps dogs with no recorded age under every age and offers no Unknown", async () => {
+      const onFilter = jest.fn();
+      const dogs = [
+        ...mockDogs,
+        { id: 9, name: "Mystery", breed: "Mixed", size: "small", organization_name: "Furry Friends" },
+      ];
+      render(<FilterPanel dogs={dogs} onFilter={onFilter} />);
+
+      fireEvent.click(screen.getByLabelText("Filter by age"));
+      await waitFor(() => {
+        expect(screen.getByText("Adult (3-8 years)")).toBeInTheDocument();
+      });
+      expect(screen.queryByText(/unknown/i)).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByText("Adult (3-8 years)"));
+      await waitFor(
+        () => {
+          const lastCall = onFilter.mock.calls[onFilter.mock.calls.length - 1][0];
+          expect(lastCall.map((d: { name: string }) => d.name).sort()).toEqual(["Luna", "Max", "Mystery"]);
+        },
+        { timeout: 2000 },
+      );
+    });
+
+    test("puts sizes on the catalog's one scale", async () => {
+      const dogs = [
+        { ...mockDogs[0], id: 11, standardized_size: "Tiny" },
+        { ...mockDogs[1], id: 12, standardized_size: "XLarge" },
+      ];
+      render(<FilterPanel dogs={dogs} onFilter={jest.fn()} />);
+
+      fireEvent.click(screen.getByLabelText("Filter by size"));
+      await waitFor(() => {
+        expect(screen.getByText("Small")).toBeInTheDocument();
+        expect(screen.getByText("Giant")).toBeInTheDocument();
+      });
+      expect(screen.queryByText("Tiny")).not.toBeInTheDocument();
+      expect(screen.queryByText("XLarge")).not.toBeInTheDocument();
     });
 
     test("shows size options", async () => {
@@ -305,8 +330,8 @@ describe("FilterPanel Component", () => {
       // Wait for dropdown to open and check options
       await waitFor(() => {
         expect(screen.getAllByText("All Sizes")).toHaveLength(2); // placeholder + option
-        expect(screen.getByText("large")).toBeInTheDocument();
-        expect(screen.getByText("medium")).toBeInTheDocument();
+        expect(screen.getByText("Large")).toBeInTheDocument();
+        expect(screen.getByText("Medium")).toBeInTheDocument();
       });
     });
 
@@ -321,10 +346,10 @@ describe("FilterPanel Component", () => {
 
       // Wait for dropdown to open and click on "medium"
       await waitFor(() => {
-        expect(screen.getByText("medium")).toBeInTheDocument();
+        expect(screen.getByText("Medium")).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText("medium"));
+      fireEvent.click(screen.getByText("Medium"));
 
       // Wait for debounced filter
       await waitFor(
@@ -476,10 +501,10 @@ describe("FilterPanel Component", () => {
       // Wait for dropdown to open and check all age group options
       await waitFor(() => {
         expect(screen.getAllByText("All Ages")).toHaveLength(2); // placeholder + option
-        expect(screen.getByText("🐶 Puppy (<1 year)")).toBeInTheDocument();
-        expect(screen.getByText("🐕 Young (1-3 years)")).toBeInTheDocument();
-        expect(screen.getByText("🦮 Adult (3-8 years)")).toBeInTheDocument();
-        expect(screen.getByText("🐕‍🦺 Senior (8+ years)")).toBeInTheDocument();
+        expect(screen.getByText("Puppy (under 1 year)")).toBeInTheDocument();
+        expect(screen.getByText("Young (1-3 years)")).toBeInTheDocument();
+        expect(screen.getByText("Adult (3-8 years)")).toBeInTheDocument();
+        expect(screen.getByText("Senior (8+ years)")).toBeInTheDocument();
       });
     });
 
@@ -493,9 +518,9 @@ describe("FilterPanel Component", () => {
       // Click to open the Select dropdown and select "large"
       fireEvent.click(sizeSelect);
       await waitFor(() => {
-        expect(screen.getByText("large")).toBeInTheDocument();
+        expect(screen.getByText("Large")).toBeInTheDocument();
       });
-      fireEvent.click(screen.getByText("large"));
+      fireEvent.click(screen.getByText("Large"));
 
       // Wait for first filter to apply
       await waitFor(
@@ -511,9 +536,9 @@ describe("FilterPanel Component", () => {
       // Click to open the Select dropdown and select "Adult"
       fireEvent.click(ageSelect);
       await waitFor(() => {
-        expect(screen.getByText("🦮 Adult (3-8 years)")).toBeInTheDocument();
+        expect(screen.getByText("Adult (3-8 years)")).toBeInTheDocument();
       });
-      fireEvent.click(screen.getByText("🦮 Adult (3-8 years)"));
+      fireEvent.click(screen.getByText("Adult (3-8 years)"));
 
       // Wait for second filter to apply
       await waitFor(
@@ -554,10 +579,10 @@ describe("FilterPanel Component", () => {
 
       // Wait for dropdown to open and click on "medium"
       await waitFor(() => {
-        expect(screen.getByText("medium")).toBeInTheDocument();
+        expect(screen.getByText("Medium")).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText("medium"));
+      fireEvent.click(screen.getByText("Medium"));
 
       // Wait for filter to apply
       await waitFor(
@@ -681,10 +706,10 @@ describe("FilterPanel Component", () => {
 
       // Wait for dropdown to open and click on "medium"
       await waitFor(() => {
-        expect(screen.getByText("medium")).toBeInTheDocument();
+        expect(screen.getByText("Medium")).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText("medium"));
+      fireEvent.click(screen.getByText("Medium"));
 
       // Click Apply
       const applyButton = screen.getByRole("button", {

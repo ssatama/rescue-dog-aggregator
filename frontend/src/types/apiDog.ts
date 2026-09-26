@@ -2,7 +2,7 @@
  * API response types for dog data from backend
  * Backend returns camelCase, frontend uses snake_case
  */
-import type { DogImage } from "./dog";
+import type { Dog, DogImage } from "./dog";
 
 export interface ApiDogProfilerData {
   name?: string;
@@ -78,6 +78,8 @@ export interface ApiDog {
   good_with_dogs?: boolean;
   good_with_cats?: boolean;
   description?: string;
+  // Swipe sends only the scraped facts its details sheet reads (#504)
+  properties?: Dog["properties"];
   status?: string;
   adoption_url?: string;
   primary_image_url?: string;

@@ -16,7 +16,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
   `frontend/src/lib/analytics.ts`; `adoption_link_clicked` is the conversion event
 - Package Management: **uv** (backend), **pnpm** (frontend)
 - Linting: **ruff** (replaces black/isort/flake8)
-- Current: 155 backend test files, 250 frontend test files, ~1,400 active dogs
+- Current: 187 backend test files, 272 frontend test files, ~1,400 active dogs
 
 ## Status
 
