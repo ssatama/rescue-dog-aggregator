@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Any
 
-from utils.standardization import parse_age_text
+from utils.standardization import MAX_DOG_AGE_MONTHS, parse_age_text
 
 # A birth date further back than this is a typo, not an old dog
 MAX_AGE_YEARS = 25
@@ -54,7 +54,7 @@ _YEAR_TO_YEAR = re.compile(r"(?<![\d./])(\d{4})\s*[-–/]\s*(\d{4})(?!\d|[./]\d)
 _YEAR = re.compile(r"(?<![\d./])(\d{4})(?!\d|[./]\d)")
 
 # Age text that is a birth date: it says so, or it is nothing but a date
-_AGE_TEXT_DOB_LABEL = re.compile(r"\b(dob|born|birth\w*|geburt\w*)\b", re.IGNORECASE)
+_AGE_TEXT_DOB_LABEL = re.compile(r"\b(dob|born|birth\w*|geb|geboren|geburt\w*)\b", re.IGNORECASE)
 _DATE_ONLY = re.compile(r"[\d\s./-]+")
 
 BirthRange = tuple[date, date]
@@ -159,9 +159,13 @@ def birth_range_from_age(min_months: int | None, max_months: int | None, observe
 
 
 def ages_at(birth_date_min: date | None, birth_date_max: date | None, today: date) -> tuple[int | None, int | None]:
-    """(age_min_months, age_max_months) on `today` for a birth date in the range."""
-    min_months = months_between(birth_date_max, today) if birth_date_max else None
-    max_months = months_between(birth_date_min, today) if birth_date_min else None
+    """(age_min_months, age_max_months) on `today` for a birth date in the range.
+
+    Capped at MAX_DOG_AGE_MONTHS, the upper bound parse_age_text gives an
+    open-ended age ("8+ years" is 96-360), so that bound doesn't grow.
+    """
+    min_months = min(months_between(birth_date_max, today), MAX_DOG_AGE_MONTHS) if birth_date_max else None
+    max_months = min(months_between(birth_date_min, today), MAX_DOG_AGE_MONTHS) if birth_date_min else None
     return min_months, max_months
 
 
@@ -270,8 +274,8 @@ TODAY_SQL = "(now() AT TIME ZONE 'UTC')::date"
 
 
 def months_sql(column: str, today: str = TODAY_SQL) -> str:
-    """months_between(column, today) in SQL."""
-    return f"CASE WHEN {column} IS NULL THEN NULL ELSE GREATEST(0, (extract(year FROM age({today}, {column})) * 12 + extract(month FROM age({today}, {column})))::int) END"
+    """The months ages_at gives for column on today, in SQL."""
+    return f"CASE WHEN {column} IS NULL THEN NULL ELSE LEAST({MAX_DOG_AGE_MONTHS}, GREATEST(0, (extract(year FROM age({today}, {column})) * 12 + extract(month FROM age({today}, {column})))::int)) END"
 
 
 # Brings every dog's derived months up to date. Run after each cron batch;

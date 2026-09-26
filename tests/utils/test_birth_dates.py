@@ -106,6 +106,11 @@ class TestMonthArithmetic:
     def test_a_stated_age_reads_back_unchanged_on_the_day_it_was_read(self, observed, min_months, max_months):
         assert ages_at(*birth_range_from_age(min_months, max_months, observed), observed) == (min_months, max_months)
 
+    def test_an_open_ended_age_keeps_its_cap(self):
+        """ "8+ years" is 96-360 months; a year on it is 108-360, not 108-372."""
+        born = birth_range_from_age(96, 360, date(2025, 9, 26))
+        assert ages_at(*born, TODAY) == (108, 360)
+
     def test_a_birth_month_gives_a_one_month_range(self):
         assert ages_at(date(2025, 3, 1), date(2025, 3, 31), TODAY) == (17, 18)
 
@@ -195,14 +200,15 @@ class TestRefreshSql:
         """REFRESH_AGES_SQL and ages_at must agree, or a save and the next refresh fight."""
         from utils.db_connection import get_db_cursor
 
-        births = [date(2020, 1, 31) + timedelta(days=d) for d in range(0, 2400, 7)]
+        # Including births more than 360 months back, where the cap applies
+        births = [date(2020, 1, 31) + timedelta(days=d) for d in range(0, 2400, 7)] + [date(1994, 1, 31) + timedelta(days=d) for d in range(0, 800, 11)]
         todays = [date(2026, 2, 28), date(2026, 3, 31), date(2026, 9, 26), date(2024, 2, 29)]
         values = ", ".join(f"(DATE '{b}', DATE '{t}')" for b in births for t in todays)
         with get_db_cursor() as cursor:
             cursor.execute(f"SELECT b, t, {months_sql('b', 't')} AS months FROM (VALUES {values}) AS v(b, t)")
             rows = cursor.fetchall()
 
-        mismatches = [(row["b"], row["t"], row["months"]) for row in rows if row["months"] != months_between(row["b"], row["t"])]
+        mismatches = [(row["b"], row["t"], row["months"]) for row in rows if row["months"] != ages_at(row["b"], None, row["t"])[1]]
         assert len(rows) == len(births) * len(todays)
         assert not mismatches
 
@@ -232,3 +238,21 @@ class TestRefreshSql:
         assert bubby["age_min_months"] >= 15
         # No birth range yet (before the #572 backfill): left as it is
         assert (rows["age-nora"]["age_min_months"], rows["age-nora"]["age_max_months"]) == (24, 36)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "age_text,is_birth_date",
+    [
+        ("02/2024", True),
+        ("Puppy (estimated DOB 01.03.2026)", True),
+        ("ca. 2 Jahre (geb. 03/2022)", True),
+        ("2 years, arrived 03/2024", False),
+        ("2 years", False),
+        (None, False),
+    ],
+)
+def test_age_text_is_a_birth_date_only_when_it_says_so(age_text, is_birth_date):
+    from utils.birth_dates import age_text_is_a_birth_date
+
+    assert age_text_is_a_birth_date(age_text) is is_birth_date
