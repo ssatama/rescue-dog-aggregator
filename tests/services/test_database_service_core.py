@@ -250,43 +250,32 @@ class TestReadPathsDegradeRatherThanRaise:
 
 
 @pytest.mark.unit
-class TestScrapeLogCompletionSurvivesADroppedConnection:
+class TestScrapeLogCompletionSurvivesADeadConnection:
     """The completion write ends a run; if it fails the row stays "running" (#557)."""
 
-    def test_a_dropped_connection_is_reconnected_and_the_write_retried(self, service):
-        dead = Mock()
-        dead.cursor.side_effect = psycopg2.OperationalError("server closed the connection unexpectedly")
-        fresh = Mock()
-        service.conn = dead
+    def test_it_writes_through_the_pool_when_there_is_one(self, service):
+        conn = Mock()
+        pool = Mock()
+        pool.get_connection_context.return_value.__enter__ = Mock(return_value=conn)
+        pool.get_connection_context.return_value.__exit__ = Mock(return_value=False)
+        service.connection_pool = pool
+        service.conn = Mock(cursor=Mock(side_effect=psycopg2.InterfaceError("connection already closed")))
 
-        def reconnect():
-            service.conn = fresh
-            return True
+        assert service.complete_scrape_log(41, "success", 10, 2, 1) is True
 
-        with patch.object(service, "connect", side_effect=reconnect):
-            assert service.complete_scrape_log(41, "success", 10, 2, 1) is True
+        conn.commit.assert_called_once()
+        assert conn.cursor.return_value.execute.call_args.args[1][1] == "success"
+        service.conn.cursor.assert_not_called()
 
-        dead.close.assert_called_once()
-        fresh.commit.assert_called_once()
-        assert fresh.cursor.return_value.execute.call_args.args[1][1] == "success"
+    def test_a_pool_failure_returns_false_rather_than_raising(self, service):
+        service.connection_pool = Mock()
+        service.connection_pool.get_connection_context.side_effect = RuntimeError("Could not acquire healthy connection")
 
-    def test_it_gives_up_after_one_reconnect(self, service):
-        def dead_connection():
-            service.conn = Mock(cursor=Mock(side_effect=psycopg2.InterfaceError("connection already closed")))
-            return True
+        assert service.complete_scrape_log(41, "error") is False
 
-        dead_connection()
-        with patch.object(service, "connect", side_effect=dead_connection) as connect:
-            assert service.complete_scrape_log(41, "error") is False
-
-        assert connect.call_count == 1
-
-    def test_a_query_error_is_not_retried(self, service):
+    def test_a_broken_direct_connection_returns_false_rather_than_raising(self, service):
         service.conn = Mock()
-        service.conn.cursor.return_value.execute.side_effect = psycopg2.errors.InvalidTextRepresentation("bad input")
+        service.conn.cursor.side_effect = psycopg2.DatabaseError("SSL SYSCALL error: EOF detected")
+        service.conn.rollback.side_effect = psycopg2.InterfaceError("connection already closed")
 
-        with patch.object(service, "connect") as connect:
-            assert service.complete_scrape_log(41, "error") is False
-
-        connect.assert_not_called()
-        service.conn.rollback.assert_called_once()
+        assert service.complete_scrape_log(41, "error") is False

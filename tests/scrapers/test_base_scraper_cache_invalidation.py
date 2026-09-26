@@ -73,10 +73,18 @@ def _tags_from(mock_invalidate_sync) -> list[str]:
 
 @pytest.mark.unit
 class TestCompleteScrapeLogCacheInvalidation:
-    """``complete_scrape_log`` fires cache invalidation only on success."""
+    """``complete_scrape_log`` purges on success, and on any status when dogs changed (#557)."""
 
     def test_fires_on_success(self, scraper, mock_invalidate_sync):
         scraper.complete_scrape_log(status="success", animals_found=10)
+        mock_invalidate_sync.assert_called_once()
+
+    def test_fires_even_when_the_log_write_raises(self, scraper, mock_invalidate_sync):
+        scraper.database_service.complete_scrape_log.side_effect = RuntimeError("write failed")
+
+        with pytest.raises(RuntimeError):
+            scraper.complete_scrape_log(status="success", animals_found=10)
+
         mock_invalidate_sync.assert_called_once()
         assert AGGREGATE_TAGS.issubset(set(_tags_from(mock_invalidate_sync)))
 

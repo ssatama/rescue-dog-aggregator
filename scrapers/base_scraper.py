@@ -319,8 +319,8 @@ class BaseScraper(ABC):
     ):
         """The one way a run completes: the scrape-log write, its metrics and cache invalidation.
 
-        The first call wins; later ones are logged and ignored. A dropped
-        database connection is retried inside ``DatabaseService``. Notes gathered during the run go
+        The first call wins; later ones are logged and ignored. The write goes
+        through the connection pool, which replaces a dead connection. Notes gathered during the run go
         into error_message and turn a success into a warning, since each one
         means part of the run didn't happen (a session that failed to start
         skips stale detection). The cache is purged after the write, so a slow
@@ -337,28 +337,30 @@ class BaseScraper(ABC):
             status = "warning"
         message = "; ".join(part for part in [error_message, *self._run_notes] if part) or None
 
-        if self.database_service:
-            written = self.database_service.complete_scrape_log(
-                self.scrape_log_id,
-                status,
-                animals_found,
-                animals_added,
-                animals_updated,
-                message,
-                detailed_metrics,
-                duration_seconds,
-                data_quality_score,
-            )
-        else:
-            self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
-            written = True
-
-        if status == "success" or self._changed_animal_ids:
-            try:
-                self._invalidate_frontend_cache()
-            except Exception as e:
-                # Never let the purge replace the exception a failed run is raising
-                self.logger.error(f"Cache invalidation failed: {e}")
+        try:
+            if self.database_service:
+                written = self.database_service.complete_scrape_log(
+                    self.scrape_log_id,
+                    status,
+                    animals_found,
+                    animals_added,
+                    animals_updated,
+                    message,
+                    detailed_metrics,
+                    duration_seconds,
+                    data_quality_score,
+                )
+            else:
+                self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
+                written = True
+        finally:
+            # After the write, even one that raised: the changed dogs are saved either way
+            if status == "success" or self._changed_animal_ids:
+                try:
+                    self._invalidate_frontend_cache()
+                except Exception as e:
+                    # Never let the purge replace the exception a failed run is raising
+                    self.logger.error(f"Cache invalidation failed: {e}")
 
         return written
 
@@ -809,7 +811,8 @@ class BaseScraper(ABC):
         # Use centralized logger for setup phase
         central_logger = logging.getLogger("scraper")
         central_logger.info(f"🚀 Starting scrape for {self.get_organization_name()}")
-        # A reused instance starts each run with none of the last run's state
+        # A reused instance (not a production path: the cron runs each org in a
+        # fresh process) must not close or re-profile the last run's things
         self.scrape_log_id = None
         self.current_scrape_session = None
         self._completion_logged = False
