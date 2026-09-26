@@ -12,6 +12,7 @@ import asyncio
 import logging
 import os
 import random
+import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -128,6 +129,7 @@ class PlaywrightBrowserService:
         # the event loop it belongs to.
         self._playwright: Playwright | None = None
         self._playwright_loop: asyncio.AbstractEventLoop | None = None
+        self._install_lock = threading.Lock()
 
     async def _get_or_start_playwright(self) -> tuple[Playwright, bool]:
         """A Playwright instance for the running event loop, and whether the caller owns it.
@@ -137,19 +139,24 @@ class PlaywrightBrowserService:
         that loop. Every asyncio.run() is a new loop, and MISIs fetches detail
         pages in worker threads, each with its own loop; reusing the listing
         loop's instance there awaited a closed loop forever (the 2026-09-26
-        hang, #580). Any other loop gets its own instance, which the caller
-        stops when it is done.
+        hang, #580). Any other loop, open or closed, gets its own instance,
+        which the caller stops when it is done. The shared one is never
+        replaced, so at most one instance per process outlives its loop.
         """
         loop = asyncio.get_running_loop()
-        if self._playwright is not None and self._playwright_loop is loop:
-            return self._playwright, False
+        if self._playwright is not None:
+            if self._playwright_loop is loop:
+                return self._playwright, False
+            # Never replaced: a replaced instance could not be stopped from this loop.
+            return await async_playwright().start(), True
 
         playwright = await async_playwright().start()
-        # Another thread may have installed a shared instance while this one started.
-        if self._playwright is None or self._playwright_loop is None or self._playwright_loop.is_closed():
-            self._playwright, self._playwright_loop = playwright, loop
-            logger.info("Started shared Playwright instance")
-            return playwright, False
+        with self._install_lock:
+            if self._playwright is None:
+                self._playwright, self._playwright_loop = playwright, loop
+                logger.info("Started shared Playwright instance")
+                return playwright, False
+        # Another thread installed one while this one started.
         return playwright, True
 
     async def shutdown(self) -> None:

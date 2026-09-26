@@ -60,7 +60,7 @@ class TestPlaywrightPerEventLoop:
             second_loop.close()
 
         assert playwright is started[1], "the first loop is closed; its instance must not be reused"
-        assert owned is False, "it becomes the shared instance of the new loop"
+        assert owned is True, "the caller owns and stops it; the shared instance is never replaced"
 
     @pytest.mark.real_clock
     def test_another_running_loop_gets_its_own_instance_to_stop(self, started):
@@ -112,6 +112,23 @@ class TestPlaywrightPerEventLoop:
             asyncio.run(service.create_browser())
 
         owned_playwright.stop.assert_awaited_once()
+
+
+@pytest.mark.unit
+@pytest.mark.real_clock
+class TestNoDriverPileUp:
+    def test_many_detail_loops_each_get_an_instance_they_stop(self, started):
+        """Before this, each closed loop's instance was replaced as 'shared' and never stopped."""
+        service = PlaywrightBrowserService()
+        loops = [asyncio.new_event_loop() for _ in range(4)]
+        results = []
+        for loop in loops:
+            results.append(loop.run_until_complete(service._get_or_start_playwright()))
+            loop.close()
+
+        assert results[0] == (started[0], False)
+        assert all(owned for _, owned in results[1:]), "every later loop owns (and so stops) its instance"
+        assert service._playwright is started[0], "the shared instance is never replaced"
 
 
 @pytest.mark.unit
