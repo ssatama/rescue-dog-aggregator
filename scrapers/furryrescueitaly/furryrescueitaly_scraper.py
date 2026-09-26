@@ -986,7 +986,8 @@ class FurryRescueItalyScraper(BaseScraper):
                 props["location_country"] = "UK"
 
     def _validate_animal_data(self, animal: dict[str, Any]) -> bool:
-        """Validate that animal has all required fields with non-null values."""
+        """Check the fields this scraper needs, then run the shared validator,
+        which also cleans the name like every other rescue's (#505)."""
         required_fields = ["name", "animal_type", "status", "organization_id"]
 
         for field in required_fields:
@@ -999,7 +1000,7 @@ class FurryRescueItalyScraper(BaseScraper):
             self.logger.debug("Animal has no adoption URL")
             return False
 
-        return True
+        return super()._validate_animal_data(animal)
 
     def _generate_external_id(self, name: str, adoption_url: str) -> str:
         """Generate unique external_id to prevent duplicate animals.

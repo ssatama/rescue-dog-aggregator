@@ -43,7 +43,9 @@ class Rename:
     slug: str
     was: str
     name: str
-    properties: dict
+    # Only the keys to add; the UPDATE merges them so a scrape writing other
+    # properties at the same time keeps its changes.
+    added_properties: dict
     organization: str | None
 
 
@@ -54,13 +56,15 @@ def plan_renames(records: list[dict]) -> list[Rename]:
         name, overlooked = clean_name(record["name"], record["breed"])
         if name == record["name"] and not overlooked:
             continue
-        properties = dict(record["properties"] or {})
-        properties.setdefault("raw_name", record["name"])
-        if overlooked:
-            properties["overlooked"] = True
-        if name == record["name"] and properties == (record["properties"] or {}):
+        stored = record["properties"] or {}
+        added = {}
+        if "raw_name" not in stored:
+            added["raw_name"] = record["name"]
+        if overlooked and stored.get("overlooked") is not True:
+            added["overlooked"] = True
+        if name == record["name"] and not added:
             continue
-        renames.append(Rename(record["id"], record["slug"], record["name"], name, properties, record["organization"]))
+        renames.append(Rename(record["id"], record["slug"], record["name"], name, added, record["organization"]))
     return renames
 
 
@@ -100,7 +104,10 @@ def main() -> int:
 
     with closing(_connect()) as conn, conn, conn.cursor() as cursor:
         for r in renames:
-            cursor.execute("UPDATE animals SET name = %s, properties = %s WHERE id = %s", (r.name, Json(r.properties), r.animal_id))
+            cursor.execute(
+                "UPDATE animals SET name = %s, properties = coalesce(properties, '{}'::jsonb) || %s WHERE id = %s",
+                (r.name, Json(r.added_properties), r.animal_id),
+            )
         conn.commit()
     logger.info("Cleaned %s names", len(renames))
 

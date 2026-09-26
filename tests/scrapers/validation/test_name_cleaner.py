@@ -22,6 +22,9 @@ class TestCleanName:
             ("Charlie Cocker", "Cocker Spaniel", "Charlie"),
             ("Diesel Shepherd", "German Shepherd", "Diesel"),
             ("Rex GSD", "German Shepherd Dog", "Rex"),
+            ("Max - URGENT - RESERVED", "Mixed Breed", "Max - RESERVED"),  # the kept label keeps its dash
+            ("Max URGENT RESERVED", "Mixed Breed", "Max RESERVED"),
+            ("Max - URGENT (Reserved)", "Mixed Breed", "Max (Reserved)"),
         ],
     )
     def test_strips_labels_and_appended_breed_words(self, name, breed, expected):
@@ -60,6 +63,8 @@ class TestCleanName:
             ("Bella *RESERVED*", "Beagle"),  # availability labels stay visible
             ("Max ON HOLD", "Mixed Breed"),
             ("Luna (applications closed)", "Mixed Breed"),
+            ("Jerry Springer", "English Springer Spaniel"),  # a pun, not an appended breed
+            ("Rocky Boxer", "Boxer"),
         ],
     )
     def test_leaves_real_names_alone(self, name, breed):

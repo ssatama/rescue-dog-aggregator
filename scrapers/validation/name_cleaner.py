@@ -37,12 +37,13 @@ BREED_ABBREVIATIONS = {
 
 # Breed nouns a rescue appends, which must also be in the dog's breed. Only
 # these: breeds also hold colours and names ("Snow White" the Westie, "King
-# Charles", "Jack Russell"), and those are real names.
+# Charles", "Jack Russell"), and those are real names. Boxer, hound, pointer,
+# setter and springer are left out too: they double as surnames and puns
+# ("Jerry Springer"), and no rescue has appended them.
 BREED_NOUNS = {
-    "akita", "beagle", "boxer", "bulldog", "chihuahua", "cocker", "collie", "dachshund",
-    "doberman", "greyhound", "hound", "husky", "lurcher", "malamute", "mastiff", "pointer",
-    "podenco", "poodle", "pug", "retriever", "rottweiler", "setter", "shepherd", "spaniel",
-    "springer", "terrier", "whippet",
+    "akita", "beagle", "bulldog", "chihuahua", "cocker", "collie", "dachshund", "doberman",
+    "greyhound", "husky", "lurcher", "malamute", "mastiff", "podenco", "poodle", "pug",
+    "retriever", "rottweiler", "shepherd", "spaniel", "terrier", "whippet",
 }  # fmt: skip
 
 
@@ -78,6 +79,17 @@ def _is_a_name(rest: str, breed: str) -> bool:
     return word not in NAME_PREFIXES and word not in breed.split() and not _is_appended_breed_word(word, breed)
 
 
+def _label_replacement(match: re.Match) -> str:
+    """A label between two kept parts leaves its separator behind:
+    "Max - URGENT - RESERVED" becomes "Max - RESERVED", not "Max RESERVED"."""
+    if match.start() == 0 or match.end() == len(match.string):
+        return " "
+    matched = match.group(0)
+    before = re.search(r"[-–—|]", re.match(r"[^\w]*", matched).group(0))
+    after = re.search(r"[-–—|]", re.search(r"[^\w]*$", matched).group(0))
+    return f" {before.group(0)} " if before and after else " "
+
+
 def clean_name(name: str, breed: str | None) -> tuple[str, bool]:
     """Return the display name and whether the rescue labelled the dog overlooked.
 
@@ -85,7 +97,7 @@ def clean_name(name: str, breed: str | None) -> tuple[str, bool]:
     leave stray punctuation behind.
     """
     overlooked = bool(re.search(r"\boverlooked\b", name, re.IGNORECASE))
-    cleaned = " ".join(_LABEL_PATTERN.sub(" ", name).split())
+    cleaned = " ".join(_LABEL_PATTERN.sub(_label_replacement, name).split())
     if not _is_tidy(cleaned):
         # A label that shared brackets or a list with other text
         # ("Luna (Urgent, Reserved)"): keep the rescue's name as it was.

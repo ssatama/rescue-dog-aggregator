@@ -16,7 +16,8 @@ class TestPlanRenames:
 
         assert rename.name == "Ally"
         assert rename.slug == "dog-1"
-        assert rename.properties == {"location": "Wales", "raw_name": "Ally OVERLOOKED", "overlooked": True}
+        # Only the new keys: the UPDATE merges them, so "location" isn't rewritten.
+        assert rename.added_properties == {"raw_name": "Ally OVERLOOKED", "overlooked": True}
 
     def test_clean_names_are_left_out(self):
         assert plan_renames([record(1, "Ally"), record(2, "Long John Silver", "Greyhound")]) == []
@@ -31,3 +32,8 @@ class TestPlanRenames:
         [rename] = plan_renames([record(1, "Lola Lab", "Labrador Retriever Cross")])
 
         assert (rename.was, rename.name) == ("Lola Lab", "Lola")
+
+    def test_keeps_an_existing_raw_name(self):
+        [rename] = plan_renames([record(1, "Ally OVERLOOKED", properties={"raw_name": "ALLY - OVERLOOKED"})])
+
+        assert rename.added_properties == {"overlooked": True}

@@ -14,26 +14,12 @@ function prop(dog: Dog, key: string): string | null {
 }
 
 /**
- * Where the dog is, when that differs from the rescue's address.
- * Scrapers store a readable `display_location` ("Snetterton, Norfolk",
- * "Baeza, Spain", #505). The rest covers rows stored before that, until
- * `management/location_commands.py display-locations --apply` has run.
- * Dogs Trust: "Evesham (Worcestershire) (Evesham)" → "Evesham (Worcestershire)",
- * where the last group repeats the town or is empty.
+ * Where the dog is, when that differs from the rescue's address: the
+ * readable `display_location` scrapers store ("Snetterton, Norfolk",
+ * "Baeza, Spain", #505). Null when the rescue doesn't say.
  */
 export function dogLocation(dog: Dog): string | null {
-  const display = prop(dog, "display_location");
-  if (display) return display;
-  const dogsTrust = prop(dog, "location");
-  if (dogsTrust) {
-    const groups = dogsTrust.match(/\([^)]*\)/g) ?? [];
-    const cleaned =
-      groups.length > 1 || /\(\s*\)\s*$/.test(dogsTrust)
-        ? dogsTrust.replace(/\s*\([^)]*\)\s*$/, "")
-        : dogsTrust;
-    return cleaned.trim() || null;
-  }
-  return prop(dog, "current_location_translated") ?? prop(dog, "current_location");
+  return prop(dog, "display_location");
 }
 
 const NEUTERED_TEXT = /\b(i am|i'm|i have been|i've been)\s+(spayed|neutered)\b/i;

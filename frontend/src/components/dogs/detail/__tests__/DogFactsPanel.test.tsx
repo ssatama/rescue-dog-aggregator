@@ -102,9 +102,9 @@ describe("DogFactsPanel", () => {
 
   it("says where the dog is, falling back to the rescue's town", () => {
     const { rerender } = render(
-      <DogFactsPanel dog={dog({ properties: { location: "Evesham (Worcestershire) (Evesham)" } })} />,
+      <DogFactsPanel dog={dog({ properties: { display_location: "Evesham, Worcestershire" } })} />,
     );
-    expect(screen.getByText(/Evesham \(Worcestershire\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Evesham, Worcestershire/)).toBeInTheDocument();
 
     rerender(<DogFactsPanel dog={dog({ properties: {} })} />);
     expect(screen.getByText(/London, United Kingdom/)).toBeInTheDocument();
