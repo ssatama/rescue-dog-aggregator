@@ -229,11 +229,13 @@ by hand.
   - Sentry token (`de.sentry.io`): issues and events, where no Sentry
     connector is attached
   - `ADMIN_API_KEY` (`api.rescuedogs.me`, `X-API-Key`): the GET-only
-    `/api/monitoring/*` and `/api/llm/*` endpoints, e.g. scraper health
+    `/api/monitoring/*` and `/api/llm/*` endpoints (e.g. scraper health), and
+    `POST /api/admin/query`, read-only SQL on production as `claude_ro`
   - GitHub goes through the built-in GitHub tools; `gh` may be missing
-- **MCP**: `.mcp.json` is committed and shared with the laptop (see
-  CLAUDE.md). The `postgres` server works when the environment has
-  `PROD_RO_DATABASE_URL` (read-only role, `scripts/sql/create_claude_ro.sql`).
+- **Production data**: the cloud can't reach Postgres directly, so the
+  `postgres` MCP server (`.mcp.json`, shared with the laptop) sends its
+  `query` tool to `POST /api/admin/query` over HTTPS. Same tool, same
+  read-only role as on the laptop.
 - **Never set `DATABASE_URL` or `RAILWAY_DATABASE_URL` in a cloud
   environment.** `config.py` prefers `DATABASE_URL` over `DB_*`, so tests
   and the dev API would run against production, and the backfill and
