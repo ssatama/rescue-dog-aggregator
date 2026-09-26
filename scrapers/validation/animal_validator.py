@@ -95,6 +95,22 @@ class AnimalValidator:
 
         return name
 
+    def rejection_reason(self, animal_data: dict[str, Any]) -> str | None:
+        """Why validate_animal_data would reject this dog, or None if it would not.
+
+        One of "missing_field", "invalid_name" or "no_image", so a run can
+        count its rejections by cause.
+        """
+        if not animal_data or not isinstance(animal_data, dict):
+            return "missing_field"
+        if any(not animal_data.get(field) for field in ("name", "external_id", "adoption_url")):
+            return "missing_field"
+        if self._is_invalid_name(self.normalize_name(animal_data["name"])):
+            return "invalid_name"
+        if not animal_data.get("primary_image_url"):
+            return "no_image"
+        return None
+
     def validate_animal_data(self, animal_data: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
         """Validate animal data dictionary for required fields and invalid names.
 

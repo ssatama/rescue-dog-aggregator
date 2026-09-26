@@ -30,6 +30,7 @@ from scrapers.filtering.filtering_service import FilteringService
 # Import Sentry integration for error tracking
 from scrapers.sentry_integration import (
     add_scrape_breadcrumb,
+    alert_dogs_not_saved,
     alert_llm_enrichment_failure,
     alert_partial_failure,
     alert_zero_dogs_found,
@@ -71,6 +72,11 @@ class BaseScraper(ABC):
     SMALL_BATCH_THRESHOLD = SMALL_BATCH_THRESHOLD
     CONCURRENT_UPLOAD_THRESHOLD = CONCURRENT_UPLOAD_THRESHOLD
     MAX_R2_FAILURE_RATE = MAX_R2_FAILURE_RATE
+
+    # Sentry is warned when more than this share of collected dogs is not saved.
+    LOSS_ALERT_RATE = 0.1
+    # How many rejected or failed external_ids a run's log line lists.
+    LOST_IDS_LOG_CAP = 20
 
     # Type annotations for instance variables
     org_config: OrganizationConfig | None
@@ -681,7 +687,9 @@ class BaseScraper(ABC):
 
                 # Phase 5: LLM Enrichment (if enabled)
                 add_scrape_breadcrumb("Starting LLM enrichment phase")
+                llm_start = datetime.now()
                 self.llm_handler.enrich_animals(self.animals_for_llm_enrichment)
+                self.metrics_collector.track_phase_timing("llm_enrichment", (datetime.now() - llm_start).total_seconds())
 
                 # Phase 6: Metrics & Logging
                 self._log_completion_metrics(animals_data, processing_stats)
@@ -894,7 +902,13 @@ class BaseScraper(ABC):
             "animals_added": 0,
             "animals_updated": 0,
             "animals_unchanged": 0,
+            "animals_rejected": 0,
+            "save_errors": 0,
+            "rejected": {},
+            "rejected_ids": [],
+            "save_error_ids": [],
             "images_uploaded": 0,
+            "images_reused": 0,
             "images_failed": 0,
         }
 
@@ -918,12 +932,8 @@ class BaseScraper(ABC):
                         batch_size=batch_size,
                         use_concurrent=len(animals_data) > self.CONCURRENT_UPLOAD_THRESHOLD,
                         database_connection=self.conn,
+                        counts=processing_stats,
                     )
-                    # Count images uploaded
-                    for animal in animals_data:
-                        if animal.get("original_image_url") and animal.get("primary_image_url"):
-                            if "images.rescuedogs.me" in animal["primary_image_url"]:
-                                processing_stats["images_uploaded"] += 1
                 except Exception as e:
                     self.logger.warning(f"Batch image processing failed; per-animal processing will handle images: {e}")
 
@@ -946,11 +956,18 @@ class BaseScraper(ABC):
 
             # CRITICAL: Validate animal data before saving to prevent invalid data in database
             if not self._validate_animal_data(animal_data):
-                self.logger.warning(f"Skipping invalid animal: {animal_data.get('name', 'Unknown')} - validation failed")
+                reason = self.animal_validator.rejection_reason(animal_data) or "invalid"
+                self.logger.warning(f"Skipping invalid animal: {animal_data.get('name', 'Unknown')} - {reason}")
+                processing_stats["animals_rejected"] += 1
+                processing_stats["rejected"][reason] = processing_stats["rejected"].get(reason, 0) + 1
+                processing_stats["rejected_ids"].append(animal_data.get("external_id"))
                 continue
 
             # Save animal
             animal_id, action = self.save_animal(animal_data)
+            if not animal_id:
+                processing_stats["save_errors"] += 1
+                processing_stats["save_error_ids"].append(animal_data.get("external_id"))
 
             # Update progress tracking (only count animals toward progress percentage)
             self.progress_tracker.update(items_processed=1, operation_type="animal_save")
@@ -990,7 +1007,40 @@ class BaseScraper(ABC):
         phase_duration = (datetime.now() - phase_start).total_seconds()
         self.metrics_collector.track_phase_timing("database_operations", phase_duration)
 
+        self._report_losses(len(animals_data), processing_stats)
         return processing_stats
+
+    def _report_losses(self, animals_count: int, processing_stats: dict[str, Any]) -> None:
+        """Log the dogs this run collected but did not save, and warn Sentry when they exceed LOSS_ALERT_RATE."""
+        lost = processing_stats["animals_rejected"] + processing_stats["save_errors"]
+        if not lost:
+            return
+        cap = self.LOST_IDS_LOG_CAP
+        self.logger.warning(
+            f"{self.get_organization_name()}: {animals_count} collected, {lost} not saved - "
+            f"rejected {processing_stats['rejected']} {processing_stats['rejected_ids'][:cap]}, "
+            f"save errors {processing_stats['save_errors']} {processing_stats['save_error_ids'][:cap]}"
+        )
+        if animals_count and lost / animals_count > self.LOSS_ALERT_RATE:
+            try:
+                alert_dogs_not_saved(
+                    org_name=self.get_organization_name(),
+                    dogs_collected=animals_count,
+                    rejected=processing_stats["rejected"],
+                    save_errors=processing_stats["save_errors"],
+                    org_id=self.organization_id,
+                    scrape_log_id=getattr(self, "scrape_log_id", None),
+                )
+            except Exception as e:
+                self.logger.error(f"Failed to emit dogs-not-saved Sentry alert: {e}")
+
+    @staticmethod
+    def _completion_rate(animals_data: list, processing_stats: dict[str, Any]) -> float:
+        """Percentage of the collected dogs that were saved."""
+        if not animals_data:
+            return 100.0
+        lost = processing_stats["animals_rejected"] + processing_stats["save_errors"]
+        return round(100.0 * (len(animals_data) - lost) / len(animals_data), 1)
 
     def _log_batch_summary(
         self,
@@ -1083,6 +1133,10 @@ class BaseScraper(ABC):
             images_failed=processing_stats["images_failed"],
             duration_seconds=duration,
             quality_score=quality_score,
+            images_reused=processing_stats["images_reused"],
+            animals_rejected=processing_stats["animals_rejected"],
+            rejected=processing_stats["rejected"],
+            save_errors=processing_stats["save_errors"],
             potential_failure_detected=processing_stats["potential_failure_detected"],
             skip_existing_animals=self.skip_existing_animals,
             batch_size=self.batch_size,
@@ -1110,15 +1164,16 @@ class BaseScraper(ABC):
                 dogs_added=processing_stats["animals_added"],
                 dogs_updated=processing_stats["animals_updated"],
                 dogs_unchanged=processing_stats["animals_unchanged"],
-                processing_failures=0,
+                processing_failures=processing_stats["animals_rejected"] + processing_stats["save_errors"],
             )
 
             self.progress_tracker.track_image_stats(
                 images_uploaded=processing_stats["images_uploaded"],
                 images_failed=processing_stats["images_failed"],
+                images_reused=processing_stats["images_reused"],
             )
 
-            self.progress_tracker.track_quality_stats(data_quality_score=quality_score, completion_rate=100.0)
+            self.progress_tracker.track_quality_stats(data_quality_score=quality_score, completion_rate=self._completion_rate(animals_data, processing_stats))
 
             self.progress_tracker.track_performance_stats(total_duration=duration)
 

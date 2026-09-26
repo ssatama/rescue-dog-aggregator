@@ -81,6 +81,7 @@ class ProgressTracker:
             "images": {
                 "images_uploaded": 0,
                 "images_failed": 0,
+                "images_reused": 0,
                 "image_optimizations": 0,
                 "image_success_rate": 0.0,
             },
@@ -352,6 +353,7 @@ class ProgressTracker:
         self,
         images_uploaded: int = 0,
         images_failed: int = 0,
+        images_reused: int = 0,
         image_optimizations: int = 0,
     ) -> None:
         """Track image processing statistics.
@@ -359,16 +361,18 @@ class ProgressTracker:
         Args:
             images_uploaded: Number of images successfully uploaded
             images_failed: Number of image uploads that failed
+            images_reused: Number of images already in R2 and reused
             image_optimizations: Number of images optimized/compressed
         """
         self.stats["images"]["images_uploaded"] = images_uploaded
         self.stats["images"]["images_failed"] = images_failed
+        self.stats["images"]["images_reused"] = images_reused
         self.stats["images"]["image_optimizations"] = image_optimizations
 
-        # Calculate success rate
-        total_images = images_uploaded + images_failed
+        # Share of dogs whose image is in R2, whether uploaded now or reused
+        total_images = images_uploaded + images_reused + images_failed
         if total_images > 0:
-            self.stats["images"]["image_success_rate"] = (images_uploaded / total_images) * 100.0
+            self.stats["images"]["image_success_rate"] = ((images_uploaded + images_reused) / total_images) * 100.0
 
     def track_performance_stats(
         self,
@@ -441,7 +445,7 @@ class ProgressTracker:
             f"📊 Discovery: {stats['discovery']['dogs_found']} dogs found, {stats['discovery']['extraction_failures']} extraction failures",
             f"🔍 Filtering: {stats['filtering']['dogs_skipped']} existing (skipped), {stats['filtering']['new_dogs']} new ({stats['filtering']['skip_rate']:.1f}% skip rate)",
             f"💾 Processing: {stats['processing']['dogs_added']} added, {stats['processing']['dogs_updated']} updated, {stats['processing']['dogs_unchanged']} unchanged",
-            f"🖼️  Images: {stats['images']['images_uploaded']} uploaded, {stats['images']['images_failed']} failed ({stats['images']['image_success_rate']:.1f}% success)",
+            f"🖼️  Images: {stats['images']['images_uploaded']} uploaded, {stats['images']['images_reused']} reused, {stats['images']['images_failed']} failed ({stats['images']['image_success_rate']:.1f}% success)",
             f"⚡ Performance: {duration:.1f}s duration, {stats['performance']['throughput']:.1f} dogs/sec",
             f"🏆 Quality: {stats['quality']['data_quality_score']:.3f} quality score, {stats['quality']['completion_rate']:.1f}% completion",
             "=" * 50,
