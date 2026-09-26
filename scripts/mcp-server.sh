@@ -22,7 +22,10 @@ case "${1:-}" in
       echo "PROD_RO_DATABASE_URL is not set (environment or .env); see scripts/sql/create_claude_ro.sql" >&2
       exit 1
     fi
-    exec npx -y @modelcontextprotocol/server-postgres "$url"
+    # The URL uses libpq's sslmode=require (encrypt, don't verify), which psql
+    # understands. node-postgres reads "require" as verify-full and rejects
+    # Railway's self-signed proxy certificate; its spelling is "no-verify".
+    exec npx -y @modelcontextprotocol/server-postgres "${url/sslmode=require/sslmode=no-verify}"
     ;;
   rescuedogs)
     cd rescuedogs-mcp-server
