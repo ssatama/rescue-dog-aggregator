@@ -26,8 +26,12 @@ import json  # noqa: E402
 import logging  # noqa: E402
 import os  # noqa: E402
 import signal  # noqa: E402
+import subprocess  # noqa: E402
 import sys  # noqa: E402
+import tempfile  # noqa: E402
 from datetime import UTC, datetime  # noqa: E402
+
+import sentry_sdk  # noqa: E402
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -39,10 +43,12 @@ from management.breed_reconciliation import reconcile  # noqa: E402
 from scrapers.sentry_integration import add_scrape_breadcrumb, init_scraper_sentry  # noqa: E402
 from utils.db_connection import (  # noqa: E402
     create_database_config_from_env,
+    execute_command,
     initialize_database_pool,
 )
 from utils.secure_config_scraper_runner import (  # noqa: E402
     BatchRunResult,
+    ScraperRunResult,
     SecureConfigScraperRunner,
 )
 
@@ -76,6 +82,13 @@ root_logger.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 shutdown_requested = False
+
+# One organization's scrape may take this long before it is killed. A hung
+# scraper otherwise holds the cron forever, and Railway skips every later
+# scheduled run while an execution is still active (2026-09-26: MISIs hung on
+# a Browserless session that had timed out, #579). The longest real run in the
+# month before was 1127s.
+ORG_TIMEOUT_SECONDS = int(os.getenv("CRON_ORG_TIMEOUT_SECONDS", "2700"))
 
 
 def handle_shutdown(signum, frame):
@@ -133,12 +146,76 @@ def report_breed_reconciliation() -> dict:
     }
 
 
+def _child_command(config_id: str, result_path: str) -> list[str]:
+    return [sys.executable, os.path.abspath(__file__), "--org", config_id, "--result-file", result_path]
+
+
+def close_timed_out_scrape_log(config_id: str, started_at: datetime, timeout: int) -> None:
+    """Mark the killed scrape's log row as an error instead of leaving it 'running'."""
+    try:
+        execute_command(
+            """
+            UPDATE scrape_logs SET status = 'error', error_message = %s, completed_at = %s
+            WHERE status = 'running' AND started_at >= %s
+              AND organization_id = (SELECT id FROM organizations WHERE config_id = %s)
+            """,
+            (f"Timed out after {timeout}s and was killed by the cron", datetime.now(), started_at, config_id),
+        )
+    except Exception as exc:
+        logger.error(f"Could not close the scrape log for {config_id}: {exc}")
+
+
+def run_org_isolated(config_id: str, timeout: int = ORG_TIMEOUT_SECONDS) -> ScraperRunResult:
+    """Run one organization in a child process that is killed if it outlives the timeout."""
+    with tempfile.NamedTemporaryFile(prefix=f"scrape-{config_id}-", suffix=".json", delete=False) as handle:
+        result_path = handle.name
+    # Naive local time, the same clock BaseScraper writes scrape_logs.started_at with.
+    started_at = datetime.now()
+    # Its own process group, so the kill also reaches the Playwright driver it spawns.
+    child = subprocess.Popen(_child_command(config_id, result_path), start_new_session=True)
+    try:
+        try:
+            child.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            os.killpg(child.pid, signal.SIGKILL)
+            child.wait()
+            logger.error(f"{config_id} timed out after {timeout}s; killed")
+            close_timed_out_scrape_log(config_id, started_at, timeout)
+            sentry_sdk.capture_message(f"Scraper {config_id} timed out after {timeout}s and was killed", level="error")
+            return ScraperRunResult(config_id=config_id, success=False, error=f"Timed out after {timeout}s")
+
+        try:
+            with open(result_path) as f:
+                result = json.load(f)
+        except (OSError, ValueError):
+            return ScraperRunResult(config_id=config_id, success=False, error=f"Scraper process exited with code {child.returncode} and no result")
+        return ScraperRunResult(**result)
+    finally:
+        try:
+            os.unlink(result_path)
+        except OSError:
+            pass
+
+
 def run_all_scrapers(runner: SecureConfigScraperRunner) -> BatchRunResult:
-    """Run all enabled scrapers."""
-    logger.info("Running all enabled scrapers")
+    """Run all enabled scrapers, each in its own process with a hard timeout."""
+    logger.info(f"Running all enabled scrapers ({ORG_TIMEOUT_SECONDS}s limit each)")
     add_scrape_breadcrumb("Starting batch scrape run", category="cron")
 
-    return runner.run_all_enabled_scrapers()
+    results = []
+    for org in runner.config_loader.get_enabled_orgs():
+        if shutdown_requested:
+            logger.warning("Shutdown requested; not starting further scrapers")
+            break
+        results.append(run_org_isolated(org.id))
+
+    return BatchRunResult(
+        success=True,
+        total_orgs=len(results),
+        successful=sum(1 for r in results if r.success),
+        failed=sum(1 for r in results if not r.success),
+        results=results,
+    )
 
 
 def format_batch_summary(result: BatchRunResult, start_time: datetime) -> dict:
@@ -186,6 +263,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Show what would run without executing")
     parser.add_argument("--list", action="store_true", help="List available scrapers")
     parser.add_argument("--json", action="store_true", help="Output results as JSON only")
+    parser.add_argument("--result-file", help="With --org: also write the result as JSON to this file (used by the batch run)")
     parser.add_argument(
         "--force-rescrape",
         action="store_true",
@@ -253,6 +331,9 @@ def main():
 
     if args.org:
         result = run_single_scraper(runner, args.org)
+        if args.result_file:
+            with open(args.result_file, "w") as f:
+                json.dump(result, f)
         if args.json:
             print(json.dumps(result, indent=2))
         else:
