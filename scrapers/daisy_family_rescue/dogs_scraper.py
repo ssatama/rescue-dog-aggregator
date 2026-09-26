@@ -193,7 +193,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
             # Apply skip_existing_animals filtering
             # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-            # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
+            # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
             if self.skip_existing_animals and basic_dogs_data:
                 basic_dogs_data = self.filtering_service.filter_existing_animals(basic_dogs_data)
                 self._sync_filtering_stats()
@@ -290,7 +290,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
                 # Apply skip_existing_animals filtering
                 # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-                # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
+                # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
                 if self.skip_existing_animals and basic_dogs_data:
                     basic_dogs_data = self.filtering_service.filter_existing_animals(basic_dogs_data)
                     self._sync_filtering_stats()

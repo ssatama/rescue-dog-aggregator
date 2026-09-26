@@ -770,7 +770,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         # Apply filtering if configured
         # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-        # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
+        # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
         if self.skip_existing_animals:
             animals = self.filtering_service.filter_existing_animals(animals)
             self._sync_filtering_stats()

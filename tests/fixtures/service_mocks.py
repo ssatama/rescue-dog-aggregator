@@ -107,7 +107,7 @@ def create_mock_session_manager(success_mode: bool = True) -> Mock:
         mock_service.update_stale_data_detection.return_value = True
         mock_service.mark_animals_unavailable.return_value = 2
         mock_service.restore_available_animal.return_value = True
-        mock_service.mark_skipped_animals_as_seen.return_value = 5
+        mock_service.mark_found_animals_as_seen.return_value = 5
         mock_service.get_stale_animals_summary.return_value = {
             ("high", "available"): 25,
             ("medium", "available"): 10,
@@ -124,7 +124,7 @@ def create_mock_session_manager(success_mode: bool = True) -> Mock:
         mock_service.update_stale_data_detection.return_value = False
         mock_service.mark_animals_unavailable.return_value = 0
         mock_service.restore_available_animal.return_value = False
-        mock_service.mark_skipped_animals_as_seen.return_value = 0
+        mock_service.mark_found_animals_as_seen.return_value = 0
         mock_service.get_stale_animals_summary.return_value = {}
         mock_service.detect_partial_failure.return_value = True
 

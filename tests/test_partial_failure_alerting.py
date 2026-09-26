@@ -181,6 +181,8 @@ class TestFinalizeScrapeWiringToPartialFailureAlert:
         scraper._emit_partial_failure_alert = Mock()
         scraper._check_adoptions_if_enabled = Mock()
         scraper._log_service_unavailable = Mock()
+        scraper._run_notes = []
+        scraper.LOSS_PARTIAL_FAILURE_RATE = BaseScraper.LOSS_PARTIAL_FAILURE_RATE
         scraper._finalize_scrape = BaseScraper._finalize_scrape.__get__(scraper)
         return scraper
 
@@ -189,7 +191,7 @@ class TestFinalizeScrapeWiringToPartialFailureAlert:
         scraper._get_correct_animals_found_count.return_value = 7
         scraper.detect_partial_failure.return_value = True
 
-        scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats={"animals_added": 0, "animals_updated": 0})
+        scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats={"animals_added": 0, "animals_updated": 0, "animals_rejected": 0, "save_errors": 0})
 
         scraper._emit_partial_failure_alert.assert_called_once_with(7)
         # Completed later as "warning" with metrics, in _log_completion_metrics (#557)
@@ -200,6 +202,6 @@ class TestFinalizeScrapeWiringToPartialFailureAlert:
         scraper._get_correct_animals_found_count.return_value = 50
         scraper.detect_partial_failure.return_value = False
 
-        scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats={"animals_added": 0, "animals_updated": 0})
+        scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats={"animals_added": 0, "animals_updated": 0, "animals_rejected": 0, "save_errors": 0})
 
         scraper._emit_partial_failure_alert.assert_not_called()

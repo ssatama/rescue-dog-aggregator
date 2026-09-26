@@ -1,6 +1,6 @@
 """Tests for SessionManager stale detection fix.
 
-These tests verify the fix for the critical bug where mark_skipped_animals_as_seen()
+These tests verify the fix for the critical bug where mark_found_animals_as_seen()
 was marking ALL available dogs as seen, instead of only the ones actually found
 by the scraper.
 
@@ -72,20 +72,23 @@ class TestRecordFoundAnimal:
         assert session_manager.get_found_external_ids_count() == 0
 
 
-class TestMarkSkippedAnimalsAsSeen:
-    """Tests for the fixed mark_skipped_animals_as_seen() method."""
+class TestMarkFoundAnimalsAsSeen:
+    """Tests for mark_found_animals_as_seen()."""
 
     def test_returns_zero_when_no_external_ids_recorded(self, session_manager):
         """If no external_ids were recorded, should return 0 and not execute SQL."""
         session_manager.start_scrape_session()
         # Don't record any external_ids
 
-        result = session_manager.mark_skipped_animals_as_seen()
+        result = session_manager.mark_found_animals_as_seen()
 
         assert result == 0
 
-    def test_returns_zero_when_skip_existing_animals_false(self, db_config):
-        """If skip_existing_animals is False, should return 0."""
+    @patch("services.session_manager.psycopg2")
+    def test_marks_found_dogs_even_when_skip_existing_animals_is_false(self, mock_psycopg2, db_config):
+        """A listed dog is seen whether or not skipping is on (#558)."""
+        mock_cursor = MagicMock(rowcount=1)
+        mock_psycopg2.connect.return_value = MagicMock(cursor=MagicMock(return_value=mock_cursor))
         session_manager = SessionManager(
             db_config=db_config,
             organization_id=1,
@@ -94,16 +97,17 @@ class TestMarkSkippedAnimalsAsSeen:
         session_manager.start_scrape_session()
         session_manager.record_found_animal("dog-123")
 
-        result = session_manager.mark_skipped_animals_as_seen()
+        result = session_manager.mark_found_animals_as_seen()
 
-        assert result == 0
+        assert result == 1
+        assert mock_cursor.execute.call_args.args[1][2] == ["dog-123"]
 
     def test_returns_zero_when_no_session(self, session_manager):
         """If no scrape session started, should return 0."""
         session_manager.record_found_animal("dog-123")
         # Don't start session
 
-        result = session_manager.mark_skipped_animals_as_seen()
+        result = session_manager.mark_found_animals_as_seen()
 
         assert result == 0
 
@@ -124,7 +128,7 @@ class TestMarkSkippedAnimalsAsSeen:
         session_manager.record_found_animal("dog-789")
 
         # Call the method (will use fallback connection since no pool)
-        result = session_manager.mark_skipped_animals_as_seen()
+        result = session_manager.mark_found_animals_as_seen()
 
         # Verify SQL was executed with external_id filter
         mock_cursor.execute.assert_called_once()
@@ -190,7 +194,7 @@ class TestIntegration:
         # Verify only 3 external_ids are recorded
         assert session_manager.get_found_external_ids_count() == 3
 
-        # The mark_skipped_animals_as_seen should only update these 3 dogs
+        # The mark_found_animals_as_seen should only update these 3 dogs
         # (In production, this would be verified by the SQL query)
 
     def test_session_reset_clears_found_ids(self, session_manager):

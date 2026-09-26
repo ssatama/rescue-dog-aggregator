@@ -61,7 +61,7 @@ class GalgosDelSolScraper(BaseScraper):
         """Get list of animals and apply skip_existing_animals filtering.
 
         Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-        BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly.
+        BEFORE filtering to ensure mark_found_animals_as_seen() works correctly.
 
         Returns:
             List of filtered animals ready for detail scraping
@@ -100,7 +100,7 @@ class GalgosDelSolScraper(BaseScraper):
             return []
 
         # Use filtering_service method that records external_ids BEFORE filtering
-        # This is critical for mark_skipped_animals_as_seen() to work correctly
+        # This is critical for mark_found_animals_as_seen() to work correctly
         result = self.filtering_service.filter_existing_animals(all_dogs_data)
         self._sync_filtering_stats()
         return result

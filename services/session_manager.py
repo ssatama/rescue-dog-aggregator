@@ -111,7 +111,7 @@ class SessionManager:
     def record_found_animal(self, external_id: str) -> None:
         """Record that an animal with given external_id was found during this scrape.
 
-        This is used by mark_skipped_animals_as_seen() to only mark animals
+        This is used by mark_found_animals_as_seen() to only mark animals
         that were actually found by the scraper, not all available animals.
 
         Args:
@@ -417,21 +417,23 @@ class SessionManager:
                 self.conn.rollback()
             return False
 
-    def mark_skipped_animals_as_seen(self) -> int:
-        """Mark animals that were found but skipped due to skip_existing_animals as seen.
+    def mark_found_animals_as_seen(self) -> int:
+        """Mark every available animal the rescue's site listed this run as seen.
 
-        IMPORTANT: Only marks animals whose external_id was recorded via record_found_animal().
-        This prevents marking ALL available animals as seen, which was causing the stale
-        detection bug where dogs not found by scrapers would incorrectly stay available.
+        A dog the site lists is not stale, whatever happened to it afterwards:
+        skipped as existing, rejected by the validator, or failed to save
+        (#558). Only external_ids recorded via record_found_animal() count, so
+        dogs the scraper didn't find still go stale. Animals already inactive
+        stay so; only a successful save brings one back.
 
         Returns:
             Number of animals marked as seen
         """
-        if not self.skip_existing_animals or not self.current_scrape_session:
+        if not self.current_scrape_session:
             return 0
 
         if not self.found_external_ids:
-            self.logger.info("No external IDs recorded as found - skipping mark_skipped_animals_as_seen")
+            self.logger.info("No external IDs recorded as found - skipping mark_found_animals_as_seen")
             return 0
 
         found_ids_tuple = tuple(self.found_external_ids)
@@ -470,13 +472,13 @@ class SessionManager:
 
                     return rows_affected
             except Exception as e:
-                self.logger.error(f"Error marking skipped animals as seen: {e}")
+                self.logger.error(f"Error marking found animals as seen: {e}")
                 return 0
 
         # Fallback to direct connection
         if not self.conn:
             if not self.connect():
-                self.logger.error("No database connection available for marking skipped animals")
+                self.logger.error("No database connection available for marking found animals")
                 return 0
 
         try:
@@ -511,7 +513,7 @@ class SessionManager:
             return rows_affected
 
         except Exception as e:
-            self.logger.error(f"Error marking skipped animals as seen: {e}")
+            self.logger.error(f"Error marking found animals as seen: {e}")
             if self.conn:
                 self.conn.rollback()
             return 0
