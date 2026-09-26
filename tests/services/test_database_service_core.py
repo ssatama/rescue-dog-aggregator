@@ -12,16 +12,19 @@ pinned a decision production never makes. It is deleted.
 """
 
 import logging
+from datetime import date
 from unittest.mock import Mock, patch
 
 import psycopg2
 import pytest
 
 from services.database_service import DatabaseService, _as_float
-from utils.birth_dates import subtract_months, today_utc
+from utils.birth_dates import subtract_months
 
+# A fixed day, so a run across UTC midnight can't see two "todays"
+TODAY = date(2026, 9, 26)
 # "2 years" read today: born exactly 24 months ago
-BORN = subtract_months(today_utc(), 24)
+BORN = subtract_months(TODAY, 24)
 
 # Column order of update_animal's SELECT. A drift here shifts every later
 # value, which is how #349's positional assertions rotted.
@@ -46,7 +49,7 @@ CURRENT_ROW = (
     [{"url": "https://images.rescuedogs.me/a.jpg", "original_url": "http://img/1.jpg", "width": 800, "height": 600}],  # images
     BORN,  # birth_date_min
     BORN,  # birth_date_max
-    today_utc(),  # age_observed_at
+    TODAY,  # age_observed_at
     None,  # created_at
 )
 IMAGES = CURRENT_ROW[17]
@@ -73,7 +76,8 @@ INCOMING = {
 
 @pytest.fixture
 def service():
-    return DatabaseService(db_config={"host": "localhost", "database": "test"}, logger=logging.getLogger("test"))
+    with patch("utils.birth_dates.today_utc", return_value=TODAY):
+        yield DatabaseService(db_config={"host": "localhost", "database": "test"}, logger=logging.getLogger("test"))
 
 
 def update_with(service, row=CURRENT_ROW, **overrides):
@@ -148,7 +152,7 @@ class TestUpdateAnimalChangeDetection:
 
     def test_an_unchanged_age_keeps_its_anchor_and_ages(self, service):
         """#561: the site still says "2 years" a year later; the dog is 3 now, not 2 again."""
-        year_ago = subtract_months(today_utc(), 12)
+        year_ago = subtract_months(TODAY, 12)
         born = subtract_months(year_ago, 24)
         row = (*CURRENT_ROW[:18], born, born, year_ago, None)
         cursor = Mock()

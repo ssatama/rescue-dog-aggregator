@@ -49,7 +49,13 @@ _DAY_MONTH_YEAR = re.compile(r"(?<!\d)(\d{1,2})[./](\d{1,2})[./](\d{4})(?!\d)")
 _MONTH_TO_MONTH_YEAR = re.compile(_MONTH_WORD + r"\s*/\s*" + _MONTH_WORD + r"\s+(\d{4})(?!\d)")
 _MONTH_YEAR = re.compile(r"(?<![\d./])(\d{1,2})[./-](\d{4})(?!\d)")
 _MONTH_NAME_YEAR = re.compile(_MONTH_WORD + r"\.?\s+(\d{4})(?!\d)")
-_YEAR = re.compile(r"(?<![\d./])(\d{4})(?![\d./])")
+_YEAR_TO_YEAR = re.compile(r"(?<![\d./])(\d{4})\s*[-–/]\s*(\d{4})(?!\d|[./]\d)")
+# A full stop may end the sentence ("DOB 2022."), but not start a date ("2022.05")
+_YEAR = re.compile(r"(?<![\d./])(\d{4})(?!\d|[./]\d)")
+
+# Age text that is a birth date: it says so, or it is nothing but a date
+_AGE_TEXT_DOB_LABEL = re.compile(r"\b(dob|born|birth\w*|geburt\w*)\b", re.IGNORECASE)
+_DATE_ONLY = re.compile(r"[\d\s./-]+")
 
 BirthRange = tuple[date, date]
 
@@ -92,7 +98,7 @@ def parse_birth_date(text: str | None, today: date | None = None) -> BirthRange 
     # Every date-like match; the one written first is the birth date
     # ("DOB 2019, arrived March 2023" is 2019).
     candidates = []
-    for rank, pattern in enumerate((_DAY_MONTH_YEAR, _MONTH_TO_MONTH_YEAR, _MONTH_YEAR, _MONTH_NAME_YEAR, _YEAR)):
+    for rank, pattern in enumerate((_DAY_MONTH_YEAR, _MONTH_TO_MONTH_YEAR, _MONTH_YEAR, _YEAR_TO_YEAR, _MONTH_NAME_YEAR, _YEAR)):
         for match in pattern.finditer(text):
             if pattern in (_MONTH_TO_MONTH_YEAR, _MONTH_NAME_YEAR) and not all(_month_number(word) for word in match.groups()[:-1]):
                 continue
@@ -117,6 +123,9 @@ def parse_birth_date(text: str | None, today: date | None = None) -> BirthRange 
         if pattern is _MONTH_YEAR:
             month, year = int(match.group(1)), int(match.group(2))
             return _checked(date(year, month, 1), _month_end(year, month), today)
+        if pattern is _YEAR_TO_YEAR:
+            first, last = int(match.group(1)), int(match.group(2))
+            return _checked(date(first, 1, 1), date(last, 12, 31), today)
         if pattern is _MONTH_NAME_YEAR:
             month, year = _month_number(match.group(1)), int(match.group(2))
             return _checked(date(year, month, 1), _month_end(year, month), today)
@@ -182,6 +191,18 @@ def as_int(value: Any) -> int | None:
     return None if value is None or value == "" else int(value)
 
 
+def _is_date_only(text: str | None) -> bool:
+    return bool(text and _DATE_ONLY.fullmatch(text.strip()))
+
+
+def age_text_is_a_birth_date(age_text: str | None) -> bool:
+    """Some rescues write the date of birth as the age: "02/2024", "Puppy (estimated DOB 01.03.2026)".
+
+    Other dates in age text ("2 years, arrived 03/2024") are not birth dates.
+    """
+    return _is_date_only(age_text) or bool(age_text and _AGE_TEXT_DOB_LABEL.search(age_text))
+
+
 def resolve_age(
     *,
     date_of_birth: str | None,
@@ -212,12 +233,14 @@ def resolve_age(
     # Some rescues write the date of birth as the age ("02/2024", "Puppy
     # (estimated DOB 01.03.2026)"). parse_age_text turns those into months as of
     # today, which must not be anchored to an older day.
-    born = parse_birth_date(date_of_birth, today) or parse_birth_date(age_text, today)
+    born = parse_birth_date(date_of_birth, today) or (parse_birth_date(age_text, today) if age_text_is_a_birth_date(age_text) else None)
     if born:
         observed = stored_observed if born == stored_range and stored_observed else today
         return Age(born[0], born[1], observed, *ages_at(born[0], born[1], today))
 
-    if min_months is None and max_months is None:
+    if min_months is None and max_months is None or _is_date_only(age_text):
+        # A bare date that isn't a valid birth date ("07/20218") is no age, not
+        # months parse_age_text counts from today
         return Age(None, None, None, None, None)
 
     observed = today

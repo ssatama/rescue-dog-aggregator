@@ -75,13 +75,13 @@ DOB_SOURCES = {
 AGE_COLUMNS = ("birth_date_min", "birth_date_max", "age_observed_at", "age_min_months", "age_max_months")
 
 
-def _stored_dob(record: dict[str, Any]) -> str | None:
+def _stored_dob(record: dict[str, Any], today: date) -> str | None:
     if record["date_of_birth"]:
         return record["date_of_birth"]
     bullets = record.get("bullets")
     if isinstance(bullets, str):
         bullets = json.loads(bullets)
-    return dob_bullet([str(bullet) for bullet in bullets]) if isinstance(bullets, list) else None
+    return dob_bullet([str(bullet) for bullet in bullets], today) if isinstance(bullets, list) else None
 
 
 def _plan_birth_dates(records: list[dict[str, Any]], today: date | None = None) -> list[Change]:
@@ -101,7 +101,7 @@ def _plan_birth_dates(records: list[dict[str, Any]], today: date | None = None) 
             stated = ages_at(as_date(record["birth_date_min"]), as_date(record["birth_date_max"]), observed)
         else:
             stated = (as_int(record["age_min_months"]), as_int(record["age_max_months"]))
-        age = resolve_age(date_of_birth=_stored_dob(record), age_text=record["age_text"], min_months=stated[0], max_months=stated[1], today=today, stored=record)
+        age = resolve_age(date_of_birth=_stored_dob(record, today), age_text=record["age_text"], min_months=stated[0], max_months=stated[1], today=today, stored=record)
         for column in AGE_COLUMNS:
             was, now = record[column], getattr(age, column)
             same = as_int(was) == now if column.startswith("age_m") else as_date(was) == now

@@ -5,6 +5,7 @@ from MisisRescue website and extract structured data using BeautifulSoup.
 """
 
 import re
+from datetime import date
 from typing import Any
 
 from bs4 import BeautifulSoup, Tag
@@ -28,14 +29,14 @@ from .normalizer import extract_weight_kg_legacy as extract_weight_kg
 DOB_LABEL = re.compile(r"\b(dob|date of birth|birthday)\b", re.IGNORECASE)
 
 
-def dob_bullet(bullets: list[str]) -> str | None:
+def dob_bullet(bullets: list[str], today: date | None = None) -> str | None:
     """The date of birth as written, from its label on ("DOB -April /May 2024"), or None.
 
     Only the text after the label is kept, so a date before it can't be taken for the birth date.
     """
     for bullet in bullets:
         label = DOB_LABEL.search(bullet)
-        if label and parse_birth_date(bullet[label.start() :]):
+        if label and parse_birth_date(bullet[label.start() :], today):
             return bullet[label.start() :]
     return None
 

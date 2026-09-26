@@ -54,6 +54,9 @@ class TestParseBirthDate:
             # Two months across New Year
             ("DOB Dec/Jan 2024", (date(2023, 12, 1), date(2024, 1, 31))),
             ("Dezember/Januar 2025", (date(2024, 12, 1), date(2025, 1, 31))),
+            # A full stop ends the sentence; a year range spans both years
+            ("rough estimate DOB 2021.", (date(2021, 1, 1), date(2021, 12, 31))),
+            ("2019-2020", (date(2019, 1, 1), date(2020, 12, 31))),
         ],
     )
     def test_formats_the_rescues_publish(self, text, expected):
@@ -128,6 +131,15 @@ class TestResolveAge:
         stored = {"age_text": "02/2024", "age_min_months": 19, "age_max_months": 25, "created_at": "2025-09-26"}
         age = resolve_age(date_of_birth=None, age_text="02/2024", min_months=31, max_months=37, today=TODAY, stored=stored)
         assert (age.age_min_months, age.age_max_months) == (30, 31)
+
+    def test_other_dates_in_age_text_are_not_birth_dates(self):
+        age = resolve_age(date_of_birth=None, age_text="approx. 2 years, arrived 03/2024", min_months=24, max_months=36, today=TODAY)
+        assert (age.age_min_months, age.age_max_months) == (24, 36)
+
+    def test_a_bare_date_that_is_not_a_birth_date_is_no_age(self):
+        """Daisy's "07/20218": parse_age_text would read "07/2021" and count from today."""
+        age = resolve_age(date_of_birth="07/20218", age_text="07/20218", min_months=62, max_months=74, today=TODAY)
+        assert age.age_min_months is None and age.birth_date_min is None
 
     def test_an_unparseable_date_of_birth_falls_back_to_the_stated_age(self):
         age = resolve_age(date_of_birth="07/20218", age_text="5 years", min_months=60, max_months=72, today=TODAY)
