@@ -43,6 +43,22 @@ def _plan_age_clears(records: list[dict[str, Any]]) -> list[Change]:
     return [Change(clear.animal_id, clear.organization, "age_text", clear.was, None) for clear in plan_clears(rows_from_records(records))]
 
 
+# Rescues whose properties.breed is the text their site shows (checked against
+# production on 2026-09-26). Until #560 they stored the standardized name as
+# breed_raw. Many Tears is left out: its properties.breed is sometimes another
+# field ("Can be the only dog").
+BREED_SOURCE_ORGS = ("animalrescuebosnia", "dogstrust", "santerpawsbulgarianrescue", "woof-project")
+
+
+def _plan_breed_raw(records: list[dict[str, Any]]) -> list[Change]:
+    changes = []
+    for record in records:
+        source = (record["source_breed"] or "").strip(" ")  # spaces only, as btrim in fetch_sql
+        if source and source != record["breed_raw"]:
+            changes.append(Change(record["id"], record["organization"], "breed_raw", record["breed_raw"], source))
+    return changes
+
+
 STEPS: dict[str, Step] = {
     step.name: step
     for step in [
@@ -56,6 +72,19 @@ STEPS: dict[str, Step] = {
                 WHERE a.age_text IS NOT NULL AND a.age_min_months IS NULL AND a.age_max_months IS NULL
             """,
             plan=_plan_age_clears,
+        ),
+        Step(
+            name="restore-breed-raw",
+            summary="breed_raw goes back to the rescue's own text in properties.breed (#560)",
+            fetch_sql=f"""
+                SELECT a.id, a.properties->>'breed' AS source_breed, a.breed_raw, o.config_id AS organization
+                FROM animals a
+                JOIN organizations o ON o.id = a.organization_id
+                WHERE o.config_id IN ({", ".join(f"'{org}'" for org in BREED_SOURCE_ORGS)})
+                  AND btrim(a.properties->>'breed') <> ''
+                  AND btrim(a.properties->>'breed') IS DISTINCT FROM a.breed_raw
+            """,
+            plan=_plan_breed_raw,
         ),
     ]
 }

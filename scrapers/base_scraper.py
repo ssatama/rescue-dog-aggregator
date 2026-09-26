@@ -530,8 +530,12 @@ class BaseScraper(ABC):
             # Apply field normalization first (trimming, boolean conversion, defaults)
             processed_data = self.standardizer.apply_field_normalization(processed_data)
 
-            # Preserve the organization's own breed text before standardization rewrites it
-            processed_data["breed_raw"] = processed_data.get("breed")
+            # Preserve the organization's own breed text before standardization
+            # rewrites it. Most scrapers call this in collect_data and save_animal
+            # calls it again: the second pass must not record the standardized
+            # name as breed_raw (#560).
+            if "breed_raw" not in processed_data:
+                processed_data["breed_raw"] = processed_data.get("breed")
 
             # Log standardization for breed if present
             original_breed = animal_data.get("breed")

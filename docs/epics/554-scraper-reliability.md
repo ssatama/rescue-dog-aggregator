@@ -103,6 +103,33 @@ Galgos del Sol.
 - Site findings from this work (Woof reads only page 1; Many Tears' count
   swing is churn) are in `docs/technical/operational-knowledge.md`.
 
+## breed_raw keeps the rescue's text (#560)
+
+`process_animal` sets `breed_raw` only when it is absent. Most scrapers call
+it in `collect_data` and `save_animal` calls it again; the second pass used to
+record the standardized name ("Toy Poodle" for Dogs Trust's "Poodle (Toy)").
+Everything else still runs on both passes, so a breed a scraper fills in after
+the first pass ("Mixed Breed" defaults) is still standardized on save, and
+derived columns are what they were before.
+
+- Backfill step `restore-breed-raw`: `breed_raw` back to `properties.breed`
+  for Dogs Trust, Santer Paws, Bosnia and Woof, whose `properties.breed` is
+  the site's text. It plans 750 dogs (2026-09-26) and changes nothing else,
+  exactly what a forced re-scrape writes (`plan --org santerpawsbulgarianrescue`:
+  70 `breed_raw`, no other field).
+- Re-resolving the derived columns from the restored text would change no
+  standardized name, slug, type or group (checked 2026-09-26), so
+  `breed_restandardize.py` has nothing to do for these rows.
+- Not in the step: Many Tears (its `properties.breed` is sometimes another
+  field, e.g. "Can be the only dog"; from now on scrapes store that text as
+  `breed_raw` too, until #571 fixes the parse), Tierschutzverein (`breed_raw`
+  is the scraper's English translation of `Rasse`), MISIs (`breed_raw` is
+  NULL for every dog; #562), Pets in Turkey, REAN and The Underdog (no source
+  copy; #572's forced re-scrape rewrites listed dogs), and the disabled Galgos
+  del Sol and Furry Rescue Italy (no row differs).
+- The step includes unlisted dogs: their `properties.breed` is the text their
+  last scrape read, which is still the rescue's wording.
+
 ## Gotchas
 
 - **The local dev database can lag production's schema.** Alembic only reads
