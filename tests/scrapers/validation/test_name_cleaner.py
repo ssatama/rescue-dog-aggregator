@@ -52,6 +52,8 @@ class TestCleanName:
             ("Golden Retriever", "Golden Retriever"),
             ("Springer Spaniel", "English Springer Spaniel"),
             ("Benji & Lab", "Labrador Retriever"),  # a pair, not an appended breed
+            ("Buddy the Beagle", "Beagle"),  # only "Name Breed" is cleaned
+            ("Bruno The Boxer", "Boxer"),
             ("Bella *RESERVED*", "Beagle"),  # availability labels stay visible
             ("Max ON HOLD", "Mixed Breed"),
             ("Luna (applications closed)", "Mixed Breed"),

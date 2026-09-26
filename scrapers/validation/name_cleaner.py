@@ -58,17 +58,17 @@ def _is_appended_breed_word(word: str, breed: str) -> bool:
 
 
 def _is_a_name(rest: str, breed: str) -> bool:
-    """What's left after the breed word must stand alone as a name.
+    """What's left after the breed word must be one word that is a name.
 
-    Not a title ("Mr Beagle"), not the start of the breed ("Siberian Husky"),
-    and not half of a pair ("Benji & Lab").
+    Every real case is "Lola Lab" or "Rex GSD". Longer names ("Buddy the
+    Beagle", "Benji & Lab") are left whole rather than guessed at, and so are
+    a title ("Mr Beagle") or the start of the breed ("Siberian Husky").
     """
     words = rest.lower().split()
-    if not words or words[-1] in {"&", "/", "and", "+"}:
+    if len(words) != 1:
         return False
-    if rest.lower().rstrip(".") in NAME_PREFIXES:
-        return False
-    return not all(word in breed.split() for word in words)
+    word = words[0].rstrip(".")
+    return word not in NAME_PREFIXES and word not in breed.split()
 
 
 def clean_name(name: str, breed: str | None) -> tuple[str, bool]:
