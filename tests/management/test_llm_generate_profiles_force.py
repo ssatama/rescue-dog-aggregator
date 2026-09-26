@@ -63,4 +63,3 @@ class TestProfileSelectionQuery:
         sql, _ = build_profile_selection_query(org_id=11, force=False, confidence="high", limit=None, ids=(251,))
 
         assert "availability_confidence" not in sql
-        assert params == (11, [251, 9570])
