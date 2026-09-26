@@ -48,7 +48,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
             # Filter based on skip_existing_animals if enabled
             # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-            # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
+            # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
             if self.skip_existing_animals:
                 animals = self.filtering_service.filter_existing_animals(animals)
                 self._sync_filtering_stats()

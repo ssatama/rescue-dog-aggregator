@@ -75,6 +75,12 @@ class BaseScraper(ABC):
 
     # Sentry is warned when more than this share of collected dogs is not saved.
     LOSS_ALERT_RATE = 0.1
+    # More than this share of found dogs failing to save makes the run a
+    # partial failure, which skips stale detection (#558). Found, not collected:
+    # with skip_existing_animals only new dogs are collected, and one new dog
+    # that fails every run would otherwise be 100%. Validator rejections don't
+    # count: they repeat for the same dog every run.
+    SAVE_ERROR_PARTIAL_FAILURE_RATE = 0.2
     # How many rejected or failed external_ids a run's log line lists.
     LOST_IDS_LOG_CAP = 20
 
@@ -1099,30 +1105,34 @@ class BaseScraper(ABC):
 
         # Check for potential partial failure before updating stale data
         correct_animals_found = self._get_correct_animals_found_count(animals_data)
-        potential_failure = self.detect_partial_failure(correct_animals_found)
+        count_dropped = self.detect_partial_failure(correct_animals_found)
+        save_errors = processing_stats["save_errors"]
+        too_many_save_errors = correct_animals_found > 0 and save_errors / correct_animals_found > self.SAVE_ERROR_PARTIAL_FAILURE_RATE
+        potential_failure = count_dropped or too_many_save_errors
         processing_stats["potential_failure_detected"] = potential_failure
 
         if potential_failure:
             self.logger.warning("Potential partial failure detected - skipping stale data update")
-            # Surface to Sentry — log alone doesn't page. Zero-dogs path is
-            # handled earlier in run(), so this covers the drop-rate case.
-            self._emit_partial_failure_alert(correct_animals_found)
             # A note, so the run completes as "warning" in _log_completion_metrics,
             # or keeps saying so if it fails before then
-            self._run_notes.append("Potential partial failure - low animal count detected")
+            if count_dropped:
+                # Surface to Sentry — log alone doesn't page. Zero-dogs path is
+                # handled earlier in run(), so this covers the drop-rate case.
+                self._emit_partial_failure_alert(correct_animals_found)
+                self._run_notes.append("Potential partial failure - low animal count detected")
+            if too_many_save_errors:
+                # _report_losses has already warned Sentry (dogs_not_saved)
+                self._run_notes.append(f"Potential partial failure - {save_errors} of {correct_animals_found} found dogs failed to save")
         else:
-            # Fix for skip_existing_animals bug: Mark skipped animals as seen
-            # before running stale data detection to prevent them from being
-            # incorrectly marked as unavailable
-            if self.skip_existing_animals:
-                if self.session_manager:
-                    self.session_manager.mark_skipped_animals_as_seen()
-                else:
-                    self._log_service_unavailable("SessionManager", "skipped animals marking disabled")
-
-            # Update stale data detection for animals not seen in this scrape
             if self.session_manager:
-                self.session_manager.update_stale_data_detection()
+                # Every dog the site listed is seen, whether it was skipped as
+                # existing, rejected or failed to save: a listed dog is not stale (#558)
+                if self.session_manager.mark_found_animals_as_seen() is None:
+                    # Stale detection now would count listed dogs as missing
+                    self.logger.warning("Could not mark found dogs as seen - skipping stale data update")
+                    self._run_notes.append("Stale detection skipped - found dogs could not be marked as seen")
+                elif not self.session_manager.update_stale_data_detection():
+                    self._run_notes.append("Stale detection failed")
             else:
                 self._log_service_unavailable("SessionManager", "stale data detection disabled")
 
@@ -1279,7 +1289,7 @@ class BaseScraper(ABC):
 
         This must be called BEFORE any skip_existing_animals filtering happens.
         It records which animals were actually found on the website so that
-        mark_skipped_animals_as_seen() only marks those specific animals as seen,
+        mark_found_animals_as_seen() only marks those specific animals as seen,
         not ALL available animals in the database.
 
         Args:

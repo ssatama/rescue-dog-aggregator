@@ -413,7 +413,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
             # Pre-generate external_ids for stale detection
             # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-            # BEFORE filtering to ensure mark_skipped_animals_as_seen() works correctly
+            # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
             for animal in animals_list:
                 if animal.get("name") and "external_id" not in animal:
                     slug = animal["name"].lower().replace(" ", "-")

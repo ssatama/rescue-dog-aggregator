@@ -227,7 +227,6 @@ class TestAdoptionIntegration:
         """Test that _finalize_scrape calls adoption checking."""
         # Setup mocks
         mock_scraper_with_adoption.detect_partial_failure = MagicMock(return_value=False)
-        mock_scraper_with_adoption.mark_skipped_animals_as_seen = MagicMock()
         mock_scraper_with_adoption.update_stale_data_detection = MagicMock()
         mock_scraper_with_adoption.complete_scrape_log = MagicMock()
         mock_scraper_with_adoption.skip_existing_animals = False
@@ -238,7 +237,7 @@ class TestAdoptionIntegration:
         mock_service.batch_check_adoptions.return_value = []
 
         # Run finalize scrape
-        processing_stats = {}
+        processing_stats = {"animals_rejected": 0, "save_errors": 0}
         mock_scraper_with_adoption._finalize_scrape([], processing_stats)
 
         # Verify adoption checking was called

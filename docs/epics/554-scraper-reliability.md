@@ -50,8 +50,26 @@ closes, move what lasts into `docs/technical/scraper-architecture.md` and
 
 The rejected and failed `external_id`s (up to 20) are in the run's log line
 "N collected, M not saved". More than 10% not saved sends a Sentry warning
-(`scraper.alert_type=dogs_not_saved`). Rejected and failed dogs are not marked
-seen, so they go stale while still listed; #558 fixes that for failed saves.
+(`scraper.alert_type=dogs_not_saved`).
+
+## Stale detection (#558)
+
+Every dog the site listed is marked seen before stale detection
+(`SessionManager.mark_found_animals_as_seen`), whether it was skipped as
+existing, rejected or failed to save, and whether or not
+`skip_existing_animals` is on. Every production config has skipping on, and
+the old method already covered that case, so this matters for
+`FORCE_RESCRAPE` runs: `backfill apply` and #572. Dogs stale detection has
+retired (status `unknown`) stay so until a save succeeds, and a new dog that
+fails validation is never stored.
+
+Stale detection is skipped, with a run note that makes the run a `warning`,
+when more than 20% of *found* dogs fail to save
+(`SAVE_ERROR_PARTIAL_FAILURE_RATE`), when marking the found dogs fails, and
+it is noted when the stale update itself fails. Found, not collected: with
+skipping on only new dogs are collected, so one new dog failing every run
+would be 100%. Validator rejections don't count (deviation from the issue):
+they repeat for the same dog every run.
 
 ## Gotchas
 

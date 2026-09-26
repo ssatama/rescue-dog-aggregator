@@ -111,7 +111,7 @@ class SessionManager:
     def record_found_animal(self, external_id: str) -> None:
         """Record that an animal with given external_id was found during this scrape.
 
-        This is used by mark_skipped_animals_as_seen() to only mark animals
+        This is used by mark_found_animals_as_seen() to only mark animals
         that were actually found by the scraper, not all available animals.
 
         Args:
@@ -417,21 +417,26 @@ class SessionManager:
                 self.conn.rollback()
             return False
 
-    def mark_skipped_animals_as_seen(self) -> int:
-        """Mark animals that were found but skipped due to skip_existing_animals as seen.
+    def mark_found_animals_as_seen(self) -> int | None:
+        """Mark every available animal the rescue's site listed this run as seen.
 
-        IMPORTANT: Only marks animals whose external_id was recorded via record_found_animal().
-        This prevents marking ALL available animals as seen, which was causing the stale
-        detection bug where dogs not found by scrapers would incorrectly stay available.
+        A dog the site lists is not stale, whatever happened to it afterwards:
+        skipped as existing, rejected by the validator, or failed to save
+        (#558). Only external_ids recorded via record_found_animal() count, so
+        dogs the scraper didn't find still go stale, and dogs the save loop
+        already marked this session aren't written twice. Dogs stale detection has
+        already retired (status 'unknown') stay so; only a successful save
+        brings one back.
 
         Returns:
-            Number of animals marked as seen
+            Number of animals marked as seen, or None if the update failed, in
+            which case stale detection must not run
         """
-        if not self.skip_existing_animals or not self.current_scrape_session:
+        if not self.current_scrape_session:
             return 0
 
         if not self.found_external_ids:
-            self.logger.info("No external IDs recorded as found - skipping mark_skipped_animals_as_seen")
+            self.logger.info("No external IDs recorded as found - skipping mark_found_animals_as_seen")
             return 0
 
         found_ids_tuple = tuple(self.found_external_ids)
@@ -453,11 +458,13 @@ class SessionManager:
                         WHERE organization_id = %s
                         AND status = 'available'
                         AND external_id = ANY(%s)
+                        AND (last_seen_at IS NULL OR last_seen_at < %s)
                         """,
                         (
                             self.current_scrape_session,
                             self.organization_id,
                             list(found_ids_tuple),
+                            self.current_scrape_session,
                         ),
                     )
 
@@ -470,14 +477,14 @@ class SessionManager:
 
                     return rows_affected
             except Exception as e:
-                self.logger.error(f"Error marking skipped animals as seen: {e}")
-                return 0
+                self.logger.error(f"Error marking found animals as seen: {e}")
+                return None
 
         # Fallback to direct connection
         if not self.conn:
             if not self.connect():
-                self.logger.error("No database connection available for marking skipped animals")
-                return 0
+                self.logger.error("No database connection available for marking found animals")
+                return None
 
         try:
             cursor = self.conn.cursor()
@@ -493,11 +500,13 @@ class SessionManager:
                 WHERE organization_id = %s
                 AND status = 'available'
                 AND external_id = ANY(%s)
+                AND (last_seen_at IS NULL OR last_seen_at < %s)
                 """,
                 (
                     self.current_scrape_session,
                     self.organization_id,
                     list(found_ids_tuple),
+                    self.current_scrape_session,
                 ),
             )
 
@@ -511,10 +520,10 @@ class SessionManager:
             return rows_affected
 
         except Exception as e:
-            self.logger.error(f"Error marking skipped animals as seen: {e}")
+            self.logger.error(f"Error marking found animals as seen: {e}")
             if self.conn:
                 self.conn.rollback()
-            return 0
+            return None
 
     def get_stale_animals_summary(self) -> dict[tuple[str, str], int]:
         """Get summary of animals by availability confidence and status.
