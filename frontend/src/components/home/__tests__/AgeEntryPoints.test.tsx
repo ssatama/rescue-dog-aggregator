@@ -14,3 +14,12 @@ describe("AgeEntryPoints", () => {
     expect(screen.queryByRole("link", { name: /Puppies/ })).not.toBeInTheDocument();
   });
 });
+
+describe("AgeEntryPoints on the age hub", () => {
+  it("keeps both links without counts when asked to", () => {
+    render(<AgeEntryPoints puppies={0} seniors={0} keepEmpty />);
+
+    expect(screen.getByRole("link", { name: /Puppies/ })).toHaveTextContent("PuppiesUnder a year old");
+    expect(screen.getByRole("link", { name: /Seniors/ })).toHaveAttribute("href", "/dogs/senior");
+  });
+});

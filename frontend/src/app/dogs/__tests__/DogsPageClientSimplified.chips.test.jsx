@@ -218,3 +218,20 @@ describe("the catalog on a landing page (#502)", () => {
     expect(router.push.mock.calls.at(-1)[0]).toBe("/dogs/puppies?size=Small");
   });
 });
+
+describe("an empty landing page (#502 review)", () => {
+  it("says none are listed rather than offering filters to clear", async () => {
+    jest.clearAllMocks();
+    useRouter.mockReturnValue({ push: jest.fn(), replace: jest.fn() });
+    usePathname.mockReturnValue("/dogs/puppies");
+    useSearchParams.mockReturnValue(new URLSearchParams(""));
+    api.getAnimals.mockResolvedValue([]);
+    api.getFilterCounts.mockResolvedValue({ total: 0 });
+    api.getAvailableRegions.mockResolvedValue([]);
+    render(
+      <DogsPageClientSimplified initialDogs={[]} metadata={{}} initialParams={{ age_category: "Puppy" }} hideHero hideBreadcrumbs />,
+    );
+
+    expect(await screen.findByText("None listed right now")).toBeInTheDocument();
+  });
+});

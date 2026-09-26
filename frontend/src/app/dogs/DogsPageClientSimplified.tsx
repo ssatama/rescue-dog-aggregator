@@ -512,8 +512,8 @@ export default function DogsPageClientSimplified({
 
               {/* Empty state */}
               {!pagination.loading && pagination.dogs.length === 0 &&
-                ((breedIsFixed || orgIsFixed) && filterState.activeFilterCount === 0 ? (
-                  // Nothing to clear: the breed or rescue itself has no dogs listed now
+                (pageFixedFilters.length > 0 && filterState.activeFilterCount === 0 ? (
+                  // Nothing to clear: the page's own breed, rescue, age or country has no dogs listed now
                   <EmptyState
                     title="None listed right now"
                     description={`${orgIsFixed ? "This rescue's list is updated" : "Rescues add new dogs"} three times a week. Every other dog is in the catalog.`}

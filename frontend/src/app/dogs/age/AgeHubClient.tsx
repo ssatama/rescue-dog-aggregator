@@ -25,7 +25,8 @@ export default function AgeHubClient({ initialStats }: AgeHubClientProps) {
       </p>
 
       <div className="mt-6 max-w-3xl">
-        <AgeEntryPoints puppies={countFor("puppies")} seniors={countFor("senior")} />
+        {/* Both ages are always linked: the hub is only these links */}
+        <AgeEntryPoints puppies={countFor("puppies")} seniors={countFor("senior")} keepEmpty />
       </div>
 
       <Link
