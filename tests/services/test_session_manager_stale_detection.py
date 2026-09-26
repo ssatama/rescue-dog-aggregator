@@ -209,3 +209,14 @@ class TestIntegration:
         # Should be empty now
         assert session_manager.get_found_external_ids_count() == 0
         assert len(session_manager.found_external_ids) == 0
+
+
+class TestMarkFoundAnimalsAsSeenFailure:
+    def test_a_failed_update_returns_none_not_zero(self, session_manager):
+        """None tells the scraper to skip stale detection; 0 means nothing was found (#558)."""
+        session_manager.connection_pool = MagicMock()
+        session_manager.connection_pool.get_connection_context.side_effect = RuntimeError("pool exhausted")
+        session_manager.start_scrape_session()
+        session_manager.record_found_animal("dog-1")
+
+        assert session_manager.mark_found_animals_as_seen() is None

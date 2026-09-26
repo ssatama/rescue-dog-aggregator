@@ -134,7 +134,7 @@ class TestTooManyNotSavedIsAPartialFailure:
 
         (completion,) = [c.args for c in scraper.database_service.complete_scrape_log.call_args_list]
         assert completion[1] == "warning"
-        assert "3 of 10 found dogs not saved" in completion[5]
+        assert "3 of 10 collected dogs failed to save" in completion[5]
         session_manager.update_stale_data_detection.assert_not_called()
         session_manager.mark_found_animals_as_seen.assert_not_called()
 
@@ -155,3 +155,41 @@ class TestTooManyNotSavedIsAPartialFailure:
         session_manager.mark_found_animals_as_seen.assert_called_once()
         session_manager.update_stale_data_detection.assert_called_once()
         assert session_manager.method_calls.index(("mark_found_animals_as_seen", (), {})) < session_manager.method_calls.index(("update_stale_data_detection", (), {}))
+
+    def test_rejections_never_make_a_partial_failure(self):
+        """A rescue with photo-less dogs is rejected the same way every run; it must keep stale detection."""
+        session_manager = Mock()
+        session_manager.get_historical_average_dogs_found.return_value = None
+        scraper = _scraper(session_manager)
+        scraper.dogs = [_dog(f"d{i}") for i in range(10)]
+        scraper.dogs[:5] = [{**d, "primary_image_url": None} for d in scraper.dogs[:5]]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "no_change")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("scrapers.base_scraper.alert_dogs_not_saved"),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            scraper._run_with_connection()
+
+        assert scraper._processing_stats["animals_rejected"] == 5
+        session_manager.update_stale_data_detection.assert_called_once()
+
+    def test_stale_detection_is_skipped_when_found_dogs_cannot_be_marked(self):
+        session_manager = Mock()
+        session_manager.get_historical_average_dogs_found.return_value = None
+        session_manager.mark_found_animals_as_seen.return_value = None
+        scraper = _scraper(session_manager)
+        scraper.dogs = [_dog("a")]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "no_change")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            scraper._run_with_connection()
+
+        session_manager.update_stale_data_detection.assert_not_called()
+        (completion,) = [c.args for c in scraper.database_service.complete_scrape_log.call_args_list]
+        assert completion[1] == "warning"
+        assert "found dogs could not be marked" in completion[5]

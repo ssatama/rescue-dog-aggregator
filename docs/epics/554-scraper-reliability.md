@@ -57,11 +57,16 @@ The rejected and failed `external_id`s (up to 20) are in the run's log line
 Every dog the site listed is marked seen before stale detection
 (`SessionManager.mark_found_animals_as_seen`), whether it was skipped as
 existing, rejected or failed to save, and whether or not
-`skip_existing_animals` is on. Dogs already inactive stay inactive until a
-save succeeds, and a new dog that fails validation is never stored. More than
-20% of found dogs not saved (`LOSS_PARTIAL_FAILURE_RATE`) makes the run a
-partial failure: stale detection is skipped and the run is a `warning` with
-the note "N of M found dogs not saved".
+`skip_existing_animals` is on. Dogs stale detection has retired (status
+`unknown`) stay so until a save succeeds, and a new dog that fails validation
+is never stored. More than 20% of collected dogs failing to save
+(`SAVE_ERROR_PARTIAL_FAILURE_RATE`) makes the run a partial failure: stale
+detection is skipped and the run is a `warning` with the note "N of M
+collected dogs failed to save". Validator rejections don't count towards it
+(deviation from the issue, which said rejected + failed): they repeat for the
+same dog every run, so a rescue with a few photo-less dogs would lose stale
+detection for good. If marking the found dogs fails, stale detection is
+skipped too, with a note.
 
 ## Gotchas
 

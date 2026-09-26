@@ -182,7 +182,7 @@ class TestFinalizeScrapeWiringToPartialFailureAlert:
         scraper._check_adoptions_if_enabled = Mock()
         scraper._log_service_unavailable = Mock()
         scraper._run_notes = []
-        scraper.LOSS_PARTIAL_FAILURE_RATE = BaseScraper.LOSS_PARTIAL_FAILURE_RATE
+        scraper.SAVE_ERROR_PARTIAL_FAILURE_RATE = BaseScraper.SAVE_ERROR_PARTIAL_FAILURE_RATE
         scraper._finalize_scrape = BaseScraper._finalize_scrape.__get__(scraper)
         return scraper
 

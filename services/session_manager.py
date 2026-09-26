@@ -417,17 +417,19 @@ class SessionManager:
                 self.conn.rollback()
             return False
 
-    def mark_found_animals_as_seen(self) -> int:
+    def mark_found_animals_as_seen(self) -> int | None:
         """Mark every available animal the rescue's site listed this run as seen.
 
         A dog the site lists is not stale, whatever happened to it afterwards:
         skipped as existing, rejected by the validator, or failed to save
         (#558). Only external_ids recorded via record_found_animal() count, so
-        dogs the scraper didn't find still go stale. Animals already inactive
-        stay so; only a successful save brings one back.
+        dogs the scraper didn't find still go stale. Dogs stale detection has
+        already retired (status 'unknown') stay so; only a successful save
+        brings one back.
 
         Returns:
-            Number of animals marked as seen
+            Number of animals marked as seen, or None if the update failed, in
+            which case stale detection must not run
         """
         if not self.current_scrape_session:
             return 0
@@ -473,13 +475,13 @@ class SessionManager:
                     return rows_affected
             except Exception as e:
                 self.logger.error(f"Error marking found animals as seen: {e}")
-                return 0
+                return None
 
         # Fallback to direct connection
         if not self.conn:
             if not self.connect():
                 self.logger.error("No database connection available for marking found animals")
-                return 0
+                return None
 
         try:
             cursor = self.conn.cursor()
@@ -516,7 +518,7 @@ class SessionManager:
             self.logger.error(f"Error marking found animals as seen: {e}")
             if self.conn:
                 self.conn.rollback()
-            return 0
+            return None
 
     def get_stale_animals_summary(self) -> dict[tuple[str, str], int]:
         """Get summary of animals by availability confidence and status.
