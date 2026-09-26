@@ -176,3 +176,27 @@ class TestCloseNeverHangs:
 
         with pytest.raises(TimeoutError):
             asyncio.run(bounded())
+
+
+@pytest.mark.unit
+@pytest.mark.real_clock
+class TestOwnedInstanceStopsOnCancel:
+    def test_a_timeout_during_connect_still_stops_the_owned_instance(self):
+        """A caller's wait_for cancels mid-connect; CancelledError is not an Exception."""
+        service = PlaywrightBrowserService()
+        service._endpoint = "wss://browserless.example"
+
+        async def never(*args, **kwargs):
+            await asyncio.Event().wait()
+
+        owned_playwright = MagicMock(stop=AsyncMock())
+        owned_playwright.chromium.connect_over_cdp = AsyncMock(side_effect=never)
+        service._get_or_start_playwright = AsyncMock(return_value=(owned_playwright, True))
+
+        async def bounded():
+            await asyncio.wait_for(service.create_browser(), 0.05)
+
+        with pytest.raises(TimeoutError):
+            asyncio.run(bounded())
+
+        owned_playwright.stop.assert_awaited_once()

@@ -58,12 +58,13 @@ class MisisRescueScraper(BaseScraper):
     metrics logging, and image uploading functionality.
     """
 
-    # Upper bounds, so a stall raises (listing) or skips one dog (detail)
-    # instead of hanging (#580). Both sit above the retries they wrap:
-    # navigate_with_retry spends up to ~183s (3 x 60s plus backoff). A normal
-    # listing takes about 60s, a detail page a few seconds.
-    LISTING_TIMEOUT_SECONDS = 420
-    DETAIL_TIMEOUT_SECONDS = 240
+    # Last-resort bounds, so a stall raises (listing) or skips one dog
+    # (detail) instead of hanging (#580). They sit well above every retry
+    # they wrap (browser connect ~190s plus navigation ~185s worst case) so a
+    # slow run that would recover is never cut off; the cron's per-rescue
+    # limit (#579) stays the backstop. Normal: listing ~60s, detail a few s.
+    LISTING_TIMEOUT_SECONDS = 900
+    DETAIL_TIMEOUT_SECONDS = 600
 
     def __init__(self, config_id: str = "misisrescue", organization_id=None):
         """Initialize with configuration."""

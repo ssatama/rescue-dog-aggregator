@@ -69,6 +69,14 @@ class PlaywrightOptions:
     wait_until: str = "domcontentloaded"  # networkidle, load, domcontentloaded, commit
 
 
+async def _stop_quietly(playwright: Playwright) -> None:
+    """Stop an owned Playwright instance, giving up after CLOSE_TIMEOUT_SECONDS."""
+    try:
+        await asyncio.wait_for(playwright.stop(), PlaywrightResult.CLOSE_TIMEOUT_SECONDS)
+    except BaseException:
+        pass
+
+
 @dataclass
 class PlaywrightResult:
     """Result of browser creation with metadata."""
@@ -245,10 +253,11 @@ class PlaywrightBrowserService:
                 _playwright=playwright,
                 _owns_playwright=owned,
             )
-        except Exception as e:
-            logger.error(f"Failed to create local Playwright browser: {e}")
+        except BaseException as e:
+            # BaseException: a caller's timeout cancels here too, and an owned instance must still stop.
+            logger.error(f"Failed to create local Playwright browser: {e!r}")
             if owned:
-                await playwright.stop()
+                await _stop_quietly(playwright)
             raise
 
     async def _create_remote_browser(self, opts: PlaywrightOptions) -> PlaywrightResult:
@@ -266,7 +275,15 @@ class PlaywrightBrowserService:
         ws_url = self._build_ws_url()
 
         playwright, owned = await self._get_or_start_playwright()
+        try:
+            return await self._connect_remote(playwright, owned, opts, ws_url, max_retries, base_delay)
+        except BaseException:
+            # BaseException: a caller's timeout cancels here too, and an owned instance must still stop.
+            if owned:
+                await _stop_quietly(playwright)
+            raise
 
+    async def _connect_remote(self, playwright: Playwright, owned: bool, opts: PlaywrightOptions, ws_url: str, max_retries: int, base_delay: float) -> PlaywrightResult:
         for attempt in range(max_retries):
             try:
                 browser = await playwright.chromium.connect_over_cdp(ws_url)
@@ -295,8 +312,6 @@ class PlaywrightBrowserService:
                     await asyncio.sleep(delay)
                 else:
                     logger.error(f"Browserless connection failed after {max_retries} attempts: {e}")
-                    if owned:
-                        await playwright.stop()
                     raise
 
     async def _create_context(self, browser: Browser, opts: PlaywrightOptions) -> BrowserContext:
