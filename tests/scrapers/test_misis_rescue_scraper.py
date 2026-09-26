@@ -1598,3 +1598,71 @@ class TestMisisRescueNavigationResilience(ScraperTestBase):
 
         assert goto.await_count == 3, "detail navigation must be retried before giving up"
         assert result is None, "an unreachable detail page must skip that dog, not raise"
+
+
+@pytest.mark.unit
+@pytest.mark.real_clock
+class TestMisisRescueNeverHangs(ScraperTestBase):
+    """A stalled browser raises or skips; it never hangs the cron (#580).
+
+    2026-09-26: Browserless ended MISIs' session at its 300s limit and the
+    scraper waited on the dead socket until the cron was redeployed.
+    """
+
+    scraper_class = MisisRescueScraper
+    config_id = "misisrescue"
+    expected_org_name = "MISIs Animal Rescue"
+    expected_base_url = "https://www.misisrescue.com"
+
+    def test_a_stalled_listing_raises_instead_of_hanging(self, scraper):
+        async def stalled():
+            await asyncio.Event().wait()
+
+        scraper.LISTING_TIMEOUT_SECONDS = 0.05
+        with patch.object(scraper, "_get_all_dogs_from_listing_playwright", side_effect=stalled):
+            with pytest.raises(RuntimeError, match="did not finish within"):
+                asyncio.run(scraper._bounded_listing_playwright())
+
+    def test_a_stalled_detail_page_skips_only_that_dog(self, scraper):
+        async def stalled(url):
+            await asyncio.Event().wait()
+
+        scraper.DETAIL_TIMEOUT_SECONDS = 0.05
+        with patch.object(scraper, "_scrape_dog_detail_playwright", side_effect=stalled):
+            assert asyncio.run(scraper._bounded_detail_playwright("https://www.misisrescue.com/post/dog1")) is None
+
+    def test_a_pagination_error_raises_instead_of_keeping_a_partial_listing(self, scraper):
+        page = Mock()
+        page.goto = AsyncMock(return_value=None)
+        page.content = AsyncMock(return_value='<html><body><a href="/post/dog1">Dog 1</a></body></html>')
+
+        @asynccontextmanager
+        async def fake_retry(options=None, **kwargs):
+            yield SimpleNamespace(page=page)
+
+        with (
+            patch("scrapers.misis_rescue.scraper.PlaywrightOptions", create=True),
+            patch.object(scraper, "_with_browser_retry", fake_retry),
+            patch.object(scraper, "_scroll_to_load_all_content_playwright", new=AsyncMock()),
+            patch.object(scraper, "_click_pagination_button_playwright", new=AsyncMock(side_effect=RuntimeError("Target page, context or browser has been closed"))),
+            patch("scrapers.misis_rescue.scraper.asyncio.sleep", new=AsyncMock()),
+        ):
+            with pytest.raises(RuntimeError, match="has been closed"):
+                asyncio.run(scraper._get_all_dogs_from_listing_playwright())
+
+    def test_a_dead_browser_while_finding_the_next_page_raises(self, scraper):
+        locator = Mock()
+        locator.first.is_visible = AsyncMock(side_effect=RuntimeError("Browser has been closed"))
+        page = Mock()
+        page.locator = Mock(return_value=locator)
+
+        with pytest.raises(RuntimeError, match="has been closed"):
+            asyncio.run(scraper._click_pagination_button_playwright(page, 2))
+
+    def test_no_next_page_button_is_the_last_page(self, scraper):
+        locator = Mock()
+        locator.first.is_visible = AsyncMock(return_value=False)
+        page = Mock()
+        page.locator = Mock(return_value=locator)
+
+        assert asyncio.run(scraper._click_pagination_button_playwright(page, 5)) is False

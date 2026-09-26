@@ -72,7 +72,7 @@ class TestTokenStaysOutOfOutput:
         playwright.chromium.connect_over_cdp = AsyncMock(return_value=MagicMock())
         with patch.dict(os.environ, {"BROWSERLESS_WS_ENDPOINT": ENDPOINT_WITH_TOKEN}):
             service = PlaywrightBrowserService()
-            service._get_or_start_playwright = AsyncMock(return_value=playwright)
+            service._get_or_start_playwright = AsyncMock(return_value=(playwright, False))
             service._create_context = AsyncMock(return_value=MagicMock(new_page=AsyncMock()))
 
             with caplog.at_level(logging.INFO, logger="services.playwright_browser_service"):
