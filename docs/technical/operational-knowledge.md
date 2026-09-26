@@ -24,7 +24,10 @@ neighbouring runs (green neighbours mean a transient stall) and curl the
 rescue's site before blaming code. Scrapers must separate failure altitude: a
 *listing* failure must raise (an empty listing fires a false zero-dogs alert,
 #215/#216), a *detail page* failure skips that dog. `navigate_with_retry`
-returns `False` instead of raising, so check its return.
+returns `False` instead of raising, so check its return. Raise
+`ListingIncompleteError` for a listing page that fails or lists no dogs when
+the pagination says it exists, and fetch plain-HTTP listings with
+`BaseScraper.get_listing_page`, which retries (#559).
 
 **Playwright branches are easy to leave untested.** Scrapers import
 Playwright only under `if USE_PLAYWRIGHT:` (read at import time) and tests
@@ -249,6 +252,16 @@ reconcile` against production text before trusting a resolver change.
 - `properties.good_with_dogs` / `good_with_cats` are `true` for nearly every
   dog (#516). `companionAnswer` in `frontend/src/utils/dogFacts.ts` must read
   the AI profile first until #516 is fixed.
+
+**Woof Project reads only listing page 1** (2026-09-26). Its pagination links
+are absolute and `_get_pagination_urls` matches only `/adoption/page/N/`, so
+it finds none. That is right by accident: pages 2-5 are the adoption archive,
+and page 4 marks adopted dogs in a way `_is_available_dog` misses (85 read as
+available in plain HTML). Fix the links only together with that (#565).
+
+**Many Tears' `dogs_found` swings with churn, not lost pages.** On 2026-09-26
+the listing was 7 pages of 12 (79 dogs, that day's count), and pages 1 and 7
+both linked every page, so no sliding window hides pages.
 
 **REAN ids are `rean-{page}-{name}`** since #435 (the shared GoDaddy page has
 no per-dog id); 39 rows were re-keyed on 2026-09-23. Any future id-scheme

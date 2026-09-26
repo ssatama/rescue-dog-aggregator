@@ -551,7 +551,13 @@ class REANScraper(BaseScraper):
             List of dog data dictionaries with correctly associated images
         """
         if USE_PLAYWRIGHT:
-            return asyncio.run(self._extract_dogs_with_images_unified_playwright(url, page_type))
+            # The fallback runs outside the Playwright event loop: it starts
+            # its own for the images, and asyncio.run can't nest.
+            try:
+                return asyncio.run(self._extract_dogs_with_images_unified_playwright(url, page_type))
+            except Exception as e:
+                self.logger.error(f"Error during Playwright unified extraction: {e}")
+                return self._extract_dogs_legacy_fallback(url, page_type)
         return self._extract_dogs_with_images_unified_selenium(url, page_type)
 
     def _extract_dogs_with_images_unified_selenium(self, url: str, page_type: str) -> list[dict[str, Any]]:
@@ -598,36 +604,28 @@ class REANScraper(BaseScraper):
 
     async def _extract_dogs_with_images_unified_playwright(self, url: str, page_type: str) -> list[dict[str, Any]]:
         """Playwright implementation of extract_dogs_with_images_unified."""
-        try:
-            playwright_service = get_playwright_service()
-            options = PlaywrightOptions(
-                headless=True,
-                viewport_width=1920,
-                viewport_height=1080,
-            )
+        playwright_service = get_playwright_service()
+        options = PlaywrightOptions(
+            headless=True,
+            viewport_width=1920,
+            viewport_height=1080,
+        )
 
-            async with playwright_service.get_browser(options) as browser_result:
-                page = browser_result.page
+        async with playwright_service.get_browser(options) as browser_result:
+            page = browser_result.page
 
-                await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=60000)
 
-                await asyncio.sleep(2)
+            await asyncio.sleep(2)
 
-                await self._trigger_lazy_loading_playwright(page)
+            await self._trigger_lazy_loading_playwright(page)
 
-                await asyncio.sleep(2)
+            await asyncio.sleep(2)
 
-                content = await page.content()
+            content = await page.content()
 
-            soup = BeautifulSoup(content, "html.parser")
-
-            dogs_data = self._extract_dogs_from_dom_soup(soup, page_type)
-
-            return dogs_data
-
-        except Exception as e:
-            self.logger.error(f"Error during Playwright unified extraction: {e}")
-            return self._extract_dogs_legacy_fallback(url, page_type)
+        soup = BeautifulSoup(content, "html.parser")
+        return self._extract_dogs_from_dom_soup(soup, page_type)
 
     async def _trigger_lazy_loading_playwright(self, page) -> None:
         """Trigger lazy loading for images using Playwright page scrolling."""

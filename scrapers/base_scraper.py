@@ -1302,7 +1302,7 @@ class BaseScraper(ABC):
 
         A page that still fails raises ListingIncompleteError, never a partial
         listing. Timeouts, connection errors, 429 and 5xx are retried; any
-        other 4xx fails at once.
+        other error (another 4xx, a malformed URL) fails at once.
         """
         kwargs.setdefault("timeout", self.timeout)
         attempts = self.max_retries + 1
@@ -1313,7 +1313,8 @@ class BaseScraper(ABC):
                 return response
             except requests.RequestException as e:
                 status = getattr(e.response, "status_code", None)
-                if attempt == attempts or (status is not None and status not in RETRYABLE_STATUS_CODES):
+                retryable = status in RETRYABLE_STATUS_CODES if status is not None else isinstance(e, requests.ConnectionError | requests.Timeout)
+                if attempt == attempts or not retryable:
                     raise ListingIncompleteError(f"Listing page {url} failed after {attempt} attempt(s): {e}") from e
                 self.logger.warning(f"Listing page {url} failed (attempt {attempt} of {attempts}), retrying: {e}")
                 time.sleep(self.retry_backoff_factor**attempt)

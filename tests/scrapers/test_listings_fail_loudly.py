@@ -73,6 +73,13 @@ class TestGetListingPage:
 
         assert get.call_count == 1
 
+    def test_a_malformed_url_fails_at_once(self, scraper):
+        get = Mock(side_effect=requests.exceptions.MissingSchema("No scheme supplied"))
+        with patch("requests.get", get), pytest.raises(ListingIncompleteError, match="No scheme"):
+            scraper.get_listing_page("example.org/list")
+
+        assert get.call_count == 1
+
 
 @pytest.mark.unit
 class TestTierschutzverein:
@@ -208,6 +215,16 @@ class TestSanterPaws:
         with patch("requests.get", get):
             assert [a["name"] for a in scraper.get_animal_list()] == ["Pepper", "Daisy", "Dexter"]
 
+    def test_a_twentieth_page_can_be_the_last(self, scraper):
+        pages = {self.BASE: _response(self._page("dog1"))} | {f"{self.BASE}page/{n}/": _response(self._page(f"dog{n}")) for n in range(2, 21)}
+        with patch("requests.get", _pages(pages | {f"{self.BASE}page/21/": _response(self.EMPTY)})):
+            assert len(scraper.get_animal_list()) == 20
+
+    def test_a_listing_past_the_safety_limit_raises(self, scraper):
+        pages = {self.BASE: _response(self._page("dog1"))} | {f"{self.BASE}page/{n}/": _response(self._page(f"dog{n}")) for n in range(2, 22)}
+        with patch("requests.get", _pages(pages)), pytest.raises(ListingIncompleteError, match="after 20 pages"):
+            scraper.get_animal_list()
+
     def test_a_failing_page_2_raises(self, scraper):
         get = _pages({self.BASE: _response(self._page("pepper", last_page=3)), f"{self.BASE}page/2/": requests.ConnectionError("reset")})
         with patch("requests.get", get), pytest.raises(ListingIncompleteError):
@@ -241,9 +258,29 @@ class TestREAN:
     def scraper(self):
         return REANScraper()
 
-    def test_a_page_that_fails_both_ways_raises(self, scraper):
+    @pytest.fixture
+    def playwright_fails(self):
+        """Production's path: USE_PLAYWRIGHT on, and the browser can't load the page."""
+        service = Mock()
+        service.get_browser.side_effect = RuntimeError("Timeout 60000ms exceeded")
         with (
-            patch.object(scraper, "extract_dogs_with_images_unified", side_effect=lambda url, page_type: scraper._extract_dogs_legacy_fallback(url, page_type)),
+            patch("scrapers.rean.dogs_scraper.USE_PLAYWRIGHT", True),
+            patch("scrapers.rean.dogs_scraper.get_playwright_service", return_value=service, create=True),
+            patch("scrapers.rean.dogs_scraper.PlaywrightOptions", create=True),
+        ):
+            yield
+
+    def test_the_requests_fallback_runs_outside_the_playwright_loop(self, scraper, playwright_fails):
+        with (
+            patch.object(scraper, "scrape_page", return_value="<html><body></body></html>"),
+            patch.object(scraper, "_extract_images_with_browser_playwright", new=AsyncMock(return_value=[])) as images,
+        ):
+            assert scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs-in-romania", "romania") == []
+
+        images.assert_awaited_once()  # its own asyncio.run, not nested in the failed one
+
+    def test_a_page_that_fails_both_ways_raises(self, scraper, playwright_fails):
+        with (
             patch.object(scraper, "scrape_page", return_value=None),
             patch.object(scraper, "handle_scraper_failure") as handle_failure,
             pytest.raises(ListingIncompleteError, match="failed to load"),

@@ -292,8 +292,8 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                 self.logger.info(f"No dogs found on page {page_num}, stopping pagination")
                 break
 
-            if page_num == max_pages:
-                raise ListingIncompleteError(f"Santer Paws listing still lists dogs on page {max_pages}")
+            if page_num > max_pages:
+                raise ListingIncompleteError(f"Santer Paws listing still lists dogs after {max_pages} pages")
 
             # Process dogs from this page
             page_animals = []

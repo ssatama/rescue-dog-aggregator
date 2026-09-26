@@ -265,9 +265,9 @@ class MisisRescueScraper(BaseScraper):
             # No button for the next page is the real last page; a clicked page
             # that shows no dogs, or still shows the last page's, didn't render.
             page_num = 2
-            while page_num <= 10:  # Safety limit
-                if not await self._click_pagination_button_playwright(page, page_num):
-                    break
+            while await self._click_pagination_button_playwright(page, page_num):
+                if page_num > 10:  # Safety limit
+                    raise ListingIncompleteError("MISIs listing still has a next page after 10 pages")
 
                 await asyncio.sleep(5)
                 await self._scroll_to_load_all_content_playwright(page)

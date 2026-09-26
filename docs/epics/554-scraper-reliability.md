@@ -75,24 +75,33 @@ they repeat for the same dog every run.
 
 A listing page that can't be read raises `ListingIncompleteError`
 (`scrapers/base_scraper.py`); `collect_data` lets it through, so the run is
-an `error` and stale detection doesn't run. No listing returns the pages that
-did load, and none turns a failure into `[]`.
+an `error` and stale detection doesn't run. In the Playwright (production)
+paths of Tierschutzverein, Many Tears, Woof, Santer Paws, MISIs, Bosnia, Pets
+in Turkey, The Underdog and REAN, no listing returns the pages that did load
+and none turns a failure into `[]`. Still to do: Dogs Trust (below), the
+Selenium paths (deleted in #566) and the disabled Furry Rescue Italy and
+Galgos del Sol.
 
 - `BaseScraper.get_listing_page(url)` is the plain-HTTP fetch: `max_retries`
   retries with `retry_backoff_factor` backoff for timeouts, connection
-  errors, 429 and 5xx; any other 4xx fails at once.
+  errors, 429 and 5xx; anything else (another 4xx, a malformed URL) fails
+  at once. `max_retries: 3` means 4 attempts here.
 - Every page the pagination says exists must list dogs. An empty *first*
   page is still left to the zero-dogs alert.
 - Per site: Many Tears reads `?page=N` up to the highest numbered link (12
   a page; a full page 1 with no links raises). Santer Paws walks
   `/adopt/page/N/` until an empty 200, which must come after its highest
   `data-page`. Tierschutzverein follows "→" links. MISIs raises when a
-  clicked page shows no `/post/` links or the previous page's.
+  clicked page shows no `/post/` links or the previous page's. A listing
+  that runs past its page limit raises (Tierschutzverein 50, Santer 20,
+  MISIs 10).
 - Per-dog failures still skip one dog: a card that doesn't parse, a detail
   page that fails.
 - Not done here: Dogs Trust's Playwright listing still stops early when a
   page doesn't render after "Next". Its "1 / N" indicator can be stale, so
   raising needs a check against the live site first (follow-up on #559).
+- Site findings from this work (Woof reads only page 1; Many Tears' count
+  swing is churn) are in `docs/technical/operational-knowledge.md`.
 
 ## Gotchas
 
@@ -108,13 +117,3 @@ did load, and none turns a failure into `[]`.
     that the GoDaddy page leaked before #435, e.g. Athena's text starts with
     "Lindsey 5 years old". A fresh scrape is clean and every other field
     matches. REAN needs a forced re-scrape and a re-profile of all 11 dogs.
-- **Woof Project reads only listing page 1** (2026-09-26). Its pagination
-  links are absolute and the parser matches only `/adoption/page/N/`, so it
-  finds none. That is right by accident: pages 2-5 are the adoption archive,
-  and page 4 marks adopted dogs in a way `_is_available_dog` misses (85 would
-  be read as available in plain HTML). Fix the links only together with
-  that, in #565.
-- **Many Tears' found-count swing is churn, not lost pages.** On 2026-09-26
-  the Playwright listing had 7 pages (6 x 12 + 7 = 79, that day's
-  `dogs_found`), and pages 1 and 7 both linked every page, so there is no
-  sliding window hiding pages.

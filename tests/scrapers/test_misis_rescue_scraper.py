@@ -1685,6 +1685,11 @@ class TestMisisRescueNeverHangs(ScraperTestBase):
         with pytest.raises(ListingIncompleteError, match="page 2"):
             self._paginated_listing(scraper, [self.PAGE_1, self.PAGE_1], [True])
 
+    def test_a_next_page_past_the_safety_limit_raises(self, scraper):
+        renders = [f'<html><body><a href="/post/dog{n}">Dog {n}</a></body></html>' for n in range(1, 12)]
+        with pytest.raises(ListingIncompleteError, match="after 10 pages"):
+            self._paginated_listing(scraper, renders, [True] * 10)
+
     def test_a_page_of_reserved_dogs_is_rendered_not_empty(self, scraper):
         reserved = '<html><body><a href="/post/dog4">Dog 4 (reserved)</a></body></html>'
         dogs = self._paginated_listing(scraper, [self.PAGE_1, reserved], [True, False])
