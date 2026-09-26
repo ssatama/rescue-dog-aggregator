@@ -25,6 +25,9 @@ describe("branded 404 (#456)", () => {
 
     expect(screen.getByTestId("site-layout")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("We couldn't find that page");
+    // Dogs vanish from rescue sites for many reasons: never "found a home" (#484)
+    expect(document.body).toHaveTextContent("may no longer be listed");
+    expect(document.body).not.toHaveTextContent(/found a home|adopted/i);
     for (const href of ["/dogs", "/breeds", "/guides"]) {
       expect(document.querySelector(`a[href="${href}"]`)).toBeInTheDocument();
     }

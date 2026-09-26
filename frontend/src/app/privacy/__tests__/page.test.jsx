@@ -162,7 +162,7 @@ describe("Privacy Page", () => {
     });
 
     test("renders last updated date", () => {
-      expect(screen.getByText(/last updated.*december 2025/i)).toBeInTheDocument();
+      expect(screen.getByText(/last updated.*september 2026/i)).toBeInTheDocument();
     });
 
     test("gets its BreadcrumbList from the Breadcrumbs component only (#443)", () => {

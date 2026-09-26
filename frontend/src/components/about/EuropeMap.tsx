@@ -186,18 +186,15 @@ export default function EuropeMap() {
 
   return (
     <section>
-      <h2 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-gray-200 mb-8 text-center">
-        Where We Help Dogs
+      <h2 className="mb-2 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+        Where the dogs are
       </h2>
-      <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-4">
-        Rescue organizations working together across borders to help dogs in
-        need
+      <p className="mb-4 text-base text-subtle">
+        The countries the listed dogs live in. Many rescues rehome them across
+        borders.
       </p>
-      <div className="relative max-w-5xl mx-auto">
-        {/* Subtle background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-transparent dark:from-blue-950/10 rounded-3xl"></div>
-
-        <div className="relative p-4 sm:p-6 md:p-8 lg:p-12">
+      <div className="relative">
+        <div className="relative">
           {loading ? (
             <div className="h-96 flex items-center justify-center">
               <p className="text-gray-600 dark:text-gray-400">Loading map...</p>

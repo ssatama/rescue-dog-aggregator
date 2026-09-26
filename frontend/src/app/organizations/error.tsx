@@ -14,7 +14,7 @@ export default function OrganizationsError({
       error={error}
       reset={reset}
       feature="organizations"
-      message="We couldn't load the organizations page. Please try again."
+      message="We couldn't load the rescues page. Please try again."
     />
   );
 }

@@ -43,89 +43,53 @@ export default function AboutPage(): React.JSX.Element {
           "https://github.com/ssatama",
         ]}
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb Navigation */}
+      <div className="mx-auto max-w-3xl py-6 lg:py-8">
         <Breadcrumbs items={breadcrumbItems} />
 
-        {/* Page Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-title text-gray-900 dark:text-gray-100 mb-3">
-            About Rescue Dog Aggregator
-          </h1>
-          <p className="text-body text-gray-600 dark:text-gray-400">
-            Connecting loving homes with rescue dogs in need.
-          </p>
-        </div>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          About Rescue Dog Aggregator
+        </h1>
+        <p className="mt-2 text-lg text-subtle">Connecting loving homes with rescue dogs in need.</p>
 
-        {/* All sections with consistent vertical rhythm */}
-        <div className="space-y-12 sm:space-y-16 md:space-y-24 lg:space-y-32 py-8 sm:py-12 md:py-16 lg:py-24">
-          {/* NEW: Harley Story */}
+        <div className="mt-10 space-y-14">
           <HarleyStory />
 
-          {/* NEW: Stats Display */}
           <StatsDisplay />
 
-          {/* NEW: Europe Map */}
           <EuropeMap />
 
-          {/* Section: Our Mission (EXPANDED) */}
           <section>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6">
-              Our Mission
-            </h2>
-            <p className="text-lg md:text-xl lg:text-2xl leading-relaxed text-gray-700 dark:text-gray-300 mb-4">
+            <h2 className="mb-3 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Our mission</h2>
+            <p className="text-lg leading-relaxed text-ink">
               Our mission is to connect loving homes in the UK and across Europe
-              with rescue dogs in need. We bring rescue dogs from trusted rescue
-              organizations across Europe and the UK, bringing over a thousand
-              dogs into one beautifully designed platform. Rescue
+              with rescue dogs in need. We bring dogs from trusted rescue
+              organizations across Europe and the UK into one place. Rescue
               organizations are not technology experts - they are experts at
-              rescuing dogs in need. By bridging the gap between high-demand
-              adoption markets and regions with shelter overpopulation, we help
-              more dogs find their forever homes while supporting the incredible
-              work of rescue organizations across Europe and UK.
+              rescuing dogs in need. By bridging the gap between places where
+              people are looking for a dog and regions with overcrowded
+              shelters, we help more dogs find homes while supporting the work
+              of the rescues.
             </p>
           </section>
 
-          {/* Section: How It Works */}
-          <section className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 md:p-10 rounded-lg">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
-              How It Works
-            </h2>
-            <div className="grid md:grid-cols-3 gap-8 text-center">
-              <div>
-                <div className="text-4xl mb-2">🐾</div>
-                <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-2">
-                  1. Browse Dogs
-                </h3>
-                <p className="text-body text-gray-600 dark:text-gray-400">
-                  Use our search and filter tools to find dogs based on breed,
-                  age, size, location, and more.
-                </p>
-              </div>
-              <div>
-                <div className="text-4xl mb-2">❤️</div>
-                <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-2">
-                  2. View Details
-                </h3>
-                <p className="text-body text-gray-600 dark:text-gray-400">
-                  Click on a dog&apos;s profile to see more photos, read their story,
-                  and learn about their personality.
-                </p>
-              </div>
-              <div>
-                <div className="text-4xl mb-2">🏠</div>
-                <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-2">
-                  3. Connect & Adopt
-                </h3>
-                <p className="text-body text-gray-600 dark:text-gray-400">
-                  Use the provided links to connect directly with the rescue
-                  organization to start the adoption process.
-                </p>
-              </div>
-            </div>
+          <section>
+            <h2 className="mb-4 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">How it works</h2>
+            <ol className="grid gap-3 md:grid-cols-3">
+              <li className="rounded-xl border border-line bg-surface p-5">
+                <p className="font-display text-lg font-bold text-ink">1. Browse dogs</p>
+                <p className="mt-1 text-subtle">Search and filter by breed, age, size, what they live well with, and where you can adopt.</p>
+              </li>
+              <li className="rounded-xl border border-line bg-surface p-5">
+                <p className="font-display text-lg font-bold text-ink">2. Meet the dog</p>
+                <p className="mt-1 text-subtle">Each dog&apos;s page has their photos, their story and what the rescue knows about them.</p>
+              </li>
+              <li className="rounded-xl border border-line bg-surface p-5">
+                <p className="font-display text-lg font-bold text-ink">3. Adopt through the rescue</p>
+                <p className="mt-1 text-subtle">Every dog links to the rescue that lists them. You apply and adopt with them directly.</p>
+              </li>
+            </ol>
           </section>
 
-          {/* NEW: Contact Section (REPLACES Get Involved) */}
           <ContactSection />
         </div>
       </div>
