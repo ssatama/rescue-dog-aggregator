@@ -49,6 +49,11 @@ def _client_returning(status_code):
 
 @pytest.mark.unit
 class TestSubmitDogUrls:
+    @pytest.fixture(autouse=True)
+    def _default_frontend_url(self, monkeypatch):
+        # The URL assertions below expect the default production host.
+        monkeypatch.delenv("FRONTEND_URL", raising=False)
+
     def test_skips_quietly_without_a_key(self, monkeypatch):
         monkeypatch.delenv("INDEXNOW_KEY", raising=False)
 

@@ -47,12 +47,14 @@ done
 uv sync >>"$LOG" 2>&1
 (cd frontend && pnpm install --frozen-lockfile) >>"$LOG" 2>&1
 
-uv run python -c "
+# Schema for the dev database and, as CI does, for the test database.
+for db in rescue_dogs test_rescue_dogs; do
+  DB_NAME=$db uv run python -c "
 import sys
 from database.db_setup import initialize_database
-conn = initialize_database()
-sys.exit(0 if conn else 1)
+sys.exit(0 if initialize_database() else 1)
 " >>"$LOG" 2>&1
+done
 
 # Writes organizations through DB_CONFIG, so the local database. The
 # revalidation call after it is skipped because REVALIDATION_TOKEN is unset.

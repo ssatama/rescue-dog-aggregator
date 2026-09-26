@@ -52,6 +52,9 @@ async function main() {
         const context = await browser.newContext({
           viewport: { width, height: 900 },
           colorScheme: scheme,
+          // Cloud sessions reach the internet through a proxy that re-signs
+          // HTTPS with its own CA; Chromium doesn't trust it, so photos fail.
+          ignoreHTTPSErrors: true,
         });
         const page = await context.newPage();
         const errors = [];
