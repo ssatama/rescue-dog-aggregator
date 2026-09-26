@@ -214,3 +214,16 @@ def test_every_prompt_states_the_schema_description_minimum():
     prompt = builder.build_prompt({"name": "Max"})
 
     assert f"at least {DESCRIPTION_MIN_CHARS + 10} characters" in prompt
+
+
+@pytest.mark.unit
+def test_every_prompt_asks_for_english_traits_and_activities():
+    """#505: German traits ("verspielt") reached cards from German-language rescues."""
+    builder = PromptBuilder.__new__(PromptBuilder)
+    builder.prompt_template = {"extraction_prompt": "Dog: {name} {breed} {age_text} {properties}"}
+
+    prompt = builder.build_prompt({"name": "Julieta"})
+
+    assert "must be in English" in prompt
+    assert "personality_traits" in prompt
+    assert "favorite_activities" in prompt
