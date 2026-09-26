@@ -327,6 +327,59 @@ def alert_partial_failure(
     log_func(f"Sent partial-failure alert for {org_name}: {dogs_found}/{historical_average:.0f} ({severity})")
 
 
+def alert_dogs_not_saved(
+    org_name: str,
+    dogs_collected: int,
+    rejected: dict[str, int],
+    save_errors: int,
+    org_id: int | None = None,
+    scrape_log_id: int | None = None,
+) -> None:
+    """Send a Sentry warning when a run collected dogs it then did not save.
+
+    A dog that is rejected or fails to save is not marked seen, so it goes
+    stale while the rescue still lists it.
+
+    Args:
+        org_name: Name of the organization being scraped.
+        dogs_collected: Number of dogs the scraper handed over for saving.
+        rejected: Rejected dog counts by reason.
+        save_errors: Number of dogs whose save failed.
+        org_id: Database ID of the organization.
+        scrape_log_id: ID of the scrape_logs entry.
+    """
+    lost = sum(rejected.values()) + save_errors
+    with sentry_sdk.new_scope() as scope:
+        scope.set_tag("scraper.organization", org_name)
+        scope.set_tag("scraper.alert_type", "dogs_not_saved")
+        scope.set_level("warning")
+
+        if org_id:
+            scope.set_tag("scraper.org_id", str(org_id))
+        if scrape_log_id:
+            scope.set_tag("scraper.scrape_log_id", str(scrape_log_id))
+
+        scope.set_context(
+            "scraper",
+            {
+                "organization": org_name,
+                "org_id": org_id,
+                "scrape_log_id": scrape_log_id,
+                "dogs_collected": dogs_collected,
+                "rejected": rejected,
+                "save_errors": save_errors,
+            },
+        )
+
+        sentry_sdk.capture_message(
+            f"{org_name}: {lost} of {dogs_collected} dogs not saved",
+            level="warning",
+            scope=scope,
+        )
+
+    logger.warning(f"Sent dogs-not-saved alert for {org_name}: {lost}/{dogs_collected}")
+
+
 def alert_llm_enrichment_failure(
     org_name: str,
     batch_size: int,

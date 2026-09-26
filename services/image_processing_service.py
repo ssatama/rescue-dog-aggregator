@@ -406,6 +406,7 @@ class ImageProcessingService:
         batch_size: int = 5,
         use_concurrent: bool = True,
         database_connection=None,
+        counts: dict[str, int] | None = None,
     ) -> list[dict[str, Any]]:
         """Process multiple animal images in batches with deduplication for better performance.
 
@@ -415,6 +416,8 @@ class ImageProcessingService:
             batch_size: Number of images to upload per batch
             use_concurrent: Whether to use concurrent uploads
             database_connection: Optional database connection for deduplication
+            counts: Optional dict whose "images_uploaded", "images_reused" and
+                "images_failed" counts (per animal) are incremented
 
         Returns:
             Updated list of animal data with uploaded image URLs
@@ -446,6 +449,8 @@ class ImageProcessingService:
         # Separate images into reusable and new uploads
         images_to_upload = []
         reused_count = 0
+        uploaded_count = 0
+        failed_count = 0
 
         for original_url in set(all_original_urls):  # Use set to avoid duplicate processing
             if original_url in existing_mappings:
@@ -495,10 +500,17 @@ class ImageProcessingService:
                             if success and uploaded_url:
                                 animals_data[animal_idx]["primary_image_url"] = uploaded_url
                                 animals_data[animal_idx]["original_image_url"] = original_url
+                                uploaded_count += 1
                             else:
+                                failed_count += 1
                                 # Keep original URL on failure
                                 animals_data[animal_idx]["original_image_url"] = original_url
         else:
             self.logger.info("✨ All images already exist in R2, no uploads needed!")
+
+        if counts is not None:
+            counts["images_uploaded"] = counts.get("images_uploaded", 0) + uploaded_count
+            counts["images_reused"] = counts.get("images_reused", 0) + reused_count
+            counts["images_failed"] = counts.get("images_failed", 0) + failed_count
 
         return animals_data

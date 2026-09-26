@@ -161,6 +161,10 @@ class NullAnimalValidator:
         """Validate animal data - always returns True with original data."""
         return True, animal_data
 
+    def rejection_reason(self, animal_data: dict[str, Any]) -> str | None:
+        """Reason for rejection - never rejects."""
+        return None
+
     def validate_external_id(self, external_id: str, org_config_id: str | None = None) -> bool:
         """Validate external ID - always returns True."""
         return True
