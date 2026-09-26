@@ -166,7 +166,7 @@ class TestWorldClassLogging:
         assert "Discovery: 100 dogs found" in summary
         assert "Filtering: 20 existing (skipped), 80 new" in summary
         assert "Processing: 15 added, 60 updated, 5 unchanged" in summary
-        assert "Images: 75 uploaded, 3 failed" in summary
+        assert "Images: 75 uploaded, 0 reused, 3 failed" in summary
         assert "Performance:" in summary  # Check for performance section
         assert "Quality:" in summary  # Check for quality section
 

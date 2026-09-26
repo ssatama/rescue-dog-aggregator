@@ -1170,6 +1170,7 @@ class BaseScraper(ABC):
             self.progress_tracker.track_image_stats(
                 images_uploaded=processing_stats["images_uploaded"],
                 images_failed=processing_stats["images_failed"],
+                images_reused=processing_stats["images_reused"],
             )
 
             self.progress_tracker.track_quality_stats(data_quality_score=quality_score, completion_rate=self._completion_rate(animals_data, processing_stats))
