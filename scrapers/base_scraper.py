@@ -1150,12 +1150,15 @@ class BaseScraper(ABC):
         """Validate animal data dictionary for required fields and invalid names.
 
         Delegates to AnimalValidator. Maintains backward compatibility by mutating
-        animal_data in place (updating normalized name).
+        animal_data in place (updating the cleaned name and, when the name was
+        cleaned, properties.raw_name).
         """
         is_valid, normalized_data = self.animal_validator.validate_animal_data(animal_data)
 
         if is_valid:
             animal_data["name"] = normalized_data["name"]
+            if "properties" in normalized_data:
+                animal_data["properties"] = normalized_data["properties"]
 
         return is_valid
 
