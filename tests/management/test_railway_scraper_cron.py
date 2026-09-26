@@ -207,6 +207,14 @@ class TestRunOrgIsolated:
         assert close_log.call_args.args[0] == "misisrescue"
         assert "misisrescue timed out" in sentry.call_args.args[0]
 
+    def test_a_scrape_that_finished_but_hangs_on_exit_still_counts(self):
+        code = 'import json, time; json.dump({"config_id": "{org}", "success": True, "animals_found": 5}, open("{result}", "w")); time.sleep(30)'
+        with patch.object(cron, "_child_command", _child_that(code)), patch.object(cron, "close_timed_out_scrape_log") as close_log:
+            result = cron.run_org_isolated("rean", timeout=2)
+
+        assert result == ScraperRunResult(config_id="rean", success=True, animals_found=5)
+        close_log.assert_not_called()
+
     def test_the_result_the_child_writes_is_returned(self):
         code = 'import json; json.dump({"config_id": "{org}", "success": True, "organization": "REAN", "animals_found": 11, "error": None}, open("{result}", "w"))'
         with patch.object(cron, "_child_command", _child_that(code)):

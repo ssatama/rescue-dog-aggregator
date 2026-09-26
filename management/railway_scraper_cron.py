@@ -173,23 +173,31 @@ def run_org_isolated(config_id: str, timeout: int = ORG_TIMEOUT_SECONDS) -> Scra
     started_at = datetime.now()
     # Its own process group, so the kill also reaches the Playwright driver it spawns.
     child = subprocess.Popen(_child_command(config_id, result_path), start_new_session=True)
+
+    def written_result() -> ScraperRunResult | None:
+        try:
+            with open(result_path) as f:
+                return ScraperRunResult(**json.load(f))
+        except (OSError, ValueError):
+            return None
+
     try:
         try:
             child.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             os.killpg(child.pid, signal.SIGKILL)
             child.wait()
+            # A scrape that finished but stalled on its way out still counts.
+            finished = written_result()
+            if finished:
+                logger.warning(f"{config_id} finished but did not exit within {timeout}s; killed")
+                return finished
             logger.error(f"{config_id} timed out after {timeout}s; killed")
             close_timed_out_scrape_log(config_id, started_at, timeout)
             sentry_sdk.capture_message(f"Scraper {config_id} timed out after {timeout}s and was killed", level="error")
             return ScraperRunResult(config_id=config_id, success=False, error=f"Timed out after {timeout}s")
 
-        try:
-            with open(result_path) as f:
-                result = json.load(f)
-        except (OSError, ValueError):
-            return ScraperRunResult(config_id=config_id, success=False, error=f"Scraper process exited with code {child.returncode} and no result")
-        return ScraperRunResult(**result)
+        return written_result() or ScraperRunResult(config_id=config_id, success=False, error=f"Scraper process exited with code {child.returncode} and no result")
     finally:
         try:
             os.unlink(result_path)
