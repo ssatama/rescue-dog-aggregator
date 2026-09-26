@@ -36,17 +36,22 @@ BREED_ABBREVIATIONS = {
     "fbd": "french bulldog",
 }
 
-# Words in a breed that say nothing about the breed; "Max Cross" stays.
-GENERIC_BREED_WORDS = {"cross", "mix", "mixed", "breed", "dog", "unknown"}
+# Breed nouns a rescue appends, which must also be in the dog's breed. Only
+# these: breeds also hold colours and names ("Snow White" the Westie, "King
+# Charles", "Jack Russell"), and those are real names.
+BREED_NOUNS = {
+    "akita", "beagle", "boxer", "bulldog", "chihuahua", "cocker", "collie", "dachshund",
+    "doberman", "greyhound", "hound", "husky", "lurcher", "malamute", "mastiff", "pointer",
+    "podenco", "poodle", "pug", "retriever", "rottweiler", "setter", "shepherd", "spaniel",
+    "springer", "terrier", "whippet",
+}  # fmt: skip
 
 
 def _is_appended_breed_word(word: str, breed: str) -> bool:
     word = word.lower()
-    if word in GENERIC_BREED_WORDS:
-        return False
     if word in BREED_ABBREVIATIONS:
         return BREED_ABBREVIATIONS[word] in breed
-    return word in breed.split()
+    return word in BREED_NOUNS and word in breed.split()
 
 
 def clean_name(name: str, breed: str | None) -> tuple[str, bool]:

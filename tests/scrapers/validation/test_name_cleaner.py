@@ -41,6 +41,11 @@ class TestCleanName:
             ("Benji & Dali", "Mixed Breed"),
             ("RAE", "Doberman Pinscher"),
             ("Rex", None),
+            ("Snow White", "West Highland White Terrier"),  # colours and names in a breed stay
+            ("King Charles", "Cavalier King Charles Spaniel"),
+            ("Jack Russell", "Jack Russell Terrier"),
+            ("Lady Golden", "Golden Retriever"),
+            ("Mr Black", "Black Labrador Retriever"),
         ],
     )
     def test_leaves_real_names_alone(self, name, breed):
