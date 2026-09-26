@@ -26,8 +26,9 @@ SHELTER_PLACES = (
     ("villena", "Villena, Spain"),
     ("adpca", "Zaragoza, Spain"),
     ("zaragoza", "Zaragoza, Spain"),
+    ("perros con alma", "Zaragoza, Spain"),
     ("ada canals", "Canals, Spain"),
-    ("bayyasa", "Baeza, Spain"),
+    ("bayyas", "Baeza, Spain"),
     ("baeza", "Baeza, Spain"),
     ("huella de jaén", "Jaén, Spain"),
     ("adoromimos", "Mafra, Portugal"),
@@ -37,7 +38,10 @@ SHELTER_PLACES = (
     ("odai", "Romania"),
 )
 
-_GERMAN_POSTCODE_TOWN = re.compile(r"\b\d{5}\s+([A-ZÄÖÜ][\wäöüß]*(?:[-\s][A-ZÄÖÜ][\wäöüß]*)*)")
+_GERMAN_POSTCODE = re.compile(r"\b\d{5}\s+(.+)")
+# Words after a postcode that name the kind of place, not the town:
+# "79312 Tierheim Emmendingen" is in Emmendingen.
+_FACILITY_WORDS = {"tierheim", "pflegestelle", "pflegefamilie", "tierpension", "hundepension", "tierschutzverein"}
 _SWISS_POSTCODE_TOWN = re.compile(r"\bCH-\d{4}\s+([A-ZÄÖÜ][\wäöüß-]*)", re.IGNORECASE)
 _TRAILING_NOTE = re.compile(r"\s+(?:in foster care|since\b.*|\(ab\b.*)$", re.IGNORECASE)
 
@@ -54,11 +58,24 @@ def _dogs_trust_style(value: str) -> str | None:
     return centre
 
 
+def _german_town(text: str) -> str | None:
+    """The capitalised words after a postcode, minus facility words, up to "bei" or a bracket."""
+    words = []
+    for word in re.sub(r"-\s+", "-", text).split():
+        if word.lower() in _FACILITY_WORDS:
+            continue
+        if not word[0].isupper():
+            break
+        words.append(word)
+    return " ".join(words) or None
+
+
 def _aufenthaltsort(value: str) -> str | None:
     if match := _SWISS_POSTCODE_TOWN.search(value):
         return f"{match.group(1)}, Switzerland"
-    if match := _GERMAN_POSTCODE_TOWN.search(value):
-        return f"{match.group(1).strip()}, Germany"
+    if match := _GERMAN_POSTCODE.search(value):
+        town = _german_town(match.group(1))
+        return f"{town}, Germany" if town else None
     lowered = value.lower()
     for key, place in SHELTER_PLACES:
         if key in lowered:
