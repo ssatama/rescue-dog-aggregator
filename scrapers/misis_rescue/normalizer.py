@@ -224,7 +224,11 @@ def extract_breed_from_text_legacy(text: str | None) -> str | None:
     return None
 
 
-NAMED_MIX = re.compile(r"^(?:possibly |probably |maybe )?(?:an? )?([a-z][a-z ]{2,30}?)\s+(?:mix|cross)(?:breed)?$", re.IGNORECASE)
+NAMED_MIX = re.compile(
+    r"^(?:(?:possibly|probably|maybe|most likely|likely|looks like|we think(?: (?:she|he)(?:'s| is))?)\s+)?(?:an?\s+)?([a-z][a-z ]{2,30}?)\s+(?:mix|cross)(?:breed)?$",
+    re.IGNORECASE,
+)
+NOT_A_BREED = re.compile(r"\b(?:mixed|breed|size|small|medium|large|big|unknown)\b", re.IGNORECASE)
 
 
 def extract_breed(bullets: list[str] | None) -> str | None:
@@ -242,7 +246,7 @@ def extract_breed(bullets: list[str] | None) -> str | None:
     # A short fact naming the breed and a mix: "Cane Corso cross", "Possibly Staff cross"
     for bullet in bullets:
         named = NAMED_MIX.match(bullet.strip())
-        if named and not re.search(r"\bmixed\b|\bbreed\b", named.group(1), re.IGNORECASE):
+        if named and not NOT_A_BREED.search(named.group(1)):
             name = named.group(1).strip().title()
             return f"{'Labrador' if name == 'Lab' else name} Mix"
 
@@ -406,8 +410,10 @@ def extract_weight_kg_legacy(text: str | None) -> float | None:
     """
     if not text:
         return None
-    match = re.search(r"(\d+(?:\.\d+)?)\s*(?:[-–]\s*(\d+(?:\.\d+)?))?\s*kg\b", text.lower())
+    match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(?:kgs?|kilos?|kilograms?)\b", text.lower())
     if not match:
         return None
-    low = float(match.group(1))
-    return (low + float(match.group(2))) / 2 if match.group(2) else low
+    low = float(match.group(1).replace(",", "."))
+    high = float(match.group(2).replace(",", ".")) if match.group(2) else None
+    # "around 21-2 kg" is a typo for 21-22, not 11.5
+    return (low + high) / 2 if high is not None and high >= low else low

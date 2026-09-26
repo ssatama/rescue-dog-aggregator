@@ -145,6 +145,21 @@ class TestFetch(ScraperTestBase):
         browser.assert_not_called()
 
     @pytest.mark.unit
+    def test_rate_limited_backs_off_and_never_opens_the_browser(self, scraper):
+        responses = [Mock(status_code=429, text=""), Mock(status_code=200, text=_html("yuk_2026_story"))]
+        with patch("scrapers.misis_rescue.scraper.requests.get", side_effect=responses), patch.object(scraper, "_scrape_dog_detail") as browser:
+            assert scraper._scrape_dog_detail_fast("https://www.misisrescue.com/post/__yuk")["name"] == "Yuk"
+
+        browser.assert_not_called()
+
+    @pytest.mark.unit
+    def test_rate_limited_twice_skips_the_dog(self, scraper):
+        with self._get(429), patch.object(scraper, "_scrape_dog_detail") as browser:
+            assert scraper._scrape_dog_detail_fast("https://www.misisrescue.com/post/__yuk") is None
+
+        browser.assert_not_called()
+
+    @pytest.mark.unit
     def test_a_server_error_tries_the_browser(self, scraper):
         with self._get(503), patch.object(scraper, "_scrape_dog_detail", return_value={"name": "Rex"}) as browser:
             assert scraper._scrape_dog_detail_fast("https://www.misisrescue.com/post/rex") == {"name": "Rex"}
@@ -185,6 +200,9 @@ class TestFetch(ScraperTestBase):
         (["4 months old", "Cane Corso cross", "12kg"], "Cane Corso Mix"),
         (["Possibly Staff cross"], "Staff Mix"),
         (["a husky mix"], "Husky Mix"),
+        (["Looks like a lab mix"], "Labrador Mix"),
+        (["Medium size mix"], "Mixed Breed"),
+        (["Unknown mix"], "Mixed Breed"),
         (["mixed breed, gun dog"], "Mixed Breed"),
         (["weights around 10kg, should be around 20 kg at full size", "mixed breed"], "Mixed Breed"),
     ],
@@ -209,6 +227,11 @@ def test_a_named_cross_is_the_breed(facts, breed):
         (["5.5 months old"], "6 months"),
         (["1 year old"], "1 year"),
         (["Mixed breed", "20kg"], None),
+        # Durations and other people's ages are not the dog's
+        (["mixed breed", "has been in the shelter for 3 years"], None),
+        (["would suit children over 12 years old"], None),
+        (["Between 2-3 years old"], "2-3 years"),
+        (["mixed breed", "we'd prefer kids older than 7 years"], None),
     ],
 )
 def test_the_first_stated_age_is_the_age(facts, age):
@@ -231,3 +254,29 @@ def test_a_dob_fact_running_into_the_next_is_cut():
 def test_the_age_is_dated_by_the_posts_last_edit():
     """Tea's "2 years old" was written on 2023-04-16, not on the day we read it."""
     assert _parse("tea_things_you_have_to_know")["age_stated_at"] == "2023-04-16"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "fact,kg",
+    [("weighs 20kgs", 20.0), ("weighs 12,5kg", 12.5), ("around 21-2 kg", 21.0), ("15-20 kilos", 17.5), ("current weight is 10 kg", 10.0)],
+)
+def test_weights_as_the_rescue_writes_them(fact, kg):
+    from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy
+
+    assert extract_weight_kg_legacy(fact) == kg
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("heading", ["How do you adopt Rex?", "How to adopt Rex?", "Want to adopt Rex?", "Adoption process"])
+def test_the_adoption_text_is_cut_whatever_its_heading(heading):
+    blocks = [("h2", "Things you should know about Rex"), ("li", "2 years old"), ("h2", heading), ("p", "Fill in the form.")]
+
+    assert split_post(blocks) == ([], ["2 years old"])
+
+
+@pytest.mark.unit
+def test_the_name_falls_back_to_the_page_title():
+    html = "<html><head><title>⭐Tea⭐ | MISI's Animal Rescue</title></head><body><div data-hook='post-description'><p>A story.</p></div></body></html>"
+
+    assert MisisRescueDetailParser().parse_detail_page(BeautifulSoup(html, "html.parser"))["name"] == "Tea"

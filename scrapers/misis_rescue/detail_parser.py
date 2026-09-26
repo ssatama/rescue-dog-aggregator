@@ -34,14 +34,28 @@ GALLERY = '[data-hook="native-gallery-renderer"]'
 BLOCKS = ["p", "li", "h1", "h2", "h3", "h4", "h5", "h6"]
 
 FACTS_HEADING = re.compile(r"things\s+you\s+(?:should|have\s+to|need\s+to|must)?\s*know", re.IGNORECASE)
-ADOPTION_HEADING = re.compile(r"^how\s+(?:do|can)\s+(?:you|i)\s+adopt", re.IGNORECASE)
+ADOPTION_HEADING = re.compile(r"^(?:how\s+(?:do|can)\s+(?:you|i)\s+adopt|how\s+to\s+adopt|want\s+to\s+adopt|adoption\s+process)", re.IGNORECASE)
 # ✔️, 💕, 🏡 and the like in front of a fact
 LEADING_SYMBOLS = re.compile(r"^[^\w(\"'“]+")
 # The same symbols between facts run together in one paragraph
 FACT_SEPARATOR = re.compile(r"\s*[✔❣💕💙💛💜🧡❤️🩺🏡]+\ufe0f?\s*")
 
 # "2.5 y old", "11 months old", "Age: 1,5-2 years", "Approx.2 years old"
+NOT_THE_AGE = re.compile(r"\b(?:over|under|than|for|since|after|when|at|in)\b", re.IGNORECASE)
+AGE_WORDS = re.compile(r"\bold\b|^\W*age\b|\by/?o\b", re.IGNORECASE)
 STATED_AGE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(y|yrs?|years?|months?)\b", re.IGNORECASE)
+
+
+def _is_the_dogs_age(fact: str, match: re.Match) -> bool:
+    """ "2 years old", "Age: 1,5-2 years", "Approx.2 years old", "3 months" read like the dog's age.
+
+    "in the shelter for 3 years" and "suits children over 12 years old" don't:
+    something comes before the number that makes it about something else.
+    """
+    before = fact[: match.start()]
+    if NOT_THE_AGE.search(before) or len(before.split()) > 3:
+        return False
+    return bool(AGE_WORDS.search(fact)) or len(fact) <= 25
 
 
 def stated_age(facts: list[str]) -> str | None:
@@ -52,7 +66,7 @@ def stated_age(facts: list[str]) -> str | None:
     """
     for fact in facts:
         match = STATED_AGE.search(fact)
-        if not match:
+        if not match or not _is_the_dogs_age(fact, match):
             continue
         low = float(match.group(1).replace(",", "."))
         high = float(match.group(2).replace(",", ".")) if match.group(2) else None
@@ -78,8 +92,11 @@ def dob_bullet(bullets: list[str], today: date | None = None) -> str | None:
     """
     for bullet in bullets:
         label = DOB_LABEL.search(bullet)
-        if label and parse_birth_date(bullet[label.start() :], today):
-            return bullet[label.start() :]
+        if not label:
+            continue
+        dob = FACT_SEPARATOR.split(bullet[label.start() :])[0].strip()
+        if parse_birth_date(dob, today):
+            return dob
     return None
 
 
@@ -155,9 +172,10 @@ class MisisRescueDetailParser:
         # A published date of birth is the age: the save turns it into a birth
         # range that keeps up with time (#561)
         if dob := dob_bullet(facts):
-            result["date_of_birth"] = dob
             # A fact can run on into the next ("DOB: April/May 2024 ❣️weights around 16kg")
-            result["age_text"] = FACT_SEPARATOR.split(dob)[0].strip()
+            dob = FACT_SEPARATOR.split(dob)[0].strip()
+            result["date_of_birth"] = dob
+            result["age_text"] = dob
         else:
             result["age_text"] = stated_age(facts)
 
@@ -190,4 +208,7 @@ class MisisRescueDetailParser:
         title = soup.select_one(POST_TITLE) or soup.find("h1")
         if title and title.get_text(strip=True):
             return _clean(title.get_text())
-        return None
+        # "⭐💜Tea💜⭐ | MISI's Animal Rescue"
+        page_title = soup.find("title")
+        name = _clean(page_title.get_text().split("|")[0]) if page_title else ""
+        return name or None

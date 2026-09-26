@@ -224,7 +224,7 @@ def resolve_age(
     stored: the saved row (age_text, birth_date_min, birth_date_max,
         age_observed_at, created_at) when the dog is already in the database.
     stated_at: when the rescue wrote the stated age, if the page says (a
-        MISIs post's last edit). It is the anchor whenever it is known.
+        MISIs post's last edit).
 
     A date of birth wins, from date_of_birth or else age_text. Otherwise a new or changed age is read as of today.
     An unchanged age_text keeps the day it was first read: a site that still
@@ -250,11 +250,15 @@ def resolve_age(
         # months parse_age_text counts from today
         return Age(None, None, None, None, None)
 
-    observed = today
+    # The earliest day the age is known to have been true: when the rescue
+    # wrote it (if the page says), and, while the text is unchanged, when we
+    # first read it. A later edit to the post must not make the dog younger.
+    anchors = [today]
     if stated_at:
-        observed = min(stated_at, today)
-    elif stored and stored.get("age_text") == age_text:
-        observed = stored_observed or as_date(stored.get("created_at")) or today
+        anchors.append(stated_at)
+    if stored and stored.get("age_text") == age_text:
+        anchors.append(stored_observed or as_date(stored.get("created_at")) or today)
+    observed = min(anchors)
     earliest, latest = birth_range_from_age(min_months, max_months, observed)
     return Age(earliest, latest, observed, *ages_at(earliest, latest, today))
 

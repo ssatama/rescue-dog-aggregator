@@ -532,8 +532,13 @@ class MisisRescueScraper(BaseScraper):
                 if not await self.browser_manager.navigate_with_retry(page, url):
                     raise RuntimeError(f"Navigation to {url} failed after retries")
 
-                # Give Wix time to load dynamic content (same as Selenium)
-                await asyncio.sleep(3)
+                # The browser is the fallback for when the server HTML lacked the
+                # post, so wait for Wix to render it; a page that never does is
+                # skipped below as an error page
+                try:
+                    await page.wait_for_selector(POST_BODY, timeout=15000)
+                except Exception:
+                    self.logger.warning(f"No post body rendered on {url} within 15s")
 
                 content = await page.content()
 
@@ -615,6 +620,15 @@ class MisisRescueScraper(BaseScraper):
 
             self.logger.debug(f"Fast-loading detail page: {url}")
             response = requests.get(url, headers=headers, timeout=10)
+
+            if response.status_code == 429:
+                # Rate limited: back off once, and never answer with a heavier browser load
+                self.logger.warning(f"HTTP 429 for {url}; backing off before one retry")
+                time.sleep(self.rate_limit_delay * 4)
+                response = requests.get(url, headers=headers, timeout=10)
+                if response.status_code == 429:
+                    self.logger.error(f"HTTP 429 again for {url}; skipping this dog")
+                    return None
 
             # A removed post is gone; anything else non-200 may be transient, so the browser tries
             if response.status_code in (404, 410):
