@@ -15,6 +15,13 @@ describe("dogLocation", () => {
     expect(dogLocation(dog({ location: raw }))).toBe(expected);
   });
 
+  it("uses the scraper's display location first", () => {
+    expect(
+      dogLocation(dog({ display_location: "Evesham, Worcestershire", location: "Evesham (Worcestershire) (Evesham)" })),
+    ).toBe("Evesham, Worcestershire");
+    expect(dogLocation(dog({ display_location: "Baeza, Spain", Aufenthaltsort: "Tierheim Baeza" }))).toBe("Baeza, Spain");
+  });
+
   it("prefers the translated location, then the plain one", () => {
     expect(
       dogLocation(dog({ location: null, current_location: "Hannover", current_location_translated: "Hanover" })),

@@ -15,10 +15,15 @@ function prop(dog: Dog, key: string): string | null {
 
 /**
  * Where the dog is, when that differs from the rescue's address.
+ * Scrapers store a readable `display_location` ("Snetterton, Norfolk",
+ * "Baeza, Spain", #505). The rest covers rows stored before that, until
+ * `management/location_commands.py display-locations --apply` has run.
  * Dogs Trust: "Evesham (Worcestershire) (Evesham)" → "Evesham (Worcestershire)",
  * where the last group repeats the town or is empty.
  */
 export function dogLocation(dog: Dog): string | null {
+  const display = prop(dog, "display_location");
+  if (display) return display;
   const dogsTrust = prop(dog, "location");
   if (dogsTrust) {
     const groups = dogsTrust.match(/\([^)]*\)/g) ?? [];
