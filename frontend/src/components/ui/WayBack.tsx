@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import GlobalSearch from "@/components/search/GlobalSearch";
 
@@ -39,7 +39,10 @@ export default function WayBack({
         {eyebrow && <p className="text-sm font-semibold text-subtle">{eyebrow}</p>}
         <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{title}</h1>
         <div className="mt-3 text-lg text-subtle">{message}</div>
-        <GlobalSearch surface="mobile" className="mt-6 sm:hidden" />
+        {/* GlobalSearch reads the URL; without a boundary the static 404 fails to build */}
+        <Suspense fallback={<div className="mt-6 h-11 sm:hidden" />}>
+          <GlobalSearch surface="mobile" className="mt-6 sm:hidden" />
+        </Suspense>
         <nav aria-label="Ways back" className="mt-6 flex flex-wrap gap-3">
           {action}
           {PATHS_BACK.map(({ href, label }, i) => (
