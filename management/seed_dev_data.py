@@ -16,7 +16,6 @@ Usage:
 import argparse
 import os
 import random
-import re
 import sys
 from datetime import UTC, datetime, timedelta
 
@@ -117,10 +116,6 @@ def refuse_unless_local() -> None:
         sys.exit(f"seed_dev_data: DB_HOST must be localhost (got {os.environ.get('DB_HOST')!r}).")
 
 
-def slugify(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
-
-
 def age_fields(rng: random.Random) -> tuple[str, int, int]:
     lo, hi, label, _ = rng.choices(AGE_BANDS, weights=[band[3] for band in AGE_BANDS])[0]
     months = rng.randint(lo, hi)
@@ -149,9 +144,9 @@ def profile(rng: random.Random, name: str, breed: str, now: datetime) -> dict:
         "experience_level": rng.choice(["first_time_ok", "some_experience", "experienced_only"]),
         "exercise_needs": rng.choice(["minimal", "moderate", "high"]),
         "grooming_needs": rng.choice(["minimal", "weekly", "frequent"]),
-        "good_with_dogs": rng.choice(["yes", "yes", "no", "maybe", "unknown"]),
+        "good_with_dogs": rng.choice(["yes", "yes", "no", "selective", "unknown"]),
         "good_with_cats": rng.choice(["yes", "no", "with_training", "unknown"]),
-        "good_with_children": rng.choice(["yes", "maybe", "unknown"]),
+        "good_with_children": rng.choice(["yes", "older_children", "no", "unknown"]),
         "yard_required": rng.random() < 0.3,
         "neutered": rng.random() < 0.7,
         "vaccinated": rng.random() < 0.8,
@@ -176,6 +171,7 @@ def seed(count: int, if_empty: bool) -> int:
     from psycopg2.extras import Json
 
     from config import DB_CONFIG
+    from utils.breed_utils import generate_breed_slug
 
     conn = psycopg2.connect(
         host=DB_CONFIG["host"],
@@ -231,18 +227,18 @@ def seed(count: int, if_empty: bool) -> int:
                     (
                         name,
                         org_id,
-                        f"seed-{org_id}-{i}",
+                        f"seed-{org_id}-{existing + i}",
                         images[0]["url"],
                         images[0]["url"],
                         Json(images),
-                        f"{website.rstrip('/')}/#seed-{i}",
+                        f"{website.rstrip('/')}/#seed-{existing + i}",
                         standardized,
                         standardized,
                         standardized,
                         primary,
                         group,
                         breed_type,
-                        slugify(primary),
+                        generate_breed_slug(primary),
                         age_text,
                         age_min,
                         age_max,
@@ -260,7 +256,7 @@ def seed(count: int, if_empty: bool) -> int:
                 animal_id = cur.fetchone()[0]
                 cur.execute(
                     "UPDATE animals SET slug = %s WHERE id = %s",
-                    (f"{slugify(name)}-{slugify(primary)}-{animal_id}", animal_id),
+                    (f"{generate_breed_slug(name)}-{generate_breed_slug(primary)}-{animal_id}", animal_id),
                 )
 
             cur.execute(
