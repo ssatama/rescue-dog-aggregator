@@ -83,44 +83,63 @@ uv run alembic -c migrations/railway/alembic.ini upgrade head
 `alembic.ini` holds a placeholder URL, so a missing variable fails loudly.
 
 **Manual production runs from the laptop** (verified 2026-09-26). Run them
-outside the cron window (Mon/Thu/Sat 15:00 UTC), from a fresh worktree of
-`origin/main`, never a feature branch, with the cron's environment. Start in
-the main checkout:
+from a fresh worktree of `origin/main`, never a feature branch, with the
+cron's environment, and never while a cron execution is still going: the
+batch starts at Mon/Thu/Sat 15:00 UTC but runs the orgs one after another,
+so it can last well past 15:00. First check that nothing is running:
 
-```bash
-git fetch origin && git worktree add ../rda-prod-run origin/main
-export RAILWAY_DATABASE_URL="$(grep -E '^RAILWAY_DATABASE_URL=' .env | cut -d= -f2- | tr -d "\"'")"
-test -n "$RAILWAY_DATABASE_URL" && cd ../rda-prod-run && \
-railway run -p 947b70e4-076f-4288-833a-ed1b1409a01d -e production -s thriving-appreciation -- \
-  env DATABASE_URL="$RAILWAY_DATABASE_URL" TZ=UTC \
-  uv run python management/railway_scraper_cron.py --org <config_id>
-cd - && git worktree remove ../rda-prod-run
+```sql
+SELECT o.config_id, sl.started_at FROM scrape_logs sl
+JOIN organizations o ON o.id = sl.organization_id WHERE sl.status = 'running';
 ```
 
-- `TZ=UTC` is required. The columns are naive timestamps written with
-  `datetime.now()`, so without it a laptop run stores local time: its
-  `scrape_logs` rows and `last_seen_at` land hours off the cron's, which can
-  skip stale detection on the next cron.
+Then, from the main checkout (the subshell keeps the production URL out of
+your shell, and `set -e` stops at the first failure, e.g. a leftover
+worktree):
+
+```bash
+(
+  set -e
+  url="$(grep -E '^RAILWAY_DATABASE_URL=' .env | cut -d= -f2- | tr -d "\"'")"
+  test -n "$url"
+  git fetch origin
+  git worktree add ../rda-prod-run origin/main
+  trap 'git worktree remove --force ../rda-prod-run' EXIT
+  cd ../rda-prod-run
+  railway run -p 947b70e4-076f-4288-833a-ed1b1409a01d -e production -s thriving-appreciation -- \
+    env DATABASE_URL="$url" TZ=UTC \
+    uv run python management/railway_scraper_cron.py --org <config_id>
+)
+```
+
+- `TZ=UTC` is required, here and in any laptop command that writes
+  timestamps. The code writes naive `datetime.now()`, so a laptop run stores
+  local time: its `scrape_logs` rows and `last_seen_at` land hours off the
+  cron's, which can skip stale detection on the next cron.
 - `DATABASE_URL` is overridden because the service's own points at
   `postgres.railway.internal`, which the laptop can't reach.
 - A single `--org` run has no timeout (the #581 limit applies only to the
-  batch), and Ctrl-C only sets a shutdown flag that it never checks. Stop a
-  stuck one with `kill`, then close its row (below).
+  batch). Ctrl-C and plain `kill` (SIGINT/SIGTERM) only set a shutdown flag
+  that it never checks. Stop a stuck one with
+  `pkill -9 -f railway_scraper_cron`, then close its row (below).
 - `railway run` brings the cron's `ENVIRONMENT=production` and Sentry DSN, so
   a laptop run's errors show up in Sentry as cron errors. Don't override
   `ENVIRONMENT`: the LLM config accepts only its known values.
 
 **A hung cron run.** The CLI can't stop one cron execution. The tested way is
-redeploying `thriving-appreciation`: it ends the running execution without
-starting a new one, and the next run comes at the next scheduled time. The
-GraphQL API has `deploymentStop(id)` (via `railway api`), not yet tried on a
-cron execution. Either way the parent process dies, so nothing closes the
-in-flight org's log; close it by hand:
+`railway redeploy -p 947b70e4-076f-4288-833a-ed1b1409a01d -e production -s
+thriving-appreciation` (not `railway up`, which deploys your checkout): it
+ends the running execution without starting a new one, and the next run
+comes at the next scheduled time. The GraphQL API has `deploymentStop(id)`
+(via `railway api`), not yet tried on a cron execution. Either way, and after
+a `kill -9` of a laptop run, nothing closes the in-flight org's log. Close it
+by hand, for that org only:
 
 ```sql
 UPDATE scrape_logs SET status = 'error', completed_at = now() AT TIME ZONE 'UTC',
-  error_message = 'Run stopped by hand (redeploy)'
-WHERE status = 'running' AND started_at >= '<execution start, UTC>';
+  error_message = 'Run stopped by hand'
+WHERE status = 'running'
+  AND organization_id = (SELECT id FROM organizations WHERE config_id = '<config_id>');
 ```
 
 Since #581 a single hung scraper times out instead of blocking the batch, so
