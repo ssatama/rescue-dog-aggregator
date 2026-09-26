@@ -246,8 +246,9 @@ def build_profile_selection_query(org_id: int, force: bool, confidence: str, lim
             regenerated after a scraper fix changed the source text
         confidence: One of VALID_CONFIDENCE_FILTERS; "all" drops the filter
         limit: Optional row cap
-        ids: Only these dogs. Implies force, since a targeted backfill
-            re-profiles dogs that already have a (bad) profile
+        ids: Only these dogs. Implies force and confidence "all": a targeted
+            backfill names dogs that already have a (bad) profile, and a
+            filter that silently drops some of them defeats the point
 
     Returns:
         The SQL and its parameters
@@ -267,7 +268,7 @@ def build_profile_selection_query(org_id: int, force: bool, confidence: str, lim
     elif not force:
         conditions.append("(dog_profiler_data IS NULL OR dog_profiler_data = '{}')")
 
-    if confidence != "all":
+    if confidence != "all" and not ids:
         conditions.append(f"availability_confidence = '{confidence}'")
 
     sql = f"""
@@ -306,7 +307,7 @@ def build_profile_selection_query(org_id: int, force: bool, confidence: str, lim
     type=int,
     help="Number of items to process per batch (default: 10)",
 )
-@click.option("--ids", default="", help="Comma-separated dog ids to re-profile (implies --force)")
+@click.option("--ids", default="", help="Comma-separated dog ids to re-profile (implies --force and --confidence all)")
 def generate_profiles(organization: int | None, limit: int | None, force: bool, confidence: str, batch_size: int, ids: str):
     """Generate dog profiler data using org-specific prompts."""
     from services.llm.dog_profiler import DogProfilerPipeline

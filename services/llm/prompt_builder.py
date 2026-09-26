@@ -26,7 +26,7 @@ DESCRIPTION_MINIMUM_RULE = f"HARD MINIMUM: the description must be at least {DES
 ENGLISH_OUTPUT_RULE = (
     "LANGUAGE: every text value must be in English, including each personality_traits, "
     "favorite_activities and unique_quirk entry. Translate source words; never copy the "
-    "original-language word or add it in brackets."
+    "original-language word or add it in brackets. Only source_references may quote the source."
 )
 
 

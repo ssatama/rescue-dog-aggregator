@@ -57,3 +57,10 @@ class TestProfileSelectionQuery:
         assert "id = ANY(%s)" in sql
         assert "dog_profiler_data IS NULL" not in sql
         assert params == (11, [251, 9570])
+
+    def test_ids_ignore_the_default_confidence_filter(self):
+        """A named dog with medium confidence must not be dropped without a word."""
+        sql, _ = build_profile_selection_query(org_id=11, force=False, confidence="high", limit=None, ids=(251,))
+
+        assert "availability_confidence" not in sql
+        assert params == (11, [251, 9570])
