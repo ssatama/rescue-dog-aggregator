@@ -107,29 +107,27 @@ class TestRunCompletion:
         assert completion[1] == "error"
         assert "listing broke" in completion[5]
 
-    def test_a_failed_completion_write_is_retried_as_it_was(self, scraper):
-        scraper.dogs = [_dog("a")]
-        scraper.database_service.complete_scrape_log.side_effect = [False, True]
-
-        with (
-            patch.object(scraper, "save_animal", return_value=(1, "added")),
-            patch.object(scraper, "detect_partial_failure", return_value=False),
-            patch("services.revalidation_client.invalidate_sync"),
-        ):
-            assert scraper._run_with_connection() is True
-
-        first, retry = _completions(scraper)
-        assert first == retry, "the retry writes the same status, counts and metrics"
-        assert retry[1] == "success"
-        assert retry[6]["animals_added"] == 1
-
-    def test_a_failed_robots_skip_write_is_retried_as_skipped(self, scraper):
+    def test_a_failed_completion_write_is_not_rewritten_as_a_generic_error(self, scraper):
+        """DatabaseService retries a dropped connection; the finally must not overwrite the outcome."""
         scraper._check_robots_permission.return_value = False
-        scraper.database_service.complete_scrape_log.side_effect = [False, True]
+        scraper.database_service.complete_scrape_log.return_value = False
 
         assert scraper._run_with_connection() is False
 
-        assert [c[1] for c in _completions(scraper)] == ["skipped", "skipped"]
+        assert [c[1] for c in _completions(scraper)] == ["skipped"]
+
+    def test_a_reused_instance_does_not_reprofile_the_last_runs_dogs(self, scraper):
+        scraper.dogs = [_dog("a")]
+        scraper.animals_for_llm_enrichment = [{"id": 1, "data": {}, "action": "create"}]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(2, "updated")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            scraper._run_with_connection()
+
+        scraper.llm_handler.enrich_animals.assert_called_once_with([])
 
     def test_a_failing_close_does_not_replace_system_exit(self, scraper):
         scraper.database_service.complete_scrape_log.side_effect = RuntimeError("connection broken")

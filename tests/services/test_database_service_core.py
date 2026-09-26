@@ -14,6 +14,7 @@ pinned a decision production never makes. It is deleted.
 import logging
 from unittest.mock import Mock, patch
 
+import psycopg2
 import pytest
 
 from services.database_service import DatabaseService, _as_float
@@ -246,3 +247,46 @@ class TestReadPathsDegradeRatherThanRaise:
         with patch("services.database_service.fetch_slugs_by_ids", return_value=["bella", "bello"]) as fetch:
             assert service.get_slugs_for_animals([1, 2]) == ["bella", "bello"]
             fetch.assert_called_once_with(service.conn, [1, 2])
+
+
+@pytest.mark.unit
+class TestScrapeLogCompletionSurvivesADroppedConnection:
+    """The completion write ends a run; if it fails the row stays "running" (#557)."""
+
+    def test_a_dropped_connection_is_reconnected_and_the_write_retried(self, service):
+        dead = Mock()
+        dead.cursor.side_effect = psycopg2.OperationalError("server closed the connection unexpectedly")
+        fresh = Mock()
+        service.conn = dead
+
+        def reconnect():
+            service.conn = fresh
+            return True
+
+        with patch.object(service, "connect", side_effect=reconnect):
+            assert service.complete_scrape_log(41, "success", 10, 2, 1) is True
+
+        dead.close.assert_called_once()
+        fresh.commit.assert_called_once()
+        assert fresh.cursor.return_value.execute.call_args.args[1][1] == "success"
+
+    def test_it_gives_up_after_one_reconnect(self, service):
+        def dead_connection():
+            service.conn = Mock(cursor=Mock(side_effect=psycopg2.InterfaceError("connection already closed")))
+            return True
+
+        dead_connection()
+        with patch.object(service, "connect", side_effect=dead_connection) as connect:
+            assert service.complete_scrape_log(41, "error") is False
+
+        assert connect.call_count == 1
+
+    def test_a_query_error_is_not_retried(self, service):
+        service.conn = Mock()
+        service.conn.cursor.return_value.execute.side_effect = psycopg2.errors.InvalidTextRepresentation("bad input")
+
+        with patch.object(service, "connect") as connect:
+            assert service.complete_scrape_log(41, "error") is False
+
+        connect.assert_not_called()
+        service.conn.rollback.assert_called_once()

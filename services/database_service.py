@@ -569,46 +569,56 @@ class DatabaseService:
 
         Returns:
             True if successful, False otherwise
+
+        A dropped connection is reconnected and the write tried once more: this
+        write ends the run, and without it the row stays "running".
         """
-        if not self.conn:
-            # Try to establish connection before failing
-            if not self.connect():
+        for attempt in (1, 2):
+            if not self.conn and not self.connect():
                 self.logger.error("No database connection available")
                 return False
-
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute(
-                """
-                UPDATE scrape_logs
-                SET completed_at = %s, status = %s,
-                    dogs_found = %s, dogs_added = %s, dogs_updated = %s,
-                    error_message = %s, detailed_metrics = %s,
-                    duration_seconds = %s, data_quality_score = %s
-                WHERE id = %s
-                """,
-                (
-                    datetime.now(),
-                    status,
-                    animals_found,
-                    animals_added,
-                    animals_updated,
-                    error_message,
-                    json.dumps(detailed_metrics) if detailed_metrics else None,
-                    duration_seconds,
-                    data_quality_score,
-                    scrape_log_id,
-                ),
-            )
-            self.conn.commit()
-            cursor.close()
-            self.logger.info(f"Updated scrape log {scrape_log_id} with status: {status}")
-            return True
-        except Exception as e:
-            self.logger.error(f"Error updating scrape log: {e}")
-            if self.conn:
-                self.conn.rollback()
-            return False
+            try:
+                cursor = self.conn.cursor()
+                cursor.execute(
+                    """
+                    UPDATE scrape_logs
+                    SET completed_at = %s, status = %s,
+                        dogs_found = %s, dogs_added = %s, dogs_updated = %s,
+                        error_message = %s, detailed_metrics = %s,
+                        duration_seconds = %s, data_quality_score = %s
+                    WHERE id = %s
+                    """,
+                    (
+                        datetime.now(),
+                        status,
+                        animals_found,
+                        animals_added,
+                        animals_updated,
+                        error_message,
+                        json.dumps(detailed_metrics) if detailed_metrics else None,
+                        duration_seconds,
+                        data_quality_score,
+                        scrape_log_id,
+                    ),
+                )
+                self.conn.commit()
+                cursor.close()
+                self.logger.info(f"Updated scrape log {scrape_log_id} with status: {status}")
+                return True
+            except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                self.logger.warning(f"Connection lost updating scrape log {scrape_log_id} (attempt {attempt}): {e}")
+                try:
+                    self.conn.close()
+                except Exception:
+                    pass
+                self.conn = None
+            except Exception as e:
+                self.logger.error(f"Error updating scrape log: {e}")
+                if self.conn:
+                    self.conn.rollback()
+                return False
+        self.logger.error(f"Could not update scrape log {scrape_log_id} after reconnecting")
+        return False
 
     def get_existing_external_ids(self, organization_id: int) -> set[str]:
         """Get external IDs of this organization's available animals that a skip-existing scrape may skip.

@@ -209,8 +209,6 @@ class BaseScraper(ABC):
         self._run_notes: list[str] = []
         # This run's save counts, once the database phase has started
         self._processing_stats: dict[str, Any] | None = None
-        # A completion whose write failed, retried once by _run_with_connection
-        self._unwritten_completion: dict[str, Any] | None = None
 
         # Initialize UnifiedStandardizer for breed standardization
         self.standardizer = UnifiedStandardizer()
@@ -321,9 +319,8 @@ class BaseScraper(ABC):
     ):
         """The one way a run completes: the scrape-log write, its metrics and cache invalidation.
 
-        The first successful write wins; later calls are logged and ignored. A
-        write that fails leaves the run open, and the ``finally`` in
-        ``_run_with_connection`` tries it once more with the same arguments. Notes gathered during the run go
+        The first call wins; later ones are logged and ignored. A dropped
+        database connection is retried inside ``DatabaseService``. Notes gathered during the run go
         into error_message and turn a success into a warning, since each one
         means part of the run didn't happen (a session that failed to start
         skips stale detection). The cache is purged after the write, so a slow
@@ -335,16 +332,7 @@ class BaseScraper(ABC):
             self.logger.warning(f"Scrape completion already logged, ignoring a second completion (status: {status}, error: {error_message})")
             return True
 
-        self._unwritten_completion = {
-            "status": status,
-            "animals_found": animals_found,
-            "animals_added": animals_added,
-            "animals_updated": animals_updated,
-            "error_message": error_message,
-            "detailed_metrics": detailed_metrics,
-            "duration_seconds": duration_seconds,
-            "data_quality_score": data_quality_score,
-        }
+        self._completion_logged = True
         if self._run_notes and status == "success":
             status = "warning"
         message = "; ".join(part for part in [error_message, *self._run_notes] if part) or None
@@ -364,9 +352,6 @@ class BaseScraper(ABC):
         else:
             self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
             written = True
-        self._completion_logged = bool(written)
-        if written:
-            self._unwritten_completion = None
 
         if status == "success" or self._changed_animal_ids:
             try:
@@ -729,22 +714,18 @@ class BaseScraper(ABC):
 
             finally:
                 # KeyboardInterrupt and SystemExit are not Exceptions and used to
-                # leave the log "running"; so did a completion write that failed,
-                # which is retried here as it was.
+                # leave the log "running".
                 # The cron's SIGTERM handler only sets a flag, and its timeout kill
                 # is a SIGKILL that no finally survives: close_timed_out_scrape_log
                 # in management/railway_scraper_cron.py closes that row instead.
                 if self.scrape_log_id and not self._completion_logged:
+                    reason = type(interrupted).__name__ if interrupted else "no completion"
                     try:
-                        if self._unwritten_completion:
-                            self.complete_scrape_log(**self._unwritten_completion)
-                        else:
-                            reason = type(interrupted).__name__ if interrupted else "no completion"
-                            self.complete_scrape_log(
-                                status="error",
-                                error_message=f"Run ended without completing ({reason})",
-                                **self._counts_so_far(),
-                            )
+                        self.complete_scrape_log(
+                            status="error",
+                            error_message=f"Run ended without completing ({reason})",
+                            **self._counts_so_far(),
+                        )
                     except Exception as e:
                         # Must not replace the KeyboardInterrupt or SystemExit in flight
                         self.logger.error(f"Could not close scrape log {self.scrape_log_id}: {e}")
@@ -828,13 +809,15 @@ class BaseScraper(ABC):
         # Use centralized logger for setup phase
         central_logger = logging.getLogger("scraper")
         central_logger.info(f"🚀 Starting scrape for {self.get_organization_name()}")
-        # A reused instance starts each run open, with no notes or counts from the last one
+        # A reused instance starts each run with none of the last run's state
         self.scrape_log_id = None
+        self.current_scrape_session = None
         self._completion_logged = False
-        self._unwritten_completion = None
         self._run_notes = []
         self._processing_stats = None
         self.animals_found = 0
+        self.total_animals_skipped = 0
+        self.animals_for_llm_enrichment = []
 
         # Ask the source site for permission before fetching anything from it.
         if not self._check_robots_permission():
