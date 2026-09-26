@@ -8,6 +8,18 @@ jest.mock("@sentry/nextjs", () => ({
   captureException: jest.fn(),
 }));
 
+jest.mock("@/components/layout/Layout", () => ({
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="site-layout">{children}</div>
+  ),
+}));
+
+jest.mock("@/components/search/GlobalSearch", () => ({
+  __esModule: true,
+  default: () => <input aria-label="Search" />,
+}));
+
 describe("RouteErrorBoundary", () => {
   const mockReset = jest.fn();
   const defaultProps = {
@@ -93,11 +105,14 @@ describe("RouteErrorBoundary", () => {
     expect(mockReset).toHaveBeenCalledTimes(1);
   });
 
-  it("should render with correct styling classes", () => {
+  it("keeps the site around the error, with search and ways back to dogs (#503)", () => {
     render(<RouteErrorBoundary {...defaultProps} />);
 
-    const container = screen.getByText("Something went wrong").closest("div");
-    expect(container).toHaveClass("text-center");
+    expect(screen.getByTestId("site-layout")).toContainElement(
+      screen.getByRole("heading", { level: 1, name: "Something went wrong" }),
+    );
+    expect(screen.getByRole("textbox", { name: "Search" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Browse all dogs" })).toHaveAttribute("href", "/dogs");
   });
 
   it("should use different feature tags for different pages", () => {

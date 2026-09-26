@@ -26,7 +26,7 @@ describe("<Footer />", () => {
 
     it("renders tagline", () => {
       const taglines = screen.getAllByText(
-        "Helping rescue dogs find loving homes.",
+        "Every rescue dog in one place. Free, no account.",
       );
       expect(taglines.length).toBeGreaterThan(0);
     });
@@ -34,7 +34,7 @@ describe("<Footer />", () => {
 
   describe("Desktop Navigation Sections", () => {
     it("renders Find Dogs section with links", () => {
-      expect(screen.getByText("Find Dogs")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Find dogs" })).toBeInTheDocument();
       expect(
         screen.getByRole("link", { name: /^all dogs$/i }),
       ).toHaveAttribute("href", "/dogs");
@@ -54,19 +54,20 @@ describe("<Footer />", () => {
         "href",
         "/dogs/senior",
       );
+      expect(screen.getByRole("link", { name: /^by country$/i })).toHaveAttribute("href", "/dogs/country");
     });
 
     it("renders Learn section with Guides hub and 4 guide links", () => {
-      expect(screen.getByText("Learn")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Learn" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /^guides$/i })).toHaveAttribute(
         "href",
         "/guides",
       );
       expect(
-        screen.getByRole("link", { name: /european rescue/i }),
+        screen.getByRole("link", { name: /adopting from abroad/i }),
       ).toHaveAttribute("href", "/guides/european-rescue-guide");
       expect(
-        screen.getByRole("link", { name: /first-time owner/i }),
+        screen.getByRole("link", { name: /first-time owners/i }),
       ).toHaveAttribute("href", "/guides/first-time-owner-guide");
       expect(screen.getByRole("link", { name: /costs/i })).toHaveAttribute(
         "href",
@@ -75,13 +76,13 @@ describe("<Footer />", () => {
     });
 
     it("renders About section with links", () => {
-      expect(screen.getByText("About")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /^about us$/i })).toHaveAttribute(
         "href",
         "/about",
       );
       expect(
-        screen.getByRole("link", { name: /organizations/i }),
+        screen.getByRole("link", { name: /^rescues$/i }),
       ).toHaveAttribute("href", "/organizations");
       expect(screen.getByRole("link", { name: /^faq$/i })).toHaveAttribute(
         "href",
@@ -96,8 +97,8 @@ describe("<Footer />", () => {
       expect(madeWithTexts.length).toBeGreaterThan(0);
     });
 
-    it("renders Privacy Policy link in bottom bar", () => {
-      const privacyLink = screen.getByRole("link", { name: /privacy policy/i });
+    it("links the privacy policy", () => {
+      const privacyLink = screen.getByRole("link", { name: /^privacy$/i });
       expect(privacyLink).toHaveAttribute("href", "/privacy");
     });
   });

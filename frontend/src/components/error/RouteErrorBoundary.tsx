@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
+import Layout from "@/components/layout/Layout";
+import WayBack, { PRIMARY_ACTION } from "@/components/ui/WayBack";
 
 type RouteErrorBoundaryProps = {
   error: Error & { digest?: string };
@@ -23,20 +25,18 @@ export function RouteErrorBoundary({
     });
   }, [error, feature]);
 
+  // Inside the site's own header and footer, so the page is never a dead end (#503)
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-gray-50 p-4">
-      <div className="text-center max-w-md">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Something went wrong
-        </h2>
-        <p className="text-gray-600 mb-4">{message}</p>
-        <button
-          onClick={reset}
-          className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors"
-        >
-          Try again
-        </button>
-      </div>
-    </div>
+    <Layout>
+      <WayBack
+        title="Something went wrong"
+        message={message}
+        action={
+          <button type="button" onClick={reset} className={PRIMARY_ACTION}>
+            Try again
+          </button>
+        }
+      />
+    </Layout>
   );
 }

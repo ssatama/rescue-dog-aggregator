@@ -13,7 +13,6 @@ interface FAQQuestion {
 interface FAQSectionData {
   id: string;
   title: string;
-  emoji: string;
   description: string;
   questions: FAQQuestion[];
 }
@@ -22,7 +21,6 @@ const FAQ_SECTIONS: FAQSectionData[] = [
   {
     id: "about",
     title: "About the Platform",
-    emoji: "🐕",
     description: "Learn about who we are and what we stand for",
     questions: [
       {
@@ -45,7 +43,6 @@ const FAQ_SECTIONS: FAQSectionData[] = [
   {
     id: "adoption",
     title: "Adoption Process",
-    emoji: "📋",
     description: "Everything about costs, timelines, and requirements",
     questions: [
       {
@@ -73,7 +70,6 @@ const FAQ_SECTIONS: FAQSectionData[] = [
   {
     id: "success",
     title: "Success & Support",
-    emoji: "💚",
     description: "What to expect and the support you'll receive",
     questions: [
       {
@@ -96,7 +92,6 @@ const FAQ_SECTIONS: FAQSectionData[] = [
   {
     id: "european",
     title: "Why European Rescue",
-    emoji: "🌍",
     description: "Understanding the need for cross-border adoption",
     questions: [
       {
@@ -107,14 +102,13 @@ const FAQ_SECTIONS: FAQSectionData[] = [
       {
         question: "Which countries do your rescue organizations cover?",
         answer:
-          "We include rescues from across Europe and the UK. The rescues we currently list, and the countries their dogs are in, are on our Organizations and Countries pages. We've selected organizations that maintain high standards for health screening and post-adoption support, covering the diverse landscape of European rescue dogs.",
+          "We include rescues from across Europe and the UK. The rescues we currently list, and the countries their dogs are in, are on our Rescues and Countries pages. We've selected organizations that maintain high standards for health screening and post-adoption support, covering the diverse landscape of European rescue dogs.",
       },
     ],
   },
   {
     id: "privacy",
     title: "Privacy & Contact",
-    emoji: "🔒",
     description: "Your data and how to reach us",
     questions: [
       {
@@ -140,23 +134,24 @@ interface FAQItemProps {
 
 function FAQItem({ question, answer, isOpen, onToggle }: FAQItemProps): React.JSX.Element {
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+    <div className="border-b border-line last:border-b-0">
       <button
         onClick={onToggle}
-        className="w-full py-5 px-1 flex items-start justify-between gap-4 text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 rounded-lg"
+        className="group flex w-full items-start justify-between gap-4 rounded-lg px-1 py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-expanded={isOpen}
       >
-        <span className="text-lg font-medium text-gray-900 dark:text-gray-100 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+        <span className="text-base font-semibold text-ink sm:text-lg">
           {question}
         </span>
         <ChevronDown
-          className={`w-5 h-5 flex-shrink-0 text-gray-500 dark:text-gray-400 transition-transform duration-300 ease-out ${isOpen ? "rotate-180" : ""}`}
+          className={`mt-1 h-5 w-5 flex-shrink-0 text-subtle transition-transform duration-300 ease-out motion-reduce:transition-none ${isOpen ? "rotate-180" : ""}`}
+          aria-hidden="true"
         />
       </button>
       <div
-        className={`overflow-hidden transition-all duration-300 ease-out ${isOpen ? "max-h-96 opacity-100 pb-5" : "max-h-0 opacity-0"}`}
+        className={`overflow-hidden transition-all duration-300 ease-out motion-reduce:transition-none ${isOpen ? "max-h-96 opacity-100 pb-5" : "max-h-0 opacity-0"}`}
       >
-        <p className="text-gray-600 dark:text-gray-400 leading-relaxed px-1">
+        <p className="px-1 leading-relaxed text-subtle">
           {answer}
         </p>
       </div>
@@ -173,20 +168,11 @@ interface FAQSectionProps {
 function FAQSection({ section, openItems, toggleItem }: FAQSectionProps): React.JSX.Element {
   return (
     <section className="scroll-mt-24" id={section.id}>
-      <div className="flex items-center gap-3 mb-6">
-        <span className="text-3xl" role="img" aria-hidden="true">
-          {section.emoji}
-        </span>
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-            {section.title}
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {section.description}
-          </p>
-        </div>
+      <div className="mb-4">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-ink">{section.title}</h2>
+        <p className="mt-1 text-sm text-subtle">{section.description}</p>
       </div>
-      <div className="bg-white dark:bg-gray-800/50 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50 px-6">
+      <div className="rounded-xl border border-line bg-surface px-4 sm:px-6">
         {section.questions.map((faq, index) => {
           const itemId = `${section.id}-${index}`;
           return (
@@ -227,59 +213,41 @@ export default function FaqClient(): React.JSX.Element {
 
   return (
     <>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl py-6 lg:py-8">
         <Breadcrumbs items={breadcrumbItems} />
-        <div className="text-center mb-12 sm:mb-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 mb-6">
-            <span className="text-3xl">❓</span>
-          </div>
-          <h1 className="text-title text-gray-900 dark:text-gray-100 mb-4">
-            Frequently Asked Questions
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Everything you need to know about adopting a rescue dog from Europe.
-            Can&apos;t find what you&apos;re looking for?{" "}
-            <Link
-              href="/about#contact"
-              className="text-orange-600 dark:text-orange-400 hover:underline"
-            >
-              Get in touch
-            </Link>
-            .
-          </p>
-        </div>
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 mb-12 sm:mb-16">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-2">
-              {FAQ_SECTIONS.map((section) => (
-                <a
-                  key={section.id}
-                  href={`#${section.id}`}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-full bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-600 dark:hover:text-orange-400 transition-colors border border-gray-200 dark:border-gray-600"
-                >
-                  <span>{section.emoji}</span>
-                  <span className="hidden sm:inline">{section.title}</span>
-                </a>
-              ))}
-            </div>
-            <div className="flex gap-2 text-sm">
-              <button
-                onClick={expandAll}
-                className="text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          Frequently asked questions
+        </h1>
+        <p className="mt-2 text-base text-subtle">
+          Everything you need to know about adopting a rescue dog from Europe.
+          Can&apos;t find what you&apos;re looking for?{" "}
+          <Link href="/about#contact" className="font-semibold text-orange-700 underline underline-offset-4 hover:no-underline dark:text-orange-400">
+            Get in touch
+          </Link>
+          .
+        </p>
+        <div className="mt-6 mb-10 flex flex-wrap items-center justify-between gap-3">
+          <nav aria-label="FAQ sections" className="flex flex-wrap gap-2">
+            {FAQ_SECTIONS.map((section) => (
+              <a
+                key={section.id}
+                href={`#${section.id}`}
+                className="inline-flex h-9 items-center rounded-full border border-line bg-surface px-3.5 text-sm font-medium text-ink transition-colors hover:bg-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                Expand all
-              </button>
-              <span className="text-gray-300 dark:text-gray-600">|</span>
-              <button
-                onClick={collapseAll}
-                className="text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
-              >
-                Collapse all
-              </button>
-            </div>
+                {section.title}
+              </a>
+            ))}
+          </nav>
+          <div className="flex gap-3 text-sm">
+            <button type="button" onClick={expandAll} className="text-subtle underline-offset-4 hover:text-ink hover:underline">
+              Expand all
+            </button>
+            <button type="button" onClick={collapseAll} className="text-subtle underline-offset-4 hover:text-ink hover:underline">
+              Collapse all
+            </button>
           </div>
         </div>
-        <div className="space-y-12 sm:space-y-16">
+        <div className="space-y-10">
           {FAQ_SECTIONS.map((section) => (
             <FAQSection
               key={section.id}
@@ -289,51 +257,46 @@ export default function FaqClient(): React.JSX.Element {
             />
           ))}
         </div>
-        <div className="mt-16 sm:mt-24 mb-12 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-2xl p-8 sm:p-10 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Ready to find your new best friend?
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-xl mx-auto">
-            Thousands of rescue dogs across Europe are waiting for a loving
-            home. Start browsing today.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="mt-12 rounded-xl border border-line bg-surface p-6 sm:p-8">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-ink">Ready to find your new best friend?</h2>
+          <p className="mt-2 text-subtle">Rescue dogs across Europe are waiting for a home. Start browsing today.</p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/dogs"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors"
+              className="inline-flex h-11 items-center justify-center rounded-lg bg-orange-700 px-5 font-semibold text-white transition-colors hover:bg-orange-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              🐾 Browse Dogs
+              Browse dogs
             </Link>
             <Link
               href="/guides"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium rounded-lg border border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-700 transition-colors"
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-line bg-surface px-5 font-semibold text-ink transition-colors hover:bg-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              📚 Read Our Guides
+              Read our guides
             </Link>
           </div>
         </div>
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-8 pb-12">
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+        <div className="mt-10 border-t border-line pt-6">
+          <p className="text-sm text-subtle">
             Learn more:{" "}
             <Link
               href="/about"
-              className="text-orange-600 dark:text-orange-400 hover:underline"
+              className="text-orange-700 underline underline-offset-4 hover:no-underline dark:text-orange-400"
             >
               About Us
             </Link>
             {" · "}
             <Link
               href="/privacy"
-              className="text-orange-600 dark:text-orange-400 hover:underline"
+              className="text-orange-700 underline underline-offset-4 hover:no-underline dark:text-orange-400"
             >
               Privacy Policy
             </Link>
             {" · "}
             <Link
               href="/organizations"
-              className="text-orange-600 dark:text-orange-400 hover:underline"
+              className="text-orange-700 underline underline-offset-4 hover:no-underline dark:text-orange-400"
             >
-              Our Partner Rescues
+              The rescues we list
             </Link>
           </p>
         </div>

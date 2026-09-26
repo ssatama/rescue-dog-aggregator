@@ -30,64 +30,61 @@ export default function PrivacyPage(): React.JSX.Element {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl py-6 lg:py-8">
         <Breadcrumbs items={breadcrumbItems} />
 
-        <div className="text-center mb-12">
-          <h1 className="text-title text-gray-900 dark:text-gray-100 mb-3">
-            Privacy Policy
+        <div>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+            Privacy policy
           </h1>
-          <p className="text-body text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-lg text-subtle">
             We believe in transparency. Here&apos;s exactly what we do and
             don&apos;t collect.
           </p>
         </div>
 
-        <div className="space-y-12 sm:space-y-16 md:space-y-24 lg:space-y-32 py-8 sm:py-12 md:py-16 lg:py-24">
-          <section className="bg-orange-50 dark:bg-orange-900/20 p-6 sm:p-8 md:p-10 rounded-lg text-center">
-            <div className="text-4xl mb-4">🍪</div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-              Notice Something Missing?
+        <div className="mt-10 space-y-12">
+          <section className="rounded-xl border border-line bg-surface p-5 sm:p-6">
+            <h2 className="mb-2 font-display text-xl font-bold text-ink">
+              Notice something missing?
             </h2>
-            <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300">
+            <p className="text-lg text-ink">
               No annoying cookie consent popups. We don&apos;t use cookies, so
               we don&apos;t need to ask.
             </p>
           </section>
 
           <section>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-8 text-center">
-              What We Collect
+            <h2 className="mb-4 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+              What we collect
             </h2>
 
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 rounded-lg">
-                <div className="text-3xl mb-3">💾</div>
-                <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-3">
-                  Your Favorites
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-line bg-surface p-5 sm:p-6">
+                <h3 className="mb-2 font-display text-lg font-bold text-ink">
+                  Your favorites
                 </h3>
-                <p className="text-body text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-subtle mb-2">
                   When you save dogs to your favorites, they&apos;re stored in
                   your browser&apos;s localStorage.
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-500">
+                <p className="text-sm text-subtle">
                   Your list stays on your device. Our analytics count that a
                   dog was saved, never who saved it.
                 </p>
               </div>
 
-              <div className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 rounded-lg">
-                <div className="text-3xl mb-3">📊</div>
-                <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-3">
-                  Anonymous Analytics
+              <div className="rounded-xl border border-line bg-surface p-5 sm:p-6">
+                <h3 className="mb-2 font-display text-lg font-bold text-ink">
+                  Anonymous analytics
                 </h3>
-                <p className="text-body text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-subtle mb-2">
                   We use{" "}
                   <Link
                     href="https://vercel.com/docs/analytics/privacy-policy"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-orange-600 dark:text-orange-400 hover:underline"
+                    className="text-orange-700 underline underline-offset-4 hover:no-underline dark:text-orange-400"
                   >
                     Vercel Analytics
                   </Link>{" "}
@@ -96,14 +93,14 @@ export default function PrivacyPage(): React.JSX.Element {
                     href="https://posthog.com/privacy"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-orange-600 dark:text-orange-400 hover:underline"
+                    className="text-orange-700 underline underline-offset-4 hover:no-underline dark:text-orange-400"
                   >
                     PostHog
                   </Link>{" "}
                   (data stored in the EU, in Frankfurt) to understand how people
                   use the site.
                 </p>
-                <ul className="text-sm text-gray-500 dark:text-gray-500 space-y-1 mt-3">
+                <ul className="text-sm text-subtle space-y-1 mt-3">
                   <li>• Page views & timestamps</li>
                   <li>• Clicks, such as which dogs you open or save</li>
                   <li>• Filters you use, and that you searched (never what you typed)</li>
@@ -113,28 +110,27 @@ export default function PrivacyPage(): React.JSX.Element {
                   <li>• Browser & OS</li>
                   <li>• Referrer source</li>
                 </ul>
-                <p className="text-sm text-gray-500 dark:text-gray-500 mt-3">
+                <p className="text-sm text-subtle mt-3">
                   Analytics store nothing on your device, so each visit starts
                   fresh and is never linked to you or to earlier visits.
                 </p>
-                <p className="text-sm font-medium text-green-600 dark:text-green-400 mt-3">
+                <p className="mt-3 text-sm font-semibold text-good">
                   No cookies • No personal identification • No cross-site
                   tracking
                 </p>
               </div>
 
-              <div className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 rounded-lg md:col-span-2">
-                <div className="text-3xl mb-3">📍</div>
-                <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-3">
-                  Where You Live
+              <div className="rounded-xl border border-line bg-surface p-5 sm:p-6 md:col-span-2">
+                <h3 className="mb-2 font-display text-lg font-bold text-ink">
+                  Where you live
                 </h3>
-                <p className="text-body text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-subtle mb-2">
                   To mark the dogs you can adopt, we guess your country from
                   your internet connection. The guess is made fresh on each
                   visit and never stored on our servers; your browser keeps it
                   only until you close the tab.
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-500">
+                <p className="text-sm text-subtle">
                   If you pick a country yourself, or choose &ldquo;Anywhere&rdquo;, that choice is
                   saved in your browser&apos;s localStorage and nowhere else.
                   Analytics record the country you set, never anything more
@@ -145,55 +141,30 @@ export default function PrivacyPage(): React.JSX.Element {
             </div>
           </section>
 
-          <section className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 md:p-10 rounded-lg">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-8 text-center">
-              What We Don&apos;t Collect
+          <section>
+            <h2 className="mb-4 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+              What we don&apos;t collect
             </h2>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 text-center">
-              <div>
-                <div className="text-3xl mb-2">👤</div>
-                <p className="text-body text-gray-600 dark:text-gray-400">
-                  No user accounts
-                </p>
-              </div>
-              <div>
-                <div className="text-3xl mb-2">📧</div>
-                <p className="text-body text-gray-600 dark:text-gray-400">
-                  No email addresses
-                </p>
-              </div>
-              <div>
-                <div className="text-3xl mb-2">🍪</div>
-                <p className="text-body text-gray-600 dark:text-gray-400">
-                  No cookies
-                </p>
-              </div>
-              <div>
-                <div className="text-3xl mb-2">📍</div>
-                <p className="text-body text-gray-600 dark:text-gray-400">
-                  No personal tracking
-                </p>
-              </div>
-              <div>
-                <div className="text-3xl mb-2">💰</div>
-                <p className="text-body text-gray-600 dark:text-gray-400">
-                  No data sold
-                </p>
-              </div>
-            </div>
+            <ul className="flex flex-wrap gap-2">
+              <li className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-ink">No user accounts</li>
+              <li className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-ink">No email addresses</li>
+              <li className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-ink">No cookies</li>
+              <li className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-ink">No personal tracking</li>
+              <li className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-ink">No data sold</li>
+            </ul>
           </section>
 
           <section>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6">
-              Error Monitoring
+            <h2 className="mb-4 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+              Error monitoring
             </h2>
-            <p className="text-lg md:text-xl leading-relaxed text-gray-700 dark:text-gray-300 mb-4">
+            <p className="text-lg leading-relaxed text-ink mb-4">
               We use{" "}
               <Link
                 href="https://sentry.io/privacy/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-orange-600 dark:text-orange-400 hover:underline"
+                className="text-orange-700 underline underline-offset-4 hover:no-underline dark:text-orange-400"
               >
                 Sentry
               </Link>{" "}
@@ -204,10 +175,10 @@ export default function PrivacyPage(): React.JSX.Element {
           </section>
 
           <section>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6">
-              Dog Data Sources
+            <h2 className="mb-4 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+              Dog data sources
             </h2>
-            <p className="text-lg md:text-xl leading-relaxed text-gray-700 dark:text-gray-300">
+            <p className="text-lg leading-relaxed text-ink">
               All dog listings are aggregated from public rescue organization
               websites. We link directly to original sources for adoption
               applications. We are not affiliated with or endorsed by these
@@ -216,20 +187,20 @@ export default function PrivacyPage(): React.JSX.Element {
             </p>
           </section>
 
-          <section className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 md:p-10 rounded-lg">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
-              Open Source & Contact
+          <section className="rounded-xl border border-line bg-surface p-5 sm:p-6">
+            <h2 className="mb-4 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+              Open source and contact
             </h2>
-            <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300 text-center mb-8">
+            <p className="mb-5 text-lg text-ink">
               This project is open source. You can see exactly how we handle
               data.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href="https://github.com/ssatama/rescue-dog-aggregator"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface px-5 font-semibold text-ink transition-colors hover:bg-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <svg
                   className="w-5 h-5"
@@ -247,7 +218,7 @@ export default function PrivacyPage(): React.JSX.Element {
               </Link>
               <Link
                 href="/about#contact"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-orange-700 px-5 font-semibold text-white transition-colors hover:bg-orange-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <svg
                   className="w-5 h-5"
@@ -263,13 +234,13 @@ export default function PrivacyPage(): React.JSX.Element {
                     d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
-                Contact Us
+                Contact us
               </Link>
             </div>
           </section>
 
-          <p className="text-sm text-gray-500 dark:text-gray-500 text-center">
-            Last updated: December 2025
+          <p className="text-sm text-subtle">
+            Last updated: September 2026
           </p>
         </div>
       </div>

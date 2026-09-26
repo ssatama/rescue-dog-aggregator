@@ -98,8 +98,10 @@ describe("FAQ Page", () => {
     });
 
     test("renders section navigation pills", () => {
-      const navLinks = screen.getAllByRole("link", { name: /🐕|📋|💚|🌍|🔒/i });
-      expect(navLinks.length).toBe(5);
+      const nav = screen.getByRole("navigation", { name: "FAQ sections" });
+      expect(nav.querySelectorAll("a")).toHaveLength(5);
+      // Section names, not emoji
+      expect(nav).toHaveTextContent("About the Platform");
     });
 
     test("renders expand/collapse buttons", () => {
@@ -129,7 +131,7 @@ describe("FAQ Page", () => {
       const privacyLink = screen.getByRole("link", { name: /privacy policy/i });
       expect(privacyLink).toHaveAttribute("href", "/privacy");
       const orgsLink = screen.getByRole("link", {
-        name: /our partner rescues/i,
+        name: /the rescues we list/i,
       });
       expect(orgsLink).toHaveAttribute("href", "/organizations");
     });

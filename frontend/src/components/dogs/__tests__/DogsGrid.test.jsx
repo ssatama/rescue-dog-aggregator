@@ -78,11 +78,7 @@ describe("DogsGrid Component", () => {
       render(<DogsGrid dogs={[]} />);
 
       const emptyState = screen.getByTestId("empty-state");
-      expect(emptyState).toHaveClass(
-        "bg-gradient-to-br",
-        "from-orange-50",
-        "to-orange-100/50",
-      );
+      expect(emptyState).toHaveClass("border", "border-line", "bg-surface");
       expect(emptyState).toHaveClass("rounded-xl");
       expect(emptyState).toHaveClass("p-8");
       expect(emptyState).toHaveClass("text-center");

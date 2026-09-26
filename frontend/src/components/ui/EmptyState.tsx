@@ -64,11 +64,11 @@ const EmptyState = React.memo<EmptyStateProps>(function EmptyState({
     noDogsFiltered: {
       title: "No dogs match your filters",
       description:
-        "Don't worry! Try adjusting your search criteria - maybe expand the age range, try a different size, or clear some filters. Every dog deserves a loving home! 🐕",
+        "Try removing a filter or two, or widening the age or size. New dogs are listed three times a week.",
       icon: FilterIcon,
       actionButton: onClearFilters
         ? {
-            text: "Clear All Filters & Start Fresh",
+            text: "Clear all filters",
             onClick: onClearFilters,
             variant: "default" as const,
           }
@@ -77,24 +77,24 @@ const EmptyState = React.memo<EmptyStateProps>(function EmptyState({
     noDogsOrganization: {
       title: "No dogs available right now",
       description:
-        "This organization doesn't have any dogs listed for adoption at the moment. But don't lose hope! Check back soon or explore other amazing rescue organizations doing wonderful work. 💝",
+        "This rescue has no dogs listed right now. Their list is updated three times a week.",
       icon: HeartIcon,
       actionButton: onBrowseOrganizations
         ? {
-            text: "Explore Other Rescues",
+            text: "See other rescues",
             onClick: onBrowseOrganizations,
             variant: "default" as const,
           }
         : null,
     },
     noOrganizations: {
-      title: "No organizations found",
+      title: "No rescues to show",
       description:
-        "We couldn't find any rescue organizations at the moment. This might be a temporary issue - please try refreshing the page.",
+        "We couldn't load the rescues. This is usually temporary.",
       icon: BuildingIcon,
       actionButton: onRefresh
         ? {
-            text: "Refresh Page",
+            text: "Try again",
             onClick: onRefresh,
             variant: "default" as const,
           }
@@ -118,39 +118,39 @@ const EmptyState = React.memo<EmptyStateProps>(function EmptyState({
   return (
     <div
       data-testid="empty-state"
-      className={`bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10 rounded-xl p-8 text-center border border-orange-200/50 dark:border-orange-800/30 shadow-sm animate-fade-in ${className}`}
+      className={`rounded-xl border border-line bg-surface p-8 text-center ${className}`}
       role="status"
       aria-label={`Empty state: ${finalTitle}`}
     >
       {/* Icon */}
       {IconComponent && (
-        <div className="mb-6">
+        <div className="mb-4">
           <IconComponent
             data-testid="empty-state-icon"
-            className="h-16 w-16 mx-auto text-orange-400 dark:text-orange-300 mb-2 animate-pulse-dot"
+            className="mx-auto h-10 w-10 text-subtle"
           />
         </div>
       )}
 
       {/* Title */}
-      <h3 className="text-xl font-semibold text-foreground mb-3 animate-fade-in-up">
+      <h2 className="mb-2 font-display text-xl font-bold text-ink">
         {finalTitle}
-      </h3>
+      </h2>
 
       {/* Description */}
-      <p className="text-muted-foreground mb-6 max-w-md mx-auto leading-relaxed animate-fade-in-up animate-stagger-1">
+      <p className="mx-auto mb-6 max-w-md leading-relaxed text-subtle">
         {finalDescription}
       </p>
 
       {/* Action Button */}
       {finalActionButton && (
-        <div className="animate-fade-in-up animate-stagger-2">
+        <div>
           <Button
             type="button"
             variant={finalActionButton.variant || "default"}
             onClick={finalActionButton.onClick}
             data-testid="clear-filters-button"
-            className="animate-button-hover focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 px-6 py-3 rounded-lg text-white bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 shadow-md hover:shadow-lg transition-all duration-200"
+            className="h-11 rounded-lg bg-orange-700 px-5 font-semibold text-white hover:bg-orange-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {finalActionButton.text}
           </Button>
