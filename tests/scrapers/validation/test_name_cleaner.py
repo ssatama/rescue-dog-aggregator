@@ -54,6 +54,9 @@ class TestCleanName:
             ("Benji & Lab", "Labrador Retriever"),  # a pair, not an appended breed
             ("Buddy the Beagle", "Beagle"),  # only "Name Breed" is cleaned
             ("Bruno The Boxer", "Boxer"),
+            ("Luna (Urgent, Reserved)", "Mixed Breed"),  # would leave "Luna , Reserved)"
+            ("Lab Husky", "Labrador Husky"),  # both words are breed
+            ("Staffy Terrier", "Staffordshire Bull Terrier"),
             ("Bella *RESERVED*", "Beagle"),  # availability labels stay visible
             ("Max ON HOLD", "Mixed Breed"),
             ("Luna (applications closed)", "Mixed Breed"),

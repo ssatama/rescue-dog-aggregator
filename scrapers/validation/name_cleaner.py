@@ -57,6 +57,13 @@ def _is_appended_breed_word(word: str, breed: str) -> bool:
     return word in BREED_NOUNS and word in breed.split()
 
 
+def _is_tidy(name: str) -> bool:
+    """Non-empty, brackets balanced, no punctuation dangling at either end."""
+    if not name or name.count("(") != name.count(")") or name.count("[") != name.count("]"):
+        return False
+    return not re.search(r"(^[\s,;:&/*+-]|[\s,;:&/*+-]$|\s[,;:])", name)
+
+
 def _is_a_name(rest: str, breed: str) -> bool:
     """What's left after the breed word must be one word that is a name.
 
@@ -68,18 +75,21 @@ def _is_a_name(rest: str, breed: str) -> bool:
     if len(words) != 1:
         return False
     word = words[0].rstrip(".")
-    return word not in NAME_PREFIXES and word not in breed.split()
+    return word not in NAME_PREFIXES and word not in breed.split() and not _is_appended_breed_word(word, breed)
 
 
 def clean_name(name: str, breed: str | None) -> tuple[str, bool]:
     """Return the display name and whether the rescue labelled the dog overlooked.
 
-    The name is returned unchanged when cleaning would leave nothing.
+    The name is returned unchanged when cleaning would leave nothing or
+    leave stray punctuation behind.
     """
     overlooked = bool(re.search(r"\boverlooked\b", name, re.IGNORECASE))
     cleaned = " ".join(_LABEL_PATTERN.sub(" ", name).split())
-    if not cleaned:
-        return name, overlooked
+    if not _is_tidy(cleaned):
+        # A label that shared brackets or a list with other text
+        # ("Luna (Urgent, Reserved)"): keep the rescue's name as it was.
+        cleaned = name
 
     words = cleaned.split()
     breed_text = (breed or "").lower()
