@@ -130,9 +130,28 @@ skips dogs that have a gallery, so galleries backfill through the normal cron.
 
 **Rows never self-correct on scrape.** `skip_existing_animals` drops existing
 dogs before `save_animal`, and updates are never re-profiled. A scraper fix
-needs an explicit backfill: re-scrape with `--force-rescrape`, then
-`generate-profiles --force`. Query the full population, not just
+needs an explicit backfill. Query the full population, not just
 `status = 'available'`, when sizing a defect.
+
+**Backfills go through `management/backfill_commands.py`** (#556).
+- `plan --org X` re-scrapes the rescue's live site with skipping off, saves
+  nothing, and diffs what `update_animal` would write
+  (`services.database_service.update_columns`) against production, read-only:
+  per-field counts with examples, dogs new on the site, dogs available in
+  production but gone from the site, and dogs whose profile text would change.
+  Images are compared by source URL, since a dry run uploads nothing. Reads use
+  `PROD_RO_DATABASE_URL` on the laptop and `POST /api/admin/query` in cloud
+  sessions. Building the scraper still syncs the organization row into the
+  local dev database.
+- SQL fixes are registered steps in `management/backfill_steps.py`: a
+  read-only query plus a pure planner, planned from fresh rows at apply time,
+  so they are idempotent. `clear-fabricated-ages` (formerly `age_commands.py`)
+  is the first; it plans 0 rows since it ran.
+- `apply --orgs a,b --steps x --confirm` writes to `RAILWAY_DATABASE_URL`: it
+  runs `railway_scraper_cron.py --org X --force-rescrape` per rescue, then the
+  steps for every rescue, then `generate-profiles --ids` for dogs whose profile text changed,
+  and prints a before/after table. Record that table here in the PR that ran it.
+- Epic #554 runs every backfill once, in #572.
 
 **Breed registry is data.** Breeds and aliases live in
 `utils/breed_registry.yaml`. `primary_breed` is the grouping key and omits the

@@ -69,7 +69,7 @@ def plan_renames(records: list[dict]) -> list[Rename]:
 
 
 def _connect():
-    """Production through RAILWAY_DATABASE_URL, like age_commands; local otherwise."""
+    """Production through RAILWAY_DATABASE_URL, like the other backfill commands; local otherwise."""
     database_url = os.getenv("RAILWAY_DATABASE_URL")
     if database_url:
         return psycopg2.connect(database_url)

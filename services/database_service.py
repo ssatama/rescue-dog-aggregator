@@ -47,6 +47,46 @@ def _images_json(images: list[dict[str, Any]] | None) -> str | None:
     return json.dumps(images, sort_keys=True) if images else None
 
 
+def update_columns(animal_data: dict[str, Any]) -> dict[str, Any]:
+    """The column values update_animal writes for a scraped dog, before images and timestamps.
+
+    Pure, so a dry run (management/backfill_commands.py plan) can show what a
+    save would write without writing it.
+    """
+    # Apply standardization for new values - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
+    new_standardized_breed, new_breed_group, size_estimate = standardize_breed(animal_data.get("breed") or "")
+
+    # Use pre-calculated age values if available
+    if "age_min_months" in animal_data and "age_max_months" in animal_data:
+        age_min_months = animal_data.get("age_min_months")
+        age_max_months = animal_data.get("age_max_months")
+    else:
+        _, age_min_months, age_max_months = parse_age_text(animal_data.get("age_text", ""))
+
+    return {
+        "name": animal_data.get("name"),
+        "breed": animal_data.get("breed"),
+        "breed_raw": animal_data.get("breed_raw") or animal_data.get("breed"),
+        # Unified standardization fields if available, the old logic otherwise
+        "standardized_breed": animal_data.get("standardized_breed") or new_standardized_breed,
+        "breed_group": animal_data.get("breed_category") or new_breed_group,
+        "age_text": animal_data.get("age_text"),
+        "age_min_months": age_min_months,
+        "age_max_months": age_max_months,
+        "sex": animal_data.get("sex"),
+        "status": animal_data.get("status", "available"),
+        # Use size estimate if no size provided
+        "size": animal_data.get("size") or animal_data.get("standardized_size"),
+        "standardized_size": animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size")),
+        "properties": json.dumps(sanitize_for_postgres(animal_data.get("properties")), sort_keys=True) if animal_data.get("properties") else None,
+        "breed_type": animal_data.get("breed_type"),
+        "primary_breed": animal_data.get("primary_breed"),
+        "secondary_breed": animal_data.get("secondary_breed"),
+        "breed_slug": animal_data.get("breed_slug"),
+        "breed_confidence": animal_data.get("breed_confidence"),
+    }
+
+
 class DatabaseService:
     """Service for all database operations extracted from BaseScraper."""
 
@@ -338,33 +378,20 @@ class DatabaseService:
 
             # Process the properties (sanitize to remove null bytes that PostgreSQL rejects)
             current_properties_json = json.dumps(sanitize_for_postgres(current_properties), sort_keys=True) if current_properties else None
-            new_properties_json = json.dumps(sanitize_for_postgres(animal_data.get("properties")), sort_keys=True) if animal_data.get("properties") else None
-
-            # Apply standardization for new values - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
-            new_standardized_breed, new_breed_group, size_estimate = standardize_breed(animal_data.get("breed") or "")
-
-            # Use pre-calculated age values if available
-            if "age_min_months" in animal_data and "age_max_months" in animal_data:
-                new_age_min_months = animal_data.get("age_min_months")
-                new_age_max_months = animal_data.get("age_max_months")
-            else:
-                _, new_age_min_months, new_age_max_months = parse_age_text(animal_data.get("age_text", ""))
-
-            # Use size estimate if no size provided
-            new_final_size = animal_data.get("size") or animal_data.get("standardized_size")
-            new_final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))
-
-            # NEW: Use unified standardization fields if available, fall back to old logic
-            final_standardized_breed = animal_data.get("standardized_breed") or new_standardized_breed
-            final_breed_group = animal_data.get("breed_category") or new_breed_group
-
-            # NEW breed enhancement fields from UnifiedStandardizer
-            new_breed_type = animal_data.get("breed_type")
-            new_primary_breed = animal_data.get("primary_breed")
-            new_secondary_breed = animal_data.get("secondary_breed")
-            new_breed_slug = animal_data.get("breed_slug")
-            new_breed_confidence = animal_data.get("breed_confidence")
-            new_breed_raw = animal_data.get("breed_raw") or animal_data.get("breed")
+            new = update_columns(animal_data)
+            new_properties_json = new["properties"]
+            new_age_min_months = new["age_min_months"]
+            new_age_max_months = new["age_max_months"]
+            new_final_size = new["size"]
+            new_final_standardized_size = new["standardized_size"]
+            final_standardized_breed = new["standardized_breed"]
+            final_breed_group = new["breed_group"]
+            new_breed_type = new["breed_type"]
+            new_primary_breed = new["primary_breed"]
+            new_secondary_breed = new["secondary_breed"]
+            new_breed_slug = new["breed_slug"]
+            new_breed_confidence = new["breed_confidence"]
+            new_breed_raw = new["breed_raw"]
             # No "images" key means the gallery step had nothing new; keep what is stored
             new_images_json = _images_json(animal_data["images"]) if "images" in animal_data else _images_json(current_images)
 
@@ -396,7 +423,7 @@ class DatabaseService:
 
             # Update the animal
             current_time = datetime.now()
-            incoming_status = animal_data.get("status", "available")
+            incoming_status = new["status"]
             should_activate = incoming_status == "available"
             cursor.execute(
                 """

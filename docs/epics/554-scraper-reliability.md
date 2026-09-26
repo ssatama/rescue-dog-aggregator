@@ -61,3 +61,9 @@ seen, so they go stale while still listed; #558 fixes that for failed saves.
   every new dog's save failed locally, silently until #555. Compare columns
   with `information_schema.columns` on both sides and add what is missing by
   hand.
+- **Backfill findings for #572** (from `backfill_commands.py plan`):
+  - `rean` (2026-09-26): all 11 stored descriptions (`description`,
+    `raw_text`, `rescue_context`) still hold the neighbouring dogs' headings
+    that the GoDaddy page leaked before #435, e.g. Athena's text starts with
+    "Lindsey 5 years old". A fresh scrape is clean and every other field
+    matches. REAN needs a forced re-scrape and a re-profile of all 11 dogs.
