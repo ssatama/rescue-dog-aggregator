@@ -9,8 +9,10 @@ Queries run as the read-only ``claude_ro`` role through READONLY_DATABASE_URL,
 never through the API's owner connection. The role's grants are the guard: a
 read-only *session* can be switched back to read-write by the query itself, so
 the endpoint refuses to run anything unless the connected role is verifiably
-unable to write. The role's statement timeout bounds runtime, and responses
-are capped at ``MAX_ROWS``. See scripts/sql/create_claude_ro.sql.
+unable to write. The query runs through a server-side cursor, which accepts a
+single SELECT-style statement and keeps the result on the database server, so
+only ``limit + 1`` rows ever reach this process; the role's statement timeout
+bounds runtime. See scripts/sql/create_claude_ro.sql.
 """
 
 import json
@@ -73,15 +75,19 @@ def run_readonly_query(request: QueryRequest) -> QueryResponse:
             if cur.fetchone()[0]:
                 logger.error("READONLY_DATABASE_URL points at a role that can write; refusing to run queries")
                 raise HTTPException(status_code=503, detail="Read-only query endpoint is misconfigured")
-            cur.execute(request.sql)
-            if cur.description is None:
-                return QueryResponse(columns=[], rows=[], row_count=0, truncated=False)
-            columns = [col.name for col in cur.description]
+        # Named cursor = DECLARE ... CURSOR FOR <sql>: one SELECT-style statement,
+        # rows fetched from the server only as asked for.
+        with conn.cursor(name="admin_query") as cur:
+            cur.execute(request.sql.strip().rstrip(";"))
             fetched = cur.fetchmany(request.limit + 1)
+            columns = [col.name for col in cur.description or []]
     except psycopg2.Error as e:
         raise HTTPException(status_code=400, detail=(e.pgerror or str(e)).strip()) from None
     finally:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except psycopg2.Error:
+            pass  # a dead connection mustn't replace the real error
         conn.close()
 
     truncated = len(fetched) > request.limit

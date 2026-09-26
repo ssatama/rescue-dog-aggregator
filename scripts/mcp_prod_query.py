@@ -38,12 +38,14 @@ def run_query(sql: str) -> tuple[str, bool]:
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             body = json.load(response)
+        rows = [dict(zip(body["columns"], row, strict=True)) for row in body["rows"]]
     except urllib.error.HTTPError as e:
         return f"HTTP {e.code}: {e.read().decode(errors='replace')}", True
     except urllib.error.URLError as e:
         return f"Request failed: {e.reason}", True
+    except Exception as e:  # timeouts, resets, non-JSON proxy pages: report, don't die
+        return f"Request failed: {type(e).__name__}: {e}", True
 
-    rows = [dict(zip(body["columns"], row, strict=True)) for row in body["rows"]]
     text = json.dumps(rows, indent=2, default=str)
     if body["truncated"]:
         text += f"\n(truncated to {body['row_count']} rows)"
@@ -64,7 +66,7 @@ def handle(message: dict) -> dict | None:
         result = {}
     elif method == "tools/list":
         result = {"tools": [TOOL]}
-    elif method == "tools/call" and message["params"].get("name") == "query":
+    elif method == "tools/call" and message.get("params", {}).get("name") == "query":
         text, is_error = run_query(message["params"].get("arguments", {}).get("sql", ""))
         result = {"content": [{"type": "text", "text": text}], "isError": is_error}
     else:
@@ -76,7 +78,11 @@ def main() -> None:
     for line in sys.stdin:
         if not line.strip():
             continue
-        reply = handle(json.loads(line))
+        # One bad message must not end the server for the rest of the session.
+        try:
+            reply = handle(json.loads(line))
+        except Exception as e:
+            reply = {"jsonrpc": "2.0", "id": None, "error": {"code": -32603, "message": f"{type(e).__name__}: {e}"}}
         if reply is not None:
             sys.stdout.write(json.dumps(reply) + "\n")
             sys.stdout.flush()
