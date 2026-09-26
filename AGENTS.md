@@ -195,6 +195,62 @@ test that needs real elapsed time — thread overlap, a timing bound — must
 carry `real_clock` or it will pass without observing anything. Assert on
 the delay `stub_clock.calls` records wherever that is enough.
 
+## Cloud Sessions
+
+Claude Code cloud sessions (claude.ai/code) set themselves up; nothing to do
+by hand.
+
+- **Setup**: the environment's setup script installs system packages. The
+  SessionStart hook in `.claude/settings.json` runs `scripts/cloud-setup.sh`
+  on every start and resume: it starts Postgres, creates `rescue_dogs` and
+  `test_rescue_dogs`, runs `uv sync` and `pnpm install`, applies the schema,
+  syncs organizations and seeds dogs. It exits at once outside the cloud
+  (`CLAUDE_CODE_REMOTE != true`). Log: `/tmp/cloud-setup.log`.
+- **Ports**: API on 8000 (`uv run uvicorn api.main:app --port 8000`), web
+  on 3000 (`cd frontend && pnpm dev`).
+- **Seed data**: `management/seed_dev_data.py` adds about 250 synthetic
+  available dogs with real photos from images.rescuedogs.me. One
+  organization has dogs without AI profiles and one has no dogs, so the
+  missing-data paths are exercised. It refuses to run unless `DB_HOST` is
+  localhost.
+- **Visual checks**: `node scripts/visual-check.cjs / /dogs` screenshots
+  each path at 390/820/1180/1440px in light and dark, and reports overflow
+  and console errors.
+- **Credentials**: sessions call these APIs without seeing the keys (the
+  agent proxy adds them per host). All are read-only:
+  - PostHog personal API key (`eu.posthog.com`): funnel and event queries,
+    e.g. `scripts/posthog-funnel.sh`
+  - Sentry token (`de.sentry.io`): issues and events, where no Sentry
+    connector is attached
+  - `ADMIN_API_KEY` (`api.rescuedogs.me`, `X-API-Key`): the GET-only
+    `/api/monitoring/*` and `/api/llm/*` endpoints, e.g. scraper health
+  - GitHub goes through the built-in GitHub tools; `gh` may be missing
+- **MCP**: `.mcp.json` is committed and shared with the laptop (see
+  CLAUDE.md). The `postgres` server works when the environment has
+  `PROD_RO_DATABASE_URL` (read-only role, `scripts/sql/create_claude_ro.sql`).
+- **Never set `DATABASE_URL` or `RAILWAY_DATABASE_URL` in a cloud
+  environment.** `config.py` prefers `DATABASE_URL` over `DB_*`, so tests
+  and the dev API would run against production, and the backfill and
+  migration commands write to `RAILWAY_DATABASE_URL`. The setup script and
+  the seed refuse to run when either is set. Monitoring stays off because
+  the Sentry DSNs and PostHog token are unset; keep it that way.
+- **`next dev` rewrites `tsconfig.json`** (adds `.next/dev/dev/types`)
+  when `NODE_ENV` isn't `development`. `pnpm dev` pins it; if you run
+  `next dev` directly, don't set `NODE_ENV`.
+
+## Where Knowledge Lives
+
+Work happens both on a laptop and in cloud sessions, and agent memory
+doesn't travel between them. Anything the next session needs goes in the
+repo, in the same PR as the work:
+
+- Production quirks, incidents and runbooks: `docs/technical/operational-knowledge.md`
+- Rules for every change: this file
+- Epic-scoped decisions: `docs/epics/<issue>-<slug>.md`. When the epic
+  closes, move what lasts into permanent docs and delete the epic file.
+
+Agent memory is only for things specific to one machine.
+
 ## Config Management
 
 ```bash
@@ -273,6 +329,8 @@ imports it; do not duplicate content between them.
 - Scrapers: `docs/technical/scraper-architecture.md`
 - LLM pipeline: `docs/features/llm-data-enrichment.md`
 - Product analytics (PostHog): `docs/features/product-analytics.md`
+- Production quirks, incidents, runbooks: `docs/technical/operational-knowledge.md`
+- UX refresh epic #484 decisions and merge rules: `docs/epics/484-ux-refresh.md`
 - Setup: `docs/guides/installation.md`
 - Deployment: `docs/guides/deployment.md`
 - Testing: `docs/guides/testing.md`

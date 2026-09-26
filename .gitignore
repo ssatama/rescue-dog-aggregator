@@ -86,11 +86,16 @@ experimental_test_*.py
 *.sqlite3
 
 # === AI Agent Artifacts ===
-.claude/
+# Shared with cloud sessions: the SessionStart hook and project skills.
+.claude/*
+!.claude/settings.json
+!.claude/skills/
+# Only the root .mcp.json is shared (it holds no secrets); others may.
+.mcp.json
+!/.mcp.json
 .gemini/
 .serena/
 .mypy_cache/
-.mcp.json
 
 # === Deployment ===
 .vercel

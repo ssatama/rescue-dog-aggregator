@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "bash",
+      "args": ["-c", "exec bash \"$(git rev-parse --show-toplevel)/scripts/mcp-server.sh\" postgres"]
+    },
+    "rescuedogs": {
+      "command": "bash",
+      "args": ["-c", "exec bash \"$(git rev-parse --show-toplevel)/scripts/mcp-server.sh\" rescuedogs"]
+    }
+  }
+}

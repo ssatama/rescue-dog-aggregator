@@ -17,18 +17,23 @@ Only tooling notes that apply to Claude Code and nowhere else belong below.
 
 - `ops-commands` - operational runbooks: organization config sync, LLM
   profiling batches, emergency recovery.
+- `weekly-devops` - the Monday `/weekly-devops` run. It reads
+  `BING_WEBMASTER_API_KEY` from `.env`, so it runs on the laptop.
 
 ### MCP servers
 
-Configured for this project in `.mcp.json` (gitignored, so each machine keeps
-its own copy):
+Committed in `.mcp.json`, the same on the laptop and in cloud sessions. Both
+start through `scripts/mcp-server.sh`, so the file holds no paths or secrets:
 
-- `postgres` - read-only SQL against the **production** Railway database. Its
-  URL is read from `RAILWAY_DATABASE_URL` in `.env` at startup, never written
-  into `.mcp.json`. Prefer it over shelling out to `psql` for inspection.
+- `postgres` - read-only SQL against the **production** Railway database, as
+  the `claude_ro` role (`scripts/sql/create_claude_ro.sql`). The URL comes
+  from `PROD_RO_DATABASE_URL`, in the environment (cloud) or `.env` (laptop).
+  Prefer it over shelling out to `psql` for inspection.
 - `rescuedogs` - this repo's own MCP server (`rescuedogs-mcp-server/`): dog
-  search, filter counts, statistics against the live API.
-- `Railway` - deployment status, logs, variables.
+  search, filter counts, statistics against the live API. Built on first use.
+
+Laptop only, added with `claude mcp add --scope local`: `Railway` (deployment
+status, logs, variables; cloud sessions have no Railway credentials).
 
 Vercel (plugin), Context7 and chrome-devtools come from user-level config;
 chrome-devtools also covers Lighthouse audits. Sentry is a local-scope server
