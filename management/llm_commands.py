@@ -335,6 +335,8 @@ def generate_profiles(organization: int | None, limit: int | None, force: bool, 
     else:
         org_ids = supported_orgs
 
+    requested_ids = tuple(int(i) for i in ids.split(",") if i.strip())
+    selected_ids: set[int] = set()
     total_processed = 0
     total_successful = 0
 
@@ -351,7 +353,7 @@ def generate_profiles(organization: int | None, limit: int | None, force: bool, 
             force=force,
             confidence=confidence,
             limit=limit,
-            ids=tuple(int(i) for i in ids.split(",") if i.strip()),
+            ids=requested_ids,
         )
 
         cursor.execute(query, query_params)
@@ -365,6 +367,7 @@ def generate_profiles(organization: int | None, limit: int | None, force: bool, 
             }
             for r in cursor.fetchall()
         ]
+        selected_ids.update(dog["id"] for dog in dogs)
 
         if not dogs:
             console.print("  [yellow]No dogs need profiling[/yellow]")
@@ -386,6 +389,10 @@ def generate_profiles(organization: int | None, limit: int | None, force: bool, 
 
     cursor.close()
     conn.close()
+
+    skipped = sorted(set(requested_ids) - selected_ids)
+    if skipped:
+        console.print(f"[yellow]Skipped {len(skipped)} of the --ids: not available, not at an LLM-enabled rescue, or outside --organization/--limit: {', '.join(map(str, skipped))}[/yellow]")
 
     console.print(f"\n[bold green]✓ Total: {total_successful}/{total_processed} profiles generated[/bold green]")
 

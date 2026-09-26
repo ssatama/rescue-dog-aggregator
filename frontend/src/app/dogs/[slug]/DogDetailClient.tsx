@@ -435,7 +435,7 @@ export default function DogDetailClient({
             </div>
           </div>
 
-          <div className="mt-10 grid gap-10 px-4 sm:px-0">
+          <div className="mt-10 grid grid-cols-1 gap-10 px-4 sm:px-0">
             {dog.organization && (
               <div data-testid="organization-container">
                 <OrganizationCard

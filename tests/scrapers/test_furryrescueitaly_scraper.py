@@ -561,3 +561,19 @@ class TestFurryRescueItalyScraper(ScraperTestBase):
         desc = animal.get("properties", {}).get("description", "")
         assert "Hi everyone!" in desc
         assert "\u00a9 2025" not in desc
+
+    def test_validation_cleans_the_name_like_every_rescue(self, scraper):
+        """The override used to skip the shared validator, so names went uncleaned (#505)."""
+        animal = {
+            "name": "Billo URGENT",
+            "animal_type": "dog",
+            "status": "available",
+            "organization_id": 1,
+            "external_id": "fri-billo",
+            "adoption_url": "https://furryrescueitaly.com/adoption/billo/",
+            "primary_image_url": "https://furryrescueitaly.com/billo.jpg",
+        }
+
+        assert scraper._validate_animal_data(animal)
+        assert animal["name"] == "Billo"
+        assert animal["properties"]["raw_name"] == "Billo URGENT"

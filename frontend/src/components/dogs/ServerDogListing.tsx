@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Dog } from "@/types/dog";
+import { formatBreed } from "@/utils/dogHelpers";
 
 interface ServerDogListingProps {
   title: string;
@@ -35,16 +36,16 @@ export default function ServerDogListing({ title, intro, dogs }: ServerDogListin
                     src={dog.primary_image_url}
                     alt={dog.name}
                     fill
-                    sizes="(max-width: 767px) 128px, 25vw"
+                    sizes="(max-width: 767px) 128px, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw"
                     className="object-cover"
                   />
                 )}
               </div>
               <div className="p-3 md:p-4">
                 <span className="block font-semibold text-gray-900 dark:text-white">{dog.name}</span>
-                {(dog.standardized_breed || dog.breed) && (
+                {formatBreed(dog) && (
                   <span className="block text-sm text-gray-600 dark:text-gray-400">
-                    {dog.standardized_breed || dog.breed}
+                    {formatBreed(dog)}
                   </span>
                 )}
               </div>
