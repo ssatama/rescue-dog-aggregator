@@ -56,6 +56,8 @@ FORCE_RESCRAPE_VALUES = ("true", "1", "yes")
 
 # Worth retrying: the server or the network may recover. Any other 4xx won't.
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+# Transient without a response: the connection failed, stalled or dropped mid-body.
+RETRYABLE_ERRORS = (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError, requests.exceptions.ContentDecodingError)
 
 
 class ListingIncompleteError(RuntimeError):
@@ -1313,7 +1315,7 @@ class BaseScraper(ABC):
                 return response
             except requests.RequestException as e:
                 status = getattr(e.response, "status_code", None)
-                retryable = status in RETRYABLE_STATUS_CODES if status is not None else isinstance(e, requests.ConnectionError | requests.Timeout)
+                retryable = status in RETRYABLE_STATUS_CODES if status is not None else isinstance(e, RETRYABLE_ERRORS)
                 if attempt == attempts or not retryable:
                     raise ListingIncompleteError(f"Listing page {url} failed after {attempt} attempt(s): {e}") from e
                 self.logger.warning(f"Listing page {url} failed (attempt {attempt} of {attempts}), retrying: {e}")

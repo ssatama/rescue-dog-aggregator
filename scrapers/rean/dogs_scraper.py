@@ -659,29 +659,25 @@ class REANScraper(BaseScraper):
         """Extract dog data from BeautifulSoup parsed DOM."""
         dogs_data = []
 
-        try:
-            # Find all dog containers using the discovered DOM structure
-            dog_containers = self._find_dog_containers_soup(soup)
+        # Find all dog containers using the discovered DOM structure. A failure
+        # here raises: returning [] for one page would retire its dogs (#559).
+        dog_containers = self._find_dog_containers_soup(soup)
 
-            for i, container in enumerate(dog_containers):
-                try:
-                    dog_data = self._extract_single_dog_from_container_soup(container, page_type, i + 1)
+        for i, container in enumerate(dog_containers):
+            try:
+                dog_data = self._extract_single_dog_from_container_soup(container, page_type, i + 1)
 
-                    if dog_data and dog_data.get("name"):
-                        dogs_data.append(dog_data)
-                        self.logger.debug(f"Successfully extracted dog: {dog_data.get('name')}")
-                    else:
-                        self.logger.warning(f"Container {i + 1} did not yield valid dog data")
+                if dog_data and dog_data.get("name"):
+                    dogs_data.append(dog_data)
+                    self.logger.debug(f"Successfully extracted dog: {dog_data.get('name')}")
+                else:
+                    self.logger.warning(f"Container {i + 1} did not yield valid dog data")
 
-                except Exception as e:
-                    self.logger.error(f"Error extracting from container {i + 1}: {e}")
-                    continue
+            except Exception as e:
+                self.logger.error(f"Error extracting from container {i + 1}: {e}")
+                continue
 
-            return dogs_data
-
-        except Exception as e:
-            self.logger.error(f"Error during DOM extraction: {e}")
-            return []
+        return dogs_data
 
     def _find_dog_containers_soup(self, soup: BeautifulSoup) -> list:
         """Find dog containers using BeautifulSoup."""

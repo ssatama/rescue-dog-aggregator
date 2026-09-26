@@ -333,8 +333,7 @@ class WoofProjectScraper(BaseScraper):
                 "Upgrade-Insecure-Requests": "1",
             }
 
-            response = requests.get(url, timeout=self.timeout, headers=headers)
-            response.raise_for_status()
+            response = self.get_listing_page(url, headers=headers)
 
             return BeautifulSoup(response.text, "html.parser")
 
