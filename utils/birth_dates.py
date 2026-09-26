@@ -70,7 +70,9 @@ def _checked(earliest: date, latest: date, today: date) -> BirthRange | None:
     """The range, or None when it can't be a living dog's birth date."""
     if earliest > today or earliest.year < today.year - MAX_AGE_YEARS or earliest > latest:
         return None
-    return earliest, min(latest, today)
+    # A birth month that isn't over yet keeps its month end: capping at today
+    # would store a different range every day
+    return earliest, latest
 
 
 def parse_birth_date(text: str | None, today: date | None = None) -> BirthRange | None:
@@ -196,7 +198,7 @@ def resolve_age(
     stored: the saved row (age_text, birth_date_min, birth_date_max,
         age_observed_at, created_at) when the dog is already in the database.
 
-    A date of birth wins. Otherwise a new or changed age is read as of today.
+    A date of birth wins, from date_of_birth or else age_text. Otherwise a new or changed age is read as of today.
     An unchanged age_text keeps the day it was first read: a site that still
     says "3 months" a year later hasn't re-aged the dog. The months are parsed
     afresh either way, so a parser fix still lands. Rows stored before #561
@@ -207,7 +209,10 @@ def resolve_age(
     stored_range = (as_date(stored.get("birth_date_min")), as_date(stored.get("birth_date_max")))
     stored_observed = as_date(stored.get("age_observed_at"))
 
-    born = parse_birth_date(date_of_birth, today)
+    # Some rescues write the date of birth as the age ("02/2024", "Puppy
+    # (estimated DOB 01.03.2026)"). parse_age_text turns those into months as of
+    # today, which must not be anchored to an older day.
+    born = parse_birth_date(date_of_birth, today) or parse_birth_date(age_text, today)
     if born:
         observed = stored_observed if born == stored_range and stored_observed else today
         return Age(born[0], born[1], observed, *ages_at(born[0], born[1], today))

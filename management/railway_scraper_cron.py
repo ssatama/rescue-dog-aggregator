@@ -152,7 +152,8 @@ def refresh_ages() -> dict:
     """Bring every dog's age_min_months/age_max_months up to today from its birth range (#561).
 
     Runs after the batch, so ages move on even for dogs no scrape touches.
-    Like the breed report, a failure is reported, never raised.
+    A failure never fails a batch that scraped fine, but goes to Sentry:
+    otherwise ages would silently freeze again.
     """
     try:
         with get_db_cursor() as cursor:
@@ -160,6 +161,7 @@ def refresh_ages() -> dict:
             updated = cursor.rowcount
             cursor.connection.commit()
     except Exception as exc:
+        sentry_sdk.capture_message(f"Age refresh failed: {exc}", level="warning")
         return {"error": str(exc)}
     return {"rows_updated": updated}
 

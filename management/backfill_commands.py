@@ -35,7 +35,7 @@ from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from management.backfill_diff import COLUMNS, PROFILE_TEXT_KEYS, build_plan, render_markdown  # noqa: E402
+from management.backfill_diff import COLUMNS, DATE_COLUMNS, PROFILE_TEXT_KEYS, build_plan, render_markdown  # noqa: E402
 from management.backfill_steps import Change, Step, get_steps, plan_step, update_statements  # noqa: E402
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -73,7 +73,7 @@ def prod_rows(sql: str) -> list[dict[str, Any]]:
 def stored_rows_sql(org: str, external_ids: list[str]) -> str:
     """The org's available dogs plus every scraped external_id, whatever its status."""
     wanted = f"OR a.external_id IN ({', '.join(_literal(i) for i in external_ids)})" if external_ids else ""
-    columns = ", ".join(f"a.{column}" for column in COLUMNS if column != "status")
+    columns = ", ".join(f"a.{column}" for column in COLUMNS if column != "status" and column not in DATE_COLUMNS)
     # The #561 columns through to_jsonb, which reads them as NULL before the migration
     return f"""
         SELECT a.id, a.external_id, a.status, a.active, a.original_image_url, a.properties, a.created_at, {columns},

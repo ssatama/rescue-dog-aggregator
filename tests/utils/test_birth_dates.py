@@ -44,8 +44,8 @@ class TestParseBirthDate:
             ("DOB 2022", (date(2022, 1, 1), date(2022, 12, 31))),
             ("DOB-2015", (date(2015, 1, 1), date(2015, 12, 31))),
             ("Geburtstag: März 2020", (date(2020, 3, 1), date(2020, 3, 31))),
-            # This month: the range stops at today
-            ("09.2026", (date(2026, 9, 1), TODAY)),
+            # This month: the whole month, so the stored range doesn't change daily
+            ("09.2026", (date(2026, 9, 1), date(2026, 9, 30))),
             # The date written first is the birth date
             ("DOB 2019, arrived at the shelter March 2023", (date(2019, 1, 1), date(2019, 12, 31))),
             # Only real month names: "maybe" is not May
@@ -117,6 +117,17 @@ class TestResolveAge:
     def test_a_date_of_birth_wins_over_the_stated_age(self):
         age = resolve_age(date_of_birth="03.2025", age_text="1 year", min_months=12, max_months=24, today=TODAY)
         assert (age.birth_date_min, age.birth_date_max, age.age_min_months, age.age_max_months) == (date(2025, 3, 1), date(2025, 3, 31), 17, 18)
+
+    def test_a_date_of_birth_written_as_the_age_is_used(self):
+        """The Underdog: "Puppy (estimated DOB 01.03.2026)" is a birth date, not a category."""
+        age = resolve_age(date_of_birth=None, age_text="Puppy (estimated DOB 01.03.2026)", min_months=2, max_months=10, today=TODAY)
+        assert (age.birth_date_min, age.age_min_months, age.age_max_months) == (date(2026, 3, 1), 6, 6)
+
+    def test_a_date_age_text_is_not_anchored_in_the_past(self):
+        """parse_age_text turns "02/2024" into months as of today; re-anchoring them at first sight would count the time twice."""
+        stored = {"age_text": "02/2024", "age_min_months": 19, "age_max_months": 25, "created_at": "2025-09-26"}
+        age = resolve_age(date_of_birth=None, age_text="02/2024", min_months=31, max_months=37, today=TODAY, stored=stored)
+        assert (age.age_min_months, age.age_max_months) == (30, 31)
 
     def test_an_unparseable_date_of_birth_falls_back_to_the_stated_age(self):
         age = resolve_age(date_of_birth="07/20218", age_text="5 years", min_months=60, max_months=72, today=TODAY)

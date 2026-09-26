@@ -254,5 +254,6 @@ class TestRefreshAges:
 
     def test_a_failure_is_reported_not_raised(self):
         """Ages lagging a few days must never fail a batch that scraped fine."""
-        with patch.object(cron, "get_db_cursor", side_effect=RuntimeError("db down")):
+        with patch.object(cron, "get_db_cursor", side_effect=RuntimeError("db down")), patch.object(cron.sentry_sdk, "capture_message") as capture:
             assert cron.refresh_ages() == {"error": "db down"}
+        capture.assert_called_once()
