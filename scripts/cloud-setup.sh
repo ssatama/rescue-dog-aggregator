@@ -31,10 +31,14 @@ if [ "${DB_HOST:-}" != "localhost" ]; then
   echo "cloud-setup: DB_HOST must be localhost (got '${DB_HOST:-}')." >&2
   exit 1
 fi
+if [ -z "${DB_PASSWORD:-}" ]; then
+  echo "cloud-setup: DB_PASSWORD must be set in the cloud environment." >&2
+  exit 1
+fi
 
 # A resumed container can have Postgres stopped.
 service postgresql start >>"$LOG" 2>&1
-runuser -u postgres -- psql -qc "ALTER USER postgres PASSWORD '${DB_PASSWORD:-postgres}';" >>"$LOG" 2>&1
+runuser -u postgres -- psql -qc "ALTER USER postgres PASSWORD '$DB_PASSWORD';" >>"$LOG" 2>&1
 for db in rescue_dogs test_rescue_dogs; do
   runuser -u postgres -- psql -tAc "SELECT 1 FROM pg_database WHERE datname='$db'" | grep -q 1 \
     || runuser -u postgres -- createdb "$db" >>"$LOG" 2>&1
@@ -56,7 +60,7 @@ uv run python management/config_commands.py sync >>"$LOG" 2>&1
 
 uv run python management/seed_dev_data.py --if-empty >>"$LOG" 2>&1
 
-dogs=$(PGPASSWORD="${DB_PASSWORD:-postgres}" psql -h localhost -U postgres -d rescue_dogs -tAc \
+dogs=$(PGPASSWORD="$DB_PASSWORD" psql -h localhost -U postgres -d rescue_dogs -tAc \
   "SELECT count(*) FROM animals WHERE active AND status = 'available'")
 echo "cloud-setup: Postgres running, dependencies installed, $dogs seeded dogs in rescue_dogs (log: $LOG)."
 echo "Start the API with: uv run uvicorn api.main:app --port 8000   and the web app with: cd frontend && pnpm dev"
