@@ -345,6 +345,37 @@ thumbnails are the usual leaks) and use
 first, drop WordPress resizes of the same upload and skip HEIC/TIFF files.
 Fixture-based tests live in `tests/scrapers/test_gallery_extraction.py`.
 
+### Name cleaning (`scrapers/validation/name_cleaner.py`)
+
+`AnimalValidator.validate_animal_data` passes every name through `clean_name`,
+so a scraper that overrides `_validate_animal_data` must still call `super()`.
+It removes what rescues decorate names with:
+
+- Appeal labels (OVERLOOKED, URGENT, HOME NEEDED, FOSTER NEEDED…), with the
+  dashes, stars and brackets around them. OVERLOOKED also sets
+  `properties.overlooked`. A label between two parts leaves its separator
+  ("Max - URGENT - RESERVED" becomes "Max - RESERVED").
+- An appended breed word on a two-word name ("Lola Lab", "Rex GSD"), only when
+  the dog's breed contains it. Longer names, titles ("Mr Beagle"), names that
+  are the breed and pun-prone words (boxer, hound, pointer, setter, springer)
+  stay whole.
+
+RESERVED, ON HOLD and APPLICATIONS CLOSED are **kept**: nothing else records
+them, and removing them would make a dog nobody can adopt look available. The
+original goes to `properties.raw_name` (a scraper that strips its own labels
+sets it first). Slugs are never changed, so URLs stay stable.
+
+### Display location (`scrapers/validation/location_cleaner.py`)
+
+The validator also sets `properties.display_location`, one readable place
+("Snetterton, Norfolk", "Baeza, Spain"), from whatever the rescue stores:
+Dogs Trust and Woof Project `location`, Tierschutzverein `Aufenthaltsort`
+(postcodes, and partner shelters mapped to their towns in `SHELTER_PLACES`),
+Daisy Family and REAN `current_location(_translated)`. A value that can't be
+read as a place is left out. The dog page shows it, falling back to the
+rescue's own town. MISIs, Many Tears, Santer Paws, Animal Rescue Bosnia, Pets
+in Turkey and The Underdog publish no per-dog location.
+
 ### Error Handling & Recovery
 
 ```python
