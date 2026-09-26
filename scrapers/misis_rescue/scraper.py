@@ -58,6 +58,12 @@ class MisisRescueScraper(BaseScraper):
     metrics logging, and image uploading functionality.
     """
 
+    # Browserless ends a session after 300s, and a session it has ended can
+    # leave the scraper waiting forever (the 2026-09-26 cron, #579/#580). A
+    # normal listing takes about 60s, a detail page a few seconds.
+    LISTING_TIMEOUT_SECONDS = 240
+    DETAIL_TIMEOUT_SECONDS = 90
+
     def __init__(self, config_id: str = "misisrescue", organization_id=None):
         """Initialize with configuration."""
         if organization_id is not None:
@@ -134,8 +140,15 @@ class MisisRescueScraper(BaseScraper):
             List of dog dictionaries with url, name, and image_url
         """
         if USE_PLAYWRIGHT:
-            return asyncio.run(self._get_all_dogs_from_listing_playwright())
+            return asyncio.run(self._bounded_listing_playwright())
         return self._get_all_dogs_from_listing_selenium()
+
+    async def _bounded_listing_playwright(self) -> list[dict[str, str]]:
+        """The listing, or an error once it has run LISTING_TIMEOUT_SECONDS. Never a hang."""
+        try:
+            return await asyncio.wait_for(self._get_all_dogs_from_listing_playwright(), self.LISTING_TIMEOUT_SECONDS)
+        except TimeoutError as e:
+            raise RuntimeError(f"MISIs listing did not finish within {self.LISTING_TIMEOUT_SECONDS}s") from e
 
     def _get_all_dogs_from_listing_selenium(self) -> list[dict[str, str]]:
         """Selenium implementation of _get_all_dogs_from_listing."""
@@ -244,32 +257,26 @@ class MisisRescueScraper(BaseScraper):
             self._assign_images_to_dogs(page_dogs, soup)
             all_dogs.extend(page_dogs)
 
-            # Pagination errors are per-page tolerable: if page 4 fails to
-            # render after page 3 succeeded, keep what we have rather than
-            # losing the whole listing. Log loudly so the failure is visible.
+            # A page that fails to render raises: keeping pages 1-3 without
+            # page 4 would mark page 4's dogs stale while they are still listed.
             page_num = 2
             while page_num <= 10:  # Safety limit
-                try:
-                    if not await self._click_pagination_button_playwright(page, page_num):
-                        break
-
-                    await asyncio.sleep(5)
-                    await self._scroll_to_load_all_content_playwright(page)
-
-                    content = await page.content()
-                    soup = BeautifulSoup(content, "html.parser")
-                    page_dogs = self._extract_dogs_before_reserved(soup)
-                    self._assign_images_to_dogs(page_dogs, soup)
-
-                    if not page_dogs:
-                        break
-
-                    all_dogs.extend(page_dogs)
-                    page_num += 1
-
-                except Exception:
-                    self.logger.error(f"Error processing page {page_num}", exc_info=True)
+                if not await self._click_pagination_button_playwright(page, page_num):
                     break
+
+                await asyncio.sleep(5)
+                await self._scroll_to_load_all_content_playwright(page)
+
+                content = await page.content()
+                soup = BeautifulSoup(content, "html.parser")
+                page_dogs = self._extract_dogs_before_reserved(soup)
+                self._assign_images_to_dogs(page_dogs, soup)
+
+                if not page_dogs:
+                    break
+
+                all_dogs.extend(page_dogs)
+                page_num += 1
 
         unique_dogs = []
         seen_urls = set()
@@ -306,32 +313,24 @@ class MisisRescueScraper(BaseScraper):
         self.logger.debug(f"Lazy loading complete. Total dogs visible: {initial_dogs}")
 
     async def _click_pagination_button_playwright(self, page, page_num: int) -> bool:
-        """Click a pagination button to navigate to a specific page (Playwright version)."""
-        try:
-            selectors = [
-                f'button:text-is("{page_num}")',
-                f'a:text-is("{page_num}")',
-                f'span:text-is("{page_num}")',
-            ]
+        """Click the button for page_num. False when there is none (the last page); a browser error raises."""
+        selectors = [
+            f'button:text-is("{page_num}")',
+            f'a:text-is("{page_num}")',
+            f'span:text-is("{page_num}")',
+        ]
 
-            for selector in selectors:
-                try:
-                    element = page.locator(selector).first
-                    if await element.is_visible():
-                        await element.scroll_into_view_if_needed()
-                        await asyncio.sleep(1)
-                        await element.click()
-                        self.logger.debug(f"Clicked pagination button for page {page_num}")
-                        return True
-                except Exception:
-                    continue
+        for selector in selectors:
+            element = page.locator(selector).first
+            if await element.is_visible():
+                await element.scroll_into_view_if_needed()
+                await asyncio.sleep(1)
+                await element.click()
+                self.logger.debug(f"Clicked pagination button for page {page_num}")
+                return True
 
-            self.logger.debug(f"No pagination button found for page {page_num}")
-            return False
-
-        except Exception as e:
-            self.logger.error(f"Error clicking pagination button for page {page_num}: {e}")
-            return False
+        self.logger.debug(f"No pagination button found for page {page_num}")
+        return False
 
     def _get_all_dog_urls(self) -> list[str]:
         """Get all dog URLs from all pages, handling pagination.
@@ -678,8 +677,16 @@ class MisisRescueScraper(BaseScraper):
             Dog data dictionary or None if error
         """
         if USE_PLAYWRIGHT:
-            return asyncio.run(self._scrape_dog_detail_playwright(url))
+            return asyncio.run(self._bounded_detail_playwright(url))
         return self._scrape_dog_detail_selenium(url)
+
+    async def _bounded_detail_playwright(self, url: str) -> dict[str, Any] | None:
+        """One dog's page, or None (skip that dog) once it has run DETAIL_TIMEOUT_SECONDS."""
+        try:
+            return await asyncio.wait_for(self._scrape_dog_detail_playwright(url), self.DETAIL_TIMEOUT_SECONDS)
+        except TimeoutError:
+            self.logger.error(f"Detail page {url} did not finish within {self.DETAIL_TIMEOUT_SECONDS}s; skipping this dog")
+            return None
 
     def _scrape_dog_detail_selenium(self, url: str) -> dict[str, Any] | None:
         """Selenium implementation of _scrape_dog_detail."""

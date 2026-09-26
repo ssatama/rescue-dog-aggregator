@@ -123,22 +123,33 @@ class PlaywrightBrowserService:
         self._endpoint = os.environ.get("BROWSERLESS_WS_ENDPOINT")
         self._token = os.environ.get("BROWSERLESS_TOKEN")
         self._enabled = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
-        # Singleton Playwright instance to prevent pthread_create exhaustion
+        # Shared Playwright instance to prevent pthread_create exhaustion, and
+        # the event loop it belongs to.
         self._playwright: Playwright | None = None
-        self._playwright_lock = asyncio.Lock()
+        self._playwright_loop: asyncio.AbstractEventLoop | None = None
 
-    async def _get_or_start_playwright(self) -> Playwright:
-        """Get shared Playwright instance, starting if needed.
+    async def _get_or_start_playwright(self) -> tuple[Playwright, bool]:
+        """A Playwright instance for the running event loop, and whether the caller owns it.
 
-        This prevents pthread_create exhaustion by reusing a single
-        Playwright/Node.js process across all browser operations.
+        One instance is shared, to prevent pthread_create exhaustion, but only
+        on the loop that started it: its connection to the Node driver lives on
+        that loop. Every asyncio.run() is a new loop, and MISIs fetches detail
+        pages in worker threads, each with its own loop; reusing the listing
+        loop's instance there awaited a closed loop forever (the 2026-09-26
+        hang, #580). Any other loop gets its own instance, which the caller
+        stops when it is done.
         """
-        if self._playwright is None:
-            async with self._playwright_lock:
-                if self._playwright is None:
-                    self._playwright = await async_playwright().start()
-                    logger.info("Started shared Playwright instance")
-        return self._playwright
+        loop = asyncio.get_running_loop()
+        if self._playwright is not None and self._playwright_loop is loop:
+            return self._playwright, False
+
+        playwright = await async_playwright().start()
+        # Another thread may have installed a shared instance while this one started.
+        if self._playwright is None or self._playwright_loop is None or self._playwright_loop.is_closed():
+            self._playwright, self._playwright_loop = playwright, loop
+            logger.info("Started shared Playwright instance")
+            return playwright, False
+        return playwright, True
 
     async def shutdown(self) -> None:
         """Stop shared Playwright instance on service shutdown."""
@@ -196,9 +207,8 @@ class PlaywrightBrowserService:
 
     async def _create_local_browser(self, opts: PlaywrightOptions) -> PlaywrightResult:
         """Create a local Chromium browser instance using shared Playwright."""
+        playwright, owned = await self._get_or_start_playwright()
         try:
-            playwright = await self._get_or_start_playwright()
-
             launch_args = [
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
@@ -225,10 +235,12 @@ class PlaywrightBrowserService:
                 page=page,
                 is_remote=False,
                 _playwright=playwright,
-                _owns_playwright=False,  # Shared instance - don't stop on close
+                _owns_playwright=owned,
             )
         except Exception as e:
             logger.error(f"Failed to create local Playwright browser: {e}")
+            if owned:
+                await playwright.stop()
             raise
 
     async def _create_remote_browser(self, opts: PlaywrightOptions) -> PlaywrightResult:
@@ -245,7 +257,7 @@ class PlaywrightBrowserService:
         base_delay = 2.0
         ws_url = self._build_ws_url()
 
-        playwright = await self._get_or_start_playwright()
+        playwright, owned = await self._get_or_start_playwright()
 
         for attempt in range(max_retries):
             try:
@@ -265,7 +277,7 @@ class PlaywrightBrowserService:
                     page=page,
                     is_remote=True,
                     _playwright=playwright,
-                    _owns_playwright=False,  # Shared instance - don't stop on close
+                    _owns_playwright=owned,
                 )
 
             except Exception as e:
@@ -275,6 +287,8 @@ class PlaywrightBrowserService:
                     await asyncio.sleep(delay)
                 else:
                     logger.error(f"Browserless connection failed after {max_retries} attempts: {e}")
+                    if owned:
+                        await playwright.stop()
                     raise
 
     async def _create_context(self, browser: Browser, opts: PlaywrightOptions) -> BrowserContext:
