@@ -108,8 +108,16 @@ def scrape_without_saving(org: str) -> tuple[list[dict[str, Any]], list[dict[str
     return scraped, rejected
 
 
+def step_sql(step: Step, organizations: set[str] | None) -> str:
+    """The step's query, filtered to the organizations in SQL so the admin API's row cap isn't hit."""
+    if not organizations:
+        return step.fetch_sql
+    wanted = ", ".join(_literal(org) for org in sorted(organizations))
+    return f"SELECT * FROM ({step.fetch_sql}) AS step_rows WHERE organization IN ({wanted})"
+
+
 def plan_steps(steps: list[Step], organizations: set[str] | None, fetch=prod_rows) -> dict[str, list[Change]]:
-    return {step.name: plan_step(step, fetch(step.fetch_sql), organizations) for step in steps}
+    return {step.name: plan_step(step, fetch(step_sql(step, organizations)), organizations) for step in steps}
 
 
 def cmd_plan(args: argparse.Namespace) -> int:
@@ -135,24 +143,36 @@ def cmd_plan(args: argparse.Namespace) -> int:
     return 0
 
 
-def _snapshot(conn, orgs: list[str]) -> dict[str, dict[int, Any]]:
-    """Per org: {animal id: (available, profile text)} for active dogs."""
+def _rows(database_url: str, sql: str, params: tuple = ()) -> list[dict[str, Any]]:
+    """One read on its own short connection, so no transaction stays open across a re-scrape."""
+    import psycopg2
     from psycopg2.extras import RealDictCursor
 
-    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-        cursor.execute(
-            """
-            SELECT o.config_id, a.id, a.status = 'available' AS available, a.properties
-            FROM animals a JOIN organizations o ON o.id = a.organization_id
-            WHERE o.config_id = ANY(%s) AND a.active
-            """,
-            (orgs,),
-        )
-        snapshot: dict[str, dict[int, Any]] = {org: {} for org in orgs}
-        for row in cursor.fetchall():
-            properties = row["properties"] or {}
-            snapshot[row["config_id"]][row["id"]] = (row["available"], tuple(properties.get(key) for key in PROFILE_TEXT_KEYS))
-        return snapshot
+    conn = psycopg2.connect(database_url)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(sql, params or None)
+            return [dict(row) for row in cursor.fetchall()]
+    finally:
+        conn.close()
+
+
+def _snapshot(database_url: str, orgs: list[str]) -> dict[str, dict[int, Any]]:
+    """Per org: {animal id: (listed, profile text)}. Inactive dogs too, so a dog the re-scrape reactivates is compared."""
+    snapshot: dict[str, dict[int, Any]] = {org: {} for org in orgs}
+    rows = _rows(
+        database_url,
+        """
+        SELECT o.config_id, a.id, a.status = 'available' AND a.active AS listed, a.properties
+        FROM animals a JOIN organizations o ON o.id = a.organization_id
+        WHERE o.config_id = ANY(%s)
+        """,
+        (orgs,),
+    )
+    for row in rows:
+        properties = row["properties"] or {}
+        snapshot[row["config_id"]][row["id"]] = (row["listed"], tuple(properties.get(key) for key in PROFILE_TEXT_KEYS))
+    return snapshot
 
 
 def text_changed(before: dict[int, Any], after: dict[int, Any]) -> list[int]:
@@ -179,29 +199,22 @@ def cmd_apply(args: argparse.Namespace) -> int:
 
     orgs = [org for org in (args.orgs or "").split(",") if org]
     steps = get_steps(args.steps.split(",")) if args.steps else []
+    before = _snapshot(database_url, orgs)
+
+    failed = [org for org in orgs if _run(["management/railway_scraper_cron.py", "--org", org, "--force-rescrape"], database_url) != 0]
+
+    step_changes = plan_steps(steps, set(orgs) or None, lambda sql: _rows(database_url, sql))
     conn = psycopg2.connect(database_url)
     try:
-        before = _snapshot(conn, orgs) if orgs else {}
-
-        failed = [org for org in orgs if _run(["management/railway_scraper_cron.py", "--org", org, "--force-rescrape"], database_url) != 0]
-
-        def fetch(sql: str) -> list[dict[str, Any]]:
-            from psycopg2.extras import RealDictCursor
-
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(sql)
-                return [dict(row) for row in cursor.fetchall()]
-
-        step_changes = plan_steps(steps, set(orgs) or None, fetch)
         with conn.cursor() as cursor:
             for changes in step_changes.values():
                 for sql, params in update_statements(changes):
                     cursor.execute(sql, params)
         conn.commit()
-
-        after = _snapshot(conn, orgs) if orgs else {}
     finally:
         conn.close()
+
+    after = _snapshot(database_url, orgs)
 
     reprofile = sorted(i for org in orgs for i in text_changed(before[org], after[org])) if args.reprofile == "changed" else []
     if reprofile and _run(["management/llm_commands.py", "generate-profiles", "--ids", ",".join(map(str, reprofile))], database_url) != 0:
@@ -211,7 +224,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
     print("| rescue | available before → after | profile text changed |")
     print("| --- | --- | ---: |")
     for org in orgs:
-        count = lambda snap: sum(1 for available, _ in snap.values() if available)  # noqa: E731
+        count = lambda snap: sum(1 for listed, _ in snap.values() if listed)  # noqa: E731
         print(f"| {org} | {count(before[org])} → {count(after[org])} | {len(text_changed(before[org], after[org]))} |")
     for name, changes in step_changes.items():
         print(f"\nStep `{name}`: {len(changes)} rows updated")

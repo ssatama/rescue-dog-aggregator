@@ -145,3 +145,34 @@ class TestApply:
         after = {1: (True, ("new", None)), 2: (True, ("same", None)), 3: (True, ("brand new", None))}
 
         assert backfill_commands.text_changed(before, after) == [1]
+
+
+@pytest.mark.unit
+class TestStepSql:
+    def test_organizations_are_filtered_in_sql(self):
+        step = backfill_commands.get_steps(["clear-fabricated-ages"])[0]
+
+        sql = backfill_commands.step_sql(step, {"rean", "o'rg"})
+
+        assert sql.endswith("WHERE organization IN ('o''rg', 'rean')")
+        assert step.fetch_sql in sql
+
+    def test_no_organizations_leaves_the_query_alone(self):
+        step = backfill_commands.get_steps(["clear-fabricated-ages"])[0]
+
+        assert backfill_commands.step_sql(step, None) == step.fetch_sql
+
+
+@pytest.mark.unit
+class TestSnapshot:
+    def test_inactive_dogs_are_included_so_a_reactivated_dog_is_reprofiled(self):
+        rows = [
+            {"config_id": "rean", "id": 1, "listed": False, "properties": {"description": "old"}},
+            {"config_id": "rean", "id": 2, "listed": True, "properties": {"description": "same"}},
+        ]
+        with patch.object(backfill_commands, "_rows", return_value=rows) as query:
+            before = backfill_commands._snapshot("postgresql://example/db", ["rean"])
+
+        assert "a.active" not in query.call_args.args[1].split("WHERE")[1]
+        after = {1: (True, ("new",) + (None,) * 8), 2: before["rean"][2]}
+        assert backfill_commands.text_changed(before["rean"], after) == [1]

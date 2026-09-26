@@ -53,7 +53,7 @@ STEPS: dict[str, Step] = {
                 SELECT a.id, a.age_text, a.age_min_months, a.age_max_months, o.config_id AS organization
                 FROM animals a
                 LEFT JOIN organizations o ON o.id = a.organization_id
-                WHERE a.age_text IS NOT NULL
+                WHERE a.age_text IS NOT NULL AND a.age_min_months IS NULL AND a.age_max_months IS NULL
             """,
             plan=_plan_age_clears,
         ),
