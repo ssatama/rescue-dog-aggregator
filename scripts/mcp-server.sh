@@ -2,8 +2,10 @@
 # Launch one of the project MCP servers declared in .mcp.json. Shared by
 # laptop and cloud sessions, so the config holds no paths or secrets.
 #
-#   postgres    read-only production SQL as claude_ro. The URL comes from
-#               PROD_RO_DATABASE_URL in the environment (cloud) or .env (laptop).
+#   postgres    read-only production SQL as claude_ro. With PROD_RO_DATABASE_URL
+#               (environment or .env, i.e. the laptop) it connects directly. In
+#               cloud sessions, which can't reach Postgres, it goes over HTTPS
+#               through the API's /api/admin/query (scripts/mcp_prod_query.py).
 #   rescuedogs  this repo's MCP server against the public API; built on first use.
 #
 # The Railway MCP server is laptop-only (it needs a railway login), so it is
@@ -17,6 +19,9 @@ case "${1:-}" in
     url=${PROD_RO_DATABASE_URL:-}
     if [ -z "$url" ] && [ -f .env ]; then
       url=$(grep -E '^PROD_RO_DATABASE_URL=' .env | cut -d= -f2- | tr -d "\"'" || true)
+    fi
+    if [ -z "$url" ] && [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
+      exec python3 scripts/mcp_prod_query.py
     fi
     if [ -z "$url" ]; then
       echo "PROD_RO_DATABASE_URL is not set (environment or .env); see scripts/sql/create_claude_ro.sql" >&2

@@ -24,7 +24,7 @@ from api.middleware.sentry_middleware import (  # Only keep timeout middleware
 from api.monitoring import init_sentry
 
 # Import routes
-from api.routes import animals, enhanced_animals, llm, monitoring, organizations, search, swipe
+from api.routes import admin, animals, enhanced_animals, llm, monitoring, organizations, search, swipe
 
 # Import CORS configuration
 from config import (
@@ -257,6 +257,7 @@ app.include_router(search.router, prefix="/api/search")
 app.include_router(swipe.router, prefix="/api/dogs")
 app.include_router(llm.router, prefix="/api/llm")
 app.include_router(monitoring.router, prefix="/api/monitoring")
+app.include_router(admin.router, prefix="/api/admin")
 
 # Include Sentry test endpoints (only in non-production environments)
 if ENVIRONMENT != "production":

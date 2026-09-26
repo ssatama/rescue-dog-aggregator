@@ -217,5 +217,8 @@ Model and cost details are in AGENTS.md. Operational points:
   `docs/features/product-analytics.md`; funnel comparison with
   `scripts/posthog-funnel.sh`.
 - **Postgres MCP is production.** Its findings are production facts; say so
-  when reporting. It connects as the read-only `claude_ro` role through
-  `PROD_RO_DATABASE_URL` (see `scripts/sql/create_claude_ro.sql`).
+  when reporting. It runs as the read-only `claude_ro` role: directly via
+  `PROD_RO_DATABASE_URL` on the laptop, via `POST /api/admin/query` in cloud
+  sessions (see `scripts/sql/create_claude_ro.sql`). A read-only *session* is
+  not a guard (a query can switch it back to read-write); the role's grants
+  are, and the endpoint refuses any role that could write.
