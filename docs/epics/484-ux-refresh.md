@@ -80,3 +80,9 @@ them, which overrides step 8 of the runbook ("the user merges"):
 - Check layouts at 390, 820, 1180 and 1440px in light and dark:
   `node scripts/visual-check.cjs <paths>` screenshots all eight views and
   reports overflow and console errors.
+
+## When the epic closes
+
+Move what lasts into permanent docs (typography, colour and photo rules into
+`docs/technical/design-system.md`; the location and "no longer listed" rules
+into AGENTS.md), then delete this file in the same PR.

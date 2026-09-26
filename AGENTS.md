@@ -225,6 +225,9 @@ by hand.
   - `ADMIN_API_KEY` (`api.rescuedogs.me`, `X-API-Key`): the GET-only
     `/api/monitoring/*` and `/api/llm/*` endpoints, e.g. scraper health
   - GitHub goes through the built-in GitHub tools; `gh` may be missing
+- **MCP**: `.mcp.json` is committed and shared with the laptop (see
+  CLAUDE.md). The `postgres` server works when the environment has
+  `PROD_RO_DATABASE_URL` (read-only role, `scripts/sql/create_claude_ro.sql`).
 - **Never set `DATABASE_URL` or `RAILWAY_DATABASE_URL` in a cloud
   environment.** `config.py` prefers `DATABASE_URL` over `DB_*`, so tests
   and the dev API would run against production, and the backfill and
@@ -234,6 +237,19 @@ by hand.
 - **`next dev` rewrites `tsconfig.json`** (adds `.next/dev/dev/types`)
   when `NODE_ENV` isn't `development`. `pnpm dev` pins it; if you run
   `next dev` directly, don't set `NODE_ENV`.
+
+## Where Knowledge Lives
+
+Work happens both on a laptop and in cloud sessions, and agent memory
+doesn't travel between them. Anything the next session needs goes in the
+repo, in the same PR as the work:
+
+- Production quirks, incidents and runbooks: `docs/technical/operational-knowledge.md`
+- Rules for every change: this file
+- Epic-scoped decisions: `docs/epics/<issue>-<slug>.md`. When the epic
+  closes, move what lasts into permanent docs and delete the epic file.
+
+Agent memory is only for things specific to one machine.
 
 ## Config Management
 
@@ -313,6 +329,7 @@ imports it; do not duplicate content between them.
 - Scrapers: `docs/technical/scraper-architecture.md`
 - LLM pipeline: `docs/features/llm-data-enrichment.md`
 - Product analytics (PostHog): `docs/features/product-analytics.md`
+- Production quirks, incidents, runbooks: `docs/technical/operational-knowledge.md`
 - UX refresh epic #484 decisions and merge rules: `docs/epics/484-ux-refresh.md`
 - Setup: `docs/guides/installation.md`
 - Deployment: `docs/guides/deployment.md`
