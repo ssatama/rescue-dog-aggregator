@@ -14,6 +14,23 @@ uv run python management/config_commands.py profile --org-id 11  # LLM profiling
 uv run python management/llm_commands.py generate-profiles       # Batch enrichment
 ```
 
+## Data Backfills
+
+Scraper fixes don't repair stored rows (most rescues skip dogs they already
+have). Prove a fix with a dry run, then run every backfill once
+(epic #554, #572). Details: `docs/technical/operational-knowledge.md`, "Data".
+
+```bash
+# Dry run: re-scrape one rescue without saving, diff against production (read-only)
+uv run python management/backfill_commands.py plan --org rean --out /tmp/rean.json
+# Dry run of registered SQL steps (management/backfill_steps.py)
+uv run python management/backfill_commands.py plan --steps clear-fabricated-ages
+# Production: forced re-scrape, steps, re-profile changed text. Maintainer's go-ahead only,
+# outside the cron window (Mon/Thu/Sat 15:00 UTC)
+export $(grep -E '^RAILWAY_DATABASE_URL=' .env | xargs)
+uv run python management/backfill_commands.py apply --orgs rean --steps clear-fabricated-ages --confirm
+```
+
 ## Emergency Commands
 
 ```bash

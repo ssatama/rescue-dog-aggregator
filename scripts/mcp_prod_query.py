@@ -30,16 +30,21 @@ TOOL = {
 }
 
 
-def run_query(sql: str) -> tuple[str, bool]:
+def fetch_rows(sql: str, limit: int = 1000) -> tuple[list[dict], bool]:
+    """Run one read-only query through the API. Returns (rows, truncated); raises on failure."""
     # Cloudflare in front of the API blocks urllib's default User-Agent (403, error 1010).
     headers = {"Content-Type": "application/json", "User-Agent": "rescuedogs-mcp-prod-query/1.0"}
     if os.environ.get("ADMIN_API_KEY"):
         headers["X-API-Key"] = os.environ["ADMIN_API_KEY"]
-    request = urllib.request.Request(ENDPOINT, data=json.dumps({"sql": sql, "limit": 1000}).encode(), headers=headers)
+    request = urllib.request.Request(ENDPOINT, data=json.dumps({"sql": sql, "limit": limit}).encode(), headers=headers)
+    with urllib.request.urlopen(request, timeout=30) as response:
+        body = json.load(response)
+    return [dict(zip(body["columns"], row, strict=True)) for row in body["rows"]], body["truncated"]
+
+
+def run_query(sql: str) -> tuple[str, bool]:
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            body = json.load(response)
-        rows = [dict(zip(body["columns"], row, strict=True)) for row in body["rows"]]
+        rows, truncated = fetch_rows(sql)
     except urllib.error.HTTPError as e:
         return f"HTTP {e.code}: {e.read().decode(errors='replace')}", True
     except urllib.error.URLError as e:
@@ -48,8 +53,8 @@ def run_query(sql: str) -> tuple[str, bool]:
         return f"Request failed: {type(e).__name__}: {e}", True
 
     text = json.dumps(rows, indent=2, default=str)
-    if body["truncated"]:
-        text += f"\n(truncated to {body['row_count']} rows)"
+    if truncated:
+        text += f"\n(truncated to {len(rows)} rows)"
     return text, False
 
 

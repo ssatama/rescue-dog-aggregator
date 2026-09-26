@@ -61,7 +61,7 @@ def coverage(records: list[dict], changes: list[tuple[int, str, dict]]) -> dict[
 
 
 def _connect():
-    """Production through RAILWAY_DATABASE_URL, like age_commands; local otherwise."""
+    """Production through RAILWAY_DATABASE_URL, like the other backfill commands; local otherwise."""
     database_url = os.getenv("RAILWAY_DATABASE_URL")
     if database_url:
         return psycopg2.connect(database_url)
