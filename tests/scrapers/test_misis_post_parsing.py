@@ -225,3 +225,9 @@ def test_a_dob_fact_running_into_the_next_is_cut():
 
     assert dog["age_text"] == "DOB: April/May 2024"
     assert dog["date_of_birth"].startswith("DOB: April/May 2024")
+
+
+@pytest.mark.unit
+def test_the_age_is_dated_by_the_posts_last_edit():
+    """Tea's "2 years old" was written on 2023-04-16, not on the day we read it."""
+    assert _parse("tea_things_you_have_to_know")["age_stated_at"] == "2023-04-16"

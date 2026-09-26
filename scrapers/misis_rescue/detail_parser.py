@@ -174,6 +174,12 @@ class MisisRescueDetailParser:
                     result["properties"]["standardized_size"] = size
                 break
 
+        # The stated age was true when the rescue last edited the post, which
+        # can be years before we read it (#561)
+        edited = soup.find("meta", property="article:modified_time") or soup.find("meta", property="article:published_time")
+        if edited and edited.get("content"):
+            result["age_stated_at"] = edited["content"][:10]
+
         # Unified standardization reads "age", not "age_text"
         if result["age_text"]:
             result["age"] = result["age_text"]
