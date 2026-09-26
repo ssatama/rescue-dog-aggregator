@@ -207,7 +207,7 @@ class TestBaseScraperCompleteIntegration:
 
         # Test complete_scrape_log uses service
         result = scraper.complete_scrape_log("completed", 10, 5, 3, None)
-        mock_db_service.complete_scrape_log.assert_called_with(456, "completed", 10, 5, 3, None)
+        mock_db_service.complete_scrape_log.assert_called_with(456, "completed", 10, 5, 3, None, None, None, None)
         assert result is True
 
     @patch.dict(

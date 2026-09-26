@@ -76,7 +76,7 @@ class TestProcessingCounts:
 
         with (
             patch.object(scraper, "save_animal", return_value=(1, "added")),
-            patch.object(scraper, "complete_scrape_log_with_metrics") as complete,
+            patch.object(scraper, "complete_scrape_log") as complete,
             patch("scrapers.base_scraper.alert_dogs_not_saved"),
         ):
             stats = scraper._process_animals_data(dogs)
