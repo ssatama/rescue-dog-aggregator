@@ -11,7 +11,10 @@ from typing import Any
 
 EXAMPLES_PER_FIELD = 5
 
-# Columns compared directly. Images are left out: a dry run does not upload,
+# Columns compared directly: the ones update_animal checks for a change, so a
+# listed difference is one a re-scrape writes. It never checks size or
+# breed_group, which change only alongside another column (noted on #568).
+# Images are left out: a dry run does not upload,
 # so primary_image_url would always differ. The scraped image source is
 # compared with the stored original_image_url instead ("image_source").
 COLUMNS = (
@@ -19,13 +22,11 @@ COLUMNS = (
     "breed",
     "breed_raw",
     "standardized_breed",
-    "breed_group",
     "age_text",
     "age_min_months",
     "age_max_months",
     "sex",
     "status",
-    "size",
     "standardized_size",
     "breed_type",
     "primary_breed",

@@ -176,3 +176,15 @@ class TestSnapshot:
         assert "a.active" not in query.call_args.args[1].split("WHERE")[1]
         after = {1: (True, ("new",) + (None,) * 8), 2: before["rean"][2]}
         assert backfill_commands.text_changed(before["rean"], after) == [1]
+
+    def test_steps_run_for_every_rescue_not_just_the_rescraped_ones(self, monkeypatch):
+        monkeypatch.setenv("RAILWAY_DATABASE_URL", "postgresql://example/db")
+        with (
+            patch.object(backfill_commands, "_snapshot", return_value={"rean": {}}),
+            patch.object(backfill_commands, "_run", return_value=0),
+            patch.object(backfill_commands, "plan_steps", return_value={}) as plan,
+            patch("psycopg2.connect"),
+        ):
+            assert backfill_commands.main(["apply", "--orgs", "rean", "--steps", "clear-fabricated-ages", "--confirm"]) == 0
+
+        assert plan.call_args.args[1] is None

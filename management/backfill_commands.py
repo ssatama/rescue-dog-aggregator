@@ -203,7 +203,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
 
     failed = [org for org in orgs if _run(["management/railway_scraper_cron.py", "--org", org, "--force-rescrape"], database_url) != 0]
 
-    step_changes = plan_steps(steps, set(orgs) or None, lambda sql: _rows(database_url, sql))
+    # Steps run for every rescue, as `plan --steps` shows them; --orgs only picks what to re-scrape.
+    step_changes = plan_steps(steps, None, lambda sql: _rows(database_url, sql))
     conn = psycopg2.connect(database_url)
     try:
         with conn.cursor() as cursor:
@@ -246,7 +247,7 @@ def main(argv: list[str] | None = None) -> int:
 
     apply = sub.add_parser("apply", help="Re-scrape, run steps and re-profile on production")
     apply.add_argument("--orgs", help="Comma-separated config_ids to force re-scrape")
-    apply.add_argument("--steps", help="Comma-separated registered steps to run after the re-scrape")
+    apply.add_argument("--steps", help="Comma-separated registered steps to run after the re-scrape, for every rescue")
     apply.add_argument("--reprofile", choices=["changed", "none"], default="changed", help="Re-profile dogs whose profile text changed")
     apply.add_argument("--confirm", action="store_true", help="Required: this writes to production")
 

@@ -149,7 +149,7 @@ needs an explicit backfill. Query the full population, not just
   is the first; it plans 0 rows since it ran.
 - `apply --orgs a,b --steps x --confirm` writes to `RAILWAY_DATABASE_URL`: it
   runs `railway_scraper_cron.py --org X --force-rescrape` per rescue, then the
-  steps, then `generate-profiles --ids` for dogs whose profile text changed,
+  steps for every rescue, then `generate-profiles --ids` for dogs whose profile text changed,
   and prints a before/after table. Record that table here in the PR that ran it.
 - Epic #554 runs every backfill once, in #572.
 
