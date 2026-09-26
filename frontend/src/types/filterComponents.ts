@@ -76,6 +76,8 @@ export interface DesktopFiltersProps extends SharedFilterProps {
   setAvailableRegionFilter: (value: string) => void;
   availableRegions: string[];
 
+  /** Hidden on a page whose age is fixed (/dogs/puppies) */
+  showAge?: boolean;
   showBreed?: boolean;
   /** Hidden on a rescue page, whose rescue is fixed (#501) */
   showOrganization?: boolean;

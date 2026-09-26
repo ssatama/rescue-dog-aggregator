@@ -2,8 +2,7 @@ import { render, screen } from "@testing-library/react";
 import AgeHubClient from "../age/AgeHubClient";
 import CountriesHubClient from "../country/CountriesHubClient";
 import CountryDogsClient from "../country/[code]/CountryDogsClient";
-import PuppiesClient from "../puppies/PuppiesClient";
-import SeniorDogsClient from "../senior/SeniorDogsClient";
+import AgeLandingClient from "../age/AgeLandingClient";
 import { AGE_CATEGORIES } from "@/utils/ageData";
 import { COUNTRIES } from "@/utils/countryData";
 
@@ -13,17 +12,7 @@ jest.mock("../DogsPageClientSimplified", () => {
   };
 });
 
-jest.mock("@/components/age/AgeQuickNav", () => {
-  return function MockAgeQuickNav() {
-    return <nav />;
-  };
-});
-
-jest.mock("@/components/countries/CountryQuickNav", () => {
-  return function MockCountryQuickNav() {
-    return <nav />;
-  };
-});
+jest.mock("@/hooks/dogs/useShowAdoptable", () => () => jest.fn());
 
 // Same failure as the homepage (Sentry JAVASCRIPT-NEXTJS-70, #425): the server
 // renders "1,531" and a fi-FI browser renders "1 531", so hydration fails.
@@ -60,7 +49,7 @@ describe("dog hub pages render counts the same in every browser locale", () => {
       />,
     );
 
-    expect(screen.getAllByText(/1,531/).length).toBeGreaterThanOrEqual(4);
+    expect(screen.getAllByText(/1,531/)).toHaveLength(2);
     expect(screen.queryByText(new RegExp(FINNISH_GROUPED_1531))).not.toBeInTheDocument();
   });
 
@@ -68,27 +57,24 @@ describe("dog hub pages render counts the same in every browser locale", () => {
     render(
       <CountriesHubClient
         initialStats={{ total: 1531, countries: [{ code: "UK", count: 1531, organizations: 3 }] }}
+        adoptableOptions={[{ value: "UK", label: "UK", count: 1531 }]}
       />,
     );
 
-    expect(screen.getAllByText(/1,531/).length).toBeGreaterThanOrEqual(3);
+    expect(screen.getAllByText(/1,531/)).toHaveLength(2);
     expect(screen.queryByText(new RegExp(FINNISH_GROUPED_1531))).not.toBeInTheDocument();
   });
 
-  test("CountryDogsClient total", () => {
-    render(<CountryDogsClient {...pageProps} country={COUNTRIES.UK} allCountries={COUNTRIES} />);
+  test("CountryDogsClient totals", () => {
+    render(
+      <CountryDogsClient {...pageProps} country={COUNTRIES.UK} allCountries={COUNTRIES} adoptableCount={1531} />,
+    );
 
-    expect(screen.getByText("1,531")).toBeInTheDocument();
+    expect(screen.getAllByText("1,531")).toHaveLength(2);
   });
 
-  test("PuppiesClient total", () => {
-    render(<PuppiesClient {...pageProps} ageCategory={AGE_CATEGORIES.puppies} />);
-
-    expect(screen.getByText("1,531")).toBeInTheDocument();
-  });
-
-  test("SeniorDogsClient total", () => {
-    render(<SeniorDogsClient {...pageProps} ageCategory={AGE_CATEGORIES.senior} />);
+  test.each(["puppies", "senior"])("AgeLandingClient total on %s", (slug) => {
+    render(<AgeLandingClient {...pageProps} ageCategory={AGE_CATEGORIES[slug]} />);
 
     expect(screen.getByText("1,531")).toBeInTheDocument();
   });

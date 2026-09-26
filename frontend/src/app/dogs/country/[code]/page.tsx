@@ -12,7 +12,9 @@ import {
   getAnimals,
   getAllMetadata,
   getCountryStats,
+  getListCounts,
 } from "@/services/serverAnimalsService";
+import { catalogCountryValue } from "@/utils/adoptability";
 import {
   getCountryByCode,
   getAllCountryCodes,
@@ -74,7 +76,7 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
     notFound();
   }
 
-  const [initialDogs, metadata, countryStats] = await Promise.all([
+  const [initialDogs, metadata, countryStats, allCounts] = await Promise.all([
     getAnimals({
       location_country: country.code,
       sort: FILTER_DEFAULTS.SORT,
@@ -83,6 +85,8 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
     }),
     getAllMetadata(),
     getCountryStats(),
+    // Every dog's counts, for how many someone living in the country can adopt
+    getListCounts({}),
   ]);
 
   const countryCount =
@@ -94,6 +98,13 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
   if (countryStats?.countries?.length && countryCount === 0 && initialDogs.length === 0) {
     notFound();
   }
+
+  const adoptableOptions = allCounts?.available_country_options ?? [];
+  const adoptableValue = catalogCountryValue(
+    adoptableOptions.map((option) => String(option.value)),
+    country.code,
+  );
+  const adoptableCount = adoptableOptions.find((option) => String(option.value) === adoptableValue)?.count ?? 0;
 
   // The page's own country always stays in its chip bar, even while stats lag its dogs
   const countriesWithDogs = getCountriesWithDogs(countryStats);
@@ -115,6 +126,7 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
           metadata={metadata}
           allCountries={chipCountries}
           totalCount={countryCount}
+          adoptableCount={adoptableCount}
         />
       </Suspense>
     </Layout>

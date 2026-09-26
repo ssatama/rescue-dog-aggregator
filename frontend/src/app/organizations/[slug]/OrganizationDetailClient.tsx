@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo } from "react";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import RescueHeader from "../../../components/organizations/RescueHeader";
 import DogsPageClientSimplified from "../../dogs/DogsPageClientSimplified";
+import useShowAdoptable from "../../../hooks/dogs/useShowAdoptable";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
 import { trackOrganizationViewed } from "@/lib/analytics";
 import type { OrganizationDetailClientProps } from "@/types/pageComponents";
@@ -21,10 +21,6 @@ export default function OrganizationDetailClient({
   metadata,
   counts,
 }: OrganizationDetailClientProps) {
-  const router = useRouter();
-  const pathname = usePathname() ?? "";
-  const searchParams = useSearchParams();
-
   useEffect(() => {
     if (!organization.slug) return;
     trackOrganizationViewed(organization.slug, organization.total_dogs ?? 0);
@@ -32,19 +28,7 @@ export default function OrganizationDetailClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per organization
   }, [organization.slug]);
 
-  // The list's own filter, set through the URL the catalog reads
-  const showAdoptable = useCallback(
-    (countryValue: string) => {
-      const params = new URLSearchParams(searchParams?.toString() ?? "");
-      params.set("available_country", countryValue);
-      params.delete("available_region");
-      params.delete("page");
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      document.getElementById("dogs-grid")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
-    },
-    [router, pathname, searchParams],
-  );
+  const showAdoptable = useShowAdoptable();
 
   const initialParams = useMemo(() => ({ organization_id: String(organization.id) }), [organization.id]);
 

@@ -1,13 +1,10 @@
 export interface AgeCategoryConfig {
   slug: string;
   name: string;
+  /** The page's heading */
+  title: string;
   shortName: string;
   apiValue: string;
-  icon: string;
-  gradient: string;
-  darkGradient: string;
-  accentColor: string;
-  emoji: string;
   tagline: string;
   description: string;
   ageRange: string;
@@ -19,13 +16,9 @@ export const AGE_CATEGORIES: Record<string, AgeCategoryConfig> = {
   puppies: {
     slug: "puppies",
     name: "Puppies",
+    title: "Rescue puppies",
     shortName: "Puppies",
     apiValue: "Puppy",
-    icon: "sparkles",
-    gradient: "from-pink-400 via-rose-500 to-orange-400",
-    darkGradient: "dark:from-pink-600 dark:via-rose-700 dark:to-orange-600",
-    accentColor: "#f43f5e",
-    emoji: "\u{1F436}",
     tagline: "Little bundles of joy, 0-12 months of pure love",
     description:
       "Young rescue puppies full of energy and playfulness, ready to grow with you",
@@ -37,13 +30,9 @@ export const AGE_CATEGORIES: Record<string, AgeCategoryConfig> = {
   senior: {
     slug: "senior",
     name: "Senior Dogs",
+    title: "Senior rescue dogs",
     shortName: "Seniors",
     apiValue: "Senior",
-    icon: "heart",
-    gradient: "from-amber-500 via-orange-600 to-rose-600",
-    darkGradient: "dark:from-amber-700 dark:via-orange-800 dark:to-rose-800",
-    accentColor: "#f59e0b",
-    emoji: "\u{1F9B4}",
     tagline: "Wise companions with so much love to give",
     description:
       "Gentle, mature dogs seeking their forever home for their golden years",

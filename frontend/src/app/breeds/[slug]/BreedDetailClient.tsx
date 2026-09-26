@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import BreedPracticalStats from "@/components/breeds/BreedPracticalStats";
 import DogsPageClientSimplified from "@/app/dogs/DogsPageClientSimplified";
+import useShowAdoptable from "@/hooks/dogs/useShowAdoptable";
 import { buildPracticalStats } from "@/utils/breedPracticalStats";
 import type { BreedDetailClientProps, SampleDog } from "@/types/breeds";
 
@@ -37,19 +38,7 @@ export default function BreedDetailClient({
     { name: breedData.primary_breed, url: isMixed ? "/breeds/mixed" : `/breeds/${breedData.breed_slug}` },
   ];
 
-  // The list's own filter, set through the URL the catalog reads
-  const showAdoptable = useCallback(
-    (countryValue: string) => {
-      const params = new URLSearchParams(searchParams?.toString() ?? "");
-      params.set("available_country", countryValue);
-      params.delete("available_region");
-      params.delete("page");
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      document.getElementById("dogs-grid")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
-    },
-    [router, pathname, searchParams],
-  );
+  const showAdoptable = useShowAdoptable();
 
   // Links from before #500 filtered by ?available_to_country=; the catalog
   // reads available_country, so carry the old name over once

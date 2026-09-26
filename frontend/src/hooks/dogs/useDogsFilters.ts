@@ -115,9 +115,11 @@ export default function useDogsFilters({
         ),
       };
 
-      // A breed or rescue page's own breed or rescue comes from the page, so
+      // A page's own breed, rescue, age or country comes from the page, so
       // the URL leaves it out
       const pageOwn: Record<string, string | undefined> = {
+        ageFilter: initialParams?.age_category,
+        locationCountryFilter: initialParams?.location_country,
         breedFilter: initialParams?.primary_breed,
         breedGroupFilter: initialParams?.breed_group,
         organizationFilter: initialParams?.organization_id,
@@ -164,11 +166,13 @@ export default function useDogsFilters({
     DEBOUNCE_URL_UPDATE_MS,
   );
 
-  // A breed or rescue page's own breed or rescue is not a filter the visitor set
+  // A page's own breed, rescue, age or country is not a filter the visitor set
   const activeFilterCount = Object.entries(filters).filter(
     ([key, value]) =>
       key !== "sortFilter" &&
       !isDefaultFilterValue(value) &&
+      !(key === "ageFilter" && value === initialParams?.age_category) &&
+      !(key === "locationCountryFilter" && value === initialParams?.location_country) &&
       !(key === "breedFilter" && value === initialParams?.primary_breed) &&
       !(key === "breedGroupFilter" && value === initialParams?.breed_group) &&
       !(key === "organizationFilter" && value === initialParams?.organization_id),

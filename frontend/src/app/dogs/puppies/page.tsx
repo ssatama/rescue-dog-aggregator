@@ -3,11 +3,11 @@ import { formatCount } from "@/utils/formatCount";
 import { clampDescription } from "@/utils/seoMeta";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import PuppiesClient from "./PuppiesClient";
+import AgeLandingClient from "../age/AgeLandingClient";
 import Layout from "@/components/layout/Layout";
 import ServerDogListing from "@/components/dogs/ServerDogListing";
 import AgeStructuredData from "@/components/age/AgeStructuredData";
-import { getAnimals, getAllMetadata, getAgeStats } from "@/services/serverAnimalsService";
+import { getAnimals, getAllMetadata, getAgeStats, getListCounts } from "@/services/serverAnimalsService";
 import { AGE_CATEGORIES } from "@/utils/ageData";
 
 export const revalidate = 86400;
@@ -42,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 
 export default async function PuppiesPage(): Promise<React.JSX.Element> {
-  const [initialDogs, metadata, ageStats] = await Promise.all([
+  const [initialDogs, metadata, ageStats, counts] = await Promise.all([
     getAnimals({
       age_category: puppyCategory.apiValue,
       age_known: true,
@@ -52,6 +52,7 @@ export default async function PuppiesPage(): Promise<React.JSX.Element> {
     }),
     getAllMetadata(),
     getAgeStats(),
+    getListCounts({ age_category: puppyCategory.apiValue }),
   ]);
 
   const puppyCategoryStat = ageStats?.ageCategories?.find((c: { slug: string }) => c.slug === "puppies");
@@ -60,12 +61,13 @@ export default async function PuppiesPage(): Promise<React.JSX.Element> {
   return (
     <Layout>
       <AgeStructuredData ageCategory={puppyCategory} dogCount={totalCount} />
-      <Suspense fallback={<ServerDogListing title="Rescue Puppies" intro={puppyCategory.tagline} dogs={initialDogs} />}>
-        <PuppiesClient
+      <Suspense fallback={<ServerDogListing title={puppyCategory.title} intro={puppyCategory.tagline} dogs={initialDogs} />}>
+        <AgeLandingClient
           ageCategory={puppyCategory}
           initialDogs={initialDogs}
           metadata={metadata}
           totalCount={totalCount}
+          adoptableOptions={counts?.available_country_options}
         />
       </Suspense>
     </Layout>

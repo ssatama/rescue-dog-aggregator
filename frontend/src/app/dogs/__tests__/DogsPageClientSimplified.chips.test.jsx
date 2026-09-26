@@ -174,3 +174,47 @@ describe("the catalog on a rescue page (#501)", () => {
     expect(api.getAnimals).toHaveBeenLastCalledWith(expect.objectContaining({ organization_id: "7" }), expect.anything());
   });
 });
+
+describe("the catalog on a landing page (#502)", () => {
+  let router;
+
+  function renderLanding(pathname, query, initialParams) {
+    usePathname.mockReturnValue(pathname);
+    useSearchParams.mockReturnValue(new URLSearchParams(query));
+    return render(
+      <DogsPageClientSimplified initialDogs={[]} metadata={{}} initialParams={initialParams} hideHero hideBreadcrumbs />,
+    );
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    router = { push: jest.fn(), replace: jest.fn() };
+    useRouter.mockReturnValue(router);
+    api.getAnimals.mockResolvedValue([{ id: 1, name: "Rex", slug: "rex-1" }]);
+    api.getFilterCounts.mockResolvedValue({ total: 1 });
+    api.getAvailableRegions.mockResolvedValue([]);
+  });
+
+  it.each([
+    ["/dogs/puppies", { age_category: "Puppy" }],
+    ["/dogs/country/uk", { location_country: "UK" }],
+  ])("%s does not count its own filter as one the visitor set", async (pathname, initialParams) => {
+    renderLanding(pathname, "", initialParams);
+
+    await screen.findByTestId("dog-card");
+    expect(screen.getByRole("button", { name: "Open filters" })).toHaveTextContent("");
+  });
+
+  it("counts only the visitor's filters and keeps the page's own out of the URL", async () => {
+    renderLanding("/dogs/puppies", "sex=Male&size=Small", { age_category: "Puppy" });
+
+    expect(await screen.findByRole("button", { name: "Open filters" })).toHaveTextContent("2");
+    // No age to pick on a page that is about one age
+    expect(screen.queryByTestId("age-button-grid")).not.toBeInTheDocument();
+    const maleChip = screen.getAllByRole("button", { name: /Male/ }).find((button) => !button.dataset.testid);
+    fireEvent.click(maleChip);
+
+    await waitFor(() => expect(router.push).toHaveBeenCalled(), { timeout: 1500 });
+    expect(router.push.mock.calls.at(-1)[0]).toBe("/dogs/puppies?size=Small");
+  });
+});

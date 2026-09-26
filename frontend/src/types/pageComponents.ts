@@ -1,7 +1,7 @@
 import type { Dog } from "./dog";
 import type { DogsPageMetadata } from "./dogsPage";
 import type { OrganizationCardData, RescueHeaderOrganization } from "./organizationComponents";
-import type { FilterCountsResponse } from "@/schemas/common";
+import type { FilterCount, FilterCountsResponse } from "@/schemas/common";
 import type { CountryStatsResponse } from "@/schemas/animals";
 
 export interface DogDetailClientProps {
@@ -30,12 +30,10 @@ export interface OrganizationsClientProps {
 export interface AgeCategory {
   slug: string;
   name: string;
-  emoji: string;
+  title: string;
   ageRange: string;
   tagline: string;
   description: string;
-  gradient: string;
-  darkGradient: string;
   apiValue: string;
   shortName: string;
   count?: number;
@@ -58,10 +56,9 @@ export interface CountryData {
   code: string;
   name: string;
   shortName: string;
+  placeName?: string;
   flag: string;
-  tagline: string;
   description: string;
-  gradient: string;
   count?: number;
   organizations?: number;
 }
@@ -70,33 +67,28 @@ export type CountriesHubStats = CountryStatsResponse;
 
 export interface CountriesHubClientProps {
   initialStats: CountriesHubStats;
+  /** Every dog's per-country counts of where it can be adopted */
+  adoptableOptions?: FilterCount[];
 }
 
-export interface AgeCategoryClientProps {
+export interface AgeLandingClientProps {
   ageCategory: AgeCategory;
   initialDogs: Dog[];
   metadata: DogsPageMetadata;
   totalCount: number;
+  /** Per-country counts of the page's dogs, for "N adoptable to you" */
+  adoptableOptions?: FilterCount[];
 }
-
-export type PuppiesClientProps = AgeCategoryClientProps;
-export type SeniorDogsClientProps = AgeCategoryClientProps;
 
 export interface CountryDogsClientProps {
   country: CountryData;
   initialDogs: Dog[];
   metadata: DogsPageMetadata;
   allCountries: Record<string, CountryData>;
+  /** Dogs that live in the country */
   totalCount: number;
-}
-
-export interface AgeQuickNavProps {
-  currentSlug?: string;
-}
-
-export interface CountryQuickNavProps {
-  currentCountry?: string;
-  allCountries: Record<string, CountryData>;
+  /** Dogs anyone living in the country can adopt, wherever they live now */
+  adoptableCount: number;
 }
 
 export type AgeStructuredDataProps =

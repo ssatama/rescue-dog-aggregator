@@ -19,7 +19,7 @@ describe("ageData", () => {
       expect(puppies.name).toBe("Puppies");
       expect(puppies.apiValue).toBe("Puppy");
       expect(puppies.ageRange).toBe("Under 1 year");
-      expect(puppies.gradient).toContain("pink");
+      expect(puppies.title).toBe("Rescue puppies");
     });
 
     it("senior category has correct properties", () => {
@@ -28,7 +28,7 @@ describe("ageData", () => {
       expect(senior.name).toBe("Senior Dogs");
       expect(senior.apiValue).toBe("Senior");
       expect(senior.ageRange).toBe("8+ years");
-      expect(senior.gradient).toContain("amber");
+      expect(senior.title).toBe("Senior rescue dogs");
     });
 
     it("each category has required fields", () => {
@@ -37,7 +37,7 @@ describe("ageData", () => {
         expect(category).toHaveProperty("name");
         expect(category).toHaveProperty("shortName");
         expect(category).toHaveProperty("apiValue");
-        expect(category).toHaveProperty("gradient");
+        expect(category).toHaveProperty("title");
         expect(category).toHaveProperty("tagline");
         expect(category).toHaveProperty("description");
         expect(category).toHaveProperty("ageRange");

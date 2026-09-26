@@ -1,110 +1,51 @@
 import { render, screen } from "@testing-library/react";
 import CountriesHubClient from "../CountriesHubClient";
 
-// Mock next/link
-jest.mock("next/link", () => {
-  return function MockLink({ children, href }) {
-    return <a href={href}>{children}</a>;
-  };
-});
-
-// Mock Breadcrumbs component
 jest.mock("@/components/ui/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
 });
 
-// Mock Card and Button
-jest.mock("@/components/ui/card", () => ({
-  Card: ({ children, className }) => (
-    <div data-testid="card" className={className}>
-      {children}
-    </div>
-  ),
-}));
-
-jest.mock("@/components/ui/button", () => ({
-  Button: ({ children }) => <button>{children}</button>,
-}));
-
-const mockInitialStats = {
-  total: 4500,
+const initialStats = {
+  total: 4000,
   countries: [
-    { code: "UK", count: 3000, organizations: 5 },
     { code: "DE", count: 800, organizations: 3 },
-    { code: "RS", count: 200, organizations: 2 },
+    { code: "UK", count: 3000, organizations: 5 },
+    { code: "IT", count: 0, organizations: 0 },
   ],
 };
+const adoptableOptions = [
+  { value: "UK", label: "UK", count: 3200 },
+  { value: "DE", label: "DE", count: 900 },
+];
 
 describe("CountriesHubClient", () => {
-  it("renders hero section with title", () => {
-    render(<CountriesHubClient initialStats={mockInitialStats} />);
+  it("lists countries with dogs, most dogs first, linking to lowercase URLs", () => {
+    render(<CountriesHubClient initialStats={initialStats} adoptableOptions={adoptableOptions} />);
 
-    expect(screen.getByText(/Rescue Dogs by Country/i)).toBeInTheDocument();
+    const links = screen.getAllByRole("link").filter((link) => link.getAttribute("href").startsWith("/dogs/country/"));
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/dogs/country/uk", "/dogs/country/de"]);
   });
 
-  it("displays total dog count in hero", () => {
-    render(<CountriesHubClient initialStats={mockInitialStats} />);
+  it("gives both numbers for each country", () => {
+    render(<CountriesHubClient initialStats={initialStats} adoptableOptions={adoptableOptions} />);
 
-    expect(screen.getByText(/4,500 dogs waiting/i)).toBeInTheDocument();
+    expect(screen.getByText("3,000 dogs in the UK")).toBeInTheDocument();
+    expect(screen.getByText("3,200 adoptable by people living there")).toBeInTheDocument();
+    expect(screen.getByText("800 dogs in Germany")).toBeInTheDocument();
   });
 
-  it("renders country cards for countries with dogs", () => {
-    render(<CountriesHubClient initialStats={mockInitialStats} />);
+  it("leaves the adoptable line out without counts", () => {
+    render(<CountriesHubClient initialStats={initialStats} />);
 
-    // Check for short names from COUNTRIES config
-    expect(screen.getByText("UK")).toBeInTheDocument();
-    expect(screen.getByText("Germany")).toBeInTheDocument();
-    expect(screen.getByText("Serbia")).toBeInTheDocument();
+    expect(screen.queryByText(/adoptable by people living there/)).not.toBeInTheDocument();
   });
 
-  it("renders country card links with lowercase href", () => {
-    render(<CountriesHubClient initialStats={mockInitialStats} />);
+  it("still offers every dog with no countries", () => {
+    render(<CountriesHubClient initialStats={{ total: 0, countries: [] }} />);
 
-    const ukLinks = screen.getAllByRole("link", { name: /UK/i });
-    // First link is the hero preview card
-    expect(ukLinks[0]).toHaveAttribute("href", "/dogs/country/uk");
-  });
-
-  it("displays dog counts per country", () => {
-    render(<CountriesHubClient initialStats={mockInitialStats} />);
-
-    // Counts may appear multiple times (hero preview + cards)
-    expect(screen.getAllByText("3,000").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("800").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("200").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("renders breadcrumbs", () => {
-    render(<CountriesHubClient initialStats={mockInitialStats} />);
-
-    expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
-  });
-
-  it("does not render Layout wrapper (Layout is at server page level)", () => {
-    render(<CountriesHubClient initialStats={mockInitialStats} />);
-
-    expect(screen.queryByTestId("layout")).not.toBeInTheDocument();
-  });
-
-  it("handles empty countries array gracefully", () => {
-    const emptyStats = { total: 0, countries: [] };
-    render(<CountriesHubClient initialStats={emptyStats} />);
-
-    expect(screen.getByText(/Rescue Dogs by Country/i)).toBeInTheDocument();
-    expect(screen.getByText(/0 dogs waiting/i)).toBeInTheDocument();
-  });
-
-  it("renders Browse All Dogs CTA", () => {
-    render(<CountriesHubClient initialStats={mockInitialStats} />);
-
-    expect(screen.getByText("Browse All Dogs")).toBeInTheDocument();
-  });
-
-  it("shows country count in subtitle", () => {
-    render(<CountriesHubClient initialStats={mockInitialStats} />);
-
-    expect(screen.getByText(/3 countries/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Rescue dogs by country");
+    expect(screen.getByRole("link", { name: /Browse every dog/ })).toHaveAttribute("href", "/dogs");
   });
 });
