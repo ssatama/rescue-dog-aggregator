@@ -48,13 +48,14 @@ jest.mock("@/lib/guides", () => ({
       content: "",
     },
   ]),
+  getGuideDogs: jest.fn(async () => []),
 }));
 
 describe("GuidesPage", () => {
   it("renders guides listing page title", async () => {
     const page = await GuidesPage();
     render(page);
-    expect(screen.getByText("Adoption Guides")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Adoption guides" })).toBeInTheDocument();
   });
 
   it("renders header and footer", async () => {
@@ -81,7 +82,7 @@ describe("GuidesPage", () => {
   it("displays guide categories", async () => {
     const page = await GuidesPage();
     render(page);
-    expect(screen.getAllByText("test")).toHaveLength(2);
+    expect(screen.getAllByText("Test")).toHaveLength(2);
   });
 
   it("displays read time for guides", async () => {

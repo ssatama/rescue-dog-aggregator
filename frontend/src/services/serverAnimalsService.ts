@@ -129,6 +129,7 @@ interface AnimalQueryParams {
   location_country?: string;
   available_to_country?: string;
   available_to_region?: string;
+  experience_level?: string;
   sort_by?: string;
   sort_order?: string;
   sort?: string;
@@ -166,6 +167,7 @@ export const getAnimals = cache(
       queryParams.append("available_to_country", params.available_to_country);
     if (params.available_to_region)
       queryParams.append("available_to_region", params.available_to_region);
+    if (params.experience_level) queryParams.append("experience_level", params.experience_level);
     if (params.sort_by) queryParams.append("sort_by", params.sort_by);
     if (params.sort_order) queryParams.append("sort_order", params.sort_order);
     if (params.sort) queryParams.append("sort", params.sort);

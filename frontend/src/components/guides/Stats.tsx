@@ -5,11 +5,11 @@ interface StatsProps {
 
 export function Stats({ value, label }: StatsProps) {
   return (
-    <div className="inline-flex flex-col items-center p-4 bg-orange-50 dark:bg-orange-950 rounded-lg mx-2">
-      <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+    <div className="mx-2 inline-flex flex-col items-center rounded-xl border border-line bg-surface p-4">
+      <div className="font-display text-3xl font-bold text-ink">
         {value}
       </div>
-      <div className="text-sm text-gray-600 dark:text-gray-400">{label}</div>
+      <div className="text-sm text-subtle">{label}</div>
     </div>
   );
 }

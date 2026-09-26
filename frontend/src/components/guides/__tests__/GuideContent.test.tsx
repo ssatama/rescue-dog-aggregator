@@ -1,153 +1,94 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { GuideContent } from "../GuideContent";
 
-const mockGuide = {
+jest.mock("../hooks/useActiveSection", () => ({ useActiveSection: () => "" }));
+
+const frontmatter = {
+  title: "Test Guide",
+  description: "Test description",
+  heroImage: "/test.jpg",
+  heroImageAlt: "Test hero image",
+  readTime: 5,
+  category: "owner-preparation",
+  keywords: ["test"],
+  lastUpdated: "2025-10-03",
+  author: "Test Author",
   slug: "test-guide",
-  frontmatter: {
-    title: "Test Guide",
-    description: "Test description",
-    heroImage: "/test.jpg",
-    heroImageAlt: "Test hero image",
-    readTime: 5,
-    category: "test",
-    keywords: ["test"],
-    lastUpdated: "2025-10-03",
-    author: "Test Author",
-    slug: "test-guide",
-    relatedGuides: [],
-  },
-  content: "## Test Content",
+  relatedGuides: [],
 };
+const mockGuide = { slug: "test-guide", frontmatter };
 
-describe("GuideContent", () => {
-  it("renders guide title", () => {
-    render(<GuideContent guide={mockGuide} />);
-    expect(screen.getByText("Test Guide")).toBeInTheDocument();
-  });
-
-  it("renders exactly one h1, sourced from the frontmatter title", () => {
+describe("GuideContent (#503)", () => {
+  it("renders exactly one h1, from the frontmatter title", () => {
     const { container } = render(<GuideContent guide={mockGuide} />);
-    const headings = container.querySelectorAll("h1");
 
+    const headings = container.querySelectorAll("h1");
     expect(headings).toHaveLength(1);
     expect(headings[0]).toHaveTextContent("Test Guide");
   });
 
-  it("does not emit Article JSON-LD (the guide page owns page-level schema)", () => {
-    const { container } = render(<GuideContent guide={mockGuide} />);
+  it("names the category in words, never its slug", () => {
+    render(<GuideContent guide={mockGuide} />);
 
-    expect(
-      container.querySelector('script[type="application/ld+json"]'),
-    ).toBeNull();
+    expect(screen.getByText("First-time owners")).toBeInTheDocument();
+    expect(screen.queryByText(/owner-preparation/i)).not.toBeInTheDocument();
   });
 
-  it("renders the body it is given rather than fetching one itself", () => {
-    // The body arrives as children, rendered on the server by the route. It
-    // used to be loaded with dynamic(..., { ssr: false }), which kept every
-    // heading and paragraph out of the static HTML.
+  it("gives read time, a readable date and the author", () => {
+    render(<GuideContent guide={mockGuide} />);
+
+    expect(screen.getByText(/5 min read/)).toHaveTextContent("5 min read · Updated 3 Oct 2025 · Test Author");
+  });
+
+  it("shows real dogs instead of a stock photo, and links into the matching catalog view", () => {
     render(
-      <GuideContent guide={mockGuide}>
-        <h2 id="a-section">A Section</h2>
-        <p>Body prose</p>
-      </GuideContent>,
+      <GuideContent
+        guide={{
+          ...mockGuide,
+          frontmatter: { ...frontmatter, dogs: { label: "See dogs that suit first-time owners", href: "/dogs?first_time_friendly=true" } },
+          dogs: [{ id: 1, name: "Rex", slug: "rex-1", image: "https://images.rescuedogs.me/rex.jpg" }],
+        }}
+      />,
     );
 
-    expect(screen.getByRole("heading", { name: "A Section" })).toBeInTheDocument();
-    expect(screen.getByText("Body prose")).toBeInTheDocument();
+    expect(screen.queryByAltText("Test hero image")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Rex" })).toHaveAttribute("href", "/dogs/rex-1");
+    const links = screen.getAllByRole("link", { name: /See dogs that suit first-time owners/ });
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      "/dogs?first_time_friendly=true",
+      "/dogs?first_time_friendly=true",
+    ]);
   });
 
-  it("builds its table of contents from the rendered headings", () => {
-    const { container } = render(
-      <GuideContent guide={mockGuide} fullPage={true}>
+  it("leaves the dogs and link out when the guide has none", () => {
+    render(<GuideContent guide={mockGuide} />);
+
+    expect(screen.queryByRole("list", { name: /dogs listed now/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("Ready to look?")).not.toBeInTheDocument();
+  });
+
+  it("does not emit JSON-LD (the route owns page-level schema)", () => {
+    const { container } = render(<GuideContent guide={mockGuide} />);
+
+    expect(container.querySelector('script[type="application/ld+json"]')).toBeNull();
+  });
+
+  it("renders the body it is given and lists its sections from the rendered headings", async () => {
+    render(
+      <GuideContent guide={mockGuide}>
         <h2 id="first-section">First Section</h2>
+        <p>Body prose</p>
         <h2 id="second-section">Second Section</h2>
       </GuideContent>,
     );
 
-    // Ids come from rehype-slug on the server; the component must read them
-    // rather than re-deriving slugs with a different algorithm.
-    const ids = Array.from(container.querySelectorAll("article h2")).map((h) => h.id);
-    expect(ids).toEqual(["first-section", "second-section"]);
-  });
-
-  it("renders hero image with alt text", () => {
-    render(<GuideContent guide={mockGuide} />);
-    const image = screen.getByAltText("Test hero image");
-    expect(image).toBeInTheDocument();
-  });
-
-  it("renders read time metadata", () => {
-    render(<GuideContent guide={mockGuide} />);
-    expect(screen.getByText(/5 min read/i)).toBeInTheDocument();
-  });
-
-  it("renders author name", () => {
-    render(<GuideContent guide={mockGuide} />);
-    expect(screen.getByText(/Test Author/i)).toBeInTheDocument();
-  });
-
-  it("renders last updated date", () => {
-    render(<GuideContent guide={mockGuide} />);
-    expect(screen.getByText(/Updated 2025-10-03/i)).toBeInTheDocument();
-  });
-
-  it("renders MDX content", () => {
-    render(<GuideContent guide={mockGuide} />);
-    const article = screen.getByRole("article");
-    expect(article).toBeInTheDocument();
-  });
-
-  it("applies prose styling classes", () => {
-    render(<GuideContent guide={mockGuide} />);
-    const proseContainer = document.querySelector(".prose");
-    expect(proseContainer).toBeInTheDocument();
-    expect(proseContainer).toHaveClass("prose-lg");
-    expect(proseContainer).toHaveClass("dark:prose-invert");
-  });
-
-  it("applies container class for full page mode", () => {
-    const { container } = render(
-      <GuideContent guide={mockGuide} fullPage={true} />,
-    );
-    expect(container.querySelector(".container")).toBeInTheDocument();
-  });
-
-  it("does not apply container class for overlay mode", () => {
-    const { container } = render(
-      <GuideContent guide={mockGuide} fullPage={false} />,
-    );
-    expect(container.querySelector(".container")).not.toBeInTheDocument();
-  });
-
-  it("extracts and renders TableOfContents in full page mode", async () => {
-    // Mock DOM with H2 elements
-    document.body.innerHTML = `
-      <article>
-        <h2 id="section-1">Section 1</h2>
-        <h2 id="section-2">Section 2</h2>
-        <h2 id="section-3">Section 3</h2>
-      </article>
-    `;
-
-    const { container } = render(
-      <GuideContent guide={mockGuide} fullPage={true} />,
-    );
-
-    // TableOfContents should be rendered
-    // Note: We can't easily test the actual extraction since it requires DOM timing
-    // This test verifies the structure is correct
-    expect(container.querySelector("article")).toBeInTheDocument();
-  });
-
-  it("does not render TableOfContents in overlay mode", () => {
-    const { container } = render(
-      <GuideContent guide={mockGuide} fullPage={false} />,
-    );
-
-    // TableOfContents should not be rendered in overlay mode
-    // Looking for the aside element that contains the desktop TOC
-    const aside = container.querySelector("aside");
-    expect(aside).not.toBeInTheDocument();
+    expect(screen.getByText("Body prose")).toBeInTheDocument();
+    // Ids come from rehype-slug on the server; the contents link to them as they are
+    await waitFor(() => expect(screen.getAllByRole("navigation", { name: "Contents" })).toHaveLength(2));
+    const hrefs = screen
+      .getAllByRole("link", { name: "Second Section" })
+      .map((link) => link.getAttribute("href"));
+    expect(hrefs).toEqual(["#second-section", "#second-section"]);
   });
 });

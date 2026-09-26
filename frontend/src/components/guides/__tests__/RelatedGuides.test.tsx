@@ -42,7 +42,7 @@ describe("RelatedGuides", () => {
   it("renders related guides when provided", () => {
     const { container } = render(<RelatedGuides relatedGuides={mockGuides} />);
 
-    expect(screen.getByText("Related Guides")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Related guides" })).toBeInTheDocument();
     expect(screen.getByText("European Rescue Guide")).toBeInTheDocument();
     expect(screen.getByText("First Time Owner Guide")).toBeInTheDocument();
   });
@@ -69,14 +69,5 @@ describe("RelatedGuides", () => {
     const grid = container.querySelector(".grid");
     expect(grid).toBeInTheDocument();
     expect(grid).toHaveClass("grid-cols-1", "md:grid-cols-2");
-  });
-
-  it("applies proper styling to footer section", () => {
-    const { container } = render(
-      <RelatedGuides relatedGuides={[mockGuides[0]]} />,
-    );
-
-    const footer = container.querySelector("footer");
-    expect(footer).toHaveClass("mt-12", "pt-8", "border-t");
   });
 });

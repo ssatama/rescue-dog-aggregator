@@ -20,7 +20,7 @@ export const mdxComponents = {
   Stats,
 
   h2: (props: ComponentPropsWithoutRef<"h2">) => (
-    <h2 className="text-3xl font-bold mt-8 mb-4" {...props} />
+    <h2 className="mt-10 mb-4 text-3xl font-bold" {...props} />
   ),
   p: (props: ComponentPropsWithoutRef<"p">) => (
     <p className="mb-4 leading-relaxed" {...props} />
@@ -31,9 +31,13 @@ export const mdxComponents = {
   ol: (props: ComponentPropsWithoutRef<"ol">) => (
     <ol className="list-decimal list-inside mb-4 space-y-2" {...props} />
   ),
-  a: (props: ComponentPropsWithoutRef<"a">) => (
-    <a className="text-orange-500 hover:underline" {...props} />
-  ),
+  // rehype-autolink-headings wraps each heading in a "#id" link: it reads as the heading, not a link
+  a: (props: ComponentPropsWithoutRef<"a">) =>
+    props.href?.startsWith("#") ? (
+      <a className="text-inherit no-underline" {...props} />
+    ) : (
+      <a className="text-orange-700 underline underline-offset-4 hover:no-underline dark:text-orange-400" {...props} />
+    ),
   code: (props: ComponentPropsWithoutRef<"code">) => (
     <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded" {...props} />
   ),
