@@ -57,6 +57,20 @@ def _is_appended_breed_word(word: str, breed: str) -> bool:
     return word in BREED_NOUNS and word in breed.split()
 
 
+def _is_a_name(rest: str, breed: str) -> bool:
+    """What's left after the breed word must stand alone as a name.
+
+    Not a title ("Mr Beagle"), not the start of the breed ("Siberian Husky"),
+    and not half of a pair ("Benji & Lab").
+    """
+    words = rest.lower().split()
+    if not words or words[-1] in {"&", "/", "and", "+"}:
+        return False
+    if rest.lower().rstrip(".") in NAME_PREFIXES:
+        return False
+    return not all(word in breed.split() for word in words)
+
+
 def clean_name(name: str, breed: str | None) -> tuple[str, bool]:
     """Return the display name and whether the rescue labelled the dog overlooked.
 
@@ -69,8 +83,9 @@ def clean_name(name: str, breed: str | None) -> tuple[str, bool]:
 
     words = cleaned.split()
     breed_text = (breed or "").lower()
-    rest = " ".join(words[:-1]).rstrip(",;-– ")
-    if rest and rest.lower() not in NAME_PREFIXES and breed_text and _is_appended_breed_word(words[-1], breed_text):
-        cleaned = rest
+    if len(words) > 1 and breed_text and _is_appended_breed_word(words[-1], breed_text):
+        rest = " ".join(words[:-1]).rstrip(",;-– ")
+        if _is_a_name(rest, breed_text):
+            cleaned = rest
 
     return cleaned, overlooked

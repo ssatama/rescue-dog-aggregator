@@ -47,6 +47,11 @@ class TestCleanName:
             ("Mr Black", "Black Labrador Retriever"),
             ("Mr Beagle", "Beagle"),  # a title and the breed is the whole name
             ("Big Lab", "Labrador Retriever"),
+            ("Mr. Beagle", "Beagle"),
+            ("Siberian Husky", "Siberian Husky"),  # listed under the breed name
+            ("Golden Retriever", "Golden Retriever"),
+            ("Springer Spaniel", "English Springer Spaniel"),
+            ("Benji & Lab", "Labrador Retriever"),  # a pair, not an appended breed
             ("Bella *RESERVED*", "Beagle"),  # availability labels stay visible
             ("Max ON HOLD", "Mixed Breed"),
             ("Luna (applications closed)", "Mixed Breed"),
