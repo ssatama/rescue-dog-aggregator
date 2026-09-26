@@ -82,6 +82,30 @@ uv run alembic -c migrations/railway/alembic.ini upgrade head
 
 `alembic.ini` holds a placeholder URL, so a missing variable fails loudly.
 
+**Manual production runs from the laptop** (verified 2026-09-26). Run them
+from a worktree of `origin/main`, never a feature branch, with the cron's
+environment:
+
+```bash
+git worktree add ../rda-prod-run origin/main && cd ../rda-prod-run
+export RAILWAY_DATABASE_URL="$(grep -E '^RAILWAY_DATABASE_URL=' ../rescue-dog-aggregator/.env | cut -d= -f2- | tr -d "\"'")"
+railway run -p 947b70e4-076f-4288-833a-ed1b1409a01d -e production -s thriving-appreciation -- \
+  env DATABASE_URL="$RAILWAY_DATABASE_URL" TZ=UTC \
+  uv run python management/railway_scraper_cron.py --org <config_id>
+```
+
+`TZ=UTC` is required: the columns are naive timestamps written with
+`datetime.now()`, so without it a laptop run stores local time and its
+`scrape_logs` rows sit hours off the cron's. `DATABASE_URL` points at the
+public URL because the service's own is the private `railway.internal` host,
+which the laptop can't reach.
+
+**A hung cron run can't be stopped on its own.** Railway has no API or CLI to
+stop one cron execution. Redeploying `thriving-appreciation` ends the running
+execution without starting a new one; the next run is the next scheduled
+time. Since #581 a single hung scraper times out instead of blocking the
+batch, so this should be rare.
+
 ## Deploys and caching (Vercel)
 
 **Vercel and Railway deploy on the same push to main.** A prerender failing
