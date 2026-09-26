@@ -181,3 +181,62 @@ def test_info_logs_go_to_stdout_and_warnings_to_stderr(capsys):
     assert "scraped 12 dogs" not in captured.err
     assert "possible external_id mismatch" in captured.err
     assert "possible external_id mismatch" not in captured.out
+
+
+def _child_that(code: str):
+    """Replace the scraper child with a tiny Python program; {result} is the result file path."""
+    import sys
+
+    return lambda config_id, result_path: [sys.executable, "-c", code.replace("{result}", result_path).replace("{org}", config_id)]
+
+
+@pytest.mark.unit
+@pytest.mark.real_clock
+class TestRunOrgIsolated:
+    """One hung scraper must not hold the cron (#579)."""
+
+    def test_a_hung_scraper_is_killed_and_its_log_closed(self):
+        with (
+            patch.object(cron, "_child_command", _child_that("import time; time.sleep(30)")),
+            patch.object(cron, "close_timed_out_scrape_log") as close_log,
+            patch.object(cron.sentry_sdk, "capture_message") as sentry,
+        ):
+            result = cron.run_org_isolated("misisrescue", timeout=1)
+
+        assert result == ScraperRunResult(config_id="misisrescue", success=False, error="Timed out after 1s")
+        assert close_log.call_args.args[0] == "misisrescue"
+        assert "misisrescue timed out" in sentry.call_args.args[0]
+
+    def test_a_scrape_that_finished_but_hangs_on_exit_still_counts(self):
+        code = 'import json, time; json.dump({"config_id": "{org}", "success": True, "animals_found": 5}, open("{result}", "w")); time.sleep(30)'
+        with patch.object(cron, "_child_command", _child_that(code)), patch.object(cron, "close_timed_out_scrape_log") as close_log:
+            result = cron.run_org_isolated("rean", timeout=2)
+
+        assert result == ScraperRunResult(config_id="rean", success=True, animals_found=5)
+        close_log.assert_not_called()
+
+    def test_the_result_the_child_writes_is_returned(self):
+        code = 'import json; json.dump({"config_id": "{org}", "success": True, "organization": "REAN", "animals_found": 11, "error": None}, open("{result}", "w"))'
+        with patch.object(cron, "_child_command", _child_that(code)):
+            result = cron.run_org_isolated("rean", timeout=30)
+
+        assert result == ScraperRunResult(config_id="rean", success=True, organization="REAN", animals_found=11)
+
+    def test_a_child_that_dies_without_a_result_is_a_failure(self):
+        with patch.object(cron, "_child_command", _child_that("import sys; sys.exit(3)")):
+            result = cron.run_org_isolated("rean", timeout=30)
+
+        assert not result.success
+        assert "exited with code 3" in result.error
+
+    def test_the_next_organization_still_runs_after_a_timeout(self):
+        runner = Mock()
+        runner.config_loader.get_enabled_orgs.return_value = [Mock(id="misisrescue"), Mock(id="rean")]
+        hung = ScraperRunResult(config_id="misisrescue", success=False, error="Timed out after 1s")
+        fine = ScraperRunResult(config_id="rean", success=True, animals_found=11)
+
+        with patch.object(cron, "run_org_isolated", side_effect=[hung, fine]) as run_org:
+            batch_result = cron.run_all_scrapers(runner)
+
+        assert [call.args[0] for call in run_org.call_args_list] == ["misisrescue", "rean"]
+        assert (batch_result.total_orgs, batch_result.successful, batch_result.failed) == (2, 1, 1)
