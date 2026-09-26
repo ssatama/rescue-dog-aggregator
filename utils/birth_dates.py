@@ -224,7 +224,7 @@ def resolve_age(
     stored: the saved row (age_text, birth_date_min, birth_date_max,
         age_observed_at, created_at) when the dog is already in the database.
     stated_at: when the rescue wrote the stated age, if the page says (a
-        MISIs post's last edit).
+        MISIs post's publication date).
 
     A date of birth wins, from date_of_birth or else age_text. Otherwise a new or changed age is read as of today.
     An unchanged age_text keeps the day it was first read: a site that still

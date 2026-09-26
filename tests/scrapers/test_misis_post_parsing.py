@@ -231,6 +231,9 @@ def test_a_named_cross_is_the_breed(facts, breed):
         (["Estimated to be around 3 years old"], "3 years"),
         (["Arrived at 6 months, now 2 years old"], "2 years"),
         (["2yo, mixed breed"], "2 years"),
+        (["3 years in the shelter", "Approx 5 years old"], "5 years"),
+        (["Found in March, now 8 months old"], "8 months"),
+        (["approx. 3 months"], "3 months"),
         (["1 year old"], "1 year"),
         (["Mixed breed", "20kg"], None),
         # Durations and other people's ages are not the dog's
@@ -301,3 +304,25 @@ def test_the_name_falls_back_to_the_page_title():
     html = "<html><head><title>⭐Tea⭐ | MISI's Animal Rescue</title></head><body><div data-hook='post-description'><p>A story.</p></div></body></html>"
 
     assert MisisRescueDetailParser().parse_detail_page(BeautifulSoup(html, "html.parser"))["name"] == "Tea"
+
+
+class TestForcedRescrape(ScraperTestBase):
+    scraper_class = MisisRescueScraper
+    config_id = "misisrescue"
+    expected_org_name = "MISIs Animal Rescue"
+    expected_base_url = "https://www.misisrescue.com"
+
+    @pytest.mark.unit
+    def test_every_listed_dog_is_found_even_if_its_page_fails(self, scraper):
+        """With skipping off, a dog whose detail page failed (a 429) must not count as missing (#558)."""
+        scraper.skip_existing_animals = False
+        scraper.session_manager = Mock()
+        listing = [{"url": "/post/rex"}, {"url": "/post/tea"}]
+        with (
+            patch.object(scraper, "_get_all_dogs_from_listing", return_value=listing),
+            patch.object(scraper, "_process_dogs_in_batches", return_value=[]),
+        ):
+            scraper.collect_data()
+
+        found = {call.args[0] for call in scraper.session_manager.record_found_animal.call_args_list}
+        assert found == {"mar-rex", "mar-tea"}

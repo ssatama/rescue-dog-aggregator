@@ -118,6 +118,10 @@ class MisisRescueScraper(BaseScraper):
         all_urls = [urljoin(self.base_url, dog_info["url"]) for dog_info in dogs_from_listing]
 
         animals = [{"adoption_url": url, "external_id": self._generate_external_id(url)} for url in all_urls]
+        # Every listed dog is found, whether or not its page is then read: a
+        # detail failure (a 429, say) must not count a listed dog as missing
+        # (#558), and with skipping off nothing else records them
+        self._record_all_found_external_ids(animals)
 
         if self.skip_existing_animals:
             filtered_animals = self.filtering_service.filter_existing_animals(animals)
