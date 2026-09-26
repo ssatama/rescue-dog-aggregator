@@ -62,7 +62,7 @@ def _is_tidy(name: str) -> bool:
     """Non-empty, brackets balanced, no punctuation dangling at either end."""
     if not name or name.count("(") != name.count(")") or name.count("[") != name.count("]"):
         return False
-    return not re.search(r"(^[\s,;:&/*+-]|[\s,;:&/*+-]$|\s[,;:])", name)
+    return not re.search(r"(^[\s,;:&/*+|-]|[\s,;:&/*+|-]$|\s[,;:])", name)
 
 
 def _is_a_name(rest: str, breed: str) -> bool:
@@ -98,6 +98,10 @@ def clean_name(name: str, breed: str | None) -> tuple[str, bool]:
     """
     overlooked = bool(re.search(r"\boverlooked\b", name, re.IGNORECASE))
     cleaned = " ".join(_LABEL_PATTERN.sub(_label_replacement, name).split())
+    if cleaned != name:
+        # Labels in a row ("Max | URGENT | FOSTER NEEDED") leave the first
+        # one's separator at the end.
+        cleaned = cleaned.strip(" -–—|")
     if not _is_tidy(cleaned):
         # A label that shared brackets or a list with other text
         # ("Luna (Urgent, Reserved)"): keep the rescue's name as it was.

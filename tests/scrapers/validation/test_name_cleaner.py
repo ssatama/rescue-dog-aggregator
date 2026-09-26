@@ -25,6 +25,9 @@ class TestCleanName:
             ("Max - URGENT - RESERVED", "Mixed Breed", "Max - RESERVED"),  # the kept label keeps its dash
             ("Max URGENT RESERVED", "Mixed Breed", "Max RESERVED"),
             ("Max - URGENT (Reserved)", "Mixed Breed", "Max (Reserved)"),
+            ("Max - URGENT - HOME NEEDED", "Mixed Breed", "Max"),  # labels in a row
+            ("Max - OVERLOOKED - URGENT", "Mixed Breed", "Max"),
+            ("Max | URGENT | FOSTER NEEDED", "Mixed Breed", "Max"),
         ],
     )
     def test_strips_labels_and_appended_breed_words(self, name, breed, expected):

@@ -392,7 +392,7 @@ def generate_profiles(organization: int | None, limit: int | None, force: bool, 
 
     skipped = sorted(set(requested_ids) - selected_ids)
     if skipped:
-        console.print(f"[yellow]Skipped {len(skipped)} of the --ids: not available, or not at an LLM-enabled rescue: {', '.join(map(str, skipped))}[/yellow]")
+        console.print(f"[yellow]Skipped {len(skipped)} of the --ids: not available, not at an LLM-enabled rescue, or outside --organization/--limit: {', '.join(map(str, skipped))}[/yellow]")
 
     console.print(f"\n[bold green]✓ Total: {total_successful}/{total_processed} profiles generated[/bold green]")
 
