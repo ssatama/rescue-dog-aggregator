@@ -2,7 +2,7 @@ import type { Dog } from "./types";
 
 /** A dog's age in words, or null when nothing is recorded (left out, #484). */
 export function getAgeDisplay(dog: Dog): string | null {
-  if (dog.age_text) return dog.age_text;
+  if (dog.age_text && dog.age_text.toLowerCase() !== "unknown") return dog.age_text;
   if (dog.age_months) {
     const years = Math.floor(dog.age_months / 12);
     const months = dog.age_months % 12;

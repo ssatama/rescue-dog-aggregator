@@ -118,6 +118,8 @@ describe("dogHelpers", () => {
       expect(formatSize({ standardized_size: "Medium" })).toBe("Medium");
       expect(formatSize({ standardized_size: "XLarge" })).toBe("Giant");
       expect(formatSize({ size: "large" })).toBe("Large");
+      expect(formatSize({ size: "X-Large" })).toBe("Giant");
+      expect(formatSize({ size: "Toy" })).toBe("Small");
     });
 
     it("returns null for unknown or off-scale sizes", () => {

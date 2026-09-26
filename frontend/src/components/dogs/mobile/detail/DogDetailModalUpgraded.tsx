@@ -4,25 +4,29 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import FocusTrap from "focus-trap-react";
-import { X, ChevronLeft, ChevronRight, Heart, ArrowUpRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFavorites } from "@/hooks/useFavorites";
 import { type Dog } from "@/types/dog";
 import { formatBreed } from "@/utils/dogHelpers";
-import { safeExternalUrl } from "@/utils/security";
 import {
   PersonalityTraits,
   hasPersonalitySection,
   EnergyTrainability,
   hasEnergyTrainabilitySection,
-  CompatibilityIcons,
-  hasCompatibilitySection,
   ActivitiesQuirks,
   hasActivitiesSection,
 } from "@/components/dogs/detail";
-import { dogMeta } from "@/components/dogs/detail/DogFactsPanel";
+import {
+  AdoptLink,
+  GoodToKnow,
+  LivesWith,
+  canAdopt,
+  dogMeta,
+} from "@/components/dogs/detail/DogFactsPanel";
+import { getWhere } from "@/components/dogs/DogCard";
 import ShareButton from "@/components/ui/ShareButton";
-import { trackAdoptionLinkClicked, trackDogViewed } from "@/lib/analytics";
+import { trackDogViewed } from "@/lib/analytics";
 
 interface DogDetailModalUpgradedProps {
   dog: Dog | null;
@@ -37,8 +41,9 @@ const navButtonClass =
   "inline-flex min-h-11 items-center gap-1 rounded-xl border border-line px-3 text-sm font-medium text-ink transition-colors hover:bg-soft disabled:cursor-not-allowed disabled:opacity-40";
 
 /**
- * Swipe's "details" sheet. Its sections are the dog page's own components, so
- * unknown facts are left out here exactly as they are there (#504).
+ * Swipe's "details" sheet. Its sections and adopt button are the dog page's
+ * own components, so unknown facts are left out here exactly as they are there
+ * (#504).
  */
 const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   dog,
@@ -163,7 +168,16 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     : photos[currentPhotoIndex] || "/placeholder_dog.svg";
 
   const meta = dogMeta(dog);
-  const profilerData = dog.dog_profiler_data;
+  // Some responses carry traits at the top level rather than in the profile
+  const profilerData =
+    dog.dog_profiler_data || dog.personality_traits?.length
+      ? {
+          ...dog.dog_profiler_data,
+          personality_traits:
+            dog.dog_profiler_data?.personality_traits ?? dog.personality_traits,
+        }
+      : undefined;
+  const where = getWhere(dog);
   const description =
     profilerData?.description ||
     dog.llm_description ||
@@ -171,8 +185,6 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     (dog.properties?.description as string | undefined) ||
     (dog.properties?.raw_description as string | undefined) ||
     "";
-  const adoptionUrl = safeExternalUrl(dog.adoption_url);
-  const rescue = dog.organization?.name;
 
   // Check if favorited
   const isFav = isFavorited(parseInt(String(dog.id), 10));
@@ -329,6 +341,11 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                     <p className="-mt-4 text-subtle">{profilerData.tagline}</p>
                   )}
 
+                  {where && <p className="-mt-4 text-sm text-subtle">{where}</p>}
+
+                  <LivesWith dog={dog} />
+                  <GoodToKnow dog={dog} />
+
                   {/* About Section */}
                   {description && (
                     <div>
@@ -370,13 +387,6 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                     </div>
                   )}
 
-                  {hasCompatibilitySection(profilerData) && (
-                    <div>
-                      <h3 className="font-semibold mb-3 text-ink">Good with</h3>
-                      <CompatibilityIcons profilerData={profilerData} />
-                    </div>
-                  )}
-
                   {hasActivitiesSection(profilerData) && (
                     <div>
                       <h3 className="font-semibold mb-3 text-ink">Activities & Quirks</h3>
@@ -384,21 +394,8 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                     </div>
                   )}
 
-                  {adoptionUrl && (
-                    <a
-                      href={adoptionUrl}
-                      target="_blank"
-                      rel="noopener"
-                      onClick={() => trackAdoptionLinkClicked(dog, "modal")}
-                      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-700 px-4 py-3 text-center font-semibold text-white shadow-sm transition-colors hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-                    >
-                      <span className="truncate">
-                        Meet {dog.name}
-                        {rescue ? ` at ${rescue}` : ""}
-                      </span>
-                      <ArrowUpRight className="h-4 w-4 flex-none" aria-hidden="true" />
-                      <span className="sr-only"> (opens the rescue&apos;s site in a new tab)</span>
-                    </a>
+                  {canAdopt(dog) && (
+                    <AdoptLink dog={dog} source="modal" className="flex w-full" />
                   )}
 
                   {onNavigate && (

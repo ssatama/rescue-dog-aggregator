@@ -76,10 +76,10 @@ export class ErrorBoundary extends Component<Props, State> {
           </h2>
           {this.props.showError && this.state.error && (
             <details className="mt-2">
-              <summary className="cursor-pointer text-sm text-red-600">
+              <summary className="cursor-pointer text-sm text-bad">
                 Error details
               </summary>
-              <pre className="mt-2 text-xs overflow-auto p-2 bg-white rounded">
+              <pre className="mt-2 text-xs overflow-auto p-2 bg-surface text-ink rounded">
                 {this.state.error.toString()}
               </pre>
             </details>

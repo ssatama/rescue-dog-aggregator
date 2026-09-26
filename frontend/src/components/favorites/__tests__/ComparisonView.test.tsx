@@ -207,6 +207,25 @@ describe("ComparisonView", () => {
     expect(screen.queryByText(/Mixed Breed/)).not.toBeInTheDocument();
   });
 
+  it("shows the rescue's qualifiers and scraped answers like the dog page", () => {
+    const dog: Dog = {
+      id: 10,
+      name: "Rex",
+      age_text: "Unknown",
+      primary_image_url: "https://example.com/rex.jpg",
+      dog_profiler_data: { good_with_children: "older_children" },
+      properties: { good_with_dogs: true },
+      adoption_url: "https://example.com/adopt/rex",
+    } as unknown as Dog;
+    render(
+      <ComparisonView dogs={[dog]} onClose={mockOnClose} onRemoveFavorite={mockOnRemoveFavorite} />,
+    );
+
+    expect(screen.getByText("Kids: Older children")).toBeInTheDocument();
+    expect(screen.getByText("Dogs: Yes")).toBeInTheDocument();
+    expect(screen.queryByText("Unknown")).not.toBeInTheDocument();
+  });
+
   it("shows energy as a word, not an invented score", () => {
     render(
       <ComparisonView

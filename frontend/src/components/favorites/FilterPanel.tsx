@@ -27,7 +27,7 @@ import {
 } from "../ui/select";
 import type { Dog as DogType } from "../../types/dog";
 import { dogCountLabel } from "@/utils/formatCount";
-import { formatSize } from "@/utils/dogHelpers";
+import { formatSize, getAgeCategory } from "@/utils/dogHelpers";
 
 // Debounce hook for filter performance
 function useDebounce<T>(value: T, delay: number): T {
@@ -50,30 +50,6 @@ interface FilterPanelProps {
   dogs: DogType[];
   onFilter: (filteredDogs: DogType[], isUserInitiated?: boolean) => void;
 }
-
-// Age groups on the catalog's boundaries. A dog with no recorded age has no
-// group and matches every age, as in the catalog (#494).
-const getAgeCategory = (dog: DogType): string | null => {
-  const ageMin = dog.age_min_months || dog.age_months;
-  const ageMax = dog.age_max_months || dog.age_months;
-
-  if (!ageMin && ageMin !== 0) return null;
-
-  if (ageMax && ageMax < 12) return "Puppy"; // < 12 months
-  if (ageMin >= 12 && ageMax && ageMax <= 36) return "Young"; // 12-36 months
-  if (ageMin >= 36 && ageMax && ageMax <= 96) return "Adult"; // 36-96 months
-  if (ageMin >= 96) return "Senior"; // 96+ months
-
-  // Fallback based on ageMin only if ageMax not available
-  if (!ageMax) {
-    if (ageMin < 12) return "Puppy";
-    if (ageMin < 36) return "Young";
-    if (ageMin < 96) return "Adult";
-    return "Senior";
-  }
-
-  return null;
-};
 
 const AGE_LABELS: Record<string, string> = {
   Puppy: "Puppy (under 1 year)",
@@ -149,8 +125,9 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
 
       // Age group filter
       if (debouncedAgeGroupFilter && debouncedAgeGroupFilter !== "_all") {
+        // A dog with no recorded age matches every age, as in the catalog (#494)
         const ageCategory = getAgeCategory(dog);
-        if (ageCategory && ageCategory !== debouncedAgeGroupFilter) {
+        if (ageCategory !== "Unknown" && ageCategory !== debouncedAgeGroupFilter) {
           return false;
         }
       }
@@ -181,7 +158,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
     const ageGroups = new Set<string>();
     dogs.forEach((dog) => {
       const category = getAgeCategory(dog);
-      if (category) {
+      if (category !== "Unknown") {
         ageGroups.add(category);
       }
     });

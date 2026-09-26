@@ -18,6 +18,7 @@ import Image from "next/image";
 import { FallbackImage } from "../ui/FallbackImage";
 import { trackAdoptionLinkClicked } from "@/lib/analytics";
 import { formatBreed } from "@/utils/dogHelpers";
+import { companionAnswer } from "@/utils/dogFacts";
 
 interface ComparisonViewProps {
   dogs: Dog[];
@@ -28,6 +29,7 @@ interface ComparisonViewProps {
 const ENERGY_LEVELS: Record<string, { label: string; width: string }> = {
   low: { label: "Low", width: "25%" },
   medium: { label: "Medium", width: "50%" },
+  moderate: { label: "Medium", width: "50%" },
   high: { label: "High", width: "75%" },
   very_high: { label: "Very high", width: "100%" },
 };
@@ -38,21 +40,17 @@ const EXPERIENCE_LABELS: Record<string, string> = {
   experienced_only: "Experienced owners",
 };
 
-type Compat = "yes" | "no" | "maybe";
-const COMPAT_LABELS: Record<Compat, string> = { yes: "Yes", no: "No", maybe: "Maybe" };
-const COMPAT_STYLES: Record<Compat, string> = {
-  yes: "bg-good-soft text-good",
-  no: "bg-bad-soft text-bad",
-  maybe: "bg-soft text-subtle",
-};
+const COMPANIONS = [
+  { field: "good_with_children", label: "Kids", Icon: Baby },
+  { field: "good_with_cats", label: "Cats", Icon: Cat },
+  { field: "good_with_dogs", label: "Dogs", Icon: DogIcon },
+] as const;
 
-/** A known answer, or null: unknown is left out, never shown as "no" (#484). */
-const compatValue = (value: unknown): Compat | null => {
-  if (value === true || value === "yes") return "yes";
-  if (value === false || value === "no") return "no";
-  if (value === "maybe") return "maybe";
-  return null;
-};
+const answerStyle = (answer: string): string =>
+  answer === "yes" ? "bg-good-soft text-good" : answer === "no" ? "bg-bad-soft text-bad" : "bg-soft text-subtle";
+
+const answerLabel = (answer: string): string =>
+  answer === "yes" ? "Yes" : answer === "no" ? "No" : answer.charAt(0).toUpperCase() + answer.slice(1);
 
 const formatPersonalityTrait = (trait: string): string => {
   return trait
@@ -92,11 +90,12 @@ const DogComparisonCard = ({
   const breed = formatBreed(dog);
   const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
 
-  const compatibility = [
-    { key: "kids", label: "Kids", Icon: Baby, value: compatValue(dog.dog_profiler_data?.good_with_children) },
-    { key: "cats", label: "Cats", Icon: Cat, value: compatValue(dog.dog_profiler_data?.good_with_cats) },
-    { key: "dogs", label: "Dogs", Icon: DogIcon, value: compatValue(dog.dog_profiler_data?.good_with_dogs) },
-  ].filter((item): item is typeof item & { value: Compat } => item.value !== null);
+  // Unknown answers are left out, never shown as "no" (#484)
+  const compatibility = COMPANIONS.flatMap(({ field, label, Icon }) => {
+    const answer = companionAnswer(dog, field);
+    return answer ? [{ key: field, label, Icon, answer }] : [];
+  });
+  const age = dog.age_text && dog.age_text.toLowerCase() !== "unknown" ? dog.age_text : null;
 
   const handleVisit = () => {
     if (dog.adoption_url) {
@@ -148,10 +147,10 @@ const DogComparisonCard = ({
           <h3 className="text-xl font-bold text-white mb-1">{dog.name}</h3>
           <div className="flex items-center gap-2 text-white/90 text-sm">
             {breed && <span>{breed}</span>}
-            {dog.age_text && (
+            {age && (
               <>
                 {breed && <span>•</span>}
-                <span>{dog.age_text}</span>
+                <span>{age}</span>
               </>
             )}
           </div>
@@ -165,10 +164,10 @@ const DogComparisonCard = ({
         </h3>
         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm mt-1">
           {breed && <span>{breed}</span>}
-          {dog.age_text && (
+          {age && (
             <>
               {breed && <span>•</span>}
-              <span>{dog.age_text}</span>
+              <span>{age}</span>
             </>
           )}
         </div>
@@ -242,16 +241,16 @@ const DogComparisonCard = ({
               Good with
             </h4>
             <ul className="flex flex-wrap items-center gap-3">
-              {compatibility.map(({ key, label, Icon, value }) => (
+              {compatibility.map(({ key, label, Icon, answer }) => (
                 <li key={key} className="flex items-center gap-1">
                   <span
-                    className={`w-6 h-6 rounded-full flex items-center justify-center ${COMPAT_STYLES[value]}`}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center ${answerStyle(answer)}`}
                     aria-hidden="true"
                   >
                     <Icon className="w-3.5 h-3.5" />
                   </span>
                   <span className="text-xs text-gray-600 dark:text-gray-400">
-                    {label}: {COMPAT_LABELS[value]}
+                    {label}: {answerLabel(answer)}
                   </span>
                 </li>
               ))}

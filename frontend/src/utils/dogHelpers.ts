@@ -68,16 +68,21 @@ export const formatBreed = (dog: DogInput | null | undefined): string | null => 
 // Giant is the API's XLarge.
 const SIZE_SCALE: Record<string, string> = {
   tiny: "Small",
+  toy: "Small",
+  mini: "Small",
   small: "Small",
   medium: "Medium",
   large: "Large",
   xlarge: "Giant",
+  xl: "Giant",
+  "x-large": "Giant",
   "extra large": "Giant",
+  "extra-large": "Giant",
   giant: "Giant",
 };
 
 /** Small, Medium, Large or Giant, or null when the size is unknown. */
 export const formatSize = (dog: DogInput | null | undefined): string | null => {
   const raw = dog?.standardized_size || dog?.size;
-  return raw ? (SIZE_SCALE[raw.toLowerCase()] ?? null) : null;
+  return raw ? (SIZE_SCALE[raw.trim().toLowerCase()] ?? null) : null;
 };
