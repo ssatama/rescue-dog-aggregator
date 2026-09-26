@@ -10,7 +10,7 @@ import {
   getBreedBySlug,
   getAnimals,
   getBreedStats,
-  getBreedCounts,
+  getListCounts,
   getAllMetadata,
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
@@ -148,7 +148,7 @@ async function fetchBreedPageData(slug: string) {
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([
     getAnimals({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
-    getBreedCounts(breedFilter),
+    getListCounts(breedFilter),
     getAllMetadata(),
   ]);
 

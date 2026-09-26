@@ -557,3 +557,41 @@ describe("a breed page's own breed (#500)", () => {
     jest.useRealTimers();
   });
 });
+
+describe("a rescue page's own rescue (#501)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (useRouter as jest.Mock).mockReturnValue(mockRouter);
+    (animalsService.getAvailableRegions as jest.Mock).mockResolvedValue([]);
+  });
+
+  it("filters by it without checking the rescue list, and does not count it as active", () => {
+    // The page's metadata lists no rescues at all: the page is the rescue
+    const { result } = renderDogsFilters(new URLSearchParams("organization_id=99"), {
+      initialParams: { organization_id: "7" },
+      pathname: "/organizations/some-rescue",
+    });
+
+    expect(result.current.filters.organizationFilter).toBe("7");
+    expect(buildAPIParams(result.current.filters).organization_id).toBe("7");
+    expect(result.current.activeFilterCount).toBe(0);
+  });
+
+  it("keeps it out of the URL, which already names the rescue", () => {
+    jest.useFakeTimers();
+    const { result } = renderDogsFilters(new URLSearchParams(), {
+      initialParams: { organization_id: "7" },
+      pathname: "/organizations/some-rescue",
+    });
+
+    act(() => {
+      result.current.updateURL({ ...result.current.filters, ageFilter: "Puppy" }, 1, false);
+    });
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    expect(mockRouter.push).toHaveBeenCalledWith("/organizations/some-rescue?age=Puppy", { scroll: false });
+    jest.useRealTimers();
+  });
+});

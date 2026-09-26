@@ -77,6 +77,8 @@ export interface DesktopFiltersProps extends SharedFilterProps {
   availableRegions: string[];
 
   showBreed?: boolean;
+  /** Hidden on a rescue page, whose rescue is fixed (#501) */
+  showOrganization?: boolean;
 }
 
 export interface MobileFilterDrawerProps extends SharedFilterProps {

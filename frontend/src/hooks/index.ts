@@ -17,6 +17,5 @@ export type {
 } from "./useSwipeNavigation";
 
 // Existing hooks (re-exported for completeness)
-export { default as useFilteredDogs } from "./useFilteredDogs";
 export { usePageTransition } from "./usePageTransition";
 export { useReducedMotion } from "./useScrollAnimation";

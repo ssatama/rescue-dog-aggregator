@@ -50,6 +50,8 @@ export interface ApiOrganization {
   country?: string;
   city?: string;
   ships_to?: string[];
+  service_regions?: string[];
+  social_media?: Record<string, unknown>;
   total_dogs?: number;
 }
 

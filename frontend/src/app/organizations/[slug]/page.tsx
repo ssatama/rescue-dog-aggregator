@@ -9,7 +9,8 @@ import Layout from "../../../components/layout/Layout";
 import ServerDogListing from "@/components/dogs/ServerDogListing";
 import { clampDescription, clampTitle } from "@/utils/seoMeta";
 import { getCountryName } from "@/utils/countryNames";
-import { getAnimals } from "@/services/serverAnimalsService";
+import { getAllMetadata, getAnimals, getListCounts } from "@/services/serverAnimalsService";
+import { FILTER_DEFAULTS } from "@/constants/filters";
 import OrganizationDetailClient from "./OrganizationDetailClient";
 import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
 import { notFound } from "next/navigation";
@@ -105,79 +106,81 @@ export async function generateMetadata(props: OrganizationDetailPageProps): Prom
   }
 }
 
-const isTestEnvironment =
-  typeof process !== "undefined" && process.env.NODE_ENV === "test";
-
-function OrganizationDetailPage(_props: OrganizationDetailPageProps): React.JSX.Element {
-  return <Layout><OrganizationDetailClient /></Layout>;
-}
-
-export async function OrganizationDetailPageAsync(props: OrganizationDetailPageProps): Promise<React.JSX.Element> {
-  const { params } = props || {};
-  let resolvedParams: { slug?: string } = {};
-
-  if (params) {
-    try {
-      resolvedParams = await params;
-    } catch (error) {
-      reportError(error, { context: "OrganizationDetailPageAsync", operation: "resolveParams" });
-      throw error;
-    }
+export default async function OrganizationDetailPage(props: OrganizationDetailPageProps): Promise<React.JSX.Element> {
+  let slug: string;
+  try {
+    ({ slug } = await props.params);
+  } catch (error) {
+    reportError(error, { context: "OrganizationDetailPage", operation: "resolveParams" });
+    throw error;
   }
 
-  let initialOrganization = null;
-  if (resolvedParams.slug) {
-    try {
-      initialOrganization = await getOrganizationBySlug(resolvedParams.slug);
-    } catch (error) {
-      if (isNotFound(error)) {
-        notFound();
-      }
-      reportError(error, { context: "OrganizationDetailPageAsync", slug: resolvedParams.slug });
-      // This route is ISR-cached for `revalidate`, so rendering the page
-      // without its organization would pin an empty shell for 7 days. Fail the
-      // render instead: the next request retries.
-      throw error;
+  let organization: Awaited<ReturnType<typeof getOrganizationBySlug>>;
+  try {
+    organization = await getOrganizationBySlug(slug);
+  } catch (error) {
+    if (isNotFound(error)) {
+      notFound();
     }
+    reportError(error, { context: "OrganizationDetailPage", slug });
+    // This route is ISR-cached for `revalidate`, so rendering the page
+    // without its organization would pin an empty shell for 7 days. Fail the
+    // render instead: the next request retries.
+    throw error;
   }
-
-  // Only for the server-rendered fallback crawlers read (#437); the client fetches its own.
-  // A failure here must not fail the page, which is ISR-cached and prerendered at build.
-  let initialDogs: Awaited<ReturnType<typeof getAnimals>> = [];
-  if (initialOrganization?.id != null) {
-    try {
-      initialDogs = await getAnimals({ organization_id: initialOrganization.id, limit: 20, offset: 0 });
-    } catch (error) {
-      reportError(error, { context: "OrganizationDetailPageAsync", operation: "fallbackDogs" });
-    }
+  if (organization.id == null) {
+    throw new Error(`Organization ${slug} has no id`);
   }
+  const organizationId = organization.id;
 
-  const breadcrumbItems = initialOrganization
-    ? [
-        { name: "Home", url: "/" },
-        { name: "Organizations", url: "/organizations" },
-        { name: initialOrganization.name },
-      ]
-    : null;
+  // The catalog's first page, in its default order, and the rescue's own
+  // counts. Neither may fail the page, which is ISR-cached and prerendered.
+  const [initialDogs, counts, metadata] = await Promise.all([
+    getAnimals({ organization_id: organizationId, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }).catch(
+      (error: unknown) => {
+        reportError(error, { context: "OrganizationDetailPage", operation: "initialDogs" });
+        return [];
+      },
+    ),
+    getListCounts({ organization_id: String(organizationId) }),
+    getAllMetadata(),
+  ]);
+
+  const rescue = {
+    ...organization,
+    id: organizationId,
+    social_media: Object.fromEntries(
+      Object.entries(organization.social_media ?? {}).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string" && entry[1] !== "",
+      ),
+    ),
+  };
 
   return (
     <Layout>
-      {initialOrganization && initialOrganization.id != null && (
-        <OrganizationSchema organization={{ ...initialOrganization, id: initialOrganization.id }} />
-      )}
-      {breadcrumbItems && <BreadcrumbSchema items={breadcrumbItems} />}
+      <OrganizationSchema organization={rescue} />
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: "/" },
+          { name: "Rescues", url: "/organizations" },
+          { name: organization.name },
+        ]}
+      />
       <Suspense
         fallback={
-          initialOrganization ? (
-            <ServerDogListing
-              title={initialOrganization.name}
-              intro={initialOrganization.description ?? undefined}
-              dogs={initialDogs}
-            />
-          ) : null
+          <ServerDogListing
+            title={organization.name}
+            intro={organization.description ?? undefined}
+            dogs={initialDogs}
+          />
         }
       >
-        <OrganizationDetailClient initialOrganization={initialOrganization} />
+        <OrganizationDetailClient
+          organization={rescue}
+          initialDogs={initialDogs}
+          metadata={metadata}
+          counts={counts}
+        />
       </Suspense>
     </Layout>
   );
@@ -204,7 +207,3 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
     return [];
   }
 }
-
-export default isTestEnvironment
-  ? OrganizationDetailPage
-  : OrganizationDetailPageAsync;

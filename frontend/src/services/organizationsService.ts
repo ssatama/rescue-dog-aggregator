@@ -1,11 +1,8 @@
 import { z } from "zod";
-import type { ApiDog, ApiOrganization } from "../types/apiDog";
-import type { Dog } from "../types/dog";
+import type { ApiOrganization } from "../types/apiDog";
 import { get, stripNulls } from "../utils/api";
 import { reportError } from "../utils/logger";
 import { trackAPIPerformance } from "../utils/performanceMonitor";
-import { ApiDogSchema } from "../schemas/animals";
-import { transformApiDogsToDogs } from "../utils/dogTransformer";
 import {
   ApiOrganizationSchema,
   EnhancedOrganizationSchema,
@@ -35,20 +32,6 @@ export async function getOrganizationBySlug(
   return get<ApiOrganization>(`/api/organizations/${slug}`, {}, {
     schema: ApiOrganizationSchema,
   });
-}
-
-export async function getOrganizationDogs(
-  idOrSlug: number | string,
-  params: Record<string, unknown> = {},
-): Promise<Dog[]> {
-  const raw = await get<ApiDog[]>("/api/animals", {
-    ...params,
-    organization_id: idOrSlug,
-    animal_type: "dog",
-  }, {
-    schema: z.array(ApiDogSchema),
-  });
-  return transformApiDogsToDogs(raw);
 }
 
 export async function getOrganizationStatistics(

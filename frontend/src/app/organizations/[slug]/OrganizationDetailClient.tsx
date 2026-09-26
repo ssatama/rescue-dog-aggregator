@@ -1,490 +1,84 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import DogFilters from "../../../components/filters/DogFilters";
-import OrganizationHero from "../../../components/organizations/OrganizationHero";
-import MobileFilterDrawer from "../../../components/filters/MobileFilterDrawer";
-import useFilteredDogs from "../../../hooks/useFilteredDogs";
-import { getAgeFilterOptions, getDefaultFilters } from "../../../utils/dogFilters";
-import type { AgeCategory, SortOption } from "../../../utils/dogFilters";
-import { AGE_OPTIONS, RESCUE_PAGE_SORTS } from "@/constants/filters";
-import { Button } from "../../../components/ui/button";
-import {
-  getOrganizationBySlug,
-  getOrganizationDogs,
-} from "../../../services/organizationsService";
-import { reportError } from "../../../utils/logger";
+import { useCallback, useEffect, useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import Breadcrumbs from "../../../components/ui/Breadcrumbs";
+import RescueHeader from "../../../components/organizations/RescueHeader";
+import DogsPageClientSimplified from "../../dogs/DogsPageClientSimplified";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
-import {
-  trackFiltersApplied,
-  trackOrganizationViewed,
-} from "@/lib/analytics";
-import DogsGrid from "../../../components/dogs/DogsGrid";
+import { trackOrganizationViewed } from "@/lib/analytics";
 import type { OrganizationDetailClientProps } from "@/types/pageComponents";
-import type { ApiOrganization } from "@/types/apiDog";
-import type { Dog } from "@/types/dog";
 
-interface OrganizationWithDetails extends ApiOrganization {
-  id: number;
-  total_dogs?: number;
-  properties?: {
-    email?: string;
-    phone?: string;
-    [key: string]: unknown;
-  };
-}
-
-interface OrgFilters {
-  age: AgeCategory;
-  breed: string;
-  sex: string;
-  sort: SortOption;
-}
-
-export default function OrganizationDetailClient({ initialOrganization = null }: OrganizationDetailClientProps) {
-  const urlParams = useParams();
+/**
+ * A rescue's page (#501): who they are and where they rehome to, then their
+ * dogs in the catalog itself with the rescue fixed, so the count, chips,
+ * sort, lifestyle filters and "Only dogs I can adopt" are the catalog's own
+ * and the list takes the same URL params as /dogs.
+ */
+export default function OrganizationDetailClient({
+  organization,
+  initialDogs,
+  metadata,
+  counts,
+}: OrganizationDetailClientProps) {
+  const router = useRouter();
+  const pathname = usePathname() ?? "";
   const searchParams = useSearchParams();
-  const organizationSlug = urlParams?.slug;
 
-  const [organization, setOrganization] = useState<OrganizationWithDetails | null>(
-    initialOrganization as OrganizationWithDetails | null,
-  );
-  const [dogs, setDogs] = useState<Dog[]>([]);
-  const [loading, setLoading] = useState(!initialOrganization);
-  const [error, setError] = useState<Error | null>(null);
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-
-  // Pagination state
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  const [filters, setFilters] = useState<OrgFilters>(() => {
-    const defaultFilters = getDefaultFilters();
-
-    const urlAge = searchParams?.get("age");
-    const urlBreed = searchParams?.get("breed");
-    const urlSex = searchParams?.get("sex");
-    const urlSort = searchParams?.get("sort");
-
-    if (urlAge || urlBreed || urlSex || urlSort) {
-      return {
-        // An old link can carry an age the filter no longer offers (Unknown)
-        age: getAgeFilterOptions().some((option) => option.value === urlAge)
-          ? (urlAge as AgeCategory)
-          : defaultFilters.age || "All",
-        breed: urlBreed || defaultFilters.breed || "",
-        sex: urlSex || "Any",
-        // An old link can carry a sort the menu no longer offers (name-asc)
-        sort: RESCUE_PAGE_SORTS.some((option) => option.value === urlSort)
-          ? (urlSort as SortOption)
-          : defaultFilters.sort || "newest",
-      };
-    }
-    return {
-      age: defaultFilters.age || "All",
-      breed: defaultFilters.breed || "",
-      sex: "Any",
-      sort: defaultFilters.sort || "newest",
-    };
-  });
-
-  const { availableBreeds } = useFilteredDogs(
-    dogs,
-    { age: "All", breed: "", sort: "newest" },
-    false,
-  ) as { availableBreeds: string[] };
-
-  // Use dogs directly since they're already filtered by the backend
-  const filteredDogs = dogs;
-  const hasActiveFilters =
-    Boolean(filters.age && filters.age !== "All") ||
-    Boolean(filters.breed && filters.breed.trim() !== "") ||
-    Boolean(filters.sex && filters.sex !== "Any");
-
-  // Ships To filter not needed for organization pages - all dogs have same shipping options
-
-  // Mobile filter handlers
-  const handleMobileFilterOpen = () => {
-    setIsMobileFilterOpen(true);
-  };
-
-  const handleMobileFilterClose = () => {
-    setIsMobileFilterOpen(false);
-  };
-
-  const handleClearAllFilters = () => {
-    const defaultFilters = getDefaultFilters();
-    setFilters({
-      age: defaultFilters.age || "All",
-      breed: defaultFilters.breed || "",
-      sex: "Any",
-      sort: defaultFilters.sort || "newest",
-    });
-  };
-
-  // Fetch organization dogs with pagination and filtering
-  const fetchOrganizationDogs = useCallback(
-    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Intentionally using organization?.id instead of organization to avoid re-creating callback on non-id property changes
-    async (currentPage = 1, loadMore = false) => {
-      if (!loadMore) {
-        setLoading(true);
-        setDogs([]);
-      } else {
-        setLoadingMore(true);
-      }
-      setError(null);
-
-      const limit = 20;
-      const offset = (currentPage - 1) * limit;
-
-      // Build API filter parameters from current filters
-      const apiParams: Record<string, unknown> = {
-        limit,
-        offset,
-        sort: filters.sort || "newest", // Always include sort parameter
-      };
-
-      // Add age filter if selected
-      if (filters.age && filters.age !== "All") {
-        apiParams.age_category = filters.age;
-      }
-
-      // Add breed filter if selected
-      if (filters.breed && filters.breed.trim() !== "") {
-        apiParams.breed = filters.breed;
-      }
-
-      // Add sex filter if selected
-      if (filters.sex && filters.sex !== "Any") {
-        apiParams.sex = filters.sex;
-      }
-
-      try {
-        const dogsData = await getOrganizationDogs(organization?.id as number, apiParams);
-
-        setDogs((prevDogs) =>
-          loadMore ? [...prevDogs, ...dogsData] : dogsData,
-        );
-        setHasMore(dogsData.length === limit);
-        setPage(currentPage);
-        setLoading(false);
-        setLoadingMore(false);
-      } catch (err) {
-        reportError(err, {
-          context: "OrganizationDetailClient.fetchDogs",
-          organizationId: organization?.id,
-        });
-        setError(err as Error);
-        setHasMore(false);
-        setLoading(false);
-        setLoadingMore(false);
-      }
-    },
-    [organization?.id, filters],
-  );
-
-  // Handle Load More
-  const handleLoadMore = () => {
-    if (hasMore && !loading && !loadingMore) {
-      fetchOrganizationDogs(page + 1, true);
-    }
-  };
-
-  // Separate from the fetch below, which skips the org request (and anything
-  // inside it) when the server already rendered the organization.
-  const viewedOrgSlug = organization?.slug;
   useEffect(() => {
-    if (viewedOrgSlug) {
-      trackOrganizationViewed(viewedOrgSlug, organization?.total_dogs ?? 0);
-    }
+    if (!organization.slug) return;
+    trackOrganizationViewed(organization.slug, organization.total_dogs ?? 0);
+    trackOrgPageView(organization.slug, organization.total_dogs ?? 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per organization
-  }, [viewedOrgSlug]);
+  }, [organization.slug]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!organizationSlug) return;
+  // The list's own filter, set through the URL the catalog reads
+  const showAdoptable = useCallback(
+    (countryValue: string) => {
+      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      params.set("available_country", countryValue);
+      params.delete("available_region");
+      params.delete("page");
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document.getElementById("dogs-grid")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+    },
+    [router, pathname, searchParams],
+  );
 
-      try {
-        const isInitialLoad = !organization;
-        if (isInitialLoad) {
-          setLoading(true);
-        }
-        setError(null);
-
-        // Fetch organization details (only on initial load)
-        if (isInitialLoad) {
-          const orgData = await getOrganizationBySlug(organizationSlug as string);
-          setOrganization(orgData as OrganizationWithDetails);
-
-          // Track organization page view
-          if (orgData?.slug) {
-            trackOrgPageView(orgData.slug, (orgData as OrganizationWithDetails).total_dogs || 0);
-          }
-        }
-
-        // Fetch first page of dogs using the organization ID
-        const limit = 20;
-        const apiParams: Record<string, unknown> = { limit, offset: 0, sort: filters.sort || "newest" };
-
-        // Add current filters
-        if (filters.age && filters.age !== "All") {
-          apiParams.age_category = filters.age;
-        }
-        if (filters.breed && filters.breed.trim() !== "") {
-          apiParams.breed = filters.breed;
-        }
-        if (filters.sex && filters.sex !== "Any") {
-          apiParams.sex = filters.sex;
-        }
-
-        const orgId = organization?.id;
-        if (orgId) {
-          const dogsData = await getOrganizationDogs(orgId, apiParams);
-          setDogs(dogsData);
-          setHasMore(dogsData.length === limit);
-          setPage(1);
-        }
-
-        if (isInitialLoad) {
-          setLoading(false);
-        }
-      } catch (err) {
-        reportError(err, {
-          context: "OrganizationDetailClient.fetchOrganizationData",
-          organizationSlug,
-        });
-        setError(err as Error);
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- use organization?.id (stable primitive) instead of organization (unstable object reference) to prevent double-fetch
-  }, [organizationSlug, filters, organization?.id]);
-
-  // Loading state
-  if (loading) {
-    return (
-      <>
-        <div className="max-w-7xl mx-auto p-4">
-          {/* Hero skeleton */}
-          <div className="bg-gradient-to-r from-amber-100 dark:from-amber-900/20 to-orange-200 dark:to-orange-900/30 rounded-lg p-8 mb-8">
-            <div className="animate-pulse">
-              <div className="flex items-center space-x-6 mb-6">
-                <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                <div className="space-y-3 flex-1">
-                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Dogs grid skeleton */}
-          <DogsGrid loading={true} skeletonCount={8} />
-        </div>
-      </>
-    );
-  }
-
-  // Error state
-  if (error || !organization) {
-    return (
-      <>
-        <div className="max-w-7xl mx-auto p-4">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg p-6 text-center">
-            <h1 className="text-2xl font-bold text-red-500 dark:text-red-400 mb-4">
-              Organization Not Found
-            </h1>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              Sorry, we couldn&apos;t find the organization you&apos;re looking for.
-            </p>
-            <Link
-              href="/organizations"
-              className="inline-block bg-orange-500 dark:bg-orange-600 hover:bg-orange-600 dark:hover:bg-orange-700 text-white px-6 py-3 rounded-lg transition-colors"
-            >
-              Return to Organizations
-            </Link>
-          </div>
-        </div>
-      </>
-    );
-  }
+  const initialParams = useMemo(() => ({ organization_id: String(organization.id) }), [organization.id]);
 
   return (
-    <>
-      <OrganizationHero organization={organization} />
+    <div className="mx-auto max-w-7xl py-6">
+      <Breadcrumbs
+        items={[
+          { name: "Home", url: "/" },
+          { name: "Rescues", url: "/organizations" },
+          { name: organization.name },
+        ]}
+        schema={false}
+      />
 
-      <div className="max-w-7xl mx-auto p-4">
-        {/* Contact Information (if available in properties) */}
-        {organization.properties && (
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              Contact Information
-            </h2>
-            <div className="space-y-2">
-              {organization.properties.email && (
-                <div className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <a
-                    href={`mailto:${organization.properties.email}`}
-                    className="text-orange-500 dark:text-orange-400 hover:underline"
-                  >
-                    {organization.properties.email}
-                  </a>
-                </div>
-              )}
-
-              {organization.properties.phone && (
-                <div className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                    />
-                  </svg>
-                  <a
-                    href={`tel:${organization.properties.phone}`}
-                    className="text-orange-500 dark:text-orange-400 hover:underline"
-                  >
-                    {organization.properties.phone}
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Dogs section with filters */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Available Dogs
-            </h2>
-          </div>
-
-          {/* Filter System - only age, breed, sort for organization pages */}
-          {!loading && (
-            <DogFilters
-              filters={filters}
-              onFiltersChange={(newFilters) => setFilters((prev) => ({ ...prev, ...newFilters }))}
-              availableBreeds={availableBreeds || []}
-              hasActiveFilters={hasActiveFilters}
-              showShipsToFilter={false}
-              showSortFilter={false}
-              onMobileFilterClick={handleMobileFilterOpen}
-              useSimpleBreedDropdown={true}
-            />
-          )}
-
-          {/* Dogs Grid with filtered results */}
-          <div className="mt-6">
-            <DogsGrid
-              dogs={filteredDogs}
-              loading={loading && dogs.length === 0}
-              loadingType="filter"
-              emptyStateVariant={
-                hasActiveFilters ? "noDogsFiltered" : "noDogsOrganization"
-              }
-              onClearFilters={handleClearAllFilters}
-              onBrowseOrganizations={() =>
-                (window.location.href = "/organizations")
-              }
-              listContext="org-page"
-            />
-
-            {hasMore && !loading && !loadingMore && (
-              <div className="flex justify-center mt-8 mb-12">
-                <button
-                  data-testid="load-more-button"
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 dark:from-orange-400 dark:to-orange-500 hover:from-orange-600 hover:to-orange-700 dark:hover:from-orange-500 dark:hover:to-orange-600 text-white font-medium px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Load More Dogs →
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+      <div className="mb-8 mt-6 lg:mb-10">
+        <RescueHeader
+          organization={organization}
+          adoptableOptions={counts?.available_country_options}
+          onShowAdoptable={showAdoptable}
+        />
       </div>
 
-      {/* Mobile Filter Drawer */}
-      <MobileFilterDrawer
-        isOpen={isMobileFilterOpen}
-        onClose={handleMobileFilterClose}
-        // Context-aware filters for organization page (only age, breed, sex)
-        filterConfig={{
-          showAge: true,
-          showBreed: true,
-          showSize: false, // No size filter for organization pages
-          showSex: true, // Include sex filter for organization pages
-          showShipsTo: false, // No ships-to for organization pages
-          showOrganization: false, // No organization filter for organization pages
-          showSearch: false, // No search for organization pages
-        }}
-        searchQuery=""
-        handleSearchChange={() => {}}
-        clearSearch={() => {}}
-        organizationFilter="any"
-        setOrganizationFilter={() => {}}
-        organizations={[]}
-        standardizedBreedFilter={filters.breed || "Any breed"}
-        setStandardizedBreedFilter={(breed: string) => {
-          setFilters((prev) => ({ ...prev, breed }));
-          trackFiltersApplied({ breed }, "org_page");
-        }}
-        standardizedBreeds={availableBreeds || []}
-        sexFilter={filters.sex || "Any"}
-        setSexFilter={(sex: string) => {
-          setFilters((prev) => ({ ...prev, sex }));
-          trackFiltersApplied({ sex }, "org_page");
-        }}
-        sexOptions={["Any", "Male", "Female"]}
-        sizeFilter="Any size"
-        setSizeFilter={() => {}}
-        sizeOptions={["Any size"]}
-        ageCategoryFilter={filters.age || "Any age"}
-        setAgeCategoryFilter={(age: string) => {
-          setFilters((prev) => ({ ...prev, age: age as AgeCategory }));
-          trackFiltersApplied({ age }, "org_page");
-        }}
-        ageOptions={AGE_OPTIONS}
-        availableCountryFilter="Any country"
-        setAvailableCountryFilter={() => {}}
-        availableCountries={["Any country"]}
-        resetFilters={handleClearAllFilters}
-        filterCounts={null}
-      />
-    </>
+      <section id="dogs-grid" aria-labelledby="rescue-dogs-heading" className="scroll-mt-20">
+        <h2 id="rescue-dogs-heading" className="font-display text-xl font-bold tracking-tight text-ink sm:text-2xl">
+          Their dogs
+        </h2>
+        <DogsPageClientSimplified
+          initialDogs={initialDogs}
+          metadata={metadata}
+          initialParams={initialParams}
+          hideHero
+          hideBreadcrumbs
+        />
+      </section>
+    </div>
   );
 }

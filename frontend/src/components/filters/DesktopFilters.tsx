@@ -28,6 +28,7 @@ export default function DesktopFilters({
   organizations,
 
   showBreed = true,
+  showOrganization = true,
   standardizedBreedFilter = "",
   setStandardizedBreedFilter,
   handleBreedSearch,
@@ -468,6 +469,7 @@ export default function DesktopFilters({
           )}
 
           {/* 6. Organization Filter - Direct select like other filters */}
+          {showOrganization && (
           <div
             className={`space-y-3 ${sectionCounts.organization > 0 ? "filter-section-active" : ""}`}
           >
@@ -525,6 +527,7 @@ export default function DesktopFilters({
               </SelectContent>
             </Select>
           </div>
+          )}
         </div>
 
         {/* Clear all filters button */}

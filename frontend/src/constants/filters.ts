@@ -24,9 +24,6 @@ export function isCatalogSort(value: string | null | undefined): boolean {
   return CATALOG_SORTS.some((sort) => sort.value === value)
 }
 
-/** Rescue pages list one rescue, so "Recommended" (which mixes rescues) is left out. */
-export const RESCUE_PAGE_SORTS = CATALOG_SORTS.filter((sort) => sort.value !== "recommended")
-
 /** One size scale everywhere, catalog and swipe alike (#494). */
 export const SIZE_OPTIONS = [FILTER_DEFAULTS.SIZE, "Small", "Medium", "Large", "Giant"]
 
