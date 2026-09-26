@@ -160,6 +160,23 @@ heading first because GoDaddy leaks a neighbour's sentence into a block.
 `age_backfill.py` deliberately doesn't clear these, and a test pins that, so
 the scraper bug stays visible. Scraper and parser fixed in #433.
 
+**Name and location backfills (#505).** Most rescues skip dogs they already
+have, so name cleaning and `display_location` reach stored rows only through
+a backfill. Both are dry runs unless given `--apply`, cover active dogs only,
+and merge just the keys they set into `properties`. Both ran on production on
+2026-09-26 (930 of 1,411 available dogs got a `display_location`). Rerun
+after a cleaner change, outside the cron window (Mon/Thu/Sat 3pm UTC):
+```bash
+export $(grep -E '^RAILWAY_DATABASE_URL=' .env | xargs)
+railway run --service thriving-appreciation -- env RAILWAY_DATABASE_URL="$RAILWAY_DATABASE_URL" \
+  uv run python management/name_commands.py clean-names --apply
+railway run --service thriving-appreciation -- env RAILWAY_DATABASE_URL="$RAILWAY_DATABASE_URL" \
+  uv run python management/location_commands.py display-locations --apply
+```
+Known gaps: Pets in Turkey writes "Currently in Amsterdam" in free text
+(not parsed), and Tierschutzverein's "bald in Leipzig" (soon in Leipzig)
+shows as "Leipzig" with "(ab 12.9.26)" dates dropped.
+
 **Quality scores.** Profiles before #320 carry a hardcoded `quality_score` of
 80. `llm_commands backfill-quality-scores` rescores them without LLM calls,
 but moves ~1.3% of dogs below `MIN_SWIPE_QUALITY_SCORE = 70`, out of the
@@ -183,6 +200,9 @@ Model and cost details are in AGENTS.md. Operational points:
   `railway run` supplies `REVALIDATION_TOKEN` for the ISR purge; the
   `DATABASE_URL` override is needed because the service's own value is
   Railway-internal.
+- `generate-profiles --ids 12,34` re-profiles named dogs (implies `--force`
+  and `--confidence all`). It still selects only available dogs at
+  LLM-enabled rescues, and prints any id it skipped.
 - Not profilable by design: org 2 (not in `configs/llm_organizations.yaml`)
   and Furry Rescue Italy (`enabled: false`); the command prints `Total: 0/0`
   without saying why.
@@ -215,7 +235,21 @@ Model and cost details are in AGENTS.md. Operational points:
   `javascript-nextjs`; the other two projects belong to unrelated apps.
 - **PostHog**: EU, project 283494. Event reference in
   `docs/features/product-analytics.md`; funnel comparison with
-  `scripts/posthog-funnel.sh`.
+  `scripts/posthog-funnel.sh`, which needs `POSTHOG_PERSONAL_API_KEY` on the
+  laptop (cloud sessions get it from the proxy). Without it, use the PostHog
+  MCP after switching to org rescuedogs.me, project 283494. It sees far fewer
+  people than "20+ daily users" (4-7 a day in late September 2026), so read
+  funnels as anecdote until traffic grows.
+- **chrome-devtools MCP**: under touch emulation, `click` doesn't open the
+  mobile filter drawer; a JS `.click()` does. The drawer works.
+- **Checking layouts**: `node scripts/visual-check.cjs <paths>` screenshots
+  390/820/1180/1440px in light and dark and reports overflow and console
+  errors. `BASE_URL=https://www.rescuedogs.me` audits production. Vercel
+  previews are behind a login, so to check a branch against real data, build
+  with `NEXT_PUBLIC_API_URL` pointing at a local proxy to api.rescuedogs.me
+  that adds CORS headers (the API allows only localhost:3000), and serve it
+  on 127.0.0.1 and a free port. Off Vercel, `/_vercel/insights` 404s show as
+  console errors; ignore them.
 - **Postgres MCP is production.** Its findings are production facts; say so
   when reporting. It runs as the read-only `claude_ro` role: directly via
   `PROD_RO_DATABASE_URL` on the laptop, via `POST /api/admin/query` in cloud

@@ -71,6 +71,28 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 Branch naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
 
+### Product Rules (settled; don't re-ask)
+
+The goal is the adoption click: a visitor finds a dog and clicks through to
+the rescue. From the 2026 UX refresh (epic #484):
+
+- **Browsing all dogs is the default.** The visitor's country (Vercel IP
+  header, read per request, never stored) may preselect "I live in", but it
+  only *labels* dogs "Adoptable to you". Hiding dogs by location is an opt-in
+  switch, with an "Anywhere" option. Never silently filter by location.
+- **Never say "adopted" or "found a home".** Adoption can't be detected; dogs
+  just vanish from rescue sites. The wording is "no longer listed".
+- **No fee or adoption-process block on dog pages.** Rescues don't publish
+  fees consistently; the dog page links out to the rescue.
+- **Missing data is left out, not apologised for.** No "Unknown", empty bars
+  or placeholder chips (details in `docs/technical/design-system.md`).
+- **Dogs first.** The mobile home stays dogs-only; rescues are reachable via
+  the nav and from every dog. Swipe is for phones, not a desktop header CTA.
+- **Privacy first, free forever.** No accounts; nothing typed into search goes
+  to analytics.
+- Look and feel (Bricolage Grotesque + Figtree, colour, photos):
+  `docs/technical/design-system.md`.
+
 ## Project Structure
 
 ```
@@ -338,7 +360,7 @@ imports it; do not duplicate content between them.
 - LLM pipeline: `docs/features/llm-data-enrichment.md`
 - Product analytics (PostHog): `docs/features/product-analytics.md`
 - Production quirks, incidents, runbooks: `docs/technical/operational-knowledge.md`
-- UX refresh epic #484 decisions and merge rules: `docs/epics/484-ux-refresh.md`
+- Design system (type, colour, photos, image sizes): `docs/technical/design-system.md`
 - Setup: `docs/guides/installation.md`
 - Deployment: `docs/guides/deployment.md`
 - Testing: `docs/guides/testing.md`

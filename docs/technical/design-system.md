@@ -69,11 +69,43 @@ the `ui/` components match.
   (12px), controls `rounded-lg`, chips and badges `rounded-full`.
 - **Shadow:** one, `shadow-card`. Everything else is a 1px `line` border.
 
+## Photos
+
+Photos are the product. Quality varies widely between rescues (resolution,
+aspect, framing, some tiny or blurry), so design for the worst case.
+
+- **Never upscale past the source.** The loader asks the CDN for a width, and
+  images.rescuedogs.me returns at most the original width.
+- **Fit odd shapes whole over a blurred copy of themselves**, never a harsh
+  crop. `CardPhoto` in `components/dogs/DogCard.tsx` fills the 4:3 frame only
+  when the aspect is between 0.95 and 1.6 and the photo is at least as wide as
+  the frame; anything taller, wider or smaller is shown whole.
+- **Stable layouts.** Frames have a fixed aspect, so a slow or odd photo never
+  moves the page.
+- **Galleries.** `animals.images` holds up to 8 photos per dog (see
+  `docs/technical/scraper-architecture.md`). Rescues that list dogs only on a
+  list page (Many Tears, Pets in Turkey, REAN) give one photo; every layout
+  has to work with one.
+
+### Sizes and the width ladder
+
+`frontend/next.config.js` sets the widths the loader may request:
+`deviceSizes` 640, 768, 1080, 1200, 1920 and `imageSizes` 32-512. 384/512 and
+1200 exist for 2x and 3x phones: a 171px card at 2x wants 342 (it used to get
+640), and a 390px photo at 3x wants 1170 (it used to get 1920) (#506).
+
+Every `sizes` string lives in `frontend/src/constants/imageSizes.ts` and must
+match the grid it is used in. `CATALOG_CARD` follows `DOG_GRID`'s 2/3/4
+columns; a new grid gets its own entry rather than borrowing one that is close.
+Preload (`priority`) only what is above the fold on a phone.
+
 ## Missing data
 
 LLM-extracted facts are missing for some dogs and whole rescues. Leave a
 missing fact out; never render "Unknown", empty bars or placeholder chips on
 cards. On the dog page an unknown compatibility can appear once, in `unknown`.
+Filters on these facts match only dogs where the value is known, and say so
+("Known for 1,136 dogs").
 
 ## Header and navigation
 
