@@ -82,6 +82,74 @@ uv run alembic -c migrations/railway/alembic.ini upgrade head
 
 `alembic.ini` holds a placeholder URL, so a missing variable fails loudly.
 
+**Manual production runs from the laptop** (verified 2026-09-26). Run them
+from a fresh worktree of `origin/main`, never a feature branch, with the
+cron's environment. Keep clear of the cron: not in the hour before
+Mon/Thu/Sat 15:00 UTC (a manual run has no timeout), and not while an
+execution is still going, since the batch runs the orgs one after another
+and can last well past 15:00. Check the Cron Runs tab, and that no log is
+open:
+
+```sql
+SELECT o.config_id, sl.started_at::text FROM scrape_logs sl
+JOIN organizations o ON o.id = sl.organization_id WHERE sl.status = 'running';
+```
+
+Then, from the main checkout (the subshell keeps the production URL out of
+your shell, and `set -e` stops at the first failure, e.g. a leftover
+worktree):
+
+```bash
+(
+  set -e
+  url="$(grep -E '^RAILWAY_DATABASE_URL=' .env | cut -d= -f2- | tr -d "\"'")"
+  test -n "$url"
+  git fetch origin
+  git worktree add ../rda-prod-run origin/main
+  trap 'git worktree remove --force ../rda-prod-run' EXIT
+  cd ../rda-prod-run
+  railway run -p 947b70e4-076f-4288-833a-ed1b1409a01d -e production -s thriving-appreciation -- \
+    env DATABASE_URL="$url" TZ=UTC \
+    uv run python management/railway_scraper_cron.py --org <config_id>
+)
+```
+
+- `TZ=UTC` is required, here and in any laptop command that writes
+  timestamps. The code writes naive `datetime.now()`, so a laptop run stores
+  local time: its `scrape_logs` rows and `last_seen_at` land hours off the
+  cron's, which can skip stale detection on either run.
+- `DATABASE_URL` is overridden because the service's own points at
+  `postgres.railway.internal`, which the laptop can't reach.
+- A single `--org` run has no timeout (the #581 limit applies only to the
+  batch). Ctrl-C and plain `kill` (SIGINT/SIGTERM) only set a shutdown flag
+  that it never checks, and Ctrl-C can kill the subshell, whose trap then
+  deletes the worktree under the still-running scraper. Don't Ctrl-C: stop a
+  stuck run with `pkill -9 -f railway_scraper_cron`, then close its row
+  (below).
+- `railway run` brings the cron's `ENVIRONMENT=production` and Sentry DSN, so
+  a laptop run's errors show up in Sentry as cron errors. Don't override
+  `ENVIRONMENT`: the LLM config accepts only its known values.
+
+**A hung cron run.** The CLI can't stop one cron execution. The tested way is
+`railway redeploy -p 947b70e4-076f-4288-833a-ed1b1409a01d -e production -s
+thriving-appreciation` (not `railway up`, which deploys your checkout): it
+ends the running execution without starting a new one, and the next run
+comes at the next scheduled time. The GraphQL API has `deploymentStop(id)`
+(via `railway api`), not yet tried on a cron execution. Either way, and after
+a `kill -9` of a laptop run, nothing closes the in-flight org's log. Close it
+by hand, for that org only, with `psql "$RAILWAY_DATABASE_URL"` (the
+`postgres` MCP is read-only):
+
+```sql
+UPDATE scrape_logs SET status = 'error', completed_at = now() AT TIME ZONE 'UTC',
+  error_message = 'Run stopped by hand'
+WHERE status = 'running'
+  AND organization_id = (SELECT id FROM organizations WHERE config_id = '<config_id>');
+```
+
+Since #581 a single hung scraper times out instead of blocking the batch, so
+this should be rare.
+
 ## Deploys and caching (Vercel)
 
 **Vercel and Railway deploy on the same push to main.** A prerender failing
@@ -187,9 +255,9 @@ and merge just the keys they set into `properties`. Both ran on production on
 after a cleaner change, outside the cron window (Mon/Thu/Sat 3pm UTC):
 ```bash
 export $(grep -E '^RAILWAY_DATABASE_URL=' .env | xargs)
-railway run --service thriving-appreciation -- env RAILWAY_DATABASE_URL="$RAILWAY_DATABASE_URL" \
+railway run --service thriving-appreciation -- env RAILWAY_DATABASE_URL="$RAILWAY_DATABASE_URL" TZ=UTC \
   uv run python management/name_commands.py clean-names --apply
-railway run --service thriving-appreciation -- env RAILWAY_DATABASE_URL="$RAILWAY_DATABASE_URL" \
+railway run --service thriving-appreciation -- env RAILWAY_DATABASE_URL="$RAILWAY_DATABASE_URL" TZ=UTC \
   uv run python management/location_commands.py display-locations --apply
 ```
 Known gaps: Pets in Turkey writes "Currently in Amsterdam" in free text
@@ -212,7 +280,7 @@ Model and cost details are in AGENTS.md. Operational points:
   ```bash
   export $(grep -E '^RAILWAY_DATABASE_URL=' .env | xargs)
   railway run --service thriving-appreciation -- \
-    env DATABASE_URL="$RAILWAY_DATABASE_URL" \
+    env DATABASE_URL="$RAILWAY_DATABASE_URL" TZ=UTC \
     uv run python management/llm_commands.py generate-profiles \
       --organization <ID> --confidence all --batch-size 5
   ```
