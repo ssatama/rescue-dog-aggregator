@@ -21,6 +21,14 @@ from services.llm.schemas.dog_profiler import DESCRIPTION_MIN_CHARS
 # the 2026-09-23 backfill (#431). The margin keeps a near miss above the floor.
 DESCRIPTION_MINIMUM_RULE = f"HARD MINIMUM: the description must be at least {DESCRIPTION_MIN_CHARS + 10} characters long. A shorter description is rejected."
 
+# German source text leaked into traits and activities as "verspielt" or
+# "Verspielt (playful)", which cards show verbatim (#505).
+ENGLISH_OUTPUT_RULE = (
+    "LANGUAGE: every text value must be in English, including each personality_traits, "
+    "favorite_activities and unique_quirk entry. Translate source words; never copy the "
+    "original-language word or add it in brackets."
+)
+
 
 class PromptBuilder:
     """Builder for constructing LLM prompts from dog data and templates."""
@@ -100,7 +108,7 @@ class PromptBuilder:
             properties=properties_str,
         )
 
-        return f"{prompt}\n\n{DESCRIPTION_MINIMUM_RULE}"
+        return f"{prompt}\n\n{DESCRIPTION_MINIMUM_RULE}\n\n{ENGLISH_OUTPUT_RULE}"
 
     def build_messages(self, dog_data: dict[str, Any], prompt_adjustment: str = "") -> list:
         """

@@ -49,3 +49,11 @@ class TestProfileSelectionQuery:
     def test_rejects_an_unknown_confidence_value(self):
         with pytest.raises(ValueError):
             build_profile_selection_query(org_id=28, force=True, confidence="'; DROP TABLE animals;--", limit=None)
+
+    def test_ids_select_only_those_dogs_even_with_a_profile(self):
+        """#505: backfill the few dogs with German traits without re-profiling a whole rescue."""
+        sql, params = build_profile_selection_query(org_id=11, force=False, confidence="all", limit=None, ids=(251, 9570))
+
+        assert "id = ANY(%s)" in sql
+        assert "dog_profiler_data IS NULL" not in sql
+        assert params == (11, [251, 9570])

@@ -237,7 +237,7 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
 VALID_CONFIDENCE_FILTERS = ("high", "medium", "low", "all")
 
 
-def build_profile_selection_query(org_id: int, force: bool, confidence: str, limit: int | None) -> tuple[str, tuple]:
+def build_profile_selection_query(org_id: int, force: bool, confidence: str, limit: int | None, ids: tuple[int, ...] = ()) -> tuple[str, tuple]:
     """Build the query selecting which dogs to profile.
 
     Args:
@@ -246,6 +246,8 @@ def build_profile_selection_query(org_id: int, force: bool, confidence: str, lim
             regenerated after a scraper fix changed the source text
         confidence: One of VALID_CONFIDENCE_FILTERS; "all" drops the filter
         limit: Optional row cap
+        ids: Only these dogs. Implies force, since a targeted backfill
+            re-profiles dogs that already have a (bad) profile
 
     Returns:
         The SQL and its parameters
@@ -257,8 +259,12 @@ def build_profile_selection_query(org_id: int, force: bool, confidence: str, lim
         raise ValueError(f"Unknown confidence filter {confidence!r}; expected one of {VALID_CONFIDENCE_FILTERS}")
 
     conditions = ["organization_id = %s", "status = 'available'"]
+    params: tuple = (org_id,)
 
-    if not force:
+    if ids:
+        conditions.append("id = ANY(%s)")
+        params += (list(ids),)
+    elif not force:
         conditions.append("(dog_profiler_data IS NULL OR dog_profiler_data = '{}')")
 
     if confidence != "all":
@@ -274,7 +280,7 @@ def build_profile_selection_query(org_id: int, force: bool, confidence: str, lim
     if limit:
         sql += f" LIMIT {int(limit)}"
 
-    return sql, (org_id,)
+    return sql, params
 
 
 @llm.command()
@@ -300,7 +306,8 @@ def build_profile_selection_query(org_id: int, force: bool, confidence: str, lim
     type=int,
     help="Number of items to process per batch (default: 10)",
 )
-def generate_profiles(organization: int | None, limit: int | None, force: bool, confidence: str, batch_size: int):
+@click.option("--ids", default="", help="Comma-separated dog ids to re-profile (implies --force)")
+def generate_profiles(organization: int | None, limit: int | None, force: bool, confidence: str, batch_size: int, ids: str):
     """Generate dog profiler data using org-specific prompts."""
     from services.llm.dog_profiler import DogProfilerPipeline
     from services.llm.organization_config_loader import get_config_loader
@@ -338,7 +345,13 @@ def generate_profiles(organization: int | None, limit: int | None, force: bool, 
         console.print(f"\n[bold blue]Processing {org_config.organization_name} (ID: {org_id})[/bold blue]")
         console.print(f"  Model: {get_llm_config().models.default_model}")
 
-        query, query_params = build_profile_selection_query(org_id=org_id, force=force, confidence=confidence, limit=limit)
+        query, query_params = build_profile_selection_query(
+            org_id=org_id,
+            force=force,
+            confidence=confidence,
+            limit=limit,
+            ids=tuple(int(i) for i in ids.split(",") if i.strip()),
+        )
 
         cursor.execute(query, query_params)
         dogs = [
@@ -365,7 +378,7 @@ def generate_profiles(organization: int | None, limit: int | None, force: bool, 
             asyncio.run(pipeline.save_results(results))
 
         stats = pipeline.get_statistics()
-        console.print(f"  ✓ Processed: {stats['processed']}, Successful: {stats['successful']} ({stats['success_rate']:.1f}%)")
+        console.print(f"  ✓ Processed: {stats['processed']}, Successful: {stats['successful']} ({stats['success_rate']:.0%})")
 
         total_processed += stats["processed"]
         total_successful += stats["successful"]
