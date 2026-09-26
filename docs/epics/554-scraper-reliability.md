@@ -71,6 +71,38 @@ skipping on only new dogs are collected, so one new dog failing every run
 would be 100%. Validator rejections don't count (deviation from the issue):
 they repeat for the same dog every run.
 
+## Listings fail loudly (#559)
+
+A listing page that can't be read raises `ListingIncompleteError`
+(`scrapers/base_scraper.py`); `collect_data` lets it through, so the run is
+an `error` and stale detection doesn't run. In the Playwright (production)
+paths of Tierschutzverein, Many Tears, Woof, Santer Paws, MISIs, Bosnia, Pets
+in Turkey, The Underdog and REAN, no listing returns the pages that did load
+and none turns a failure into `[]`. Still to do: Dogs Trust (below), the
+Selenium paths (deleted in #566) and the disabled Furry Rescue Italy and
+Galgos del Sol.
+
+- `BaseScraper.get_listing_page(url)` is the plain-HTTP fetch: `max_retries`
+  retries with `retry_backoff_factor` backoff for timeouts, connection
+  errors, 429 and 5xx; anything else (another 4xx, a malformed URL) fails
+  at once. `max_retries: 3` means 4 attempts here.
+- Every page the pagination says exists must list dogs. An empty *first*
+  page is still left to the zero-dogs alert.
+- Per site: Many Tears reads `?page=N` up to the highest numbered link (12
+  a page; a full page 1 with no links raises). Santer Paws walks
+  `/adopt/page/N/` until an empty 200, which must come after its highest
+  `data-page`. Tierschutzverein follows "→" links. MISIs raises when a
+  clicked page shows no `/post/` links or the previous page's. A listing
+  that runs past its page limit raises (Tierschutzverein 50, Santer 20,
+  MISIs 10).
+- Per-dog failures still skip one dog: a card that doesn't parse, a detail
+  page that fails.
+- Not done here: Dogs Trust's Playwright listing still stops early when a
+  page doesn't render after "Next". Its "1 / N" indicator can be stale, so
+  raising needs a check against the live site first (follow-up on #559).
+- Site findings from this work (Woof reads only page 1; Many Tears' count
+  swing is churn) are in `docs/technical/operational-knowledge.md`.
+
 ## Gotchas
 
 - **The local dev database can lag production's schema.** Alembic only reads

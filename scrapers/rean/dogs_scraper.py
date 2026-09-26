@@ -7,7 +7,7 @@ from typing import Any
 import requests
 from bs4 import BeautifulSoup
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, ListingIncompleteError
 
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
@@ -551,7 +551,13 @@ class REANScraper(BaseScraper):
             List of dog data dictionaries with correctly associated images
         """
         if USE_PLAYWRIGHT:
-            return asyncio.run(self._extract_dogs_with_images_unified_playwright(url, page_type))
+            # The fallback runs outside the Playwright event loop: it starts
+            # its own for the images, and asyncio.run can't nest.
+            try:
+                return asyncio.run(self._extract_dogs_with_images_unified_playwright(url, page_type))
+            except Exception as e:
+                self.logger.error(f"Error during Playwright unified extraction: {e}")
+                return self._extract_dogs_legacy_fallback(url, page_type)
         return self._extract_dogs_with_images_unified_selenium(url, page_type)
 
     def _extract_dogs_with_images_unified_selenium(self, url: str, page_type: str) -> list[dict[str, Any]]:
@@ -598,36 +604,28 @@ class REANScraper(BaseScraper):
 
     async def _extract_dogs_with_images_unified_playwright(self, url: str, page_type: str) -> list[dict[str, Any]]:
         """Playwright implementation of extract_dogs_with_images_unified."""
-        try:
-            playwright_service = get_playwright_service()
-            options = PlaywrightOptions(
-                headless=True,
-                viewport_width=1920,
-                viewport_height=1080,
-            )
+        playwright_service = get_playwright_service()
+        options = PlaywrightOptions(
+            headless=True,
+            viewport_width=1920,
+            viewport_height=1080,
+        )
 
-            async with playwright_service.get_browser(options) as browser_result:
-                page = browser_result.page
+        async with playwright_service.get_browser(options) as browser_result:
+            page = browser_result.page
 
-                await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=60000)
 
-                await asyncio.sleep(2)
+            await asyncio.sleep(2)
 
-                await self._trigger_lazy_loading_playwright(page)
+            await self._trigger_lazy_loading_playwright(page)
 
-                await asyncio.sleep(2)
+            await asyncio.sleep(2)
 
-                content = await page.content()
+            content = await page.content()
 
-            soup = BeautifulSoup(content, "html.parser")
-
-            dogs_data = self._extract_dogs_from_dom_soup(soup, page_type)
-
-            return dogs_data
-
-        except Exception as e:
-            self.logger.error(f"Error during Playwright unified extraction: {e}")
-            return self._extract_dogs_legacy_fallback(url, page_type)
+        soup = BeautifulSoup(content, "html.parser")
+        return self._extract_dogs_from_dom_soup(soup, page_type)
 
     async def _trigger_lazy_loading_playwright(self, page) -> None:
         """Trigger lazy loading for images using Playwright page scrolling."""
@@ -661,29 +659,25 @@ class REANScraper(BaseScraper):
         """Extract dog data from BeautifulSoup parsed DOM."""
         dogs_data = []
 
-        try:
-            # Find all dog containers using the discovered DOM structure
-            dog_containers = self._find_dog_containers_soup(soup)
+        # Find all dog containers using the discovered DOM structure. A failure
+        # here raises: returning [] for one page would retire its dogs (#559).
+        dog_containers = self._find_dog_containers_soup(soup)
 
-            for i, container in enumerate(dog_containers):
-                try:
-                    dog_data = self._extract_single_dog_from_container_soup(container, page_type, i + 1)
+        for i, container in enumerate(dog_containers):
+            try:
+                dog_data = self._extract_single_dog_from_container_soup(container, page_type, i + 1)
 
-                    if dog_data and dog_data.get("name"):
-                        dogs_data.append(dog_data)
-                        self.logger.debug(f"Successfully extracted dog: {dog_data.get('name')}")
-                    else:
-                        self.logger.warning(f"Container {i + 1} did not yield valid dog data")
+                if dog_data and dog_data.get("name"):
+                    dogs_data.append(dog_data)
+                    self.logger.debug(f"Successfully extracted dog: {dog_data.get('name')}")
+                else:
+                    self.logger.warning(f"Container {i + 1} did not yield valid dog data")
 
-                except Exception as e:
-                    self.logger.error(f"Error extracting from container {i + 1}: {e}")
-                    continue
+            except Exception as e:
+                self.logger.error(f"Error extracting from container {i + 1}: {e}")
+                continue
 
-            return dogs_data
-
-        except Exception as e:
-            self.logger.error(f"Error during DOM extraction: {e}")
-            return []
+        return dogs_data
 
     def _find_dog_containers_soup(self, soup: BeautifulSoup) -> list:
         """Find dog containers using BeautifulSoup."""
@@ -1040,83 +1034,73 @@ class REANScraper(BaseScraper):
 
         Returns:
             List of dog data using legacy approach
+
+        Raises:
+            ListingIncompleteError: the page can't be fetched either way.
         """
-        try:
-            # World-class logging: Legacy fallback handled by centralized system
+        html_content = self.scrape_page(url)
+        if not html_content:
+            raise ListingIncompleteError(f"REAN {page_type} page {url} failed to load")
 
-            # Use the original approach as fallback
-            html_content = self.scrape_page(url)
-            if not html_content:
-                return []
+        dog_blocks = self.extract_dog_content_from_html(html_content)
+        available_images = self.extract_images_with_browser(url)
 
-            dog_blocks = self.extract_dog_content_from_html(html_content)
-            available_images = self.extract_images_with_browser(url)
+        dog_data_list = []
+        for entry in dog_blocks:
+            dog_data = self.extract_dog_data(entry, page_type)
+            if dog_data and dog_data.get("name"):
+                dog_data_list.append(dog_data)
 
-            dog_data_list = []
-            for entry in dog_blocks:
-                dog_data = self.extract_dog_data(entry, page_type)
-                if dog_data and dog_data.get("name"):
-                    dog_data_list.append(dog_data)
-
-            # Use the improved association logic
-            enriched_dog_data_list = self.associate_images_with_dogs(dog_data_list, available_images)
-
-            # World-class logging: Legacy results handled by centralized system
-            return enriched_dog_data_list
-
-        except Exception as e:
-            self.logger.error(f"Legacy fallback also failed: {e}")
-            return []
+        # Use the improved association logic
+        return self.associate_images_with_dogs(dog_data_list, available_images)
 
     def scrape_animals(self) -> list[dict[str, Any]]:
         """
         Main scraping method that processes both Romania and UK pages.
+
+        A page that can't be fetched raises, so BaseScraper ends the run as
+        an error and stale detection doesn't run.
 
         Returns:
             List of standardized animal data dictionaries
         """
         all_animals = []
 
-        try:
-            for page_type, page_path in self.pages.items():
-                # World-class logging: Page scraping handled by centralized system
+        for page_type, page_path in self.pages.items():
+            # World-class logging: Page scraping handled by centralized system
 
-                # Use unified extraction to get dogs with correctly associated
-                # images
-                page_url = f"{self.base_url}{page_path}"
-                enriched_dog_data_list = self.extract_dogs_with_images_unified(page_url, page_type)
-                # World-class logging: Page results handled by centralized system
+            # Use unified extraction to get dogs with correctly associated
+            # images
+            page_url = f"{self.base_url}{page_path}"
+            enriched_dog_data_list = self.extract_dogs_with_images_unified(page_url, page_type)
+            # World-class logging: Page results handled by centralized system
 
-                # Convert to standardized format and add to results
-                ids_on_page: dict[str, int] = {}
-                for dog_data in enriched_dog_data_list:
-                    try:
-                        standardized_data = self.standardize_animal_data(dog_data, page_type)
-                        # Two dogs listed under one name must not share a row. The
-                        # suffix follows page order, so it is only stable while
-                        # both stay listed; no REAN name has been reused yet.
-                        external_id = standardized_data["external_id"]
-                        ids_on_page[external_id] = ids_on_page.get(external_id, 0) + 1
-                        if ids_on_page[external_id] > 1:
-                            standardized_data["external_id"] = f"{external_id}-{ids_on_page[external_id]}"
-                            self.logger.warning(f"Two REAN dogs named {standardized_data['name']} on {page_type}; the second is {standardized_data['external_id']}")
-                        all_animals.append(standardized_data)
-                    except Exception as e:
-                        self.logger.error(f"Error processing dog entry: {e}")
-                        continue
+            # Convert to standardized format and add to results
+            ids_on_page: dict[str, int] = {}
+            for dog_data in enriched_dog_data_list:
+                try:
+                    standardized_data = self.standardize_animal_data(dog_data, page_type)
+                    # Two dogs listed under one name must not share a row. The
+                    # suffix follows page order, so it is only stable while
+                    # both stay listed; no REAN name has been reused yet.
+                    external_id = standardized_data["external_id"]
+                    ids_on_page[external_id] = ids_on_page.get(external_id, 0) + 1
+                    if ids_on_page[external_id] > 1:
+                        standardized_data["external_id"] = f"{external_id}-{ids_on_page[external_id]}"
+                        self.logger.warning(f"Two REAN dogs named {standardized_data['name']} on {page_type}; the second is {standardized_data['external_id']}")
+                    all_animals.append(standardized_data)
+                except Exception as e:
+                    self.logger.error(f"Error processing dog entry: {e}")
+                    continue
 
-                # Rate limiting between pages
-                # Not the last page
-                if page_type != list(self.pages.keys())[-1]:
-                    time.sleep(self.rate_limit_delay)
+            # Rate limiting between pages
+            # Not the last page
+            if page_type != list(self.pages.keys())[-1]:
+                time.sleep(self.rate_limit_delay)
 
-            # World-class logging: Total results handled by centralized system
-            return all_animals
+        # World-class logging: Total results handled by centralized system
+        return all_animals
 
-        except Exception as e:
-            self.logger.error(f"Critical error during scraping: {e}")
-            self.handle_scraper_failure(str(e))
-            return []
         # Stale detection handled by BaseScraper._finalize_scrape() with proper safety guards
 
     def scrape_page(self, url: str) -> str | None:

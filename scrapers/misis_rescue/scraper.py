@@ -14,7 +14,7 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, ListingIncompleteError
 
 from .detail_parser import MisisRescueDetailParser
 
@@ -258,25 +258,29 @@ class MisisRescueScraper(BaseScraper):
             page_dogs = self._extract_dogs_before_reserved(soup)
             self._assign_images_to_dogs(page_dogs, soup)
             all_dogs.extend(page_dogs)
+            previous_links = self._post_links(soup)
 
             # A page that fails to render raises: keeping pages 1-3 without
             # page 4 would mark page 4's dogs stale while they are still listed.
+            # No button for the next page is the real last page; a clicked page
+            # that shows no dogs, or still shows the last page's, didn't render.
             page_num = 2
-            while page_num <= 10:  # Safety limit
-                if not await self._click_pagination_button_playwright(page, page_num):
-                    break
+            while await self._click_pagination_button_playwright(page, page_num):
+                if page_num > 10:  # Safety limit
+                    raise ListingIncompleteError("MISIs listing still has a next page after 10 pages")
 
                 await asyncio.sleep(5)
                 await self._scroll_to_load_all_content_playwright(page)
 
                 content = await page.content()
                 soup = BeautifulSoup(content, "html.parser")
+                links = self._post_links(soup)
+                if not links or links == previous_links:
+                    raise ListingIncompleteError(f"MISIs listing page {page_num} was clicked but didn't render its dogs")
+                previous_links = links
+
                 page_dogs = self._extract_dogs_before_reserved(soup)
                 self._assign_images_to_dogs(page_dogs, soup)
-
-                if not page_dogs:
-                    break
-
                 all_dogs.extend(page_dogs)
                 page_num += 1
 
@@ -288,6 +292,11 @@ class MisisRescueScraper(BaseScraper):
                 seen_urls.add(dog["url"])
 
         return unique_dogs
+
+    @staticmethod
+    def _post_links(soup: BeautifulSoup) -> set[str]:
+        """Every dog post link on a listing page, reserved dogs included."""
+        return {a["href"] for a in soup.find_all("a", href=lambda href: href and "/post/" in href)}
 
     async def _scroll_to_load_all_content_playwright(self, page) -> None:
         """Scroll to bottom of page to trigger lazy loading (Playwright version)."""

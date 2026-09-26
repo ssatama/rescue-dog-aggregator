@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, ListingIncompleteError
 from utils.shared_extraction_patterns import gallery_urls
 
 USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
@@ -246,7 +246,9 @@ class WoofProjectScraper(BaseScraper):
         """Get list of available dogs from all listing pages.
 
         Fetches all paginated listing pages and extracts information about all
-        available dogs. Dogs marked as ADOPTED or RESERVED are excluded.
+        available dogs. Dogs marked as ADOPTED or RESERVED are excluded. A page
+        that fails to load raises ListingIncompleteError: the dogs on it would
+        go stale.
 
         Returns:
             List of dictionaries containing:
@@ -255,92 +257,43 @@ class WoofProjectScraper(BaseScraper):
         """
         all_dogs = []
 
-        # Get all pagination URLs
-        pagination_urls = self._get_pagination_urls()
+        for page_url in self._get_pagination_urls():
+            self.respect_rate_limit()
+            all_dogs.extend(self._extract_dogs_from_page(self._require_listing_page(page_url)))
 
-        for page_url in pagination_urls:
-            try:
-                # Respect rate limiting
-                self.respect_rate_limit()
-
-                # Fetch this page
-                soup = self._fetch_listing_page(page_url)
-                if not soup:
-                    self.logger.warning(f"Failed to fetch page: {page_url}")
-                    continue
-
-                # Extract dogs from this page
-                page_dogs = self._extract_dogs_from_page(soup)
-                all_dogs.extend(page_dogs)
-
-                # World-class logging: Page results handled by centralized system
-
-            except Exception as e:
-                self.logger.error(f"Error processing page {page_url}: {e}")
-                continue
-
-        # World-class logging: Total dogs count handled by centralized system
         return all_dogs
 
-    def _get_pagination_urls(self) -> list[str]:
-        """Generate pagination URLs dynamically by checking for pagination.
+    def _require_listing_page(self, url: str) -> BeautifulSoup:
+        """The parsed listing page, or ListingIncompleteError if it can't be fetched."""
+        soup = self._fetch_listing_page(url)
+        if soup is None:
+            raise ListingIncompleteError(f"Woof Project listing page {url} failed to load")
+        return soup
 
-        Dynamically discovers pagination instead of using fixed page count.
+    def _get_pagination_urls(self) -> list[str]:
+        """Listing page URLs, from the pagination links on page 1.
 
         Returns:
             List of pagination URLs
         """
         urls = [self.listing_url]  # Always start with page 1
+        soup = self._require_listing_page(self.listing_url)
 
-        # Check first page for pagination links
-        try:
-            soup = self._fetch_listing_page(self.listing_url)
-            if soup:
-                # Look for pagination links - common patterns
-                pagination_links = []
-
-                # Look for numbered pagination links
-                for link in soup.find_all("a"):
-                    href = link.get("href", "")
-                    # Ensure href is a string before calling string methods
-                    href_str = str(href) if href else ""
-                    if "/page/" in href_str and href_str.startswith("/adoption/page/"):
-                        pagination_links.append(href_str)
-
-                # Extract page numbers and create full URLs
-                page_numbers = set()
-                for link in pagination_links:
-                    try:
-                        # Extract page number from URL like /adoption/page/2/
-                        link_str = str(link)
-                        page_num = int(link_str.split("/page/")[-1].rstrip("/"))
-                        page_numbers.add(page_num)
-                    except (ValueError, IndexError):
-                        continue
-
-                # Add URLs for discovered pages
-                for page_num in sorted(page_numbers):
-                    if page_num > 1:  # Page 1 already added
-                        urls.append(f"{self.listing_url}page/{page_num}/")
-
-                # World-class logging: Pagination discovery handled by centralized system
-
-        except Exception as e:
-            self.logger.warning(f"Could not auto-discover pagination, using fallback: {e}")
-            # Fallback to at least check a few pages manually
-            for page_num in range(2, 6):  # Check pages 2-5
-                test_url = f"{self.listing_url}page/{page_num}/"
+        # Extract page numbers from links like /adoption/page/2/. The live site
+        # links absolute URLs, so this finds none and only page 1 is read; the
+        # later pages are the adoption archive (2026-09-26, see #565).
+        page_numbers = set()
+        for link in soup.find_all("a"):
+            href_str = str(link.get("href", "") or "")
+            if href_str.startswith("/adoption/page/"):
                 try:
-                    test_soup = self._fetch_listing_page(test_url)
-                    if test_soup:
-                        # Quick check if page has content
-                        h2_tags = test_soup.find_all("h2")
-                        if len(h2_tags) > 5:  # If page has reasonable content
-                            urls.append(test_url)
-                        else:
-                            break  # Stop if page seems empty
-                except Exception:
-                    break  # Stop on error
+                    page_numbers.add(int(href_str.split("/page/")[-1].rstrip("/")))
+                except (ValueError, IndexError):
+                    continue
+
+        for page_num in sorted(page_numbers):
+            if page_num > 1:  # Page 1 already added
+                urls.append(f"{self.listing_url}page/{page_num}/")
 
         return urls
 
@@ -380,8 +333,7 @@ class WoofProjectScraper(BaseScraper):
                 "Upgrade-Insecure-Requests": "1",
             }
 
-            response = requests.get(url, timeout=self.timeout, headers=headers)
-            response.raise_for_status()
+            response = self.get_listing_page(url, headers=headers)
 
             return BeautifulSoup(response.text, "html.parser")
 

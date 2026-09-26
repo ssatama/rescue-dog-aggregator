@@ -111,59 +111,35 @@ class TheUnderdogScraper(BaseScraper):
             - url: Full URL to dog detail page
             - thumbnail_url: URL of thumbnail image
         """
-        try:
-            # Fetch listing page
-            soup = self._fetch_listing_page()
-            if not soup:
-                return []
+        # Fetch listing page; a failure raises rather than listing no dogs
+        soup = self._fetch_listing_page()
 
-            # Find all dog cards
-            dog_cards = soup.select(".ProductList-item")
-            # World-class logging: Dog cards count handled by centralized system
+        # Find all dog cards
+        dog_cards = soup.select(".ProductList-item")
+        # World-class logging: Dog cards count handled by centralized system
 
-            available_dogs = []
+        available_dogs = []
 
-            for card in dog_cards:
-                # Extract basic info
-                dog_info = self._extract_dog_info(card)
-                if not dog_info:
-                    continue
+        for card in dog_cards:
+            # Extract basic info
+            dog_info = self._extract_dog_info(card)
+            if not dog_info:
+                continue
 
-                # Check if dog is available (no ADOPTED/RESERVED status) using original name with flag
-                if self._is_available_dog(dog_info["original_name"]):
-                    available_dogs.append(dog_info)
-                    self.logger.debug(f"Found available dog: {dog_info['name']}")
-                else:
-                    self.logger.debug(f"Skipping unavailable dog: {dog_info['name']}")
+            # Check if dog is available (no ADOPTED/RESERVED status) using original name with flag
+            if self._is_available_dog(dog_info["original_name"]):
+                available_dogs.append(dog_info)
+                self.logger.debug(f"Found available dog: {dog_info['name']}")
+            else:
+                self.logger.debug(f"Skipping unavailable dog: {dog_info['name']}")
 
-            # World-class logging: Available dogs filtering handled by centralized system
-            return available_dogs
+        # World-class logging: Available dogs filtering handled by centralized system
+        return available_dogs
 
-        except Exception as e:
-            self.logger.error(f"Error getting animal list: {e}")
-            return []
-
-    def _fetch_listing_page(self) -> BeautifulSoup | None:
-        """Fetch and parse the listing page.
-
-        Returns:
-            BeautifulSoup object or None if error
-        """
-        try:
-            # World-class logging: Page fetching handled by centralized system
-
-            response = requests.get(
-                self.listing_url,
-                timeout=self.timeout,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"},
-            )
-            response.raise_for_status()
-
-            return BeautifulSoup(response.text, "html.parser")
-
-        except requests.RequestException as e:
-            self.logger.error(f"Error fetching listing page: {e}")
-            return None
+    def _fetch_listing_page(self) -> BeautifulSoup:
+        """Fetch and parse the listing page; ListingIncompleteError if it fails."""
+        response = self.get_listing_page(self.listing_url, headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"})
+        return BeautifulSoup(response.text, "html.parser")
 
     def _extract_dog_info(self, card) -> dict[str, str] | None:
         """Extract dog information from a card element.
