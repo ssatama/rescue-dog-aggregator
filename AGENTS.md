@@ -208,6 +208,12 @@ by hand.
   (`CLAUDE_CODE_REMOTE != true`). Log: `/tmp/cloud-setup.log`.
 - **Ports**: API on 8000 (`uv run uvicorn api.main:app --port 8000`), web
   on 3000 (`cd frontend && pnpm dev`).
+- **Checks**: the cloud VM is slow, so run only the tests relevant to the
+  change (`uv run pytest tests/path/test_x.py`,
+  `pnpm jest --testPathPatterns <name>`) plus ruff, tsc and eslint. CI runs
+  the full suites on every PR; don't repeat them here.
+- **psql**: the local database needs a password:
+  `PGPASSWORD=$DB_PASSWORD psql -h localhost -U postgres -d rescue_dogs`.
 - **Seed data**: `management/seed_dev_data.py` adds about 250 synthetic
   available dogs with real photos from images.rescuedogs.me. One
   organization has dogs without AI profiles and one has no dogs, so the

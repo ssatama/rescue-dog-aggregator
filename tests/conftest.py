@@ -60,6 +60,9 @@ class RecordedSleeps:
 
 # Set TESTING environment variable early
 os.environ["TESTING"] = "true"
+# Subprocesses (CLI smoke tests) re-import config and inherit this environment,
+# so an exported DB_NAME=rescue_dogs (cloud sessions) would trip the safety guard.
+os.environ["DB_NAME"] = "test_rescue_dogs"
 print("\n[conftest] Set TESTING environment variable.")
 
 # --- Credentials for the TEST database ---
