@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within } from "@testing-library/react";
 import DogCard, { getDogSummary, getLivesWithFacts } from "../DogCard";
 import { trackDogCardClicked } from "@/lib/analytics";
 import type { Dog } from "@/types/dog";
+import { IMAGE_SIZES } from "@/constants/imageSizes";
 
 const mockToggleFavorite = jest.fn();
 let mockFavorited = false;
@@ -183,6 +184,21 @@ describe("DogCard", () => {
 
       expect(img).toHaveAttribute("data-fit", "fill");
       ImageSpy.mockRestore();
+    });
+
+    it("asks for a photo the size of a DOG_GRID column unless told otherwise (#506)", () => {
+      const { rerender } = render(<DogCard dog={fullDog} />);
+      expect(screen.getByAltText("Bella")).toHaveAttribute("data-sizes", IMAGE_SIZES.CATALOG_CARD);
+
+      rerender(<DogCard dog={fullDog} sizes={IMAGE_SIZES.SINGLE_COLUMN_CARD} />);
+      expect(screen.getByAltText("Bella")).toHaveAttribute("data-sizes", IMAGE_SIZES.SINGLE_COLUMN_CARD);
+    });
+
+    it("fetches only a tiny copy for the blurred backdrop (#506)", () => {
+      const { container } = render(<DogCard dog={fullDog} />);
+      loadPhoto(600, 1200);
+      const backdrop = container.querySelector('img[aria-hidden="true"]');
+      expect(backdrop).toHaveAttribute("data-sizes", "64px");
     });
 
     it("never stretches a photo smaller than the frame", () => {

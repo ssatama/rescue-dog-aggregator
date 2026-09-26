@@ -229,8 +229,11 @@ const nextConfig = {
     minimumCacheTTL: 31536000,
     dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    deviceSizes: [640, 768, 1080, 1920],
-    imageSizes: [32, 64, 128, 256],
+    // 384/512 and 1200 close the gaps a 2x or 3x phone fell through:
+    // a 171px card at 2x wants 342 and got 640; a 390px photo at 3x wants
+    // 1170 and got 1920 (#506).
+    deviceSizes: [640, 768, 1080, 1200, 1920],
+    imageSizes: [32, 64, 128, 256, 384, 512],
     unoptimized: false,
   },
 };

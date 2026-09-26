@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import DogCard from "./DogCard";
+import { IMAGE_SIZES } from "@/constants/imageSizes";
 import { getSimilarDogs } from "../../services/similarDogsService";
 import { similarDogsQuery } from "../../utils/dogFacts";
 import { reportError } from "../../utils/logger";
@@ -70,7 +71,7 @@ export default function SimilarDogsSection({
       ) : (
         <div data-testid="similar-dogs-grid" className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {dogs.map((similar, i) => (
-            <DogCard key={similar.id} dog={similar} position={i} listContext="similar" />
+            <DogCard key={similar.id} dog={similar} position={i} listContext="similar" sizes={IMAGE_SIZES.SINGLE_COLUMN_CARD} />
           ))}
         </div>
       )}

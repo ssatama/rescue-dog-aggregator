@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import DogCard from "@/components/dogs/DogCard";
+import { IMAGE_SIZES } from "@/constants/imageSizes";
 import DogCardSkeletonOptimized from "@/components/dogs/DogCardSkeletonOptimized";
 import { getAnimals } from "@/services/serverAnimalsService";
 import type { Dog } from "@/types/dog";
@@ -188,7 +189,7 @@ export function DogGrid({
       {layout === "grid" ? (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 sm:gap-6">
           {dogs.map((dog, index) => (
-            <DogCard key={dog.id} dog={dog} priority={index < 2} position={index} />
+            <DogCard key={dog.id} dog={dog} priority={index < 2} position={index} sizes={IMAGE_SIZES.SINGLE_COLUMN_CARD} />
           ))}
         </div>
       ) : (
@@ -198,7 +199,7 @@ export function DogGrid({
               key={dog.id}
               className="flex-none min-w-[260px] max-w-[360px] w-[80%] sm:w-[320px] snap-start"
             >
-              <DogCard dog={dog} priority={index < 2} position={index} />
+              <DogCard dog={dog} priority={index < 2} position={index} sizes={IMAGE_SIZES.SINGLE_COLUMN_CARD} />
             </div>
           ))}
         </div>
