@@ -43,7 +43,11 @@ FACT_SEPARATOR = re.compile(r"\s*[✔❣💕💙💛💜🧡❤️🩺🏡]+\ufe
 # "2.5 y old", "11 months old", "Age: 1,5-2 years", "Approx.2 years old"
 NOT_THE_AGE = re.compile(r"\b(?:over|under|than|for|since|after|when|at|in)\b", re.IGNORECASE)
 AGE_QUALIFIERS = re.compile(r"\b(?:approx|approximately|around|about|nearly|roughly|between|circa|ca)\b", re.IGNORECASE)
-STATED_AGE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(y/o|yo|y|yrs?|years?|months?)\b", re.IGNORECASE)
+# Group 4: the months of "2 years (and) 3 months", one age
+STATED_AGE = re.compile(
+    r"(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(y/o|yo|y|yrs?|years?|months?)\b(?:,?\s*(?:and\s+)?(\d+)\s*months?\b)?",
+    re.IGNORECASE,
+)
 
 
 def _is_the_dogs_age(fact: str, match: re.Match, since: int) -> bool:
@@ -83,6 +87,8 @@ def stated_age(facts: list[str]) -> str | None:
         low = float(match.group(1).replace(",", "."))
         high = float(match.group(2).replace(",", ".")) if match.group(2) else None
         unit = "months" if match.group(3).lower().startswith("m") else "years"
+        if unit == "years" and high is None and match.group(4):
+            return f"{math.floor(low * 12) + int(match.group(4))} months"
         if high is not None:
             # parse_age_text reads ranges of whole numbers
             return f"{math.floor(low)}-{math.ceil(high)} {unit}"
