@@ -34,6 +34,8 @@ export interface DogCardProps {
   /** Compact only: replaces the facts and greys the row, for a saved dog that
    * is no longer listed (#498). */
   notice?: React.ReactNode;
+  /** Grid only: the `sizes` for a grid other than DOG_GRID's columns. */
+  sizes?: string;
 }
 
 type Fact = { label: string; good: boolean };
@@ -147,7 +149,8 @@ export function CardPhoto({
           alt=""
           aria-hidden="true"
           fill
-          sizes={sizes}
+          // Blurred to a wash, so a tiny copy looks the same
+          sizes="64px"
           className="scale-110 object-cover opacity-60 blur-xl"
         />
       )}
@@ -230,6 +233,7 @@ function DogCard({
   onOpen,
   actions,
   notice,
+  sizes,
 }: DogCardProps): React.ReactElement {
   const href = `/dogs/${dog.slug || `unknown-dog-${dog.id}`}`;
   const summary = getDogSummary(dog);
@@ -274,7 +278,7 @@ function DogCard({
         <CardPhoto
           dog={dog}
           priority={priority}
-          sizes={compact ? IMAGE_SIZES.THUMBNAIL : IMAGE_SIZES.CATALOG_CARD}
+          sizes={compact ? IMAGE_SIZES.THUMBNAIL : (sizes ?? IMAGE_SIZES.CATALOG_CARD)}
         />
         {!compact && <FavoriteHeart dog={dog} />}
         {!compact && <AdoptableBadge dog={dog} className="absolute left-2 top-2 z-[2] bg-surface/95 shadow-sm" />}

@@ -5,7 +5,9 @@ import type { Dog } from "@/types/dog";
 
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: ({ alt, src }: { alt: string; src: string }) => <img alt={alt} src={src} />,
+  default: ({ alt, src, priority }: { alt: string; src: string; priority?: boolean }) => (
+    <img alt={alt} src={src} data-priority={String(Boolean(priority))} />
+  ),
 }));
 
 const dogs = [
@@ -23,6 +25,12 @@ describe("ServerDogListing", () => {
     expect(screen.getByText("Small paws.")).toBeInTheDocument();
     const hrefs = Array.from(container.querySelectorAll("a")).map((a) => a.getAttribute("href"));
     expect(hrefs).toEqual(["/dogs/mabel-dachshund-1", "/dogs/greta-podenco-2", "/dogs/unknown-dog-3"]);
+  });
+
+  it("preloads nothing: hydration replaces it before its photos would show (#506)", () => {
+    render(<ServerDogListing title="Dogs" dogs={dogs} />);
+
+    expect(screen.getByAltText("Mabel")).toHaveAttribute("data-priority", "false");
   });
 
   it("labels images with the dog's name and shows the breed", () => {

@@ -23,7 +23,7 @@ export default function ServerDogListing({ title, intro, dogs }: ServerDogListin
       <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{title}</h1>
       {intro && <p className="mt-2 text-base text-gray-600 dark:text-gray-400">{intro}</p>}
       <ul className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {dogs.map((dog, index) => (
+        {dogs.map((dog) => (
           <li key={dog.id}>
             <Link
               href={`/dogs/${dog.slug || `unknown-dog-${dog.id}`}`}
@@ -35,8 +35,7 @@ export default function ServerDogListing({ title, intro, dogs }: ServerDogListin
                     src={dog.primary_image_url}
                     alt={dog.name}
                     fill
-                    sizes="(max-width: 768px) 128px, 25vw"
-                    priority={index < 4}
+                    sizes="(max-width: 767px) 128px, 25vw"
                     className="object-cover"
                   />
                 )}

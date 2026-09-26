@@ -154,8 +154,7 @@ const NextImage = React.memo(function NextImage({
   const responsiveSizes = useMemo(() => {
     const sizePresets: Record<string, string> = {
       "dog-card": "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
-      "dog-thumbnail":
-        "(max-width: 640px) 25vw, (max-width: 1024px) 20vw, 15vw",
+      "dog-thumbnail": "64px",
       "org-logo": "(max-width: 640px) 64px, (max-width: 1024px) 56px, 64px",
       "related-dog": "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw",
       hero: "100vw",

@@ -2,6 +2,7 @@
 export type ImageSizeKey =
   | "SWIPE_CARD"
   | "CATALOG_CARD"
+  | "SINGLE_COLUMN_CARD"
   | "CAROUSEL"
   | "THUMBNAIL"
   | "ORG_LOGO"
@@ -15,15 +16,18 @@ export const IMAGE_SIZES: Record<ImageSizeKey, string> = {
   SWIPE_CARD:
     "(max-width: 480px) 100vw, 448px",
 
-  // Catalog cards in grid
-  CATALOG_CARD: "(max-width: 640px) 50vw, 33vw",
+  // Catalog cards in DOG_GRID: 2 columns, 3 from 640px, 4 from 1280px
+  CATALOG_CARD: "(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 25vw",
+
+  // A card grid that is one column on phones (similar dogs, guides)
+  SINGLE_COLUMN_CARD: "(max-width: 767px) 100vw, 33vw",
 
   // Image carousels - optimized for different viewport sizes
   CAROUSEL:
     "(max-width: 480px) 100vw, 448px",
 
   // Thumbnails for related dogs or small previews
-  THUMBNAIL: "128px",
+  THUMBNAIL: "96px",
 
   // Organization logos
   ORG_LOGO: "64px",

@@ -188,6 +188,7 @@ jest.mock("next/image", () => ({
     
     return <img 
       {...props}
+      data-sizes={sizes}
       style={{ ...style, ...fillStyles }}
       className={combinedClassName}
     />;
