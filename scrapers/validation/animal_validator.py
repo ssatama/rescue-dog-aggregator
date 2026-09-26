@@ -15,6 +15,7 @@ from scrapers.validation.constants import (
     PROMO_KEYWORDS_PATTERN,
     SKU_PATTERN,
 )
+from scrapers.validation.location_cleaner import display_location
 from scrapers.validation.name_cleaner import clean_name
 
 
@@ -126,6 +127,10 @@ class AnimalValidator:
                 properties["overlooked"] = True
             result_data["properties"] = properties
         normalized_name = display_name
+
+        place = display_location(result_data.get("properties") or {})
+        if place:
+            result_data["properties"] = {**(result_data.get("properties") or {}), "display_location": place}
 
         primary_image_url = animal_data.get("primary_image_url")
         if primary_image_url == "":

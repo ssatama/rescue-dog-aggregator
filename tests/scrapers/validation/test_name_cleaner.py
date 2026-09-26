@@ -79,11 +79,11 @@ class TestValidatorKeepsTheOriginal:
         return {"name": "Ally OVERLOOKED", "breed": "Mixed Breed", "external_id": "mt-1", "adoption_url": "https://x", "primary_image_url": "https://x/1.jpg", **overrides}
 
     def test_raw_name_and_overlooked_go_into_properties(self):
-        ok, data = AnimalValidator().validate_animal_data(self._animal(properties={"location": "Wales"}))
+        ok, data = AnimalValidator().validate_animal_data(self._animal(properties={"colour": "black"}))
 
         assert ok
         assert data["name"] == "Ally"
-        assert data["properties"] == {"location": "Wales", "raw_name": "Ally OVERLOOKED", "overlooked": True}
+        assert data["properties"] == {"colour": "black", "raw_name": "Ally OVERLOOKED", "overlooked": True}
 
     def test_existing_raw_name_from_the_scraper_wins(self):
         _, data = AnimalValidator().validate_animal_data(self._animal(properties={"raw_name": "Ally OVERLOOKED (Wales)"}))
@@ -91,7 +91,7 @@ class TestValidatorKeepsTheOriginal:
         assert data["properties"]["raw_name"] == "Ally OVERLOOKED (Wales)"
 
     def test_clean_names_leave_properties_untouched(self):
-        animal = self._animal(name="Ally", properties={"location": "Wales"})
+        animal = self._animal(name="Ally", properties={"colour": "black"})
         _, data = AnimalValidator().validate_animal_data(animal)
 
         assert data["properties"] is animal["properties"]
