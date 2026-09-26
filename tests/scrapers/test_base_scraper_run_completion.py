@@ -107,14 +107,23 @@ class TestRunCompletion:
         assert completion[1] == "error"
         assert "listing broke" in completion[5]
 
-    def test_a_failed_completion_write_is_not_rewritten_as_a_generic_error(self, scraper):
-        """DatabaseService retries a dropped connection; the finally must not overwrite the outcome."""
-        scraper._check_robots_permission.return_value = False
-        scraper.database_service.complete_scrape_log.return_value = False
+    def test_a_failed_completion_write_is_closed_as_an_error_not_left_running(self, scraper):
+        scraper.dogs = [_dog("a")]
+        scraper.database_service.complete_scrape_log.side_effect = [False, True]
 
-        assert scraper._run_with_connection() is False
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "added")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync") as invalidate,
+        ):
+            scraper._run_with_connection()
 
-        assert [c[1] for c in _completions(scraper)] == ["skipped"]
+        first, close = _completions(scraper)
+        assert first[1] == "success"
+        assert close[1] == "error"
+        assert "completion write failed" in close[5]
+        assert close[2:5] == (1, 1, 0), "the close keeps what the run saved"
+        invalidate.assert_called_once()  # the close does not purge a second time
 
     def test_a_reused_instance_does_not_reprofile_the_last_runs_dogs(self, scraper):
         scraper.dogs = [_dog("a")]

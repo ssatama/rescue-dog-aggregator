@@ -624,6 +624,8 @@ class DatabaseService:
                 self.conn.rollback()
             except Exception:
                 pass  # a broken connection can't roll back; the False still reports the failure
+            if self.conn.closed:
+                self.conn = None  # dead: the next call reconnects
             return False
 
     def get_existing_external_ids(self, organization_id: int) -> set[str]:
