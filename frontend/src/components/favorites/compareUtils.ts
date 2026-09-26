@@ -10,7 +10,13 @@ export function getAgeDisplay(dog: Dog): string | null {
     if (months === 0) return `${years} year${years !== 1 ? "s" : ""}`;
     return `${years} year${years !== 1 ? "s" : ""}, ${months} month${months !== 1 ? "s" : ""}`;
   }
-  if (dog.age_min_months && dog.age_max_months) {
+  if (dog.age_min_months != null && dog.age_max_months) {
+    // Puppies in months: "Under 6 months" is stored as 0-6
+    if (dog.age_max_months < 12) {
+      return dog.age_min_months === 0
+        ? `Under ${dog.age_max_months} months`
+        : `${dog.age_min_months}-${dog.age_max_months} months`;
+    }
     const minYears = Math.floor(dog.age_min_months / 12);
     const maxYears = Math.floor(dog.age_max_months / 12);
     if (minYears === maxYears) {
