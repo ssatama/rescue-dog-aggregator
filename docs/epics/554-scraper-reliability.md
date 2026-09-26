@@ -142,8 +142,15 @@ birth dates that fits what the rescue said (`birth_date_min`,
 - A scraper whose rescue publishes a date of birth passes the text as
   `date_of_birth` (optional key; the save parses it). Tierschutzverein
   (`Geburtstag`), Santer Paws (`D.O.B`), Bosnia, Daisy (`Alter`), Pets in
-  Turkey ("Born in") and MISIs (the DOB bullet). Dates are day-first.
+  Turkey ("Born in") and MISIs (the DOB bullet, from its label on: DOB,
+  date of birth, birthday; a bare "born" can be the dog's puppies). Dates
+  are day-first. An `age_text` that is a birth date also counts, when it
+  says so (DOB, born, geb.) or is nothing but a date: The Underdog's
+  "Puppy (estimated DOB 01.03.2026)". A bare date that doesn't parse
+  (Daisy's "07/20218") is no age: `parse_age_text` would count it from today.
 - Everyone else: the stated age is taken back from the day it was read.
+- Months are capped at 360 (`MAX_DOG_AGE_MONTHS`), the bound "8+ years"
+  parses to, or open-ended maxima would grow on every refresh.
 - `age_min_months`/`age_max_months` stay stored columns, derived from the
   range: at save time, and by `REFRESH_AGES_SQL` after every cron batch
   (`age_refresh` in the batch summary). Chosen over deriving them at read
@@ -152,9 +159,12 @@ birth dates that fits what the rescue said (`birth_date_min`,
   up to three days late.
 - **An unchanged `age_text` keeps its anchor.** A forced re-scrape of a
   site that still says "3 months" a year later must not make the dog a
-  puppy again. Rows stored before #561 have no anchor, so `created_at`
-  stands in (the age was read at first sight). This makes #572's forced
-  re-scrape and the `derive-birth-dates` step agree, in either order.
+  puppy again. The months are parsed afresh, so a parser fix still lands.
+  Rows stored before #561 have no anchor, so `created_at` stands in (the
+  age was read at first sight). This makes #572's forced re-scrape and the
+  `derive-birth-dates` step agree, in either order. Known limit: a row
+  whose `age_text` an earlier update rewrote gets an anchor that is too
+  early; nothing records when the text changed.
 - `age_text` is still the rescue's words as first read ("3 months"). The
   frontend shows categories from the months, not the text; JSON-LD and the
   favourites compare view still show the text (a follow-up).
