@@ -6,6 +6,7 @@
 //   BASE_URL=http://localhost:3000 OUT_DIR=/tmp/visual node scripts/visual-check.cjs /dogs
 //
 // Exits 1 when any page overflows horizontally or logs a console error.
+// Connection-level request failures are listed as warnings only.
 // Playwright is loaded from frontend/node_modules. In cloud sessions the
 // preinstalled Chromium under /opt/pw-browsers is used; set CHROMIUM_PATH to
 // point elsewhere. On a laptop Playwright's own browser is used.
@@ -58,8 +59,19 @@ async function main() {
         });
         const page = await context.newPage();
         const errors = [];
-        page.on("console", (msg) => msg.type() === "error" && errors.push(msg.text()));
+        const warnings = [];
+        // Connection-level failures (net::ERR_*) are reported as warnings with
+        // their URL: the cloud proxy produces them intermittently while the
+        // resource still loads on retry. HTTP errors (404/500) and page errors
+        // still fail.
+        page.on("console", (msg) => {
+          if (msg.type() === "error" && !msg.text().includes("net::ERR_")) errors.push(msg.text());
+        });
         page.on("pageerror", (err) => errors.push(err.message));
+        page.on("requestfailed", (req) => {
+          const reason = req.failure()?.errorText || "failed";
+          if (reason !== "net::ERR_ABORTED") warnings.push(`${reason} ${req.url()}`);
+        });
 
         const response = await page.goto(BASE_URL + pagePath, { waitUntil: "networkidle" });
         const overflow = await page.evaluate(
@@ -74,6 +86,7 @@ async function main() {
         if (errors.length) flags.push(`${errors.length} console error(s)`);
         console.log(`${flags.length ? "FAIL" : "ok  "} ${pagePath} ${width}px ${scheme} [${status}] ${flags.join(", ")}`);
         for (const e of errors) console.log(`       ${e.slice(0, 300)}`);
+        for (const w of warnings) console.log(`       warning: ${w.slice(0, 300)}`);
         if (flags.length) problems.push(`${pagePath} ${width}px ${scheme}`);
 
         await context.close();

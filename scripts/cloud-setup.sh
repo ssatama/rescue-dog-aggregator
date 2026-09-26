@@ -49,7 +49,7 @@ uv sync >>"$LOG" 2>&1
 
 # Schema for the dev database and, as CI does, for the test database.
 for db in rescue_dogs test_rescue_dogs; do
-  DB_NAME=$db uv run python -c "
+  TESTING=$([ "$db" = test_rescue_dogs ] && echo true || echo false) DB_NAME=$db uv run python -c "
 import sys
 from database.db_setup import initialize_database
 sys.exit(0 if initialize_database() else 1)
