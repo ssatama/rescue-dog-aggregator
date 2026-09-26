@@ -1,5 +1,5 @@
 import type { Dog } from "@/types/dog";
-import { getAgeCategory } from "./dogHelpers";
+import { formatSize, getAgeCategory } from "./dogHelpers";
 import { companionAnswer } from "./dogFacts";
 
 /**
@@ -10,11 +10,10 @@ import { companionAnswer } from "./dogFacts";
  */
 
 const SIZES: Record<string, string> = {
-  Tiny: "All tiny dogs",
   Small: "All small dogs",
   Medium: "All medium-sized dogs",
   Large: "All large dogs",
-  XLarge: "All extra-large dogs",
+  Giant: "All giant dogs",
 };
 
 const AGES: Record<string, string> = {
@@ -51,7 +50,7 @@ export function favoritesInCommon(dogs: Dog[]): string[] {
   const rescue = shared(dogs, (dog) => dog.organization?.name);
   if (rescue) lines.push(`All at ${rescue}`);
 
-  const size = shared(dogs, (dog) => SIZES[dog.standardized_size ?? ""]);
+  const size = shared(dogs, (dog) => SIZES[formatSize(dog) ?? ""]);
   if (size) lines.push(size);
 
   const age = shared(dogs, (dog) => AGES[getAgeCategory(dog)]);

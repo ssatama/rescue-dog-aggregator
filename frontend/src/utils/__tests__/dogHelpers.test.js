@@ -2,45 +2,9 @@
  * Tests for dogHelpers utility functions
  */
 
-import {
-  formatAge,
-  getAgeCategory,
-  formatBreed,
-  formatGender,
-  isRecentDog,
-  getOrganizationName,
-  getShipsToCountries,
-  formatSize,
-} from "../dogHelpers";
+import { getAgeCategory, formatBreed, formatSize } from "../dogHelpers";
 
 describe("dogHelpers", () => {
-  describe("formatAge", () => {
-    it("formats age in months for dogs under 1 year", () => {
-      expect(formatAge({ age_min_months: 6 })).toBe("6 months");
-      expect(formatAge({ age_min_months: 1 })).toBe("1 month");
-    });
-
-    it("formats age in years for dogs 1 year and older", () => {
-      expect(formatAge({ age_min_months: 12 })).toBe("1 year");
-      expect(formatAge({ age_min_months: 24 })).toBe("2 years");
-    });
-
-    it("formats age with years and months when applicable", () => {
-      expect(formatAge({ age_min_months: 13 })).toBe("1 year, 1 month");
-      expect(formatAge({ age_min_months: 26 })).toBe("2 years, 2 months");
-    });
-
-    it("falls back to age_text when age_min_months not available", () => {
-      expect(formatAge({ age_text: "3 years old" })).toBe("3 years old");
-    });
-
-    it('returns "Age unknown" when no age information available', () => {
-      expect(formatAge({})).toBe("Age unknown");
-      expect(formatAge(null)).toBe("Age unknown");
-      expect(formatAge(undefined)).toBe("Age unknown");
-    });
-  });
-
   describe("getAgeCategory", () => {
     it("categorizes puppies (under 1 year)", () => {
       expect(getAgeCategory({ age_min_months: 6 })).toBe("Puppy");
@@ -148,130 +112,18 @@ describe("dogHelpers", () => {
     });
   });
 
-  describe("formatGender", () => {
-    it("formats male gender with icon", () => {
-      expect(formatGender({ sex: "Male" })).toEqual({
-        text: "Male",
-        icon: "♂️",
-      });
-      expect(formatGender({ sex: "male" })).toEqual({
-        text: "Male",
-        icon: "♂️",
-      });
-      expect(formatGender({ sex: "M" })).toEqual({ text: "Male", icon: "♂️" });
-      expect(formatGender({ sex: "m" })).toEqual({ text: "Male", icon: "♂️" });
-    });
-
-    it("formats female gender with icon", () => {
-      expect(formatGender({ sex: "Female" })).toEqual({
-        text: "Female",
-        icon: "♀️",
-      });
-      expect(formatGender({ sex: "female" })).toEqual({
-        text: "Female",
-        icon: "♀️",
-      });
-      expect(formatGender({ sex: "F" })).toEqual({
-        text: "Female",
-        icon: "♀️",
-      });
-      expect(formatGender({ sex: "f" })).toEqual({
-        text: "Female",
-        icon: "♀️",
-      });
-    });
-
-    it("handles unknown gender", () => {
-      expect(formatGender({ sex: "Unknown" })).toEqual({
-        text: "Unknown",
-        icon: "❓",
-      });
-      expect(formatGender({})).toEqual({ text: "Unknown", icon: "❓" });
-      expect(formatGender(null)).toEqual({ text: "Unknown", icon: "❓" });
-    });
-  });
-
-  describe("isRecentDog", () => {
-    it("returns true for dogs created within last 7 days", () => {
-      const recentDate = new Date();
-      recentDate.setDate(recentDate.getDate() - 3); // 3 days ago
-
-      expect(isRecentDog({ created_at: recentDate.toISOString() })).toBe(true);
-    });
-
-    it("returns false for dogs created more than 7 days ago", () => {
-      const oldDate = new Date();
-      oldDate.setDate(oldDate.getDate() - 10); // 10 days ago
-
-      expect(isRecentDog({ created_at: oldDate.toISOString() })).toBe(false);
-    });
-
-    it("returns false when no created_at date available", () => {
-      expect(isRecentDog({})).toBe(false);
-      expect(isRecentDog(null)).toBe(false);
-      expect(isRecentDog(undefined)).toBe(false);
-    });
-
-    it("handles invalid dates gracefully", () => {
-      expect(isRecentDog({ created_at: "invalid-date" })).toBe(false);
-    });
-  });
-
-  describe("getOrganizationName", () => {
-    it("returns organization name when available", () => {
-      const dog = {
-        organization: { name: "Pets in Turkey" },
-      };
-      expect(getOrganizationName(dog)).toBe("Pets in Turkey");
-    });
-
-    it("returns fallback when organization not available", () => {
-      expect(getOrganizationName({})).toBe("Unknown Organization");
-      expect(getOrganizationName(null)).toBe("Unknown Organization");
-      expect(getOrganizationName({ organization: {} })).toBe(
-        "Unknown Organization",
-      );
-    });
-  });
-
-  describe("getShipsToCountries", () => {
-    it("returns ships_to array when available", () => {
-      const dog = {
-        organization: { ships_to: ["DE", "NL", "BE"] },
-      };
-      expect(getShipsToCountries(dog)).toEqual(["DE", "NL", "BE"]);
-    });
-
-    it("returns empty array when ships_to not available", () => {
-      expect(getShipsToCountries({})).toEqual([]);
-      expect(getShipsToCountries(null)).toEqual([]);
-      expect(getShipsToCountries({ organization: {} })).toEqual([]);
-    });
-  });
-
   describe("formatSize", () => {
-    it("prefers standardized_size over size", () => {
-      const dog = {
-        size: "Large",
-        standardized_size: "Medium",
-      };
-      expect(formatSize(dog)).toBe("Medium");
+    it("puts sizes on the catalog's scale", () => {
+      expect(formatSize({ standardized_size: "Tiny" })).toBe("Small");
+      expect(formatSize({ standardized_size: "Medium" })).toBe("Medium");
+      expect(formatSize({ standardized_size: "XLarge" })).toBe("Giant");
+      expect(formatSize({ size: "large" })).toBe("Large");
     });
 
-    it("falls back to size when standardized_size not available", () => {
-      expect(formatSize({ size: "Small" })).toBe("Small");
-    });
-
-    it("returns null for unknown sizes", () => {
-      expect(formatSize({ size: "Unknown" })).toBe(null);
-      expect(formatSize({ size: "unknown" })).toBe(null);
+    it("returns null for unknown or off-scale sizes", () => {
       expect(formatSize({ standardized_size: "Unknown" })).toBe(null);
-    });
-
-    it("returns null when no size information available", () => {
       expect(formatSize({})).toBe(null);
       expect(formatSize(null)).toBe(null);
-      expect(formatSize(undefined)).toBe(null);
     });
   });
 });

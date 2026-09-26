@@ -154,12 +154,12 @@ export default function EuropeMap() {
     const countryCode = COUNTRY_NAME_TO_CODE[countryName];
 
     if (!countryCode) {
-      return isDarkMode ? "#1F2937" : "#F3F4F6"; // gray-800 : gray-100
+      return isDarkMode ? "#2f2c28" : "#f2efea"; // the site's warm gray-800 : gray-100
     }
 
     const orgCount = getOrgCount(countryCode);
     if (orgCount === 0) {
-      return isDarkMode ? "#1F2937" : "#F3F4F6"; // gray-800 : gray-100
+      return isDarkMode ? "#2f2c28" : "#f2efea"; // the site's warm gray-800 : gray-100
     }
 
     // Progressive orange gradient
@@ -243,7 +243,7 @@ export default function EuropeMap() {
                                 key={geo.rsmKey}
                                 geography={geo}
                                 fill={getCountryFill(countryName, isDarkMode)}
-                                stroke={isDarkMode ? "#374151" : "#E5E7EB"}
+                                stroke={isDarkMode ? "#45413c" : "#e5e1da"}
                                 strokeWidth={0.5}
                                 tabIndex={orgCount > 0 ? 0 : -1}
                                 onMouseEnter={() => {

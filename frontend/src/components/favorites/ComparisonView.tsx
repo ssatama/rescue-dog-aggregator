@@ -4,13 +4,10 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, useReducedMotion, PanInfo } from "framer-motion";
 import {
   Heart,
-  Clock,
   Users,
   Dog as DogIcon,
   Cat,
   Baby,
-  Star,
-  Zap,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -20,6 +17,7 @@ import { Dog } from "./types";
 import Image from "next/image";
 import { FallbackImage } from "../ui/FallbackImage";
 import { trackAdoptionLinkClicked } from "@/lib/analytics";
+import { formatBreed } from "@/utils/dogHelpers";
 
 interface ComparisonViewProps {
   dogs: Dog[];
@@ -27,41 +25,33 @@ interface ComparisonViewProps {
   onRemoveFavorite: (dogId: string | number) => void;
 }
 
-const getEnergyLevel = (level?: string): number => {
-  const levels: { [key: string]: number } = {
-    Low: 3,
-    "Low-Medium": 4,
-    Medium: 5,
-    "Medium-High": 7,
-    High: 9,
-    "Very High": 10,
-  };
-  return levels[level || "Medium"] || 5;
+const ENERGY_LEVELS: Record<string, { label: string; width: string }> = {
+  low: { label: "Low", width: "25%" },
+  medium: { label: "Medium", width: "50%" },
+  high: { label: "High", width: "75%" },
+  very_high: { label: "Very high", width: "100%" },
 };
 
-const getExperienceLevel = (level?: string): string => {
-  const mapping: { [key: string]: string } = {
-    "Beginner Friendly": "Beginner",
-    "Some Experience": "Intermediate",
-    "Experienced Owner": "Advanced",
-  };
-  return mapping[level || ""] || "Beginner";
+const EXPERIENCE_LABELS: Record<string, string> = {
+  first_time_ok: "First-time owners OK",
+  some_experience: "Some experience",
+  experienced_only: "Experienced owners",
 };
 
-// Add text formatting helpers
-const formatExperienceText = (experience?: string): string => {
-  if (!experience) return "First Time OK";
+type Compat = "yes" | "no" | "maybe";
+const COMPAT_LABELS: Record<Compat, string> = { yes: "Yes", no: "No", maybe: "Maybe" };
+const COMPAT_STYLES: Record<Compat, string> = {
+  yes: "bg-good-soft text-good",
+  no: "bg-bad-soft text-bad",
+  maybe: "bg-soft text-subtle",
+};
 
-  const formatMap: { [key: string]: string } = {
-    first_time_ok: "First Time OK",
-    some_experience: "Some Experience",
-    experienced_owner: "Experienced Owner",
-    "Beginner Friendly": "Beginner Friendly",
-    "Some Experience": "Some Experience",
-    "Experienced Owner": "Experienced Owner",
-  };
-
-  return formatMap[experience] || experience;
+/** A known answer, or null: unknown is left out, never shown as "no" (#484). */
+const compatValue = (value: unknown): Compat | null => {
+  if (value === true || value === "yes") return "yes";
+  if (value === false || value === "no") return "no";
+  if (value === "maybe") return "maybe";
+  return null;
 };
 
 const formatPersonalityTrait = (trait: string): string => {
@@ -85,75 +75,6 @@ const getTraitColor = (index: number): string => {
   return colors[index % colors.length];
 };
 
-const EnergyLevelBar = ({ level }: { level: number }) => (
-  <div className="flex items-center space-x-2">
-    <Zap className="w-4 h-4 text-yellow-500" />
-    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-      <div
-        className="bg-gradient-to-r from-yellow-400 to-orange-500 h-2 rounded-full transition-all duration-500"
-        style={{ width: `${(level / 10) * 100}%` }}
-      />
-    </div>
-    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-      {level}/10
-    </span>
-  </div>
-);
-
-const CompatibilityIcon = ({
-  type,
-  compatible,
-}: {
-  type: "kids" | "cats" | "dogs";
-  compatible: boolean;
-}) => {
-  const icons = {
-    kids: Baby,
-    cats: Cat,
-    dogs: DogIcon,
-  };
-  const Icon = icons[type];
-
-  return (
-    <div
-      className={`flex items-center justify-center w-8 h-8 rounded-full ${
-        compatible
-          ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-          : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-      }`}
-    >
-      <Icon className="w-4 h-4" />
-    </div>
-  );
-};
-
-const ExperienceIndicator = ({ level }: { level: string }) => {
-  const colors = {
-    Beginner:
-      "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
-    Intermediate:
-      "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
-    Advanced:
-      "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
-    "Beginner Friendly":
-      "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
-    "Some Experience":
-      "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
-    "Experienced Owner":
-      "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
-  };
-
-  return (
-    <div
-      className={`px-3 py-1 rounded-full text-xs font-medium border ${
-        colors[level as keyof typeof colors] || colors.Beginner
-      }`}
-    >
-      {level}
-    </div>
-  );
-};
-
 const DogComparisonCard = ({
   dog,
   onRemoveFavorite,
@@ -166,26 +87,16 @@ const DogComparisonCard = ({
   const imageUrl = dog.primary_image_url;
   const tagline = dog.dog_profiler_data?.tagline;
   const traits = dog.dog_profiler_data?.personality_traits || [];
-  const energyLevel = getEnergyLevel(dog.dog_profiler_data?.energy_level);
-  const experienceLevel =
-    dog.dog_profiler_data?.experience_level ||
-    getExperienceLevel(dog.dog_profiler_data?.experience_level);
+  const energy = ENERGY_LEVELS[dog.dog_profiler_data?.energy_level ?? ""];
+  const experience = dog.dog_profiler_data?.experience_level;
+  const breed = formatBreed(dog);
   const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
 
-  const compatibility = {
-    kids:
-      typeof dog.dog_profiler_data?.good_with_children === "boolean"
-        ? dog.dog_profiler_data.good_with_children
-        : dog.dog_profiler_data?.good_with_children === "yes",
-    cats:
-      typeof dog.dog_profiler_data?.good_with_cats === "boolean"
-        ? dog.dog_profiler_data.good_with_cats
-        : dog.dog_profiler_data?.good_with_cats === "yes",
-    dogs:
-      typeof dog.dog_profiler_data?.good_with_dogs === "boolean"
-        ? dog.dog_profiler_data.good_with_dogs
-        : dog.dog_profiler_data?.good_with_dogs === "yes",
-  };
+  const compatibility = [
+    { key: "kids", label: "Kids", Icon: Baby, value: compatValue(dog.dog_profiler_data?.good_with_children) },
+    { key: "cats", label: "Cats", Icon: Cat, value: compatValue(dog.dog_profiler_data?.good_with_cats) },
+    { key: "dogs", label: "Dogs", Icon: DogIcon, value: compatValue(dog.dog_profiler_data?.good_with_dogs) },
+  ].filter((item): item is typeof item & { value: Compat } => item.value !== null);
 
   const handleVisit = () => {
     if (dog.adoption_url) {
@@ -236,10 +147,10 @@ const DogComparisonCard = ({
         <div className="absolute bottom-3 left-3 right-3 hidden md:block">
           <h3 className="text-xl font-bold text-white mb-1">{dog.name}</h3>
           <div className="flex items-center gap-2 text-white/90 text-sm">
-            <span>{dog.breed || "Mixed Breed"}</span>
+            {breed && <span>{breed}</span>}
             {dog.age_text && (
               <>
-                <span>•</span>
+                {breed && <span>•</span>}
                 <span>{dog.age_text}</span>
               </>
             )}
@@ -253,10 +164,10 @@ const DogComparisonCard = ({
           {dog.name}
         </h3>
         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm mt-1">
-          <span>{dog.breed || "Mixed Breed"}</span>
+          {breed && <span>{breed}</span>}
           {dog.age_text && (
             <>
-              <span>•</span>
+              {breed && <span>•</span>}
               <span>{dog.age_text}</span>
             </>
           )}
@@ -295,88 +206,58 @@ const DogComparisonCard = ({
           </div>
         )}
 
-        {/* Energy Level - compact */}
-        {dog.dog_profiler_data?.energy_level && (
+        {energy && (
           <div>
             <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
-              Energy Level
+              Energy
             </h4>
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                 <div
-                  className="bg-gradient-to-r from-orange-400 to-orange-500 h-1.5 rounded-full"
-                  style={{ width: `${(energyLevel / 10) * 100}%` }}
+                  className="bg-orange-500 h-1.5 rounded-full"
+                  style={{ width: energy.width }}
                 />
               </div>
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                {energyLevel}/10
+                {energy.label}
               </span>
             </div>
           </div>
         )}
 
-        {/* Experience Required - compact */}
-        {dog.dog_profiler_data?.experience_level && (
+        {experience && EXPERIENCE_LABELS[experience] && (
           <div>
             <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
-              Experience Required
+              Experience
             </h4>
-            <span className="inline-block px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-              {formatExperienceText(dog.dog_profiler_data.experience_level)}
+            <span className="inline-block px-3 py-1.5 rounded-full text-xs font-medium bg-soft text-ink">
+              {EXPERIENCE_LABELS[experience]}
             </span>
           </div>
         )}
 
-        {/* Compatibility - compact icons */}
-        <div>
-          <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
-            Good with
-          </h4>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                  compatibility.kids
-                    ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                    : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                }`}
-              >
-                <Baby className="w-3.5 h-3.5" />
-              </div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                Kids
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                  compatibility.cats
-                    ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                    : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                }`}
-              >
-                <Cat className="w-3.5 h-3.5" />
-              </div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                Cats
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                  compatibility.dogs
-                    ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                    : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                }`}
-              >
-                <DogIcon className="w-3.5 h-3.5" />
-              </div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                Dogs
-              </span>
-            </div>
+        {compatibility.length > 0 && (
+          <div>
+            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
+              Good with
+            </h4>
+            <ul className="flex flex-wrap items-center gap-3">
+              {compatibility.map(({ key, label, Icon, value }) => (
+                <li key={key} className="flex items-center gap-1">
+                  <span
+                    className={`w-6 h-6 rounded-full flex items-center justify-center ${COMPAT_STYLES[value]}`}
+                    aria-hidden="true"
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                  </span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    {label}: {COMPAT_LABELS[value]}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        )}
 
         {/* Special Quirk - only show if space allows */}
         {uniqueQuirk && (
@@ -530,22 +411,17 @@ const ComparisonView = ({
               <ChevronLeft className="w-6 h-6" />
             </button>
 
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {isMobile ? (
-                  <>
-                    Dog {currentIndex + 1} of {dogs.length}
-                  </>
-                ) : (
-                  <>
-                    Showing {Math.min(currentIndex + 1, dogs.length)}-
-                    {Math.min(currentIndex + visibleCards, dogs.length)} of{" "}
-                    {dogs.length} favorites
-                  </>
-                )}
-              </span>
-            </div>
+            {/* On a phone the dots below say where you are; no "Dog 1 of 20" (#504). */}
+            {!isMobile && (
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Showing {Math.min(currentIndex + 1, dogs.length)}-
+                  {Math.min(currentIndex + visibleCards, dogs.length)} of{" "}
+                  {dogs.length} favorites
+                </span>
+              </div>
+            )}
 
             <button
               onClick={goNext}

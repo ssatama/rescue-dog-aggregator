@@ -10,7 +10,7 @@ import { trackExternalLinkClick } from "@/lib/monitoring/breadcrumbs";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import ShareButton from "@/components/ui/ShareButton";
 import DogStatusBadge from "@/components/dogs/DogStatusBadge";
-import { formatBreed, getAgeCategory } from "@/utils/dogHelpers";
+import { formatBreed, formatSize, getAgeCategory } from "@/utils/dogHelpers";
 import { safeExternalUrl } from "@/utils/security";
 import { getCountryName } from "@/utils/countryNames";
 import {
@@ -145,7 +145,7 @@ export function dogMeta(dog: Dog): string[] {
     formatBreed(dog),
     sex === "male" || sex === "m" ? "Male" : sex === "female" || sex === "f" ? "Female" : null,
     age !== "Unknown" ? age : null,
-    dog.standardized_size || dog.size || null,
+    formatSize(dog),
   ].filter((v): v is string => Boolean(v));
 }
 

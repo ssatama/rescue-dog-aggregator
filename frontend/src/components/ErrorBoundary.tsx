@@ -53,12 +53,12 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.state.isChunkError) {
         return (
-          <div className="flex flex-col items-center justify-center min-h-[400px] p-8 bg-blue-50 rounded-lg">
+          <div className="flex flex-col items-center justify-center min-h-[400px] p-8 bg-soft rounded-lg">
             <div className="text-4xl mb-4">🔄</div>
-            <h2 className="text-xl font-semibold mb-2 text-gray-900">
+            <h2 className="text-xl font-semibold mb-2 text-ink">
               Updating...
             </h2>
-            <p className="text-gray-600 text-center mb-4">
+            <p className="text-subtle text-center mb-4">
               Loading the latest version of the site.
             </p>
           </div>
@@ -70,8 +70,8 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="error-boundary-fallback p-4 m-4 border border-red-500 rounded-lg bg-red-50">
-          <h2 className="text-lg font-semibold text-red-700">
+        <div className="error-boundary-fallback p-4 m-4 border border-bad rounded-lg bg-bad-soft">
+          <h2 className="text-lg font-semibold text-bad">
             Something went wrong
           </h2>
           {this.props.showError && this.state.error && (

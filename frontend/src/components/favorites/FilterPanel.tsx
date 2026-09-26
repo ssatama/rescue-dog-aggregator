@@ -27,6 +27,7 @@ import {
 } from "../ui/select";
 import type { Dog as DogType } from "../../types/dog";
 import { dogCountLabel } from "@/utils/formatCount";
+import { formatSize } from "@/utils/dogHelpers";
 
 // Debounce hook for filter performance
 function useDebounce<T>(value: T, delay: number): T {
@@ -50,20 +51,14 @@ interface FilterPanelProps {
   onFilter: (filteredDogs: DogType[], isUserInitiated?: boolean) => void;
 }
 
-// Helper function to get age category using the same logic as main catalog
-const getAgeCategory = (dog: DogType): string => {
-  // Use age_min and age_max if available (same as main catalog)
+// Age groups on the catalog's boundaries. A dog with no recorded age has no
+// group and matches every age, as in the catalog (#494).
+const getAgeCategory = (dog: DogType): string | null => {
   const ageMin = dog.age_min_months || dog.age_months;
   const ageMax = dog.age_max_months || dog.age_months;
 
-  // Handle Unknown age case
-  if (!ageMin && ageMin !== 0 && !ageMax) return "Unknown";
+  if (!ageMin && ageMin !== 0) return null;
 
-  // If no age data at all
-  if (!ageMin && ageMin !== 0) return "Unknown";
-
-  // Use the same boundaries as main catalog filters
-  // Based on age_max for upper bound categories
   if (ageMax && ageMax < 12) return "Puppy"; // < 12 months
   if (ageMin >= 12 && ageMax && ageMax <= 36) return "Young"; // 12-36 months
   if (ageMin >= 36 && ageMax && ageMax <= 96) return "Adult"; // 36-96 months
@@ -77,7 +72,14 @@ const getAgeCategory = (dog: DogType): string => {
     return "Senior";
   }
 
-  return "Unknown";
+  return null;
+};
+
+const AGE_LABELS: Record<string, string> = {
+  Puppy: "Puppy (under 1 year)",
+  Young: "Young (1-3 years)",
+  Adult: "Adult (3-8 years)",
+  Senior: "Senior (8+ years)",
 };
 
 export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
@@ -114,18 +116,10 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
   }, [dogs]);
 
   const uniqueSizes = useMemo(() => {
-    const sizes = dogs
-      .map((dog) => dog.standardized_size || dog.size)
-      .filter((size): size is string => !!size);
-    const sizeOrder = ["Tiny", "Small", "Medium", "Large", "XLarge"];
-    return [...new Set(sizes)].toSorted((a, b) => {
-      const aIndex = sizeOrder.indexOf(a);
-      const bIndex = sizeOrder.indexOf(b);
-      if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
-      if (aIndex === -1) return 1;
-      if (bIndex === -1) return -1;
-      return aIndex - bIndex;
-    });
+    const sizes = new Set(dogs.map(formatSize));
+    return ["Small", "Medium", "Large", "Giant"].filter((size) =>
+      sizes.has(size),
+    );
   }, [dogs]);
 
   const uniqueOrganizations = useMemo(() => {
@@ -148,8 +142,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
 
       // Size filter
       if (debouncedSizeFilter && debouncedSizeFilter !== "_all") {
-        const dogSize = dog.standardized_size || dog.size;
-        if (dogSize !== debouncedSizeFilter) {
+        if (formatSize(dog) !== debouncedSizeFilter) {
           return false;
         }
       }
@@ -157,7 +150,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       // Age group filter
       if (debouncedAgeGroupFilter && debouncedAgeGroupFilter !== "_all") {
         const ageCategory = getAgeCategory(dog);
-        if (ageCategory !== debouncedAgeGroupFilter) {
+        if (ageCategory && ageCategory !== debouncedAgeGroupFilter) {
           return false;
         }
       }
@@ -193,7 +186,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       }
     });
     // Return in the standard order, but only if they exist in the data
-    const orderedGroups = ["Puppy", "Young", "Adult", "Senior", "Unknown"];
+    const orderedGroups = ["Puppy", "Young", "Adult", "Senior"];
     return orderedGroups.filter((g) => ageGroups.has(g));
   }, [dogs]);
 
@@ -314,11 +307,6 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
               </SelectItem>
               {uniqueSizes.map((size) => (
                 <SelectItem key={size} value={size}>
-                  {size === "Tiny" && "🐕 "}
-                  {size === "Small" && "🐕‍🦺 "}
-                  {size === "Medium" && "🦮 "}
-                  {size === "Large" && "🐕‍🦺 "}
-                  {size === "XLarge" && "🦮 "}
                   {size}
                 </SelectItem>
               ))}
@@ -352,29 +340,11 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
               <SelectItem value="_all" className="font-medium">
                 All Ages
               </SelectItem>
-              {uniqueAgeGroups.map((ageGroup) => {
-                const getAgeLabel = (group: string) => {
-                  switch (group) {
-                    case "Puppy":
-                      return "🐶 Puppy (<1 year)";
-                    case "Young":
-                      return "🐕 Young (1-3 years)";
-                    case "Adult":
-                      return "🦮 Adult (3-8 years)";
-                    case "Senior":
-                      return "🐕‍🦺 Senior (8+ years)";
-                    case "Unknown":
-                      return "❓ Age Unknown";
-                    default:
-                      return group;
-                  }
-                };
-                return (
-                  <SelectItem key={ageGroup} value={ageGroup}>
-                    {getAgeLabel(ageGroup)}
-                  </SelectItem>
-                );
-              })}
+              {uniqueAgeGroups.map((ageGroup) => (
+                <SelectItem key={ageGroup} value={ageGroup}>
+                  {AGE_LABELS[ageGroup]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -613,11 +583,6 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
                   </SelectItem>
                   {uniqueSizes.map((size) => (
                     <SelectItem key={size} value={size}>
-                      {size === "Tiny" && "🐕 "}
-                      {size === "Small" && "🐕‍🦺 "}
-                      {size === "Medium" && "🦮 "}
-                      {size === "Large" && "🐕‍🦺 "}
-                      {size === "XLarge" && "🦮 "}
                       {size}
                     </SelectItem>
                   ))}
@@ -651,29 +616,11 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
                   <SelectItem value="_all" className="font-medium">
                     All Ages
                   </SelectItem>
-                  {uniqueAgeGroups.map((ageGroup) => {
-                    const getAgeLabel = (group: string) => {
-                      switch (group) {
-                        case "Puppy":
-                          return "🐶 Puppy (<1 year)";
-                        case "Young":
-                          return "🐕 Young (1-3 years)";
-                        case "Adult":
-                          return "🦮 Adult (3-8 years)";
-                        case "Senior":
-                          return "🐕‍🦺 Senior (8+ years)";
-                        case "Unknown":
-                          return "❓ Age Unknown";
-                        default:
-                          return group;
-                      }
-                    };
-                    return (
-                      <SelectItem key={ageGroup} value={ageGroup}>
-                        {getAgeLabel(ageGroup)}
-                      </SelectItem>
-                    );
-                  })}
+                  {uniqueAgeGroups.map((ageGroup) => (
+                    <SelectItem key={ageGroup} value={ageGroup}>
+                      {AGE_LABELS[ageGroup]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

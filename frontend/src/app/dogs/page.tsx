@@ -80,11 +80,10 @@ export default async function DogsPageOptimized(): Promise<React.JSX.Element> {
         />
       </Suspense>
       <section className="container mx-auto px-4 py-12 lg:pl-[calc(16rem+2rem+1rem)]">
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-2xl mx-auto text-center leading-relaxed">
-          Every dog listed here is available for adoption from a verified
-          European rescue organization. Our listings are updated multiple times
-          per week with new dogs from shelters and rescues across the continent.
-          Use the filters to search by breed, size, age, sex, or location.
+        <p className="text-sm text-subtle max-w-2xl mx-auto text-center leading-relaxed">
+          Every dog here is listed by one of the rescues we follow across
+          Europe and the UK, and the list is updated three times a week. Use
+          the filters to search by breed, size, age, sex or location.
         </p>
       </section>
     </Layout>

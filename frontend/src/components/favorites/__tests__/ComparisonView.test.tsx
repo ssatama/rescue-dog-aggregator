@@ -167,10 +167,8 @@ describe("ComparisonView", () => {
       />,
     );
 
-    // Check for formatted experience level text (ComparisonView uses its own formatter)
-    expect(screen.getAllByText("First Time OK").length).toBeGreaterThan(0);
-    // "experienced_only" is not in the formatter map, so it's returned as-is
-    expect(screen.getByText("experienced_only")).toBeInTheDocument();
+    expect(screen.getAllByText("First-time owners OK").length).toBeGreaterThan(0);
+    expect(screen.getByText("Experienced owners")).toBeInTheDocument();
   });
 
   it("displays compatibility icons correctly", () => {
@@ -182,10 +180,44 @@ describe("ComparisonView", () => {
       />,
     );
 
-    // Check for compatibility labels
-    expect(screen.getAllByText("Kids").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Cats").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Dogs").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Kids: Yes").length).toBeGreaterThan(0);
+    expect(screen.getByText("Cats: No")).toBeInTheDocument();
+    expect(screen.getByText("Dogs: No")).toBeInTheDocument();
+  });
+
+  it("leaves out unknown compatibility, energy and breed instead of guessing", () => {
+    const unknownDog: Dog = {
+      id: 9,
+      name: "Pip",
+      primary_image_url: "https://example.com/pip.jpg",
+      dog_profiler_data: { good_with_cats: "unknown" },
+      adoption_url: "https://example.com/adopt/pip",
+    };
+    render(
+      <ComparisonView
+        dogs={[unknownDog]}
+        onClose={mockOnClose}
+        onRemoveFavorite={mockOnRemoveFavorite}
+      />,
+    );
+
+    expect(screen.queryByText("Good with")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Cats/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Energy")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Mixed Breed/)).not.toBeInTheDocument();
+  });
+
+  it("shows energy as a word, not an invented score", () => {
+    render(
+      <ComparisonView
+        dogs={mockDogs}
+        onClose={mockOnClose}
+        onRemoveFavorite={mockOnRemoveFavorite}
+      />,
+    );
+
+    expect(screen.getAllByText("High").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/\/10/)).not.toBeInTheDocument();
   });
 
   it("displays unique quirks for each dog", () => {
@@ -296,8 +328,9 @@ describe("ComparisonView", () => {
       />,
     );
 
-    // On mobile, we show "Dog X of Y" format
-    expect(screen.getByText(/Dog \d+ of \d+/)).toBeInTheDocument();
+    // The dots say where you are; there is no "Dog 1 of 3" counter (#504)
+    expect(screen.getAllByRole("button", { name: /Go to page/ }).length).toBeGreaterThan(1);
+    expect(screen.queryByText(/Dog \d+ of \d+/)).not.toBeInTheDocument();
   });
 
   it("calls onRemoveFavorite when heart button is clicked", () => {

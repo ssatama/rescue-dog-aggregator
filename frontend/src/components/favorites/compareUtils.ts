@@ -1,6 +1,7 @@
 import type { Dog } from "./types";
 
-export function getAgeDisplay(dog: Dog): string {
+/** A dog's age in words, or null when nothing is recorded (left out, #484). */
+export function getAgeDisplay(dog: Dog): string | null {
   if (dog.age_text) return dog.age_text;
   if (dog.age_months) {
     const years = Math.floor(dog.age_months / 12);
@@ -17,5 +18,5 @@ export function getAgeDisplay(dog: Dog): string {
     }
     return `${minYears}-${maxYears} years`;
   }
-  return "Unknown";
+  return null;
 }

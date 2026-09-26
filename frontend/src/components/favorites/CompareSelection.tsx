@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import Image from "next/image";
 import type { Dog } from "./types";
 import { getAgeDisplay } from "./compareUtils";
+import { formatBreed } from "@/utils/dogHelpers";
 
 interface CompareSelectionProps {
   dogs: Dog[];
@@ -86,7 +87,7 @@ export default function CompareSelection({
           const imageUrl = hasImageError
             ? "/placeholder-dog.jpg"
             : dog.primary_image_url || "/placeholder-dog.jpg";
-          const breed = dog.standardized_breed || dog.breed || "Unknown breed";
+          const breed = formatBreed(dog);
           const ageDisplay = getAgeDisplay(dog);
 
           return (
@@ -125,7 +126,7 @@ export default function CompareSelection({
                 <div className="relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
                   <Image
                     src={imageUrl}
-                    alt={`${dog.name} - ${breed}`}
+                    alt={breed ? `${dog.name} - ${breed}` : dog.name}
                     fill
                     className={`object-cover transition-transform duration-500 ${
                       !isDisabled ? "group-hover:scale-105" : ""
@@ -187,12 +188,16 @@ export default function CompareSelection({
                     {dog.name}
                   </h3>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {ageDisplay}
-                    </p>
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                      {breed}
-                    </p>
+                    {ageDisplay && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {ageDisplay}
+                      </p>
+                    )}
+                    {breed && (
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                        {breed}
+                      </p>
+                    )}
                   </div>
                 </div>
 
