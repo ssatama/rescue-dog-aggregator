@@ -16,12 +16,12 @@ Build an open-source platform aggregating rescue dogs from multiple organization
   `frontend/src/lib/analytics.ts`; `adoption_link_clicked` is the conversion event
 - Package Management: **uv** (backend), **pnpm** (frontend)
 - Linting: **ruff** (replaces black/isort/flake8)
-- Current: 155 backend test files, 250 frontend test files, 1,500+ active dogs
+- Current: 155 backend test files, 250 frontend test files, ~1,400 active dogs
 
 ## Status
 
 - Site live at www.rescuedogs.me
-- 1,500+ active dogs from 12 organizations
+- ~1,400 active dogs from 11 organizations (2026-09-26)
 - Deployment: Vercel (frontend), Railway (backend + PostgreSQL + cron)
 - Scrapers: Railway cron (Mon/Thu/Sat 3pm UTC)
 - Traffic: 20+ daily users, growing steadily

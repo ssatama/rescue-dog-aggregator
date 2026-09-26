@@ -31,7 +31,8 @@ TOOL = {
 
 
 def run_query(sql: str) -> tuple[str, bool]:
-    headers = {"Content-Type": "application/json"}
+    # Cloudflare in front of the API blocks urllib's default User-Agent (403, error 1010).
+    headers = {"Content-Type": "application/json", "User-Agent": "rescuedogs-mcp-prod-query/1.0"}
     if os.environ.get("ADMIN_API_KEY"):
         headers["X-API-Key"] = os.environ["ADMIN_API_KEY"]
     request = urllib.request.Request(ENDPOINT, data=json.dumps({"sql": sql, "limit": 1000}).encode(), headers=headers)
