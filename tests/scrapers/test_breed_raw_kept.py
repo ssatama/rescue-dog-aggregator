@@ -1,4 +1,4 @@
-"""breed_raw keeps the rescue's own text: a dog is standardized once (#560).
+"""breed_raw keeps the rescue's own text through a second standardization (#560).
 
 Most scrapers call process_animal in collect_data, and save_animal called it
 again, so the second pass stored the standardized name as breed_raw. Dogs
@@ -62,9 +62,24 @@ class TestBreedRawKept:
         (_, saved), _ = scraper.database_service.update_animal.call_args
         assert update_columns(saved)["breed_raw"] == "Poodle (Toy)"
 
-    def test_processing_twice_is_processing_once(self, scraper):
-        once = scraper.process_animal(_dog())
-        assert scraper.process_animal(once) is once
+    def test_a_breed_changed_after_processing_is_standardized_again(self, scraper):
+        """Santer and Pets in Turkey fill in a breed after process_animal; save re-derives from it."""
+        dog = scraper.process_animal({**_dog(), "breed": None})
+        dog["breed"] = "Poodle (Toy)"
+
+        again = scraper.process_animal(dog)
+
+        assert again["standardized_breed"] == "Toy Poodle"
+        assert again["breed_raw"] is None, "the site gave no breed"
+
+    def test_save_works_on_a_copy(self, scraper):
+        scraper.database_service.get_existing_animal.return_value = None
+        scraper.database_service.create_animal.return_value = (1, "added")
+        dog = scraper.process_animal(_dog())
+
+        scraper.save_animal(dog)
+
+        assert "original_image_url" not in dog
 
     def test_a_scraper_that_does_not_process_is_standardized_on_save(self, scraper):
         scraper.database_service.get_existing_animal.return_value = None

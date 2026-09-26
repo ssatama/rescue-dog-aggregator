@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from management.age_backfill import plan_clears, rows_from_records
-from management.breed_raw_backfill import SOURCE_TEXT_ORGS, plan_breed_raw
 
 
 @dataclass(frozen=True)
@@ -44,8 +43,19 @@ def _plan_age_clears(records: list[dict[str, Any]]) -> list[Change]:
     return [Change(clear.animal_id, clear.organization, "age_text", clear.was, None) for clear in plan_clears(rows_from_records(records))]
 
 
+# Rescues whose properties.breed is the text their site shows (checked against
+# production on 2026-09-26). Until #560 they stored the standardized name as
+# breed_raw. Many Tears is left out: its properties.breed is sometimes another
+# field ("Can be the only dog").
+BREED_SOURCE_ORGS = ("animalrescuebosnia", "dogstrust", "santerpawsbulgarianrescue", "woof-project")
+
+
 def _plan_breed_raw(records: list[dict[str, Any]]) -> list[Change]:
-    return [Change(*change) for change in plan_breed_raw(records)]
+    return [
+        Change(record["id"], record["organization"], "breed_raw", record["breed_raw"], record["source_breed"].strip())
+        for record in records
+        if (record["source_breed"] or "").strip() and record["source_breed"].strip() != record["breed_raw"]
+    ]
 
 
 STEPS: dict[str, Step] = {
@@ -64,17 +74,14 @@ STEPS: dict[str, Step] = {
         ),
         Step(
             name="restore-breed-raw",
-            summary="breed_raw goes back to the rescue's text in properties.breed, and the derived breed columns are resolved from it (#560)",
+            summary="breed_raw goes back to the rescue's own text in properties.breed (#560)",
             fetch_sql=f"""
-                SELECT a.id, a.properties->>'breed' AS source_breed, a.breed_raw,
-                       a.primary_breed, a.secondary_breed, a.breed_slug, a.breed_type,
-                       a.breed_group, a.standardized_breed, a.breed_confidence,
-                       o.config_id AS organization
+                SELECT a.id, a.properties->>'breed' AS source_breed, a.breed_raw, o.config_id AS organization
                 FROM animals a
                 JOIN organizations o ON o.id = a.organization_id
-                WHERE o.config_id IN ({", ".join(f"'{org}'" for org in SOURCE_TEXT_ORGS)})
-                  AND a.properties->>'breed' IS NOT NULL
-                  AND a.properties->>'breed' IS DISTINCT FROM a.breed_raw
+                WHERE o.config_id IN ({", ".join(f"'{org}'" for org in BREED_SOURCE_ORGS)})
+                  AND btrim(a.properties->>'breed') <> ''
+                  AND btrim(a.properties->>'breed') IS DISTINCT FROM a.breed_raw
             """,
             plan=_plan_breed_raw,
         ),

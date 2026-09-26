@@ -59,7 +59,7 @@ def _display_name(identity) -> str:
     return f"{identity.primary} Cross" if identity.is_cross else identity.primary
 
 
-def resolved_fields(source: str) -> dict[str, Any]:
+def _resolved_fields(source: str) -> dict[str, Any]:
     identity = resolve_breed(source)
 
     if identity.primary is None:
@@ -94,7 +94,7 @@ def plan_restandardization(rows: Iterable[AnimalBreedRow]) -> list[BreedUpdate]:
         if not source:
             continue
 
-        fields = resolved_fields(source)
+        fields = _resolved_fields(source)
         stored = {
             "primary_breed": row.primary_breed,
             "secondary_breed": row.secondary_breed,
