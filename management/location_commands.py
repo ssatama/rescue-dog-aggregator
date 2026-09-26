@@ -16,7 +16,7 @@ from collections import Counter
 from contextlib import closing
 
 import psycopg2
-from psycopg2.extras import Json, RealDictCursor
+from psycopg2.extras import RealDictCursor
 from rich.console import Console
 from rich.table import Table
 
@@ -97,7 +97,11 @@ def main() -> int:
 
     with closing(_connect()) as conn, conn, conn.cursor() as cursor:
         for animal_id, _, properties in changes:
-            cursor.execute("UPDATE animals SET properties = %s WHERE id = %s", (Json(properties), animal_id))
+            # Merge the one key so a scrape running meanwhile keeps its writes.
+            cursor.execute(
+                "UPDATE animals SET properties = coalesce(properties, '{}'::jsonb) || jsonb_build_object('display_location', %s::text) WHERE id = %s",
+                (properties["display_location"], animal_id),
+            )
         conn.commit()
     logger.info("Set display_location on %s dogs", len(changes))
 
