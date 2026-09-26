@@ -45,6 +45,8 @@ class TestDisplayLocation:
             ("Tierheim ASPA Bukarest", "Bucharest, Romania"),
             ("Tierheim Perros con Alma", "Zaragoza, Spain"),
             ("Tierheim Albayyas", "Baeza, Spain"),
+            ("Tierheim ADPCA 50012 Zaragoza", "Zaragoza, Spain"),  # a Spanish postcode
+            ("23560 Lübeck, ab 1.10.", "Lübeck, Germany"),
             ("Tierheim Adoromimos in Mafra", "Mafra, Portugal"),
             ("Pflegestelle (Hunde-Reha-Zentrum) des Tierheim Odai, Rumänien", "Romania"),
         ],
@@ -52,7 +54,7 @@ class TestDisplayLocation:
     def test_aufenthaltsort(self, stored, expected):
         assert display_location({"Aufenthaltsort": stored}) == expected
 
-    @pytest.mark.parametrize("stored", ["auf Anfrage", "Tierheim Doggyland", "Tierheim Felican"])
+    @pytest.mark.parametrize("stored", ["auf Anfrage", "Tierheim Doggyland", "Tierheim Felican", "Tierheim Kaspar", "Tierheim Rhodaina"])
     def test_unknown_places_are_left_out(self, stored):
         assert display_location({"Aufenthaltsort": stored}) is None
 

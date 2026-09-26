@@ -15,27 +15,31 @@ A value that can't be read as a place is left out, never guessed.
 import re
 
 # Tierschutzverein's partner shelters, as they appear in Aufenthaltsort, with
-# the place each one names on the rescue's own pages.
-SHELTER_PLACES = (
-    ("mi fiel amigo", "Andújar, Spain"),
-    ("andújar", "Andújar, Spain"),
-    ("hogar de asis", "La Carolina, Spain"),
-    ("la carolina", "La Carolina, Spain"),
-    ("bajo aragón", "Bajo Aragón, Spain"),
-    ("apap", "Bajo Aragón, Spain"),
-    ("villena", "Villena, Spain"),
-    ("adpca", "Zaragoza, Spain"),
-    ("zaragoza", "Zaragoza, Spain"),
-    ("perros con alma", "Zaragoza, Spain"),
-    ("ada canals", "Canals, Spain"),
-    ("bayyas", "Baeza, Spain"),
-    ("baeza", "Baeza, Spain"),
-    ("huella de jaén", "Jaén, Spain"),
-    ("adoromimos", "Mafra, Portugal"),
-    ("mafra", "Mafra, Portugal"),
-    ("aspa", "Bucharest, Romania"),
-    ("bukarest", "Bucharest, Romania"),
-    ("odai", "Romania"),
+# the place each one names on the rescue's own pages. Whole words only, so
+# "Kaspar" is not ASPA.
+SHELTER_PLACES = tuple(
+    (re.compile(pattern), place)
+    for pattern, place in (
+        (r"\bmie? fiel amigo\b", "Andújar, Spain"),
+        (r"\band[úu]jar\b", "Andújar, Spain"),
+        (r"\bhogar de asis\b", "La Carolina, Spain"),
+        (r"\bla carolina\b", "La Carolina, Spain"),
+        (r"\bbajo arag[óo]n\b", "Bajo Aragón, Spain"),
+        (r"\bapap\b", "Bajo Aragón, Spain"),
+        (r"\bvillena\b", "Villena, Spain"),
+        (r"\badpca\b", "Zaragoza, Spain"),
+        (r"\bzaragoza\b", "Zaragoza, Spain"),
+        (r"\bperros con alma\b", "Zaragoza, Spain"),
+        (r"\bada canals\b", "Canals, Spain"),
+        (r"\b(?:al[\s-]?)?bayy?as", "Baeza, Spain"),  # spelled a dozen ways
+        (r"\bbaeza\b", "Baeza, Spain"),
+        (r"\bhuella de ja[ée]n\b", "Jaén, Spain"),
+        (r"\badoromimos\b", "Mafra, Portugal"),
+        (r"\bmafra\b", "Mafra, Portugal"),
+        (r"\baspa\b", "Bucharest, Romania"),
+        (r"\bbukarest\b", "Bucharest, Romania"),
+        (r"\bodai\b", "Romania"),
+    )
 )
 
 _GERMAN_POSTCODE = re.compile(r"\b\d{5}\s+(.+)")
@@ -66,21 +70,23 @@ def _german_town(text: str) -> str | None:
             continue
         if not word[0].isupper():
             break
-        words.append(word)
+        words.append(word.rstrip(",;."))
+        if word[-1] in ",;":
+            break
     return " ".join(words) or None
 
 
 def _aufenthaltsort(value: str) -> str | None:
     if match := _SWISS_POSTCODE_TOWN.search(value):
         return f"{match.group(1)}, Switzerland"
-    if match := _GERMAN_POSTCODE.search(value):
+    lowered = value.lower()
+    shelter = next((place for pattern, place in SHELTER_PLACES if pattern.search(lowered)), None)
+    # A foster home in Germany gives its postcode; Spanish postcodes also have
+    # five digits, so a partner shelter's name wins over one.
+    if not shelter and (match := _GERMAN_POSTCODE.search(value)):
         town = _german_town(match.group(1))
         return f"{town}, Germany" if town else None
-    lowered = value.lower()
-    for key, place in SHELTER_PLACES:
-        if key in lowered:
-            return place
-    return None
+    return shelter
 
 
 def _current_location(value: str) -> str | None:
