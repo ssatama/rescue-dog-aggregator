@@ -13,6 +13,7 @@ import argparse
 import logging
 import os
 import sys
+from contextlib import closing
 from dataclasses import dataclass
 
 import psycopg2
@@ -81,7 +82,7 @@ def main() -> int:
     console = Console()
     console.print(f"[dim]target: {'production (RAILWAY_DATABASE_URL)' if os.getenv('RAILWAY_DATABASE_URL') else 'local'}[/dim]")
 
-    with _connect() as conn, conn.cursor(cursor_factory=RealDictCursor) as cursor:
+    with closing(_connect()) as conn, conn, conn.cursor(cursor_factory=RealDictCursor) as cursor:
         cursor.execute(FETCH_QUERY)
         renames = plan_renames([dict(r) for r in cursor.fetchall()])
 
@@ -97,7 +98,7 @@ def main() -> int:
             logger.info("Dry run - pass --apply to write these %s rows", len(renames))
         return 0
 
-    with _connect() as conn, conn.cursor() as cursor:
+    with closing(_connect()) as conn, conn, conn.cursor() as cursor:
         for r in renames:
             cursor.execute("UPDATE animals SET name = %s, properties = %s WHERE id = %s", (r.name, Json(r.properties), r.animal_id))
         conn.commit()

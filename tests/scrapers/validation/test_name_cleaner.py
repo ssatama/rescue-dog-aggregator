@@ -14,9 +14,8 @@ class TestCleanName:
             ("Ally OVERLOOKED", "Mixed Breed", "Ally"),
             ("Vinnie HOME NEEDED", "Mixed Breed", "Vinnie"),
             ("Max - EXPERIENCED HOME NEEDED", "Mixed Breed", "Max"),
-            ("Bella *RESERVED*", "Beagle", "Bella"),
             ("URGENT - Rocco", "Mixed Breed", "Rocco"),
-            ("Luna (applications closed)", "Mixed Breed", "Luna"),
+            ("Rex, Husky", "Siberian Husky", "Rex"),
             ("Lola Lab", "Labrador Retriever Cross", "Lola"),
             ("Penny Lab", "Labrador Retriever", "Penny"),
             ("Rocky Husky", "Siberian Husky", "Rocky"),
@@ -46,13 +45,18 @@ class TestCleanName:
             ("Jack Russell", "Jack Russell Terrier"),
             ("Lady Golden", "Golden Retriever"),
             ("Mr Black", "Black Labrador Retriever"),
+            ("Mr Beagle", "Beagle"),  # a title and the breed is the whole name
+            ("Big Lab", "Labrador Retriever"),
+            ("Bella *RESERVED*", "Beagle"),  # availability labels stay visible
+            ("Max ON HOLD", "Mixed Breed"),
+            ("Luna (applications closed)", "Mixed Breed"),
         ],
     )
     def test_leaves_real_names_alone(self, name, breed):
         assert clean_name(name, breed)[0] == name
 
     def test_a_name_that_is_only_a_label_is_kept(self):
-        assert clean_name("RESERVED", "Mixed Breed")[0] == "RESERVED"
+        assert clean_name("URGENT", "Mixed Breed")[0] == "URGENT"
 
     def test_flags_overlooked_dogs(self):
         assert clean_name("Ally OVERLOOKED", "Mixed Breed")[1] is True

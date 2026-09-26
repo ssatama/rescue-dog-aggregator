@@ -7,18 +7,17 @@ name. The original is kept in properties.raw_name by the validator.
 
 import re
 
-# Status labels rescues append or prepend. Matched case-insensitively as whole
+# Appeal labels rescues append or prepend. Matched case-insensitively as whole
 # phrases, together with the dashes, stars and brackets around them.
+# RESERVED, ON HOLD and APPLICATIONS CLOSED stay in the name: nothing else
+# records them, and without them a dog nobody can adopt looks available.
 LABELS = (
     "OVERLOOKED",
     "URGENT",
-    "RESERVED",
-    "ON HOLD",
     "HOME NEEDED",
     "FOSTER NEEDED",
     "FOSTER OR ADOPTER NEEDED",
     "EXPERIENCED HOME NEEDED",
-    "APPLICATIONS CLOSED",
 )
 _LABEL_PATTERN = re.compile(
     r"[\s\-–—*:|!(\[]*\b(?:" + "|".join(re.escape(label).replace(r"\ ", r"\s+") for label in sorted(LABELS, key=len, reverse=True)) + r")\b[\s\-–—*:|!)\]]*",
@@ -47,6 +46,10 @@ BREED_NOUNS = {
 }  # fmt: skip
 
 
+# "Mr Beagle" and "Big Lab" are the whole name, not "Mr" plus a breed.
+NAME_PREFIXES = {"mr", "mrs", "miss", "ms", "lady", "lord", "sir", "little", "big", "baby", "old", "young"}
+
+
 def _is_appended_breed_word(word: str, breed: str) -> bool:
     word = word.lower()
     if word in BREED_ABBREVIATIONS:
@@ -66,7 +69,8 @@ def clean_name(name: str, breed: str | None) -> tuple[str, bool]:
 
     words = cleaned.split()
     breed_text = (breed or "").lower()
-    if len(words) > 1 and breed_text and _is_appended_breed_word(words[-1], breed_text):
-        cleaned = " ".join(words[:-1])
+    rest = " ".join(words[:-1]).rstrip(",;-– ")
+    if rest and rest.lower() not in NAME_PREFIXES and breed_text and _is_appended_breed_word(words[-1], breed_text):
+        cleaned = rest
 
     return cleaned, overlooked
