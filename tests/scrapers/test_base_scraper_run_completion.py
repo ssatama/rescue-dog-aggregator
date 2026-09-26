@@ -107,7 +107,7 @@ class TestRunCompletion:
         assert completion[1] == "error"
         assert "listing broke" in completion[5]
 
-    def test_a_failed_completion_write_is_retried_so_the_log_does_not_stay_running(self, scraper):
+    def test_a_failed_completion_write_is_retried_as_it_was(self, scraper):
         scraper.dogs = [_dog("a")]
         scraper.database_service.complete_scrape_log.side_effect = [False, True]
 
@@ -116,13 +116,61 @@ class TestRunCompletion:
             patch.object(scraper, "detect_partial_failure", return_value=False),
             patch("services.revalidation_client.invalidate_sync"),
         ):
-            scraper._run_with_connection()
+            assert scraper._run_with_connection() is True
 
         first, retry = _completions(scraper)
-        assert first[1] == "success"
-        assert retry[1] == "error"
-        assert "completion not recorded" in retry[5]
-        assert retry[3] == 1, "the retry keeps the dogs the run added"
+        assert first == retry, "the retry writes the same status, counts and metrics"
+        assert retry[1] == "success"
+        assert retry[6]["animals_added"] == 1
+
+    def test_a_failed_robots_skip_write_is_retried_as_skipped(self, scraper):
+        scraper._check_robots_permission.return_value = False
+        scraper.database_service.complete_scrape_log.side_effect = [False, True]
+
+        assert scraper._run_with_connection() is False
+
+        assert [c[1] for c in _completions(scraper)] == ["skipped", "skipped"]
+
+    def test_a_failing_close_does_not_replace_system_exit(self, scraper):
+        scraper.database_service.complete_scrape_log.side_effect = RuntimeError("connection broken")
+
+        with patch.object(scraper, "collect_data", side_effect=SystemExit(1)), pytest.raises(SystemExit):
+            scraper._run_with_connection()
+
+    def test_an_interrupt_mid_save_keeps_what_was_saved(self, scraper):
+        scraper.dogs = [_dog("a"), _dog("b"), _dog("c")]
+        saves = iter([(1, "added"), (2, "updated"), KeyboardInterrupt()])
+
+        def save(_dog):
+            result = next(saves)
+            if isinstance(result, BaseException):
+                raise result
+            return result
+
+        with (
+            patch.object(scraper, "save_animal", side_effect=save),
+            patch("services.revalidation_client.invalidate_sync"),
+            pytest.raises(KeyboardInterrupt),
+        ):
+            scraper._run_with_connection()
+
+        (completion,) = _completions(scraper)
+        assert completion[1:5] == ("error", 3, 1, 1)
+
+    def test_a_reused_instance_never_rewrites_the_previous_runs_log(self, scraper):
+        scraper.dogs = [_dog("a")]
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "added")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            scraper._run_with_connection()
+        scraper._check_robots_permission.side_effect = KeyboardInterrupt
+
+        with pytest.raises(KeyboardInterrupt):
+            scraper._run_with_connection()
+
+        assert len(_completions(scraper)) == 1, "the interrupted second run had no log of its own to close"
 
     def test_the_log_is_written_before_the_cache_purge(self, scraper):
         scraper.dogs = [_dog("a")]
