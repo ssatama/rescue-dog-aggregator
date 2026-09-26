@@ -15,6 +15,7 @@ from scrapers.validation.constants import (
     PROMO_KEYWORDS_PATTERN,
     SKU_PATTERN,
 )
+from scrapers.validation.name_cleaner import clean_name
 
 
 class AnimalValidator:
@@ -115,7 +116,16 @@ class AnimalValidator:
             return False, animal_data
 
         result_data = animal_data.copy()
-        result_data["name"] = normalized_name
+        display_name, overlooked = clean_name(normalized_name, animal_data.get("breed"))
+        result_data["name"] = display_name
+        if display_name != normalized_name or overlooked:
+            properties = dict(animal_data.get("properties") or {})
+            # Scrapers that already strip their own labels set raw_name first.
+            properties.setdefault("raw_name", normalized_name)
+            if overlooked:
+                properties["overlooked"] = True
+            result_data["properties"] = properties
+        normalized_name = display_name
 
         primary_image_url = animal_data.get("primary_image_url")
         if primary_image_url == "":

@@ -102,6 +102,17 @@ class TestUpdateAnimalChangeDetection:
     def test_a_changed_field_is_written(self, service, field, new_value):
         assert update_with(service, **{field: new_value}) == "updated"
 
+    def test_a_renamed_dog_keeps_its_slug(self, service):
+        """#505 cleans names at scrape time ("Ally OVERLOOKED" -> "Ally"); the URL must not move."""
+        cursor = Mock()
+        cursor.fetchone.return_value = CURRENT_ROW
+        service.conn = Mock(cursor=Mock(return_value=cursor))
+
+        service.update_animal(1, {**INCOMING, "name": "Bell"})
+
+        update_sql = next(c.args[0] for c in cursor.execute.call_args_list if "UPDATE animals" in c.args[0])
+        assert "slug =" not in update_sql.replace("breed_slug =", "")
+
     def test_a_scrape_without_a_gallery_keeps_the_stored_one(self, service):
         """No "images" key means the gallery step had nothing new, not "delete it"."""
         assert update_with(service) == "no_change"
