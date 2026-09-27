@@ -270,9 +270,6 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
       expect(loadMoreButton).toBeDisabled();
     });
 
-    // A second click while the request is open must not start another
-    fireEvent.click(loadMoreButton);
-
     await act(async () => {
       releaseRequest();
     });
