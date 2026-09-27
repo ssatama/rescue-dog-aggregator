@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { THEME_COLORS } from "@/constants/themeColors";
 
 // What a phone, tablet or desktop uses when the site is installed as an app.
 // Next links it from every page as /manifest.webmanifest.
@@ -13,7 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     // White like the icons, so the launch screen has no box around the dog
     background_color: "#FFFFFF",
-    theme_color: "#FAF9F6",
+    theme_color: THEME_COLORS.light,
     categories: ["lifestyle"],
     icons: [
       { src: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png", purpose: "any" },

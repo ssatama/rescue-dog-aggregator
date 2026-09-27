@@ -6,6 +6,7 @@ import type {
   ThemeContextValue,
   ThemeProviderProps,
 } from "@/types/layoutComponents";
+import { THEME_COLORS } from "@/constants/themeColors";
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: "light",
@@ -31,6 +32,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
+    // The layout's theme-color tags follow the OS; a theme picked with the
+    // toggle overrides both, so the browser bar matches the page
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((meta) => meta.setAttribute("content", THEME_COLORS[theme]));
   }, [theme]);
 
   const updateTheme = (newTheme: Theme): void => {

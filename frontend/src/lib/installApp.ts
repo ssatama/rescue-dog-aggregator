@@ -8,7 +8,8 @@ import { isStandalone } from "@/lib/displayMode";
 //   `beforeinstallprompt`, and we open their own install dialog.
 // - `ios`: every iOS browser can Add to Home Screen from the Share sheet, but
 //   there is no API, so we show the steps.
-// - `mac-safari`: Safari 17+ has File > Add to Dock, again with no API.
+// - `mac-safari`: Safari on Sonoma or later has File > Add to Dock, again with
+//   no API.
 //
 // There is no service worker on purpose: none of these need one, and the last
 // one served stale API data (#159).
@@ -22,8 +23,9 @@ interface BeforeInstallPromptEvent extends Event {
 
 declare global {
   interface Window {
-    /** Set by the inline script in the root layout, which runs before React
-     * and so catches an event that fires before hydration. */
+    /** The only copy of Chrome's deferred prompt. The inline script in the
+     * root layout sets it, before hydration, and announces it with
+     * `installpromptchange`; `promptInstall` clears it. */
     __installPrompt?: BeforeInstallPromptEvent;
   }
 }
@@ -39,16 +41,25 @@ export function manualInstallMethod(
   if (IN_APP_BROWSER.test(userAgent)) return null;
   // iPadOS asks for the desktop site, so it reports a Mac with a touch screen
   if (/iPhone|iPad|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && maxTouchPoints > 1)) {
+    // Apps' web views (LinkedIn, Gmail, Slack...) have no Safari/ token and no
+    // Share sheet entry
+    if (!/Safari\//.test(userAgent)) return null;
+    // Chrome, Firefox and Edge on iOS got Add to Home Screen in iOS 16.4
+    if (/CriOS|FxiOS|EdgiOS/.test(userAgent)) {
+      const [, major = 0, minor = 0] = (/OS (\d+)_(\d+)/.exec(userAgent) ?? []).map(Number);
+      if (major < 16 || (major === 16 && minor < 4)) return null;
+    }
     return "ios";
   }
   if (/Macintosh/.test(userAgent) && !/Chrome|Chromium|Edg|Firefox|OPR/.test(userAgent)) {
+    // Add to Dock needs macOS Sonoma. Safari always reports macOS 10_15_7, and
+    // 17 and 18 also run on Monterey and Ventura; 26 needs Sonoma or later.
     const version = Number(/Version\/(\d+)/.exec(userAgent)?.[1]);
-    if (version >= 17) return "mac-safari";
+    if (version >= 26) return "mac-safari";
   }
   return null;
 }
 
-let deferredPrompt: BeforeInstallPromptEvent | null = null;
 let installed = false;
 let listening = false;
 const listeners = new Set<() => void>();
@@ -60,15 +71,10 @@ function emit(): void {
 function listen(): void {
   if (listening) return;
   listening = true;
-  deferredPrompt = window.__installPrompt ?? null;
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    deferredPrompt = event as BeforeInstallPromptEvent;
-    emit();
-  });
+  window.addEventListener("installpromptchange", emit);
   window.addEventListener("appinstalled", () => {
     installed = true;
-    deferredPrompt = null;
+    window.__installPrompt = undefined;
     trackAppInstalled();
     emit();
   });
@@ -82,7 +88,7 @@ function subscribe(listener: () => void): () => void {
 
 function getInstallMethod(): InstallMethod | null {
   if (installed || isStandalone()) return null;
-  if (deferredPrompt) return "prompt";
+  if (window.__installPrompt) return "prompt";
   return manualInstallMethod(navigator.userAgent, navigator.maxTouchPoints);
 }
 
@@ -93,11 +99,17 @@ export function useInstallMethod(): InstallMethod | null {
 
 /** Opens the browser's install dialog. Each prompt can be shown only once. */
 export async function promptInstall(): Promise<void> {
-  const prompt = deferredPrompt;
+  const prompt = window.__installPrompt;
   if (!prompt) return;
-  deferredPrompt = null;
-  await prompt.prompt();
-  const { outcome } = await prompt.userChoice;
-  if (outcome === "accepted") installed = true;
-  emit();
+  window.__installPrompt = undefined;
+  try {
+    await prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === "accepted") installed = true;
+  } catch {
+    // A stale prompt (installed from the address bar meanwhile) rejects.
+    // Nothing to report: the button falls back to what the browser offers now.
+  } finally {
+    emit();
+  }
 }

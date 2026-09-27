@@ -11,6 +11,7 @@ import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapp
 import InstallNudge from "@/components/pwa/InstallNudge";
 import SentryInitializer from "@/components/SentryInitializer";
 import { generateSiteGraph } from "@/utils/schema";
+import { THEME_COLORS } from "@/constants/themeColors";
 
 // Figtree for text, Bricolage Grotesque for dog names and headings. Both are
 // variable fonts, so no weight list is needed.
@@ -99,10 +100,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Browser chrome and the installed app's title bar match the page
+  // The OS theme at first paint; ThemeProvider follows the site's own toggle
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FAF9F6" },
-    { media: "(prefers-color-scheme: dark)", color: "#131211" },
+    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
   ],
 };
 
@@ -130,7 +131,7 @@ export default function RootLayout({
             Inline so it runs before hydration, when the event often fires. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__installPrompt=e})`,
+            __html: `window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__installPrompt=e;window.dispatchEvent(new Event("installpromptchange"))})`,
           }}
         />
         <script

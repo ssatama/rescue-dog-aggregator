@@ -1,3 +1,5 @@
+import { safeStorage } from "@/utils/safeStorage";
+
 // When to suggest installing the site as an app. The card waits until someone
 // is clearly coming back or browsing a lot, and once dismissed it never
 // returns. The counts stay in localStorage and are never sent anywhere.
@@ -19,20 +21,12 @@ interface NudgeState {
 const EMPTY: NudgeState = { sessions: 0, dogViews: 0, lastSeen: 0, dismissed: false };
 
 function read(): NudgeState {
-  try {
-    const saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
-    return saved && typeof saved === "object" ? { ...EMPTY, ...saved } : EMPTY;
-  } catch {
-    return EMPTY;
-  }
+  return { ...EMPTY, ...safeStorage.parse<Partial<NudgeState> | null>(KEY, EMPTY) };
 }
 
+// Blocked storage: the counts never grow, so the card never shows
 function write(state: NudgeState): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-  } catch {
-    // Private mode or blocked storage: the card just never shows
-  }
+  safeStorage.stringify(KEY, state);
 }
 
 /** Call on load and whenever the tab becomes visible again. */

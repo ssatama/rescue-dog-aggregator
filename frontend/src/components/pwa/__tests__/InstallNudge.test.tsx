@@ -33,7 +33,10 @@ describe("InstallNudge", () => {
     mockMethod.mockReturnValue("ios");
     mockIsTouch.mockReturnValue(true);
     mockPathname.mockReturnValue("/dogs");
+    jest.useFakeTimers();
   });
+
+  afterEach(() => jest.useRealTimers());
 
   it("stays hidden on a first, light visit", () => {
     render(<InstallNudge />);
@@ -45,7 +48,9 @@ describe("InstallNudge", () => {
     const { rerender } = render(<InstallNudge />);
     expect(screen.getByRole("region", { name: /home screen/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Show me how" })).toBeInTheDocument();
+    act(() => jest.advanceTimersByTime(1000));
     rerender(<InstallNudge />);
+    act(() => jest.advanceTimersByTime(1000));
     expect(trackInstallNudgeShown).toHaveBeenCalledTimes(1);
     expect(trackInstallNudgeShown).toHaveBeenCalledWith("ios");
   });
@@ -55,6 +60,7 @@ describe("InstallNudge", () => {
     HTMLElement.prototype.checkVisibility = () => false;
     browseFiveDogs();
     render(<InstallNudge />);
+    act(() => jest.advanceTimersByTime(1000));
     expect(trackInstallNudgeShown).not.toHaveBeenCalled();
     HTMLElement.prototype.checkVisibility = original;
   });
@@ -99,6 +105,24 @@ describe("InstallNudge", () => {
     browseFiveDogs();
     render(<InstallNudge />);
     expect(screen.queryByRole("region", { name: /home screen/i })).toBeNull();
+  });
+
+  it("appears on returning to a tab left open, when that is the third session", () => {
+    localStorage.setItem(
+      "installNudge",
+      JSON.stringify({ sessions: 1, dogViews: 0, lastSeen: Date.now() - 31 * 60 * 1000, dismissed: false }),
+    );
+    render(<InstallNudge />);
+    expect(screen.queryByRole("region", { name: /home screen/i })).toBeNull();
+
+    const setVisibility = (state: DocumentVisibilityState) => {
+      Object.defineProperty(document, "visibilityState", { value: state, configurable: true });
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
+    act(() => setVisibility("hidden"));
+    act(() => jest.advanceTimersByTime(31 * 60 * 1000));
+    act(() => setVisibility("visible"));
+    expect(screen.getByRole("region", { name: /home screen/i })).toBeInTheDocument();
   });
 
   it("appears on the next page once browsing crosses the threshold", () => {

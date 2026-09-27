@@ -18,7 +18,8 @@ export default function InstallNudge() {
   const method = useInstallMethod();
   const pathname = usePathname();
   const isTouch = useMediaQuery("(pointer: coarse)");
-  const [visitRecorded, setVisitRecorded] = useState(false);
+  // Bumped after each visit is recorded, so the card re-reads the counts
+  const [visits, setVisits] = useState(0);
   const [closed, setClosed] = useState(false);
   const shownTracked = useRef(false);
   const cardRef = useRef<HTMLElement>(null);
@@ -26,11 +27,15 @@ export default function InstallNudge() {
   useEffect(() => {
     recordVisit();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the visit count lives in localStorage, readable only after mount
-    setVisitRecorded(true);
+    setVisits((count) => count + 1);
     // Coming back to a tab left open counts as a visit too
     const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") recordSeen();
-      else recordVisit();
+      if (document.visibilityState === "hidden") {
+        recordSeen();
+      } else {
+        recordVisit();
+        setVisits((count) => count + 1);
+      }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);
@@ -38,20 +43,25 @@ export default function InstallNudge() {
 
   // Read on every render, so a dog viewed on the last page counts on this one
   const shown =
-    visitRecorded &&
+    visits > 0 &&
     !closed &&
     method !== null &&
     isTouch &&
     !pathname?.startsWith("/swipe") &&
     isNudgeDue();
 
-  // Counted once it is really on screen: CSS hides it behind the adopt bar
+  // Counted once it is really on screen: CSS hides it behind the adopt bar,
+  // which can mount a moment after the card (a dog loaded client-side)
   useEffect(() => {
-    const visible = cardRef.current?.checkVisibility?.() ?? Boolean(cardRef.current);
-    if (visible && method && !shownTracked.current) {
-      shownTracked.current = true;
-      trackInstallNudgeShown(method);
-    }
+    if (!shown || !method || shownTracked.current) return;
+    const timer = setTimeout(() => {
+      const card = cardRef.current;
+      if (card && (card.checkVisibility?.() ?? true)) {
+        shownTracked.current = true;
+        trackInstallNudgeShown(method);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [shown, method, pathname]);
 
   if (!shown || !method) return null;
@@ -68,8 +78,9 @@ export default function InstallNudge() {
       initial={{ y: 24, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
-      // Sits above the tab bar; the dog page's adopt bar owns the bottom edge
-      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 rounded-2xl border border-line bg-surface p-4 shadow-xl [body:has([data-adopt-bar])_&]:hidden sm:left-auto sm:w-96 lg:bottom-6 lg:right-6"
+      // Sits above the tab bar; below lg the dog page's adopt bar owns the
+      // bottom edge (the bar is lg:hidden, but stays in the DOM)
+      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 rounded-2xl border border-line bg-surface p-4 shadow-xl max-lg:[body:has([data-adopt-bar])_&]:hidden sm:left-auto sm:w-96 lg:bottom-6 lg:right-6"
     >
       <button
         type="button"
