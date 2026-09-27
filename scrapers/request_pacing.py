@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import requests
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from utils.robots_checker import RobotsChecker
 
@@ -188,7 +189,7 @@ class RequestPacing:
         """Worth another attempt: a timeout, a dropped connection, a 429 or a 5xx. Not a 404 or a parse error."""
         if isinstance(error, requests.HTTPError):
             return getattr(error.response, "status_code", None) in RETRYABLE_STATUS_CODES
-        return isinstance(error, RETRYABLE_ERRORS + (TimeoutError,))
+        return isinstance(error, RETRYABLE_ERRORS + (TimeoutError, PlaywrightTimeoutError))
 
     def _detail_failed(self, item_url: str, error: BaseException) -> None:
         self.detail_failures = [*self.detail_failures, item_url]

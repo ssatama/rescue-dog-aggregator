@@ -514,24 +514,35 @@ class BaseScraper(DogSaving, StaleDetection, RunReporting, RequestPacing, ABC):
         fetch_one: Callable[[Any], Awaitable[Any]],
         *,
         url: Callable[[Any], str] = lambda item: item["adoption_url"],
+        attempts: int = 1,
     ) -> list:
         """``fetch_details`` for coroutine fetches, one at a time on the running loop.
 
-        Each fetch is cut off after the org's ``timeout`` and counted as failed.
+        Each fetch is cut off after the org's ``timeout``. Like ``fetch_details``,
+        only transient errors (a timeout among them) are retried (#571).
         """
         self._after_listing()
         results = []
         unique = self._unique_by_url(items, url)
         self._detail_attempted += len(unique)
         for item in unique:
-            wait = self._claim_request_slot()
-            if wait > 0:
-                await asyncio.sleep(wait)
-            try:
-                result = await asyncio.wait_for(fetch_one(item), self.timeout)
-            except Exception as e:
-                self._detail_failed(url(item), e)
-                continue
-            if result is not None:
-                results.append(result)
+            for attempt in range(1, max(1, attempts) + 1):
+                wait = self._claim_request_slot()
+                if wait > 0:
+                    await asyncio.sleep(wait)
+                try:
+                    result = await asyncio.wait_for(fetch_one(item), self.timeout)
+                except Exception as e:
+                    self._back_off_after(e, attempt)
+                    if attempt < attempts and self._is_transient(e):
+                        self.metrics_collector.track_retry(success=False)
+                        self.logger.warning(f"Detail page {url(item)} failed (attempt {attempt} of {attempts}), retrying: {e}")
+                        continue
+                    self._detail_failed(url(item), e)
+                    break
+                if attempt > 1:
+                    self.metrics_collector.track_retry(success=True)
+                if result is not None:
+                    results.append(result)
+                break
         return results

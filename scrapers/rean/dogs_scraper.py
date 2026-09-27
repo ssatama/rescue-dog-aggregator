@@ -69,6 +69,22 @@ def rean_external_id(name: str, page_type: str) -> str:
     return f"rean-{page_type}-{name.lower().replace(' ', '-')}"
 
 
+_FEMALE_WORDS = {"she", "her", "hers", "girl", "lady"}
+
+
+def sex_from_pronouns(text: str | None) -> str | None:
+    """Male or Female when every gendered word in the story agrees, else None.
+
+    A majority isn't enough: "a volunteer found him and she took him to her
+    home" is about a male dog and two of its words say female (#571).
+    """
+    words = re.findall(r"\b(she|her|hers|girl|lady|he|him|his|boy|chap)\b", (text or "").lower())
+    kinds = {word in _FEMALE_WORDS for word in words}
+    if len(kinds) != 1:
+        return None
+    return "Female" if kinds.pop() else "Male"
+
+
 class REANScraper(BaseScraper):
     """REAN (Rescuing European Animals in Need) scraper for Romania and UK foster dogs."""
 
@@ -1456,6 +1472,14 @@ class REANScraper(BaseScraper):
         if not isinstance(properties, dict):
             properties = {}
 
+        # REAN never states the sex; the story's pronouns usually do (#571).
+        # Recorded in properties.sex_source; nothing displays that label yet.
+        sex = dog_data.get("sex")
+        if not sex:
+            sex = sex_from_pronouns(properties.get("description"))
+            if sex:
+                properties = {**properties, "sex_source": "pronouns"}
+
         standardized_data = {
             "external_id": external_id,
             "name": name,
@@ -1464,7 +1488,7 @@ class REANScraper(BaseScraper):
             "animal_type": "dog",
             "age": dog_data.get("age_text"),  # Unified standardization expects 'age' field
             "breed": dog_data.get("breed"),  # Add breed field for unified standardization
-            "sex": dog_data.get("sex"),  # Add sex field for unified standardization
+            "sex": sex,
             "properties": properties,
         }
 

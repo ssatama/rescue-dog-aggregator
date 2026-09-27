@@ -814,3 +814,37 @@ class TestExtractNameFromLiveLayout:
     def test_call_to_action_text_is_not_a_dog_name(self, scraper, text):
         """Seven dogs named "Please" reached production from this text."""
         assert scraper.extract_name(text) is None
+
+
+@pytest.mark.unit
+class TestSexFromPronouns:
+    """#571: REAN never states the sex; a clear story says it, labelled as a guess."""
+
+    def test_a_clear_story_gives_the_sex_labelled(self, scraper):
+        entry = "Bobbie is around 5 months old, rescued from the local kill shelter. He is vaccinated and chipped. This little boy desperately needs a home."
+        dog = scraper.standardize_animal_data(scraper.extract_dog_data(entry, "romania"), "romania")
+
+        assert dog["sex"] == "Male"
+        assert dog["properties"]["sex_source"] == "pronouns"
+
+    def test_a_mixed_story_stays_unsure(self, scraper):
+        entry = "Mimi and her brother came in together; he is shy and she is bold. They need a home."
+        dog = scraper.standardize_animal_data(scraper.extract_dog_data(entry, "romania"), "romania")
+
+        assert "sex_source" not in dog["properties"]
+
+    @pytest.mark.parametrize(
+        ("story", "sex"),
+        [
+            # Production stories (Annie, Sunny): every gendered word agrees
+            ("Annie is around 1 year old. she is a friendly little girl with people and dogs. she will be spayed before she travels.", "Female"),
+            ("Sunny is a super friendly little chap around 4 months old. He will be chipped before he travels.", "Male"),
+            # The rescuers' pronouns outvote the dog's: not a guess worth showing
+            ("Our volunteer found him and she took him to her home.", None),
+            ("Rocco is a friendly 5 year old. Vaccinated and chipped.", None),
+        ],
+    )
+    def test_the_sex_is_guessed_only_when_the_story_agrees(self, story, sex):
+        from scrapers.rean.dogs_scraper import sex_from_pronouns
+
+        assert sex_from_pronouns(story) == sex

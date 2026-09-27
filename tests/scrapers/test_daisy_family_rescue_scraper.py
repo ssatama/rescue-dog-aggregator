@@ -624,3 +624,24 @@ class TestDaisyFamilyRescueScraperIntegration:
             assert scraper.rate_limit_delay == 1.0
             assert scraper.max_retries == 3
             assert scraper.timeout == 30
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("text", "breed"),
+    [
+        ("Mischling", "mixed breed"),
+        ("Deutscher Schäferhund-Mischling", "german shepherd mix"),
+        ("Deutscher Schäferhund", "german shepherd"),
+        # Not every Schäferhund is a German Shepherd
+        ("Belgischer Schäferhund", "Belgischer Schäferhund"),
+        ("Weißer Schweizer Schäferhund", "Weißer Schweizer Schäferhund"),
+        ("Schäferhund-Mischling", "mixed breed"),
+        ("Podenco", "Podenco"),
+    ],
+)
+def test_a_named_breed_comes_before_mischling(text, breed):
+    """#571: "Deutscher Schäferhund-Mischling" was stored as plain "mixed breed"."""
+    from scrapers.daisy_family_rescue.dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
+
+    assert DaisyFamilyRescueDogDetailScraper()._parse_breed(text) == breed
