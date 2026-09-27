@@ -215,6 +215,7 @@ def resolve_age(
     max_months: int | None,
     today: date,
     stored: dict[str, Any] | None = None,
+    stated_at: date | None = None,
 ) -> Age:
     """What to store for a scraped dog's age.
 
@@ -222,6 +223,8 @@ def resolve_age(
     min_months, max_months: the stated age parsed from age_text.
     stored: the saved row (age_text, birth_date_min, birth_date_max,
         age_observed_at, created_at) when the dog is already in the database.
+    stated_at: when the rescue wrote the stated age, if the page says (a
+        MISIs post's publication date).
 
     A date of birth wins, from date_of_birth or else age_text. Otherwise a new or changed age is read as of today.
     An unchanged age_text keeps the day it was first read: a site that still
@@ -247,9 +250,15 @@ def resolve_age(
         # months parse_age_text counts from today
         return Age(None, None, None, None, None)
 
-    observed = today
+    # The earliest day the age is known to have been true: when the rescue
+    # wrote it (if the page says), and, while the text is unchanged, when we
+    # first read it. A later edit to the post must not make the dog younger.
+    anchors = [today]
+    if stated_at:
+        anchors.append(stated_at)
     if stored and stored.get("age_text") == age_text:
-        observed = stored_observed or as_date(stored.get("created_at")) or today
+        anchors.append(stored_observed or as_date(stored.get("created_at")) or today)
+    observed = min(anchors)
     earliest, latest = birth_range_from_age(min_months, max_months, observed)
     return Age(earliest, latest, observed, *ages_at(earliest, latest, today))
 
@@ -267,6 +276,7 @@ def age_columns(animal_data: dict[str, Any], today: date | None = None, stored: 
         max_months=as_int(max_months),
         today=today or today_utc(),
         stored=stored,
+        stated_at=as_date(animal_data.get("age_stated_at")),
     )
 
 

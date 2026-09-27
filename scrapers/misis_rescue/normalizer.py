@@ -11,74 +11,8 @@ Age, breed, sex, and weight extraction logic has been moved to:
 import re
 
 # Import shared extraction utilities
+from utils.breed_registry import resolve_breed
 from utils.shared_extraction_patterns import extract_weight_from_text
-
-
-def extract_birth_date(text: str | None) -> str | None:
-    """Extract birth date from various text formats.
-
-    Args:
-        text: Text containing birth date information
-
-    Returns:
-        Extracted birth date string or None
-    """
-    if not text:
-        return None
-
-    text = text.strip()
-
-    # Pattern 1: "rough estimate DOB 2021" or "DOB- 2023" or "DOB: 2021"
-    match = re.search(r"DOB[-:\s]+(\d{4})(?!\d)", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    # Pattern 2: "DOB: March 2023"
-    match = re.search(r"DOB:\s*([A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    # Pattern 3: "DOB: April/May 2024" or "DOB -April /May 2024"
-    match = re.search(r"DOB[-:\s]*([A-Za-z]+\s*/\s*[A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    # Pattern 4: "born in 2022"
-    match = re.search(r"born\s+in\s+(\d{4})", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    # Pattern 5: "birthday: June 2023"
-    match = re.search(r"birthday:\s*([A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    # Pattern 6: "date of birth: 2020"
-    match = re.search(r"date\s+of\s+birth:\s*(\d{4})", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    # Pattern 8: "born: December 2021"
-    match = re.search(r"born:\s*([A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    # Pattern 9: "DOB - october 2022" (with dash)
-    match = re.search(r"DOB\s*-\s*([A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    # Pattern 10: "- january 2024" (dash at start)
-    match = re.search(r"^-\s*([A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    # Pattern 11: "october 2022" (just month year)
-    match = re.search(r"^([A-Za-z]+\s+\d{4})$", text.strip(), re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    return None
 
 
 def normalize_name(name: str | None) -> str:
@@ -163,55 +97,6 @@ def normalize_name(name: str | None) -> str:
 
     # Title case each word properly
     return cleaned.title()
-
-
-def extract_age_from_text_legacy(text: str | None) -> float | None:
-    """Extract age from detailed text using enhanced patterns.
-
-    Args:
-        text: Full text content to search
-
-    Returns:
-        Age in years as float or None
-    """
-    if not text:
-        return None
-
-    text = text.lower()
-
-    # Pattern 1: "4 y old", "roughly 3 y old"
-    match = re.search(r"(?:roughly|approximately|about)?\s*(\d+(?:\.\d+)?)\s*y\s+old", text)
-    if match:
-        return float(match.group(1))
-
-    # Pattern 2: "nearly 2 years old", "approximately 3 years old"
-    match = re.search(
-        r"(?:nearly|approximately|roughly|about|exactly)?\s*(\d+(?:\.\d+)?)\s*years?\s+old",
-        text,
-    )
-    if match:
-        return float(match.group(1))
-
-    # Pattern 3: "18 months old", "6 months"
-    match = re.search(r"(\d+)\s*months?\s*(?:old)?", text)
-    if match:
-        months = int(match.group(1))
-        return round(months / 12.0, 2)
-
-    # Pattern 4: Veterinary estimates
-    match = re.search(
-        r"(?:vet|veterinary).*?(?:estimates?|assessment).*?(\d+(?:\.\d+)?)\s*(?:years?|y)",
-        text,
-    )
-    if match:
-        return float(match.group(1))
-
-    # Pattern 5: "vet estimated her)" patterns
-    match = re.search(r"vet estimated.*?(\d+(?:\.\d+)?)\s*y", text)
-    if match:
-        return float(match.group(1))
-
-    return None
 
 
 def extract_sex_from_text_legacy(text: str | None) -> str | None:
@@ -340,85 +225,12 @@ def extract_breed_from_text_legacy(text: str | None) -> str | None:
     return None
 
 
-def calculate_age_years(birth_date_text: str | None) -> float | None:
-    """Calculate age in years from birth date text.
-
-    Args:
-        birth_date_text: Birth date string from extract_birth_date
-
-    Returns:
-        Age in years as float or None
-    """
-    if not birth_date_text:
-        return None
-
-    # Import datetime here to avoid mocking issues
-    from datetime import datetime
-
-    current_date = datetime.now()
-
-    # Handle year only format (e.g., "2021")
-    if re.match(r"^\d{4}$", birth_date_text):
-        birth_year = int(birth_date_text)
-        return float(current_date.year - birth_year)
-
-    # Handle month/year format (e.g., "March 2023")
-    match = re.search(r"([A-Za-z]+)\s+(\d{4})", birth_date_text)
-    if match:
-        month_name = match.group(1)
-        birth_year = int(match.group(2))
-
-        # Map month names to numbers
-        month_map = {
-            "january": 1,
-            "february": 2,
-            "march": 3,
-            "april": 4,
-            "may": 5,
-            "june": 6,
-            "july": 7,
-            "august": 8,
-            "september": 9,
-            "october": 10,
-            "november": 11,
-            "december": 12,
-        }
-
-        month_num = month_map.get(month_name.lower())
-        if month_num:
-            birth_date = datetime(birth_year, month_num, 1)
-            age_days = (current_date - birth_date).days
-            return round(age_days / 365.25, 1)
-
-    # Handle range format (e.g., "April/May 2024")
-    match = re.search(r"([A-Za-z]+)/([A-Za-z]+)\s+(\d{4})", birth_date_text)
-    if match:
-        month1_name = match.group(1)
-        birth_year = int(match.group(3))
-
-        month_map = {
-            "january": 1,
-            "february": 2,
-            "march": 3,
-            "april": 4,
-            "may": 5,
-            "june": 6,
-            "july": 7,
-            "august": 8,
-            "september": 9,
-            "october": 10,
-            "november": 11,
-            "december": 12,
-        }
-
-        month1_num = month_map.get(month1_name.lower())
-        if month1_num:
-            # Use first month for calculation
-            birth_date = datetime(birth_year, month1_num, 15)  # Mid-month
-            age_days = (current_date - birth_date).days
-            return round(age_days / 365.25, 1)
-
-    return None
+MAX_DOG_WEIGHT_KG = 100
+NAMED_MIX = re.compile(
+    r"^(?:(?:possibly|probably|maybe|most likely|likely|looks like|we think(?: (?:she|he)(?:'s| is))?)\s+)?(?:an?\s+)?([a-z][a-z ]{2,30}?)\s+(?:mix|cross)(?:breed)?$",
+    re.IGNORECASE,
+)
+NOT_A_BREED = re.compile(r"\b(?:mixed|breed|size|small|medium|large|big|unknown)\b", re.IGNORECASE)
 
 
 def extract_breed(bullets: list[str] | None) -> str | None:
@@ -432,6 +244,14 @@ def extract_breed(bullets: list[str] | None) -> str | None:
     """
     if not bullets:
         return None
+
+    # A short fact naming the breed and a mix: "Cane Corso cross", "Possibly Staff cross"
+    for bullet in bullets:
+        named = NAMED_MIX.match(bullet.strip())
+        # Only a breed the registry knows: "Probably a mix" and "Beautiful mix" name none
+        if named and not NOT_A_BREED.search(named.group(1)) and resolve_breed(named.group(1)).group != "Unknown":
+            name = named.group(1).strip().title()
+            return f"{'Labrador' if name == 'Lab' else name} Mix"
 
     # Join all bullets into single text for pattern matching
     text = " ".join(bullets).lower()
@@ -505,7 +325,7 @@ def extract_breed(bullets: list[str] | None) -> str | None:
     for pattern in breed_patterns:
         match = re.search(pattern, text)
         if match:
-            breed = match.group(1)
+            breed = match.group(1).strip()
             if breed.lower() == "lab":
                 return "Labrador"
             elif breed.lower() == "english pointer":
@@ -586,74 +406,21 @@ def normalize_size(weight_text: str | None) -> str | None:
 
 
 def extract_weight_kg_legacy(text: str | None) -> float | None:
-    """Extract weight in kg from text.
+    """The first weight in the text, in kg: "10 kg", "weighs around 22-25kg" (the middle of a range).
 
-    Args:
-        text: Text containing weight information
-
-    Returns:
-        Weight in kg as float or None
+    The first is the current weight; posts add the expected adult weight after
+    it ("weighs around 6kg, should be around 15kg at full size").
     """
     if not text:
         return None
-
-    text = text.lower()
-
-    # Pattern 0: "✔️weighs around 22-25kg" (with checkmarks and "around")
-    match = re.search(r"✔️weighs\s+around\s+(\d+\.?\d*)-(\d+\.?\d*)kg", text)
-    if match:
-        weight1 = float(match.group(1))
-        weight2 = float(match.group(2))
-        return (weight1 + weight2) / 2
-
-    # Pattern 0.5: "weighs around 15-18 kg" (with "around" and space before kg)
-    match = re.search(r"weighs\s+around\s+(\d+\.?\d*)-(\d+\.?\d*)\s*kg", text)
-    if match:
-        weight1 = float(match.group(1))
-        weight2 = float(match.group(2))
-        return (weight1 + weight2) / 2
-
-    # Pattern 1: "weighs 2-3kg" (range) - most specific first
-    match = re.search(r"weighs\s+(\d+\.?\d*)-(\d+\.?\d*)kg", text)
-    if match:
-        weight1 = float(match.group(1))
-        weight2 = float(match.group(2))
-        return (weight1 + weight2) / 2
-
-    # Pattern 2: "2-3kg" (range)
-    match = re.search(r"(\d+\.?\d*)-(\d+\.?\d*)kg", text)
-    if match:
-        weight1 = float(match.group(1))
-        weight2 = float(match.group(2))
-        return (weight1 + weight2) / 2
-
-    # Pattern 3: "weighs 18kg"
-    match = re.search(r"weighs\s+(\d+\.?\d*)kg", text)
-    if match:
-        return float(match.group(1))
-
-    # Pattern 4: "10kg" (simple)
-    match = re.search(r"(\d+\.?\d*)kg", text)
-    if match:
-        return float(match.group(1))
-
-    # Pattern 5: "weight: 15 kg"
-    match = re.search(r"weight:\s*(\d+\.?\d*)\s*kg", text)
-    if match:
-        return float(match.group(1))
-
-    # Pattern 6: "15-20 kg" (range with space)
-    match = re.search(r"(\d+\.?\d*)-(\d+\.?\d*)\s*kg", text)
-    if match:
-        weight1 = float(match.group(1))
-        weight2 = float(match.group(2))
-        return (weight1 + weight2) / 2
-
-    # Pattern 7: "around 15-18 kg at full size" (future weight)
-    match = re.search(r"around\s+(\d+\.?\d*)-(\d+\.?\d*)\s*kg\s+at\s+full\s+size", text)
-    if match:
-        weight1 = float(match.group(1))
-        weight2 = float(match.group(2))
-        return (weight1 + weight2) / 2
-
+    for match in re.finditer(r"(?<![\d/.,])(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?)\s*)?(?:kgs?|kilos?|kilograms?)\b", text.lower()):
+        low = float(match.group(1).replace(",", "."))
+        high = float(match.group(2).replace(",", ".")) if match.group(2) else None
+        # "around 21-2 kg" is a typo for 21-22, not 11.5
+        weight = (low + high) / 2 if high is not None and high >= low else low
+        # "DOB 10/2023 - 18kg": a year run into a weight is not one
+        if weight <= MAX_DOG_WEIGHT_KG:
+            return weight
+        if high is not None and high <= MAX_DOG_WEIGHT_KG:
+            return high
     return None

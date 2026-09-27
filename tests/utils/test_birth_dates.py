@@ -256,3 +256,28 @@ def test_age_text_is_a_birth_date_only_when_it_says_so(age_text, is_birth_date):
     from utils.birth_dates import age_text_is_a_birth_date
 
     assert age_text_is_a_birth_date(age_text) is is_birth_date
+
+
+@pytest.mark.unit
+class TestStatedAt:
+    """#562: MISIs says when the rescue wrote the age: the post's last edit."""
+
+    def test_the_day_the_rescue_wrote_the_age_is_the_anchor(self):
+        age = resolve_age(date_of_birth=None, age_text="3.5 months", min_months=3, max_months=5, today=TODAY, stated_at=date(2025, 7, 5))
+        assert (age.age_observed_at, age.age_min_months) == (date(2025, 7, 5), 17)
+
+    def test_it_wins_over_a_changed_age_text(self):
+        """Our parser now writes "4 months" for the same post; that is not the rescue re-aging the dog."""
+        stored = {"age_text": "5 months", "created_at": "2025-07-05", "age_min_months": 5, "age_max_months": 7}
+        age = resolve_age(date_of_birth=None, age_text="4 months", min_months=4, max_months=6, today=TODAY, stored=stored, stated_at=date(2025, 7, 1))
+        assert age.age_observed_at == date(2025, 7, 1)
+
+    def test_a_later_edit_does_not_make_the_dog_younger(self):
+        """Read on 2025-01-01 as "3 months"; the post edited in 2026-05 still says so."""
+        stored = {"age_text": "3 months", "birth_date_min": date(2024, 8, 1), "birth_date_max": date(2024, 10, 1), "age_observed_at": date(2025, 1, 1)}
+        age = resolve_age(date_of_birth=None, age_text="3 months", min_months=3, max_months=5, today=TODAY, stored=stored, stated_at=date(2026, 5, 1))
+        assert age.age_observed_at == date(2025, 1, 1)
+
+    def test_a_date_of_birth_still_wins(self):
+        age = resolve_age(date_of_birth="DOB January 2026", age_text="DOB January 2026", min_months=None, max_months=None, today=TODAY, stated_at=date(2026, 5, 22))
+        assert age.birth_date_min == date(2026, 1, 1)
