@@ -70,9 +70,10 @@ extraction_prompt: |
   - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Look for "nervous"=shy, "confident"=confident, "timid"=shy, "resilient"=confident. Default to "moderate" if not mentioned.
 
   COMPATIBILITY (only if explicitly stated):
-  - good_with_dogs: Look for "may_live_with" field or mentions of dog compatibility
-  - good_with_cats: Look for cat test results or explicit mentions
-  - good_with_children: Look for "may_live_with" field or mentions like "adult only home"
+  "may_live_with" lists what the rescue says the dog may live with ("Cats, Dogs, Secondary school children"). A listed item means yes. An item missing from it is NOT a no: answer "no" only when the text says so ("needs to be the only dog", "adult only home"), otherwise "unknown".
+  - good_with_dogs: "Dogs" in "may_live_with", or mentions of dog compatibility
+  - good_with_cats: "Cats" in "may_live_with", cat test results or explicit mentions
+  - good_with_children: school-age children in "may_live_with", or mentions like "adult only home"
 
   LIVING REQUIREMENTS (REQUIRED - use conservative defaults):
   - home_type: Look for garden/housing requirements. Default to "house_preferred" if secure garden mentioned.

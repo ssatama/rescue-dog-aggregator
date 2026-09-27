@@ -747,12 +747,45 @@ class TestDogsTrustMayLiveWith:
         assert scraper._extract_compatibility(soup) == {"may_live_with": "Cats, Dogs, Primary school children, Secondary school children"}
         assert scraper._extract_behavioral_traits(soup) == {"good_with_dogs": True, "good_with_cats": True, "good_with_children": "Yes (5+)"}
 
-    def test_preschool_children_means_any_age(self):
+    def _with_chips(self, *chips: tuple[str, str]):
+        """Pippa's page with its chips replaced: (parameter, label)."""
         from bs4 import BeautifulSoup
 
-        html = '<a href="/rehoming/dogs?liveWithPreschool=true">Preschool children</a><a href="/rehoming/dogs?liveWithPrimary=true">Primary school children</a>'
+        soup = self._soup("may_live_with_all.html")
+        chip_span = soup.find("a", href=lambda href: href and "liveWith" in href).parent
+        chip_span.clear()
+        for parameter, label in chips:
+            chip_span.append(BeautifulSoup(f'<a href="/rehoming/dogs?liveWith{parameter}=true">{label}</a>', "html.parser"))
+        return soup
 
-        assert DogsTrustScraper()._extract_behavioral_traits(BeautifulSoup(html, "html.parser")) == {"good_with_children": True}
+    def test_preschool_children_means_any_age(self):
+        soup = self._with_chips(("Secondary", "Secondary school children"), ("Preschool", "Preschool children"), ("Primary", "Primary school children"))
+
+        assert DogsTrustScraper()._extract_behavioral_traits(soup) == {"good_with_children": True}
+
+    def test_chips_are_read_by_parameter_not_label(self):
+        """Until mid-2026 the labels were "Primary" and "Secondary"."""
+        soup = self._with_chips(("Primary", "Primary"), ("Secondary", "Secondary"))
+
+        assert DogsTrustScraper()._extract_behavioral_traits(soup) == {"good_with_children": "Yes (5+)"}
+
+    def test_an_unknown_chip_is_logged_not_guessed(self):
+        soup = self._with_chips(("Rabbits", "Rabbits"), ("Dogs", "Dogs"))
+        scraper = DogsTrustScraper()
+        scraper.logger = Mock()
+
+        assert scraper._extract_behavioral_traits(soup) == {"good_with_dogs": True}
+        scraper.logger.warning.assert_called_once_with("Unknown 'May live with' chip: 'Rabbits' (liveWithRabbits)")
+
+    def test_a_search_link_outside_the_card_is_ignored(self):
+        from bs4 import BeautifulSoup
+
+        soup = self._soup("may_live_with_children_only.html")
+        soup.body.append(BeautifulSoup('<a href="/rehoming/dogs?liveWithCats=true">Dogs who live with cats</a>', "html.parser"))
+        scraper = DogsTrustScraper()
+
+        assert scraper._extract_compatibility(soup) == {"may_live_with": "Secondary school children"}
+        assert scraper._extract_behavioral_traits(soup) == {"good_with_children": "Yes (11+)"}
 
     def test_no_chips_says_nothing(self):
         soup = self._soup("may_live_with_children_only.html")

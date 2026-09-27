@@ -1384,39 +1384,59 @@ class DogsTrustScraper(BaseScraper):
 
         return living_situation
 
-    def _may_live_with(self, soup: BeautifulSoup) -> list[str]:
-        """The "May live with" chips: "Cats", "Dogs", "Primary school children".
+    # The chips' search parameters: /rehoming/dogs?liveWithDogs=true (#516).
+    # Keyed on these, not the labels, which have changed before ("Secondary"
+    # became "Secondary school children" in 2026).
+    LIVE_WITH_TRAITS = {
+        "Dogs": ("good_with_dogs", True),
+        "Cats": ("good_with_cats", True),
+        "Preschool": ("good_with_children", True),
+        "Primary": ("good_with_children", "Yes (5+)"),
+        "Secondary": ("good_with_children", "Yes (11+)"),
+    }
 
-        Each chip links to the site's search for it (?liveWithDogs=true), the
-        same way breed and age are read. Matching text in divs used to reach
-        the page wrapper, whose text always says "dogs" (#516).
+    def _may_live_with(self, soup: BeautifulSoup) -> list[tuple[str, str]]:
+        """The "May live with" chips as (parameter, label): ("Dogs", "Dogs").
+
+        Only the card whose label says "May live with": matching text in any
+        div used to reach the page wrapper, whose text always says "dogs".
         """
-        return [link.get_text(strip=True) for link in soup.find_all("a", href=re.compile(r"liveWith\w+=true"))]
+        label = soup.find(string=lambda text: text and text.strip() == "May live with")
+        card = label.find_parent(class_=re.compile("traitCard")) if label else None
+        if not card:
+            return []
+        chips = []
+        for link in card.find_all("a", href=True):
+            if match := re.search(r"liveWith(\w+)=true", link["href"]):
+                chips.append((match.group(1), link.get_text(strip=True)))
+        if not chips and card.get_text(strip=True) != "May live with":
+            self.logger.warning(f"'May live with' card without chips: {card.get_text(' ', strip=True)[:100]!r}")
+        return chips
 
     def _extract_compatibility(self, soup: BeautifulSoup) -> dict[str, str]:
         """The "May live with" chips as one string, "Cats, Dogs, Secondary school children"."""
-        items = self._may_live_with(soup)
-        return {"may_live_with": ", ".join(items)} if items else {}
+        labels = [label for _, label in self._may_live_with(soup)]
+        return {"may_live_with": ", ".join(labels)} if labels else {}
 
     def _extract_behavioral_traits(self, soup: BeautifulSoup) -> dict[str, Any]:
         """good_with_dogs/cats/children from the "May live with" chips.
 
         A chip means yes. No chip means the rescue didn't say, so the key is
-        left out: not "Unknown", and not "no" either (#516). Children are
-        "Yes (5+)" for primary school age, "Yes (11+)" for secondary only.
+        left out: not "Unknown", and not "no" either (#516). Children take the
+        youngest age listed: preschool any age, primary "Yes (5+)",
+        secondary only "Yes (11+)".
         """
-        items = {item.lower() for item in self._may_live_with(soup)}
+        order = list(self.LIVE_WITH_TRAITS)
+        known = []
+        for parameter, label in self._may_live_with(soup):
+            if parameter in self.LIVE_WITH_TRAITS:
+                known.append(parameter)
+            else:
+                self.logger.warning(f"Unknown 'May live with' chip: {label!r} (liveWith{parameter})")
         traits: dict[str, Any] = {}
-        if "dogs" in items:
-            traits["good_with_dogs"] = True
-        if "cats" in items:
-            traits["good_with_cats"] = True
-        if "preschool children" in items:
-            traits["good_with_children"] = True
-        elif "primary school children" in items:
-            traits["good_with_children"] = "Yes (5+)"
-        elif "secondary school children" in items:
-            traits["good_with_children"] = "Yes (11+)"
+        for parameter in sorted(known, key=order.index, reverse=True):  # the youngest children win
+            key, value = self.LIVE_WITH_TRAITS[parameter]
+            traits[key] = value
         return traits
 
     def _normalize_text(self, text: str) -> str:

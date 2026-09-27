@@ -252,7 +252,10 @@ when a post has no story), the facts are `raw_bullet_points`, and
 The detail page's "May live with" card holds one link per chip, each to the
 site's own search (`/rehoming/dogs?liveWithDogs=true`): Cats, Dogs,
 Preschool/Primary school/Secondary school children. `_may_live_with` reads
-those links, the way breed and age are read from their filter links. The
+the links inside that card only, and maps them by the URL parameter, not
+the label: the labels changed in 2026 ("Secondary" became "Secondary
+school children"). A chip it doesn't know, or a card without chips, is
+logged. The
 old code took the first `div` whose text contained "May live with", which
 was the page wrapper, so `good_with_dogs` was true for every dog with the
 card (the wrapper always says "dogs"). The children check looked for
@@ -267,8 +270,10 @@ children").
 - Children: preschool means any age (`true`), primary "Yes (5+)",
   secondary only "Yes (11+)".
 - The profile was fed the wrong facts, so `profile_inputs` (backfill tool)
-  counts `good_with_dogs/cats/children` as profile inputs, by key. Dropping
-  the "Unknown" placeholder alone isn't a change.
+  counts `may_live_with` and `good_with_dogs/cats/children` as profile
+  inputs, by key. Dropping the "Unknown" placeholder alone isn't a change.
+- The Dogs Trust prompt says a chip missing from `may_live_with` is not a
+  "no"; only the text can say no.
 - After #572: change `companionAnswer` in `frontend/src/utils/dogFacts.ts`
   to `answerOf(profile) ?? answerOf(properties)`, so a rescue's real answer
   fills in behind an AI "unknown" (from #514's review, on #516).
@@ -294,7 +299,7 @@ children").
     listed (the three-miss lag). Compatibility: `good_with_dogs` true -> none
     188, `good_with_cats` true -> none 23, `good_with_children` gains "Yes
     (11+)" 205, "Yes (5+)" 43, true 5; the "Unknown" placeholders go.
-    `may_live_with` loses a leaked breed on 45. 256 dogs re-profile. The
+    `may_live_with` loses a leaked breed on 45. 257 dogs re-profile. The
     same run also shows #560's `breed_raw` (185) and #561's birth ranges.
     Run plans with `USE_PLAYWRIGHT=true` on the laptop: without it Dogs
     Trust takes the Selenium listing and returns 5 dogs.

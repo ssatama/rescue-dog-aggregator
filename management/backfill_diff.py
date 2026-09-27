@@ -99,7 +99,7 @@ def dog_changes(scraped: dict[str, Any], stored: dict[str, Any]) -> dict[str, tu
 
 # Scraped facts the profile prompt also reads (#516: Dogs Trust's were wrong).
 # Compared by key: unlike a text, a fact that moves key says something else.
-PROFILE_FACT_KEYS = ("good_with_dogs", "good_with_cats", "good_with_children")
+PROFILE_FACT_KEYS = ("may_live_with", "good_with_dogs", "good_with_cats", "good_with_children")
 
 
 def profile_inputs(properties: dict[str, Any]) -> list[str]:
@@ -113,7 +113,7 @@ def profile_inputs(properties: dict[str, Any]) -> list[str]:
 
 
 def needs_reprofile(changes: dict[str, tuple[Any, Any]]) -> bool:
-    """A profile input changed: plan's counterpart of apply's text_changed."""
+    """A profile input changed: plan's counterpart of apply's inputs_changed."""
     keys = [key for key in (*PROFILE_TEXT_KEYS, *PROFILE_FACT_KEYS) if f"properties.{key}" in changes]
     was = {key: changes[f"properties.{key}"][0] for key in keys}
     now = {key: changes[f"properties.{key}"][1] for key in keys}
@@ -183,7 +183,7 @@ def render_markdown(plan: dict[str, Any], step_changes: dict[str, list[Any]] | N
         lines.append(f"- Rejected by validation: {len(plan['rejected'])}: {rejected}")
     lines.append(f"- On the site, not stored: {len(plan['new_on_site'])}" + (f": {', '.join(plan['new_on_site'][:20])}" if plan["new_on_site"] else ""))
     lines.append(f"- Available in production, not on the site: {len(plan['missing_from_site'])}" + (f": {', '.join(plan['missing_from_site'][:20])}" if plan["missing_from_site"] else ""))
-    lines.append(f"- Profile text would change (re-profile): {len(plan['reprofile_ids'])}")
+    lines.append(f"- Profile inputs would change (re-profile): {len(plan['reprofile_ids'])}")
     lines.append("")
 
     if not plan["fields"]:

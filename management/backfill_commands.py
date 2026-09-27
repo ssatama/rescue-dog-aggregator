@@ -169,7 +169,7 @@ def _rows(database_url: str, sql: str, params: tuple = ()) -> list[dict[str, Any
 
 
 def _snapshot(database_url: str, orgs: list[str]) -> dict[str, dict[int, Any]]:
-    """Per org: {animal id: (listed, profile text)}. Inactive dogs too, so a dog the re-scrape reactivates is compared."""
+    """Per org: {animal id: (listed, profile inputs)}. Inactive dogs too, so a dog the re-scrape reactivates is compared."""
     snapshot: dict[str, dict[int, Any]] = {org: {} for org in orgs}
     rows = _rows(
         database_url,
@@ -186,7 +186,7 @@ def _snapshot(database_url: str, orgs: list[str]) -> dict[str, dict[int, Any]]:
     return snapshot
 
 
-def text_changed(before: dict[int, Any], after: dict[int, Any]) -> list[int]:
+def inputs_changed(before: dict[int, Any], after: dict[int, Any]) -> list[int]:
     """Dogs present in both snapshots whose profile inputs (texts, #516 facts) changed."""
     return sorted(animal_id for animal_id, (_, text) in after.items() if animal_id in before and before[animal_id][1] != text)
 
@@ -228,16 +228,16 @@ def cmd_apply(args: argparse.Namespace) -> int:
 
     after = _snapshot(database_url, orgs)
 
-    reprofile = sorted(i for org in orgs for i in text_changed(before[org], after[org])) if args.reprofile == "changed" else []
+    reprofile = sorted(i for org in orgs for i in inputs_changed(before[org], after[org])) if args.reprofile == "changed" else []
     if reprofile and _run(["management/llm_commands.py", "generate-profiles", "--ids", ",".join(map(str, reprofile))], database_url) != 0:
         failed.append("generate-profiles")
 
     print("\n### Backfill applied\n")
-    print("| rescue | available before → after | profile text changed |")
+    print("| rescue | available before → after | profile inputs changed |")
     print("| --- | --- | ---: |")
     for org in orgs:
         count = lambda snap: sum(1 for listed, _ in snap.values() if listed)  # noqa: E731
-        print(f"| {org} | {count(before[org])} → {count(after[org])} | {len(text_changed(before[org], after[org]))} |")
+        print(f"| {org} | {count(before[org])} → {count(after[org])} | {len(inputs_changed(before[org], after[org]))} |")
     for name, changes in step_changes.items():
         print(f"\nStep `{name}`: {len(changes)} rows updated")
     print(f"\nRe-profiled: {len(reprofile)} dogs")
@@ -259,7 +259,7 @@ def main(argv: list[str] | None = None) -> int:
     apply = sub.add_parser("apply", help="Re-scrape, run steps and re-profile on production")
     apply.add_argument("--orgs", help="Comma-separated config_ids to force re-scrape")
     apply.add_argument("--steps", help="Comma-separated registered steps to run after the re-scrape, for every rescue")
-    apply.add_argument("--reprofile", choices=["changed", "none"], default="changed", help="Re-profile dogs whose profile text changed")
+    apply.add_argument("--reprofile", choices=["changed", "none"], default="changed", help="Re-profile dogs whose profile inputs (texts, compatibility facts) changed")
     apply.add_argument("--confirm", action="store_true", help="Required: this writes to production")
 
     args = parser.parse_args(argv)

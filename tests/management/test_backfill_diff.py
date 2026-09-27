@@ -70,7 +70,7 @@ class TestDogChanges:
         """#516: the profile was fed Dogs Trust's wrong good_with_dogs."""
         assert needs_reprofile({"properties.good_with_dogs": (True, None)})
         assert needs_reprofile({"properties.good_with_children": ("Unknown", "Yes (11+)")})
-        assert not needs_reprofile({"properties.may_live_with": ("A", "B")})
+        assert needs_reprofile({"properties.may_live_with": ("German Shepherd Dog Cross, Dogs", "Dogs")})
         assert not needs_reprofile({"properties.good_with_cats": ("Unknown", None)})
 
     def test_text_that_only_moved_key_needs_no_reprofile(self):
