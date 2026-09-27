@@ -41,6 +41,8 @@ class TestTranslationFunctions:
             ("1 Jahr alt", "1 year old"),
             ("18 Monate", "18 months"),
             ("05.2025 (3 Monate alt)", "3 months old"),
+            ("07.2026 (8 Wochen alt)", "8 weeks old"),
+            ("08.2026 (1 Woche alt)", "1 week old"),
         ]
 
         for text, expected in test_cases:
@@ -202,6 +204,8 @@ class TestTranslationFunctions:
             ("ca. 40 cm/ 15 kg/ kann noch etwas wachsen", 36, None),
             ("aktuell ca 38cm , im Wachstum", 36, None),
             ("ca. 50 cm, noch nicht ausgewachsen", 36, None),
+            ("ca. 40 cm, noch nicht ganz ausgewachsen", 8, None),
+            ("ca. 20 cm", 0, None),  # "8 Wochen alt"
             ("ca. 35 cm, wächst noch (mittel bis groß)", 36, None),
             ("35 cm, 6 kg", 4, None),
             ("50 cm", 6, None),
@@ -214,7 +218,12 @@ class TestTranslationFunctions:
             ("Endgröße ca. 40-43cm", 5, "Medium"),
             ("ca. 40 – 45 cm (ausgewachsen)", 36, "Medium"),
             ("ca. 37 cm, wächst kaum noch, ca. 10 kg", 10, "Medium"),
+            ("kleinbleibend, ca. 20 cm", 4, "Small"),
+            ("ca. 30 cm, Endgrösse ca. 50 cm", 5, "Medium"),
+            ("aktuell ca. 30 cm, ausgewachsen ca. 50 cm", 5, "Medium"),
             # One year old counts as grown; no stated age is not a puppy
+            ("aktuell 45 cm, 20 kg", 72, "Medium"),
+            ("klein bis mittelgroß", 36, None),
             ("ca. 50 cm", 12, "Medium"),
             ("ca. 50 cm", None, "Medium"),
         ],
@@ -227,6 +236,7 @@ class TestTranslationFunctions:
         assert stated_age_months("03.2025 (10 Monate alt)") == 10
         assert stated_age_months("09.2025 (1 Jahr alt)") == 12
         assert stated_age_months("02.2020 (6 Jahre alt)") == 72
+        assert stated_age_months("07.2026 (8 Wochen alt)") == 0
         assert stated_age_months("Unbekannt") is None
         assert stated_age_months(None) is None
 

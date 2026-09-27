@@ -18,13 +18,15 @@ _HEIGHT_RANGE = re.compile(_NUMBER + r"\s*(?:cm)?\s*(?:-|–|bis)\s*" + _NUMBER 
 _HEIGHT = re.compile(_NUMBER + r"\s*cm", re.IGNORECASE)
 _SIZE_WORD = r"(mittelgroß|klein|groß)"  # mittelgroß first: it contains groß
 _SIZES = {"klein": "Small", "mittelgroß": "Medium", "groß": "Large"}
-# The rescue's word for the adult: "klein bleibend", "mittelgroß werdend", "wird groß"
-_ADULT_SIZE_WORD = re.compile(_SIZE_WORD + r"\s+(?:bleibend|werdend)|wird\s+" + _SIZE_WORD, re.IGNORECASE)
-# The height is the adult's: "Endgröße", "(wenn ausgewachsen)", "wächst kaum noch"
-_ADULT_HEIGHT = re.compile(r"endgröße|(?<!nicht )ausgewachsen|kaum noch", re.IGNORECASE)
+# The rescue's word for the adult: "klein bleibend", "mittelgroßwerdend", "wird groß"
+_ADULT_SIZE_WORD = re.compile(_SIZE_WORD + r"\s*(?:bleibend|werdend)|wird\s+" + _SIZE_WORD, re.IGNORECASE)
+_NOT_GROWN = re.compile(r"nicht\s+(?:ganz\s+|voll\s+)?ausgewachsen", re.IGNORECASE)
+# The adult's height follows ("Endgröße ca. 40 cm", "ausgewachsen ca. 50 cm")
+# or comes before ("55 cm (wenn ausgewachsen)", "37 cm, wächst kaum noch")
+_ADULT_HEIGHT = re.compile(r"endgr(?:ö|oe|o)(?:ß|ss)e|\bausgewachsen|kaum noch", re.IGNORECASE)
 # \bwachsen keeps "ausgewachsen" (fully grown) out
-_GROWING = re.compile(r"wachstum|wächst|\bwachsen|werdend|aktuell|nicht ausgewachsen", re.IGNORECASE)
-_STATED_AGE = re.compile(r"(\d+)\s*(Jahr|Monat)", re.IGNORECASE)
+_GROWING = re.compile(r"wachstum|wächst|\bwachsen|werdend", re.IGNORECASE)
+_STATED_AGE = re.compile(r"(\d+)\s*(Jahr|Monat|Woche|Tag)", re.IGNORECASE)
 
 
 def stated_age_months(age_text: str | None) -> int | None:
@@ -32,8 +34,18 @@ def stated_age_months(age_text: str | None) -> int | None:
     match = _STATED_AGE.search(age_text or "")
     if not match:
         return None
-    number = int(match.group(1))
-    return number * 12 if match.group(2).lower() == "jahr" else number
+    number, unit = int(match.group(1)), match.group(2).lower()
+    return {"jahr": number * 12, "monat": number}.get(unit, 0)
+
+
+def _height_cm(text: str) -> float | None:
+    """The first height in the text; a range counts by its middle."""
+    if match := _HEIGHT_RANGE.search(text):
+        low, high = (float(group.replace(",", ".")) for group in match.groups())
+        return (low + high) / 2
+    if match := _HEIGHT.search(text):
+        return float(match.group(1).replace(",", "."))
+    return None
 
 
 def translate_size(height_text: str | None, age_months: int | None = None) -> str | None:
@@ -50,24 +62,21 @@ def translate_size(height_text: str | None, age_months: int | None = None) -> st
     if match := _ADULT_SIZE_WORD.search(height_text):
         return _SIZES[(match.group(1) or match.group(2)).lower()]
 
-    growing = _GROWING.search(height_text) or (age_months is not None and age_months < ADULT_FROM_MONTHS)
-    if growing and not _ADULT_HEIGHT.search(height_text):
+    not_grown = _NOT_GROWN.search(height_text)
+    text = _NOT_GROWN.sub(" ", height_text)
+    adult = _ADULT_HEIGHT.search(text)
+    growing = not_grown or _GROWING.search(text) or (age_months is not None and age_months < ADULT_FROM_MONTHS)
+    if growing and not adult:
         return None
 
-    height = None
-    if match := _HEIGHT_RANGE.search(height_text):
-        low, high = (float(group.replace(",", ".")) for group in match.groups())
-        height = (low + high) / 2
-    elif match := _HEIGHT.search(height_text):
-        height = float(match.group(1).replace(",", "."))
-
+    height = (_height_cm(text[adult.end() :]) if adult else None) or _height_cm(text)
     if height is not None:
         if height < SMALL_BELOW_CM:
             return "Small"
         return "Medium" if height <= MEDIUM_UP_TO_CM else "Large"
 
-    word = re.search(_SIZE_WORD, height_text, re.IGNORECASE)
-    return _SIZES[word.group(1).lower()] if word else None
+    words = {word.lower() for word in re.findall(_SIZE_WORD, text, re.IGNORECASE)}
+    return _SIZES[words.pop()] if len(words) == 1 else None  # "klein bis mittelgroß" is no answer
 
 
 def translate_gender(gender: str | None) -> str | None:
@@ -125,10 +134,13 @@ def translate_age(age_text: str | None) -> str | None:
         return None
 
     # Handle full date patterns like "05.2025 (3 Monate alt)" or "01.2024 (1 Jahr alt)"
-    match = re.match(r"^\d{2}\.\d{4}\s*\((\d+)\s*(Jahr[e]?|Monat[e]?)\s*alt\)$", age_text)
+    match = re.match(r"^\d{2}\.\d{4}\s*\((\d+)\s*(Jahr[e]?|Monat[e]?|Woche[n]?)\s*alt\)$", age_text)
     if match:
         number = int(match.group(1))
         unit = match.group(2)
+
+        if "Woche" in unit:
+            return "1 week old" if number == 1 else f"{number} weeks old"
 
         if "Jahr" in unit:
             if number == 1:

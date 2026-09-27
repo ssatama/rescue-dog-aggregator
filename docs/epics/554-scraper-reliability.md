@@ -222,10 +222,12 @@ when a post has no story), the facts are `raw_bullet_points`, and
   (Small below 35 cm, Medium up to 55, Large above). A range counts by its
   middle; without a height, the site's word (klein, mittelgroß, groß). A
   dog still growing gets no size, and the save falls back to the breed's:
-  the text says so ("im Wachstum", "wächst", "aktuell", "nicht
-  ausgewachsen"), or the stated age is under 12 months. The rescue's own
-  adult size wins over both: "klein bleibend", "mittelgroß werdend", "wird
-  groß", "Endgröße", "(wenn ausgewachsen)", "wächst kaum noch". Known
+  the text says so ("im Wachstum", "wächst", "nicht ganz ausgewachsen"),
+  or the stated age is under 12 months (weeks count as 0). The rescue's
+  own adult size wins over both: "klein bleibend", "mittelgroß werdend",
+  "wird groß", or a height marked "Endgröße", "ausgewachsen", "wächst kaum
+  noch" (the height after the marker, else the first). Two size words
+  ("klein bis mittelgroß") give no size. Known
   limit: a puppy keeps no size until a forced re-scrape, because
   Tierschutzverein skips existing dogs (43 of 392 on 2026-09-27). Daisy's
   scraper uses 40/60 cm for the same question; one scale for all rescues
@@ -233,9 +235,9 @@ when a post has no story), the facts are `raw_bullet_points`, and
 - An age the translation doesn't recognise is stored as `None` and logged
   ("Untranslated age for ..."), never as German text.
 - The "Beschreibung" section is stored as `properties.description`, the
-  key every reader uses. `needs_reprofile` compares the profile texts, not
-  the keys they sit under, so #572 doesn't re-profile 392 dogs whose text
-  only moved. The API's sitemap filter (`animal_service.py`) reads only
+  key every reader uses. `profile_texts` (`management/backfill_diff.py`)
+  compares the profile texts, not the keys they sit under, for both `plan`
+  and `apply`, so #572 doesn't re-profile 366 dogs whose text only moved. The API's sitemap filter (`animal_service.py`) reads only
   that key, so every Tierschutzverein dog used to be out of the quality
   sitemap. The cost: readers of the key now see German text. Pages show
   the English AI text first, but a dog not yet profiled shows the German
