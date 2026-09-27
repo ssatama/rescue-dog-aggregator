@@ -1,6 +1,7 @@
 """Optimized tests for Woof Project scraper - essential functionality only."""
 
-from unittest.mock import AsyncMock, Mock, patch
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
 from bs4 import BeautifulSoup
@@ -17,43 +18,6 @@ class TestWoofProjectScraperOptimized:
         return WoofProjectScraper(config_id="woof-project")
 
     # Core Business Logic Tests
-
-    def test_status_filtering_behavior(self, scraper):
-        """Test that dogs with ADOPTED/RESERVED status are properly filtered out."""
-        test_html = """
-        <div class="fusion-text fusion-text-1">
-            <!-- Available dog -->
-            <h4 style="text-align: center;">
-                <a href="/adoption/buddy/">Buddy</a>
-            </h4>
-        </div>
-        <div class="fusion-text fusion-text-1">
-            <!-- Adopted dog -->
-            <h2 style="text-align: center;">
-                <span style="color: #ff0000;">ADOPTED</span>
-            </h2>
-            <h4 style="text-align: center;">
-                <a href="/adoption/luna/">Luna</a>
-            </h4>
-        </div>
-        <div class="fusion-text fusion-text-1">
-            <!-- Reserved dog -->
-            <h2 style="text-align: center;">
-                <span style="color: #ff0000;">RESERVED</span>
-            </h2>
-            <h4 style="text-align: center;">
-                <a href="/adoption/max/">Max</a>
-            </h4>
-        </div>
-        """
-
-        soup = BeautifulSoup(test_html, "html.parser")
-        elements = soup.find_all("div", class_="fusion-text")
-
-        # Test filtering behavior
-        assert scraper._is_available_dog(elements[0]) is True  # Available
-        assert scraper._is_available_dog(elements[1]) is False  # Adopted
-        assert scraper._is_available_dog(elements[2]) is False  # Reserved
 
     def test_data_extraction_pipeline(self, scraper):
         """Test complete data extraction pipeline with essential functionality."""
@@ -89,24 +53,6 @@ class TestWoofProjectScraperOptimized:
             assert "wp-content/uploads" in result["primary_image_url"]
 
     @pytest.mark.parametrize(
-        "url,expected",
-        [
-            # Valid URLs
-            ("/adoption/buddy/", True),
-            ("/adoption/max-zeus/", True),
-            ("https://woofproject.eu/adoption/luna/", True),
-            # Invalid URLs
-            ("/adoption/page/2/", False),
-            ("", False),
-            ("/adoption/", False),
-            ("/contact/", False),
-        ],
-    )
-    def test_url_validation_consolidated(self, scraper, url, expected):
-        """Test URL validation with essential cases."""
-        assert scraper._is_valid_dog_url(url) == expected
-
-    @pytest.mark.parametrize(
         "name,expected",
         [
             ("LISBON", "Lisbon"),
@@ -120,27 +66,6 @@ class TestWoofProjectScraperOptimized:
     def test_name_standardization_consolidated(self, scraper, name, expected):
         """Test name standardization with essential cases."""
         assert scraper._standardize_name(name) == expected
-
-    def test_pagination_discovery(self, scraper):
-        """Test dynamic pagination URL generation."""
-        pagination_html = """
-        <html><body>
-        <a href="/adoption/page/2/">Page 2</a>
-        <a href="/adoption/page/3/">Page 3</a>
-        </body></html>
-        """
-        soup = BeautifulSoup(pagination_html, "html.parser")
-
-        with patch.object(scraper, "_fetch_listing_page", return_value=soup):
-            actual_urls = scraper._get_pagination_urls()
-
-        expected_urls = [
-            "https://woofproject.eu/adoption/",
-            "https://woofproject.eu/adoption/page/2/",
-            "https://woofproject.eu/adoption/page/3/",
-        ]
-
-        assert actual_urls == expected_urls
 
     def test_image_prioritization_logic(self, scraper):
         """Test image selection and prioritization."""
@@ -173,49 +98,6 @@ class TestWoofProjectScraperOptimized:
 
         for url, expected_id in test_cases:
             assert scraper._generate_external_id(url) == expected_id
-
-    def test_network_error_handling(self, scraper):
-        """Test network failure handling and fallbacks (Selenium path)."""
-        with (
-            patch("scrapers.woof_project.dogs_scraper.USE_PLAYWRIGHT", False),
-            patch.object(scraper, "_fetch_with_browser") as mock_browser,
-            patch("scrapers.woof_project.dogs_scraper.requests.get") as mock_get,
-        ):
-            # Mock browser automation to fail
-            mock_browser.side_effect = Exception("Browser not available")
-
-            # Test successful requests fallback
-            mock_response = Mock()
-            mock_response.text = '<html><body><div class="fusion-text">Dogs</div></body></html>'
-            mock_response.raise_for_status.return_value = None
-            mock_get.return_value = mock_response
-
-            soup = scraper._fetch_listing_page("https://woofproject.eu/adoption/")
-            assert soup is not None
-            assert soup.find("div", class_="fusion-text") is not None
-
-            # Test complete network failure
-            mock_get.side_effect = Exception("Network error")
-            soup = scraper._fetch_listing_page("https://woofproject.eu/adoption/")
-            assert soup is None
-
-    def test_network_error_handling_playwright(self, scraper):
-        """Test network failure handling and fallbacks (Playwright path)."""
-        mock_playwright = AsyncMock(return_value=None)
-        with (
-            patch("scrapers.woof_project.dogs_scraper.USE_PLAYWRIGHT", True),
-            patch.object(scraper, "_fetch_with_browser_playwright", mock_playwright),
-            patch("scrapers.woof_project.dogs_scraper.requests.get") as mock_get,
-        ):
-            # Test successful requests fallback
-            mock_response = Mock()
-            mock_response.text = '<html><body><div class="fusion-text">Dogs</div></body></html>'
-            mock_response.raise_for_status.return_value = None
-            mock_get.return_value = mock_response
-
-            soup = scraper._fetch_listing_page("https://woofproject.eu/adoption/")
-            assert soup is not None
-            assert soup.find("div", class_="fusion-text") is not None
 
     def test_edge_case_handling(self, scraper):
         """Test handling of edge cases and malformed data."""
@@ -393,3 +275,82 @@ class TestWoofProjectLabelledFields:
         result = self._scrape(scraper, html, "big")
 
         assert result["size"] is None
+
+
+LISTINGS = Path(__file__).parent.parent / "fixtures" / "listings"
+ADOPTION = "https://woofproject.eu/adoption/"
+
+
+def _card(slug, name, badge=None):
+    status = f"<h2>{badge}</h2>" if badge else ""
+    return f'<article class="type-adoption" id="post-{slug}"><a href="{ADOPTION}{slug}/"><img src="x.jpg"/></a>{status}<h2>{name}</h2></article>'
+
+
+def _page(cards, current, last):
+    links = "".join(f'<span class="page-numbers current">{n}</span>' if n == current else f'<a class="page-numbers" href="{ADOPTION}page/{n}/">{n}</a>' for n in range(1, last + 1))
+    return f'<html><body>{"".join(cards)}<nav class="elementor-pagination">{links}</nav></body></html>'
+
+
+@pytest.mark.unit
+class TestWoofProjectListing:
+    """The listing is plain HTML: one card per dog, available dogs first (#565)."""
+
+    @pytest.fixture
+    def scraper(self):
+        return WoofProjectScraper(config_id="woof-project")
+
+    @staticmethod
+    def _serve(pages):
+        return patch("scrapers.base_scraper.requests.get", side_effect=lambda url, **kwargs: Mock(text=pages[url]))
+
+    def test_the_saved_first_page(self, scraper):
+        with self._serve({ADOPTION: (LISTINGS / "woof_project_page1.html").read_text()}) as get:
+            dogs = scraper.get_animal_list()
+
+        # Arean is "GEADOPTEERD"; Amlet's page is /adoption/9270/, a bare post id
+        assert sorted(scraper._generate_external_id(dog["url"]) for dog in dogs) == [
+            "wp-9270",
+            "wp-banjo",
+            "wp-bunney",
+            "wp-camelito",
+            "wp-chicago",
+            "wp-darren",
+            "wp-jharna",
+            "wp-miran",
+            "wp-rou",
+            "wp-rusty-2",
+            "wp-sarita",
+            "wp-scotch",
+            "wp-sora",
+            "wp-willow-2",
+        ]
+        assert {"name": "AMLET", "url": f"{ADOPTION}9270/"} in dogs
+        get.assert_called_once()  # page 1 ends in the archive, so page 2 isn't read
+
+    def test_title_case_badges_mark_the_archive_on_page_4(self, scraper):
+        soup = BeautifulSoup((LISTINGS / "woof_project_page4.html").read_text(), "html.parser")
+
+        assert [scraper._available_dog(card) for card in soup.select("article.type-adoption")] == [None] * 99
+
+    def test_a_page_ending_in_an_available_dog_leads_to_the_next(self, scraper):
+        pages = {
+            ADOPTION: _page([_card("tara", "TARA"), _card("skip", "SKIP")], current=1, last=3),
+            f"{ADOPTION}page/2/": _page([_card("siri", "SIRI"), _card("suvi", "SUVI", badge="ADOPTED")], current=2, last=3),
+        }
+        with self._serve(pages) as get:
+            dogs = scraper.get_animal_list()
+
+        assert [dog["name"] for dog in dogs] == ["TARA", "SKIP", "SIRI"]
+        assert get.call_count == 2
+
+    def test_the_last_page_ends_the_listing(self, scraper):
+        with self._serve({ADOPTION: _page([_card("tara", "TARA")], current=1, last=1)}):
+            assert [dog["name"] for dog in scraper.get_animal_list()] == ["TARA"]
+
+    def test_an_unknown_badge_is_logged_and_the_dog_left_out(self, scraper):
+        card = BeautifulSoup(_card("nala", "NALA", badge="ON HOLD"), "html.parser").article
+
+        with patch.object(scraper, "logger") as logger:
+            assert scraper._available_dog(card) is None
+
+        assert "ON HOLD" in logger.warning.call_args.args[0]

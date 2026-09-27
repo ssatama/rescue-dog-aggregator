@@ -253,11 +253,13 @@ reconcile` against production text before trusting a resolver change.
   dog (#516). `companionAnswer` in `frontend/src/utils/dogFacts.ts` must read
   the AI profile first until #516 is fixed.
 
-**Woof Project reads only listing page 1** (2026-09-26). Its pagination links
-are absolute and `_get_pagination_urls` matches only `/adoption/page/N/`, so
-it finds none. That is right by accident: pages 2-5 are the adoption archive,
-and page 4 marks adopted dogs in a way `_is_available_dog` misses (85 read as
-available in plain HTML). Fix the links only together with that (#565).
+**Woof Project lists available dogs first, then the adoption archive**
+(pages 2-5 on 2026-09-27). Since #565 the listing is plain HTML: an adopted or
+reserved dog has a status heading above its name, in any case and sometimes in
+Dutch ("GEADOPTEERD"), and the next page is read only while a page ends in an
+available dog. The archive has badge-less old dogs (Billy on page 3), so
+reading every page would bring them back. Some dog pages have a bare post id
+as their slug (`/adoption/9270/` is Amlet), so `wp-9270` is a real id.
 
 **Many Tears' `dogs_found` swings with churn, not lost pages.** On 2026-09-26
 the listing was 7 pages of 12 (79 dogs, that day's count), and pages 1 and 7

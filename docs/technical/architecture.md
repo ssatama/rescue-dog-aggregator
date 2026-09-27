@@ -181,7 +181,7 @@ Scrapers run automatically on Railway as a cron service (Mon/Thu/Sat 3pm UTC):
 | dogstrust                 | UK/Ireland | Playwright |
 | manytearsrescue           | UK         | Playwright |
 | rean                      | Romania/UK | Playwright |
-| woof_project              | UK         | Playwright |
+| woof_project              | UK         | HTTP       |
 | misis_rescue              | Montenegro | Playwright |
 | daisy_family_rescue       | Greece     | Playwright |
 | tierschutzverein_europa   | Germany    | HTTP       |

@@ -174,19 +174,24 @@ class TestManyTearsPlaywright:
 @pytest.mark.unit
 class TestWoofProject:
     BASE = "https://woofproject.eu/adoption/"
-    PAGE_1 = '<html><body><h4><a href="/adoption/buddy/">Buddy</a></h4><a href="/adoption/page/2/">2</a></body></html>'
+    # Page 1 ends in an available dog, so page 2 must be read
+    PAGE_1 = (
+        '<html><body><article class="type-adoption"><a href="https://woofproject.eu/adoption/buddy/">Buddy</a><h2>BUDDY</h2></article>'
+        '<nav class="elementor-pagination"><span class="page-numbers current">1</span>'
+        '<a class="page-numbers" href="https://woofproject.eu/adoption/page/2/">2</a></nav></body></html>'
+    )
 
     @pytest.fixture
     def scraper(self):
         return WoofProjectScraper(config_id="woof-project")
 
-    def test_a_failing_first_page_raises(self, scraper):
-        with patch.object(scraper, "_fetch_listing_page", return_value=None), pytest.raises(ListingIncompleteError):
+    def test_a_failing_first_page_raises(self, scraper, stub_clock):
+        with patch("requests.get", _pages({self.BASE: _response(status=503)})), pytest.raises(ListingIncompleteError):
             scraper.collect_data()
 
-    def test_a_failing_page_2_raises(self, scraper):
-        soups = {self.BASE: BeautifulSoup(self.PAGE_1, "html.parser"), f"{self.BASE}page/2/": None}
-        with patch.object(scraper, "_fetch_listing_page", side_effect=soups.get), pytest.raises(ListingIncompleteError, match="page/2"):
+    def test_a_failing_page_2_raises(self, scraper, stub_clock):
+        get = _pages({self.BASE: _response(self.PAGE_1), f"{self.BASE}page/2/": requests.ConnectionError("reset")})
+        with patch("requests.get", get), pytest.raises(ListingIncompleteError, match="page/2"):
             scraper.get_animal_list()
 
 

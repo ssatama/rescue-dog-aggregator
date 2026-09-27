@@ -117,7 +117,7 @@ management/             # CLI tools (19 scripts)
 | Dogs Trust                   | UK/Ireland | Playwright |
 | Many Tears Rescue            | UK         | Playwright |
 | REAN                         | Romania/UK | Playwright |
-| Woof Project                 | UK         | Playwright |
+| Woof Project                 | UK         | HTTP       |
 | MISIS Rescue                 | Montenegro | Playwright |
 | Daisy Family Rescue          | Greece     | Playwright |
 | Tierschutzverein Europa      | Germany    | HTTP       |
