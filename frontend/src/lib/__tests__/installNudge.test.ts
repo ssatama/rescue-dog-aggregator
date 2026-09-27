@@ -1,6 +1,7 @@
 import {
   dismissNudge,
   isNudgeDue,
+  markNudgeShown,
   recordDogView,
   recordVisit,
   SESSION_GAP_MS,
@@ -51,6 +52,27 @@ describe("installNudge", () => {
     for (let i = 1; i <= 5; i++) recordDogView(T0 + i);
     dismissNudge();
     for (let i = 6; i <= 10; i++) recordDogView(T0 + i);
+    expect(isNudgeDue()).toBe(false);
+  });
+
+  it("counts a session that starts on a dog page", () => {
+    recordDogView(T0);
+    recordVisit(T0 + 1);
+    recordVisit(T0 + SESSION_GAP_MS + 2);
+    recordVisit(T0 + 2 * SESSION_GAP_MS + 3);
+    expect(isNudgeDue()).toBe(true);
+  });
+
+  it("gives the card one session: ignored, it retires at the next", () => {
+    recordVisit(T0);
+    for (let i = 1; i <= 5; i++) recordDogView(T0 + i);
+    expect(markNudgeShown()).toBe(true);
+    expect(markNudgeShown()).toBe(false);
+    // Still there on the next page of the same session
+    recordVisit(T0 + 60_000);
+    expect(isNudgeDue()).toBe(true);
+    // Back after a break: gone
+    recordVisit(T0 + 60_000 + SESSION_GAP_MS + 1);
     expect(isNudgeDue()).toBe(false);
   });
 

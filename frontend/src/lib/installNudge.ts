@@ -1,8 +1,9 @@
 import { safeStorage } from "@/utils/safeStorage";
 
 // When to suggest installing the site as an app. The card waits until someone
-// is clearly coming back or browsing a lot, and once dismissed it never
-// returns. The counts stay in localStorage and are never sent anywhere.
+// is clearly coming back or browsing a lot, then gets one session: dismissed
+// or ignored, it never returns. The counts stay on the device and are never
+// sent anywhere.
 
 export const SESSIONS_TO_NUDGE = 3;
 export const DOG_VIEWS_TO_NUDGE = 5;
@@ -16,24 +17,37 @@ interface NudgeState {
   dogViews: number;
   lastSeen: number;
   dismissed: boolean;
+  /** The session the card was first seen in; null until then. */
+  shownInSession: number | null;
 }
 
-const EMPTY: NudgeState = { sessions: 0, dogViews: 0, lastSeen: 0, dismissed: false };
+const EMPTY: NudgeState = {
+  sessions: 0,
+  dogViews: 0,
+  lastSeen: 0,
+  dismissed: false,
+  shownInSession: null,
+};
 
 function read(): NudgeState {
   return { ...EMPTY, ...safeStorage.parse<Partial<NudgeState> | null>(KEY, EMPTY) };
 }
 
-// Blocked storage: the counts never grow, so the card never shows
+// Falls back to sessionStorage, so with localStorage blocked the counts and a
+// dismissal last only as long as the tab
 function write(state: NudgeState): void {
   safeStorage.stringify(KEY, state);
 }
 
+/** Activity now: a new session if the last activity was a while ago. */
+function touch(state: NudgeState, now: number): NudgeState {
+  const newSession = now - state.lastSeen > SESSION_GAP_MS;
+  return { ...state, sessions: state.sessions + (newSession ? 1 : 0), lastSeen: now };
+}
+
 /** Call on load and whenever the tab becomes visible again. */
 export function recordVisit(now = Date.now()): void {
-  const state = read();
-  const newSession = now - state.lastSeen > SESSION_GAP_MS;
-  write({ ...state, sessions: state.sessions + (newSession ? 1 : 0), lastSeen: now });
+  write(touch(read(), now));
 }
 
 /** Call when the tab is hidden, so time spent browsing is not a gap. */
@@ -41,16 +55,27 @@ export function recordSeen(now = Date.now()): void {
   write({ ...read(), lastSeen: now });
 }
 
+// A dog page records its view before the card records the visit, so a first
+// page that is a dog page must start the session itself
 export function recordDogView(now = Date.now()): void {
-  const state = read();
-  write({ ...state, dogViews: state.dogViews + 1, lastSeen: now });
+  const state = touch(read(), now);
+  write({ ...state, dogViews: state.dogViews + 1 });
 }
 
 export function dismissNudge(): void {
   write({ ...read(), dismissed: true });
 }
 
+/** Records that the card was seen. True only the first time, ever. */
+export function markNudgeShown(): boolean {
+  const state = read();
+  if (state.shownInSession !== null) return false;
+  write({ ...state, shownInSession: state.sessions });
+  return true;
+}
+
 export function isNudgeDue(): boolean {
-  const { sessions, dogViews, dismissed } = read();
-  return !dismissed && (sessions >= SESSIONS_TO_NUDGE || dogViews >= DOG_VIEWS_TO_NUDGE);
+  const { sessions, dogViews, dismissed, shownInSession } = read();
+  if (dismissed || (shownInSession !== null && shownInSession !== sessions)) return false;
+  return sessions >= SESSIONS_TO_NUDGE || dogViews >= DOG_VIEWS_TO_NUDGE;
 }

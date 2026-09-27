@@ -23,6 +23,8 @@ const UA = {
   // Chrome on iOS before 16.4 has no Add to Home Screen
   iphoneChromeOld:
     "Mozilla/5.0 (iPhone; CPU iPhone OS 16_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/110.0.0.0 Mobile/15E148 Safari/604.1",
+  ipadChromeDesktop:
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/140.0.0.0 Mobile/15E148 Safari/604.1",
   iphoneSafariOld:
     "Mozilla/5.0 (iPhone; CPU iPhone OS 15_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6 Mobile/15E148 Safari/604.1",
   macChrome:
@@ -44,6 +46,7 @@ describe("manualInstallMethod", () => {
     ["an in-app browser", null, UA.iphoneInstagram, 5],
     ["an app's web view", null, UA.iphoneWebView, 5],
     ["Chrome on iOS 16.3", null, UA.iphoneChromeOld, 5],
+    ["Chrome on an iPad asking for the desktop site", "ios", UA.ipadChromeDesktop, 5],
     // Chrome installs through its own prompt, not instructions
     ["Chrome on a Mac", null, UA.macChrome, 0],
     ["Chrome on Android", null, UA.androidChrome, 5],

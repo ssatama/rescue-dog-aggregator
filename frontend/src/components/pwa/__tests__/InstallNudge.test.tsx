@@ -43,13 +43,17 @@ describe("InstallNudge", () => {
     expect(screen.queryByRole("region", { name: /home screen/i })).toBeNull();
   });
 
-  it("shows after heavy browsing, once per page load in analytics", () => {
+  it("shows after heavy browsing, counted in analytics once ever", () => {
     browseFiveDogs();
-    const { rerender } = render(<InstallNudge />);
+    const { rerender, unmount } = render(<InstallNudge />);
     expect(screen.getByRole("region", { name: /home screen/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Show me how" })).toBeInTheDocument();
     act(() => jest.advanceTimersByTime(1000));
     rerender(<InstallNudge />);
+    act(() => jest.advanceTimersByTime(1000));
+    // A full page load in the same session remounts the card
+    unmount();
+    render(<InstallNudge />);
     act(() => jest.advanceTimersByTime(1000));
     expect(trackInstallNudgeShown).toHaveBeenCalledTimes(1);
     expect(trackInstallNudgeShown).toHaveBeenCalledWith("ios");
@@ -100,6 +104,8 @@ describe("InstallNudge", () => {
     ["without a touch screen", () => mockIsTouch.mockReturnValue(false)],
     ["when already installed or not installable", () => mockMethod.mockReturnValue(null)],
     ["on the swipe page", () => mockPathname.mockReturnValue("/swipe")],
+    // Dogs first: the mobile home stays dogs-only (AGENTS.md)
+    ["on the home page", () => mockPathname.mockReturnValue("/")],
   ])("stays hidden %s", (_name, setup) => {
     setup();
     browseFiveDogs();

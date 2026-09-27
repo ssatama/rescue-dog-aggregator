@@ -44,9 +44,11 @@ export function manualInstallMethod(
     // Apps' web views (LinkedIn, Gmail, Slack...) have no Safari/ token and no
     // Share sheet entry
     if (!/Safari\//.test(userAgent)) return null;
-    // Chrome, Firefox and Edge on iOS got Add to Home Screen in iOS 16.4
-    if (/CriOS|FxiOS|EdgiOS/.test(userAgent)) {
-      const [, major = 0, minor = 0] = (/OS (\d+)_(\d+)/.exec(userAgent) ?? []).map(Number);
+    // Chrome, Firefox and Edge on iOS got Add to Home Screen in iOS 16.4. An
+    // iPad asking for the desktop site hides its version; assume a recent one.
+    const iosVersion = /OS (\d+)_(\d+)/.exec(userAgent);
+    if (/CriOS|FxiOS|EdgiOS/.test(userAgent) && iosVersion) {
+      const [major, minor] = [Number(iosVersion[1]), Number(iosVersion[2])];
       if (major < 16 || (major === 16 && minor < 4)) return null;
     }
     return "ios";
@@ -61,6 +63,8 @@ export function manualInstallMethod(
 }
 
 let installed = false;
+// The user agent never changes, so work this out once
+let manualMethod: ReturnType<typeof manualInstallMethod> | undefined;
 let listening = false;
 const listeners = new Set<() => void>();
 
@@ -89,7 +93,10 @@ function subscribe(listener: () => void): () => void {
 function getInstallMethod(): InstallMethod | null {
   if (installed || isStandalone()) return null;
   if (window.__installPrompt) return "prompt";
-  return manualInstallMethod(navigator.userAgent, navigator.maxTouchPoints);
+  if (manualMethod === undefined) {
+    manualMethod = manualInstallMethod(navigator.userAgent, navigator.maxTouchPoints);
+  }
+  return manualMethod;
 }
 
 /** Null when the site is already installed or this browser cannot install it. */

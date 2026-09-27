@@ -244,4 +244,22 @@ describe("ThemeProvider", () => {
     expect(colors()).toEqual(["#131211", "#131211"]);
     document.head.innerHTML = "";
   });
+
+  test("keeps theme-color on tags Next re-creates after a client navigation", async () => {
+    document.head.innerHTML =
+      '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAF9F6">';
+    render(
+      <ThemeProvider>
+        <TestComponent />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByTestId("set-dark"));
+
+    document.head.innerHTML =
+      '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAF9F6">';
+    await waitFor(() =>
+      expect(document.querySelector('meta[name="theme-color"]').content).toBe("#131211"),
+    );
+    document.head.innerHTML = "";
+  });
 });

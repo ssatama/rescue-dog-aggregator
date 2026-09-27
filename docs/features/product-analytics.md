@@ -54,9 +54,9 @@ installed app (home screen, Dock), otherwise `browser`. Custom events:
 | `location_set` | Not wired yet: the "I live in" picker (#493) | `source` (`geo` / `picker`), `country`, `only_adoptable` |
 | `organization_viewed` | Organization page | `org_slug`, `dog_count` |
 | `organization_website_clicked` | "Visit Original Website" on an org page | `org_slug`, `destination_domain` |
-| `install_nudge_shown` | The one-time "add to home screen" card, on a touch device after the 3rd session or 5th dog viewed | `method` (`prompt` = the browser's own dialog, `ios`, `mac-safari`) |
+| `install_nudge_shown` | The "add to home screen" card, once ever: on a touch device after the 3rd session or 5th dog viewed, never on the home page or /swipe. It stays for that session, then retires | `method` (`prompt` = the browser's own dialog, `ios`) |
 | `install_nudge_dismissed` | Its close button; the card never shows again | `method` |
-| `app_install_clicked` | Install button in the card, the mobile menu or the footer | `surface` (`nudge` / `menu` / `footer`), `method` |
+| `app_install_clicked` | Install button in the card, the mobile menu or the footer | `surface` (`nudge` / `menu` / `footer`), `method` (`prompt` / `ios` / `mac-safari`) |
 | `app_installed` | The browser reports an install (Chrome and Edge only; iOS and Safari never do) | none |
 
 Search and filter events never carry free text. `search_performed` has no

@@ -7,13 +7,20 @@ import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import InstallAppButton from "./InstallAppButton";
 import { useInstallMethod } from "@/lib/installApp";
-import { dismissNudge, isNudgeDue, recordSeen, recordVisit } from "@/lib/installNudge";
+import {
+  dismissNudge,
+  isNudgeDue,
+  markNudgeShown,
+  recordSeen,
+  recordVisit,
+} from "@/lib/installNudge";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { trackInstallNudgeDismissed, trackInstallNudgeShown } from "@/lib/analytics";
 
 /** A one-time card on phones and tablets suggesting the home screen app, once
- * someone is on their third visit or has looked at five dogs. The menu and the
- * footer offer the same thing all the time; this is the only push. */
+ * someone is on their third visit or has looked at five dogs. It stays for that
+ * session, then retires whether or not it was used. The menu and the footer
+ * offer the same thing all the time; this is the only push. */
 export default function InstallNudge() {
   const method = useInstallMethod();
   const pathname = usePathname();
@@ -21,7 +28,6 @@ export default function InstallNudge() {
   // Bumped after each visit is recorded, so the card re-reads the counts
   const [visits, setVisits] = useState(0);
   const [closed, setClosed] = useState(false);
-  const shownTracked = useRef(false);
   const cardRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -47,17 +53,18 @@ export default function InstallNudge() {
     !closed &&
     method !== null &&
     isTouch &&
+    // Dogs first: the mobile home stays dogs-only (AGENTS.md)
+    pathname !== "/" &&
     !pathname?.startsWith("/swipe") &&
     isNudgeDue();
 
-  // Counted once it is really on screen: CSS hides it behind the adopt bar,
+  // Seen once it is really on screen: CSS hides it behind the adopt bar,
   // which can mount a moment after the card (a dog loaded client-side)
   useEffect(() => {
-    if (!shown || !method || shownTracked.current) return;
+    if (!shown || !method) return;
     const timer = setTimeout(() => {
       const card = cardRef.current;
-      if (card && (card.checkVisibility?.() ?? true)) {
-        shownTracked.current = true;
+      if (card && (card.checkVisibility?.() ?? true) && markNudgeShown()) {
         trackInstallNudgeShown(method);
       }
     }, 1000);
@@ -114,7 +121,7 @@ export default function InstallNudge() {
         surface="nudge"
         onDone={close}
         className="mt-3 w-full rounded-full bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-orange-400 dark:text-gray-950 dark:hover:bg-orange-300"
-        labels={{ prompt: "Install", ios: "Show me how", "mac-safari": "Show me how" }}
+        labels={{ prompt: "Install", ios: "Show me how" }}
       />
     </motion.section>
   );
