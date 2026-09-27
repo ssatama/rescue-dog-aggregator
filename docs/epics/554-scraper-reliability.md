@@ -291,6 +291,37 @@ children").
   card). If the label is renamed, every dog loses the facts quietly; a
   run-level count of dogs with chips belongs to #569's stats.
 
+## Pets in Turkey: photo ids, whole names, no sleep (#564)
+
+- **The ID is the photo:** `pit-{wix media id}` (`pit_external_id`), the 32
+  hex digits of the card photo's Wix upload. The page has no per-dog id: its
+  repeater item ids (`__item-kn4frxp6`) decode to 2017-2023 timestamps, so the
+  rescue edits slots in place for the next dog. A name id was the fallback,
+  but names come back for different dogs (Dotty, a terrier in 2025 and an
+  8-month-old spaniel mix in 2026). Every one of the 33 dogs listed on
+  2026-09-27 still had the photo it was first seen with (stored R2 hash =
+  hash of today's URL), some for over a year. Known cost: a new photo for the
+  same dog re-creates it, and the old row retires after the stale grace. A
+  card without a Wix photo is skipped (logged).
+- **Re-key:** `management/pets_in_turkey_rekey.py` (dry run by default) moves
+  rows onto the photo id from `original_image_url`. Planned on 2026-09-27:
+  128 of 139 rows, all 33 active, exactly the fixture's 33 ids. The other 11
+  share a photo with a newer row: the same dog re-created by a breed edit under
+  the old ids (Barney, Chiara, Coffee...), left as they are. Apply it on the
+  laptop right after the merge deploys and before the next cron.
+- The name is everything after "I'm". `adoption_url` is `/dogs` (no per-dog
+  anchor); a save never rewrites `adoption_url`, so backfill step
+  `pets-in-turkey-listing-url` fixes stored rows (139 planned 2026-09-27).
+- The cards have no story, so no description. Every listed dog is saved on
+  every run (the scraper doesn't skip existing dogs), so the cron clears the
+  "Ready to fly" text on listed dogs; unlisted rows keep it.
+- No placeholders: breed, sex and size are `None` when the card lacks them.
+- "Born in" dates were never read: the value sits past the other labels, more
+  than five texts on (Shadow had no age). The search now runs to the end of
+  the card.
+- Runtime: discovery 0.9 s (was 96 s of per-dog sleep). A local run takes 19 s
+  in all, 18 s of it failed image uploads (no R2 credentials locally).
+
 ## Gotchas
 
 - **The local dev database can lag production's schema.** Alembic only reads

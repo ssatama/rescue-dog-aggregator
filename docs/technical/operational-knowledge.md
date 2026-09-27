@@ -268,6 +268,11 @@ no per-dog id); 39 rows were re-keyed on 2026-09-23. Any future id-scheme
 change needs the same re-key before the next cron. REAN ages come from the
 heading first because GoDaddy leaks a neighbour's sentence into a block.
 
+**Pets in Turkey ids are `pit-{wix media id}`** of the card photo since #564.
+The Wix repeater slots are reused for new dogs, so their ids are not per dog.
+Re-keyed with `management/pets_in_turkey_rekey.py`. A photo swap for the same
+dog re-creates it.
+
 **daisyfamilyrescue `age_text`** once held gender text and future dates.
 `age_backfill.py` deliberately doesn't clear these, and a test pins that, so
 the scraper bug stays visible. Scraper and parser fixed in #433.

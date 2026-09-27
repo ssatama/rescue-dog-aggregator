@@ -1,13 +1,29 @@
 """Modernized scraper implementation for Pets in Turkey organization."""
 
 import re
-import time
 from typing import Any
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
+
+# A Wix media id: the account prefix, then 32 hex digits per uploaded photo
+WIX_MEDIA_ID = re.compile(r"static\.wixstatic\.com/media/[0-9a-f]+_([0-9a-f]{32})~mv2")
+NAME = re.compile(r"I['’]m\s+(.+)")
+
+
+def pit_external_id(image_url: str | None) -> str | None:
+    """A dog's id is its photo's Wix media id (#564).
+
+    The page has no per-dog id. Its repeater slots are edited in place for the
+    next dog (their ids date from 2017-2023), and the old name-and-breed id
+    re-created a dog whenever its breed text was edited. A photo stays with
+    its dog: every listed dog on 2026-09-27 still had the photo it was first
+    seen with, some for over a year.
+    """
+    match = WIX_MEDIA_ID.search(image_url or "")
+    return f"pit-{match.group(1)}" if match else None
 
 
 class PetsInTurkeyScraper(BaseScraper):
@@ -101,15 +117,13 @@ class PetsInTurkeyScraper(BaseScraper):
 
         self.logger.info(f"Found {len(dog_sections)} dogs to process")
 
-        # Process each dog section
+        # Every dog is on this one page, so there is nothing to rate-limit
         for idx, section in enumerate(dog_sections):
             try:
-                # Apply rate limiting
-                if idx > 0:
-                    time.sleep(self.rate_limit_delay)
-
                 dog_data = self._extract_dog_data(section)
-                if dog_data and dog_data.get("name"):
+                if dog_data.get("name") and not dog_data.get("external_id"):
+                    self.logger.warning(f"Skipping {dog_data['name']}: no Wix photo to take an id from")
+                elif dog_data.get("name"):
                     # Apply standardization
                     dog_data = self._apply_standardization(dog_data)
                     dogs_data.append(dog_data)
@@ -143,10 +157,10 @@ class PetsInTurkeyScraper(BaseScraper):
         """
         dog_data = {
             "name": "",
-            "breed": "Mixed Breed",
+            "breed": None,
             "age": None,
-            "sex": "Unknown",
-            "size": "Medium",
+            "sex": None,
+            "size": None,
             "status": "available",
             "animal_type": "dog",
             "properties": {},
@@ -161,24 +175,20 @@ class PetsInTurkeyScraper(BaseScraper):
                     if text and text not in all_texts:
                         all_texts.append(text)
 
-            # Extract name from "I'm X" pattern
+            # The whole name after "I'm": "I'm Mr Bean" is Mr Bean
             for text in all_texts:
-                if text.startswith("I'm "):
-                    name_match = re.search(r"I'm\s+(\w+)", text)
-                    if name_match:
-                        dog_data["name"] = name_match.group(1).strip()
-                        break
+                name_match = NAME.match(text)
+                if name_match:
+                    dog_data["name"] = " ".join(name_match.group(1).split())
+                    break
 
             # Extract image
             img = section.find("img")
             if img and img.get("src"):
                 dog_data["primary_image_url"] = self._clean_image_url(img["src"])
 
-            # Extract "Ready to fly" or "Currently in" info as description
-            for text in all_texts:
-                if "Ready to fly" in text or "Currently in" in text:
-                    dog_data["properties"]["description"] = text.strip()
-                    break
+            # The cards carry no story, only "Ready to fly in ..." or where the
+            # dog is now, so there is no description (#564)
 
             # Find the labels and values pattern
             # Labels are: Breed, Weight, Age, Sex, Neutered
@@ -290,9 +300,10 @@ class PetsInTurkeyScraper(BaseScraper):
             # Alternative pattern for puppies with "Born in" date
             for i, text in enumerate(all_texts):
                 if "Born in" in text:
-                    # Look for date pattern in current text or next few elements
+                    # The date is among the values after "Adopt Me", past the
+                    # other labels: search to the end of the card
                     birth_match = None
-                    for j in range(i, min(i + 5, len(all_texts))):
+                    for j in range(i, len(all_texts)):
                         birth_match = re.search(r"(\d{1,2}/\d{1,2}/\d{4})", all_texts[j])
                         if birth_match:
                             break
@@ -325,14 +336,9 @@ class PetsInTurkeyScraper(BaseScraper):
 
             self.logger.error(traceback.format_exc())
 
-        # Always set external_id and adoption_url (even if extraction had issues)
-        name_slug = dog_data.get("name", "unknown").lower().replace(" ", "-")
-        breed_slug = dog_data.get("breed", "unknown").lower().replace(" ", "-")
-        external_id = f"pit-{name_slug}-{breed_slug}"
-        dog_data["external_id"] = re.sub(r"[^a-z0-9-]", "", external_id)
-
-        # Set adoption URL
-        dog_data["adoption_url"] = f"{self.base_url}/adoption#{name_slug}"
+        dog_data["external_id"] = pit_external_id(dog_data.get("primary_image_url"))
+        # The dogs are listed on this page, which has no per-dog anchor
+        dog_data["adoption_url"] = self.listing_url
 
         return dog_data
 
@@ -400,24 +406,9 @@ class PetsInTurkeyScraper(BaseScraper):
         # Use unified standardization through base scraper
         standardized = self.process_animal(data)
 
-        # Ensure required fields have defaults
-        standardized["name"] = (standardized.get("name") or "Unknown").strip()
-
-        # Handle breed standardization properly
-        if self.use_unified_standardization and "breed" in standardized:
-            # breed is already handled by process_animal
-            pass
-        else:
-            standardized["breed"] = standardized.get("breed") or "Mixed Breed"
-        standardized.setdefault("standardized_size", standardized.get("size") or "Medium")
-        standardized.setdefault(
-            "gender",
-            standardized.get("sex", "Unknown").lower() if standardized.get("sex") else "unknown",
-        )
         # Don't override age_text if it was processed from age data
         if not standardized.get("age_text") and standardized.get("age"):
             standardized["age_text"] = standardized["age"]
-        standardized.setdefault("age_text", "Unknown")
         standardized.setdefault("status", "available")
         standardized.setdefault("animal_type", "dog")
 
