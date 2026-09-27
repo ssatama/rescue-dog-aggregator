@@ -246,31 +246,6 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         assert isinstance(self.scraper.max_retries, int)
         assert isinstance(self.scraper.timeout, (int, float))
 
-    @patch("time.sleep")
-    def test_rate_limiting_uses_config_delay(self, mock_sleep):
-        """Test that rate limiting uses config-defined delay, not hardcoded value."""
-        # Mock the animal list to have one animal
-        with (
-            patch.object(self.scraper, "get_animal_list") as mock_get_list,
-            patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details,
-        ):
-            mock_get_list.return_value = [
-                {
-                    "name": "Test Dog",
-                    "external_id": "test-dog",
-                    "adoption_url": "https://santerpawsbulgarianrescue.com/dog/test-dog/",
-                    "animal_type": "dog",
-                    "status": "available",
-                }
-            ]
-
-            mock_scrape_details.return_value = {"breed": "Mixed Breed"}
-
-            self.scraper.collect_data()
-
-            # Should use config rate_limit_delay (2.5) not hardcoded (3)
-            mock_sleep.assert_called_with(2.5)
-
     def test_get_filtered_animals_basic(self):
         """Test that _get_filtered_animals method returns same animals as get_animal_list when skip_existing_animals=False."""
         with patch.object(self.scraper, "get_animal_list") as mock_get_list:
@@ -484,55 +459,29 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 self.assertEqual(mock_scrape_details.call_count, 5)
 
     def test_process_animals_parallel_respects_rate_limiting(self):
-        """Test that parallel processing respects rate limiting configuration."""
-
-        # Test with rate_limit_delay from config (2.5 seconds)
-        with patch("time.sleep") as mock_sleep:
-            with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
-                mock_animals = [
-                    {
-                        "name": "Dog1",
-                        "adoption_url": "https://site.com/dog1/",
-                        "external_id": "dog1",
-                    }
-                ]
-
-                mock_scrape_details.return_value = {"breed": "Mixed Breed"}
-
-                result = self.scraper._process_animals_parallel(mock_animals)
-
-                # Should have called sleep with rate_limit_delay (2.5 from config)
-                mock_sleep.assert_called_with(2.5)
-                self.assertEqual(len(result), 1)
-
-    def test_process_animals_parallel_handles_errors(self):
-        """Test that parallel processing handles errors gracefully and continues processing."""
-        with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
-            mock_animals = [
-                {
-                    "name": "GoodDog",
-                    "adoption_url": "https://site.com/good/",
-                    "external_id": "good",
-                },
-                {
-                    "name": "BadDog",
-                    "adoption_url": "https://site.com/bad/",
-                    "external_id": "bad",
-                },
-            ]
-
-            # Make second call raise exception
-            mock_scrape_details.side_effect = [
-                {"breed": "Mixed Breed"},
-                Exception("Network error"),
-            ]  # First call succeeds  # Second call fails
+        """Request starts are rate_limit_delay apart (2.5 s from config) (#567)."""
+        with patch("time.sleep") as mock_sleep, patch.object(self.scraper, "_scrape_animal_details", return_value={"breed": "Mixed Breed"}):
+            mock_animals = [{"name": f"Dog{n}", "adoption_url": f"https://site.com/dog{n}/", "external_id": f"dog{n}"} for n in (1, 2)]
 
             result = self.scraper._process_animals_parallel(mock_animals)
 
-            # Should still return both animals (error doesn't stop processing)
             self.assertEqual(len(result), 2)
-            self.assertEqual(result[0]["name"], "GoodDog")
-            self.assertEqual(result[1]["name"], "BadDog")
+            # One interval after the listing, then one between the two dogs
+            self.assertEqual([round(call.args[0], 1) for call in mock_sleep.call_args_list], [2.5, 5.0])
+
+    def test_process_animals_parallel_handles_errors(self):
+        """A dog whose detail page fails is skipped and counted; the others go on (#567)."""
+        with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
+            mock_animals = [
+                {"name": "GoodDog", "adoption_url": "https://site.com/good/", "external_id": "good"},
+                {"name": "BadDog", "adoption_url": "https://site.com/bad/", "external_id": "bad"},
+            ]
+            mock_scrape_details.side_effect = [{"breed": "Mixed Breed"}, Exception("Network error")]
+
+            result = self.scraper._process_animals_parallel(mock_animals)
+
+            self.assertEqual([dog["name"] for dog in result], ["GoodDog"])
+            self.assertEqual(self.scraper.detail_failures, ["https://site.com/bad/"])
 
     def test_collect_data_integration_with_parallel_processing(self):
         """Test full collect_data integration with parallel processing and filtering."""

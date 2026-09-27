@@ -325,18 +325,12 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
         assert not error_msgs
 
     @patch("requests.get")
-    def test_detail_page_500_logs_error(self, mock_get, scraper, caplog):
-        """500 on a dog detail page should still log as error."""
+    def test_detail_page_500_raises_for_fetch_details(self, mock_get, scraper):
+        """A 500 reaches fetch_details, which retries it and counts it (#567)."""
         mock_response = Mock()
         mock_response.status_code = 500
         mock_response.raise_for_status = Mock(side_effect=requests.exceptions.HTTPError(response=mock_response))
         mock_get.return_value = mock_response
 
-        import logging
-
-        with caplog.at_level(logging.ERROR):
-            result = scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/broken/")
-
-        assert result is None
-        error_msgs = [r for r in caplog.records if r.levelno == logging.ERROR]
-        assert any("HTTP error" in r.message for r in error_msgs)
+        with pytest.raises(requests.exceptions.HTTPError):
+            scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/broken/")

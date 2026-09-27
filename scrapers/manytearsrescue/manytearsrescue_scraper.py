@@ -7,7 +7,7 @@ from typing import Any
 
 from bs4 import BeautifulSoup, Tag
 
-from scrapers.base_scraper import BaseScraper, ListingIncompleteError
+from scrapers.base_scraper import BaseScraper, DetailPageError, ListingIncompleteError
 from services.playwright_browser_service import (
     PlaywrightOptions,
     get_playwright_service,
@@ -96,35 +96,17 @@ class ManyTearsRescueScraper(BaseScraper):
         return asyncio.run(self._process_animals_parallel_playwright(animals))
 
     async def _process_animals_parallel_playwright(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Playwright implementation of parallel animal processing."""
-        all_dogs_data = []
-        seen_urls = set()
+        """Each dog's detail page, one at a time, merged over its listing data (#567)."""
 
-        self.logger.info(f"Starting detail scraping for {len(animals)} animals using Playwright")
+        async def fetch(animal: dict[str, Any]) -> dict[str, Any]:
+            details = await self._scrape_animal_details_playwright(animal["adoption_url"])
+            if not details:
+                # The Playwright fetch logs its own error and returns {}
+                raise DetailPageError(f"{animal['adoption_url']} yielded no details")
+            animal.update(details)
+            return animal
 
-        # Process animals sequentially to avoid overwhelming the server
-        # (could be made concurrent with asyncio.gather in batches if needed)
-        for animal in animals:
-            adoption_url = animal["adoption_url"]
-
-            if adoption_url in seen_urls:
-                self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
-                continue
-            seen_urls.add(adoption_url)
-
-            # Respectful delay between requests
-            await asyncio.sleep(random.uniform(self.rate_limit_delay + 1, self.rate_limit_delay + 3))
-
-            detail_data = await self._scrape_animal_details_playwright(adoption_url)
-
-            if detail_data:
-                animal.update(detail_data)
-
-            all_dogs_data.append(animal)
-            self.logger.debug(f"Processed {len(all_dogs_data)}/{len(animals)} animals")
-
-        self.logger.info(f"Completed detail scraping: {len(all_dogs_data)} animals processed")
-        return all_dogs_data
+        return await self.fetch_details_async(animals, fetch)
 
     def collect_data(self) -> list[dict[str, Any]]:
         """Collect all available dog data from listing pages.
@@ -203,7 +185,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
             page_num += 1
             if page_num <= max_pages:
-                await asyncio.sleep(random.uniform(self.rate_limit_delay + 2, self.rate_limit_delay + 5))
+                await asyncio.sleep(random.uniform(self.rate_limit_delay + 0.5, self.rate_limit_delay + 3.5))
 
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs

@@ -373,6 +373,39 @@ children").
   (disabled since 2025-10) still say `available`; they become `unknown` in
   #572. Retiring dogs when config sync disables an org is a follow-up.
 
+## One detail-fetch helper (#567)
+
+- `BaseScraper.fetch_details` (threads) and `fetch_details_async` (one at a
+  time on the Playwright loop) replace the copied loops in Dogs Trust,
+  Tierschutzverein, Santer Paws, MISIs, Bosnia, Many Tears and Daisy.
+  `browser_manager.scrape_with_retry` is gone; `ScraperBrowserManager` keeps
+  only browser and navigation retries and no copy of the delay.
+- `rate_limit_delay` is the minimum time between request starts, across all
+  workers. The real rates before: Dogs Trust about 5x its 2.5 s (5 threads each
+  sleeping), Tierschutzverein and Santer Paws 3x, MISIs and Bosnia a burst of 6
+  per 2.5 s. Runs with `skip_existing_animals` fetch only new dogs, so cron
+  times barely change; a forced re-scrape (#572) is slower: Dogs Trust about
+  480 x 2.5 s = 20 minutes.
+- Many Tears' config goes from 1.5 to 3.0 s: it slept 1.5 s plus 1-3 s of
+  jitter per dog, so 3.0 keeps its pace; its listing sleep keeps 3.5-6.5 s.
+- A detail failure now skips the dog in every scraper (the epic rule).
+  Santer Paws, Tierschutzverein and Many Tears swallowed errors and saved the
+  dog with listing data only; their fetch now raises `DetailPageError` on an
+  empty result. Dogs Trust saved `{}` details after its own retries. Daisy,
+  MISIs and Bosnia turned failures into listing data or `None`; they raise
+  now. Every listed dog is recorded as found first (Bosnia, Tierschutzverein
+  and Daisy now do it on forced re-scrapes too), so a skipped dog doesn't go
+  stale; it is added on the next run. Failures leave a run note: the run is a
+  `warning` and `scrape_logs` says how many.
+- Only transient errors are retried (timeouts, connection drops, 429, 5xx);
+  a 404 or a parse bug fails at once. A 429/503 pushes the shared clock back
+  for every worker, and listing requests take slots too. No helper-level
+  timeout on threads: a `Future` can't be interrupted, and a timeout counted
+  from the wait would fail queued dogs; each request carries its own timeout.
+- Not migrated: Woof and The Underdog fetch detail pages one by one with
+  `respect_rate_limit()` (the same meaning with one worker), and the disabled
+  Furry Rescue Italy keeps its old loop.
+
 ## Gotchas
 
 - **The local dev database can lag production's schema.** Alembic only reads

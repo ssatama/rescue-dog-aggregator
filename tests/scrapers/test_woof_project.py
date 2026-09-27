@@ -328,7 +328,7 @@ class TestWoofProjectListing:
         assert {"name": "AMLET", "url": f"{ADOPTION}9270/"} in dogs
         # Page 2 is all archive, so page 3 (with badge-less Billy) isn't read
         assert [call.args[0] for call in get.call_args_list] == [ADOPTION, f"{ADOPTION}page/2/"]
-        assert stub_clock.calls == [scraper.rate_limit_delay]
+        assert [round(wait) for wait in stub_clock.calls] == [round(scraper.rate_limit_delay)]
 
     def test_title_case_badges_mark_the_archive_on_page_4(self, scraper):
         soup = BeautifulSoup((LISTINGS / "woof_project_page4.html").read_text(), "html.parser")

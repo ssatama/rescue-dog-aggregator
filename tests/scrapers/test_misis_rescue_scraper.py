@@ -7,7 +7,7 @@ import pytest
 from bs4 import BeautifulSoup
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
-from scrapers.base_scraper import ListingIncompleteError
+from scrapers.base_scraper import DetailPageError, ListingIncompleteError
 from scrapers.misis_rescue.normalizer import (
     extract_breed,
     extract_sex,
@@ -817,7 +817,8 @@ class TestMisisRescueNeverHangs(ScraperTestBase):
 
         scraper.DETAIL_TIMEOUT_SECONDS = 0.05
         with patch.object(scraper, "_scrape_dog_detail_playwright", side_effect=stalled):
-            assert asyncio.run(scraper._bounded_detail_playwright("https://www.misisrescue.com/post/dog1")) is None
+            with pytest.raises(DetailPageError, match="did not finish"):
+                asyncio.run(scraper._bounded_detail_playwright("https://www.misisrescue.com/post/dog1"))
 
     def test_a_pagination_error_raises_instead_of_keeping_a_partial_listing(self, scraper):
         page = Mock()

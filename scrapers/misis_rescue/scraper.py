@@ -6,14 +6,13 @@ Reserved section detection, and data collection.
 """
 
 import asyncio
-import time
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from scrapers.base_scraper import BaseScraper, ListingIncompleteError
+from scrapers.base_scraper import BaseScraper, DetailPageError, ListingIncompleteError
 from services.playwright_browser_service import PlaywrightOptions
 
 from .detail_parser import POST_BODY, MisisRescueDetailParser
@@ -114,9 +113,15 @@ class MisisRescueScraper(BaseScraper):
             self.total_animals_skipped = 0
             urls_to_process = all_urls
 
-        if urls_to_process:
-            return self._process_dogs_in_batches(urls_to_process)
-        return []
+        return self.fetch_details(urls_to_process, self._fetch_dog, url=lambda url: url, max_workers=self.batch_size)
+
+    def _fetch_dog(self, url: str) -> dict[str, Any] | None:
+        """The dog on a post page; None for a post that is gone (404/410), which is no failure.
+
+        Giving up for any other reason (429 twice, a browser timeout) raises, so
+        the dog is counted as failed (#567).
+        """
+        return self._scrape_dog_detail_fast(url)
 
     def _get_all_dogs_from_listing(self) -> list[dict[str, str]]:
         """Get all dog data from listing page.
@@ -341,6 +346,8 @@ class MisisRescueScraper(BaseScraper):
         Returns:
             Dog data dictionary or None if error
         """
+        # A browser load is another request to the site: it waits its turn (#567)
+        self.wait_for_request_slot()
         return asyncio.run(self._bounded_detail_playwright(url))
 
     def _dog_from_page(self, soup: BeautifulSoup, url: str) -> dict[str, Any] | None:
@@ -363,8 +370,7 @@ class MisisRescueScraper(BaseScraper):
         try:
             return await asyncio.wait_for(self._scrape_dog_detail_playwright(url), self.DETAIL_TIMEOUT_SECONDS)
         except TimeoutError:
-            self.logger.error(f"Detail page {url} did not finish within {self.DETAIL_TIMEOUT_SECONDS}s; skipping this dog")
-            return None
+            raise DetailPageError(f"Detail page {url} did not finish within {self.DETAIL_TIMEOUT_SECONDS}s") from None
 
     async def _scrape_dog_detail_playwright(self, url: str) -> dict[str, Any] | None:
         """Playwright implementation of _scrape_dog_detail."""
@@ -477,15 +483,15 @@ class MisisRescueScraper(BaseScraper):
             if response.status_code == 429:
                 # Rate limited: back off once, and never answer with a heavier browser load
                 self.logger.warning(f"HTTP 429 for {url}; backing off before one retry")
-                time.sleep(self.rate_limit_delay * 4)
+                # Every worker slows down, not only this one (#567)
+                self._push_back_request_clock(self.rate_limit_delay * 4, pause=True)
+                self.wait_for_request_slot()
                 try:
                     response = requests.get(url, headers=headers, timeout=10)
                 except requests.RequestException as e:
-                    self.logger.error(f"Retry after HTTP 429 failed for {url}: {e}; skipping this dog")
-                    return None
+                    raise DetailPageError(f"Retry after HTTP 429 failed for {url}: {e}") from e
                 if response.status_code == 429:
-                    self.logger.error(f"HTTP 429 again for {url}; skipping this dog")
-                    return None
+                    raise DetailPageError(f"HTTP 429 again for {url}")
 
             # A removed post is gone; anything else non-200 may be transient, so the browser tries
             if response.status_code in (404, 410):
@@ -516,6 +522,8 @@ class MisisRescueScraper(BaseScraper):
             self.logger.debug(f"Successfully scraped {url} with fast method")
             return dog_data
 
+        except DetailPageError:
+            raise
         except requests.RequestException as e:
             self.logger.warning(f"Request failed for {url}: {e}, falling back to the browser")
             return self._scrape_dog_detail(url)
@@ -798,68 +806,6 @@ class MisisRescueScraper(BaseScraper):
 
         self.logger.warning("No hero image found on detail page")
         return None
-
-    def _process_dogs_in_batches(self, urls: list[str]) -> list[dict[str, Any]]:
-        """Process dog URLs in batches using concurrent processing (MisisRescue-specific).
-
-        Args:
-            urls: List of URLs to process
-
-        Returns:
-            List of valid dog data dictionaries
-        """
-        if not urls:
-            return []
-
-        # Split URLs into batches
-        batches = [urls[i : i + self.batch_size] for i in range(0, len(urls), self.batch_size)]
-        all_results = []
-
-        # World-class logging: Batch processing handled by centralized system
-
-        for batch_num, batch_urls in enumerate(batches, 1):
-            # World-class logging: Batch progress handled by centralized system
-
-            batch_results = self._process_single_batch(batch_urls)
-            all_results.extend(batch_results)
-
-            # Rate limiting between batches
-            if batch_num < len(batches):
-                time.sleep(self.rate_limit_delay)
-
-        # World-class logging: Batch completion handled by centralized system
-        return all_results
-
-    def _process_single_batch(self, urls: list[str]) -> list[dict[str, Any]]:
-        """Process a single batch of URLs concurrently.
-
-        Args:
-            urls: Batch of URLs to process
-
-        Returns:
-            List of valid dog data dictionaries from this batch
-        """
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-
-        results = []
-
-        with ThreadPoolExecutor(max_workers=self.batch_size) as executor:
-            # Submit all tasks - use fast method first
-            future_to_url = {executor.submit(self.browser_manager.scrape_with_retry, self._scrape_dog_detail_fast, url): url for url in urls}
-
-            # Collect results as they complete
-            for future in as_completed(future_to_url):
-                url = future_to_url[future]
-                try:
-                    result = future.result()
-                    if result:
-                        results.append(result)
-                    else:
-                        self.logger.warning(f"Invalid or empty data for URL: {url}")
-                except Exception as e:
-                    self.logger.error(f"Error processing {url}: {e}")
-
-        return results
 
     def _extract_image_width(self, image_url: str) -> int | None:
         """Extract width from Wix image URL parameters.

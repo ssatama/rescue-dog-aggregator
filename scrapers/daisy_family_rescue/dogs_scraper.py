@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, DetailPageError
 from services.playwright_browser_service import (
     PlaywrightOptions,
     get_playwright_service,
@@ -182,26 +182,13 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     basic_dogs_data = self.filtering_service.filter_existing_animals(basic_dogs_data)
                     self._sync_filtering_stats()
                 else:
+                    # Every listed dog is found, even one whose page then fails (#558)
+                    self._record_all_found_external_ids(basic_dogs_data)
                     self.total_animals_before_filter = len(basic_dogs_data)
                     self.total_animals_skipped = 0
 
-                # Second pass: Process the filtered dogs with detail page enhancement
-                processed_count = 0
-                for dog_data in basic_dogs_data:
-                    try:
-                        enhanced_data = await self._enhance_with_detail_page(dog_data)
-                        if enhanced_data:
-                            all_dogs.append(enhanced_data)
-                            processed_count += 1
-                            self.logger.debug(f"Processed {processed_count}/{len(basic_dogs_data)}: {enhanced_data.get('name')}")
-                        else:
-                            all_dogs.append(dog_data)
-                            processed_count += 1
-                    except Exception as e:
-                        self.logger.warning(f"Error processing dog {dog_data.get('name', 'unknown')}: {e}")
-                        continue
-
-                self.respect_rate_limit()
+                # Second pass: each dog's detail page, within the rate limit (#567)
+                all_dogs.extend(await self.fetch_details_async(basic_dogs_data, self._enhance_with_detail_page, url=lambda dog: dog.get("adoption_url") or str(id(dog))))
 
             except Exception as e:
                 self.logger.error(f"Failed to extract dogs with Playwright: {e}")
@@ -382,7 +369,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
             self.logger.warning(f"Error extracting image: {e}")
         return None
 
-    async def _enhance_with_detail_page(self, basic_dog_data: dict[str, Any]) -> dict[str, Any] | None:
+    async def _enhance_with_detail_page(self, basic_dog_data: dict[str, Any]) -> dict[str, Any]:
         """Enhance basic dog data with detailed information from the dog's detail page.
 
         Uses DaisyFamilyRescueDogDetailScraper to extract comprehensive information
@@ -402,9 +389,6 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
             # Extract detailed information — use async to avoid nested event loops
             detailed_data = await self.detail_scraper.async_extract_dog_details(adoption_url, self.logger)
-
-            # Apply rate limiting between detail page requests
-            self.respect_rate_limit()
 
             if detailed_data:
                 # Merge basic data with detailed data
@@ -429,13 +413,13 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 self.logger.debug(f"Successfully enhanced data for {merged_data.get('name')}")
                 return merged_data
             else:
-                self.logger.warning(f"No detailed data extracted for {basic_dog_data.get('name')}, using basic data")
-                return basic_dog_data
+                # A detail page that failed skips the dog and is counted (#567)
+                raise DetailPageError(f"{adoption_url}: no details extracted")
 
+        except DetailPageError:
+            raise
         except Exception as e:
-            self.logger.error(f"Error enhancing dog data for {basic_dog_data.get('name')}: {e}")
-            # Return basic data on error rather than losing the dog entirely
-            return basic_dog_data
+            raise DetailPageError(f"{adoption_url}: {e}") from e
 
     def _find_container_section(self, container_position: int, section_positions: dict[str, int]) -> str | None:
         """Find which section a container belongs to based on DOM positions."""

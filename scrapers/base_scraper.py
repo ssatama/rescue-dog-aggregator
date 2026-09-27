@@ -1,10 +1,14 @@
 # scrapers/base_scraper.py
 
+import asyncio
 import logging
 import os
 import sys
+import threading
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Any
 
@@ -58,6 +62,10 @@ RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 RETRYABLE_ERRORS = (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError, requests.exceptions.ContentDecodingError)
 
 
+class DetailPageError(RuntimeError):
+    """A dog's detail page yielded no details: the dog is skipped and counted (#567)."""
+
+
 class ListingIncompleteError(RuntimeError):
     """A listing page the scraper had to read could not be read.
 
@@ -79,6 +87,16 @@ def force_rescrape_enabled() -> bool:
 
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
+
+    # Class-level defaults for the request clock, so a scraper built without
+    # __init__ (test fixtures) still works; __init__ gives each its own (#567)
+    _request_slot_lock = threading.Lock()
+    _next_request_at = 0.0
+    _paused_until = 0.0
+    _detail_attempted = 0
+    detail_failures: list[str] = []
+    # A site's Retry-After is honoured up to this; longer would outlast the cron's per-org timeout
+    MAX_BACK_OFF_SECONDS = 120
 
     # Sentry is warned when more than this share of collected dogs is not saved.
     LOSS_ALERT_RATE = 0.1
@@ -195,15 +213,13 @@ class BaseScraper(ABC):
 
         self.image_processing_service = image_processing_service
 
+        # One request-start clock per scraper, shared by every worker (#567)
+        self._request_slot_lock = threading.Lock()
+        self._next_request_at = 0.0
+        self.detail_failures: list[str] = []
+
         # Browser retry manager (extracted from BaseScraper)
-        self.browser_manager = ScraperBrowserManager(
-            logger=self.logger,
-            metrics_collector=self.metrics_collector,
-            rate_limit_delay=self.rate_limit_delay,
-            max_retries=self.max_retries,
-            retry_backoff_factor=self.retry_backoff_factor,
-            animal_validator=self.animal_validator,
-        )
+        self.browser_manager = ScraperBrowserManager(logger=self.logger)
 
         # Track animals for filtering stats
         self.total_animals_before_filter = 0
@@ -642,8 +658,12 @@ class BaseScraper(ABC):
                 self.progress_tracker.track_discovery_stats(
                     dogs_found=correct_animals_found,
                     pages_processed=1,
-                    extraction_failures=0,
+                    extraction_failures=len(self.detail_failures),
                 )  # Single page scrape
+                if self.detail_failures:
+                    # A note makes the run a "warning" and puts the count in scrape_logs (#567)
+                    self._run_notes.append(f"{len(self.detail_failures)} detail page(s) failed; those dogs were skipped")
+                    self._alert_detail_failures()
 
                 # Track filtering phase stats
                 # Note: animals_data contents depend on scraper implementation -
@@ -816,6 +836,8 @@ class BaseScraper(ABC):
         self.animals_found = 0
         self.total_animals_skipped = 0
         self.animals_for_llm_enrichment = []
+        self.detail_failures = []
+        self._detail_attempted = 0
 
         # Ask the source site for permission before fetching anything from it.
         if not self._check_robots_permission():
@@ -1022,6 +1044,22 @@ class BaseScraper(ABC):
 
         self._report_losses(len(animals_data), processing_stats)
         return processing_stats
+
+    def _alert_detail_failures(self) -> None:
+        """Sentry hears when more than LOSS_ALERT_RATE of the detail pages failed: new dogs would stop arriving quietly."""
+        attempted = max(self._detail_attempted, len(self.detail_failures))
+        if len(self.detail_failures) / attempted <= self.LOSS_ALERT_RATE:
+            return
+        try:
+            capture_scraper_error(
+                error=RuntimeError(f"{len(self.detail_failures)} of {attempted} detail pages failed, e.g. {self.detail_failures[: self.LOST_IDS_LOG_CAP]}"),
+                org_name=self.get_organization_name(),
+                org_id=self.organization_id,
+                scrape_log_id=getattr(self, "scrape_log_id", None),
+                phase="detail_pages",
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to emit detail-failure Sentry alert: {e}")
 
     def _report_losses(self, animals_count: int, processing_stats: dict[str, Any]) -> None:
         """Log the dogs this run collected but did not save, and warn Sentry when they exceed LOSS_ALERT_RATE."""
@@ -1249,6 +1287,161 @@ class BaseScraper(ABC):
         if self.rate_limit_delay > 0:
             time.sleep(self.rate_limit_delay)
 
+    def _claim_request_slot(self) -> float:
+        """Seconds to wait before this scraper's next request may start.
+
+        ``rate_limit_delay`` is the minimum time between request starts to the
+        site, across every worker (#567): N threads can't multiply the rate.
+        """
+        with self._request_slot_lock:
+            now = time.monotonic()
+            start = max(now, self._next_request_at)
+            self._next_request_at = start + self.rate_limit_delay
+        return start - now
+
+    def _push_back_request_clock(self, seconds: float, pause: bool = False) -> None:
+        """Move the next free slot to at least ``seconds`` from now.
+
+        With ``pause``, requests whose slot was already claimed wait too: the
+        site asked every worker to slow down.
+        """
+        until = time.monotonic() + seconds
+        with self._request_slot_lock:
+            self._next_request_at = max(self._next_request_at, until)
+            if pause:
+                self._paused_until = max(self._paused_until, until)
+
+    def _back_off_after(self, error: BaseException, attempt: int) -> None:
+        """A 429 or 503 slows the whole scraper, by Retry-After or exponential back-off."""
+        response = getattr(error, "response", None)
+        if getattr(response, "status_code", None) not in (429, 503):
+            return
+        retry_after = (getattr(response, "headers", None) or {}).get("Retry-After")
+        seconds = float(retry_after) if retry_after and str(retry_after).isdigit() else self.rate_limit_delay * self.retry_backoff_factor**attempt
+        seconds = min(seconds, self.MAX_BACK_OFF_SECONDS)
+        self.logger.warning(f"The site answered {response.status_code}; pausing requests for {seconds:.0f}s")
+        self._push_back_request_clock(seconds, pause=True)
+
+    def _after_listing(self) -> None:
+        """A browser listing took no slots: its last page load still counts as a request start."""
+        if self._next_request_at == 0.0:
+            self._push_back_request_clock(self.rate_limit_delay)
+
+    def wait_for_request_slot(self) -> None:
+        """Block until this scraper may start a request. Call it before every extra request a fetch makes."""
+        wait = self._claim_request_slot()
+        starts_at = time.monotonic() + max(wait, 0)
+        if wait > 0:
+            time.sleep(wait)
+        # A back-off that started while this request was waiting holds it too
+        pause = self._paused_until - starts_at
+        if pause > 0:
+            time.sleep(pause)
+
+    @staticmethod
+    def _unique_by_url(items: list, url: Callable[[Any], str]) -> list:
+        seen: set[str] = set()
+        unique = []
+        for item in items:
+            if url(item) not in seen:
+                seen.add(url(item))
+                unique.append(item)
+        return unique
+
+    @staticmethod
+    def _is_transient(error: BaseException) -> bool:
+        """Worth another attempt: a timeout, a dropped connection, a 429 or a 5xx. Not a 404 or a parse error."""
+        if isinstance(error, requests.HTTPError):
+            return getattr(error.response, "status_code", None) in RETRYABLE_STATUS_CODES
+        return isinstance(error, RETRYABLE_ERRORS + (TimeoutError,))
+
+    def _detail_failed(self, item_url: str, error: BaseException) -> None:
+        self.detail_failures = [*self.detail_failures, item_url]
+        self.logger.error(f"Detail page {item_url} failed, skipping this dog: {error!r}")
+
+    def fetch_details(
+        self,
+        items: list,
+        fetch_one: Callable[[Any], Any],
+        *,
+        url: Callable[[Any], str] = lambda item: item["adoption_url"],
+        max_workers: int = 1,
+        attempts: int = 1,
+    ) -> list:
+        """``fetch_one(item)`` for each item, results in input order (#567).
+
+        An item whose URL was already seen runs once. Every attempt waits for a
+        request slot, so the site sees at most one request start per
+        ``rate_limit_delay`` however many workers run. Only transient errors
+        are retried (``_is_transient``). An item that still raises is logged,
+        added to ``detail_failures`` and left out, as is a ``None`` result
+        (without counting as a failure). One bad item never stops the rest.
+        ``fetch_one`` bounds its own time: every request it makes has a timeout.
+        """
+
+        attempts = max(1, attempts)
+
+        def run(item):
+            for attempt in range(1, attempts + 1):
+                self.wait_for_request_slot()
+                try:
+                    result = fetch_one(item)
+                except Exception as e:
+                    # A 429 slows every worker, whether or not this dog gets another try
+                    self._back_off_after(e, attempt)
+                    if attempt == attempts or not self._is_transient(e):
+                        raise
+                    self.metrics_collector.track_retry(success=False)
+                    self.logger.warning(f"Detail page {url(item)} failed (attempt {attempt} of {attempts}), retrying: {e}")
+                    continue
+                if attempt > 1:
+                    self.metrics_collector.track_retry(success=True)
+                return result
+
+        self._after_listing()
+        results = []
+        unique = self._unique_by_url(items, url)
+        self._detail_attempted += len(unique)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [(item, executor.submit(run, item)) for item in unique]
+            for item, future in futures:
+                try:
+                    result = future.result()
+                except Exception as e:
+                    self._detail_failed(url(item), e)
+                    continue
+                if result is not None:
+                    results.append(result)
+        return results
+
+    async def fetch_details_async(
+        self,
+        items: list,
+        fetch_one: Callable[[Any], Awaitable[Any]],
+        *,
+        url: Callable[[Any], str] = lambda item: item["adoption_url"],
+    ) -> list:
+        """``fetch_details`` for coroutine fetches, one at a time on the running loop.
+
+        Each fetch is cut off after the org's ``timeout`` and counted as failed.
+        """
+        self._after_listing()
+        results = []
+        unique = self._unique_by_url(items, url)
+        self._detail_attempted += len(unique)
+        for item in unique:
+            wait = self._claim_request_slot()
+            if wait > 0:
+                await asyncio.sleep(wait)
+            try:
+                result = await asyncio.wait_for(fetch_one(item), self.timeout)
+            except Exception as e:
+                self._detail_failed(url(item), e)
+                continue
+            if result is not None:
+                results.append(result)
+        return results
+
     def get_listing_page(self, url: str, **kwargs) -> requests.Response:
         """GET one listing page, retried max_retries times with backoff.
 
@@ -1259,6 +1452,8 @@ class BaseScraper(ABC):
         kwargs.setdefault("timeout", self.timeout)
         attempts = self.max_retries + 1
         for attempt in range(1, attempts + 1):
+            # Listing pages share the request clock with detail pages (#567)
+            self.wait_for_request_slot()
             try:
                 response = requests.get(url, **kwargs)
                 response.raise_for_status()
