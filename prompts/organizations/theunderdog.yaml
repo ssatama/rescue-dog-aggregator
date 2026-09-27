@@ -75,7 +75,7 @@ extraction_prompt: |
   - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Look for "nervous"=shy, "confident"=confident, "scared"=very_shy. Default to "moderate" if not mentioned.
 
   COMPATIBILITY (extract from the good_with_* properties, raw_qa_data and description):
-  The properties good_with_dogs, good_with_cats and good_with_children are the rescue's own "Living with ...?" answers. true means "yes", false means "no". A limit is kept in the value: "Yes (8+)" or "Yes (teens only)" for children means "older_children"; "Selective", "Yes (female dogs)" or "Yes (males preferred)" for dogs means "selective". A property that is missing is NOT a no: "I've not been tested" is "unknown".
+  The properties good_with_dogs, good_with_cats and good_with_children are the rescue's own "Living with ...?" answers. true means "yes", false means "no". A limit is kept in the value: for children any "Yes (...)" ("Yes (8+)", "Yes (older children)", "Yes (teens only)") means "older_children"; for dogs "Selective" or any "Yes (...)" ("Yes (female dogs)", "Yes (males preferred)") means "selective"; for cats "Selective" ("confident, dog-savvy cats") means "with_training". A property that is missing is NOT a no: "I've not been tested" is "unknown".
   - good_with_dogs: the good_with_dogs property, else "Living with dogs?" in raw_qa_data
   - good_with_cats: the good_with_cats property, else "Living with cats?" in raw_qa_data
   - good_with_children: the good_with_children property, else "Living with kids?" in raw_qa_data
