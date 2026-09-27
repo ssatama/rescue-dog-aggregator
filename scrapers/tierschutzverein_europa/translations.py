@@ -6,30 +6,52 @@ Tierschutzverein Europa database. All mappings are based on actual production da
 
 import re
 
-# Shoulder height bounds for "Ungefähre Größe" (#563): under SMALL_MAX_CM is
-# Small, up to MEDIUM_MAX_CM is Medium, above it Large.
-SMALL_MAX_CM = 35
-MEDIUM_MAX_CM = 55
+# Shoulder height bounds for "Ungefähre Größe" (#563): Small below
+# SMALL_BELOW_CM, Medium up to and including MEDIUM_UP_TO_CM, Large above.
+SMALL_BELOW_CM = 35
+MEDIUM_UP_TO_CM = 55
+# Younger dogs are still growing: their height today isn't their adult size
+ADULT_FROM_MONTHS = 12
 
 _NUMBER = r"(\d+(?:[.,]\d+)?)"
 _HEIGHT_RANGE = re.compile(_NUMBER + r"\s*(?:cm)?\s*(?:-|–|bis)\s*" + _NUMBER + r"\s*cm", re.IGNORECASE)
 _HEIGHT = re.compile(_NUMBER + r"\s*cm", re.IGNORECASE)
-# "im Wachstum", "wächst noch", "kann noch etwas wachsen", "mittelgroß werdend".
-# \bwachsen keeps "ausgewachsen" (fully grown) out.
-_GROWING = re.compile(r"wachstum|wächst|\bwachsen|werdend", re.IGNORECASE)
-# mittelgroß before groß: it contains it
-_SIZE_WORDS = (("mittelgroß", "Medium"), ("klein", "Small"), ("groß", "Large"))
+_SIZE_WORD = r"(mittelgroß|klein|groß)"  # mittelgroß first: it contains groß
+_SIZES = {"klein": "Small", "mittelgroß": "Medium", "groß": "Large"}
+# The rescue's word for the adult: "klein bleibend", "mittelgroß werdend", "wird groß"
+_ADULT_SIZE_WORD = re.compile(_SIZE_WORD + r"\s+(?:bleibend|werdend)|wird\s+" + _SIZE_WORD, re.IGNORECASE)
+# The height is the adult's: "Endgröße", "(wenn ausgewachsen)", "wächst kaum noch"
+_ADULT_HEIGHT = re.compile(r"endgröße|(?<!nicht )ausgewachsen|kaum noch", re.IGNORECASE)
+# \bwachsen keeps "ausgewachsen" (fully grown) out
+_GROWING = re.compile(r"wachstum|wächst|\bwachsen|werdend|aktuell|nicht ausgewachsen", re.IGNORECASE)
+_STATED_AGE = re.compile(r"(\d+)\s*(Jahr|Monat)", re.IGNORECASE)
 
 
-def translate_size(height_text: str | None) -> str | None:
-    """Size from the page's "Ungefähre Größe", by shoulder height.
+def stated_age_months(age_text: str | None) -> int | None:
+    """The age the site states, in whole months: "03.2025 (10 Monate alt)" -> 10."""
+    match = _STATED_AGE.search(age_text or "")
+    if not match:
+        return None
+    number = int(match.group(1))
+    return number * 12 if match.group(2).lower() == "jahr" else number
+
+
+def translate_size(height_text: str | None, age_months: int | None = None) -> str | None:
+    """Adult size from the page's "Ungefähre Größe", by shoulder height.
 
     "ca. 50 cm, 17 kg" -> Medium; a range counts by its middle ("ca. 60 - 65 cm"
-    -> Large). Without a height, the site's word ("mittelgroß"). A dog that is
-    still growing has no size yet: its height today says nothing about the
-    adult ("ca. 20 cm, im Wachstum").
+    -> Large). Without a height, the site's word ("mittelgroß"). A dog still
+    growing (said so, or younger than ADULT_FROM_MONTHS) has no size yet,
+    unless the rescue gives the adult's: "klein bleibend", "Endgröße ca. 40 cm".
     """
-    if not height_text or _GROWING.search(height_text):
+    if not height_text:
+        return None
+
+    if match := _ADULT_SIZE_WORD.search(height_text):
+        return _SIZES[(match.group(1) or match.group(2)).lower()]
+
+    growing = _GROWING.search(height_text) or (age_months is not None and age_months < ADULT_FROM_MONTHS)
+    if growing and not _ADULT_HEIGHT.search(height_text):
         return None
 
     height = None
@@ -40,12 +62,12 @@ def translate_size(height_text: str | None) -> str | None:
         height = float(match.group(1).replace(",", "."))
 
     if height is not None:
-        if height < SMALL_MAX_CM:
+        if height < SMALL_BELOW_CM:
             return "Small"
-        return "Medium" if height <= MEDIUM_MAX_CM else "Large"
+        return "Medium" if height <= MEDIUM_UP_TO_CM else "Large"
 
-    lowered = height_text.lower()
-    return next((size for word, size in _SIZE_WORDS if word in lowered), None)
+    word = re.search(_SIZE_WORD, height_text, re.IGNORECASE)
+    return _SIZES[word.group(1).lower()] if word else None
 
 
 def translate_gender(gender: str | None) -> str | None:
@@ -154,8 +176,7 @@ def translate_age(age_text: str | None) -> str | None:
         else:
             return f"{months} months"
 
-    # If we can't parse it, return the original text for debugging
-    # This helps us identify patterns we haven't handled yet
+    # Unrecognised: no age rather than German text (the scraper logs it)
     return None
 
 

@@ -218,17 +218,29 @@ when a post has no story), the facts are `raw_bullet_points`, and
   prefers it over `age_text`, so the German text used to be stored. The
   birth range still comes from `Geburtstag` as `date_of_birth` (#561).
 - Size is read from "Ungefähre Größe" by shoulder height:
-  `translate_size` in `scrapers/tierschutzverein_europa/translations.py`,
-  thresholds `SMALL_MAX_CM`/`MEDIUM_MAX_CM` (under 35 Small, 35-55
-  Medium, above Large). A range counts by its middle; without a height,
-  the site's word (klein, mittelgroß, groß). A dog still growing ("im
-  Wachstum", "wächst", "werdend") gets no size, so the save falls back to
-  the breed's, as before. Daisy's scraper uses 40/60 for the same
-  question; one scale for all rescues belongs to #568.
+  `translate_size` in `scrapers/tierschutzverein_europa/translations.py`
+  (Small below 35 cm, Medium up to 55, Large above). A range counts by its
+  middle; without a height, the site's word (klein, mittelgroß, groß). A
+  dog still growing gets no size, and the save falls back to the breed's:
+  the text says so ("im Wachstum", "wächst", "aktuell", "nicht
+  ausgewachsen"), or the stated age is under 12 months. The rescue's own
+  adult size wins over both: "klein bleibend", "mittelgroß werdend", "wird
+  groß", "Endgröße", "(wenn ausgewachsen)", "wächst kaum noch". Known
+  limit: a puppy keeps no size until a forced re-scrape, because
+  Tierschutzverein skips existing dogs (43 of 392 on 2026-09-27). Daisy's
+  scraper uses 40/60 cm for the same question; one scale for all rescues
+  belongs to #568.
+- An age the translation doesn't recognise is stored as `None` and logged
+  ("Untranslated age for ..."), never as German text.
 - The "Beschreibung" section is stored as `properties.description`, the
   key every reader uses. `needs_reprofile` compares the profile texts, not
   the keys they sit under, so #572 doesn't re-profile 392 dogs whose text
-  only moved.
+  only moved. The API's sitemap filter (`animal_service.py`) reads only
+  that key, so every Tierschutzverein dog used to be out of the quality
+  sitemap. The cost: readers of the key now see German text. Pages show
+  the English AI text first, but a dog not yet profiled shows the German
+  in its page body, meta description and JSON-LD (3 dogs on 2026-09-27).
+  Marking the description's language is for #568.
 - The issue's "243 Medium" didn't match production on 2026-09-27: 75
   Medium, 201 with no size at all (breeds with no size estimate). Height
   makes most of those 201 Medium, so the Medium count goes up, not down.
@@ -251,8 +263,8 @@ when a post has no story), the facts are `raw_bullet_points`, and
     re-profiles those whose description changed (all of them: none had one).
   - `tierschutzverein-europa` (#563, 2026-09-27): forced re-scrape of 373
     listed dogs (the dry run took 6.5 minutes at the configured rate,
-    without image uploads; plan it off-peak). 372 matched: every `age_text` English,
-    birth ranges on all 372, `standardized_size` changes on 236 (after:
-    222 Medium, 120 Large, 10 Small, 20 none, of which 19 are still
-    growing), `description` on 366. No re-profiles: the text only moved
-    key.
+    without image uploads; plan it off-peak). 372 matched: every `age_text`
+    English, birth ranges on all 372, `description` on 366, no re-profiles
+    (the text only moved key). Sizes over the 392 active dogs' stored
+    heights and ages, after review: 213 Medium, 117 Large, 10 Small, 52
+    none (43 under 12 months, 9 growing or no height).

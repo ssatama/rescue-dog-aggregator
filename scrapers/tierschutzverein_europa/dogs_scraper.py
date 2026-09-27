@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from scrapers.base_scraper import BaseScraper, ListingIncompleteError
 from scrapers.tierschutzverein_europa.translations import (
     normalize_name,
+    stated_age_months,
     translate_age,
     translate_breed,
     translate_gender,
@@ -201,8 +202,6 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 # over age_text, and it would store the German text (#563).
                 result["age_text"] = properties["Geburtstag"]
                 result["date_of_birth"] = properties["Geburtstag"]  # "03.2025 (1 Jahr alt)" (#561)
-            if "Ungefähre Größe" in properties:
-                result["size"] = translate_size(properties["Ungefähre Größe"])
 
             return result
 
@@ -398,9 +397,17 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                     if translated_sex:
                         translated_dog["sex"] = translated_sex
 
-                if translated_dog.get("age_text"):
-                    # None for "Unbekannt": no German text stands in for an age
-                    translated_dog["age_text"] = translate_age(translated_dog["age_text"])
+                german_age = translated_dog.get("age_text")
+                translated_dog["size"] = translate_size(
+                    (translated_dog.get("properties") or {}).get("Ungefähre Größe"),
+                    stated_age_months(german_age),
+                )
+
+                if german_age:
+                    # No German text stands in for an age
+                    translated_dog["age_text"] = translate_age(german_age)
+                    if translated_dog["age_text"] is None and german_age.strip().lower() != "unbekannt":
+                        self.logger.warning(f"Untranslated age for {translated_dog.get('name')}: {german_age!r}")
 
                 if translated_dog.get("breed"):
                     translated_breed = translate_breed(translated_dog["breed"])

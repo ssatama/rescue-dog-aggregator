@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from scrapers.tierschutzverein_europa.dogs_scraper import TierschutzvereinEuropaScraper
 from scrapers.tierschutzverein_europa.translations import (
     normalize_name,
+    stated_age_months,
     translate_age,
     translate_breed,
     translate_gender,
@@ -170,32 +171,64 @@ class TestTranslationFunctions:
     @pytest.mark.parametrize(
         ("height_text", "expected"),
         [
-            # Real "Ungefähre Größe" values from production (2026-09-27)
+            # Real "Ungefähre Größe" values from production (2026-09-27), adult dogs
             ("ca. 30 cm", "Small"),
+            ("ca. 34 cm", "Small"),
             ("ca. 35 cm", "Medium"),
             ("ca. 50 cm, 17 kg", "Medium"),
             ("55 cm, 25 kg (geschätzt)", "Medium"),
             ("ca. 56 cm / 16,5 kg", "Large"),
             ("36 kg / 62 cm", "Large"),
             ("ca. 60 - 65 cm", "Large"),
-            ("ca. 55 cm – 60 cm (wenn ausgewachsen)", "Large"),
-            ("Endgröße ca. 40-43cm", "Medium"),
+            ("50 bis 52 cm", "Medium"),
             ("mittelgroß (ca. 50 cm)", "Medium"),
             ("mittelgroß, 15-18 kg", "Medium"),
             ("klein", "Small"),
             ("groß", "Large"),
-            # Still growing: today's height says nothing about the adult
-            ("ca. 25 cm, ca. 2,5 kg (im Wachstum)", None),
-            ("ca. 40 cm/ 15 kg/ kann noch etwas wachsen", None),
-            ("36 cm, wächst noch", None),
-            ("ca. 36 cm (vermutlich mittelgroß werdend)", None),
             ("keine Angaben", None),
             ("", None),
             (None, None),
         ],
     )
     def test_translate_size_from_shoulder_height(self, height_text, expected):
-        assert translate_size(height_text) == expected
+        assert translate_size(height_text, age_months=36) == expected
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        ("height_text", "age_months", "expected"),
+        [
+            # Still growing, by the text or by age: today's height isn't the adult's
+            ("ca. 25 cm, ca. 2,5 kg (im Wachstum)", 36, None),
+            ("ca. 40 cm/ 15 kg/ kann noch etwas wachsen", 36, None),
+            ("aktuell ca 38cm , im Wachstum", 36, None),
+            ("ca. 50 cm, noch nicht ausgewachsen", 36, None),
+            ("ca. 35 cm, wächst noch (mittel bis groß)", 36, None),
+            ("35 cm, 6 kg", 4, None),
+            ("50 cm", 6, None),
+            ("mittelgroß", 11, None),
+            # ...unless the rescue gives the adult's size
+            ("klein bleibend, im Wachstum", 3, "Small"),
+            ("ca. 36 cm (vermutlich mittelgroß werdend)", 5, "Medium"),
+            ("ca. 45 cm, 14 kg (wird groß und schwer)", 9, "Large"),
+            ("ca. 55 cm – 60 cm (wenn ausgewachsen)", 7, "Large"),
+            ("Endgröße ca. 40-43cm", 5, "Medium"),
+            ("ca. 40 – 45 cm (ausgewachsen)", 36, "Medium"),
+            ("ca. 37 cm, wächst kaum noch, ca. 10 kg", 10, "Medium"),
+            # One year old counts as grown; no stated age is not a puppy
+            ("ca. 50 cm", 12, "Medium"),
+            ("ca. 50 cm", None, "Medium"),
+        ],
+    )
+    def test_translate_size_of_a_growing_dog(self, height_text, age_months, expected):
+        assert translate_size(height_text, age_months) == expected
+
+    @pytest.mark.unit
+    def test_stated_age_months(self):
+        assert stated_age_months("03.2025 (10 Monate alt)") == 10
+        assert stated_age_months("09.2025 (1 Jahr alt)") == 12
+        assert stated_age_months("02.2020 (6 Jahre alt)") == 72
+        assert stated_age_months("Unbekannt") is None
+        assert stated_age_months(None) is None
 
 
 class TestScraperCoreFunctions:
@@ -371,13 +404,12 @@ class TestScraperCoreFunctions:
         assert "Beschreibung" not in properties
         assert "description" not in details  # save drops a top-level description
         assert "age" not in details  # would win over the translated age_text (#563)
-        assert details["size"] is None  # 17 cm and still growing
 
     @pytest.mark.unit
     def test_english_age_and_height_size_survive_standardization(self, scraper, detail_html):
         """What the save writes: #563's age_text used to be the German Geburtstag."""
         mock_response = Mock()
-        mock_response.text = detail_html.replace("17 cm, im Wachstum, klein bleibend", "ca. 50 cm, 17 kg")
+        mock_response.text = detail_html.replace("17 cm, im Wachstum, klein bleibend", "ca. 50 cm, 17 kg").replace("05.2025 (3 Monate alt)", "05.2023 (3 Jahre alt)")
         mock_response.raise_for_status = Mock()
         scraper.standardizer = UnifiedStandardizer()
         scraper.use_unified_standardization = True
@@ -387,11 +419,21 @@ class TestScraperCoreFunctions:
         dog = scraper.process_animal(scraper._translate_and_normalize_dogs([dog])[0])
         saved = update_columns(dog)
 
-        assert saved["age_text"] == "3 months old"
+        assert saved["age_text"] == "3 years old"
         assert saved["birth_date_min"] is not None  # from Geburtstag (#561)
         assert saved["size"] == "Medium"
         assert saved["standardized_size"] == "Medium"
         assert dog["properties"]["Ungefähre Größe"] == "ca. 50 cm, 17 kg"
+
+    @pytest.mark.unit
+    def test_an_age_that_does_not_translate_is_dropped_and_logged(self, scraper):
+        dogs = [{"name": "Rex", "age_text": "ca. 2019"}, {"name": "Lia", "age_text": "Unbekannt"}]
+
+        rex, lia = scraper._translate_and_normalize_dogs(dogs)
+
+        assert rex["age_text"] is None
+        assert lia["age_text"] is None
+        scraper.logger.warning.assert_called_once_with("Untranslated age for Rex: 'ca. 2019'")
 
     @pytest.mark.unit
     def test_process_animals_parallel_batching(self, scraper):
