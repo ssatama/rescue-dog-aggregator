@@ -67,7 +67,7 @@ extraction_prompt: |
   Properties: {properties}
 
   Look for information in:
-  - page_text_excerpt (narrative descriptions)
+  - description (the rescue's story about the dog)
   - raw_bullet_points (extracted facts)
   - weight, raw_name fields
   - Any embedded details about age, personality, needs
@@ -163,7 +163,7 @@ few_shot_examples:
   - input: |
       Name: Fluffy Poodle Mix
       Properties: {
-        "page_text_excerpt": "This beautiful fluffy poodle mix has a gorgeous coat and loves to play. She's very friendly with everyone.",
+        "description": "This beautiful fluffy poodle mix has a gorgeous coat and loves to play. She's very friendly with everyone.",
         "raw_bullet_points": ["Friendly", "Playful", "Good with kids", "Beautiful fluffy coat"]
       }
     
@@ -181,7 +181,7 @@ few_shot_examples:
       Properties: {
         "weight": "20.0kg",
         "raw_name": "💙 Beky {He's a boy 🤪!}",
-        "page_text_excerpt": "Beky is the boss of our shelter. We reckon he's somewhere between 8-10 years old... Beky is still the life and soul of the party & a really cheeky character. We found him on the streets... That's why it's hard to know how old he is, but our vet has had a guess. He's medium-sized, under 20kg...",
+        "description": "Beky is the boss of our shelter. We reckon he's somewhere between 8-10 years old... Beky is still the life and soul of the party & a really cheeky character. We found him on the streets... That's why it's hard to know how old he is, but our vet has had a guess. He's medium-sized, under 20kg...",
         "raw_bullet_points": ["A really funny guy. Cheeky & loves some fuss", "Good at walking on the lead", "Could be rehomed with a dog savvy cat", "Vaccinated & castrated", "Beky can be a bit dominant with male dogs"]
       }
 

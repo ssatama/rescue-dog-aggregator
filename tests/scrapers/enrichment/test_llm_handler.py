@@ -183,11 +183,14 @@ class TestLLMEnrichmentHandlerDataPreparation:
 
         assert len(result) == 1
         assert result[0]["id"] == 456
-        assert result[0]["name"] == "Unknown"
-        assert result[0]["breed"] is None  # no breed invented (#568)
-        assert result[0]["age_text"] == "Unknown"
+        # Missing values stay None for the prompt builder to word (#568)
+        assert result[0]["name"] is None
+        assert result[0]["breed"] is None
+        assert result[0]["age_text"] is None
+        assert result[0]["properties"] == {}
 
-    def test_prepare_dogs_adds_description_from_data(self):
+    def test_prepare_dogs_ignores_a_top_level_description(self):
+        """#568: the story is properties.description; no scraper emits a top-level one."""
         handler = LLMEnrichmentHandler(
             organization_id=1,
             organization_name="Test Org",
@@ -203,7 +206,7 @@ class TestLLMEnrichmentHandlerDataPreparation:
 
         result = handler._prepare_dogs_for_profiling(animals)
 
-        assert result[0]["properties"]["description"] == "A friendly dog"
+        assert result[0]["properties"] == {}
 
     def test_prepare_dogs_adds_description_from_properties(self):
         handler = LLMEnrichmentHandler(
