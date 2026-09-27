@@ -2126,9 +2126,9 @@ class AnimalService:
         conditions = base_conditions.copy()
         params = base_params.copy()
 
-        # Add country filter for regions
-        conditions.append("sr.country = %s")
-        params.append(filters.available_to_country)
+        # Regions of a country the rescue rehomes to, as the list filters (#539)
+        conditions.append("o.ships_to ? %s AND sr.country = %s")
+        params.extend([filters.available_to_country, filters.available_to_country])
 
         # Add other non-region filters
         if filters.sex:

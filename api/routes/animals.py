@@ -193,10 +193,11 @@ async def get_distinct_available_regions(
             SELECT DISTINCT sr.region
             FROM service_regions sr
             JOIN organizations o ON sr.organization_id = o.id
-            WHERE sr.country = %s AND sr.region IS NOT NULL AND sr.region != '' AND o.active = TRUE
+            WHERE sr.country = %s AND o.ships_to ? %s
+              AND sr.region IS NOT NULL AND sr.region != '' AND o.active = TRUE
             ORDER BY sr.region ASC
             """,
-            (country,),  # Pass the country as a parameter
+            (country, country),  # Only rescues that rehome to the country (#539)
         )
         results = cursor.fetchall()
         regions = [row["region"] for row in results]
