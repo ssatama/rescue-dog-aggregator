@@ -275,7 +275,7 @@ class AnimalService:
             # Get description from properties
             description = None
             if hasattr(animal, "properties") and animal.properties:
-                description = animal.properties.get("description") or animal.properties.get("raw_description")
+                description = animal.properties.get("description")  # the one story key (#568, #572)
 
             # Skip if no description
             if not description or not isinstance(description, str):
