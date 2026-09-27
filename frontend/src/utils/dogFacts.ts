@@ -1,5 +1,6 @@
 import type { Dog } from "../types/dog";
-import { getAgeCategory } from "./dogHelpers";
+import { SIZE_API_MAPPING } from "../constants/filters";
+import { getAgeCategory, sizeCategory } from "./dogHelpers";
 
 /**
  * Facts some rescues publish in `properties` (#489). Each rescue names and
@@ -121,7 +122,9 @@ export function adoptionDomain(url: string | undefined): string | null {
 export function similarDogsQuery(
   dog: Dog,
 ): { standardized_size?: string; age_category?: string; age_known?: boolean } | null {
-  const size = dog.standardized_size && dog.standardized_size !== "Unknown" ? dog.standardized_size : null;
+  // On the catalog's scale: the API's Small includes Tiny, and Giant is XLarge
+  const scale = sizeCategory(dog);
+  const size = scale ? SIZE_API_MAPPING[scale] : null;
   const age = getAgeCategory(dog);
   if (!size && age === "Unknown") return null;
   return {

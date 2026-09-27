@@ -2,25 +2,12 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, useReducedMotion, PanInfo } from "framer-motion";
-import {
-  Heart,
-  Users,
-  Dog as DogIcon,
-  Cat,
-  Baby,
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
-  X,
-} from "lucide-react";
+import { Heart, Users, Dog as DogIcon, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Dog } from "./types";
 import Image from "next/image";
 import { FallbackImage } from "../ui/FallbackImage";
-import { trackAdoptionLinkClicked } from "@/lib/analytics";
 import { formatBreed } from "@/utils/dogHelpers";
-import { companionAnswer } from "@/utils/dogFacts";
-import { safeExternalUrl } from "@/utils/security";
-import { EXPERIENCE, canAdopt } from "@/components/dogs/detail/DogFactsPanel";
+import { AdoptLink, ENERGY, EXPERIENCE, LivesWith, canAdopt } from "@/components/dogs/detail/DogFactsPanel";
 import { getAgeDisplay } from "./compareUtils";
 
 interface ComparisonViewProps {
@@ -29,25 +16,13 @@ interface ComparisonViewProps {
   onRemoveFavorite: (dogId: string | number) => void;
 }
 
-const ENERGY_LEVELS: Record<string, { label: string; width: string }> = {
-  low: { label: "Low", width: "25%" },
-  medium: { label: "Medium", width: "50%" },
-  high: { label: "High", width: "75%" },
-  very_high: { label: "Very high", width: "100%" },
+// Bar widths; the words are the dog page's (ENERGY)
+const ENERGY_WIDTH: Record<string, string> = {
+  low: "25%",
+  medium: "50%",
+  high: "75%",
+  very_high: "100%",
 };
-
-
-const COMPANIONS = [
-  { field: "good_with_children", label: "Kids", Icon: Baby },
-  { field: "good_with_cats", label: "Cats", Icon: Cat },
-  { field: "good_with_dogs", label: "Dogs", Icon: DogIcon },
-] as const;
-
-const answerStyle = (answer: string): string =>
-  answer === "yes" ? "bg-good-soft text-good" : answer === "no" ? "bg-bad-soft text-bad" : "bg-soft text-subtle";
-
-const answerLabel = (answer: string): string =>
-  answer === "yes" ? "Yes" : answer === "no" ? "No" : answer.charAt(0).toUpperCase() + answer.slice(1);
 
 const formatPersonalityTrait = (trait: string): string => {
   return trait
@@ -82,26 +57,15 @@ const DogComparisonCard = ({
   const imageUrl = dog.primary_image_url;
   const tagline = dog.dog_profiler_data?.tagline;
   const traits = dog.dog_profiler_data?.personality_traits || [];
-  const energy = ENERGY_LEVELS[dog.dog_profiler_data?.energy_level ?? ""];
+  const energyLevel = dog.dog_profiler_data?.energy_level ?? "";
+  const energy = ENERGY[energyLevel] && ENERGY_WIDTH[energyLevel]
+    ? { label: ENERGY[energyLevel], width: ENERGY_WIDTH[energyLevel] }
+    : null;
   const experience = dog.dog_profiler_data?.experience_level;
   const breed = formatBreed(dog);
   const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
 
-  // Unknown answers are left out, never shown as "no" (#484)
-  const compatibility = COMPANIONS.flatMap(({ field, label, Icon }) => {
-    const answer = companionAnswer(dog, field);
-    return answer ? [{ key: field, label, Icon, answer }] : [];
-  });
   const age = getAgeDisplay(dog);
-
-  // Same rule as the dog page: only a listed dog with a safe link
-  const adoptionUrl = canAdopt(dog) ? safeExternalUrl(dog.adoption_url) : null;
-  const handleVisit = () => {
-    if (adoptionUrl) {
-      trackAdoptionLinkClicked(dog, "comparison");
-      window.open(adoptionUrl, "_blank", "noopener");
-    }
-  };
 
   return (
     <div
@@ -234,28 +198,8 @@ const DogComparisonCard = ({
           </div>
         )}
 
-        {compatibility.length > 0 && (
-          <div>
-            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
-              Good with
-            </h4>
-            <ul className="flex flex-wrap items-center gap-3">
-              {compatibility.map(({ key, label, Icon, answer }) => (
-                <li key={key} className="flex items-center gap-1">
-                  <span
-                    className={`w-6 h-6 rounded-full flex items-center justify-center ${answerStyle(answer)}`}
-                    aria-hidden="true"
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                  </span>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                    {label}: {answerLabel(answer)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {/* The dog page's words: "✓ Children", "Dogs: selective" (#550) */}
+        <LivesWith dog={dog} heading="h4" />
 
         {/* Special Quirk - only show if space allows */}
         {uniqueQuirk && (
@@ -269,16 +213,8 @@ const DogComparisonCard = ({
           </div>
         )}
 
-        {adoptionUrl && (
-          <button
-            onClick={handleVisit}
-            className="w-full bg-orange-700 hover:bg-orange-800 text-white py-2.5 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-            aria-label={`Visit ${dog.name}`}
-          >
-            <span>Visit {dog.name}</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
-        )}
+        {/* Same rule as the dog page: only a listed dog with a safe link */}
+        {canAdopt(dog) && <AdoptLink dog={dog} source="comparison" className="w-full text-sm" />}
       </div>
     </div>
   );
@@ -371,6 +307,24 @@ const ComparisonView = ({
     [canGoNext, canGoPrev],
   );
 
+  const pageDots = (
+    <div className="flex flex-wrap justify-center gap-2">
+      {Array.from({ length: maxIndex + 1 }, (_, index) => (
+        <button
+          key={index}
+          onClick={() => setCurrentIndex(index)}
+          className={`h-2 rounded-full transition-all ${
+            index === currentIndex
+              ? "w-8 bg-orange-500"
+              : "w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+          }`}
+          aria-label={`Go to page ${index + 1}`}
+          aria-current={index === currentIndex ? "true" : undefined}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-50 bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-y-auto">
       <div className="min-h-screen p-4">
@@ -410,7 +364,9 @@ const ComparisonView = ({
               <ChevronLeft className="w-6 h-6" />
             </button>
 
-            {/* On a phone the dots below say where you are; no "Dog 1 of 20" (#504). */}
+            {/* On a phone the dots sit between the arrows, since a card fills
+                the screen and dots below it are off-screen (#550); no "Dog 1 of 20" (#504). */}
+            {isMobile && maxIndex > 0 && pageDots}
             {!isMobile && (
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -475,23 +431,8 @@ const ComparisonView = ({
             </motion.div>
           </div>
 
-          {/* Pagination Dots */}
-          {maxIndex > 0 && (
-            <div className="flex justify-center mt-8 gap-2 pb-8">
-              {Array.from({ length: maxIndex + 1 }, (_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`h-2 rounded-full transition-all ${
-                    index === currentIndex
-                      ? "w-8 bg-orange-500"
-                      : "w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                  }`}
-                  aria-label={`Go to page ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
+          {/* Desktop: dots under the cards */}
+          {!isMobile && maxIndex > 0 && <div className="mt-8 pb-8">{pageDots}</div>}
 
           {/* Bottom padding for mobile nav if needed */}
           {isMobile && <div className="h-20" />}

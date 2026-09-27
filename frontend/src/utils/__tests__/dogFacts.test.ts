@@ -157,6 +157,11 @@ describe("similarDogsQuery", () => {
     expect(similarDogsQuery({ standardized_size: "Small" } as Dog)).toEqual({ standardized_size: "Small" });
   });
 
+  it("asks on the catalog's scale: a Tiny dog's similar dogs are Small ones, which include Tiny (#550)", () => {
+    expect(similarDogsQuery({ standardized_size: "Tiny" } as Dog)).toEqual({ standardized_size: "Small" });
+    expect(similarDogsQuery({ standardized_size: "XLarge" } as Dog)).toEqual({ standardized_size: "XLarge" });
+  });
+
   it("is null when neither is known, rather than matching every dog", () => {
     expect(similarDogsQuery({ standardized_size: "Unknown" } as Dog)).toBeNull();
   });

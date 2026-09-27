@@ -438,6 +438,10 @@ async def get_swipe_stack(
                 "total": total_count,
             }
 
+        except HTTPException:
+            # A bad request (malformed excluded ids) is the client's, not a 500
+            transaction.set_status("invalid_argument")
+            raise
         except Exception as e:
             transaction.set_status("internal_error")
             logger.error(f"Error fetching swipe stack: {str(e)}")

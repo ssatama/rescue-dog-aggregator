@@ -51,7 +51,7 @@ describe("analytics", () => {
         breed: "Labrador Retriever Mix",
         age_category: "Young",
         sex: "Female",
-        size: "large",
+        size: "Large",
         org_slug: "some-rescue",
         org_name: "Some Rescue",
         org_country: "DE",

@@ -25,7 +25,7 @@ import {
 import AdoptableBadge from "@/components/location/AdoptableBadge";
 import type { Dog } from "@/types/dog";
 
-const ENERGY: Record<string, string> = {
+export const ENERGY: Record<string, string> = {
   low: "Low energy",
   medium: "Medium energy",
   high: "High energy",
@@ -66,10 +66,18 @@ function Chip({
   );
 }
 
-function FactRow({ label, children }: { label: string; children: React.ReactNode }) {
+function FactRow({
+  label,
+  heading: Heading = "h2",
+  children,
+}: {
+  label: string;
+  heading?: "h2" | "h4";
+  children: React.ReactNode;
+}) {
   return (
     <div className="grid gap-1.5">
-      <h2 className="text-[11.5px] font-semibold uppercase tracking-wider text-subtle">{label}</h2>
+      <Heading className="text-[11.5px] font-semibold uppercase tracking-wider text-subtle">{label}</Heading>
       <ul className="flex flex-wrap gap-1.5" aria-label={label}>
         {children}
       </ul>
@@ -79,8 +87,9 @@ function FactRow({ label, children }: { label: string; children: React.ReactNode
 
 const ANSWER_ORDER = (answer: string) => (answer === "yes" ? 0 : answer === "no" ? 2 : 1);
 
-/** Known companions, plus one quiet chip for the rest (never three). */
-export function LivesWith({ dog }: { dog: Dog }) {
+/** Known companions, plus one quiet chip for the rest (never three). The
+ * compare cards use it too, under their own h4 headings. */
+export function LivesWith({ dog, heading }: { dog: Dog; heading?: "h2" | "h4" }) {
   const answers: { label: string; answer: string | null }[] = COMPANIONS.map(({ field, label }) => ({
     label,
     answer: companionAnswer(dog, field),
@@ -91,7 +100,7 @@ export function LivesWith({ dog }: { dog: Dog }) {
   if (known.length === 0) return null;
   const unknown = answers.filter((a) => a.answer === null).map((a) => a.label);
   return (
-    <FactRow label="Lives with">
+    <FactRow label="Lives with" heading={heading}>
       {known.map(({ label, answer }) =>
         answer === "yes" || answer === "no" ? (
           <Chip key={label} tone={answer === "yes" ? "good" : "bad"}>

@@ -116,7 +116,10 @@ function FavoritesPageContent(): React.JSX.Element {
   // from their snapshots. Saved dogs are never dropped from the list (#498).
   const [fetched, setFetched] = useState<Map<number, Dog>>(() => new Map());
   const [missing, setMissing] = useState<Map<number, Dog>>(() => new Map());
-  const [error, setError] = useState<string | null>(null);
+  // Ids whose fetch failed. They are retried from "Try again", and the page
+  // only gives up on the whole list when nothing loaded at all (#533).
+  const [failed, setFailed] = useState<Set<number>>(() => new Set());
+  const [retries, setRetries] = useState(0);
   const requested = useRef(new Set<number>());
   // The saved ids when a fetch resolves, which may differ from when it started
   const favoritesRef = useRef(favorites);
@@ -179,9 +182,15 @@ function FavoritesPageContent(): React.JSX.Element {
       })
       .catch((fetchError: unknown) => {
         reportError(fetchError, { context: "fetchFavoriteDogs", favoriteCount: ids.length });
-        setError("Failed to load your favorite dogs. Please try again.");
+        setFailed((prev) => new Set([...prev, ...ids]));
       });
-  }, [favorites, isHydrated]);
+  }, [favorites, isHydrated, retries]);
+
+  const retryFailed = useCallback(() => {
+    failed.forEach((id) => requested.current.delete(id));
+    setFailed(new Set());
+    setRetries((n) => n + 1);
+  }, [failed]);
 
   // Newest saved first; the dogs still listed, then the ones that left
   const { listed, unlisted } = useMemo(() => {
@@ -209,13 +218,16 @@ function FavoritesPageContent(): React.JSX.Element {
     [showToast],
   );
 
-  if (error) {
+  // Saved ids still on the list whose fetch failed
+  const failedCount = favorites.filter((id) => failed.has(id)).length;
+
+  if (failedCount > 0 && fetched.size + missing.size === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
         <EmptyState
           title="Something went wrong"
-          description={error}
-          actionButton={{ text: "Try Again", onClick: () => window.location.reload() }}
+          description="Failed to load your favorite dogs. Please try again."
+          actionButton={{ text: "Try Again", onClick: retryFailed }}
         />
       </div>
     );
@@ -235,7 +247,7 @@ function FavoritesPageContent(): React.JSX.Element {
     );
   }
 
-  const loading = !isHydrated || listed.length + unlisted.length < count;
+  const loading = !isHydrated || listed.length + unlisted.length + failedCount < count;
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:pt-8">
@@ -264,6 +276,15 @@ function FavoritesPageContent(): React.JSX.Element {
           </div>
         )}
       </header>
+
+      {!loading && failedCount > 0 && (
+        <p role="alert" className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-subtle">
+          {failedCount === 1 ? "One saved dog didn't load." : `${failedCount} saved dogs didn't load.`}
+          <button type="button" onClick={retryFailed} className={SECONDARY_BUTTON}>
+            Try again
+          </button>
+        </p>
+      )}
 
       {loading ? (
         <ul className="mt-5 grid gap-3" aria-busy="true" aria-label="Loading saved dogs">

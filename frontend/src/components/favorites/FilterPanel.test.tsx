@@ -99,6 +99,19 @@ describe("FilterPanel Component", () => {
       ).toBeInTheDocument();
     });
 
+    test("a new list with no filter change isn't reported as the user's (#533)", async () => {
+      const onFilter = jest.fn();
+      const { rerender } = render(<FilterPanel dogs={mockDogs} onFilter={onFilter} />);
+
+      // The favorites page rebuilds its list after removing an unlisted dog
+      rerender(<FilterPanel dogs={[...mockDogs]} onFilter={onFilter} />);
+      rerender(<FilterPanel dogs={mockDogs.slice(1)} onFilter={onFilter} />);
+
+      await waitFor(() => expect(onFilter).toHaveBeenCalledTimes(2));
+      expect(onFilter).not.toHaveBeenCalledWith(expect.anything(), true);
+      expect(onFilter).toHaveBeenLastCalledWith(mockDogs.slice(1), false);
+    });
+
     test("applies filters immediately on desktop", async () => {
       const onFilter = jest.fn();
       render(<FilterPanel dogs={mockDogs} onFilter={onFilter} />);
