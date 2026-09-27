@@ -123,6 +123,21 @@ describe("companionAnswer", () => {
     expect(companionAnswer(dog({ good_with_children: "older_children" }), "good_with_children")).toBe("older children");
   });
 
+  it("treats a low-confidence AI answer as not assessed (#517)", () => {
+    const d = {
+      properties: { good_with_cats: true },
+      dog_profiler_data: { good_with_cats: "no", confidence_scores: { good_with_cats: 0.5 } },
+    } as unknown as Dog;
+    expect(companionAnswer(d, "good_with_cats")).toBeNull();
+  });
+
+  it("keeps an AI answer scored above 0.5", () => {
+    const d = {
+      dog_profiler_data: { good_with_cats: "no", confidence_scores: { good_with_cats: 0.6 } },
+    } as unknown as Dog;
+    expect(companionAnswer(d, "good_with_cats")).toBe("no");
+  });
+
   it("is null when neither source assessed it", () => {
     expect(companionAnswer(dog({ good_with_dogs: "Unknown" }), "good_with_dogs")).toBeNull();
   });
@@ -149,7 +164,8 @@ describe("similarDogsQuery", () => {
 
 describe("pickSimilarDogs", () => {
   const cand = (id: number, org: number) => ({ id, name: `Dog ${id}`, organization_id: org }) as Dog;
-  const me = cand(7, 1);
+  // id 20 starts the rotation at the top of a 5- or 4-dog list
+  const me = cand(20, 1);
 
   it("takes one dog per rescue, other rescues first", () => {
     const picked = pickSimilarDogs(me, [cand(10, 1), cand(11, 1), cand(12, 2), cand(13, 2), cand(14, 3)]);
@@ -157,7 +173,19 @@ describe("pickSimilarDogs", () => {
   });
 
   it("fills up from the same rescues when few others match", () => {
-    const picked = pickSimilarDogs(me, [cand(7, 1), cand(10, 1), cand(11, 1), cand(12, 1)]);
+    const picked = pickSimilarDogs(me, [cand(20, 1), cand(10, 1), cand(11, 1), cand(12, 1)]);
     expect(picked.map((d) => d.id)).toEqual([10, 11, 12]);
+  });
+
+  it("starts the list at a point set by the dog's id, so neighbours differ", () => {
+    const pool = [10, 11, 12, 13, 14].map((id) => cand(id, id));
+    expect(pickSimilarDogs(cand(1, 99), pool).map((d) => d.id)).toEqual([11, 12, 13]);
+    expect(pickSimilarDogs(cand(3, 99), pool).map((d) => d.id)).toEqual([13, 14, 10]);
+    // Same dog, same three: ISR pages stay stable
+    expect(pickSimilarDogs(cand(3, 99), pool)).toEqual(pickSimilarDogs(cand(3, 99), pool));
+  });
+
+  it("returns nothing for no candidates", () => {
+    expect(pickSimilarDogs(me, [])).toEqual([]);
   });
 });

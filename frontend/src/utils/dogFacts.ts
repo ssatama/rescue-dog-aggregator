@@ -75,11 +75,16 @@ function answerOf(value: unknown): string | null {
  * stored good_with_dogs is true for almost every dog, even "only dog" ones.
  * The scraper is fixed (#516); once #572 rewrites the rows, let a rescue's
  * answer fill in behind an AI "unknown" too.
+ *
+ * A profile answer the model scored 0.5 or less is a guess, so it counts as
+ * not assessed (#517), and the scraped value doesn't stand in for it.
  */
 export function companionAnswer(
   dog: Dog,
   field: "good_with_children" | "good_with_dogs" | "good_with_cats",
 ): string | null {
+  const confidence = dog.dog_profiler_data?.confidence_scores?.[field];
+  if (typeof confidence === "number" && confidence <= 0.5) return null;
   return answerOf(dog.dog_profiler_data?.[field] ?? dog.properties?.[field]);
 }
 
@@ -131,13 +136,17 @@ export const SIMILAR_CANDIDATES = 20;
 
 /**
  * Three of the candidates, one per rescue first and other rescues before this
- * dog's own, so "Similar dogs" is not just "More from {rescue}" again.
+ * dog's own, so "Similar dogs" is not just "More from {rescue}" again. The
+ * list starts at a point set by this dog's id, so dogs of the same size and
+ * age don't all show the same three (#520), and a page always shows the same.
  */
 export function pickSimilarDogs(dog: Dog, candidates: Dog[]): Dog[] {
+  const start = candidates.length > 0 ? Math.abs(Number(dog.id) || 0) % candidates.length : 0;
+  const rotated = [...candidates.slice(start), ...candidates.slice(0, start)];
   const seen = new Set([dog.organization_id]);
   const spread: Dog[] = [];
   const rest: Dog[] = [];
-  for (const other of candidates) {
+  for (const other of rotated) {
     if (other.id === dog.id) continue;
     if (seen.has(other.organization_id)) {
       rest.push(other);

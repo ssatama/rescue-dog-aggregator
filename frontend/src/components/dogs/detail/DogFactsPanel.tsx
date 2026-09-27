@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
@@ -149,14 +149,19 @@ export function dogMeta(dog: Dog): string[] {
   ].filter((v): v is string => Boolean(v));
 }
 
+const emptySubscribe = (): (() => void) => () => {};
+
 function Where({ dog }: { dog: Dog }) {
+  // The page is cached for 48 hours, so "listed today" from the server would
+  // go stale (#515). Work it out in the browser only.
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const org = dog.organization;
   if (!org) return null;
   const orgPlace = [org.city, org.country ? getCountryName(org.country) : null]
     .filter(Boolean)
     .join(", ");
   const place = dogLocation(dog) ?? orgPlace;
-  const listed = listedAgo(dog.created_at);
+  const listed = mounted ? listedAgo(dog.created_at) : null;
   const logo = (org as { logo_url?: string | null }).logo_url;
   return (
     <div className="flex items-center gap-3 rounded-xl bg-soft px-3 py-2.5">
@@ -178,7 +183,7 @@ function Where({ dog }: { dog: Dog }) {
           <span className="font-semibold text-ink">{org.name}</span>
         )}
         {(place || listed) && (
-          <p className="text-[13px] text-subtle" suppressHydrationWarning>
+          <p className="text-[13px] text-subtle">
             {[place, listed].filter(Boolean).join(" · ")}
           </p>
         )}

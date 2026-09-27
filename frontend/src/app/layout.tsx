@@ -7,6 +7,7 @@ import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { Analytics, SpeedInsights } from "@/components/analytics";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import InAppHistoryTracker from "@/components/navigation/InAppHistory";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
 import SentryInitializer from "@/components/SentryInitializer";
 import { generateSiteGraph } from "@/utils/schema";
@@ -128,6 +129,7 @@ export default function RootLayout({
               >
                 {children}
                 <MobileBottomNavWrapper />
+                <InAppHistoryTracker />
               </ErrorBoundary>
               <Analytics />
               <SpeedInsights />

@@ -2,10 +2,11 @@
 // TDD Phase 3: RED - Tests for dog detail OrganizationCard integration
 
 import React from "react";
-import { render, screen, waitFor } from "../../../../test-utils";
+import { render, screen, waitFor, fireEvent } from "../../../../test-utils";
 import "@testing-library/jest-dom";
 import DogDetailClient from "../DogDetailClient";
 import { getAnimalBySlug } from "../../../../services/animalsService";
+import { resetInAppHistoryForTests } from "../../../../components/navigation/InAppHistory";
 
 // Mock the animalsService
 jest.mock("../../../../services/animalsService", () => ({
@@ -122,6 +123,15 @@ jest.mock("../../../../components/dogs/detail", () => ({
       )}
     </div>
   ),
+}));
+
+// One router across renders, so the back button's calls can be asserted
+const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), forward: jest.fn(), prefetch: jest.fn() };
+jest.mock("next/navigation", () => ({
+  useRouter: () => mockRouter,
+  useParams: () => ({ id: "1" }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/dogs",
 }));
 
 // Mock the useSwipeNavigation hook (configurable per-test)
@@ -489,6 +499,36 @@ describe("DogDetailClient Dog Detail Integration", () => {
         expect(adoptLink).toHaveAttribute("rel", "noopener");
         expect(adoptLink.getAttribute("rel")).not.toMatch(/noreferrer/);
       }
+    });
+  });
+
+  describe("phone back button (#518)", () => {
+    afterEach(() => resetInAppHistoryForTests());
+
+    it("goes to the catalog when the visitor landed on this dog", async () => {
+      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
+      fireEvent.click(await screen.findByTestId("back-button"));
+      expect(mockRouter.push).toHaveBeenCalledWith("/dogs");
+      expect(mockRouter.back).not.toHaveBeenCalled();
+    });
+
+    it("goes back when the visitor came from another page of the site", async () => {
+      const { default: InAppHistoryTracker } = jest.requireActual("../../../../components/navigation/InAppHistory");
+      const nav = jest.requireMock("next/navigation");
+      const original = nav.usePathname;
+      let path = "/dogs";
+      nav.usePathname = () => path;
+      try {
+        const tracker = render(<InAppHistoryTracker />);
+        path = "/dogs/test-dog-mixed-breed-1";
+        tracker.rerender(<InAppHistoryTracker />);
+      } finally {
+        nav.usePathname = original;
+      }
+      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
+      fireEvent.click(await screen.findByTestId("back-button"));
+      expect(mockRouter.back).toHaveBeenCalled();
+      expect(mockRouter.push).not.toHaveBeenCalledWith("/dogs");
     });
   });
 });
