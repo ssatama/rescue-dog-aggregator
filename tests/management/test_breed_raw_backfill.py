@@ -14,7 +14,8 @@ class TestRestoreBreedRaw:
     def test_is_registered_for_the_rescues_with_a_source_copy(self):
         step = STEPS["restore-breed-raw"]
         assert all(f"'{org}'" in step.fetch_sql for org in BREED_SOURCE_ORGS)
-        assert "manytearsrescue" not in step.fetch_sql
+        # Many Tears joined once #571 fixed its breed parse
+        assert "'manytearsrescue'" in step.fetch_sql
 
     def test_restores_the_rescues_text(self):
         records = [_record(1, "Poodle (Toy)", "Toy Poodle"), _record(2, " Mixed ", "Mixed Breed", "santerpawsbulgarianrescue")]
@@ -30,3 +31,9 @@ class TestRestoreBreedRaw:
 
     def test_a_blank_source_is_left_alone(self):
         assert plan_step(STEPS["restore-breed-raw"], [_record(1, "  ", "Toy Poodle"), _record(2, None, "Toy Poodle")]) == []
+
+    def test_a_many_tears_row_the_rescrape_missed_keeps_its_breed_raw(self):
+        """#571: a failed detail fetch leaves "Can be the only dog" in properties.breed."""
+        records = [_record(1, "Can be the only dog", "Unknown", "manytearsrescue"), _record(2, "Collie Cross", "Unknown", "manytearsrescue")]
+
+        assert plan_step(STEPS["restore-breed-raw"], records) == [Change(2, "manytearsrescue", "breed_raw", "Unknown", "Collie Cross")]

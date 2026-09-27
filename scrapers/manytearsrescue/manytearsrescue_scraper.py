@@ -13,6 +13,10 @@ from services.playwright_browser_service import (
     get_playwright_service,
 )
 
+# Detail-page lines that sit where the breed does but aren't one: "Can be the
+# only dog" (#571). The restore-breed-raw backfill step skips them too.
+NOT_A_BREED = ("can be", "must ", "needs ", "no ", "not ", "only ", "good with", "prefers ")
+
 
 class ManyTearsRescueScraper(BaseScraper):
     """Scraper for Many Tears Rescue organization.
@@ -105,7 +109,8 @@ class ManyTearsRescueScraper(BaseScraper):
             animal.update(details)
             return animal
 
-        return await self.fetch_details_async(animals, fetch)
+        # One retry: get_page_content already tries twice per attempt
+        return await self.fetch_details_async(animals, fetch, attempts=2)
 
     def collect_data(self) -> list[dict[str, Any]]:
         """Collect all available dog data from listing pages.
@@ -304,6 +309,11 @@ class ManyTearsRescueScraper(BaseScraper):
 
             result = await playwright_service.get_page_content(adoption_url, options)
             if not result.success:
+                # A timeout is retried by fetch_details_async (#571); anything else
+                # (Browserless refusing, DNS) fails at once instead of piling up retries
+                # "Timeout 60000ms exceeded" from Playwright, net::ERR_TIMED_OUT from Chromium
+                if re.search(r"time[d_ ]*out", result.error or "", re.IGNORECASE):
+                    raise TimeoutError(f"{adoption_url} did not load: {result.error}")
                 self.logger.error(f"Failed to get page content from {adoption_url}: {result.error}")
                 return {}
 
@@ -375,6 +385,8 @@ class ManyTearsRescueScraper(BaseScraper):
             self.logger.debug(f"Successfully extracted details for {name}")
             return result
 
+        except TimeoutError:
+            raise
         except Exception as e:
             self.logger.error(f"Error scraping details from {adoption_url}: {e}")
             return {}
@@ -456,7 +468,8 @@ class ManyTearsRescueScraper(BaseScraper):
                 ):
                     description_parts.append(text)
 
-        return " ".join(description_parts)
+        # One paragraph per line, so the sponsor filter never merges two (#571)
+        return "\n".join(description_parts)
 
     def _extract_structured_data_from_detail_page(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract structured data (age, breed, sex) from detail page list items.
@@ -510,6 +523,10 @@ class ManyTearsRescueScraper(BaseScraper):
                         # Breed extraction - typically appears after age and gender
                         elif (
                             i >= 2  # Should come after status, age, gender
+                            # The first match: later items are location and compatibility, and
+                            # "Can be the only dog" was being stored as the breed (#571)
+                            and "breed" not in structured_data
+                            and not text_lower.startswith(NOT_A_BREED)
                             and text_lower not in ["available for adoption", "male", "female"]
                             and not text_lower.startswith("in foster")
                             and not text_lower.startswith("can live with")
@@ -534,9 +551,8 @@ class ManyTearsRescueScraper(BaseScraper):
     def _extract_requirements_sections(self, soup: BeautifulSoup) -> dict[str, str]:
         """Extract the 6 requirements sections from the structured list.
 
-        Based on Playwright analysis, these are in a ul > li structure where
-        each li contains an img with alt text and a p with the requirement text.
-        However, the real website structure may differ, so we implement fallback strategies.
+        They are a ul > li structure where each li holds an img, whose alt text
+        names the category, and a p with the requirement.
 
         Args:
             soup: BeautifulSoup object of the detail page
@@ -553,7 +569,7 @@ class ManyTearsRescueScraper(BaseScraper):
             if not isinstance(ul, Tag):
                 continue
             items = ul.find_all("li")
-            if len(items) == 6:  # The requirements list has exactly 6 items
+            if items:  # Any length: a dog may have fewer categories (#571)
                 for li in items:
                     if not isinstance(li, Tag):
                         continue
@@ -582,105 +598,8 @@ class ManyTearsRescueScraper(BaseScraper):
                 if requirements:
                     break
 
-        # Strategy 2: Optimized text pattern matching (O(n) instead of O(n²))
-        if not requirements:
-            # Define expected text patterns for each requirement category
-            requirement_patterns = {
-                "human_family_requirements": [
-                    "calm and quiet home",
-                    "adult only home",
-                    "quiet home",
-                    "family requirements",
-                ],
-                "other_pet_requirements": [
-                    "at least one other dog",
-                    "resident dog",
-                    "other dog",
-                    "other pet",
-                    "live with a male dog",
-                    "haven't met cats",
-                    "met cats fine",
-                ],
-                "house_garden_requirements": [
-                    "secure garden",
-                    "garden",
-                    "house and garden",
-                ],
-                "out_about_requirements": [
-                    "walk on a lead",
-                    "walks",
-                    "out and about",
-                    "adventures",
-                ],
-                "training_needs": [
-                    "house training",
-                    "never lived in a home",
-                    "training",
-                ],
-                "medical_issues": [
-                    "ready for my forever home",
-                    "ready to find my forever home",
-                    "medical",
-                    "neutered",
-                ],
-            }
-
-            # OPTIMIZATION: Collect all paragraph elements once (O(n))
-            all_paragraphs = soup.find_all(["p", "div", "span"])
-
-            # Single pass through paragraphs for all patterns (O(n) instead of O(n²))
-            for element in all_paragraphs:
-                element_text = element.get_text(strip=True)
-                if len(element_text) <= 20:  # Skip short text
-                    continue
-
-                element_text_lower = element_text.lower()
-
-                # Check all patterns against this element
-                for req_key, patterns in requirement_patterns.items():
-                    if req_key in requirements:  # Already found this requirement
-                        continue
-
-                    # Check if any pattern matches this element
-                    for pattern in patterns:
-                        if pattern.lower() in element_text_lower:
-                            requirements[req_key] = element_text
-                            break  # Found match for this requirement
-
-                    if req_key in requirements:  # Break out of patterns loop
-                        break
-
-        # Strategy 3: Optimized fallback search if Strategy 2 didn't find all 6
-        if len(requirements) < 6:
-            # Search for key phrases that should uniquely identify each requirement
-            remaining_patterns = {
-                "human_family_requirements": ["calm", "quiet", "adult only"],
-                "other_pet_requirements": ["other dog", "resident", "cats"],
-                "house_garden_requirements": ["garden", "secure"],
-                "out_about_requirements": ["walk", "lead", "walks"],
-                "training_needs": ["training", "house training", "home"],
-                "medical_issues": ["ready", "forever home", "medical", "neutered"],
-            }
-
-            # OPTIMIZATION: Reuse paragraph elements from Strategy 2 (avoid re-scanning DOM)
-            if "all_paragraphs" not in locals():
-                all_paragraphs = soup.find_all("p")
-
-            # Single pass through paragraphs for remaining patterns
-            for p in all_paragraphs:
-                p_text = p.get_text(strip=True)
-                if len(p_text) <= 15:  # Skip short text
-                    continue
-
-                p_text_lower = p_text.lower()
-
-                # Check remaining requirements
-                for req_key, patterns in remaining_patterns.items():
-                    if req_key not in requirements:  # Only check missing requirements
-                        if any(pattern.lower() in p_text_lower for pattern in patterns):
-                            requirements[req_key] = p_text
-                            break  # Found match, move to next paragraph
-
+        # Only the list's own items: the old word matching ("home", "walk",
+        # "garden") put arbitrary paragraphs into the requirements (#571)
         return requirements
 
     def _extract_diary_entries(self, soup: BeautifulSoup) -> dict[str, str]:
@@ -718,10 +637,10 @@ class ManyTearsRescueScraper(BaseScraper):
                 if date_match:
                     date = date_match.group(1)
                     title = date_match.group(2)
-                    # The wording is what production stores; #571 decides its fate
-                    diary_entries[date] = f"Title: {title} (Full content requires WebDriver)"
+                    # Only the title is in the page source; the text loads on click (#571)
+                    diary_entries[date] = title
                 else:
-                    diary_entries[button_text] = "Title only extracted"
+                    diary_entries[button_text] = button_text
         return diary_entries
 
     def _extract_compatibility_sections(self, soup: BeautifulSoup) -> dict[str, str]:
@@ -772,23 +691,11 @@ class ManyTearsRescueScraper(BaseScraper):
         if not description:
             return description
 
-        # Split into sentences and filter out sponsor sentences
-        sentences = []
-        for sentence in description.split("."):
-            sentence = sentence.strip()
-            if sentence:
-                # Skip sentences containing Gift of Life sponsor text
-                sentence_lower = sentence.lower()
-                if "gift of life by" in sentence_lower or "through the generosity of a gift of life sponsor" in sentence_lower:
-                    continue
-                sentences.append(sentence)
-
-        # Rejoin sentences
-        result = ". ".join(sentences)
-        if result and not result.endswith("."):
-            result += "."
-
-        # Clean up extra whitespace
-        result = " ".join(result.split())
-
-        return result
+        # A sentence ends at a paragraph break, or at ". " (also '." ' and ".) ")
+        # before anything but a lowercase letter: "2.5 years", "e.g. she" and
+        # "Mr. Smith" stay whole, "old. 3 weeks ago" splits (#571)
+        sentences = re.split(r"\n+|(?<=[.!?][\"')\]])\s+|(?<=[.!?])(?<!\bMr\.)(?<!\bMrs\.)(?<!\bMs\.)(?<!\bDr\.)\s+(?=[^a-z\s])", description.strip())
+        # Production: "Bloom has been given the Gift of Life Vicki Coldman." (#571)
+        sponsor = ("given the gift of life", "gift of life by", "through the generosity of a gift of life sponsor")
+        kept = [sentence for sentence in sentences if not any(phrase in sentence.lower() for phrase in sponsor)]
+        return " ".join(" ".join(kept).split())

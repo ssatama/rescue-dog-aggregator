@@ -1,5 +1,6 @@
 """Animal Rescue Bosnia scraper implementation."""
 
+import re
 from typing import Any
 from urllib.parse import urljoin
 
@@ -9,6 +10,9 @@ from bs4 import BeautifulSoup
 from scrapers.base_scraper import BaseScraper, DetailPageError
 from scrapers.wordpress_ids import body_post_id, key_on_post_ids
 from utils.shared_extraction_patterns import gallery_urls
+
+# Not the default python-requests User-Agent (#571)
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}
 
 
 class AnimalRescueBosniaScraper(BaseScraper):
@@ -32,7 +36,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             - thumbnail: URL to listing thumbnail image
         """
         # Fetch listing page; a failure raises rather than listing no dogs
-        response = self.get_listing_page(self.listing_url)
+        response = self.get_listing_page(self.listing_url, headers=HEADERS)
 
         soup = BeautifulSoup(response.content, "html.parser")
 
@@ -123,7 +127,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
         """
         try:
             # Fetch detail page
-            response = requests.get(url, timeout=self.timeout)
+            response = requests.get(url, headers=HEADERS, timeout=self.timeout)
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, "html.parser")
@@ -263,7 +267,8 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 "age_text": self._calculate_age_text(properties.get("date_of_birth")),
                 "date_of_birth": properties.get("date_of_birth"),  # "January 2022" (#561)
                 "sex": self._standardize_sex(properties.get("gender")),
-                "size": self._extract_size_from_weight(properties.get("weight")),
+                # Weight first; the shoulder height when the page gives no weight (#571)
+                "size": self._extract_size_from_weight(properties.get("weight")) or self._extract_size_from_height(properties.get("height")),
                 # Properties for additional data storage
                 "properties": {
                     **properties,
@@ -356,6 +361,18 @@ class AnimalRescueBosniaScraper(BaseScraper):
         else:
             return None
 
+    @staticmethod
+    def _extract_size_from_height(height: str | None) -> str | None:
+        """Size from shoulder height ("53 cm"), on the same five-step scale as weight."""
+        match = re.search(r"(\d+(?:\.\d+)?)\s*cm", height or "", re.IGNORECASE)
+        if not match:
+            return None
+        centimetres = float(match.group(1))
+        for ceiling, size in ((25, "Tiny"), (40, "Small"), (55, "Medium"), (70, "Large")):
+            if centimetres < ceiling:
+                return size
+        return "XLarge"
+
     def _extract_size_from_weight(self, weight: str | None) -> str | None:
         """Extract size category from weight."""
         if not weight:
@@ -430,7 +447,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
     def _with_page_ids(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Key each listed dog on its WordPress page ID (#570)."""
-        keyed = key_on_post_ids(self, animals, route=f"{self.base_url}/wp-json/wp/v2/pages", url_of=lambda animal: animal["url"], prefix="arb-")
+        keyed = key_on_post_ids(self, animals, route=f"{self.base_url}/wp-json/wp/v2/pages", url_of=lambda animal: animal["url"], prefix="arb-", headers=HEADERS)
         return [{**animal, "adoption_url": animal["url"]} for animal in keyed]
 
     def _valid_dog(self, animal: dict[str, Any]) -> dict[str, Any] | None:
@@ -442,32 +459,12 @@ class AnimalRescueBosniaScraper(BaseScraper):
             if result.get("external_id") and result["external_id"] != animal["external_id"]:
                 self.logger.warning(f"{url}: page says {result['external_id']}, listing {animal['external_id']}; keeping the listing's")
             result["external_id"] = animal["external_id"]
-        if result and self._validate_dog_data(result):
-            result["organization_id"] = self.organization_id
-            return result
-        self.logger.warning(f"Invalid or empty data for URL: {url}")
-        return None
-
-    def _validate_dog_data(self, dog_data: dict[str, Any]) -> bool:
-        """Validate dog data has required fields.
-
-        Args:
-            dog_data: Dog data dictionary
-
-        Returns:
-            True if data is valid
-        """
-        if not dog_data:
-            return False
-
-        # Check required fields
-        required_fields = ["name", "external_id", "adoption_url"]
-        for field in required_fields:
-            if field not in dog_data or not dog_data[field]:
-                self.logger.warning(f"Missing required field '{field}' in dog data")
-                return False
-
-        return True
+        if not result:
+            self.logger.warning(f"No dog data on {url}")
+            return None
+        # Validated on save, where a rejection is counted (#571)
+        result["organization_id"] = self.organization_id
+        return result
 
     def _is_non_dog_page(self, name: str, soup) -> bool:
         """Check if this page is not actually a dog page.

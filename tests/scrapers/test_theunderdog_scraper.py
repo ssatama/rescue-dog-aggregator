@@ -644,3 +644,131 @@ class TestTheUnderdogIntegration:
         for weight, expected_size in size_tests:
             result = scraper._estimate_size_from_weight(weight)
             assert result == expected_size, f"Size estimation failed for {weight}kg"
+
+
+# Every distinct "Living with ...?" answer stored in production (2026-09-27),
+# then edge cases from review. A parser change must keep all of them.
+PRODUCTION_ANSWERS = [
+    # Cats
+    ("I’ve not been tested with cats", None),
+    ("I’ve not been properly tested with cats", None),
+    ("i’ve not been tested with cats", None),
+    ("I haven’t been tested with cats", None),
+    ("We’ve not been tested with cats", None),
+    ("I’m not interested in cats", None),
+    ("I’m looking for a home without cats", False),
+    ("I am looking for a home without cats", False),
+    ("I’d like a home without cats", False),
+    ("I can’t live with cats", False),
+    ("I can’t live with cats or small pets", False),
+    ("I can’t live with cats (or small pets/birds)", False),
+    ("I can live with cats", True),
+    ("I may be able to live with confident cats", "Selective"),
+    ("I can live with confident, dog-savvy cats", "Selective"),
+    ("I could live with confident, dog-savvy cats", "Selective"),
+    ("I might be able to live with dog-savvy cats", "Selective"),
+    ("I can live with confident cats", "Selective"),
+    ("I may be able to live with cats", "Selective"),
+    ("I may be able to live with dog-savvy cats", "Selective"),
+    ("I can likely live with cats", "Selective"),
+    ("I could be introduced to cats", "Selective"),
+    ("I can live with dog-savvy cats", "Selective"),
+    # Dogs
+    ("I can live with other dogs", True),
+    ("We can live with other dogs", True),
+    ("can live with other dogs", True),
+    ("I need a home with other dogs", True),
+    ("I can live with female dogs", "Yes (female dogs)"),
+    ("I can live with other dogs (males preferred)", "Yes (males preferred)"),
+    ("I can live with other dogs (females preferred)", "Yes (females preferred)"),
+    ("Females preferred", "Yes (females preferred)"),
+    ("I could live with other dogs if they’re smaller females", "Yes (smaller females)"),
+    ("I can be selective with other dogs", "Selective"),
+    ("I can live with other dogs with the right introductions", "Selective"),
+    ("I can live with other dogs with well managed introductions", "Selective"),
+    ("I'm friendly with other dogs, but would prefer to be the only resident dog", "Selective"),
+    ("I’m friendly with other dogs, but may prefer to be the only dog", "Selective"),
+    ("I’d prefer to be the only dog at home, but I’m friendly with other dogs", "Selective"),
+    ("I’d be happy as the only dog", False),
+    ("I’d prefer to be the only dog", False),
+    ("I’d probably prefer to be the only dog", False),
+    ("I’m looking for a home without other dogs", False),
+    # Children
+    ("I can live with children", True),
+    ("‍ I can live with children", True),
+    ("I can live with children (4+)", "Yes (4+)"),
+    ("I can live with children (8+)", "Yes (8+)"),
+    ("I can live with older children (10+)", "Yes (10+)"),
+    ("I can live with children (5+ recommended)", "Yes (5+)"),
+    ("I can live with children (recommended 6+)", "Yes (6+)"),
+    ("I’m looking for an adult only home (or 12+)", "Yes (12+)"),
+    ("I can live with children (teens only)", "Yes (teens only)"),
+    ("I can live with older children", "Yes (older children)"),
+    ("We can live with older children", "Yes (older children)"),
+    ("I can live with teenagers", "Yes (teenagers)"),
+    ("I’d prefer an adult-only home, or older children", "Yes (older children)"),
+    ("I’m looking for a home without children", False),
+    ("I’m looking for an adult-only home", False),
+    ("I’m looking for an adult only home", False),
+    ("I’d prefer an adult-only household", False),
+    ("I’m friendly with children but looking for an adult-only home", False),
+    ("No", False),
+]
+REVIEW_CASES = [
+    (None, None),
+    ("Untested", None),
+    ("Yes", True),
+    ("Yes (8+)", "Yes (8+)"),
+    ("Yes, with introductions", "Selective"),
+    ("No (under 12s)", False),
+    ("No problems with children", True),
+    ("Not good with cats", False),
+    ("I can live with male or female dogs", True),
+    ("I can live with other dogs but not males", "Selective"),
+    ("I can live with other dogs, no males", "Selective"),
+    ("I can live with older children, not toddlers", "Yes (older children)"),
+    ("I can live with older children, but a home without toddlers", "Yes (older children)"),
+    ("I can live with cats (I lived with one in foster)", True),
+    ("I have been tested with cats and can live with them", True),
+    # Any negation before a yes phrase is a no
+    ("I shouldn't live with cats", False),
+    ("I don't live with cats", False),
+    ("I could not live with cats", False),
+    ("I'd prefer not to live with cats", False),
+    ("I would not be good with cats", False),
+    # An untested clause doesn't cancel the rest of the answer
+    ("I can't live with cats, not tested with small pets", False),
+    ("I can live with children (not tested with toddlers)", "Selective"),
+    ("No, unknown with small pets", False),
+]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(("answer", "expected"), PRODUCTION_ANSWERS + REVIEW_CASES)
+def test_q_and_a_compatibility_answers(answer, expected):
+    """#571: "Living with dogs?/cats?/kids?" answers become good_with_*."""
+    from scrapers.theunderdog.theunderdog_scraper import good_with
+
+    assert good_with(answer) == expected
+
+
+@pytest.mark.unit
+def test_n_plus_is_an_age_only_for_children():
+    """ "Living with dogs?": "2+ dogs" is a count, not an age limit."""
+    from scrapers.theunderdog.theunderdog_scraper import good_with
+
+    assert good_with("I can live with 2+ dogs", ages=False) is True
+    assert good_with("I can live with children (8+)") == "Yes (8+)"
+
+
+@pytest.mark.unit
+def test_where_from_is_the_origin_not_the_location():
+    """#571/#574: origin never feeds display_location."""
+    from scrapers.validation.location_cleaner import display_location
+    from tests.scrapers.test_scraped_dog_contract import underdog
+
+    properties = underdog()["properties"]
+
+    assert properties["origin"].startswith("Cyprus")
+    assert (properties["good_with_dogs"], properties["good_with_cats"], properties["good_with_children"]) == ("Selective", False, True)
+    assert display_location({"origin": properties["origin"]}) is None

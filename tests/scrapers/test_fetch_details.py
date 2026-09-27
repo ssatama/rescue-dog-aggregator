@@ -119,6 +119,25 @@ class TestFetchDetailsAsync:
         assert scraper.detail_failures == ["https://rescue.example/b"]
         assert [round(wait) for wait in stub_clock.calls] == [2, 4, 6]
 
+    def test_a_timeout_is_retried_but_a_lasting_error_is_not(self, scraper, stub_clock):
+        """Many Tears and Daisy raise TimeoutError for a page that didn't load (#571)."""
+        calls = []
+
+        async def fetch(dog):
+            calls.append(dog["adoption_url"])
+            if dog["adoption_url"].endswith("slow") and calls.count(dog["adoption_url"]) == 1:
+                raise TimeoutError("did not load")
+            if dog["adoption_url"].endswith("broken"):
+                raise ValueError("parse error")
+            return dog
+
+        results = asyncio.run(scraper.fetch_details_async(_dogs("slow", "broken"), fetch, attempts=3))
+
+        assert [dog["adoption_url"] for dog in results] == ["https://rescue.example/slow"]
+        assert calls.count("https://rescue.example/slow") == 2
+        assert calls.count("https://rescue.example/broken") == 1
+        assert scraper.detail_failures == ["https://rescue.example/broken"]
+
     def test_a_fetch_past_the_org_timeout_counts_as_failed(self, scraper):
         scraper.timeout = 0.01
 

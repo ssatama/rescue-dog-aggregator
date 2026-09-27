@@ -12,6 +12,81 @@ from utils.shared_extraction_patterns import gallery_urls
 
 from .normalizer import extract_qa_data, extract_size_and_weight_from_qa
 
+GOOD_WITH_QUESTIONS = {"Living with dogs?": "good_with_dogs", "Living with cats?": "good_with_cats", "Living with kids?": "good_with_children"}
+
+
+# Each pattern is checked against every distinct production answer in the tests
+_UNTESTED = re.compile(r"\b(not|haven't|never)( been)?( properly)? tested\b|\buntested\b|\bunknown\b|not sure|don't know|not interested")
+_NEGATION = re.compile(r"\b(not|never|cannot)\b|n't\b")
+_YES = re.compile(r"^\W*yes\b|\blive with\b|\b(good|fine|friendly|happy) with\b|\bno problems? with\b|\bintroduced to\b|\bneed a home with\b|\bpreferred\b")
+_NO = re.compile(r"^\W*no\W*$|\bwithout\b|\bno (other )?(dogs|cats|children|kids)\b|\bonly (resident )?dog\b")
+_CLAUSES = re.compile(r"[,;()]|\bbut\b|\band\b")
+_QUALIFIED = re.compile(r"\b(may|might|could|likely|probably|confident|savvy|older|teens?|teenagers|prefer|preferred|smaller|only|but|not|over)\b|introduc")
+_SEX = re.compile(r"\b(fe)?males?\b")
+
+
+def _clause(clause: str) -> bool | None:
+    """One clause's answer: True, False, or None when it doesn't say.
+
+    A yes phrase after a negation is a no: "can't live with", "could not live
+    with", "would not be good with", "prefer not to live with".
+    """
+    if _UNTESTED.search(clause):
+        return None
+    if match := _YES.search(clause):
+        return not _NEGATION.search(clause[: match.start()])
+    if _NO.search(clause):
+        return False
+    return None
+
+
+def _limit(text: str) -> str | None:
+    """The limit a qualified yes names: "teens only", "older children", "female dogs"."""
+    # A bracket that states a limit; "(I lived with one in foster)" doesn't
+    for inner in re.findall(r"\(([^)]*)\)", text):
+        if re.search(r"\bonly\b|\bpreferred\b|\b(fe)?males?\b", inner):
+            return inner.strip()
+    if match := re.search(r"\b(older children|teenagers|teens)\b", text):
+        return match.group(1)
+    # One sex named and not ruled out: "female dogs", not "male or female dogs" or "not males"
+    if len({sex for sex in _SEX.findall(text)}) == 1:
+        if match := re.search(r"(?<!\bnot )(?<!\bno )\b((?:smaller )?(?:fe)?males?(?: dogs)?(?: preferred)?)\b", text):
+            return match.group(1)
+    return None
+
+
+def good_with(answer: str | None, ages: bool = True) -> bool | str | None:
+    """True, False, "Selective" or "Yes (<limit>)" from a Q&A answer; None when it doesn't say.
+
+    A limit is kept, like Dogs Trust's "Yes (5+)": "children (8+)" -> "Yes (8+)",
+    "older children" -> "Yes (older children)", "female dogs" -> "Yes (female
+    dogs)". A yes with a condition but no named limit ("confident, dog-savvy
+    cats", "with the right introductions") is "Selective". Untested is not a no.
+    """
+    text = (answer or "").lower().replace("’", "'").replace("‍", "").strip()
+    if not text:
+        return None
+    if "selective" in text:
+        return "Selective"
+    # An "N+" is an age only on "Living with kids?": "2+ dogs" isn't a limit
+    if ages and (age := re.search(r"(\d+)\s*\+", text)):  # "(8+)", "(recommended 6+)", "adult only home (or 12+)"
+        return f"Yes ({age.group(1)}+)"
+    if re.search(r"\badult[- ]only\b", text):
+        # "an adult-only home, or older children" still takes older children
+        return "Yes (older children)" if "older children" in text else False
+    # Clause by clause, so "can't live with cats, not tested with small pets" is a
+    # no, and "friendly with other dogs, but would prefer to be the only dog" a
+    # condition
+    verdicts = {verdict for verdict in map(_clause, _CLAUSES.split(text)) if verdict is not None}
+    if not verdicts:
+        return None
+    if verdicts == {False}:
+        return False
+    one_sex = len(set(_SEX.findall(text))) == 1
+    if False in verdicts or one_sex or _QUALIFIED.search(text):
+        return f"Yes ({limit})" if (limit := _limit(text)) else "Selective"
+    return True
+
 
 class TheUnderdogScraper(BaseScraper):
     """Scraper for The Underdog rescue organization.
@@ -281,6 +356,16 @@ class TheUnderdogScraper(BaseScraper):
                     result["sex"] = "Male"
                 elif sex_value in ["female", "f"]:
                     result["sex"] = "Female"
+
+            # Compatibility and origin from the Q&A (#571). The raw answers stay
+            # in raw_qa_data; an answer these words don't settle is left out.
+            for question, key in GOOD_WITH_QUESTIONS.items():
+                answer = good_with(qa_data.get(question), ages=key == "good_with_children")
+                if answer is not None:
+                    result["properties"][key] = answer
+            # Where the dog comes from, not where it is: never display_location (#574)
+            if qa_data.get("Where am I from?"):
+                result["properties"]["origin"] = qa_data["Where am I from?"].strip()
 
             # Ensure ALL critical fields are present for BaseScraper
             # BaseScraper will handle standardization automatically

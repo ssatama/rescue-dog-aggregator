@@ -679,10 +679,7 @@ class DogsTrustScraper(BaseScraper):
             additional_properties = self._extract_additional_properties(soup)
             properties.update(additional_properties)
         except Exception as e:
-            print(f"Error in _extract_additional_properties: {e}")
-            import traceback
-
-            traceback.print_exc()
+            self.logger.exception(f"Error in _extract_additional_properties: {e}")
 
         # CRITICAL: Store description in properties (Many Tears pattern)
         if description:
@@ -918,27 +915,20 @@ class DogsTrustScraper(BaseScraper):
         """
         living_situation = {}
 
-        # Find all generic div elements that might contain the property
-        # Based on DOM analysis, properties are in generic elements with label and value
-        property_containers = soup.find_all("div")
-
-        for container in property_containers:
-            # Look for "Living off site" text within this container
-            container_text = container.get_text(strip=True)
-
-            # Check if this container has "Living off site" and is not too long (to avoid full page containers)
-            if "Living off site" in container_text and len(container_text) < 50:
-                # Extract the value after "Living off site"
-                # The value is typically "Yes" or "No" following the label
-                if "Living off site" in container_text:
-                    # Split by "Living off site" and get what comes after
-                    parts = container_text.split("Living off site")
-                    if len(parts) > 1:
-                        value = parts[1].strip().lstrip(":").strip()
-                        # Check if we got a valid value
-                        if value and value.lower() in ["yes", "no"]:
-                            living_situation["living_off_site"] = value.capitalize()
-                            break
+        # The label's own text node, then its container: one pass, where
+        # scanning every div's get_text() was quadratic on big pages (#571)
+        for label in soup.find_all(string=re.compile("Living off site")):
+            # Climb to the element that holds the value after the label
+            container, value = label.parent, ""
+            while container is not None and not value:
+                text = container.get_text(strip=True)
+                if len(text) >= 50:  # past the label's own block
+                    break
+                value = text.split("Living off site", 1)[-1].strip().lstrip(":").strip()
+                container = container.parent
+            if value.lower() in ("yes", "no"):
+                living_situation["living_off_site"] = value.capitalize()
+                break
 
         return living_situation
 

@@ -18,6 +18,7 @@ from datetime import date
 from typing import Any
 
 from management.age_backfill import plan_clears, rows_from_records
+from scrapers.manytearsrescue.manytearsrescue_scraper import NOT_A_BREED
 from scrapers.misis_rescue.detail_parser import dob_bullet
 from utils.birth_dates import ages_at, as_date, as_int, resolve_age, today_utc
 
@@ -49,15 +50,20 @@ def _plan_age_clears(records: list[dict[str, Any]]) -> list[Change]:
 
 # Rescues whose properties.breed is the text their site shows (checked against
 # production on 2026-09-26). Until #560 they stored the standardized name as
-# breed_raw. Many Tears is left out: its properties.breed is sometimes another
-# field ("Can be the only dog").
-BREED_SOURCE_ORGS = ("animalrescuebosnia", "dogstrust", "santerpawsbulgarianrescue", "woof-project")
+# breed_raw. Many Tears joined after #571 fixed its breed parse (it stored
+# "Can be the only dog"); only its active rows, which #572 re-scrapes before
+# the steps run.
+BREED_SOURCE_ORGS = ("animalrescuebosnia", "dogstrust", "manytearsrescue", "santerpawsbulgarianrescue", "woof-project")
 
 
 def _plan_breed_raw(records: list[dict[str, Any]]) -> list[Change]:
     changes = []
     for record in records:
         source = (record["source_breed"] or "").strip(" ")  # spaces only, as btrim in fetch_sql
+        # A Many Tears row the re-scrape didn't rewrite (detail fetch failed)
+        # still holds "Can be the only dog" as its breed (#571)
+        if record["organization"] == "manytearsrescue" and source.lower().startswith(NOT_A_BREED):
+            continue
         if source and source != record["breed_raw"]:
             changes.append(Change(record["id"], record["organization"], "breed_raw", record["breed_raw"], source))
     return changes
@@ -200,6 +206,8 @@ STEPS: dict[str, Step] = {
                 FROM animals a
                 JOIN organizations o ON o.id = a.organization_id
                 WHERE o.config_id IN ({", ".join(f"'{org}'" for org in BREED_SOURCE_ORGS)})
+                  -- Inactive Many Tears rows still hold the misparsed breed and are never re-scraped
+                  AND (o.config_id <> 'manytearsrescue' OR a.active)
                   AND btrim(a.properties->>'breed') <> ''
                   AND btrim(a.properties->>'breed') IS DISTINCT FROM a.breed_raw
             """,

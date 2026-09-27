@@ -762,3 +762,19 @@ class TestDogsTrustMayLiveWith:
 
         assert scraper._extract_compatibility(BeautifulSoup("<html><body><p>Meet Rex</p></body></html>", "html.parser")) == {}
         scraper.logger.warning.assert_not_called()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("html", "expected"),
+    [
+        ("<div><div><span>Living off site</span><span>Yes</span></div><p>A long story about the dog that is not the label.</p></div>", {"living_off_site": "Yes"}),
+        ("<div><span>Living off site:</span> No</div>", {"living_off_site": "No"}),
+        ("<div><p>Nothing about it here.</p></div>", {}),
+    ],
+)
+def test_living_off_site_is_read_from_its_label(html, expected):
+    """#571: one pass over the label's text node, not every div."""
+    from bs4 import BeautifulSoup
+
+    assert DogsTrustScraper()._extract_living_situation(BeautifulSoup(html, "html.parser")) == expected

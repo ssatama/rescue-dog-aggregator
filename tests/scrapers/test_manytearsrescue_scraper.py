@@ -49,3 +49,79 @@ class TestManyTearsRescueScraper:
 
             assert scraper is not None
             assert scraper.metrics_collector is not None
+
+
+@pytest.mark.unit
+class TestSweep571:
+    """#571: fixes from the audit."""
+
+    @pytest.fixture
+    def scraper(self):
+        from pathlib import Path
+
+        from bs4 import BeautifulSoup
+
+        page = (Path(__file__).parent.parent / "fixtures" / "galleries" / "manytears_6199.html").read_text()
+        return ManyTearsRescueScraper(), BeautifulSoup(page, "html.parser")
+
+    def test_the_breed_is_not_the_compatibility_line(self, scraper):
+        many_tears, soup = scraper
+
+        assert many_tears._extract_structured_data_from_detail_page(soup)["breed"] == "Giant Schnauzer Cross"
+
+    def test_the_sponsor_filter_keeps_decimals_and_abbreviations(self, scraper):
+        many_tears, _ = scraper
+        text = "Bella is 2.5 years old, e.g. she loves walks. Gift of Life by Jane Doe. She is kind."
+
+        assert many_tears._filter_sponsor_text(text) == "Bella is 2.5 years old, e.g. she loves walks. She is kind."
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            # Production wording (dogs 6092 and 5356): no "by", and sometimes no name
+            "Bloom has had 2 teeth removed at the time of her spay. Bloom has been given the Gift of Life Vicki Coldman.",
+            "Tapas will blossom into a happy companion. Tapas has been given the Gift of Life.",
+            "Rex loves walks. Rex was given the Gift of Life by Mr. Smith.",
+        ],
+    )
+    def test_the_sponsor_filter_matches_production_wording(self, scraper, text):
+        many_tears, _ = scraper
+
+        assert "Gift of Life" not in many_tears._filter_sponsor_text(text)
+        assert "Smith" not in many_tears._filter_sponsor_text(text)
+        assert many_tears._filter_sponsor_text(text).endswith(".")
+
+    def test_the_sponsor_filter_drops_only_the_sponsor_paragraph(self, scraper):
+        """Paragraphs are lines: an unpunctuated sponsor line can't swallow its neighbour."""
+        many_tears, _ = scraper
+        text = "Bloom loves walks.\nBloom has been given the Gift of Life Vicki Coldman\n2 of her teeth were removed."
+
+        assert many_tears._filter_sponsor_text(text) == "Bloom loves walks. 2 of her teeth were removed."
+
+    @pytest.mark.parametrize(
+        ("text", "kept"),
+        [
+            ("Bloom is 2 years old. 3 weeks ago Bloom was given the gift of life by Vicki and now she is ready.", "Bloom is 2 years old."),
+            ('We call her "Blossom." Bloom has been given the Gift of Life by Vicki. She is 2.', 'We call her "Blossom." She is 2.'),
+            ("She loves toys (and her treats.) Bloom has been given the Gift of Life by Vicki. She is 2.", "She loves toys (and her treats.) She is 2."),
+        ],
+    )
+    def test_the_sponsor_filter_never_takes_a_neighbouring_sentence(self, scraper, text, kept):
+        many_tears, _ = scraper
+
+        assert many_tears._filter_sponsor_text(text) == kept
+
+    def test_a_diary_entry_is_its_title_without_a_placeholder(self, scraper):
+        from bs4 import BeautifulSoup
+
+        many_tears, _ = scraper
+        soup = BeautifulSoup("<h2>My Diary</h2><ul><li><button>01-09-26 Settling in</button></li></ul>", "html.parser")
+
+        assert many_tears._extract_diary_entries(soup) == {"01-09-26": "Settling in"}
+
+    def test_a_loose_paragraph_is_not_a_requirement(self):
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup("<p>I would love a home with a big garden and long walks every day.</p>", "html.parser")
+
+        assert ManyTearsRescueScraper()._extract_requirements_sections(soup) == {}
