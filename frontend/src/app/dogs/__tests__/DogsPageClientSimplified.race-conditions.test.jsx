@@ -244,10 +244,16 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
       expect(screen.getAllByTestId("dog-card")).toHaveLength(20);
     });
 
+    // Held open until the disabled state has been checked: a timer-based
+    // delay could resolve first on a slow runner (#583)
     let fetchCount = 0;
+    let releaseRequest;
+    const pending = new Promise((resolve) => {
+      releaseRequest = resolve;
+    });
     getAnimals.mockImplementation(async () => {
       fetchCount++;
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await pending;
       return page2Dogs;
     });
 
@@ -262,6 +268,13 @@ describe("DogsPageClientSimplified - Race Conditions (Bug #2)", () => {
     // Verify button is disabled while loading
     await waitFor(() => {
       expect(loadMoreButton).toBeDisabled();
+    });
+
+    // A second click while the request is open must not start another
+    fireEvent.click(loadMoreButton);
+
+    await act(async () => {
+      releaseRequest();
     });
 
     // Wait for the request to complete

@@ -84,6 +84,37 @@ describe("useDogsPagination", () => {
       expect(result.current.dogs).toEqual([]);
     });
 
+    it("renders a deep link the same on the server as in the browser (#529)", () => {
+      // The server used to keep initialDogs while the browser started empty
+      const { renderToString } = jest.requireActual("react-dom/server");
+      const React = jest.requireActual("react");
+      const searchParams = new URLSearchParams("size=Large");
+      function Probe() {
+        const { dogs, loading } = useDogsPagination({
+          initialDogs: makeDogs(5),
+          initialParams: {},
+          filters: defaultFilters,
+          buildAPIParams: mockBuildAPIParams,
+          scrollPositionRef: { current: 0 },
+          searchParams,
+          pathname: "/dogs",
+        });
+        return React.createElement("p", null, `${dogs.length}:${loading}`);
+      }
+      // renderToString runs no effects: this is the server's first render
+      const serverHtml = renderToString(React.createElement(Probe));
+      const { result } = renderPagination({ initialDogs: makeDogs(5), searchParams });
+
+      expect(serverHtml).toContain("0:true");
+      expect([result.current.dogs.length, result.current.loading]).toEqual([0, true]);
+    });
+
+    it("starts without loading when the URL has no filters", () => {
+      const { result } = renderPagination({ initialDogs: makeDogs(5), initialParams: defaultFilters });
+
+      expect(result.current.loading).toBe(false);
+    });
+
     it("should start empty when URL page > 1", () => {
       const dogs = makeDogs(5);
       const searchParams = new URLSearchParams("page=2");
