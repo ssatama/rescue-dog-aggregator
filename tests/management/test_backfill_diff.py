@@ -66,6 +66,13 @@ class TestDogChanges:
         assert needs_reprofile({"properties.Beschreibung": ("a", "b")})
         assert not needs_reprofile({"properties.display_location": (None, "Berlin"), "size": ("Small", "Medium")})
 
+    def test_a_changed_compatibility_fact_needs_a_reprofile(self):
+        """#516: the profile was fed Dogs Trust's wrong good_with_dogs."""
+        assert needs_reprofile({"properties.good_with_dogs": (True, None)})
+        assert needs_reprofile({"properties.good_with_children": ("Unknown", "Yes (11+)")})
+        assert not needs_reprofile({"properties.may_live_with": ("A", "B")})
+        assert not needs_reprofile({"properties.good_with_cats": ("Unknown", None)})
+
     def test_text_that_only_moved_key_needs_no_reprofile(self):
         moved = {"properties.Beschreibung": ("Ein guter Hund.", None), "properties.description": (None, "Ein guter Hund.")}
         edited = {"properties.Beschreibung": ("Ein guter Hund.", None), "properties.description": (None, "Ein sehr guter Hund.")}

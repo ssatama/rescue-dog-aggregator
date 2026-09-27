@@ -1384,162 +1384,39 @@ class DogsTrustScraper(BaseScraper):
 
         return living_situation
 
-    def _extract_compatibility(self, soup: BeautifulSoup) -> dict[str, str]:
-        """Extract compatibility information from Dogs Trust detail page.
+    def _may_live_with(self, soup: BeautifulSoup) -> list[str]:
+        """The "May live with" chips: "Cats", "Dogs", "Primary school children".
 
-        Looks for "May live with" label and extracts the associated value which
-        typically contains links like "Dogs", "Primary school age children", etc.
-
-        Args:
-            soup: BeautifulSoup object of the detail page
-
-        Returns:
-            Dictionary with compatibility properties
+        Each chip links to the site's search for it (?liveWithDogs=true), the
+        same way breed and age are read. Matching text in divs used to reach
+        the page wrapper, whose text always says "dogs" (#516).
         """
-        compatibility = {}
+        return [link.get_text(strip=True) for link in soup.find_all("a", href=re.compile(r"liveWith\w+=true"))]
 
-        # Find all div elements that might contain the property
-        property_containers = soup.find_all("div")
-
-        for container in property_containers:
-            container_text = container.get_text(strip=True)
-
-            # Check if this container has "May live with" and is reasonably sized
-            if "May live with" in container_text and len(container_text) < 300:
-                # Look for links within this container (compatibility items are often links)
-                links = container.find_all("a")
-                if links:
-                    # Extract text from all links that are compatibility values
-                    compatibility_items = []
-                    for link in links:
-                        link_text = link.get_text(strip=True)
-                        # Filter out navigation links
-                        if link_text and len(link_text) < 50 and "May live with" not in link_text:
-                            # Check if this looks like a compatibility value
-                            if any(
-                                word in link_text.lower()
-                                for word in [
-                                    "dog",
-                                    "cat",
-                                    "child",
-                                    "primary",
-                                    "secondary",
-                                    "preschool",
-                                ]
-                            ):
-                                compatibility_items.append(link_text)
-
-                    if compatibility_items:
-                        # Join multiple compatibility items
-                        compatibility["may_live_with"] = ", ".join(compatibility_items)
-                        break
-                else:
-                    # No links, try to extract value directly after "May live with"
-                    if "May live with" in container_text:
-                        parts = container_text.split("May live with")
-                        if len(parts) > 1:
-                            value = parts[1].strip().lstrip(":").strip()
-                            # Take only the first 200 chars to avoid getting entire page
-                            if value and len(value) < 200:
-                                compatibility["may_live_with"] = value
-                                break
-
-        return compatibility
+    def _extract_compatibility(self, soup: BeautifulSoup) -> dict[str, str]:
+        """The "May live with" chips as one string, "Cats, Dogs, Secondary school children"."""
+        items = self._may_live_with(soup)
+        return {"may_live_with": ", ".join(items)} if items else {}
 
     def _extract_behavioral_traits(self, soup: BeautifulSoup) -> dict[str, Any]:
-        """Extract behavioral traits (good with children/dogs/cats) from Dogs Trust detail page.
+        """good_with_dogs/cats/children from the "May live with" chips.
 
-        Looks for "Can live with" section and parses the list items to determine
-        compatibility with children, dogs, and cats.
-
-        Args:
-            soup: BeautifulSoup object of the detail page
-
-        Returns:
-            Dictionary with behavioral trait properties:
-            - good_with_children: True/False/"Yes (age+)"
-            - good_with_dogs: True/False/"Maybe"
-            - good_with_cats: True/False/"Unknown"
+        A chip means yes. No chip means the rescue didn't say, so the key is
+        left out: not "Unknown", and not "no" either (#516). Children are
+        "Yes (5+)" for primary school age, "Yes (11+)" for secondary only.
         """
-        traits = {
-            "good_with_children": "Unknown",
-            "good_with_dogs": "Unknown",
-            "good_with_cats": "Unknown",
-        }
-
-        # Look for "Can live with" section
-        can_live_with_sections = soup.find_all(
-            lambda tag: tag.name in ["div", "section"] and tag.find(lambda t: t.name in ["h2", "h3", "h4"] and "can live with" in (t.get_text(strip=True).lower() if t.get_text(strip=True) else ""))
-        )
-
-        for section in can_live_with_sections:
-            # Find list items in this section
-            list_items = section.find_all("li")
-
-            for item in list_items:
-                text = item.get_text(strip=True).lower()
-
-                # Check for children compatibility
-                if "child" in text or ("adult" in text and ("only" in text or "prefer" in text)):
-                    if "aged" in text or "age" in text:
-                        # Extract age requirement
-                        import re
-
-                        age_match = re.search(r"aged?\s+(\d+)\+?", text)
-                        if age_match:
-                            age = age_match.group(1)
-                            traits["good_with_children"] = f"Yes ({age}+)"
-                        else:
-                            if "child" in text:
-                                traits["good_with_children"] = True
-                    elif "could live with children" in text:
-                        traits["good_with_children"] = True
-                    elif "adult" in text and ("only" in text or "prefer" in text):
-                        traits["good_with_children"] = False
-
-                # Check for dog compatibility
-                if "dog" in text:
-                    if "only dog" in text or "no other dogs" in text or "be the only dog" in text:
-                        traits["good_with_dogs"] = False
-                    elif "may be able" in text or ("may" in text and "dogs" in text):
-                        traits["good_with_dogs"] = "Maybe"
-                    elif "love" in text and "dogs" in text:
-                        traits["good_with_dogs"] = True
-                    elif "can live with" in text and "dogs" in text:
-                        traits["good_with_dogs"] = True
-                    elif "other dogs" in text and "live with" in text:
-                        traits["good_with_dogs"] = True
-
-                # Check for cat compatibility
-                if "cat" in text:
-                    if "no cats" in text:
-                        traits["good_with_cats"] = False
-                    elif "can live with cats" in text or "live with cats" in text:
-                        traits["good_with_cats"] = True
-                    elif "may" in text and "cats" in text:
-                        traits["good_with_cats"] = "Maybe"
-
-        # Also check the "May live with" field if present
-        may_live_with_text = ""
-        for div in soup.find_all("div"):
-            if "May live with" in div.get_text(strip=True):
-                may_live_with_text = div.get_text(strip=True).lower()
-                break
-
-        if may_live_with_text:
-            if "primary school age children" in may_live_with_text:
-                if traits["good_with_children"] == "Unknown":
-                    traits["good_with_children"] = "Yes (5+)"
-            elif "secondary school age children" in may_live_with_text:
-                if traits["good_with_children"] == "Unknown":
-                    traits["good_with_children"] = "Yes (11+)"
-
-            if "dogs" in may_live_with_text and traits["good_with_dogs"] == "Unknown":
-                traits["good_with_dogs"] = True
-
-            if "cats" in may_live_with_text and traits["good_with_cats"] == "Unknown":
-                traits["good_with_cats"] = True
-
+        items = {item.lower() for item in self._may_live_with(soup)}
+        traits: dict[str, Any] = {}
+        if "dogs" in items:
+            traits["good_with_dogs"] = True
+        if "cats" in items:
+            traits["good_with_cats"] = True
+        if "preschool children" in items:
+            traits["good_with_children"] = True
+        elif "primary school children" in items:
+            traits["good_with_children"] = "Yes (5+)"
+        elif "secondary school children" in items:
+            traits["good_with_children"] = "Yes (11+)"
         return traits
 
     def _normalize_text(self, text: str) -> str:

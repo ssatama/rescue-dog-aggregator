@@ -6,6 +6,7 @@ and reserved dog filtering requirements.
 """
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
@@ -714,3 +715,50 @@ class TestDogsTrustResponseDecoding:
 
         assert "Kevin's ready for a home he'd love." == description
         assert "â" not in description
+
+
+@pytest.mark.unit
+class TestDogsTrustMayLiveWith:
+    """#516: the compatibility facts come from the "May live with" chips.
+
+    The fixtures are real detail pages (2026-09-27). The page's wrapper text
+    says "dogs" everywhere, which used to make good_with_dogs true for nearly
+    every dog, and Sonic's breed link leaked into may_live_with.
+    """
+
+    FIXTURES = Path(__file__).parent.parent / "fixtures" / "dogstrust"
+
+    def _soup(self, name: str):
+        from bs4 import BeautifulSoup
+
+        return BeautifulSoup((self.FIXTURES / name).read_text(), "html.parser")
+
+    def test_a_dog_listed_with_older_children_only(self):
+        soup = self._soup("may_live_with_children_only.html")  # Sonic, German Shepherd Dog Cross
+        scraper = DogsTrustScraper()
+
+        assert scraper._extract_compatibility(soup) == {"may_live_with": "Secondary school children"}
+        assert scraper._extract_behavioral_traits(soup) == {"good_with_children": "Yes (11+)"}
+
+    def test_a_dog_listed_with_cats_dogs_and_children(self):
+        soup = self._soup("may_live_with_all.html")  # Pippa
+        scraper = DogsTrustScraper()
+
+        assert scraper._extract_compatibility(soup) == {"may_live_with": "Cats, Dogs, Primary school children, Secondary school children"}
+        assert scraper._extract_behavioral_traits(soup) == {"good_with_dogs": True, "good_with_cats": True, "good_with_children": "Yes (5+)"}
+
+    def test_preschool_children_means_any_age(self):
+        from bs4 import BeautifulSoup
+
+        html = '<a href="/rehoming/dogs?liveWithPreschool=true">Preschool children</a><a href="/rehoming/dogs?liveWithPrimary=true">Primary school children</a>'
+
+        assert DogsTrustScraper()._extract_behavioral_traits(BeautifulSoup(html, "html.parser")) == {"good_with_children": True}
+
+    def test_no_chips_says_nothing(self):
+        soup = self._soup("may_live_with_children_only.html")
+        for link in soup.find_all("a", href=lambda href: href and "liveWith" in href):
+            link.decompose()
+        scraper = DogsTrustScraper()
+
+        assert scraper._extract_compatibility(soup) == {}
+        assert scraper._extract_behavioral_traits(soup) == {}

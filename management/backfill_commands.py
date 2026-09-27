@@ -35,7 +35,7 @@ from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from management.backfill_diff import COLUMNS, DATE_COLUMNS, build_plan, profile_texts, render_markdown  # noqa: E402
+from management.backfill_diff import COLUMNS, DATE_COLUMNS, build_plan, profile_inputs, render_markdown  # noqa: E402
 from management.backfill_steps import Change, Step, get_steps, plan_step, update_statements  # noqa: E402
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -182,12 +182,12 @@ def _snapshot(database_url: str, orgs: list[str]) -> dict[str, dict[int, Any]]:
     )
     for row in rows:
         properties = row["properties"] or {}
-        snapshot[row["config_id"]][row["id"]] = (row["listed"], profile_texts(properties))
+        snapshot[row["config_id"]][row["id"]] = (row["listed"], profile_inputs(properties))
     return snapshot
 
 
 def text_changed(before: dict[int, Any], after: dict[int, Any]) -> list[int]:
-    """Dogs present in both snapshots whose profile text changed."""
+    """Dogs present in both snapshots whose profile inputs (texts, #516 facts) changed."""
     return sorted(animal_id for animal_id, (_, text) in after.items() if animal_id in before and before[animal_id][1] != text)
 
 
