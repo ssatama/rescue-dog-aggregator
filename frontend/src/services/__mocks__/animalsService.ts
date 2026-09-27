@@ -13,5 +13,4 @@ export const getAvailableRegions = jest.fn();
 export const getStatistics = jest.fn();
 export const getFilterCounts = jest.fn();
 export const getBreedSuggestions = jest.fn();
-export const getBreedDogs = jest.fn();
 export const getBreedFilterCounts = jest.fn();

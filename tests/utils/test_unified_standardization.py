@@ -612,47 +612,47 @@ class TestBreedNormalizationFixes:
         assert result["group"] == "Herding"
 
     def test_behavioral_text_rejected_can_be_only_dog(self):
-        """CRITICAL-3: 'Can Be the Only Dog' should return Unknown (not a breed)."""
+        """CRITICAL-3: 'Can Be the Only Dog' should return no breed (not a breed)."""
         standardizer = UnifiedStandardizer()
         result = standardizer._standardize_breed("Can Be the Only Dog")
-        assert result["name"] == "Unknown"
-        assert result["breed_type"] == "unknown"
+        assert result["name"] is None  # nothing, not "Unknown" (#605)
+        assert result["breed_type"] is None
 
     def test_behavioral_text_rejected_tbc(self):
-        """CRITICAL-3: 'TBC' should return Unknown."""
+        """CRITICAL-3: 'TBC' should return no breed."""
         standardizer = UnifiedStandardizer()
         result = standardizer._standardize_breed("TBC")
-        assert result["name"] == "Unknown"
-        assert result["breed_type"] == "unknown"
+        assert result["name"] is None  # nothing, not "Unknown" (#605)
+        assert result["breed_type"] is None
 
     def test_behavioral_text_rejected_breed_tbc(self):
-        """CRITICAL-3: 'Breed TBC' should return Unknown."""
+        """CRITICAL-3: 'Breed TBC' should return no breed."""
         standardizer = UnifiedStandardizer()
         result = standardizer._standardize_breed("Breed TBC")
-        assert result["name"] == "Unknown"
-        assert result["breed_type"] == "unknown"
+        assert result["name"] is None  # nothing, not "Unknown" (#605)
+        assert result["breed_type"] is None
 
     def test_behavioral_text_rejected_not_specified(self):
-        """CRITICAL-3: 'Not Specified' should return Unknown."""
+        """CRITICAL-3: 'Not Specified' should return no breed."""
         standardizer = UnifiedStandardizer()
         result = standardizer._standardize_breed("Not Specified")
-        assert result["name"] == "Unknown"
-        assert result["breed_type"] == "unknown"
+        assert result["name"] is None  # nothing, not "Unknown" (#605)
+        assert result["breed_type"] is None
 
     def test_behavioral_text_rejected_pending(self):
-        """CRITICAL-3: 'Pending' should return Unknown."""
+        """CRITICAL-3: 'Pending' should return no breed."""
         standardizer = UnifiedStandardizer()
         result = standardizer._standardize_breed("Pending")
-        assert result["name"] == "Unknown"
-        assert result["breed_type"] == "unknown"
+        assert result["name"] is None  # nothing, not "Unknown" (#605)
+        assert result["breed_type"] is None
 
     def test_overly_long_breed_rejected(self):
-        """CRITICAL-3: Breed strings over 60 chars should return Unknown."""
+        """CRITICAL-3: Breed strings over 60 chars should return no breed."""
         standardizer = UnifiedStandardizer()
         long_text = "This is not a breed but some very long description that should be rejected"
         result = standardizer._standardize_breed(long_text)
-        assert result["name"] == "Unknown"
-        assert result["breed_type"] == "unknown"
+        assert result["name"] is None  # nothing, not "Unknown" (#605)
+        assert result["breed_type"] is None
 
     def test_duplicate_words_removed(self):
         """MEDIUM-1: 'Bodeguero Andaluz Andaluz' should dedupe to 'Bodeguero Andaluz'."""
@@ -761,8 +761,19 @@ class TestSizeIsNotFabricated:
 
     def test_stated_size_is_still_honoured(self):
         standardizer = UnifiedStandardizer()
-        for stated, expected in [("small", "Small"), ("Medium", "Medium"), ("large", "Large"), ("giant", "Large")]:
+        for stated, expected in [("small", "Small"), ("Medium", "Medium"), ("large", "Large"), ("giant", "XLarge")]:
             assert standardizer.apply_full_standardization(size=stated)["standardized_size"] == expected
+
+    def test_one_size_table_for_short_forms_and_giants(self):
+        """_standardize_size and standardize_size_value used to disagree on
+        giants (Large vs XLarge); the site's Giant filter matched no dog (#605)."""
+        standardizer = UnifiedStandardizer()
+        for stated, expected in [("XS", "Small"), ("s", "Small"), ("M", "Medium"), ("l", "Large"), ("Extra Large", "XLarge"), ("XL", "XLarge"), ("XXL", "XLarge")]:
+            assert standardizer.apply_full_standardization(size=stated)["standardized_size"] == expected
+
+    def test_a_giant_breed_estimate_stays_giant(self):
+        result = UnifiedStandardizer().apply_full_standardization(breed="Great Dane", size=None)
+        assert result["standardized_size"] == "XLarge"
 
     def test_breed_estimate_still_fills_a_missing_size(self):
         """A known breed is real evidence; only the blind default is removed."""

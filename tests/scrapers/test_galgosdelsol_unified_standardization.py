@@ -123,7 +123,7 @@ class TestGalgosDelSolUnifiedStandardization:
             ("small", "Small"),
             ("medium", "Medium"),
             ("large", "Large"),
-            ("xlarge", "Large"),  # xlarge maps to Large for canonical sizes
+            ("xlarge", "XLarge"),  # Giant on the site (#605)
         ]
 
         for raw_size, expected_size in test_cases:

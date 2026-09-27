@@ -1184,7 +1184,9 @@ class AnimalService:
                 "o.active = TRUE",
                 "a.primary_image_url IS NOT NULL",
             ]
-            params = []
+            # One list per WHERE: the SQL reads the counts' filters, then
+            # min_count and limit, then the sample dogs' filters
+            filter_params = []
 
             if breed_type:
                 if breed_type == "mixed":
@@ -1193,14 +1195,12 @@ class AnimalService:
                 else:
                     count_conditions.append("a.breed_type = %s")
                     sample_conditions.append("a.breed_type = %s")
-                    params.append(breed_type)
-                    params.append(breed_type)  # Need it twice for both queries
+                    filter_params.append(breed_type)
 
             if breed_group:
                 count_conditions.append("a.breed_group = %s")
                 sample_conditions.append("a.breed_group = %s")
-                params.append(breed_group)
-                params.append(breed_group)  # Need it twice for both queries
+                filter_params.append(breed_group)
 
             if breed_type != "mixed":
                 # A breed the rescue didn't state is NULL since #568, not a breed group
@@ -1351,9 +1351,7 @@ class AnimalService:
                 ORDER BY bc.count DESC
             """
 
-            # Add min_count and limit to params
-            params.extend([min_count, limit])
-
+            params = [*filter_params, min_count, limit, *filter_params]
             self.cursor.execute(query, params)
             results = self.cursor.fetchall()
 

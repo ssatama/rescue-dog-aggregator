@@ -728,6 +728,9 @@ class REANScraper(BaseScraper):
             for dog_data in enriched_dog_data_list:
                 try:
                     standardized_data = self.standardize_animal_data(dog_data, page_type)
+                    if standardized_data is None:
+                        self.logger.warning(f"Skipped a REAN entry on {page_type} with no name")
+                        continue
                     # Two dogs listed under one name must not share a row. The
                     # suffix follows page order, so it is only stable while
                     # both stay listed; no REAN name has been reused yet.
@@ -1441,7 +1444,7 @@ class REANScraper(BaseScraper):
 
         return errors
 
-    def standardize_animal_data(self, dog_data: dict[str, Any], page_type: str) -> dict[str, Any]:
+    def standardize_animal_data(self, dog_data: dict[str, Any], page_type: str) -> dict[str, Any] | None:
         """
         Convert extracted data to standardized format for database.
 
@@ -1450,13 +1453,13 @@ class REANScraper(BaseScraper):
             page_type: Type of page (romania/uk_foster)
 
         Returns:
-            Standardized animal data dictionary
+            Standardized animal data dictionary, or None for an entry with no
+            name: the external id is built from the name, so every nameless
+            entry would share one "unknown" row (#605)
         """
-        name = dog_data.get("name", "Unknown")
-
-        # Handle None name gracefully
-        if name is None:
-            name = "Unknown"
+        name = (dog_data.get("name") or "").strip()
+        if not name:
+            return None
 
         external_id = rean_external_id(name, page_type)
 
