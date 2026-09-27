@@ -1202,6 +1202,10 @@ class AnimalService:
                 params.append(breed_group)
                 params.append(breed_group)  # Need it twice for both queries
 
+            if breed_type != "mixed":
+                # A breed the rescue didn't state is NULL since #568, not a breed group
+                count_conditions.append("a.primary_breed IS NOT NULL")
+
             count_where_clause = " AND ".join(count_conditions)
             sample_where_clause = " AND ".join(sample_conditions)
 
