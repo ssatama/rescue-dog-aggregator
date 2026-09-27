@@ -155,12 +155,16 @@ def main() -> int:
                 cursor.execute(FETCH_QUERY, (config_id,))
                 rows = [dict(row) for row in cursor.fetchall()]
             links = site_links(route, [row["adoption_url"] for row in rows if row["adoption_url"]])
-            # As the scraper does: an active row the REST answer lacks is read from its page
+            # As the scraper does: an active row the REST answer lacks is read from
+            # its page, unless that page is one a row already matches by its own
+            # URL (WordPress guesses redirects: a dead /john/ lands on /johny/)
+            claimed = {found[0] for row in rows if (found := match(row["adoption_url"] or "", links))}
             for row in rows:
                 if row["active"] and row["adoption_url"] and match(row["adoption_url"], links) is None:
                     found = page_link(row["adoption_url"])
-                    if found:
+                    if found and found[0] not in claimed:
                         links[url_key(row["adoption_url"])] = found
+                        claimed.add(found[0])
             planned, skipped = plan_rekeys(rows, links, prefix)
             unmatched = sum(1 for row in rows if match(row["adoption_url"] or "", links) is None)
             logger.info("%s: %s rows, %s re-keyed, %s not published (kept)", config_id, len(rows), len(planned), unmatched)
