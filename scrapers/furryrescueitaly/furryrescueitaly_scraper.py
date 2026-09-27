@@ -961,8 +961,7 @@ class FurryRescueItalyScraper(BaseScraper):
         elif "age_category" in props:
             animal["age"] = props["age_category"]
 
-        # Apply unified standardization
-        animal = self.process_animal(animal)
+        # save_animal standardises; nothing to do here (#568)
 
         # Preserve good_with field processing
         if "good_with" in props:

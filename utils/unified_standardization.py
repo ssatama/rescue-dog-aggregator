@@ -587,7 +587,7 @@ class UnifiedStandardizer:
         # can't resolve): the breed fields stay empty, not "Unknown" (#568).
         # breed_raw keeps what the rescue wrote.
         if str(breed_result.get("name") or "").strip().lower() in ("", "unknown"):
-            for key in ("breed", "standardized_breed", "breed_category", "breed_type", "primary_breed", "breed_slug", "breed_confidence"):
+            for key in ("breed", "standardized_breed", "breed_category", "breed_type", "primary_breed", "secondary_breed", "breed_slug", "breed_confidence"):
                 result[key] = None
 
         # Return deep copy to prevent cache mutation
@@ -1105,10 +1105,15 @@ class UnifiedStandardizer:
                 "giant": "Large",
             }
 
-            if size_lower in size_map:
+            # The broader reader knows "Mini", "Toy", "X-Large", "Medium-Large" (#568)
+            from utils.standardization import standardize_size_value
+
+            stated = size_map.get(size_lower) or standardize_size_value(size)
+            if stated:
+                canonical = "Large" if stated == "XLarge" else stated
                 return {
-                    "category": size_map[size_lower],
-                    "weight_range": self._get_weight_range(size_map[size_lower]),
+                    "category": canonical,
+                    "weight_range": self._get_weight_range(canonical),
                     "source": "explicit",
                 }
 

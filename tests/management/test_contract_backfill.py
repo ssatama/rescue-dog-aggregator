@@ -27,6 +27,9 @@ class TestOneDescriptionKey:
     def test_a_placeholder_story_is_removed(self):
         assert _planned({"description": "No description available", "raw_description": "No description available"}) == {}
 
+    def test_an_underdog_placeholder_with_a_dotted_name_is_removed(self):
+        assert _planned({"raw_description": "Rescue dog Mr. Bean from The Underdog organization."}) == {}
+
     def test_an_underdog_placeholder_gives_way_to_the_real_story(self):
         assert _planned({"description": "Rescue dog Vicky from The Underdog organization.", "raw_description": "Vicky loves walks."}) == {"description": "Vicky loves walks."}
 
@@ -44,6 +47,7 @@ def _breed_record(**columns):
         "breed": None,
         "standardized_breed": None,
         "primary_breed": None,
+        "secondary_breed": None,
         "breed_group": None,
         "breed_type": None,
         "breed_slug": None,

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import DogCard from "@/components/dogs/DogCard";
 import { IMAGE_SIZES } from "@/constants/imageSizes";
+import { SIZE_API_MAPPING } from "@/constants/filters";
 import DogCardSkeletonOptimized from "@/components/dogs/DogCardSkeletonOptimized";
 import { getAnimals } from "@/services/serverAnimalsService";
 import type { Dog } from "@/types/dog";
@@ -95,7 +96,8 @@ export function DogGrid({
         if (breed_type) params.breed_type = breed_type;
         if (sex) params.sex = sex;
         // On the size scale, so a size estimated from the breed counts too (#568)
-        if (size) params.standardized_size = size;
+        const apiSize = size && SIZE_API_MAPPING[size.charAt(0).toUpperCase() + size.slice(1).toLowerCase()];
+        if (apiSize) params.standardized_size = apiSize;
         if (age_category) params.age_category = age_category;
         if (location_country) params.location_country = location_country;
         if (available_to_country)

@@ -58,8 +58,9 @@ class TestWoofProjectScraperOptimized:
             ("LISBON", "Lisbon"),
             ("MAX-ZEUS", "Max-Zeus"),
             ("Buddy", "Buddy"),
-            ("", "Unknown"),
-            (None, "Unknown"),
+            # No name: None, and the validator rejects the dog (#568)
+            ("", None),
+            (None, None),
             ("  BUDDY  ", "Buddy"),
         ],
     )
@@ -118,8 +119,8 @@ class TestWoofProjectScraperOptimized:
 
                 # Should handle gracefully without exceptions
                 if result is not None:
-                    assert isinstance(result["name"], str)
-                    assert len(result["name"]) > 0
+                    # An empty page has no name to give (#568); the validator rejects it
+                    assert result["name"] is None or len(result["name"]) > 0
                     assert result["external_id"] == f"wp-{case_name}"
                     assert result["animal_type"] == "dog"
                     assert result["status"] == "available"

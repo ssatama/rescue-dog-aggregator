@@ -92,6 +92,12 @@ function formatProfileSections(data: ProfileData, parts: string[]): void {
   }
 }
 
+/** The size to show as a fact: a size estimated from the breed isn't the rescue's (#568). */
+function statedSize(dog: Dog): string | null {
+  if (dog.properties?.size_source === "breed") return null;
+  return dog.standardized_size || dog.size;
+}
+
 export function truncateIfNeeded(text: string): string {
   if (text.length <= CHARACTER_LIMIT) {
     return text;
@@ -128,8 +134,9 @@ export function formatDogMarkdown(
   if (dog.sex) {
     parts.push(`- **Sex:** ${dog.sex}`);
   }
-  if (dog.standardized_size || dog.size) {
-    parts.push(`- **Size:** ${dog.standardized_size || dog.size}`);
+  const size = statedSize(dog);
+  if (size) {
+    parts.push(`- **Size:** ${size}`);
   }
   if (dog.breed_group) {
     parts.push(`- **Breed Group:** ${dog.breed_group}`);
@@ -204,7 +211,8 @@ No dogs found matching your criteria.
     }
     if (dog.age_text) details.push(`**Age:** ${dog.age_text}`);
     if (dog.sex) details.push(`**Sex:** ${dog.sex}`);
-    if (dog.standardized_size) details.push(`**Size:** ${dog.standardized_size}`);
+    const size = statedSize(dog);
+    if (size) details.push(`**Size:** ${size}`);
 
     parts.push(details.join(" | "));
     parts.push("");

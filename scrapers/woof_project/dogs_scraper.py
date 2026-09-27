@@ -97,7 +97,7 @@ class WoofProjectScraper(BaseScraper):
         # World-class logging: Collection results handled by centralized system
         return all_dogs_data
 
-    def _standardize_name(self, name: str) -> str:
+    def _standardize_name(self, name: str | None) -> str | None:
         """Standardize dog name to proper title case.
 
         Converts names like "LISBON" to "Lisbon" following other scraper patterns.
@@ -106,10 +106,11 @@ class WoofProjectScraper(BaseScraper):
             name: Raw dog name
 
         Returns:
-            Standardized name in title case
+            Standardized name in title case, or None when there is none (the
+            validator rejects the dog)
         """
         if not name:
-            return "Unknown"
+            return None
 
         # Clean up the name
         cleaned = name.strip()
@@ -197,7 +198,7 @@ class WoofProjectScraper(BaseScraper):
             sex = self._normalize_sex(fields.get("sex")) or self._extract_sex_from_description(description or "")
 
             # Apply standardization to name only (breed/size/age handled by unified standardizer)
-            standardized_name = self._standardize_name(name or "Unknown")
+            standardized_name = self._standardize_name(name)
 
             # Missing values stay None: never store a breed, size, age or sex the rescue didn't state
             result = {

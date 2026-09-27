@@ -478,7 +478,7 @@ if __name__ == "__main__":
     print("\nBreed Standardization Tests:")
     for breed in test_breeds:
         std_breed, group, size = standardize_breed(breed)
-        print(f"{breed:<20} -> {std_breed:<25} (Group: {group:<12}, Size: {size})")
+        print(f"{breed:<20} -> {std_breed!s:<25} (Group: {group!s:<12}, Size: {size})")
 
     test_ages = [
         "2 years",

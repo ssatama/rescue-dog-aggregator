@@ -360,7 +360,8 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                         if age_info.get("age_min_months") is not None:
                             properties["age_min_months"] = age_info["age_min_months"]
                             properties["age_max_months"] = age_info["age_max_months"]
-                            properties["age_category"] = age_info.get("age_category", "Unknown")
+                            if age_info.get("age_category"):
+                                properties["age_category"] = age_info["age_category"]
                 elif label == "Size":
                     if value:
                         properties["size"] = value

@@ -226,6 +226,16 @@ describe("DogGrid", () => {
     });
   });
 
+  it("maps its size onto the API's size scale", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid size="giant" />);
+
+    await waitFor(() => {
+      expect(serverAnimalsService.getAnimals).toHaveBeenCalledWith(expect.objectContaining({ standardized_size: "XLarge" }));
+    });
+  });
+
   it("uses generic fallback link when no breed specified", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 

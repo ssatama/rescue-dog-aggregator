@@ -131,7 +131,7 @@ def _plan_disabled_org_status(records: list[dict[str, Any]]) -> list[Change]:
 _PLACEHOLDER_STORY = re.compile(
     r"^(no description available"
     r"|rescue dog from woof project available for adoption"
-    r"|rescue dog [^.]{1,40} from the underdog organization)\.?$",
+    r"|rescue dog .{1,60}? from the underdog organization)\.?$",
     re.IGNORECASE,
 )
 # Keys some scrapers kept the story under before properties.description was the one key (#568)
@@ -159,7 +159,7 @@ def _plan_description_key(records: list[dict[str, Any]]) -> list[Change]:
 
 # A row names no breed when its standardized breed is empty or "Unknown", the
 # same test the standardiser applies to a scraped dog (#568)
-_BREED_COLUMNS = ("breed", "standardized_breed", "primary_breed", "breed_group", "breed_type", "breed_slug", "breed_confidence")
+_BREED_COLUMNS = ("breed", "standardized_breed", "primary_breed", "secondary_breed", "breed_group", "breed_type", "breed_slug", "breed_confidence")
 
 
 def _is_unknown(value: Any) -> bool:
@@ -264,12 +264,12 @@ STEPS: dict[str, Step] = {
             name="unknown-to-null",
             summary="A dog with no breed has no breed fields (not 'Unknown'), and 'Unknown' sex becomes empty: missing data is left out (#568)",
             fetch_sql="""
-                SELECT a.id, a.breed, a.standardized_breed, a.primary_breed, a.breed_group, a.breed_type, a.breed_slug,
-                       a.breed_confidence, a.sex, o.config_id AS organization
+                SELECT a.id, a.breed, a.standardized_breed, a.primary_breed, a.secondary_breed, a.breed_group, a.breed_type,
+                       a.breed_slug, a.breed_confidence, a.sex, o.config_id AS organization
                 FROM animals a
                 JOIN organizations o ON o.id = a.organization_id
                 WHERE ((a.standardized_breed IS NULL OR lower(a.standardized_breed) = 'unknown')
-                       AND num_nonnulls(a.breed, a.standardized_breed, a.primary_breed, a.breed_group, a.breed_type, a.breed_slug, a.breed_confidence) > 0)
+                       AND num_nonnulls(a.breed, a.standardized_breed, a.primary_breed, a.secondary_breed, a.breed_group, a.breed_type, a.breed_slug, a.breed_confidence) > 0)
                    OR lower(a.sex) = 'unknown'
             """,
             plan=_plan_unknown_to_null,

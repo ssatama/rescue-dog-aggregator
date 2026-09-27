@@ -2,12 +2,12 @@
 
 Each case runs a scraper's own parsing over a saved real page: the gallery
 fixtures (2026-09-24), Pets in Turkey's saved listing and REAN's text
-entries. Many Tears has no saved detail page yet.
+entries. Galgos del Sol and Furry Rescue Italy are disabled and have none.
 """
 
 import asyncio
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -15,6 +15,7 @@ from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueB
 from scrapers.contract import missing_required, unknown_keys
 from scrapers.daisy_family_rescue.dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
 from scrapers.dogstrust.dogstrust_scraper import DogsTrustScraper
+from scrapers.manytearsrescue.manytearsrescue_scraper import ManyTearsRescueScraper
 from scrapers.misis_rescue.scraper import MisisRescueScraper
 from scrapers.pets_in_turkey.petsinturkey_scraper import PetsInTurkeyScraper
 from scrapers.rean.dogs_scraper import REANScraper
@@ -108,7 +109,15 @@ def rean():
     return dog | {"primary_image_url": "https://img1.wsimg.com/isteam/ip/abc/bobbie.jpg"}
 
 
-SCRAPERS = [bosnia, santer, underdog, woof, tierschutzverein, dogstrust, misis, daisy, pets_in_turkey, rean]
+def manytears():
+    url = "https://www.manytearsrescue.org/adopt/dogs/6199/"
+    service = Mock(get_page_content=AsyncMock(return_value=Mock(success=True, content=_page("manytears_6199"))))
+    with patch("scrapers.manytearsrescue.manytearsrescue_scraper.get_playwright_service", return_value=service):
+        details = asyncio.run(ManyTearsRescueScraper()._scrape_animal_details_playwright(url))
+    return _listed(url, "6199", "Helga", details)
+
+
+SCRAPERS = [bosnia, santer, underdog, woof, tierschutzverein, dogstrust, misis, daisy, pets_in_turkey, rean, manytears]
 
 
 @pytest.mark.unit
