@@ -391,15 +391,20 @@ children").
 - A detail failure now skips the dog in every scraper (the epic rule).
   Santer Paws, Tierschutzverein and Many Tears swallowed errors and saved the
   dog with listing data only; their fetch now raises `DetailPageError` on an
-  empty result. Dogs Trust saved `{}` details after its own retries. Every
-  listed dog is recorded as found first (Bosnia, Tierschutzverein and Daisy
-  now do it on forced re-scrapes too), so a skipped dog doesn't go stale; it
-  is added on the next run. Failures leave a run note: the run is a
+  empty result. Dogs Trust saved `{}` details after its own retries. Daisy,
+  MISIs and Bosnia turned failures into listing data or `None`; they raise
+  now. Every listed dog is recorded as found first (Bosnia, Tierschutzverein
+  and Daisy now do it on forced re-scrapes too), so a skipped dog doesn't go
+  stale; it is added on the next run. Failures leave a run note: the run is a
   `warning` and `scrape_logs` says how many.
 - Only transient errors are retried (timeouts, connection drops, 429, 5xx);
-  a 404 or a parse bug fails at once. No helper-level timeout on threads: a
-  `Future` can't be interrupted, and a timeout counted from the wait would
-  fail queued dogs; each request carries its own timeout.
+  a 404 or a parse bug fails at once. A 429/503 pushes the shared clock back
+  for every worker, and listing requests take slots too. No helper-level
+  timeout on threads: a `Future` can't be interrupted, and a timeout counted
+  from the wait would fail queued dogs; each request carries its own timeout.
+- Not migrated: Woof and The Underdog fetch detail pages one by one with
+  `respect_rate_limit()` (the same meaning with one worker), and the disabled
+  Furry Rescue Italy keeps its old loop.
 
 ## Gotchas
 
