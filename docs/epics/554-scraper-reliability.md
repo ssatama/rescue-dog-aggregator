@@ -368,9 +368,10 @@ children").
 - Tests: 67 removed (28 Selenium browser-service tests, 2 Selenium token
   redaction tests, 9 flag tests, 6 shim tests, 22 Selenium-path scraper
   tests), 7 Playwright or soup replacements added.
-- Backfill step `galgos-status-unknown`: Galgos del Sol's 199 inactive rows
-  still say `available` (disabled since 2025-10, so nothing retires them);
-  they become `unknown` in #572.
+- Backfill step `disabled-org-status-unknown`: a disabled rescue is never
+  scraped, so nothing retires its dogs. Galgos del Sol's 199 inactive rows
+  (disabled since 2025-10) still say `available`; they become `unknown` in
+  #572. Retiring dogs when config sync disables an org is a follow-up.
 
 ## Gotchas
 

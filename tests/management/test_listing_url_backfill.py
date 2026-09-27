@@ -1,4 +1,4 @@
-"""The pets-in-turkey-listing-url (#564) and galgos-status-unknown (#566) backfill steps."""
+"""The pets-in-turkey-listing-url (#564) and disabled-org-status-unknown (#566) backfill steps."""
 
 import pytest
 
@@ -25,11 +25,11 @@ class TestPetsInTurkeyListingUrl:
 
 
 @pytest.mark.unit
-class TestGalgosStatusUnknown:
+class TestDisabledOrgStatusUnknown:
     def test_an_available_row_of_the_disabled_org_becomes_unknown(self):
         records = [{"id": 7, "status": "available", "organization": "galgosdelsol"}]
 
-        assert plan_step(STEPS["galgos-status-unknown"], records) == [Change(7, "galgosdelsol", "status", "available", "unknown")]
+        assert plan_step(STEPS["disabled-org-status-unknown"], records) == [Change(7, "galgosdelsol", "status", "available", "unknown")]
 
     def test_is_idempotent(self):
-        assert plan_step(STEPS["galgos-status-unknown"], [{"id": 7, "status": "unknown", "organization": "galgosdelsol"}]) == []
+        assert plan_step(STEPS["disabled-org-status-unknown"], [{"id": 7, "status": "unknown", "organization": "galgosdelsol"}]) == []

@@ -1,4 +1,3 @@
-import asyncio
 import re
 from typing import Any
 from urllib.parse import urlparse
@@ -64,10 +63,6 @@ class DaisyFamilyRescueDogDetailScraper:
             "medium": (40, 60),
             "large": (60, 100),
         }
-
-    def extract_dog_details(self, dog_url: str, logger=None) -> dict[str, Any] | None:
-        """Extract detailed information from a single dog's detail page (sync caller)."""
-        return asyncio.run(self._extract_dog_details_playwright(dog_url, logger))
 
     async def async_extract_dog_details(self, dog_url: str, logger=None) -> dict[str, Any] | None:
         """Extract detailed information (async caller — avoids nested asyncio.run())."""

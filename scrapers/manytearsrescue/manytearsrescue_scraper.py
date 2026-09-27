@@ -131,8 +131,8 @@ class ManyTearsRescueScraper(BaseScraper):
 
         This method implements the BaseScraper template method pattern.
         It extracts dogs from all listing pages using pagination, then
-        scrapes detailed information for each dog. Supports skip_existing_animals
-        and batch_size parallelism configuration parameters.
+        scrapes each dog's detail page, one at a time. Supports
+        skip_existing_animals.
 
         A listing failure propagates, so the run ends as an error and stale
         detection doesn't run.
@@ -154,7 +154,7 @@ class ManyTearsRescueScraper(BaseScraper):
     def get_animal_list(self) -> list[dict[str, Any]]:
         """Fetch list of available dogs using browser automation with pagination.
 
-        Handles Cloudflare Bot Management by using headless Chrome with proper options.
+        Handles Cloudflare Bot Management with a Playwright browser (Browserless in production).
         Iterates through all pages dynamically detecting the maximum page count.
 
         Returns:
@@ -319,23 +319,8 @@ class ManyTearsRescueScraper(BaseScraper):
         match = re.search(r"/adopt/dogs/(\d+)/?$", url)
         return match.group(1) if match else url.split("/")[-2] if url.split("/")[-2].isdigit() else "unknown"
 
-    def _scrape_animal_details(self, adoption_url: str) -> dict[str, Any]:
-        """Scrape detailed information from individual dog page.
-
-        Extracts comprehensive data including name, requirements sections, diary entries,
-        compatibility sections, description, and hero image following the detailed
-        requirements for comprehensive data extraction.
-
-        Args:
-            adoption_url: URL of the individual dog adoption page
-
-        Returns:
-            Dictionary with detailed dog information following BaseScraper format
-        """
-        return asyncio.run(self._scrape_animal_details_playwright(adoption_url))
-
     async def _scrape_animal_details_playwright(self, adoption_url: str) -> dict[str, Any]:
-        """Playwright implementation of _scrape_animal_details."""
+        """Scrape one dog's detail page with Playwright."""
         try:
             self.logger.debug(f"Scraping details from: {adoption_url}")
 

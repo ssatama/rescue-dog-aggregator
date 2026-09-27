@@ -44,8 +44,6 @@ def suppress_service_logging():
         "utils.config_loader",
         "utils.organization_sync_service",
         "utils.db_connection",
-        "WDM",  # WebDriver Manager
-        "selenium",
     ]
 
     for service_name in service_loggers:
