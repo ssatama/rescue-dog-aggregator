@@ -57,7 +57,8 @@ class TestGetListingPage:
             assert scraper.get_listing_page("https://example.org/list").text == "ok"
 
         assert get.call_count == 2
-        assert stub_clock.calls == [scraper.retry_backoff_factor]
+        # The back-off, then the retry's turn on the request clock (#567)
+        assert stub_clock.calls[0] == scraper.retry_backoff_factor
 
     def test_a_page_that_keeps_failing_raises(self, scraper):
         get = Mock(side_effect=requests.ConnectionError("reset"))

@@ -304,8 +304,13 @@ dogs = await self.fetch_details_async(animals, fetch_one)  # Playwright scrapers
   that raises the delay applies at once. Each retry waits for a slot too, and
   so must any extra request a fetch makes (`wait_for_request_slot()`, as
   MISIs does before its browser fallback).
+- `get_listing_page` takes a slot too, and the first detail request waits one
+  interval after the listing, so listing and detail pages share the clock.
 - Only transient errors are retried: timeouts, dropped connections, 429, 5xx.
-  A 404 or a parse error fails at once.
+  A 404 or a parse error fails at once. A 429 or 503 pushes the whole
+  scraper's clock back (by `Retry-After`, else exponential back-off), so every
+  worker slows down. Retries feed `metrics_collector.track_retry`.
+- `attempts` is total tries; pass `max_retries + 1`, as `get_listing_page` uses.
 - Items with a URL already seen run once; results keep the input order.
 - A dog whose fetch raises is logged, added to `detail_failures` and
   skipped; the rest go on. A fetcher that swallows its own errors and

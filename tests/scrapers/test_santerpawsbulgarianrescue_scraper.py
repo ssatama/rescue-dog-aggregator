@@ -466,8 +466,8 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             result = self.scraper._process_animals_parallel(mock_animals)
 
             self.assertEqual(len(result), 2)
-            [call] = mock_sleep.call_args_list
-            self.assertAlmostEqual(call.args[0], 2.5, places=1)
+            # One interval after the listing, then one between the two dogs
+            self.assertEqual([round(call.args[0], 1) for call in mock_sleep.call_args_list], [2.5, 5.0])
 
     def test_process_animals_parallel_handles_errors(self):
         """A dog whose detail page fails is skipped and counted; the others go on (#567)."""

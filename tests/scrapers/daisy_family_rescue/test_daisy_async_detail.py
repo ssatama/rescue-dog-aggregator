@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from scrapers.base_scraper import DetailPageError
 from scrapers.daisy_family_rescue.dog_detail_scraper import (
     DaisyFamilyRescueDogDetailScraper,
 )
@@ -88,20 +89,14 @@ class TestDaisyEnhanceWithDetailPageAsync:
         assert result["properties"]["german_description"] == "Ein toller Hund"
 
     @pytest.mark.asyncio
-    async def test_enhance_returns_basic_on_detail_failure(self, scraper):
-        """_enhance_with_detail_page returns basic data when detail extraction fails."""
-        basic_data = {
-            "name": "Max",
-            "adoption_url": "https://daisyfamilyrescue.de/max",
-        }
-
+    async def test_a_page_without_details_fails_the_dog(self, scraper):
+        """No details means the page failed: the dog is skipped and counted (#567)."""
         mock_detail_scraper = MagicMock()
         mock_detail_scraper.async_extract_dog_details = AsyncMock(return_value=None)
         scraper.detail_scraper = mock_detail_scraper
 
-        result = await scraper._enhance_with_detail_page(basic_data)
-
-        assert result == basic_data
+        with pytest.raises(DetailPageError):
+            await scraper._enhance_with_detail_page({"name": "Max", "adoption_url": "https://daisyfamilyrescue.de/max"})
 
     @pytest.mark.asyncio
     async def test_enhance_returns_basic_on_no_adoption_url(self, scraper):

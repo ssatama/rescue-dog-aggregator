@@ -88,6 +88,12 @@ def force_rescrape_enabled() -> bool:
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
 
+    # Class-level defaults for the request clock, so a scraper built without
+    # __init__ (test fixtures) still works; __init__ gives each its own (#567)
+    _request_slot_lock = threading.Lock()
+    _next_request_at = 0.0
+    detail_failures: list[str] = []
+
     # Sentry is warned when more than this share of collected dogs is not saved.
     LOSS_ALERT_RATE = 0.1
     # More than this share of found dogs failing to save makes the run a
@@ -203,7 +209,7 @@ class BaseScraper(ABC):
 
         self.image_processing_service = image_processing_service
 
-        # One request-start clock per scraper, shared by every detail worker (#567)
+        # One request-start clock per scraper, shared by every worker (#567)
         self._request_slot_lock = threading.Lock()
         self._next_request_at = 0.0
         self.detail_failures: list[str] = []
@@ -1271,6 +1277,21 @@ class BaseScraper(ABC):
             self._next_request_at = start + self.rate_limit_delay
         return start - now
 
+    def _push_back_request_clock(self, seconds: float) -> None:
+        """Hold every worker's next request at least ``seconds`` from now: the site asked us to slow down."""
+        with self._request_slot_lock:
+            self._next_request_at = max(self._next_request_at, time.monotonic() + seconds)
+
+    def _back_off_after(self, error: BaseException, attempt: int) -> None:
+        """A 429 or 503 slows the whole scraper, by Retry-After or exponential back-off."""
+        response = getattr(error, "response", None)
+        if getattr(response, "status_code", None) not in (429, 503):
+            return
+        retry_after = (getattr(response, "headers", None) or {}).get("Retry-After")
+        seconds = float(retry_after) if retry_after and str(retry_after).isdigit() else self.rate_limit_delay * self.retry_backoff_factor**attempt
+        self.logger.warning(f"The site answered {response.status_code}; pausing requests for {seconds:.0f}s")
+        self._push_back_request_clock(seconds)
+
     def wait_for_request_slot(self) -> None:
         """Block until this scraper may start a request. Call it before every extra request a fetch makes."""
         wait = self._claim_request_slot()
@@ -1295,7 +1316,7 @@ class BaseScraper(ABC):
         return isinstance(error, RETRYABLE_ERRORS + (TimeoutError,))
 
     def _detail_failed(self, item_url: str, error: BaseException) -> None:
-        self.detail_failures.append(item_url)
+        self.detail_failures = [*self.detail_failures, item_url]
         self.logger.error(f"Detail page {item_url} failed, skipping this dog: {error!r}")
 
     def fetch_details(
@@ -1318,16 +1339,26 @@ class BaseScraper(ABC):
         ``fetch_one`` bounds its own time: every request it makes has a timeout.
         """
 
+        attempts = max(1, attempts)
+
         def run(item):
             for attempt in range(1, attempts + 1):
                 self.wait_for_request_slot()
                 try:
-                    return fetch_one(item)
+                    result = fetch_one(item)
                 except Exception as e:
                     if attempt == attempts or not self._is_transient(e):
                         raise
+                    self.metrics_collector.track_retry(success=False)
+                    self._back_off_after(e, attempt)
                     self.logger.warning(f"Detail page {url(item)} failed (attempt {attempt} of {attempts}), retrying: {e}")
+                    continue
+                if attempt > 1:
+                    self.metrics_collector.track_retry(success=True)
+                return result
 
+        # The listing's last request was a request start too
+        self._push_back_request_clock(self.rate_limit_delay)
         results = []
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [(item, executor.submit(run, item)) for item in self._unique_by_url(items, url)]
@@ -1352,6 +1383,8 @@ class BaseScraper(ABC):
 
         Each fetch is cut off after the org's ``timeout`` and counted as failed.
         """
+        # The listing's last request was a request start too
+        self._push_back_request_clock(self.rate_limit_delay)
         results = []
         for item in self._unique_by_url(items, url):
             wait = self._claim_request_slot()
@@ -1376,6 +1409,8 @@ class BaseScraper(ABC):
         kwargs.setdefault("timeout", self.timeout)
         attempts = self.max_retries + 1
         for attempt in range(1, attempts + 1):
+            # Listing pages share the request clock with detail pages (#567)
+            self.wait_for_request_slot()
             try:
                 response = requests.get(url, **kwargs)
                 response.raise_for_status()

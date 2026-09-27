@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, DetailPageError
 from utils.shared_extraction_patterns import gallery_urls
 
 
@@ -279,11 +279,12 @@ class AnimalRescueBosniaScraper(BaseScraper):
             if e.response is not None and e.response.status_code == 404:
                 self.logger.warning(f"Dog page not found (likely adopted): {url}")
                 return None
-            self.logger.error(f"HTTP error scraping animal details from {url}: {e}")
-            return None
+            # fetch_details retries a transient error and counts the rest (#567)
+            raise
+        except requests.RequestException:
+            raise
         except Exception as e:
-            self.logger.error(f"Error scraping animal details from {url}: {e}")
-            return None
+            raise DetailPageError(f"Error scraping animal details from {url}: {e}") from e
 
     def _calculate_age_text(self, date_of_birth: str | None) -> str | None:
         """Calculate age text from date of birth for standardization."""

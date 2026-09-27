@@ -50,8 +50,8 @@ class TestFetchDetails:
         results = scraper.fetch_details(_dogs(*"abcdefghij"), fetch, max_workers=5)
 
         assert len(results) == 10
-        # Ten request starts, 2 s apart: the first goes at once, the rest wait 2, 4 ... 18 s
-        assert sorted(round(wait) for wait in stub_clock.calls) == [2, 4, 6, 8, 10, 12, 14, 16, 18]
+        # Ten request starts, 2 s apart, the first one interval after the listing: 2, 4 ... 20 s
+        assert sorted(round(wait) for wait in stub_clock.calls) == [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
 
     def test_results_keep_the_input_order(self, scraper):
         assert scraper.fetch_details(_dogs("a", "b", "c"), lambda dog: dog["adoption_url"][-1], max_workers=3) == ["a", "b", "c"]
@@ -83,7 +83,7 @@ class TestFetchDetails:
         fetch = Mock(side_effect=[requests.ConnectionError("reset"), {"ok": True}])
 
         assert scraper.fetch_details(_dogs("a"), fetch, attempts=2) == [{"ok": True}]
-        assert [round(wait) for wait in stub_clock.calls] == [2]  # the retry waited its turn
+        assert [round(wait) for wait in stub_clock.calls] == [2, 4]  # the retry waited its turn
 
     @pytest.mark.parametrize("error", [ValueError("parse bug"), requests.HTTPError("404", response=Mock(status_code=404)), DetailPageError("empty")])
     def test_a_lasting_error_is_not_retried(self, scraper, error):
@@ -104,7 +104,7 @@ class TestFetchDetails:
 
         scraper.fetch_details(_dogs("a", "b"), lambda dog: dog)
 
-        assert [round(wait) for wait in stub_clock.calls] == [10]
+        assert [round(wait) for wait in stub_clock.calls] == [10, 20]
 
 
 @pytest.mark.unit
@@ -119,7 +119,7 @@ class TestFetchDetailsAsync:
 
         assert [dog["adoption_url"][-1] for dog in results] == ["a", "c"]
         assert scraper.detail_failures == ["https://rescue.example/b"]
-        assert [round(wait) for wait in stub_clock.calls] == [2, 4]
+        assert [round(wait) for wait in stub_clock.calls] == [2, 4, 6]
 
     def test_a_fetch_past_the_org_timeout_counts_as_failed(self, scraper):
         scraper.timeout = 0.01
@@ -155,3 +155,23 @@ def test_failed_detail_pages_leave_a_run_note(scraper):
         scraper._run_with_connection()
 
     assert any("1 detail page(s) failed" in note for note in scraper._run_notes)
+
+
+@pytest.mark.unit
+def test_a_429_slows_every_worker_by_retry_after(scraper, stub_clock):
+    busy = requests.HTTPError("429", response=Mock(status_code=429, headers={"Retry-After": "30"}))
+    fetch = Mock(side_effect=[busy, {"ok": True}])
+
+    assert scraper.fetch_details(_dogs("a"), fetch, attempts=2) == [{"ok": True}]
+    # The retry waited for the site's 30 s, not the usual 2 s slot
+    assert [round(wait) for wait in stub_clock.calls] == [2, 30]
+
+
+@pytest.mark.unit
+def test_retries_are_tracked(scraper):
+    scraper.metrics_collector = Mock()
+    fetch = Mock(side_effect=[requests.ConnectionError("reset"), {"ok": True}])
+
+    scraper.fetch_details(_dogs("a"), fetch, attempts=2)
+
+    assert [call.kwargs for call in scraper.metrics_collector.track_retry.call_args_list] == [{"success": False}, {"success": True}]

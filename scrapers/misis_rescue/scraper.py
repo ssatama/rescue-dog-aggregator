@@ -6,14 +6,13 @@ Reserved section detection, and data collection.
 """
 
 import asyncio
-import time
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from scrapers.base_scraper import BaseScraper, ListingIncompleteError
+from scrapers.base_scraper import BaseScraper, DetailPageError, ListingIncompleteError
 from services.playwright_browser_service import PlaywrightOptions
 
 from .detail_parser import POST_BODY, MisisRescueDetailParser
@@ -114,7 +113,14 @@ class MisisRescueScraper(BaseScraper):
             self.total_animals_skipped = 0
             urls_to_process = all_urls
 
-        return self.fetch_details(urls_to_process, self._scrape_dog_detail_fast, url=lambda url: url, max_workers=self.batch_size)
+        return self.fetch_details(urls_to_process, self._fetch_dog, url=lambda url: url, max_workers=self.batch_size)
+
+    def _fetch_dog(self, url: str) -> dict[str, Any]:
+        """The dog on a post page; a page that gives up (429s, gone, a browser timeout) counts as failed (#567)."""
+        dog = self._scrape_dog_detail_fast(url)
+        if dog is None:
+            raise DetailPageError(f"{url}: no dog after the HTTP and browser attempts")
+        return dog
 
     def _get_all_dogs_from_listing(self) -> list[dict[str, str]]:
         """Get all dog data from listing page.
@@ -477,7 +483,8 @@ class MisisRescueScraper(BaseScraper):
             if response.status_code == 429:
                 # Rate limited: back off once, and never answer with a heavier browser load
                 self.logger.warning(f"HTTP 429 for {url}; backing off before one retry")
-                time.sleep(self.rate_limit_delay * 4)
+                # Every worker slows down, not only this one (#567)
+                self._push_back_request_clock(self.rate_limit_delay * 4)
                 self.wait_for_request_slot()
                 try:
                     response = requests.get(url, headers=headers, timeout=10)

@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, DetailPageError
 from services.playwright_browser_service import (
     PlaywrightOptions,
     get_playwright_service,
@@ -416,13 +416,13 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 self.logger.debug(f"Successfully enhanced data for {merged_data.get('name')}")
                 return merged_data
             else:
-                self.logger.warning(f"No detailed data extracted for {basic_dog_data.get('name')}, using basic data")
-                return basic_dog_data
+                # A detail page that failed skips the dog and is counted (#567)
+                raise DetailPageError(f"{adoption_url}: no details extracted")
 
+        except DetailPageError:
+            raise
         except Exception as e:
-            self.logger.error(f"Error enhancing dog data for {basic_dog_data.get('name')}: {e}")
-            # Return basic data on error rather than losing the dog entirely
-            return basic_dog_data
+            raise DetailPageError(f"{adoption_url}: {e}") from e
 
     def _find_container_section(self, container_position: int, section_positions: dict[str, int]) -> str | None:
         """Find which section a container belongs to based on DOM positions."""

@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import pytest
 from bs4 import BeautifulSoup
 
+from scrapers.base_scraper import DetailPageError
 from scrapers.daisy_family_rescue.dog_detail_scraper import (
     DaisyFamilyRescueDogDetailScraper,
 )
@@ -563,8 +564,9 @@ class TestDaisyFamilyRescueScraperIntegration:
         with patch.object(DaisyFamilyRescueDogDetailScraper, "async_extract_dog_details", new_callable=AsyncMock) as mock_extract:
             mock_extract.side_effect = Exception("Connection error")
 
-            result = await scraper._enhance_with_detail_page(basic_dog_data)
-            assert result == basic_dog_data
+            # Skipped and counted by fetch_details_async, not saved half-empty (#567)
+            with pytest.raises(DetailPageError, match="Connection error"):
+                await scraper._enhance_with_detail_page(basic_dog_data)
 
     @pytest.mark.integration
     def test_translation_error_handling(self, scraper):

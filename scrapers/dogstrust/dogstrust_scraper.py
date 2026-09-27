@@ -117,7 +117,7 @@ class DogsTrustScraper(BaseScraper):
             animal.update(self._scrape_animal_details_http(animal["adoption_url"]))
             return animal
 
-        return self.fetch_details(animals, fetch, max_workers=min(self.batch_size, 5), attempts=self.max_retries)
+        return self.fetch_details(animals, fetch, max_workers=min(self.batch_size, 5), attempts=self.max_retries + 1)
 
     def collect_data(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Collect all available dog data from listing pages.

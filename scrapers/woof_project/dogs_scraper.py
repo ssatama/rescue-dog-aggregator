@@ -137,9 +137,7 @@ class WoofProjectScraper(BaseScraper):
         seen: set[str] = set()
         url: str | None = self.listing_url
         while url and url not in seen:
-            if seen:
-                self.respect_rate_limit()
-            seen.add(url)
+            seen.add(url)  # get_listing_page keeps the org's rate between pages
             soup = BeautifulSoup(self.get_listing_page(url, headers={"User-Agent": USER_AGENT}).text, "html.parser")
             page = [dog for dog in map(self._available_dog, soup.select("article.type-adoption")) if dog]
             dogs.extend(page)
