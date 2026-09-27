@@ -66,6 +66,14 @@ class TestDogChanges:
         assert needs_reprofile({"properties.Beschreibung": ("a", "b")})
         assert not needs_reprofile({"properties.display_location": (None, "Berlin"), "size": ("Small", "Medium")})
 
+    def test_text_that_only_moved_key_needs_no_reprofile(self):
+        moved = {"properties.Beschreibung": ("Ein guter Hund.", None), "properties.description": (None, "Ein guter Hund.")}
+        edited = {"properties.Beschreibung": ("Ein guter Hund.", None), "properties.description": (None, "Ein sehr guter Hund.")}
+
+        assert not needs_reprofile(moved)
+        assert needs_reprofile(edited)
+        assert needs_reprofile({"properties.description": (None, "A new story.")})
+
 
 @pytest.mark.unit
 class TestBuildPlan:

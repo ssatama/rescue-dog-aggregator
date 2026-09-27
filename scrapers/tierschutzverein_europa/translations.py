@@ -6,6 +6,47 @@ Tierschutzverein Europa database. All mappings are based on actual production da
 
 import re
 
+# Shoulder height bounds for "Ungefähre Größe" (#563): under SMALL_MAX_CM is
+# Small, up to MEDIUM_MAX_CM is Medium, above it Large.
+SMALL_MAX_CM = 35
+MEDIUM_MAX_CM = 55
+
+_NUMBER = r"(\d+(?:[.,]\d+)?)"
+_HEIGHT_RANGE = re.compile(_NUMBER + r"\s*(?:cm)?\s*(?:-|–|bis)\s*" + _NUMBER + r"\s*cm", re.IGNORECASE)
+_HEIGHT = re.compile(_NUMBER + r"\s*cm", re.IGNORECASE)
+# "im Wachstum", "wächst noch", "kann noch etwas wachsen", "mittelgroß werdend".
+# \bwachsen keeps "ausgewachsen" (fully grown) out.
+_GROWING = re.compile(r"wachstum|wächst|\bwachsen|werdend", re.IGNORECASE)
+# mittelgroß before groß: it contains it
+_SIZE_WORDS = (("mittelgroß", "Medium"), ("klein", "Small"), ("groß", "Large"))
+
+
+def translate_size(height_text: str | None) -> str | None:
+    """Size from the page's "Ungefähre Größe", by shoulder height.
+
+    "ca. 50 cm, 17 kg" -> Medium; a range counts by its middle ("ca. 60 - 65 cm"
+    -> Large). Without a height, the site's word ("mittelgroß"). A dog that is
+    still growing has no size yet: its height today says nothing about the
+    adult ("ca. 20 cm, im Wachstum").
+    """
+    if not height_text or _GROWING.search(height_text):
+        return None
+
+    height = None
+    if match := _HEIGHT_RANGE.search(height_text):
+        low, high = (float(group.replace(",", ".")) for group in match.groups())
+        height = (low + high) / 2
+    elif match := _HEIGHT.search(height_text):
+        height = float(match.group(1).replace(",", "."))
+
+    if height is not None:
+        if height < SMALL_MAX_CM:
+            return "Small"
+        return "Medium" if height <= MEDIUM_MAX_CM else "Large"
+
+    lowered = height_text.lower()
+    return next((size for word, size in _SIZE_WORDS if word in lowered), None)
+
 
 def translate_gender(gender: str | None) -> str | None:
     """Translate German gender terms to English standard values.

@@ -14,6 +14,7 @@ from scrapers.tierschutzverein_europa.translations import (
     translate_age,
     translate_breed,
     translate_gender,
+    translate_size,
 )
 from utils.shared_extraction_patterns import gallery_urls
 
@@ -21,14 +22,9 @@ from utils.shared_extraction_patterns import gallery_urls
 class TierschutzvereinEuropaScraper(BaseScraper):
     """Tierschutzverein Europa e.V. scraper with two-phase parallel architecture."""
 
-    def __init__(self, config_id="tierschutzverein-europa", organization_id=None):
+    def __init__(self, config_id="tierschutzverein-europa"):
         """Initialize Tierschutzverein Europa scraper with configuration."""
-        if organization_id is not None:
-            # Legacy mode - use organization_id
-            super().__init__(organization_id=organization_id)
-        else:
-            # New mode - use config_id
-            super().__init__(config_id=config_id)
+        super().__init__(config_id=config_id)
 
         self.base_url: str = "https://tierschutzverein-europa.de"
         self.listing_url: str = "https://tierschutzverein-europa.de/tiervermittlung/"
@@ -201,13 +197,12 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             if "Geschlecht" in properties:
                 result["sex"] = properties["Geschlecht"]
             if "Geburtstag" in properties:
+                # Translated in phase 3. No "age": process_animal prefers it
+                # over age_text, and it would store the German text (#563).
                 result["age_text"] = properties["Geburtstag"]
-                result["age"] = properties["Geburtstag"]  # Unified standardization expects 'age' field
                 result["date_of_birth"] = properties["Geburtstag"]  # "03.2025 (1 Jahr alt)" (#561)
-
-            # Add description as separate field for BaseScraper
-            if "Beschreibung" in properties:
-                result["description"] = properties["Beschreibung"]
+            if "Ungefähre Größe" in properties:
+                result["size"] = translate_size(properties["Ungefähre Größe"])
 
             return result
 
@@ -242,7 +237,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 if key and value:
                     properties[key] = value
 
-        # Extract description (Beschreibung)
+        # The "Beschreibung" section, stored where every reader looks (#563)
         description_section = soup.find("h2", string=re.compile("Beschreibung", re.I))
         if description_section:
             description_parts = []
@@ -255,7 +250,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 current = current.find_next_sibling()
 
             if description_parts:
-                properties["Beschreibung"] = "\n".join(description_parts)
+                properties["description"] = "\n".join(description_parts)
 
         return properties
 
@@ -404,9 +399,8 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                         translated_dog["sex"] = translated_sex
 
                 if translated_dog.get("age_text"):
-                    translated_age = translate_age(translated_dog["age_text"])
-                    if translated_age:
-                        translated_dog["age_text"] = translated_age
+                    # None for "Unbekannt": no German text stands in for an age
+                    translated_dog["age_text"] = translate_age(translated_dog["age_text"])
 
                 if translated_dog.get("breed"):
                     translated_breed = translate_breed(translated_dog["breed"])
@@ -466,13 +460,3 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             return name.capitalize()
 
         return None
-
-    def _get_existing_animal_urls(self) -> set:
-        """Get URLs of existing animals from database."""
-        try:
-            # This would normally query the database
-            # For now, returning empty set to avoid database dependency in tests
-            return set()
-        except Exception as e:
-            self.logger.error(f"Error getting existing animal URLs: {e}")
-            return set()

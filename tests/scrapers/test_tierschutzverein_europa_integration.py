@@ -9,8 +9,11 @@ from scrapers.tierschutzverein_europa.translations import (
     translate_age,
     translate_breed,
     translate_gender,
+    translate_size,
 )
+from services.database_service import update_columns
 from utils.standardization import standardize_age, standardize_breed
+from utils.unified_standardization import UnifiedStandardizer
 
 
 class TestTranslationFunctions:
@@ -162,6 +165,37 @@ class TestTranslationFunctions:
     def test_translate_gender_none_and_empty(self):
         assert translate_gender(None) is None
         assert translate_gender("") is None
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        ("height_text", "expected"),
+        [
+            # Real "Ungefähre Größe" values from production (2026-09-27)
+            ("ca. 30 cm", "Small"),
+            ("ca. 35 cm", "Medium"),
+            ("ca. 50 cm, 17 kg", "Medium"),
+            ("55 cm, 25 kg (geschätzt)", "Medium"),
+            ("ca. 56 cm / 16,5 kg", "Large"),
+            ("36 kg / 62 cm", "Large"),
+            ("ca. 60 - 65 cm", "Large"),
+            ("ca. 55 cm – 60 cm (wenn ausgewachsen)", "Large"),
+            ("Endgröße ca. 40-43cm", "Medium"),
+            ("mittelgroß (ca. 50 cm)", "Medium"),
+            ("mittelgroß, 15-18 kg", "Medium"),
+            ("klein", "Small"),
+            ("groß", "Large"),
+            # Still growing: today's height says nothing about the adult
+            ("ca. 25 cm, ca. 2,5 kg (im Wachstum)", None),
+            ("ca. 40 cm/ 15 kg/ kann noch etwas wachsen", None),
+            ("36 cm, wächst noch", None),
+            ("ca. 36 cm (vermutlich mittelgroß werdend)", None),
+            ("keine Angaben", None),
+            ("", None),
+            (None, None),
+        ],
+    )
+    def test_translate_size_from_shoulder_height(self, height_text, expected):
+        assert translate_size(height_text) == expected
 
 
 class TestScraperCoreFunctions:
@@ -332,9 +366,32 @@ class TestScraperCoreFunctions:
         assert properties["Mittelmeertest"] == "zu jung"
         assert properties["Aufenthaltsort"] == "Hundepension von Perros con Alma"
 
-        assert "Beschreibung" in properties
-        assert "Klein, aber voller Lebensfreude" in properties["Beschreibung"]
-        assert "ohne ihre Mütter im Tierheim" in properties["Beschreibung"]
+        assert "Klein, aber voller Lebensfreude" in properties["description"]
+        assert "ohne ihre Mütter im Tierheim" in properties["description"]
+        assert "Beschreibung" not in properties
+        assert "description" not in details  # save drops a top-level description
+        assert "age" not in details  # would win over the translated age_text (#563)
+        assert details["size"] is None  # 17 cm and still growing
+
+    @pytest.mark.unit
+    def test_english_age_and_height_size_survive_standardization(self, scraper, detail_html):
+        """What the save writes: #563's age_text used to be the German Geburtstag."""
+        mock_response = Mock()
+        mock_response.text = detail_html.replace("17 cm, im Wachstum, klein bleibend", "ca. 50 cm, 17 kg")
+        mock_response.raise_for_status = Mock()
+        scraper.standardizer = UnifiedStandardizer()
+        scraper.use_unified_standardization = True
+
+        with patch("requests.get", return_value=mock_response):
+            dog = {"name": "Bonsai", "external_id": "bonsai"} | scraper._scrape_animal_details("https://tierschutzverein-europa.de/tiervermittlung/bonsai/")
+        dog = scraper.process_animal(scraper._translate_and_normalize_dogs([dog])[0])
+        saved = update_columns(dog)
+
+        assert saved["age_text"] == "3 months old"
+        assert saved["birth_date_min"] is not None  # from Geburtstag (#561)
+        assert saved["size"] == "Medium"
+        assert saved["standardized_size"] == "Medium"
+        assert dog["properties"]["Ungefähre Größe"] == "ca. 50 cm, 17 kg"
 
     @pytest.mark.unit
     def test_process_animals_parallel_batching(self, scraper):
@@ -405,8 +462,7 @@ class TestScraperCoreFunctions:
         assert properties["Rasse"] == "Labrador Mix"
         assert properties["Geschlecht"] == "weiblich"
 
-        assert "Beschreibung" in properties
-        assert "liebevolle Hündin" in properties["Beschreibung"]
+        assert "liebevolle Hündin" in properties["description"]
 
         assert "Geburtstag" not in properties or properties["Geburtstag"] is None
 

@@ -97,8 +97,15 @@ def dog_changes(scraped: dict[str, Any], stored: dict[str, Any]) -> dict[str, tu
     return changes
 
 
+def _profile_texts(changes: dict[str, tuple[Any, Any]], side: int) -> list[str]:
+    pairs = (changes.get(f"properties.{key}") for key in PROFILE_TEXT_KEYS)
+    return sorted(json.dumps(pair[side], sort_keys=True) for pair in pairs if pair and pair[side] is not None)
+
+
 def needs_reprofile(changes: dict[str, tuple[Any, Any]]) -> bool:
-    return any(f"properties.{key}" in changes for key in PROFILE_TEXT_KEYS)
+    """A profile text changed. A text that only moved to another key is the
+    same source, so it doesn't count (#563: Beschreibung became description)."""
+    return _profile_texts(changes, 0) != _profile_texts(changes, 1)
 
 
 def build_plan(org: str, scraped: list[dict[str, Any]], rejected: list[dict[str, str]], stored: list[dict[str, Any]]) -> dict[str, Any]:
