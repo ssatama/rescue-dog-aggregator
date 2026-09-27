@@ -28,7 +28,7 @@ import { DogSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import RetiredListingNotice from "../../../components/dogs/RetiredListingNotice";
 import { trackDogView } from "@/lib/monitoring/breadcrumbs";
-import { hasInAppHistory } from "@/components/navigation/InAppHistory";
+import { canGoBackOnSite } from "@/utils/siteHistory";
 import {
   trackDogViewed,
   trackGalleryPhotoViewed,
@@ -357,7 +357,7 @@ export default function DogDetailClient({
               <div className="pointer-events-none absolute inset-x-3 top-3 z-[3] flex justify-between sm:hidden">
                 <button
                   type="button"
-                  onClick={() => (hasInAppHistory() ? router.back() : router.push("/dogs"))}
+                  onClick={() => (canGoBackOnSite() ? router.back() : router.push("/dogs"))}
                   aria-label="Back"
                   className="pointer-events-auto grid h-10 w-10 place-items-center rounded-full bg-white/90 text-gray-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   data-testid="back-button"

@@ -6,7 +6,6 @@ import { render, screen, waitFor, fireEvent } from "../../../../test-utils";
 import "@testing-library/jest-dom";
 import DogDetailClient from "../DogDetailClient";
 import { getAnimalBySlug } from "../../../../services/animalsService";
-import { resetInAppHistoryForTests } from "../../../../components/navigation/InAppHistory";
 
 // Mock the animalsService
 jest.mock("../../../../services/animalsService", () => ({
@@ -503,28 +502,20 @@ describe("DogDetailClient Dog Detail Integration", () => {
   });
 
   describe("phone back button (#518)", () => {
-    afterEach(() => resetInAppHistoryForTests());
+    afterEach(() => {
+      delete window.navigation;
+    });
 
     it("goes to the catalog when the visitor landed on this dog", async () => {
+      window.navigation = { canGoBack: false };
       render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
       fireEvent.click(await screen.findByTestId("back-button"));
       expect(mockRouter.push).toHaveBeenCalledWith("/dogs");
       expect(mockRouter.back).not.toHaveBeenCalled();
     });
 
-    it("goes back when the visitor came from another page of the site", async () => {
-      const { default: InAppHistoryTracker } = jest.requireActual("../../../../components/navigation/InAppHistory");
-      const nav = jest.requireMock("next/navigation");
-      const original = nav.usePathname;
-      let path = "/dogs";
-      nav.usePathname = () => path;
-      try {
-        const tracker = render(<InAppHistoryTracker />);
-        path = "/dogs/test-dog-mixed-breed-1";
-        tracker.rerender(<InAppHistoryTracker />);
-      } finally {
-        nav.usePathname = original;
-      }
+    it("goes back when a page of the site is behind this one", async () => {
+      window.navigation = { canGoBack: true };
       render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
       fireEvent.click(await screen.findByTestId("back-button"));
       expect(mockRouter.back).toHaveBeenCalled();
