@@ -98,6 +98,19 @@ class TestSweep571:
 
         assert many_tears._filter_sponsor_text(text) == "Bloom loves walks. 2 of her teeth were removed."
 
+    @pytest.mark.parametrize(
+        ("text", "kept"),
+        [
+            ("Bloom is 2 years old. 3 weeks ago Bloom was given the gift of life by Vicki and now she is ready.", "Bloom is 2 years old."),
+            ('We call her "Blossom." Bloom has been given the Gift of Life by Vicki. She is 2.', 'We call her "Blossom." She is 2.'),
+            ("She loves toys (and her treats.) Bloom has been given the Gift of Life by Vicki. She is 2.", "She loves toys (and her treats.) She is 2."),
+        ],
+    )
+    def test_the_sponsor_filter_never_takes_a_neighbouring_sentence(self, scraper, text, kept):
+        many_tears, _ = scraper
+
+        assert many_tears._filter_sponsor_text(text) == kept
+
     def test_a_diary_entry_is_its_title_without_a_placeholder(self, scraper):
         from bs4 import BeautifulSoup
 

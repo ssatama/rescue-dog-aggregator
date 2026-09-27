@@ -55,7 +55,7 @@ def _limit(text: str) -> str | None:
     return None
 
 
-def good_with(answer: str | None) -> bool | str | None:
+def good_with(answer: str | None, ages: bool = True) -> bool | str | None:
     """True, False, "Selective" or "Yes (<limit>)" from a Q&A answer; None when it doesn't say.
 
     A limit is kept, like Dogs Trust's "Yes (5+)": "children (8+)" -> "Yes (8+)",
@@ -68,7 +68,8 @@ def good_with(answer: str | None) -> bool | str | None:
         return None
     if "selective" in text:
         return "Selective"
-    if age := re.search(r"(\d+)\s*\+", text):  # "(8+)", "(recommended 6+)", "adult only home (or 12+)"
+    # An "N+" is an age only on "Living with kids?": "2+ dogs" isn't a limit
+    if ages and (age := re.search(r"(\d+)\s*\+", text)):  # "(8+)", "(recommended 6+)", "adult only home (or 12+)"
         return f"Yes ({age.group(1)}+)"
     if re.search(r"\badult[- ]only\b", text):
         # "an adult-only home, or older children" still takes older children
@@ -359,7 +360,7 @@ class TheUnderdogScraper(BaseScraper):
             # Compatibility and origin from the Q&A (#571). The raw answers stay
             # in raw_qa_data; an answer these words don't settle is left out.
             for question, key in GOOD_WITH_QUESTIONS.items():
-                answer = good_with(qa_data.get(question))
+                answer = good_with(qa_data.get(question), ages=key == "good_with_children")
                 if answer is not None:
                     result["properties"][key] = answer
             # Where the dog comes from, not where it is: never display_location (#574)

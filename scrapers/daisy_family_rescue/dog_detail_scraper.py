@@ -139,6 +139,9 @@ class DaisyFamilyRescueDogDetailScraper:
                 # Retried by fetch_details_async, which knows TimeoutError (#571)
                 raise TimeoutError(f"{dog_url} did not load: {e}") from e
             except Exception as e:
+                # Chromium's net::ERR_TIMED_OUT arrives as a plain Playwright Error, as on Many Tears
+                if "ERR_TIMED_OUT" in str(e):
+                    raise TimeoutError(f"{dog_url} did not load: {e}") from e
                 if logger:
                     logger.error(f"Error extracting details from {dog_url}: {e}")
                 return None

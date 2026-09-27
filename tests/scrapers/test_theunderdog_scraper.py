@@ -753,6 +753,15 @@ def test_q_and_a_compatibility_answers(answer, expected):
 
 
 @pytest.mark.unit
+def test_n_plus_is_an_age_only_for_children():
+    """ "Living with dogs?": "2+ dogs" is a count, not an age limit."""
+    from scrapers.theunderdog.theunderdog_scraper import good_with
+
+    assert good_with("I can live with 2+ dogs", ages=False) is True
+    assert good_with("I can live with children (8+)") == "Yes (8+)"
+
+
+@pytest.mark.unit
 def test_where_from_is_the_origin_not_the_location():
     """#571/#574: origin never feeds display_location."""
     from scrapers.validation.location_cleaner import display_location
