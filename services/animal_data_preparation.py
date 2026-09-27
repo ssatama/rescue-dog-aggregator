@@ -54,12 +54,14 @@ def prepare_animal_data(animal_data: dict[str, Any], today: date | None = None) 
     description_text = f"{animal_data.get('name') or ''} {animal_data.get('breed') or ''} {animal_data.get('age_text') or ''}"
     language = _detect_language(description_text)
 
-    standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed") or "")
+    standardized_breed, breed_group, _ = standardize_breed(animal_data.get("breed") or "")
 
     age = age_columns(animal_data, today)
 
-    final_size = animal_data.get("size") or animal_data.get("standardized_size")
-    final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))
+    # `size` is only ever the rescue's own; a breed estimate lives in
+    # standardized_size, labelled by properties.size_source (#568)
+    final_size = animal_data.get("size")
+    final_standardized_size = animal_data.get("standardized_size") or standardize_size_value(animal_data.get("size"))
 
     final_standardized_breed = animal_data.get("standardized_breed") or standardized_breed
     final_breed_group = animal_data.get("breed_category") or breed_group

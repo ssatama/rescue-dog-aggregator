@@ -58,7 +58,7 @@ def update_columns(animal_data: dict[str, Any], stored: dict[str, Any] | None = 
     save would write without writing it.
     """
     # Apply standardization for new values - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
-    new_standardized_breed, new_breed_group, size_estimate = standardize_breed(animal_data.get("breed") or "")
+    new_standardized_breed, new_breed_group, _ = standardize_breed(animal_data.get("breed") or "")
 
     age = age_columns(animal_data, today, stored)
 
@@ -77,9 +77,10 @@ def update_columns(animal_data: dict[str, Any], stored: dict[str, Any] | None = 
         "age_observed_at": age.age_observed_at,
         "sex": animal_data.get("sex"),
         "status": animal_data.get("status", "available"),
-        # Use size estimate if no size provided
-        "size": animal_data.get("size") or animal_data.get("standardized_size"),
-        "standardized_size": animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size")),
+        # `size` is only ever the rescue's own; a breed estimate lives in
+        # standardized_size, labelled by properties.size_source (#568)
+        "size": animal_data.get("size"),
+        "standardized_size": animal_data.get("standardized_size") or standardize_size_value(animal_data.get("size")),
         "properties": json.dumps(sanitize_for_postgres(animal_data.get("properties")), sort_keys=True) if animal_data.get("properties") else None,
         "breed_type": animal_data.get("breed_type"),
         "primary_breed": animal_data.get("primary_breed"),

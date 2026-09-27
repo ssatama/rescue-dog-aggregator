@@ -82,8 +82,13 @@ const SIZE_SCALE: Record<string, string> = {
   giant: "Giant",
 };
 
-/** Small, Medium, Large or Giant, or null when the size is unknown. */
+/**
+ * Small, Medium, Large or Giant, or null when the size is unknown. A size
+ * estimated from the breed stays out of the dog's facts (#568); it still
+ * counts for size filters.
+ */
 export const formatSize = (dog: DogInput | null | undefined): string | null => {
+  if (dog?.properties?.size_source === "breed") return null;
   const onScale = (raw: string | undefined) => (raw ? SIZE_SCALE[raw.trim().toLowerCase()] : undefined);
   return onScale(dog?.standardized_size) ?? onScale(dog?.size) ?? null;
 };

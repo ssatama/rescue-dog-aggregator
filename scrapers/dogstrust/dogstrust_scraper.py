@@ -608,14 +608,6 @@ class DogsTrustScraper(BaseScraper):
             "adoption_url": adoption_url,
             "animal_type": "dog",
             "status": "available",
-            # Default values for required fields (will be enriched in detail scraping)
-            "name": "Unknown",
-            "breed": "Mixed Breed",
-            "size": "Medium",
-            "age_text": None,
-            "sex": "Unknown",
-            "location": "UK",
-            "description": "",
         }
 
         return dog_data
@@ -694,17 +686,16 @@ class DogsTrustScraper(BaseScraper):
             traceback.print_exc()
 
         # CRITICAL: Store description in properties (Many Tears pattern)
-        properties["description"] = description or ""
+        if description:
+            properties["description"] = description
 
         # Build raw result for unified standardization processing
         raw_result = {
-            "name": name or "Unknown",
-            "breed": breed or "Mixed Breed",
+            "name": name,
+            "breed": breed,
             "age": age,  # Unified standardization expects 'age' field
-            "sex": sex or "Unknown",
-            "size": size or "Medium",
-            "location": location or "UK",
-            "description": description or "",
+            "sex": sex,
+            "size": size,
             "primary_image_url": primary_image_url,
             "original_image_url": primary_image_url,
             "animal_type": "dog",

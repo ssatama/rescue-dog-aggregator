@@ -206,7 +206,6 @@ class WoofProjectScraper(BaseScraper):
                 "adoption_url": url,
                 "primary_image_url": primary_image_url,
                 "image_urls": self._extract_image_urls_from_detail(soup, primary_image_url),
-                "description": description or "Rescue dog from Woof Project available for adoption",
                 "breed": breed,
                 "age": age,
                 "size": size,
@@ -216,9 +215,8 @@ class WoofProjectScraper(BaseScraper):
             }
 
             properties = {
-                "description": description or "No description available",
-                "raw_name": name or "Unknown",
-                "raw_description": description or "No description available",
+                "description": description,
+                "raw_name": name,
                 "breed": breed,
                 "age_text": age,
                 "size": size,

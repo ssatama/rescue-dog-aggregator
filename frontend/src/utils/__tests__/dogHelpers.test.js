@@ -134,5 +134,10 @@ describe("dogHelpers", () => {
       expect(formatSize({})).toBe(null);
       expect(formatSize(null)).toBe(null);
     });
+
+    it("leaves out a size estimated from the breed", () => {
+      expect(formatSize({ standardized_size: "Large", properties: { size_source: "breed" } })).toBe(null);
+      expect(formatSize({ standardized_size: "Large", properties: {} })).toBe("Large");
+    });
   });
 });

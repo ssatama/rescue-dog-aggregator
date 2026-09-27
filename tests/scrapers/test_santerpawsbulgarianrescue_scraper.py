@@ -646,8 +646,9 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         # then fell back to `else: assertEqual(result, {})`, so any outcome
         # whatsoever passed.
         self.assertIsNone(result.get("description"))
-        self.assertEqual(result.get("breed"), "Unknown")
-        self.assertEqual(result.get("standardized_size"), "Medium")
+        # Missing data is left out, not "Unknown" or "Medium" (#568)
+        self.assertIsNone(result.get("breed"))
+        self.assertIsNone(result.get("standardized_size"))
         self.assertIsNone(result.get("age"))
         self.assertIsNone(result.get("sex"))
 
@@ -831,7 +832,6 @@ class TestSanterPawsDetailPageLayout:
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
 
         expected = "Kevin is a stunning young English Setter, purebred. He is wonderful with other dogs and cats."
-        assert result["description"] == expected
         assert result["properties"]["description"] == expected
 
     def test_ignores_the_other_dogs_cards_and_adoption_blurb(self, scraper, serve):
@@ -841,7 +841,7 @@ class TestSanterPawsDetailPageLayout:
 
         assert result["sex"] == "Male"
         assert result["properties"]["breed"] == "English Setter"
-        assert "Adopting a rescue dog" not in result["description"]
+        assert "Adopting a rescue dog" not in result["properties"]["description"]
 
     def test_reserved_status_is_detected(self, scraper, serve):
         serve(_dog_page({**KEVIN_FIELDS, "Status": "Reserved"}, ["Kevin."]))
@@ -850,19 +850,20 @@ class TestSanterPawsDetailPageLayout:
 
         assert result["status"] == "reserved"
 
-    def test_a_blank_breed_falls_back_to_mixed_breed(self, scraper, serve):
+    def test_a_blank_breed_stays_empty(self, scraper, serve):
+        """No "Mixed Breed" standing in for a breed the site didn't give (#568)."""
         serve(_dog_page({**KEVIN_FIELDS, "Breed": ""}, ["Kevin."]))
 
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
 
-        assert result["breed"] == "Mixed Breed"
+        assert result.get("breed") is None
 
     def test_page_without_a_story_leaves_description_absent(self, scraper, serve):
         serve(_dog_page(KEVIN_FIELDS, []))
 
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
 
-        assert not result.get("description")
+        assert not result["properties"].get("description")
         assert result["properties"]["breed"] == "English Setter"
 
     def test_reads_a_story_pasted_in_div_blocks(self, scraper, serve):
@@ -871,7 +872,7 @@ class TestSanterPawsDetailPageLayout:
 
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/harvey/")
 
-        assert result["description"] == "Harvey came to us from a village shelter. He loves every dog he meets."
+        assert result["properties"]["description"] == "Harvey came to us from a village shelter. He loves every dog he meets."
 
     def test_keeps_list_items_as_separate_sentences(self, scraper, serve):
         """via and bamboo keep their home requirements in <ul><li>."""
@@ -879,7 +880,7 @@ class TestSanterPawsDetailPageLayout:
 
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/bamboo/")
 
-        assert result["description"] == "Bamboo needs: Older children only A secure garden"
+        assert result["properties"]["description"] == "Bamboo needs: Older children only A secure garden"
 
     def test_the_date_of_birth_is_passed_on_for_the_birth_range(self, scraper, serve):
         """#561: D.O.B is day-first; the save turns it into the stored birth range."""
@@ -904,7 +905,7 @@ class TestSanterPawsDetailPageLayout:
 
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
 
-        assert result["description"] == "Only a story, no fields yet."
+        assert result["properties"]["description"] == "Only a story, no fields yet."
         assert result.get("sex") is None
         assert result.get("age") is None
 
@@ -925,14 +926,14 @@ class TestSanterPawsDetailPageLayout:
 
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/marley/")
 
-        assert result["description"] == "🐾 Meet Marley 🐾 Born 9th March 2025, little Marley came into rescue."
+        assert result["properties"]["description"] == "🐾 Meet Marley 🐾 Born 9th March 2025, little Marley came into rescue."
 
     def test_keeps_a_bare_strong_title_outside_any_block(self, scraper, serve):
         serve(_dog_page(KEVIN_FIELDS, [], story_html="<strong>Hiltz, our collie boy</strong><p>Hiltz walks beautifully on the lead.</p>"))
 
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/hiltz/")
 
-        assert result["description"] == "Hiltz, our collie boy Hiltz walks beautifully on the lead."
+        assert result["properties"]["description"] == "Hiltz, our collie boy Hiltz walks beautifully on the lead."
 
     def test_a_blank_sex_leaves_sex_absent(self, scraper, serve):
         """Same placeholder class #349 removed for age: "Unknown" would read as scraped."""
@@ -949,4 +950,4 @@ class TestSanterPawsDetailPageLayout:
 
         result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/marley/")
 
-        assert result["description"] == "Meet Marley Marley loves people."
+        assert result["properties"]["description"] == "Meet Marley Marley loves people."

@@ -73,9 +73,11 @@ class TestPrepareAnimalData:
         result = prepare_animal_data(animal_data_with_size)
         assert result.final_size == "small"
 
-        animal_data_standardized = {"name": "Tiny", "breed": "Chihuahua", "standardized_size": "small"}
+        # A standardized (possibly breed-estimated) size never becomes the rescue's size (#568)
+        animal_data_standardized = {"name": "Tiny", "breed": "Chihuahua", "standardized_size": "Small"}
         result = prepare_animal_data(animal_data_standardized)
-        assert result.final_size == "small"
+        assert result.final_size is None
+        assert result.final_standardized_size == "Small"
 
     def test_short_description_defaults_to_english(self):
         animal_data = {"name": "A", "breed": ""}

@@ -180,7 +180,6 @@ class MisisRescueDetailParser:
         name = self._extract_dog_name(soup)
 
         result: dict[str, Any] = {
-            "bullet_points": facts,
             "name": normalize_name(name) if name else None,
             "breed": None,
             "sex": None,

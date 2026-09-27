@@ -575,7 +575,7 @@ class TestREANDataStandardization:
         assert standardized["age_min_months"] == 7
         assert standardized["age_max_months"] == 9
         assert standardized["size"] == "Small"
-        assert standardized["language"] == "en"
+        assert "language" not in standardized  # the save detects it (#568)
         assert "external_id" in standardized
         assert standardized["primary_image_url"] == dog_data["primary_image_url"]
         assert standardized["original_image_url"] == dog_data["primary_image_url"]

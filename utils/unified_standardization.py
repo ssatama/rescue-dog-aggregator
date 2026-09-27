@@ -579,7 +579,15 @@ class UnifiedStandardizer:
             # Size fields - preserve original and add standardized
             "size": size,  # Preserve original size field
             "standardized_size": size_result.get("category"),
+            # "breed" when the size is the breed's typical one, not the rescue's (#568)
+            "size_source": "breed" if size_result.get("source") == "breed_estimated" else None,
         }
+
+        # No breed given (or "Unknown", which names none): the breed fields
+        # stay empty, not "Unknown" (#568)
+        if not (breed.strip() if isinstance(breed, str) else breed) or str(breed).strip().lower() == "unknown":
+            for key in ("breed", "standardized_breed", "breed_category", "breed_type", "primary_breed", "breed_slug"):
+                result[key] = None
 
         # Return deep copy to prevent cache mutation
         return deepcopy(result)

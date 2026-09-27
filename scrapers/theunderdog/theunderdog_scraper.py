@@ -250,8 +250,6 @@ class TheUnderdogScraper(BaseScraper):
             # Ensure properties is never None or completely empty
             if not properties:
                 properties = {}
-            if not description:
-                description = f"Rescue dog {name} from The Underdog organization."
 
             # Build result dictionary with enhanced properties
             result = {
@@ -260,21 +258,15 @@ class TheUnderdogScraper(BaseScraper):
                 "adoption_url": url,
                 "primary_image_url": hero_image_url,
                 "image_urls": self._extract_image_urls(soup, hero_image_url),
-                "description": description,
                 "properties": {
                     "raw_qa_data": properties,  # Store Q&A pairs
                     "raw_name": name,
-                    "raw_description": description,
+                    "description": description,
                     "page_url": url,
                 },
                 "animal_type": "dog",
                 "status": "available",  # All scraped dogs are available
             }
-
-            # Add country if found
-            if country:
-                result["country"] = country["name"]
-                result["country_code"] = country["iso_code"]
 
             # Extract Q&A data for size/weight information
             qa_data = extract_qa_data(result.get("properties", {}))
@@ -296,11 +288,6 @@ class TheUnderdogScraper(BaseScraper):
             # BaseScraper will handle standardization automatically
 
             # Required fields - these MUST have values
-            if not result.get("breed"):
-                # Try to extract from description
-                # Let BaseScraper's UnifiedStandardizer handle the actual standardization
-                result["breed"] = "Mixed Breed"  # Default if extraction failed
-
             if not result.get("age"):
                 # Try to extract from description as fallback
                 result["age"] = self._extract_age_fallback(description)
@@ -315,31 +302,18 @@ class TheUnderdogScraper(BaseScraper):
                 if size:
                     result["size"] = size
                 if weight_kg:
-                    result["weight_kg"] = weight_kg
+                    result["properties"]["weight_kg"] = weight_kg
 
                 # If still no size, try to estimate from weight if available
-                if not result.get("size") and result.get("weight_kg"):
+                if not result.get("size") and weight_kg:
                     try:
-                        weight = float(result["weight_kg"])
-                        result["size"] = self._estimate_size_from_weight(weight)
+                        result["size"] = self._estimate_size_from_weight(float(weight_kg))
                     except (ValueError, TypeError):
-                        result["size"] = "Medium"  # Fallback if conversion fails
+                        pass
 
-                # Final fallback
-                if not result.get("size"):
-                    result["size"] = "Medium"
-
-            # Ensure description is not empty
-            if not result.get("description"):
-                result["description"] = f"Rescue dog from {result.get('country', 'unknown location')}"
-
-            # Add location standardization
-            if not result.get("location"):
-                # Use country as primary location
-                if result.get("country"):
-                    result["location"] = result["country"]
-                else:
-                    result["location"] = "Unknown"
+            # The country is where the dog is
+            if country:
+                result["properties"]["location"] = country["name"]
 
             # Apply unified standardization
             return self.process_animal(result)

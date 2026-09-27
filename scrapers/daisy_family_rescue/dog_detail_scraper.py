@@ -305,13 +305,13 @@ class DaisyFamilyRescueDogDetailScraper:
         if "Gewicht:" in steckbrief_data:
             weight = self._parse_weight(steckbrief_data["Gewicht:"])
             if weight:
-                processed_data["weight_kg"] = weight
+                processed_data.setdefault("properties", {})["weight_kg"] = weight
 
         # Process height and determine size
         if "Schulterhöhe:" in steckbrief_data:
             height = self._parse_height(steckbrief_data["Schulterhöhe:"])
             if height:
-                processed_data["height_cm"] = height
+                processed_data.setdefault("properties", {})["height_cm"] = height
                 size = self._determine_size(height)
                 if size:
                     processed_data["size"] = size

@@ -39,8 +39,8 @@ class TestPostBody:
         dog = _parse("tea_things_you_have_to_know")
 
         assert dog["name"] == "Tea"
-        assert dog["bullet_points"][:3] == ["2 years old", "mixed breed", "around 21-2 kg"]
-        assert not any(item in fact for fact in dog["bullet_points"] for item in NAV)
+        assert dog["properties"]["raw_bullet_points"][:3] == ["2 years old", "mixed breed", "around 21-2 kg"]
+        assert not any(item in fact for fact in dog["properties"]["raw_bullet_points"] for item in NAV)
         assert (dog["age_text"], dog["sex"], dog["breed"]) == ("2 years", "Female", "Mixed Breed")
 
     def test_a_post_without_a_story_is_described_by_its_facts(self):
@@ -63,17 +63,17 @@ class TestPostBody:
 
         assert dog["date_of_birth"] == "DOB January 2026"
         assert dog["age_text"] == "DOB January 2026"
-        assert dog["bullet_points"][0] == "DOB January 2026"
+        assert dog["properties"]["raw_bullet_points"][0] == "DOB January 2026"
 
     def test_facts_stop_at_the_adoption_boilerplate(self):
-        facts = _parse("olly_2026_dob")["bullet_points"]
+        facts = _parse("olly_2026_dob")["properties"]["raw_bullet_points"]
 
         assert facts[-1] == "Castration is mandatory once he’s old enough"
         assert not any("adopt" in fact.lower() for fact in facts)
 
     def test_gallery_cells_are_not_facts(self):
         for name in ("tea_things_you_have_to_know", "olly_2026_dob", "yuk_2026_story"):
-            assert all(fact.strip() for fact in _parse(name)["bullet_points"])
+            assert all(fact.strip() for fact in _parse(name)["properties"]["raw_bullet_points"])
 
     def test_weight_with_a_space_sets_the_size(self):
         """Yuk: "current weight is 10 kg"."""

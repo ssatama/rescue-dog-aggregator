@@ -224,9 +224,9 @@ class TestWoofProjectLabelledFields:
         assert result["age_text"] == "2 years"
         assert result["age_min_months"] == 24
         assert result["size"] == "Medium"
-        assert result["description"].startswith("Hoi, ik ben Arean")
-        assert "Subscribe" not in result["description"]
-        assert "Welcome to our family" not in result["description"]
+        assert result["properties"]["description"].startswith("Hoi, ik ben Arean")
+        assert "Subscribe" not in result["properties"]["description"]
+        assert "Welcome to our family" not in result["properties"]["description"]
 
     def test_missing_values_stay_none(self, scraper):
         html = """

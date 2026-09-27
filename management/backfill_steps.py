@@ -127,6 +127,50 @@ def _plan_disabled_org_status(records: list[dict[str, Any]]) -> list[Change]:
     return [Change(record["id"], record["organization"], "status", record["status"], "unknown") for record in records if record["status"] != "unknown"]
 
 
+# Stories that name no dog fact: scrapers wrote them when a page had no story (#568)
+_PLACEHOLDER_STORY = re.compile(
+    r"^(no description available"
+    r"|rescue dog from woof project available for adoption"
+    r"|rescue dog [^.]{1,40} from the underdog organization"
+    r"|rescue dog from [a-z ]{1,40})\.?$",
+    re.IGNORECASE,
+)
+# Keys some scrapers kept the story under before properties.description was the one key (#568)
+_OLD_STORY_KEYS = ("raw_description", "Beschreibung")
+
+
+def _plan_description_key(records: list[dict[str, Any]]) -> list[Change]:
+    changes = []
+    for record in records:
+        properties = record["properties"] if isinstance(record["properties"], dict) else json.loads(record["properties"] or "{}")
+        fixed = dict(properties)
+        story = (fixed.get("description") or "").strip()
+        if not story or _PLACEHOLDER_STORY.match(story):
+            story = next((fixed[key].strip() for key in _OLD_STORY_KEYS if isinstance(fixed.get(key), str) and fixed[key].strip() and not _PLACEHOLDER_STORY.match(fixed[key].strip())), "")
+        for key in _OLD_STORY_KEYS:
+            fixed.pop(key, None)
+        if story:
+            fixed["description"] = story
+        else:
+            fixed.pop("description", None)
+        if fixed != properties:
+            changes.append(Change(record["id"], record["organization"], "properties", json.dumps(properties, sort_keys=True), json.dumps(fixed, sort_keys=True)))
+    return changes
+
+
+# "Unknown" standing in for a breed or sex nobody gave (#568)
+_UNKNOWN_COLUMNS = ("breed", "standardized_breed", "primary_breed", "breed_group", "sex")
+
+
+def _plan_unknown_to_null(records: list[dict[str, Any]]) -> list[Change]:
+    return [
+        Change(record["id"], record["organization"], column, record[column], None)
+        for record in records
+        for column in _UNKNOWN_COLUMNS
+        if isinstance(record[column], str) and record[column].strip().lower() == "unknown"
+    ]
+
+
 STEPS: dict[str, Step] = {
     step.name: step
     for step in [
@@ -197,6 +241,30 @@ STEPS: dict[str, Step] = {
                   AND a.status = 'available'
             """,
             plan=_plan_disabled_org_status,
+        ),
+        Step(
+            name="one-description-key",
+            summary="The story is properties.description: moved from raw_description/Beschreibung, placeholder stories removed (#568)",
+            fetch_sql="""
+                SELECT a.id, a.properties, o.config_id AS organization
+                FROM animals a
+                JOIN organizations o ON o.id = a.organization_id
+                WHERE a.properties ?| array['raw_description', 'Beschreibung']
+                   OR a.properties->>'description' ~* '^(no description available|rescue dog .*from .*)$'
+                   OR a.properties->>'description' = ''
+            """,
+            plan=_plan_description_key,
+        ),
+        Step(
+            name="unknown-to-null",
+            summary="'Unknown' breed, breed group and sex become empty: missing data is left out (#568)",
+            fetch_sql="""
+                SELECT a.id, a.breed, a.standardized_breed, a.primary_breed, a.breed_group, a.sex, o.config_id AS organization
+                FROM animals a
+                JOIN organizations o ON o.id = a.organization_id
+                WHERE 'unknown' IN (lower(a.breed), lower(a.standardized_breed), lower(a.primary_breed), lower(a.breed_group), lower(a.sex))
+            """,
+            plan=_plan_unknown_to_null,
         ),
     ]
 }

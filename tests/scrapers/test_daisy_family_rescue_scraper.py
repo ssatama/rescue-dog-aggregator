@@ -69,9 +69,9 @@ class TestDaisyFamilyRescueScraperMain:
         assert props["language"] == "de"
         assert props["location"] == "München"
 
-        assert result["birth_date"] == "03/2020"
-        assert result["height_cm"] == 53
-        assert result["weight_kg"] == 19
+        assert result["properties"]["birth_date"] == "03/2020"
+        assert result["properties"]["height_cm"] == 53
+        assert result["properties"]["weight_kg"] == 19
 
     @pytest.mark.unit
     def test_extract_dog_from_container_no_link(self, scraper):
