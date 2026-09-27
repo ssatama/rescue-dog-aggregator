@@ -21,6 +21,7 @@ import logging
 import os
 import sys
 from dataclasses import dataclass
+from datetime import datetime
 
 import psycopg2
 import requests
@@ -29,15 +30,15 @@ from psycopg2.extras import RealDictCursor
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import DB_CONFIG  # noqa: E402
-from scrapers.wordpress_ids import post_ids, slugs, url_key  # noqa: E402
+from scrapers.wordpress_ids import fetch_posts, slug, url_key  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}
-# config_id -> (ID prefix, REST route, query the route by slug)
+# config_id -> (ID prefix, REST route)
 SITES = {
-    "santerpawsbulgarianrescue": ("spbr-", "https://santerpawsbulgarianrescue.com/wp-json/wp/v2/dog", False),
-    "animalrescuebosnia": ("arb-", "https://www.animal-rescue-bosnia.org/wp-json/wp/v2/pages", True),
+    "santerpawsbulgarianrescue": ("spbr-", "https://santerpawsbulgarianrescue.com/wp-json/wp/v2/dog"),
+    "animalrescuebosnia": ("arb-", "https://www.animal-rescue-bosnia.org/wp-json/wp/v2/pages"),
 }
 
 FETCH_QUERY = """
@@ -58,20 +59,29 @@ class Rekey:
     active: bool
 
 
-def slug(url: str) -> str:
-    return url_key(url).split("/")[-1]
+def match(url: str, links: dict[str, tuple[int, str]]) -> tuple[int, str] | None:
+    """The post a stored URL is: by path, else by slug when only one post has it.
+
+    Santer Paws' old /adoption/<slug>/ rows only match by slug.
+    """
+    if url_key(url) in links:
+        return links[url_key(url)]
+    by_slug = [found for key, found in links.items() if key.split("/")[-1] == slug(url)]
+    return by_slug[0] if len(by_slug) == 1 else None
 
 
-def plan_rekeys(rows: list[dict], links: dict[str, tuple[int, str]], prefix: str) -> list[Rekey]:
+def plan_rekeys(rows: list[dict], links: dict[str, tuple[int, str]], prefix: str) -> tuple[list[Rekey], list[str]]:
     """One row per post moves to its post's ID: the most recently seen.
 
-    links maps a page slug to its post ID and current link.
+    links maps a page's URL key to its post ID and current link. Returns the
+    re-keys and why any matched row was left alone.
     """
     taken = {row["external_id"] for row in rows}
     candidates: dict[str, dict] = {}
+    skipped: list[str] = []
 
     for row in rows:
-        found = links.get(slug(row["adoption_url"] or ""))
+        found = match(row["adoption_url"] or "", links)
         if found is None:
             continue
         new_id = f"{prefix}{found[0]}"
@@ -79,32 +89,36 @@ def plan_rekeys(rows: list[dict], links: dict[str, tuple[int, str]], prefix: str
         if new_id == row["external_id"]:
             continue
         current = candidates.get(new_id)
-        if current is None or (row["last_seen_at"], row["id"]) > (current["last_seen_at"], current["id"]):
+        if current is None or _recency(row) > _recency(current):
+            if current is not None:
+                skipped.append(f"{current['external_id']}: an older row of {new_id}")
             candidates[new_id] = row
+        else:
+            skipped.append(f"{row['external_id']}: an older row of {new_id}")
 
-    return sorted(
-        (Rekey(row["id"], row["name"], row["external_id"], new_id, row["link"], row["active"]) for new_id, row in candidates.items() if new_id not in taken),
-        key=lambda rekey: rekey.animal_id,
-    )
+    rekeys = []
+    for new_id, row in candidates.items():
+        if new_id in taken:
+            # A scrape under the new IDs already inserted the dog: merge by hand
+            skipped.append(f"{row['external_id']}: {new_id} already exists")
+            continue
+        rekeys.append(Rekey(row["id"], row["name"], row["external_id"], new_id, row["link"], row["active"]))
+    return sorted(rekeys, key=lambda rekey: rekey.animal_id), skipped
 
 
-def site_links(route: str, by_slug: bool, urls: list[str]) -> dict[str, tuple[int, str]]:
-    """Page slug -> (post ID, current link) from the site's REST API."""
-    items: list[dict] = []
+def _recency(row: dict) -> tuple:
+    return (row["last_seen_at"] or datetime.min, row["id"])
+
+
+def site_links(route: str, urls: list[str]) -> dict[str, tuple[int, str]]:
+    """URL key -> (post ID, current link) for the stored URLs' slugs."""
 
     def get_json(params: dict) -> tuple[list[dict], int]:
-        response = requests.get(route, params={**params, "_fields": "id,link"}, headers=HEADERS, timeout=30)
+        response = requests.get(route, params=params, headers=HEADERS, timeout=30)
         response.raise_for_status()
-        items.extend(response.json())
         return response.json(), int(response.headers.get("X-WP-TotalPages", 1))
 
-    if not by_slug:
-        post_ids(get_json, {})
-    else:
-        wanted = slugs(urls)
-        for start in range(0, len(wanted), 50):
-            post_ids(get_json, {"slug": ",".join(wanted[start : start + 50])})
-    return {slug(item["link"]): (item["id"], item["link"]) for item in items}
+    return {url_key(post["link"]): (post["id"], post["link"]) for post in fetch_posts(get_json, (slug(url) for url in urls))}
 
 
 def _connect():
@@ -124,14 +138,16 @@ def main() -> int:
 
     with _connect() as conn:
         rekeys: list[Rekey] = []
-        for config_id, (prefix, route, by_slug) in SITES.items():
+        for config_id, (prefix, route) in SITES.items():
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute(FETCH_QUERY, (config_id,))
                 rows = [dict(row) for row in cursor.fetchall()]
-            links = site_links(route, by_slug, [row["adoption_url"] for row in rows if row["adoption_url"]])
-            planned = plan_rekeys(rows, links, prefix)
-            unmapped = sum(1 for row in rows if slug(row["adoption_url"] or "") not in links)
-            logger.info("%s: %s rows, %s re-keyed, %s not published (kept)", config_id, len(rows), len(planned), unmapped)
+            links = site_links(route, [row["adoption_url"] for row in rows if row["adoption_url"]])
+            planned, skipped = plan_rekeys(rows, links, prefix)
+            unmatched = sum(1 for row in rows if match(row["adoption_url"] or "", links) is None)
+            logger.info("%s: %s rows, %s re-keyed, %s not published (kept)", config_id, len(rows), len(planned), unmatched)
+            for reason in skipped:
+                logger.warning("  kept %s", reason)
             rekeys += planned
 
         for rekey in rekeys:

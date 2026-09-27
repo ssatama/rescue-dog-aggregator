@@ -6,6 +6,7 @@ import requests
 from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import (
     AnimalRescueBosniaScraper,
 )
+from scrapers.request_pacing import ListingIncompleteError
 from tests.scrapers.test_scraper_base import ScraperTestBase
 
 
@@ -122,7 +123,7 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
         assert result["external_id"] is None
 
     def test_listed_dogs_are_keyed_on_their_page_ids(self, scraper):
-        """One REST request keys every listed dog; an unpublished page is a failed detail page (#570)."""
+        """One REST request keys every listed dog; a dead link is skipped (#570)."""
         listed = [
             {"name": "Johny", "url": "https://www.animal-rescue-bosnia.org/johny/"},
             {"name": "Johny", "url": "https://www.animal-rescue-bosnia.org/johny/"},
@@ -131,12 +132,18 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
         rest = Mock(headers={"X-WP-TotalPages": "1"})
         rest.json.return_value = [{"id": 36251, "link": "https://www.animal-rescue-bosnia.org/johny/"}]
 
-        with patch.object(scraper, "get_listing_page", return_value=rest) as get:
+        def get_listing_page(url, **kwargs):
+            if "wp-json" in url:
+                return rest
+            raise ListingIncompleteError(f"{url} failed") from requests.HTTPError(response=Mock(status_code=404))
+
+        with patch.object(scraper, "get_listing_page", side_effect=get_listing_page) as get:
             keyed = scraper._with_page_ids(listed)
 
         assert [(dog["external_id"], dog["adoption_url"]) for dog in keyed] == [("arb-36251", "https://www.animal-rescue-bosnia.org/johny/")]
-        assert get.call_args.kwargs["params"]["slug"] == "johny,lexis"
-        assert scraper.detail_failures == ["https://www.animal-rescue-bosnia.org/lexis/"]
+        assert get.call_args_list[0].kwargs["params"]["slug"] == "johny,lexis"
+        # A dead link is not a failed detail page: it would alert on every run
+        assert scraper.detail_failures == []
 
     @pytest.mark.parametrize("dob", ["January 2022", "Januar 2022", "Jan 2022"])
     def test_age_from_english_or_german_month(self, scraper, dob):

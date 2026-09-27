@@ -8,7 +8,7 @@ import requests
 from bs4 import BeautifulSoup, Comment, Tag
 
 from scrapers.base_scraper import BaseScraper, DetailPageError, ListingIncompleteError
-from scrapers.wordpress_ids import body_post_id, post_ids, url_key
+from scrapers.wordpress_ids import body_post_id, key_on_post_ids
 
 # Migrated to unified standardization - using BaseScraper.process_animal()
 # Legacy standardize_age kept for date-of-birth calculations
@@ -44,6 +44,10 @@ def _story_paragraphs(element: Tag) -> list[str]:
     flush()
 
     return paragraphs
+
+
+# The listing, the REST lookup and page checks go out with the same User-Agent
+LISTING_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}
 
 
 class SanterPawsBulgarianRescueScraper(BaseScraper):
@@ -108,29 +112,15 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         return result
 
     def _with_post_ids(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Key each listed dog on its WordPress post ID (#570).
-
-        One REST request maps every dog's URL to its ID. A listed dog the
-        answer doesn't hold has no published page: it is skipped as a failed
-        detail page, as its 404 would be. A failed request raises
-        ListingIncompleteError, so stale detection doesn't run.
-        """
-        if not animals:
-            return animals
-
-        def get_json(params: dict) -> tuple[list[dict], int]:
-            response = self.get_listing_page(f"{self.base_url}/wp-json/wp/v2/dog", params=params, timeout=30)
-            return response.json(), int(response.headers.get("X-WP-TotalPages", 1))
-
-        ids = post_ids(get_json, {})
-        keyed = []
-        for animal in animals:
-            post_id = ids.get(url_key(animal["adoption_url"]))
-            if post_id is None:
-                self._detail_failed(animal["adoption_url"], DetailPageError("not a published dog page"))
-                continue
-            keyed.append({**animal, "external_id": self._external_id(post_id)})
-        return keyed
+        """Key each listed dog on its WordPress post ID (#570)."""
+        return key_on_post_ids(
+            self,
+            animals,
+            route=f"{self.base_url}/wp-json/wp/v2/dog",
+            url_of=lambda animal: animal["adoption_url"],
+            prefix="spbr-",
+            headers=LISTING_HEADERS,
+        )
 
     def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Each dog's detail page, merged over its listing data (#567)."""
@@ -191,9 +181,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         page_num = 1
         last_numbered_page = 1
         max_pages = 20  # Safety limit to prevent infinite loops
-        headers = {
-            "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)",
-        }
+        headers = LISTING_HEADERS
 
         while True:
             page_url = self.listing_url if page_num == 1 else f"{self.listing_url}page/{page_num}/"
@@ -302,11 +290,6 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         except Exception as e:
             self.logger.error(f"Error extracting name from URL {url}: {e}")
             return ""
-
-    @staticmethod
-    def _external_id(post_id: int) -> str:
-        """The dog's ID: its WordPress post ID, which survives renames (#570)."""
-        return f"spbr-{post_id}"
 
     def _clean_dog_name(self, name: str) -> str:
         """Clean dog name by normalizing case and handling formatting.
@@ -481,7 +464,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
 
             # The page's own post ID (#570); None if the theme drops the body class
             post_id = body_post_id(soup)
-            external_id = self._external_id(post_id) if post_id else None
+            external_id = f"spbr-{post_id}" if post_id else None
 
             # Extract properties from the detail page
             properties = self._extract_properties(soup)

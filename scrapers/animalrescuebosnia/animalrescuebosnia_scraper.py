@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper, DetailPageError
-from scrapers.wordpress_ids import body_post_id, post_ids, slugs, url_key
+from scrapers.wordpress_ids import body_post_id, key_on_post_ids
 from utils.shared_extraction_patterns import gallery_urls
 
 
@@ -149,7 +149,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
             # The page's own ID (#570): a name can change or repeat
             page_id = body_post_id(soup)
-            external_id = self._external_id(page_id) if page_id else None
+            external_id = f"arb-{page_id}" if page_id else None
 
             # Extract hero image (first significant image, not in gallery)
             hero_image_url = None
@@ -429,35 +429,9 @@ class AnimalRescueBosniaScraper(BaseScraper):
         return all_animals
 
     def _with_page_ids(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Key each listed dog on its WordPress page ID (#570).
-
-        One REST request maps the listed pages' slugs to their IDs. A listed
-        dog the answer doesn't hold has no published page (the listing links
-        to some 404s): it is skipped as a failed detail page. A failed request
-        raises ListingIncompleteError, so stale detection doesn't run.
-        """
-        animals = self._unique_by_url(animals, lambda animal: animal["url"])
-        if not animals:
-            return animals
-
-        def get_json(params: dict) -> tuple[list[dict], int]:
-            response = self.get_listing_page(f"{self.base_url}/wp-json/wp/v2/pages", params=params)
-            return response.json(), int(response.headers.get("X-WP-TotalPages", 1))
-
-        ids = post_ids(get_json, {"slug": ",".join(slugs(animal["url"] for animal in animals))})
-        keyed = []
-        for animal in animals:
-            page_id = ids.get(url_key(animal["url"]))
-            if page_id is None:
-                self._detail_failed(animal["url"], DetailPageError("not a published page"))
-                continue
-            keyed.append({**animal, "external_id": self._external_id(page_id), "adoption_url": animal["url"]})
-        return keyed
-
-    @staticmethod
-    def _external_id(page_id: int) -> str:
-        """The dog's ID: its WordPress page ID, which survives renames (#570)."""
-        return f"arb-{page_id}"
+        """Key each listed dog on its WordPress page ID (#570)."""
+        keyed = key_on_post_ids(self, animals, route=f"{self.base_url}/wp-json/wp/v2/pages", url_of=lambda animal: animal["url"], prefix="arb-")
+        return [{**animal, "adoption_url": animal["url"]} for animal in keyed]
 
     def _valid_dog(self, animal: dict[str, Any]) -> dict[str, Any] | None:
         """The dog on a listed dog's detail page, or None if it yields no valid dog."""

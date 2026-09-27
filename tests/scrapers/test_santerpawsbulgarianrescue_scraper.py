@@ -53,7 +53,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 self.assertEqual(result, expected_name)
 
     def test_listed_dogs_are_keyed_on_their_post_ids(self):
-        """The REST post ID survives renames; an unpublished page is a failed detail page (#570)."""
+        """The REST post ID survives renames; a dead link is skipped (#570)."""
         listed = [
             {"name": "Pepper", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/pepper/"},
             {"name": "Gone", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/gone/"},
@@ -61,11 +61,17 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         rest = Mock(headers={"X-WP-TotalPages": "1"})
         rest.json.return_value = [{"id": 232, "link": "https://santerpawsbulgarianrescue.com/dog/pepper/"}]
 
-        with patch.object(self.scraper, "get_listing_page", return_value=rest):
+        def get_listing_page(url, **kwargs):
+            if "wp-json" in url:
+                return rest
+            raise ListingIncompleteError(f"{url} failed") from requests.HTTPError(response=Mock(status_code=404))
+
+        with patch.object(self.scraper, "get_listing_page", side_effect=get_listing_page) as get:
             keyed = _REAL_WITH_POST_IDS(self.scraper, listed)
 
         self.assertEqual([dog["external_id"] for dog in keyed], ["spbr-232"])
-        self.assertEqual(self.scraper.detail_failures, ["https://santerpawsbulgarianrescue.com/dog/gone/"])
+        self.assertEqual(get.call_args_list[0].kwargs["headers"]["User-Agent"], "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)")
+        self.assertEqual(self.scraper.detail_failures, [])
 
     @patch("requests.get")
     def test_get_animal_list_pagination_request(self, mock_get):

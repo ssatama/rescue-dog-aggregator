@@ -279,15 +279,15 @@ dog re-creates it.
 **Santer Paws and Animal Rescue Bosnia ids are WordPress post ids** since
 #570: `spbr-{post id}` and `arb-{page id}`. Names and slugs change and repeat;
 post ids don't. Listing pages show only links, so each run asks the site's
-REST API once (`/wp-json/wp/v2/dog`, `/wp-json/wp/v2/pages?slug=...`) for
-every listed dog's id. If that request fails, the listing fails
-(ListingIncompleteError). A listed dog missing from the answer has no
-published page and is skipped as a failed detail page: Bosnia's listing links
-to some 404s (Lexis, Avelina, Vina on 2026-09-27). Detail pages carry the id
-in `<body class>` (`postid-N`, `page-id-N`) as a cross-check. Rows were
-re-keyed with `management/wordpress_rekey.py`, which matches by slug (Santer
-Paws moved its pages from `/adoption/` to `/dog/`) and also rewrites
-`adoption_url`, since updates never refresh it.
+REST API for the listed slugs (`/wp-json/wp/v2/dog`, `/wp-json/wp/v2/pages`,
+50 slugs a request). A listed link the answer lacks (a renamed page WordPress
+redirects) is resolved from its page's `<body class>` (`postid-N`,
+`page-id-N`); only a page that 404s is skipped, with a warning and no failure
+count. Bosnia's listing links to a few such dead pages (Lexis, Avelina on
+2026-09-27). A failed REST request fails the listing (ListingIncompleteError).
+Rows were re-keyed with `management/wordpress_rekey.py` (path first, then a
+unique slug, since Santer Paws moved its pages from `/adoption/` to `/dog/`),
+which also rewrites `adoption_url`: updates never refresh it.
 
 **daisyfamilyrescue `age_text`** once held gender text and future dates.
 `age_backfill.py` deliberately doesn't clear these, and a test pins that, so
