@@ -272,8 +272,12 @@ children").
 - The profile was fed the wrong facts, so `profile_inputs` (backfill tool)
   counts `may_live_with` and `good_with_dogs/cats/children` as profile
   inputs, by key. Dropping the "Unknown" placeholder alone isn't a change.
-- The Dogs Trust prompt says a chip missing from `may_live_with` is not a
-  "no"; only the text can say no.
+- The Dogs Trust prompt (1.1.0) says a chip missing from `may_live_with`
+  is not a "no"; only the description can say no. Secondary school
+  children alone is "older_children", not "yes".
+- The scraper can no longer store an explicit `false`: the "Can live with"
+  section it parsed isn't on the pages, and no stored Dogs Trust row had
+  one. Negatives come from the profile.
 - After #572: change `companionAnswer` in `frontend/src/utils/dogFacts.ts`
   to `answerOf(profile) ?? answerOf(properties)`, so a rescue's real answer
   fills in behind an AI "unknown" (from #514's review, on #516).

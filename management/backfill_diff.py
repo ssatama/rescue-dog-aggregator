@@ -102,13 +102,17 @@ def dog_changes(scraped: dict[str, Any], stored: dict[str, Any]) -> dict[str, tu
 PROFILE_FACT_KEYS = ("may_live_with", "good_with_dogs", "good_with_cats", "good_with_children")
 
 
+def _is_fact(value: Any) -> bool:
+    return value is not None and not (isinstance(value, str) and value.strip().lower() in ("", "unknown"))
+
+
 def profile_inputs(properties: dict[str, Any]) -> list[str]:
     """What the profile is built from. Texts count whatever key each sits
     under: a text that only moved key is the same source (#563: Beschreibung
     became description). Facts count with their key; the "Unknown"
     placeholder is no fact, so dropping it alone changes nothing."""
     texts = [json.dumps(properties[key], sort_keys=True) for key in PROFILE_TEXT_KEYS if properties.get(key) is not None]
-    facts = [f"{key}={json.dumps(properties[key])}" for key in PROFILE_FACT_KEYS if properties.get(key) not in (None, "Unknown")]
+    facts = [f"{key}={json.dumps(properties[key])}" for key in PROFILE_FACT_KEYS if _is_fact(properties.get(key))]
     return sorted(texts) + facts
 
 

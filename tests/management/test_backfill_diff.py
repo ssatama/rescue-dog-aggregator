@@ -72,6 +72,7 @@ class TestDogChanges:
         assert needs_reprofile({"properties.good_with_children": ("Unknown", "Yes (11+)")})
         assert needs_reprofile({"properties.may_live_with": ("German Shepherd Dog Cross, Dogs", "Dogs")})
         assert not needs_reprofile({"properties.good_with_cats": ("Unknown", None)})
+        assert not needs_reprofile({"properties.good_with_cats": ("unknown", None)})
 
     def test_text_that_only_moved_key_needs_no_reprofile(self):
         moved = {"properties.Beschreibung": ("Ein guter Hund.", None), "properties.description": (None, "Ein guter Hund.")}

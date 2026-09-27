@@ -1119,13 +1119,6 @@ class DogsTrustScraper(BaseScraper):
 
             traceback.print_exc()
 
-        # Extract behavioral traits (good with children/dogs/cats)
-        try:
-            behavioral_traits = self._extract_behavioral_traits(soup)
-            properties.update(behavioral_traits)
-        except Exception as e:
-            self.logger.error(f"Error extracting behavioral traits: {e}")
-
         # CRITICAL: Store description in properties (Many Tears pattern)
         properties["description"] = description or ""
 
@@ -1386,7 +1379,8 @@ class DogsTrustScraper(BaseScraper):
 
     # The chips' search parameters: /rehoming/dogs?liveWithDogs=true (#516).
     # Keyed on these, not the labels, which have changed before ("Secondary"
-    # became "Secondary school children" in 2026).
+    # became "Secondary school children" in 2026). Children in priority
+    # order: the youngest listed wins.
     LIVE_WITH_TRAITS = {
         "Dogs": ("good_with_dogs", True),
         "Cats": ("good_with_cats", True),
@@ -1394,50 +1388,50 @@ class DogsTrustScraper(BaseScraper):
         "Primary": ("good_with_children", "Yes (5+)"),
         "Secondary": ("good_with_children", "Yes (11+)"),
     }
+    _MAY_LIVE_WITH = re.compile(r"^\s*may live with:?\s*$", re.IGNORECASE)
 
     def _may_live_with(self, soup: BeautifulSoup) -> list[tuple[str, str]]:
         """The "May live with" chips as (parameter, label): ("Dogs", "Dogs").
 
         Only the card whose label says "May live with": matching text in any
         div used to reach the page wrapper, whose text always says "dogs".
+        A label without its card, or a card without chips, is logged.
         """
-        label = soup.find(string=lambda text: text and text.strip() == "May live with")
-        card = label.find_parent(class_=re.compile("traitCard")) if label else None
+        label = soup.find(string=self._MAY_LIVE_WITH)
+        if not label:
+            return []
+        card = label.find_parent(class_=re.compile("traitCard"))
         if not card:
+            self.logger.warning("'May live with' label outside a trait card: the page layout changed")
             return []
         chips = []
         for link in card.find_all("a", href=True):
             if match := re.search(r"liveWith(\w+)=true", link["href"]):
                 chips.append((match.group(1), link.get_text(strip=True)))
-        if not chips and card.get_text(strip=True) != "May live with":
+        if not chips:
             self.logger.warning(f"'May live with' card without chips: {card.get_text(' ', strip=True)[:100]!r}")
         return chips
 
-    def _extract_compatibility(self, soup: BeautifulSoup) -> dict[str, str]:
-        """The "May live with" chips as one string, "Cats, Dogs, Secondary school children"."""
-        labels = [label for _, label in self._may_live_with(soup)]
-        return {"may_live_with": ", ".join(labels)} if labels else {}
+    def _extract_compatibility(self, soup: BeautifulSoup) -> dict[str, Any]:
+        """may_live_with and good_with_dogs/cats/children, from one read of the chips.
 
-    def _extract_behavioral_traits(self, soup: BeautifulSoup) -> dict[str, Any]:
-        """good_with_dogs/cats/children from the "May live with" chips.
-
+        may_live_with is the labels, "Cats, Dogs, Secondary school children".
         A chip means yes. No chip means the rescue didn't say, so the key is
-        left out: not "Unknown", and not "no" either (#516). Children take the
-        youngest age listed: preschool any age, primary "Yes (5+)",
-        secondary only "Yes (11+)".
+        left out: not "Unknown", and not "no" either (#516). Children:
+        preschool any age, primary "Yes (5+)", secondary only "Yes (11+)".
         """
-        order = list(self.LIVE_WITH_TRAITS)
-        known = []
-        for parameter, label in self._may_live_with(soup):
-            if parameter in self.LIVE_WITH_TRAITS:
-                known.append(parameter)
-            else:
+        chips = self._may_live_with(soup)
+        if not chips:
+            return {}
+        present = {parameter for parameter, _ in chips}
+        for parameter, label in chips:
+            if parameter not in self.LIVE_WITH_TRAITS:
                 self.logger.warning(f"Unknown 'May live with' chip: {label!r} (liveWith{parameter})")
-        traits: dict[str, Any] = {}
-        for parameter in sorted(known, key=order.index, reverse=True):  # the youngest children win
-            key, value = self.LIVE_WITH_TRAITS[parameter]
-            traits[key] = value
-        return traits
+        compatibility: dict[str, Any] = {"may_live_with": ", ".join(label for _, label in chips)}
+        for parameter, (key, value) in self.LIVE_WITH_TRAITS.items():
+            if parameter in present:
+                compatibility.setdefault(key, value)
+        return compatibility
 
     def _normalize_text(self, text: str) -> str:
         """Normalize text by replacing smart quotes and special characters.
