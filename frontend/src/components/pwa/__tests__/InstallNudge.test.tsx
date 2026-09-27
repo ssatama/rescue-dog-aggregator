@@ -65,18 +65,6 @@ describe("InstallNudge", () => {
     expect(trackInstallNudgeShown).toHaveBeenCalledWith("ios");
   });
 
-  it("is not counted as shown while CSS hides it behind the adopt bar", () => {
-    // jsdom applies no Tailwind, so stand in for the adopt bar's CSS
-    const spy = jest
-      .spyOn(window, "getComputedStyle")
-      .mockReturnValue({ display: "none" } as CSSStyleDeclaration);
-    browseFiveDogs();
-    render(<InstallNudge />);
-    act(() => jest.advanceTimersByTime(1000));
-    spy.mockRestore();
-    expect(trackInstallNudgeShown).not.toHaveBeenCalled();
-  });
-
   it("shows on the third session", () => {
     const now = Date.now();
     const gap = 31 * 60 * 1000;
@@ -122,6 +110,8 @@ describe("InstallNudge", () => {
     ["on the swipe page", () => mockPathname.mockReturnValue("/swipe")],
     // Dogs first: the mobile home stays dogs-only (AGENTS.md)
     ["on the home page", () => mockPathname.mockReturnValue("/")],
+    // The adopt bar owns the bottom edge, even while the dog loads
+    ["on a dog page", () => mockPathname.mockReturnValue("/dogs/milo-mixed-breed-11788")],
   ])("stays hidden %s", (_name, setup) => {
     setup();
     browseFiveDogs();
@@ -145,6 +135,35 @@ describe("InstallNudge", () => {
     act(() => jest.advanceTimersByTime(31 * 60 * 1000));
     act(() => setVisibility("visible"));
     expect(screen.getByRole("region", { name: /home screen/i })).toBeInTheDocument();
+  });
+
+  it("still shows on listings under /dogs", () => {
+    mockPathname.mockReturnValue("/dogs/puppies");
+    browseFiveDogs();
+    render(<InstallNudge />);
+    expect(screen.getByRole("region", { name: /home screen/i })).toBeInTheDocument();
+  });
+
+  it("retires when the site is installed from the browser's own menu", () => {
+    browseFiveDogs();
+    render(<InstallNudge />);
+    act(() => {
+      window.dispatchEvent(new Event("appinstalled"));
+    });
+    expect(screen.queryByRole("region", { name: /home screen/i })).toBeNull();
+  });
+
+  it("keeps a long visit spent scrolling one page as one session", () => {
+    render(<InstallNudge />);
+    for (let minute = 0; minute < 45; minute += 5) {
+      act(() => jest.advanceTimersByTime(5 * 60 * 1000));
+      act(() => {
+        window.dispatchEvent(new Event("scroll"));
+      });
+    }
+    mockPathname.mockReturnValue("/dogs?page=2");
+    render(<InstallNudge />);
+    expect(JSON.parse(localStorage.getItem("installNudge")!).sessions).toBe(1);
   });
 
   it("keeps a long visit spent moving between pages as one session", () => {

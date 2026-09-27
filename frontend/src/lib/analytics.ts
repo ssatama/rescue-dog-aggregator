@@ -251,8 +251,13 @@ export function trackOrganizationWebsiteClicked(
  * the app window without a reload. */
 export function registerDisplayMode(): void {
   if (!posthog.__loaded) return;
-  const update = () =>
-    posthog.register({ display_mode: isStandalone() ? "standalone" : "browser" });
+  const update = () => {
+    try {
+      posthog.register({ display_mode: isStandalone() ? "standalone" : "browser" });
+    } catch (error) {
+      reportError(error, { context: "analytics.registerDisplayMode" });
+    }
+  };
   update();
   window.matchMedia?.("(display-mode: standalone)").addEventListener?.("change", update);
 }

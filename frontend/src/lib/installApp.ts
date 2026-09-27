@@ -30,9 +30,9 @@ declare global {
   }
 }
 
-// In-app browsers (Instagram, Facebook, TikTok, the Google app...) have no
-// Add to Home Screen
-const IN_APP_BROWSER = /FBAN|FBAV|Instagram|Line\/|TikTok|Snapchat|GSA\//;
+// In-app browsers (Instagram, Facebook, TikTok, the Google app, Android
+// WebViews...) have no Add to Home Screen
+const IN_APP_BROWSER = /FBAN|FBAV|Instagram|Line\/|TikTok|Snapchat|GSA\/|; wv\)/;
 
 /** The install route that needs instructions, from the user agent. */
 export function manualInstallMethod(
@@ -114,7 +114,7 @@ export function getInstallMethod(): InstallMethod | null {
  * Chromium browsers have `onbeforeinstallprompt` before their prompt arrives
  * (and after it is spent). */
 export function canEverInstall(): boolean {
-  if (alreadyInstalled()) return false;
+  if (alreadyInstalled() || IN_APP_BROWSER.test(navigator.userAgent)) return false;
   return "onbeforeinstallprompt" in window || manualMethodHere() !== null;
 }
 

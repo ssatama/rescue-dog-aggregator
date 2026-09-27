@@ -56,24 +56,34 @@ const GUIDES: Record<ManualMethod, { title: string; steps: Step[]; note?: string
 
 interface InstallInstructionsProps {
   method: ManualMethod;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onClose: () => void;
+  /** Focus the page's main content on close, when the opener has unmounted. */
+  returnFocusToMain?: boolean;
 }
 
 /** The steps for browsers that can install the site but have no API for it. */
 export default function InstallInstructions({
   method,
-  open,
-  onOpenChange,
+  onClose,
+  returnFocusToMain = false,
 }: InstallInstructionsProps) {
   const guide = GUIDES[method];
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    // Mounted only while open (InstallAppButton loads it on demand)
+    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         {/* Above the mobile menu drawer (z-70), which can open this */}
         <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/50" />
-        <Dialog.Content className="fixed inset-x-0 bottom-0 z-[80] rounded-t-2xl border-t border-line bg-surface p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl focus:outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border">
+        <Dialog.Content
+          onCloseAutoFocus={(event) => {
+            const main = document.querySelector("main");
+            if (!returnFocusToMain || !main) return;
+            event.preventDefault();
+            main.setAttribute("tabindex", "-1");
+            main.focus({ preventScroll: true });
+          }}
+          className="fixed inset-x-0 bottom-0 z-[80] rounded-t-2xl border-t border-line bg-surface p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl focus:outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border">
           <Dialog.Close
             className="absolute right-4 top-4 rounded-lg p-1.5 text-subtle transition-colors hover:bg-soft hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Close"

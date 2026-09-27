@@ -73,6 +73,18 @@ describe("canEverInstall", () => {
     delete (window as { onbeforeinstallprompt?: unknown }).onbeforeinstallprompt;
   });
 
+  it("is false in an Android WebView, which has the property but never installs", () => {
+    const ua = jest
+      .spyOn(navigator, "userAgent", "get")
+      .mockReturnValue(
+        "Mozilla/5.0 (Linux; Android 15; Pixel 9; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/140.0.0.0 Mobile Safari/537.36",
+      );
+    (window as { onbeforeinstallprompt?: unknown }).onbeforeinstallprompt = null;
+    expect(canEverInstall()).toBe(false);
+    delete (window as { onbeforeinstallprompt?: unknown }).onbeforeinstallprompt;
+    ua.mockRestore();
+  });
+
   it("is false in a browser with neither the prompt nor Share steps", () => {
     expect(canEverInstall()).toBe(false);
   });

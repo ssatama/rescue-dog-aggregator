@@ -21,6 +21,9 @@ import { trackInstallNudgeDismissed, trackInstallNudgeShown } from "@/lib/analyt
  * someone is on their third visit or has looked at five dogs. It stays for that
  * session, then retires whether or not it was used. The menu and the footer
  * offer the same thing all the time; this is the only push. */
+// /dogs/<slug>-<id>; /dogs/puppies and /dogs/country/... are listings
+const DOG_PAGE = /^\/dogs\/[^/]+-\d+$/;
+
 export default function InstallNudge() {
   const method = useInstallMethod();
   const pathname = usePathname();
@@ -42,8 +45,24 @@ export default function InstallNudge() {
       if (document.visibilityState === "hidden") recordSeen();
       else recordVisit();
     };
+    // Scrolling and filtering on one page is activity too, noted once a minute
+    let lastActivity = 0;
+    const onActivity = () => {
+      const now = Date.now();
+      if (now - lastActivity < 60_000) return;
+      lastActivity = now;
+      recordSeen(now);
+    };
+    const activity = ["scroll", "pointerdown", "keydown"] as const;
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    activity.forEach((type) => window.addEventListener(type, onActivity, { passive: true }));
+    // Installed from the browser's own menu or address bar
+    window.addEventListener("appinstalled", dismissNudge);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      activity.forEach((type) => window.removeEventListener(type, onActivity));
+      window.removeEventListener("appinstalled", dismissNudge);
+    };
   }, []);
 
   const shown =
@@ -54,16 +73,16 @@ export default function InstallNudge() {
     canNudge() &&
     // Dogs first: the mobile home stays dogs-only (AGENTS.md)
     pathname !== "/" &&
-    !pathname?.startsWith("/swipe");
+    !pathname?.startsWith("/swipe") &&
+    // A dog page's adopt bar owns the bottom edge, even while the dog loads
+    !DOG_PAGE.test(pathname ?? "");
 
-  // Seen once it is really on screen: CSS hides it behind the adopt bar,
-  // which can mount a moment after the card (a dog loaded client-side)
+  // Seen once it is really on screen, a second after it appears
   useEffect(() => {
     if (!shown || !method) return;
     const timer = setTimeout(() => {
       const card = cardRef.current;
-      // Not checkVisibility(): iOS before 17.4 lacks it
-      if (card && getComputedStyle(card).display !== "none" && markNudgeShown()) {
+      if (card && markNudgeShown()) {
         trackInstallNudgeShown(method);
       }
     }, 1000);
@@ -85,9 +104,8 @@ export default function InstallNudge() {
       initial={{ y: 24, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
-      // Sits above the tab bar; below lg the dog page's adopt bar owns the
-      // bottom edge (the bar is lg:hidden, but stays in the DOM)
-      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 rounded-2xl border border-line bg-surface p-4 shadow-xl max-lg:[body:has([data-adopt-bar])_&]:hidden sm:left-auto sm:w-96 lg:bottom-6 lg:right-6"
+      // Sits above the tab bar
+      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 rounded-2xl border border-line bg-surface p-4 shadow-xl sm:left-auto sm:w-96 lg:bottom-6 lg:right-6"
     >
       <button
         type="button"

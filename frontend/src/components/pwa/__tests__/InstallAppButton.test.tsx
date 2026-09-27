@@ -80,6 +80,23 @@ describe("InstallAppButton", () => {
     document.removeEventListener("keydown", drawerEscape);
   });
 
+  it("retires the card as soon as the steps open from the menu or footer", async () => {
+    mockMethod.mockReturnValue("ios");
+    render(<InstallAppButton surface="menu" />);
+    fireEvent.click(screen.getByRole("button", { name: "Add to Home Screen" }));
+    // iOS may discard the tab before the steps are ever closed
+    expect(dismissNudge).toHaveBeenCalled();
+    await screen.findByRole("dialog");
+  });
+
+  it("keeps the card while its own steps are open", async () => {
+    mockMethod.mockReturnValue("ios");
+    render(<InstallAppButton surface="nudge" />);
+    fireEvent.click(screen.getByRole("button", { name: "Add to Home Screen" }));
+    await screen.findByRole("dialog");
+    expect(dismissNudge).not.toHaveBeenCalled();
+  });
+
   it("shows the Safari on Mac steps", async () => {
     mockMethod.mockReturnValue("mac-safari");
     render(<InstallAppButton surface="footer" />);

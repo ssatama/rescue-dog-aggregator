@@ -46,6 +46,10 @@ export default function InstallAppButton({
       if (await promptInstall()) dismissNudge();
     } else {
       setStepsOpen(true);
+      // iOS may discard the tab once they head to the Home Screen, before the
+      // steps are closed. The card's own button waits for the close, since
+      // retiring it now would unmount the steps with it.
+      if (surface !== "nudge") dismissNudge();
     }
   };
 
@@ -58,12 +62,12 @@ export default function InstallAppButton({
       {stepsOpen && method !== "prompt" && (
         <InstallInstructions
           method={method}
-          open
-          onOpenChange={(open) => {
-            if (open) return;
+          onClose={() => {
             setStepsOpen(false);
             dismissNudge();
           }}
+          // From the card, the button that opened the steps is gone by now
+          returnFocusToMain={surface === "nudge"}
         />
       )}
     </>
