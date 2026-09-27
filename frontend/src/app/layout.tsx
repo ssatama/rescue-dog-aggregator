@@ -8,8 +8,10 @@ import { Analytics, SpeedInsights } from "@/components/analytics";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
+import InstallNudgeLoader from "@/components/pwa/InstallNudgeLoader";
 import SentryInitializer from "@/components/SentryInitializer";
 import { generateSiteGraph } from "@/utils/schema";
+import { THEME_COLORS } from "@/constants/themeColors";
 
 // Figtree for text, Bricolage Grotesque for dog names and headings. Both are
 // variable fonts, so no weight list is needed.
@@ -54,7 +56,12 @@ export const metadata: Metadata = {
       },
     ],
   },
-  manifest: "/site.webmanifest",
+  // Installed as an app on iOS; the manifest is app/manifest.ts
+  appleWebApp: {
+    capable: true,
+    title: "Rescue Dogs",
+    statusBarStyle: "default",
+  },
   openGraph: {
     title: "Rescue Dog Aggregator - Find Your Perfect Rescue Dog",
     description:
@@ -100,14 +107,24 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://images.rescuedogs.me" />
         <link rel="dns-prefetch" href="https://images.rescuedogs.me" />
+        {/* Also adds theme-color for the saved theme. Not in Next's viewport
+            metadata: those tags follow the OS and are re-created on every
+            navigation. ThemeProvider keeps this one in step with the toggle. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})()`,
+            __html: `(function(){var d=false;try{var t=localStorage.getItem("theme");d=t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)}catch(e){}if(d)document.documentElement.classList.add("dark");var m=document.createElement("meta");m.name="theme-color";m.content=d?"${THEME_COLORS.dark}":"${THEME_COLORS.light}";document.head.appendChild(m)})()`,
           }}
         />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister()})})}})()`,
+          }}
+        />
+        {/* Keeps Chrome's install prompt for our own button (lib/installApp.ts).
+            Inline so it runs before hydration, when the event often fires. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__installPrompt=e;window.dispatchEvent(new Event("installpromptchange"))});window.addEventListener("appinstalled",function(){window.__installPrompt=undefined;window.dispatchEvent(new Event("installpromptchange"))})`,
           }}
         />
         <script
@@ -128,6 +145,7 @@ export default function RootLayout({
               >
                 {children}
                 <MobileBottomNavWrapper />
+                <InstallNudgeLoader />
               </ErrorBoundary>
               <Analytics />
               <SpeedInsights />

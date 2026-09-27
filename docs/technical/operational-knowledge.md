@@ -209,6 +209,15 @@ any 404 change with `curl -o /dev/null -w "%{http_code}"` on the deployed URL.
 galleries upload in parallel (5 workers). `get_existing_external_ids` only
 skips dogs that have a gallery, so galleries backfill through the normal cron.
 
+**Installable app, no service worker.** The site installs from
+`app/manifest.ts` (Chrome/Edge through their own dialog, iOS and Safari on
+Mac through the steps in `components/pwa/InstallInstructions.tsx`). None of
+these need a service worker, and the last one served stale API data as "No
+dogs available" (#159); the root layout still unregisters it for returning
+visitors. Don't add one back for install. On iOS a Home Screen app has its own
+storage, so favorites saved in Safari don't appear in the app; the steps say
+so. The nudge card's thresholds are in `lib/installNudge.ts`.
+
 ## Data
 
 **Rows never self-correct on scrape.** `skip_existing_animals` drops existing

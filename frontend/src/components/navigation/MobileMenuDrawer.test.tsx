@@ -185,6 +185,16 @@ describe("MobileMenuDrawer", () => {
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
 
+    it("leaves an Escape an inner dialog already handled", () => {
+      render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
+
+      const handled = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
+      handled.preventDefault();
+      document.dispatchEvent(handled);
+
+      expect(mockOnClose).not.toHaveBeenCalled();
+    });
+
     it("should call onClose when Escape key is pressed", () => {
       render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
 

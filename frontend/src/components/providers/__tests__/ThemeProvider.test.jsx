@@ -226,4 +226,39 @@ describe("ThemeProvider", () => {
 
     setItemSpy.mockRestore();
   });
+
+  test("points the browser's theme-color at the chosen theme", () => {
+    // As the inline theme script in layout.tsx leaves it
+    document.head.innerHTML = '<meta name="theme-color" content="#FAF9F6">';
+    render(
+      <ThemeProvider>
+        <TestComponent />
+      </ThemeProvider>,
+    );
+    const color = () => document.querySelector('meta[name="theme-color"]').content;
+
+    try {
+      fireEvent.click(screen.getByTestId("set-dark"));
+      expect(color()).toBe("#131211");
+      fireEvent.click(screen.getByTestId("set-light"));
+      expect(color()).toBe("#FAF9F6");
+    } finally {
+      document.head.innerHTML = "";
+    }
+  });
+
+  test("adds the theme-color tag back if the head lost it", () => {
+    document.head.innerHTML = "";
+    try {
+      render(
+        <ThemeProvider>
+          <TestComponent />
+        </ThemeProvider>,
+      );
+      fireEvent.click(screen.getByTestId("set-dark"));
+      expect(document.querySelector('meta[name="theme-color"]').content).toBe("#131211");
+    } finally {
+      document.head.innerHTML = "";
+    }
+  });
 });

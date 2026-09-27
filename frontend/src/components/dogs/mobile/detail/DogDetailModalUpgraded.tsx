@@ -27,6 +27,7 @@ import {
 import { getWhere } from "@/components/dogs/DogCard";
 import ShareButton from "@/components/ui/ShareButton";
 import { trackDogViewed } from "@/lib/analytics";
+import { recordDogView } from "@/lib/installNudge";
 
 interface DogDetailModalUpgradedProps {
   dog: Dog | null;
@@ -70,6 +71,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   useEffect(() => {
     if (isOpen && dog) {
       trackDogViewed(dog, "modal");
+      recordDogView(dog.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per dog shown, not per re-render of the same dog
   }, [isOpen, dog?.id]);

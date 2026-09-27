@@ -6,6 +6,7 @@ import type {
   ThemeContextValue,
   ThemeProviderProps,
 } from "@/types/layoutComponents";
+import { THEME_COLORS } from "@/constants/themeColors";
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: "light",
@@ -31,6 +32,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
+    // The browser bar and the installed app's title bar. The inline theme
+    // script in layout.tsx adds this tag; Next doesn't manage it, and a
+    // client-rendered <head> would drop it, so add it back if it's gone.
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "theme-color";
+      document.head.appendChild(meta);
+    }
+    meta.content = THEME_COLORS[theme];
   }, [theme]);
 
   const updateTheme = (newTheme: Theme): void => {

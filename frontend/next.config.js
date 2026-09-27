@@ -52,6 +52,12 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // The manifest moved to app/manifest.ts (#612)
+      {
+        source: '/site.webmanifest',
+        destination: '/manifest.webmanifest',
+        permanent: true,
+      },
       // Serbia was stored as SR, which is Suriname's ISO code (#450).
       {
         source: '/dogs/country/sr',

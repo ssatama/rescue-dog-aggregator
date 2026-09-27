@@ -1,22 +1,28 @@
 import posthog from "posthog-js";
 import {
   trackAdoptionLinkClicked,
+  trackAppInstallClicked,
+  trackAppInstalls,
   trackDogViewed,
   trackFiltersApplied,
   trackGalleryPhotoViewed,
+  trackInstallNudgeDismissed,
+  trackInstallNudgeShown,
   trackLocationSet,
   trackSearchPerformed,
   trackSortChanged,
+  registerDisplayMode,
 } from "../analytics";
 
 jest.mock("posthog-js", () => ({
   __esModule: true,
-  default: { __loaded: true, capture: jest.fn() },
+  default: { __loaded: true, capture: jest.fn(), register: jest.fn() },
 }));
 
 const mockPosthog = posthog as unknown as {
   __loaded: boolean;
   capture: jest.Mock;
+  register: jest.Mock;
 };
 
 const dog = {
@@ -172,6 +178,49 @@ describe("analytics", () => {
         undefined,
       ],
     ]);
+  });
+
+  it("sends install events with the surface and install method", () => {
+    trackInstallNudgeShown("ios");
+    trackAppInstallClicked("nudge", "ios");
+    trackInstallNudgeDismissed("prompt");
+    const addListener = jest.spyOn(window, "addEventListener");
+    trackAppInstalls();
+    window.dispatchEvent(new Event("appinstalled"));
+    const [, onInstalled] = addListener.mock.calls.find(([type]) => type === "appinstalled")!;
+    window.removeEventListener("appinstalled", onInstalled);
+    addListener.mockRestore();
+
+    expect(mockPosthog.capture.mock.calls).toEqual([
+      ["install_nudge_shown", { method: "ios" }, undefined],
+      ["app_install_clicked", { surface: "nudge", method: "ios" }, undefined],
+      ["install_nudge_dismissed", { method: "prompt" }, undefined],
+      ["app_installed", {}, undefined],
+    ]);
+  });
+
+  it("tags events with display_mode and follows a switch to the app window", () => {
+    let standalone = false;
+    let onChange: () => void = () => {};
+    const original = window.matchMedia;
+    window.matchMedia = jest.fn(() => ({
+      get matches() {
+        return standalone;
+      },
+      addEventListener: (_type: string, listener: () => void) => {
+        onChange = listener;
+      },
+    })) as unknown as typeof window.matchMedia;
+
+    try {
+      registerDisplayMode();
+      expect(mockPosthog.register).toHaveBeenLastCalledWith({ display_mode: "browser" });
+      standalone = true;
+      onChange();
+      expect(mockPosthog.register).toHaveBeenLastCalledWith({ display_mode: "standalone" });
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it("does nothing before PostHog is initialized", () => {

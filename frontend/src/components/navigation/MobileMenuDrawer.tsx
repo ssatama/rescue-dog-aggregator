@@ -12,11 +12,13 @@ import {
   Building2,
   Users,
   Shield,
+  Smartphone,
   LucideIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ThemeToggle } from "../ui/ThemeToggle";
+import InstallAppButton from "@/components/pwa/InstallAppButton";
 
 interface MobileMenuDrawerProps {
   isOpen: boolean;
@@ -111,7 +113,8 @@ function MenuLink({
 export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
+      // An inner dialog (the install steps) handles its own Escape first
+      if (e.key === "Escape" && isOpen && !e.defaultPrevented) {
         onClose();
       }
     };
@@ -190,6 +193,11 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
 
             {/* Footer area - fixed at bottom */}
             <div className="border-t border-border p-6 space-y-4">
+              <InstallAppButton
+                surface="menu"
+                className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                icon={<Smartphone className="w-4 h-4" />}
+              />
               {footerItems.map((item) => {
                 const Icon = item.icon;
                 return (

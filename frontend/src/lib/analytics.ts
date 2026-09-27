@@ -1,6 +1,8 @@
 import posthog, { type CaptureOptions } from "posthog-js";
 import { getAgeCategory, sizeCategory } from "@/utils/dogHelpers";
 import { reportError } from "@/utils/logger";
+import type { InstallMethod } from "@/lib/installApp";
+import { isStandalone } from "@/lib/displayMode";
 
 // Product analytics events for PostHog. Every posthog.capture() goes through
 // this file so the event names and their properties live in one place.
@@ -242,4 +244,47 @@ export function trackOrganizationWebsiteClicked(
     },
     OUTBOUND,
   );
+}
+
+/** Adds `display_mode` to every event: `standalone` when the site runs as an
+ * installed app. Follows the change when Chrome moves an installing tab into
+ * the app window without a reload. */
+export function registerDisplayMode(): void {
+  if (!posthog.__loaded) return;
+  const update = () => {
+    try {
+      posthog.register({ display_mode: isStandalone() ? "standalone" : "browser" });
+    } catch (error) {
+      reportError(error, { context: "analytics.registerDisplayMode" });
+    }
+  };
+  update();
+  window.matchMedia?.("(display-mode: standalone)").addEventListener?.("change", update);
+}
+
+// Installing the site as an app (home screen, Dock). `method` is how this
+// browser installs: its own dialog (`prompt`) or our steps (`ios`,
+// `mac-safari`). `app_installed` only fires where the browser reports it
+// (Chrome, Edge); installed launches carry `display_mode: standalone`.
+export type InstallSurface = "nudge" | "menu" | "footer";
+
+export function trackAppInstallClicked(
+  surface: InstallSurface,
+  method: InstallMethod,
+): void {
+  capture("app_install_clicked", { surface, method });
+}
+
+/** Listens from PostHog's start, so an install from the browser's own menu is
+ * caught on any page, whether or not an install button is on it. */
+export function trackAppInstalls(): void {
+  window.addEventListener("appinstalled", () => capture("app_installed", {}));
+}
+
+export function trackInstallNudgeShown(method: InstallMethod): void {
+  capture("install_nudge_shown", { method });
+}
+
+export function trackInstallNudgeDismissed(method: InstallMethod): void {
+  capture("install_nudge_dismissed", { method });
 }

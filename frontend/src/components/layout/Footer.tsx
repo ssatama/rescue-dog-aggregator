@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, Smartphone } from "lucide-react";
+import InstallAppButton from "@/components/pwa/InstallAppButton";
 
 const COLUMNS = [
   {
@@ -62,6 +63,11 @@ export default function Footer() {
                 </span>
               </div>
             </Link>
+            <InstallAppButton
+              surface="footer"
+              className={`mt-4 inline-flex items-center gap-2 font-medium ${LINK}`}
+              icon={<Smartphone aria-hidden="true" className="h-4 w-4" />}
+            />
           </div>
 
           {COLUMNS.map((column) => (
