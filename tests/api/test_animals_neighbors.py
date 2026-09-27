@@ -1,7 +1,7 @@
 """GET /api/animals/{slug}/neighbors: prev/next for the dog page (#490).
 
-The seeded dogs are 9001-9014, all available, so the default newest-first
-order is 9014 ... 9001.
+The seeded dogs are 9001-9014, all available and all from one rescue, so the
+default "recommended" order (#535) matches newest-first: 9014 ... 9001.
 """
 
 import pytest
