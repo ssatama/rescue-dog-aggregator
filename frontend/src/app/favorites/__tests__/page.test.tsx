@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import FavoritesClient from "../FavoritesClient";
@@ -208,5 +208,37 @@ describe("Favorites page (#498)", () => {
 
     expect(await screen.findByText("Something went wrong")).toBeInTheDocument();
     expect(screen.queryByTestId("no-longer-listed")).not.toBeInTheDocument();
+  });
+
+  test("Try again refetches the dogs that failed, without a reload (#533)", async () => {
+    mockFavorites = [1, 2];
+    mockGetAnimalsByIds.mockRejectedValueOnce(new Error("down")).mockResolvedValue([listedDog(1), listedDog(2)]);
+    render(<FavoritesClient />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Try Again" }));
+
+    await waitFor(() => expect(savedRows()).toHaveLength(2));
+    expect(mockGetAnimalsByIds).toHaveBeenLastCalledWith([1, 2]);
+  });
+
+  test("a later failed fetch keeps the dogs already loaded (#533)", async () => {
+    mockFavorites = [1];
+    mockGetAnimalsByIds.mockResolvedValueOnce([listedDog(1)]).mockRejectedValueOnce(new Error("deploy"));
+    const { rerender } = render(<FavoritesClient />);
+    await waitFor(() => expect(savedRows()).toHaveLength(1));
+
+    // A shared link adds a dog while the API is briefly down
+    mockFavorites = [1, 2];
+    rerender(<FavoritesClient />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("One saved dog didn't load.");
+    expect(savedRows()).toHaveLength(1);
+    expect(screen.queryByText("Something went wrong")).not.toBeInTheDocument();
+
+    mockGetAnimalsByIds.mockResolvedValueOnce([listedDog(2)]);
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(savedRows()).toHaveLength(2));
+    expect(mockGetAnimalsByIds).toHaveBeenLastCalledWith([2]);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

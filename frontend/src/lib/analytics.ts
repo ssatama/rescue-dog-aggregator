@@ -1,5 +1,5 @@
 import posthog, { type CaptureOptions } from "posthog-js";
-import { getAgeCategory } from "@/utils/dogHelpers";
+import { getAgeCategory, sizeCategory } from "@/utils/dogHelpers";
 import { reportError } from "@/utils/logger";
 
 // Product analytics events for PostHog. Every posthog.capture() goes through
@@ -75,7 +75,8 @@ export function dogProperties(dog: AnalyticsDog): Record<string, unknown> {
       age_text: dog.age_text,
     }),
     sex: dog.sex ?? null,
-    size: dog.standardized_size || dog.size || null,
+    // The scale the UI shows (Small, not Tiny; Giant, not XLarge)
+    size: sizeCategory({ standardized_size: dog.standardized_size, size: dog.size }),
     org_slug: dog.organization?.slug ?? null,
     org_name: dog.organization?.name ?? null,
     org_country: dog.organization?.country ?? null,

@@ -4,6 +4,11 @@ import "@testing-library/jest-dom";
 import ComparisonView from "../ComparisonView";
 import { Dog } from "../types";
 
+jest.mock("@/lib/analytics", () => ({
+  ...jest.requireActual("@/lib/analytics"),
+  trackAdoptionLinkClicked: jest.fn(),
+}));
+
 const mockDogs: Dog[] = [
   {
     id: 1,
@@ -174,7 +179,7 @@ describe("ComparisonView", () => {
     expect(screen.getByText("Experienced owners only")).toBeInTheDocument();
   });
 
-  it("displays compatibility icons correctly", () => {
+  it("shows companions in the dog page's words (#550)", () => {
     render(
       <ComparisonView
         dogs={mockDogs}
@@ -183,9 +188,11 @@ describe("ComparisonView", () => {
       />,
     );
 
-    expect(screen.getAllByText("Kids: Yes").length).toBeGreaterThan(0);
-    expect(screen.getByText("Cats: No")).toBeInTheDocument();
-    expect(screen.getByText("Dogs: No")).toBeInTheDocument();
+    const [luna, max, bella] = screen.getAllByRole("list", { name: "Lives with" }).map((row) => row.textContent);
+    expect(luna).toBe("✓ Children: yes✓ Dogs: yes✓ Cats: yes");
+    expect(max).toBe("✓ Children: yes✓ Dogs: yes✗ Cats: no");
+    expect(bella).toBe("✓ Children: yes✓ Cats: yes✗ Dogs: no");
+    expect(screen.getAllByRole("heading", { level: 4, name: "Lives with" })).toHaveLength(3);
   });
 
   it("leaves out unknown compatibility, energy and breed instead of guessing", () => {
@@ -224,8 +231,9 @@ describe("ComparisonView", () => {
       <ComparisonView dogs={[dog]} onClose={mockOnClose} onRemoveFavorite={mockOnRemoveFavorite} />,
     );
 
-    expect(screen.getByText("Kids: Older children")).toBeInTheDocument();
-    expect(screen.getByText("Dogs: Yes")).toBeInTheDocument();
+    const row = screen.getByRole("list", { name: "Lives with" }).textContent;
+    expect(row).toContain("Children: older children");
+    expect(row).toContain("✓ Dogs");
     expect(screen.queryByText("Unknown")).not.toBeInTheDocument();
   });
 
@@ -238,7 +246,9 @@ describe("ComparisonView", () => {
       />,
     );
 
-    expect(screen.getAllByText("High").length).toBeGreaterThan(0);
+    // The dog page's words (#550)
+    expect(screen.getByText("High energy")).toBeInTheDocument();
+    expect(screen.getByText("Medium energy")).toBeInTheDocument();
     expect(screen.queryByText(/\/10/)).not.toBeInTheDocument();
   });
 
@@ -270,16 +280,13 @@ describe("ComparisonView", () => {
     );
 
     // Organization names might not be displayed in the new minimal design
-    // Check that the Visit buttons are present instead
+    // Check that the adopt links are present instead
     mockDogs.forEach((dog) => {
-      const visitButton = screen.getByRole("button", {
-        name: `Visit ${dog.name}`,
-      });
-      expect(visitButton).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: new RegExp(`^Meet ${dog.name}`) })).toBeInTheDocument();
     });
   });
 
-  it("renders Visit Dog buttons for each dog", () => {
+  it("renders an adopt link for each dog", () => {
     render(
       <ComparisonView
         dogs={mockDogs}
@@ -288,10 +295,7 @@ describe("ComparisonView", () => {
       />,
     );
 
-    const visitButtons = screen.getAllByRole("button", {
-      name: /Visit .*/i,
-    });
-    expect(visitButtons).toHaveLength(mockDogs.length);
+    expect(screen.getAllByRole("link", { name: /^Meet / })).toHaveLength(mockDogs.length);
   });
 
   it("handles navigation between dogs on mobile", async () => {
@@ -370,10 +374,8 @@ describe("ComparisonView", () => {
     expect(mockOnRemoveFavorite).toHaveBeenCalledWith(mockDogs[0].id);
   });
 
-  it("opens adoption URL when Visit button is clicked", () => {
-    const mockOpen = jest.fn();
-    global.open = mockOpen;
-
+  it("links to the rescue with the referrer kept, and tracks the click from comparison", () => {
+    const { trackAdoptionLinkClicked } = jest.requireMock("@/lib/analytics");
     render(
       <ComparisonView
         dogs={mockDogs}
@@ -382,18 +384,14 @@ describe("ComparisonView", () => {
       />,
     );
 
-    const visitButtons = screen.getAllByRole("button", {
-      name: /Visit .*/i,
-    });
-    fireEvent.click(visitButtons[0]);
-
-    expect(mockOpen).toHaveBeenCalledWith(
-      mockDogs[0].adoption_url,
-      "_blank",
-      // Referrer is deliberately preserved: rescues see rescuedogs.me in their
-      // own analytics, which is the only proof we send them traffic.
-      "noopener",
-    );
+    const link = screen.getAllByRole("link", { name: /^Meet / })[0];
+    expect(link).toHaveAttribute("href", mockDogs[0].adoption_url);
+    expect(link).toHaveAttribute("target", "_blank");
+    // Referrer is deliberately preserved: rescues see rescuedogs.me in their
+    // own analytics, which is the only proof we send them traffic.
+    expect(link).toHaveAttribute("rel", "noopener");
+    fireEvent.click(link);
+    expect(trackAdoptionLinkClicked).toHaveBeenCalledWith(mockDogs[0], "comparison", undefined);
   });
 
   it("offers no rescue link for a dog that is no longer listed or has an unsafe link", () => {
@@ -408,7 +406,7 @@ describe("ComparisonView", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: /Visit .*/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Meet / })).not.toBeInTheDocument();
   });
 
   it("disables navigation buttons appropriately", () => {

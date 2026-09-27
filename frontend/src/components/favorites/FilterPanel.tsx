@@ -186,21 +186,28 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
     onFilter(dogs, true); // Reset to show all dogs (user-initiated)
   };
 
-  // Use a ref to track the previous filteredDogs to avoid infinite loops
-  const prevFilteredDogsRef = useRef<DogType[] | null>(null);
+  // The applied filter values and list the last effect saw (none on first render)
+  const filterKey = [
+    debouncedBreedFilter,
+    debouncedSizeFilter,
+    debouncedAgeGroupFilter,
+    debouncedOrganizationFilter,
+  ].join("\u0000");
+  const prevRef = useRef<{ filterKey: string; dogs: DogType[] } | null>(null);
 
-  // Auto-apply filters on desktop only (mobile uses Apply button)
+  // Auto-apply filters on desktop only (mobile uses Apply button). Only a
+  // change of filter is the user's: a new list (a dog removed, more loaded)
+  // re-applies the same filters silently, without a "Filtered to" toast (#533).
   useEffect(() => {
-    // Only trigger onFilter if filters were actively changed by user, not on initial load
-    if (
-      !isMobile &&
-      prevFilteredDogsRef.current !== null &&
-      prevFilteredDogsRef.current !== filteredDogs
-    ) {
-      onFilter(filteredDogs, true); // Pass true for user-initiated changes
+    const prev = prevRef.current;
+    prevRef.current = { filterKey, dogs };
+    if (isMobile || prev === null) return;
+    if (prev.filterKey !== filterKey) {
+      onFilter(filteredDogs, true);
+    } else if (prev.dogs !== dogs) {
+      onFilter(filteredDogs, false);
     }
-    prevFilteredDogsRef.current = filteredDogs;
-  }, [filteredDogs, isMobile, onFilter]);
+  }, [filterKey, dogs, filteredDogs, isMobile, onFilter]);
 
   // Handle escape key for mobile bottom sheet
   useEffect(() => {
