@@ -1,7 +1,7 @@
 import logging
 
 import psycopg2
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
@@ -557,11 +557,18 @@ async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(
 @router.get("/{animal_slug}/neighbors", response_model=NeighborsResponse)
 async def get_animal_neighbors(
     animal_slug: str,
+    request: Request,
     filters: AnimalFilterRequest = Depends(),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Previous and next dog for prev/next on the dog page (#490), in the list's
-    order and under the same filters, instead of downloading 300 dogs."""
+    order and under the same filters, instead of downloading 300 dogs.
+
+    Without a sort it follows the catalog's default, "recommended" (#535): dog
+    cards link to the page with no query string. The list endpoint keeps
+    "newest" as its own default."""
+    if "sort" not in request.query_params:
+        filters = filters.model_copy(update={"sort": "recommended"})
     try:
         return AnimalService(cursor).get_neighbors(animal_slug, filters)
     except psycopg2.Error as db_err:

@@ -1,7 +1,7 @@
 """GET /api/animals/{slug}/neighbors: prev/next for the dog page (#490).
 
-The seeded dogs are 9001-9014, all available, so the default newest-first
-order is 9014 ... 9001.
+The seeded dogs are 9001-9014, all available and all from one rescue, so the
+default "recommended" order (#535) matches newest-first: 9014 ... 9001.
 """
 
 import pytest
@@ -62,3 +62,31 @@ class TestAnimalNeighbors:
 
     def test_unknown_slug_has_no_neighbors(self, client: TestClient):
         assert neighbors(client, "no-such-dog") == {"prev": None, "next": None}
+
+
+@pytest.mark.database
+@pytest.mark.integration
+class TestNeighborsDefaultSort:
+    """Dog cards link with no query string, so no sort means the catalog's
+    default, "recommended" (#535), not the list endpoint's "newest"."""
+
+    def _sort_seen(self, client: TestClient, monkeypatch, **params) -> str:
+        seen = {}
+
+        class FakeService:
+            def __init__(self, cursor):
+                pass
+
+            def get_neighbors(self, slug, filters):
+                seen["sort"] = filters.sort
+                return {"prev": None, "next": None}
+
+        monkeypatch.setattr("api.routes.animals.AnimalService", FakeService)
+        neighbors(client, "german-shepherd", **params)
+        return seen["sort"]
+
+    def test_no_sort_follows_the_catalog_default(self, client: TestClient, monkeypatch):
+        assert self._sort_seen(client, monkeypatch) == "recommended"
+
+    def test_an_explicit_sort_is_kept(self, client: TestClient, monkeypatch):
+        assert self._sort_seen(client, monkeypatch, sort="newest") == "newest"

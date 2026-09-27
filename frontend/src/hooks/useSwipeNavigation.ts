@@ -13,6 +13,9 @@ interface UseSwipeNavigationReturn {
   handlers: ReturnType<typeof useSwipeable>;
   prevDog: DogNeighbor | null;
   nextDog: DogNeighbor | null;
+  /** Go to the neighbour by the same URL the prefetch used (#522). */
+  navigateToPrev: () => void;
+  navigateToNext: () => void;
   isLoading: boolean;
 }
 
@@ -116,7 +119,7 @@ export function useSwipeNavigation({
     trackMouse: false,
   });
 
-  return { handlers, prevDog, nextDog, isLoading: current === null };
+  return { handlers, prevDog, nextDog, navigateToPrev, navigateToNext, isLoading: current === null };
 }
 
 export type { UseSwipeNavigationProps, UseSwipeNavigationReturn };
