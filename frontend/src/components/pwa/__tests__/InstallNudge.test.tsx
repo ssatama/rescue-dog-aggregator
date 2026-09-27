@@ -131,6 +131,12 @@ describe("InstallNudge", () => {
     expect(screen.getByRole("region", { name: /home screen/i })).toBeInTheDocument();
   });
 
+  it("appears as soon as the fifth dog is viewed, without a page change", () => {
+    render(<InstallNudge />);
+    act(() => browseFiveDogs());
+    expect(screen.getByRole("region", { name: /home screen/i })).toBeInTheDocument();
+  });
+
   it("appears on the next page once browsing crosses the threshold", () => {
     const { rerender } = render(<InstallNudge />);
     expect(screen.queryByRole("region", { name: /home screen/i })).toBeNull();

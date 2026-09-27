@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { safeStorage } from "@/utils/safeStorage";
 
 // When to suggest installing the site as an app. The card waits until someone
@@ -11,6 +12,7 @@ export const DOG_VIEWS_TO_NUDGE = 5;
 export const SESSION_GAP_MS = 30 * 60 * 1000;
 
 const KEY = "installNudge";
+const CHANGE = "installnudgechange";
 
 interface NudgeState {
   sessions: number;
@@ -37,6 +39,7 @@ function read(): NudgeState {
 // dismissal last only as long as the tab
 function write(state: NudgeState): void {
   safeStorage.stringify(KEY, state);
+  window.dispatchEvent(new Event(CHANGE));
 }
 
 /** Activity now: a new session if the last activity was a while ago. */
@@ -72,6 +75,16 @@ export function markNudgeShown(): boolean {
   if (state.shownInSession !== null) return false;
   write({ ...state, shownInSession: state.sessions });
   return true;
+}
+
+function subscribe(listener: () => void): () => void {
+  window.addEventListener(CHANGE, listener);
+  return () => window.removeEventListener(CHANGE, listener);
+}
+
+/** Re-renders as soon as a visit or a dog view makes the card due. */
+export function useNudgeDue(): boolean {
+  return useSyncExternalStore(subscribe, isNudgeDue, () => false);
 }
 
 export function isNudgeDue(): boolean {

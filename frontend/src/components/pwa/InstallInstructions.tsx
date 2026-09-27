@@ -72,7 +72,11 @@ export default function InstallInstructions({
       <Dialog.Portal>
         {/* Above the mobile menu drawer (z-70), which can open this */}
         <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/50" />
-        <Dialog.Content className="fixed inset-x-0 bottom-0 z-[80] rounded-t-2xl border-t border-line bg-surface p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl focus:outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border">
+        <Dialog.Content
+          // Radix listens in the capture phase; stopping here keeps Escape from
+          // also reaching the mobile menu's handler and closing the drawer
+          onEscapeKeyDown={(event) => event.stopPropagation()}
+          className="fixed inset-x-0 bottom-0 z-[80] rounded-t-2xl border-t border-line bg-surface p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl focus:outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border">
           <Dialog.Close
             className="absolute right-4 top-4 rounded-lg p-1.5 text-subtle transition-colors hover:bg-soft hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Close"

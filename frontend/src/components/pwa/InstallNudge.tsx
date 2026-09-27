@@ -9,10 +9,10 @@ import InstallAppButton from "./InstallAppButton";
 import { useInstallMethod } from "@/lib/installApp";
 import {
   dismissNudge,
-  isNudgeDue,
   markNudgeShown,
   recordSeen,
   recordVisit,
+  useNudgeDue,
 } from "@/lib/installNudge";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { trackInstallNudgeDismissed, trackInstallNudgeShown } from "@/lib/analytics";
@@ -25,38 +25,32 @@ export default function InstallNudge() {
   const method = useInstallMethod();
   const pathname = usePathname();
   const isTouch = useMediaQuery("(pointer: coarse)");
-  // Bumped after each visit is recorded, so the card re-reads the counts
-  const [visits, setVisits] = useState(0);
-  const [closed, setClosed] = useState(false);
+  const due = useNudgeDue();
+  // False until this visit is counted, so a card due last session can't flash
+  const [visitCounted, setVisitCounted] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     recordVisit();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the visit count lives in localStorage, readable only after mount
-    setVisits((count) => count + 1);
+    setVisitCounted(true);
     // Coming back to a tab left open counts as a visit too
     const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        recordSeen();
-      } else {
-        recordVisit();
-        setVisits((count) => count + 1);
-      }
+      if (document.visibilityState === "hidden") recordSeen();
+      else recordVisit();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
-  // Read on every render, so a dog viewed on the last page counts on this one
   const shown =
-    visits > 0 &&
-    !closed &&
+    visitCounted &&
+    due &&
     method !== null &&
     isTouch &&
     // Dogs first: the mobile home stays dogs-only (AGENTS.md)
     pathname !== "/" &&
-    !pathname?.startsWith("/swipe") &&
-    isNudgeDue();
+    !pathname?.startsWith("/swipe");
 
   // Seen once it is really on screen: CSS hides it behind the adopt bar,
   // which can mount a moment after the card (a dog loaded client-side)
@@ -73,10 +67,6 @@ export default function InstallNudge() {
 
   if (!shown || !method) return null;
 
-  const close = () => {
-    dismissNudge();
-    setClosed(true);
-  };
 
   return (
     <motion.section
@@ -93,7 +83,7 @@ export default function InstallNudge() {
         type="button"
         onClick={() => {
           trackInstallNudgeDismissed(method);
-          close();
+          dismissNudge();
         }}
         className="absolute right-2 top-2 rounded-lg p-2 text-subtle transition-colors hover:bg-soft hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Not now"
@@ -119,7 +109,7 @@ export default function InstallNudge() {
 
       <InstallAppButton
         surface="nudge"
-        onDone={close}
+        onDone={dismissNudge}
         className="mt-3 w-full rounded-full bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-orange-400 dark:text-gray-950 dark:hover:bg-orange-300"
         labels={{ prompt: "Install", ios: "Show me how" }}
       />

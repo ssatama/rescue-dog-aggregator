@@ -17,6 +17,9 @@ const UA = {
   // Safari 17 and 18 also run on Monterey and Ventura, which have no Add to Dock
   macSafari18:
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+  // The Google app reports Safari but has no Add to Home Screen
+  iphoneGoogleApp:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) GSA/390.0.0 Mobile/15E148 Safari/604.1",
   // WKWebView in LinkedIn, Gmail, Slack...: no Safari/ token
   iphoneWebView:
     "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 LinkedInApp/9.30",
@@ -45,6 +48,7 @@ describe("manualInstallMethod", () => {
     ["Safari 18 on a Mac (maybe Ventura)", null, UA.macSafari18, 0],
     ["an in-app browser", null, UA.iphoneInstagram, 5],
     ["an app's web view", null, UA.iphoneWebView, 5],
+    ["the Google app", null, UA.iphoneGoogleApp, 5],
     ["Chrome on iOS 16.3", null, UA.iphoneChromeOld, 5],
     ["Chrome on an iPad asking for the desktop site", "ios", UA.ipadChromeDesktop, 5],
     // Chrome installs through its own prompt, not instructions

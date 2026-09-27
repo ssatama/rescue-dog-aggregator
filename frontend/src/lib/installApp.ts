@@ -30,8 +30,9 @@ declare global {
   }
 }
 
-// In-app browsers (Instagram, Facebook, TikTok...) have no Share sheet entry
-const IN_APP_BROWSER = /FBAN|FBAV|Instagram|Line\/|TikTok|Snapchat/;
+// In-app browsers (Instagram, Facebook, TikTok, the Google app...) have no
+// Add to Home Screen
+const IN_APP_BROWSER = /FBAN|FBAV|Instagram|Line\/|TikTok|Snapchat|GSA\//;
 
 /** The install route that needs instructions, from the user agent. */
 export function manualInstallMethod(
@@ -63,7 +64,8 @@ export function manualInstallMethod(
 }
 
 let installed = false;
-// The user agent never changes, so work this out once
+// Neither changes during a page's life, so work them out once
+let standalone: boolean | undefined;
 let manualMethod: ReturnType<typeof manualInstallMethod> | undefined;
 let listening = false;
 const listeners = new Set<() => void>();
@@ -91,7 +93,8 @@ function subscribe(listener: () => void): () => void {
 }
 
 function getInstallMethod(): InstallMethod | null {
-  if (installed || isStandalone()) return null;
+  standalone ??= isStandalone();
+  if (installed || standalone) return null;
   if (window.__installPrompt) return "prompt";
   if (manualMethod === undefined) {
     manualMethod = manualInstallMethod(navigator.userAgent, navigator.maxTouchPoints);

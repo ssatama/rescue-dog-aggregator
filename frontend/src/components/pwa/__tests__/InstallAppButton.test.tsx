@@ -55,6 +55,21 @@ describe("InstallAppButton", () => {
     expect(onDone).toHaveBeenCalled();
   });
 
+  it("closes only the steps on Escape, not the menu drawer they opened from", async () => {
+    mockMethod.mockReturnValue("ios");
+    const drawerEscape = jest.fn();
+    document.addEventListener("keydown", drawerEscape);
+    render(<InstallAppButton surface="menu" />);
+    fireEvent.click(screen.getByRole("button", { name: "Add to Home Screen" }));
+    const dialog = await screen.findByRole("dialog");
+
+    fireEvent.keyDown(dialog, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(drawerEscape).not.toHaveBeenCalled();
+    document.removeEventListener("keydown", drawerEscape);
+  });
+
   it("shows the Safari on Mac steps", async () => {
     mockMethod.mockReturnValue("mac-safari");
     render(<InstallAppButton surface="footer" />);

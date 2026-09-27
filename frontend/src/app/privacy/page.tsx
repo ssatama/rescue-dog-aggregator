@@ -75,7 +75,8 @@ export default function PrivacyPage(): React.JSX.Element {
                 <p className="mt-2 text-sm text-subtle">
                   Your browser also counts your visits and the dogs you open,
                   so we can suggest adding the site to your home screen at a
-                  sensible moment. Those counts never leave your device.
+                  sensible moment. The counts stay on your device; analytics
+                  only learn that the suggestion was shown.
                 </p>
               </div>
 
