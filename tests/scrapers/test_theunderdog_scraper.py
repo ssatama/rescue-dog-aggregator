@@ -644,3 +644,34 @@ class TestTheUnderdogIntegration:
         for weight, expected_size in size_tests:
             result = scraper._estimate_size_from_weight(weight)
             assert result == expected_size, f"Size estimation failed for {weight}kg"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("answer", "expected"),
+    [
+        ("‍ I can live with children", True),
+        ("I can be selective with other dogs", "Selective"),
+        ("I’m looking for a home without cats", False),
+        ("Untested", None),
+        (None, None),
+    ],
+)
+def test_q_and_a_compatibility_answers(answer, expected):
+    """#571: "Living with dogs?/cats?/kids?" answers become good_with_*."""
+    from scrapers.theunderdog.theunderdog_scraper import good_with
+
+    assert good_with(answer) == expected
+
+
+@pytest.mark.unit
+def test_where_from_is_the_origin_not_the_location():
+    """#571/#574: origin never feeds display_location."""
+    from scrapers.validation.location_cleaner import display_location
+    from tests.scrapers.test_scraped_dog_contract import underdog
+
+    properties = underdog()["properties"]
+
+    assert properties["origin"].startswith("Cyprus")
+    assert (properties["good_with_dogs"], properties["good_with_cats"], properties["good_with_children"]) == ("Selective", False, True)
+    assert display_location({"origin": properties["origin"]}) is None

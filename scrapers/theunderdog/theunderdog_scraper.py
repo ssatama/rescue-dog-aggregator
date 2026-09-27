@@ -12,6 +12,21 @@ from utils.shared_extraction_patterns import gallery_urls
 
 from .normalizer import extract_qa_data, extract_size_and_weight_from_qa
 
+GOOD_WITH_QUESTIONS = {"Living with dogs?": "good_with_dogs", "Living with cats?": "good_with_cats", "Living with kids?": "good_with_children"}
+
+
+def good_with(answer: str | None) -> bool | str | None:
+    """True, False or "Selective" from a Q&A answer such as "I can live with
+    children" or "I'm looking for a home without cats"; None when unclear."""
+    text = (answer or "").lower().replace("\u2019", "'")
+    if "selective" in text:
+        return "Selective"
+    if re.search(r"\bwithout\b|\bno\b|\bnot\b|can't|cannot", text):
+        return False
+    if re.search(r"\bcan live with\b|\bgood with\b|\blove", text):
+        return True
+    return None
+
 
 class TheUnderdogScraper(BaseScraper):
     """Scraper for The Underdog rescue organization.
@@ -281,6 +296,16 @@ class TheUnderdogScraper(BaseScraper):
                     result["sex"] = "Male"
                 elif sex_value in ["female", "f"]:
                     result["sex"] = "Female"
+
+            # Compatibility and origin from the Q&A (#571). The raw answers stay
+            # in raw_qa_data; an answer these words don't settle is left out.
+            for question, key in GOOD_WITH_QUESTIONS.items():
+                answer = good_with(qa_data.get(question))
+                if answer is not None:
+                    result["properties"][key] = answer
+            # Where the dog comes from, not where it is: never display_location (#574)
+            if qa_data.get("Where am I from?"):
+                result["properties"]["origin"] = qa_data["Where am I from?"].strip()
 
             # Ensure ALL critical fields are present for BaseScraper
             # BaseScraper will handle standardization automatically

@@ -814,3 +814,22 @@ class TestExtractNameFromLiveLayout:
     def test_call_to_action_text_is_not_a_dog_name(self, scraper, text):
         """Seven dogs named "Please" reached production from this text."""
         assert scraper.extract_name(text) is None
+
+
+@pytest.mark.unit
+class TestSexFromPronouns:
+    """#571: REAN never states the sex; a clear story says it, labelled as a guess."""
+
+    def test_a_clear_story_gives_the_sex_labelled(self, scraper):
+        entry = "Bobbie is around 5 months old, rescued from the local kill shelter. He is vaccinated and chipped. This little boy desperately needs a home."
+        dog = scraper.standardize_animal_data(scraper.extract_dog_data(entry, "romania"), "romania")
+
+        assert dog["sex"] == "Male"
+        assert dog["properties"]["sex_source"] == "pronouns"
+
+    def test_a_mixed_story_stays_unsure(self):
+        from utils.shared_extraction_patterns import sex_from_pronouns
+
+        assert sex_from_pronouns("She and her brother came in; he is shy and his sister is bold.") is None
+        assert sex_from_pronouns("She came in with her brother; he was adopted, she waits.") == "Female"
+        assert sex_from_pronouns("A lovely dog.") is None

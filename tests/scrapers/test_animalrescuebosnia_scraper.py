@@ -351,3 +351,24 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
 
         with pytest.raises(requests.exceptions.HTTPError):
             scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/broken/")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(("height", "size"), [("35 cm", "Small"), ("53 cm", "Medium"), ("62cm", "Large"), ("tall", None), (None, None)])
+def test_size_from_height_when_no_weight(height, size):
+    """#571: Bosnia pages give height without weight for some dogs."""
+    from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueBosniaScraper
+
+    assert AnimalRescueBosniaScraper._extract_size_from_height(height) == size
+
+
+@pytest.mark.unit
+@patch("requests.get")
+def test_detail_requests_send_a_user_agent(mock_get):
+    from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueBosniaScraper
+
+    mock_get.return_value = Mock(content=b"<html><body><h1>Ksenon</h1></body></html>", raise_for_status=Mock())
+
+    AnimalRescueBosniaScraper(config_id="animalrescuebosnia").scrape_animal_details("https://www.animal-rescue-bosnia.org/ksenon/")
+
+    assert "RescueDogAggregator" in mock_get.call_args.kwargs["headers"]["User-Agent"]

@@ -19,6 +19,7 @@ from utils.shared_extraction_patterns import (
 from utils.shared_extraction_patterns import (
     extract_weight_from_text as shared_extract_weight,
 )
+from utils.shared_extraction_patterns import sex_from_pronouns
 
 # Words that appear where a name would sit but never name a dog: calls to
 # action, navigation, and the charity's own copy.
@@ -1456,6 +1457,14 @@ class REANScraper(BaseScraper):
         if not isinstance(properties, dict):
             properties = {}
 
+        # REAN never states the sex; the story's pronouns usually do (#571).
+        # Labelled, like a size estimated from the breed, as a guess.
+        sex = dog_data.get("sex")
+        if not sex:
+            sex = sex_from_pronouns(properties.get("description"))
+            if sex:
+                properties = {**properties, "sex_source": "pronouns"}
+
         standardized_data = {
             "external_id": external_id,
             "name": name,
@@ -1464,7 +1473,7 @@ class REANScraper(BaseScraper):
             "animal_type": "dog",
             "age": dog_data.get("age_text"),  # Unified standardization expects 'age' field
             "breed": dog_data.get("breed"),  # Add breed field for unified standardization
-            "sex": dog_data.get("sex"),  # Add sex field for unified standardization
+            "sex": sex,
             "properties": properties,
         }
 

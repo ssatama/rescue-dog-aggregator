@@ -3,6 +3,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from services.playwright_browser_service import (
     PlaywrightOptions,
@@ -52,6 +53,7 @@ class DaisyFamilyRescueDogDetailScraper:
         self.breed_translations = {
             "mischling": "mixed breed",
             "deutscher schäferhund": "german shepherd",
+            "schäferhund": "german shepherd",
             "golden retriever": "golden retriever",
             "labrador": "labrador",
             "terrier": "terrier",
@@ -134,6 +136,9 @@ class DaisyFamilyRescueDogDetailScraper:
 
                 return dog_data
 
+            except PlaywrightTimeoutError as e:
+                # Retried by fetch_details_async, which knows TimeoutError (#571)
+                raise TimeoutError(f"{dog_url} did not load: {e}") from e
             except Exception as e:
                 if logger:
                     logger.error(f"Error extracting details from {dog_url}: {e}")
@@ -387,10 +392,14 @@ class DaisyFamilyRescueDogDetailScraper:
 
         breed_lower = breed_text.lower()
 
-        # Check for known breed translations
-        for german, english in self.breed_translations.items():
-            if german in breed_lower:
-                return english
+        # A named breed first, longest name first: "Schäferhund-Mischling" is a
+        # shepherd cross, not just "mixed breed" (#571)
+        named = [(german, english) for german, english in self.breed_translations.items() if german != "mischling" and german in breed_lower]
+        if named:
+            english = max(named, key=lambda pair: len(pair[0]))[1]
+            return f"{english} mix" if "mischling" in breed_lower else english
+        if "mischling" in breed_lower:
+            return self.breed_translations["mischling"]
 
         # Return original if no translation found
         return breed_text

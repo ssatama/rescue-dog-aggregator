@@ -14,7 +14,8 @@ class TestRestoreBreedRaw:
     def test_is_registered_for_the_rescues_with_a_source_copy(self):
         step = STEPS["restore-breed-raw"]
         assert all(f"'{org}'" in step.fetch_sql for org in BREED_SOURCE_ORGS)
-        assert "manytearsrescue" not in step.fetch_sql
+        # Many Tears joined once #571 fixed its breed parse
+        assert "'manytearsrescue'" in step.fetch_sql
 
     def test_restores_the_rescues_text(self):
         records = [_record(1, "Poodle (Toy)", "Toy Poodle"), _record(2, " Mixed ", "Mixed Breed", "santerpawsbulgarianrescue")]

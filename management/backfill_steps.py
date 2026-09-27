@@ -51,7 +51,8 @@ def _plan_age_clears(records: list[dict[str, Any]]) -> list[Change]:
 # production on 2026-09-26). Until #560 they stored the standardized name as
 # breed_raw. Many Tears is left out: its properties.breed is sometimes another
 # field ("Can be the only dog").
-BREED_SOURCE_ORGS = ("animalrescuebosnia", "dogstrust", "santerpawsbulgarianrescue", "woof-project")
+# manytearsrescue: after #571 fixed its breed parse; #572 re-scrapes before the steps run
+BREED_SOURCE_ORGS = ("animalrescuebosnia", "dogstrust", "manytearsrescue", "santerpawsbulgarianrescue", "woof-project")
 
 
 def _plan_breed_raw(records: list[dict[str, Any]]) -> list[Change]:

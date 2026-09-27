@@ -201,6 +201,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             return result
 
         except Exception as e:
+            # A timeout, dropped connection, 429 or 5xx is retried by fetch_details (#571)
+            if self._is_transient(e):
+                raise
             self.logger.error(f"Error scraping details from {adoption_url}: {e}")
             return {}
 
@@ -301,7 +304,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             animal.update(details)
             return animal
 
-        return self.fetch_details(animals, fetch, max_workers=3)
+        return self.fetch_details(animals, fetch, max_workers=3, attempts=self.max_retries + 1)
 
     def _translate_and_normalize_dogs(self, dogs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Translate German data to English for BaseScraper processing."""
