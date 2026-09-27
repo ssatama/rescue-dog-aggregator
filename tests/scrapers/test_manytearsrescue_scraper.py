@@ -10,7 +10,6 @@ class TestManyTearsRescueScraper:
     def test_scraper_initialization_with_config(self):
         with (
             patch("scrapers.base_scraper.ConfigLoader"),
-            patch("scrapers.base_scraper.create_default_sync_service"),
         ):
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
             assert scraper is not None
@@ -22,7 +21,6 @@ class TestManyTearsRescueScraper:
 
         with (
             patch("scrapers.base_scraper.ConfigLoader"),
-            patch("scrapers.base_scraper.create_default_sync_service"),
         ):
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
             assert isinstance(scraper, BaseScraper)
@@ -30,7 +28,6 @@ class TestManyTearsRescueScraper:
     def test_collect_data_follows_template_method_pattern(self):
         with (
             patch("scrapers.base_scraper.ConfigLoader"),
-            patch("scrapers.base_scraper.create_default_sync_service"),
         ):
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue")
 
@@ -47,7 +44,6 @@ class TestManyTearsRescueScraper:
 
         with (
             patch("scrapers.base_scraper.ConfigLoader"),
-            patch("scrapers.base_scraper.create_default_sync_service"),
         ):
             scraper = ManyTearsRescueScraper(config_id="manytearsrescue", metrics_collector=mock_metrics)
 

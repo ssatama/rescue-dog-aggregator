@@ -26,15 +26,13 @@ class _Scraper(BaseScraper):
 @pytest.fixture
 def scraper():
     with (
-        patch("scrapers.base_scraper.create_default_sync_service") as sync,
         patch("scrapers.base_scraper.ConfigLoader") as loader,
     ):
-        sync.return_value.sync_single_organization.return_value = Mock(organization_id=1, was_created=False)
         config = Mock(name="TestOrg")
         config.get_scraper_config_dict.return_value = {"rate_limit_delay": 0, "max_retries": 1, "timeout": 10}
         loader.return_value.load_config.return_value = config
 
-        s = _Scraper(config_id="test-org")
+        s = _Scraper(organization_id=1, config_id="test-org")
         s.organization_name = "Test Org"
         s.organization_id = 1
         s.logger = Mock()

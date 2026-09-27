@@ -26,15 +26,13 @@ class _Scraper(BaseScraper):
 
 def _scraper(session_manager):
     with (
-        patch("scrapers.base_scraper.create_default_sync_service") as sync,
         patch("scrapers.base_scraper.ConfigLoader") as loader,
     ):
-        sync.return_value.sync_single_organization.return_value = Mock(organization_id=ORG_ID, was_created=False)
         config = Mock()
         config.get_scraper_config_dict.return_value = {"rate_limit_delay": 0, "max_retries": 1, "timeout": 10, "skip_existing_animals": False}
         config.name = "Test Rescue"
         loader.return_value.load_config.return_value = config
-        s = _Scraper(config_id="test", metrics_collector=MetricsCollector())
+        s = _Scraper(organization_id=ORG_ID, config_id="test", metrics_collector=MetricsCollector())
     s.database_service = Mock()
     s.database_service.create_scrape_log.return_value = 77
     s.database_service.get_slugs_for_animals.return_value = []
@@ -182,7 +180,7 @@ class TestTooManyNotSavedIsAPartialFailure:
         ):
             scraper._run_with_connection()
 
-        assert scraper._processing_stats["animals_rejected"] == 5
+        assert scraper._processing_stats.animals_rejected == 5
         session_manager.update_stale_data_detection.assert_called_once()
 
     def test_stale_detection_is_skipped_when_found_dogs_cannot_be_marked(self):

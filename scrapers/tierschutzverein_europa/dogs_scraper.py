@@ -48,12 +48,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
         if self.skip_existing_animals:
             animals = self.filtering_service.filter_existing_animals(animals)
-            self._sync_filtering_stats()
         else:
             # Every listed dog is found, even one whose page then fails (#558)
             self._record_all_found_external_ids(animals)
-            self.total_animals_before_filter = len(animals)
-            self.total_animals_skipped = 0
 
         if not animals:
             self.logger.info("All animals already exist - skipping detail scraping")

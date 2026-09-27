@@ -102,7 +102,6 @@ class GalgosDelSolScraper(BaseScraper):
         # Use filtering_service method that records external_ids BEFORE filtering
         # This is critical for mark_found_animals_as_seen() to work correctly
         result = self.filtering_service.filter_existing_animals(all_dogs_data)
-        self._sync_filtering_stats()
         return result
 
     def _process_animals_in_batches(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:

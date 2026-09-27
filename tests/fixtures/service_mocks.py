@@ -221,33 +221,23 @@ def create_test_scraper_with_services(
     if config_id:
         # Mock config-based initialization
         with patch("scrapers.base_scraper.ConfigLoader") as mock_loader_class:
-            with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync_class:
-                # Mock config
-                mock_config = Mock()
-                mock_config.name = "Mock Test Org"
-                mock_config.get_scraper_config_dict.return_value = {
-                    "rate_limit_delay": 1.0,
-                    "max_retries": 3,
-                    "timeout": 30,
-                }
+            mock_config = Mock()
+            mock_config.name = "Mock Test Org"
+            mock_config.get_scraper_config_dict.return_value = {
+                "rate_limit_delay": 1.0,
+                "max_retries": 3,
+                "timeout": 30,
+            }
+            mock_loader_class.return_value.load_config.return_value = mock_config
 
-                # Mock loader
-                mock_loader = Mock()
-                mock_loader.load_config.return_value = mock_config
-                mock_loader_class.return_value = mock_loader
-
-                # Mock sync manager
-                mock_sync = Mock()
-                mock_sync.sync_organization.return_value = (organization_id, True)
-                mock_sync_class.return_value = mock_sync
-
-                scraper = TestScraper(
-                    config_id=config_id,
-                    database_service=database_service,
-                    image_processing_service=image_processing_service,
-                    session_manager=session_manager,
-                    metrics_collector=metrics_collector,
-                )
+            scraper = TestScraper(
+                organization_id=organization_id,
+                config_id=config_id,
+                database_service=database_service,
+                image_processing_service=image_processing_service,
+                session_manager=session_manager,
+                metrics_collector=metrics_collector,
+            )
     else:
         scraper = TestScraper(
             organization_id=organization_id,

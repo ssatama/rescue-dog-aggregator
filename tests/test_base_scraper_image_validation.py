@@ -172,8 +172,8 @@ class TestBaseScraperImageValidation:
         mock_db.create_animal.assert_not_called()
 
         # Verify stats show no animals were processed
-        assert stats["animals_added"] == 0
-        assert stats["animals_updated"] == 0
+        assert stats.animals_added == 0
+        assert stats.animals_updated == 0
 
     def test_missing_adoption_url_rejected(self):
         """Test that animals without adoption_url are rejected."""

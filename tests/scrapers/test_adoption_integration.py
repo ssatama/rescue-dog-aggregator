@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from scrapers.base_scraper import BaseScraper
+from scrapers.scrape_stats import ScrapeStats
 from services.adoption_detection import AdoptionCheckResult
 from utils.config_models import OrganizationConfig, ScraperConfig, ScraperInfo
 
@@ -237,7 +238,7 @@ class TestAdoptionIntegration:
         mock_service.batch_check_adoptions.return_value = []
 
         # Run finalize scrape
-        processing_stats = {"animals_rejected": 0, "save_errors": 0}
+        processing_stats = ScrapeStats()
         mock_scraper_with_adoption._finalize_scrape([], processing_stats)
 
         # Verify adoption checking was called

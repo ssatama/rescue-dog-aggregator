@@ -286,7 +286,7 @@ class FurryRescueItalyScraper(BaseScraper):
             Dictionary containing detailed animal information
         """
         try:
-            self.logger.info(f"Scraping details from: {url}")
+            self.logger.debug(f"Scraping details from: {url}")
 
             # Rate limiting for respectful scraping
             time.sleep(self.rate_limit_delay)
@@ -773,10 +773,6 @@ class FurryRescueItalyScraper(BaseScraper):
         # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
         if self.skip_existing_animals:
             animals = self.filtering_service.filter_existing_animals(animals)
-            self._sync_filtering_stats()
-        else:
-            self.total_animals_before_filter = len(animals)
-            self.total_animals_skipped = 0
 
         # For small sites (<=10 animals), process sequentially
         # For larger sites, use simple parallel processing
@@ -795,7 +791,7 @@ class FurryRescueItalyScraper(BaseScraper):
 
         for i, animal in enumerate(animals, 1):
             try:
-                self.logger.info(f"Processing {i}/{len(animals)}: {animal.get('name', 'Unknown')}")
+                self.logger.debug(f"Processing {i}/{len(animals)}: {animal.get('name', 'Unknown')}")
 
                 # Scrape detail page
                 if "adoption_url" in animal:

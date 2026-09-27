@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bs4 import BeautifulSoup
@@ -14,7 +14,6 @@ class TestDaisyFamilyRescueScraperMain:
     @pytest.fixture
     def scraper(self):
         with (
-            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
             patch("scrapers.base_scraper.R2Service"),
         ):
@@ -30,10 +29,6 @@ class TestDaisyFamilyRescueScraperMain:
             mock_config.metadata.website_url = "https://daisyfamilyrescue.de"
 
             mock_config_loader.return_value.load_config.return_value = mock_config
-            mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
-            mock_sync.return_value = mock_sync_service
-
             scraper = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
             return scraper
 
@@ -410,10 +405,8 @@ class TestDaisyFamilyRescueScraperIntegration:
     @pytest.fixture
     def scraper(self):
         with (
-            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
             patch("scrapers.base_scraper.R2Service"),
-            patch.dict("os.environ", {"TESTING_VALIDATE_SYNC": "true"}),
         ):
             mock_config = MagicMock()
             mock_config.name = "Daisy Family Rescue e.V."
@@ -426,10 +419,6 @@ class TestDaisyFamilyRescueScraperIntegration:
             mock_config.get_display_name.return_value = "Daisy Family Rescue e.V."
 
             mock_config_loader.return_value.load_config.return_value = mock_config
-            mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
-            mock_sync.return_value = mock_sync_service
-
             scraper = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
             return scraper
 
@@ -601,10 +590,8 @@ class TestDaisyFamilyRescueScraperIntegration:
     @pytest.mark.integration
     def test_configuration_driven_initialization(self):
         with (
-            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
             patch("scrapers.base_scraper.R2Service"),
-            patch.dict("os.environ", {"TESTING_VALIDATE_SYNC": "true"}),
         ):
             mock_config = MagicMock()
             mock_config.name = "Daisy Family Rescue e.V."
@@ -616,21 +603,17 @@ class TestDaisyFamilyRescueScraperIntegration:
             mock_config.get_display_name.return_value = "Daisy Family Rescue e.V."
 
             mock_config_loader.return_value.load_config.return_value = mock_config
-            mock_sync_service = Mock()
-            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
-            mock_sync.return_value = mock_sync_service
-
             scraper = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
 
             assert scraper.rate_limit_delay == 2.5
             assert scraper.max_retries == 3
             assert scraper.timeout == 30
-            assert scraper.organization_id == 12
+            # Construction does no I/O; the loader attaches the synced id (#569)
+            assert scraper.organization_id is None
 
     @pytest.mark.integration
     def test_legacy_initialization_compatibility(self):
         with (
-            patch("scrapers.base_scraper.create_default_sync_service"),
             patch("scrapers.base_scraper.ConfigLoader"),
             patch("scrapers.base_scraper.R2Service"),
         ):

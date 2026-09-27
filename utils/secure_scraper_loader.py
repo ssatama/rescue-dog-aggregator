@@ -152,13 +152,17 @@ class SecureScraperLoader:
 
     def create_scraper_instance(self, module_info: ScraperModuleInfo, config_id: str) -> ScraperProtocol:
         """Create scraper instance with dependency injection."""
+        from config import enable_world_class_scraper_logging
+
         scraper_class = self.load_scraper_class(module_info)
 
         try:
+            # Quiet service logs; scraper loggers stay at INFO (config.py)
+            enable_world_class_scraper_logging()
             # Create instance with config_id first
             instance = scraper_class(config_id=config_id)
 
-            # Then inject the services after organization_id is known
+            # Then sync the organization and attach it with the services
             self._inject_services(instance)
 
             logger.info(f"Created scraper instance: {module_info.class_name} with config_id: {config_id}")
@@ -188,6 +192,8 @@ class SecureScraperLoader:
             except Exception as e:
                 logger.error(f"CRITICAL: Global database pool initialization failed: {e}")
                 raise RuntimeError(f"Global database pool validation failed: {e}") from e
+
+            organization_id = self._sync_organization(scraper_instance.org_config)
 
             from services.connection_pool import ConnectionPoolService
             from services.database_service import DatabaseService
@@ -219,7 +225,7 @@ class SecureScraperLoader:
             # Create SessionManager with connection pool
             session_manager = SessionManager(
                 DB_CONFIG,
-                scraper_instance.organization_id,
+                organization_id,
                 scraper_instance.skip_existing_animals,
                 connection_pool=connection_pool,
             )
@@ -236,24 +242,29 @@ class SecureScraperLoader:
                 services_to_store.append(connection_pool)
             scraper_instance._injected_services = services_to_store
 
-            # Inject services into the scraper instance
-            scraper_instance.database_service = database_service
-            scraper_instance.image_processing_service = image_processing_service
-            scraper_instance.session_manager = session_manager
-            scraper_instance.metrics_collector = metrics_collector
-
-            # CRITICAL FIX: Also inject into filtering_service which was created during __init__
-            # with database_service=None before services were available
-            if hasattr(scraper_instance, "filtering_service") and scraper_instance.filtering_service:
-                scraper_instance.filtering_service.database_service = database_service
-                scraper_instance.filtering_service.session_manager = session_manager
-                logger.debug("Injected services into filtering_service")
+            scraper_instance.attach(
+                organization_id,
+                database_service=database_service,
+                session_manager=session_manager,
+                image_processing_service=image_processing_service,
+                metrics_collector=metrics_collector,
+            )
 
             logger.info(f"Services successfully injected and connected for scraper instance (pool: {'enabled' if connection_pool else 'disabled'})")
 
         except Exception as e:
             logger.error(f"CRITICAL: Service injection failed: {e}")
             raise RuntimeError(f"Scraper cannot operate without database services: {e}") from e
+
+    @staticmethod
+    def _sync_organization(org_config) -> int:
+        """Make sure the organization row matches its config, and return its id."""
+        from utils.organization_sync_service import create_default_sync_service
+
+        result = create_default_sync_service().sync_single_organization(org_config)
+        if not result or not result.success:
+            raise RuntimeError(f"Organization sync failed for {org_config.id}: {getattr(result, 'error', None) or 'no result'}")
+        return result.organization_id
 
     def get_allowed_modules(self) -> set[str]:
         """Get copy of allowed modules (immutable)."""

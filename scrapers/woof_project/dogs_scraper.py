@@ -69,10 +69,7 @@ class WoofProjectScraper(BaseScraper):
         # Apply skip_existing_animals filtering
         if self.skip_existing_animals and available_dogs:
             dogs_to_process = self.filtering_service.filter_existing_animals(available_dogs)
-            self._sync_filtering_stats()
         else:
-            self.total_animals_before_filter = len(available_dogs)
-            self.total_animals_skipped = 0
             dogs_to_process = available_dogs
 
         # Collect detailed data for each dog

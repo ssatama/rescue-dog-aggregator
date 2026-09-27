@@ -224,8 +224,7 @@ needs an explicit backfill. Query the full population, not just
   production but gone from the site, and dogs whose profile text would change.
   Images are compared by source URL, since a dry run uploads nothing. Reads use
   `PROD_RO_DATABASE_URL` on the laptop and `POST /api/admin/query` in cloud
-  sessions. Building the scraper still syncs the organization row into the
-  local dev database.
+  sessions. Building the scraper touches no database (#569).
 - SQL fixes are registered steps in `management/backfill_steps.py`: a
   read-only query plus a pure planner, planned from fresh rows at apply time,
   so they are idempotent. `clear-fabricated-ages` (formerly `age_commands.py`)

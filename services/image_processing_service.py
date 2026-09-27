@@ -15,7 +15,10 @@ Following CLAUDE.md principles:
 
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from scrapers.scrape_stats import ScrapeStats
 
 from utils.r2_service import R2Service
 
@@ -406,7 +409,7 @@ class ImageProcessingService:
         batch_size: int = 5,
         use_concurrent: bool = True,
         database_connection=None,
-        counts: dict[str, int] | None = None,
+        counts: "ScrapeStats | None" = None,
     ) -> list[dict[str, Any]]:
         """Process multiple animal images in batches with deduplication for better performance.
 
@@ -416,8 +419,8 @@ class ImageProcessingService:
             batch_size: Number of images to upload per batch
             use_concurrent: Whether to use concurrent uploads
             database_connection: Optional database connection for deduplication
-            counts: Optional dict whose "images_uploaded", "images_reused" and
-                "images_failed" counts (per animal) are incremented
+            counts: Optional run stats whose images_uploaded, images_reused and
+                images_failed counts (per animal) are added to
 
         Returns:
             Updated list of animal data with uploaded image URLs
@@ -509,8 +512,8 @@ class ImageProcessingService:
             self.logger.info("✨ All images already exist in R2, no uploads needed!")
 
         if counts is not None:
-            counts["images_uploaded"] = counts.get("images_uploaded", 0) + uploaded_count
-            counts["images_reused"] = counts.get("images_reused", 0) + reused_count
-            counts["images_failed"] = counts.get("images_failed", 0) + failed_count
+            counts.images_uploaded += uploaded_count
+            counts.images_reused += reused_count
+            counts.images_failed += failed_count
 
         return animals_data

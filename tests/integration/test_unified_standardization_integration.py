@@ -62,17 +62,13 @@ class TestUnifiedStandardizationIntegration:
     """Test unified standardization integration with base scraper."""
 
     @patch("scrapers.base_scraper.ConfigLoader")
-    @patch("scrapers.base_scraper.create_default_sync_service")
-    def test_base_scraper_applies_standardization(self, mock_sync_service, mock_config_loader):
+    def test_base_scraper_applies_standardization(self, mock_config_loader):
         """Test that base scraper correctly applies unified standardization."""
         # Setup config mock
         mock_config = Mock()
         mock_config.base_url = "http://test.com"
         mock_config.name = "test_org"
         mock_config_loader.load_config.return_value = mock_config
-
-        # Setup sync service mock
-        mock_sync_service.return_value = Mock()
 
         # Track saved animals
         saved_animals = []

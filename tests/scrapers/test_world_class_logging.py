@@ -210,4 +210,6 @@ class TestWorldClassLogging:
 
             # Test scraper initialization sets up world-class logging
             scraper = TestScraper(organization_id=1)
-            assert scraper.logger.level == logging.WARNING  # Silent logger
+            # The runner's level and handlers apply; no pin, no handler of its own (#569)
+            assert scraper.logger.level == logging.NOTSET
+            assert scraper.logger.handlers == []

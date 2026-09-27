@@ -583,14 +583,9 @@ class TestListingExtraction:
     @pytest.fixture
     def scraper(self):
         with (
-            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_loader,
             patch("scrapers.base_scraper.R2Service"),
         ):
-            mock_sync_instance = Mock()
-            mock_sync_instance.sync_single_organization.return_value = Mock(organization_id=13, was_created=True)
-            mock_sync.return_value = mock_sync_instance
-
             mock_config = Mock()
             mock_config.get_scraper_config_dict.return_value = {
                 "rate_limit_delay": 0.1,
