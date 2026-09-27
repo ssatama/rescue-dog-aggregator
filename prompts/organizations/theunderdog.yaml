@@ -58,6 +58,8 @@ extraction_prompt: |
   The properties contains:
   - raw_qa_data: Quick facts about the dog
   - description: Comprehensive story and details about the dog
+  - good_with_dogs, good_with_cats, good_with_children: the rescue's "Living with ...?" answers, when they say
+  - origin: where the dog comes from (not where it is now)
   - page_url: Source URL
 
   Return a FLAT JSON object (no nested sections) with exactly these fields:
@@ -72,10 +74,11 @@ extraction_prompt: |
   - sociability: Use ONLY "very_social", "social", "selective", "independent", or "needs_work". Look for "friendly"=social, "shy"=selective, "nervous"=needs_work. Default to "social" if not mentioned.
   - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Look for "nervous"=shy, "confident"=confident, "scared"=very_shy. Default to "moderate" if not mentioned.
 
-  COMPATIBILITY (extract from raw_qa_data and description):
-  - good_with_dogs: Check "Living with dogs?" in raw_qa_data. Map "I can live with other dogs"=yes, "I'm looking for a home without dogs"=no
-  - good_with_cats: Check "Living with cats?" in raw_qa_data. Map "I can't live with cats"=no, "I've not been tested"=unknown
-  - good_with_children: Check "Living with kids?" in raw_qa_data. Look for age restrictions
+  COMPATIBILITY (extract from the good_with_* properties, raw_qa_data and description):
+  The properties good_with_dogs, good_with_cats and good_with_children are the rescue's own "Living with ...?" answers. true means "yes", false means "no". A limit is kept in the value: for children any "Yes (...)" ("Yes (8+)", "Yes (older children)", "Yes (teens only)") means "older_children"; for dogs "Selective" or any "Yes (...)" ("Yes (female dogs)", "Yes (males preferred)") means "selective"; for cats "Selective" ("confident, dog-savvy cats") means "with_training". A property that is missing is NOT a no: "I've not been tested" is "unknown".
+  - good_with_dogs: the good_with_dogs property, else "Living with dogs?" in raw_qa_data
+  - good_with_cats: the good_with_cats property, else "Living with cats?" in raw_qa_data
+  - good_with_children: the good_with_children property, else "Living with kids?" in raw_qa_data
 
   LIVING REQUIREMENTS (extract from raw_qa_data):
   - home_type: Check "Where can I live?" field. Default to "house_preferred" if garden mentioned

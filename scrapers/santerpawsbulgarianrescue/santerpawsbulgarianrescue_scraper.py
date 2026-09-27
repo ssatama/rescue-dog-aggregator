@@ -137,7 +137,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             animal.update(details)
             return animal
 
-        return self.fetch_details(animals, fetch, max_workers=3)
+        return self.fetch_details(animals, fetch, max_workers=3, attempts=self.max_retries + 1)
 
     def collect_data(self) -> list[dict[str, Any]]:
         """Collect all available dog data from the listing page.
@@ -519,6 +519,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             return result
 
         except requests.RequestException as e:
+            # A timeout, dropped connection, 429 or 5xx is retried by fetch_details (#571)
+            if self._is_transient(e):
+                raise
             self.logger.error(f"Network error scraping details from {adoption_url}: {e}")
             return {}
         except Exception as e:

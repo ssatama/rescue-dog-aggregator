@@ -145,18 +145,13 @@ class LLMEnrichmentHandler:
             animal_data = item["data"]
             dog_data = {
                 "id": item["id"],
-                "name": animal_data.get("name", "Unknown"),
+                # Missing values stay None: the prompt builder words them (#568)
+                "name": animal_data.get("name"),
                 "breed": animal_data.get("breed"),
-                "age_text": animal_data.get("age_text") or "Unknown",
-                "properties": animal_data.get("properties", {}),
+                "age_text": animal_data.get("age_text"),
+                # The story is already properties.description, the one story key (#568)
+                "properties": animal_data.get("properties") or {},
             }
-
-            description = animal_data.get("description", "")
-            if not description and "properties" in animal_data:
-                description = animal_data["properties"].get("description", "")
-            if description:
-                dog_data["properties"]["description"] = description
-
             dogs_to_profile.append(dog_data)
 
         return dogs_to_profile
