@@ -228,38 +228,19 @@ describe("ThemeProvider", () => {
   });
 
   test("points the browser's theme-color at the chosen theme", () => {
-    document.head.innerHTML =
-      '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAF9F6">' +
-      '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#131211">';
+    // As the inline theme script in layout.tsx leaves it
+    document.head.innerHTML = '<meta name="theme-color" content="#FAF9F6">';
     render(
       <ThemeProvider>
         <TestComponent />
       </ThemeProvider>,
     );
-    const colors = () =>
-      [...document.querySelectorAll('meta[name="theme-color"]')].map((m) => m.content);
+    const color = () => document.querySelector('meta[name="theme-color"]').content;
 
-    expect(colors()).toEqual(["#FAF9F6", "#FAF9F6"]);
     fireEvent.click(screen.getByTestId("set-dark"));
-    expect(colors()).toEqual(["#131211", "#131211"]);
-    document.head.innerHTML = "";
-  });
-
-  test("keeps theme-color on tags Next re-creates after a client navigation", async () => {
-    document.head.innerHTML =
-      '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAF9F6">';
-    render(
-      <ThemeProvider>
-        <TestComponent />
-      </ThemeProvider>,
-    );
-    fireEvent.click(screen.getByTestId("set-dark"));
-
-    document.head.innerHTML =
-      '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAF9F6">';
-    await waitFor(() =>
-      expect(document.querySelector('meta[name="theme-color"]').content).toBe("#131211"),
-    );
+    expect(color()).toBe("#131211");
+    fireEvent.click(screen.getByTestId("set-light"));
+    expect(color()).toBe("#FAF9F6");
     document.head.innerHTML = "";
   });
 });

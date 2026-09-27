@@ -7,7 +7,8 @@ import { safeStorage } from "@/utils/safeStorage";
 // sent anywhere.
 
 export const SESSIONS_TO_NUDGE = 3;
-export const DOG_VIEWS_TO_NUDGE = 5;
+/** Different dogs: a reload or a return to the same dog doesn't count. */
+export const DOGS_TO_NUDGE = 5;
 /** Away this long, and the next visit counts as a new session. */
 export const SESSION_GAP_MS = 30 * 60 * 1000;
 
@@ -16,7 +17,8 @@ const CHANGE = "installnudgechange";
 
 interface NudgeState {
   sessions: number;
-  dogViews: number;
+  /** The first few distinct dogs viewed, up to DOGS_TO_NUDGE. */
+  dogIds: string[];
   lastSeen: number;
   dismissed: boolean;
   /** The session the card was first seen in; null until then. */
@@ -25,7 +27,7 @@ interface NudgeState {
 
 const EMPTY: NudgeState = {
   sessions: 0,
-  dogViews: 0,
+  dogIds: [],
   lastSeen: 0,
   dismissed: false,
   shownInSession: null,
@@ -48,7 +50,7 @@ function touch(state: NudgeState, now: number): NudgeState {
   return { ...state, sessions: state.sessions + (newSession ? 1 : 0), lastSeen: now };
 }
 
-/** Call on load and whenever the tab becomes visible again. */
+/** Call on load, on each page change and whenever the tab becomes visible. */
 export function recordVisit(now = Date.now()): void {
   write(touch(read(), now));
 }
@@ -60,9 +62,14 @@ export function recordSeen(now = Date.now()): void {
 
 // A dog page records its view before the card records the visit, so a first
 // page that is a dog page must start the session itself
-export function recordDogView(now = Date.now()): void {
+export function recordDogView(dogId: number | string, now = Date.now()): void {
   const state = touch(read(), now);
-  write({ ...state, dogViews: state.dogViews + 1 });
+  const id = String(dogId);
+  const dogIds =
+    state.dogIds.includes(id) || state.dogIds.length >= DOGS_TO_NUDGE
+      ? state.dogIds
+      : [...state.dogIds, id];
+  write({ ...state, dogIds });
 }
 
 export function dismissNudge(): void {
@@ -88,7 +95,7 @@ export function useNudgeDue(): boolean {
 }
 
 export function isNudgeDue(): boolean {
-  const { sessions, dogViews, dismissed, shownInSession } = read();
+  const { sessions, dogIds, dismissed, shownInSession } = read();
   if (dismissed || (shownInSession !== null && shownInSession !== sessions)) return false;
-  return sessions >= SESSIONS_TO_NUDGE || dogViews >= DOG_VIEWS_TO_NUDGE;
+  return sessions >= SESSIONS_TO_NUDGE || dogIds.length >= DOGS_TO_NUDGE;
 }

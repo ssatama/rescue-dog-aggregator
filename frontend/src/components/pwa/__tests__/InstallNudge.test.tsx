@@ -23,7 +23,7 @@ const mockIsTouch = useMediaQuery as jest.Mock;
 const mockPathname = usePathname as jest.Mock;
 
 function browseFiveDogs() {
-  for (let i = 0; i < 5; i++) recordDogView();
+  for (let i = 0; i < 5; i++) recordDogView(i);
 }
 
 describe("InstallNudge", () => {
@@ -74,7 +74,7 @@ describe("InstallNudge", () => {
     const gap = 31 * 60 * 1000;
     localStorage.setItem(
       "installNudge",
-      JSON.stringify({ sessions: 2, dogViews: 0, lastSeen: now - gap, dismissed: false }),
+      JSON.stringify({ sessions: 2, lastSeen: now - gap, dismissed: false }),
     );
     render(<InstallNudge />);
     expect(screen.getByRole("region", { name: /home screen/i })).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("InstallNudge", () => {
   it("never comes back once dismissed", () => {
     browseFiveDogs();
     const { unmount } = render(<InstallNudge />);
-    fireEvent.click(screen.getByRole("button", { name: "Not now" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(screen.queryByRole("region", { name: /home screen/i })).toBeNull();
     expect(trackInstallNudgeDismissed).toHaveBeenCalledWith("ios");
     unmount();
@@ -116,7 +116,7 @@ describe("InstallNudge", () => {
   it("appears on returning to a tab left open, when that is the third session", () => {
     localStorage.setItem(
       "installNudge",
-      JSON.stringify({ sessions: 1, dogViews: 0, lastSeen: Date.now() - 31 * 60 * 1000, dismissed: false }),
+      JSON.stringify({ sessions: 1, lastSeen: Date.now() - 31 * 60 * 1000, dismissed: false }),
     );
     render(<InstallNudge />);
     expect(screen.queryByRole("region", { name: /home screen/i })).toBeNull();
@@ -129,6 +129,16 @@ describe("InstallNudge", () => {
     act(() => jest.advanceTimersByTime(31 * 60 * 1000));
     act(() => setVisibility("visible"));
     expect(screen.getByRole("region", { name: /home screen/i })).toBeInTheDocument();
+  });
+
+  it("keeps a long visit spent moving between pages as one session", () => {
+    const { rerender } = render(<InstallNudge />);
+    for (const page of ["/guides", "/organizations", "/dogs?page=2"]) {
+      act(() => jest.advanceTimersByTime(20 * 60 * 1000));
+      mockPathname.mockReturnValue(page);
+      rerender(<InstallNudge />);
+    }
+    expect(JSON.parse(localStorage.getItem("installNudge")!).sessions).toBe(1);
   });
 
   it("appears as soon as the fifth dog is viewed, without a page change", () => {

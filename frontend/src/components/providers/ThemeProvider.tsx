@@ -32,21 +32,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
-
-  // The layout's theme-color tags follow the OS; the theme picked here
-  // overrides both, so the browser bar matches the page. Next re-creates the
-  // tags on client navigation, so new ones are corrected as they arrive.
-  useEffect(() => {
-    const color = THEME_COLORS[theme];
-    const apply = () =>
-      document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
-        if (meta.getAttribute("content") !== color) meta.setAttribute("content", color);
-      });
-    apply();
-    const observer = new MutationObserver(apply);
-    observer.observe(document.head, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    // The browser bar and the installed app's title bar. The inline theme
+    // script in layout.tsx adds this tag; Next doesn't manage it.
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", THEME_COLORS[theme]);
   }, [theme]);
 
   const updateTheme = (newTheme: Theme): void => {

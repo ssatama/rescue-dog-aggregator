@@ -107,13 +107,16 @@ export function useInstallMethod(): InstallMethod | null {
   return useSyncExternalStore(subscribe, getInstallMethod, () => null);
 }
 
-/** Opens the browser's install dialog. Each prompt can be shown only once. */
-export async function promptInstall(): Promise<void> {
+/** Opens the browser's install dialog; false if none appeared. Each prompt can
+ * be shown only once. */
+export async function promptInstall(): Promise<boolean> {
   const prompt = window.__installPrompt;
-  if (!prompt) return;
+  if (!prompt) return false;
   window.__installPrompt = undefined;
+  let shown = false;
   try {
     await prompt.prompt();
+    shown = true;
     const { outcome } = await prompt.userChoice;
     if (outcome === "accepted") installed = true;
   } catch {
@@ -122,4 +125,5 @@ export async function promptInstall(): Promise<void> {
   } finally {
     emit();
   }
+  return shown;
 }

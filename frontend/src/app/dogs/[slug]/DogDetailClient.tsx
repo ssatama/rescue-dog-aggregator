@@ -112,7 +112,7 @@ export default function DogDetailClient({
           }
           if (data?.id) {
             trackDogViewed(data as Dog, "detail_page");
-            recordDogView();
+            recordDogView(data.id);
             // The first photo is on screen at load; DogGallery reports the rest
             const photos = getGallery(data as Dog).length;
             if (photos > 0) trackGalleryPhotoViewed(data.id, 0, photos);
@@ -194,7 +194,7 @@ export default function DogDetailClient({
         );
       }
       trackDogViewed(initialDog, "detail_page");
-      recordDogView();
+      recordDogView(initialDog.id);
       const photos = getGallery(initialDog).length;
       if (photos > 0) trackGalleryPhotoViewed(initialDog.id, 0, photos);
       return;

@@ -71,7 +71,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   useEffect(() => {
     if (isOpen && dog) {
       trackDogViewed(dog, "modal");
-      recordDogView();
+      recordDogView(dog.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per dog shown, not per re-render of the same dog
   }, [isOpen, dog?.id]);

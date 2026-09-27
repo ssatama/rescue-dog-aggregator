@@ -61,12 +61,15 @@ describe("manualInstallMethod", () => {
 });
 
 describe("the browser's install prompt", () => {
-  function fakePrompt(result: Promise<{ outcome: "accepted" | "dismissed" }>) {
+  function fakePrompt(
+    result: Promise<{ outcome: "accepted" | "dismissed" }>,
+    shows = Promise.resolve(),
+  ) {
     const event = new Event("beforeinstallprompt") as Event & {
       prompt: jest.Mock;
       userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
     };
-    event.prompt = jest.fn(() => Promise.resolve());
+    event.prompt = jest.fn(() => shows);
     event.userChoice = result;
     return event;
   }
@@ -93,7 +96,11 @@ describe("the browser's install prompt", () => {
     const { result } = renderHook(() => useInstallMethod());
     const event = fakePrompt(Promise.resolve({ outcome: "dismissed" }));
     announce(event);
-    await act(() => promptInstall());
+    let shown: boolean | undefined;
+    await act(async () => {
+      shown = await promptInstall();
+    });
+    expect(shown).toBe(true);
     expect(event.prompt).toHaveBeenCalled();
     expect(window.__installPrompt).toBeUndefined();
     expect(result.current).toBeNull();
@@ -106,5 +113,16 @@ describe("the browser's install prompt", () => {
     announce(event);
     await act(() => promptInstall());
     expect(result.current).toBeNull();
+  });
+
+  it("reports that nothing appeared when prompt() itself rejects", async () => {
+    const shows = Promise.reject(new Error("InvalidStateError"));
+    shows.catch(() => {});
+    announce(fakePrompt(Promise.resolve({ outcome: "dismissed" }), shows));
+    let shown: boolean | undefined;
+    await act(async () => {
+      shown = await promptInstall();
+    });
+    expect(shown).toBe(false);
   });
 });

@@ -30,10 +30,14 @@ export default function InstallNudge() {
   const [visitCounted, setVisitCounted] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
 
+  // Every page is activity, so a long visit stays one session
   useEffect(() => {
     recordVisit();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the visit count lives in localStorage, readable only after mount
     setVisitCounted(true);
+  }, [pathname]);
+
+  useEffect(() => {
     // Coming back to a tab left open counts as a visit too
     const onVisibilityChange = () => {
       if (document.visibilityState === "hidden") recordSeen();
@@ -86,7 +90,7 @@ export default function InstallNudge() {
           dismissNudge();
         }}
         className="absolute right-2 top-2 rounded-lg p-2 text-subtle transition-colors hover:bg-soft hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        aria-label="Not now"
+        aria-label="Dismiss"
       >
         <X className="h-4 w-4" />
       </button>

@@ -97,14 +97,12 @@ export const metadata: Metadata = {
   },
 };
 
+// No themeColor here: Next's tags follow the OS and are re-created on every
+// navigation. The inline theme script below adds one tag for the site's own
+// theme, and ThemeProvider keeps it in step with the toggle.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // The OS theme at first paint; ThemeProvider follows the site's own toggle
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
-    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
-  ],
 };
 
 export default function RootLayout({
@@ -119,7 +117,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://images.rescuedogs.me" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})()`,
+            __html: `(function(){var d=false;try{var t=localStorage.getItem("theme");d=t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)}catch(e){}if(d)document.documentElement.classList.add("dark");var m=document.createElement("meta");m.name="theme-color";m.content=d?"${THEME_COLORS.dark}":"${THEME_COLORS.light}";document.head.appendChild(m)})()`,
           }}
         />
         <script

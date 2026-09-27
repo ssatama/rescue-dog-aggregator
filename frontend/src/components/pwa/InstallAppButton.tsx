@@ -22,7 +22,8 @@ interface InstallAppButtonProps {
   icon?: React.ReactNode;
   /** Replaces the default label for some install methods. */
   labels?: Partial<Record<InstallMethod, string>>;
-  /** After the browser's dialog is answered or the steps are closed. */
+  /** After the browser's dialog is answered or the steps are closed; not when
+   * the browser showed nothing. */
   onDone?: () => void;
 }
 
@@ -43,8 +44,8 @@ export default function InstallAppButton({
   const handleClick = async () => {
     trackAppInstallClicked(surface, method);
     if (method === "prompt") {
-      await promptInstall();
-      onDone?.();
+      // A stale prompt shows nothing, and the card should not retire for that
+      if (await promptInstall()) onDone?.();
     } else {
       setStepsOpen(true);
     }

@@ -1,11 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import InstallAppButton from "../InstallAppButton";
 import { promptInstall, useInstallMethod } from "@/lib/installApp";
 import { trackAppInstallClicked } from "@/lib/analytics";
 
 jest.mock("@/lib/installApp", () => ({
   useInstallMethod: jest.fn(),
-  promptInstall: jest.fn(() => Promise.resolve()),
+  promptInstall: jest.fn(() => Promise.resolve(true)),
 }));
 jest.mock("@/lib/analytics", () => ({ trackAppInstallClicked: jest.fn() }));
 
@@ -39,6 +39,17 @@ describe("InstallAppButton", () => {
     expect(promptInstall).toHaveBeenCalled();
     await screen.findByRole("button", { name: "Install app" });
     expect(onDone).toHaveBeenCalled();
+  });
+
+  it("does not report done when the browser showed no dialog", async () => {
+    mockMethod.mockReturnValue("prompt");
+    (promptInstall as jest.Mock).mockResolvedValueOnce(false);
+    const onDone = jest.fn();
+    render(<InstallAppButton surface="nudge" onDone={onDone} />);
+    fireEvent.click(screen.getByRole("button", { name: "Install app" }));
+    await waitFor(() => expect(promptInstall).toHaveBeenCalled());
+    await Promise.resolve();
+    expect(onDone).not.toHaveBeenCalled();
   });
 
   it("shows the iPhone steps, and reports done when they are closed", async () => {
