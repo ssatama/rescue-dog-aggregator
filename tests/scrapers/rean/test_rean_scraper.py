@@ -832,3 +832,19 @@ class TestSexFromPronouns:
         dog = scraper.standardize_animal_data(scraper.extract_dog_data(entry, "romania"), "romania")
 
         assert "sex_source" not in dog["properties"]
+
+    @pytest.mark.parametrize(
+        ("story", "sex"),
+        [
+            # Production stories (Annie, Sunny): every gendered word agrees
+            ("Annie is around 1 year old. she is a friendly little girl with people and dogs. she will be spayed before she travels.", "Female"),
+            ("Sunny is a super friendly little chap around 4 months old. He will be chipped before he travels.", "Male"),
+            # The rescuers' pronouns outvote the dog's: not a guess worth showing
+            ("Our volunteer found him and she took him to her home.", None),
+            ("Rocco is a friendly 5 year old. Vaccinated and chipped.", None),
+        ],
+    )
+    def test_the_sex_is_guessed_only_when_the_story_agrees(self, story, sex):
+        from scrapers.rean.dogs_scraper import sex_from_pronouns
+
+        assert sex_from_pronouns(story) == sex

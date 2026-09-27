@@ -464,7 +464,8 @@ class ManyTearsRescueScraper(BaseScraper):
                 ):
                     description_parts.append(text)
 
-        return " ".join(description_parts)
+        # One paragraph per line, so the sponsor filter never merges two (#571)
+        return "\n".join(description_parts)
 
     def _extract_structured_data_from_detail_page(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract structured data (age, breed, sex) from detail page list items.
@@ -686,8 +687,9 @@ class ManyTearsRescueScraper(BaseScraper):
         if not description:
             return description
 
-        # Sentences end at ". " before a capital, so "2.5 years" and "e.g." survive (#571)
-        sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z])", description.strip())
+        # Sentences end at a paragraph break or ". " before a capital, so
+        # "2.5 years" and "e.g." survive (#571)
+        sentences = re.split(r"\n+|(?<=[.!?])\s+(?=[A-Z])", description.strip())
         # Production: "Bloom has been given the Gift of Life Vicki Coldman." (#571)
         sponsor = ("given the gift of life", "gift of life by", "through the generosity of a gift of life sponsor")
         kept = [sentence for sentence in sentences if not any(phrase in sentence.lower() for phrase in sponsor)]

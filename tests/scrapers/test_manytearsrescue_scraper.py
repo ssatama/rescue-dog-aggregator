@@ -89,6 +89,13 @@ class TestSweep571:
         assert "Gift of Life" not in many_tears._filter_sponsor_text(text)
         assert many_tears._filter_sponsor_text(text).endswith(".")
 
+    def test_the_sponsor_filter_drops_only_the_sponsor_paragraph(self, scraper):
+        """Paragraphs are lines: an unpunctuated sponsor line can't swallow its neighbour."""
+        many_tears, _ = scraper
+        text = "Bloom loves walks.\nBloom has been given the Gift of Life Vicki Coldman\n2 of her teeth were removed."
+
+        assert many_tears._filter_sponsor_text(text) == "Bloom loves walks. 2 of her teeth were removed."
+
     def test_a_diary_entry_is_its_title_without_a_placeholder(self, scraper):
         from bs4 import BeautifulSoup
 

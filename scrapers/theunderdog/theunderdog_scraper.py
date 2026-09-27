@@ -19,7 +19,8 @@ def _limit(text: str) -> str | None:
     """The age limit, sex restriction or preference in an answer: "8+", "female dogs"."""
     if match := re.search(r"\(([^)]*)\)", text):
         return match.group(1).strip().removeprefix("or ").strip()
-    if match := re.search(r"\b((?:fe)?males?(?: dogs)?(?: preferred)?)\b", text):
+    # "not males" rules a sex out; it isn't the limit
+    if match := re.search(r"(?<!\bnot )(?<!\bno )\b((?:fe)?males?(?: dogs)?(?: preferred)?)\b", text):
         return match.group(1)
     return None
 
@@ -41,14 +42,17 @@ def good_with(answer: str | None) -> bool | str | None:
     limit = _limit(text)
     if re.search(r"\badult[- ]only\b", text):
         return f"Yes ({limit})" if limit else False
-    if re.fullmatch(r"\W*no\W*", text) or re.search(
+    negative = re.fullmatch(r"\W*no\W*", text) or re.search(
         r"\bwithout\b|\bonly (dog|pet)\b|\bno (other )?(dogs|cats|children|kids)\b|\bnot (good|suitable|safe) with\b|\bcan'?t live\b|\bcannot live\b", text
-    ):
-        return False
-    if re.search(r"\bcan live with\b|\bgood with\b|\bfine with\b|\bno problems? with\b|\bhappy (to live )?with\b|\bpreferred\b", text):
+    )
+    positive = re.search(r"\bcan live with\b|\bgood with\b|\bfine with\b|\bno problems? with\b|\bhappy (to live )?with\b|\bpreferred\b", text)
+    if negative:
+        # "can live with older children, but a home without toddlers" is a qualified yes
+        return "Selective" if positive else False
+    if positive:
         if limit:
             return f"Yes ({limit})"
-        return "Selective" if re.search(r"\bnot\b|\bolder\b|\bonly\b|\bbut\b|\bover\b|\bintroductions?\b", text) else True
+        return "Selective" if re.search(r"\bnot\b|\bolder\b|\bonly\b|\bbut\b|\bover\b|\bintroductions?\b|\b(fe)?males?\b", text) else True
     return None
 
 

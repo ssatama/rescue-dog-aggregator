@@ -16,7 +16,6 @@ from services.playwright_browser_service import (
 from utils.shared_extraction_patterns import (
     extract_age_from_text as shared_extract_age,
 )
-from utils.shared_extraction_patterns import extract_sex_from_text
 from utils.shared_extraction_patterns import (
     extract_weight_from_text as shared_extract_weight,
 )
@@ -68,6 +67,22 @@ def rean_external_id(name: str, page_type: str) -> str:
     photo is lazy-loaded, so keying on it flips the ID whenever a run misses it.
     """
     return f"rean-{page_type}-{name.lower().replace(' ', '-')}"
+
+
+_FEMALE_WORDS = {"she", "her", "hers", "girl", "lady"}
+
+
+def sex_from_pronouns(text: str | None) -> str | None:
+    """Male or Female when every gendered word in the story agrees, else None.
+
+    A majority isn't enough: "a volunteer found him and she took him to her
+    home" is about a male dog and two of its words say female (#571).
+    """
+    words = re.findall(r"\b(she|her|hers|girl|lady|he|him|his|boy|chap)\b", (text or "").lower())
+    kinds = {word in _FEMALE_WORDS for word in words}
+    if len(kinds) != 1:
+        return None
+    return "Female" if kinds.pop() else "Male"
 
 
 class REANScraper(BaseScraper):
@@ -1461,7 +1476,7 @@ class REANScraper(BaseScraper):
         # Labelled, like a size estimated from the breed, as a guess.
         sex = dog_data.get("sex")
         if not sex:
-            sex = extract_sex_from_text(properties.get("description"))
+            sex = sex_from_pronouns(properties.get("description"))
             if sex:
                 properties = {**properties, "sex_source": "pronouns"}
 

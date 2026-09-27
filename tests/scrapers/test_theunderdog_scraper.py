@@ -672,6 +672,10 @@ class TestTheUnderdogIntegration:
         ("I can’t live with cats", False),
         ("No", False),
         ("I can live with other dogs with the right introductions", "Selective"),
+        # A ruled-out sex isn't the limit, and a "without" inside a yes qualifies it
+        ("I can live with other dogs but not males", "Selective"),
+        ("I can live with other dogs, no males", "Selective"),
+        ("I can live with older children, but a home without toddlers", "Selective"),
     ],
 )
 def test_q_and_a_compatibility_answers(answer, expected):
