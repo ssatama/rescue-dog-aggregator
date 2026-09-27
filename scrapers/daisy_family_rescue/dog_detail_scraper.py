@@ -83,7 +83,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
             try:
                 if logger:
-                    logger.info(f"Loading dog detail page (Playwright): {dog_url}")
+                    logger.debug(f"Loading dog detail page (Playwright): {dog_url}")
 
                 await page.goto(dog_url, wait_until="domcontentloaded")
                 await page.wait_for_selector("body", timeout=30000)

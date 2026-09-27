@@ -507,7 +507,7 @@ class BaseScraper(ABC):
             # Log standardization for breed if present
             original_breed = animal_data.get("breed")
             if original_breed:
-                self.logger.info(f"Standardizing breed: {original_breed}")
+                self.logger.debug(f"Standardizing breed: {original_breed}")
 
             # Apply full standardization (handles breed, age, size)
             standardized = self.standardizer.apply_full_standardization(
@@ -533,7 +533,7 @@ class BaseScraper(ABC):
             new_breed = processed_data.get("breed")
             if original_breed and new_breed != original_breed:
                 confidence = processed_data.get("standardization_confidence", 0)
-                self.logger.info(f"Breed standardized: '{original_breed}' -> '{new_breed}' (confidence: {confidence:.2f})")
+                self.logger.debug(f"Breed standardized: '{original_breed}' -> '{new_breed}' (confidence: {confidence:.2f})")
 
         except Exception as e:
             # If standardization fails, log the error and return the original data
@@ -628,8 +628,7 @@ class BaseScraper(ABC):
                 animals_data = self._collect_and_time_data()
                 discovery_duration = (datetime.now() - discovery_start).total_seconds()
 
-                # Counted once per run (#569); every later phase reads self.animals_found
-                self.animals_found = self._get_correct_animals_found_count(animals_data)
+                # _collect_and_time_data set self.animals_found; every later phase reads it
 
                 # Alert if zero dogs found - likely indicates website change
                 if self.animals_found == 0:
@@ -894,12 +893,10 @@ class BaseScraper(ABC):
         phase_duration = (datetime.now() - phase_start).total_seconds()
         self.metrics_collector.track_phase_timing("data_collection", phase_duration)
 
-        # discovery completion message
-        # Use the same logic as _get_correct_animals_found_count to avoid misleading warnings
-        # when skip_existing_animals causes filtering
-        actual_animals_found = self._get_correct_animals_found_count(animals_data)
-        if actual_animals_found > 0:
-            central_logger.info(f"✅ Discovery complete: {actual_animals_found} {self.animal_type}s found ({phase_duration:.1f}s)")
+        # Counted once per run (#569): dogs listed, before skip_existing_animals filtering
+        self.animals_found = self._get_correct_animals_found_count(animals_data)
+        if self.animals_found > 0:
+            central_logger.info(f"✅ Discovery complete: {self.animals_found} {self.animal_type}s found ({phase_duration:.1f}s)")
         else:
             central_logger.warning(f"⚠️  No {self.animal_type}s found - check website status")
 

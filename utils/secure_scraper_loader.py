@@ -263,7 +263,7 @@ class SecureScraperLoader:
 
         result = create_default_sync_service().sync_single_organization(org_config)
         if not result or not result.success:
-            raise RuntimeError(f"Organization sync failed for {org_config.id}")
+            raise RuntimeError(f"Organization sync failed for {org_config.id}: {getattr(result, 'error', None) or 'no result'}")
         return result.organization_id
 
     def get_allowed_modules(self) -> set[str]:
