@@ -791,6 +791,11 @@ class TestDogsTrustMayLiveWith:
 
         assert self._scraper()._extract_compatibility(soup) == {"may_live_with": "Secondary school children", "good_with_children": "Yes (11+)"}
 
+    def test_a_repeated_or_empty_chip_is_listed_once(self):
+        soup = self._with_chips(("Dogs", "Dogs"), ("Dogs", "Dogs"), ("Cats", ""))
+
+        assert self._scraper()._extract_compatibility(soup) == {"may_live_with": "Dogs, Cats", "good_with_dogs": True, "good_with_cats": True}
+
     def test_a_card_without_chips_says_nothing_and_is_logged_once(self):
         soup = self._with_chips()
         scraper = self._scraper()

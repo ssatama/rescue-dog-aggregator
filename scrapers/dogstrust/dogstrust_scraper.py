@@ -1295,10 +1295,11 @@ class DogsTrustScraper(BaseScraper):
         if living_situation:
             additional_properties.update(living_situation)
 
-        # Extract compatibility information
-        compatibility = self._extract_compatibility(soup)
-        if compatibility:
-            additional_properties.update(compatibility)
+        # Compatibility: may_live_with and good_with_* (#516)
+        try:
+            additional_properties.update(self._extract_compatibility(soup))
+        except Exception as e:
+            self.logger.error(f"Error extracting compatibility: {e}")
 
         return additional_properties
 
@@ -1404,13 +1405,14 @@ class DogsTrustScraper(BaseScraper):
         if not card:
             self.logger.warning("'May live with' label outside a trait card: the page layout changed")
             return []
-        chips = []
+        chips: dict[str, str] = {}  # one per parameter, in page order
         for link in card.find_all("a", href=True):
-            if match := re.search(r"liveWith(\w+)=true", link["href"]):
-                chips.append((match.group(1), link.get_text(strip=True)))
+            match = re.search(r"liveWith(\w+)=true", link["href"])
+            if match and match.group(1) not in chips:
+                chips[match.group(1)] = link.get_text(strip=True) or match.group(1)
         if not chips:
             self.logger.warning(f"'May live with' card without chips: {card.get_text(' ', strip=True)[:100]!r}")
-        return chips
+        return list(chips.items())
 
     def _extract_compatibility(self, soup: BeautifulSoup) -> dict[str, Any]:
         """may_live_with and good_with_dogs/cats/children, from one read of the chips.

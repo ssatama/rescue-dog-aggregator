@@ -99,7 +99,8 @@ def dog_changes(scraped: dict[str, Any], stored: dict[str, Any]) -> dict[str, tu
 
 # Scraped facts the profile prompt also reads (#516: Dogs Trust's were wrong).
 # Compared by key: unlike a text, a fact that moves key says something else.
-PROFILE_FACT_KEYS = ("may_live_with", "good_with_dogs", "good_with_cats", "good_with_children")
+# may_live_with is left out: its labels changed in 2026 while the facts didn't.
+PROFILE_FACT_KEYS = ("good_with_dogs", "good_with_cats", "good_with_children")
 
 
 def _is_fact(value: Any) -> bool:

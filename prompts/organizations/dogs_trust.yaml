@@ -70,10 +70,10 @@ extraction_prompt: |
   - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Look for "nervous"=shy, "confident"=confident, "timid"=shy, "resilient"=confident. Default to "moderate" if not mentioned.
 
   COMPATIBILITY (only if explicitly stated):
-  "may_live_with" lists what the rescue says the dog may live with ("Cats, Dogs, Secondary school children"). An item missing from it is NOT a no: answer "no" only when the description says so ("needs to be the only dog", "adult only home"), otherwise "unknown".
-  - good_with_dogs: "yes" if "Dogs" is in "may_live_with", or from mentions of dog compatibility
-  - good_with_cats: "yes" if "Cats" is in "may_live_with", or from cat test results or explicit mentions
-  - good_with_children: "yes" if "Preschool children" or "Primary school children" is in "may_live_with"; "older_children" if only "Secondary school children" is; or from mentions like "adult only home"
+  The properties good_with_dogs, good_with_cats and good_with_children are the rescue's own "May live with" answers. true means "yes"; "Yes (5+)" or "Yes (11+)" means "older_children" (not suitable for young children). A property that is missing is NOT a no: answer "no" only when the description says so ("needs to be the only dog", "adult only home"), otherwise "unknown".
+  - good_with_dogs: the good_with_dogs property, or mentions of dog compatibility
+  - good_with_cats: the good_with_cats property, cat test results or explicit mentions
+  - good_with_children: the good_with_children property, or mentions like "adult only home"
 
   LIVING REQUIREMENTS (REQUIRED - use conservative defaults):
   - home_type: Look for garden/housing requirements. Default to "house_preferred" if secure garden mentioned.

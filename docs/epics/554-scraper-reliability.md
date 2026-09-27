@@ -270,17 +270,26 @@ children").
 - Children: preschool means any age (`true`), primary "Yes (5+)",
   secondary only "Yes (11+)".
 - The profile was fed the wrong facts, so `profile_inputs` (backfill tool)
-  counts `may_live_with` and `good_with_dogs/cats/children` as profile
-  inputs, by key. Dropping the "Unknown" placeholder alone isn't a change.
-- The Dogs Trust prompt (1.1.0) says a chip missing from `may_live_with`
-  is not a "no"; only the description can say no. Secondary school
-  children alone is "older_children", not "yes".
+  counts `good_with_dogs/cats/children` as profile inputs, by key. Dropping
+  the "Unknown" placeholder alone isn't a change. `may_live_with` isn't an
+  input: its labels changed in 2026 while the facts didn't.
+- The Dogs Trust prompt (1.1.0) reads the `good_with_*` properties, not
+  the chip labels: `true` is "yes", "Yes (5+)"/"Yes (11+)" is
+  "older_children" (the schema has no 5+ bucket, and a primary-school dog
+  isn't cleared for toddlers). A missing one is not a "no"; only the
+  description can say no.
 - The scraper can no longer store an explicit `false`: the "Can live with"
   section it parsed isn't on the pages, and no stored Dogs Trust row had
   one. Negatives come from the profile.
 - After #572: change `companionAnswer` in `frontend/src/utils/dogFacts.ts`
   to `answerOf(profile) ?? answerOf(properties)`, so a rescue's real answer
-  fills in behind an AI "unknown" (from #514's review, on #516).
+  fills in behind an AI "unknown" (from #514's review, on #516). Not before
+  every shown row is right: #572 re-scrapes only listed dogs, and the 118
+  in stale grace (2026-09-27) keep the wrong `true` until they're retired
+  or a step clears them.
+- A page without the "May live with" label is silent (102 dogs have no
+  card). If the label is renamed, every dog loses the facts quietly; a
+  run-level count of dogs with chips belongs to #569's stats.
 
 ## Gotchas
 
@@ -303,7 +312,7 @@ children").
     listed (the three-miss lag). Compatibility: `good_with_dogs` true -> none
     188, `good_with_cats` true -> none 23, `good_with_children` gains "Yes
     (11+)" 205, "Yes (5+)" 43, true 5; the "Unknown" placeholders go.
-    `may_live_with` loses a leaked breed on 45. 257 dogs re-profile. The
+    `may_live_with` loses a leaked breed on 45. 256 dogs re-profile. The
     same run also shows #560's `breed_raw` (185) and #561's birth ranges.
     Run plans with `USE_PLAYWRIGHT=true` on the laptop: without it Dogs
     Trust takes the Selenium listing and returns 5 dogs.
