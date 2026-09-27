@@ -324,6 +324,7 @@ class TestScraperCoreFunctions:
         assert properties["Rasse"] == "Mischling"
         assert properties["Geschlecht"] == "männlich"
         assert properties["Geburtstag"] == "05.2025 (3 Monate alt)"
+        assert details["date_of_birth"] == "05.2025 (3 Monate alt)"  # #561
         assert properties["Ungefähre Größe"] == "17 cm, im Wachstum, klein bleibend"
         assert properties["Kastriert"] == "zu jung"
         assert properties["Katzentest"] == "auf Anfrage"

@@ -12,7 +12,7 @@ from typing import Any
 EXAMPLES_PER_FIELD = 5
 
 # Columns compared directly: the ones update_animal checks for a change, so a
-# listed difference is one a re-scrape writes. It never checks size or
+# listed difference is one a re-scrape writes (images aside, below). It never checks size or
 # breed_group, which change only alongside another column (noted on #568).
 # Images are left out: a dry run does not upload,
 # so primary_image_url would always differ. The scraped image source is
@@ -33,8 +33,13 @@ COLUMNS = (
     "secondary_breed",
     "breed_slug",
     "breed_confidence",
+    "birth_date_min",
+    "birth_date_max",
+    "age_observed_at",
 )
 NUMERIC_COLUMNS = {"age_min_months", "age_max_months", "breed_confidence"}
+# Dates from the admin query API arrive as ISO text
+DATE_COLUMNS = {"birth_date_min", "birth_date_max", "age_observed_at"}
 
 # properties keys that carry the rescue's free text. The profile prompt reads
 # all properties, but these are what a scraper fix changes and what the
@@ -64,6 +69,8 @@ def _norm(column: str, value: Any) -> Any:
     """Make a stored value and a scraped value comparable (the API returns numbers as text)."""
     if value is None or value == "":
         return None
+    if column in DATE_COLUMNS:
+        return str(value)[:10]
     if column in NUMERIC_COLUMNS or isinstance(value, Decimal):
         try:
             return float(value)

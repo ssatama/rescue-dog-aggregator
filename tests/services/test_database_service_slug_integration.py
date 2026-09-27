@@ -279,6 +279,10 @@ class TestDatabaseServiceSlugIntegration:
                 0.95,  # breed_confidence
                 "Old Breed",  # breed_raw
                 None,  # images
+                None,  # birth_date_min
+                None,  # birth_date_max
+                None,  # age_observed_at
+                None,  # created_at
             ),
             # No second call needed for updates
         ]
@@ -302,7 +306,7 @@ class TestDatabaseServiceSlugIntegration:
                 "Large",
             )
 
-            with patch("services.database_service.parse_age_text") as mock_parse_age:
+            with patch("utils.birth_dates.parse_age_text") as mock_parse_age:
                 # parse_age_text returns (age_category, min_months, max_months)
                 mock_parse_age.return_value = ("Young", 12, 24)
 

@@ -293,7 +293,7 @@ uv run python management/llm_commands.py generate-profiles       # Batch enrichm
 ## Database Schema Highlights
 
 ```sql
-animals: 39 columns including id, name, breed, standardized_breed, properties(JSONB),
+animals: 42 columns including id, name, breed, standardized_breed, properties(JSONB),
          dog_profiler_data(JSONB), status, availability_confidence, slug, blur_data_url
 organizations: 21 columns including id, name, slug, config_id, active, ships_to(JSONB),
                website_url, country, city, social_media(JSONB)

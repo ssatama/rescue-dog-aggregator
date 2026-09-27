@@ -436,6 +436,7 @@ class DaisyFamilyRescueDogDetailScraper:
         if "Alter:" in steckbrief_data:
             processed_data["age_text"] = steckbrief_data["Alter:"]
             processed_data["age"] = steckbrief_data["Alter:"]  # Unified standardization expects 'age' field
+            processed_data["date_of_birth"] = steckbrief_data["Alter:"]  # "01/2026" (#561)
 
         # Process gender/sex
         if "Geschlecht:" in steckbrief_data:

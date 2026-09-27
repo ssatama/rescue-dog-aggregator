@@ -299,6 +299,7 @@ class PetsInTurkeyScraper(BaseScraper):
 
                     if birth_match:
                         dog_data["properties"]["birth_date"] = birth_match.group(1)
+                        dog_data["date_of_birth"] = birth_match.group(1)  # day-first (#561)
                         # Calculate age from birth date
                         from datetime import datetime
 

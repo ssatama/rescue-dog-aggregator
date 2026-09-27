@@ -932,6 +932,14 @@ class TestSanterPawsDetailPageLayout:
 
         assert result["description"] == "Bamboo needs: Older children only A secure garden"
 
+    def test_the_date_of_birth_is_passed_on_for_the_birth_range(self, scraper, serve):
+        """#561: D.O.B is day-first; the save turns it into the stored birth range."""
+        serve(_dog_page(KEVIN_FIELDS, ["Kevin."]))
+
+        result = scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/kevin/")
+
+        assert result["date_of_birth"] == "04/04/2022"
+
     def test_a_blank_date_of_birth_leaves_age_absent(self, scraper, serve):
         """#349 removed the "Unknown" age placeholder; 11 live dogs have a blank D.O.B. cell."""
         serve(_dog_page({**KEVIN_FIELDS, "D.O.B": ""}, ["Nanny."]))
@@ -940,6 +948,7 @@ class TestSanterPawsDetailPageLayout:
 
         assert "age_text" not in result["properties"]
         assert result.get("age") is None
+        assert result.get("date_of_birth") is None
 
     def test_story_without_a_field_grid_leaves_sex_and_age_absent(self, scraper, serve):
         serve(_dog_page({}, ["Only a story, no fields yet."]))

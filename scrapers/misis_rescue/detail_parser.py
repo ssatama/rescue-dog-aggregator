@@ -5,9 +5,12 @@ from MisisRescue website and extract structured data using BeautifulSoup.
 """
 
 import re
+from datetime import date
 from typing import Any
 
 from bs4 import BeautifulSoup, Tag
+
+from utils.birth_dates import parse_birth_date
 
 from .normalizer import (
     calculate_age_years,
@@ -21,6 +24,21 @@ from .normalizer import extract_age_from_text_legacy as extract_age_from_text
 from .normalizer import extract_breed_from_text_legacy as extract_breed_from_text
 from .normalizer import extract_sex_from_text_legacy as extract_sex_from_text
 from .normalizer import extract_weight_kg_legacy as extract_weight_kg
+
+# "born" alone is left out: "her puppies were born in March" is not her birth date
+DOB_LABEL = re.compile(r"\b(dob|date of birth|birthday)\b", re.IGNORECASE)
+
+
+def dob_bullet(bullets: list[str], today: date | None = None) -> str | None:
+    """The date of birth as written, from its label on ("DOB -April /May 2024"), or None.
+
+    Only the text after the label is kept, so a date before it can't be taken for the birth date.
+    """
+    for bullet in bullets:
+        label = DOB_LABEL.search(bullet)
+        if label and parse_birth_date(bullet[label.start() :], today):
+            return bullet[label.start() :]
+    return None
 
 
 class MisisRescueDetailParser:
@@ -70,6 +88,11 @@ class MisisRescueDetailParser:
 
         # Use normalizer functions to extract structured data
         if bullet_points:
+            # The DOB bullet as written ("rough estimate DOB -April /May 2024"),
+            # so the saved age keeps up with time (#561)
+            if bullet := dob_bullet(bullet_points):
+                result["date_of_birth"] = bullet
+
             # Extract age text for standardization by BaseScraper
             for bullet in bullet_points:
                 birth_date = extract_birth_date(bullet)

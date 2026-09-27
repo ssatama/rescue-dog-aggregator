@@ -288,6 +288,10 @@ class TestDatabaseServiceRawBreedPersistence:
             "0.5",
             None,
             None,
+            None,
+            None,
+            None,
+            datetime(2026, 1, 1),
         )
 
         db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"})

@@ -248,6 +248,7 @@ class TestPetsInTurkeyScraper:
 
         assert dog_data["name"] == "Shadow"
         assert dog_data["properties"].get("birth_date") == "11/12/2020"
+        assert dog_data["date_of_birth"] == "11/12/2020"  # day-first: 11 December (#561)
 
     def test_external_id_generation(self, scraper):
         """Test stable external ID generation."""

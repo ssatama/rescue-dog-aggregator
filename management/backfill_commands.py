@@ -35,7 +35,7 @@ from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from management.backfill_diff import COLUMNS, PROFILE_TEXT_KEYS, build_plan, render_markdown  # noqa: E402
+from management.backfill_diff import COLUMNS, DATE_COLUMNS, PROFILE_TEXT_KEYS, build_plan, render_markdown  # noqa: E402
 from management.backfill_steps import Change, Step, get_steps, plan_step, update_statements  # noqa: E402
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -73,18 +73,21 @@ def prod_rows(sql: str) -> list[dict[str, Any]]:
 def stored_rows_sql(org: str, external_ids: list[str]) -> str:
     """The org's available dogs plus every scraped external_id, whatever its status."""
     wanted = f"OR a.external_id IN ({', '.join(_literal(i) for i in external_ids)})" if external_ids else ""
-    columns = ", ".join(f"a.{column}" for column in COLUMNS if column != "status")
+    columns = ", ".join(f"a.{column}" for column in COLUMNS if column != "status" and column not in DATE_COLUMNS)
+    # The #561 columns through to_jsonb, which reads them as NULL before the migration
     return f"""
-        SELECT a.id, a.external_id, a.status, a.active, a.original_image_url, a.properties, {columns}
+        SELECT a.id, a.external_id, a.status, a.active, a.original_image_url, a.properties, a.created_at, {columns},
+               row_json->>'birth_date_min' AS birth_date_min, row_json->>'birth_date_max' AS birth_date_max,
+               row_json->>'age_observed_at' AS age_observed_at
         FROM animals a JOIN organizations o ON o.id = a.organization_id
+        CROSS JOIN LATERAL to_jsonb(a) AS row_json
         WHERE o.config_id = {_literal(org)}
           AND ((a.status = 'available' AND a.active) {wanted})
     """
 
 
 def scrape_without_saving(org: str) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
-    """Run the org's scraper with skipping off and return (would-be columns, rejected dogs)."""
-    from services.database_service import update_columns
+    """Run the org's scraper with skipping off and return (dogs as save_animal would see them, rejected dogs)."""
     from utils.config_loader import ConfigLoader
     from utils.db_connection import create_database_config_from_env, initialize_database_pool
     from utils.secure_scraper_loader import ScraperModuleInfo, SecureScraperLoader
@@ -103,9 +106,16 @@ def scrape_without_saving(org: str) -> tuple[list[dict[str, Any]], list[dict[str
         if not scraper._validate_animal_data(dog):
             rejected.append({"external_id": dog.get("external_id"), "reason": scraper.animal_validator.rejection_reason(dog) or "invalid"})
             continue
-        processed = scraper.process_animal(dog)
-        scraped.append({**update_columns(processed), "external_id": processed["external_id"], "image_source": processed.get("primary_image_url")})
+        scraped.append(scraper.process_animal(dog))
     return scraped, rejected
+
+
+def would_write(dogs: list[dict[str, Any]], stored: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """What update_animal would write for each scraped dog, given its stored row (for the age anchor, #561)."""
+    from services.database_service import update_columns
+
+    by_id = {row["external_id"]: row for row in stored}
+    return [{**update_columns(dog, stored=by_id.get(dog["external_id"])), "external_id": dog["external_id"], "image_source": dog.get("primary_image_url")} for dog in dogs]
 
 
 def step_sql(step: Step, organizations: set[str] | None) -> str:
@@ -126,8 +136,9 @@ def cmd_plan(args: argparse.Namespace) -> int:
 
     output: dict[str, Any] = {"steps": {name: [asdict(c) for c in changes] for name, changes in step_changes.items()}}
     if args.org:
-        scraped, rejected = scrape_without_saving(args.org)
-        plan = build_plan(args.org, scraped, rejected, prod_rows(stored_rows_sql(args.org, [dog["external_id"] for dog in scraped])))
+        dogs, rejected = scrape_without_saving(args.org)
+        stored = prod_rows(stored_rows_sql(args.org, [dog["external_id"] for dog in dogs]))
+        plan = build_plan(args.org, would_write(dogs, stored), rejected, stored)
         output["plan"] = plan
         print(render_markdown(plan, step_changes))
     else:

@@ -260,6 +260,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 # Raw fields for standardization by BaseScraper
                 "breed": properties.get("breed"),
                 "age_text": self._calculate_age_text(properties.get("date_of_birth")),
+                "date_of_birth": properties.get("date_of_birth"),  # "January 2022" (#561)
                 "sex": self._standardize_sex(properties.get("gender")),
                 "size": self._extract_size_from_weight(properties.get("weight")),
                 # Properties for additional data storage

@@ -1030,6 +1030,28 @@ class TestDetailParser:
         assert result.get("properties", {}).get("weight") is None
         assert result["sex"] is None
 
+    @pytest.mark.parametrize(
+        "bullets,expected",
+        [
+            (["She's a natural-born explorer", "rough estimate DOB -April /May 2024", "weighs 20kg"], "DOB -April /May 2024"),
+            (["DOB: around May 2021", "mixed breed"], "DOB: around May 2021"),
+            (["DOB: 08.12.2023.", "Castrated"], "DOB: 08.12.2023."),
+            (["3 months old", "Mixed breed"], None),
+            # A mother's litter is not her birth date
+            (["5 years old", "Her puppies were born 03/2026"], None),
+            # Only the date after the label counts
+            (["Rescued in 2024, DOB 2019"], "DOB 2019"),
+        ],
+    )
+    def test_the_dob_bullet_is_passed_on_for_the_birth_range(self, bullets, expected):
+        """#561: the save parses this into the stored birth range. "born" alone is not a DOB label."""
+        items = "".join(f"<li>{bullet}</li>" for bullet in bullets)
+        html = f"<html><body><h1>Test Dog</h1><h2>Things you should know</h2><ul>{items}</ul></body></html>"
+
+        result = MisisRescueDetailParser().parse_detail_page(BeautifulSoup(html, "html.parser"))
+
+        assert result.get("date_of_birth") == expected
+
     def test_size_categories_via_parser(self):
         parser = MisisRescueDetailParser()
 

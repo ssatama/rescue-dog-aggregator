@@ -130,6 +130,50 @@ derived columns are what they were before.
 - The step includes unlisted dogs: their `properties.breed` is the text their
   last scrape read, which is still the rescue's wording.
 
+## Ages keep up (#561)
+
+Ages used to freeze at first sight (every org skips existing dogs), so 70
+active dogs first seen over six months ago were still "puppies" on
+2026-09-26, 59 of them at MISIs. A dog's age is now stored as the range of
+birth dates that fits what the rescue said (`birth_date_min`,
+`birth_date_max`), plus `age_observed_at`, the day the age was read.
+`utils/birth_dates.py` holds all of it.
+
+- A scraper whose rescue publishes a date of birth passes the text as
+  `date_of_birth` (optional key; the save parses it). Tierschutzverein
+  (`Geburtstag`), Santer Paws (`D.O.B`), Bosnia, Daisy (`Alter`), Pets in
+  Turkey ("Born in") and MISIs (the DOB bullet, from its label on: DOB,
+  date of birth, birthday; a bare "born" can be the dog's puppies). Dates
+  are day-first. An `age_text` that is a birth date also counts, when it
+  says so (DOB, born, geb.) or is nothing but a date: The Underdog's
+  "Puppy (estimated DOB 01.03.2026)". A bare date that doesn't parse
+  (Daisy's "07/20218") is no age: `parse_age_text` would count it from today.
+- Everyone else: the stated age is taken back from the day it was read.
+- Months are capped at 360 (`MAX_DOG_AGE_MONTHS`), the bound "8+ years"
+  parses to, or open-ended maxima would grow on every refresh.
+- `age_min_months`/`age_max_months` stay stored columns, derived from the
+  range: at save time, and by `REFRESH_AGES_SQL` after every cron batch
+  (`age_refresh` in the batch summary). Chosen over deriving them at read
+  time because every filter, sort, stat and the frontend read those two
+  columns. The cron runs three times a week, so a month boundary can show
+  up to three days late.
+- **An unchanged `age_text` keeps its anchor.** A forced re-scrape of a
+  site that still says "3 months" a year later must not make the dog a
+  puppy again. The months are parsed afresh, so a parser fix still lands.
+  Rows stored before #561 have no anchor, so `created_at` stands in (the
+  age was read at first sight). This makes #572's forced re-scrape and the
+  `derive-birth-dates` step agree, in either order. Known limit: a row
+  whose `age_text` an earlier update rewrote gets an anchor that is too
+  early; nothing records when the text changed.
+- `age_text` is still the rescue's words as first read ("3 months"). The
+  frontend shows categories from the months, not the text; JSON-LD and the
+  favourites compare view still show the text (a follow-up).
+- Backfill step `derive-birth-dates`: active dogs only (the admin API caps
+  a query at 5,000 rows; there are 10k dogs). Planned 2026-09-26: stale
+  puppies 70 → 6, and the 6 are real (DOB September/October 2025).
+- The migration (`f1a6d8e3c520`) must be on production before the PR
+  merges, or every save fails on the missing columns.
+
 ## Gotchas
 
 - **The local dev database can lag production's schema.** Alembic only reads

@@ -128,3 +128,11 @@ class TestDaisySteckbriefFields:
         scraper = DaisyFamilyRescueDogDetailScraper()
 
         assert scraper._extract_field_value("Halter:\nAls Zweithund geeignet: ja", "Halter:") is None
+
+
+@pytest.mark.unit
+def test_alter_is_passed_on_as_the_date_of_birth():
+    """#561: "Alter: 01/2026" is a birth month; the save turns it into the stored birth range."""
+    processed = DaisyFamilyRescueDogDetailScraper()._process_steckbrief_data({"Alter:": "01/2026"})
+
+    assert processed["date_of_birth"] == "01/2026"

@@ -12,12 +12,19 @@ pinned a decision production never makes. It is deleted.
 """
 
 import logging
+from datetime import date
 from unittest.mock import Mock, patch
 
 import psycopg2
 import pytest
 
 from services.database_service import DatabaseService, _as_float
+from utils.birth_dates import subtract_months
+
+# A fixed day, so a run across UTC midnight can't see two "todays"
+TODAY = date(2026, 9, 26)
+# "2 years" read today: born exactly 24 months ago
+BORN = subtract_months(TODAY, 24)
 
 # Column order of update_animal's SELECT. A drift here shifts every later
 # value, which is how #349's positional assertions rotted.
@@ -40,7 +47,12 @@ CURRENT_ROW = (
     0.9,  # breed_confidence
     "Beagle",  # breed_raw
     [{"url": "https://images.rescuedogs.me/a.jpg", "original_url": "http://img/1.jpg", "width": 800, "height": 600}],  # images
+    BORN,  # birth_date_min
+    BORN,  # birth_date_max
+    TODAY,  # age_observed_at
+    None,  # created_at
 )
+IMAGES = CURRENT_ROW[17]
 
 INCOMING = {
     "name": "Bella",
@@ -64,7 +76,8 @@ INCOMING = {
 
 @pytest.fixture
 def service():
-    return DatabaseService(db_config={"host": "localhost", "database": "test"}, logger=logging.getLogger("test"))
+    with patch("utils.birth_dates.today_utc", return_value=TODAY):
+        yield DatabaseService(db_config={"host": "localhost", "database": "test"}, logger=logging.getLogger("test"))
 
 
 def update_with(service, row=CURRENT_ROW, **overrides):
@@ -119,11 +132,11 @@ class TestUpdateAnimalChangeDetection:
         assert update_with(service) == "no_change"
 
     def test_the_same_gallery_writes_nothing(self, service):
-        assert update_with(service, images=list(CURRENT_ROW[-1])) == "no_change"
+        assert update_with(service, images=list(IMAGES)) == "no_change"
 
     def test_a_changed_gallery_is_written(self, service):
         second = {"url": "https://images.rescuedogs.me/b.jpg", "original_url": "http://img/2.jpg", "width": 800, "height": 600}
-        assert update_with(service, images=[*CURRENT_ROW[-1], second]) == "updated"
+        assert update_with(service, images=[*IMAGES, second]) == "updated"
 
     def test_an_age_that_was_never_known_and_still_is_not_writes_nothing(self, service):
         """Both sides NULL after the fabricated-age backfill. Must not churn."""
@@ -136,6 +149,23 @@ class TestUpdateAnimalChangeDetection:
         row = (*CURRENT_ROW[:2], "Unknown", *CURRENT_ROW[3:])
 
         assert update_with(service, row=row, age_text=None) == "updated"
+
+    def test_an_unchanged_age_keeps_its_anchor_and_ages(self, service):
+        """#561: the site still says "2 years" a year later; the dog is 3 now, not 2 again."""
+        year_ago = subtract_months(TODAY, 12)
+        born = subtract_months(year_ago, 24)
+        row = (*CURRENT_ROW[:18], born, born, year_ago, None)
+        cursor = Mock()
+        cursor.fetchone.return_value = row
+        service.conn = Mock(cursor=Mock(return_value=cursor))
+
+        assert service.update_animal(1, INCOMING)[1] == "updated"
+        params = next(c.args[1] for c in cursor.execute.call_args_list if "UPDATE animals" in c.args[0])
+        assert (params[6], params[7]) == (36, 36)
+        assert params[-4:-1] == (born, born, year_ago)
+
+    def test_a_published_birth_date_is_written(self, service):
+        assert update_with(service, date_of_birth="01.2020") == "updated"
 
     def test_breed_confidence_compares_numerically_not_as_text(self, service):
         """The column used to hold text; '0.9' and 0.9 are the same confidence."""

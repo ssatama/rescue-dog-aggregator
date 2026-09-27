@@ -607,6 +607,8 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                 # Rename age_text to age for unified standardization API
                 if "age_text" in properties:
                     result["age"] = properties["age_text"]
+                    # The D.O.B cell, day-first: "03/10/2025" (#561)
+                    result["date_of_birth"] = properties["age_text"]
                 if "size" in properties:
                     result["size"] = properties["size"] or "Medium"
                 if "status" in properties:

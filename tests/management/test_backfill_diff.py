@@ -116,3 +116,16 @@ class TestRenderMarkdown:
 
         assert "| `name` | 1 / 1 |" in text
         assert "Rex \\| URGENT" in text
+
+
+@pytest.mark.unit
+def test_birth_dates_compare_as_dates_whatever_their_type():
+    """#561: the admin API returns dates as text; a re-scrape computes date objects."""
+    from datetime import date
+
+    from management.backfill_diff import dog_changes
+
+    stored = {"birth_date_min": "2025-03-01", "birth_date_max": "2025-03-31", "age_observed_at": None}
+    scraped = {"birth_date_min": date(2025, 3, 1), "birth_date_max": date(2025, 3, 31), "age_observed_at": date(2026, 9, 26)}
+
+    assert set(dog_changes(scraped, stored)) == {"age_observed_at"}

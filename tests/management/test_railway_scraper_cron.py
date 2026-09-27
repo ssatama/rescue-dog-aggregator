@@ -7,7 +7,7 @@ run just looks fine.
 """
 
 from datetime import UTC, datetime, timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -240,3 +240,20 @@ class TestRunOrgIsolated:
 
         assert [call.args[0] for call in run_org.call_args_list] == ["misisrescue", "rean"]
         assert (batch_result.total_orgs, batch_result.successful, batch_result.failed) == (2, 1, 1)
+
+
+@pytest.mark.unit
+class TestRefreshAges:
+    def test_reports_how_many_dogs_changed(self):
+        cursor = MagicMock(rowcount=7)
+        with patch.object(cron, "get_db_cursor") as get_cursor:
+            get_cursor.return_value.__enter__.return_value = cursor
+            assert cron.refresh_ages() == {"rows_updated": 7}
+        cursor.execute.assert_called_once_with(cron.REFRESH_AGES_SQL)
+        cursor.connection.commit.assert_called_once()
+
+    def test_a_failure_is_reported_not_raised(self):
+        """Ages lagging a few days must never fail a batch that scraped fine."""
+        with patch.object(cron, "get_db_cursor", side_effect=RuntimeError("db down")), patch.object(cron.sentry_sdk, "capture_message") as capture:
+            assert cron.refresh_ages() == {"error": "db down"}
+        capture.assert_called_once()
