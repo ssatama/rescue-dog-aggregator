@@ -35,7 +35,7 @@ from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from management.backfill_diff import COLUMNS, DATE_COLUMNS, PROFILE_TEXT_KEYS, build_plan, render_markdown  # noqa: E402
+from management.backfill_diff import COLUMNS, DATE_COLUMNS, build_plan, profile_texts, render_markdown  # noqa: E402
 from management.backfill_steps import Change, Step, get_steps, plan_step, update_statements  # noqa: E402
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -182,7 +182,7 @@ def _snapshot(database_url: str, orgs: list[str]) -> dict[str, dict[int, Any]]:
     )
     for row in rows:
         properties = row["properties"] or {}
-        snapshot[row["config_id"]][row["id"]] = (row["listed"], tuple(properties.get(key) for key in PROFILE_TEXT_KEYS))
+        snapshot[row["config_id"]][row["id"]] = (row["listed"], profile_texts(properties))
     return snapshot
 
 

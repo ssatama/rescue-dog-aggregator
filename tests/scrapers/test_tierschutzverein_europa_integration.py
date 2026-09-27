@@ -6,11 +6,15 @@ from bs4 import BeautifulSoup
 from scrapers.tierschutzverein_europa.dogs_scraper import TierschutzvereinEuropaScraper
 from scrapers.tierschutzverein_europa.translations import (
     normalize_name,
+    stated_age_months,
     translate_age,
     translate_breed,
     translate_gender,
+    translate_size,
 )
+from services.database_service import update_columns
 from utils.standardization import standardize_age, standardize_breed
+from utils.unified_standardization import UnifiedStandardizer
 
 
 class TestTranslationFunctions:
@@ -37,6 +41,9 @@ class TestTranslationFunctions:
             ("1 Jahr alt", "1 year old"),
             ("18 Monate", "18 months"),
             ("05.2025 (3 Monate alt)", "3 months old"),
+            ("07.2026 (8 Wochen alt)", "8 weeks old"),
+            ("08.2026 (1 Woche alt)", "1 week old"),
+            ("09.2026 (5 Tage alt)", "5 days old"),
         ]
 
         for text, expected in test_cases:
@@ -162,6 +169,81 @@ class TestTranslationFunctions:
     def test_translate_gender_none_and_empty(self):
         assert translate_gender(None) is None
         assert translate_gender("") is None
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        ("height_text", "expected"),
+        [
+            # Real "Ungefähre Größe" values from production (2026-09-27), adult dogs
+            ("ca. 30 cm", "Small"),
+            ("ca. 34 cm", "Small"),
+            ("ca. 35 cm", "Medium"),
+            ("ca. 50 cm, 17 kg", "Medium"),
+            ("55 cm, 25 kg (geschätzt)", "Medium"),
+            ("ca. 56 cm / 16,5 kg", "Large"),
+            ("36 kg / 62 cm", "Large"),
+            ("ca. 60 - 65 cm", "Large"),
+            ("50 bis 52 cm", "Medium"),
+            ("mittelgroß (ca. 50 cm)", "Medium"),
+            ("mittelgroß, 15-18 kg", "Medium"),
+            ("klein", "Small"),
+            ("groß", "Large"),
+            ("keine Angaben", None),
+            ("", None),
+            (None, None),
+        ],
+    )
+    def test_translate_size_from_shoulder_height(self, height_text, expected):
+        assert translate_size(height_text, age_months=36) == expected
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        ("height_text", "age_months", "expected"),
+        [
+            # Still growing, by the text or by age: today's height isn't the adult's
+            ("ca. 25 cm, ca. 2,5 kg (im Wachstum)", 36, None),
+            ("ca. 40 cm/ 15 kg/ kann noch etwas wachsen", 36, None),
+            ("aktuell ca 38cm , im Wachstum", 36, None),
+            ("ca. 50 cm, noch nicht ausgewachsen", 36, None),
+            ("ca. 40 cm, noch nicht ganz ausgewachsen", 8, None),
+            ("ca. 30 cm, noch nicht vollständig ausgewachsen", 5, None),
+            ("ca. 30 cm, Endgröße unbekannt", 4, None),
+            ("ca. 20 cm", 0, None),  # "8 Wochen alt"
+            ("ca. 35 cm, wächst noch (mittel bis groß)", 36, None),
+            ("35 cm, 6 kg", 4, None),
+            ("50 cm", 6, None),
+            ("mittelgroß", 11, None),
+            # ...unless the rescue gives the adult's size
+            ("klein bleibend, im Wachstum", 3, "Small"),
+            ("ca. 36 cm (vermutlich mittelgroß werdend)", 5, "Medium"),
+            ("ca. 45 cm, 14 kg (wird groß und schwer)", 9, "Large"),
+            ("ca. 55 cm – 60 cm (wenn ausgewachsen)", 7, "Large"),
+            ("Endgröße ca. 40-43cm", 5, "Medium"),
+            ("ca. 40 – 45 cm (ausgewachsen)", 36, "Medium"),
+            ("ca. 37 cm, wächst kaum noch, ca. 10 kg", 10, "Medium"),
+            ("kleinbleibend, ca. 20 cm", 4, "Small"),
+            ("ca. 30 cm, Endgrösse ca. 50 cm", 5, "Medium"),
+            ("aktuell ca. 30 cm, ausgewachsen ca. 50 cm", 5, "Medium"),
+            # One year old counts as grown; no stated age is not a puppy
+            ("aktuell 45 cm, 20 kg", 72, "Medium"),
+            ("mittelgross", 36, "Medium"),
+            ("gross bleibend, ca. 25 cm", 4, "Large"),
+            ("klein bis mittelgroß", 36, None),
+            ("ca. 50 cm", 12, "Medium"),
+            ("ca. 50 cm", None, "Medium"),
+        ],
+    )
+    def test_translate_size_of_a_growing_dog(self, height_text, age_months, expected):
+        assert translate_size(height_text, age_months) == expected
+
+    @pytest.mark.unit
+    def test_stated_age_months(self):
+        assert stated_age_months("03.2025 (10 Monate alt)") == 10
+        assert stated_age_months("09.2025 (1 Jahr alt)") == 12
+        assert stated_age_months("02.2020 (6 Jahre alt)") == 72
+        assert stated_age_months("07.2026 (8 Wochen alt)") == 0
+        assert stated_age_months("Unbekannt") is None
+        assert stated_age_months(None) is None
 
 
 class TestScraperCoreFunctions:
@@ -332,9 +414,51 @@ class TestScraperCoreFunctions:
         assert properties["Mittelmeertest"] == "zu jung"
         assert properties["Aufenthaltsort"] == "Hundepension von Perros con Alma"
 
-        assert "Beschreibung" in properties
-        assert "Klein, aber voller Lebensfreude" in properties["Beschreibung"]
-        assert "ohne ihre Mütter im Tierheim" in properties["Beschreibung"]
+        assert "Klein, aber voller Lebensfreude" in properties["description"]
+        assert "ohne ihre Mütter im Tierheim" in properties["description"]
+        assert "Beschreibung" not in properties
+        assert "description" not in details  # save drops a top-level description
+        assert "age" not in details  # would win over the translated age_text (#563)
+
+    @pytest.mark.unit
+    def test_english_age_and_height_size_survive_standardization(self, scraper, detail_html):
+        """What the save writes: #563's age_text used to be the German Geburtstag."""
+        mock_response = Mock()
+        mock_response.text = detail_html.replace("17 cm, im Wachstum, klein bleibend", "ca. 50 cm, 17 kg").replace("05.2025 (3 Monate alt)", "05.2023 (3 Jahre alt)")
+        mock_response.raise_for_status = Mock()
+        scraper.standardizer = UnifiedStandardizer()
+        scraper.use_unified_standardization = True
+
+        with patch("requests.get", return_value=mock_response):
+            dog = {"name": "Bonsai", "external_id": "bonsai"} | scraper._scrape_animal_details("https://tierschutzverein-europa.de/tiervermittlung/bonsai/")
+        dog = scraper.process_animal(scraper._translate_and_normalize_dogs([dog])[0])
+        saved = update_columns(dog)
+
+        assert saved["age_text"] == "3 years old"
+        assert saved["birth_date_min"] is not None  # from Geburtstag (#561)
+        assert saved["size"] == "Medium"
+        assert saved["standardized_size"] == "Medium"
+        assert dog["properties"]["Ungefähre Größe"] == "ca. 50 cm, 17 kg"
+
+    @pytest.mark.unit
+    def test_an_age_that_does_not_translate_is_dropped_and_logged(self, scraper):
+        dogs = [{"name": "Rex", "age_text": "ca. 2019"}, {"name": "Lia", "age_text": "Unbekannt"}]
+
+        rex, lia = scraper._translate_and_normalize_dogs(dogs)
+
+        assert rex["age_text"] is None
+        assert lia["age_text"] is None
+        scraper.logger.warning.assert_called_once_with("Untranslated age for Rex: 'ca. 2019'")
+
+    @pytest.mark.unit
+    def test_a_failed_translation_never_keeps_the_german_age(self, scraper):
+        dog = {"name": "Rex", "breed": "Mischling", "age_text": "03.2025 (10 Monate alt)"}
+
+        with patch("scrapers.tierschutzverein_europa.dogs_scraper.translate_breed", side_effect=ValueError("boom")):
+            (rex,) = scraper._translate_and_normalize_dogs([dog])
+
+        assert rex["age_text"] is None
+        assert rex["properties"]["translation_error"] == "boom"
 
     @pytest.mark.unit
     def test_process_animals_parallel_batching(self, scraper):
@@ -405,8 +529,7 @@ class TestScraperCoreFunctions:
         assert properties["Rasse"] == "Labrador Mix"
         assert properties["Geschlecht"] == "weiblich"
 
-        assert "Beschreibung" in properties
-        assert "liebevolle Hündin" in properties["Beschreibung"]
+        assert "liebevolle Hündin" in properties["description"]
 
         assert "Geburtstag" not in properties or properties["Geburtstag"] is None
 

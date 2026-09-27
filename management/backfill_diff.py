@@ -97,8 +97,16 @@ def dog_changes(scraped: dict[str, Any], stored: dict[str, Any]) -> dict[str, tu
     return changes
 
 
+def profile_texts(properties: dict[str, Any]) -> list[str]:
+    """The profile's source texts, whatever key each sits under. A text that
+    only moved key is the same source (#563: Beschreibung became description)."""
+    return sorted(json.dumps(properties[key], sort_keys=True) for key in PROFILE_TEXT_KEYS if properties.get(key) is not None)
+
+
 def needs_reprofile(changes: dict[str, tuple[Any, Any]]) -> bool:
-    return any(f"properties.{key}" in changes for key in PROFILE_TEXT_KEYS)
+    """A profile text changed: plan's counterpart of apply's text_changed."""
+    pairs = {key: changes[f"properties.{key}"] for key in PROFILE_TEXT_KEYS if f"properties.{key}" in changes}
+    return profile_texts({key: was for key, (was, _) in pairs.items()}) != profile_texts({key: now for key, (_, now) in pairs.items()})
 
 
 def build_plan(org: str, scraped: list[dict[str, Any]], rejected: list[dict[str, str]], stored: list[dict[str, Any]]) -> dict[str, Any]:

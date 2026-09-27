@@ -174,8 +174,18 @@ class TestSnapshot:
             before = backfill_commands._snapshot("postgresql://example/db", ["rean"])
 
         assert "a.active" not in query.call_args.args[1].split("WHERE")[1]
-        after = {1: (True, ("new",) + (None,) * 8), 2: before["rean"][2]}
+        after = {1: (True, ['"new"']), 2: before["rean"][2]}
         assert backfill_commands.text_changed(before["rean"], after) == [1]
+
+    def test_a_text_that_only_moved_key_is_not_a_change(self):
+        """#563: a re-scrape moves Tierschutzverein's Beschreibung to description."""
+        before_rows = [{"config_id": "tsv", "id": 1, "listed": True, "properties": {"Beschreibung": "Ein guter Hund."}}]
+        after_rows = [{"config_id": "tsv", "id": 1, "listed": True, "properties": {"description": "Ein guter Hund."}}]
+        with patch.object(backfill_commands, "_rows", side_effect=[before_rows, after_rows]):
+            before = backfill_commands._snapshot("postgresql://example/db", ["tsv"])
+            after = backfill_commands._snapshot("postgresql://example/db", ["tsv"])
+
+        assert backfill_commands.text_changed(before["tsv"], after["tsv"]) == []
 
     def test_steps_run_for_every_rescue_not_just_the_rescraped_ones(self, monkeypatch):
         monkeypatch.setenv("RAILWAY_DATABASE_URL", "postgresql://example/db")

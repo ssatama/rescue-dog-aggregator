@@ -11,9 +11,11 @@ from bs4 import BeautifulSoup
 from scrapers.base_scraper import BaseScraper, ListingIncompleteError
 from scrapers.tierschutzverein_europa.translations import (
     normalize_name,
+    stated_age_months,
     translate_age,
     translate_breed,
     translate_gender,
+    translate_size,
 )
 from utils.shared_extraction_patterns import gallery_urls
 
@@ -21,14 +23,9 @@ from utils.shared_extraction_patterns import gallery_urls
 class TierschutzvereinEuropaScraper(BaseScraper):
     """Tierschutzverein Europa e.V. scraper with two-phase parallel architecture."""
 
-    def __init__(self, config_id="tierschutzverein-europa", organization_id=None):
+    def __init__(self, config_id="tierschutzverein-europa"):
         """Initialize Tierschutzverein Europa scraper with configuration."""
-        if organization_id is not None:
-            # Legacy mode - use organization_id
-            super().__init__(organization_id=organization_id)
-        else:
-            # New mode - use config_id
-            super().__init__(config_id=config_id)
+        super().__init__(config_id=config_id)
 
         self.base_url: str = "https://tierschutzverein-europa.de"
         self.listing_url: str = "https://tierschutzverein-europa.de/tiervermittlung/"
@@ -201,13 +198,10 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             if "Geschlecht" in properties:
                 result["sex"] = properties["Geschlecht"]
             if "Geburtstag" in properties:
+                # Translated in phase 3. No "age": process_animal prefers it
+                # over age_text, and it would store the German text (#563).
                 result["age_text"] = properties["Geburtstag"]
-                result["age"] = properties["Geburtstag"]  # Unified standardization expects 'age' field
                 result["date_of_birth"] = properties["Geburtstag"]  # "03.2025 (1 Jahr alt)" (#561)
-
-            # Add description as separate field for BaseScraper
-            if "Beschreibung" in properties:
-                result["description"] = properties["Beschreibung"]
 
             return result
 
@@ -242,7 +236,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 if key and value:
                     properties[key] = value
 
-        # Extract description (Beschreibung)
+        # The "Beschreibung" section, stored where every reader looks (#563)
         description_section = soup.find("h2", string=re.compile("Beschreibung", re.I))
         if description_section:
             description_parts = []
@@ -255,7 +249,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 current = current.find_next_sibling()
 
             if description_parts:
-                properties["Beschreibung"] = "\n".join(description_parts)
+                properties["description"] = "\n".join(description_parts)
 
         return properties
 
@@ -403,10 +397,17 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                     if translated_sex:
                         translated_dog["sex"] = translated_sex
 
-                if translated_dog.get("age_text"):
-                    translated_age = translate_age(translated_dog["age_text"])
-                    if translated_age:
-                        translated_dog["age_text"] = translated_age
+                german_age = translated_dog.get("age_text")
+                translated_dog["size"] = translate_size(
+                    (translated_dog.get("properties") or {}).get("Ungefähre Größe"),
+                    stated_age_months(german_age),
+                )
+
+                if german_age:
+                    # No German text stands in for an age
+                    translated_dog["age_text"] = translate_age(german_age)
+                    if translated_dog["age_text"] is None and german_age.strip().lower() != "unbekannt":
+                        self.logger.warning(f"Untranslated age for {translated_dog.get('name')}: {german_age!r}")
 
                 if translated_dog.get("breed"):
                     translated_breed = translate_breed(translated_dog["breed"])
@@ -425,6 +426,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 self.logger.error(f"Translation failed for {dog.get('name', 'unknown')}: {e}")
                 # Return original with error flag
                 dog_with_error = dog.copy()
+                dog_with_error["age_text"] = None  # never the German text (#563)
                 if "properties" not in dog_with_error:
                     dog_with_error["properties"] = {}
                 dog_with_error["properties"]["translation_error"] = str(e)
@@ -466,13 +468,3 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             return name.capitalize()
 
         return None
-
-    def _get_existing_animal_urls(self) -> set:
-        """Get URLs of existing animals from database."""
-        try:
-            # This would normally query the database
-            # For now, returning empty set to avoid database dependency in tests
-            return set()
-        except Exception as e:
-            self.logger.error(f"Error getting existing animal URLs: {e}")
-            return set()

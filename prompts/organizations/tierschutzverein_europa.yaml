@@ -162,7 +162,7 @@ few_shot_examples:
       Name: Max
       Breed: Schäferhund-Mix
       Age: 3 Jahre
-      Properties: {"Beschreibung": "Max ist ein freundlicher und ruhiger Rüde, der sehr verträglich mit anderen Hunden ist. Er ist geimpft, kastriert und sucht ein liebevolles Zuhause mit Garten."}
+      Properties: {"description": "Max ist ein freundlicher und ruhiger Rüde, der sehr verträglich mit anderen Hunden ist. Er ist geimpft, kastriert und sucht ein liebevolles Zuhause mit Garten."}
 
     output: |
       {
