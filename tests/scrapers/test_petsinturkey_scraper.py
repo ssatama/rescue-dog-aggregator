@@ -1,5 +1,7 @@
 """Tests for the modernized Pets in Turkey scraper."""
 
+import re
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -7,10 +9,12 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import ListingIncompleteError
-from scrapers.pets_in_turkey.petsinturkey_scraper import PetsInTurkeyScraper
+from scrapers.pets_in_turkey.petsinturkey_scraper import PetsInTurkeyScraper, pit_external_id
+
+LISTING = Path(__file__).parent.parent / "fixtures" / "pets_in_turkey" / "dogs.html"
+ALIZA_PHOTO = "https://static.wixstatic.com/media/3da926_3efcf2b8ff6a4ae4be601a033d8c24de~mv2.jpg"
 
 
-@pytest.mark.unit
 @pytest.mark.unit
 class TestPetsInTurkeyScraper:
     """Test suite for modernized Pets in Turkey scraper."""
@@ -125,21 +129,22 @@ class TestPetsInTurkeyScraper:
             "Jack Russell Terrier",
         ]  # Could be either
         assert nico["sex"] == "Male"
-        assert nico["properties"]["description"] == "Ready to fly on 12/09/2025"
+        assert nico["external_id"] == "pit-5992ee3703454ce1914dda7709e5466b"
+        assert "description" not in nico["properties"]
         assert nico["properties"]["weight"] == "8 kg"
         assert nico["size"] == "Small"  # 8kg = Small
 
         assert emily is not None, "Emily not found in results"
         assert emily["breed"] in ["Terrier", "Terrier Mix"]  # May get standardized
         assert emily["sex"] == "Female"
-        assert emily["properties"]["description"] == "Ready to fly on 24/09/2025"
+        assert emily["external_id"] == "pit-d53eb15bf9a04793968940c9aeece82f"
 
     def test_extract_dog_data(self, scraper):
         """Test extraction of data from a single dog section."""
         html = """
         <div>
             <h4>I'm Arthur</h4>
-            <img src="https://static.wixstatic.com/media/3da926_test.jpg" />
+            <img src="https://static.wixstatic.com/media/3da926_a6d33cee2ac54fd9b374160d05ce888e~mv2.jpg" />
             <p>Currently in Germany (64686 Lantertal) in his foster home</p>
             <span>Breed</span>
             <span>Weight</span>
@@ -168,7 +173,7 @@ class TestPetsInTurkeyScraper:
         ]  # Capitalization may vary
         assert dog_data["sex"] == "Male"
         assert dog_data["size"] == "Medium"  # 15kg = Medium
-        assert dog_data["properties"]["description"] == "Currently in Germany (64686 Lantertal) in his foster home"
+        assert "description" not in dog_data["properties"]
         assert dog_data["properties"]["neutered_spayed"] == "Yes"
         assert dog_data["properties"]["height"] == "height: 40cm"
 
@@ -195,27 +200,32 @@ class TestPetsInTurkeyScraper:
         relative_url = "/images/dog.jpg"
         assert scraper._clean_image_url(relative_url) == "https://www.petsinturkey.org/images/dog.jpg"
 
-    def test_apply_standardization(self, scraper):
-        """Test data standardization."""
-        from utils.unified_standardization import UnifiedStandardizer
+    def test_apply_standardization_leaves_missing_data_out(self, scraper):
+        """No "Unknown" name or age, no "Medium" or "Mixed Breed" standing in (#564)."""
+        standardized = scraper._apply_standardization({"name": "Mona", "breed": None, "sex": None, "size": None})
 
-        scraper.standardizer = UnifiedStandardizer()
-        scraper.use_unified_standardization = True
-
-        raw_data = {
-            "name": None,
-            "breed": "  terrier  MIX  ",
-            "age_text": "2 yo",
-        }
-
-        # The _apply_standardization method exists in the scraper
-        standardized = scraper._apply_standardization(raw_data.copy())
-
-        # Verify defaults are applied
-        assert standardized["name"] == "Unknown"
-        assert standardized.get("standardized_size") == "Medium"
+        assert standardized["name"] == "Mona"
+        assert standardized.get("breed") != "Mixed Breed"
+        assert standardized.get("standardized_size") != "Medium"
+        assert "gender" not in standardized
+        assert standardized.get("age_text") is None
         assert standardized["status"] == "available"
         assert standardized["animal_type"] == "dog"
+
+    def test_a_card_without_weight_or_breed_gets_no_placeholders(self, scraper):
+        html = f"""
+        <div>
+            <h4>I'm Mona</h4>
+            <img src="{ALIZA_PHOTO}" />
+            <span>Breed</span>
+            <span>Adopt Me</span>
+        </div>
+        """
+        dog_data = scraper._extract_dog_data(BeautifulSoup(html, "html.parser").find("div"))
+
+        assert dog_data["breed"] is None
+        assert dog_data["sex"] is None
+        assert dog_data["size"] is None
 
     @patch("scrapers.base_scraper.requests.get")
     def test_a_listing_that_fails_to_load_raises_after_retries(self, mock_get, scraper):
@@ -250,22 +260,67 @@ class TestPetsInTurkeyScraper:
         assert dog_data["properties"].get("birth_date") == "11/12/2020"
         assert dog_data["date_of_birth"] == "11/12/2020"  # day-first: 11 December (#561)
 
-    def test_external_id_generation(self, scraper):
-        """Test stable external ID generation."""
-        html = """
+    def test_the_id_is_the_photo_and_the_name_is_whole(self, scraper):
+        """The ID survives breed and name edits; "I'm Mr Bean" is Mr Bean (#564)."""
+        html = f"""
         <div>
-            <h4>I'm Test Dog</h4>
+            <h4>I'm Mr\xa0 Bean</h4>
+            <img src="{ALIZA_PHOTO}/v1/fill/w_180,h_221,al_c,q_80/a.jpg" />
             <span>Breed</span>
             <span>Adopt Me</span>
             <span>Golden Retriever</span>
         </div>
         """
-        soup = BeautifulSoup(html, "html.parser")
-        section = soup.find("div")
+        dog_data = scraper._extract_dog_data(BeautifulSoup(html, "html.parser").find("div"))
 
-        dog_data = scraper._extract_dog_data(section)
+        assert dog_data["name"] == "Mr Bean"
+        assert dog_data["external_id"] == "pit-3efcf2b8ff6a4ae4be601a033d8c24de"
+        assert dog_data["adoption_url"] == "https://www.petsinturkey.org/dogs"
 
-        # External ID uses first word of name only (due to \w+ regex pattern)
-        assert dog_data["external_id"] == "pit-test-golden-retriever"
-        # Adoption URL also uses only first word of name
-        assert dog_data["adoption_url"] == "https://www.petsinturkey.org/adoption#test"
+    def test_pit_external_id(self):
+        assert pit_external_id(ALIZA_PHOTO) == "pit-3efcf2b8ff6a4ae4be601a033d8c24de"
+        assert pit_external_id("https://static.wixstatic.com/media/3da926_test.jpg") is None
+        assert pit_external_id(None) is None
+
+    @patch("scrapers.base_scraper.requests.get")
+    def test_a_card_without_a_photo_is_skipped(self, mock_get, scraper):
+        mock_get.return_value = MagicMock(text="""<div><div><h4>I'm Ghost</h4></div><span>Breed</span><span>Adopt Me</span><span>Mix</span><span>9 kg</span><span>Male</span></div>""")
+
+        assert scraper.collect_data() == []
+        scraper.logger.warning.assert_called_once()
+
+
+@pytest.mark.unit
+class TestPetsInTurkeySavedListing:
+    """The /dogs page as saved on 2026-09-27: 33 dogs, then an adoption-forms repeater."""
+
+    @pytest.fixture
+    def dogs(self, stub_clock):
+        scraper = PetsInTurkeyScraper()
+        scraper.session_manager = None
+        with patch.object(scraper, "get_listing_page", return_value=MagicMock(text=LISTING.read_text())):
+            dogs = scraper.collect_data()
+        assert stub_clock.calls == []  # one page, no per-dog sleep (#564)
+        return {dog["name"]: dog for dog in dogs}
+
+    def test_every_dog_once_with_its_own_photo_id(self, dogs):
+        assert len(dogs) == 33
+        ids = [dog["external_id"] for dog in dogs.values()]
+        assert len(set(ids)) == 33
+        assert all(re.fullmatch(r"pit-[0-9a-f]{32}", external_id) for external_id in ids)
+
+    def test_a_dog(self, dogs):
+        aliza = dogs["Aliza"]
+
+        assert aliza["external_id"] == "pit-3efcf2b8ff6a4ae4be601a033d8c24de"
+        assert aliza["primary_image_url"] == ALIZA_PHOTO
+        assert aliza["adoption_url"] == "https://www.petsinturkey.org/dogs"
+        assert aliza["breed_raw"] == "Labrador"
+        assert aliza["sex"] == "Female"
+        assert aliza["size"] == "Large"  # 32 kg
+        assert aliza["age_text"] == "1 years"
+        assert aliza["properties"]["neutered_spayed"] == "Yes"
+        assert "description" not in aliza["properties"]
+
+    def test_a_puppy_by_date_of_birth(self, dogs):
+        assert dogs["Shadow"]["date_of_birth"] == "11/12/2020"

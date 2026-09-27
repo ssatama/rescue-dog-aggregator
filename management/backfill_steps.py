@@ -110,6 +110,16 @@ def _plan_birth_dates(records: list[dict[str, Any]], today: date | None = None) 
     return changes
 
 
+# Pets in Turkey's dogs are listed on /dogs, which has no per-dog anchor. The
+# stored links were /adoption#name, an anchor the page doesn't have (#564), and
+# a save never rewrites adoption_url.
+PETS_IN_TURKEY_LISTING = "https://www.petsinturkey.org/dogs"
+
+
+def _plan_listing_urls(records: list[dict[str, Any]]) -> list[Change]:
+    return [Change(record["id"], record["organization"], "adoption_url", record["adoption_url"], PETS_IN_TURKEY_LISTING) for record in records if record["adoption_url"] != PETS_IN_TURKEY_LISTING]
+
+
 STEPS: dict[str, Step] = {
     step.name: step
     for step in [
@@ -155,6 +165,18 @@ STEPS: dict[str, Step] = {
                 WHERE a.active
             """,
             plan=_plan_birth_dates,
+        ),
+        Step(
+            name="pets-in-turkey-listing-url",
+            summary="Pets in Turkey dogs link to /dogs, where they are listed, not to a made-up /adoption#name (#564)",
+            fetch_sql=f"""
+                SELECT a.id, a.adoption_url, o.config_id AS organization
+                FROM animals a
+                JOIN organizations o ON o.id = a.organization_id
+                WHERE o.config_id = 'pets-in-turkey'
+                  AND a.adoption_url IS DISTINCT FROM '{PETS_IN_TURKEY_LISTING}'
+            """,
+            plan=_plan_listing_urls,
         ),
     ]
 }
