@@ -31,7 +31,6 @@ class TestAnimalRescueBosniaUnifiedStandardization:
     def test_size_standardization_through_base_scraper(self):
         """Test that sizes are standardized through base scraper using real standardizer."""
         scraper = AnimalRescueBosniaScraper(organization_id=1)
-        scraper.use_unified_standardization = True
 
         # Test data with size that should be standardized
         test_data = {

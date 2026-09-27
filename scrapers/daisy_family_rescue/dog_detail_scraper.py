@@ -1,14 +1,14 @@
-import asyncio
-import os
 import re
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 
+from services.playwright_browser_service import (
+    PlaywrightOptions,
+    get_playwright_service,
+)
 from utils.shared_extraction_patterns import gallery_urls
-
-USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
 
 # The footer is excluded by position, so this floor only has to keep out short
 # Steckbrief lines and the name widget; story paragraphs run from ~119 chars.
@@ -16,23 +16,6 @@ MIN_STORY_WIDGET_CHARS = 80
 
 # Steckbrief lines that are never parsed into fields but must not read as story.
 UNPARSED_STECKBRIEF_LABELS = ("Verträglich mit", "Als Zweithund")
-
-if TYPE_CHECKING:
-    from selenium.webdriver.remote.webdriver import WebDriver
-
-if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import (
-        PlaywrightOptions,
-        get_playwright_service,
-    )
-else:
-    from selenium.common.exceptions import NoSuchElementException, TimeoutException
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.remote.webdriver import WebDriver
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.webdriver.support.ui import WebDriverWait
-
-    from services.browser_service import BrowserOptions, get_browser_service
 
 
 class DaisyFamilyRescueDogDetailScraper:
@@ -81,99 +64,9 @@ class DaisyFamilyRescueDogDetailScraper:
             "large": (60, 100),
         }
 
-    def setup_driver(self, headless: bool = True) -> "WebDriver":
-        """Setup WebDriver for scraping.
-
-        Uses centralized browser service that auto-detects environment:
-        - Local: Uses Chrome
-        - Railway: Uses Browserless
-        """
-        browser_service = get_browser_service()
-        browser_options = BrowserOptions(
-            headless=headless,
-            window_size=(1920, 1080),
-        )
-        browser_result = browser_service.create_driver(browser_options)
-        return browser_result.driver
-
-    def extract_dog_details(self, dog_url: str, logger=None) -> dict[str, Any] | None:
-        """Extract detailed information from a single dog's detail page (sync caller)."""
-        if USE_PLAYWRIGHT:
-            return asyncio.run(self._extract_dog_details_playwright(dog_url, logger))
-        return self._extract_dog_details_selenium(dog_url, logger)
-
     async def async_extract_dog_details(self, dog_url: str, logger=None) -> dict[str, Any] | None:
         """Extract detailed information (async caller — avoids nested asyncio.run())."""
-        if USE_PLAYWRIGHT:
-            return await self._extract_dog_details_playwright(dog_url, logger)
-        return self._extract_dog_details_selenium(dog_url, logger)
-
-    def _extract_dog_details_selenium(self, dog_url: str, logger=None) -> dict[str, Any] | None:
-        """Extract detailed information using Selenium."""
-        driver = None
-
-        try:
-            driver = self.setup_driver()
-
-            if logger:
-                logger.info(f"Loading dog detail page: {dog_url}")
-
-            driver.get(dog_url)
-
-            # Wait for page to load
-            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-
-            # Extract all the data
-            dog_data = {
-                "adoption_url": dog_url,
-                "external_id": self._extract_external_id_from_url(dog_url),
-                "properties": {
-                    "source": "daisyfamilyrescue.de",
-                    "extraction_method": "detail_page",
-                    "language": "de",
-                },
-            }
-
-            # Extract Steckbrief data
-            steckbrief_data = self._extract_steckbrief_data(driver, logger)
-            if steckbrief_data:
-                # Process and standardize the data
-                processed_data = self._process_steckbrief_data(steckbrief_data, logger)
-                dog_data.update(processed_data)
-
-            # Extract main dog image
-            image_url = self._extract_main_image(driver, logger)
-            if image_url:
-                dog_data["primary_image_url"] = image_url
-                dog_data["image_urls"] = self._extract_image_urls_soup(BeautifulSoup(driver.page_source, "html.parser"), image_url)
-
-            # Extract additional description text
-            description = self._extract_description(driver, logger)
-            if description:
-                # Ensure properties is still a dictionary after update
-                if "properties" not in dog_data:
-                    dog_data["properties"] = {}
-                if isinstance(dog_data["properties"], dict):
-                    dog_data["properties"]["german_description"] = description
-
-            # Extract dog name from page title or content
-            name = self._extract_dog_name(driver, logger)
-            if name:
-                dog_data["name"] = name
-
-            if logger:
-                logger.debug(f"Extracted details for dog: {dog_data.get('name', 'Unknown')}")
-
-            return dog_data
-
-        except Exception as e:
-            if logger:
-                logger.error(f"Error extracting details from {dog_url}: {e}")
-            return None
-
-        finally:
-            if driver:
-                driver.quit()
+        return await self._extract_dog_details_playwright(dog_url, logger)
 
     async def _extract_dog_details_playwright(self, dog_url: str, logger=None) -> dict[str, Any] | None:
         """Extract detailed information using Playwright."""
@@ -366,48 +259,6 @@ class DaisyFamilyRescueDogDetailScraper:
             if logger:
                 logger.error(f"Error extracting dog name: {e}")
         return None
-
-    def _extract_steckbrief_data(self, driver, logger=None) -> dict[str, str]:
-        """Extract structured data from the Steckbrief section."""
-        steckbrief_data = {}
-
-        try:
-            # Find the Steckbrief section header
-            steckbrief_header = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//h4[contains(text(), 'Steckbrief')]")))
-
-            if logger:
-                logger.debug("Found Steckbrief section")
-
-            # Get the container that contains all the data
-            # Try different container approaches - the data is in the great-grandparent or ancestor section
-            try:
-                steckbrief_container = steckbrief_header.find_element(By.XPATH, "../../..")
-            except NoSuchElementException:
-                try:
-                    steckbrief_container = steckbrief_header.find_element(By.XPATH, "ancestor::section[1]")
-                except NoSuchElementException:
-                    # Fallback to grandparent
-                    steckbrief_container = steckbrief_header.find_element(By.XPATH, "../..")
-
-            # Extract all text from the container
-            container_text = steckbrief_container.text
-
-            # Parse structured fields from the text
-            for pattern in self.steckbrief_patterns:
-                value = self._extract_field_value(container_text, pattern)
-                if value:
-                    steckbrief_data[pattern] = value
-                    if logger:
-                        logger.debug(f"Extracted {pattern} {value}")
-
-        except TimeoutException:
-            if logger:
-                logger.warning("Steckbrief section not found")
-        except Exception as e:
-            if logger:
-                logger.error(f"Error extracting Steckbrief data: {e}")
-
-        return steckbrief_data
 
     def _extract_field_value(self, text: str, field_pattern: str) -> str | None:
         """Extract the value for a specific field from text."""
@@ -615,124 +466,6 @@ class DaisyFamilyRescueDogDetailScraper:
         fee_match = re.search(r"(\d+(?:\.\d+)?)\s*€", fee_text)
         if fee_match:
             return float(fee_match.group(1))
-
-        return None
-
-    def _extract_main_image(self, driver: "WebDriver", logger=None) -> str | None:
-        """Extract the main dog image from the page."""
-        try:
-            # Look for images with specific patterns (found in inspection)
-            image_selectors = [
-                "img[alt*='beitragsbild']",  # Main content image
-                "img[src*='brownie']",  # Example from inspection
-                "img[src*='wp-content/uploads']",  # WordPress uploads
-                ".elementor-image img",  # Elementor image widgets
-                "article img",  # Any image in article
-                "main img",  # Any image in main content
-            ]
-
-            for selector in image_selectors:
-                try:
-                    img_elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                    for img in img_elements:
-                        src = img.get_attribute("src")
-                        alt = img.get_attribute("alt") or ""
-
-                        # Skip common non-dog images
-                        if src and self._is_valid_dog_image(src, alt):
-                            if logger:
-                                logger.debug(f"Found main image: {src}")
-                            return src
-                except Exception:
-                    continue
-
-            if logger:
-                logger.warning("No valid dog image found")
-
-        except Exception as e:
-            if logger:
-                logger.error(f"Error extracting main image: {e}")
-
-        return None
-
-    def _is_valid_dog_image(self, src: str, alt: str) -> bool:
-        """Check if an image URL is likely a dog photo."""
-        if not src:
-            return False
-
-        src_lower = src.lower()
-        alt_lower = alt.lower()
-
-        # Skip common non-dog images
-        skip_patterns = [
-            "logo",
-            "close",
-            "cookie",
-            "icon",
-            "button",
-            "facebook",
-            "instagram",
-            "social",
-            "header",
-        ]
-
-        for pattern in skip_patterns:
-            if pattern in src_lower or pattern in alt_lower:
-                return False
-
-        # Look for dog-related patterns
-        dog_patterns = ["beitragsbild", "hund", "dog", "wp-content/uploads"]
-
-        for pattern in dog_patterns:
-            if pattern in src_lower:
-                return True
-
-        # Check file extensions
-        image_extensions = [".jpg", ".jpeg", ".png", ".webp"]
-        if any(ext in src_lower for ext in image_extensions):
-            return True
-
-        return False
-
-    def _extract_description(self, driver: "WebDriver", logger=None) -> str | None:
-        """Extract the dog's story with the same rules as the Playwright path."""
-        return self._extract_description_soup(BeautifulSoup(driver.page_source, "html.parser"), logger)
-
-    def _extract_dog_name(self, driver: "WebDriver", logger=None) -> str | None:
-        """Extract dog name from page title or content."""
-        try:
-            # Try to get name from page title
-            page_title = driver.title
-            if page_title:
-                # Pattern: "Dog Name - Daisy Family Rescue..."
-                title_match = re.search(r"^([^-]+)", page_title)
-                if title_match:
-                    name = title_match.group(1).strip()
-                    if name and name.lower() not in ["daisy", "family", "rescue"]:
-                        if logger:
-                            logger.debug(f"Extracted name from title: {name}")
-                        return name
-
-            # Try to get name from h1 or main heading
-            heading_selectors = ["h1", ".entry-title", ".post-title"]
-            for selector in heading_selectors:
-                try:
-                    heading = driver.find_element(By.CSS_SELECTOR, selector)
-                    heading_text = heading.text.strip()
-                    if heading_text and len(heading_text) < 50:  # Reasonable name length
-                        # Extract just the name part
-                        name_match = re.search(r"^([^-]+)", heading_text)
-                        if name_match:
-                            name = name_match.group(1).strip()
-                            if logger:
-                                logger.debug(f"Extracted name from heading: {name}")
-                            return name
-                except Exception:
-                    continue
-
-        except Exception as e:
-            if logger:
-                logger.error(f"Error extracting dog name: {e}")
 
         return None
 

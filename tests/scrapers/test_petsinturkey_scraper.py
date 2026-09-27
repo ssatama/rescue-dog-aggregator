@@ -39,7 +39,6 @@ class TestPetsInTurkeyScraper:
             scraper.org_config.metadata.website_url = "https://www.petsinturkey.org"
             scraper.set_filtering_stats = MagicMock()
             # Set up unified standardization attributes
-            scraper.use_unified_standardization = False
             scraper.standardizer = None
             # Add the process_animal method from BaseScraper
             scraper.process_animal = BaseScraper.process_animal.__get__(scraper, PetsInTurkeyScraper)

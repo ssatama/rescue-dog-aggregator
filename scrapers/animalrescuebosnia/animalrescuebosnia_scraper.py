@@ -483,7 +483,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
         with ThreadPoolExecutor(max_workers=self.batch_size) as executor:
             # Submit all tasks
-            future_to_url = {executor.submit(self._scrape_with_retry, self.scrape_animal_details, url): url for url in urls}
+            future_to_url = {executor.submit(self.browser_manager.scrape_with_retry, self.scrape_animal_details, url): url for url in urls}
 
             # Collect results as they complete
             for future in as_completed(future_to_url):

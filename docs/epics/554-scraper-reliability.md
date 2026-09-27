@@ -23,8 +23,8 @@ closes, move what lasts into `docs/technical/scraper-architecture.md` and
 - **Be a polite crawler.** Never exceed a rescue's configured rate or its
   robots.txt Crawl-delay, even while testing. Save a page as a fixture
   instead of re-fetching it.
-- **Playwright is the production path** (`USE_PLAYWRIGHT=true`). Tests cover
-  the Playwright branch until #566 removes Selenium.
+- **Playwright is the only browser path** since #566 removed Selenium. Tests
+  patch `get_playwright_service` with `tests/fixtures/playwright_fakes.py`.
 - **The disabled scrapers stay** (Galgos del Sol, Furry Rescue Italy).
 - **Name and location cleaning live in the validator.** Keep
   `properties.raw_name`, `overlooked` and `display_location` working.
@@ -78,9 +78,9 @@ A listing page that can't be read raises `ListingIncompleteError`
 an `error` and stale detection doesn't run. In the Playwright (production)
 paths of Tierschutzverein, Many Tears, Woof, Santer Paws, MISIs, Bosnia, Pets
 in Turkey, The Underdog and REAN, no listing returns the pages that did load
-and none turns a failure into `[]`. Still to do: Dogs Trust (below), the
-Selenium paths (deleted in #566) and the disabled Furry Rescue Italy and
-Galgos del Sol.
+and none turns a failure into `[]`. Still to do: Dogs Trust (below) and the
+disabled Furry Rescue Italy and Galgos del Sol. The Selenium paths are gone
+(#566).
 
 - `BaseScraper.get_listing_page(url)` is the plain-HTTP fetch: `max_retries`
   retries with `retry_backoff_factor` backoff for timeouts, connection
@@ -346,6 +346,33 @@ children").
   Amlet's detail page, photo upload and profile (was 169 s on average, 241 s
   of `data_collection` in the latest run).
 
+## Selenium, shims and the standardization flag removed (#566)
+
+- Playwright is the only browser path: the Selenium twins in Dogs Trust, Many
+  Tears, MISIs, REAN and Daisy (both scrapers), `services/browser_service.py`,
+  the `USE_PLAYWRIGHT` switch and the `selenium` dependency are gone. Woof's
+  went in #565. The disabled Galgos del Sol and Furry Rescue Italy never
+  imported Selenium, so they are untouched. The `USE_PLAYWRIGHT` variable on
+  Railway is now unused.
+- BaseScraper lost its shims and dead methods: `_scrape_with_retry`,
+  `_with_browser_retry`, `_navigate_with_retry` (callers use
+  `self.browser_manager`), `detect_catastrophic_failure`,
+  `detect_scraper_failure`, `get_rate_limit_delay`, `log_detailed_metrics`,
+  `detect_language` (`langdetect` stays: `animal_data_preparation` uses it),
+  the batch-constant class aliases, `current_scrape_session` (the session
+  manager keeps its own) and `use_unified_standardization`: `process_animal`
+  always standardizes.
+- Many Tears' diary extraction keeps the production (no-driver) behaviour,
+  which stores `"Title: <title> (Full content requires WebDriver)"`: a
+  placeholder for #571 to settle.
+- Tests: 67 removed (28 Selenium browser-service tests, 2 Selenium token
+  redaction tests, 9 flag tests, 6 shim tests, 22 Selenium-path scraper
+  tests), 7 Playwright or soup replacements added.
+- Backfill step `disabled-org-status-unknown`: a disabled rescue is never
+  scraped, so nothing retires its dogs. Galgos del Sol's 199 inactive rows
+  (disabled since 2025-10) still say `available`; they become `unknown` in
+  #572. Retiring dogs when config sync disables an org is a follow-up.
+
 ## Gotchas
 
 - **The local dev database can lag production's schema.** Alembic only reads
@@ -369,8 +396,8 @@ children").
     (11+)" 205, "Yes (5+)" 43, true 5; the "Unknown" placeholders go.
     `may_live_with` loses a leaked breed on 45. 256 dogs re-profile. The
     same run also shows #560's `breed_raw` (185) and #561's birth ranges.
-    Run plans with `USE_PLAYWRIGHT=true` on the laptop: without it Dogs
-    Trust takes the Selenium listing and returns 5 dogs.
+    (Before #566, plans needed `USE_PLAYWRIGHT=true`, or Dogs Trust took the
+    Selenium listing and returned 5 dogs; Playwright is now the only path.)
   - `tierschutzverein-europa` (#563, 2026-09-27): forced re-scrape of 373
     listed dogs (the dry run took 6.5 minutes at the configured rate,
     without image uploads; plan it off-peak). 372 matched: every `age_text`

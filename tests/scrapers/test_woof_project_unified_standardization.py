@@ -18,13 +18,6 @@ class TestWoofProjectUnifiedStandardization:
         assert hasattr(scraper, "standardizer")
         assert isinstance(scraper.standardizer, UnifiedStandardizer)
 
-    def test_scraper_uses_unified_standardization_flag(self):
-        """Verify scraper respects unified standardization feature flag."""
-        scraper = WoofProjectScraper()
-        assert hasattr(scraper, "use_unified_standardization")
-        # Should default to True for base scraper
-        assert scraper.use_unified_standardization is True
-
     def test_scraper_no_longer_imports_optimized_standardization(self):
         """Verify scraper doesn't import from optimized_standardization."""
         import scrapers.woof_project.dogs_scraper as module

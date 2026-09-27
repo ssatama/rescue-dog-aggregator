@@ -198,7 +198,7 @@ uv run pytest                         # Everything, including browser tests
 | Marker        | Purpose                                    |
 | ------------- | ------------------------------------------ |
 | `database`    | Requires a PostgreSQL database             |
-| `browser`     | Requires Playwright/Selenium               |
+| `browser`     | Requires a real browser (Playwright)       |
 | `external`    | Requires external APIs or credentials      |
 | `real_clock`  | Must observe real elapsed time             |
 | `unit`        | Pure logic, no I/O                         |

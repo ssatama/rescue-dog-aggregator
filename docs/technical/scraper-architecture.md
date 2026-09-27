@@ -95,7 +95,7 @@ from scrapers.sentry_integration import (
 
 ### Overview
 
-All browser-dependent scrapers have been migrated from **Selenium** to **Playwright** for Browserless v2 compatibility.
+Browser-dependent scrapers use **Playwright**, the only browser path since #566 removed Selenium.
 
 **Why Playwright?**
 
@@ -121,7 +121,6 @@ from services.playwright_browser_service import (
 
 | Environment Variable      | Value         | Behavior                       |
 | ------------------------- | ------------- | ------------------------------ |
-| `USE_PLAYWRIGHT`          | `true`        | Enables Playwright (required)  |
 | `BROWSERLESS_WS_ENDPOINT` | WebSocket URL | Uses remote Browserless        |
 | `BROWSERLESS_TOKEN`       | Auth token    | Authentication for Browserless |
 
@@ -144,21 +143,17 @@ class PlaywrightOptions:
 **Usage Pattern in Scrapers:**
 
 ```python
-if os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true":
-    # Playwright path (Railway/production)
-    playwright_service = get_playwright_service()
-    options = PlaywrightOptions(headless=True, timeout=60000)
+playwright_service = get_playwright_service()
+options = PlaywrightOptions(headless=True, timeout=60000)
 
-    async with playwright_service.get_browser(options) as browser_result:
-        page = browser_result.page
-        await page.goto(url, wait_until="networkidle")
-        content = await page.content()
-else:
-    # Selenium fallback (local development)
-    driver = webdriver.Chrome()
-    driver.get(url)
-    content = driver.page_source
+async with playwright_service.get_browser(options) as browser_result:
+    page = browser_result.page
+    await page.goto(url, wait_until="networkidle")
+    content = await page.content()
 ```
+
+Tests patch the module's `get_playwright_service` with
+`tests/fixtures/playwright_fakes.py`, which serves saved HTML from `page.content()`.
 
 ### Browserless v2 Integration
 
@@ -167,7 +162,6 @@ else:
 ```bash
 BROWSERLESS_WS_ENDPOINT=wss://chrome.browserless.io
 BROWSERLESS_TOKEN=<your-token>
-USE_PLAYWRIGHT=true
 ```
 
 **Connection Flow:**
@@ -411,14 +405,11 @@ def update_stale_data_detection(self) -> None:
 
 ### Common Implementation Pattern
 
-All scrapers follow this structure with Playwright/Selenium dual-mode support:
+Browser scrapers follow this structure:
 
 ```python
-import os
 from scrapers.base_scraper import BaseScraper
-
-if os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true":
-    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
 
 class OrganizationScraper(BaseScraper):
     def __init__(self, config_id: str = "org-id", ...):
@@ -427,9 +418,7 @@ class OrganizationScraper(BaseScraper):
         self.listing_url = f"{self.base_url}/dogs"
 
     def collect_data(self) -> List[Dict[str, Any]]:
-        if os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true":
-            return self._collect_with_playwright()
-        return self._collect_with_selenium()
+        return asyncio.run(self._collect_with_playwright())
 
     async def _collect_with_playwright(self) -> List[Dict[str, Any]]:
         playwright_service = get_playwright_service()
@@ -731,11 +720,8 @@ scrapers/
 ### Step 3: Implement Scraper
 
 ```python
-import os
 from scrapers.base_scraper import BaseScraper
-
-if os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true":
-    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
 
 class NewOrgScraper(BaseScraper):
     def __init__(self, config_id: str = "new-org", **kwargs):
@@ -744,9 +730,8 @@ class NewOrgScraper(BaseScraper):
         self.listing_url = f"{self.base_url}/dogs"
 
     def collect_data(self) -> List[Dict[str, Any]]:
-        if os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true":
-            return self._collect_with_playwright()
-        return self._collect_with_http()
+        # Prefer plain HTTP (get_listing_page) when the site renders server-side
+        return asyncio.run(self._collect_with_playwright())
 
     async def _collect_with_playwright(self) -> List[Dict[str, Any]]:
         playwright_service = get_playwright_service()
@@ -816,7 +801,6 @@ DATABASE_URL=postgresql://user:pass@host/db
 RAILWAY_DATABASE_URL=postgresql://...
 
 # Browser automation
-USE_PLAYWRIGHT=true
 BROWSERLESS_WS_ENDPOINT=wss://chrome.browserless.io
 BROWSERLESS_TOKEN=<token>
 
@@ -837,8 +821,7 @@ OPENROUTER_API_KEY=xxx
 ### Local Development
 
 ```bash
-# No browser service needed - uses local Chromium or Selenium
-USE_PLAYWRIGHT=false  # or unset
+# No BROWSERLESS_WS_ENDPOINT: Playwright uses local Chromium
 
 # Local database
 DATABASE_URL=postgresql://localhost/rescue_dogs
@@ -865,7 +848,7 @@ pytest tests/scrapers/test_<org>_scraper.py -m browser -v
 ```python
 @pytest.mark.unit        # Pure logic, no I/O
 @pytest.mark.database    # Requires a PostgreSQL database
-@pytest.mark.browser     # Requires Playwright/Selenium
+@pytest.mark.browser     # Requires a real browser (Playwright)
 @pytest.mark.external    # Requires external APIs or credentials
 ```
 

@@ -1,5 +1,4 @@
 import asyncio
-import os
 import re
 import time
 from typing import Any
@@ -8,24 +7,16 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper, ListingIncompleteError
-
-USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
-
-if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import (
-        PlaywrightOptions,
-        get_playwright_service,
-    )
-else:
-    from selenium.webdriver.common.by import By
-
-    from services.browser_service import BrowserOptions, get_browser_service
+from services.playwright_browser_service import (
+    PlaywrightOptions,
+    get_playwright_service,
+)
 
 # Import shared extraction utilities for consolidation
-from utils.shared_extraction_patterns import (  # noqa: E402
+from utils.shared_extraction_patterns import (
     extract_age_from_text as shared_extract_age,
 )
-from utils.shared_extraction_patterns import (  # noqa: E402
+from utils.shared_extraction_patterns import (
     extract_weight_from_text as shared_extract_weight,
 )
 
@@ -186,78 +177,7 @@ class REANScraper(BaseScraper):
         Returns:
             List of actual image URLs from REAN's CDN (wsimg.com)
         """
-        if USE_PLAYWRIGHT:
-            return asyncio.run(self._extract_images_with_browser_playwright(url))
-        return self._extract_images_with_browser_selenium(url)
-
-    def _extract_images_with_browser_selenium(self, url: str) -> list[str]:
-        """Selenium implementation of extract_images_with_browser."""
-        try:
-            browser_service = get_browser_service()
-            browser_options = BrowserOptions(
-                headless=True,
-                window_size=(1920, 1080),
-                user_agent="Mozilla/5.0 (compatible; RescueDogAggregator/1.0)",
-                random_user_agent=False,
-            )
-            browser_result = browser_service.create_driver(browser_options)
-            driver = browser_result.driver
-
-            try:
-                # Load the page
-                driver.get(url)
-                # World-class logging: Page loading handled by centralized system
-
-                # Wait for initial page load and JavaScript execution
-                time.sleep(5)
-
-                # Scroll to the bottom to trigger lazy loading of all images
-                # World-class logging: Scrolling handled by centralized system
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(3)  # Wait for lazy loading to complete
-
-                # Scroll back to top and then slowly down to ensure all images
-                # load
-                driver.execute_script("window.scrollTo(0, 0);")
-                time.sleep(1)
-
-                # Progressive scroll to ensure all images are in viewport at
-                # some point
-                total_height = driver.execute_script("return document.body.scrollHeight")
-                current_position = 0
-                scroll_increment = 500
-
-                while current_position < total_height:
-                    driver.execute_script(f"window.scrollTo(0, {current_position});")
-                    time.sleep(1)  # Allow images to load
-                    current_position += scroll_increment
-
-                # World-class logging: Scrolling completion handled by centralized system
-
-                # Extract all image elements
-                img_elements = driver.find_elements(By.TAG_NAME, "img")
-                # World-class logging: Element discovery handled by centralized system
-
-                # Filter for actual REAN CDN images (wsimg.com)
-                actual_images = []
-                for img in img_elements:
-                    src = img.get_attribute("src")
-                    if src and self._is_valid_rean_image(src):
-                        # Clean the URL to remove problematic transformations
-                        cleaned_src = self._clean_wsimg_url(src)
-                        actual_images.append(cleaned_src)
-                        self.logger.debug(f"Found valid REAN image: {cleaned_src[:80]}...")
-
-                # World-class logging: Image extraction handled by centralized system
-                return actual_images
-
-            finally:
-                # Always clean up the browser
-                driver.quit()
-
-        except Exception as e:
-            self.logger.error(f"Error during browser-based image extraction: {e}")
-            return []
+        return asyncio.run(self._extract_images_with_browser_playwright(url))
 
     async def _extract_images_with_browser_playwright(self, url: str) -> list[str]:
         """Playwright implementation of extract_images_with_browser."""
@@ -550,56 +470,12 @@ class REANScraper(BaseScraper):
         Returns:
             List of dog data dictionaries with correctly associated images
         """
-        if USE_PLAYWRIGHT:
-            # The fallback runs outside the Playwright event loop: it starts
-            # its own for the images, and asyncio.run can't nest.
-            try:
-                return asyncio.run(self._extract_dogs_with_images_unified_playwright(url, page_type))
-            except Exception as e:
-                self.logger.error(f"Error during Playwright unified extraction: {e}")
-                return self._extract_dogs_legacy_fallback(url, page_type)
-        return self._extract_dogs_with_images_unified_selenium(url, page_type)
-
-    def _extract_dogs_with_images_unified_selenium(self, url: str, page_type: str) -> list[dict[str, Any]]:
-        """Selenium implementation of extract_dogs_with_images_unified."""
+        # The fallback runs outside the Playwright event loop: it starts its
+        # own for the images, and asyncio.run can't nest.
         try:
-            browser_service = get_browser_service()
-            browser_options = BrowserOptions(
-                headless=True,
-                window_size=(1920, 1080),
-                user_agent="Mozilla/5.0 (compatible; RescueDogAggregator/1.0)",
-                random_user_agent=False,
-            )
-            browser_result = browser_service.create_driver(browser_options)
-            driver = browser_result.driver
-
-            try:
-                # Load the page
-                driver.get(url)
-                # World-class logging: Page loading handled by centralized system
-
-                # Wait for initial page load and JavaScript execution
-                time.sleep(5)
-
-                # Trigger lazy loading by scrolling
-                self._trigger_comprehensive_lazy_loading(driver)
-
-                # Wait for images to load after scrolling
-                time.sleep(3)
-
-                # Extract dogs using unified DOM approach
-                dogs_data = self._extract_dogs_from_dom(driver, page_type)
-
-                # World-class logging: Extraction success handled by centralized system
-                return dogs_data
-
-            finally:
-                driver.quit()
-
+            return asyncio.run(self._extract_dogs_with_images_unified_playwright(url, page_type))
         except Exception as e:
-            self.logger.error(f"Error during unified browser extraction: {e}")
-            # Fallback to legacy method if unified approach fails
-            # World-class logging: Fallback handled by centralized system
+            self.logger.error(f"Error during Playwright unified extraction: {e}")
             return self._extract_dogs_legacy_fallback(url, page_type)
 
     async def _extract_dogs_with_images_unified_playwright(self, url: str, page_type: str) -> list[dict[str, Any]]:
@@ -772,250 +648,6 @@ class REANScraper(BaseScraper):
                     cleaned_url = self._clean_wsimg_url(actual_src)
                     self.logger.debug(f"Found valid image for {dog_name}: {cleaned_url[:50]}...")
                     return cleaned_url
-
-            self.logger.debug(f"No valid images found in container {container_num} for {dog_name}")
-            return None
-
-        except Exception as e:
-            self.logger.error(f"Error extracting image from container {container_num}: {e}")
-            return None
-
-    def _trigger_comprehensive_lazy_loading(self, driver):
-        """
-        Comprehensively trigger lazy loading for all images on the page.
-
-        Args:
-            driver: Selenium WebDriver instance
-        """
-        try:
-            # Get total page height
-            total_height = driver.execute_script("return document.body.scrollHeight")
-
-            # Progressive scroll to ensure all images load
-            self.logger.debug("Triggering comprehensive lazy loading...")
-
-            # Scroll to bottom first
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(2)
-
-            # Scroll back to top
-            driver.execute_script("window.scrollTo(0, 0);")
-            time.sleep(1)
-
-            # Progressive scroll in smaller increments
-            current_position = 0
-            scroll_increment = 300
-
-            while current_position < total_height:
-                driver.execute_script(f"window.scrollTo(0, {current_position});")
-                time.sleep(0.5)  # Allow images to load
-                current_position += scroll_increment
-
-            # Final scroll to bottom and back to top
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(2)
-            driver.execute_script("window.scrollTo(0, 0);")
-            time.sleep(1)
-
-            self.logger.debug("Lazy loading trigger completed")
-
-        except Exception as e:
-            self.logger.warning(f"Error during lazy loading trigger: {e}")
-
-    def _extract_dogs_from_dom(self, driver, page_type: str) -> list[dict[str, Any]]:
-        """
-        Extract dog data from DOM using unified container approach.
-
-        Args:
-            driver: Selenium WebDriver instance
-            page_type: Type of page (romania/uk_foster)
-
-        Returns:
-            List of dog data dictionaries with images
-        """
-        dogs_data = []
-
-        try:
-            # Find all dog containers using the discovered DOM structure
-            dog_containers = self._find_dog_containers(driver)
-            # World-class logging: Container discovery handled by centralized system
-
-            for i, container in enumerate(dog_containers):
-                try:
-                    # Extract all data from this single container
-                    dog_data = self._extract_single_dog_from_container(container, page_type, i + 1)
-
-                    if dog_data and dog_data.get("name"):
-                        dogs_data.append(dog_data)
-                        self.logger.debug(f"Successfully extracted dog: {dog_data.get('name')}")
-                    else:
-                        self.logger.warning(f"Container {i + 1} did not yield valid dog data")
-
-                except Exception as e:
-                    self.logger.error(f"Error extracting from container {i + 1}: {e}")
-                    continue
-
-            return dogs_data
-
-        except Exception as e:
-            self.logger.error(f"Error during DOM extraction: {e}")
-            return []
-
-    def _find_dog_containers(self, driver):
-        """
-        Find dog containers using robust CSS selectors.
-
-        Args:
-            driver: Selenium WebDriver instance
-
-        Returns:
-            List of WebDriver elements representing dog containers
-        """
-        # Try multiple CSS selectors based on DOM investigation
-        selectors_to_try = [
-            "div.x-el-article",  # Primary selector from investigation
-            "div.x.c1-5",  # Alternative selector
-            "div[class*='x-el-article']",  # Partial class match
-            "div[class*='c1-5']",  # Another partial match
-        ]
-
-        for selector in selectors_to_try:
-            try:
-                containers = driver.find_elements(By.CSS_SELECTOR, selector)
-                if containers:
-                    self.logger.debug(f"Found {len(containers)} containers with selector: {selector}")
-                    # Validate containers have expected dog content
-                    valid_containers = self._validate_dog_containers(containers)
-                    if valid_containers:
-                        # World-class logging: Selector success handled by centralized system
-                        return valid_containers
-
-            except Exception as e:
-                self.logger.debug(f"Selector '{selector}' failed: {e}")
-                continue
-
-        # Fallback: try to find containers with h3 headers (dog names)
-        self.logger.warning("Primary selectors failed, trying fallback approach...")
-        try:
-            # Find all h3 elements and get their parent containers
-            h3_elements = driver.find_elements(By.TAG_NAME, "h3")
-            containers = []
-            for h3 in h3_elements:
-                # Check if this h3 contains dog-like content
-                text = h3.text.strip()
-                if any(pattern in text.lower() for pattern in ["months old", "years old"]):
-                    # Get the parent container that likely contains the full
-                    # dog info
-                    parent = h3.find_element(By.XPATH, "./..")
-                    containers.append(parent)
-
-            if containers:
-                # World-class logging: Fallback results handled by centralized system
-                return containers
-
-        except Exception as e:
-            self.logger.error(f"Fallback container detection failed: {e}")
-
-        return []
-
-    def _validate_dog_containers(self, containers):
-        """
-        Validate that containers actually contain dog information.
-
-        Args:
-            containers: List of WebDriver elements
-
-        Returns:
-            List of validated containers
-        """
-        valid_containers = []
-
-        for container in containers:
-            try:
-                # Check if container has expected dog content structure
-                text_content = container.text.strip()
-
-                # Must contain age information to be a valid dog container
-                if any(pattern in text_content.lower() for pattern in ["months old", "years old", "vaccinated", "chipped"]):
-                    valid_containers.append(container)
-
-            except Exception as e:
-                self.logger.debug(f"Error validating container: {e}")
-                continue
-
-        return valid_containers
-
-    def _extract_single_dog_from_container(self, container, page_type: str, container_num: int) -> dict[str, Any]:
-        """
-        Extract complete dog data from a single DOM container.
-
-        Args:
-            container: WebDriver element representing the dog container
-            page_type: Type of page (romania/uk_foster)
-            container_num: Container number for logging
-
-        Returns:
-            Dictionary with dog data including correctly associated image
-        """
-        try:
-            # Extract text content from container
-            full_text = container.text.strip()
-
-            # Extract dog data using existing text processing logic
-            dog_data = self.extract_dog_data(full_text, page_type)
-
-            if not dog_data or not dog_data.get("name"):
-                self.logger.debug(f"Container {container_num} did not yield valid dog data from text: {full_text[:100]}...")
-                return None
-
-            # Extract image from the same container
-            image_url = self._extract_image_from_container(container, dog_data.get("name"), container_num)
-
-            # Associate the image with the dog data
-            if image_url:
-                dog_data["primary_image_url"] = image_url
-                self.logger.debug(f"Successfully associated image for {dog_data.get('name')}: {image_url[:50]}...")
-            else:
-                self.logger.debug(f"No valid image found for {dog_data.get('name')} in container {container_num}")
-
-            return dog_data
-
-        except Exception as e:
-            self.logger.error(f"Error extracting dog from container {container_num}: {e}")
-            return None
-
-    def _extract_image_from_container(self, container, dog_name: str, container_num: int) -> str | None:
-        """
-        Extract image URL from a dog container.
-
-        Args:
-            container: WebDriver element representing the dog container
-            dog_name: Name of the dog for logging
-            container_num: Container number for logging
-
-        Returns:
-            Image URL if found and valid, None otherwise
-        """
-        try:
-            # Find image element within this container
-            img_elements = container.find_elements(By.TAG_NAME, "img")
-
-            for img in img_elements:
-                # Get image source - try multiple attributes for dynamic
-                # loading
-                img_src = img.get_attribute("src")
-                data_src = img.get_attribute("data-src")
-
-                # Prefer data-src for lazy loading, fallback to src
-                actual_src = data_src if data_src else img_src
-
-                if actual_src and self._is_valid_rean_image(actual_src):
-                    # Clean the URL for R2 compatibility
-                    cleaned_url = self._clean_wsimg_url(actual_src)
-                    self.logger.debug(f"Found valid image for {dog_name}: {cleaned_url[:50]}...")
-                    return cleaned_url
-                else:
-                    self.logger.debug(f"Skipping invalid image for {dog_name}: {actual_src[:50] if actual_src else 'No src'}...")
 
             self.logger.debug(f"No valid images found in container {container_num} for {dog_name}")
             return None

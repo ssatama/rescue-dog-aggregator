@@ -64,7 +64,7 @@
             },
             "headless": {
               "type": "boolean",
-              "description": "Whether to run Selenium in headless mode"
+              "description": "Whether to run the browser (Playwright) in headless mode"
             },
             "retry_backoff_factor": {
               "type": "number",

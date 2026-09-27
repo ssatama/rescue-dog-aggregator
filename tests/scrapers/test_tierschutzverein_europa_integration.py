@@ -427,7 +427,6 @@ class TestScraperCoreFunctions:
         mock_response.text = detail_html.replace("17 cm, im Wachstum, klein bleibend", "ca. 50 cm, 17 kg").replace("05.2025 (3 Monate alt)", "05.2023 (3 Jahre alt)")
         mock_response.raise_for_status = Mock()
         scraper.standardizer = UnifiedStandardizer()
-        scraper.use_unified_standardization = True
 
         with patch("requests.get", return_value=mock_response):
             dog = {"name": "Bonsai", "external_id": "bonsai"} | scraper._scrape_animal_details("https://tierschutzverein-europa.de/tiervermittlung/bonsai/")

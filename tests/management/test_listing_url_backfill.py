@@ -1,4 +1,4 @@
-"""The pets-in-turkey-listing-url backfill step (#564)."""
+"""The pets-in-turkey-listing-url (#564) and disabled-org-status-unknown (#566) backfill steps."""
 
 import pytest
 
@@ -22,3 +22,14 @@ class TestPetsInTurkeyListingUrl:
 
     def test_is_the_url_the_scraper_stores(self):
         assert PetsInTurkeyScraper().listing_url == PETS_IN_TURKEY_LISTING
+
+
+@pytest.mark.unit
+class TestDisabledOrgStatusUnknown:
+    def test_an_available_row_of_the_disabled_org_becomes_unknown(self):
+        records = [{"id": 7, "status": "available", "organization": "galgosdelsol"}]
+
+        assert plan_step(STEPS["disabled-org-status-unknown"], records) == [Change(7, "galgosdelsol", "status", "available", "unknown")]
+
+    def test_is_idempotent(self):
+        assert plan_step(STEPS["disabled-org-status-unknown"], [{"id": 7, "status": "unknown", "organization": "galgosdelsol"}]) == []

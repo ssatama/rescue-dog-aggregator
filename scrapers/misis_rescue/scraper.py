@@ -6,35 +6,17 @@ Reserved section detection, and data collection.
 """
 
 import asyncio
-import os
 import time
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
 
 from scrapers.base_scraper import BaseScraper, ListingIncompleteError
+from services.playwright_browser_service import PlaywrightOptions
 
 from .detail_parser import POST_BODY, MisisRescueDetailParser
-
-USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
-
-if TYPE_CHECKING:
-    from selenium.webdriver.remote.webdriver import WebDriver
-
-if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import (
-        PlaywrightOptions,
-    )
-else:
-    from selenium.common.exceptions import NoSuchElementException, TimeoutException
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.remote.webdriver import WebDriver
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.webdriver.support.ui import WebDriverWait
-
-    from services.browser_service import BrowserOptions, get_browser_service
 
 
 def _one_per_wix_media(urls: list[str]) -> list[str]:
@@ -145,9 +127,7 @@ class MisisRescueScraper(BaseScraper):
         Returns:
             List of dog dictionaries with url and name
         """
-        if USE_PLAYWRIGHT:
-            return asyncio.run(self._bounded_listing_playwright())
-        return self._get_all_dogs_from_listing_selenium()
+        return asyncio.run(self._bounded_listing_playwright())
 
     async def _bounded_listing_playwright(self) -> list[dict[str, str]]:
         """The listing, or an error once it has run LISTING_TIMEOUT_SECONDS. Never a hang."""
@@ -155,80 +135,6 @@ class MisisRescueScraper(BaseScraper):
             return await asyncio.wait_for(self._get_all_dogs_from_listing_playwright(), self.LISTING_TIMEOUT_SECONDS)
         except TimeoutError as e:
             raise RuntimeError(f"MISIs listing did not finish within {self.LISTING_TIMEOUT_SECONDS}s") from e
-
-    def _get_all_dogs_from_listing_selenium(self) -> list[dict[str, str]]:
-        """Selenium implementation of _get_all_dogs_from_listing."""
-        all_dogs = []
-        page_num = 1
-
-        driver = None
-        try:
-            driver = self._setup_selenium_driver()
-
-            # Load the first page
-            # World-class logging: Initial page loading handled by centralized system
-            driver.get(self.listing_url)
-
-            # Wait for page to load
-            WebDriverWait(driver, self.timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-            time.sleep(5)  # Give Wix time to load dynamic content
-
-            # Scroll to bottom to load all dogs on page 1 (lazy loading)
-            self._scroll_to_load_all_content(driver)
-
-            # Extract dogs from page 1
-            soup = BeautifulSoup(driver.page_source, "html.parser")
-            page_dogs = self._extract_dogs_before_reserved(soup)
-
-            all_dogs.extend(page_dogs)
-            # World-class logging: Page results handled by centralized system
-
-            # Now click through pages 2, 3, 4, etc.
-            page_num = 2
-            while page_num <= 10:  # Safety limit
-                try:
-                    # Try to find and click the page button
-                    if not self._click_pagination_button(driver, page_num):
-                        # World-class logging: Pagination completion handled by centralized system
-                        break
-
-                    # Wait for page to load after click
-                    time.sleep(5)
-
-                    # Scroll to bottom to load all dogs on this page (lazy loading)
-                    self._scroll_to_load_all_content(driver)
-
-                    # Extract dogs from this page
-                    soup = BeautifulSoup(driver.page_source, "html.parser")
-                    page_dogs = self._extract_dogs_before_reserved(soup)
-
-                    if not page_dogs:
-                        # World-class logging: Empty page detection handled by centralized system
-                        break
-
-                    all_dogs.extend(page_dogs)
-                    # World-class logging: Page results handled by centralized system
-
-                    page_num += 1
-
-                except Exception as e:
-                    self.logger.error(f"Error processing page {page_num}: {e}")
-                    break
-
-        finally:
-            if driver:
-                driver.quit()
-
-        # Remove duplicates (in case same dog appears on multiple pages)
-        unique_dogs = []
-        seen_urls = set()
-        for dog in all_dogs:
-            if dog["url"] not in seen_urls:
-                unique_dogs.append(dog)
-                seen_urls.add(dog["url"])
-
-        # World-class logging: Total unique dogs handled by centralized system
-        return unique_dogs
 
     async def _get_all_dogs_from_listing_playwright(self) -> list[dict[str, str]]:
         """Playwright implementation of _get_all_dogs_from_listing."""
@@ -242,7 +148,7 @@ class MisisRescueScraper(BaseScraper):
         # Use retry wrapper for resilient browser connection. Browser-level
         # exceptions propagate so collect_data → BaseScraper can surface them
         # in Sentry instead of being silently converted to a zero-dogs alert.
-        async with self._with_browser_retry(options) as browser_result:
+        async with self.browser_manager.with_browser_retry(options) as browser_result:
             page = browser_result.page
 
             # Retry transient stalls: a single un-retried goto loses the whole
@@ -435,9 +341,7 @@ class MisisRescueScraper(BaseScraper):
         Returns:
             Dog data dictionary or None if error
         """
-        if USE_PLAYWRIGHT:
-            return asyncio.run(self._bounded_detail_playwright(url))
-        return self._scrape_dog_detail_selenium(url)
+        return asyncio.run(self._bounded_detail_playwright(url))
 
     def _dog_from_page(self, soup: BeautifulSoup, url: str) -> dict[str, Any] | None:
         """The dog on a post page, or None for a page with no post body: an error page, not a dog."""
@@ -462,60 +366,6 @@ class MisisRescueScraper(BaseScraper):
             self.logger.error(f"Detail page {url} did not finish within {self.DETAIL_TIMEOUT_SECONDS}s; skipping this dog")
             return None
 
-    def _scrape_dog_detail_selenium(self, url: str) -> dict[str, Any] | None:
-        """Selenium implementation of _scrape_dog_detail."""
-        driver = None
-
-        try:
-            driver = self._setup_selenium_driver()
-
-            self.logger.debug(f"Loading detail page: {url}")
-            driver.get(url)
-
-            # Enhanced wait for Wix dynamic content to fully load
-            try:
-                # Wait for main content to appear
-                WebDriverWait(driver, self.timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-
-                # Give extra time for Wix to load dynamic content
-                time.sleep(3)
-
-                # Scroll to trigger lazy loading of all content
-                self._scroll_detail_page_for_content(driver)
-
-                # Wait for any h1 tag (dog name) to ensure content loaded
-                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "h1")))
-
-                # Additional wait for images to load
-                time.sleep(2)
-
-            except TimeoutException:
-                # No h1 in time: parsed anyway, and a page without a post body is skipped below
-                self.logger.warning(f"Timeout waiting for content on {url}")
-
-            soup = BeautifulSoup(driver.page_source, "html.parser")
-            dog_data = self._dog_from_page(soup, url)
-            if dog_data is None:
-                return None
-
-            # Extract the main image - try hero image first, then grid fallback
-            main_image_url = self._extract_main_image(driver, soup)
-            if main_image_url:
-                dog_data["image_urls"] = _one_per_wix_media([main_image_url, *self._extract_static_image_urls(soup)])
-                dog_data["primary_image_url"] = main_image_url
-            else:
-                self.logger.warning(f"No image found for dog at {url}")
-
-            # Apply unified standardization
-            return self.process_animal(dog_data)
-
-        except Exception as e:
-            self.logger.error(f"Error scraping dog detail {url}: {e}")
-            return None
-        finally:
-            if driver:
-                driver.quit()
-
     async def _scrape_dog_detail_playwright(self, url: str) -> dict[str, Any] | None:
         """Playwright implementation of _scrape_dog_detail."""
         try:
@@ -528,7 +378,7 @@ class MisisRescueScraper(BaseScraper):
             self.logger.debug(f"Loading detail page with Playwright: {url}")
 
             # Use retry wrapper for resilient browser connection
-            async with self._with_browser_retry(options) as browser_result:
+            async with self.browser_manager.with_browser_retry(options) as browser_result:
                 page = browser_result.page
 
                 # Retry transient stalls. Exhaustion raises into the handler
@@ -607,10 +457,9 @@ class MisisRescueScraper(BaseScraper):
             return None
 
     def _scrape_dog_detail_fast(self, url: str) -> dict[str, Any] | None:
-        """Fast scraping method using requests instead of Selenium.
+        """Fetch a dog page over plain HTTP; the browser is the fallback.
 
-        This is MUCH faster than Selenium for static content.
-        Falls back to Selenium method if this fails.
+        Wix renders posts server-side, so HTTP is enough for most dogs.
 
         Args:
             url: Full URL to dog detail page
@@ -809,152 +658,7 @@ class MisisRescueScraper(BaseScraper):
 
         return hashlib.md5(url.encode()).hexdigest()[:8]
 
-    def _setup_selenium_driver(self) -> "WebDriver":
-        """Setup WebDriver with appropriate options.
-
-        Uses centralized browser service that auto-detects environment:
-        - Local: Uses Chrome
-        - Railway: Uses Browserless
-
-        Returns:
-            Configured WebDriver instance
-        """
-        browser_service = get_browser_service()
-        browser_options = BrowserOptions(
-            headless=True,
-            window_size=(1920, 1080),
-        )
-        browser_result = browser_service.create_driver(browser_options)
-        return browser_result.driver
-
-    def _click_pagination_button(self, driver: "WebDriver", page_num: int) -> bool:
-        """Click a pagination button to navigate to a specific page.
-
-        Args:
-            driver: Selenium WebDriver instance
-            page_num: Page number to navigate to
-
-        Returns:
-            True if button was found and clicked, False otherwise
-        """
-        try:
-            # Look for clickable page number using XPath
-            # This handles buttons, links, or spans with the page number
-            xpath = f'//button[text()="{page_num}"] | //a[text()="{page_num}"] | //span[text()="{page_num}"]'
-            elements = driver.find_elements(By.XPATH, xpath)
-
-            if not elements:
-                self.logger.debug(f"No pagination button found for page {page_num}")
-                return False
-
-            element = elements[0]
-            self.logger.debug(f"Found pagination button for page {page_num}")
-
-            # Scroll to element to ensure it's visible
-            driver.execute_script("arguments[0].scrollIntoView(true);", element)
-            time.sleep(1)
-
-            # Try to click the element
-            element.click()
-            # World-class logging: Pagination navigation handled by centralized system
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Error clicking page {page_num} button: {e}")
-            return False
-
-    def _scroll_to_load_all_content(self, driver: "WebDriver") -> None:
-        """Scroll to bottom of page to trigger lazy loading of all dogs.
-
-        Args:
-            driver: Selenium WebDriver instance
-        """
-        # World-class logging: Lazy loading handled by centralized system
-
-        # Get initial number of dogs
-        initial_dogs = len(driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]'))
-        self.logger.debug(f"Initial dogs visible: {initial_dogs}")
-
-        scroll_attempts = 0
-        max_scrolls = 20  # Safety limit
-
-        while scroll_attempts < max_scrolls:
-            # Scroll to bottom
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(2)  # Wait for lazy loading
-
-            # Check if new dogs loaded
-            current_dogs = len(driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]'))
-
-            if current_dogs > initial_dogs:
-                self.logger.debug(f"New dogs loaded: {current_dogs} (was {initial_dogs})")
-                initial_dogs = current_dogs
-                scroll_attempts = 0  # Reset counter when new content loads
-            else:
-                scroll_attempts += 1
-
-            # If no new content loaded for several attempts, we're done
-            if scroll_attempts >= 3:
-                break
-
         # World-class logging: Scrolling completion handled by centralized system
-
-    def _scroll_detail_page_for_content(self, driver: "WebDriver") -> None:
-        """Scroll detail page to load all content including images.
-
-        Args:
-            driver: Selenium WebDriver instance
-        """
-        self.logger.debug("Scrolling detail page to load all content")
-
-        # Scroll to multiple positions to trigger all lazy loading
-        scroll_positions = [0, 0.25, 0.5, 0.75, 1.0]
-
-        for position in scroll_positions:
-            scroll_target = f"document.body.scrollHeight * {position}"
-            driver.execute_script(f"window.scrollTo(0, {scroll_target});")
-            time.sleep(1)  # Wait for content to load at each position
-
-        # Scroll back to top to ensure hero image loads
-        driver.execute_script("window.scrollTo(0, 0);")
-        time.sleep(1)
-
-        # Final scroll to image grid area (usually middle of page)
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.5);")
-        time.sleep(1)
-
-    def _extract_main_image(self, driver: "WebDriver", soup: BeautifulSoup) -> str | None:
-        """Extract the main image for the dog - hero image or enhanced grid fallback.
-
-        Args:
-            driver: Selenium WebDriver instance
-            soup: BeautifulSoup object of the detail page
-
-        Returns:
-            URL of the main image or None if not found
-        """
-        # First try to get hero image
-        hero_url = self._extract_hero_image(soup)
-
-        # Check if hero image is good quality (at least 600px wide)
-        if hero_url and self._is_high_quality_image(hero_url):
-            self.logger.debug(f"Using high-quality hero image: {hero_url}")
-            return hero_url
-
-        # If no hero image or low quality, try enhanced grid extraction with click-and-wait
-        self.logger.debug("Hero image not suitable, trying enhanced grid extraction")
-        grid_image = self._extract_first_grid_image(driver, soup)
-        if grid_image:
-            self.logger.debug(f"Using enhanced grid image: {grid_image}")
-            return grid_image
-
-        # Last resort - return any hero image we found
-        if hero_url:
-            self.logger.debug(f"Using fallback hero image: {hero_url}")
-            return hero_url
-
-        self.logger.warning("No suitable image found")
-        return None
 
     def _is_high_quality_image(self, image_url: str) -> bool:
         """Check if image is high quality (>= 600px width).
@@ -970,153 +674,6 @@ class MisisRescueScraper(BaseScraper):
 
         width = self._extract_image_width(image_url)
         return width is not None and width >= 600
-
-    def _extract_first_grid_image(self, driver: "WebDriver", soup: BeautifulSoup) -> str | None:
-        """Extract the first image from the image grid with click-and-wait for high-res.
-
-        IMPORTANT: Avoid images from 'Related Posts' section at bottom of page.
-
-        Args:
-            driver: Selenium WebDriver instance
-            soup: BeautifulSoup object of the detail page
-
-        Returns:
-            URL of the first grid image or None if not found
-        """
-        try:
-            # Wait for image grid to be present
-            WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, "img[src*='wixstatic.com']")))
-
-            # Find all grid images using WebDriver, but exclude related posts section
-            # Try to find main content area first to avoid related posts
-            main_content_images: list[Any] = []
-
-            # Try multiple selectors to find main content area
-            main_content_selectors = [
-                "main img[src*='wixstatic.com']",  # Images in main content
-                "article img[src*='wixstatic.com']",  # Images in article
-                "[data-testid='richTextElement'] img[src*='wixstatic.com']",  # Wix rich text
-                ".main img[src*='wixstatic.com']",  # Main class
-            ]
-
-            for selector in main_content_selectors:
-                try:
-                    content_images = driver.find_elements(By.CSS_SELECTOR, selector)
-                    if content_images:
-                        main_content_images = content_images
-                        self.logger.debug(f"Found {len(main_content_images)} images in main content using selector: {selector}")
-                        break
-                except Exception as e:
-                    self.logger.debug(f"Selector {selector} failed: {e}")
-
-            # If no main content images found, fall back to all images but filter out related posts
-            if not main_content_images:
-                all_images = driver.find_elements(By.CSS_SELECTOR, "img[src*='wixstatic.com']")
-                self.logger.debug(f"Found {len(all_images)} total images on page")
-
-                # Filter out images that are likely from related posts section
-                main_content_images = []
-                for img in all_images:
-                    try:
-                        # Check if image is in related posts section
-                        parent_text = img.find_element(
-                            By.XPATH,
-                            "./ancestor::*[contains(text(), 'Related') or contains(text(), 'related')]",
-                        )
-                        if parent_text:
-                            self.logger.debug("Skipping image in related posts section")
-                            continue
-                    except NoSuchElementException:
-                        # If no related posts parent found, it's likely in main content
-                        pass
-
-                    # Check if image is near bottom of page (likely related posts)
-                    try:
-                        img_location = img.location_once_scrolled_into_view
-                        page_height = driver.execute_script("return document.body.scrollHeight")
-                        if img_location["y"] > page_height * 0.8:  # Bottom 20% of page
-                            self.logger.debug(f"Skipping image near bottom of page (y={img_location['y']}, page_height={page_height})")
-                            continue
-                    except Exception:
-                        pass
-
-                    main_content_images.append(img)
-
-                self.logger.debug(f"Filtered to {len(main_content_images)} main content images")
-
-            # Look for suitable grid images (skip first few which are usually hero/header)
-            suitable_images = []
-            for i, img in enumerate(main_content_images[2:], 2):  # Skip first 2
-                try:
-                    src = img.get_attribute("src")
-                    if src and "w_" in src and not any(skip in src.lower() for skip in ["logo", "icon", "button", "header", "footer"]) and img.is_displayed() and img.is_enabled():
-                        # Check minimum size
-                        width = self._extract_image_width(src)
-                        if width and width >= 200:  # Minimum size for grid image
-                            # CRITICAL: Exclude 289x162 images which are likely related posts
-                            size = img.size
-                            if size and size.get("width") == 289 and size.get("height") == 162:
-                                self.logger.debug(f"Skipping 289x162 image {i} (likely related posts): {src[:100]}...")
-                                continue
-
-                            # Exclude images with specific problematic hash that we know is wrong
-                            if "ef9e05_aac9fec0f9a64d0fba7e40a67965686b" in src:
-                                self.logger.debug(f"Skipping known problematic image {i}: {src[:100]}...")
-                                continue
-
-                            suitable_images.append((i, img, src, width))
-                            self.logger.debug(f"Suitable grid image {i}: width={width}px, size={size}")
-
-                except Exception as e:
-                    self.logger.debug(f"Skipping image {i}: {e}")
-
-            if not suitable_images:
-                self.logger.warning("No suitable grid images found for click-and-wait")
-                return None
-
-            # Sort by width (largest first) and take the first one
-            suitable_images.sort(key=lambda x: x[3], reverse=True)
-            img_index, first_grid_img, initial_src, initial_width = suitable_images[0]
-
-            self.logger.debug(f"Selected grid image {img_index}: {initial_width}px wide")
-
-            # Scroll to image and click
-            driver.execute_script("arguments[0].scrollIntoView(true);", first_grid_img)
-            time.sleep(1)
-
-            self.logger.debug(f"Initial grid image: {initial_src}")
-
-            # Click to trigger high-res loading
-            try:
-                first_grid_img.click()
-                self.logger.debug("Clicked grid image, waiting for high-res version...")
-
-                # Wait up to 5 seconds for high-res version to load
-                high_res_src = self._wait_for_high_res_image(driver, first_grid_img, initial_src)
-
-                if high_res_src and high_res_src != initial_src:
-                    # CRITICAL FIX: Clean the high-res image URL to ensure quality
-                    cleaned_url = self._clean_wix_image_url(high_res_src)
-                    self.logger.debug(f"High-res grid image loaded: {cleaned_url}")
-                    return cleaned_url
-                else:
-                    # CRITICAL FIX: Clean the initial image URL to ensure quality
-                    cleaned_url = self._clean_wix_image_url(initial_src)
-                    self.logger.debug("High-res image didn't load, using cleaned initial version")
-                    return cleaned_url
-
-            except Exception as e:
-                self.logger.error(f"Error clicking grid image: {e}")
-                # CRITICAL FIX: Clean the initial image URL even in error case
-                cleaned_url = self._clean_wix_image_url(initial_src)
-                return cleaned_url
-
-        except TimeoutException:
-            self.logger.debug("No image grid found on page")
-        except Exception as e:
-            self.logger.error(f"Error extracting grid image: {e}")
-
-        return None
 
     def _extract_hero_image(self, soup: BeautifulSoup) -> str | None:
         """Extract the main hero image from the detail page.
@@ -1288,7 +845,7 @@ class MisisRescueScraper(BaseScraper):
 
         with ThreadPoolExecutor(max_workers=self.batch_size) as executor:
             # Submit all tasks - use fast method first
-            future_to_url = {executor.submit(self._scrape_with_retry, self._scrape_dog_detail_fast, url): url for url in urls}
+            future_to_url = {executor.submit(self.browser_manager.scrape_with_retry, self._scrape_dog_detail_fast, url): url for url in urls}
 
             # Collect results as they complete
             for future in as_completed(future_to_url):
@@ -1322,37 +879,3 @@ class MisisRescueScraper(BaseScraper):
             return width
         except (IndexError, ValueError):
             return None
-
-    def _wait_for_high_res_image(self, driver: "WebDriver", img_element, initial_src: str, max_wait: int = 5) -> str | None:
-        """Wait for image src to change to high-res version after clicking.
-
-        Args:
-            driver: Selenium WebDriver instance
-            img_element: WebDriver image element
-            initial_src: Initial image source URL
-            max_wait: Maximum seconds to wait
-
-        Returns:
-            High-res image URL or None if timeout
-        """
-        start_time = time.time()
-
-        while time.time() - start_time < max_wait:
-            try:
-                current_src = img_element.get_attribute("src")
-
-                # Check if src has changed (indicating high-res loaded)
-                if current_src != initial_src:
-                    current_width = self._extract_image_width(current_src)
-                    initial_width = self._extract_image_width(initial_src)
-
-                    self.logger.debug(f"Image src changed: {initial_width}px → {current_width}px")
-                    return current_src
-
-            except Exception as e:
-                self.logger.debug(f"Error checking image: {e}")
-
-            time.sleep(0.5)  # Check every 500ms
-
-        self.logger.debug("Timeout waiting for high-res image")
-        return None

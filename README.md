@@ -218,7 +218,7 @@ Markers say what a test **needs**, not how fast it is. `--strict-markers` is
 on, so an unregistered marker is an error rather than a silent no-op.
 
 - `@pytest.mark.database` - Requires a PostgreSQL database
-- `@pytest.mark.browser` - Requires Playwright/Selenium
+- `@pytest.mark.browser` - Requires a real browser (Playwright)
 - `@pytest.mark.external` - Requires external APIs or credentials
 - `@pytest.mark.real_clock` - Must observe real elapsed time
 - `@pytest.mark.unit` - Pure logic, no I/O
@@ -280,7 +280,6 @@ OPENROUTER_API_KEY=xxx
 SENTRY_DSN_BACKEND=xxx
 
 # Browser automation (production)
-USE_PLAYWRIGHT=true
 BROWSERLESS_WS_ENDPOINT=wss://chrome.browserless.io
 BROWSERLESS_TOKEN=xxx
 

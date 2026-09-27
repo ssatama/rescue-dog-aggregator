@@ -183,8 +183,8 @@ class TestFetch(ScraperTestBase):
             yield SimpleNamespace(page=page)
 
         with (
-            patch("scrapers.misis_rescue.scraper.PlaywrightOptions", create=True),
-            patch.object(scraper, "_with_browser_retry", fake_retry),
+            patch("scrapers.misis_rescue.scraper.PlaywrightOptions"),
+            patch.object(scraper.browser_manager, "with_browser_retry", fake_retry),
             patch.object(scraper.browser_manager, "navigate_with_retry", new=AsyncMock(return_value=True)),
             patch("scrapers.misis_rescue.scraper.asyncio.sleep", new=AsyncMock()),
         ):

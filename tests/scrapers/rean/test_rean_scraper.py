@@ -2,9 +2,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import requests
-from selenium.common.exceptions import WebDriverException
 
 from scrapers.rean.dogs_scraper import REANScraper
+from tests.fixtures.playwright_fakes import fake_page, fake_playwright_service
 
 
 @pytest.fixture
@@ -704,227 +704,60 @@ class TestREANNetworkOperations:
             assert result is None
 
 
+TOBY = """
+<div class="x-el-article">
+  <img src="https://img1.wsimg.com/isteam/ip/abc/toby.jpg/:/rs=w:600"/>
+  <h3>Toby - 4 months old - in Romania</h3>
+  <p>Little friendly Toby is looking sad in the shelter. Vaccinated and chipped. (Updated 22/4/25)</p>
+</div>
+"""
+
+
+@pytest.mark.unit
 class TestREANBrowserExtraction:
-    @pytest.mark.browser
-    @patch("scrapers.rean.dogs_scraper.get_browser_service")
-    def test_extract_images_with_browser_basic(self, mock_browser_service, scraper):
-        mock_service = MagicMock()
-        mock_browser_service.return_value = mock_service
-        mock_driver = MagicMock()
-        mock_browser_result = MagicMock()
-        mock_browser_result.driver = mock_driver
-        mock_service.create_driver.return_value = mock_browser_result
+    """The Playwright path, the one production runs (#566)."""
 
-        mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
+    @staticmethod
+    def _browser(service):
+        return patch("scrapers.rean.dogs_scraper.get_playwright_service", return_value=service)
 
-        mock_img1 = MagicMock()
-        mock_img1.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg"
+    def test_extract_images_keeps_only_rean_images(self, scraper, stub_clock):
+        html = """<html><body>
+            <img src="https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg"/>
+            <img src="//img1.wsimg.com/isteam/ip/def456/dog2.jpg/:/rs=w:600"/>
+            <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="/>
+            <img src="https://example.com/random.jpg"/>
+            <img src=""/>
+        </body></html>"""
+        service = fake_playwright_service(fake_page(html))
 
-        mock_img2 = MagicMock()
-        mock_img2.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg"
+        with self._browser(service):
+            images = scraper.extract_images_with_browser("https://rean.org.uk/test")
 
-        mock_placeholder = MagicMock()
-        mock_placeholder.get_attribute.return_value = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+        assert images == ["https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg", "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg"]
+        service.page.goto.assert_awaited_once_with("https://rean.org.uk/test", wait_until="domcontentloaded", timeout=60000)
+        assert any("scrollTo" in str(call) for call in service.page.evaluate.await_args_list)
 
-        mock_driver.find_elements.return_value = [mock_img1, mock_img2, mock_placeholder]
+    def test_extract_images_returns_nothing_when_the_browser_fails(self, scraper, stub_clock):
+        with self._browser(fake_playwright_service(error=RuntimeError("Browserless unavailable"))):
+            assert scraper.extract_images_with_browser("https://rean.org.uk/test") == []
 
-        images = scraper.extract_images_with_browser("https://rean.org.uk/test")
+    def test_unified_extraction_keeps_each_dog_with_its_own_image(self, scraper, stub_clock):
+        with self._browser(fake_playwright_service(fake_page(f"<html><body>{TOBY}</body></html>"))):
+            [toby] = scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs", "romania")
 
-        mock_service.create_driver.assert_called_once()
-        mock_driver.get.assert_called_once_with("https://rean.org.uk/test")
-        mock_driver.quit.assert_called_once()
+        assert toby["name"] == "Toby"
+        assert toby["age_text"] == "4 months"
+        assert toby["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
 
-        assert len(images) == 2
-        assert "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg" in images
-        assert "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg" in images
+    def test_unified_extraction_falls_back_when_the_browser_fails(self, scraper, stub_clock):
+        with self._browser(fake_playwright_service(error=RuntimeError("Browserless unavailable"))), patch.object(scraper, "_extract_dogs_legacy_fallback", return_value=[]) as fallback:
+            assert scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs", "romania") == []
 
-    @pytest.mark.browser
-    @patch("scrapers.rean.dogs_scraper.get_browser_service")
-    @patch("scrapers.rean.dogs_scraper.time.sleep")
-    def test_extract_images_with_browser_waits_for_loading(self, mock_sleep, mock_browser_service, scraper):
-        mock_service = MagicMock()
-        mock_browser_service.return_value = mock_service
-        mock_driver = MagicMock()
-        mock_browser_result = MagicMock()
-        mock_browser_result.driver = mock_driver
-        mock_service.create_driver.return_value = mock_browser_result
-        mock_driver.find_elements.return_value = []
-        mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
-
-        scraper.extract_images_with_browser("https://rean.org.uk/test")
-
-        assert mock_sleep.call_count >= 1
-
-        mock_driver.execute_script.assert_called()
-        scroll_calls = [call for call in mock_driver.execute_script.call_args_list if "scrollTo" in str(call)]
-        assert len(scroll_calls) > 0
-
-    @pytest.mark.browser
-    @patch("scrapers.rean.dogs_scraper.get_browser_service")
-    def test_extract_images_with_browser_filters_wsimg_only(self, mock_browser_service, scraper):
-        mock_service = MagicMock()
-        mock_browser_service.return_value = mock_service
-        mock_driver = MagicMock()
-        mock_browser_result = MagicMock()
-        mock_browser_result.driver = mock_driver
-        mock_service.create_driver.return_value = mock_browser_result
-        mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
-
-        mock_images = []
-
-        mock_img1 = MagicMock()
-        mock_img1.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg"
-        mock_images.append(mock_img1)
-
-        mock_img2 = MagicMock()
-        mock_img2.get_attribute.return_value = "https://example.com/random.jpg"
-        mock_images.append(mock_img2)
-
-        mock_img3 = MagicMock()
-        mock_img3.get_attribute.return_value = "data:image/gif;base64,abc123"
-        mock_images.append(mock_img3)
-
-        mock_img4 = MagicMock()
-        mock_img4.get_attribute.return_value = ""
-        mock_images.append(mock_img4)
-
-        mock_driver.find_elements.return_value = mock_images
-
-        images = scraper.extract_images_with_browser("https://rean.org.uk/test")
-
-        assert len(images) == 1
-        assert images[0] == "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg"
-
-    @patch("scrapers.rean.dogs_scraper.get_browser_service")
-    def test_extract_images_with_browser_handles_errors(self, mock_browser_service, scraper):
-        mock_service = MagicMock()
-        mock_browser_service.return_value = mock_service
-        mock_service.create_driver.side_effect = Exception("WebDriver failed to start")
-
-        images = scraper.extract_images_with_browser("https://rean.org.uk/test")
-
-        assert images == []
-
-    @pytest.mark.browser
-    @patch("scrapers.rean.dogs_scraper.get_browser_service")
-    def test_extract_images_with_browser_configuration(self, mock_browser_service, scraper):
-        mock_service = MagicMock()
-        mock_browser_service.return_value = mock_service
-        mock_driver = MagicMock()
-        mock_browser_result = MagicMock()
-        mock_browser_result.driver = mock_driver
-        mock_service.create_driver.return_value = mock_browser_result
-        mock_driver.find_elements.return_value = []
-        mock_driver.execute_script.side_effect = lambda script: 1000 if "scrollHeight" in script else None
-
-        scraper.extract_images_with_browser("https://rean.org.uk/test")
-
-        mock_service.create_driver.assert_called_once()
-
-    @pytest.mark.browser
-    @patch("selenium.webdriver.Chrome")
-    def test_extract_images_browser_webdriver_failure(self, mock_chrome, scraper):
-        mock_chrome.side_effect = WebDriverException("Chrome failed to start")
-
-        result = scraper.extract_images_with_browser("https://rean.org.uk/dogs")
-
-        assert result == []
-
-    @pytest.mark.browser
-    @patch("selenium.webdriver.Chrome")
-    def test_browser_element_not_found(self, mock_chrome, scraper):
-        mock_driver = Mock()
-        mock_chrome.return_value = mock_driver
-
-        mock_driver.find_elements.return_value = []
-        scraper._find_dog_containers = Mock(return_value=[])
-
-        result = scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs", "romania")
-
-        assert isinstance(result, list)
+        fallback.assert_called_once_with("https://rean.org.uk/dogs", "romania")
 
 
 class TestREANIntegration:
-    @pytest.mark.browser
-    @patch("selenium.webdriver.Chrome")
-    @patch("time.sleep")
-    def test_unified_extraction_with_dom(self, mock_sleep, mock_chrome, scraper):
-        mock_driver = Mock()
-        mock_chrome.return_value = mock_driver
-
-        mock_container = Mock()
-        mock_container.text = """
-        Toby - 4 months old - in Romania
-        Little friendly Toby is looking sad in the shelter.
-        Vaccinated and chipped.
-        (Updated 22/4/25)
-        """
-
-        mock_img = Mock()
-        mock_img.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
-        mock_container.find_elements.return_value = [mock_img]
-
-        scraper._find_dog_containers = Mock(return_value=[mock_container])
-
-        result = scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs", "romania")
-
-        assert len(result) == 1
-        assert result[0]["name"] == "Toby"
-        assert result[0]["age_text"] == "4 months"
-        assert result[0]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
-
-    @pytest.mark.browser
-    @patch("selenium.webdriver.Chrome")
-    def test_unified_extraction_fallback(self, mock_chrome, scraper):
-        mock_chrome.side_effect = WebDriverException("Failed")
-
-        scraper._extract_dogs_legacy_fallback = Mock(return_value=[])
-
-        result = scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs", "romania")
-
-        assert result == []
-        scraper._extract_dogs_legacy_fallback.assert_called_once()
-
-    @pytest.mark.external
-    @patch("requests.get")
-    @patch("selenium.webdriver.Chrome")
-    @patch("time.sleep")
-    def test_full_scraping_workflow(self, mock_sleep, mock_chrome, mock_get, scraper):
-        page_html = """
-        <html><body>
-        <div class="dog-entry">
-            Buddy is 2 years old, rescued from streets.
-            He is vaccinated and chipped.
-            (Updated 22/4/25)
-        </div>
-        </body></html>
-        """
-
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.text = page_html
-        mock_get.return_value = mock_response
-
-        mock_driver = Mock()
-        mock_chrome.return_value = mock_driver
-
-        mock_container = Mock()
-        mock_container.text = "Buddy is 2 years old, rescued from streets. He is vaccinated and chipped. (Updated 22/4/25)"
-
-        mock_img = Mock()
-        mock_img.get_attribute.return_value = "https://img1.wsimg.com/isteam/ip/abc/buddy.jpg"
-        mock_container.find_elements.return_value = [mock_img]
-
-        scraper._find_dog_containers = Mock(return_value=[mock_container])
-
-        result = scraper.scrape_animals()
-
-        assert len(result) > 0
-        dog = result[0]
-        assert dog["name"] == "Buddy"
-        assert dog["animal_type"] == "dog"
-        assert "external_id" in dog
-
     @pytest.mark.external
     def test_rate_limiting_between_pages(self, scraper):
         with patch("time.sleep") as mock_sleep, patch("requests.get") as mock_get:

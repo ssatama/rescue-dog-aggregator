@@ -1,38 +1,24 @@
 """Scraper implementation for Many Tears Rescue organization."""
 
 import asyncio
-import os
 import random
 import re
-import time
 from typing import Any
 
 from bs4 import BeautifulSoup, Tag
 
 from scrapers.base_scraper import BaseScraper, ListingIncompleteError
-
-USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
-
-if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import (
-        PlaywrightOptions,
-        get_playwright_service,
-    )
-else:
-    from selenium.common.exceptions import TimeoutException
-    from selenium.webdriver.chrome.options import Options
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.webdriver.support.wait import WebDriverWait
-
-    from services.browser_service import BrowserOptions, get_browser_service
+from services.playwright_browser_service import (
+    PlaywrightOptions,
+    get_playwright_service,
+)
 
 
 class ManyTearsRescueScraper(BaseScraper):
     """Scraper for Many Tears Rescue organization.
 
     Many Tears Rescue uses Cloudflare Bot Management which blocks standard HTTP requests.
-    This scraper uses Selenium WebDriver to bypass the protection and extract dog data
+    This scraper uses Playwright (Browserless in production) to bypass the protection and extract dog data
     from listing pages with pagination support.
     """
 
@@ -107,9 +93,7 @@ class ManyTearsRescueScraper(BaseScraper):
         Returns:
             List of processed animals with detailed data
         """
-        if USE_PLAYWRIGHT:
-            return asyncio.run(self._process_animals_parallel_playwright(animals))
-        return self._process_animals_parallel_selenium(animals)
+        return asyncio.run(self._process_animals_parallel_playwright(animals))
 
     async def _process_animals_parallel_playwright(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Playwright implementation of parallel animal processing."""
@@ -142,98 +126,13 @@ class ManyTearsRescueScraper(BaseScraper):
         self.logger.info(f"Completed detail scraping: {len(all_dogs_data)} animals processed")
         return all_dogs_data
 
-    def _process_animals_parallel_selenium(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Selenium implementation of parallel animal processing."""
-        all_dogs_data = []
-        seen_urls = set()  # Track URLs to prevent duplicates
-
-        # REDUCED PARALLELISM: Max 2 threads to avoid detection and resource issues
-        import concurrent.futures
-        from threading import Lock
-
-        self.logger.info(f"Starting detail scraping for {len(animals)} animals using batch_size={self.batch_size}")
-
-        # Thread-safe collections
-        results_lock = Lock()
-
-        def process_animal_batch(animal_batch):
-            """Process a batch of animals with individual WebDriver per thread"""
-            batch_results = []
-            local_driver = None
-
-            try:
-                # Create WebDriver for this thread with stealth options
-                local_driver = self._setup_selenium_driver()
-
-                for animal in animal_batch:
-                    adoption_url = animal["adoption_url"]
-
-                    # Skip duplicates (shouldn't happen but safety check)
-                    with results_lock:
-                        if adoption_url in seen_urls:
-                            self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
-                            continue
-                        seen_urls.add(adoption_url)
-
-                    # Random delay for respectful scraping
-                    time.sleep(random.uniform(self.rate_limit_delay + 1, self.rate_limit_delay + 3))
-
-                    # Use thread-local WebDriver (no locking needed)
-                    detail_data = self._scrape_animal_details_selenium(adoption_url, driver=local_driver)
-
-                    if detail_data:
-                        # Merge detail data with listing data (detail data takes precedence)
-                        animal.update(detail_data)
-
-                    batch_results.append(animal)
-
-            except Exception as e:
-                self.logger.error(f"Error in batch processing: {e}")
-            finally:
-                # Clean up thread-local WebDriver
-                if local_driver:
-                    try:
-                        local_driver.quit()
-                    except Exception:
-                        pass
-
-            return batch_results
-
-        # Split animals into batches based on batch_size
-        batches = []
-        for i in range(0, len(animals), self.batch_size):
-            batch = animals[i : i + self.batch_size]
-            batches.append(batch)
-
-        self.logger.info(f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}")
-
-        # Process batches with reduced concurrency
-        max_workers = min(2, len(batches))  # MAX 2 THREADS to prevent overwhelming
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit all batches
-            future_to_batch = {executor.submit(process_animal_batch, batch): i for i, batch in enumerate(batches)}
-
-            # Collect results as they complete with extended timeout
-            for future in concurrent.futures.as_completed(future_to_batch):
-                batch_index = future_to_batch[future]
-                try:
-                    batch_results = future.result(timeout=600)  # 10 minute timeout per batch
-                    all_dogs_data.extend(batch_results)
-                    self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch_results)} animals processed")
-                except Exception as e:
-                    self.logger.error(f"Batch {batch_index + 1} failed: {e}")
-                    continue
-
-        return all_dogs_data
-
     def collect_data(self) -> list[dict[str, Any]]:
         """Collect all available dog data from listing pages.
 
         This method implements the BaseScraper template method pattern.
         It extracts dogs from all listing pages using pagination, then
-        scrapes detailed information for each dog. Supports skip_existing_animals
-        and batch_size parallelism configuration parameters.
+        scrapes each dog's detail page, one at a time. Supports
+        skip_existing_animals.
 
         A listing failure propagates, so the run ends as an error and stale
         detection doesn't run.
@@ -246,7 +145,7 @@ class ManyTearsRescueScraper(BaseScraper):
         if not animals:
             return []
 
-        # Phase 2: Process animals in parallel with individual WebDrivers per thread
+        # Phase 2: Fetch each dog's detail page
         all_dogs_data = self._process_animals_parallel(animals)
 
         self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
@@ -255,124 +154,13 @@ class ManyTearsRescueScraper(BaseScraper):
     def get_animal_list(self) -> list[dict[str, Any]]:
         """Fetch list of available dogs using browser automation with pagination.
 
-        Handles Cloudflare Bot Management by using headless Chrome with proper options.
+        Handles Cloudflare Bot Management with a Playwright browser (Browserless in production).
         Iterates through all pages dynamically detecting the maximum page count.
 
         Returns:
             List of dictionaries containing basic dog information from all pages
         """
-        if USE_PLAYWRIGHT:
-            return asyncio.run(self._get_animal_list_playwright())
-        return self._get_animal_list_selenium()
-
-    def _get_animal_list_selenium(self) -> list[dict[str, Any]]:
-        """Selenium implementation of get_animal_list."""
-        driver = None
-        all_dogs = []
-
-        try:
-            driver = self._setup_selenium_driver()
-
-            # Start with page 1 to detect max pages
-            page_num = 1
-            max_pages = None
-            consecutive_empty_pages = 0
-            max_empty_pages = 2  # Stop after 2 consecutive empty pages
-
-            while True:
-                try:
-                    if page_num == 1:
-                        url = self.listing_url
-                    else:
-                        url = f"{self.listing_url}?page={page_num}"
-
-                    self.logger.info(f"Fetching page {page_num}: {url}")
-
-                    # Load page with retry logic
-                    page_loaded = False
-                    for retry in range(3):
-                        try:
-                            driver.get(url)
-
-                            # Wait for page to load with random delay
-                            wait_time = random.uniform(3, 7)
-                            time.sleep(wait_time)
-
-                            # Verify page loaded by checking for dog cards
-                            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='/adopt/dogs/']")))
-                            page_loaded = True
-                            break
-                        except TimeoutException:
-                            self.logger.warning(f"Timeout on page {page_num}, retry {retry + 1}/3")
-                            if retry < 2:
-                                time.sleep(2 ** (retry + 1))  # Exponential backoff
-                            continue
-
-                    if not page_loaded:
-                        self.logger.error(f"Failed to load page {page_num} after 3 retries")
-                        break
-
-                    # Random human-like scroll
-                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.3);")
-                    time.sleep(random.uniform(0.5, 1.5))
-                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.6);")
-                    time.sleep(random.uniform(0.5, 1.5))
-                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-
-                    # Parse the page content
-                    soup = BeautifulSoup(driver.page_source, "html.parser")
-
-                    # Detect max pages from pagination links on first page
-                    if max_pages is None:
-                        max_pages = self._detect_max_pages(soup)
-                        self.logger.info(f"Detected maximum pages: {max_pages}")
-
-                    # Extract dogs from current page
-                    page_dogs = self._extract_dogs_from_page(soup)
-                    if page_dogs:
-                        all_dogs.extend(page_dogs)
-                        self.logger.info(f"Found {len(page_dogs)} dogs on page {page_num}")
-                        consecutive_empty_pages = 0
-                    else:
-                        self.logger.warning(f"No dogs found on page {page_num}")
-                        consecutive_empty_pages += 1
-
-                        # Stop if too many empty pages
-                        if consecutive_empty_pages >= max_empty_pages:
-                            self.logger.info(f"Stopping after {max_empty_pages} consecutive empty pages")
-                            break
-
-                    # Check if we should continue to next page
-                    if page_num >= max_pages:
-                        self.logger.info(f"Reached max page {max_pages}")
-                        break
-
-                    page_num += 1
-
-                    # Rate limiting between page requests with random delay
-                    if page_num <= max_pages:
-                        delay = random.uniform(self.rate_limit_delay + 2, self.rate_limit_delay + 5)
-                        self.logger.debug(f"Waiting {delay:.1f}s before next page...")
-                        time.sleep(delay)
-
-                except Exception as e:
-                    self.logger.error(f"Error processing page {page_num}: {e}")
-                    consecutive_empty_pages += 1
-                    if consecutive_empty_pages >= max_empty_pages:
-                        break
-                    continue
-
-        except Exception as e:
-            self.logger.error(f"Error during pagination scraping: {e}")
-        finally:
-            if driver:
-                try:
-                    driver.quit()
-                except Exception:
-                    pass
-
-        self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
-        return all_dogs
+        return asyncio.run(self._get_animal_list_playwright())
 
     async def _get_animal_list_playwright(self) -> list[dict[str, Any]]:
         """Playwright implementation of get_animal_list.
@@ -419,104 +207,6 @@ class ManyTearsRescueScraper(BaseScraper):
 
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs
-
-    def _get_chrome_options(self):
-        """Get standardized Chrome options for Cloudflare bypass.
-
-        Centralized Chrome configuration to avoid code duplication.
-        Uses comprehensive options optimized for bot detection bypass.
-
-        Returns:
-            Configured Chrome Options instance
-        """
-        chrome_options = Options()
-
-        # Core headless settings
-        chrome_options.add_argument("--headless=new")  # Use new headless mode
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-
-        # Random viewport size for fingerprint variation
-        width = random.randint(1366, 1920)
-        height = random.randint(768, 1080)
-        chrome_options.add_argument(f"--window-size={width},{height}")
-
-        # Anti-detection arguments
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        chrome_options.add_argument("--disable-features=IsolateOrigins,site-per-process")
-        chrome_options.add_argument("--disable-web-security")
-        chrome_options.add_argument("--disable-features=VizDisplayCompositor")
-        chrome_options.add_argument("--disable-dev-tools")
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument("--disable-plugins")
-        chrome_options.add_argument("--disable-images")  # Faster loading
-        chrome_options.add_argument("--disable-javascript")  # Then re-enable selectively
-
-        # Random user agent
-        user_agent = random.choice(self.USER_AGENTS)
-        chrome_options.add_argument(f"--user-agent={user_agent}")
-
-        # Additional stealth options
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option("useAutomationExtension", False)
-
-        # Disable logging to reduce detection
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
-        chrome_options.add_argument("--log-level=3")
-        chrome_options.add_argument("--silent")
-
-        # Performance optimizations
-        prefs = {
-            "profile.default_content_setting_values": {
-                "images": 2,  # Block images
-                "plugins": 2,  # Block plugins
-                "popups": 2,  # Block popups
-                "geolocation": 2,  # Block location
-                "notifications": 2,  # Block notifications
-                "media_stream": 2,  # Block media stream
-            },
-            "profile.managed_default_content_settings": {"images": 2},
-        }
-        chrome_options.add_experimental_option("prefs", prefs)
-
-        return chrome_options
-
-    def _setup_selenium_driver(self):
-        """Setup Selenium WebDriver with Cloudflare bypass options.
-
-        Uses centralized browser service that auto-detects environment:
-        - Local: Uses Chrome with CDP stealth commands
-        - Railway: Uses Browserless (CDP stealth not available)
-
-        Returns:
-            Configured WebDriver instance
-        """
-        browser_service = get_browser_service()
-
-        width = random.randint(1366, 1920)
-        height = random.randint(768, 1080)
-
-        browser_options = BrowserOptions(
-            headless=True,
-            window_size=(width, height),
-            user_agent=random.choice(self.USER_AGENTS),
-            random_user_agent=False,
-            page_load_timeout=60,
-            implicit_wait=10,
-            stealth_mode=True,
-            disable_images=True,
-        )
-
-        browser_result = browser_service.create_driver(browser_options)
-        self._browser_supports_cdp = browser_result.supports_cdp
-
-        if browser_result.supports_cdp:
-            self.logger.debug("Using local Chrome with CDP stealth mode")
-        else:
-            self.logger.info("Using remote Browserless (CDP stealth not available)")
-
-        return browser_result.driver
 
     def _detect_max_pages(self, soup: BeautifulSoup) -> int:
         """Detect maximum page count from pagination links.
@@ -629,123 +319,8 @@ class ManyTearsRescueScraper(BaseScraper):
         match = re.search(r"/adopt/dogs/(\d+)/?$", url)
         return match.group(1) if match else url.split("/")[-2] if url.split("/")[-2].isdigit() else "unknown"
 
-    def _scrape_animal_details(self, adoption_url: str, driver=None) -> dict[str, Any]:
-        """Scrape detailed information from individual dog page.
-
-        Extracts comprehensive data including name, requirements sections, diary entries,
-        compatibility sections, description, and hero image following the detailed
-        requirements for comprehensive data extraction.
-
-        Args:
-            adoption_url: URL of the individual dog adoption page
-            driver: Optional WebDriver instance (for testing, Selenium only)
-
-        Returns:
-            Dictionary with detailed dog information following BaseScraper format
-        """
-        if USE_PLAYWRIGHT:
-            return asyncio.run(self._scrape_animal_details_playwright(adoption_url))
-        return self._scrape_animal_details_selenium(adoption_url, driver)
-
-    def _scrape_animal_details_selenium(self, adoption_url: str, driver=None) -> dict[str, Any]:
-        """Selenium implementation of _scrape_animal_details."""
-        local_driver = None
-        try:
-            self.logger.debug(f"Scraping details from: {adoption_url}")
-
-            # Use provided driver (for testing) or create new one
-            if driver is None:
-                # Use browser service for driver creation
-                local_driver = self._setup_selenium_driver()
-                driver = local_driver
-                driver.get(adoption_url)
-                time.sleep(2)
-            else:
-                # Using shared WebDriver - navigate to the URL
-                driver.get(adoption_url)
-                time.sleep(2)
-
-            # Parse HTML with BeautifulSoup
-            soup = BeautifulSoup(driver.page_source, "html.parser")
-
-            # Extract core fields
-            name = self._extract_name(soup)
-            hero_image_url = self._extract_hero_image(soup)
-            description = self._extract_description(soup)
-
-            # Extract structured data (age, breed, sex) from DOM
-            structured_data = self._extract_structured_data_from_detail_page(soup)
-
-            # Extract properties using comprehensive extraction methods
-            properties = {}
-
-            # Add structured data to properties
-            properties.update(structured_data)
-
-            # Extract 6 requirements sections
-            requirements = self._extract_requirements_sections(soup)
-            properties.update(requirements)
-
-            # Extract diary entries (optional)
-            diary_entries = self._extract_diary_entries(soup, driver=driver)
-            if diary_entries:
-                properties["diary_entries"] = diary_entries
-
-            # Extract compatibility sections (optional)
-            compatibility = self._extract_compatibility_sections(soup)
-            properties.update(compatibility)
-
-            # Filter sponsor text from description
-            description = self._filter_sponsor_text(description)
-
-            # CRITICAL FIX: Store description in properties so it gets saved to database
-            properties["description"] = description or ""
-
-            # Size will be handled in the field extraction section below
-
-            # Build result following SanterPaws pattern with Zero NULLs compliance
-            result = {
-                "name": name or "Unknown",
-                "description": description or "",
-                "primary_image_url": hero_image_url,
-                "original_image_url": hero_image_url,
-                "properties": properties,
-                "animal_type": "dog",
-                "status": "available",
-                "location": "Wales, UK",
-            }
-
-            # Extract individual fields from structured_data for compatibility with BaseScraper
-            # Zero NULLs compliance - always provide defaults
-            result["breed"] = structured_data.get("breed") or "Mixed Breed"
-            result["sex"] = structured_data.get("sex") or "Unknown"
-            result["age"] = structured_data.get("age")
-            result["age_text"] = structured_data.get("age_text") or structured_data.get("age")
-
-            # Size will be handled by unified standardization
-            result["size"] = structured_data.get("size")
-
-            # Add image_urls for R2 integration
-            if hero_image_url:
-                result["image_urls"] = [hero_image_url]
-            else:
-                result["image_urls"] = []
-
-            # Apply unified standardization
-            result = self.process_animal(result)
-
-            self.logger.debug(f"Successfully extracted details for {name}")
-            return result
-
-        except Exception as e:
-            self.logger.error(f"Error scraping details from {adoption_url}: {e}")
-            return {}
-        finally:
-            if local_driver:
-                local_driver.quit()
-
     async def _scrape_animal_details_playwright(self, adoption_url: str) -> dict[str, Any]:
-        """Playwright implementation of _scrape_animal_details."""
+        """Scrape one dog's detail page with Playwright."""
         try:
             self.logger.debug(f"Scraping details from: {adoption_url}")
 
@@ -780,8 +355,8 @@ class ManyTearsRescueScraper(BaseScraper):
             requirements = self._extract_requirements_sections(soup)
             properties.update(requirements)
 
-            # Extract diary entries (basic extraction without driver)
-            diary_entries = self._extract_diary_entries(soup, driver=None)
+            # Diary entry titles
+            diary_entries = self._extract_diary_entries(soup)
             if diary_entries:
                 properties["diary_entries"] = diary_entries
 
@@ -1137,22 +712,20 @@ class ManyTearsRescueScraper(BaseScraper):
 
         return requirements
 
-    def _extract_diary_entries(self, soup: BeautifulSoup, driver=None) -> dict[str, str]:
-        """Extract diary entries from the optional diary section.
+    def _extract_diary_entries(self, soup: BeautifulSoup) -> dict[str, str]:
+        """Extract diary entry titles from the optional diary section.
 
-        Diary entries appear as clickable buttons with dates that expand to show full content.
-        Uses WebDriver to click buttons and extract expanded diary text.
+        Diary entries are buttons with dates that expand to show the full text;
+        only the button titles are in the page source.
 
         Args:
             soup: BeautifulSoup object of the detail page
-            driver: Optional WebDriver instance for clicking diary buttons
 
         Returns:
-            Dictionary mapping dates to full diary entry content
+            Dictionary mapping dates to diary entry titles
         """
         diary_entries: dict[str, str] = {}
 
-        # Find diary heading first
         diary_heading = None
         for h2 in soup.find_all("h2"):
             if "diary" in h2.get_text(strip=True).lower():
@@ -1162,106 +735,22 @@ class ManyTearsRescueScraper(BaseScraper):
         if not diary_heading:
             return diary_entries
 
-        # Find the diary list after the heading
         ul = diary_heading.find_next("ul")
         if not ul:
             return diary_entries
 
-        # If no driver available, fall back to basic extraction
-        if not driver:
-            buttons = ul.find_all("button") if isinstance(ul, Tag) else []
-            for button in buttons:
-                button_text = button.get_text(strip=True)
-                if button_text:
-                    # Extract date from button text if possible
-                    date_match = re.match(r"^(\d{2}-\d{2}-\d{2})\s+(.+)$", button_text)
-                    if date_match:
-                        date = date_match.group(1)
-                        title = date_match.group(2)
-                        diary_entries[date] = f"Title: {title} (Full content requires WebDriver)"
-                    else:
-                        diary_entries[button_text] = "Title only extracted"
-            return diary_entries
-
-        # Enhanced WebDriver-based diary extraction
-        try:
-            # Find all diary buttons using WebDriver
-            diary_buttons = driver.find_elements(
-                By.XPATH,
-                "//h2[contains(translate(text(), 'DIARY', 'diary'), 'diary')]/following-sibling::ul//button",
-            )
-
-            for button_element in diary_buttons:
-                try:
-                    # Get button text to extract date and title
-                    button_text = button_element.text.strip()
-                    if not button_text:
-                        continue
-
-                    # Extract date from button text
-                    date_match = re.match(r"^(\d{2}-\d{2}-\d{2})\s+(.+)$", button_text)
-                    if date_match:
-                        diary_date = date_match.group(1)
-                        diary_title = date_match.group(2)
-                    else:
-                        # Use full text as key if no date pattern
-                        diary_date = button_text
-                        diary_title = button_text
-
-                    # Click the diary button to expand content
-                    driver.execute_script("arguments[0].scrollIntoView();", button_element)
-                    time.sleep(0.5)  # Brief pause for scroll
-
-                    # Click using JavaScript to avoid interception issues
-                    driver.execute_script("arguments[0].click();", button_element)
-
-                    # Wait for content to expand
-                    time.sleep(1)
-
-                    # Extract expanded diary content from the same li element
-                    # Look for paragraphs that appear after clicking
-                    parent_li = button_element.find_element(By.XPATH, "./ancestor::li[1]")
-                    diary_paragraphs = parent_li.find_elements(By.XPATH, ".//p")
-
-                    diary_content_parts = []
-                    for p in diary_paragraphs:
-                        p_text = p.text.strip()
-                        # Filter out button text and short snippets
-                        if p_text and len(p_text) > 20 and p_text != button_text:
-                            diary_content_parts.append(p_text)
-
-                    # Store diary entry
-                    if diary_content_parts:
-                        full_diary_content = "\n\n".join(diary_content_parts)
-                        diary_entries[diary_date] = full_diary_content
-                        self.logger.debug(f"Extracted diary entry for {diary_date}: {len(full_diary_content)} chars")
-                    else:
-                        # Fallback to title if no content found
-                        diary_entries[diary_date] = f"Title: {diary_title}"
-
-                except Exception as button_error:
-                    self.logger.warning(f"Failed to extract diary entry from button '{button_text}': {button_error}")
-                    continue
-
-        except Exception as e:
-            self.logger.warning(f"Error during WebDriver diary extraction: {e}")
-            # Fallback to basic extraction without clicking - re-parse with BeautifulSoup
-            if driver:
-                soup_fallback = BeautifulSoup(driver.page_source, "html.parser")
-                diary_heading_fallback = None
-                for h2 in soup_fallback.find_all("h2"):
-                    if "diary" in h2.get_text(strip=True).lower():
-                        diary_heading_fallback = h2
-                        break
-                if diary_heading_fallback:
-                    ul_fallback = diary_heading_fallback.find_next("ul")
-                    if ul_fallback and hasattr(ul_fallback, "find_all"):
-                        buttons = ul_fallback.find_all("button")
-                        for button in buttons:
-                            button_text = button.get_text(strip=True)
-                            if button_text:
-                                diary_entries[button_text] = "Fallback: WebDriver extraction failed"
-
+        buttons = ul.find_all("button") if isinstance(ul, Tag) else []
+        for button in buttons:
+            button_text = button.get_text(strip=True)
+            if button_text:
+                date_match = re.match(r"^(\d{2}-\d{2}-\d{2})\s+(.+)$", button_text)
+                if date_match:
+                    date = date_match.group(1)
+                    title = date_match.group(2)
+                    # The wording is what production stores; #571 decides its fate
+                    diary_entries[date] = f"Title: {title} (Full content requires WebDriver)"
+                else:
+                    diary_entries[button_text] = "Title only extracted"
         return diary_entries
 
     def _extract_compatibility_sections(self, soup: BeautifulSoup) -> dict[str, str]:

@@ -25,7 +25,6 @@ def browser_manager():
 
 @pytest.mark.unit
 class TestScrapeWithRetry:
-    @patch.dict("os.environ", {"USE_PLAYWRIGHT": "true"})
     def test_returns_result_on_success(self, browser_manager):
         scrape_fn = Mock(return_value={"name": "Buddy", "breed": "Lab"})
 
@@ -34,7 +33,6 @@ class TestScrapeWithRetry:
         scrape_fn.assert_called_once()
         assert result == {"name": "Buddy", "breed": "Lab"}
 
-    @patch.dict("os.environ", {"USE_PLAYWRIGHT": "true"})
     def test_retries_on_failure_then_succeeds(self, browser_manager):
         scrape_fn = Mock(side_effect=[Exception("timeout"), {"name": "Max", "breed": "Poodle"}])
 
@@ -43,7 +41,6 @@ class TestScrapeWithRetry:
         assert scrape_fn.call_count == 2
         assert result == {"name": "Max", "breed": "Poodle"}
 
-    @patch.dict("os.environ", {"USE_PLAYWRIGHT": "true"})
     def test_returns_none_after_exhausted_retries(self, browser_manager):
         scrape_fn = Mock(side_effect=Exception("always fails"))
 
@@ -52,7 +49,6 @@ class TestScrapeWithRetry:
         assert scrape_fn.call_count == 3
         assert result is None
 
-    @patch.dict("os.environ", {"USE_PLAYWRIGHT": "true"})
     def test_rejects_invalid_name(self, browser_manager):
         scrape_fn = Mock(return_value={"name": "", "breed": "Lab"})
 
@@ -60,7 +56,6 @@ class TestScrapeWithRetry:
 
         assert result is None
 
-    @patch.dict("os.environ", {"USE_PLAYWRIGHT": "true"})
     def test_returns_non_dict_result_directly(self, browser_manager):
         scrape_fn = Mock(return_value=["item1", "item2"])
 

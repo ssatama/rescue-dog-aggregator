@@ -17,7 +17,6 @@ class TestManyTearsRescueUnifiedStandardization:
         """Create a ManyTearsRescue scraper instance with mocked driver."""
         scraper = ManyTearsRescueScraper()
         scraper.driver = MagicMock()
-        scraper.use_unified_standardization = True
         return scraper
 
     def test_staffordshire_bull_terrier_standardization(self, scraper):

@@ -43,14 +43,8 @@ class TestBasScraperUnifiedStandardization:
 
         assert isinstance(scraper.standardizer, UnifiedStandardizer)
 
-    def test_base_scraper_has_feature_flag(self, scraper):
-        """BaseScraper should have use_unified_standardization flag defaulting to True"""
-        assert hasattr(scraper, "use_unified_standardization")
-        assert scraper.use_unified_standardization is True
-
     def test_process_animal_with_standardization_enabled(self, scraper):
         """process_animal() should apply standardization when flag is True"""
-        scraper.use_unified_standardization = True
 
         raw_data = {
             "name": "Buddy",
@@ -69,24 +63,6 @@ class TestBasScraperUnifiedStandardization:
         assert "standardization_confidence" in processed
         assert processed["name"] == "Buddy"
         assert processed["external_id"] == "dog-123"
-
-    def test_process_animal_with_standardization_disabled(self, scraper):
-        """process_animal() should return raw data when flag is False"""
-        scraper.use_unified_standardization = False
-
-        raw_data = {
-            "name": "Max",
-            "breed": "Lurcher",
-            "external_id": "dog-456",
-            "organization_id": 1,
-        }
-
-        processed = scraper.process_animal(raw_data)
-
-        # Should return unchanged
-        assert processed == raw_data
-        assert "primary_breed" not in processed
-        assert "breed_category" not in processed
 
     def test_save_animal_calls_process_animal(self, scraper):
         """save_animal() should call process_animal() before saving"""
@@ -113,7 +89,6 @@ class TestBasScraperUnifiedStandardization:
 
     def test_save_animal_with_standardization_updates_breed_fields(self, scraper):
         """save_animal() should save standardized breed data when enabled"""
-        scraper.use_unified_standardization = True
         scraper.database_service.get_existing_animal.return_value = None
         scraper.database_service.create_animal.return_value = (999, "create")
 
@@ -136,7 +111,6 @@ class TestBasScraperUnifiedStandardization:
 
     def test_standardization_preserves_non_breed_fields(self, scraper):
         """Standardization should not modify non-breed related fields"""
-        scraper.use_unified_standardization = True
         scraper.database_service.get_existing_animal.return_value = None
         scraper.database_service.create_animal.return_value = (111, "create")
 
@@ -167,7 +141,6 @@ class TestBasScraperUnifiedStandardization:
 
     def test_standardization_logs_events(self, scraper):
         """Standardization should log breed changes"""
-        scraper.use_unified_standardization = True
         scraper.database_service.get_existing_animal.return_value = None
         scraper.database_service.create_animal.return_value = (222, "create")
 
@@ -188,7 +161,6 @@ class TestBasScraperUnifiedStandardization:
 
     def test_existing_animal_update_with_standardization(self, scraper):
         """Updating existing animal should apply standardization"""
-        scraper.use_unified_standardization = True
 
         # Mock existing animal as a tuple (like database would return)
         existing_animal = (333, "Duke", "Lurcher", None, None)
@@ -212,21 +184,8 @@ class TestBasScraperUnifiedStandardization:
         assert updated_data["breed_category"] == "Hound"
         assert result == (333, "update")
 
-    def test_feature_flag_can_be_disabled_per_instance(self):
-        """Each scraper instance can independently control standardization"""
-        with patch("scrapers.base_scraper.psycopg2"):
-            scraper1 = ConcreteTestScraper(organization_id=1)
-            scraper2 = ConcreteTestScraper(organization_id=2)
-
-            scraper1.use_unified_standardization = False
-            scraper2.use_unified_standardization = True
-
-            assert scraper1.use_unified_standardization is False
-            assert scraper2.use_unified_standardization is True
-
     def test_standardizer_handles_none_breed_gracefully(self, scraper):
         """process_animal() should handle None breed values"""
-        scraper.use_unified_standardization = True
 
         raw_data = {
             "name": "Unknown",
@@ -260,7 +219,6 @@ class TestBaseScraperRawBreedPreservation:
 
     def test_raw_breed_kept_when_standardization_rewrites_breed(self, scraper):
         """The pre-standardization breed text survives in breed_raw."""
-        scraper.use_unified_standardization = True
 
         processed = scraper.process_animal(
             {
@@ -277,7 +235,6 @@ class TestBaseScraperRawBreedPreservation:
 
     def test_raw_breed_kept_when_breed_collapses_to_mixed_breed(self, scraper):
         """Crossbreed -> Mixed Breed is the lossiest rewrite; raw must still survive."""
-        scraper.use_unified_standardization = True
 
         processed = scraper.process_animal(
             {
@@ -293,7 +250,6 @@ class TestBaseScraperRawBreedPreservation:
 
     def test_raw_breed_none_when_organization_supplied_no_breed(self, scraper):
         """A missing breed must not become the string 'Unknown' in breed_raw."""
-        scraper.use_unified_standardization = True
 
         processed = scraper.process_animal(
             {
@@ -305,21 +261,6 @@ class TestBaseScraperRawBreedPreservation:
 
         assert processed["breed_raw"] is None
         assert processed["breed"] == "Unknown"
-
-    def test_standardization_disabled_leaves_breed_untouched(self, scraper):
-        """With the flag off nothing rewrites breed, so it still holds the raw value."""
-        scraper.use_unified_standardization = False
-
-        processed = scraper.process_animal(
-            {
-                "name": "Max",
-                "breed": "Lurcher Cross",
-                "external_id": "dog-999",
-                "organization_id": 1,
-            }
-        )
-
-        assert processed["breed"] == "Lurcher Cross"
 
 
 @pytest.mark.unit

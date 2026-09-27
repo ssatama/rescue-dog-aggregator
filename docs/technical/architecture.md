@@ -127,7 +127,6 @@ created_at, updated_at
 database_service.py          # Connection pool, transactions, retries
 connection_pool.py           # Enhanced pooling (10-30 connections)
 playwright_browser_service.py # Centralized Playwright browser automation
-browser_service.py           # Legacy browser service interface
 metrics_collector.py         # Performance + business metrics
 session_manager.py           # User sessions, preferences
 adoption_detection.py        # Detect adopted dogs via patterns
@@ -158,13 +157,13 @@ null_objects.py              # Null Object pattern implementations
 
 ### Browser Automation: Playwright
 
-All browser-dependent scrapers use **Playwright** (migrated from Selenium for Browserless v2 compatibility):
+All browser-dependent scrapers use **Playwright**, the only browser path (Selenium removed in #566):
 
 - **Local**: Uses local Chromium via `playwright`
 - **Production**: Uses Browserless v2 via WebSocket CDP connection
 - **Service**: `services/playwright_browser_service.py` provides unified API
 
-Environment variables: `USE_PLAYWRIGHT=true`, `BROWSERLESS_WS_ENDPOINT`, `BROWSERLESS_TOKEN`
+Environment variables: `BROWSERLESS_WS_ENDPOINT`, `BROWSERLESS_TOKEN` (without them, local Chromium)
 
 ### Railway Cron Job
 
@@ -334,7 +333,7 @@ pnpm exec playwright test                      # E2E tests
 @pytest.mark.unit        # Pure logic, no I/O
 @pytest.mark.integration # Exercises more than one internal component
 @pytest.mark.database    # Requires a PostgreSQL database
-@pytest.mark.browser     # Requires Playwright/Selenium
+@pytest.mark.browser     # Requires a real browser (Playwright)
 ```
 
 ## Configuration Management
@@ -570,7 +569,6 @@ OPENROUTER_API_KEY=xxx
 SENTRY_DSN_BACKEND=xxx
 
 # Browser automation (production)
-USE_PLAYWRIGHT=true
 BROWSERLESS_WS_ENDPOINT=wss://chrome.browserless.io
 BROWSERLESS_TOKEN=xxx
 

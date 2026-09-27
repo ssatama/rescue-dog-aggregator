@@ -29,12 +29,6 @@ class TestDaisyFamilyRescueUnifiedStandardization:
 
         assert isinstance(scraper.standardizer, UnifiedStandardizer)
 
-    def test_scraper_uses_unified_standardization_flag(self):
-        """Test that scraper has unified standardization enabled."""
-        scraper = DaisyFamilyRescueScraper(organization_id=13)
-        assert hasattr(scraper, "use_unified_standardization")
-        assert scraper.use_unified_standardization is True
-
     def test_detail_scraper_no_custom_parse_age(self):
         """Test that detail scraper doesn't have custom _parse_age method."""
         from scrapers.daisy_family_rescue.dog_detail_scraper import (

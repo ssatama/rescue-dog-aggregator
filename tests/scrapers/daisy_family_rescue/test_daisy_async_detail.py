@@ -25,7 +25,6 @@ class TestDaisyAsyncDetailScraper:
         return DaisyFamilyRescueDogDetailScraper()
 
     @pytest.mark.asyncio
-    @patch("scrapers.daisy_family_rescue.dog_detail_scraper.USE_PLAYWRIGHT", True)
     async def test_async_extract_dog_details_returns_data(self, detail_scraper):
         """async_extract_dog_details returns data without asyncio.run()."""
         expected = {"name": "Buddy", "adoption_url": "https://example.com/buddy"}
@@ -37,7 +36,6 @@ class TestDaisyAsyncDetailScraper:
         detail_scraper._extract_dog_details_playwright.assert_awaited_once_with("https://example.com/buddy", None)
 
     @pytest.mark.asyncio
-    @patch("scrapers.daisy_family_rescue.dog_detail_scraper.USE_PLAYWRIGHT", True)
     async def test_async_extract_returns_none_on_failure(self, detail_scraper):
         """async_extract_dog_details returns None when extraction fails."""
         detail_scraper._extract_dog_details_playwright = AsyncMock(return_value=None)
@@ -45,17 +43,6 @@ class TestDaisyAsyncDetailScraper:
         result = await detail_scraper.async_extract_dog_details("https://example.com/missing")
 
         assert result is None
-
-    @pytest.mark.asyncio
-    @patch("scrapers.daisy_family_rescue.dog_detail_scraper.USE_PLAYWRIGHT", False)
-    async def test_async_extract_falls_back_to_selenium(self, detail_scraper):
-        """async_extract_dog_details uses Selenium when Playwright is disabled."""
-        expected = {"name": "Rex"}
-        detail_scraper._extract_dog_details_selenium = MagicMock(return_value=expected)
-
-        result = await detail_scraper.async_extract_dog_details("https://example.com/rex")
-
-        assert result == expected
 
 
 @pytest.mark.unit
