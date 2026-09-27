@@ -100,8 +100,8 @@ Galgos del Sol.
 - Not done here: Dogs Trust's Playwright listing still stops early when a
   page doesn't render after "Next". Its "1 / N" indicator can be stale, so
   raising needs a check against the live site first (follow-up on #559).
-- Site findings from this work (Woof reads only page 1; Many Tears' count
-  swing is churn) are in `docs/technical/operational-knowledge.md`.
+- Site findings from this work (Woof lists available dogs first; Many Tears'
+  count swing is churn) are in `docs/technical/operational-knowledge.md`.
 
 ## breed_raw keeps the rescue's text (#560)
 
@@ -321,6 +321,30 @@ children").
   the card.
 - Runtime: discovery 0.9 s (was 96 s of per-dog sleep). A local run takes 19 s
   in all, 18 s of it failed image uploads (no R2 credentials locally).
+
+## Woof Project: plain HTTP listing (#565)
+
+- The listing is plain HTML: one `<article class="type-adoption">` card per
+  dog, its name the last `<h2>`, and a status `<h2>` above the name when the
+  dog is adopted or reserved (any case; "GEADOPTEERD" in Dutch). Any other
+  heading above the name is logged and the dog kept: hiding an available dog
+  is the worse error. The Selenium and Playwright listing code (a fresh
+  browser per page, 300px scroll steps, fixed sleeps, page 1 loaded twice) is
+  gone, and so is the browser fallback: plain HTML has every card.
+- Available dogs come first, then the archive (pages 2-5, 2026-09-27), so the
+  next page is read only while a page lists an available dog: pages 1 and 2
+  today, with the org's rate limit between them and each page read once. The
+  archive holds a badge-less 2023 dog (Billy, page 3), so following every
+  page would bring old dogs back.
+- Two production errors fixed: **Arean** says "GEADOPTEERD" but was live as
+  available (the old check wanted English words right above the name), and
+  **Amlet** was never scraped because his page is `/adoption/9270/` and the old
+  URL check rejected numeric slugs. Today's production ids otherwise match
+  (13 of 14; Arean goes stale, Amlet is added as `wp-9270`).
+- Runtime: the listing takes 9 s live (two pages and the 3 s rate limit). A
+  local run of the first version (page 1 only) took 16.6 s in all, including
+  Amlet's detail page, photo upload and profile (was 169 s on average, 241 s
+  of `data_collection` in the latest run).
 
 ## Gotchas
 

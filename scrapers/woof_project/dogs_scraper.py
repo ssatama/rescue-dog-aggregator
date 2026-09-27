@@ -1,33 +1,31 @@
 """Scraper implementation for Woof Project organization."""
 
-import asyncio
-import os
 import re
-import time
 from typing import Any
 from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from scrapers.base_scraper import BaseScraper, ListingIncompleteError
+from scrapers.base_scraper import BaseScraper
 from utils.shared_extraction_patterns import gallery_urls
 
-USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
+USER_AGENT = "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"
 
-if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import (
-        PlaywrightOptions,
-        get_playwright_service,
-    )
+# A dog's own page: /adoption/<slug>/, not /adoption/page/2/
+DOG_PAGE = re.compile(r"/adoption/(?!page/)[^/]+/?$")
+
+# Headings above an unavailable dog's name; pages 4 and 5 write them in title
+# case, and one card says it in Dutch
+STATUS_BADGES = {"adopted", "reserved", "geadopteerd", "gereserveerd"}
 
 
 class WoofProjectScraper(BaseScraper):
     """Scraper for Woof Project rescue organization.
 
-    Woof Project uses a WordPress-based website with paginated listings
-    showing rescue dogs. Only available dogs (without ADOPTED/RESERVED
-    status) are scraped.
+    Woof Project is a WordPress site. The listing is plain HTML, one
+    <article class="type-adoption"> card per dog; an adopted or reserved
+    dog has a status heading above its name and is skipped.
     """
 
     def __init__(self, config_id: str = "woof-project", organization_id=None):
@@ -99,29 +97,6 @@ class WoofProjectScraper(BaseScraper):
         # World-class logging: Collection results handled by centralized system
         return all_dogs_data
 
-    def _is_available_dog(self, element: Tag) -> bool:
-        """Check if a dog is available based on its listing element.
-
-        Available dogs have no status badge. Dogs with ADOPTED or
-        RESERVED H2 above their name are not available.
-
-        Args:
-            element: BeautifulSoup element for a dog listing
-
-        Returns:
-            True if dog is available, False otherwise
-        """
-        # Look for H2 tags that might contain status
-        h2_tags = element.find_all("h2")
-
-        for h2 in h2_tags:
-            h2_text = h2.get_text(strip=True).upper()
-            # Check for ADOPTED or RESERVED status
-            if "ADOPTED" in h2_text or "RESERVED" in h2_text:
-                return False
-
-        return True
-
     def _standardize_name(self, name: str) -> str:
         """Standardize dog name to proper title case.
 
@@ -148,675 +123,50 @@ class WoofProjectScraper(BaseScraper):
         else:
             return cleaned.title()
 
-    def _is_valid_dog_url(self, url: str) -> bool:
-        """Check if URL is a valid individual dog page (not pagination).
-
-        Args:
-            url: URL to validate
-
-        Returns:
-            True if URL is an individual dog page, False if pagination or invalid
-        """
-        if not url or "/adoption/" not in url:
-            return False
-
-        # Extract the path part from full URLs
-        if url.startswith("http"):
-            # For full URLs like https://woofproject.eu/adoption/buddy/
-            # Extract path after domain
-            path_start = url.find("/adoption/")
-            if path_start == -1:
-                return False
-            path = url[path_start:]
-        else:
-            # For relative URLs like /adoption/buddy/
-            path = url
-
-        # Split path into parts
-        parts = path.split("/")
-
-        # Valid individual dog URLs have exactly 4 parts: ['', 'adoption', 'dog-name', '']
-        # Example: /adoption/lisbon/ -> ['', 'adoption', 'lisbon', '']
-        if len(parts) != 4:
-            return False
-
-        # Second part should be 'adoption'
-        if parts[1] != "adoption":
-            return False
-
-        # Third part should be dog name (not 'page' for pagination)
-        dog_name_part = parts[2]
-        if not dog_name_part or dog_name_part == "page":
-            return False
-
-        # Valid dog name should not contain numbers only (pagination IDs)
-        if dog_name_part.isdigit():
-            return False
-
-        return True
-
-    def _extract_dog_info(self, element: Tag) -> dict[str, str] | None:
-        """Extract dog information from a listing element.
-
-        Args:
-            element: BeautifulSoup element for a dog listing
-
-        Returns:
-            Dictionary with dog info or None if extraction fails
-        """
-        try:
-            # Find the h4 tag with the dog link
-            h4_tag = element.find("h4")
-            if not h4_tag or not isinstance(h4_tag, Tag):
-                return None
-
-            # Get the link element
-            link_elem = h4_tag.find("a", href=True)
-            if not link_elem or not isinstance(link_elem, Tag):
-                return None
-
-            # Extract name and URL
-            name = link_elem.get_text(strip=True)
-            relative_url = link_elem.get("href")
-
-            if not name or not relative_url:
-                return None
-
-            # Ensure relative_url is a string
-            if isinstance(relative_url, list):
-                relative_url = relative_url[0] if relative_url else ""
-
-            relative_url = str(relative_url)
-
-            # Convert relative URL to absolute
-            if relative_url.startswith("/"):
-                full_url = self.base_url + relative_url
-            elif relative_url.startswith("http"):
-                full_url = relative_url
-            else:
-                full_url = urljoin(self.base_url, relative_url)
-
-            return {"name": name, "url": full_url}
-
-        except Exception as e:
-            self.logger.error(f"Error extracting dog info: {e}")
-            return None
-
     def get_animal_list(self) -> list[dict[str, str]]:
-        """Get list of available dogs from all listing pages.
+        """Available dogs from the listing, read as plain HTML (#565).
 
-        Fetches all paginated listing pages and extracts information about all
-        available dogs. Dogs marked as ADOPTED or RESERVED are excluded. A page
-        that fails to load raises ListingIncompleteError: the dogs on it would
-        go stale.
-
-        Returns:
-            List of dictionaries containing:
-            - name: Dog name
-            - url: Full URL to dog detail page
+        The listing puts the available dogs first and the adoption archive
+        after them, so the next page is read only while a page lists an
+        available dog: page 2 today, which has none. The archive holds old
+        dogs without a status (Billy, page 3), so reading every page would
+        bring them back. A page that fails to load raises
+        ListingIncompleteError: the dogs on it would go stale.
         """
-        all_dogs = []
-
-        for page_url in self._get_pagination_urls():
-            self.respect_rate_limit()
-            all_dogs.extend(self._extract_dogs_from_page(self._require_listing_page(page_url)))
-
-        return all_dogs
-
-    def _require_listing_page(self, url: str) -> BeautifulSoup:
-        """The parsed listing page, or ListingIncompleteError if it can't be fetched."""
-        soup = self._fetch_listing_page(url)
-        if soup is None:
-            raise ListingIncompleteError(f"Woof Project listing page {url} failed to load")
-        return soup
-
-    def _get_pagination_urls(self) -> list[str]:
-        """Listing page URLs, from the pagination links on page 1.
-
-        Returns:
-            List of pagination URLs
-        """
-        urls = [self.listing_url]  # Always start with page 1
-        soup = self._require_listing_page(self.listing_url)
-
-        # Extract page numbers from links like /adoption/page/2/. The live site
-        # links absolute URLs, so this finds none and only page 1 is read; the
-        # later pages are the adoption archive (2026-09-26, see #565).
-        page_numbers = set()
-        for link in soup.find_all("a"):
-            href_str = str(link.get("href", "") or "")
-            if href_str.startswith("/adoption/page/"):
-                try:
-                    page_numbers.add(int(href_str.split("/page/")[-1].rstrip("/")))
-                except (ValueError, IndexError):
-                    continue
-
-        for page_num in sorted(page_numbers):
-            if page_num > 1:  # Page 1 already added
-                urls.append(f"{self.listing_url}page/{page_num}/")
-
-        return urls
-
-    def _fetch_listing_page(self, url: str) -> BeautifulSoup | None:
-        """Fetch and parse a listing page with lazy loading support.
-
-        Args:
-            url: URL to fetch
-
-        Returns:
-            BeautifulSoup object or None if error
-        """
-        try:
-            self.logger.debug(f"Fetching listing page: {url}")
-
-            # Try browser automation for lazy loading first
-            try:
-                if USE_PLAYWRIGHT:
-                    result = asyncio.run(self._fetch_with_browser_playwright(url))
-                    if result is not None:
-                        return result
-                    self.logger.warning("Playwright returned None, falling back to requests")
-                else:
-                    result = self._fetch_with_browser(url)
-                    if result is not None:
-                        return result
-            except Exception as browser_error:
-                self.logger.warning(f"Browser automation failed: {browser_error}, falling back to requests")
-
-            # Fallback to requests with better headers
-            headers = {
-                "User-Agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"),
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
-                "Accept-Encoding": "gzip, deflate",
-                "Connection": "keep-alive",
-                "Upgrade-Insecure-Requests": "1",
-            }
-
-            response = self.get_listing_page(url, headers=headers)
-
-            return BeautifulSoup(response.text, "html.parser")
-
-        except Exception as e:
-            self.logger.error(f"Error fetching listing page {url}: {e}")
-            return None
-
-    def _fetch_with_browser(self, url: str) -> BeautifulSoup | None:
-        """Fetch page using browser automation to handle lazy loading.
-
-        Args:
-            url: URL to fetch
-
-        Returns:
-            BeautifulSoup object or None if error
-        """
-        try:
-            from services.browser_service import BrowserOptions, get_browser_service
-
-            browser_service = get_browser_service()
-            browser_options = BrowserOptions(
-                headless=True,
-                window_size=(1920, 1080),
-                extra_arguments=[
-                    "--disable-web-security",
-                    "--disable-features=VizDisplayCompositor",
-                ],
-            )
-            browser_result = browser_service.create_driver(browser_options)
-
-            self.logger.debug(f"Starting browser automation for {url}")
-            driver = browser_result.driver
-
-            try:
-                driver.get(url)
-                self.logger.debug("Page loaded, starting comprehensive lazy loading")
-
-                # Trigger comprehensive lazy loading
-                self._trigger_comprehensive_lazy_loading(driver)
-
-                # Wait for adoption links and H2 elements to be present
-                self._wait_for_essential_elements(driver)
-
-                # Get page source and parse
-                page_source = driver.page_source
-                self.logger.debug(f"Retrieved page source ({len(page_source)} characters)")
-                return BeautifulSoup(page_source, "html.parser")
-
-            finally:
-                driver.quit()
-
-        except ImportError:
-            self.logger.debug("Selenium not available, falling back to requests")
-            return None
-        except Exception as e:
-            self.logger.warning(f"Browser automation error: {e}")
-            return None
-
-    def _trigger_comprehensive_lazy_loading(self, driver):
-        """Trigger comprehensive lazy loading with progressive scrolling.
-
-        Args:
-            driver: Selenium WebDriver instance
-        """
-        try:
-            # Initial wait for page to settle
-            time.sleep(2)
-
-            # First scroll to bottom to trigger initial lazy loading
-            self.logger.debug("Scrolling to bottom to trigger initial lazy loading")
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(2)
-
-            # Scroll back to top
-            self.logger.debug("Scrolling back to top")
-            driver.execute_script("window.scrollTo(0, 0);")
-            time.sleep(1)
-
-            # Progressive scrolling in smaller increments
-            self.logger.debug("Starting progressive scrolling")
-            total_height = driver.execute_script("return document.body.scrollHeight")
-
-            # Scroll in 300px increments
-            for i in range(0, total_height, 300):
-                driver.execute_script(f"window.scrollTo(0, {i});")
-                time.sleep(0.5)
-
-            # Final scroll to bottom
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(2)
-
-            # Final scroll to top for extraction
-            driver.execute_script("window.scrollTo(0, 0);")
-            time.sleep(1)
-
-            self.logger.debug("Comprehensive lazy loading completed")
-
-        except Exception as e:
-            self.logger.warning(f"Error during lazy loading: {e}")
-
-    def _wait_for_essential_elements(self, driver):
-        """Wait for essential elements to be present on the page.
-
-        Args:
-            driver: Selenium WebDriver instance
-        """
-        try:
-            from selenium.webdriver.common.by import By
-            from selenium.webdriver.support import expected_conditions as EC
-            from selenium.webdriver.support.ui import WebDriverWait
-
-            wait = WebDriverWait(driver, 10)
-
-            # Wait for H2 elements (dog names) to be present
-            try:
-                self.logger.debug("Waiting for H2 elements (dog names)")
-                wait.until(EC.presence_of_element_located((By.TAG_NAME, "h2")))
-                h2_count = len(driver.find_elements(By.TAG_NAME, "h2"))
-                self.logger.debug(f"Found {h2_count} H2 elements")
-            except Exception:
-                self.logger.debug("No H2 elements found within timeout")
-
-            # Wait for adoption links to be present
-            try:
-                self.logger.debug("Waiting for adoption links")
-                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href*="/adoption/"]')))
-                link_count = len(driver.find_elements(By.CSS_SELECTOR, 'a[href*="/adoption/"]'))
-                self.logger.debug(f"Found {link_count} adoption links")
-            except Exception:
-                self.logger.debug("No adoption links found within timeout")
-
-        except Exception as e:
-            self.logger.warning(f"Error waiting for elements: {e}")
-
-    async def _fetch_with_browser_playwright(self, url: str) -> BeautifulSoup | None:
-        """Fetch page using Playwright browser automation to handle lazy loading.
-
-        Args:
-            url: URL to fetch
-
-        Returns:
-            BeautifulSoup object or None if error
-        """
-        try:
-            playwright_service = get_playwright_service()
-            options = PlaywrightOptions(
-                headless=True,
-                viewport_width=1920,
-                viewport_height=1080,
-                timeout=60000,
-                stealth_mode=False,
-            )
-
-            async with playwright_service.get_browser(options) as browser_result:
-                page = browser_result.page
-                self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} for Woof Project scraping")
-
-                self.logger.debug(f"Starting Playwright browser automation for {url}")
-                await page.goto(url, wait_until="domcontentloaded")
-                self.logger.debug("Page loaded, starting comprehensive lazy loading")
-
-                await self._trigger_comprehensive_lazy_loading_playwright(page)
-                await self._wait_for_essential_elements_playwright(page)
-
-                page_source = await page.content()
-                self.logger.debug(f"Retrieved page source ({len(page_source)} characters)")
-                return BeautifulSoup(page_source, "html.parser")
-
-        except Exception as e:
-            self.logger.warning(f"Playwright browser automation error: {e}")
-            return None
-
-    async def _trigger_comprehensive_lazy_loading_playwright(self, page):
-        """Trigger comprehensive lazy loading with progressive scrolling using Playwright.
-
-        Args:
-            page: Playwright Page instance
-        """
-        try:
-            await asyncio.sleep(2)
-
-            self.logger.debug("Scrolling to bottom to trigger initial lazy loading")
-            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await asyncio.sleep(2)
-
-            self.logger.debug("Scrolling back to top")
-            await page.evaluate("window.scrollTo(0, 0)")
-            await asyncio.sleep(1)
-
-            self.logger.debug("Starting progressive scrolling")
-            total_height = await page.evaluate("document.body.scrollHeight")
-
-            for i in range(0, total_height, 300):
-                await page.evaluate(f"window.scrollTo(0, {i})")
-                await asyncio.sleep(0.5)
-
-            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await asyncio.sleep(2)
-
-            await page.evaluate("window.scrollTo(0, 0)")
-            await asyncio.sleep(1)
-
-            self.logger.debug("Comprehensive lazy loading completed")
-
-        except Exception as e:
-            self.logger.warning(f"Error during Playwright lazy loading: {e}")
-
-    async def _wait_for_essential_elements_playwright(self, page):
-        """Wait for essential elements to be present on the page using Playwright.
-
-        Args:
-            page: Playwright Page instance
-        """
-        try:
-            try:
-                self.logger.debug("Waiting for H2 elements (dog names)")
-                await page.wait_for_selector("h2", timeout=10000)
-                h2_count = await page.locator("h2").count()
-                self.logger.debug(f"Found {h2_count} H2 elements")
-            except Exception:
-                self.logger.debug("No H2 elements found within timeout")
-
-            try:
-                self.logger.debug("Waiting for adoption links")
-                await page.wait_for_selector('a[href*="/adoption/"]', timeout=10000)
-                link_count = await page.locator('a[href*="/adoption/"]').count()
-                self.logger.debug(f"Found {link_count} adoption links")
-            except Exception:
-                self.logger.debug("No adoption links found within timeout")
-
-        except Exception as e:
-            self.logger.warning(f"Error waiting for elements (Playwright): {e}")
-
-    def _extract_dogs_from_page(self, soup: BeautifulSoup) -> list[dict[str, str]]:
-        """Extract available dogs from a single listing page.
-
-        Args:
-            soup: BeautifulSoup object of the listing page
-
-        Returns:
-            List of dog information dictionaries
-        """
-        # Try the new method first, fall back to old method if needed
-        try:
-            return self._extract_dogs_from_page_new_method(soup)
-        except Exception as e:
-            self.logger.warning(f"New extraction method failed, falling back to old method: {e}")
-            return self._extract_dogs_from_page_old_method(soup)
-
-    def _extract_dogs_from_page_new_method(self, soup: BeautifulSoup) -> list[dict[str, str]]:
-        """Extract dogs using robust container-first approach.
-
-        Instead of processing H2 tags linearly, this method finds containers
-        that group together each dog's information (status, name, link) and
-        processes each container independently.
-
-        Args:
-            soup: BeautifulSoup object of the listing page
-
-        Returns:
-            List of dog information dictionaries
-        """
-        dogs = []
-
-        self.logger.debug("Starting robust container-first extraction")
-
-        # Try multiple container strategies
-        dogs_found = self._extract_dogs_by_widget_containers(soup)
-        if dogs_found:
-            dogs.extend(dogs_found)
-        else:
-            # Fallback to section-based extraction
-            dogs.extend(self._extract_dogs_by_content_sections(soup))
-
-        # World-class logging: Extraction results handled by centralized system
+        dogs: list[dict[str, str]] = []
+        seen: set[str] = set()
+        url: str | None = self.listing_url
+        while url and url not in seen:
+            if seen:
+                self.respect_rate_limit()
+            seen.add(url)
+            soup = BeautifulSoup(self.get_listing_page(url, headers={"User-Agent": USER_AGENT}).text, "html.parser")
+            page = [dog for dog in map(self._available_dog, soup.select("article.type-adoption")) if dog]
+            dogs.extend(page)
+            url = self._next_page_url(soup, url) if page else None
         return dogs
 
-    def _extract_dogs_by_widget_containers(self, soup: BeautifulSoup) -> list[dict[str, str]]:
-        """Extract dogs by finding elementor widget containers."""
-        dogs = []
+    def _available_dog(self, card: Tag) -> dict[str, str] | None:
+        """The dog on a listing card, or None if it is adopted or reserved."""
+        headings = [h2.get_text(" ", strip=True) for h2 in card.find_all("h2")]
+        link = card.find("a", href=DOG_PAGE)
+        if not headings or link is None:
+            self.logger.warning(f"Listing card without a name or dog link: {card.get('id')}")
+            return None
 
-        # Look for elementor widgets that contain dog information
-        widget_containers = soup.find_all("div", class_=lambda x: x and any("elementor-widget" in cls for cls in x))
+        *above, name = headings
+        if any(heading.lower() in STATUS_BADGES for heading in above):
+            return None
+        if above:
+            # A heading the site hasn't used before: keep the dog rather than hide it
+            self.logger.warning(f"Unknown heading {above!r} above {name}: listed as available")
+        return {"name": name, "url": urljoin(self.base_url, str(link["href"]))}
 
-        self.logger.debug(f"Found {len(widget_containers)} widget containers")
-
-        for widget in widget_containers:
-            # Ensure widget is a Tag object before calling find_all
-            if not isinstance(widget, Tag):
-                continue
-
-            # Check if this widget contains adoption links and dog names
-            adoption_links = widget.find_all(
-                "a",
-                href=lambda x: x and "/adoption/" in x and self._is_valid_dog_url(x),
-            )
-            h2_tags = widget.find_all("h2")
-
-            if not adoption_links or not h2_tags:
-                continue
-
-            # Process each adoption link in this widget
-            for link in adoption_links:
-                if not isinstance(link, Tag):
-                    continue
-                href = link.get("href", "")
-                if not href or "/adoption/" not in href:
-                    continue
-
-                # Find the corresponding dog name H2 near this link
-                dog_name = self._find_dog_name_near_link(link, widget)
-                if not dog_name:
-                    continue
-
-                # Check if this dog is available (no ADOPTED/RESERVED in this widget)
-                if self._is_dog_available_in_container(widget, dog_name):
-                    # Convert relative URL to absolute
-                    if href.startswith("/"):
-                        href = f"https://woofproject.eu{href}"
-                    elif not href.startswith("http"):
-                        href = f"https://woofproject.eu/{href}"
-
-                    dogs.append({"name": dog_name, "url": href})
-                    self.logger.debug(f"Found available dog in widget: {dog_name}")
-                else:
-                    self.logger.debug(f"Skipping unavailable dog in widget: {dog_name}")
-
-        return dogs
-
-    def _extract_dogs_by_content_sections(self, soup: BeautifulSoup) -> list[dict[str, str]]:
-        """Fallback method: extract dogs by analyzing content sections."""
-        dogs = []
-
-        self.logger.debug("Using fallback content section extraction")
-
-        # Find all adoption links first
-        adoption_links = soup.find_all("a", href=lambda x: x and "/adoption/" in x and self._is_valid_dog_url(x))
-
-        for link in adoption_links:
-            href = link.get("href", "")
-
-            # Find the parent container that might contain this dog's full info
-            container = self._find_dog_container_for_link(link)
-            if not container:
-                continue
-
-            # Find dog name in this container
-            dog_name = self._find_dog_name_in_container(container)
-            if not dog_name or not self._looks_like_dog_name(dog_name):
-                continue
-
-            # Check availability within this container
-            if self._is_dog_available_in_container(container, dog_name):
-                # Convert relative URL to absolute
-                if href.startswith("/"):
-                    href = f"https://woofproject.eu{href}"
-                elif not href.startswith("http"):
-                    href = f"https://woofproject.eu/{href}"
-
-                dogs.append({"name": dog_name, "url": href})
-                self.logger.debug(f"Found available dog in section: {dog_name}")
-            else:
-                self.logger.debug(f"Skipping unavailable dog in section: {dog_name}")
-
-        return dogs
-
-    def _find_dog_name_near_link(self, link, container):
-        """Find dog name H2 near an adoption link within a container."""
-        # Look for H2 tags in the same container
-        h2_tags = container.find_all("h2")
-
-        for h2 in h2_tags:
-            text = h2.get_text(strip=True)
-            if self._looks_like_dog_name(text) and text not in ["ADOPTED", "RESERVED"]:
-                return text
-
-        return None
-
-    def _find_dog_container_for_link(self, link):
-        """Find a reasonable container that groups a dog's information."""
-        current = link
-
-        # Walk up the DOM to find a container with both H2 and the link
-        for level in range(8):
-            current = current.parent
-            if not current:
-                break
-
-            # Check if this container has both H2s and our link
-            h2_tags = current.find_all("h2")
-            if len(h2_tags) >= 1:
-                # This container has H2s, it might be our dog container
-                return current
-
-        return None
-
-    def _find_dog_name_in_container(self, container):
-        """Find the dog name within a container."""
-        h2_tags = container.find_all("h2")
-
-        for h2 in h2_tags:
-            text = h2.get_text(strip=True)
-            if self._looks_like_dog_name(text) and text not in ["ADOPTED", "RESERVED"]:
-                return text
-
-        return None
-
-    def _is_dog_available_in_container(self, container, dog_name):
-        """Check if a dog is available by looking for ADOPTED/RESERVED in its container."""
-        h2_tags = container.find_all("h2")
-
-        # Look for ADOPTED/RESERVED status tags in this container
-        status_tags = []
-        dog_name_positions = []
-
-        for i, h2 in enumerate(h2_tags):
-            text = h2.get_text(strip=True)
-            if text in ["ADOPTED", "RESERVED"]:
-                status_tags.append((i, text))
-            elif text == dog_name:
-                dog_name_positions.append(i)
-
-        # If no status tags found, dog is available
-        if not status_tags:
-            return True
-
-        # If no dog name positions found, assume available (shouldn't happen)
-        if not dog_name_positions:
-            return True
-
-        # Check if any status tag is immediately before our dog name
-        for dog_pos in dog_name_positions:
-            for status_pos, status_text in status_tags:
-                if status_pos == dog_pos - 1:  # Status immediately before name
-                    self.logger.debug(f"Found {status_text} immediately before {dog_name}")
-                    return False
-
-        # Additional check: if there are many status tags in this container,
-        # be more conservative and check proximity
-        if len(status_tags) > 2:
-            for dog_pos in dog_name_positions:
-                for status_pos, status_text in status_tags:
-                    if abs(status_pos - dog_pos) <= 2:  # Status within 2 positions
-                        self.logger.debug(f"Found {status_text} near {dog_name} (positions {status_pos}, {dog_pos})")
-                        return False
-
-        return True
-
-    def _extract_dogs_from_page_old_method(self, soup: BeautifulSoup) -> list[dict[str, str]]:
-        """Original extraction method as fallback.
-
-        Args:
-            soup: BeautifulSoup object of the listing page
-
-        Returns:
-            List of dog information dictionaries
-        """
-        dogs = []
-
-        # Find all fusion-text elements (each contains one dog)
-        dog_elements = soup.find_all("div", class_="fusion-text")
-
-        self.logger.debug(f"Found {len(dog_elements)} potential dog elements")
-
-        for element in dog_elements:
-            # Check if this dog is available (not adopted/reserved)
-            if self._is_available_dog(element):
-                # Extract dog info
-                dog_info = self._extract_dog_info(element)
-                if dog_info:
-                    dogs.append(dog_info)
-                    self.logger.debug(f"Found available dog: {dog_info['name']}")
-                else:
-                    self.logger.debug("Could not extract info from available dog element")
-            else:
-                # Log skipped dogs for debugging
-                h4_tag = element.find("h4")
-                if h4_tag:
-                    link_elem = h4_tag.find("a")
-                    name = link_elem.get_text(strip=True) if link_elem else "Unknown"
-                    self.logger.debug(f"Skipping unavailable dog: {name}")
-
-        return dogs
+    def _next_page_url(self, soup: BeautifulSoup, page_url: str) -> str | None:
+        """The link after the current page in the listing's pagination, if any."""
+        current = soup.select_one("nav.elementor-pagination .current")
+        next_link = current.find_next_sibling("a", class_="page-numbers") if current else None
+        return urljoin(page_url, str(next_link["href"])) if next_link else None
 
     def scrape_animal_details(self, url: str) -> dict[str, Any] | None:
         """Scrape detailed information for a single dog with NULL prevention.
@@ -995,7 +345,7 @@ class WoofProjectScraper(BaseScraper):
             response = requests.get(
                 url,
                 timeout=self.timeout,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"},
+                headers={"User-Agent": USER_AGENT},
             )
             response.raise_for_status()
 
@@ -1585,104 +935,3 @@ class WoofProjectScraper(BaseScraper):
             return False
 
         return True
-
-    def _find_dog_url_near_h2(self, h2_element: Tag, dog_name: str) -> str | None:
-        """Find the adoption URL for a dog near its H2 element.
-
-        The structure on woofproject.eu is:
-        - H2 is in an elementor-widget-heading
-        - Image/link is in a sibling elementor-widget-image
-
-        Args:
-            h2_element: The H2 element containing the dog name
-            dog_name: The dog name (for logging)
-
-        Returns:
-            Full adoption URL or None if not found
-        """
-        # First try: Navigate up to find the widget level (for live site)
-        current = h2_element
-
-        # Go up to the widget level (usually 2-3 levels up)
-        for level in range(5):
-            current = current.parent
-            if not current:
-                break
-
-            # Check if this looks like a widget container
-            classes = current.get("class", [])
-            if "elementor-widget" in classes:
-                # Found widget level, now look for sibling widgets with links
-                if current.parent:
-                    siblings = current.parent.find_all(recursive=False)
-
-                    for sibling in siblings:
-                        if sibling == current:
-                            continue
-
-                        # Look for adoption links in this sibling
-                        links = sibling.find_all("a", href=True)
-                        for link in links:
-                            href = link.get("href")
-                            if href and "/adoption/" in href:
-                                # Check if this link contains the dog name
-                                dog_name_lower = dog_name.lower().replace(" ", "-").replace("(", "").replace(")", "")
-                                if dog_name_lower in href.lower():
-                                    # Convert to absolute URL
-                                    if href.startswith("/"):
-                                        return self.base_url + href
-                                    elif href.startswith("http"):
-                                        return href
-                                    else:
-                                        return urljoin(self.base_url, href)
-
-                # Also try looking at this level for any adoption links
-                links = current.find_all("a", href=True)
-                for link in links:
-                    href = link.get("href")
-                    if href and "/adoption/" in href:
-                        dog_name_lower = dog_name.lower().replace(" ", "-").replace("(", "").replace(")", "")
-                        if dog_name_lower in href.lower():
-                            if href.startswith("/"):
-                                return self.base_url + href
-                            elif href.startswith("http"):
-                                return href
-                            else:
-                                return urljoin(self.base_url, href)
-
-        # Second try: Fallback to simple sibling traversal (for tests and simpler structures)
-        current = h2_element
-        for _ in range(10):  # Look back up to 10 elements
-            current = current.previous_sibling
-            if not current:
-                break
-
-            # Skip text nodes and only process Tag elements
-            if hasattr(current, "name") and current.name:
-                # Check if this element itself is an adoption link
-                if current.name == "a" and current.get("href"):
-                    href = current.get("href")
-                    if href and "/adoption/" in href:
-                        # Convert to absolute URL
-                        if href.startswith("/"):
-                            return self.base_url + href
-                        elif href.startswith("http"):
-                            return href
-                        else:
-                            return urljoin(self.base_url, href)
-
-                # Also look for adoption links inside this element
-                link = current.find("a", href=True)
-                if link:
-                    href = link.get("href")
-                    if href and "/adoption/" in href:
-                        # Convert to absolute URL
-                        if href.startswith("/"):
-                            return self.base_url + href
-                        elif href.startswith("http"):
-                            return href
-                        else:
-                            return urljoin(self.base_url, href)
-
-        self.logger.debug(f"Could not find adoption URL for {dog_name}")
-        return None

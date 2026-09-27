@@ -397,7 +397,7 @@ def update_stale_data_detection(self) -> None:
 | `dogstrust`                 | UK/Ireland | Playwright | JavaScript-rendered, pagination |
 | `manytearsrescue`           | UK         | Playwright | High volume, batch processing   |
 | `rean`                      | Romania/UK | Playwright | Multi-page, lazy-loaded images  |
-| `woof_project`              | UK         | Playwright | Elementor lazy loading          |
+| `woof_project`              | UK         | HTTP       | Available dogs listed first     |
 | `misis_rescue`              | Montenegro | Playwright | Pagination, scrolling           |
 | `daisy_family_rescue`       | Greece     | Playwright | Two-phase scraping              |
 | `tierschutzverein_europa`   | Germany    | HTTP       | Translation layer               |
