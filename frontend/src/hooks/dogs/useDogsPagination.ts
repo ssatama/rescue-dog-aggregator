@@ -57,17 +57,18 @@ export default function useDogsPagination({
   const rawUrlPage = parseInt(searchParams.get("page") || "1", 10);
   const urlPage = Number.isNaN(rawUrlPage) ? 1 : rawUrlPage;
 
-  const [dogs, setDogs] = useState<Dog[]>(() => {
-    if (typeof window === 'undefined') return initialDogs;
-
+  // initialDogs are the unfiltered first page. A URL with filters or a later
+  // page starts empty and loading instead, deciding from the URL alone so the
+  // server and the browser render the same skeleton: no hydration mismatch,
+  // and no "No dogs match" before the fetch has answered (#529).
+  const [deepLink] = useState(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete('page');
     params.delete('scroll');
-    const hasFilters = params.toString().length > 0;
-
-    return (urlPage === 1 && !hasFilters) ? initialDogs : [];
+    return urlPage !== 1 || params.toString().length > 0;
   });
-  const [loading, setLoading] = useState(false);
+  const [dogs, setDogs] = useState<Dog[]>(() => (deepLink ? [] : initialDogs));
+  const [loading, setLoading] = useState(deepLink);
   const [loadingMore, setLoadingMore] = useState(false);
   const [isFilterTransition, setIsFilterTransition] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,6 +114,9 @@ export default function useDogsPagination({
         countsKey === countsKeyRef.current
           ? null
           : getFilterCounts(baseParams, { signal: abortController.signal });
+      // Awaited below, after the pages. If the pages fail or are aborted first,
+      // nothing awaits it, and its rejection must not go unhandled.
+      countsPromise?.catch(() => {});
 
       const requests = [];
       for (let p = 1; p <= targetPage; p++) {
