@@ -1,9 +1,13 @@
 import posthog from "posthog-js";
 import {
   trackAdoptionLinkClicked,
+  trackAppInstallClicked,
+  trackAppInstalled,
   trackDogViewed,
   trackFiltersApplied,
   trackGalleryPhotoViewed,
+  trackInstallNudgeDismissed,
+  trackInstallNudgeShown,
   trackLocationSet,
   trackSearchPerformed,
   trackSortChanged,
@@ -171,6 +175,20 @@ describe("analytics", () => {
         { source: "geo", country: "GB", only_adoptable: false },
         undefined,
       ],
+    ]);
+  });
+
+  it("sends install events with the surface and install method", () => {
+    trackInstallNudgeShown("ios");
+    trackAppInstallClicked("nudge", "ios");
+    trackInstallNudgeDismissed("prompt");
+    trackAppInstalled();
+
+    expect(mockPosthog.capture.mock.calls).toEqual([
+      ["install_nudge_shown", { method: "ios" }, undefined],
+      ["app_install_clicked", { surface: "nudge", method: "ios" }, undefined],
+      ["install_nudge_dismissed", { method: "prompt" }, undefined],
+      ["app_installed", {}, undefined],
     ]);
   });
 

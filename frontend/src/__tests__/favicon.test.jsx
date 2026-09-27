@@ -20,8 +20,10 @@ describe("Favicon Integration", () => {
       expect(metadata.icons.apple).toBe("/apple-touch-icon.png");
     });
 
-    test("should include manifest in metadata", () => {
-      expect(metadata.manifest).toBe("/site.webmanifest");
+    test("should set up the iOS home screen app", () => {
+      expect(metadata.appleWebApp).toEqual(
+        expect.objectContaining({ capable: true, title: "Rescue Dogs" }),
+      );
     });
 
     test("should include PNG favicon variants in metadata", () => {
@@ -47,12 +49,6 @@ describe("Favicon Integration", () => {
       expect(fs.existsSync(appleTouchIconPath)).toBe(true);
     });
 
-    test.skip("site.webmanifest should exist in public directory", () => {
-      // Skipping: Requires filesystem access
-      const manifestPath = path.join(publicDir, "site.webmanifest");
-      expect(fs.existsSync(manifestPath)).toBe(true);
-    });
-
     test.skip("android chrome icons should exist in public directory", () => {
       // Skipping: Requires filesystem access
       const androidIcons = [
@@ -64,25 +60,6 @@ describe("Favicon Integration", () => {
         const iconPath = path.join(publicDir, icon);
         expect(fs.existsSync(iconPath)).toBe(true);
       });
-    });
-  });
-
-  describe("PWA Manifest Content", () => {
-    test.skip("manifest should contain correct app metadata", () => {
-      // Skipping: Requires filesystem access
-      const manifestPath = path.join(
-        process.cwd(),
-        "public",
-        "site.webmanifest",
-      );
-      const manifestContent = fs.readFileSync(manifestPath, "utf8");
-      const manifest = JSON.parse(manifestContent);
-
-      expect(manifest.name).toBe("Rescue Dog Aggregator");
-      expect(manifest.short_name).toBe("RescueDogs");
-      expect(manifest.icons).toHaveLength(2);
-      expect(manifest.icons[0].src).toBe("/android-chrome-192x192.png");
-      expect(manifest.icons[1].src).toBe("/android-chrome-512x512.png");
     });
   });
 });

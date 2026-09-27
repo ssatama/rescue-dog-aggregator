@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -8,6 +8,7 @@ import { Analytics, SpeedInsights } from "@/components/analytics";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
+import InstallNudge from "@/components/pwa/InstallNudge";
 import SentryInitializer from "@/components/SentryInitializer";
 import { generateSiteGraph } from "@/utils/schema";
 
@@ -54,7 +55,12 @@ export const metadata: Metadata = {
       },
     ],
   },
-  manifest: "/site.webmanifest",
+  // Installed as an app on iOS; the manifest is app/manifest.ts
+  appleWebApp: {
+    capable: true,
+    title: "Rescue Dogs",
+    statusBarStyle: "default",
+  },
   openGraph: {
     title: "Rescue Dog Aggregator - Find Your Perfect Rescue Dog",
     description:
@@ -90,6 +96,16 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Browser chrome and the installed app's title bar match the page
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAF9F6" },
+    { media: "(prefers-color-scheme: dark)", color: "#131211" },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -110,6 +126,13 @@ export default function RootLayout({
             __html: `(function(){if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister()})})}})()`,
           }}
         />
+        {/* Keeps Chrome's install prompt for our own button (lib/installApp.ts).
+            Inline so it runs before hydration, when the event often fires. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__installPrompt=e})`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -128,6 +151,7 @@ export default function RootLayout({
               >
                 {children}
                 <MobileBottomNavWrapper />
+                <InstallNudge />
               </ErrorBoundary>
               <Analytics />
               <SpeedInsights />

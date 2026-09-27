@@ -1,6 +1,7 @@
 import posthog, { type CaptureOptions } from "posthog-js";
 import { getAgeCategory, sizeCategory } from "@/utils/dogHelpers";
 import { reportError } from "@/utils/logger";
+import type { InstallMethod } from "@/lib/installApp";
 
 // Product analytics events for PostHog. Every posthog.capture() goes through
 // this file so the event names and their properties live in one place.
@@ -242,4 +243,29 @@ export function trackOrganizationWebsiteClicked(
     },
     OUTBOUND,
   );
+}
+
+// Installing the site as an app (home screen, Dock). `method` is how this
+// browser installs: its own dialog (`prompt`) or our steps (`ios`,
+// `mac-safari`). `app_installed` only fires where the browser reports it
+// (Chrome, Edge); installed launches carry `display_mode: standalone`.
+export type InstallSurface = "nudge" | "menu" | "footer";
+
+export function trackAppInstallClicked(
+  surface: InstallSurface,
+  method: InstallMethod,
+): void {
+  capture("app_install_clicked", { surface, method });
+}
+
+export function trackAppInstalled(): void {
+  capture("app_installed", {});
+}
+
+export function trackInstallNudgeShown(method: InstallMethod): void {
+  capture("install_nudge_shown", { method });
+}
+
+export function trackInstallNudgeDismissed(method: InstallMethod): void {
+  capture("install_nudge_dismissed", { method });
 }

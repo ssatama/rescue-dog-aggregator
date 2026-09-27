@@ -33,6 +33,7 @@ import {
   trackDogViewed,
   trackGalleryPhotoViewed,
 } from "@/lib/analytics";
+import { recordDogView } from "@/lib/installNudge";
 import {
   PersonalityTraits,
   EnergyTrainability,
@@ -111,6 +112,7 @@ export default function DogDetailClient({
           }
           if (data?.id) {
             trackDogViewed(data as Dog, "detail_page");
+            recordDogView();
             // The first photo is on screen at load; DogGallery reports the rest
             const photos = getGallery(data as Dog).length;
             if (photos > 0) trackGalleryPhotoViewed(data.id, 0, photos);
@@ -192,6 +194,7 @@ export default function DogDetailClient({
         );
       }
       trackDogViewed(initialDog, "detail_page");
+      recordDogView();
       const photos = getGallery(initialDog).length;
       if (photos > 0) trackGalleryPhotoViewed(initialDog.id, 0, photos);
       return;

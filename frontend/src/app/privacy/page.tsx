@@ -72,6 +72,11 @@ export default function PrivacyPage(): React.JSX.Element {
                   Your list stays on your device. Our analytics count that a
                   dog was saved, never who saved it.
                 </p>
+                <p className="mt-2 text-sm text-subtle">
+                  Your browser also counts your visits and the dogs you open,
+                  so we can suggest adding the site to your home screen at a
+                  sensible moment. Those counts never leave your device.
+                </p>
               </div>
 
               <div className="rounded-xl border border-line bg-surface p-5 sm:p-6">
