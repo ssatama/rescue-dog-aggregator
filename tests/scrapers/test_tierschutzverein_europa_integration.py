@@ -43,6 +43,7 @@ class TestTranslationFunctions:
             ("05.2025 (3 Monate alt)", "3 months old"),
             ("07.2026 (8 Wochen alt)", "8 weeks old"),
             ("08.2026 (1 Woche alt)", "1 week old"),
+            ("09.2026 (5 Tage alt)", "5 days old"),
         ]
 
         for text, expected in test_cases:
@@ -205,6 +206,8 @@ class TestTranslationFunctions:
             ("aktuell ca 38cm , im Wachstum", 36, None),
             ("ca. 50 cm, noch nicht ausgewachsen", 36, None),
             ("ca. 40 cm, noch nicht ganz ausgewachsen", 8, None),
+            ("ca. 30 cm, noch nicht vollständig ausgewachsen", 5, None),
+            ("ca. 30 cm, Endgröße unbekannt", 4, None),
             ("ca. 20 cm", 0, None),  # "8 Wochen alt"
             ("ca. 35 cm, wächst noch (mittel bis groß)", 36, None),
             ("35 cm, 6 kg", 4, None),
@@ -223,6 +226,8 @@ class TestTranslationFunctions:
             ("aktuell ca. 30 cm, ausgewachsen ca. 50 cm", 5, "Medium"),
             # One year old counts as grown; no stated age is not a puppy
             ("aktuell 45 cm, 20 kg", 72, "Medium"),
+            ("mittelgross", 36, "Medium"),
+            ("gross bleibend, ca. 25 cm", 4, "Large"),
             ("klein bis mittelgroß", 36, None),
             ("ca. 50 cm", 12, "Medium"),
             ("ca. 50 cm", None, "Medium"),
@@ -444,6 +449,16 @@ class TestScraperCoreFunctions:
         assert rex["age_text"] is None
         assert lia["age_text"] is None
         scraper.logger.warning.assert_called_once_with("Untranslated age for Rex: 'ca. 2019'")
+
+    @pytest.mark.unit
+    def test_a_failed_translation_never_keeps_the_german_age(self, scraper):
+        dog = {"name": "Rex", "breed": "Mischling", "age_text": "03.2025 (10 Monate alt)"}
+
+        with patch("scrapers.tierschutzverein_europa.dogs_scraper.translate_breed", side_effect=ValueError("boom")):
+            (rex,) = scraper._translate_and_normalize_dogs([dog])
+
+        assert rex["age_text"] is None
+        assert rex["properties"]["translation_error"] == "boom"
 
     @pytest.mark.unit
     def test_process_animals_parallel_batching(self, scraper):

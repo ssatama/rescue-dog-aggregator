@@ -426,6 +426,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 self.logger.error(f"Translation failed for {dog.get('name', 'unknown')}: {e}")
                 # Return original with error flag
                 dog_with_error = dog.copy()
+                dog_with_error["age_text"] = None  # never the German text (#563)
                 if "properties" not in dog_with_error:
                     dog_with_error["properties"] = {}
                 dog_with_error["properties"]["translation_error"] = str(e)
