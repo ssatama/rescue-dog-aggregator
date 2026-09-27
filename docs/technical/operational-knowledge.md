@@ -256,10 +256,12 @@ reconcile` against production text before trusting a resolver change.
 **Woof Project lists available dogs first, then the adoption archive**
 (pages 2-5 on 2026-09-27). Since #565 the listing is plain HTML: an adopted or
 reserved dog has a status heading above its name, in any case and sometimes in
-Dutch ("GEADOPTEERD"), and the next page is read only while a page ends in an
-available dog. The archive has badge-less old dogs (Billy on page 3), so
-reading every page would bring them back. Some dog pages have a bare post id
-as their slug (`/adoption/9270/` is Amlet), so `wp-9270` is a real id.
+Dutch ("GEADOPTEERD"), and the next page is read only while a page lists an
+available dog (so page 2, which has none, is the last read). The archive has
+badge-less old dogs (Billy on page 3), so reading every page would bring them
+back. Some dog pages have a bare post id as their slug (`/adoption/9270/` is
+Amlet), so `wp-9270` is a real id; if the rescue gives the post a name slug,
+the dog is re-created under it and the old row goes stale.
 
 **Many Tears' `dogs_found` swings with churn, not lost pages.** On 2026-09-26
 the listing was 7 pages of 12 (79 dogs, that day's count), and pages 1 and 7

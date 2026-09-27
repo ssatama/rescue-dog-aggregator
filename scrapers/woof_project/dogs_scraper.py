@@ -127,40 +127,46 @@ class WoofProjectScraper(BaseScraper):
         """Available dogs from the listing, read as plain HTML (#565).
 
         The listing puts the available dogs first and the adoption archive
-        after them, so the next page is read only while a page ends in an
-        available dog. A page that fails to load raises ListingIncompleteError:
-        the dogs on it would go stale.
+        after them, so the next page is read only while a page lists an
+        available dog: page 2 today, which has none. The archive holds old
+        dogs without a status (Billy, page 3), so reading every page would
+        bring them back. A page that fails to load raises
+        ListingIncompleteError: the dogs on it would go stale.
         """
         dogs: list[dict[str, str]] = []
+        seen: set[str] = set()
         url: str | None = self.listing_url
-        while url:
+        while url and url not in seen:
+            if seen:
+                self.respect_rate_limit()
+            seen.add(url)
             soup = BeautifulSoup(self.get_listing_page(url, headers={"User-Agent": USER_AGENT}).text, "html.parser")
-            page = [self._available_dog(card) for card in soup.select("article.type-adoption")]
-            dogs.extend(dog for dog in page if dog)
-            url = self._next_page_url(soup) if page and page[-1] else None
+            page = [dog for dog in map(self._available_dog, soup.select("article.type-adoption")) if dog]
+            dogs.extend(page)
+            url = self._next_page_url(soup, url) if page else None
         return dogs
 
     def _available_dog(self, card: Tag) -> dict[str, str] | None:
-        """The dog on a listing card, or None if a status heading sits above its name."""
+        """The dog on a listing card, or None if it is adopted or reserved."""
         headings = [h2.get_text(" ", strip=True) for h2 in card.find_all("h2")]
         link = card.find("a", href=DOG_PAGE)
         if not headings or link is None:
             self.logger.warning(f"Listing card without a name or dog link: {card.get('id')}")
             return None
 
-        *badges, name = headings
-        for badge in badges:
-            if badge.lower() not in STATUS_BADGES:
-                self.logger.warning(f"Unknown status {badge!r} above {name}: not listed as available")
-        if badges:
+        *above, name = headings
+        if any(heading.lower() in STATUS_BADGES for heading in above):
             return None
+        if above:
+            # A heading the site hasn't used before: keep the dog rather than hide it
+            self.logger.warning(f"Unknown heading {above!r} above {name}: listed as available")
         return {"name": name, "url": urljoin(self.base_url, str(link["href"]))}
 
-    def _next_page_url(self, soup: BeautifulSoup) -> str | None:
+    def _next_page_url(self, soup: BeautifulSoup, page_url: str) -> str | None:
         """The link after the current page in the listing's pagination, if any."""
         current = soup.select_one("nav.elementor-pagination .current")
         next_link = current.find_next_sibling("a", class_="page-numbers") if current else None
-        return str(next_link["href"]) if next_link else None
+        return urljoin(page_url, str(next_link["href"])) if next_link else None
 
     def scrape_animal_details(self, url: str) -> dict[str, Any] | None:
         """Scrape detailed information for a single dog with NULL prevention.

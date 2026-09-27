@@ -326,23 +326,25 @@ children").
 
 - The listing is plain HTML: one `<article class="type-adoption">` card per
   dog, its name the last `<h2>`, and a status `<h2>` above the name when the
-  dog is adopted or reserved (any case; "GEADOPTEERD" in Dutch). An unknown
-  status is logged and the dog left out. The Selenium and Playwright listing
-  code (a fresh browser per page, 300px scroll steps, fixed sleeps, page 1
-  loaded twice) is gone, and so is the browser fallback: plain HTML has every
-  card.
+  dog is adopted or reserved (any case; "GEADOPTEERD" in Dutch). Any other
+  heading above the name is logged and the dog kept: hiding an available dog
+  is the worse error. The Selenium and Playwright listing code (a fresh
+  browser per page, 300px scroll steps, fixed sleeps, page 1 loaded twice) is
+  gone, and so is the browser fallback: plain HTML has every card.
 - Available dogs come first, then the archive (pages 2-5, 2026-09-27), so the
-  next page is read only while a page ends in an available dog. The archive
-  holds a badge-less 2023 dog (Billy, page 3), so following every page would
-  bring old dogs back.
+  next page is read only while a page lists an available dog: pages 1 and 2
+  today, with the org's rate limit between them and each page read once. The
+  archive holds a badge-less 2023 dog (Billy, page 3), so following every
+  page would bring old dogs back.
 - Two production errors fixed: **Arean** says "GEADOPTEERD" but was live as
   available (the old check wanted English words right above the name), and
   **Amlet** was never scraped because his page is `/adoption/9270/` and the old
   URL check rejected numeric slugs. Today's production ids otherwise match
   (13 of 14; Arean goes stale, Amlet is added as `wp-9270`).
-- Runtime: the listing takes 3 s live. A local run took 16.6 s in all,
-  including Amlet's detail page, photo upload and profile (was 169 s on
-  average, 241 s of `data_collection` in the latest run).
+- Runtime: the listing takes 9 s live (two pages and the 3 s rate limit). A
+  local run of the first version (page 1 only) took 16.6 s in all, including
+  Amlet's detail page, photo upload and profile (was 169 s on average, 241 s
+  of `data_collection` in the latest run).
 
 ## Gotchas
 

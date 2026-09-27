@@ -303,8 +303,9 @@ class TestWoofProjectListing:
     def _serve(pages):
         return patch("scrapers.base_scraper.requests.get", side_effect=lambda url, **kwargs: Mock(text=pages[url]))
 
-    def test_the_saved_first_page(self, scraper):
-        with self._serve({ADOPTION: (LISTINGS / "woof_project_page1.html").read_text()}) as get:
+    def test_the_saved_listing(self, scraper, stub_clock):
+        pages = {ADOPTION: (LISTINGS / "woof_project_page1.html").read_text(), f"{ADOPTION}page/2/": (LISTINGS / "woof_project_page2.html").read_text()}
+        with self._serve(pages) as get:
             dogs = scraper.get_animal_list()
 
         # Arean is "GEADOPTEERD"; Amlet's page is /adoption/9270/, a bare post id
@@ -325,32 +326,69 @@ class TestWoofProjectListing:
             "wp-willow-2",
         ]
         assert {"name": "AMLET", "url": f"{ADOPTION}9270/"} in dogs
-        get.assert_called_once()  # page 1 ends in the archive, so page 2 isn't read
+        # Page 2 is all archive, so page 3 (with badge-less Billy) isn't read
+        assert [call.args[0] for call in get.call_args_list] == [ADOPTION, f"{ADOPTION}page/2/"]
+        assert stub_clock.calls == [scraper.rate_limit_delay]
 
     def test_title_case_badges_mark_the_archive_on_page_4(self, scraper):
         soup = BeautifulSoup((LISTINGS / "woof_project_page4.html").read_text(), "html.parser")
 
         assert [scraper._available_dog(card) for card in soup.select("article.type-adoption")] == [None] * 99
 
-    def test_a_page_ending_in_an_available_dog_leads_to_the_next(self, scraper):
+    def test_reads_on_while_a_page_lists_an_available_dog(self, scraper, stub_clock):
         pages = {
-            ADOPTION: _page([_card("tara", "TARA"), _card("skip", "SKIP")], current=1, last=3),
-            f"{ADOPTION}page/2/": _page([_card("siri", "SIRI"), _card("suvi", "SUVI", badge="ADOPTED")], current=2, last=3),
+            ADOPTION: _page([_card("tara", "TARA"), _card("suvi", "SUVI", badge="Reserved")], current=1, last=3),
+            f"{ADOPTION}page/2/": _page([_card("siri", "SIRI"), _card("mia", "MIA", badge="ADOPTED")], current=2, last=3),
+            f"{ADOPTION}page/3/": _page([_card("mia", "MIA", badge="ADOPTED")], current=3, last=3),
         }
         with self._serve(pages) as get:
             dogs = scraper.get_animal_list()
 
-        assert [dog["name"] for dog in dogs] == ["TARA", "SKIP", "SIRI"]
-        assert get.call_count == 2
+        assert [dog["name"] for dog in dogs] == ["TARA", "SIRI"]
+        assert get.call_count == 3
 
     def test_the_last_page_ends_the_listing(self, scraper):
         with self._serve({ADOPTION: _page([_card("tara", "TARA")], current=1, last=1)}):
             assert [dog["name"] for dog in scraper.get_animal_list()] == ["TARA"]
 
-    def test_an_unknown_badge_is_logged_and_the_dog_left_out(self, scraper):
-        card = BeautifulSoup(_card("nala", "NALA", badge="ON HOLD"), "html.parser").article
+    def test_a_page_linking_to_itself_is_read_once(self, scraper, stub_clock):
+        # A cached page 2 that serves page 1 again
+        page_1 = _page([_card("tara", "TARA")], current=1, last=2)
+        with self._serve({ADOPTION: page_1, f"{ADOPTION}page/2/": page_1}) as get:
+            scraper.get_animal_list()
+
+        assert get.call_count == 2
+
+    def test_a_relative_pagination_link(self, scraper, stub_clock):
+        pages = {ADOPTION: _page([_card("tara", "TARA")], current=1, last=2).replace(f"{ADOPTION}page/2/", "/adoption/page/2/"), f"{ADOPTION}page/2/": _page([], current=2, last=2)}
+        with self._serve(pages) as get:
+            scraper.get_animal_list()
+
+        assert get.call_args_list[1].args[0] == f"{ADOPTION}page/2/"
+
+    def test_an_unknown_heading_is_logged_and_the_dog_kept(self, scraper):
+        card = BeautifulSoup(_card("nala", "NALA", badge="URGENT"), "html.parser").article
+
+        with patch.object(scraper, "logger") as logger:
+            assert scraper._available_dog(card) == {"name": "NALA", "url": f"{ADOPTION}nala/"}
+
+        assert "URGENT" in logger.warning.call_args.args[0]
+
+    def test_a_status_with_another_heading_still_marks_the_dog(self, scraper):
+        card = BeautifulSoup(_card("nala", "NALA", badge="ADOPTED</h2><h2>URGENT"), "html.parser").article
+
+        assert scraper._available_dog(card) is None
+
+    @pytest.mark.parametrize("badge", ["ADOPTED", "Adopted", "RESERVED", "Reserved", "GEADOPTEERD", "Gereserveerd"])
+    def test_each_status_marks_the_dog_unavailable(self, scraper, badge):
+        card = BeautifulSoup(_card("nala", "NALA", badge=badge), "html.parser").article
+
+        assert scraper._available_dog(card) is None
+
+    def test_a_card_without_a_dog_link_is_logged_and_skipped(self, scraper):
+        card = BeautifulSoup('<article class="type-adoption" id="post-1"><h2>NALA</h2></article>', "html.parser").article
 
         with patch.object(scraper, "logger") as logger:
             assert scraper._available_dog(card) is None
 
-        assert "ON HOLD" in logger.warning.call_args.args[0]
+        logger.warning.assert_called_once()
