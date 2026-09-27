@@ -378,7 +378,9 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 },
             ]
 
-            result = self.scraper.collect_data()
+            # No network: the detail step gives each dog a description (#568)
+            with patch.object(self.scraper, "_scrape_animal_details", return_value={"properties": {"description": "A good dog."}}):
+                result = self.scraper.collect_data()
 
             # Should deduplicate to 2 unique dogs
             self.assertEqual(len(result), 2)
