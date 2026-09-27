@@ -217,20 +217,20 @@ class DatabaseService:
 
     def get_images_by_external_id(self, organization_id: int) -> dict[str, list[dict[str, Any]]]:
         """Every stored photo gallery for one rescue, keyed by external_id."""
-        if not self.conn and not self.connect():
-            return {}
+        # Reads go through connection(): pooled in the cron, so a read late in
+        # a long run doesn't sit on a direct connection opened at its start (#605)
         try:
-            cursor = self.conn.cursor()
-            cursor.execute(
-                "SELECT external_id, images FROM animals WHERE organization_id = %s AND images IS NOT NULL",
-                (organization_id,),
-            )
-            rows = cursor.fetchall()
-            cursor.close()
+            with self.connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT external_id, images FROM animals WHERE organization_id = %s AND images IS NOT NULL",
+                    (organization_id,),
+                )
+                rows = cursor.fetchall()
+                cursor.close()
             return {external_id: images for external_id, images in rows}
         except Exception as e:
             self.logger.error(f"Error reading stored galleries for organization {organization_id}: {e}")
-            self.conn.rollback()
             return {}
 
     def create_animal(self, animal_data: dict[str, Any]) -> tuple[int | None, str]:
@@ -699,20 +699,15 @@ class DatabaseService:
         Returns:
             Set of existing external IDs
         """
-        if not self.conn:
-            # Try to establish connection before failing
-            if not self.connect():
-                self.logger.error("No database connection available")
-                return set()
-
         try:
-            cursor = self.conn.cursor()
-            cursor.execute(
-                "SELECT external_id FROM animals WHERE organization_id = %s AND status = 'available' AND primary_image_url LIKE 'https://images.rescuedogs.me/%%' AND images IS NOT NULL",
-                (organization_id,),
-            )
-            results = cursor.fetchall()
-            cursor.close()
+            with self.connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT external_id FROM animals WHERE organization_id = %s AND status = 'available' AND primary_image_url LIKE 'https://images.rescuedogs.me/%%' AND images IS NOT NULL",
+                    (organization_id,),
+                )
+                results = cursor.fetchall()
+                cursor.close()
 
             return {row[0] for row in results if row[0]}
         except Exception as e:
@@ -735,9 +730,11 @@ class DatabaseService:
         if not animal_ids:
             return []
 
-        if not self.conn:
-            if not self.connect():
-                self.logger.error("No database connection available")
-                return []
-
-        return fetch_slugs_by_ids(self.conn, animal_ids)
+        # The purge runs after LLM enrichment, the longest phase: a pooled
+        # connection, not the direct one opened at the start of the run (#605)
+        try:
+            with self.connection() as conn:
+                return fetch_slugs_by_ids(conn, animal_ids)
+        except Exception as e:
+            self.logger.error(f"No database connection for the slug lookup: {e}")
+            return []

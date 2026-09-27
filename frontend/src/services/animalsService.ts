@@ -288,59 +288,6 @@ export async function getBreedSuggestions(
   }
 }
 
-interface BreedFilters {
-  limit?: number;
-  offset?: number;
-  age?: string;
-  sex?: string;
-  size?: string;
-  good_with_cats?: boolean;
-  good_with_dogs?: boolean;
-}
-
-export async function getBreedDogs(
-  breedSlug: string,
-  filters: BreedFilters = {},
-): Promise<Dog[] | { results: Dog[]; total: number }> {
-  logger.log(`Fetching dogs for breed: ${breedSlug}`, filters);
-
-  try {
-    const breedStats = await get("/api/animals/breeds/stats", {}, {
-      schema: BreedStatsSchema,
-    });
-    const breedData = breedStats.qualifying_breeds?.find(
-      (breed) => breed.breed_slug === breedSlug,
-    );
-
-    if (!breedData) {
-      throw new Error(`Breed not found: ${breedSlug}`);
-    }
-
-    const params: AnimalParams = {
-      breed: breedData.primary_breed,
-      limit: filters.limit || 12,
-      offset: filters.offset || 0,
-      animal_type: "dog",
-      status: "available",
-    };
-
-    if (filters.age && filters.age !== "all") params.age = filters.age;
-    if (filters.sex && filters.sex !== "all") params.sex = filters.sex;
-    if (filters.size && filters.size !== "all") params.size = filters.size;
-    if (filters.good_with_cats) params.good_with_cats = true;
-    if (filters.good_with_dogs) params.good_with_dogs = true;
-
-    const raw = await get<ApiDog[]>("/api/animals", params, {
-      schema: z.array(ApiDogSchema),
-    });
-    return transformApiDogsToDogs(raw);
-  } catch (error) {
-    logger.error(`Error fetching breed dogs for ${breedSlug}:`, error);
-    reportError(error, { context: "getBreedDogs", breedSlug });
-    return { results: [], total: 0 };
-  }
-}
-
 export async function getBreedFilterCounts(
   breedSlug: string,
 ): Promise<z.infer<typeof FilterCountsResponseSchema> | null> {

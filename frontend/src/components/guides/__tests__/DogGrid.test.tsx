@@ -237,6 +237,18 @@ describe("DogGrid", () => {
     });
   });
 
+  it("says so when a size isn't on the scale, instead of silently showing every size (#605)", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    const warn = jest.spyOn(jest.requireActual("@/utils/logger").logger, "warn").mockImplementation(() => {});
+
+    render(<DogGrid size="medium-ish" />);
+
+    await waitFor(() => expect(serverAnimalsService.getAnimals).toHaveBeenCalled());
+    expect(serverAnimalsService.getAnimals).toHaveBeenCalledWith(expect.not.objectContaining({ standardized_size: expect.anything() }));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('size "medium-ish"'));
+    warn.mockRestore();
+  });
+
   it("uses generic fallback link when no breed specified", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 

@@ -765,36 +765,6 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
   }
 });
 
-type BreedDogFilters = Partial<AnimalQueryParams>;
-
-export const getBreedDogs = cache(
-  async (
-    breedSlug: string,
-    filters: BreedDogFilters = {},
-
-
-  ): Promise<Dog[]> => {
-    const breedStats = await getBreedStats();
-    const breedData = breedStats.qualifying_breeds?.find(
-      (breed) => breed.breed_slug === breedSlug,
-    );
-
-    if (!breedData) {
-      throw new Error(`Breed not found: ${breedSlug}`);
-    }
-
-    const params: AnimalQueryParams = {
-      primary_breed: breedData.primary_breed,
-      limit: filters.limit || 12,
-      offset: filters.offset || 0,
-      ...filters,
-    };
-
-    return getAnimals(params);
-  },
-  [],
-);
-
 /**
  * Unfiltered counts for one breed, rescue or age page, or for every dog
  * (country pages) (#500, #501, #502): a breed's practical stats, and how many

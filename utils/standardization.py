@@ -224,9 +224,8 @@ def standardize_breed(breed_text: str) -> tuple[str | None, str | None, str | No
     # CRITICAL-2: Use UnifiedStandardizer instead of legacy enhanced_standardizer
     standardizer = _get_unified_standardizer()
     result = standardizer._standardize_breed(breed_text)
-    # Text that names no breed (empty, "Unknown") standardises to nothing, not
-    # to an "Unknown" breed and group (#568)
-    if result["name"] == "Unknown":
+    # Text that names no breed (empty, "Unknown") standardises to nothing (#568)
+    if not result["name"]:
         return (None, None, None)
     return (result["name"], result["group"], result.get("size"))
 
@@ -318,6 +317,11 @@ def standardize_size_value(size: str) -> str | None:
         "extra large": "XLarge",
         "extra-large": "XLarge",
         # Alternative spellings/formats
+        "extra small": "Small",
+        "xs": "Small",
+        "s": "Small",
+        "m": "Medium",
+        "l": "Large",
         "mini": "Tiny",
         "miniature": "Tiny",
         "toy": "Tiny",

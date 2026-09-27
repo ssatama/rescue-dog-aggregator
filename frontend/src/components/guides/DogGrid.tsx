@@ -7,6 +7,7 @@ import { SIZE_API_MAPPING, SIZE_OPTIONS, scaleValue } from "@/constants/filters"
 import DogCardSkeletonOptimized from "@/components/dogs/DogCardSkeletonOptimized";
 import { getAnimals } from "@/services/serverAnimalsService";
 import type { Dog } from "@/types/dog";
+import { logger } from "@/utils/logger";
 
 interface AnimalApiParams {
   limit: number;
@@ -98,6 +99,8 @@ export function DogGrid({
         // On the size scale, so a size estimated from the breed counts too (#568)
         const scaled = size && scaleValue(size.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()), SIZE_OPTIONS, "");
         if (scaled) params.standardized_size = SIZE_API_MAPPING[scaled];
+        // A guide author's typo would otherwise show every size without a word (#605)
+        else if (size) logger.warn(`DogGrid: size "${size}" is not one of ${SIZE_OPTIONS.slice(1).join(", ")}; showing all sizes`);
         if (age_category) params.age_category = age_category;
         if (location_country) params.location_country = location_country;
         if (available_to_country)

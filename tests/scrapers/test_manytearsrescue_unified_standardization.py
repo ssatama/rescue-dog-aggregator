@@ -106,8 +106,8 @@ class TestManyTearsRescueUnifiedStandardization:
             ("small", "Small"),
             ("medium", "Medium"),
             ("large", "Large"),
-            ("giant", "Large"),
-            ("xl", "Large"),
+            ("giant", "XLarge"),
+            ("xl", "XLarge"),
         ]
 
         for input_size, expected_size in test_cases:

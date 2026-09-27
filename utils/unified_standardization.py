@@ -558,17 +558,17 @@ class UnifiedStandardizer:
         size_result = self._standardize_size(size, breed_result.get("size")) if self.enable_size_standardization else {"category": size}
 
         # Build result in the format expected by BaseScraper and tests
-        primary_breed = breed_result.get("primary_breed") or breed_result.get("name", "Unknown")
+        primary_breed = breed_result.get("primary_breed") or breed_result.get("name")
         result = {
             # Breed fields
-            "breed": breed_result.get("name", "Unknown"),
-            "standardized_breed": breed_result.get("name", "Unknown"),  # Add standardized_breed for tests
-            "breed_category": breed_result.get("group", "Unknown"),
+            "breed": breed_result.get("name"),
+            "standardized_breed": breed_result.get("name"),  # Add standardized_breed for tests
+            "breed_category": breed_result.get("group"),
             "breed_type": breed_result.get("breed_type", "purebred"),  # Add breed_type field
             "breed_confidence": breed_result.get("confidence", 0.0),  # Add breed_confidence field
             "primary_breed": primary_breed,
             "secondary_breed": breed_result.get("secondary_breed"),
-            "breed_slug": breed_result.get("breed_slug") or generate_breed_slug(primary_breed),
+            "breed_slug": breed_result.get("breed_slug") or (generate_breed_slug(primary_breed) if primary_breed else None),
             "standardization_confidence": breed_result.get("confidence", 0.0),
             # Age fields - preserve original and add ranges
             "age": age,  # Preserve original age field
@@ -689,8 +689,22 @@ class UnifiedStandardizer:
         """Resolve a breed string to its canonical identity via the registry."""
         identity = resolve_breed(breed)
 
+        if identity.primary is None and identity.breed_type != "mixed":
+            # Text that names no breed: nothing, not an "Unknown" breed (#568, #605)
+            return {
+                "name": None,
+                "group": None,
+                "size": None,
+                "confidence": identity.confidence,
+                "breed_type": None,
+                "is_mixed": False,
+                "primary_breed": None,
+                "secondary_breed": None,
+                "breed_slug": None,
+            }
+
         if identity.primary is None:
-            name = "Mixed Breed" if identity.breed_type == "mixed" else "Unknown"
+            name = "Mixed Breed"
             return {
                 "name": name,
                 "group": identity.group,
@@ -1085,44 +1099,23 @@ class UnifiedStandardizer:
         breed facts; estimating from a second breed table here would let the two
         drift apart.
         """
-        # Step 1: Try to use explicit size if provided
-        if size and isinstance(size, str):
-            size_lower = size.strip().lower()
+        # Step 1: The stated size, read by the one size table (#605). Giant is
+        # XLarge, which the site shows as "Giant"; this used to fold it into Large.
+        from utils.standardization import standardize_size_value
 
-            size_map = {
-                "tiny": "Tiny",  # Keep actual tiny for tiny breeds
-                "extra small": "Small",
-                "xs": "Small",
-                "small": "Small",
-                "s": "Small",
-                "medium": "Medium",
-                "m": "Medium",
-                "large": "Large",
-                "l": "Large",
-                "extra large": "Large",  # Map XLarge to Large for canonical sizes
-                "xlarge": "Large",
-                "xl": "Large",
-                "giant": "Large",
+        stated = standardize_size_value(size) if isinstance(size, str) else None
+        if stated:
+            return {
+                "category": stated,
+                "weight_range": self._get_weight_range(stated),
+                "source": "explicit",
             }
-
-            # The broader reader knows "Mini", "Toy", "X-Large", "Medium-Large" (#568)
-            from utils.standardization import standardize_size_value
-
-            # Its XLarge stays XLarge, as update_columns stored it before (#568)
-            stated = size_map.get(size_lower) or standardize_size_value(size)
-            if stated:
-                return {
-                    "category": stated,
-                    "weight_range": self._get_weight_range(stated),
-                    "source": "explicit",
-                }
 
         # Step 2: Fall back to the breed's typical size
         if breed_size and self.enable_breed_standardization:
-            canonical = "Large" if breed_size == "XLarge" else breed_size
             return {
-                "category": canonical,
-                "weight_range": self._get_weight_range(canonical),
+                "category": breed_size,
+                "weight_range": self._get_weight_range(breed_size),
                 "source": "breed_estimated",
             }
 

@@ -612,13 +612,11 @@ class TestREANEdgeCases:
 
     @pytest.mark.unit
     def test_corrupted_properties_handling(self, scraper):
-        result = scraper.standardize_animal_data({"name": None}, "test")
-        assert isinstance(result, dict)
-        assert result.get("name") == "Unknown"
-
-        result = scraper.standardize_animal_data({"name": ""}, "test")
-        assert isinstance(result, dict)
-        assert result.get("name") is None
+        # A nameless entry is skipped, not saved as "Unknown" (#605)
+        assert scraper.standardize_animal_data({"name": None}, "test") is None
+        assert scraper.standardize_animal_data({"name": ""}, "test") is None
+        assert scraper.standardize_animal_data({"name": "  "}, "test") is None
+        assert scraper.standardize_animal_data({}, "test") is None
 
         result = scraper.standardize_animal_data({"name": "Valid", "properties": "not-a-dict"}, "test")
         assert isinstance(result, dict)
@@ -750,6 +748,16 @@ class TestREANBrowserExtraction:
             assert scraper.extract_dogs_with_images_unified("https://rean.org.uk/dogs", "romania") == []
 
         fallback.assert_called_once_with("https://rean.org.uk/dogs", "romania")
+
+
+@pytest.mark.unit
+def test_a_nameless_entry_is_skipped_not_saved_as_unknown(scraper):
+    """The external id comes from the name, so nameless entries would all
+    share one "Unknown" row (#605)."""
+    scraper.extract_dogs_with_images_unified = Mock(side_effect=[[{"name": ""}, {"name": "Toby"}], []])
+    with patch("time.sleep"):
+        animals = scraper.scrape_animals()
+    assert [a["name"] for a in animals] == ["Toby"]
 
 
 class TestREANIntegration:

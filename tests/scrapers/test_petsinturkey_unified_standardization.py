@@ -56,7 +56,7 @@ class TestPetsInTurkeyUnifiedStandardization:
 
         assert result["breed"] == "Kangal"
         assert result["breed_category"] == "Guardian"
-        assert result["standardized_size"] == "Large"  # XLarge maps to Large
+        assert result["standardized_size"] == "XLarge"  # Giant on the site (#605)
         assert result["standardization_confidence"] >= 0.9  # Changed to >= for exact 0.9
 
         # Test Anatolian Shepherd
@@ -70,7 +70,7 @@ class TestPetsInTurkeyUnifiedStandardization:
 
         assert result["breed"] == "Anatolian Shepherd"
         assert result["breed_category"] == "Guardian"
-        assert result["standardized_size"] == "Large"  # XLarge maps to Large
+        assert result["standardized_size"] == "XLarge"  # Giant on the site (#605)
 
     def test_size_calculation_from_weight(self, scraper):
         """Test size calculation based on weight."""

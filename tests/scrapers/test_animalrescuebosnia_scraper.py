@@ -249,7 +249,7 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
             ("10 kg", "Small", "Small"),
             ("25 kg", "Medium", "Medium"),
             ("40 kg", "Large", "Large"),
-            ("50 kg", "XLarge", "Large"),
+            ("50 kg", "XLarge", "XLarge"),  # Giant on the site (#605)
         ]
 
         for weight, expected_size, expected_standardized in test_cases:
