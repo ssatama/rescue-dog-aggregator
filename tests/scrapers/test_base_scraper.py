@@ -4,7 +4,7 @@ Behavioral tests for BaseScraper - testing outcomes, not implementation details.
 Replaces the overly granular test_base_scraper.py with focused behavioral tests.
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -32,13 +32,11 @@ class TestBaseScraperBehavior:
     @pytest.fixture
     def scraper(self):
         """Create a test scraper instance."""
-        with patch("scrapers.base_scraper.psycopg2"):
-            scraper = ConcreteTestScraper(organization_id=1)
-            # Mock database service for proper functionality
-            scraper.database_service = Mock()
-            scraper.conn = Mock()
-            scraper.cursor = Mock()
-            return scraper
+        scraper = ConcreteTestScraper(organization_id=1)
+        # Mock database service for proper functionality
+        scraper.database_service = Mock()
+        scraper.cursor = Mock()
+        return scraper
 
     def test_scraper_saves_new_animals(self, scraper):
         """Test that scraper successfully saves new animals to database."""
@@ -122,10 +120,9 @@ class TestNameValidationAndNormalization:
     @pytest.fixture
     def scraper(self):
         """Create a test scraper instance."""
-        with patch("scrapers.base_scraper.psycopg2"):
-            scraper = ConcreteTestScraper(organization_id=1)
-            scraper.database_service = Mock()
-            return scraper
+        scraper = ConcreteTestScraper(organization_id=1)
+        scraper.database_service = Mock()
+        return scraper
 
     def test_rejects_pure_numeric_names(self, scraper):
         """Test that pure numeric names like '251' are rejected."""

@@ -14,11 +14,9 @@ from scrapers.theunderdog.theunderdog_scraper import TheUnderdogScraper
 class TestTheUnderdogScraper:
     @pytest.fixture
     def scraper(self):
-        with patch("scrapers.base_scraper.BaseScraper.connect_to_database"):
-            scraper = TheUnderdogScraper(config_id="theunderdog")
-            scraper.conn = MagicMock()
-            scraper.logger = MagicMock()
-            return scraper
+        scraper = TheUnderdogScraper(config_id="theunderdog")
+        scraper.logger = MagicMock()
+        return scraper
 
     @pytest.fixture
     def listing_html(self):
@@ -168,11 +166,9 @@ class TestTheUnderdogScraper:
 class TestTheUnderdogDetailScraping:
     @pytest.fixture
     def scraper(self):
-        with patch("scrapers.base_scraper.BaseScraper.connect_to_database"):
-            scraper = TheUnderdogScraper(config_id="theunderdog")
-            scraper.conn = MagicMock()
-            scraper.logger = MagicMock()
-            return scraper
+        scraper = TheUnderdogScraper(config_id="theunderdog")
+        scraper.logger = MagicMock()
+        return scraper
 
     @pytest.fixture
     def detail_html_available(self):

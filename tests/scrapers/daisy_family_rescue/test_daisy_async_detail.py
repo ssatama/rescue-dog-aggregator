@@ -7,7 +7,7 @@ an already-running async context) is resolved by using direct async calls.
 Fixes PYTHON-FASTAPI-1Y.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -52,15 +52,13 @@ class TestDaisyEnhanceWithDetailPageAsync:
 
     @pytest.fixture
     def scraper(self):
-        with patch("scrapers.base_scraper.psycopg2"):
-            from scrapers.daisy_family_rescue.dogs_scraper import (
-                DaisyFamilyRescueScraper,
-            )
+        from scrapers.daisy_family_rescue.dogs_scraper import (
+            DaisyFamilyRescueScraper,
+        )
 
-            s = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
-            s.conn = MagicMock()
-            s.cursor = MagicMock()
-            return s
+        s = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
+        s.cursor = MagicMock()
+        return s
 
     @pytest.mark.asyncio
     async def test_enhance_merges_basic_and_detail_data(self, scraper):

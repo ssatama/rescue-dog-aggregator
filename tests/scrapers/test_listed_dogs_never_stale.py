@@ -135,7 +135,7 @@ class TestTooManyNotSavedIsAPartialFailure:
         with (
             patch.object(scraper, "save_animal", side_effect=lambda d: (None, "error") if d["external_id"] in failing else (1, "no_change")),
             patch.object(scraper, "detect_partial_failure", return_value=False),
-            patch("scrapers.base_scraper.alert_dogs_not_saved"),
+            patch("scrapers.run_reporting.alert_dogs_not_saved"),
             patch("services.revalidation_client.invalidate_sync"),
         ):
             scraper._run_with_connection()
@@ -155,7 +155,7 @@ class TestTooManyNotSavedIsAPartialFailure:
         with (
             patch.object(scraper, "save_animal", side_effect=lambda d: (None, "error") if d["external_id"] in {"d0", "d1"} else (1, "no_change")),
             patch.object(scraper, "detect_partial_failure", return_value=False),
-            patch("scrapers.base_scraper.alert_dogs_not_saved"),
+            patch("scrapers.run_reporting.alert_dogs_not_saved"),
             patch("services.revalidation_client.invalidate_sync"),
         ):
             scraper._run_with_connection()
@@ -175,7 +175,7 @@ class TestTooManyNotSavedIsAPartialFailure:
         with (
             patch.object(scraper, "save_animal", return_value=(1, "no_change")),
             patch.object(scraper, "detect_partial_failure", return_value=False),
-            patch("scrapers.base_scraper.alert_dogs_not_saved"),
+            patch("scrapers.run_reporting.alert_dogs_not_saved"),
             patch("services.revalidation_client.invalidate_sync"),
         ):
             scraper._run_with_connection()
@@ -213,7 +213,7 @@ class TestTooManyNotSavedIsAPartialFailure:
             patch.object(scraper, "save_animal", return_value=(None, "error")),
             patch.object(scraper, "_get_correct_animals_found_count", return_value=50),
             patch.object(scraper, "detect_partial_failure", return_value=False),
-            patch("scrapers.base_scraper.alert_dogs_not_saved"),
+            patch("scrapers.run_reporting.alert_dogs_not_saved"),
             patch("services.revalidation_client.invalidate_sync"),
         ):
             scraper._run_with_connection()

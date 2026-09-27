@@ -1,6 +1,6 @@
 """Test that BaseScraper uses batch uploads for ALL scrapers."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -77,13 +77,13 @@ class TestBaseScraperBatchUploads:
 
         scraper = TestScraper(config_id="test")
         scraper.image_processing_service = mock_services["image_service"]
+        scraper.database_service = MagicMock()
         scraper.r2_service = mock_services["r2"]
         scraper.progress_tracker = mock_services["progress_tracker"]
 
         # Mock database connection
-        with patch.object(scraper, "connect_to_database"):
-            with patch.object(scraper, "save_animal", return_value=(1, "created")):
-                scraper._process_animals_data(scraper.collect_data())
+        with patch.object(scraper, "save_animal", return_value=(1, "created")):
+            scraper._process_animals_data(scraper.collect_data())
 
         # Verify batch_process_images was called even for 1 animal
         mock_services["image_service"].batch_process_images.assert_called_once()
@@ -119,12 +119,12 @@ class TestBaseScraperBatchUploads:
 
         scraper = TestScraper(config_id="test")
         scraper.image_processing_service = mock_services["image_service"]
+        scraper.database_service = MagicMock()
         scraper.r2_service = mock_services["r2"]
         scraper.progress_tracker = mock_services["progress_tracker"]
 
-        with patch.object(scraper, "connect_to_database"):
-            with patch.object(scraper, "save_animal", return_value=(1, "created")):
-                scraper._process_animals_data(scraper.collect_data())
+        with patch.object(scraper, "save_animal", return_value=(1, "created")):
+            scraper._process_animals_data(scraper.collect_data())
 
         # Verify batch_process_images was called for 3 animals
         mock_services["image_service"].batch_process_images.assert_called_once()
@@ -150,12 +150,12 @@ class TestBaseScraperBatchUploads:
 
         scraper = TestScraper(config_id="test")
         scraper.image_processing_service = mock_services["image_service"]
+        scraper.database_service = MagicMock()
         scraper.r2_service = mock_services["r2"]
         scraper.progress_tracker = mock_services["progress_tracker"]
 
-        with patch.object(scraper, "connect_to_database"):
-            with patch.object(scraper, "save_animal", return_value=(1, "created")):
-                scraper._process_animals_data(scraper.collect_data())
+        with patch.object(scraper, "save_animal", return_value=(1, "created")):
+            scraper._process_animals_data(scraper.collect_data())
 
         # Verify batch_process_images was called for 15 animals
         mock_services["image_service"].batch_process_images.assert_called_once()
@@ -183,12 +183,12 @@ class TestBaseScraperBatchUploads:
 
         scraper = TestScraper(config_id="test")
         scraper.image_processing_service = mock_services["image_service"]
+        scraper.database_service = MagicMock()
         scraper.r2_service = mock_services["r2"]
         scraper.progress_tracker = mock_services["progress_tracker"]
 
-        with patch.object(scraper, "connect_to_database"):
-            with patch.object(scraper, "save_animal", return_value=(1, "created")):
-                scraper._process_animals_data(scraper.collect_data())
+        with patch.object(scraper, "save_animal", return_value=(1, "created")):
+            scraper._process_animals_data(scraper.collect_data())
 
         # Verify batch_process_images was NOT called due to high failure rate
         mock_services["image_service"].batch_process_images.assert_not_called()
@@ -210,12 +210,12 @@ class TestBaseScraperBatchUploads:
 
         scraper = TestScraper(config_id="test")
         scraper.image_processing_service = mock_services["image_service"]
+        scraper.database_service = MagicMock()
         scraper.r2_service = mock_services["r2"]
         scraper.progress_tracker = mock_services["progress_tracker"]
 
-        with patch.object(scraper, "connect_to_database"):
-            with patch.object(scraper, "save_animal", return_value=(1, "created")):
-                scraper._process_animals_data(scraper.collect_data())
+        with patch.object(scraper, "save_animal", return_value=(1, "created")):
+            scraper._process_animals_data(scraper.collect_data())
 
         # Verify batch_process_images was still called
         mock_services["image_service"].batch_process_images.assert_called_once()

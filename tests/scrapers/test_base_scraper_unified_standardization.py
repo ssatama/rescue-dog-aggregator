@@ -3,7 +3,7 @@ Tests for BaseScraper integration with UnifiedStandardizer
 Tests the feature flag system and standardization flow
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -26,14 +26,12 @@ class TestBasScraperUnifiedStandardization:
     @pytest.fixture
     def scraper(self):
         """Create a BaseScraper instance with mocked dependencies"""
-        with patch("scrapers.base_scraper.psycopg2"):
-            scraper = ConcreteTestScraper(organization_id=1)
-            scraper.database_service = Mock()
-            scraper.conn = Mock()
-            scraper.cursor = Mock()
-            scraper.image_processing_service = Mock()
-            scraper.metrics_collector = Mock()
-            return scraper
+        scraper = ConcreteTestScraper(organization_id=1)
+        scraper.database_service = Mock()
+        scraper.cursor = Mock()
+        scraper.image_processing_service = Mock()
+        scraper.metrics_collector = Mock()
+        return scraper
 
     def test_base_scraper_has_unified_standardizer(self, scraper):
         """BaseScraper should initialize UnifiedStandardizer instance"""
@@ -208,14 +206,12 @@ class TestBaseScraperRawBreedPreservation:
 
     @pytest.fixture
     def scraper(self):
-        with patch("scrapers.base_scraper.psycopg2"):
-            scraper = ConcreteTestScraper(organization_id=1)
-            scraper.database_service = Mock()
-            scraper.conn = Mock()
-            scraper.cursor = Mock()
-            scraper.image_processing_service = Mock()
-            scraper.metrics_collector = Mock()
-            return scraper
+        scraper = ConcreteTestScraper(organization_id=1)
+        scraper.database_service = Mock()
+        scraper.cursor = Mock()
+        scraper.image_processing_service = Mock()
+        scraper.metrics_collector = Mock()
+        return scraper
 
     def test_raw_breed_kept_when_standardization_rewrites_breed(self, scraper):
         """The pre-standardization breed text survives in breed_raw."""
@@ -269,14 +265,12 @@ class TestBaseScraperAgeTextOnly:
 
     @pytest.fixture
     def scraper(self):
-        with patch("scrapers.base_scraper.psycopg2"):
-            scraper = ConcreteTestScraper(organization_id=1)
-            scraper.database_service = Mock()
-            scraper.conn = Mock()
-            scraper.cursor = Mock()
-            scraper.image_processing_service = Mock()
-            scraper.metrics_collector = Mock()
-            return scraper
+        scraper = ConcreteTestScraper(organization_id=1)
+        scraper.database_service = Mock()
+        scraper.cursor = Mock()
+        scraper.image_processing_service = Mock()
+        scraper.metrics_collector = Mock()
+        return scraper
 
     def test_age_text_without_age_is_kept_and_parsed(self, scraper):
         processed = scraper.process_animal(

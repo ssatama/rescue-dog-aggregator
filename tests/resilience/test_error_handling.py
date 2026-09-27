@@ -45,21 +45,6 @@ class TestErrorResilience:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_database_connection_failure_recovery(self, mock_scraper):
-        """Test scraper handles database connection failures gracefully."""
-        with patch("scrapers.base_scraper.psycopg2.connect") as mock_connect:
-            # First call fails, second succeeds
-            mock_connect.side_effect = [
-                Exception("Connection failed"),
-                Mock(),  # Successful connection
-            ]
-
-            # Should handle the failure gracefully
-            _result = mock_scraper.connect_to_database()
-
-            # First attempt should fail, but method should handle it
-            assert mock_connect.call_count >= 1
-
     @patch.dict(
         "os.environ",
         {

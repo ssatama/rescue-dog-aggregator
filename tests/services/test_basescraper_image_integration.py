@@ -4,7 +4,7 @@ Test ImageProcessingService integration with BaseScraper.
 Ensures that dependency injection works correctly and ImageProcessingService is used when provided.
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -57,8 +57,7 @@ class TestBaseScraperWithImageProcessingService:
         }
 
         # Mock the database operations that save_animal calls
-        scraper.conn = Mock()
-        mock_db_service = Mock()
+        mock_db_service = MagicMock()
         mock_db_service.get_existing_animal.return_value = None
         mock_db_service.create_animal.return_value = (123, "added")
         scraper.database_service = mock_db_service
@@ -71,7 +70,8 @@ class TestBaseScraperWithImageProcessingService:
         args = mock_image_service.process_primary_image.call_args[0]
         assert args[0]["primary_image_url"] == "https://example.com/test.jpg"
         assert args[1] is None  # existing_animal
-        assert args[2] == scraper.conn  # database connection
+        # The DatabaseService's connection (#569)
+        assert args[2] == mock_db_service.connection.return_value.__enter__.return_value
         assert args[3] == "Organization ID 1"  # organization_name
 
     @patch.dict(
@@ -110,8 +110,7 @@ class TestBaseScraperWithImageProcessingService:
         animal_data = {"name": "Test Dog", "external_id": "test-123"}
 
         # Mock database operations
-        scraper.conn = Mock()
-        mock_db_service = Mock()
+        mock_db_service = MagicMock()
         mock_db_service.get_existing_animal.return_value = None
         mock_db_service.create_animal.return_value = (123, "added")
         scraper.database_service = mock_db_service
@@ -163,8 +162,7 @@ class TestBaseScraperWithImageProcessingService:
             "external_id": "test-123",
             "primary_image_url": "https://example.com/test.jpg",
         }
-        scraper.conn = Mock()
-        mock_db_service = Mock()
+        mock_db_service = MagicMock()
         mock_db_service.get_existing_animal.return_value = None
         mock_db_service.create_animal.return_value = (123, "added")
         scraper.database_service = mock_db_service

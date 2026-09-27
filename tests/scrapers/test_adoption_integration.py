@@ -67,7 +67,7 @@ class TestAdoptionIntegration:
         scraper = TestScraper(organization_id=1)
         # Manually set the config
         scraper.org_config = mock_config_with_adoption
-        scraper.conn = MagicMock()
+        scraper.database_service = MagicMock()
         scraper.logger = MagicMock()
         scraper.metrics_collector = MagicMock()
         return scraper
@@ -84,7 +84,7 @@ class TestAdoptionIntegration:
         scraper = TestScraper(organization_id=1)
         # Manually set the config
         scraper.org_config = mock_config_without_adoption
-        scraper.conn = MagicMock()
+        scraper.database_service = MagicMock()
         scraper.logger = MagicMock()
         scraper.metrics_collector = MagicMock()
         return scraper
@@ -143,7 +143,9 @@ class TestAdoptionIntegration:
 
         # Verify service was called
         mock_service_class.assert_called_once()
-        mock_service.batch_check_adoptions.assert_called_once_with(mock_scraper_with_adoption.conn, 1, threshold=3, limit=50, dry_run=False)  # organization_id
+        mock_service.batch_check_adoptions.assert_called_once_with(
+            mock_scraper_with_adoption.database_service.connection.return_value.__enter__.return_value, 1, threshold=3, limit=50, dry_run=False
+        )  # organization_id
 
         # Verify logging
         mock_scraper_with_adoption.logger.info.assert_any_call("🔍 Checking for adoptions (threshold: 3 missed scrapes)")

@@ -12,7 +12,7 @@ What remains is the one assertion that can fail - that a scraper reads the
 identity its config declares - and the fixture the subclasses build on.
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -36,11 +36,9 @@ class ScraperTestBase:
         if not self.scraper_class or not self.config_id:
             pytest.skip("Scraper class and config_id must be set in subclass")
 
-        with patch("scrapers.base_scraper.psycopg2"):
-            scraper = self.scraper_class(config_id=self.config_id)
-            scraper.conn = Mock()
-            scraper.cursor = Mock()
-            return scraper
+        scraper = self.scraper_class(config_id=self.config_id)
+        scraper.cursor = Mock()
+        return scraper
 
     @pytest.mark.unit
     def test_reads_its_identity_from_config(self, scraper):

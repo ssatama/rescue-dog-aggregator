@@ -13,7 +13,7 @@ pinned a decision production never makes. It is deleted.
 
 import logging
 from datetime import date
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import psycopg2
 import pytest
@@ -322,3 +322,32 @@ class TestScrapeLogCompletionSurvivesADeadConnection:
         assert service.complete_scrape_log(41, "success", detailed_metrics={"when": object()}) is True
 
         assert service.conn.cursor.return_value.execute.call_args.args[1][6] is None
+
+
+@pytest.mark.unit
+class TestConnection:
+    """The one connection a scraper's own queries use (#569)."""
+
+    def test_a_pooled_connection_goes_back_rolled_back(self):
+        conn = Mock()
+        pool = MagicMock()
+        pool.get_connection_context.return_value.__enter__.return_value = conn
+        service = DatabaseService(db_config={"host": "localhost", "database": "test"}, connection_pool=pool)
+
+        with service.connection() as got:
+            assert got is conn
+
+        conn.rollback.assert_called_once()
+
+    def test_without_a_pool_it_is_the_direct_connection(self):
+        service = DatabaseService(db_config={"host": "localhost", "database": "test"})
+        service.conn = Mock()
+
+        with service.connection() as got:
+            assert got is service.conn
+
+    def test_no_connection_at_all_is_an_error(self):
+        service = DatabaseService(db_config={"host": "localhost", "database": "test"})
+
+        with patch.object(service, "connect", return_value=False), pytest.raises(RuntimeError), service.connection():
+            pass
