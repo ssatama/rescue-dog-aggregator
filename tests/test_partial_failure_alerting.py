@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from scrapers.base_scraper import BaseScraper
+from scrapers.scrape_stats import ScrapeStats
 
 
 @pytest.mark.unit
@@ -175,7 +176,7 @@ class TestFinalizeScrapeWiringToPartialFailureAlert:
         scraper.skip_existing_animals = False
         scraper.session_manager = Mock()
         scraper.metrics_collector = Mock()
-        scraper._get_correct_animals_found_count = Mock()
+        scraper.animals_found = 0
         scraper.detect_partial_failure = Mock()
         scraper.complete_scrape_log = Mock()
         scraper._emit_partial_failure_alert = Mock()
@@ -188,10 +189,10 @@ class TestFinalizeScrapeWiringToPartialFailureAlert:
 
     def test_finalize_scrape_invokes_partial_failure_alert_when_detected(self):
         scraper = self._make_scraper()
-        scraper._get_correct_animals_found_count.return_value = 7
+        scraper.animals_found = 7
         scraper.detect_partial_failure.return_value = True
 
-        scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats={"animals_added": 0, "animals_updated": 0, "animals_rejected": 0, "save_errors": 0})
+        scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats=ScrapeStats())
 
         scraper._emit_partial_failure_alert.assert_called_once_with(7)
         # Completed later as "warning" with metrics, in _log_completion_metrics (#557)
@@ -199,9 +200,9 @@ class TestFinalizeScrapeWiringToPartialFailureAlert:
 
     def test_finalize_scrape_does_not_alert_when_no_partial_failure(self):
         scraper = self._make_scraper()
-        scraper._get_correct_animals_found_count.return_value = 50
+        scraper.animals_found = 50
         scraper.detect_partial_failure.return_value = False
 
-        scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats={"animals_added": 0, "animals_updated": 0, "animals_rejected": 0, "save_errors": 0})
+        scraper._finalize_scrape(animals_data=[{"name": "Dog"}], processing_stats=ScrapeStats())
 
         scraper._emit_partial_failure_alert.assert_not_called()

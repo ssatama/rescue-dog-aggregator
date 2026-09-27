@@ -1542,13 +1542,10 @@ class REANScraper(BaseScraper):
 
         if self.skip_existing_animals:
             result = self.filtering_service.filter_existing_animals(animals)
-            self._sync_filtering_stats()
             return result
 
         # Not filtering - record external IDs for stale detection
         for animal in animals:
             if animal.get("external_id") and self.session_manager:
                 self.session_manager.record_found_animal(animal["external_id"])
-        self.total_animals_before_filter = len(animals)
-        self.total_animals_skipped = 0
         return animals

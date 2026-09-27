@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import os
-import sys
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -16,7 +15,7 @@ import psycopg2
 import requests
 
 # Import config
-from config import DB_CONFIG, enable_world_class_scraper_logging
+from config import DB_CONFIG
 
 # Import services and utilities
 from scrapers.browser_manager import ScraperBrowserManager
@@ -28,6 +27,7 @@ from scrapers.constants import (
 from scrapers.contract import unknown_keys
 from scrapers.enrichment.llm_handler import LLMEnrichmentHandler
 from scrapers.filtering.filtering_service import FilteringService
+from scrapers.scrape_stats import ScrapeStats
 
 # Import Sentry integration for error tracking
 from scrapers.sentry_integration import (
@@ -44,7 +44,6 @@ from services.null_objects import NullMetricsCollector
 from services.progress_tracker import ProgressTracker
 from utils.config_loader import ConfigLoader
 from utils.config_models import OrganizationConfig
-from utils.organization_sync_service import create_default_sync_service
 from utils.r2_service import R2Service
 from utils.robots_checker import RobotsChecker
 from utils.unified_standardization import UnifiedStandardizer
@@ -130,22 +129,9 @@ class BaseScraper(ABC):
             self.config_loader = ConfigLoader()
             self.org_config = self.config_loader.load_config(config_id)
 
-            # Skip organization sync during most tests, but allow specific tests to validate sync behavior
-            if sys.modules.get("pytest") is not None and not os.environ.get("TESTING_VALIDATE_SYNC"):
-                # Test environment - use mock values (most tests)
-                self.organization_id = 1  # Default test organization ID
-                logger.info(f"Test mode: Skipping organization sync for {config_id}")
-            else:
-                # Production environment - ensure organization exists in database
-                sync_manager = create_default_sync_service()
-                try:
-                    sync_result = sync_manager.sync_single_organization(self.org_config)
-                    if not sync_result or not sync_result.success:
-                        raise ValueError(f"Organization sync failed for {self.org_config.id}. Halting scraper.")
-                    self.organization_id = sync_result.organization_id
-                except Exception as e:
-                    logger.error(f"Failed to sync organization {self.org_config.id}: {e}")
-                    raise ValueError(f"Could not initialize scraper due to organization sync failure for {self.org_config.id}") from e
+            # Construction does no I/O (#569): the loader syncs the
+            # organization row and passes its id to attach()
+            self.organization_id = organization_id
 
             # Use config for scraper settings
             scraper_config = self.org_config.get_scraper_config_dict()
@@ -221,10 +207,6 @@ class BaseScraper(ABC):
         # Browser retry manager (extracted from BaseScraper)
         self.browser_manager = ScraperBrowserManager(logger=self.logger)
 
-        # Track animals for filtering stats
-        self.total_animals_before_filter = 0
-        self.total_animals_skipped = 0
-
         # Track animals for LLM enrichment
         self.animals_for_llm_enrichment = []
 
@@ -236,40 +218,41 @@ class BaseScraper(ABC):
         # Things worth recording that don't end the run; they go into the final log
         self._run_notes: list[str] = []
         # This run's save counts, once the database phase has started
-        self._processing_stats: dict[str, Any] | None = None
+        self._processing_stats: ScrapeStats | None = None
         # The arguments of a completion write that failed, tried once more at the end of the run
         self._unwritten_completion: tuple | None = None
 
         # Initialize UnifiedStandardizer for breed standardization
         self.standardizer = UnifiedStandardizer()
 
-    def _setup_logger(self):
-        """Set up a logger for the scraper.
+    def attach(
+        self,
+        organization_id: int,
+        *,
+        database_service,
+        session_manager,
+        image_processing_service=None,
+        metrics_collector=None,
+    ) -> None:
+        """Bind the scraper to its organization row and the run's services.
 
-        Individual scrapers now use silent loggers while BaseScraper provides
-        all progress updates through the ProgressTracker system.
+        Construction is pure (#569), so the loader syncs the organization and
+        builds the services first, then attaches them here, before run().
         """
-        # Enable world-class logging configuration
-        enable_world_class_scraper_logging()
+        self.organization_id = organization_id
+        self.database_service = database_service
+        self.session_manager = session_manager
+        self.image_processing_service = image_processing_service
+        if metrics_collector is not None:
+            self.metrics_collector = metrics_collector
+        self.filtering_service.organization_id = organization_id
+        self.filtering_service.database_service = database_service
+        self.filtering_service.session_manager = session_manager
+        self.llm_handler.organization_id = organization_id
 
-        # Create a silent logger for this individual scraper
-        # All progress will be handled by ProgressTracker
-        logger = logging.getLogger(f"scraper.{self.get_organization_name()}.{self.animal_type}")
-        logger.setLevel(logging.WARNING)  # Only show warnings and errors
-
-        # Check if handler already exists to prevent duplication
-        if not logger.handlers:
-            # Create handlers only if none exist
-            c_handler = logging.StreamHandler()
-
-            # Create formatters
-            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-            c_handler.setFormatter(formatter)
-
-            # Add handlers to logger
-            logger.addHandler(c_handler)
-
-        return logger
+    def _setup_logger(self):
+        """The scraper's logger. Its level and handlers are the runner's (#569)."""
+        return logging.getLogger(f"scraper.{self.get_organization_name()}.{self.animal_type}")
 
     def _log_service_unavailable(self, service_name: str, operation: str):
         """Log service unavailable warning with consistent format."""
@@ -645,8 +628,7 @@ class BaseScraper(ABC):
                 animals_data = self._collect_and_time_data()
                 discovery_duration = (datetime.now() - discovery_start).total_seconds()
 
-                # Store count for scraper runner interface
-                # Use the same logic as database logging to ensure consistency
+                # Counted once per run (#569); every later phase reads self.animals_found
                 self.animals_found = self._get_correct_animals_found_count(animals_data)
 
                 # Alert if zero dogs found - likely indicates website change
@@ -670,10 +652,8 @@ class BaseScraper(ABC):
                 )  # Use central scraper logger
 
                 # Track discovery phase stats
-                # Use correct animals found count to show actual discovery metrics
-                correct_animals_found = self._get_correct_animals_found_count(animals_data)
                 self.progress_tracker.track_discovery_stats(
-                    dogs_found=correct_animals_found,
+                    dogs_found=self.animals_found,
                     pages_processed=1,
                     extraction_failures=len(self.detail_failures),
                 )  # Single page scrape
@@ -691,7 +671,7 @@ class BaseScraper(ABC):
                 )
 
                 # Log discovery completion with actual timing
-                self.progress_tracker.log_phase_complete("Discovery", discovery_duration, f"{correct_animals_found} dogs found")
+                self.progress_tracker.log_phase_complete("Discovery", discovery_duration, f"{self.animals_found} dogs found")
 
                 # Phase 3: Database Operations
                 add_scrape_breadcrumb(
@@ -714,8 +694,8 @@ class BaseScraper(ABC):
                 self._log_completion_metrics(animals_data, processing_stats)
 
                 # Set final transaction data
-                transaction.set_data("dogs_added", processing_stats.get("animals_added", 0))
-                transaction.set_data("dogs_updated", processing_stats.get("animals_updated", 0))
+                transaction.set_data("dogs_added", processing_stats.animals_added)
+                transaction.set_data("dogs_updated", processing_stats.animals_updated)
 
                 return True
 
@@ -851,7 +831,7 @@ class BaseScraper(ABC):
         self._run_notes = []
         self._processing_stats = None
         self.animals_found = 0
-        self.total_animals_skipped = 0
+        self.filtering_service.reset_stats()
         self.animals_for_llm_enrichment = []
         self.detail_failures = []
         self._detail_attempted = 0
@@ -946,46 +926,44 @@ class BaseScraper(ABC):
         }
 
     def _process_animals_data(self, animals_data):
-        """Database operations phase: Process and save animal data with progress tracking."""
+        """Database operations phase: validate, upload images, save and mark each dog seen."""
         phase_start = datetime.now()
 
-        processing_stats = {
-            "animals_added": 0,
-            "animals_updated": 0,
-            "animals_unchanged": 0,
-            "animals_rejected": 0,
-            "save_errors": 0,
-            "rejected": {},
-            "rejected_ids": [],
-            "save_error_ids": [],
-            "images_uploaded": 0,
-            "images_reused": 0,
-            "images_failed": 0,
-        }
+        stats = ScrapeStats()
         # Visible from the first save, so a run that fails mid-loop reports what it saved
-        self._processing_stats = processing_stats
+        self._processing_stats = stats
 
-        # Use self.progress_tracker (created in _run_with_connection) for consistent stats
-        # This ensures progress logs and completion summary use the same tracker
+        # Validate first, so a rejected dog costs no image upload (#569). The
+        # validator also cleans the name and builds properties.display_location
+        # in place (#573/#574), before the save.
+        valid = []
+        for animal_data in animals_data:
+            animal_data["organization_id"] = self.organization_id
+            animal_data.setdefault("animal_type", self.animal_type)
+            if self._validate_animal_data(animal_data):
+                valid.append(animal_data)
+                continue
+            reason = self.animal_validator.rejection_reason(animal_data) or "invalid"
+            self.logger.warning(f"Skipping invalid animal: {animal_data.get('name', 'Unknown')} - {reason}")
+            stats.reject(animal_data.get("external_id"), reason)
 
         # ALWAYS use batch image processing for ALL scrapers when ImageProcessingService is available
         # This ensures consistent batch uploading behavior across all organizations
-        if self.image_processing_service and len(animals_data) > 0:
+        if self.image_processing_service and valid:
             # Check R2 health before batch processing
             health = self.r2_service.get_health_status()
             if health.get("failure_rate", 0) < MAX_R2_FAILURE_RATE:  # Only batch process if failure rate is reasonable
-                self.logger.info(f"🚀 Using batch image processing for {len(animals_data)} animals")
+                self.logger.info(f"🚀 Using batch image processing for {len(valid)} animals")
                 try:
-                    # Always use batch processing for better performance and consistency
                     # Use smaller batch size for small datasets, adaptive for larger ones
-                    batch_size = min(SMALL_BATCH_THRESHOLD, len(animals_data)) if len(animals_data) <= SMALL_BATCH_THRESHOLD else self.r2_service.get_adaptive_batch_size()
-                    animals_data = self.image_processing_service.batch_process_images(
-                        animals_data,
+                    batch_size = min(SMALL_BATCH_THRESHOLD, len(valid)) if len(valid) <= SMALL_BATCH_THRESHOLD else self.r2_service.get_adaptive_batch_size()
+                    valid = self.image_processing_service.batch_process_images(
+                        valid,
                         self.organization_name,
                         batch_size=batch_size,
-                        use_concurrent=len(animals_data) > CONCURRENT_UPLOAD_THRESHOLD,
+                        use_concurrent=len(valid) > CONCURRENT_UPLOAD_THRESHOLD,
                         database_connection=self.conn,
-                        counts=processing_stats,
+                        counts=stats,
                     )
                 except Exception as e:
                     self.logger.warning(f"Batch image processing failed; per-animal processing will handle images: {e}")
@@ -994,35 +972,15 @@ class BaseScraper(ABC):
                 # here leaves every dog's stored gallery as it is.
                 try:
                     stored_images = self.database_service.get_images_by_external_id(self.organization_id) if self.database_service else {}
-                    self.image_processing_service.batch_process_galleries(animals_data, stored_images, self.organization_name)
+                    self.image_processing_service.batch_process_galleries(valid, stored_images, self.organization_name)
                 except Exception as e:
                     self.logger.warning(f"Gallery processing failed; keeping stored galleries: {e}")
 
         if not self.session_manager:
             self._log_service_unavailable("SessionManager", "mark animal as seen disabled")
 
-        for i, animal_data in enumerate(animals_data):
-            # Add organization_id and animal_type to the animal data
-            animal_data["organization_id"] = self.organization_id
-            if "animal_type" not in animal_data:
-                animal_data["animal_type"] = self.animal_type
-
-            # CRITICAL: Validate animal data before saving to prevent invalid data in database
-            if not self._validate_animal_data(animal_data):
-                reason = self.animal_validator.rejection_reason(animal_data) or "invalid"
-                self.logger.warning(f"Skipping invalid animal: {animal_data.get('name', 'Unknown')} - {reason}")
-                processing_stats["animals_rejected"] += 1
-                processing_stats["rejected"][reason] = processing_stats["rejected"].get(reason, 0) + 1
-                processing_stats["rejected_ids"].append(animal_data.get("external_id"))
-                continue
-
-            # Save animal
+        for i, animal_data in enumerate(valid):
             animal_id, action = self.save_animal(animal_data)
-            if not animal_id:
-                processing_stats["save_errors"] += 1
-                processing_stats["save_error_ids"].append(animal_data.get("external_id"))
-
-            # Update progress tracking (only count animals toward progress percentage)
             self.progress_tracker.update(items_processed=1, operation_type="animal_save")
 
             if animal_id:
@@ -1030,38 +988,27 @@ class BaseScraper(ABC):
                 if self.session_manager:
                     self.session_manager.mark_animal_as_seen(animal_id)
                     self._purge_if_reactivated(animal_id)
-
-                # Update counts
-                if action == "added":
-                    processing_stats["animals_added"] += 1
+                stats.saved(action)
+                if action in ("added", "updated"):
                     self.mark_animal_changed(animal_id)
-                elif action == "updated":
-                    processing_stats["animals_updated"] += 1
-                    self.mark_animal_changed(animal_id)
-                elif action == "no_change":
-                    processing_stats["animals_unchanged"] += 1
+            else:
+                stats.save_failed(animal_data.get("external_id"))
 
             # Log progress if needed (world-class progress tracking)
             if self.progress_tracker.should_log_progress():
-                progress_message = self.progress_tracker.get_progress_message()
-                self.logger.info(progress_message)
-
-                # Log batch summary with processing stats
-                self._log_batch_summary(self.progress_tracker, processing_stats, i + 1)
-
-                # Mark progress as logged
+                self.logger.info(self.progress_tracker.get_progress_message())
+                self._log_batch_summary(self.progress_tracker, stats, stats.animals_rejected + i + 1)
                 self.progress_tracker.log_batch_progress()
 
         # Log final completion
-        if len(animals_data) > 0:
-            final_message = self.progress_tracker.get_progress_message()
-            self.logger.info(f"🎯 Processing complete: {final_message}")
+        if animals_data:
+            self.logger.info(f"🎯 Processing complete: {self.progress_tracker.get_progress_message()}")
 
         phase_duration = (datetime.now() - phase_start).total_seconds()
         self.metrics_collector.track_phase_timing("database_operations", phase_duration)
 
-        self._report_losses(len(animals_data), processing_stats)
-        return processing_stats
+        self._report_losses(len(animals_data), stats)
+        return stats
 
     def _alert_detail_failures(self) -> None:
         """Sentry hears when more than LOSS_ALERT_RATE of the detail pages failed: new dogs would stop arriving quietly."""
@@ -1079,24 +1026,24 @@ class BaseScraper(ABC):
         except Exception as e:
             self.logger.error(f"Failed to emit detail-failure Sentry alert: {e}")
 
-    def _report_losses(self, animals_count: int, processing_stats: dict[str, Any]) -> None:
+    def _report_losses(self, animals_count: int, processing_stats: ScrapeStats) -> None:
         """Log the dogs this run collected but did not save, and warn Sentry when they exceed LOSS_ALERT_RATE."""
-        lost = processing_stats["animals_rejected"] + processing_stats["save_errors"]
+        lost = processing_stats.lost
         if not lost:
             return
         cap = self.LOST_IDS_LOG_CAP
         self.logger.warning(
             f"{self.get_organization_name()}: {animals_count} collected, {lost} not saved - "
-            f"rejected {processing_stats['rejected']} {processing_stats['rejected_ids'][:cap]}, "
-            f"save errors {processing_stats['save_errors']} {processing_stats['save_error_ids'][:cap]}"
+            f"rejected {processing_stats.rejected} {processing_stats.rejected_ids[:cap]}, "
+            f"save errors {processing_stats.save_errors} {processing_stats.save_error_ids[:cap]}"
         )
         if animals_count and lost / animals_count > self.LOSS_ALERT_RATE:
             try:
                 alert_dogs_not_saved(
                     org_name=self.get_organization_name(),
                     dogs_collected=animals_count,
-                    rejected=processing_stats["rejected"],
-                    save_errors=processing_stats["save_errors"],
+                    rejected=processing_stats.rejected,
+                    save_errors=processing_stats.save_errors,
                     org_id=self.organization_id,
                     scrape_log_id=getattr(self, "scrape_log_id", None),
                 )
@@ -1104,17 +1051,17 @@ class BaseScraper(ABC):
                 self.logger.error(f"Failed to emit dogs-not-saved Sentry alert: {e}")
 
     @staticmethod
-    def _completion_rate(animals_data: list, processing_stats: dict[str, Any]) -> float:
+    def _completion_rate(animals_data: list, processing_stats: ScrapeStats) -> float:
         """Percentage of the collected dogs that were saved."""
         if not animals_data:
             return 100.0
-        lost = processing_stats["animals_rejected"] + processing_stats["save_errors"]
+        lost = processing_stats.lost
         return round(100.0 * (len(animals_data) - lost) / len(animals_data), 1)
 
     def _log_batch_summary(
         self,
         progress_tracker: ProgressTracker,
-        processing_stats: dict[str, int],
+        processing_stats: ScrapeStats,
         processed_count: int,
     ):
         """Log batch summary with processing statistics.
@@ -1128,13 +1075,13 @@ class BaseScraper(ABC):
         if progress_tracker.verbosity_level.value in ["detailed", "comprehensive"]:
             summary = (
                 f"✅ Batch summary ({processed_count} processed): "
-                f"Added: {processing_stats['animals_added']}, "
-                f"Updated: {processing_stats['animals_updated']}, "
-                f"Images: {processing_stats['images_uploaded']} uploaded"
+                f"Added: {processing_stats.animals_added}, "
+                f"Updated: {processing_stats.animals_updated}, "
+                f"Images: {processing_stats.images_uploaded} uploaded"
             )
 
-            if processing_stats["images_failed"] > 0:
-                summary += f", {processing_stats['images_failed']} failed"
+            if processing_stats.images_failed > 0:
+                summary += f", {processing_stats.images_failed} failed"
 
             self.logger.info(summary)
 
@@ -1143,12 +1090,12 @@ class BaseScraper(ABC):
         phase_start = datetime.now()
 
         # Check for potential partial failure before updating stale data
-        correct_animals_found = self._get_correct_animals_found_count(animals_data)
+        correct_animals_found = self.animals_found
         count_dropped = self.detect_partial_failure(correct_animals_found)
-        save_errors = processing_stats["save_errors"]
+        save_errors = processing_stats.save_errors
         too_many_save_errors = correct_animals_found > 0 and save_errors / correct_animals_found > self.SAVE_ERROR_PARTIAL_FAILURE_RATE
         potential_failure = count_dropped or too_many_save_errors
-        processing_stats["potential_failure_detected"] = potential_failure
+        processing_stats.potential_failure_detected = potential_failure
 
         if potential_failure:
             self.logger.warning("Potential partial failure detected - skipping stale data update")
@@ -1191,21 +1138,21 @@ class BaseScraper(ABC):
         quality_score = self.metrics_collector.assess_data_quality(animals_data)
 
         # Log detailed metrics
-        correct_animals_found = self._get_correct_animals_found_count(animals_data)
+        correct_animals_found = self.animals_found
         detailed_metrics = self.metrics_collector.generate_comprehensive_metrics(
             animals_found=correct_animals_found,
-            animals_added=processing_stats["animals_added"],
-            animals_updated=processing_stats["animals_updated"],
-            animals_unchanged=processing_stats["animals_unchanged"],
-            images_uploaded=processing_stats["images_uploaded"],
-            images_failed=processing_stats["images_failed"],
+            animals_added=processing_stats.animals_added,
+            animals_updated=processing_stats.animals_updated,
+            animals_unchanged=processing_stats.animals_unchanged,
+            images_uploaded=processing_stats.images_uploaded,
+            images_failed=processing_stats.images_failed,
             duration_seconds=duration,
             quality_score=quality_score,
-            images_reused=processing_stats["images_reused"],
-            animals_rejected=processing_stats["animals_rejected"],
-            rejected=processing_stats["rejected"],
-            save_errors=processing_stats["save_errors"],
-            potential_failure_detected=processing_stats["potential_failure_detected"],
+            images_reused=processing_stats.images_reused,
+            animals_rejected=processing_stats.animals_rejected,
+            rejected=processing_stats.rejected,
+            save_errors=processing_stats.save_errors,
+            potential_failure_detected=processing_stats.potential_failure_detected,
             skip_existing_animals=self.skip_existing_animals,
             batch_size=self.batch_size,
             rate_limit_delay=self.rate_limit_delay,
@@ -1216,8 +1163,8 @@ class BaseScraper(ABC):
         self.complete_scrape_log(
             status="success",
             animals_found=correct_animals_found,
-            animals_added=processing_stats["animals_added"],
-            animals_updated=processing_stats["animals_updated"],
+            animals_added=processing_stats.animals_added,
+            animals_updated=processing_stats.animals_updated,
             detailed_metrics=detailed_metrics,
             duration_seconds=duration,
             data_quality_score=quality_score,
@@ -1227,16 +1174,16 @@ class BaseScraper(ABC):
         if hasattr(self, "progress_tracker") and self.progress_tracker:
             # Update final stats
             self.progress_tracker.track_processing_stats(
-                dogs_added=processing_stats["animals_added"],
-                dogs_updated=processing_stats["animals_updated"],
-                dogs_unchanged=processing_stats["animals_unchanged"],
-                processing_failures=processing_stats["animals_rejected"] + processing_stats["save_errors"],
+                dogs_added=processing_stats.animals_added,
+                dogs_updated=processing_stats.animals_updated,
+                dogs_unchanged=processing_stats.animals_unchanged,
+                processing_failures=processing_stats.lost,
             )
 
             self.progress_tracker.track_image_stats(
-                images_uploaded=processing_stats["images_uploaded"],
-                images_failed=processing_stats["images_failed"],
-                images_reused=processing_stats["images_reused"],
+                images_uploaded=processing_stats.images_uploaded,
+                images_failed=processing_stats.images_failed,
+                images_reused=processing_stats.images_reused,
             )
 
             self.progress_tracker.track_quality_stats(data_quality_score=quality_score, completion_rate=self._completion_rate(animals_data, processing_stats))
@@ -1248,9 +1195,7 @@ class BaseScraper(ABC):
         else:
             # Fallback to basic logging if no ProgressTracker
             central_logger = logging.getLogger("scraper")
-            central_logger.info(
-                f"✅ Scrape completed: {processing_stats['animals_added']} added, {processing_stats['animals_updated']} updated, Quality: {quality_score:.2f}, Duration: {duration:.1f}s"
-            )
+            central_logger.info(f"✅ Scrape completed: {processing_stats.animals_added} added, {processing_stats.animals_updated} updated, Quality: {quality_score:.2f}, Duration: {duration:.1f}s")
 
     @abstractmethod
     def collect_data(self):
@@ -1279,17 +1224,18 @@ class BaseScraper(ABC):
 
         return is_valid
 
-    def _sync_filtering_stats(self):
-        """Sync filtering stats from FilteringService to base scraper attributes."""
-        self.total_animals_before_filter = self.filtering_service.total_animals_before_filter
-        self.total_animals_skipped = self.filtering_service.total_animals_skipped
+    # filter_existing_animals keeps these up to date (#569)
+    @property
+    def total_animals_before_filter(self) -> int:
+        return self.filtering_service.total_animals_before_filter
+
+    @property
+    def total_animals_skipped(self) -> int:
+        return self.filtering_service.total_animals_skipped
 
     def _get_correct_animals_found_count(self, animals_data: list) -> int:
-        """Return correct animals-found count, accounting for skip_existing_animals filtering."""
-        self._sync_filtering_stats()
-        if self.skip_existing_animals and self.total_animals_before_filter > 0:
-            return self.total_animals_before_filter
-        return len(animals_data)
+        """Dogs the site listed: before skip_existing_animals filtering, when it ran."""
+        return self.filtering_service.get_correct_animals_found_count(animals_data)
 
     def get_organization_name(self) -> str:
         """Get organization name for logging."""
@@ -1577,11 +1523,11 @@ class BaseScraper(ABC):
         Dogs saved before the failure are in the database and get purged, so the
         error row must say so rather than 0/0/0.
         """
-        stats = self._processing_stats or {}
+        stats = self._processing_stats or ScrapeStats()
         return {
             "animals_found": self.animals_found,
-            "animals_added": stats.get("animals_added", 0),
-            "animals_updated": stats.get("animals_updated", 0),
+            "animals_added": stats.animals_added,
+            "animals_updated": stats.animals_updated,
         }
 
     def handle_scraper_failure(self, error_message):

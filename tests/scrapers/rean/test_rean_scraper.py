@@ -10,7 +10,6 @@ from tests.fixtures.playwright_fakes import fake_page, fake_playwright_service
 @pytest.fixture
 def scraper():
     with (
-        patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
         patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
     ):
         mock_config = MagicMock()
@@ -23,10 +22,6 @@ def scraper():
         mock_config.metadata.website_url = "https://rean.org.uk"
 
         mock_config_loader.return_value.load_config.return_value = mock_config
-        mock_sync_service = Mock()
-        mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=True)
-        mock_sync.return_value = mock_sync_service
-
         scraper = REANScraper()
         scraper.logger = Mock()
         return scraper

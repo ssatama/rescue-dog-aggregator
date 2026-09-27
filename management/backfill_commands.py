@@ -17,9 +17,7 @@ PR, and every backfill runs once, together (#572).
 plan reads production with PROD_RO_DATABASE_URL (laptop), or through
 POST /api/admin/query in cloud sessions, like the postgres MCP server. It
 builds the scraper without its database, image and session services, so it
-saves, uploads and profiles nothing. Building a scraper still syncs the
-organization row into the local dev database until #569 makes construction
-pure.
+saves, uploads and profiles nothing (construction does no I/O since #569).
 
 apply writes to RAILWAY_DATABASE_URL. Run it outside the cron window
 (Mon/Thu/Sat 15:00 UTC) and only with the maintainer's go-ahead.
@@ -89,12 +87,9 @@ def stored_rows_sql(org: str, external_ids: list[str]) -> str:
 def scrape_without_saving(org: str) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
     """Run the org's scraper with skipping off and return (dogs as save_animal would see them, rejected dogs)."""
     from utils.config_loader import ConfigLoader
-    from utils.db_connection import create_database_config_from_env, initialize_database_pool
     from utils.secure_scraper_loader import ScraperModuleInfo, SecureScraperLoader
 
     os.environ["FORCE_RESCRAPE"] = "true"
-    # The organization sync in BaseScraper.__init__ needs the pool (the local dev database).
-    initialize_database_pool(create_database_config_from_env())
     config = ConfigLoader().load_config(org)
     scraper_class = SecureScraperLoader().load_scraper_class(ScraperModuleInfo(module_path=config.scraper.module, class_name=config.scraper.class_name))
     scraper = scraper_class(config_id=org)

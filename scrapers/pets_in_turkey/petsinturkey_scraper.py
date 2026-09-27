@@ -140,10 +140,6 @@ class PetsInTurkeyScraper(BaseScraper):
             if dog.get("external_id") and self.session_manager:
                 self.session_manager.record_found_animal(dog["external_id"])
 
-        # Set filtering stats (no DB filtering here - extraction failures tracked separately)
-        self.total_animals_before_filter = len(dogs_data)
-        self.total_animals_skipped = 0
-
         return dogs_data
 
     def _extract_dog_data(self, section) -> dict[str, Any]:

@@ -421,14 +421,11 @@ class AnimalRescueBosniaScraper(BaseScraper):
         # Filter existing animals if skip is enabled
         if self.skip_existing_animals:
             filtered_animals = self.filtering_service.filter_existing_animals(animals_list)
-            self._sync_filtering_stats()
             urls_to_process = [a["url"] for a in filtered_animals]
         else:
             urls_to_process = [animal["url"] for animal in animals_list]
             # Every listed dog is found, even one whose page then fails (#558)
             self._record_all_found_external_ids(animals_list)
-            self.total_animals_before_filter = len(animals_list)
-            self.total_animals_skipped = 0
 
         # Process URLs in batches with parallel processing
         all_animals = self.fetch_details(urls_to_process, self._valid_dog, url=lambda url: url, max_workers=self.batch_size, attempts=self.max_retries + 1)

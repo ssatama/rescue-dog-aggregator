@@ -17,16 +17,10 @@ class TestBaseScraperBatchUploads:
     def mock_services(self):
         """Create mock services for testing."""
         with (
-            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_loader,
             patch("utils.r2_service.R2Service") as mock_r2,
             patch("services.image_processing_service.ImageProcessingService") as mock_image_service,
         ):
-            # Mock sync service
-            mock_sync_instance = Mock()
-            mock_sync_instance.sync_single_organization.return_value = Mock(organization_id=1, was_created=False)
-            mock_sync.return_value = mock_sync_instance
-
             # Mock config
             mock_config = Mock()
             mock_config.get_scraper_config_dict.return_value = {
@@ -61,7 +55,6 @@ class TestBaseScraperBatchUploads:
             mock_progress_tracker.log_completion_summary = Mock()
 
             yield {
-                "sync": mock_sync_instance,
                 "r2": mock_r2_instance,
                 "image_service": mock_image_service_instance,
                 "config": mock_config,
@@ -77,6 +70,7 @@ class TestBaseScraperBatchUploads:
                     {
                         "name": "Test Dog",
                         "external_id": "test-1",
+                        "adoption_url": "https://example.com/dog",
                         "primary_image_url": "https://example.com/dog.jpg",
                     }
                 ]
@@ -106,16 +100,19 @@ class TestBaseScraperBatchUploads:
                     {
                         "name": "Dog 1",
                         "external_id": "test-1",
+                        "adoption_url": "https://example.com/dog",
                         "primary_image_url": "https://example.com/dog1.jpg",
                     },
                     {
                         "name": "Dog 2",
                         "external_id": "test-2",
+                        "adoption_url": "https://example.com/dog",
                         "primary_image_url": "https://example.com/dog2.jpg",
                     },
                     {
                         "name": "Dog 3",
                         "external_id": "test-3",
+                        "adoption_url": "https://example.com/dog",
                         "primary_image_url": "https://example.com/dog3.jpg",
                     },
                 ]
@@ -145,6 +142,7 @@ class TestBaseScraperBatchUploads:
                     {
                         "name": f"Dog {i}",
                         "external_id": f"test-{i}",
+                        "adoption_url": "https://example.com/dog",
                         "primary_image_url": f"https://example.com/dog{i}.jpg",
                     }
                     for i in range(15)
@@ -178,6 +176,7 @@ class TestBaseScraperBatchUploads:
                     {
                         "name": "Test Dog",
                         "external_id": "test-1",
+                        "adoption_url": "https://example.com/dog",
                         "primary_image_url": "https://example.com/dog.jpg",
                     }
                 ]
@@ -204,6 +203,7 @@ class TestBaseScraperBatchUploads:
                     {
                         "name": "Dog 2",
                         "external_id": "test-2",
+                        "adoption_url": "https://example.com/dog",
                         "primary_image_url": "https://example.com/dog2.jpg",
                     },
                 ]  # No image
@@ -220,4 +220,5 @@ class TestBaseScraperBatchUploads:
         # Verify batch_process_images was still called
         mock_services["image_service"].batch_process_images.assert_called_once()
         call_args = mock_services["image_service"].batch_process_images.call_args
-        assert len(call_args[0][0]) == 2  # Both animals passed to batch processing
+        # The dog with no image is rejected before any upload (#569)
+        assert [dog["external_id"] for dog in call_args[0][0]] == ["test-2"]

@@ -180,12 +180,9 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
                 if self.skip_existing_animals and basic_dogs_data:
                     basic_dogs_data = self.filtering_service.filter_existing_animals(basic_dogs_data)
-                    self._sync_filtering_stats()
                 else:
                     # Every listed dog is found, even one whose page then fails (#558)
                     self._record_all_found_external_ids(basic_dogs_data)
-                    self.total_animals_before_filter = len(basic_dogs_data)
-                    self.total_animals_skipped = 0
 
                 # Second pass: each dog's detail page, within the rate limit (#567)
                 all_dogs.extend(await self.fetch_details_async(basic_dogs_data, self._enhance_with_detail_page, url=lambda dog: dog.get("adoption_url") or str(id(dog))))

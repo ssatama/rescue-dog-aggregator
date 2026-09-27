@@ -106,11 +106,8 @@ class MisisRescueScraper(BaseScraper):
 
         if self.skip_existing_animals:
             filtered_animals = self.filtering_service.filter_existing_animals(animals)
-            self._sync_filtering_stats()
             urls_to_process = [a["adoption_url"] for a in filtered_animals]
         else:
-            self.total_animals_before_filter = len(all_urls)
-            self.total_animals_skipped = 0
             urls_to_process = all_urls
 
         return self.fetch_details(urls_to_process, self._fetch_dog, url=lambda url: url, max_workers=self.batch_size)

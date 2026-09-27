@@ -36,6 +36,11 @@ class FilteringService:
     def total_animals_skipped(self) -> int:
         return self._total_animals_skipped
 
+    def reset_stats(self) -> None:
+        """Forget the last run's filtering counts."""
+        self._total_animals_before_filter = 0
+        self._total_animals_skipped = 0
+
     def get_existing_external_ids(self) -> set[str]:
         """Get external IDs of this organization's available animals."""
         if self.database_service:
