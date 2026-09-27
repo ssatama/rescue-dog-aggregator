@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup, Comment, Tag
 
 from scrapers.base_scraper import BaseScraper, DetailPageError, ListingIncompleteError
+from scrapers.wordpress_ids import body_post_id, post_ids, url_key
 
 # Migrated to unified standardization - using BaseScraper.process_animal()
 # Legacy standardize_age kept for date-of-birth calculations
@@ -95,7 +96,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             List of filtered animals ready for detail scraping
         """
         # Get list of available dogs from all listing pages
-        animals = self.get_animal_list()
+        animals = self._with_post_ids(self.get_animal_list())
 
         if not animals:
             self.logger.warning("No animals found to process")
@@ -106,6 +107,31 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         result = self.filtering_service.filter_existing_animals(animals)
         return result
 
+    def _with_post_ids(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Key each listed dog on its WordPress post ID (#570).
+
+        One REST request maps every dog's URL to its ID. A listed dog the
+        answer doesn't hold has no published page: it is skipped as a failed
+        detail page, as its 404 would be. A failed request raises
+        ListingIncompleteError, so stale detection doesn't run.
+        """
+        if not animals:
+            return animals
+
+        def get_json(params: dict) -> tuple[list[dict], int]:
+            response = self.get_listing_page(f"{self.base_url}/wp-json/wp/v2/dog", params=params, timeout=30)
+            return response.json(), int(response.headers.get("X-WP-TotalPages", 1))
+
+        ids = post_ids(get_json, {})
+        keyed = []
+        for animal in animals:
+            post_id = ids.get(url_key(animal["adoption_url"]))
+            if post_id is None:
+                self._detail_failed(animal["adoption_url"], DetailPageError("not a published dog page"))
+                continue
+            keyed.append({**animal, "external_id": self._external_id(post_id)})
+        return keyed
+
     def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Each dog's detail page, merged over its listing data (#567)."""
 
@@ -114,6 +140,10 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             if not details:
                 # _scrape_animal_details logs its own error and returns {}
                 raise DetailPageError(f"{animal['adoption_url']} yielded no details")
+            # The listing's ID is the dog's; the page's own is a cross-check (#570)
+            page_id = details.pop("external_id", None)
+            if page_id and animal.get("external_id") and page_id != animal["external_id"]:
+                self.logger.warning(f"{animal['adoption_url']}: page says {page_id}, listing {animal['external_id']}; keeping the listing's")
             animal.update(details)
             return animal
 
@@ -223,13 +253,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                         self.logger.warning(f"Could not extract name from URL: {adoption_url}")
                         continue
 
-                    # Extract external ID from URL
-                    external_id = self._extract_external_id(adoption_url)
-
-                    # Create animal data structure
+                    # Keyed on its post ID later, in _with_post_ids (#570)
                     animal_data = {
                         "name": name,
-                        "external_id": external_id,
                         "adoption_url": adoption_url,
                         "animal_type": "dog",
                         "status": "available",
@@ -238,7 +264,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                     }
 
                     page_animals.append(animal_data)
-                    self.logger.debug(f"Added dog: {name} ({external_id})")
+                    self.logger.debug(f"Added dog: {name}")
 
                 except Exception as e:
                     self.logger.error(f"Error processing dog card: {e}")
@@ -277,19 +303,10 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             self.logger.error(f"Error extracting name from URL {url}: {e}")
             return ""
 
-    def _extract_external_id(self, url: str) -> str:
-        """Extract external ID from adoption URL with organization prefix.
-
-        Args:
-            url: Full adoption URL
-
-        Returns:
-            External ID with 'spbr-' prefix to prevent collisions
-        """
-        # Extract the last part of the URL path, removing trailing slash
-        # This will be the slug: pepper, daisy, summer-breeze, etc.
-        slug = url.rstrip("/").split("/")[-1]
-        return f"spbr-{slug}"
+    @staticmethod
+    def _external_id(post_id: int) -> str:
+        """The dog's ID: its WordPress post ID, which survives renames (#570)."""
+        return f"spbr-{post_id}"
 
     def _clean_dog_name(self, name: str) -> str:
         """Clean dog name by normalizing case and handling formatting.
@@ -462,8 +479,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                 self.logger.warning(f"Could not extract name from {adoption_url}")
                 return {}
 
-            # Extract external ID from URL
-            external_id = self._extract_external_id(adoption_url)
+            # The page's own post ID (#570); None if the theme drops the body class
+            post_id = body_post_id(soup)
+            external_id = self._external_id(post_id) if post_id else None
 
             # Extract properties from the detail page
             properties = self._extract_properties(soup)

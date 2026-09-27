@@ -62,7 +62,7 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
     @patch("requests.get")
     def test_detail_page_data_extraction(self, mock_get, scraper):
         mock_html = """
-        <html><body>
+        <html><body class="page-template-default page page-id-36251">
             <h1>Ksenon</h1>
             <img src="/wp-content/uploads/2025/06/Ksenon-2.jpg" alt="">
             <h2>Short description</h2>
@@ -79,7 +79,7 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
         result = scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/ksenon/")
 
         assert result["name"] == "Ksenon"
-        assert result["external_id"] == "arb-ksenon"
+        assert result["external_id"] == "arb-36251"  # the page ID, not the name (#570)
         assert result["sex"] == "Male"
         assert result["properties"]["breed"] == "Mix"
         assert result["properties"]["gender"] == "Male"
@@ -111,22 +111,32 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
         assert result["age_text"] is not None
 
     @patch("requests.get")
-    def test_external_id_generation(self, mock_get, scraper):
-        mock_html = """
-        <html><body>
-            <h1>Ksenon Dog</h1>
-            <h2>Short description</h2>
-            <p>Breed: Mix<br>Gender: Male</p>
-        </body></html>
-        """
-        mock_response = Mock()
-        mock_response.content = mock_html.encode("utf-8")
+    def test_a_page_without_its_id_gives_no_external_id(self, mock_get, scraper):
+        """The name is never the ID (#570): a renamed dog would be a new one."""
+        mock_response = Mock(content=b"<html><body><h1>Ksenon Dog</h1><h2>Short description</h2><p>Breed: Mix<br>Gender: Male</p></body></html>")
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
         result = scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/ksenon/")
 
-        assert result["external_id"] == "arb-ksenon-dog"
+        assert result["external_id"] is None
+
+    def test_listed_dogs_are_keyed_on_their_page_ids(self, scraper):
+        """One REST request keys every listed dog; an unpublished page is a failed detail page (#570)."""
+        listed = [
+            {"name": "Johny", "url": "https://www.animal-rescue-bosnia.org/johny/"},
+            {"name": "Johny", "url": "https://www.animal-rescue-bosnia.org/johny/"},
+            {"name": "Lexis", "url": "https://www.animal-rescue-bosnia.org/lexis/"},
+        ]
+        rest = Mock(headers={"X-WP-TotalPages": "1"})
+        rest.json.return_value = [{"id": 36251, "link": "https://www.animal-rescue-bosnia.org/johny/"}]
+
+        with patch.object(scraper, "get_listing_page", return_value=rest) as get:
+            keyed = scraper._with_page_ids(listed)
+
+        assert [(dog["external_id"], dog["adoption_url"]) for dog in keyed] == [("arb-36251", "https://www.animal-rescue-bosnia.org/johny/")]
+        assert get.call_args.kwargs["params"]["slug"] == "johny,lexis"
+        assert scraper.detail_failures == ["https://www.animal-rescue-bosnia.org/lexis/"]
 
     @pytest.mark.parametrize("dob", ["January 2022", "Januar 2022", "Jan 2022"])
     def test_age_from_english_or_german_month(self, scraper, dob):

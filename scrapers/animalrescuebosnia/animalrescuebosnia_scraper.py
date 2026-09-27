@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper, DetailPageError
+from scrapers.wordpress_ids import body_post_id, post_ids, slugs, url_key
 from utils.shared_extraction_patterns import gallery_urls
 
 
@@ -146,9 +147,9 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 # World-class logging: Location filtering handled by centralized system
                 return None
 
-            # Extract external ID from name with organization prefix
-            slug = name.lower().replace(" ", "-")
-            external_id = f"arb-{slug}"
+            # The page's own ID (#570): a name can change or repeat
+            page_id = body_post_id(soup)
+            external_id = self._external_id(page_id) if page_id else None
 
             # Extract hero image (first significant image, not in gallery)
             hero_image_url = None
@@ -409,33 +410,64 @@ class AnimalRescueBosniaScraper(BaseScraper):
         animals_list = self.get_animal_list()
         # World-class logging: Animal list stats handled by centralized system
 
-        # Pre-generate external_ids for stale detection
-        # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-        # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
-        for animal in animals_list:
-            if animal.get("name") and "external_id" not in animal:
-                slug = animal["name"].lower().replace(" ", "-")
-                animal["external_id"] = f"arb-{slug}"
-                animal["adoption_url"] = animal["url"]
+        # IDs before filtering: filter_existing_animals records every listed
+        # dog's external_id for stale detection (#558)
+        animals_list = self._with_page_ids(animals_list)
 
         # Filter existing animals if skip is enabled
         if self.skip_existing_animals:
-            filtered_animals = self.filtering_service.filter_existing_animals(animals_list)
-            urls_to_process = [a["url"] for a in filtered_animals]
+            to_process = self.filtering_service.filter_existing_animals(animals_list)
         else:
-            urls_to_process = [animal["url"] for animal in animals_list]
+            to_process = animals_list
             # Every listed dog is found, even one whose page then fails (#558)
             self._record_all_found_external_ids(animals_list)
 
         # Process URLs in batches with parallel processing
-        all_animals = self.fetch_details(urls_to_process, self._valid_dog, url=lambda url: url, max_workers=self.batch_size, attempts=self.max_retries + 1)
+        all_animals = self.fetch_details(to_process, self._valid_dog, url=lambda animal: animal["url"], max_workers=self.batch_size, attempts=self.max_retries + 1)
 
         # World-class logging: Collection results handled by centralized system
         return all_animals
 
-    def _valid_dog(self, url: str) -> dict[str, Any] | None:
-        """The dog on a detail page, or None if the page yields no valid dog."""
+    def _with_page_ids(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Key each listed dog on its WordPress page ID (#570).
+
+        One REST request maps the listed pages' slugs to their IDs. A listed
+        dog the answer doesn't hold has no published page (the listing links
+        to some 404s): it is skipped as a failed detail page. A failed request
+        raises ListingIncompleteError, so stale detection doesn't run.
+        """
+        animals = self._unique_by_url(animals, lambda animal: animal["url"])
+        if not animals:
+            return animals
+
+        def get_json(params: dict) -> tuple[list[dict], int]:
+            response = self.get_listing_page(f"{self.base_url}/wp-json/wp/v2/pages", params=params)
+            return response.json(), int(response.headers.get("X-WP-TotalPages", 1))
+
+        ids = post_ids(get_json, {"slug": ",".join(slugs(animal["url"] for animal in animals))})
+        keyed = []
+        for animal in animals:
+            page_id = ids.get(url_key(animal["url"]))
+            if page_id is None:
+                self._detail_failed(animal["url"], DetailPageError("not a published page"))
+                continue
+            keyed.append({**animal, "external_id": self._external_id(page_id), "adoption_url": animal["url"]})
+        return keyed
+
+    @staticmethod
+    def _external_id(page_id: int) -> str:
+        """The dog's ID: its WordPress page ID, which survives renames (#570)."""
+        return f"arb-{page_id}"
+
+    def _valid_dog(self, animal: dict[str, Any]) -> dict[str, Any] | None:
+        """The dog on a listed dog's detail page, or None if it yields no valid dog."""
+        url = animal["url"]
         result = self.scrape_animal_details(url)
+        if result:
+            # The listing's ID is the dog's; the page's own is a cross-check (#570)
+            if result.get("external_id") and result["external_id"] != animal["external_id"]:
+                self.logger.warning(f"{url}: page says {result['external_id']}, listing {animal['external_id']}; keeping the listing's")
+            result["external_id"] = animal["external_id"]
         if result and self._validate_dog_data(result):
             result["organization_id"] = self.organization_id
             return result

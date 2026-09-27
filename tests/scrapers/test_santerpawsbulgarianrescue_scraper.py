@@ -9,6 +9,19 @@ from scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper import
     SanterPawsBulgarianRescueScraper,
 )
 
+_REAL_WITH_POST_IDS = SanterPawsBulgarianRescueScraper._with_post_ids
+
+
+@pytest.fixture(autouse=True)
+def _no_rest_lookup():
+    """No network: listed dogs keep a given ID or are keyed on their slug, not the REST post ID (#570)."""
+
+    def by_slug(self, animals):
+        return [{**animal, "external_id": animal.get("external_id") or "spbr-" + animal["adoption_url"].rstrip("/").split("/")[-1]} for animal in animals]
+
+    with patch.object(SanterPawsBulgarianRescueScraper, "_with_post_ids", by_slug):
+        yield
+
 
 @pytest.mark.unit
 class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
@@ -39,22 +52,20 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 result = self.scraper._extract_dog_name_from_url(url)
                 self.assertEqual(result, expected_name)
 
-    def test_extract_external_id_from_url(self):
-        """Test external ID extraction from URLs."""
-        test_cases = [
-            ("https://santerpawsbulgarianrescue.com/dog/pepper/", "spbr-pepper"),
-            ("https://santerpawsbulgarianrescue.com/dog/daisy/", "spbr-daisy"),
-            (
-                "https://santerpawsbulgarianrescue.com/dog/summer-breeze/",
-                "spbr-summer-breeze",
-            ),
-            ("https://santerpawsbulgarianrescue.com/dog/ruby-red/", "spbr-ruby-red"),
+    def test_listed_dogs_are_keyed_on_their_post_ids(self):
+        """The REST post ID survives renames; an unpublished page is a failed detail page (#570)."""
+        listed = [
+            {"name": "Pepper", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/pepper/"},
+            {"name": "Gone", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/gone/"},
         ]
+        rest = Mock(headers={"X-WP-TotalPages": "1"})
+        rest.json.return_value = [{"id": 232, "link": "https://santerpawsbulgarianrescue.com/dog/pepper/"}]
 
-        for url, expected_id in test_cases:
-            with self.subTest(url=url):
-                result = self.scraper._extract_external_id(url)
-                self.assertEqual(result, expected_id)
+        with patch.object(self.scraper, "get_listing_page", return_value=rest):
+            keyed = _REAL_WITH_POST_IDS(self.scraper, listed)
+
+        self.assertEqual([dog["external_id"] for dog in keyed], ["spbr-232"])
+        self.assertEqual(self.scraper.detail_failures, ["https://santerpawsbulgarianrescue.com/dog/gone/"])
 
     @patch("requests.get")
     def test_get_animal_list_pagination_request(self, mock_get):
@@ -147,7 +158,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
         # Check first dog
         self.assertEqual(animals[0]["name"], "Pepper")
-        self.assertEqual(animals[0]["external_id"], "spbr-pepper")
+        self.assertNotIn("external_id", animals[0])  # keyed later on the post ID (#570)
         self.assertEqual(
             animals[0]["adoption_url"],
             "https://santerpawsbulgarianrescue.com/dog/pepper/",
@@ -157,7 +168,6 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
         # Check second dog
         self.assertEqual(animals[1]["name"], "Daisy")
-        self.assertEqual(animals[1]["external_id"], "spbr-daisy")
         self.assertEqual(
             animals[1]["adoption_url"],
             "https://santerpawsbulgarianrescue.com/dog/daisy/",
@@ -165,7 +175,6 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
         # Check third dog with hyphenated name
         self.assertEqual(animals[2]["name"], "Summer Breeze")
-        self.assertEqual(animals[2]["external_id"], "spbr-summer-breeze")
         self.assertEqual(
             animals[2]["adoption_url"],
             "https://santerpawsbulgarianrescue.com/dog/summer-breeze/",
