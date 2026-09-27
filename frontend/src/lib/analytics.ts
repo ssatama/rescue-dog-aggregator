@@ -2,6 +2,7 @@ import posthog, { type CaptureOptions } from "posthog-js";
 import { getAgeCategory, sizeCategory } from "@/utils/dogHelpers";
 import { reportError } from "@/utils/logger";
 import type { InstallMethod } from "@/lib/installApp";
+import { isStandalone } from "@/lib/displayMode";
 
 // Product analytics events for PostHog. Every posthog.capture() goes through
 // this file so the event names and their properties live in one place.
@@ -243,6 +244,17 @@ export function trackOrganizationWebsiteClicked(
     },
     OUTBOUND,
   );
+}
+
+/** Adds `display_mode` to every event: `standalone` when the site runs as an
+ * installed app. Follows the change when Chrome moves an installing tab into
+ * the app window without a reload. */
+export function registerDisplayMode(): void {
+  if (!posthog.__loaded) return;
+  const update = () =>
+    posthog.register({ display_mode: isStandalone() ? "standalone" : "browser" });
+  update();
+  window.matchMedia?.("(display-mode: standalone)").addEventListener?.("change", update);
 }
 
 // Installing the site as an app (home screen, Dock). `method` is how this

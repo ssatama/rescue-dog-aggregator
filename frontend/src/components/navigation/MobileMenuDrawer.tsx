@@ -113,7 +113,8 @@ function MenuLink({
 export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
+      // An inner dialog (the install steps) handles its own Escape first
+      if (e.key === "Escape" && isOpen && !e.defaultPrevented) {
         onClose();
       }
     };

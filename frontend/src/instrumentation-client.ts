@@ -5,7 +5,7 @@
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
 import { resolvePosthogOptOut } from "@/lib/posthogOptOut";
-import { isStandalone } from "@/lib/displayMode";
+import { registerDisplayMode } from "@/lib/analytics";
 import {
   isChunkLoadError,
   setupChunkErrorHandler,
@@ -73,8 +73,7 @@ if (posthogEnabled) {
       // (below), keeping it off the critical path for LCP.
       disable_session_recording: true,
     });
-    // Launches from the home screen or Dock show up as `standalone`
-    posthog.register({ display_mode: isStandalone() ? "standalone" : "browser" });
+    registerDisplayMode();
 
     const startRecording = () => {
       try {

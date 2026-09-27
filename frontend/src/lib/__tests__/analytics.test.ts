@@ -11,16 +11,18 @@ import {
   trackLocationSet,
   trackSearchPerformed,
   trackSortChanged,
+  registerDisplayMode,
 } from "../analytics";
 
 jest.mock("posthog-js", () => ({
   __esModule: true,
-  default: { __loaded: true, capture: jest.fn() },
+  default: { __loaded: true, capture: jest.fn(), register: jest.fn() },
 }));
 
 const mockPosthog = posthog as unknown as {
   __loaded: boolean;
   capture: jest.Mock;
+  register: jest.Mock;
 };
 
 const dog = {
@@ -190,6 +192,27 @@ describe("analytics", () => {
       ["install_nudge_dismissed", { method: "prompt" }, undefined],
       ["app_installed", {}, undefined],
     ]);
+  });
+
+  it("tags events with display_mode and follows a switch to the app window", () => {
+    let standalone = false;
+    let onChange: () => void = () => {};
+    const original = window.matchMedia;
+    window.matchMedia = jest.fn(() => ({
+      get matches() {
+        return standalone;
+      },
+      addEventListener: (_type: string, listener: () => void) => {
+        onChange = listener;
+      },
+    })) as unknown as typeof window.matchMedia;
+
+    registerDisplayMode();
+    expect(mockPosthog.register).toHaveBeenLastCalledWith({ display_mode: "browser" });
+    standalone = true;
+    onChange();
+    expect(mockPosthog.register).toHaveBeenLastCalledWith({ display_mode: "standalone" });
+    window.matchMedia = original;
   });
 
   it("does nothing before PostHog is initialized", () => {

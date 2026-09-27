@@ -60,13 +60,15 @@ describe("InstallNudge", () => {
   });
 
   it("is not counted as shown while CSS hides it behind the adopt bar", () => {
-    const original = HTMLElement.prototype.checkVisibility;
-    HTMLElement.prototype.checkVisibility = () => false;
+    // jsdom applies no Tailwind, so stand in for the adopt bar's CSS
+    const spy = jest
+      .spyOn(window, "getComputedStyle")
+      .mockReturnValue({ display: "none" } as CSSStyleDeclaration);
     browseFiveDogs();
     render(<InstallNudge />);
     act(() => jest.advanceTimersByTime(1000));
+    spy.mockRestore();
     expect(trackInstallNudgeShown).not.toHaveBeenCalled();
-    HTMLElement.prototype.checkVisibility = original;
   });
 
   it("shows on the third session", () => {

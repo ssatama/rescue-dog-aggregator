@@ -62,7 +62,8 @@ export default function InstallNudge() {
     if (!shown || !method) return;
     const timer = setTimeout(() => {
       const card = cardRef.current;
-      if (card && (card.checkVisibility?.() ?? true) && markNudgeShown()) {
+      // Not checkVisibility(): iOS before 17.4 lacks it
+      if (card && getComputedStyle(card).display !== "none" && markNudgeShown()) {
         trackInstallNudgeShown(method);
       }
     }, 1000);

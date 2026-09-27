@@ -66,9 +66,9 @@ describe("InstallAppButton", () => {
     expect(onDone).toHaveBeenCalled();
   });
 
-  it("closes only the steps on Escape, not the menu drawer they opened from", async () => {
+  it("marks Escape as handled, so the menu drawer behind the steps stays open", async () => {
     mockMethod.mockReturnValue("ios");
-    const drawerEscape = jest.fn();
+    const drawerEscape = jest.fn((event: KeyboardEvent) => event.defaultPrevented);
     document.addEventListener("keydown", drawerEscape);
     render(<InstallAppButton surface="menu" />);
     fireEvent.click(screen.getByRole("button", { name: "Add to Home Screen" }));
@@ -77,7 +77,7 @@ describe("InstallAppButton", () => {
     fireEvent.keyDown(dialog, { key: "Escape" });
 
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(drawerEscape).not.toHaveBeenCalled();
+    expect(drawerEscape).toHaveReturnedWith(true);
     document.removeEventListener("keydown", drawerEscape);
   });
 
