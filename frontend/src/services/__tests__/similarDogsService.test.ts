@@ -4,7 +4,8 @@ import type { Dog } from "../../types/dog";
 
 jest.mock("../animalsService", () => ({ getAnimals: jest.fn() }));
 
-const dog = { id: 7, name: "Dolly", standardized_size: "Large", age_min_months: 40 } as Dog;
+// id 8 over four candidates starts the rotation (#520) at the top
+const dog = { id: 8, name: "Dolly", standardized_size: "Large", age_min_months: 40 } as Dog;
 const found = (ids: number[]) => ids.map((id) => ({ id, name: `Dog ${id}` })) as Dog[];
 
 describe("getSimilarDogs", () => {
@@ -19,7 +20,7 @@ describe("getSimilarDogs", () => {
   });
 
   it("leaves out the dog itself and returns at most three", async () => {
-    (getAnimals as jest.Mock).mockResolvedValue(found([1, 7, 2, 3]));
+    (getAnimals as jest.Mock).mockResolvedValue(found([1, 8, 2, 3]));
 
     expect((await getSimilarDogs(dog)).map((d) => d.id)).toEqual([1, 2, 3]);
   });

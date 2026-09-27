@@ -2,7 +2,7 @@
 // TDD Phase 3: RED - Tests for dog detail OrganizationCard integration
 
 import React from "react";
-import { render, screen, waitFor } from "../../../../test-utils";
+import { render, screen, waitFor, fireEvent } from "../../../../test-utils";
 import "@testing-library/jest-dom";
 import DogDetailClient from "../DogDetailClient";
 import { getAnimalBySlug } from "../../../../services/animalsService";
@@ -122,6 +122,15 @@ jest.mock("../../../../components/dogs/detail", () => ({
       )}
     </div>
   ),
+}));
+
+// One router across renders, so the back button's calls can be asserted
+const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), forward: jest.fn(), prefetch: jest.fn() };
+jest.mock("next/navigation", () => ({
+  useRouter: () => mockRouter,
+  useParams: () => ({ id: "1" }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/dogs",
 }));
 
 // Mock the useSwipeNavigation hook (configurable per-test)
@@ -489,6 +498,28 @@ describe("DogDetailClient Dog Detail Integration", () => {
         expect(adoptLink).toHaveAttribute("rel", "noopener");
         expect(adoptLink.getAttribute("rel")).not.toMatch(/noreferrer/);
       }
+    });
+  });
+
+  describe("phone back button (#518)", () => {
+    afterEach(() => {
+      delete window.navigation;
+    });
+
+    it("goes to the catalog when the visitor landed on this dog", async () => {
+      window.navigation = { canGoBack: false };
+      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
+      fireEvent.click(await screen.findByTestId("back-button"));
+      expect(mockRouter.push).toHaveBeenCalledWith("/dogs");
+      expect(mockRouter.back).not.toHaveBeenCalled();
+    });
+
+    it("goes back when a page of the site is behind this one", async () => {
+      window.navigation = { canGoBack: true };
+      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
+      fireEvent.click(await screen.findByTestId("back-button"));
+      expect(mockRouter.back).toHaveBeenCalled();
+      expect(mockRouter.push).not.toHaveBeenCalledWith("/dogs");
     });
   });
 });
