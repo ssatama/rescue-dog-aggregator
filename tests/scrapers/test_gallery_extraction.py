@@ -131,7 +131,6 @@ def detail_page(scraper, module: str, fixture: str, method: str, url: str) -> di
     """Run a requests-based detail scraper against a saved page."""
     html = (FIXTURES / f"{fixture}.html").read_text()
     response = Mock(text=html, content=html.encode(), status_code=200, raise_for_status=lambda: None)
-    scraper.use_unified_standardization = False
     scraper.timeout = 30
     with patch(f"{module}.requests.get", return_value=response):
         return getattr(scraper, method)(url)

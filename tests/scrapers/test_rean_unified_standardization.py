@@ -37,7 +37,6 @@ class TestREANUnifiedStandardization:
     def test_rean_uses_unified_standardization_when_enabled(self, scraper):
         """Test that REAN uses unified standardization through BaseScraper."""
         # Set feature flag
-        scraper.use_unified_standardization = True
 
         # Mock animal data (REAN doesn't extract breed)
         raw_animal = {
@@ -56,7 +55,6 @@ class TestREANUnifiedStandardization:
 
     def test_rean_handles_missing_breed_gracefully(self, scraper):
         """Test REAN handles cases where breed is not extracted."""
-        scraper.use_unified_standardization = True
 
         raw_animal = {"name": "Max", "age": "3 years", "properties": {}}
 
@@ -70,7 +68,6 @@ class TestREANUnifiedStandardization:
 
     def test_rean_future_breed_extraction_ready(self, scraper):
         """Test that if REAN adds breed extraction, it will use unified standardization."""
-        scraper.use_unified_standardization = True
 
         # Process through standardizer with proper keyword arguments
         standardized = scraper.standardizer.apply_full_standardization(breed="Lurcher", age="1 year")
@@ -96,18 +93,3 @@ class TestREANUnifiedStandardization:
             assert result["name"] == "Test Dog"
             assert result["age_text"] == "2 years"
             assert "properties" in result
-
-    def test_feature_flag_controls_standardization(self, scraper):
-        """Test feature flag properly controls standardization usage."""
-        raw_animal = {"name": "Charlie", "age": "4 years", "properties": {}}
-
-        # Test with flag disabled - should return data unchanged
-        scraper.use_unified_standardization = False
-        result_disabled = scraper.process_animal(raw_animal)
-        assert result_disabled == raw_animal
-
-        # Test with flag enabled - should apply any available standardization
-        scraper.use_unified_standardization = True
-        result_enabled = scraper.process_animal(raw_animal)
-        assert result_enabled["name"] == "Charlie"
-        assert result_enabled["age_text"] == "4 years"  # Unified standardization preserves age_text

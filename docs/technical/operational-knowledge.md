@@ -29,10 +29,10 @@ returns `False` instead of raising, so check its return. Raise
 the pagination says it exists, and fetch plain-HTTP listings with
 `BaseScraper.get_listing_page`, which retries (#559).
 
-**Playwright branches are easy to leave untested.** Scrapers import
-Playwright only under `if USE_PLAYWRIGHT:` (read at import time) and tests
-default to Selenium. Patch with `patch("...scraper.PlaywrightOptions",
-create=True)` to cover the code production runs.
+**Playwright is the only browser path** (Selenium removed in #566). Tests
+patch the scraper module's `get_playwright_service` with
+`tests/fixtures/playwright_fakes.py` and serve saved HTML; nothing reads
+`USE_PLAYWRIGHT` any more, so the Railway variable can go.
 
 **Cron import quirk (#211/#212, reverted in #213).** New modules under
 `services/` once failed with `ModuleNotFoundError` in the cron container even

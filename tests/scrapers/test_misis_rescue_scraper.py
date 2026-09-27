@@ -713,7 +713,7 @@ class TestMisisRescueNavigationResilience(ScraperTestBase):
         async def fake_retry(options=None, **kwargs):
             yield SimpleNamespace(page=page)
 
-        return patch.object(scraper, "_with_browser_retry", fake_retry)
+        return patch.object(scraper.browser_manager, "with_browser_retry", fake_retry)
 
     def _make_page(self, goto):
         page = Mock()
@@ -722,10 +722,8 @@ class TestMisisRescueNavigationResilience(ScraperTestBase):
         return page
 
     def _run_listing(self, scraper, page):
-        # PlaywrightOptions is only imported when USE_PLAYWRIGHT=true at import
-        # time, so under the test default (Selenium branch) the name is absent.
         with (
-            patch("scrapers.misis_rescue.scraper.PlaywrightOptions", create=True),
+            patch("scrapers.misis_rescue.scraper.PlaywrightOptions"),
             self._patch_page_into(scraper, page),
             patch.object(scraper, "_scroll_to_load_all_content_playwright", new=AsyncMock()),
             patch.object(scraper, "_click_pagination_button_playwright", new=AsyncMock(return_value=False)),
@@ -770,7 +768,7 @@ class TestMisisRescueNavigationResilience(ScraperTestBase):
 
     def _run_detail(self, scraper, page):
         with (
-            patch("scrapers.misis_rescue.scraper.PlaywrightOptions", create=True),
+            patch("scrapers.misis_rescue.scraper.PlaywrightOptions"),
             self._patch_page_into(scraper, page),
             patch("scrapers.misis_rescue.scraper.asyncio.sleep", new=AsyncMock()),
             patch("scrapers.browser_manager.asyncio.sleep", new=AsyncMock()),
@@ -831,8 +829,8 @@ class TestMisisRescueNeverHangs(ScraperTestBase):
             yield SimpleNamespace(page=page)
 
         with (
-            patch("scrapers.misis_rescue.scraper.PlaywrightOptions", create=True),
-            patch.object(scraper, "_with_browser_retry", fake_retry),
+            patch("scrapers.misis_rescue.scraper.PlaywrightOptions"),
+            patch.object(scraper.browser_manager, "with_browser_retry", fake_retry),
             patch.object(scraper, "_scroll_to_load_all_content_playwright", new=AsyncMock()),
             patch.object(scraper, "_click_pagination_button_playwright", new=AsyncMock(side_effect=RuntimeError("Target page, context or browser has been closed"))),
             patch("scrapers.misis_rescue.scraper.asyncio.sleep", new=AsyncMock()),
@@ -850,8 +848,8 @@ class TestMisisRescueNeverHangs(ScraperTestBase):
             yield SimpleNamespace(page=page)
 
         with (
-            patch("scrapers.misis_rescue.scraper.PlaywrightOptions", create=True),
-            patch.object(scraper, "_with_browser_retry", fake_retry),
+            patch("scrapers.misis_rescue.scraper.PlaywrightOptions"),
+            patch.object(scraper.browser_manager, "with_browser_retry", fake_retry),
             patch.object(scraper.browser_manager, "navigate_with_retry", new=AsyncMock(return_value=True)),
             patch.object(scraper, "_scroll_to_load_all_content_playwright", new=AsyncMock()),
             patch.object(scraper, "_click_pagination_button_playwright", new=AsyncMock(side_effect=buttons)),

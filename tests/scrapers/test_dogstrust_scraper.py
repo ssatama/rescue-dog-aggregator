@@ -29,53 +29,18 @@ class TestDogsTrustScraper(ScraperTestBase):
     expected_org_name = "Dogs Trust"
     expected_base_url = "https://www.dogstrust.org.uk"
 
-    @patch("scrapers.dogstrust.dogstrust_scraper.get_browser_service")
-    def test_selenium_driver_cleanup_on_exception(self, mock_browser_service, scraper):
-        """Test WebDriver is properly cleaned up even when exceptions occur."""
-        mock_service = Mock()
-        mock_browser_service.return_value = mock_service
-        mock_driver = Mock()
-        mock_browser_result = Mock()
-        mock_browser_result.driver = mock_driver
-        mock_service.create_driver.return_value = mock_browser_result
-        mock_driver.get.side_effect = Exception("Network error")
+    def test_the_listing_loads_the_available_dogs_url(self, scraper):
+        """The first load is the canonical filtered URL, page 0; pages after it are clicked."""
+        page = _build_paginated_page_mock(['<html><body><a href="/rehoming/dogs/breed/111">Dog</a><div>1 / 1</div></body></html>'])
+        _patch_browser_retry(scraper, page)
 
-        # Should handle exception gracefully and clean up driver
-        result = scraper.get_animal_list()
+        with patch("scrapers.dogstrust.dogstrust_scraper.asyncio.sleep", new=AsyncMock()):
+            result = scraper.get_animal_list()
 
-        assert isinstance(result, list)  # Should return empty list on error
-        mock_driver.quit.assert_called_once()
-
-    @patch("scrapers.dogstrust.dogstrust_scraper.get_browser_service")
-    def test_get_animal_list_applies_reserved_dog_filter(self, mock_browser_service, scraper):
-        """Test that get_animal_list applies filter to hide reserved dogs through UI."""
-        mock_service = Mock()
-        mock_browser_service.return_value = mock_service
-        mock_driver = Mock()
-        mock_browser_result = Mock()
-        mock_browser_result.driver = mock_driver
-        mock_service.create_driver.return_value = mock_browser_result
-        mock_driver.page_source = """
-        <html>
-            <body>
-                <div>1 of 5</div>
-            </body>
-        </html>
-        """
-
-        # Mock find_element to simulate filter elements not found
-        mock_driver.find_element.side_effect = Exception("Element not found")
-
-        result = scraper.get_animal_list()
-
-        # Initial page load uses the canonical parameterized URL.
-        assert mock_driver.get.called
-        loaded_url = mock_driver.get.call_args.args[0]
+        loaded_url = page.goto.await_args.args[0]
         assert loaded_url.startswith("https://www.dogstrust.org.uk/rehoming/dogs")
         assert "page=0" in loaded_url
-        # Verify attempts to find filter elements were made
-        assert mock_driver.find_element.called
-        assert isinstance(result, list)
+        assert [dog["external_id"] for dog in result] == ["111"]
 
 
 class TestDogsTrustUnifiedStandardization:
@@ -108,25 +73,6 @@ class TestDogsTrustUnifiedStandardization:
         assert processed["standardized_size"] == "Large"  # Size standardization
         assert processed["primary_breed"] == "German Shepherd Dog"  # Primary breed
         assert processed["standardization_confidence"] > 0.8  # Confidence score
-
-    def test_dogstrust_bypasses_unified_when_disabled(self):
-        """Test that DogsTrust bypasses unified standardization when feature flag is disabled."""
-        scraper = DogsTrustScraper()
-
-        # Disable unified standardization
-        scraper.use_unified_standardization = False
-
-        raw_animal_data = {
-            "name": "Buddy",
-            "breed": "german shepherd",
-            "age": "3 years old",
-            "size": "large",
-        }
-
-        processed = scraper.process_animal(raw_animal_data)
-
-        # Should return original data when flag disabled
-        assert processed == raw_animal_data
 
     def test_dogstrust_removes_optimized_standardization_imports(self):
         """Test that DogsTrust no longer imports from optimized_standardization after migration."""
@@ -222,7 +168,7 @@ def _build_listing_page_mock(wait_for_selector_side_effect, content_html=""):
 
 
 def _patch_browser_retry(scraper, page):
-    """Replace scraper._with_browser_retry with one yielding the given page."""
+    """Replace browser_manager.with_browser_retry with one yielding the given page."""
 
     @asynccontextmanager
     async def _retry(*_args, **_kwargs):
@@ -231,7 +177,7 @@ def _patch_browser_retry(scraper, page):
         result.is_remote = True
         yield result
 
-    scraper._with_browser_retry = _retry
+    scraper.browser_manager.with_browser_retry = _retry
 
 
 _VALID_LISTING_HTML = """
@@ -350,7 +296,6 @@ class TestDogsTrustBrowserDropRetry:
 
     _CLOSED_MESSAGE = "Page.content: Target page, context or browser has been closed"
 
-    @patch("scrapers.dogstrust.dogstrust_scraper.USE_PLAYWRIGHT", True)
     @patch("scrapers.dogstrust.dogstrust_scraper.time.sleep")
     def test_retries_whole_scrape_on_browser_drop(self, mock_sleep):
         scraper = DogsTrustScraper()
@@ -364,7 +309,6 @@ class TestDogsTrustBrowserDropRetry:
         assert attempt.await_count == 2
         mock_sleep.assert_called_once()
 
-    @patch("scrapers.dogstrust.dogstrust_scraper.USE_PLAYWRIGHT", True)
     @patch("scrapers.dogstrust.dogstrust_scraper.time.sleep")
     def test_reraises_after_exhausting_retries(self, mock_sleep):
         scraper = DogsTrustScraper()
@@ -376,7 +320,6 @@ class TestDogsTrustBrowserDropRetry:
 
         assert attempt.await_count == 3
 
-    @patch("scrapers.dogstrust.dogstrust_scraper.USE_PLAYWRIGHT", True)
     @patch("scrapers.dogstrust.dogstrust_scraper.time.sleep")
     def test_does_not_retry_non_browser_closed_error(self, mock_sleep):
         scraper = DogsTrustScraper()

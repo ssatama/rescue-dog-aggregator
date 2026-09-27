@@ -5,13 +5,11 @@ import os
 import sys
 import time
 from abc import ABC, abstractmethod
-from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any
 
 import psycopg2
 import requests
-from langdetect import detect
 
 # Import config
 from config import DB_CONFIG, enable_world_class_scraper_logging
@@ -81,12 +79,6 @@ def force_rescrape_enabled() -> bool:
 
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
-
-    # Batch processing configuration constants (deprecated - use scrapers.constants)
-    # Kept for backward compatibility with any code referencing class attributes
-    SMALL_BATCH_THRESHOLD = SMALL_BATCH_THRESHOLD
-    CONCURRENT_UPLOAD_THRESHOLD = CONCURRENT_UPLOAD_THRESHOLD
-    MAX_R2_FAILURE_RATE = MAX_R2_FAILURE_RATE
 
     # Sentry is warned when more than this share of collected dogs is not saved.
     LOSS_ALERT_RATE = 0.1
@@ -178,7 +170,6 @@ class BaseScraper(ABC):
         self.conn = None
         self.scrape_log_id = None
         self.animals_found = 0  # Track count for scraper runner interface
-        self.current_scrape_session = None
         self.scrape_start_time = None
         self.r2_service = R2Service()
 
@@ -235,7 +226,6 @@ class BaseScraper(ABC):
 
         # Initialize UnifiedStandardizer for breed standardization
         self.standardizer = UnifiedStandardizer()
-        self.use_unified_standardization = True  # Feature flag for gradual rollout
 
     def _setup_logger(self):
         """Set up a logger for the scraper.
@@ -480,24 +470,6 @@ class BaseScraper(ABC):
 
         submit_dog_urls_sync(slugs)
 
-    def detect_language(self, text):
-        """Detect the language of the text.
-
-        Args:
-            text: Text to detect language for
-
-        Returns:
-            ISO 639-1 language code (e.g., 'en' for English, 'de' for German)
-        """
-        try:
-            if not text or len(text.strip()) < 10:
-                return "en"  # Default to English for very short or empty text
-
-            return detect(text)
-        except Exception as e:
-            self.logger.warning(f"Language detection error: {e}. Defaulting to English.")
-            return "en"
-
     def validate_external_id(self, external_id):
         """Validate that external_id follows organization prefix pattern.
 
@@ -511,18 +483,14 @@ class BaseScraper(ABC):
 
     def process_animal(self, animal_data: dict[str, Any]) -> dict[str, Any]:
         """
-        Process animal data through standardization if enabled.
+        Process animal data through unified standardization.
 
         Args:
             animal_data: Raw animal data dictionary
 
         Returns:
-            Processed animal data with standardized breed fields if enabled
+            Processed animal data with standardized breed fields
         """
-        if not self.use_unified_standardization:
-            # Feature flag disabled - return data unchanged
-            return animal_data
-
         # Make a copy to avoid modifying the original
         processed_data = animal_data.copy()
 
@@ -841,7 +809,6 @@ class BaseScraper(ABC):
         # A reused instance (not a production path: the cron runs each org in a
         # fresh process) must not close or re-profile the last run's things
         self.scrape_log_id = None
-        self.current_scrape_session = None
         self._completion_logged = False
         self._unwritten_completion = None
         self._run_notes = []
@@ -878,10 +845,7 @@ class BaseScraper(ABC):
         session_started = False
         if self.session_manager:
             session_started = self.session_manager.start_scrape_session()
-            if session_started:
-                self.current_scrape_session = self.session_manager.get_current_session()
         else:
-            self.current_scrape_session = datetime.now()
             self._log_service_unavailable("SessionManager", "using basic session tracking")
             session_started = True
         if not session_started:
@@ -969,17 +933,17 @@ class BaseScraper(ABC):
         if self.image_processing_service and len(animals_data) > 0:
             # Check R2 health before batch processing
             health = self.r2_service.get_health_status()
-            if health.get("failure_rate", 0) < self.MAX_R2_FAILURE_RATE:  # Only batch process if failure rate is reasonable
+            if health.get("failure_rate", 0) < MAX_R2_FAILURE_RATE:  # Only batch process if failure rate is reasonable
                 self.logger.info(f"🚀 Using batch image processing for {len(animals_data)} animals")
                 try:
                     # Always use batch processing for better performance and consistency
                     # Use smaller batch size for small datasets, adaptive for larger ones
-                    batch_size = min(self.SMALL_BATCH_THRESHOLD, len(animals_data)) if len(animals_data) <= self.SMALL_BATCH_THRESHOLD else self.r2_service.get_adaptive_batch_size()
+                    batch_size = min(SMALL_BATCH_THRESHOLD, len(animals_data)) if len(animals_data) <= SMALL_BATCH_THRESHOLD else self.r2_service.get_adaptive_batch_size()
                     animals_data = self.image_processing_service.batch_process_images(
                         animals_data,
                         self.organization_name,
                         batch_size=batch_size,
-                        use_concurrent=len(animals_data) > self.CONCURRENT_UPLOAD_THRESHOLD,
+                        use_concurrent=len(animals_data) > CONCURRENT_UPLOAD_THRESHOLD,
                         database_connection=self.conn,
                         counts=processing_stats,
                     )
@@ -1243,10 +1207,6 @@ class BaseScraper(ABC):
         """
         pass
 
-    def _scrape_with_retry(self, scrape_method, *args, **kwargs):
-        """Deprecated: delegates to self.browser_manager.scrape_with_retry()."""
-        return self.browser_manager.scrape_with_retry(scrape_method, *args, **kwargs)
-
     def _validate_animal_data(self, animal_data: dict[str, Any]) -> bool:
         """Validate animal data dictionary for required fields and invalid names.
 
@@ -1275,16 +1235,6 @@ class BaseScraper(ABC):
             return self.total_animals_before_filter
         return len(animals_data)
 
-    @asynccontextmanager
-    async def _with_browser_retry(self, options=None, max_retries=3, base_delay=2.0):
-        """Deprecated: delegates to self.browser_manager.with_browser_retry()."""
-        async with self.browser_manager.with_browser_retry(options, max_retries, base_delay) as result:
-            yield result
-
-    async def _navigate_with_retry(self, page, url, max_retries=3, wait_until="domcontentloaded", timeout=60000):
-        """Deprecated: delegates to self.browser_manager.navigate_with_retry()."""
-        return await self.browser_manager.navigate_with_retry(page, url, max_retries, wait_until, timeout)
-
     def get_organization_name(self) -> str:
         """Get organization name for logging."""
         if self.org_config:
@@ -1292,10 +1242,6 @@ class BaseScraper(ABC):
         else:
             # Fallback for legacy mode
             return f"Organization ID {self.organization_id}"
-
-    def get_rate_limit_delay(self) -> float:
-        """Get rate limit delay from config or default."""
-        return float(self.rate_limit_delay)
 
     # Add method to respect rate limiting
     def respect_rate_limit(self):
@@ -1348,24 +1294,6 @@ class BaseScraper(ABC):
 
         if recorded_count > 0:
             self.logger.debug(f"Recorded {recorded_count} external IDs as found for stale detection")
-
-    def detect_catastrophic_failure(self, animals_found, absolute_minimum=3):
-        """Detect catastrophic scraper failures (zero or extremely low animal counts).
-
-        This method detects complete scraper failures or situations where the count
-        is so low that it's almost certainly a system error rather than reality.
-
-        IMPORTANT: Considers skip_existing_animals filtering to avoid false positives.
-
-        Args:
-            animals_found: Number of animals found in current scrape (after filtering)
-            absolute_minimum: Absolute minimum count below which failure is assumed
-
-        Returns:
-            True if catastrophic failure detected, False otherwise
-        """
-        # Simple catastrophic failure check - basic threshold only
-        return animals_found == 0 or animals_found < absolute_minimum
 
     def detect_partial_failure(
         self,
@@ -1430,19 +1358,6 @@ class BaseScraper(ABC):
         except Exception as e:
             self.logger.error(f"Failed to emit partial-failure Sentry alert: {e}")
 
-    def detect_scraper_failure(self, animals_found, threshold_percentage=0.5, absolute_minimum=3):
-        """Combined failure detection method that checks both catastrophic and partial failures.
-
-        Args:
-            animals_found: Number of animals found in current scrape
-            threshold_percentage: Minimum percentage of historical average to consider normal
-            absolute_minimum: Absolute minimum count below which failure is assumed
-
-        Returns:
-            True if any type of failure detected, False otherwise
-        """
-        return self.detect_partial_failure(animals_found, threshold_percentage, absolute_minimum)
-
     def _counts_so_far(self) -> dict[str, int]:
         """Found, added and updated counts for a run that ends early.
 
@@ -1475,9 +1390,6 @@ class BaseScraper(ABC):
             if self.scrape_log_id:
                 self.complete_scrape_log(status="error", error_message=error_message, **self._counts_so_far())
 
-            # Reset scrape session to prevent stale data updates
-            self.current_scrape_session = None
-
             return True
         except Exception as e:
             self.logger.error(f"Error handling scraper failure: {e}")
@@ -1490,18 +1402,6 @@ class BaseScraper(ABC):
                 phase="handle_failure",
             )
             return False
-
-    def log_detailed_metrics(self, metrics: dict[str, Any]):
-        """Log detailed metrics to the scrape log.
-
-        Args:
-            metrics: Dictionary containing detailed metrics
-
-        Returns:
-            True if successful, False otherwise
-        """
-        self.metrics_collector.log_detailed_metrics(metrics)
-        return True
 
     def _check_adoptions_if_enabled(self):
         """Check for dog adoptions if enabled in organization config.

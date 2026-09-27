@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 import sys
 import time
 from collections.abc import AsyncIterator
@@ -20,7 +19,7 @@ from services.playwright_browser_service import (
 
 
 class ScraperBrowserManager:
-    """Manages browser retry logic for scrapers (Selenium and Playwright)."""
+    """Manages browser retry logic for scrapers (Playwright)."""
 
     def __init__(
         self,
@@ -48,15 +47,6 @@ class ScraperBrowserManager:
         Returns:
             Result from scrape_method or None if all retries exhausted
         """
-        use_playwright = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
-
-        if use_playwright:
-            browser_exceptions = (Exception,)
-        else:
-            from selenium.common.exceptions import TimeoutException, WebDriverException
-
-            browser_exceptions = (TimeoutException, WebDriverException, ValueError)
-
         for attempt in range(self.max_retries):
             try:
                 result = scrape_method(*args, **kwargs)
@@ -72,7 +62,7 @@ class ScraperBrowserManager:
 
                 return result
 
-            except browser_exceptions as e:
+            except Exception as e:
                 self.metrics_collector.track_retry(success=False)
                 self.logger.warning(f"Scraping attempt {attempt + 1}/{self.max_retries} failed: {e}")
 

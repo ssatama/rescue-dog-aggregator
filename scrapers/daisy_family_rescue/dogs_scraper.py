@@ -1,36 +1,19 @@
 import asyncio
 import hashlib
-import os
 import re
-import time
 from typing import Any
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
+from services.playwright_browser_service import (
+    PlaywrightOptions,
+    get_playwright_service,
+)
 
-USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
-
-if USE_PLAYWRIGHT:
-    from services.playwright_browser_service import (
-        PlaywrightOptions,
-        get_playwright_service,
-    )
-else:
-    from selenium.common.exceptions import (
-        NoSuchElementException,
-        StaleElementReferenceException,
-        WebDriverException,
-    )
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.webdriver.support.ui import WebDriverWait
-
-    from services.browser_service import BrowserOptions, get_browser_service
-
-from .dog_detail_scraper import DaisyFamilyRescueDogDetailScraper  # noqa: E402
-from .translations import normalize_name, translate_dog_data  # noqa: E402
+from .dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
+from .translations import normalize_name, translate_dog_data
 
 
 class DaisyFamilyRescueScraper(BaseScraper):
@@ -80,10 +63,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         empty list, a `warning` run, and dogs_found = 0 with no cause.
         """
         # Step 1: Extract dogs using browser automation with section filtering
-        if USE_PLAYWRIGHT:
-            all_dogs = asyncio.run(self._extract_with_playwright())
-        else:
-            all_dogs = self._extract_with_selenium()
+        all_dogs = asyncio.run(self._extract_with_playwright())
 
         if len(all_dogs) == 0:
             self.logger.warning("No dogs extracted from main listing")
@@ -143,99 +123,6 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
         # World-class logging: Translation stats handled by centralized system
         return translated_dogs
-
-    def _extract_with_selenium(self) -> list[dict[str, Any]]:
-        """Extract dogs using Selenium with section filtering."""
-        all_dogs = []
-        driver = None
-
-        try:
-            # Check for headless setting from config (default: True for production)
-            headless = True
-            if hasattr(self, "org_config") and self.org_config:
-                scraper_config = self.org_config.get_scraper_config_dict()
-                headless = scraper_config.get("headless", True)
-
-            browser_service = get_browser_service()
-            browser_options = BrowserOptions(
-                headless=headless,
-                window_size=(1920, 1080),
-                stealth_mode=True,
-            )
-            browser_result = browser_service.create_driver(browser_options)
-            driver = browser_result.driver
-
-            # World-class logging: Page loading handled by centralized system
-            driver.get(self.listing_url)
-
-            # Wait for page to load
-            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-
-            # Handle lazy loading if needed
-            self._handle_lazy_loading(driver)
-
-            # Find and filter sections
-            valid_dog_containers = self._filter_dogs_by_section(driver)
-
-            # First pass: Extract basic dog data and URLs from all containers
-            basic_dogs_data = []
-
-            for i, container in enumerate(valid_dog_containers):
-                try:
-                    dog_data = self._extract_dog_from_container(container, i + 1)
-                    if dog_data:
-                        basic_dogs_data.append(dog_data)
-                    else:
-                        self.logger.warning(f"Failed to extract data from container {i + 1}")
-                except Exception as e:
-                    self.logger.warning(f"Error processing dog container {i + 1}: {e}")
-                    continue
-
-            # Apply skip_existing_animals filtering
-            # Uses self.filtering_service.filter_existing_animals() which records ALL external_ids
-            # BEFORE filtering to ensure mark_found_animals_as_seen() works correctly
-            if self.skip_existing_animals and basic_dogs_data:
-                basic_dogs_data = self.filtering_service.filter_existing_animals(basic_dogs_data)
-                self._sync_filtering_stats()
-            else:
-                self.total_animals_before_filter = len(basic_dogs_data)
-                self.total_animals_skipped = 0
-
-            # Second pass: Process the filtered dogs with detail page enhancement
-            processed_count = 0
-            for dog_data in basic_dogs_data:
-                try:
-                    # Enhance with detailed information from dog's detail page
-                    # Selenium path: safe to use asyncio.run (no existing event loop)
-                    enhanced_data = asyncio.run(self._enhance_with_detail_page(dog_data))
-                    if enhanced_data:
-                        all_dogs.append(enhanced_data)
-                        processed_count += 1
-                        self.logger.debug(f"Processed {processed_count}/{len(basic_dogs_data)}: {enhanced_data.get('name')}")
-                    else:
-                        # Fallback to basic data if detail extraction fails
-                        all_dogs.append(dog_data)
-                        processed_count += 1
-                        self.logger.warning(f"Used basic data for {dog_data.get('name')} (detail extraction failed)")
-
-                except Exception as e:
-                    self.logger.warning(f"Error processing dog {dog_data.get('name', 'unknown')}: {e}")
-                    continue
-
-            # World-class logging: Processing results handled by centralized system
-
-            # Apply rate limiting using BaseScraper method
-            self.respect_rate_limit()
-
-        except Exception as e:
-            self.logger.error(f"Failed to extract dogs with Selenium: {e}")
-            raise
-
-        finally:
-            if driver:
-                driver.quit()
-
-        return all_dogs
 
     async def _extract_with_playwright(self) -> list[dict[str, Any]]:
         """Extract dogs using Playwright with section filtering.
@@ -550,97 +437,6 @@ class DaisyFamilyRescueScraper(BaseScraper):
             # Return basic data on error rather than losing the dog entirely
             return basic_dog_data
 
-    def _handle_lazy_loading(self, driver):
-        """Handle lazy loading based on inspection findings."""
-        # World-class logging: Lazy loading handled by centralized system
-
-        # Based on inspection, WordPress uses native lazy loading, not JavaScript
-        # Scroll to trigger any lazy-loaded content
-        last_height = driver.execute_script("return document.body.scrollHeight")
-
-        # Scroll down progressively
-        for i in range(3):  # 3 scroll steps should be sufficient
-            driver.execute_script(f"window.scrollTo(0, {(i + 1) * last_height // 3});")
-            time.sleep(2)  # Wait for content to load
-
-        # Scroll to bottom
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(2)
-
-        # Scroll back to top for processing
-        driver.execute_script("window.scrollTo(0, 0);")
-        time.sleep(1)
-
-    def _filter_dogs_by_section(self, driver) -> list:
-        """Filter dog containers to only include those from target sections."""
-        valid_containers = []
-
-        try:
-            # Find all section headers
-            section_headers = driver.find_elements(By.CSS_SELECTOR, "h2.elementor-heading-title.elementor-size-default")
-
-            # Find all dog containers
-            all_dog_containers = driver.find_elements(
-                By.CSS_SELECTOR,
-                "article.elementor-post.elementor-grid-item.ecs-post-loop",
-            )
-
-            # Map sections to their positions in DOM (classified ones only)
-            section_positions = {}
-            for header in section_headers:
-                section_text = header.text.strip()
-                if self._classify_section(section_text) is None:
-                    continue
-                header_position = driver.execute_script(
-                    """
-                    var elements = Array.from(document.querySelectorAll('*'));
-                    return elements.indexOf(arguments[0]);
-                """,
-                    header,
-                )
-                section_positions[section_text] = header_position
-
-            # Filter containers by section
-            for container in all_dog_containers:
-                # Early-drop Elementor-injected non-dog containers (no /hund-*/ link).
-                # Narrow catch: only tolerate stale-element / generic WebDriver
-                # errors (include on fail-open to avoid losing a real dog). Any
-                # other error is a bug we want surfaced as a section-filter
-                # failure, handled by the outer except.
-                try:
-                    has_dog_link = bool(container.find_elements(By.CSS_SELECTOR, "a[href*='/hund-']"))
-                except (StaleElementReferenceException, WebDriverException) as e:
-                    self.logger.warning(f"Selenium error probing dog link, including container: {e}")
-                    has_dog_link = True
-                if not has_dog_link:
-                    continue
-
-                container_position = driver.execute_script(
-                    """
-                    var elements = Array.from(document.querySelectorAll('*'));
-                    return elements.indexOf(arguments[0]);
-                """,
-                    container,
-                )
-
-                container_section = self._find_container_section(container_position, section_positions)
-                kind = self._classify_section(container_section) if container_section else None
-
-                if kind == "skip":
-                    self.logger.debug(f"Skipping container at position {container_position} in section: {container_section}")
-                    continue
-                valid_containers.append(container)
-
-        except Exception as e:
-            self.logger.warning(f"Section filtering failed, using all containers: {e}")
-            # Fallback: use all dog containers
-            valid_containers = driver.find_elements(
-                By.CSS_SELECTOR,
-                "article.elementor-post.elementor-grid-item.ecs-post-loop",
-            )
-
-        return valid_containers
-
     def _find_container_section(self, container_position: int, section_positions: dict[str, int]) -> str | None:
         """Find which section a container belongs to based on DOM positions."""
         # Find the section header that comes before this container
@@ -655,88 +451,6 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     closest_section = section_name
 
         return closest_section
-
-    def _extract_dog_from_container(self, container, container_num: int) -> dict[str, Any] | None:
-        """Extract dog data from a single container element."""
-        try:
-            # Extract dog name and location from link text - try multiple selectors
-            dog_link = None
-            dog_url = None
-            link_text = ""
-
-            # Try different link selectors
-            link_selectors = [
-                "a[href*='/hund-']",
-                "a[href*='/dog']",
-                "a",  # Fallback to any link
-            ]
-
-            for selector in link_selectors:
-                try:
-                    links = container.find_elements(By.CSS_SELECTOR, selector)
-                    for link in links:
-                        href = link.get_attribute("href")
-                        if href and ("hund-" in href or "/hund" in href):
-                            link_text = link.text.strip()
-                            if link_text:  # Skip links with empty text (image-only links)
-                                dog_link = link
-                                dog_url = href
-                                break
-                    if dog_link:
-                        break
-                except Exception:
-                    continue
-
-            if not dog_link or not dog_url:
-                self.logger.warning(f"Could not find dog link in container {container_num}")
-                return None
-
-            # Parse name and location from text like "Brownie - in München"
-            name, location = self._parse_name_and_location(link_text)
-            if not name:
-                self.logger.warning(f"Could not extract name from container {container_num}")
-                return None
-
-            # Extract image URL
-            image_url = self._extract_image_from_container(container)
-
-            # Extract external ID from URL
-            external_id = self._extract_external_id_from_url(dog_url)
-
-            # Extract any additional visible info from container text
-            container_text = container.text
-            additional_info = self._extract_additional_info_from_text(container_text)
-
-            dog_data = {
-                "name": name,
-                "external_id": external_id,
-                "adoption_url": dog_url,
-                "primary_image_url": image_url,
-                "status": "available",
-                "animal_type": "dog",
-                "properties": {
-                    "source": "daisyfamilyrescue.de",
-                    "country": "DE",  # Will be refined based on section
-                    "extraction_method": "selenium_listing",
-                    "language": "de",
-                    "location": location,
-                    "container_text": container_text[:200],  # First 200 chars for debugging
-                },
-            }
-
-            # Add any additional extracted info
-            dog_data.update(additional_info)
-
-            # Validate the extracted data before returning
-            if self._validate_dog_data(dog_data):
-                return dog_data
-            else:
-                self.logger.warning(f"Data validation failed for dog in container {container_num}")
-                return None
-
-        except Exception as e:
-            self.logger.error(f"Error extracting dog from container {container_num}: {e}")
-            return None
 
     def _parse_name_and_location(self, link_text: str) -> tuple[str | None, str | None]:
         """Parse dog name and location from link text like 'Brownie - in München'."""
@@ -759,23 +473,6 @@ class DaisyFamilyRescueScraper(BaseScraper):
         else:
             # Fallback: treat entire text as name
             return link_text.strip(), None
-
-    def _extract_image_from_container(self, container) -> str | None:
-        """Extract image URL from container."""
-        try:
-            img_element = container.find_element(By.TAG_NAME, "img")
-            img_src = img_element.get_attribute("src")
-
-            # Validate URL
-            if img_src and self._is_valid_image_url(img_src):
-                return img_src
-
-        except NoSuchElementException:
-            pass
-        except Exception as e:
-            self.logger.warning(f"Error extracting image: {e}")
-
-        return None
 
     def _is_valid_image_url(self, url: str) -> bool:
         """Validate that URL points to a valid image."""

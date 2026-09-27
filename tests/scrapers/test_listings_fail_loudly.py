@@ -136,8 +136,8 @@ class TestManyTearsPlaywright:
 
         service = Mock(get_page_content=AsyncMock(side_effect=get_page_content))
         with (
-            patch("scrapers.manytearsrescue.manytearsrescue_scraper.get_playwright_service", return_value=service, create=True),
-            patch("scrapers.manytearsrescue.manytearsrescue_scraper.PlaywrightOptions", create=True),
+            patch("scrapers.manytearsrescue.manytearsrescue_scraper.get_playwright_service", return_value=service),
+            patch("scrapers.manytearsrescue.manytearsrescue_scraper.PlaywrightOptions"),
         ):
             return asyncio.run(scraper._get_animal_list_playwright())
 
@@ -270,13 +270,12 @@ class TestREAN:
 
     @pytest.fixture
     def playwright_fails(self):
-        """Production's path: USE_PLAYWRIGHT on, and the browser can't load the page."""
+        """The browser can't load the page."""
         service = Mock()
         service.get_browser.side_effect = RuntimeError("Timeout 60000ms exceeded")
         with (
-            patch("scrapers.rean.dogs_scraper.USE_PLAYWRIGHT", True),
-            patch("scrapers.rean.dogs_scraper.get_playwright_service", return_value=service, create=True),
-            patch("scrapers.rean.dogs_scraper.PlaywrightOptions", create=True),
+            patch("scrapers.rean.dogs_scraper.get_playwright_service", return_value=service),
+            patch("scrapers.rean.dogs_scraper.PlaywrightOptions"),
         ):
             yield
 

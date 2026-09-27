@@ -17,7 +17,6 @@ class TestPetsInTurkeyUnifiedStandardization:
         """Create a PetsInTurkey scraper instance with mocked session."""
         scraper = PetsInTurkeyScraper()
         scraper.session = MagicMock()
-        scraper.use_unified_standardization = True
         return scraper
 
     def test_jack_russell_standardization(self, scraper):

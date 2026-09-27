@@ -13,7 +13,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from scrapers.sentry_integration import init_scraper_sentry
-from services.browser_service import BrowserOptions, BrowserService
 from services.playwright_browser_service import PlaywrightBrowserService, PlaywrightOptions, redact_endpoint
 
 SECRET = "s3cr3t-browserless-token"
@@ -49,21 +48,6 @@ class TestTokenStaysOutOfOutput:
 
         assert SECRET not in str(health)
         assert health["endpoint"] == "wss://browserless-production.up.railway.app"
-
-    def test_selenium_health_check_omits_the_token(self):
-        with patch.dict(os.environ, {"BROWSER_WEBDRIVER_ENDPOINT": f"https://browserless.internal/webdriver?token={SECRET}"}):
-            health = BrowserService().health_check()
-
-        assert SECRET not in str(health)
-
-    @patch("services.browser_service.webdriver.Remote", return_value=MagicMock())
-    def test_selenium_remote_launch_log_omits_the_token(self, _remote, caplog):
-        with patch.dict(os.environ, {"BROWSER_WEBDRIVER_ENDPOINT": f"https://browserless.internal/webdriver?token={SECRET}"}):
-            with caplog.at_level(logging.INFO, logger="services.browser_service"):
-                BrowserService().create_driver(BrowserOptions())
-
-        assert "Created remote browser via Browserless" in caplog.text
-        assert SECRET not in caplog.text, caplog.text
 
     @pytest.mark.asyncio
     async def test_playwright_remote_launch_log_omits_the_token(self, caplog):

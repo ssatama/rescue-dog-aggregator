@@ -102,12 +102,6 @@ class TestDaisyStoryExtraction:
 
         assert description.startswith("Ich wurde Mitte Januar 2026 geboren")
 
-    def test_selenium_path_uses_the_same_rules(self, scraper):
-        class FakeDriver:
-            page_source = str(_page(STECKBRIEF + STORY))
-
-        assert scraper._extract_description(FakeDriver()) == scraper._extract_description_soup(_page(STECKBRIEF + STORY))
-
 
 @pytest.mark.unit
 class TestDaisySteckbriefFields:

@@ -36,33 +36,8 @@ class TestEnhancedFailureDetection:
 
         # Bind the actual methods to the mock
         scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(scraper)
-        scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
-        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(scraper)
 
         return scraper
-
-    def test_detect_zero_animals_as_catastrophic_failure(self, mock_scraper):
-        """Test that zero animals is always detected as catastrophic failure."""
-        # This should ALWAYS be true regardless of historical data
-        result = mock_scraper.detect_catastrophic_failure(0)
-        assert result is True
-
-    def test_detect_extremely_low_count_as_catastrophic(self, mock_scraper):
-        """Test that extremely low counts trigger catastrophic failure detection."""
-        # 1-2 animals should be flagged as catastrophic for most organizations
-        result = mock_scraper.detect_catastrophic_failure(1, absolute_minimum=3)
-        assert result is True
-
-        result = mock_scraper.detect_catastrophic_failure(2, absolute_minimum=3)
-        assert result is True
-
-    def test_normal_count_not_flagged_as_catastrophic(self, mock_scraper):
-        """Test that normal counts don't trigger catastrophic failure."""
-        result = mock_scraper.detect_catastrophic_failure(25, absolute_minimum=3)
-        assert result is False
-
-        # No error logging for normal counts
-        mock_scraper.logger.error.assert_not_called()
 
     def test_enhanced_partial_failure_with_zero_animals(self, mock_scraper):
         """Test enhanced partial failure detection catches zero animals."""
@@ -129,29 +104,6 @@ class TestEnhancedFailureDetection:
         result = mock_scraper.detect_partial_failure(2, absolute_minimum=5)
         assert result is True
 
-    def test_combined_catastrophic_and_partial_failure_check(self, mock_scraper):
-        """Test that both catastrophic and partial failure checks work together."""
-        # Configure SessionManager for different scenarios
-        mock_scraper.session_manager.detect_partial_failure.side_effect = [
-            True,
-            True,
-            True,
-            False,
-        ]
-
-        # Test the combined method (to be implemented)
-        result = mock_scraper.detect_scraper_failure(0)  # Zero animals
-        assert result is True
-
-        result = mock_scraper.detect_scraper_failure(2, absolute_minimum=5)  # Below absolute minimum
-        assert result is True
-
-        result = mock_scraper.detect_scraper_failure(20, absolute_minimum=5)  # Below 50% threshold
-        assert result is True
-
-        result = mock_scraper.detect_scraper_failure(30, absolute_minimum=5)  # Normal
-        assert result is False
-
 
 @pytest.mark.database
 class TestFailureDetectionEdgeCases:
@@ -175,16 +127,9 @@ class TestFailureDetectionEdgeCases:
         scraper._log_service_unavailable = Mock()
 
         # Bind the actual methods to the mock
-        scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
         scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(scraper)
-        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(scraper)
 
         return scraper
-
-    def test_negative_animal_count(self, mock_scraper):
-        """Test handling of invalid negative animal counts."""
-        result = mock_scraper.detect_catastrophic_failure(-1)
-        assert result is True
 
     def test_extremely_high_threshold_percentage(self, mock_scraper):
         """Test with unreasonably high threshold percentage."""
@@ -233,9 +178,7 @@ class TestFailureDetectionConfiguration:
         scraper._log_service_unavailable = Mock()
 
         # Bind the actual methods to the mock
-        scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
         scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(scraper)
-        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(scraper)
 
         return scraper
 
@@ -298,19 +241,9 @@ class TestFailureLoggingAndReporting:
         scraper._log_service_unavailable = Mock()
 
         # Bind the actual methods to the mock
-        scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
         scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(scraper)
-        scraper.detect_scraper_failure = BaseScraper.detect_scraper_failure.__get__(scraper)
 
         return scraper
-
-    def test_catastrophic_failure_logging_includes_context(self, mock_scraper):
-        """Test that catastrophic failure detection returns correct results."""
-        result = mock_scraper.detect_catastrophic_failure(0)
-        assert result is True
-
-        result = mock_scraper.detect_catastrophic_failure(10)
-        assert result is False
 
     def test_partial_failure_logging_includes_thresholds(self, mock_scraper):
         """Test that partial failure detection uses SessionManager."""

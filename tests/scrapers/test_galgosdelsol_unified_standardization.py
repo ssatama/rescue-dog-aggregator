@@ -22,7 +22,6 @@ def galgosdelsol_scraper():
     )
 
     # Enable unified standardization
-    scraper.use_unified_standardization = True
 
     return scraper
 
@@ -163,24 +162,3 @@ class TestGalgosDelSolUnifiedStandardization:
             result = galgosdelsol_scraper.process_animal(animal)
             assert result["breed"] == expected_breed
             assert result["breed_category"] == expected_category
-
-    def test_feature_flag_controls_standardization(self, galgosdelsol_scraper):
-        """Test that feature flag properly controls standardization."""
-        animal = {
-            "breed": "galgo",
-            "age": "3 years",
-            "sex": "Male",
-            "size": "large",
-        }
-
-        # With flag enabled (default in fixture)
-        result_enabled = galgosdelsol_scraper.process_animal(animal)
-        assert "breed" in result_enabled
-        assert result_enabled["breed"] == "Galgo Español"
-        assert "breed_category" in result_enabled
-
-        # With flag disabled
-        galgosdelsol_scraper.use_unified_standardization = False
-        result_disabled = galgosdelsol_scraper.process_animal(animal)
-        # Should return original data unchanged
-        assert result_disabled == animal

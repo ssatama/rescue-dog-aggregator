@@ -120,6 +120,13 @@ def _plan_listing_urls(records: list[dict[str, Any]]) -> list[Change]:
     return [Change(record["id"], record["organization"], "adoption_url", record["adoption_url"], PETS_IN_TURKEY_LISTING) for record in records if record["adoption_url"] != PETS_IN_TURKEY_LISTING]
 
 
+# Galgos del Sol has been disabled since 2025-10, so no run retires its dogs: they
+# stayed status 'available' behind active = false. 'unknown' is what the stale
+# path leaves on dogs that stop being listed (#566).
+def _plan_disabled_org_status(records: list[dict[str, Any]]) -> list[Change]:
+    return [Change(record["id"], record["organization"], "status", record["status"], "unknown") for record in records if record["status"] != "unknown"]
+
+
 STEPS: dict[str, Step] = {
     step.name: step
     for step in [
@@ -177,6 +184,19 @@ STEPS: dict[str, Step] = {
                   AND a.adoption_url IS DISTINCT FROM '{PETS_IN_TURKEY_LISTING}'
             """,
             plan=_plan_listing_urls,
+        ),
+        Step(
+            name="galgos-status-unknown",
+            summary="Galgos del Sol (disabled) dogs are no longer 'available': status 'unknown', like any dog no longer listed (#566)",
+            fetch_sql="""
+                SELECT a.id, a.status, o.config_id AS organization
+                FROM animals a
+                JOIN organizations o ON o.id = a.organization_id
+                WHERE o.config_id = 'galgosdelsol'
+                  AND NOT a.active
+                  AND a.status = 'available'
+            """,
+            plan=_plan_disabled_org_status,
         ),
     ]
 }

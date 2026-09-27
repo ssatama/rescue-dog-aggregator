@@ -2,7 +2,6 @@
 
 import asyncio
 import concurrent.futures
-import os
 import random
 import re
 import time
@@ -11,21 +10,11 @@ from typing import Any
 
 import requests
 from bs4 import BeautifulSoup, Tag
+from playwright.async_api import Error as PlaywrightError
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.base_scraper import BaseScraper
-
-USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
-
-# Imports are unconditional so tests can exercise both paths regardless of
-# the env var; USE_PLAYWRIGHT only routes runtime behaviour.
-from playwright.async_api import Error as PlaywrightError  # noqa: E402
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError  # noqa: E402
-from selenium.webdriver.common.by import By  # noqa: E402
-from selenium.webdriver.support import expected_conditions as EC  # noqa: E402
-from selenium.webdriver.support.wait import WebDriverWait  # noqa: E402
-
-from services.browser_service import BrowserOptions, get_browser_service  # noqa: E402
-from services.playwright_browser_service import PlaywrightOptions  # noqa: E402
+from services.playwright_browser_service import PlaywrightOptions
 
 # Browserless v2 sessions occasionally close mid-pagination — the remote browser
 # is torn down server-side, surfacing as a TargetClosedError partway through the
@@ -48,7 +37,7 @@ def _is_browser_closed_error(error: BaseException) -> bool:
 class DogsTrustScraper(BaseScraper):
     """Scraper for Dogs Trust organization.
 
-    Dogs Trust uses JavaScript-rendered listing pages requiring Selenium WebDriver
+    Dogs Trust uses JavaScript-rendered listing pages requiring Playwright
     for listing page scraping, while detail pages work with standard HTTP requests.
     This hybrid approach follows the patterns established in the analysis phase.
     """
@@ -116,7 +105,7 @@ class DogsTrustScraper(BaseScraper):
         """Process animals in parallel batches using ThreadPoolExecutor.
 
         This method follows the Many Tears pattern for parallel processing,
-        but uses HTTP requests instead of Selenium for detail pages since
+        but uses HTTP requests instead of a browser for detail pages since
         Dogs Trust detail pages don't require JavaScript rendering.
 
         Args:
@@ -153,7 +142,7 @@ class DogsTrustScraper(BaseScraper):
                         # Rate limiting with randomization for natural browsing pattern
                         time.sleep(self.rate_limit_delay + random.uniform(-0.2, 0.3))
 
-                        # Extract detailed data via HTTP requests (faster than Selenium)
+                        # Extract detailed data via HTTP requests (faster than a browser)
                         detail_data = self._scrape_animal_details_http(adoption_url)
 
                         if detail_data:
@@ -222,7 +211,6 @@ class DogsTrustScraper(BaseScraper):
         """Fetch list of available dogs using browser automation with pagination.
 
         Handles JavaScript-rendered listing pages by using headless browser.
-        Uses Playwright when USE_PLAYWRIGHT=true, otherwise Selenium.
         Applies filters to hide reserved dogs and iterates through all pages
         using navigation buttons.
 
@@ -233,14 +221,12 @@ class DogsTrustScraper(BaseScraper):
         Returns:
             List of dictionaries containing basic dog information from all pages
         """
-        if USE_PLAYWRIGHT:
-            return self._run_playwright_pagination_with_retry(max_pages_to_scrape)
-        return self._get_animal_list_selenium(max_pages_to_scrape)
+        return self._run_playwright_pagination_with_retry(max_pages_to_scrape)
 
     def _run_playwright_pagination_with_retry(self, max_pages_to_scrape: int = None, max_attempts: int = 3) -> list[dict[str, Any]]:
         """Run Playwright pagination, retrying from a fresh browser on a session drop.
 
-        ``_with_browser_retry`` only retries browser *acquisition*; a Browserless
+        ``browser_manager.with_browser_retry`` only retries browser *acquisition*; a Browserless
         session that dies mid-pagination (TargetClosedError at page.content())
         otherwise loses the whole scrape and fires a Sentry alert. Retrying from
         page 0 with a new browser is the safe recovery — salvaging the partial
@@ -257,276 +243,6 @@ class DogsTrustScraper(BaseScraper):
                 delay = 2.0 * attempt
                 self.logger.warning(f"Browserless session dropped mid-scrape (attempt {attempt}/{max_attempts}): {error}; retrying from a fresh browser in {delay}s")
                 time.sleep(delay)
-
-    def _get_animal_list_selenium(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
-        """Fetch list of available dogs using Selenium WebDriver with pagination."""
-        driver = self._setup_selenium_driver()
-        all_dogs = []
-
-        # Log scraping mode
-        if max_pages_to_scrape:
-            self.logger.info(f"DEBUG MODE: Limiting scrape to {max_pages_to_scrape} pages")
-        else:
-            self.logger.info("Scraping all available pages")
-
-        try:
-            # Navigate to the initial page
-            url = self.listing_url
-            self.logger.debug(f"Loading initial page: {url}")
-            driver.get(url)
-
-            # Wait for initial page load
-            wait = WebDriverWait(driver, 15)
-
-            # Handle cookie consent banner if present
-            try:
-                # Quick check for cookie consent banner
-                time.sleep(0.5)
-
-                # Try to accept cookies if banner is present
-                cookie_selectors = [
-                    "//button[contains(text(), 'Accept all')]",
-                    "//button[contains(text(), 'Accept All')]",
-                    "//button[contains(text(), 'Accept')]",
-                    "//button[@id='onetrust-accept-btn-handler']",
-                    "//button[contains(@class, 'accept')]",
-                    "//button[contains(@aria-label, 'accept')]",
-                ]
-
-                for selector in cookie_selectors:
-                    try:
-                        cookie_button = driver.find_element(By.XPATH, selector)
-                        if cookie_button and cookie_button.is_displayed():
-                            cookie_button.click()
-                            self.logger.info("Accepted cookie consent")
-                            time.sleep(0.3)  # Brief wait for banner to disappear
-                            break
-                    except Exception:
-                        continue
-
-            except Exception as e:
-                self.logger.debug(f"No cookie consent banner found or couldn't click: {e}")
-
-            # Wait for the page to fully load and dog cards to appear
-            try:
-                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href*="/rehoming/dogs/"]')))
-                self.logger.info("Initial page loaded successfully")
-            except Exception as e:
-                self.logger.warning(f"Timeout waiting for initial page load: {e}")
-
-            # Apply filter to hide reserved dogs
-            try:
-                self.logger.info("Applying filter to hide reserved dogs...")
-
-                # Look for and click the Filters button
-                filters_button = None
-
-                # Try multiple possible selectors for the filters button
-                filter_selectors = [
-                    "//button[contains(text(), 'Filters')]",
-                    "//button[contains(text(), 'Filter')]",
-                    "//button[contains(@aria-label, 'filter')]",
-                    "//button[contains(@aria-label, 'Filter')]",
-                    "//button[contains(@class, 'filter')]",
-                    "//div[contains(@class, 'filter')]//button",
-                    "//button[@data-testid='filters-button']",
-                ]
-
-                for selector in filter_selectors:
-                    try:
-                        filters_button = driver.find_element(By.XPATH, selector)
-                        if filters_button and filters_button.is_displayed():
-                            self.logger.debug(f"Found filters button with selector: {selector}")
-                            break
-                    except Exception:
-                        continue
-
-                if filters_button:
-                    # Scroll to and click the filters button using JavaScript to avoid overlay issues
-                    driver.execute_script("arguments[0].scrollIntoView(true);", filters_button)
-                    time.sleep(0.5)
-                    # Use JavaScript click to bypass any overlapping elements
-                    driver.execute_script("arguments[0].click();", filters_button)
-                    self.logger.info("Clicked filters button")
-
-                    # Wait for filter panel to open
-                    time.sleep(1)
-
-                    # Look for the "Hide reserved dogs" option
-                    # Try multiple possible ways to find this option
-                    reserved_selectors = [
-                        "//label[contains(text(), 'Hide reserved')]",
-                        "//label[contains(text(), 'hide reserved')]",
-                        "//input[@type='checkbox'][contains(@name, 'reserved')]",
-                        "//input[@type='checkbox'][contains(@id, 'reserved')]",
-                        "//span[contains(text(), 'Hide reserved')]",
-                        "//div[contains(text(), 'Hide reserved')]",
-                        "//*[contains(text(), 'Available dogs only')]",
-                        "//*[contains(text(), 'Show available')]",
-                    ]
-
-                    checkbox_clicked = False
-                    for selector in reserved_selectors:
-                        try:
-                            element = driver.find_element(By.XPATH, selector)
-                            if element:
-                                # If it's a label, click it; if it's an input, check if it needs to be clicked
-                                if element.tag_name == "input":
-                                    if not element.is_selected():
-                                        # Use JavaScript to click checkbox to avoid overlay issues
-                                        driver.execute_script("arguments[0].click();", element)
-                                        checkbox_clicked = True
-                                        self.logger.info("Checked 'Hide reserved dogs' checkbox")
-                                else:
-                                    element.click()
-                                    checkbox_clicked = True
-                                    self.logger.info("Clicked 'Hide reserved dogs' option")
-                                break
-                        except Exception:
-                            continue
-
-                    if checkbox_clicked:
-                        # Apply the filter
-                        apply_selectors = [
-                            "//button[contains(text(), 'Show')]",
-                            "//button[contains(text(), 'Apply')]",
-                            "//button[contains(text(), 'Update')]",
-                            "//button[contains(text(), 'Search')]",
-                            "//button[contains(@type, 'submit')]",
-                            "//button[@data-testid='apply-filters']",
-                        ]
-
-                        for selector in apply_selectors:
-                            try:
-                                apply_button = driver.find_element(By.XPATH, selector)
-                                if apply_button and apply_button.is_displayed():
-                                    # Use JavaScript to click apply button to avoid overlay issues
-                                    driver.execute_script("arguments[0].click();", apply_button)
-                                    self.logger.info("Applied filter to hide reserved dogs")
-                                    # Wait for page to reload with filter applied
-                                    time.sleep(1)
-                                    break
-                            except Exception:
-                                continue
-                    else:
-                        self.logger.warning("Could not find 'Hide reserved dogs' option")
-                else:
-                    self.logger.warning("Could not find filters button - proceeding without filter")
-
-            except Exception as e:
-                self.logger.warning(f"Could not apply filter to hide reserved dogs: {e}")
-                self.logger.info("Proceeding without filter - will manually filter reserved dogs")
-
-            # Add a bit of scrolling to trigger any lazy-loaded content
-            try:
-                self.logger.debug("Scrolling to trigger lazy-loaded content...")
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 2);")
-                time.sleep(0.3)
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(0.3)
-                driver.execute_script("window.scrollTo(0, 0);")
-                time.sleep(0.2)
-            except Exception as e:
-                self.logger.debug(f"Scrolling failed (not critical): {e}")
-
-            # Track pagination
-            page_num = 0
-            max_pages = None
-            pages_scraped = 0
-
-            while True:
-                # Parse the current page content
-                soup = BeautifulSoup(driver.page_source, "html.parser")
-
-                # Detect max pages from pagination indicator on first iteration
-                if max_pages is None:
-                    max_pages = self._detect_max_pages(soup)
-                    self.logger.info(f"Detected maximum pages: {max_pages}")
-
-                # Extract dogs from current page
-                page_dogs = self._extract_dogs_from_page(soup)
-                if page_dogs:
-                    all_dogs.extend(page_dogs)
-                    self.logger.info(f"Page {page_num}: Found {len(page_dogs)} dogs (total so far: {len(all_dogs)})")
-                else:
-                    self.logger.warning(f"Page {page_num}: No dogs found - may indicate JavaScript loading issue")
-
-                pages_scraped += 1
-
-                # Check if we've reached the debug limit
-                if max_pages_to_scrape and pages_scraped >= max_pages_to_scrape:
-                    self.logger.info(f"Reached debug limit of {max_pages_to_scrape} pages")
-                    break
-
-                # Check if we should continue to next page
-                if max_pages is not None and page_num >= max_pages - 1:
-                    self.logger.info(f"Reached last page ({max_pages} total)")
-                    break
-
-                # Try to navigate to the next page using the Next button
-                try:
-                    # Scroll down to ensure pagination controls are visible
-                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                    time.sleep(0.5)
-
-                    # Find and click the Next button
-                    next_button = None
-                    next_selectors = [
-                        "//button[@aria-label='Next']",
-                        "//button[contains(@aria-label, 'Next')]",
-                        "//button[contains(text(), 'Next') and not(@disabled)]",
-                        "//button[contains(., 'Next') and not(@disabled)]",
-                        "//a[contains(text(), 'Next') and not(contains(@class, 'disabled'))]",
-                        "//button[@aria-label='Next page' and not(@disabled)]",
-                        "//a[@aria-label='Next page']",
-                        "//button[normalize-space()='Next']",
-                    ]
-
-                    for selector in next_selectors:
-                        try:
-                            next_button = driver.find_element(By.XPATH, selector)
-                            if next_button and next_button.is_displayed():
-                                break
-                        except Exception:
-                            continue
-
-                    if next_button:
-                        self.logger.debug(f"Clicking Next button to navigate to page {page_num + 1}")
-                        driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
-                        time.sleep(0.2)  # Brief pause for scroll
-                        # Use JavaScript to click next button to avoid overlay issues
-                        driver.execute_script("arguments[0].click();", next_button)
-
-                        # Wait for the new page to load with randomized delay
-                        time.sleep(self.rate_limit_delay + random.uniform(0, 0.5))  # Randomized delay for natural pattern
-
-                        # Wait for new content to appear
-                        try:
-                            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href*="/rehoming/dogs/"]')))
-                        except Exception:
-                            self.logger.warning(f"Timeout waiting for page {page_num + 1} to load")
-
-                        # Scroll to trigger lazy loading on the new page
-                        driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 2);")
-                        time.sleep(0.2)
-                        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                        time.sleep(0.2)
-
-                        page_num += 1
-                    else:
-                        self.logger.info("No enabled Next button found - reached end of results")
-                        break
-                except Exception as e:
-                    self.logger.info(f"Could not find or click Next button: {e} - assuming end of results")
-                    break
-
-        except Exception as e:
-            self.logger.error(f"Error during pagination scraping: {e}")
-        finally:
-            driver.quit()
-
-        self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
-        return all_dogs
 
     async def _get_animal_list_playwright(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Fetch list of available dogs using Playwright with pagination.
@@ -549,7 +265,7 @@ class DogsTrustScraper(BaseScraper):
         )
 
         # Use retry wrapper for resilient browser connection
-        async with self._with_browser_retry(options) as browser_result:
+        async with self.browser_manager.with_browser_retry(options) as browser_result:
             page = browser_result.page
             self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} for Dogs Trust scraping")
 
@@ -858,32 +574,6 @@ class DogsTrustScraper(BaseScraper):
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs
 
-    def _setup_selenium_driver(self):
-        """Setup Selenium WebDriver for JavaScript-rendered pages.
-
-        Uses centralized browser service that auto-detects environment:
-        - Local: Uses Chrome
-        - Railway: Uses Browserless
-
-        Returns:
-            Configured WebDriver instance
-        """
-        browser_service = get_browser_service()
-
-        browser_options = BrowserOptions(
-            headless=True,
-            window_size=(1920, 1080),
-            page_load_timeout=30,
-            implicit_wait=10,
-        )
-
-        browser_result = browser_service.create_driver(browser_options)
-
-        if browser_result.is_remote:
-            self.logger.info("Using remote Browserless for Dogs Trust scraping")
-
-        return browser_result.driver
-
     def _detect_max_pages(self, soup: BeautifulSoup) -> int:
         """Detect maximum page count from pagination indicator.
 
@@ -1031,7 +721,7 @@ class DogsTrustScraper(BaseScraper):
 
         for attempt in range(max_retries):
             try:
-                # Use HTTP requests for detail pages (faster than Selenium)
+                # Use HTTP requests for detail pages (faster than a browser)
                 headers = {
                     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",

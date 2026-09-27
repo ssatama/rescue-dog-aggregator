@@ -30,7 +30,6 @@ def theunderdog_scraper(mock_db_connection):
         scraper.logger = Mock()
         scraper.organization_id = 100
         scraper.organization_name = "theunderdog"
-        scraper.use_unified_standardization = True  # Enable unified standardization
         return scraper
 
 

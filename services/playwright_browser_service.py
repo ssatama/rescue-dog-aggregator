@@ -4,8 +4,7 @@ Provides unified browser creation that auto-detects environment:
 - Local development: Uses local Chromium via playwright
 - Railway/Production: Uses Browserless v2 via WebSocket
 
-This service replaces browser_service.py (Selenium) for Browserless v2 compatibility.
-Browserless v2 removed Selenium/WebDriver support, only Playwright/Puppeteer work.
+Browserless v2 supports only Playwright/Puppeteer, not Selenium/WebDriver.
 """
 
 import asyncio
@@ -126,13 +125,11 @@ class PlaywrightBrowserService:
     Environment variables:
     - BROWSERLESS_WS_ENDPOINT: WebSocket URL for Browserless (e.g., wss://host:3000)
     - BROWSERLESS_TOKEN: Authentication token for Browserless
-    - USE_PLAYWRIGHT: Set to 'true' to enable Playwright (default: false for safety)
     """
 
     def __init__(self):
         self._endpoint = os.environ.get("BROWSERLESS_WS_ENDPOINT")
         self._token = os.environ.get("BROWSERLESS_TOKEN")
-        self._enabled = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
         # Shared Playwright instance to prevent pthread_create exhaustion, and
         # the event loop it belongs to.
         self._playwright: Playwright | None = None
@@ -177,11 +174,6 @@ class PlaywrightBrowserService:
                 logger.warning(f"Error stopping Playwright: {e}")
             finally:
                 self._playwright = None
-
-    @property
-    def is_enabled(self) -> bool:
-        """Check if Playwright is enabled via USE_PLAYWRIGHT env var."""
-        return self._enabled
 
     @property
     def is_remote_mode(self) -> bool:
@@ -436,7 +428,6 @@ class PlaywrightBrowserService:
             Dictionary with health status and configuration info.
         """
         return {
-            "enabled": self.is_enabled,
             "mode": "remote" if self.is_remote_mode else "local",
             "endpoint": redact_endpoint(self._endpoint) if self.is_remote_mode else None,
             "token_configured": bool(self._token),

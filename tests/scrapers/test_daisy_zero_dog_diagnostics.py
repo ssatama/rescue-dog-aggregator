@@ -8,7 +8,7 @@ produced the same signal: dogs_found = 0, and nothing else.
 """
 
 import inspect
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bs4 import BeautifulSoup
@@ -34,7 +34,7 @@ class TestCollectDataPropagatesFailures:
     """BaseScraper can only mark a run `error` if the exception reaches it."""
 
     def test_browser_failure_propagates_instead_of_returning_empty(self, scraper):
-        with patch.object(scraper, "_extract_with_selenium") as mock_extract:
+        with patch.object(scraper, "_extract_with_playwright", new_callable=AsyncMock) as mock_extract:
             mock_extract.side_effect = RuntimeError("Browserless session closed")
 
             with pytest.raises(RuntimeError, match="Browserless session closed"):
@@ -42,7 +42,7 @@ class TestCollectDataPropagatesFailures:
 
     def test_translation_failure_propagates(self, scraper):
         with (
-            patch.object(scraper, "_extract_with_selenium") as mock_extract,
+            patch.object(scraper, "_extract_with_playwright", new_callable=AsyncMock) as mock_extract,
             patch.object(scraper, "_translate_and_normalize_dogs") as mock_translate,
         ):
             mock_extract.return_value = [{"name": "BRUNO", "external_id": "hund-bruno"}]
@@ -57,7 +57,7 @@ class TestCollectDataPropagatesFailures:
         assert "except Exception" not in source, "collect_data must not catch and return [] - that is the silent failure this test exists to prevent"
 
     def test_a_genuinely_empty_listing_is_still_an_empty_list(self, scraper):
-        with patch.object(scraper, "_extract_with_selenium") as mock_extract:
+        with patch.object(scraper, "_extract_with_playwright", new_callable=AsyncMock) as mock_extract:
             mock_extract.return_value = []
 
             assert scraper.collect_data() == []

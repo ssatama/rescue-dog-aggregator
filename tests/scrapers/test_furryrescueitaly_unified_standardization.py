@@ -22,7 +22,6 @@ def scraper():
     )
 
     # Enable unified standardization for this scraper
-    scraper.use_unified_standardization = True
 
     return scraper
 

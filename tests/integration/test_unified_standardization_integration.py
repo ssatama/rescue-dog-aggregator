@@ -11,7 +11,7 @@ from utils.unified_standardization import UnifiedStandardizer
 class TestScraper(BaseScraper):
     """Test scraper for integration testing."""
 
-    def __init__(self, use_unified_standardization=True):
+    def __init__(self):
         """Initialize test scraper with minimal required arguments."""
         # Mock the necessary services
         mock_db = Mock()
@@ -25,9 +25,6 @@ class TestScraper(BaseScraper):
             session_manager=mock_session_manager,
             metrics_collector=mock_metrics,
         )
-
-        # Override the use_unified_standardization flag after init
-        self.use_unified_standardization = use_unified_standardization
 
     def collect_data(self):
         """Implement abstract method to collect data."""
@@ -81,13 +78,12 @@ class TestUnifiedStandardizationIntegration:
         saved_animals = []
 
         # Create scraper with unified standardization enabled
-        scraper = TestScraper(use_unified_standardization=True)
+        scraper = TestScraper()
 
         # Mock the save_animal method to track what gets saved
         def mock_save(animal):
             # Apply standardization manually to test
-            if scraper.use_unified_standardization and scraper.standardizer:
-                animal = scraper.process_animal(animal)
+            animal = scraper.process_animal(animal)
             saved_animals.append(animal)
             return animal
 
@@ -115,48 +111,6 @@ class TestUnifiedStandardizationIntegration:
         assert bella["breed_category"] == "Designer/Hybrid"
         assert bella["primary_breed"] == "Labradoodle"  # keeps its own identity
         assert bella["secondary_breed"] is None
-
-    @patch("scrapers.base_scraper.ConfigLoader")
-    @patch("scrapers.base_scraper.create_default_sync_service")
-    def test_standardization_disabled(self, mock_sync_service, mock_config_loader):
-        """Test that standardization can be disabled."""
-        # Setup config mock
-        mock_config = Mock()
-        mock_config.base_url = "http://test.com"
-        mock_config.name = "test_org"
-        mock_config_loader.load_config.return_value = mock_config
-
-        # Setup sync service mock
-        mock_sync_service.return_value = Mock()
-
-        saved_animals = []
-
-        # Create scraper with standardization disabled
-        scraper = TestScraper(use_unified_standardization=False)
-
-        # Mock the save_animal method
-        def mock_save(animal):
-            if scraper.use_unified_standardization and scraper.standardizer:
-                animal = scraper.process_animal(animal)
-            saved_animals.append(animal)
-            return animal
-
-        # Get test animals and process them
-        animals = scraper.fetch_animals()
-        for animal in animals:
-            mock_save(animal)
-
-        # Verify animals were NOT standardized
-        assert len(saved_animals) == 3
-
-        # Breeds should remain as-is
-        luna = saved_animals[0]
-        assert luna["breed"] == "Lurcher"
-        assert "breed_category" not in luna  # No standardization applied
-
-        max_dog = saved_animals[1]
-        assert max_dog["breed"] == "Staffy"  # Not standardized
-        assert "breed_category" not in max_dog
 
     def test_standardizer_handles_edge_cases(self):
         """Test that standardizer handles edge cases properly."""

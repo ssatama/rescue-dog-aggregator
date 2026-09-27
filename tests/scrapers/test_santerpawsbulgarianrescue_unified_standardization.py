@@ -30,7 +30,6 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
             scraper = SanterPawsBulgarianRescueScraper.__new__(SanterPawsBulgarianRescueScraper)
             scraper.config_id = "santerpawsbulgarianrescue"
             scraper.standardizer = Mock()
-            scraper.use_unified_standardization = True
             scraper.logger = Mock()
             scraper.organization_id = 1
             scraper.scrape_status = {"success": 0, "errors": 0}
@@ -255,7 +254,6 @@ class TestSanterPawsBulgarianRescueUnifiedStandardization:
     def test_feature_flag_enabled(self, scraper):
         """Test that unified standardization respects the feature flag."""
         # Arrange
-        scraper.use_unified_standardization = True
         raw_data = {"name": "Test", "breed": "labrador"}
 
         # Mock both standardizer methods

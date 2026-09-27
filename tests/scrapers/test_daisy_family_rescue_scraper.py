@@ -37,29 +37,21 @@ class TestDaisyFamilyRescueScraperMain:
             return scraper
 
     @pytest.fixture
-    def mock_selenium_container(self):
-        container = Mock()
-
-        link = Mock()
-        link.get_attribute.return_value = "https://daisyfamilyrescue.de/hund-brownie/"
-        link.text = "Brownie - in München"
-
-        container.find_elements.return_value = [link]
-
-        container.text = """Brownie - in München
-03/2020 • 53cm • 19kg
-Deutscher Schäferhund Mischling
-weiblich, kastriert"""
-
-        img = Mock()
-        img.get_attribute.return_value = "https://daisyfamilyrescue.de/wp-content/uploads/brownie.jpg"
-        container.find_element.return_value = img
-
-        return container
+    def brownie_card(self):
+        html = """
+        <article class="elementor-post">
+          <a href="https://daisyfamilyrescue.de/hund-brownie/"><img src="https://daisyfamilyrescue.de/wp-content/uploads/brownie.jpg"/></a>
+          <a href="https://daisyfamilyrescue.de/hund-brownie/">Brownie - in München</a>
+          <p>03/2020 • 53cm • 19kg</p>
+          <p>Deutscher Schäferhund Mischling</p>
+          <p>weiblich, kastriert</p>
+        </article>
+        """
+        return BeautifulSoup(html, "html.parser").article
 
     @pytest.mark.unit
-    def test_extract_dog_from_container_success(self, scraper, mock_selenium_container):
-        result = scraper._extract_dog_from_container(mock_selenium_container, 1)
+    def test_extract_dog_from_container_success(self, scraper, brownie_card):
+        result = scraper._extract_dog_from_container_soup(brownie_card, 1)
 
         assert result is not None
         assert result["name"] == "Brownie"
@@ -72,7 +64,7 @@ weiblich, kastriert"""
         props = result["properties"]
         assert props["source"] == "daisyfamilyrescue.de"
         assert props["country"] == "DE"
-        assert props["extraction_method"] == "selenium_listing"
+        assert props["extraction_method"] == "playwright_listing"
         assert props["language"] == "de"
         assert props["location"] == "München"
 
@@ -82,68 +74,18 @@ weiblich, kastriert"""
 
     @pytest.mark.unit
     def test_extract_dog_from_container_no_link(self, scraper):
-        container = Mock()
-        container.find_elements.return_value = []
-        container.text = "Some non-dog content"
+        container = BeautifulSoup("<article><p>Some non-dog content</p></article>", "html.parser").article
 
-        result = scraper._extract_dog_from_container(container, 1)
-        assert result is None
+        assert scraper._extract_dog_from_container_soup(container, 1) is None
 
     @pytest.mark.unit
-    def test_extract_dog_from_container_invalid_data(self, scraper, mock_selenium_container):
-        link = Mock()
-        link.get_attribute.return_value = "https://daisyfamilyrescue.de/hund-x/"
-        link.text = "X"
+    def test_extract_dog_from_container_invalid_data(self, scraper):
+        container = BeautifulSoup('<article><a href="https://daisyfamilyrescue.de/hund-x/">X</a></article>', "html.parser").article
 
-        mock_selenium_container.find_elements.return_value = [link]
-        mock_selenium_container.text = "X"
-
-        result = scraper._extract_dog_from_container(mock_selenium_container, 1)
-        assert result is None
+        assert scraper._extract_dog_from_container_soup(container, 1) is None
 
     @pytest.mark.unit
-    def test_filter_dogs_by_section_success(self, scraper):
-        """Headers use the current live site copy. First two are target sections,
-        third is the skip section; containers under the first two should survive,
-        the one under the skip section should be filtered out."""
-        mock_driver = Mock()
-
-        header1 = Mock()
-        header1.text = "Aktuell bei einer Pflegestelle in Deutschland"
-        header2 = Mock()
-        header2.text = "Unsere Hündinnen"
-        header3 = Mock()
-        header3.text = "Wir sind bereits reserviert"
-
-        mock_driver.find_elements.side_effect = [
-            [header1, header2, header3],
-            [Mock(), Mock(), Mock()],
-        ]
-
-        mock_driver.execute_script.side_effect = [
-            100,
-            200,
-            300,
-            150,
-            250,
-            350,
-        ]
-
-        result = scraper._filter_dogs_by_section(mock_driver)
-
-        assert len(result) == 2
-
-    @pytest.mark.browser
-    def test_handle_lazy_loading(self, scraper):
-        mock_driver = Mock()
-        mock_driver.execute_script.side_effect = [1000, 1000, 1000, 1000, 1000, 1000]
-
-        scraper._handle_lazy_loading(mock_driver)
-
-        assert mock_driver.execute_script.call_count >= 3
-
-    @pytest.mark.unit
-    def test_collect_data_selenium_success(self, scraper):
+    def test_collect_data_success(self, scraper):
         mock_dogs = [
             {
                 "name": "BRUNO",
@@ -155,7 +97,7 @@ weiblich, kastriert"""
         ]
 
         with (
-            patch.object(scraper, "_extract_with_selenium") as mock_extract,
+            patch.object(scraper, "_extract_with_playwright", new_callable=AsyncMock) as mock_extract,
             patch.object(scraper, "_translate_and_normalize_dogs") as mock_translate,
         ):
             mock_extract.return_value = mock_dogs
@@ -168,13 +110,13 @@ weiblich, kastriert"""
             mock_translate.assert_called_once_with(mock_dogs)
 
     @pytest.mark.unit
-    def test_collect_data_selenium_failure(self, scraper):
+    def test_collect_data_browser_failure(self, scraper):
         """A browser failure must reach BaseScraper so the run is marked `error`.
 
         See tests/scrapers/test_daisy_zero_dog_diagnostics.py - swallowing this
         is what produced 28 zero-dog runs with no diagnosable cause.
         """
-        with patch.object(scraper, "_extract_with_selenium") as mock_extract:
+        with patch.object(scraper, "_extract_with_playwright", new_callable=AsyncMock) as mock_extract:
             mock_extract.side_effect = Exception("WebDriver failed")
 
             with pytest.raises(Exception, match="WebDriver failed"):
@@ -182,35 +124,11 @@ weiblich, kastriert"""
 
     @pytest.mark.unit
     def test_collect_data_no_dogs_found(self, scraper):
-        with patch.object(scraper, "_extract_with_selenium") as mock_extract:
+        with patch.object(scraper, "_extract_with_playwright", new_callable=AsyncMock) as mock_extract:
             mock_extract.return_value = []
 
             result = scraper.collect_data()
 
-            assert result == []
-
-    @pytest.mark.unit
-    def test_extract_with_selenium_chrome_options(self, scraper):
-        with patch("scrapers.daisy_family_rescue.dogs_scraper.get_browser_service") as mock_browser_service:
-            mock_service = Mock()
-            mock_browser_service.return_value = mock_service
-
-            mock_driver = Mock()
-            mock_browser_result = Mock()
-            mock_browser_result.driver = mock_driver
-            mock_service.create_driver.return_value = mock_browser_result
-            mock_driver.find_elements.return_value = []
-
-            with (
-                patch("scrapers.daisy_family_rescue.dogs_scraper.WebDriverWait") as mock_wait,
-                patch.object(scraper, "_handle_lazy_loading"),
-                patch.object(scraper, "_filter_dogs_by_section", return_value=[]),
-            ):
-                mock_wait.return_value.until.return_value = True
-                result = scraper._extract_with_selenium()
-
-            mock_browser_service.assert_called_once()
-            mock_service.create_driver.assert_called_once()
             assert result == []
 
     @pytest.mark.unit
@@ -410,41 +328,6 @@ weiblich, kastriert"""
         assert scraper._classify_section("Reserviert für unsere Hündinnen") == "skip"
 
     @pytest.mark.unit
-    def test_filter_dogs_by_section_drops_selenium_containers_without_hund_link(self, scraper):
-        """Regression guard for the Selenium code path. Previously surfaced as
-        noisy 'Could not find dog link in container N' warnings when Elementor
-        injected non-dog containers (newsletter signup blocks). The bare
-        ``Mock()`` used in ``test_filter_dogs_by_section_success`` above can't
-        verify the early-drop — it passes whether or not the code exists. This
-        test puts the selector result explicitly.
-        """
-        from selenium.webdriver.common.by import By
-
-        mock_driver = Mock()
-
-        header = Mock()
-        header.text = "Unsere Hündinnen"
-
-        dog_container = Mock()
-        dog_container.find_elements.return_value = [Mock()]  # has /hund-*/ link
-
-        newsletter_container = Mock()
-        newsletter_container.find_elements.return_value = []  # no dog link
-
-        mock_driver.find_elements.side_effect = [
-            [header],
-            [dog_container, newsletter_container],
-        ]
-        # Positions: header@100, dog@150, newsletter@160
-        mock_driver.execute_script.side_effect = [100, 150, 160]
-
-        result = scraper._filter_dogs_by_section(mock_driver)
-
-        assert result == [dog_container]
-        dog_container.find_elements.assert_called_with(By.CSS_SELECTOR, "a[href*='/hund-']")
-        newsletter_container.find_elements.assert_called_with(By.CSS_SELECTOR, "a[href*='/hund-']")
-
-    @pytest.mark.unit
     def test_filter_dogs_by_section_soup_with_live_dom(self, scraper):
         """Golden-path DOM test against the current live layout.
 
@@ -501,63 +384,23 @@ weiblich, kastriert"""
             assert scraper._classify_section(section) == "target"
 
     @pytest.mark.unit
-    def test_link_extraction_skips_empty_text_links(self, scraper):
-        container = Mock()
-
-        image_link = Mock()
-        image_link.get_attribute.side_effect = lambda attr: {
-            "href": "https://daisyfamilyrescue.de/hund-brownie/",
-        }.get(attr)
-        image_link.text = ""
-
-        text_link = Mock()
-        text_link.get_attribute.side_effect = lambda attr: {
-            "href": "https://daisyfamilyrescue.de/hund-brownie/",
-        }.get(attr)
-        text_link.text = "Brownie - in München"
-
-        container.find_elements.return_value = [image_link, text_link]
-        container.text = "Brownie - in München\n03/2020 • 53cm • 19kg"
-
-        result = scraper._extract_dog_from_container(container, 1)
+    def test_link_extraction_skips_empty_text_links(self, scraper, brownie_card):
+        """The photo link comes first and has no text; the name is on the second link."""
+        result = scraper._extract_dog_from_container_soup(brownie_card, 1)
 
         assert result is not None, "Should extract dog data from text link"
         assert result["name"] == "Brownie", "Should extract name from text link, not empty image link"
         assert result["properties"]["location"] == "München", "Should extract location from text link"
 
     @pytest.mark.unit
-    def test_link_text_extraction_germany_vs_macedonia_pattern(self, scraper):
-        macedonia_container = Mock()
-        macedonia_link = Mock()
-        macedonia_link.get_attribute.side_effect = lambda attr: {
-            "href": "https://daisyfamilyrescue.de/hund-bonnie-2/",
-        }.get(attr)
-        macedonia_link.text = "Bonnie"
-        macedonia_container.find_elements.return_value = [macedonia_link]
-        macedonia_container.text = "Bonnie\n03/2025 • im Wachstum"
+    def test_link_text_extraction_germany_vs_macedonia_pattern(self, scraper, brownie_card):
+        macedonia = BeautifulSoup('<article><a href="https://daisyfamilyrescue.de/hund-bonnie-2/">Bonnie</a><p>03/2025 • im Wachstum</p></article>', "html.parser").article
 
-        macedonia_result = scraper._extract_dog_from_container(macedonia_container, 1)
+        macedonia_result = scraper._extract_dog_from_container_soup(macedonia, 1)
         assert macedonia_result is not None
         assert macedonia_result["name"] == "Bonnie"
 
-        germany_container = Mock()
-
-        image_link = Mock()
-        image_link.get_attribute.side_effect = lambda attr: {
-            "href": "https://daisyfamilyrescue.de/hund-brownie/",
-        }.get(attr)
-        image_link.text = ""
-
-        text_link = Mock()
-        text_link.get_attribute.side_effect = lambda attr: {
-            "href": "https://daisyfamilyrescue.de/hund-brownie/",
-        }.get(attr)
-        text_link.text = "Brownie - in München"
-
-        germany_container.find_elements.return_value = [image_link, text_link]
-        germany_container.text = "Brownie - in München\n03/2020 • 53cm • 19kg"
-
-        germany_result = scraper._extract_dog_from_container(germany_container, 1)
+        germany_result = scraper._extract_dog_from_container_soup(brownie_card, 1)
         assert germany_result is not None, "Should skip empty image link and use text link"
         assert germany_result["name"] == "Brownie", "Should extract name from text link"
 
@@ -591,7 +434,7 @@ class TestDaisyFamilyRescueScraperIntegration:
 
     @pytest.mark.integration
     def test_end_to_end_data_flow_mock(self, scraper):
-        with patch.object(scraper, "_extract_with_selenium") as mock_extract:
+        with patch.object(scraper, "_extract_with_playwright", new_callable=AsyncMock) as mock_extract:
             raw_dog_data = [
                 {
                     "name": "LUNA",
@@ -606,7 +449,7 @@ class TestDaisyFamilyRescueScraperIntegration:
                     "properties": {
                         "source": "daisyfamilyrescue.de",
                         "country": "DE",
-                        "extraction_method": "selenium_listing",
+                        "extraction_method": "playwright_listing",
                         "language": "de",
                         "location": "München",
                     },
@@ -751,8 +594,7 @@ class TestDaisyFamilyRescueScraperIntegration:
         org_name = scraper.get_organization_name()
         assert "Daisy Family Rescue" in org_name
 
-        rate_delay = scraper.get_rate_limit_delay()
-        assert rate_delay == 0.1
+        assert scraper.rate_limit_delay == 0.1
 
     @pytest.mark.integration
     def test_configuration_driven_initialization(self):
