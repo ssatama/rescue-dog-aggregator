@@ -103,7 +103,8 @@ class PromptBuilder:
         # Format the extraction prompt with dog data
         prompt = self.prompt_template["extraction_prompt"].format(
             name=dog_data.get("name") or "Unknown",
-            breed=dog_data.get("breed") or "Mixed Breed",
+            # Not "Mixed Breed": the model would repeat it as a fact (#568)
+            breed=dog_data.get("breed") or "Not stated by the rescue",
             age_text=dog_data.get("age_text") or "Unknown age",
             properties=properties_str,
         )

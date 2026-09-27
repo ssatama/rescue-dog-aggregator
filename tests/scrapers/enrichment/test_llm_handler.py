@@ -184,7 +184,7 @@ class TestLLMEnrichmentHandlerDataPreparation:
         assert len(result) == 1
         assert result[0]["id"] == 456
         assert result[0]["name"] == "Unknown"
-        assert result[0]["breed"] == "Mixed Breed"
+        assert result[0]["breed"] is None  # no breed invented (#568)
         assert result[0]["age_text"] == "Unknown"
 
     def test_prepare_dogs_adds_description_from_data(self):

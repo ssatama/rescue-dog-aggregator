@@ -256,7 +256,6 @@ class GalgosDelSolScraper(BaseScraper):
                 "animal_type": "dog",
                 "status": "available",
                 "properties": properties,
-                "description": description,
             }
 
             # Add image_urls for R2 integration through BaseScraper template method
@@ -265,25 +264,10 @@ class GalgosDelSolScraper(BaseScraper):
             else:
                 result["image_urls"] = []
 
-            # Extract individual fields from properties for compatibility with zero NULLs compliance
-            if properties:
-                if "breed" in properties:
-                    result["breed"] = properties["breed"] or "Mixed Breed"
-                if "sex" in properties:
-                    result["sex"] = properties["sex"] or "Unknown"
-                if "age_text" in properties:
-                    result["age_text"] = properties["age_text"]
-
-            # Ensure zero NULLs compliance - set proper defaults for missing fields
-            if "breed" not in result:
-                result["breed"] = "Mixed Breed"
-            if "sex" not in result:
-                result["sex"] = "Unknown"
-            if "age_text" not in result:
-                result["age_text"] = None
-
-            # Use BaseScraper fallback for size (not available on this site)
-            result["size"] = "Medium"  # Default fallback as requested
+            # What the site gave; a missing value stays missing (#568)
+            for key in ("breed", "sex", "age_text"):
+                if properties.get(key):
+                    result[key] = properties[key]
 
             self.logger.debug(f"Successfully extracted data for {name}")
 

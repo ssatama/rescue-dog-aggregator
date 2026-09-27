@@ -913,12 +913,14 @@ class FurryRescueItalyScraper(BaseScraper):
         # Prepare data for unified standardization
         # Extract key fields to match expected format
         props = animal["properties"]
+        # The listing card's facts belong in properties; the save drops top-level extras (#568)
+        for key in ("born", "weight", "location"):
+            if key in animal:
+                props.setdefault(key, animal.pop(key))
 
         # Set breed at top level for standardization
         if "breed" in props:
             animal["breed"] = props["breed"]
-        else:
-            animal["breed"] = "Mixed Breed"
 
         # Set sex at top level
         if "sex" in props:
@@ -940,7 +942,7 @@ class FurryRescueItalyScraper(BaseScraper):
                 animal["size"] = "Small"
             elif "large" in size_value:
                 animal["size"] = "Large"
-            else:
+            elif "medium" in size_value:
                 animal["size"] = "Medium"
         elif "future_size" in props:
             size_value = props["future_size"].lower()
@@ -950,7 +952,7 @@ class FurryRescueItalyScraper(BaseScraper):
                 animal["size"] = "Small"
             elif "large" in size_value:
                 animal["size"] = "Large"
-            else:
+            elif "medium" in size_value:
                 animal["size"] = "Medium"
 
         # Set age at top level (renamed from age_text to age for unified standardization)
@@ -959,8 +961,7 @@ class FurryRescueItalyScraper(BaseScraper):
         elif "age_category" in props:
             animal["age"] = props["age_category"]
 
-        # Apply unified standardization
-        animal = self.process_animal(animal)
+        # save_animal standardises; nothing to do here (#568)
 
         # Preserve good_with field processing
         if "good_with" in props:

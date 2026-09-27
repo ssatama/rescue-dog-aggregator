@@ -345,7 +345,8 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 },
             }
 
-            dog_data.update(additional_info)
+            # Facts, not columns: they belong in properties (#568)
+            dog_data["properties"].update(additional_info)
 
             if self._validate_dog_data(dog_data):
                 return dog_data

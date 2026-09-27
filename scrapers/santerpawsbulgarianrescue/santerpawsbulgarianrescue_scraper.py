@@ -360,16 +360,19 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                         if age_info.get("age_min_months") is not None:
                             properties["age_min_months"] = age_info["age_min_months"]
                             properties["age_max_months"] = age_info["age_max_months"]
-                            properties["age_category"] = age_info.get("age_category", "Unknown")
+                            if age_info.get("age_category"):
+                                properties["age_category"] = age_info["age_category"]
                 elif label == "Size":
-                    properties["size"] = value or "Medium"
+                    if value:
+                        properties["size"] = value
                 elif label == "Sex":
                     # Blank stays absent, like D.O.B: "Unknown" would read as scraped (#349)
                     if value:
                         properties["sex"] = value
                 elif label == "Breed":
                     # Store raw breed for unified standardization
-                    properties["breed"] = value or "Mixed Breed"
+                    if value:
+                        properties["breed"] = value
                 elif label == "Status":
                     # Map status values
                     if value and value.lower() in ["reserved", "on hold"]:
@@ -486,7 +489,6 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                 "animal_type": "dog",
                 "status": "available",
                 "properties": properties,
-                "description": description,
             }
 
             # The dog's photos: the hero, then the gallery's full-size originals (#487)
@@ -496,7 +498,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             # Extract individual fields from properties for compatibility with zero NULLs compliance
             if properties:
                 if "breed" in properties:
-                    result["breed"] = properties["breed"] or "Mixed Breed"
+                    result["breed"] = properties["breed"]
                 if "sex" in properties:
                     result["sex"] = properties["sex"]
                 # Rename age_text to age for unified standardization API
@@ -505,19 +507,13 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                     # The D.O.B cell, day-first: "03/10/2025" (#561)
                     result["date_of_birth"] = properties["age_text"]
                 if "size" in properties:
-                    result["size"] = properties["size"] or "Medium"
+                    result["size"] = properties["size"]
                 if "status" in properties:
                     result["status"] = properties["status"]  # Override default with extracted status
 
             # Apply unified standardization via process_animal from BaseScraper
             # This handles breed standardization, age parsing, size normalization, etc.
             result = self.process_animal(result)
-
-            # Zero NULLs compliance - set defaults only if unified standardization didn't provide them
-            if "breed" not in result or not result["breed"]:
-                result["breed"] = "Mixed Breed"
-            if "standardized_size" not in result or not result["standardized_size"]:
-                result["standardized_size"] = "Medium"
 
             self.logger.debug(f"Successfully extracted data for {name}")
             return result

@@ -198,7 +198,7 @@ class TestUnifiedStandardizer:
 
         # Test with non-string breed
         result = standardizer.apply_full_standardization(breed=123)
-        assert result["breed"] == "Unknown"
+        assert result["breed"] is None  # names no breed (#568)
 
         # Test with very long string
         long_breed = "a" * 1000
@@ -501,8 +501,9 @@ def test_data_quality_fix():
 
     # This is not a breed, it's a behavioral note
     result = standardizer.apply_full_standardization(breed="Can Be The Only Dog")
-    # Should remain as Unknown since it's not a breed
-    assert result["breed_category"] == "Unknown"
+    # Not a breed, so no breed fields at all (#568)
+    assert result["breed"] is None
+    assert result["breed_category"] is None
 
 
 class TestBreedNormalizationFixes:
@@ -768,3 +769,13 @@ class TestSizeIsNotFabricated:
         standardizer = UnifiedStandardizer()
         result = standardizer.apply_full_standardization(breed="Chihuahua", size=None)
         assert result["standardized_size"] == "Tiny"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(("stated", "category"), [("Mini", "Tiny"), ("Toy", "Tiny"), ("X-Large", "XLarge"), ("Med", "Medium")])
+def test_a_stated_size_is_the_rescues_not_the_breeds(stated, category):
+    """#568: a size the rescue wrote is never relabelled as a breed estimate."""
+    result = UnifiedStandardizer().apply_full_standardization(breed="Labrador Retriever", size=stated)
+
+    assert result["standardized_size"] == category
+    assert result["size_source"] is None

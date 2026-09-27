@@ -412,9 +412,4 @@ class PetsInTurkeyScraper(BaseScraper):
         standardized.setdefault("status", "available")
         standardized.setdefault("animal_type", "dog")
 
-        # Handle neutered/spayed field standardization
-        neutered_value = dog_data.get("properties", {}).get("neutered_spayed", "")
-        if neutered_value:
-            standardized.setdefault("neutered", neutered_value.lower() == "yes")
-
         return standardized

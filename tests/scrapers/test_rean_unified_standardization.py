@@ -64,7 +64,7 @@ class TestREANUnifiedStandardization:
         # Verify it processes gracefully even without breed
         assert processed["name"] == "Max"
         assert processed["age_text"] == "3 years"
-        assert processed["breed"] == "Unknown"  # Unified standardization sets default
+        assert processed["breed"] is None  # No breed stays empty (#568)
 
     def test_rean_future_breed_extraction_ready(self, scraper):
         """Test that if REAN adds breed extraction, it will use unified standardization."""

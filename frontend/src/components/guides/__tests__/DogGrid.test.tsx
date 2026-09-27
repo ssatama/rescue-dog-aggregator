@@ -72,7 +72,7 @@ describe("DogGrid", () => {
       <DogGrid
         breed="galgo"
         location_country="ES"
-        size="large"
+        size="Large"
         age_category="adult"
         limit={4}
       />,
@@ -82,7 +82,7 @@ describe("DogGrid", () => {
       expect(serverAnimalsService.getAnimals).toHaveBeenCalledWith({
         breed: "galgo",
         location_country: "ES",
-        size: "large",
+        standardized_size: "Large",
         age_category: "adult",
         limit: 4,
         status: "available",
@@ -223,6 +223,17 @@ describe("DogGrid", () => {
     await waitFor(() => {
       const link = screen.getByText(/Browse all/i);
       expect(link).toHaveAttribute("href", "/dogs?breed=lurcher");
+    });
+  });
+
+  it("maps its size onto the API's size scale", async () => {
+    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+
+    render(<DogGrid size="extra large" />);
+
+    await waitFor(() => {
+      // Legacy "Extra Large" is Giant on today's scale, XLarge in the API
+      expect(serverAnimalsService.getAnimals).toHaveBeenCalledWith(expect.objectContaining({ standardized_size: "XLarge" }));
     });
   });
 

@@ -20,13 +20,12 @@ from config import DB_CONFIG, enable_world_class_scraper_logging
 
 # Import services and utilities
 from scrapers.browser_manager import ScraperBrowserManager
-
-# Import centralized constants
 from scrapers.constants import (
     CONCURRENT_UPLOAD_THRESHOLD,
     MAX_R2_FAILURE_RATE,
     SMALL_BATCH_THRESHOLD,
 )
+from scrapers.contract import unknown_keys
 from scrapers.enrichment.llm_handler import LLMEnrichmentHandler
 from scrapers.filtering.filtering_service import FilteringService
 
@@ -217,6 +216,7 @@ class BaseScraper(ABC):
         self._request_slot_lock = threading.Lock()
         self._next_request_at = 0.0
         self.detail_failures: list[str] = []
+        self._unknown_keys_logged: set[str] = set()
 
         # Browser retry manager (extracted from BaseScraper)
         self.browser_manager = ScraperBrowserManager(logger=self.logger)
@@ -535,7 +535,16 @@ class BaseScraper(ABC):
             )
 
             # Update processed_data with standardized fields (now returned flattened)
+            size_source = standardized.pop("size_source", None)
             processed_data.update(standardized)
+            # A breed-estimated size is labelled, so no page presents it as the rescue's (#568)
+            properties = dict(processed_data.get("properties") or {})
+            if size_source:
+                properties["size_source"] = size_source
+            else:
+                properties.pop("size_source", None)
+            if properties or "properties" in processed_data:
+                processed_data["properties"] = properties
 
             # Log the result if breed changed
             new_breed = processed_data.get("breed")
@@ -551,6 +560,13 @@ class BaseScraper(ABC):
 
         return processed_data
 
+    def _check_contract(self, animal_data: dict[str, Any]) -> None:
+        """Log, once per run, top-level keys the save path doesn't read (#568)."""
+        new = unknown_keys(animal_data) - self._unknown_keys_logged
+        if new:
+            self._unknown_keys_logged |= new
+            self.logger.warning(f"Scraped dogs carry keys the save path doesn't read, so their values are lost: {sorted(new)}. Move them into properties (scrapers/contract.py).")
+
     def save_animal(self, animal_data):
         """Save or update animal data in the database with R2 image upload."""
         if not self.database_service:
@@ -558,6 +574,7 @@ class BaseScraper(ABC):
             return None, "error"
 
         try:
+            self._check_contract(animal_data)
             # Process animal data through standardization if enabled
             animal_data = self.process_animal(animal_data)
 
@@ -838,6 +855,7 @@ class BaseScraper(ABC):
         self.animals_for_llm_enrichment = []
         self.detail_failures = []
         self._detail_attempted = 0
+        self._unknown_keys_logged = set()
 
         # Ask the source site for permission before fetching anything from it.
         if not self._check_robots_permission():

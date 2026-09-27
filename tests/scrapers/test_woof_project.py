@@ -58,8 +58,9 @@ class TestWoofProjectScraperOptimized:
             ("LISBON", "Lisbon"),
             ("MAX-ZEUS", "Max-Zeus"),
             ("Buddy", "Buddy"),
-            ("", "Unknown"),
-            (None, "Unknown"),
+            # No name: None, and the validator rejects the dog (#568)
+            ("", None),
+            (None, None),
             ("  BUDDY  ", "Buddy"),
         ],
     )
@@ -118,8 +119,8 @@ class TestWoofProjectScraperOptimized:
 
                 # Should handle gracefully without exceptions
                 if result is not None:
-                    assert isinstance(result["name"], str)
-                    assert len(result["name"]) > 0
+                    # An empty page has no name to give (#568); the validator rejects it
+                    assert result["name"] is None or len(result["name"]) > 0
                     assert result["external_id"] == f"wp-{case_name}"
                     assert result["animal_type"] == "dog"
                     assert result["status"] == "available"
@@ -224,9 +225,9 @@ class TestWoofProjectLabelledFields:
         assert result["age_text"] == "2 years"
         assert result["age_min_months"] == 24
         assert result["size"] == "Medium"
-        assert result["description"].startswith("Hoi, ik ben Arean")
-        assert "Subscribe" not in result["description"]
-        assert "Welcome to our family" not in result["description"]
+        assert result["properties"]["description"].startswith("Hoi, ik ben Arean")
+        assert "Subscribe" not in result["properties"]["description"]
+        assert "Welcome to our family" not in result["properties"]["description"]
 
     def test_missing_values_stay_none(self, scraper):
         html = """
@@ -240,7 +241,8 @@ class TestWoofProjectLabelledFields:
         assert result["sex"] is None
         assert result["age_text"] is None
         assert result["size"] is None
-        assert result["properties"]["breed"] is None
+        # Missing, not stored as null (#568)
+        assert "breed" not in result["properties"]
 
     @pytest.mark.parametrize(
         ("value", "expected"),

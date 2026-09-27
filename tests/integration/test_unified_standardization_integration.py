@@ -119,7 +119,7 @@ class TestUnifiedStandardizationIntegration:
         # Test None values - standardizer accepts individual params not dicts
         result = standardizer.apply_full_standardization(breed=None, age=None, size=None)
         assert result is not None
-        assert result["breed_category"] == "Unknown"
+        assert result["breed_category"] is None  # no breed stays empty, not "Unknown" (#568)
         assert result["standardization_confidence"] == 0.0
 
         # Test empty/missing values
@@ -129,11 +129,11 @@ class TestUnifiedStandardizationIntegration:
 
         # Test partial data with Unknown breed
         result = standardizer.apply_full_standardization(breed="Unknown")
-        assert result["breed"] == "Unknown"
-        assert result["breed_category"] == "Unknown"
+        assert result["breed"] is None
+        assert result["breed_category"] is None
         assert result["standardization_confidence"] == 0.0  # "Unknown" names no breed
 
         # Test empty string breed
         result = standardizer.apply_full_standardization(breed="")
-        assert result["breed"] == "Unknown"
-        assert result["breed_category"] == "Unknown"
+        assert result["breed"] is None
+        assert result["breed_category"] is None

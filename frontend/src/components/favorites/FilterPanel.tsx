@@ -27,7 +27,7 @@ import {
 } from "../ui/select";
 import type { Dog as DogType } from "../../types/dog";
 import { dogCountLabel } from "@/utils/formatCount";
-import { formatSize, getAgeCategory } from "@/utils/dogHelpers";
+import { getAgeCategory, sizeCategory } from "@/utils/dogHelpers";
 import { AGE_OPTIONS, SIZE_OPTIONS } from "@/constants/filters";
 
 // Debounce hook for filter performance
@@ -93,7 +93,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
   }, [dogs]);
 
   const uniqueSizes = useMemo(() => {
-    const sizes = new Set(dogs.map(formatSize));
+    const sizes = new Set(dogs.map(sizeCategory));
     return SIZE_OPTIONS.slice(1).filter((size) => sizes.has(size));
   }, [dogs]);
 
@@ -117,7 +117,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
 
       // Size filter
       if (debouncedSizeFilter && debouncedSizeFilter !== "_all") {
-        if (formatSize(dog) !== debouncedSizeFilter) {
+        if (sizeCategory(dog) !== debouncedSizeFilter) {
           return false;
         }
       }

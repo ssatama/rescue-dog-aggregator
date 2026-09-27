@@ -34,7 +34,8 @@ class TestNullColumnsDoNotReachTheModel:
         prompt = builder.build_prompt({"name": "Bella", "breed": None, "age_text": "2 years", "properties": {"description": "x"}})
 
         assert "Breed: None" not in prompt
-        assert "Breed: Mixed Breed" in prompt
+        # Not "Mixed Breed", which the model would repeat as a fact (#568)
+        assert "Breed: Not stated by the rescue" in prompt
 
     def test_null_properties_do_not_become_the_word_none(self, builder):
         prompt = builder.build_prompt({"name": "Bella", "breed": "Lab", "age_text": "2 years", "properties": None})

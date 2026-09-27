@@ -1465,7 +1465,6 @@ class REANScraper(BaseScraper):
             "age": dog_data.get("age_text"),  # Unified standardization expects 'age' field
             "breed": dog_data.get("breed"),  # Add breed field for unified standardization
             "sex": dog_data.get("sex"),  # Add sex field for unified standardization
-            "language": "en",
             "properties": properties,
         }
 

@@ -109,6 +109,8 @@ export interface Dog {
     weight?: string;
     house_trained?: boolean;
     special_needs?: boolean;
+    /** "breed" when the size is the breed's typical one, not the rescue's (#568) */
+    size_source?: string;
     [key: string]: unknown;
   };
 

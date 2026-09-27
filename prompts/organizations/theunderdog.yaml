@@ -57,7 +57,7 @@ extraction_prompt: |
 
   The properties contains:
   - raw_qa_data: Quick facts about the dog
-  - raw_description: Comprehensive story and details about the dog
+  - description: Comprehensive story and details about the dog
   - page_url: Source URL
 
   Return a FLAT JSON object (no nested sections) with exactly these fields:
@@ -66,13 +66,13 @@ extraction_prompt: |
   - description: 150-350 character adoption-focused description. Start with the dog's unique character or journey. Use warm, world-class engaging language while staying factual. Focus on what makes this dog special and what they offer adopters. Create emotional connection. MUST be under 400 characters.
   - tagline: Compelling hook under 50 characters that captures the dog's essence
 
-  BEHAVIORAL ASSESSMENT (REQUIRED - extract from raw_description):
+  BEHAVIORAL ASSESSMENT (REQUIRED - extract from description):
   - energy_level: Use ONLY "low", "medium", "high", or "very_high". Look for "energetic"=high, "calm"=low, "active"=medium, "laid back"=low. Default to "medium" if not explicitly mentioned.
   - trainability: Use ONLY "easy", "moderate", "challenging", or "very_challenging". Look for "smart"/"clever"=easy, "stubborn"=challenging. Default to "moderate" if not mentioned.
   - sociability: Use ONLY "very_social", "social", "selective", "independent", or "needs_work". Look for "friendly"=social, "shy"=selective, "nervous"=needs_work. Default to "social" if not mentioned.
   - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Look for "nervous"=shy, "confident"=confident, "scared"=very_shy. Default to "moderate" if not mentioned.
 
-  COMPATIBILITY (extract from raw_qa_data and raw_description):
+  COMPATIBILITY (extract from raw_qa_data and description):
   - good_with_dogs: Check "Living with dogs?" in raw_qa_data. Map "I can live with other dogs"=yes, "I'm looking for a home without dogs"=no
   - good_with_cats: Check "Living with cats?" in raw_qa_data. Map "I can't live with cats"=no, "I've not been tested"=unknown
   - good_with_children: Check "Living with kids?" in raw_qa_data. Look for age restrictions
@@ -85,10 +85,10 @@ extraction_prompt: |
 
   CARE NEEDS:
   - grooming_needs: null (CRITICAL: ALWAYS set to null. Do NOT add grooming even for long-haired breeds unless the source text explicitly contains words like "grooming", "brushing", "coat care", or "groomer". 99.9% of cases should be null.)
-  - medical_needs: Extract from raw_description any medical conditions or treatments mentioned
+  - medical_needs: Extract from description any medical conditions or treatments mentioned
   - special_needs: From explicit special requirements mentioned as a single string (e.g., "separation anxiety" or "needs lead training"). If multiple needs, combine into one string with semicolon separator
 
-  PERSONALITY (extract from raw_description only):
+  PERSONALITY (extract from description only):
   - personality_traits: List 3-5 traits ONLY from explicit descriptions in the text
   - favorite_activities: List 2-4 activities explicitly mentioned. If only 1 activity mentioned, add "quiet time"
   - unique_quirk: Any specific behavior or characteristic that makes this dog unique
@@ -162,7 +162,7 @@ few_shot_examples:
           "Living with cats?": "I've not been tested with cats",
           "Living with kids?": "I can live with children (8+)"
         },
-        "raw_description": "Luna is a beautiful shepherd mix who was found wandering the streets. She's intelligent, loyal, and loves to play fetch. She can be nervous of new people initially but warms up quickly with treats. Luna would thrive in an active home where she can go on adventures."
+        "description": "Luna is a beautiful shepherd mix who was found wandering the streets. She's intelligent, loyal, and loves to play fetch. She can be nervous of new people initially but warms up quickly with treats. Luna would thrive in an active home where she can go on adventures."
       }
 
     output: |

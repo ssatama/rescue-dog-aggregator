@@ -125,7 +125,7 @@ class TestPromptBuilder:
         result = builder.build_prompt(dog_data)
 
         assert "Unknown" in result  # Default name
-        assert "Mixed Breed" in result  # Default breed
+        assert "Not stated by the rescue" in result  # No breed invented (#568)
         assert "Unknown age" in result  # Default age
         assert "{}" in result  # Empty properties dict
 

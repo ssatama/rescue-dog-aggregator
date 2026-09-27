@@ -197,9 +197,9 @@ class TestBasScraperUnifiedStandardization:
         processed = scraper.process_animal(raw_data)
 
         # Should handle None without crashing and set defaults
-        assert processed["breed"] == "Unknown"
-        assert processed.get("primary_breed") == "Unknown"
-        assert processed.get("breed_category") == "Unknown"
+        assert processed["breed"] is None
+        assert processed.get("primary_breed") is None
+        assert processed.get("breed_category") is None
 
 
 @pytest.mark.unit
@@ -260,7 +260,7 @@ class TestBaseScraperRawBreedPreservation:
         )
 
         assert processed["breed_raw"] is None
-        assert processed["breed"] == "Unknown"
+        assert processed["breed"] is None
 
 
 @pytest.mark.unit

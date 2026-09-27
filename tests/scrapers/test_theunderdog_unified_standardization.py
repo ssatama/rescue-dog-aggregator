@@ -142,9 +142,9 @@ def test_theunderdog_handles_missing_breed_gracefully(theunderdog_scraper):
 
     processed_data = theunderdog_scraper.process_animal(raw_animal_data)
 
-    # Should have a fallback breed
-    assert processed_data["breed"] in ["Mixed Breed", "Unknown"]
-    assert processed_data.get("breed_category") in ["Mixed", "Unknown", None]
+    # No breed stays empty: no "Mixed Breed" or "Unknown" (#568)
+    assert processed_data["breed"] is None
+    assert processed_data.get("breed_category") is None
 
 
 def test_theunderdog_size_extraction_from_qa_data(theunderdog_scraper):

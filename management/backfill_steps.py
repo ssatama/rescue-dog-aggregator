@@ -127,6 +127,57 @@ def _plan_disabled_org_status(records: list[dict[str, Any]]) -> list[Change]:
     return [Change(record["id"], record["organization"], "status", record["status"], "unknown") for record in records if record["status"] != "unknown"]
 
 
+# Stories that name no dog fact: scrapers wrote them when a page had no story (#568)
+_PLACEHOLDER_STORY = re.compile(
+    r"^(no description available"
+    r"|rescue dog from woof project available for adoption"
+    r"|rescue dog .{1,60}? from the underdog organization)\.?$",
+    re.IGNORECASE,
+)
+# Keys some scrapers kept the story under before properties.description was the one key (#568)
+_OLD_STORY_KEYS = ("raw_description", "Beschreibung")
+
+
+def _plan_description_key(records: list[dict[str, Any]]) -> list[Change]:
+    changes = []
+    for record in records:
+        properties = record["properties"] if isinstance(record["properties"], dict) else json.loads(record["properties"] or "{}")
+        fixed = dict(properties)
+        story = (fixed.get("description") or "").strip()
+        if not story or _PLACEHOLDER_STORY.match(story):
+            story = next((fixed[key].strip() for key in _OLD_STORY_KEYS if isinstance(fixed.get(key), str) and fixed[key].strip() and not _PLACEHOLDER_STORY.match(fixed[key].strip())), "")
+        for key in _OLD_STORY_KEYS:
+            fixed.pop(key, None)
+        if story:
+            fixed["description"] = story
+        else:
+            fixed.pop("description", None)
+        if fixed != properties:
+            changes.append(Change(record["id"], record["organization"], "properties", json.dumps(properties, sort_keys=True), json.dumps(fixed, sort_keys=True)))
+    return changes
+
+
+# A row names no breed when neither its breed nor its standardized breed does
+# (empty or "Unknown"). A breed column with text is the rescue's and stays,
+# even where standardisation never ran (#568).
+_BREED_COLUMNS = ("breed", "standardized_breed", "primary_breed", "secondary_breed", "breed_group", "breed_type", "breed_slug", "breed_confidence")
+
+
+def _is_unknown(value: Any) -> bool:
+    return isinstance(value, str) and value.strip().lower() == "unknown"
+
+
+def _plan_unknown_to_null(records: list[dict[str, Any]]) -> list[Change]:
+    changes = []
+    for record in records:
+        no_breed = all(record[column] is None or _is_unknown(record[column]) for column in ("breed", "standardized_breed"))
+        if no_breed:
+            changes += [Change(record["id"], record["organization"], column, record[column], None) for column in _BREED_COLUMNS if record[column] is not None]
+        if _is_unknown(record["sex"]):
+            changes.append(Change(record["id"], record["organization"], "sex", record["sex"], None))
+    return changes
+
+
 STEPS: dict[str, Step] = {
     step.name: step
     for step in [
@@ -197,6 +248,34 @@ STEPS: dict[str, Step] = {
                   AND a.status = 'available'
             """,
             plan=_plan_disabled_org_status,
+        ),
+        Step(
+            name="one-description-key",
+            summary="The story is properties.description: moved from raw_description/Beschreibung, placeholder stories removed (#568)",
+            fetch_sql="""
+                SELECT a.id, a.properties, o.config_id AS organization
+                FROM animals a
+                JOIN organizations o ON o.id = a.organization_id
+                WHERE a.properties ?| array['raw_description', 'Beschreibung']
+                   OR a.properties->>'description' ~* '^(no description available|rescue dog .*from .*)$'
+                   OR a.properties->>'description' = ''
+            """,
+            plan=_plan_description_key,
+        ),
+        Step(
+            name="unknown-to-null",
+            summary="A dog with no breed has no breed fields (not 'Unknown'), and 'Unknown' sex becomes empty: missing data is left out (#568)",
+            fetch_sql="""
+                SELECT a.id, a.breed, a.standardized_breed, a.primary_breed, a.secondary_breed, a.breed_group, a.breed_type,
+                       a.breed_slug, a.breed_confidence, a.sex, o.config_id AS organization
+                FROM animals a
+                JOIN organizations o ON o.id = a.organization_id
+                WHERE ((a.breed IS NULL OR lower(a.breed) = 'unknown')
+                       AND (a.standardized_breed IS NULL OR lower(a.standardized_breed) = 'unknown')
+                       AND num_nonnulls(a.breed, a.standardized_breed, a.primary_breed, a.secondary_breed, a.breed_group, a.breed_type, a.breed_slug, a.breed_confidence) > 0)
+                   OR lower(a.sex) = 'unknown'
+            """,
+            plan=_plan_unknown_to_null,
         ),
     ]
 }

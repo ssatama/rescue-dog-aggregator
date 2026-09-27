@@ -579,7 +579,16 @@ class UnifiedStandardizer:
             # Size fields - preserve original and add standardized
             "size": size,  # Preserve original size field
             "standardized_size": size_result.get("category"),
+            # "breed" when the size is the breed's typical one, not the rescue's (#568)
+            "size_source": "breed" if size_result.get("source") == "breed_estimated" else None,
         }
+
+        # Text that names no breed (none given, "Unknown", or one the registry
+        # can't resolve): the breed fields stay empty, not "Unknown" (#568).
+        # breed_raw keeps what the rescue wrote.
+        if str(breed_result.get("name") or "").strip().lower() in ("", "unknown"):
+            for key in ("breed", "standardized_breed", "breed_category", "breed_type", "primary_breed", "secondary_breed", "breed_slug", "breed_confidence"):
+                result[key] = None
 
         # Return deep copy to prevent cache mutation
         return deepcopy(result)
@@ -1096,10 +1105,15 @@ class UnifiedStandardizer:
                 "giant": "Large",
             }
 
-            if size_lower in size_map:
+            # The broader reader knows "Mini", "Toy", "X-Large", "Medium-Large" (#568)
+            from utils.standardization import standardize_size_value
+
+            # Its XLarge stays XLarge, as update_columns stored it before (#568)
+            stated = size_map.get(size_lower) or standardize_size_value(size)
+            if stated:
                 return {
-                    "category": size_map[size_lower],
-                    "weight_range": self._get_weight_range(size_map[size_lower]),
+                    "category": stated,
+                    "weight_range": self._get_weight_range(stated),
                     "source": "explicit",
                 }
 

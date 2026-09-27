@@ -4,6 +4,7 @@ import pytest
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import ListingIncompleteError
+from scrapers.contract import missing_required, unknown_keys
 from scrapers.theunderdog.theunderdog_scraper import TheUnderdogScraper
 
 
@@ -280,7 +281,7 @@ class TestTheUnderdogDetailScraping:
         assert properties["page_url"] == "https://theunderdog.org/adopt/vicky"
 
         expected_desc = "Vicky is currently in a foster home in North Devon after being rescued from a difficult start in life and spending a good few months in the shelter in Cyprus. She's believed to be around two years old and is a large mixed breed with a calm, sweet and endearing personality."
-        assert expected_desc in result["description"]
+        assert expected_desc in result["properties"]["description"]
 
         assert result["external_id"] == "tud-vicky"
 
@@ -307,7 +308,7 @@ class TestTheUnderdogDetailScraping:
         assert qa_data["How big?"] == "Medium"
         assert "How old?" not in qa_data
 
-        assert "A lovely dog looking for a home." in result["description"]
+        assert "A lovely dog looking for a home." in result["properties"]["description"]
 
     def test_extract_country_from_flag(self, scraper):
         result = scraper._extract_country_from_name("Vicky 🇬🇧")
@@ -468,43 +469,27 @@ class TestTheUnderdogIntegration:
         assert vicky["status"] == "available"
 
         assert vicky["age_text"] == "Young adult (around two years)"
-        assert vicky["breed"] == "Mixed Breed"
+        assert vicky["breed"] is None  # the page gives no breed (#568)
         assert vicky["sex"] == "Female"
         assert vicky["size"] == "Large"
-        assert vicky["weight_kg"] == 30.0
-        assert vicky["country"] == "United Kingdom"
-        assert vicky["country_code"] == "GB"
-        assert vicky["location"] == "United Kingdom"
+        assert vicky["properties"]["weight_kg"] == 30.0
+        assert vicky["properties"]["location"] == "United Kingdom"
 
         luna = next(r for r in results if r["name"] == "Luna")
         assert luna["external_id"] == "tud-luna"
         assert luna["adoption_url"] == "https://www.theunderdog.org/adopt/luna"
         assert luna["primary_image_url"] == "https://images.squarespace-cdn.com/luna-hero.jpg"
 
-        assert luna["breed"] == "Shepherd Mix" or luna["breed"] == "Mixed Breed"
+        assert luna["breed"] is None  # only the story mentions it (#568)
         assert luna["sex"] == "Female"
         assert luna["size"] == "Medium"
-        assert luna["country"] == "France"
-        assert luna["country_code"] == "FR"
-        assert luna["location"] == "France"
+        assert luna["properties"]["location"] == "France"
+        assert luna["properties"]["location"] == "France"
 
-        required_fields = [
-            "name",
-            "external_id",
-            "adoption_url",
-            "primary_image_url",
-            "description",
-            "breed",
-            "sex",
-            "size",
-            "animal_type",
-            "status",
-        ]
+        # The ScrapedDog contract: required keys present, nothing lost on save (#568)
         for dog in results:
-            for field in required_fields:
-                assert field in dog, f"Missing required field '{field}' in {dog['name']}"
-                assert dog[field] is not None, f"Field '{field}' is None in {dog['name']}"
-                assert dog[field] != "", f"Field '{field}' is empty in {dog['name']}"
+            assert missing_required(dog) == []
+            assert unknown_keys(dog) == set()
 
     @patch("scrapers.theunderdog.theunderdog_scraper.requests.get")
     def test_fallback_extraction_from_description(self, mock_get, scraper):
@@ -540,9 +525,8 @@ class TestTheUnderdogIntegration:
 
         assert buddy["age_text"] == "3 years"
         assert buddy["sex"] == "Male"
-        assert buddy["breed"] == "Mixed Breed"
-        assert buddy["country"] == "Romania"
-        assert buddy["country_code"] == "RO"
+        assert buddy["breed"] is None  # the page gives no breed (#568)
+        assert buddy["properties"]["location"] == "Romania"
 
     def test_field_population_completeness(self, scraper):
         mock_data = {

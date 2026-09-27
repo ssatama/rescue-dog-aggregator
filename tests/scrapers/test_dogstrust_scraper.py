@@ -103,8 +103,8 @@ class TestDogsTrustUnifiedStandardization:
         processed = scraper.process_animal(raw_animal_data)
 
         # Should handle missing breed gracefully
-        assert "breed" in processed
-        assert processed["breed_category"] == "Unknown"
+        assert processed["breed"] is None  # not "Unknown" (#568)
+        assert processed["breed_category"] is None
 
 
 # Listing-page resilience: remote Browserless under stealth_mode

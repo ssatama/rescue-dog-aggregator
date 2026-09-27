@@ -263,7 +263,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         # Extract dog name from h3 element
         name_elem = link_element.find("h3")
-        name = name_elem.text.strip() if name_elem else "Unknown"
+        name = name_elem.text.strip() if name_elem else None
 
         # Extract external ID from URL (e.g., /adopt/dogs/2604/ -> "2604")
         external_id = self._extract_external_id_from_url(adoption_url)
@@ -275,15 +275,6 @@ class ManyTearsRescueScraper(BaseScraper):
             "external_id": external_id,
             "animal_type": "dog",
             "status": "available",
-            # Default values for required fields (will be enriched in detail scraping)
-            "breed": "Mixed Breed",
-            "size": None,  # Let unified standardization handle defaults
-            "age": None,
-            "sex": "Unknown",
-            "location": "Wales, UK",
-            "description": "",
-            "requirements": "",
-            "medical_info": "",
         }
 
         return dog_data
@@ -350,24 +341,23 @@ class ManyTearsRescueScraper(BaseScraper):
             description = self._filter_sponsor_text(description)
 
             # CRITICAL FIX: Store description in properties so it gets saved to database
-            properties["description"] = description or ""
+            if description:
+                properties["description"] = description
 
             # Build result following SanterPaws pattern with Zero NULLs compliance
             result = {
-                "name": name or "Unknown",
-                "description": description or "",
+                "name": name,
                 "primary_image_url": hero_image_url,
                 "original_image_url": hero_image_url,
                 "properties": properties,
                 "animal_type": "dog",
                 "status": "available",
-                "location": "Wales, UK",
             }
 
             # Extract individual fields from structured_data for compatibility with BaseScraper
-            # Zero NULLs compliance - always provide defaults
-            result["breed"] = structured_data.get("breed") or "Mixed Breed"
-            result["sex"] = structured_data.get("sex") or "Unknown"
+            # Missing facts stay None (#568)
+            result["breed"] = structured_data.get("breed")
+            result["sex"] = structured_data.get("sex")
             result["age"] = structured_data.get("age")
             result["age_text"] = structured_data.get("age_text") or structured_data.get("age")
 

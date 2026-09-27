@@ -24,8 +24,8 @@ class PreparedAnimalData:
 
     language: str
     breed_raw: str | None
-    standardized_breed: str
-    breed_group: str
+    standardized_breed: str | None
+    breed_group: str | None
     final_size: str | None
     final_standardized_size: str | None
     age_months_min: int | None
@@ -54,12 +54,14 @@ def prepare_animal_data(animal_data: dict[str, Any], today: date | None = None) 
     description_text = f"{animal_data.get('name') or ''} {animal_data.get('breed') or ''} {animal_data.get('age_text') or ''}"
     language = _detect_language(description_text)
 
-    standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed") or "")
+    standardized_breed, breed_group, _ = standardize_breed(animal_data.get("breed") or "")
 
     age = age_columns(animal_data, today)
 
-    final_size = animal_data.get("size") or animal_data.get("standardized_size")
-    final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))
+    # `size` is only ever the rescue's own; a breed estimate lives in
+    # standardized_size, labelled by properties.size_source (#568)
+    final_size = animal_data.get("size")
+    final_standardized_size = animal_data.get("standardized_size") or standardize_size_value(animal_data.get("size"))
 
     final_standardized_breed = animal_data.get("standardized_breed") or standardized_breed
     final_breed_group = animal_data.get("breed_category") or breed_group
@@ -84,7 +86,7 @@ def prepare_animal_data(animal_data: dict[str, Any], today: date | None = None) 
     )
 
 
-def generate_temp_slug(animal_data: dict[str, Any], standardized_breed: str, conn: Any) -> str:
+def generate_temp_slug(animal_data: dict[str, Any], standardized_breed: str | None, conn: Any) -> str:
     """Generate temporary slug before animal ID is available.
 
     Args:
@@ -114,7 +116,7 @@ def update_to_final_slug(
     cursor: Any,
     animal_id: int,
     animal_data: dict[str, Any],
-    standardized_breed: str,
+    standardized_breed: str | None,
     conn: Any,
     log: logging.Logger,
 ) -> None:
