@@ -116,7 +116,7 @@ def update_to_final_slug(
     cursor: Any,
     animal_id: int,
     animal_data: dict[str, Any],
-    standardized_breed: str,
+    standardized_breed: str | None,
     conn: Any,
     log: logging.Logger,
 ) -> None:

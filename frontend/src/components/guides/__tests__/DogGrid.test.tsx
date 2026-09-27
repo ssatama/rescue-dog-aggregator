@@ -229,9 +229,10 @@ describe("DogGrid", () => {
   it("maps its size onto the API's size scale", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 
-    render(<DogGrid size="giant" />);
+    render(<DogGrid size="extra large" />);
 
     await waitFor(() => {
+      // Legacy "Extra Large" is Giant on today's scale, XLarge in the API
       expect(serverAnimalsService.getAnimals).toHaveBeenCalledWith(expect.objectContaining({ standardized_size: "XLarge" }));
     });
   });

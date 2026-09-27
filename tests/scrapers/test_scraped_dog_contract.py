@@ -143,3 +143,9 @@ class TestScrapedDogContract:
 
         assert "description" not in dog
         assert not {"raw_description", "Beschreibung"} & set(properties)
+
+
+@pytest.mark.unit
+def test_age_stated_at_is_a_key_the_save_reads():
+    """utils/birth_dates anchors the age at it (#561); it is not lost."""
+    assert unknown_keys({"name": "Freya", "age_stated_at": "2026-05-01"}) == set()

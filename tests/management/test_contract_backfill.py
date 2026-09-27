@@ -74,11 +74,12 @@ class TestUnknownToNull:
             ("breed_confidence", None),
         ]
 
-    def test_raw_text_that_names_no_breed_goes_too(self):
-        """breed_raw keeps what the rescue wrote; the breed column held it unresolved."""
-        record = _breed_record(breed="Can be the only dog", standardized_breed="Unknown", breed_slug="unknown")
+    def test_a_breed_column_with_text_stays(self):
+        """The rescue's text, even unresolved or never standardised: a re-scrape decides (breed_raw may be missing on old rows)."""
+        for standardized in ("Unknown", None):
+            record = _breed_record(breed="Podenco", standardized_breed=standardized, breed_slug="unknown")
 
-        assert {change.column for change in plan_step(STEPS["unknown-to-null"], [record])} == {"breed", "standardized_breed", "breed_slug"}
+            assert plan_step(STEPS["unknown-to-null"], [record]) == []
 
     def test_an_unregistered_breed_keeps_its_unknown_group(self):
         """The standardiser keeps a clean unregistered name, with group "Unknown" and type "unknown"."""

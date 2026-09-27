@@ -157,8 +157,9 @@ def _plan_description_key(records: list[dict[str, Any]]) -> list[Change]:
     return changes
 
 
-# A row names no breed when its standardized breed is empty or "Unknown", the
-# same test the standardiser applies to a scraped dog (#568)
+# A row names no breed when neither its breed nor its standardized breed does
+# (empty or "Unknown"). A breed column with text is the rescue's and stays,
+# even where standardisation never ran (#568).
 _BREED_COLUMNS = ("breed", "standardized_breed", "primary_breed", "secondary_breed", "breed_group", "breed_type", "breed_slug", "breed_confidence")
 
 
@@ -169,7 +170,8 @@ def _is_unknown(value: Any) -> bool:
 def _plan_unknown_to_null(records: list[dict[str, Any]]) -> list[Change]:
     changes = []
     for record in records:
-        if record["standardized_breed"] is None or _is_unknown(record["standardized_breed"]):
+        no_breed = all(record[column] is None or _is_unknown(record[column]) for column in ("breed", "standardized_breed"))
+        if no_breed:
             changes += [Change(record["id"], record["organization"], column, record[column], None) for column in _BREED_COLUMNS if record[column] is not None]
         if _is_unknown(record["sex"]):
             changes.append(Change(record["id"], record["organization"], "sex", record["sex"], None))
@@ -268,7 +270,8 @@ STEPS: dict[str, Step] = {
                        a.breed_slug, a.breed_confidence, a.sex, o.config_id AS organization
                 FROM animals a
                 JOIN organizations o ON o.id = a.organization_id
-                WHERE ((a.standardized_breed IS NULL OR lower(a.standardized_breed) = 'unknown')
+                WHERE ((a.breed IS NULL OR lower(a.breed) = 'unknown')
+                       AND (a.standardized_breed IS NULL OR lower(a.standardized_breed) = 'unknown')
                        AND num_nonnulls(a.breed, a.standardized_breed, a.primary_breed, a.secondary_breed, a.breed_group, a.breed_type, a.breed_slug, a.breed_confidence) > 0)
                    OR lower(a.sex) = 'unknown'
             """,

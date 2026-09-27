@@ -1108,12 +1108,12 @@ class UnifiedStandardizer:
             # The broader reader knows "Mini", "Toy", "X-Large", "Medium-Large" (#568)
             from utils.standardization import standardize_size_value
 
+            # Its XLarge stays XLarge, as update_columns stored it before (#568)
             stated = size_map.get(size_lower) or standardize_size_value(size)
             if stated:
-                canonical = "Large" if stated == "XLarge" else stated
                 return {
-                    "category": canonical,
-                    "weight_range": self._get_weight_range(canonical),
+                    "category": stated,
+                    "weight_range": self._get_weight_range(stated),
                     "source": "explicit",
                 }
 

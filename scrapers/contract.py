@@ -25,6 +25,8 @@ class ScrapedDog(TypedDict):
     age: NotRequired[str | None]
     age_text: NotRequired[str | None]
     date_of_birth: NotRequired[str | None]
+    # When the page stated the age, so the age is anchored there (#561)
+    age_stated_at: NotRequired[str | None]
     sex: NotRequired[str | None]
     size: NotRequired[str | None]
     image_urls: NotRequired[list[str]]

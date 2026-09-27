@@ -772,7 +772,7 @@ class TestSizeIsNotFabricated:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize(("stated", "category"), [("Mini", "Tiny"), ("Toy", "Tiny"), ("X-Large", "Large"), ("Med", "Medium")])
+@pytest.mark.parametrize(("stated", "category"), [("Mini", "Tiny"), ("Toy", "Tiny"), ("X-Large", "XLarge"), ("Med", "Medium")])
 def test_a_stated_size_is_the_rescues_not_the_breeds(stated, category):
     """#568: a size the rescue wrote is never relabelled as a breed estimate."""
     result = UnifiedStandardizer().apply_full_standardization(breed="Labrador Retriever", size=stated)
