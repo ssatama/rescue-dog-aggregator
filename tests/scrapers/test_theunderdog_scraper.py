@@ -730,6 +730,16 @@ REVIEW_CASES = [
     ("I can live with older children, but a home without toddlers", "Yes (older children)"),
     ("I can live with cats (I lived with one in foster)", True),
     ("I have been tested with cats and can live with them", True),
+    # Any negation before a yes phrase is a no
+    ("I shouldn't live with cats", False),
+    ("I don't live with cats", False),
+    ("I could not live with cats", False),
+    ("I'd prefer not to live with cats", False),
+    ("I would not be good with cats", False),
+    # An untested clause doesn't cancel the rest of the answer
+    ("I can't live with cats, not tested with small pets", False),
+    ("I can live with children (not tested with toddlers)", "Selective"),
+    ("No, unknown with small pets", False),
 ]
 
 

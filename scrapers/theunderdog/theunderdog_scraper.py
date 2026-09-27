@@ -17,12 +17,27 @@ GOOD_WITH_QUESTIONS = {"Living with dogs?": "good_with_dogs", "Living with cats?
 
 # Each pattern is checked against every distinct production answer in the tests
 _UNTESTED = re.compile(r"\b(not|haven't|never)( been)?( properly)? tested\b|\buntested\b|\bunknown\b|not sure|don't know|not interested")
-_NO = re.compile(r"^\W*no\W*(\(.*\))?\W*$|\bwithout\b|\bcan'?t live\b|\bcannot live\b|\bnot (good|suitable|safe) with\b|\bno (other )?(dogs|cats|children|kids)\b|\bonly (resident )?dog\b")
-_YES = re.compile(
-    r"^\W*yes\b|(?<!can't )(?<!cannot )(?<!can not )\blive with\b|(?<!not )\b(good|fine|friendly|happy) with\b|\bno problems? with\b|\bintroduced to\b|\bneed a home with\b|\bpreferred\b"
-)
+_NEGATION = re.compile(r"\b(not|never|cannot)\b|n't\b")
+_YES = re.compile(r"^\W*yes\b|\blive with\b|\b(good|fine|friendly|happy) with\b|\bno problems? with\b|\bintroduced to\b|\bneed a home with\b|\bpreferred\b")
+_NO = re.compile(r"^\W*no\W*$|\bwithout\b|\bno (other )?(dogs|cats|children|kids)\b|\bonly (resident )?dog\b")
+_CLAUSES = re.compile(r"[,;()]|\bbut\b|\band\b")
 _QUALIFIED = re.compile(r"\b(may|might|could|likely|probably|confident|savvy|older|teens?|teenagers|prefer|preferred|smaller|only|but|not|over)\b|introduc")
 _SEX = re.compile(r"\b(fe)?males?\b")
+
+
+def _clause(clause: str) -> bool | None:
+    """One clause's answer: True, False, or None when it doesn't say.
+
+    A yes phrase after a negation is a no: "can't live with", "could not live
+    with", "would not be good with", "prefer not to live with".
+    """
+    if _UNTESTED.search(clause):
+        return None
+    if match := _YES.search(clause):
+        return not _NEGATION.search(clause[: match.start()])
+    if _NO.search(clause):
+        return False
+    return None
 
 
 def _limit(text: str) -> str | None:
@@ -49,24 +64,25 @@ def good_with(answer: str | None) -> bool | str | None:
     cats", "with the right introductions") is "Selective". Untested is not a no.
     """
     text = (answer or "").lower().replace("’", "'").replace("‍", "").strip()
-    if not text or _UNTESTED.search(text):
+    if not text:
         return None
     if "selective" in text:
         return "Selective"
     if age := re.search(r"(\d+)\s*\+", text):  # "(8+)", "(recommended 6+)", "adult only home (or 12+)"
         return f"Yes ({age.group(1)}+)"
-    yes = _YES.search(text)
     if re.search(r"\badult[- ]only\b", text):
         # "an adult-only home, or older children" still takes older children
         return "Yes (older children)" if "older children" in text else False
-    if _NO.search(text) and not yes:
-        return False
-    # A no beside a yes is a condition: "friendly with other dogs, but would prefer
-    # to be the only dog", "older children, but a home without toddlers"
-    if not yes:
+    # Clause by clause, so "can't live with cats, not tested with small pets" is a
+    # no, and "friendly with other dogs, but would prefer to be the only dog" a
+    # condition
+    verdicts = {verdict for verdict in map(_clause, _CLAUSES.split(text)) if verdict is not None}
+    if not verdicts:
         return None
+    if verdicts == {False}:
+        return False
     one_sex = len(set(_SEX.findall(text))) == 1
-    if _NO.search(text) or one_sex or _QUALIFIED.search(text):
+    if False in verdicts or one_sex or _QUALIFIED.search(text):
         return f"Yes ({limit})" if (limit := _limit(text)) else "Selective"
     return True
 
