@@ -676,6 +676,13 @@ class TestTheUnderdogIntegration:
         ("I can live with other dogs but not males", "Selective"),
         ("I can live with other dogs, no males", "Selective"),
         ("I can live with older children, but a home without toddlers", "Selective"),
+        # Both sexes is no limit; short answers; brackets that aren't limits
+        ("I can live with male or female dogs", True),
+        ("Yes", True),
+        ("No (under 12s)", False),
+        ("I can live with cats (I lived with one in foster)", True),
+        ("I have been tested with cats and can live with them", True),
+        ("Untested", None),
     ],
 )
 def test_q_and_a_compatibility_answers(answer, expected):

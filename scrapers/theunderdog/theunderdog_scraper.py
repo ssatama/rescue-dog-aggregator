@@ -17,11 +17,16 @@ GOOD_WITH_QUESTIONS = {"Living with dogs?": "good_with_dogs", "Living with cats?
 
 def _limit(text: str) -> str | None:
     """The age limit, sex restriction or preference in an answer: "8+", "female dogs"."""
-    if match := re.search(r"\(([^)]*)\)", text):
-        return match.group(1).strip().removeprefix("or ").strip()
-    # "not males" rules a sex out; it isn't the limit
-    if match := re.search(r"(?<!\bnot )(?<!\bno )\b((?:fe)?males?(?: dogs)?(?: preferred)?)\b", text):
-        return match.group(1)
+    # Only a bracket that states a limit: "(8+)", "(teens only)", "(males preferred)"
+    for inner in re.findall(r"\(([^)]*)\)", text):
+        inner = inner.strip().removeprefix("or ").strip()
+        if re.search(r"\d+\+|\bonly\b|\bpreferred\b|\b(?:fe)?males?\b", inner):
+            return inner
+    # One sex named and not ruled out: "female dogs". "male or female dogs" is no
+    # limit, and "not males" rules a sex out rather than naming the limit.
+    if len(set(re.findall(r"\b(fe)?males?\b", text))) == 1:
+        if match := re.search(r"(?<!\bnot )(?<!\bno )\b((?:fe)?males?(?: dogs)?(?: preferred)?)\b", text):
+            return match.group(1)
     return None
 
 
@@ -35,8 +40,26 @@ def good_with(answer: str | None) -> bool | str | None:
     "adult only home (or 12+)" -> "Yes (12+)". Untested is not a no.
     """
     text = (answer or "").lower().replace("\u2019", "'")
-    if re.search(r"\btest|\bunknown\b|not sure|don't know", text):
+    if re.search(r"\buntested\b|\bnot (been )?tested\b|\bunknown\b|not sure|don't know", text):
         return None
+    if "selective" in text:
+        return "Selective"
+    limit = _limit(text)
+    if re.search(r"\badult[- ]only\b", text):
+        return f"Yes ({limit})" if limit else False
+    negative = re.fullmatch(r"\W*no\W*(\([^)]*\))?\W*", text) or re.search(
+        r"\bwithout\b|\bonly (dog|pet)\b|\bno (other )?(dogs|cats|children|kids)\b|\bnot (good|suitable|safe) with\b|\bcan'?t live\b|\bcannot live\b", text
+    )
+    positive = re.fullmatch(r"\W*yes\W*", text) or re.search(r"\bcan live with\b|\bgood with\b|\bfine with\b|\bno problems? with\b|\bhappy (to live )?with\b|\bpreferred\b", text)
+    if negative:
+        # "can live with older children, but a home without toddlers" is a qualified yes
+        return "Selective" if positive else False
+    if positive:
+        if limit:
+            return f"Yes ({limit})"
+        one_sex = len(set(re.findall(r"\b(fe)?males?\b", text))) == 1
+        return "Selective" if one_sex or re.search(r"\bnot\b|\bolder\b|\bonly\b|\bbut\b|\bover\b|\bintroductions?\b", text) else True
+    return None
     if "selective" in text:
         return "Selective"
     limit = _limit(text)

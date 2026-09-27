@@ -81,12 +81,14 @@ class TestSweep571:
             # Production wording (dogs 6092 and 5356): no "by", and sometimes no name
             "Bloom has had 2 teeth removed at the time of her spay. Bloom has been given the Gift of Life Vicki Coldman.",
             "Tapas will blossom into a happy companion. Tapas has been given the Gift of Life.",
+            "Rex loves walks. Rex was given the Gift of Life by Mr. Smith.",
         ],
     )
     def test_the_sponsor_filter_matches_production_wording(self, scraper, text):
         many_tears, _ = scraper
 
         assert "Gift of Life" not in many_tears._filter_sponsor_text(text)
+        assert "Smith" not in many_tears._filter_sponsor_text(text)
         assert many_tears._filter_sponsor_text(text).endswith(".")
 
     def test_the_sponsor_filter_drops_only_the_sponsor_paragraph(self, scraper):

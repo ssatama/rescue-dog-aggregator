@@ -688,8 +688,8 @@ class ManyTearsRescueScraper(BaseScraper):
             return description
 
         # Sentences end at a paragraph break or ". " before a capital, so
-        # "2.5 years" and "e.g." survive (#571)
-        sentences = re.split(r"\n+|(?<=[.!?])\s+(?=[A-Z])", description.strip())
+        # "2.5 years", "e.g." and "Mr. Smith" survive (#571)
+        sentences = re.split(r"\n+|(?<=[.!?])(?<!\bMr\.)(?<!\bMrs\.)(?<!\bMs\.)(?<!\bDr\.)\s+(?=[A-Z])", description.strip())
         # Production: "Bloom has been given the Gift of Life Vicki Coldman." (#571)
         sponsor = ("given the gift of life", "gift of life by", "through the generosity of a gift of life sponsor")
         kept = [sentence for sentence in sentences if not any(phrase in sentence.lower() for phrase in sponsor)]
