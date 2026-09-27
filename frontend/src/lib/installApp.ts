@@ -63,8 +63,8 @@ export function manualInstallMethod(
 }
 
 let installed = false;
-// Neither changes during a page's life, so work them out once
-let standalone: boolean | undefined;
+// The user agent never changes, so work this out once. Standalone is checked
+// each time: Chrome moves an installing tab into the app window, no reload.
 let manualMethod: ReturnType<typeof manualInstallMethod> | undefined;
 let listening = false;
 const listeners = new Set<() => void>();
@@ -98,8 +98,7 @@ function manualMethodHere(): "ios" | "mac-safari" | null {
 }
 
 function alreadyInstalled(): boolean {
-  standalone ??= isStandalone();
-  return installed || standalone;
+  return installed || isStandalone();
 }
 
 export function getInstallMethod(): InstallMethod | null {

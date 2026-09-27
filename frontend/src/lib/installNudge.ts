@@ -49,7 +49,11 @@ function write(state: NudgeState): void {
 /** Where the card could ever show: a touch screen, in a browser that can
  * install the site, not already installed. Nothing is counted anywhere else. */
 export function canNudge(): boolean {
-  return window.matchMedia?.("(pointer: coarse)").matches === true && canEverInstall();
+  return onTouchScreen() && canEverInstall();
+}
+
+function onTouchScreen(): boolean {
+  return window.matchMedia?.("(pointer: coarse)").matches === true;
 }
 
 /** Dismissed, or shown in an earlier session: the card is done for good. */
@@ -91,14 +95,15 @@ export function recordDogView(dogId: number | string, now = Date.now()): void {
   });
 }
 
-/** Retires the card: its close button, or any install flow from any surface. */
+/** Retires the card: its close button, or any install flow from any surface.
+ * Not gated on canNudge(): right after an install the site counts as
+ * installed, and the retirement must still be saved. Desktop stores nothing. */
 export function dismissNudge(): void {
-  if (canNudge()) write({ ...read(), dismissed: true });
+  if (onTouchScreen()) write({ ...read(), dismissed: true });
 }
 
 /** Records that the card was seen. True only the first time, ever. */
 export function markNudgeShown(): boolean {
-  if (!canNudge()) return false;
   const state = read();
   if (state.shownInSession !== null) return false;
   write({ ...state, shownInSession: state.sessions });
