@@ -504,11 +504,6 @@ class BaseScraper(ABC):
             if "breed_raw" not in processed_data:
                 processed_data["breed_raw"] = processed_data.get("breed")
 
-            # Log standardization for breed if present
-            original_breed = animal_data.get("breed")
-            if original_breed:
-                self.logger.debug(f"Standardizing breed: {original_breed}")
-
             # Apply full standardization (handles breed, age, size)
             standardized = self.standardizer.apply_full_standardization(
                 breed=processed_data.get("breed"),
@@ -528,12 +523,6 @@ class BaseScraper(ABC):
                 properties.pop("size_source", None)
             if properties or "properties" in processed_data:
                 processed_data["properties"] = properties
-
-            # Log the result if breed changed
-            new_breed = processed_data.get("breed")
-            if original_breed and new_breed != original_breed:
-                confidence = processed_data.get("standardization_confidence", 0)
-                self.logger.debug(f"Breed standardized: '{original_breed}' -> '{new_breed}' (confidence: {confidence:.2f})")
 
         except Exception as e:
             # If standardization fails, log the error and return the original data
