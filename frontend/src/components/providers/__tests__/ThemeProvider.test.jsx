@@ -237,10 +237,13 @@ describe("ThemeProvider", () => {
     );
     const color = () => document.querySelector('meta[name="theme-color"]').content;
 
-    fireEvent.click(screen.getByTestId("set-dark"));
-    expect(color()).toBe("#131211");
-    fireEvent.click(screen.getByTestId("set-light"));
-    expect(color()).toBe("#FAF9F6");
-    document.head.innerHTML = "";
+    try {
+      fireEvent.click(screen.getByTestId("set-dark"));
+      expect(color()).toBe("#131211");
+      fireEvent.click(screen.getByTestId("set-light"));
+      expect(color()).toBe("#FAF9F6");
+    } finally {
+      document.head.innerHTML = "";
+    }
   });
 });

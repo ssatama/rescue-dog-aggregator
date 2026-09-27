@@ -83,7 +83,8 @@ export default function InstallNudge() {
     if (!shown || !method) return;
     const timer = setTimeout(() => {
       const card = cardRef.current;
-      if (card && markNudgeShown()) {
+      // A background tab can render it (a storage event) without anyone looking
+      if (card && document.visibilityState === "visible" && markNudgeShown()) {
         trackInstallNudgeShown(method);
       }
     }, 1000);
@@ -104,8 +105,9 @@ export default function InstallNudge() {
       initial={{ y: 24, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
-      // Sits above the tab bar
-      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 rounded-2xl border border-line bg-surface p-4 shadow-xl sm:left-auto sm:w-96 lg:bottom-6 lg:right-6"
+      // Sits above the tab bar. Also hidden wherever an adopt bar is, in case a
+      // dog's URL doesn't end in its id (a fallback slug)
+      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 rounded-2xl border border-line bg-surface p-4 shadow-xl max-lg:[body:has([data-adopt-bar])_&]:hidden sm:left-auto sm:w-96 lg:bottom-6 lg:right-6"
     >
       <button
         type="button"

@@ -184,8 +184,12 @@ describe("analytics", () => {
     trackInstallNudgeShown("ios");
     trackAppInstallClicked("nudge", "ios");
     trackInstallNudgeDismissed("prompt");
+    const addListener = jest.spyOn(window, "addEventListener");
     trackAppInstalls();
     window.dispatchEvent(new Event("appinstalled"));
+    const [, onInstalled] = addListener.mock.calls.find(([type]) => type === "appinstalled")!;
+    window.removeEventListener("appinstalled", onInstalled);
+    addListener.mockRestore();
 
     expect(mockPosthog.capture.mock.calls).toEqual([
       ["install_nudge_shown", { method: "ios" }, undefined],
@@ -208,12 +212,15 @@ describe("analytics", () => {
       },
     })) as unknown as typeof window.matchMedia;
 
-    registerDisplayMode();
-    expect(mockPosthog.register).toHaveBeenLastCalledWith({ display_mode: "browser" });
-    standalone = true;
-    onChange();
-    expect(mockPosthog.register).toHaveBeenLastCalledWith({ display_mode: "standalone" });
-    window.matchMedia = original;
+    try {
+      registerDisplayMode();
+      expect(mockPosthog.register).toHaveBeenLastCalledWith({ display_mode: "browser" });
+      standalone = true;
+      onChange();
+      expect(mockPosthog.register).toHaveBeenLastCalledWith({ display_mode: "standalone" });
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it("does nothing before PostHog is initialized", () => {

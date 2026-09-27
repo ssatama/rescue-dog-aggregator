@@ -8,7 +8,7 @@ import { Analytics, SpeedInsights } from "@/components/analytics";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
-import InstallNudge from "@/components/pwa/InstallNudgeLoader";
+import InstallNudgeLoader from "@/components/pwa/InstallNudgeLoader";
 import SentryInitializer from "@/components/SentryInitializer";
 import { generateSiteGraph } from "@/utils/schema";
 import { THEME_COLORS } from "@/constants/themeColors";
@@ -145,7 +145,7 @@ export default function RootLayout({
               >
                 {children}
                 <MobileBottomNavWrapper />
-                <InstallNudge />
+                <InstallNudgeLoader />
               </ErrorBoundary>
               <Analytics />
               <SpeedInsights />

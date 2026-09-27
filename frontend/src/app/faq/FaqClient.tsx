@@ -114,7 +114,7 @@ const FAQ_SECTIONS: FAQSectionData[] = [
       {
         question: "Do you track users or use cookies?",
         answer:
-          "No, and we mean it. We don't use cookies, don't require accounts, and don't track personal information. Your favorites list is stored locally in your browser. On phones and tablets that can add the site to the home screen, your browser also keeps a count of your visits and the IDs of the first five dogs you open, so we can suggest it at a sensible moment; they stay on your device. We use only anonymous, cookie-free analytics to understand general usage patterns.",
+          "No, and we mean it. We don't use cookies, don't require accounts, and don't track personal information. Your favorites list is stored locally in your browser. On phones and tablets that can add the site to the home screen, your browser also keeps a count of your visits, when you were last active, and the IDs of the first five dogs you open, so we can suggest it at a sensible moment; they stay on your device. We use only anonymous, cookie-free analytics to understand general usage patterns.",
       },
       {
         question: "How can I contact you?",

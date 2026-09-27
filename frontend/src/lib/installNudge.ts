@@ -47,7 +47,8 @@ function write(state: NudgeState): void {
 }
 
 /** Where the card could ever show: a touch screen, in a browser that can
- * install the site, not already installed. Nothing is counted anywhere else. */
+ * install the site, not running as the installed app. Nothing is counted
+ * anywhere else. (A Chrome tab can't tell it was installed before.) */
 export function canNudge(): boolean {
   return onTouchScreen() && canEverInstall();
 }
@@ -112,11 +113,14 @@ export function markNudgeShown(): boolean {
 
 // `storage` brings a dismissal in another tab to this one
 function subscribe(listener: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === KEY) listener();
+  };
   window.addEventListener(CHANGE, listener);
-  window.addEventListener("storage", listener);
+  window.addEventListener("storage", onStorage);
   return () => {
     window.removeEventListener(CHANGE, listener);
-    window.removeEventListener("storage", listener);
+    window.removeEventListener("storage", onStorage);
   };
 }
 

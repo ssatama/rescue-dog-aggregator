@@ -65,6 +65,18 @@ describe("InstallNudge", () => {
     expect(trackInstallNudgeShown).toHaveBeenCalledWith("ios");
   });
 
+  it("is not counted as seen in a background tab", () => {
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+    try {
+      browseFiveDogs();
+      render(<InstallNudge />);
+      act(() => jest.advanceTimersByTime(1000));
+      expect(trackInstallNudgeShown).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+    }
+  });
+
   it("shows on the third session", () => {
     const now = Date.now();
     const gap = 31 * 60 * 1000;

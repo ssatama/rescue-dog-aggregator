@@ -126,6 +126,8 @@ export async function promptInstall(): Promise<boolean> {
   const prompt = window.__installPrompt;
   if (!prompt) return false;
   window.__installPrompt = undefined;
+  // At once, so a double tap can't start (and count) a second install
+  emit();
   let shown = false;
   try {
     await prompt.prompt();

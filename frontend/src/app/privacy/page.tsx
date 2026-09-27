@@ -74,8 +74,9 @@ export default function PrivacyPage(): React.JSX.Element {
                 </p>
                 <p className="mt-2 text-sm text-subtle">
                   On phones and tablets that can add the site to the home
-                  screen, your browser also keeps a count of your visits and
-                  the IDs of the first five dogs you open, so we can suggest it
+                  screen, your browser also keeps a count of your visits, when
+                  you were last active, and the IDs of the first five dogs you
+                  open, so we can suggest it
                   at a sensible moment. They stay on your device; analytics
                   only learn whether the suggestion was shown, closed or used,
                   and whether the site is running as an installed app.
