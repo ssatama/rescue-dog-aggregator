@@ -301,20 +301,19 @@ def manage_test_data(request):
         # Insert base data
         print("[conftest manage_test_data] Inserting base test data...")
         org_sql = """
-        INSERT INTO organizations (id, name, slug, website_url, country, city, active, social_media)
-        VALUES (901, 'Mock Test Org', 'mock-test-org', 'http://example.com', 'Testland', 'Testville', TRUE, '{"facebook": "https://facebook.com/testorg", "instagram": "https://instagram.com/testorg"}')
+        INSERT INTO organizations (id, name, slug, website_url, country, city, active, social_media, ships_to)
+        VALUES (901, 'Mock Test Org', 'mock-test-org', 'http://example.com', 'Testland', 'Testville', TRUE, '{"facebook": "https://facebook.com/testorg", "instagram": "https://instagram.com/testorg"}', '["Testland", "Otherland"]')
         ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name,
             slug = EXCLUDED.slug,
             website_url = EXCLUDED.website_url,
-            social_media = EXCLUDED.social_media;
+            social_media = EXCLUDED.social_media,
+            ships_to = EXCLUDED.ships_to;
         """
         cursor.execute(org_sql)
 
-        # /api/animals/meta/available_countries reads service_regions. Without
-        # these rows it returned [] against a seeded organisation, and the test
-        # covering it asserted with all(), which is vacuously true on an empty
-        # list - so it passed while checking nothing.
+        # Regions come from service_regions (countries from ships_to, #539).
+        # Without rows here the region tests would assert on an empty list.
         service_regions_sql = """
         INSERT INTO service_regions (organization_id, country, region)
         VALUES (901, 'Testland', 'Test Region'), (901, 'Otherland', 'Other Region')

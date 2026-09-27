@@ -80,6 +80,8 @@ the rescue. From the 2026 UX refresh (epic #484):
   header, read per request, never stored) may preselect "I live in", but it
   only *labels* dogs "Adoptable to you". Hiding dogs by location is an opt-in
   switch, with an "Anywhere" option. Never silently filter by location.
+  "Adoptable to" a country means the rescue's `ships_to`, not where its dogs
+  live, for the badge, the filter and every count (#539).
 - **Never say "adopted" or "found a home".** Adoption can't be detected; dogs
   just vanish from rescue sites. The wording is "no longer listed".
 - **No fee or adoption-process block on dog pages.** Rescues don't publish

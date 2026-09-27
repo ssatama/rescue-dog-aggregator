@@ -202,8 +202,8 @@ class AnimalFilterRequest(BaseModel):
         return [level.strip() for level in self.availability_confidence.split(",")]
 
     def needs_service_region_join(self) -> bool:
-        """Check if query needs service_regions table join."""
-        return bool(self.available_to_country or self.available_to_region)
+        """Only a region needs the service_regions table; a country is ships_to (#539)."""
+        return bool(self.available_to_country and self.available_to_region)
 
 
 class OrganizationFilterRequest(BaseModel):
@@ -350,8 +350,8 @@ class AnimalFilterCountRequest(BaseModel):
         return [level.strip() for level in self.availability_confidence.split(",")]
 
     def needs_service_region_join(self) -> bool:
-        """Check if query needs service_regions table join."""
-        return bool(self.available_to_country or self.available_to_region)
+        """Only a region needs the service_regions table; a country is ships_to (#539)."""
+        return bool(self.available_to_country and self.available_to_region)
 
 
 class MonitoringFilterRequest(BaseModel):

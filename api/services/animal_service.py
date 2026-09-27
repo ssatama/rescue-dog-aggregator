@@ -1425,7 +1425,8 @@ class AnimalService:
         ]
         params = [filters.animal_type]
 
-        # Add JOIN for service_regions if filtering by available_to
+        # service_regions only for a region: "available to" a country is the
+        # rescue's ships_to, as on the dog cards' "Adoptable to you" (#539)
         if filters.needs_service_region_join():
             joins += " JOIN service_regions sr ON a.organization_id = sr.organization_id"
 
@@ -1497,12 +1498,12 @@ class AnimalService:
             params.append(filters.location_country)
 
         if filters.available_to_country:
-            conditions.append("sr.country = %s")
+            conditions.append("o.ships_to ? %s")
             params.append(filters.available_to_country)
 
         if filters.available_to_region and filters.available_to_country:
-            conditions.append("sr.region = %s")
-            params.append(filters.available_to_region)
+            conditions.append("sr.country = %s AND sr.region = %s")
+            params.extend([filters.available_to_country, filters.available_to_region])
 
         # Profiler-based filters (LLM-enriched dog_profiler_data JSONB)
         if filters.home_type:
@@ -2098,16 +2099,16 @@ class AnimalService:
             if age_condition:
                 conditions.append(age_condition)
 
+        # Where each rescue rehomes to (ships_to), the rule the dog cards use (#539)
         query = f"""
-            SELECT sr.country, COUNT(DISTINCT a.id) as count
+            SELECT c.country, COUNT(DISTINCT a.id) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
-            JOIN service_regions sr ON a.organization_id = sr.organization_id
+            CROSS JOIN LATERAL jsonb_array_elements_text(COALESCE(o.ships_to, '[]'::jsonb)) AS c(country)
             WHERE {" AND ".join(conditions)}
-              AND sr.country IS NOT NULL
-              AND sr.country != ''
-            GROUP BY sr.country
-            ORDER BY sr.country ASC
+              AND c.country != ''
+            GROUP BY c.country
+            ORDER BY c.country ASC
         """
 
         self.cursor.execute(query, params)
@@ -2125,9 +2126,9 @@ class AnimalService:
         conditions = base_conditions.copy()
         params = base_params.copy()
 
-        # Add country filter for regions
-        conditions.append("sr.country = %s")
-        params.append(filters.available_to_country)
+        # Regions of a country the rescue rehomes to, as the list filters (#539)
+        conditions.append("o.ships_to ? %s AND sr.country = %s")
+        params.extend([filters.available_to_country, filters.available_to_country])
 
         # Add other non-region filters
         if filters.sex:
