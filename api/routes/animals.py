@@ -146,17 +146,16 @@ async def get_distinct_location_countries(
 async def get_distinct_available_countries(
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
-    """Get a distinct list of countries organizations can adopt to (from service_regions)."""
+    """Countries active rescues rehome to: their ships_to, the rule the dog
+    cards' "Adoptable to you" uses (#539)."""
     try:
-        # Query distinct, non-null, non-empty countries from the service_regions table
-        # Also join with organizations to ensure we only consider active orgs
         cursor.execute(
             """
-            SELECT DISTINCT sr.country
-            FROM service_regions sr
-            JOIN organizations o ON sr.organization_id = o.id
-            WHERE sr.country IS NOT NULL AND sr.country != '' AND o.active = TRUE
-            ORDER BY sr.country ASC
+            SELECT DISTINCT c.country
+            FROM organizations o
+            CROSS JOIN LATERAL jsonb_array_elements_text(COALESCE(o.ships_to, '[]'::jsonb)) AS c(country)
+            WHERE c.country != '' AND o.active = TRUE
+            ORDER BY c.country ASC
             """
         )
         results = cursor.fetchall()
