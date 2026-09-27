@@ -75,6 +75,20 @@ class TestSweep571:
 
         assert many_tears._filter_sponsor_text(text) == "Bella is 2.5 years old, e.g. she loves walks. She is kind."
 
+    @pytest.mark.parametrize(
+        "text",
+        [
+            # Production wording (dogs 6092 and 5356): no "by", and sometimes no name
+            "Bloom has had 2 teeth removed at the time of her spay. Bloom has been given the Gift of Life Vicki Coldman.",
+            "Tapas will blossom into a happy companion. Tapas has been given the Gift of Life.",
+        ],
+    )
+    def test_the_sponsor_filter_matches_production_wording(self, scraper, text):
+        many_tears, _ = scraper
+
+        assert "Gift of Life" not in many_tears._filter_sponsor_text(text)
+        assert many_tears._filter_sponsor_text(text).endswith(".")
+
     def test_a_diary_entry_is_its_title_without_a_placeholder(self, scraper):
         from bs4 import BeautifulSoup
 

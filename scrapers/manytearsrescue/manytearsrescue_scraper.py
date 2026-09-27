@@ -688,5 +688,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         # Sentences end at ". " before a capital, so "2.5 years" and "e.g." survive (#571)
         sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z])", description.strip())
-        kept = [sentence for sentence in sentences if "gift of life by" not in sentence.lower() and "through the generosity of a gift of life sponsor" not in sentence.lower()]
+        # Production: "Bloom has been given the Gift of Life Vicki Coldman." (#571)
+        sponsor = ("given the gift of life", "gift of life by", "through the generosity of a gift of life sponsor")
+        kept = [sentence for sentence in sentences if not any(phrase in sentence.lower() for phrase in sponsor)]
         return " ".join(" ".join(kept).split())

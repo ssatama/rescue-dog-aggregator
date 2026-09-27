@@ -659,6 +659,19 @@ class TestTheUnderdogIntegration:
         ("I can live with older children, not toddlers", "Selective"),
         ("No problems with children", True),
         (None, None),
+        # Production answers with a limit keep it, like Dogs Trust's "Yes (5+)"
+        ("I can live with children (8+)", "Yes (8+)"),
+        ("I can live with older children (10+)", "Yes (10+)"),
+        ("I can live with children (teens only)", "Yes (teens only)"),
+        ("I can live with female dogs", "Yes (female dogs)"),
+        ("I can live with other dogs (males preferred)", "Yes (males preferred)"),
+        ("Females preferred", "Yes (females preferred)"),
+        ("I’m looking for an adult only home (or 12+)", "Yes (12+)"),
+        ("I’m looking for an adult-only home", False),
+        ("I’d prefer to be the only dog", False),
+        ("I can’t live with cats", False),
+        ("No", False),
+        ("I can live with other dogs with the right introductions", "Selective"),
     ],
 )
 def test_q_and_a_compatibility_answers(answer, expected):

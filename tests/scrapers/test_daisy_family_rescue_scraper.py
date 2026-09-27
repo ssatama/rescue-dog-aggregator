@@ -631,13 +631,17 @@ class TestDaisyFamilyRescueScraperIntegration:
     ("text", "breed"),
     [
         ("Mischling", "mixed breed"),
-        ("Schäferhund-Mischling", "german shepherd mix"),
+        ("Deutscher Schäferhund-Mischling", "german shepherd mix"),
         ("Deutscher Schäferhund", "german shepherd"),
+        # Not every Schäferhund is a German Shepherd
+        ("Belgischer Schäferhund", "Belgischer Schäferhund"),
+        ("Weißer Schweizer Schäferhund", "Weißer Schweizer Schäferhund"),
+        ("Schäferhund-Mischling", "mixed breed"),
         ("Podenco", "Podenco"),
     ],
 )
 def test_a_named_breed_comes_before_mischling(text, breed):
-    """#571: "Schäferhund-Mischling" was stored as plain "mixed breed"."""
+    """#571: "Deutscher Schäferhund-Mischling" was stored as plain "mixed breed"."""
     from scrapers.daisy_family_rescue.dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
 
     assert DaisyFamilyRescueDogDetailScraper()._parse_breed(text) == breed

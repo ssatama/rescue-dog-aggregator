@@ -53,7 +53,6 @@ class DaisyFamilyRescueDogDetailScraper:
         self.breed_translations = {
             "mischling": "mixed breed",
             "deutscher schäferhund": "german shepherd",
-            "schäferhund": "german shepherd",
             "golden retriever": "golden retriever",
             "labrador": "labrador",
             "terrier": "terrier",
@@ -392,8 +391,9 @@ class DaisyFamilyRescueDogDetailScraper:
 
         breed_lower = breed_text.lower()
 
-        # A named breed first, longest name first: "Schäferhund-Mischling" is a
-        # shepherd cross, not just "mixed breed" (#571)
+        # A named breed first, longest name first: "Deutscher Schäferhund-Mischling"
+        # is a German Shepherd cross, not just "mixed breed" (#571). Plain
+        # "Schäferhund" isn't a key: Belgian, White Swiss and Caucasian are too.
         named = [(german, english) for german, english in self.breed_translations.items() if german != "mischling" and german in breed_lower]
         if named:
             english = max(named, key=lambda pair: len(pair[0]))[1]
