@@ -15,17 +15,27 @@ from .normalizer import extract_qa_data, extract_size_and_weight_from_qa
 GOOD_WITH_QUESTIONS = {"Living with dogs?": "good_with_dogs", "Living with cats?": "good_with_cats", "Living with kids?": "good_with_children"}
 
 
+# Each pattern is checked against every distinct production answer in the tests
+_UNTESTED = re.compile(r"\b(not|haven't|never)( been)?( properly)? tested\b|\buntested\b|\bunknown\b|not sure|don't know|not interested")
+_NO = re.compile(r"^\W*no\W*(\(.*\))?\W*$|\bwithout\b|\bcan'?t live\b|\bcannot live\b|\bnot (good|suitable|safe) with\b|\bno (other )?(dogs|cats|children|kids)\b|\bonly (resident )?dog\b")
+_YES = re.compile(
+    r"^\W*yes\b|(?<!can't )(?<!cannot )(?<!can not )\blive with\b|(?<!not )\b(good|fine|friendly|happy) with\b|\bno problems? with\b|\bintroduced to\b|\bneed a home with\b|\bpreferred\b"
+)
+_QUALIFIED = re.compile(r"\b(may|might|could|likely|probably|confident|savvy|older|teens?|teenagers|prefer|preferred|smaller|only|but|not|over)\b|introduc")
+_SEX = re.compile(r"\b(fe)?males?\b")
+
+
 def _limit(text: str) -> str | None:
-    """The age limit, sex restriction or preference in an answer: "8+", "female dogs"."""
-    # Only a bracket that states a limit: "(8+)", "(teens only)", "(males preferred)"
+    """The limit a qualified yes names: "teens only", "older children", "female dogs"."""
+    # A bracket that states a limit; "(I lived with one in foster)" doesn't
     for inner in re.findall(r"\(([^)]*)\)", text):
-        inner = inner.strip().removeprefix("or ").strip()
-        if re.search(r"\d+\+|\bonly\b|\bpreferred\b|\b(?:fe)?males?\b", inner):
-            return inner
-    # One sex named and not ruled out: "female dogs". "male or female dogs" is no
-    # limit, and "not males" rules a sex out rather than naming the limit.
-    if len(set(re.findall(r"\b(fe)?males?\b", text))) == 1:
-        if match := re.search(r"(?<!\bnot )(?<!\bno )\b((?:fe)?males?(?: dogs)?(?: preferred)?)\b", text):
+        if re.search(r"\bonly\b|\bpreferred\b|\b(fe)?males?\b", inner):
+            return inner.strip()
+    if match := re.search(r"\b(older children|teenagers|teens)\b", text):
+        return match.group(1)
+    # One sex named and not ruled out: "female dogs", not "male or female dogs" or "not males"
+    if len({sex for sex in _SEX.findall(text)}) == 1:
+        if match := re.search(r"(?<!\bnot )(?<!\bno )\b((?:smaller )?(?:fe)?males?(?: dogs)?(?: preferred)?)\b", text):
             return match.group(1)
     return None
 
@@ -33,50 +43,32 @@ def _limit(text: str) -> str | None:
 def good_with(answer: str | None) -> bool | str | None:
     """True, False, "Selective" or "Yes (<limit>)" from a Q&A answer; None when it doesn't say.
 
-    "I can live with children" -> True, "I'm looking for a home without cats"
-    -> False, "I can be selective with other dogs" or "older children, not
-    toddlers" -> "Selective". A limit is kept, like Dogs Trust's "Yes (5+)":
-    "children (8+)" -> "Yes (8+)", "female dogs" -> "Yes (female dogs)",
-    "adult only home (or 12+)" -> "Yes (12+)". Untested is not a no.
+    A limit is kept, like Dogs Trust's "Yes (5+)": "children (8+)" -> "Yes (8+)",
+    "older children" -> "Yes (older children)", "female dogs" -> "Yes (female
+    dogs)". A yes with a condition but no named limit ("confident, dog-savvy
+    cats", "with the right introductions") is "Selective". Untested is not a no.
     """
-    text = (answer or "").lower().replace("\u2019", "'")
-    if re.search(r"\buntested\b|\bnot (been )?tested\b|\bunknown\b|not sure|don't know", text):
+    text = (answer or "").lower().replace("’", "'").replace("‍", "").strip()
+    if not text or _UNTESTED.search(text):
         return None
     if "selective" in text:
         return "Selective"
-    limit = _limit(text)
+    if age := re.search(r"(\d+)\s*\+", text):  # "(8+)", "(recommended 6+)", "adult only home (or 12+)"
+        return f"Yes ({age.group(1)}+)"
+    yes = _YES.search(text)
     if re.search(r"\badult[- ]only\b", text):
-        return f"Yes ({limit})" if limit else False
-    negative = re.fullmatch(r"\W*no\W*(\([^)]*\))?\W*", text) or re.search(
-        r"\bwithout\b|\bonly (dog|pet)\b|\bno (other )?(dogs|cats|children|kids)\b|\bnot (good|suitable|safe) with\b|\bcan'?t live\b|\bcannot live\b", text
-    )
-    positive = re.fullmatch(r"\W*yes\W*", text) or re.search(r"\bcan live with\b|\bgood with\b|\bfine with\b|\bno problems? with\b|\bhappy (to live )?with\b|\bpreferred\b", text)
-    if negative:
-        # "can live with older children, but a home without toddlers" is a qualified yes
-        return "Selective" if positive else False
-    if positive:
-        if limit:
-            return f"Yes ({limit})"
-        one_sex = len(set(re.findall(r"\b(fe)?males?\b", text))) == 1
-        return "Selective" if one_sex or re.search(r"\bnot\b|\bolder\b|\bonly\b|\bbut\b|\bover\b|\bintroductions?\b", text) else True
-    return None
-    if "selective" in text:
-        return "Selective"
-    limit = _limit(text)
-    if re.search(r"\badult[- ]only\b", text):
-        return f"Yes ({limit})" if limit else False
-    negative = re.fullmatch(r"\W*no\W*", text) or re.search(
-        r"\bwithout\b|\bonly (dog|pet)\b|\bno (other )?(dogs|cats|children|kids)\b|\bnot (good|suitable|safe) with\b|\bcan'?t live\b|\bcannot live\b", text
-    )
-    positive = re.search(r"\bcan live with\b|\bgood with\b|\bfine with\b|\bno problems? with\b|\bhappy (to live )?with\b|\bpreferred\b", text)
-    if negative:
-        # "can live with older children, but a home without toddlers" is a qualified yes
-        return "Selective" if positive else False
-    if positive:
-        if limit:
-            return f"Yes ({limit})"
-        return "Selective" if re.search(r"\bnot\b|\bolder\b|\bonly\b|\bbut\b|\bover\b|\bintroductions?\b|\b(fe)?males?\b", text) else True
-    return None
+        # "an adult-only home, or older children" still takes older children
+        return "Yes (older children)" if "older children" in text else False
+    if _NO.search(text) and not yes:
+        return False
+    # A no beside a yes is a condition: "friendly with other dogs, but would prefer
+    # to be the only dog", "older children, but a home without toddlers"
+    if not yes:
+        return None
+    one_sex = len(set(_SEX.findall(text))) == 1
+    if _NO.search(text) or one_sex or _QUALIFIED.search(text):
+        return f"Yes ({limit})" if (limit := _limit(text)) else "Selective"
+    return True
 
 
 class TheUnderdogScraper(BaseScraper):
