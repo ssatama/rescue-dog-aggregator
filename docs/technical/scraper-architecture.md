@@ -295,18 +295,28 @@ Every scraper that reads one page per dog goes through one helper:
 
 ```python
 dogs = self.fetch_details(animals, fetch_one, max_workers=3, attempts=self.max_retries)
-dogs = await self.fetch_details_async(animals, fetch_one)  # Playwright scrapers
+dogs = await self.fetch_details_async(animals, fetch_one)  # Playwright scrapers, one at a time
 ```
 
 - **`rate_limit_delay` means one thing:** the minimum time between request
   starts to the site, across every worker. Workers share one request-slot
   clock, so 5 threads don't make 5 times the rate. A robots.txt Crawl-delay
-  that raises the delay applies at once. Each retry waits for a slot too.
+  that raises the delay applies at once. Each retry waits for a slot too, and
+  so must any extra request a fetch makes (`wait_for_request_slot()`, as
+  MISIs does before its browser fallback).
+- Only transient errors are retried: timeouts, dropped connections, 429, 5xx.
+  A 404 or a parse error fails at once.
 - Items with a URL already seen run once; results keep the input order.
-- A dog whose page raises on its last attempt, or runs past
-  `DETAIL_TIMEOUT_SECONDS` (120), is logged, added to `detail_failures` (the
-  run's extraction-failure count) and skipped; the rest go on. A `None` result
-  is left out without counting as a failure.
+- A dog whose fetch raises is logged, added to `detail_failures` and
+  skipped; the rest go on. A fetcher that swallows its own errors and
+  returns `{}` must raise `DetailPageError` instead. Failures become a run
+  note, so the run ends as `warning` with the count in `scrape_logs`. A `None`
+  result is left out without counting as a failure.
+- `fetch_one` bounds its own time (every request has a timeout);
+  `fetch_details_async` also cuts each fetch off after the org's `timeout`.
+- A scraper that doesn't use `filter_existing_animals` must record every
+  listed dog as found before fetching (`_record_all_found_external_ids`), or
+  a skipped dog would go stale.
 - `respect_rate_limit()` stays for sequential listing loops: it sleeps the
   full delay between pages.
 

@@ -182,6 +182,8 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     basic_dogs_data = self.filtering_service.filter_existing_animals(basic_dogs_data)
                     self._sync_filtering_stats()
                 else:
+                    # Every listed dog is found, even one whose page then fails (#558)
+                    self._record_all_found_external_ids(basic_dogs_data)
                     self.total_animals_before_filter = len(basic_dogs_data)
                     self.total_animals_skipped = 0
 

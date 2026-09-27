@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup, Comment, Tag
 
-from scrapers.base_scraper import BaseScraper, ListingIncompleteError
+from scrapers.base_scraper import BaseScraper, DetailPageError, ListingIncompleteError
 
 # Migrated to unified standardization - using BaseScraper.process_animal()
 # Legacy standardize_age kept for date-of-birth calculations
@@ -111,7 +111,11 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         """Each dog's detail page, merged over its listing data (#567)."""
 
         def fetch(animal: dict[str, Any]) -> dict[str, Any]:
-            animal.update(self._scrape_animal_details(animal["adoption_url"]) or {})
+            details = self._scrape_animal_details(animal["adoption_url"])
+            if not details:
+                # _scrape_animal_details logs its own error and returns {}
+                raise DetailPageError(f"{animal['adoption_url']} yielded no details")
+            animal.update(details)
             return animal
 
         return self.fetch_details(animals, fetch, max_workers=3)

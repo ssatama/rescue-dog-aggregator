@@ -389,11 +389,17 @@ children").
 - Many Tears' config goes from 1.5 to 3.0 s: it slept 1.5 s plus 1-3 s of
   jitter per dog, so 3.0 keeps its pace; its listing sleep keeps 3.5-6.5 s.
 - A detail failure now skips the dog in every scraper (the epic rule).
-  Tierschutzverein and Santer Paws used to keep the listing-only data when
-  the page raised; Dogs Trust saved a dog with `{}` details after its own
-  retries. Skipped dogs were recorded as found, so they don't go stale; they
-  are added on the next run. Failures count as the run's extraction
-  failures.
+  Santer Paws, Tierschutzverein and Many Tears swallowed errors and saved the
+  dog with listing data only; their fetch now raises `DetailPageError` on an
+  empty result. Dogs Trust saved `{}` details after its own retries. Every
+  listed dog is recorded as found first (Bosnia, Tierschutzverein and Daisy
+  now do it on forced re-scrapes too), so a skipped dog doesn't go stale; it
+  is added on the next run. Failures leave a run note: the run is a
+  `warning` and `scrape_logs` says how many.
+- Only transient errors are retried (timeouts, connection drops, 429, 5xx);
+  a 404 or a parse bug fails at once. No helper-level timeout on threads: a
+  `Future` can't be interrupted, and a timeout counted from the wait would
+  fail queued dogs; each request carries its own timeout.
 
 ## Gotchas
 

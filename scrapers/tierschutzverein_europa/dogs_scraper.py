@@ -6,7 +6,7 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-from scrapers.base_scraper import BaseScraper, ListingIncompleteError
+from scrapers.base_scraper import BaseScraper, DetailPageError, ListingIncompleteError
 from scrapers.tierschutzverein_europa.translations import (
     normalize_name,
     stated_age_months,
@@ -51,6 +51,8 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             animals = self.filtering_service.filter_existing_animals(animals)
             self._sync_filtering_stats()
         else:
+            # Every listed dog is found, even one whose page then fails (#558)
+            self._record_all_found_external_ids(animals)
             self.total_animals_before_filter = len(animals)
             self.total_animals_skipped = 0
 
@@ -297,7 +299,11 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         """Each dog's detail page, merged over its listing data (#567)."""
 
         def fetch(animal: dict[str, Any]) -> dict[str, Any]:
-            animal.update(self._scrape_animal_details(animal["adoption_url"]) or {})
+            details = self._scrape_animal_details(animal["adoption_url"])
+            if not details:
+                # _scrape_animal_details logs its own error and returns {}
+                raise DetailPageError(f"{animal['adoption_url']} yielded no details")
+            animal.update(details)
             return animal
 
         return self.fetch_details(animals, fetch, max_workers=3)

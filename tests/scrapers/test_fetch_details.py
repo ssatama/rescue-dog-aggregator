@@ -5,8 +5,11 @@ import threading
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 
-from scrapers.base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper, DetailPageError
+
+_real_async_sleep = asyncio.sleep
 
 
 class _Scraper(BaseScraper):
@@ -76,21 +79,24 @@ class TestFetchDetails:
         assert scraper.fetch_details(_dogs("a"), lambda dog: None) == []
         assert scraper.detail_failures == []
 
-    def test_every_attempt_takes_a_request_slot(self, scraper, stub_clock):
-        fetch = Mock(side_effect=[ConnectionError("reset"), {"ok": True}])
+    def test_a_transient_error_is_retried_and_every_attempt_takes_a_slot(self, scraper, stub_clock):
+        fetch = Mock(side_effect=[requests.ConnectionError("reset"), {"ok": True}])
 
         assert scraper.fetch_details(_dogs("a"), fetch, attempts=2) == [{"ok": True}]
         assert [round(wait) for wait in stub_clock.calls] == [2]  # the retry waited its turn
 
-    def test_a_fetch_past_the_timeout_counts_as_failed(self, scraper):
-        release = threading.Event()
-        scraper.DETAIL_TIMEOUT_SECONDS = 0.05
+    @pytest.mark.parametrize("error", [ValueError("parse bug"), requests.HTTPError("404", response=Mock(status_code=404)), DetailPageError("empty")])
+    def test_a_lasting_error_is_not_retried(self, scraper, error):
+        fetch = Mock(side_effect=error)
 
-        results = scraper.fetch_details(_dogs("a"), lambda dog: release.wait(5))
-        release.set()
-
-        assert results == []
+        assert scraper.fetch_details(_dogs("a"), fetch, attempts=3) == []
+        assert fetch.call_count == 1
         assert scraper.detail_failures == ["https://rescue.example/a"]
+
+    def test_a_503_is_retried(self, scraper):
+        fetch = Mock(side_effect=[requests.HTTPError("503", response=Mock(status_code=503)), {"ok": True}])
+
+        assert scraper.fetch_details(_dogs("a"), fetch, attempts=2) == [{"ok": True}]
 
     def test_the_slot_clock_follows_a_raised_delay(self, scraper, stub_clock):
         """A robots.txt Crawl-delay raises rate_limit_delay after construction; the clock reads it live."""
@@ -115,6 +121,16 @@ class TestFetchDetailsAsync:
         assert scraper.detail_failures == ["https://rescue.example/b"]
         assert [round(wait) for wait in stub_clock.calls] == [2, 4]
 
+    def test_a_fetch_past_the_org_timeout_counts_as_failed(self, scraper):
+        scraper.timeout = 0.01
+
+        async def fetch(dog):
+            await asyncio.Event().wait()
+
+        with patch("asyncio.sleep", new=_real_async_sleep):
+            assert asyncio.run(scraper.fetch_details_async(_dogs("a"), fetch)) == []
+        assert scraper.detail_failures == ["https://rescue.example/a"]
+
 
 @pytest.mark.unit
 def test_a_new_run_starts_with_no_failures(scraper):
@@ -125,3 +141,17 @@ def test_a_new_run_starts_with_no_failures(scraper):
     scraper._setup_scrape()
 
     assert scraper.detail_failures == []
+
+
+@pytest.mark.unit
+def test_failed_detail_pages_leave_a_run_note(scraper):
+    """The note makes the run a warning and puts the count in scrape_logs (#567)."""
+    scraper.fetch_details(_dogs("a"), Mock(side_effect=DetailPageError("empty")))
+    scraper._run_notes = []
+
+    with patch.object(scraper, "_setup_scrape", return_value=True), patch.object(scraper, "_finalize_scrape"), patch.object(scraper, "_process_animals_data", return_value={}):
+        scraper.animals_found = 1
+        scraper._collect_and_time_data = Mock(return_value=[{"external_id": "a"}])
+        scraper._run_with_connection()
+
+    assert any("1 detail page(s) failed" in note for note in scraper._run_notes)

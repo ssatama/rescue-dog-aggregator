@@ -9,7 +9,6 @@ import time
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import TimeoutError as FutureTimeoutError
 from datetime import datetime
 from typing import Any
 
@@ -61,6 +60,10 @@ FORCE_RESCRAPE_VALUES = ("true", "1", "yes")
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 # Transient without a response: the connection failed, stalled or dropped mid-body.
 RETRYABLE_ERRORS = (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError, requests.exceptions.ContentDecodingError)
+
+
+class DetailPageError(RuntimeError):
+    """A dog's detail page yielded no details: the dog is skipped and counted (#567)."""
 
 
 class ListingIncompleteError(RuntimeError):
@@ -647,6 +650,9 @@ class BaseScraper(ABC):
                     pages_processed=1,
                     extraction_failures=len(self.detail_failures),
                 )  # Single page scrape
+                if self.detail_failures:
+                    # A note makes the run a "warning" and puts the count in scrape_logs (#567)
+                    self._run_notes.append(f"{len(self.detail_failures)} detail page(s) failed; those dogs were skipped")
 
                 # Track filtering phase stats
                 # Note: animals_data contents depend on scraper implementation -
@@ -1253,9 +1259,6 @@ class BaseScraper(ABC):
         if self.rate_limit_delay > 0:
             time.sleep(self.rate_limit_delay)
 
-    # A detail page still running after this long counts as failed (#567)
-    DETAIL_TIMEOUT_SECONDS = 120
-
     def _claim_request_slot(self) -> float:
         """Seconds to wait before this scraper's next request may start.
 
@@ -1269,6 +1272,7 @@ class BaseScraper(ABC):
         return start - now
 
     def wait_for_request_slot(self) -> None:
+        """Block until this scraper may start a request. Call it before every extra request a fetch makes."""
         wait = self._claim_request_slot()
         if wait > 0:
             time.sleep(wait)
@@ -1282,6 +1286,13 @@ class BaseScraper(ABC):
                 seen.add(url(item))
                 unique.append(item)
         return unique
+
+    @staticmethod
+    def _is_transient(error: BaseException) -> bool:
+        """Worth another attempt: a timeout, a dropped connection, a 429 or a 5xx. Not a 404 or a parse error."""
+        if isinstance(error, requests.HTTPError):
+            return getattr(error.response, "status_code", None) in RETRYABLE_STATUS_CODES
+        return isinstance(error, RETRYABLE_ERRORS + (TimeoutError,))
 
     def _detail_failed(self, item_url: str, error: BaseException) -> None:
         self.detail_failures.append(item_url)
@@ -1300,10 +1311,11 @@ class BaseScraper(ABC):
 
         An item whose URL was already seen runs once. Every attempt waits for a
         request slot, so the site sees at most one request start per
-        ``rate_limit_delay`` however many workers run. An item that raises on
-        its last attempt or runs past DETAIL_TIMEOUT_SECONDS is logged, added to
-        ``detail_failures`` and left out, as is a ``None`` result. One bad item
-        never stops the rest.
+        ``rate_limit_delay`` however many workers run. Only transient errors
+        are retried (``_is_transient``). An item that still raises is logged,
+        added to ``detail_failures`` and left out, as is a ``None`` result
+        (without counting as a failure). One bad item never stops the rest.
+        ``fetch_one`` bounds its own time: every request it makes has a timeout.
         """
 
         def run(item):
@@ -1312,28 +1324,21 @@ class BaseScraper(ABC):
                 try:
                     return fetch_one(item)
                 except Exception as e:
-                    if attempt == attempts:
+                    if attempt == attempts or not self._is_transient(e):
                         raise
                     self.logger.warning(f"Detail page {url(item)} failed (attempt {attempt} of {attempts}), retrying: {e}")
 
         results = []
-        executor = ThreadPoolExecutor(max_workers=max_workers)
-        try:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [(item, executor.submit(run, item)) for item in self._unique_by_url(items, url)]
             for item, future in futures:
                 try:
-                    result = future.result(timeout=self.DETAIL_TIMEOUT_SECONDS)
-                except FutureTimeoutError:
-                    self._detail_failed(url(item), TimeoutError(f"no answer within {self.DETAIL_TIMEOUT_SECONDS}s"))
-                    continue
+                    result = future.result()
                 except Exception as e:
                     self._detail_failed(url(item), e)
                     continue
                 if result is not None:
                     results.append(result)
-        finally:
-            # A timed-out fetch can't be interrupted; don't wait for it
-            executor.shutdown(wait=False, cancel_futures=True)
         return results
 
     async def fetch_details_async(
@@ -1342,26 +1347,23 @@ class BaseScraper(ABC):
         fetch_one: Callable[[Any], Awaitable[Any]],
         *,
         url: Callable[[Any], str] = lambda item: item["adoption_url"],
-        attempts: int = 1,
     ) -> list:
-        """``fetch_details`` for coroutine fetches, one at a time on the running loop."""
+        """``fetch_details`` for coroutine fetches, one at a time on the running loop.
+
+        Each fetch is cut off after the org's ``timeout`` and counted as failed.
+        """
         results = []
         for item in self._unique_by_url(items, url):
-            for attempt in range(1, attempts + 1):
-                wait = self._claim_request_slot()
-                if wait > 0:
-                    await asyncio.sleep(wait)
-                try:
-                    result = await asyncio.wait_for(fetch_one(item), self.DETAIL_TIMEOUT_SECONDS)
-                except Exception as e:
-                    if attempt < attempts and not isinstance(e, TimeoutError):
-                        self.logger.warning(f"Detail page {url(item)} failed (attempt {attempt} of {attempts}), retrying: {e}")
-                        continue
-                    self._detail_failed(url(item), e)
-                    break
-                if result is not None:
-                    results.append(result)
-                break
+            wait = self._claim_request_slot()
+            if wait > 0:
+                await asyncio.sleep(wait)
+            try:
+                result = await asyncio.wait_for(fetch_one(item), self.timeout)
+            except Exception as e:
+                self._detail_failed(url(item), e)
+                continue
+            if result is not None:
+                results.append(result)
         return results
 
     def get_listing_page(self, url: str, **kwargs) -> requests.Response:

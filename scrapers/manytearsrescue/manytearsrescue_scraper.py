@@ -7,7 +7,7 @@ from typing import Any
 
 from bs4 import BeautifulSoup, Tag
 
-from scrapers.base_scraper import BaseScraper, ListingIncompleteError
+from scrapers.base_scraper import BaseScraper, DetailPageError, ListingIncompleteError
 from services.playwright_browser_service import (
     PlaywrightOptions,
     get_playwright_service,
@@ -99,7 +99,11 @@ class ManyTearsRescueScraper(BaseScraper):
         """Each dog's detail page, one at a time, merged over its listing data (#567)."""
 
         async def fetch(animal: dict[str, Any]) -> dict[str, Any]:
-            animal.update(await self._scrape_animal_details_playwright(animal["adoption_url"]) or {})
+            details = await self._scrape_animal_details_playwright(animal["adoption_url"])
+            if not details:
+                # The Playwright fetch logs its own error and returns {}
+                raise DetailPageError(f"{animal['adoption_url']} yielded no details")
+            animal.update(details)
             return animal
 
         return await self.fetch_details_async(animals, fetch)

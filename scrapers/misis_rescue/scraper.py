@@ -114,7 +114,7 @@ class MisisRescueScraper(BaseScraper):
             self.total_animals_skipped = 0
             urls_to_process = all_urls
 
-        return self.fetch_details(urls_to_process, self._scrape_dog_detail_fast, url=lambda url: url, max_workers=self.batch_size, attempts=self.max_retries)
+        return self.fetch_details(urls_to_process, self._scrape_dog_detail_fast, url=lambda url: url, max_workers=self.batch_size)
 
     def _get_all_dogs_from_listing(self) -> list[dict[str, str]]:
         """Get all dog data from listing page.
@@ -339,6 +339,8 @@ class MisisRescueScraper(BaseScraper):
         Returns:
             Dog data dictionary or None if error
         """
+        # A browser load is another request to the site: it waits its turn (#567)
+        self.wait_for_request_slot()
         return asyncio.run(self._bounded_detail_playwright(url))
 
     def _dog_from_page(self, soup: BeautifulSoup, url: str) -> dict[str, Any] | None:
@@ -476,6 +478,7 @@ class MisisRescueScraper(BaseScraper):
                 # Rate limited: back off once, and never answer with a heavier browser load
                 self.logger.warning(f"HTTP 429 for {url}; backing off before one retry")
                 time.sleep(self.rate_limit_delay * 4)
+                self.wait_for_request_slot()
                 try:
                     response = requests.get(url, headers=headers, timeout=10)
                 except requests.RequestException as e:
