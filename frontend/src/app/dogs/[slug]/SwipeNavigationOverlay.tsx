@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useCallback, useMemo, type MutableRefObject } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, type MutableRefObject } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSwipeNavigation } from "../../../hooks/useSwipeNavigation";
 import { NavigationArrows } from "../../../components/dogs/detail";
 
@@ -27,7 +27,6 @@ export default function SwipeNavigationOverlay({
   navigationRef,
 }: SwipeNavigationOverlayProps) {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const searchParamsObj = useMemo(() => {
     const paramsObj: Record<string, string> = {};
@@ -43,38 +42,24 @@ export default function SwipeNavigationOverlay({
     handlers,
     prevDog,
     nextDog,
+    navigateToPrev,
+    navigateToNext,
     isLoading: navLoading,
   } = useSwipeNavigation({
     currentDogSlug: dogSlug,
     searchParams: searchParamsObj,
   });
 
-  const handlePrevDog = useCallback(() => {
-    if (prevDog) {
-      const qs = searchParams?.toString() ?? "";
-      const url = `/dogs/${prevDog.slug}${qs ? `?${qs}` : ""}`;
-      router.push(url);
-    }
-  }, [prevDog, searchParams, router]);
-
-  const handleNextDog = useCallback(() => {
-    if (nextDog) {
-      const qs = searchParams?.toString() ?? "";
-      const url = `/dogs/${nextDog.slug}${qs ? `?${qs}` : ""}`;
-      router.push(url);
-    }
-  }, [nextDog, searchParams, router]);
-
   useEffect(() => {
     if (!navigationRef) return;
     navigationRef.current = {
-      prev: prevDog ? handlePrevDog : undefined,
-      next: nextDog ? handleNextDog : undefined,
+      prev: prevDog ? navigateToPrev : undefined,
+      next: nextDog ? navigateToNext : undefined,
     };
     return () => {
       navigationRef.current = {};
     };
-  }, [navigationRef, prevDog, nextDog, handlePrevDog, handleNextDog]);
+  }, [navigationRef, prevDog, nextDog, navigateToPrev, navigateToNext]);
 
   const hasNavigation = prevDog || nextDog;
   const swipeable = gestures && hasNavigation;
@@ -94,8 +79,8 @@ export default function SwipeNavigationOverlay({
       )}
 
       <NavigationArrows
-        onPrev={handlePrevDog}
-        onNext={handleNextDog}
+        onPrev={navigateToPrev}
+        onNext={navigateToNext}
         hasPrev={!!prevDog}
         hasNext={!!nextDog}
         isLoading={navLoading}

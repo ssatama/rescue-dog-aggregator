@@ -55,6 +55,17 @@ describe("useSwipeNavigation", () => {
     expect(prefetch).toHaveBeenCalledWith("/dogs/bo-3?size=Large");
   });
 
+  it("hands the arrow buttons the exact URL it prefetched (#522)", async () => {
+    const { result } = renderHook(() => useSwipeNavigation(props("dolly-2", { size: "Large", age: "Puppy", sex: "Any" })));
+    await waitFor(() => expect(prefetch).toHaveBeenCalledTimes(2));
+
+    act(() => result.current.navigateToNext());
+    act(() => result.current.navigateToPrev());
+    expect(push).toHaveBeenNthCalledWith(1, "/dogs/bo-3?age=Puppy&size=Large");
+    expect(push).toHaveBeenNthCalledWith(2, "/dogs/rex-1?age=Puppy&size=Large");
+    expect(prefetch).toHaveBeenCalledWith("/dogs/bo-3?age=Puppy&size=Large");
+  });
+
   it("goes to the next dog on a left swipe and the previous on a right swipe", async () => {
     const { result } = renderHook(() => useSwipeNavigation(props()));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
