@@ -19,7 +19,8 @@ const GUIDES: Record<ManualMethod, { title: string; steps: Step[]; note?: string
         icon: Share,
         text: (
           <>
-            Tap <strong>Share</strong> in your browser&apos;s toolbar
+            Tap <strong>Share</strong>. In Safari on iOS 26 it&apos;s under the{" "}
+            <strong>&middot;&middot;&middot;</strong> button
           </>
         ),
       },

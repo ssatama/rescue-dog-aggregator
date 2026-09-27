@@ -92,7 +92,7 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-function getInstallMethod(): InstallMethod | null {
+export function getInstallMethod(): InstallMethod | null {
   standalone ??= isStandalone();
   if (installed || standalone) return null;
   if (window.__installPrompt) return "prompt";

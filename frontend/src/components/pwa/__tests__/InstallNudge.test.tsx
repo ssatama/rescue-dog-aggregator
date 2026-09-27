@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import InstallNudge from "../InstallNudge";
-import { useInstallMethod } from "@/lib/installApp";
+import { getInstallMethod, useInstallMethod } from "@/lib/installApp";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { recordDogView } from "@/lib/installNudge";
 import { usePathname } from "next/navigation";
@@ -8,6 +8,7 @@ import { trackInstallNudgeDismissed, trackInstallNudgeShown } from "@/lib/analyt
 
 jest.mock("@/lib/installApp", () => ({
   useInstallMethod: jest.fn(),
+  getInstallMethod: jest.fn(),
   promptInstall: jest.fn(),
 }));
 jest.mock("@/hooks/useMediaQuery", () => ({ useMediaQuery: jest.fn() }));
@@ -31,6 +32,11 @@ describe("InstallNudge", () => {
     localStorage.clear();
     jest.clearAllMocks();
     mockMethod.mockReturnValue("ios");
+    // installNudge only counts on a touch screen that can install
+    (getInstallMethod as jest.Mock).mockImplementation(() => mockMethod());
+    window.matchMedia = jest.fn((query: string) => ({
+      matches: query === "(pointer: coarse)",
+    })) as unknown as typeof window.matchMedia;
     mockIsTouch.mockReturnValue(true);
     mockPathname.mockReturnValue("/dogs");
     jest.useFakeTimers();
@@ -87,6 +93,14 @@ describe("InstallNudge", () => {
     browseFiveDogs();
     render(<InstallNudge />);
     expect(screen.getByRole("button", { name: "Install" })).toBeInTheDocument();
+  });
+
+  it("counts as seen before a quick dismissal, so the funnel adds up", () => {
+    browseFiveDogs();
+    render(<InstallNudge />);
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(trackInstallNudgeShown).toHaveBeenCalledWith("ios");
+    expect(trackInstallNudgeDismissed).toHaveBeenCalledWith("ios");
   });
 
   it("never comes back once dismissed", () => {

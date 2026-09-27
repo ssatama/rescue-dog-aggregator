@@ -6,11 +6,38 @@ import {
   recordVisit,
   SESSION_GAP_MS,
 } from "../installNudge";
+import { getInstallMethod } from "@/lib/installApp";
+
+jest.mock("@/lib/installApp", () => ({ getInstallMethod: jest.fn() }));
 
 const T0 = 1_800_000_000_000;
 
+function device({ touch, method }: { touch: boolean; method: string | null }) {
+  (getInstallMethod as jest.Mock).mockReturnValue(method);
+  window.matchMedia = jest.fn((query: string) => ({
+    matches: query === "(pointer: coarse)" && touch,
+  })) as unknown as typeof window.matchMedia;
+}
+
 describe("installNudge", () => {
-  beforeEach(() => localStorage.clear());
+  const originalMatchMedia = window.matchMedia;
+  beforeEach(() => {
+    localStorage.clear();
+    device({ touch: true, method: "ios" });
+  });
+  afterAll(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
+  it.each([
+    ["a desktop", { touch: false, method: "prompt" }],
+    ["a browser that can't install, or the installed app", { touch: true, method: null }],
+  ])("stores nothing on %s, where the card can never show", (_name, setup) => {
+    device(setup);
+    recordVisit(T0);
+    recordDogView(1, T0);
+    expect(localStorage.getItem("installNudge")).toBeNull();
+  });
 
   it("is not due on a first visit", () => {
     recordVisit(T0);

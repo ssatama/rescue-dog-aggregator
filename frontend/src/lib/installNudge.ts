@@ -1,10 +1,12 @@
 import { useSyncExternalStore } from "react";
 import { safeStorage } from "@/utils/safeStorage";
+import { getInstallMethod } from "@/lib/installApp";
 
 // When to suggest installing the site as an app. The card waits until someone
 // is clearly coming back or browsing a lot, then gets one session: dismissed
 // or ignored, it never returns. The counts stay on the device and are never
-// sent anywhere.
+// sent anywhere, and are kept only where the card could ever show: a touch
+// screen, in a browser that can install the site, not already installed.
 
 export const SESSIONS_TO_NUDGE = 3;
 /** Different dogs: a reload or a return to the same dog doesn't count. */
@@ -44,6 +46,12 @@ function write(state: NudgeState): void {
   window.dispatchEvent(new Event(CHANGE));
 }
 
+function counting(): boolean {
+  return (
+    window.matchMedia?.("(pointer: coarse)").matches === true && getInstallMethod() !== null
+  );
+}
+
 /** Activity now: a new session if the last activity was a while ago. */
 function touch(state: NudgeState, now: number): NudgeState {
   const newSession = now - state.lastSeen > SESSION_GAP_MS;
@@ -52,17 +60,18 @@ function touch(state: NudgeState, now: number): NudgeState {
 
 /** Call on load, on each page change and whenever the tab becomes visible. */
 export function recordVisit(now = Date.now()): void {
-  write(touch(read(), now));
+  if (counting()) write(touch(read(), now));
 }
 
 /** Call when the tab is hidden, so time spent browsing is not a gap. */
 export function recordSeen(now = Date.now()): void {
-  write({ ...read(), lastSeen: now });
+  if (counting()) write({ ...read(), lastSeen: now });
 }
 
 // A dog page records its view before the card records the visit, so a first
 // page that is a dog page must start the session itself
 export function recordDogView(dogId: number | string, now = Date.now()): void {
+  if (!counting()) return;
   const state = touch(read(), now);
   const id = String(dogId);
   const dogIds =
@@ -84,9 +93,14 @@ export function markNudgeShown(): boolean {
   return true;
 }
 
+// `storage` brings a dismissal in another tab to this one
 function subscribe(listener: () => void): () => void {
   window.addEventListener(CHANGE, listener);
-  return () => window.removeEventListener(CHANGE, listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    window.removeEventListener(CHANGE, listener);
+    window.removeEventListener("storage", listener);
+  };
 }
 
 /** Re-renders as soon as a visit or a dog view makes the card due. */

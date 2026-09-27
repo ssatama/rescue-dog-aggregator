@@ -72,6 +72,11 @@ export default function InstallNudge() {
 
   if (!shown || !method) return null;
 
+  // Acting within the first second still means it was seen
+  const noteSeen = () => {
+    if (markNudgeShown()) trackInstallNudgeShown(method);
+  };
+
 
   return (
     <motion.section
@@ -87,6 +92,7 @@ export default function InstallNudge() {
       <button
         type="button"
         onClick={() => {
+          noteSeen();
           trackInstallNudgeDismissed(method);
           dismissNudge();
         }}
@@ -112,12 +118,14 @@ export default function InstallNudge() {
         </div>
       </div>
 
-      <InstallAppButton
-        surface="nudge"
-        onDone={dismissNudge}
-        className="mt-3 w-full rounded-full bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-orange-400 dark:text-gray-950 dark:hover:bg-orange-300"
-        labels={{ prompt: "Install", ios: "Show me how" }}
-      />
+      <div onClickCapture={noteSeen}>
+        <InstallAppButton
+          surface="nudge"
+          onDone={dismissNudge}
+          className="mt-3 w-full rounded-full bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-orange-400 dark:text-gray-950 dark:hover:bg-orange-300"
+          labels={{ prompt: "Install", ios: "Show me how" }}
+        />
+      </div>
     </motion.section>
   );
 }

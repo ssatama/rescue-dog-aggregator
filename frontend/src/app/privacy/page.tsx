@@ -73,9 +73,9 @@ export default function PrivacyPage(): React.JSX.Element {
                   dog was saved, never who saved it.
                 </p>
                 <p className="mt-2 text-sm text-subtle">
-                  Your browser also counts your visits and the dogs you open,
-                  so we can suggest adding the site to your home screen at a
-                  sensible moment. The counts stay on your device; analytics
+                  On phones and tablets that can add the site to the home
+                  screen, your browser also counts your visits and the dogs you
+                  open, so we can suggest it at a sensible moment. The counts stay on your device; analytics
                   only learn that the suggestion was shown.
                 </p>
               </div>

@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -8,7 +8,7 @@ import { Analytics, SpeedInsights } from "@/components/analytics";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MobileBottomNavWrapper from "@/components/navigation/MobileBottomNavWrapper";
-import InstallNudge from "@/components/pwa/InstallNudge";
+import InstallNudge from "@/components/pwa/InstallNudgeLoader";
 import SentryInitializer from "@/components/SentryInitializer";
 import { generateSiteGraph } from "@/utils/schema";
 import { THEME_COLORS } from "@/constants/themeColors";
@@ -97,14 +97,6 @@ export const metadata: Metadata = {
   },
 };
 
-// No themeColor here: Next's tags follow the OS and are re-created on every
-// navigation. The inline theme script below adds one tag for the site's own
-// theme, and ThemeProvider keeps it in step with the toggle.
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-};
-
 export default function RootLayout({
   children,
 }: {
@@ -115,6 +107,9 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://images.rescuedogs.me" />
         <link rel="dns-prefetch" href="https://images.rescuedogs.me" />
+        {/* Also adds theme-color for the saved theme. Not in Next's viewport
+            metadata: those tags follow the OS and are re-created on every
+            navigation. ThemeProvider keeps this one in step with the toggle. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){var d=false;try{var t=localStorage.getItem("theme");d=t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)}catch(e){}if(d)document.documentElement.classList.add("dark");var m=document.createElement("meta");m.name="theme-color";m.content=d?"${THEME_COLORS.dark}":"${THEME_COLORS.light}";document.head.appendChild(m)})()`,
