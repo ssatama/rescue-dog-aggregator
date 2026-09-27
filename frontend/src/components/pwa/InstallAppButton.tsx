@@ -4,6 +4,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { promptInstall, useInstallMethod, type InstallMethod } from "@/lib/installApp";
 import { trackAppInstallClicked, type InstallSurface } from "@/lib/analytics";
+import { dismissNudge } from "@/lib/installNudge";
 
 // Only a few visitors open the steps, so they load on demand
 const InstallInstructions = dynamic(() => import("./InstallInstructions"), { ssr: false });
@@ -22,9 +23,6 @@ interface InstallAppButtonProps {
   icon?: React.ReactNode;
   /** Replaces the default label for some install methods. */
   labels?: Partial<Record<InstallMethod, string>>;
-  /** After the browser's dialog is answered or the steps are closed; not when
-   * the browser showed nothing. */
-  onDone?: () => void;
 }
 
 /** Installs the site as an app. Renders nothing where that is not possible,
@@ -34,7 +32,6 @@ export default function InstallAppButton({
   className,
   icon,
   labels,
-  onDone,
 }: InstallAppButtonProps) {
   const method = useInstallMethod();
   const [stepsOpen, setStepsOpen] = useState(false);
@@ -44,8 +41,9 @@ export default function InstallAppButton({
   const handleClick = async () => {
     trackAppInstallClicked(surface, method);
     if (method === "prompt") {
-      // A stale prompt shows nothing, and the card should not retire for that
-      if (await promptInstall()) onDone?.();
+      // Anyone who has been through an install flow, from any button, is done
+      // with the card. A stale prompt shows nothing, so that doesn't count.
+      if (await promptInstall()) dismissNudge();
     } else {
       setStepsOpen(true);
     }
@@ -64,7 +62,7 @@ export default function InstallAppButton({
           onOpenChange={(open) => {
             if (open) return;
             setStepsOpen(false);
-            onDone?.();
+            dismissNudge();
           }}
         />
       )}

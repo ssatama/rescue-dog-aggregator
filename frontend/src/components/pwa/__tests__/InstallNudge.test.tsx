@@ -1,17 +1,15 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import InstallNudge from "../InstallNudge";
-import { getInstallMethod, useInstallMethod } from "@/lib/installApp";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { canEverInstall, useInstallMethod } from "@/lib/installApp";
 import { recordDogView } from "@/lib/installNudge";
 import { usePathname } from "next/navigation";
 import { trackInstallNudgeDismissed, trackInstallNudgeShown } from "@/lib/analytics";
 
 jest.mock("@/lib/installApp", () => ({
   useInstallMethod: jest.fn(),
-  getInstallMethod: jest.fn(),
+  canEverInstall: jest.fn(),
   promptInstall: jest.fn(),
 }));
-jest.mock("@/hooks/useMediaQuery", () => ({ useMediaQuery: jest.fn() }));
 jest.mock("@/lib/analytics", () => ({
   trackAppInstallClicked: jest.fn(),
   trackInstallNudgeShown: jest.fn(),
@@ -20,8 +18,13 @@ jest.mock("@/lib/analytics", () => ({
 jest.mock("next/navigation", () => ({ usePathname: jest.fn() }));
 
 const mockMethod = useInstallMethod as jest.Mock;
-const mockIsTouch = useMediaQuery as jest.Mock;
 const mockPathname = usePathname as jest.Mock;
+
+function setTouch(touch: boolean) {
+  window.matchMedia = jest.fn((query: string) => ({
+    matches: query === "(pointer: coarse)" && touch,
+  })) as unknown as typeof window.matchMedia;
+}
 
 function browseFiveDogs() {
   for (let i = 0; i < 5; i++) recordDogView(i);
@@ -33,11 +36,8 @@ describe("InstallNudge", () => {
     jest.clearAllMocks();
     mockMethod.mockReturnValue("ios");
     // installNudge only counts on a touch screen that can install
-    (getInstallMethod as jest.Mock).mockImplementation(() => mockMethod());
-    window.matchMedia = jest.fn((query: string) => ({
-      matches: query === "(pointer: coarse)",
-    })) as unknown as typeof window.matchMedia;
-    mockIsTouch.mockReturnValue(true);
+    (canEverInstall as jest.Mock).mockImplementation(() => mockMethod() !== null);
+    setTouch(true);
     mockPathname.mockReturnValue("/dogs");
     jest.useFakeTimers();
   });
@@ -117,7 +117,7 @@ describe("InstallNudge", () => {
   });
 
   it.each([
-    ["without a touch screen", () => mockIsTouch.mockReturnValue(false)],
+    ["without a touch screen", () => setTouch(false)],
     ["when already installed or not installable", () => mockMethod.mockReturnValue(null)],
     ["on the swipe page", () => mockPathname.mockReturnValue("/swipe")],
     // Dogs first: the mobile home stays dogs-only (AGENTS.md)

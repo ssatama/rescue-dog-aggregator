@@ -6,14 +6,14 @@ import {
   recordVisit,
   SESSION_GAP_MS,
 } from "../installNudge";
-import { getInstallMethod } from "@/lib/installApp";
+import { canEverInstall } from "@/lib/installApp";
 
-jest.mock("@/lib/installApp", () => ({ getInstallMethod: jest.fn() }));
+jest.mock("@/lib/installApp", () => ({ canEverInstall: jest.fn() }));
 
 const T0 = 1_800_000_000_000;
 
-function device({ touch, method }: { touch: boolean; method: string | null }) {
-  (getInstallMethod as jest.Mock).mockReturnValue(method);
+function device({ touch, installable }: { touch: boolean; installable: boolean }) {
+  (canEverInstall as jest.Mock).mockReturnValue(installable);
   window.matchMedia = jest.fn((query: string) => ({
     matches: query === "(pointer: coarse)" && touch,
   })) as unknown as typeof window.matchMedia;
@@ -23,15 +23,15 @@ describe("installNudge", () => {
   const originalMatchMedia = window.matchMedia;
   beforeEach(() => {
     localStorage.clear();
-    device({ touch: true, method: "ios" });
+    device({ touch: true, installable: true });
   });
   afterAll(() => {
     window.matchMedia = originalMatchMedia;
   });
 
   it.each([
-    ["a desktop", { touch: false, method: "prompt" }],
-    ["a browser that can't install, or the installed app", { touch: true, method: null }],
+    ["a desktop", { touch: false, installable: true }],
+    ["a browser that can't install, or the installed app", { touch: true, installable: false }],
   ])("stores nothing on %s, where the card can never show", (_name, setup) => {
     device(setup);
     recordVisit(T0);
@@ -108,6 +108,15 @@ describe("installNudge", () => {
     // Back after a break: gone
     recordVisit(T0 + 60_000 + SESSION_GAP_MS + 1);
     expect(isNudgeDue()).toBe(false);
+  });
+
+  it("stops counting once the card is retired", () => {
+    recordVisit(T0);
+    dismissNudge();
+    const before = localStorage.getItem("installNudge");
+    recordVisit(T0 + SESSION_GAP_MS + 1);
+    recordDogView(1, T0 + SESSION_GAP_MS + 2);
+    expect(localStorage.getItem("installNudge")).toBe(before);
   });
 
   it("survives corrupt storage", () => {

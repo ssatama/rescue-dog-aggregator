@@ -2,12 +2,14 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import InstallAppButton from "../InstallAppButton";
 import { promptInstall, useInstallMethod } from "@/lib/installApp";
 import { trackAppInstallClicked } from "@/lib/analytics";
+import { dismissNudge } from "@/lib/installNudge";
 
 jest.mock("@/lib/installApp", () => ({
   useInstallMethod: jest.fn(),
   promptInstall: jest.fn(() => Promise.resolve(true)),
 }));
 jest.mock("@/lib/analytics", () => ({ trackAppInstallClicked: jest.fn() }));
+jest.mock("@/lib/installNudge", () => ({ dismissNudge: jest.fn() }));
 
 const mockMethod = useInstallMethod as jest.Mock;
 
@@ -30,32 +32,29 @@ describe("InstallAppButton", () => {
     expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
   });
 
-  it("opens the browser's dialog and reports the click", async () => {
+  it("opens the browser's dialog, reports the click and retires the card", async () => {
     mockMethod.mockReturnValue("prompt");
-    const onDone = jest.fn();
-    render(<InstallAppButton surface="menu" onDone={onDone} />);
+    render(<InstallAppButton surface="menu" />);
     fireEvent.click(screen.getByRole("button", { name: "Install app" }));
     expect(trackAppInstallClicked).toHaveBeenCalledWith("menu", "prompt");
     expect(promptInstall).toHaveBeenCalled();
     await screen.findByRole("button", { name: "Install app" });
-    expect(onDone).toHaveBeenCalled();
+    expect(dismissNudge).toHaveBeenCalled();
   });
 
-  it("does not report done when the browser showed no dialog", async () => {
+  it("keeps the card when the browser showed no dialog", async () => {
     mockMethod.mockReturnValue("prompt");
     (promptInstall as jest.Mock).mockResolvedValueOnce(false);
-    const onDone = jest.fn();
-    render(<InstallAppButton surface="nudge" onDone={onDone} />);
+    render(<InstallAppButton surface="nudge" />);
     fireEvent.click(screen.getByRole("button", { name: "Install app" }));
     await waitFor(() => expect(promptInstall).toHaveBeenCalled());
     await Promise.resolve();
-    expect(onDone).not.toHaveBeenCalled();
+    expect(dismissNudge).not.toHaveBeenCalled();
   });
 
-  it("shows the iPhone steps, and reports done when they are closed", async () => {
+  it("shows the iPhone steps, and retires the card once they are read, from any button", async () => {
     mockMethod.mockReturnValue("ios");
-    const onDone = jest.fn();
-    render(<InstallAppButton surface="footer" onDone={onDone} />);
+    render(<InstallAppButton surface="footer" />);
     fireEvent.click(screen.getByRole("button", { name: "Add to Home Screen" }));
 
     const dialog = await screen.findByRole("dialog", { name: /home screen/i });
@@ -63,7 +62,7 @@ describe("InstallAppButton", () => {
     expect(promptInstall).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Got it" }));
-    expect(onDone).toHaveBeenCalled();
+    expect(dismissNudge).toHaveBeenCalled();
   });
 
   it("marks Escape as handled, so the menu drawer behind the steps stays open", async () => {

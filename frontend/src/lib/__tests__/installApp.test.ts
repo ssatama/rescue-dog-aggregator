@@ -1,5 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
-import { manualInstallMethod, promptInstall, useInstallMethod } from "../installApp";
+import {
+  canEverInstall,
+  manualInstallMethod,
+  promptInstall,
+  useInstallMethod,
+} from "../installApp";
 
 jest.mock("@/lib/analytics", () => ({ trackAppInstalled: jest.fn() }));
 
@@ -57,6 +62,19 @@ describe("manualInstallMethod", () => {
     ["Firefox on a Mac", null, UA.macFirefox, 0],
   ])("%s → %s", (_name, expected, ua, touchPoints) => {
     expect(manualInstallMethod(ua, touchPoints)).toBe(expected);
+  });
+});
+
+describe("canEverInstall", () => {
+  it("knows Chromium can install before its prompt arrives", () => {
+    (window as { onbeforeinstallprompt?: unknown }).onbeforeinstallprompt = null;
+    expect(window.__installPrompt).toBeUndefined();
+    expect(canEverInstall()).toBe(true);
+    delete (window as { onbeforeinstallprompt?: unknown }).onbeforeinstallprompt;
+  });
+
+  it("is false in a browser with neither the prompt nor Share steps", () => {
+    expect(canEverInstall()).toBe(false);
   });
 });
 

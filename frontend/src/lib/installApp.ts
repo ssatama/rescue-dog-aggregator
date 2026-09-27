@@ -92,14 +92,30 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-export function getInstallMethod(): InstallMethod | null {
-  standalone ??= isStandalone();
-  if (installed || standalone) return null;
-  if (window.__installPrompt) return "prompt";
+function manualMethodHere(): "ios" | "mac-safari" | null {
   if (manualMethod === undefined) {
     manualMethod = manualInstallMethod(navigator.userAgent, navigator.maxTouchPoints);
   }
   return manualMethod;
+}
+
+function alreadyInstalled(): boolean {
+  standalone ??= isStandalone();
+  return installed || standalone;
+}
+
+export function getInstallMethod(): InstallMethod | null {
+  if (alreadyInstalled()) return null;
+  if (window.__installPrompt) return "prompt";
+  return manualMethodHere();
+}
+
+/** Whether this browser can install the site at all, known from page load:
+ * Chromium browsers have `onbeforeinstallprompt` before their prompt arrives
+ * (and after it is spent). */
+export function canEverInstall(): boolean {
+  if (alreadyInstalled()) return false;
+  return "onbeforeinstallprompt" in window || manualMethodHere() !== null;
 }
 
 /** Null when the site is already installed or this browser cannot install it. */

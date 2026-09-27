@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { safeStorage } from "@/utils/safeStorage";
-import { getInstallMethod } from "@/lib/installApp";
+import { canEverInstall } from "@/lib/installApp";
 
 // When to suggest installing the site as an app. The card waits until someone
 // is clearly coming back or browsing a lot, then gets one session: dismissed
@@ -46,10 +46,22 @@ function write(state: NudgeState): void {
   window.dispatchEvent(new Event(CHANGE));
 }
 
-function counting(): boolean {
-  return (
-    window.matchMedia?.("(pointer: coarse)").matches === true && getInstallMethod() !== null
-  );
+/** Where the card could ever show: a touch screen, in a browser that can
+ * install the site, not already installed. Nothing is counted anywhere else. */
+export function canNudge(): boolean {
+  return window.matchMedia?.("(pointer: coarse)").matches === true && canEverInstall();
+}
+
+/** Dismissed, or shown in an earlier session: the card is done for good. */
+function retired({ dismissed, shownInSession, sessions }: NudgeState): boolean {
+  return dismissed || (shownInSession !== null && shownInSession !== sessions);
+}
+
+/** Counting stops where the card can't show, and once it is retired. */
+function update(change: (state: NudgeState) => NudgeState): void {
+  if (!canNudge()) return;
+  const state = read();
+  if (!retired(state)) write(change(state));
 }
 
 /** Activity now: a new session if the last activity was a while ago. */
@@ -60,27 +72,26 @@ function touch(state: NudgeState, now: number): NudgeState {
 
 /** Call on load, on each page change and whenever the tab becomes visible. */
 export function recordVisit(now = Date.now()): void {
-  if (counting()) write(touch(read(), now));
+  update((state) => touch(state, now));
 }
 
 /** Call when the tab is hidden, so time spent browsing is not a gap. */
 export function recordSeen(now = Date.now()): void {
-  if (counting()) write({ ...read(), lastSeen: now });
+  update((state) => ({ ...state, lastSeen: now }));
 }
 
 // A dog page records its view before the card records the visit, so a first
 // page that is a dog page must start the session itself
 export function recordDogView(dogId: number | string, now = Date.now()): void {
-  if (!counting()) return;
-  const state = touch(read(), now);
-  const id = String(dogId);
-  const dogIds =
-    state.dogIds.includes(id) || state.dogIds.length >= DOGS_TO_NUDGE
-      ? state.dogIds
-      : [...state.dogIds, id];
-  write({ ...state, dogIds });
+  update((previous) => {
+    const state = touch(previous, now);
+    const id = String(dogId);
+    const full = state.dogIds.includes(id) || state.dogIds.length >= DOGS_TO_NUDGE;
+    return full ? state : { ...state, dogIds: [...state.dogIds, id] };
+  });
 }
 
+/** Retires the card: its close button, or any install flow from any surface. */
 export function dismissNudge(): void {
   write({ ...read(), dismissed: true });
 }
@@ -109,7 +120,7 @@ export function useNudgeDue(): boolean {
 }
 
 export function isNudgeDue(): boolean {
-  const { sessions, dogIds, dismissed, shownInSession } = read();
-  if (dismissed || (shownInSession !== null && shownInSession !== sessions)) return false;
-  return sessions >= SESSIONS_TO_NUDGE || dogIds.length >= DOGS_TO_NUDGE;
+  const state = read();
+  if (retired(state)) return false;
+  return state.sessions >= SESSIONS_TO_NUDGE || state.dogIds.length >= DOGS_TO_NUDGE;
 }
