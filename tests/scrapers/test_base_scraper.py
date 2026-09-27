@@ -35,7 +35,6 @@ class TestBaseScraperBehavior:
         scraper = ConcreteTestScraper(organization_id=1)
         # Mock database service for proper functionality
         scraper.database_service = Mock()
-        scraper.cursor = Mock()
         return scraper
 
     def test_scraper_saves_new_animals(self, scraper):

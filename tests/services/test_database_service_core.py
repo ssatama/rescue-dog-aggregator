@@ -328,7 +328,8 @@ class TestScrapeLogCompletionSurvivesADeadConnection:
 class TestConnection:
     """The one connection a scraper's own queries use (#569)."""
 
-    def test_a_pooled_connection_goes_back_rolled_back(self):
+    def test_a_pooled_connection_is_the_pools(self):
+        """psycopg2's pool rolls back or closes it on return."""
         conn = Mock()
         pool = MagicMock()
         pool.get_connection_context.return_value.__enter__.return_value = conn
@@ -337,7 +338,7 @@ class TestConnection:
         with service.connection() as got:
             assert got is conn
 
-        conn.rollback.assert_called_once()
+        pool.get_connection_context.return_value.__exit__.assert_called_once()
 
     def test_without_a_pool_it_is_the_direct_connection(self):
         service = DatabaseService(db_config={"host": "localhost", "database": "test"})

@@ -108,8 +108,12 @@ class DogSaving:
             # Skip if already processed (has original_image_url set from batch processing)
             if animal_data.get("primary_image_url") and not animal_data.get("original_image_url"):
                 if self.image_processing_service:
-                    with self.database_service.connection() as conn:
-                        animal_data = self.image_processing_service.process_primary_image(animal_data, existing_animal, conn, self.organization_name)
+                    if existing_animal:
+                        # Only a stored dog's image is compared, so only it needs a connection
+                        with self.database_service.connection() as conn:
+                            animal_data = self.image_processing_service.process_primary_image(animal_data, existing_animal, conn, self.organization_name)
+                    else:
+                        animal_data = self.image_processing_service.process_primary_image(animal_data, None, None, self.organization_name)
                 else:
                     self._log_service_unavailable("ImageProcessingService", "using original image URL")
                     animal_data["original_image_url"] = animal_data["primary_image_url"]

@@ -42,6 +42,8 @@ class RequestPacing:
     detail_failures: list[str] = []
     # A site's Retry-After is honoured up to this; longer would outlast the cron's per-org timeout
     MAX_BACK_OFF_SECONDS = 120
+    # Built on the first robots check
+    _robots_checker: RobotsChecker | None = None
 
     def get_robots_check_urls(self) -> list[str]:
         """URLs to test against robots.txt before scraping.

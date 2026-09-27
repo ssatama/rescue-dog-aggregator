@@ -23,7 +23,6 @@ class TestEnhancedFailureDetection:
         scraper = Mock(spec=BaseScraper)
         scraper.organization_id = 1
         scraper.logger = Mock()
-        scraper.conn = Mock()
 
         # Add new attributes for skip_existing_animals feature
         scraper.skip_existing_animals = False
@@ -115,7 +114,6 @@ class TestFailureDetectionEdgeCases:
         scraper = Mock(spec=BaseScraper)
         scraper.organization_id = 1
         scraper.logger = Mock()
-        scraper.conn = Mock()
 
         # Add new attributes for skip_existing_animals feature
         scraper.skip_existing_animals = False
@@ -166,7 +164,6 @@ class TestFailureDetectionConfiguration:
         scraper = Mock(spec=BaseScraper)
         scraper.organization_id = 1
         scraper.logger = Mock()
-        scraper.conn = Mock()
 
         # Add new attributes for skip_existing_animals feature
         scraper.skip_existing_animals = False
@@ -229,7 +226,6 @@ class TestFailureLoggingAndReporting:
         scraper = Mock(spec=BaseScraper)
         scraper.organization_id = 1
         scraper.logger = Mock()
-        scraper.conn = Mock()
 
         # Add new attributes for skip_existing_animals feature
         scraper.skip_existing_animals = False

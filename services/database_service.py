@@ -141,22 +141,24 @@ class DatabaseService:
 
     @contextmanager
     def connection(self) -> Iterator[Any]:
-        """A connection for callers that run their own queries (image dedup,
-        adoption checks), so a scraper has one database path (#569).
+        """A connection for a scraper's own queries (image dedup, adoption
+        checks), so the scraper holds no connection of its own (#569).
 
-        Pooled when there is a pool. The connection goes back rolled back, so
-        nothing stays open on it; a caller that writes commits first.
+        Pooled when there is a pool: the pool rolls back or closes it on
+        return, so nothing stays open. Without a pool it is this service's
+        connection, rolled back if the caller fails.
         """
         if self.connection_pool:
             with self.connection_pool.get_connection_context() as conn:
-                try:
-                    yield conn
-                finally:
-                    conn.rollback()
+                yield conn
             return
         if not self.conn and not self.connect():
             raise RuntimeError("No database connection available")
-        yield self.conn
+        try:
+            yield self.conn
+        except Exception:
+            self.conn.rollback()
+            raise
 
     def close(self) -> None:
         """Close database connection."""

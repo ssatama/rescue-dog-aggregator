@@ -28,7 +28,6 @@ class TestBasScraperUnifiedStandardization:
         """Create a BaseScraper instance with mocked dependencies"""
         scraper = ConcreteTestScraper(organization_id=1)
         scraper.database_service = Mock()
-        scraper.cursor = Mock()
         scraper.image_processing_service = Mock()
         scraper.metrics_collector = Mock()
         return scraper
@@ -208,7 +207,6 @@ class TestBaseScraperRawBreedPreservation:
     def scraper(self):
         scraper = ConcreteTestScraper(organization_id=1)
         scraper.database_service = Mock()
-        scraper.cursor = Mock()
         scraper.image_processing_service = Mock()
         scraper.metrics_collector = Mock()
         return scraper
@@ -267,7 +265,6 @@ class TestBaseScraperAgeTextOnly:
     def scraper(self):
         scraper = ConcreteTestScraper(organization_id=1)
         scraper.database_service = Mock()
-        scraper.cursor = Mock()
         scraper.image_processing_service = Mock()
         scraper.metrics_collector = Mock()
         return scraper

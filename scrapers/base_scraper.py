@@ -34,7 +34,6 @@ from services.progress_tracker import ProgressTracker
 from utils.config_loader import ConfigLoader
 from utils.config_models import OrganizationConfig
 from utils.r2_service import R2Service
-from utils.robots_checker import RobotsChecker
 from utils.unified_standardization import UnifiedStandardizer
 
 # Set up module-level logger
@@ -58,17 +57,6 @@ def force_rescrape_enabled() -> bool:
 
 class BaseScraper(DogSaving, StaleDetection, RunReporting, RequestPacing, ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
-
-    # Sentry is warned when more than this share of collected dogs is not saved.
-    LOSS_ALERT_RATE = 0.1
-    # More than this share of found dogs failing to save makes the run a
-    # partial failure, which skips stale detection (#558). Found, not collected:
-    # with skip_existing_animals only new dogs are collected, and one new dog
-    # that fails every run would otherwise be 100%. Validator rejections don't
-    # count: they repeat for the same dog every run.
-    SAVE_ERROR_PARTIAL_FAILURE_RATE = 0.2
-    # How many rejected or failed external_ids a run's log line lists.
-    LOST_IDS_LOG_CAP = 20
 
     # Type annotations for instance variables
     org_config: OrganizationConfig | None
@@ -384,7 +372,6 @@ class BaseScraper(DogSaving, StaleDetection, RunReporting, RequestPacing, ABC):
                         self.logger.error(f"Could not close scrape log {self.scrape_log_id}: {e}")
 
     # Class-level default, replaced with an instance on first use.
-    _robots_checker: RobotsChecker | None = None
 
     def _setup_scrape(self):
         """Setup phase: Initialize scrape log, session, and timing with world-class logging."""

@@ -43,7 +43,6 @@ class TestBaseScraperWithDatabaseService:
         mock_db_service.create_animal.return_value = (123, "added")
 
         scraper = mock_scraper_with_service(organization_id=1, database_service=mock_db_service)
-        scraper.conn = Mock()
 
         animal_data = {
             "name": "Test Dog",
@@ -75,7 +74,6 @@ class TestBaseScraperWithDatabaseService:
         mock_db_service.update_animal.return_value = (456, "updated")
 
         scraper = mock_scraper_with_service(organization_id=1, database_service=mock_db_service)
-        scraper.conn = Mock()
 
         animal_data = {
             "name": "Updated Dog",
@@ -173,7 +171,6 @@ class TestBaseScraperCompleteIntegration:
         mock_db_service.complete_scrape_log.return_value = True
 
         scraper = mock_scraper_with_service(organization_id=1, database_service=mock_db_service)
-        scraper.conn = Mock()
 
         # Test save_animal for new animal (delegates to get_existing_animal + create_animal)
         animal_data = {

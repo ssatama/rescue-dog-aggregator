@@ -57,7 +57,6 @@ class TestDaisyEnhanceWithDetailPageAsync:
         )
 
         s = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
-        s.cursor = MagicMock()
         return s
 
     @pytest.mark.asyncio

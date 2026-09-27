@@ -13,11 +13,14 @@ from scrapers.sentry_integration import (
 )
 from services.progress_tracker import ProgressTracker
 
-logger = logging.getLogger(__name__)
-
 
 class RunReporting:
     """The run's log row, alerts and metrics."""
+
+    # Sentry is warned when more than this share of collected dogs is not saved.
+    LOSS_ALERT_RATE = 0.1
+    # How many rejected or failed external_ids a run's log line lists.
+    LOST_IDS_LOG_CAP = 20
 
     def start_scrape_log(self):
         """Create a new entry in the scrape_logs table."""

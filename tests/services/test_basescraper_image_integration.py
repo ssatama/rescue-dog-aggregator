@@ -70,8 +70,8 @@ class TestBaseScraperWithImageProcessingService:
         args = mock_image_service.process_primary_image.call_args[0]
         assert args[0]["primary_image_url"] == "https://example.com/test.jpg"
         assert args[1] is None  # existing_animal
-        # The DatabaseService's connection (#569)
-        assert args[2] == mock_db_service.connection.return_value.__enter__.return_value
+        # A new dog's image is compared with nothing stored, so no connection is borrowed (#569)
+        assert args[2] is None
         assert args[3] == "Organization ID 1"  # organization_name
 
     @patch.dict(

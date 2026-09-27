@@ -213,8 +213,9 @@ which also binds the filtering service and LLM handler. Tests pass
 `backfill plan` builds a scraper with no database at all.
 
 The scraper's logger is `scraper.<org>.<type>` with no level or handler of its
-own: the runner's apply. Every query of the scraper's own (image dedup, adoption
-checks) goes through `DatabaseService.connection()`, the one database path.
+own: the runner's apply. The scraper holds no database connection of its own: its own queries (image
+dedup, adoption checks) borrow one through `DatabaseService.connection()`.
+Some `DatabaseService` methods still use its direct connection beside the pool.
 
 ### Core Configuration (Loaded from YAML)
 
@@ -241,7 +242,8 @@ Returns `True` when the run succeeded. Its phases:
    it seen. Counts go into a `ScrapeStats`.
 4. Stale detection, unless the run looks like a partial failure (a count drop,
    or too many save errors), then adoption checks.
-5. Completion: metrics, the `scrape_logs` row, frontend cache invalidation for
+5. LLM enrichment of new and changed dogs, for organizations that have it.
+6. Completion: metrics, the `scrape_logs` row, frontend cache invalidation for
    changed dogs.
 
 ### Abstract Method: `collect_data()`

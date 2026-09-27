@@ -9,6 +9,13 @@ from scrapers.sentry_integration import capture_scraper_error
 class StaleDetection:
     """Mark listed dogs seen, then age out the ones no longer listed."""
 
+    # More than this share of found dogs failing to save makes the run a
+    # partial failure, which skips stale detection (#558). Found, not collected:
+    # with skip_existing_animals only new dogs are collected, and one new dog
+    # that fails every run would otherwise be 100%. Validator rejections don't
+    # count: they repeat for the same dog every run.
+    SAVE_ERROR_PARTIAL_FAILURE_RATE = 0.2
+
     def _finalize_scrape(self, animals_data, processing_stats):
         """Stale data detection phase: Handle partial failures and update stale data."""
         phase_start = datetime.now()
