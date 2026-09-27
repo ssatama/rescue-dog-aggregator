@@ -7,7 +7,8 @@
 Dry run by default. Run it right after the scraper change deploys and before
 the next cron: a scrape under the new IDs that finds no matching row inserts
 the dog again. Each stored row's adoption_url is looked up in the site's REST
-API, the same mapping the scrapers use. Rows whose page is no longer published
+API, the same mapping the scrapers use, and an active row it lacks is read
+from its page. Rows whose page is no longer published
 keep their old ID (they are gone from the site anyway). Rows match by slug,
 since Santer Paws moved its pages from /adoption/ to /dog/, and a re-keyed row
 also gets the page's current link (updates never refresh adoption_url). Rows
@@ -25,12 +26,13 @@ from datetime import datetime
 
 import psycopg2
 import requests
+from bs4 import BeautifulSoup
 from psycopg2.extras import RealDictCursor
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import DB_CONFIG  # noqa: E402
-from scrapers.wordpress_ids import fetch_posts, slug, url_key  # noqa: E402
+from scrapers.wordpress_ids import body_post_id, fetch_posts, slug, url_key  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +123,16 @@ def site_links(route: str, urls: list[str]) -> dict[str, tuple[int, str]]:
     return {url_key(post["link"]): (post["id"], post["link"]) for post in fetch_posts(get_json, (slug(url) for url in urls))}
 
 
+def page_link(url: str) -> tuple[int, str] | None:
+    """(post ID, final URL) from a page's <body class>, or None if it is gone."""
+    response = requests.get(url, headers=HEADERS, timeout=30)
+    if response.status_code in (404, 410):
+        return None
+    response.raise_for_status()
+    post_id = body_post_id(BeautifulSoup(response.content, "html.parser"))
+    return (post_id, response.url) if post_id else None
+
+
 def _connect():
     database_url = os.getenv("RAILWAY_DATABASE_URL")
     if database_url:
@@ -143,6 +155,12 @@ def main() -> int:
                 cursor.execute(FETCH_QUERY, (config_id,))
                 rows = [dict(row) for row in cursor.fetchall()]
             links = site_links(route, [row["adoption_url"] for row in rows if row["adoption_url"]])
+            # As the scraper does: an active row the REST answer lacks is read from its page
+            for row in rows:
+                if row["active"] and row["adoption_url"] and match(row["adoption_url"], links) is None:
+                    found = page_link(row["adoption_url"])
+                    if found:
+                        links[url_key(row["adoption_url"])] = found
             planned, skipped = plan_rekeys(rows, links, prefix)
             unmatched = sum(1 for row in rows if match(row["adoption_url"] or "", links) is None)
             logger.info("%s: %s rows, %s re-keyed, %s not published (kept)", config_id, len(rows), len(planned), unmatched)

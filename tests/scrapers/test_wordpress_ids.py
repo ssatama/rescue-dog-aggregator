@@ -91,3 +91,15 @@ class TestKeyOnPostIds:
 def test_urls_match_by_path_and_slug():
     assert url_key("https://www.site.org/Johny/") == url_key("https://site.org/johny") == "/johny"
     assert slug("https://site.org/Mery Joy/") == "mery-joy"
+
+
+@pytest.mark.unit
+def test_a_redirect_never_takes_a_listed_dogs_id():
+    """WordPress guesses /john/ -> /johny/: Johny keeps its ID, John is skipped (#570)."""
+    pages = {"https://site.org/john/": '<body class="page page-id-36251"></body>'}
+    scraper = _scraper(pages)
+    dogs = [{"url": "https://site.org/john/"}, {"url": "https://site.org/johny/"}]
+
+    keyed = key_on_post_ids(scraper, dogs, route="https://site.org/wp-json/wp/v2/pages", url_of=lambda dog: dog["url"], prefix="arb-")
+
+    assert [(dog["url"], dog["external_id"]) for dog in keyed] == [("https://site.org/johny/", "arb-36251")]

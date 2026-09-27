@@ -85,17 +85,25 @@ def key_on_post_ids(scraper: Any, animals: list[dict], *, route: str, url_of: Ca
         return response.json(), int(response.headers.get("X-WP-TotalPages", 1))
 
     ids = {url_key(post["link"]): post["id"] for post in fetch_posts(get_json, (slug(key) for key in unique))}
-    keyed = []
-    for key, animal in unique.items():
-        post_id = ids.get(key) or _page_post_id(scraper, url_of(animal), headers)
+    # Links the REST answer holds first: a page reached through a redirect
+    # (WordPress also guesses, sending a dead /john/ to /johny/) never takes
+    # the ID of a dog listed under its own link
+    ordered = sorted(unique.items(), key=lambda item: item[0] not in ids)
+    keyed: dict[str, dict] = {}
+    for key, animal in ordered:
+        post_id = ids.get(key) or page_post_id(scraper, url_of(animal), headers)
         if post_id is None:
             scraper.logger.warning(f"{url_of(animal)} is listed but its page is gone; skipped")
             continue
-        keyed.append({**animal, "external_id": f"{prefix}{post_id}"})
-    return keyed
+        external_id = f"{prefix}{post_id}"
+        if external_id in keyed:
+            scraper.logger.warning(f"{url_of(animal)} leads to the page of {url_of(keyed[external_id])}; skipped")
+            continue
+        keyed[external_id] = {**animal, "external_id": external_id}
+    return list(keyed.values())
 
 
-def _page_post_id(scraper: Any, url: str, headers: dict | None) -> int | None:
+def page_post_id(scraper: Any, url: str, headers: dict | None) -> int | None:
     """The ID in a page's <body class>, or None if the page is gone (404)."""
     try:
         response = scraper.get_listing_page(url, headers=headers)
