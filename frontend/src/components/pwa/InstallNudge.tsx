@@ -36,7 +36,9 @@ export default function InstallNudge() {
 
   // Every page is activity, so a long visit stays one session
   useEffect(() => {
-    recordVisit();
+    // A tab opened in the background isn't a visit until it's looked at; the
+    // visibilitychange handler records it then
+    if (document.visibilityState === "visible") recordVisit();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the visit count lives in localStorage, readable only after mount
     setVisitCounted(true);
   }, [pathname]);

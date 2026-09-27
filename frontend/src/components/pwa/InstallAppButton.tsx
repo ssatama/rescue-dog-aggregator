@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import dynamic from "next/dynamic";
 import { promptInstall, useInstallMethod, type InstallMethod } from "@/lib/installApp";
 import { trackAppInstallClicked, type InstallSurface } from "@/lib/analytics";
 import { dismissNudge } from "@/lib/installNudge";
-
-// Only a few visitors open the steps, so they load on demand
-const InstallInstructions = dynamic(() => import("./InstallInstructions"), { ssr: false });
+// A plain import: next/dynamic is preloaded on every page anyway, and a
+// missing lazy chunk would throw in render and reload the page (ErrorBoundary)
+import InstallInstructions from "./InstallInstructions";
 
 const LABELS: Record<InstallMethod, string> = {
   prompt: "Install app",

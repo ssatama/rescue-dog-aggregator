@@ -70,7 +70,7 @@ export default function InstallInstructions({
   const guide = GUIDES[method];
 
   return (
-    // Mounted only while open (InstallAppButton loads it on demand)
+    // Mounted only while open
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         {/* Above the mobile menu drawer (z-70), which can open this */}
