@@ -72,7 +72,7 @@ describe("DogGrid", () => {
       <DogGrid
         breed="galgo"
         location_country="ES"
-        size="large"
+        size="Large"
         age_category="adult"
         limit={4}
       />,
@@ -82,7 +82,7 @@ describe("DogGrid", () => {
       expect(serverAnimalsService.getAnimals).toHaveBeenCalledWith({
         breed: "galgo",
         location_country: "ES",
-        size: "large",
+        standardized_size: "Large",
         age_category: "adult",
         limit: 4,
         status: "available",

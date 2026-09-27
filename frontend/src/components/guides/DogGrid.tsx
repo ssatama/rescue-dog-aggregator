@@ -16,7 +16,7 @@ interface AnimalApiParams {
   primary_breed?: string;
   breed_type?: string;
   sex?: string;
-  size?: string;
+  standardized_size?: string;
   age_category?: string;
   location_country?: string;
   available_to_country?: string;
@@ -94,7 +94,8 @@ export function DogGrid({
         if (primary_breed) params.primary_breed = primary_breed;
         if (breed_type) params.breed_type = breed_type;
         if (sex) params.sex = sex;
-        if (size) params.size = size;
+        // On the size scale, so a size estimated from the breed counts too (#568)
+        if (size) params.standardized_size = size;
         if (age_category) params.age_category = age_category;
         if (location_country) params.location_country = location_country;
         if (available_to_country)

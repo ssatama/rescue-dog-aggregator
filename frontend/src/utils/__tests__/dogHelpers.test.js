@@ -2,7 +2,7 @@
  * Tests for dogHelpers utility functions
  */
 
-import { getAgeCategory, formatBreed, formatSize } from "../dogHelpers";
+import { getAgeCategory, formatBreed, formatSize, sizeCategory } from "../dogHelpers";
 
 describe("dogHelpers", () => {
   describe("getAgeCategory", () => {
@@ -138,6 +138,10 @@ describe("dogHelpers", () => {
     it("leaves out a size estimated from the breed", () => {
       expect(formatSize({ standardized_size: "Large", properties: { size_source: "breed" } })).toBe(null);
       expect(formatSize({ standardized_size: "Large", properties: {} })).toBe("Large");
+    });
+
+    it("still gives filters a size estimated from the breed", () => {
+      expect(sizeCategory({ standardized_size: "Large", properties: { size_source: "breed" } })).toBe("Large");
     });
   });
 });

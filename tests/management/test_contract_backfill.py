@@ -37,23 +37,65 @@ class TestOneDescriptionKey:
         assert plan_step(STEPS["one-description-key"], [_story_record({"description": "Sora is sweet."})]) == []
 
 
+def _breed_record(**columns):
+    record = {
+        "id": 2,
+        "organization": "rean",
+        "breed": None,
+        "standardized_breed": None,
+        "primary_breed": None,
+        "breed_group": None,
+        "breed_type": None,
+        "breed_slug": None,
+        "breed_confidence": None,
+        "sex": "Male",
+    }
+    return {**record, **columns}
+
+
 @pytest.mark.unit
 class TestUnknownToNull:
-    def test_each_unknown_column_becomes_null(self):
-        record = {"id": 2, "organization": "rean", "breed": "Unknown", "standardized_breed": "Unknown", "primary_breed": "Unknown", "breed_group": "Unknown", "sex": "Male"}
+    def test_a_dog_with_no_breed_loses_every_breed_field(self):
+        record = _breed_record(breed="Unknown", standardized_breed="Unknown", primary_breed="Unknown", breed_group="Unknown", breed_type="unknown", breed_slug="unknown", breed_confidence=0)
 
         changes = plan_step(STEPS["unknown-to-null"], [record])
 
-        assert [(change.column, change.now) for change in changes] == [("breed", None), ("standardized_breed", None), ("primary_breed", None), ("breed_group", None)]
+        assert [(change.column, change.now) for change in changes] == [
+            ("breed", None),
+            ("standardized_breed", None),
+            ("primary_breed", None),
+            ("breed_group", None),
+            ("breed_type", None),
+            ("breed_slug", None),
+            ("breed_confidence", None),
+        ]
+
+    def test_raw_text_that_names_no_breed_goes_too(self):
+        """breed_raw keeps what the rescue wrote; the breed column held it unresolved."""
+        record = _breed_record(breed="Can be the only dog", standardized_breed="Unknown", breed_slug="unknown")
+
+        assert {change.column for change in plan_step(STEPS["unknown-to-null"], [record])} == {"breed", "standardized_breed", "breed_slug"}
+
+    def test_an_unregistered_breed_keeps_its_unknown_group(self):
+        """The standardiser keeps a clean unregistered name, with group "Unknown" and type "unknown"."""
+        record = _breed_record(
+            breed="Hungarian Pumi", standardized_breed="Hungarian Pumi", primary_breed="Hungarian Pumi", breed_group="Unknown", breed_type="unknown", breed_slug="hungarian-pumi", breed_confidence=0.4
+        )
+
+        assert plan_step(STEPS["unknown-to-null"], [record]) == []
+
+    def test_unknown_sex_becomes_null(self):
+        record = _breed_record(breed="Beagle", standardized_breed="Beagle", sex="Unknown")
+
+        assert [(change.column, change.now) for change in plan_step(STEPS["unknown-to-null"], [record])] == [("sex", None)]
 
     def test_a_real_breed_is_left_alone(self):
-        record = {"id": 3, "organization": "rean", "breed": "Mixed Breed", "standardized_breed": "Mixed Breed", "primary_breed": "Mixed Breed", "breed_group": "Mixed", "sex": "Female"}
+        record = _breed_record(breed="Mixed Breed", standardized_breed="Mixed Breed", primary_breed="Mixed Breed", breed_group="Mixed", breed_type="mixed", breed_slug="mixed-breed", sex="Female")
 
         assert plan_step(STEPS["unknown-to-null"], [record]) == []
 
 
 @pytest.mark.unit
 def test_a_real_story_that_starts_like_a_placeholder_stays():
-    story = "Rescue dog from Cyprus who loves the beach, Bella is looking for a quiet home."
-
-    assert plan_step(STEPS["one-description-key"], [_story_record({"description": story})]) == []
+    for story in ("Rescue dog from Cyprus who loves the beach, Bella is looking for a quiet home.", "Rescue dog from a shelter in Spain."):
+        assert plan_step(STEPS["one-description-key"], [_story_record({"description": story})]) == []

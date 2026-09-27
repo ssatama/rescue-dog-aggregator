@@ -261,8 +261,9 @@ class TheUnderdogScraper(BaseScraper):
                 "properties": {
                     "raw_qa_data": properties,  # Store Q&A pairs
                     "raw_name": name,
-                    "description": description,
                     "page_url": url,
+                    # No story on the page: no description key (#568)
+                    **({"description": description} if description else {}),
                 },
                 "animal_type": "dog",
                 "status": "available",  # All scraped dogs are available

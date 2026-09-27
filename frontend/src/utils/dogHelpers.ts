@@ -83,12 +83,17 @@ const SIZE_SCALE: Record<string, string> = {
 };
 
 /**
- * Small, Medium, Large or Giant, or null when the size is unknown. A size
- * estimated from the breed stays out of the dog's facts (#568); it still
- * counts for size filters.
+ * The size filters match: Small, Medium, Large or Giant, including a size
+ * estimated from the breed, or null when the size is unknown.
  */
-export const formatSize = (dog: DogInput | null | undefined): string | null => {
-  if (dog?.properties?.size_source === "breed") return null;
+export const sizeCategory = (dog: DogInput | null | undefined): string | null => {
   const onScale = (raw: string | undefined) => (raw ? SIZE_SCALE[raw.trim().toLowerCase()] : undefined);
   return onScale(dog?.standardized_size) ?? onScale(dog?.size) ?? null;
 };
+
+/**
+ * The size shown as a fact about the dog. A size estimated from the breed is
+ * left out (#568): it isn't the rescue's, though it still counts for filters.
+ */
+export const formatSize = (dog: DogInput | null | undefined): string | null =>
+  dog?.properties?.size_source === "breed" ? null : sizeCategory(dog);

@@ -12,8 +12,8 @@ from typing import Any
 EXAMPLES_PER_FIELD = 5
 
 # Columns compared directly: the ones update_animal checks for a change, so a
-# listed difference is one a re-scrape writes (images aside, below). It never checks size or
-# breed_group, which change only alongside another column (noted on #568).
+# listed difference is one a re-scrape writes (images aside, below).
+# breed_group isn't checked; it changes only alongside standardized_breed.
 # Images are left out: a dry run does not upload,
 # so primary_image_url would always differ. The scraped image source is
 # compared with the stored original_image_url instead ("image_source").

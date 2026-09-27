@@ -275,8 +275,6 @@ class ManyTearsRescueScraper(BaseScraper):
             "external_id": external_id,
             "animal_type": "dog",
             "status": "available",
-            # Every dog is at the rescue in Carmarthenshire
-            "location": "Wales, UK",
         }
 
         return dog_data
@@ -354,7 +352,6 @@ class ManyTearsRescueScraper(BaseScraper):
                 "properties": properties,
                 "animal_type": "dog",
                 "status": "available",
-                "location": "Wales, UK",
             }
 
             # Extract individual fields from structured_data for compatibility with BaseScraper

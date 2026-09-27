@@ -198,7 +198,7 @@ class TestUnifiedStandardizer:
 
         # Test with non-string breed
         result = standardizer.apply_full_standardization(breed=123)
-        assert result["breed"] == "Unknown"
+        assert result["breed"] is None  # names no breed (#568)
 
         # Test with very long string
         long_breed = "a" * 1000
@@ -501,8 +501,9 @@ def test_data_quality_fix():
 
     # This is not a breed, it's a behavioral note
     result = standardizer.apply_full_standardization(breed="Can Be The Only Dog")
-    # Should remain as Unknown since it's not a breed
-    assert result["breed_category"] == "Unknown"
+    # Not a breed, so no breed fields at all (#568)
+    assert result["breed"] is None
+    assert result["breed_category"] is None
 
 
 class TestBreedNormalizationFixes:

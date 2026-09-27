@@ -583,9 +583,10 @@ class UnifiedStandardizer:
             "size_source": "breed" if size_result.get("source") == "breed_estimated" else None,
         }
 
-        # No breed given (or "Unknown", which names none): the breed fields
-        # stay empty, not "Unknown" (#568)
-        if not (breed.strip() if isinstance(breed, str) else breed) or str(breed).strip().lower() == "unknown":
+        # Text that names no breed (none given, "Unknown", or one the registry
+        # can't resolve): the breed fields stay empty, not "Unknown" (#568).
+        # breed_raw keeps what the rescue wrote.
+        if str(breed_result.get("name") or "").strip().lower() in ("", "unknown"):
             for key in ("breed", "standardized_breed", "breed_category", "breed_type", "primary_breed", "breed_slug", "breed_confidence"):
                 result[key] = None
 

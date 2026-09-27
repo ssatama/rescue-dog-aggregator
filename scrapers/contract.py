@@ -54,7 +54,11 @@ KNOWN_KEYS = frozenset(ScrapedDog.__annotations__)
 
 
 def missing_required(dog: dict[str, Any]) -> list[str]:
-    """Required keys that are absent or empty."""
+    """Required keys that are absent or empty.
+
+    For tests of a scraper's output. At save time the same rule is
+    AnimalValidator.rejection_reason, which rejects the dog.
+    """
     return sorted(key for key in REQUIRED_KEYS if not dog.get(key))
 
 

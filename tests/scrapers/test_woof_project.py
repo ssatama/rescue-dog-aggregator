@@ -240,7 +240,8 @@ class TestWoofProjectLabelledFields:
         assert result["sex"] is None
         assert result["age_text"] is None
         assert result["size"] is None
-        assert result["properties"]["breed"] is None
+        # Missing, not stored as null (#568)
+        assert "breed" not in result["properties"]
 
     @pytest.mark.parametrize(
         ("value", "expected"),

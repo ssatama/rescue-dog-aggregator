@@ -232,7 +232,8 @@ class WoofProjectScraper(BaseScraper):
                 },
             }
 
-            result["properties"] = properties
+            # A fact the page didn't give is left out, not stored as null (#568)
+            result["properties"] = {key: value for key, value in properties.items() if value is not None}
 
             self.logger.debug(f"Extracted data for {result['name']}: breed={result['breed']}, age={result.get('age', 'Unknown')}, size={result['size']}")
 
