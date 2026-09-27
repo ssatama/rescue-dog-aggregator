@@ -24,8 +24,8 @@ class PreparedAnimalData:
 
     language: str
     breed_raw: str | None
-    standardized_breed: str
-    breed_group: str
+    standardized_breed: str | None
+    breed_group: str | None
     final_size: str | None
     final_standardized_size: str | None
     age_months_min: int | None
@@ -86,7 +86,7 @@ def prepare_animal_data(animal_data: dict[str, Any], today: date | None = None) 
     )
 
 
-def generate_temp_slug(animal_data: dict[str, Any], standardized_breed: str, conn: Any) -> str:
+def generate_temp_slug(animal_data: dict[str, Any], standardized_breed: str | None, conn: Any) -> str:
     """Generate temporary slug before animal ID is available.
 
     Args:

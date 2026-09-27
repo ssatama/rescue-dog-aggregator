@@ -51,6 +51,7 @@ CURRENT_ROW = (
     BORN,  # birth_date_max
     TODAY,  # age_observed_at
     None,  # created_at
+    None,  # size
 )
 IMAGES = CURRENT_ROW[17]
 
@@ -154,7 +155,7 @@ class TestUpdateAnimalChangeDetection:
         """#561: the site still says "2 years" a year later; the dog is 3 now, not 2 again."""
         year_ago = subtract_months(TODAY, 12)
         born = subtract_months(year_ago, 24)
-        row = (*CURRENT_ROW[:18], born, born, year_ago, None)
+        row = (*CURRENT_ROW[:18], born, born, year_ago, None, None)
         cursor = Mock()
         cursor.fetchone.return_value = row
         service.conn = Mock(cursor=Mock(return_value=cursor))
@@ -173,6 +174,11 @@ class TestUpdateAnimalChangeDetection:
 
     def test_a_real_confidence_change_is_written(self, service):
         assert update_with(service, breed_confidence=0.4) == "updated"
+
+    def test_an_invented_size_is_cleared(self, service):
+        """#568: size is only the rescue's own; a stored breed estimate goes."""
+        row = (*CURRENT_ROW[:-1], "Medium")
+        assert update_with(service, row=row) == "updated"
 
     def test_a_missing_animal_is_an_error_not_a_silent_success(self, service):
         cursor = Mock()

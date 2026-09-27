@@ -283,6 +283,7 @@ class TestDatabaseServiceSlugIntegration:
                 None,  # birth_date_max
                 None,  # age_observed_at
                 None,  # created_at
+                None,  # size
             ),
             # No second call needed for updates
         ]

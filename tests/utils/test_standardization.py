@@ -39,10 +39,8 @@ class TestBreedStandardization:
     def test_unknown_breed(self):
         """Test handling of unknown breeds."""
         result = standardize_breed("unknown breed")
-        # "unknown" is a non-breed value, not a name to carry through
-        assert result[0] == "Unknown"
-        assert result[1] == "Unknown"
-        assert result[2] is None
+        # "unknown" is a non-breed value: nothing to store, not "Unknown" (#568)
+        assert result == (None, None, None)
 
     # Fix for test_age_ranges
     def test_age_ranges(self):
@@ -59,8 +57,8 @@ class TestBreedStandardization:
 
     def test_empty_or_none_breed(self):
         """Test handling of empty or None input."""
-        assert standardize_breed("") == ("Unknown", "Unknown", None)
-        assert standardize_breed(None) == ("Unknown", "Unknown", None)
+        assert standardize_breed("") == (None, None, None)
+        assert standardize_breed(None) == (None, None, None)
 
 
 class TestAgeStandardization:

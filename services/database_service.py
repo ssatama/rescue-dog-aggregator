@@ -351,7 +351,7 @@ class DatabaseService:
                 SELECT name, breed, age_text, sex, primary_image_url, status,
                        standardized_breed, age_min_months, age_max_months, standardized_size, properties,
                        breed_type, primary_breed, secondary_breed, breed_slug, breed_confidence,
-                       breed_raw, images, birth_date_min, birth_date_max, age_observed_at, created_at
+                       breed_raw, images, birth_date_min, birth_date_max, age_observed_at, created_at, size
                 FROM animals WHERE id = %s
                 """,
                 (animal_id,),
@@ -385,6 +385,7 @@ class DatabaseService:
                 current_birth_date_max,
                 current_age_observed_at,
                 current_created_at,
+                current_size,
             ) = current_data
 
             # Process the properties (sanitize to remove null bytes that PostgreSQL rejects)
@@ -427,6 +428,7 @@ class DatabaseService:
                 or final_standardized_breed != current_standardized_breed
                 or new_age_min_months != current_age_min_months
                 or new_age_max_months != current_age_max_months
+                or new_final_size != current_size
                 or new_final_standardized_size != current_standardized_size
                 or new_breed_type != current_breed_type
                 or new_primary_breed != current_primary_breed

@@ -87,7 +87,9 @@ class TestPrepareAnimalData:
     def test_empty_breed(self):
         animal_data = {"name": "NoBreed"}
         result = prepare_animal_data(animal_data)
-        assert result.standardized_breed is not None
+        # No breed given: nothing stored, not "Unknown" (#568)
+        assert result.standardized_breed is None
+        assert result.breed_group is None
 
 
 @pytest.mark.unit

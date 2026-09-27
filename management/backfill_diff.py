@@ -27,6 +27,7 @@ COLUMNS = (
     "age_max_months",
     "sex",
     "status",
+    "size",
     "standardized_size",
     "breed_type",
     "primary_breed",

@@ -586,7 +586,7 @@ class UnifiedStandardizer:
         # No breed given (or "Unknown", which names none): the breed fields
         # stay empty, not "Unknown" (#568)
         if not (breed.strip() if isinstance(breed, str) else breed) or str(breed).strip().lower() == "unknown":
-            for key in ("breed", "standardized_breed", "breed_category", "breed_type", "primary_breed", "breed_slug"):
+            for key in ("breed", "standardized_breed", "breed_category", "breed_type", "primary_breed", "breed_slug", "breed_confidence"):
                 result[key] = None
 
         # Return deep copy to prevent cache mutation
