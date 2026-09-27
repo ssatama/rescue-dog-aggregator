@@ -371,8 +371,6 @@ class BaseScraper(DogSaving, StaleDetection, RunReporting, RequestPacing, ABC):
                         # Must not replace the KeyboardInterrupt or SystemExit in flight
                         self.logger.error(f"Could not close scrape log {self.scrape_log_id}: {e}")
 
-    # Class-level default, replaced with an instance on first use.
-
     def _setup_scrape(self):
         """Setup phase: Initialize scrape log, session, and timing with world-class logging."""
         # Use centralized logger for setup phase
