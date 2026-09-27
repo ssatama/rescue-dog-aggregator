@@ -332,7 +332,7 @@ class TestForcedRescrape(ScraperTestBase):
         listing = [{"url": "/post/rex"}, {"url": "/post/tea"}]
         with (
             patch.object(scraper, "_get_all_dogs_from_listing", return_value=listing),
-            patch.object(scraper, "_process_dogs_in_batches", return_value=[]),
+            patch.object(scraper, "fetch_details", return_value=[]),
         ):
             scraper.collect_data()
 

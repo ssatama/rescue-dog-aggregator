@@ -1,11 +1,9 @@
 """Scraper implementation for Dogs Trust organization."""
 
 import asyncio
-import concurrent.futures
 import random
 import re
 import time
-from threading import Lock
 from typing import Any
 
 import requests
@@ -26,6 +24,17 @@ _BROWSER_CLOSED_SIGNATURES = (
     "browser has been closed",
     "connection closed",
 )
+
+
+DETAIL_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+}
 
 
 def _is_browser_closed_error(error: BaseException) -> bool:
@@ -102,92 +111,13 @@ class DogsTrustScraper(BaseScraper):
         return result
 
     def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Process animals in parallel batches using ThreadPoolExecutor.
+        """Each dog's detail page over HTTP, merged over its listing data (#567)."""
 
-        This method follows the Many Tears pattern for parallel processing,
-        but uses HTTP requests instead of a browser for detail pages since
-        Dogs Trust detail pages don't require JavaScript rendering.
+        def fetch(animal: dict[str, Any]) -> dict[str, Any]:
+            animal.update(self._scrape_animal_details_http(animal["adoption_url"]))
+            return animal
 
-        Args:
-            animals: List of animals to process
-
-        Returns:
-            List of processed animals with detailed data
-        """
-        all_dogs_data = []
-        seen_urls = set()  # Track URLs to prevent duplicates
-
-        self.logger.info(f"Starting detail scraping for {len(animals)} animals using batch_size={self.batch_size}")
-
-        # Thread-safe collections
-        results_lock = Lock()
-
-        def process_animal_batch(animal_batch):
-            """Process a batch of animals using HTTP requests"""
-            batch_results = []
-
-            try:
-                for animal in animal_batch:
-                    adoption_url = animal["adoption_url"]
-
-                    # Skip duplicates - atomic check and add to prevent race condition
-                    with results_lock:
-                        if adoption_url in seen_urls:
-                            self.logger.debug(f"Skipping duplicate dog: {animal.get('name', 'unknown')} ({adoption_url})")
-                            continue
-                        seen_urls.add(adoption_url)
-                    # Lock released here - now safe to process without holding lock
-
-                    try:
-                        # Rate limiting with randomization for natural browsing pattern
-                        time.sleep(self.rate_limit_delay + random.uniform(-0.2, 0.3))
-
-                        # Extract detailed data via HTTP requests (faster than a browser)
-                        detail_data = self._scrape_animal_details_http(adoption_url)
-
-                        if detail_data:
-                            # Merge detail data with listing data (detail data takes precedence)
-                            animal.update(detail_data)
-
-                        batch_results.append(animal)
-
-                    except Exception as e:
-                        self.logger.error(f"Failed to process {animal.get('name', 'unknown')}: {e}")
-                        # Continue processing other animals on individual failures
-                        continue
-
-            except Exception as e:
-                self.logger.error(f"Error in batch processing: {e}")
-
-            return batch_results
-
-        # Split animals into batches based on batch_size
-        batches = []
-        for i in range(0, len(animals), self.batch_size):
-            batch = animals[i : i + self.batch_size]
-            batches.append(batch)
-
-        self.logger.info(f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}")
-
-        # Process batches with controlled concurrency
-        max_workers = min(self.batch_size, 5)  # Increased parallelization for better performance
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit all batches
-            future_to_batch = {executor.submit(process_animal_batch, batch): i for i, batch in enumerate(batches)}
-
-            # Collect results as they complete
-            for future in concurrent.futures.as_completed(future_to_batch):
-                batch_index = future_to_batch[future]
-                try:
-                    batch_results = future.result(timeout=300)  # 5 minute timeout per batch
-                    all_dogs_data.extend(batch_results)
-                    self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch_results)} animals processed")
-                except Exception as e:
-                    self.logger.error(f"Batch {batch_index + 1} failed: {e}")
-                    continue
-
-        return all_dogs_data
+        return self.fetch_details(animals, fetch, max_workers=min(self.batch_size, 5), attempts=self.max_retries)
 
     def collect_data(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Collect all available dog data from listing pages.
@@ -715,55 +645,9 @@ class DogsTrustScraper(BaseScraper):
         Returns:
             Dictionary with detailed dog information following BaseScraper format
         """
-        # Implement retry logic for HTTP failures
-        max_retries = getattr(self, "max_retries", 3)
-        retry_delay = 2.0
-
-        for attempt in range(max_retries):
-            try:
-                # Use HTTP requests for detail pages (faster than a browser)
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                    "Accept-Language": "en-US,en;q=0.9",
-                    "Accept-Encoding": "gzip, deflate, br",
-                    "DNT": "1",
-                    "Connection": "keep-alive",
-                    "Upgrade-Insecure-Requests": "1",
-                }
-
-                # Fix timeout configuration - use safe default if self.timeout is not an int
-                timeout = getattr(self, "timeout", 30)
-                if not isinstance(timeout, (int, float)):
-                    timeout = 30
-
-                response = requests.get(adoption_url, headers=headers, timeout=timeout)
-                response.raise_for_status()
-
-                # If successful, break out of retry loop
-                break
-
-            except (
-                requests.exceptions.RequestException,
-                requests.exceptions.Timeout,
-            ) as e:
-                if attempt < max_retries - 1:
-                    self.logger.warning(f"HTTP request failed for {adoption_url} (attempt {attempt + 1}/{max_retries}): {e}")
-                    self.logger.info(f"Retrying in {retry_delay} seconds...")
-                    time.sleep(retry_delay)
-                    retry_delay *= 1.5  # Exponential backoff
-                    continue
-                else:
-                    self.logger.error(f"All {max_retries} HTTP attempts failed for {adoption_url}: {e}")
-                    return {}
-            except Exception as e:
-                self.logger.error(f"Unexpected error during HTTP request for {adoption_url}: {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay)
-                    retry_delay *= 1.5
-                    continue
-                else:
-                    return {}
+        # One request: fetch_details retries, each attempt within the rate limit (#567)
+        response = requests.get(adoption_url, headers=DETAIL_HEADERS, timeout=self.timeout)
+        response.raise_for_status()
 
         # Parse HTML with BeautifulSoup
         soup = self._soup_from_response(response)

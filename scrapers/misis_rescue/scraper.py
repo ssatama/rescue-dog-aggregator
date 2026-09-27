@@ -114,9 +114,7 @@ class MisisRescueScraper(BaseScraper):
             self.total_animals_skipped = 0
             urls_to_process = all_urls
 
-        if urls_to_process:
-            return self._process_dogs_in_batches(urls_to_process)
-        return []
+        return self.fetch_details(urls_to_process, self._scrape_dog_detail_fast, url=lambda url: url, max_workers=self.batch_size, attempts=self.max_retries)
 
     def _get_all_dogs_from_listing(self) -> list[dict[str, str]]:
         """Get all dog data from listing page.
@@ -798,68 +796,6 @@ class MisisRescueScraper(BaseScraper):
 
         self.logger.warning("No hero image found on detail page")
         return None
-
-    def _process_dogs_in_batches(self, urls: list[str]) -> list[dict[str, Any]]:
-        """Process dog URLs in batches using concurrent processing (MisisRescue-specific).
-
-        Args:
-            urls: List of URLs to process
-
-        Returns:
-            List of valid dog data dictionaries
-        """
-        if not urls:
-            return []
-
-        # Split URLs into batches
-        batches = [urls[i : i + self.batch_size] for i in range(0, len(urls), self.batch_size)]
-        all_results = []
-
-        # World-class logging: Batch processing handled by centralized system
-
-        for batch_num, batch_urls in enumerate(batches, 1):
-            # World-class logging: Batch progress handled by centralized system
-
-            batch_results = self._process_single_batch(batch_urls)
-            all_results.extend(batch_results)
-
-            # Rate limiting between batches
-            if batch_num < len(batches):
-                time.sleep(self.rate_limit_delay)
-
-        # World-class logging: Batch completion handled by centralized system
-        return all_results
-
-    def _process_single_batch(self, urls: list[str]) -> list[dict[str, Any]]:
-        """Process a single batch of URLs concurrently.
-
-        Args:
-            urls: Batch of URLs to process
-
-        Returns:
-            List of valid dog data dictionaries from this batch
-        """
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-
-        results = []
-
-        with ThreadPoolExecutor(max_workers=self.batch_size) as executor:
-            # Submit all tasks - use fast method first
-            future_to_url = {executor.submit(self.browser_manager.scrape_with_retry, self._scrape_dog_detail_fast, url): url for url in urls}
-
-            # Collect results as they complete
-            for future in as_completed(future_to_url):
-                url = future_to_url[future]
-                try:
-                    result = future.result()
-                    if result:
-                        results.append(result)
-                    else:
-                        self.logger.warning(f"Invalid or empty data for URL: {url}")
-                except Exception as e:
-                    self.logger.error(f"Error processing {url}: {e}")
-
-        return results
 
     def _extract_image_width(self, image_url: str) -> int | None:
         """Extract width from Wix image URL parameters.

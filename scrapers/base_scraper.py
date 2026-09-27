@@ -1,10 +1,15 @@
 # scrapers/base_scraper.py
 
+import asyncio
 import logging
 import os
 import sys
+import threading
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from datetime import datetime
 from typing import Any
 
@@ -195,15 +200,13 @@ class BaseScraper(ABC):
 
         self.image_processing_service = image_processing_service
 
+        # One request-start clock per scraper, shared by every detail worker (#567)
+        self._request_slot_lock = threading.Lock()
+        self._next_request_at = 0.0
+        self.detail_failures: list[str] = []
+
         # Browser retry manager (extracted from BaseScraper)
-        self.browser_manager = ScraperBrowserManager(
-            logger=self.logger,
-            metrics_collector=self.metrics_collector,
-            rate_limit_delay=self.rate_limit_delay,
-            max_retries=self.max_retries,
-            retry_backoff_factor=self.retry_backoff_factor,
-            animal_validator=self.animal_validator,
-        )
+        self.browser_manager = ScraperBrowserManager(logger=self.logger)
 
         # Track animals for filtering stats
         self.total_animals_before_filter = 0
@@ -642,7 +645,7 @@ class BaseScraper(ABC):
                 self.progress_tracker.track_discovery_stats(
                     dogs_found=correct_animals_found,
                     pages_processed=1,
-                    extraction_failures=0,
+                    extraction_failures=len(self.detail_failures),
                 )  # Single page scrape
 
                 # Track filtering phase stats
@@ -816,6 +819,7 @@ class BaseScraper(ABC):
         self.animals_found = 0
         self.total_animals_skipped = 0
         self.animals_for_llm_enrichment = []
+        self.detail_failures = []
 
         # Ask the source site for permission before fetching anything from it.
         if not self._check_robots_permission():
@@ -1248,6 +1252,117 @@ class BaseScraper(ABC):
         """Sleep for the configured rate limit delay."""
         if self.rate_limit_delay > 0:
             time.sleep(self.rate_limit_delay)
+
+    # A detail page still running after this long counts as failed (#567)
+    DETAIL_TIMEOUT_SECONDS = 120
+
+    def _claim_request_slot(self) -> float:
+        """Seconds to wait before this scraper's next request may start.
+
+        ``rate_limit_delay`` is the minimum time between request starts to the
+        site, across every worker (#567): N threads can't multiply the rate.
+        """
+        with self._request_slot_lock:
+            now = time.monotonic()
+            start = max(now, self._next_request_at)
+            self._next_request_at = start + self.rate_limit_delay
+        return start - now
+
+    def wait_for_request_slot(self) -> None:
+        wait = self._claim_request_slot()
+        if wait > 0:
+            time.sleep(wait)
+
+    @staticmethod
+    def _unique_by_url(items: list, url: Callable[[Any], str]) -> list:
+        seen: set[str] = set()
+        unique = []
+        for item in items:
+            if url(item) not in seen:
+                seen.add(url(item))
+                unique.append(item)
+        return unique
+
+    def _detail_failed(self, item_url: str, error: BaseException) -> None:
+        self.detail_failures.append(item_url)
+        self.logger.error(f"Detail page {item_url} failed, skipping this dog: {error!r}")
+
+    def fetch_details(
+        self,
+        items: list,
+        fetch_one: Callable[[Any], Any],
+        *,
+        url: Callable[[Any], str] = lambda item: item["adoption_url"],
+        max_workers: int = 1,
+        attempts: int = 1,
+    ) -> list:
+        """``fetch_one(item)`` for each item, results in input order (#567).
+
+        An item whose URL was already seen runs once. Every attempt waits for a
+        request slot, so the site sees at most one request start per
+        ``rate_limit_delay`` however many workers run. An item that raises on
+        its last attempt or runs past DETAIL_TIMEOUT_SECONDS is logged, added to
+        ``detail_failures`` and left out, as is a ``None`` result. One bad item
+        never stops the rest.
+        """
+
+        def run(item):
+            for attempt in range(1, attempts + 1):
+                self.wait_for_request_slot()
+                try:
+                    return fetch_one(item)
+                except Exception as e:
+                    if attempt == attempts:
+                        raise
+                    self.logger.warning(f"Detail page {url(item)} failed (attempt {attempt} of {attempts}), retrying: {e}")
+
+        results = []
+        executor = ThreadPoolExecutor(max_workers=max_workers)
+        try:
+            futures = [(item, executor.submit(run, item)) for item in self._unique_by_url(items, url)]
+            for item, future in futures:
+                try:
+                    result = future.result(timeout=self.DETAIL_TIMEOUT_SECONDS)
+                except FutureTimeoutError:
+                    self._detail_failed(url(item), TimeoutError(f"no answer within {self.DETAIL_TIMEOUT_SECONDS}s"))
+                    continue
+                except Exception as e:
+                    self._detail_failed(url(item), e)
+                    continue
+                if result is not None:
+                    results.append(result)
+        finally:
+            # A timed-out fetch can't be interrupted; don't wait for it
+            executor.shutdown(wait=False, cancel_futures=True)
+        return results
+
+    async def fetch_details_async(
+        self,
+        items: list,
+        fetch_one: Callable[[Any], Awaitable[Any]],
+        *,
+        url: Callable[[Any], str] = lambda item: item["adoption_url"],
+        attempts: int = 1,
+    ) -> list:
+        """``fetch_details`` for coroutine fetches, one at a time on the running loop."""
+        results = []
+        for item in self._unique_by_url(items, url):
+            for attempt in range(1, attempts + 1):
+                wait = self._claim_request_slot()
+                if wait > 0:
+                    await asyncio.sleep(wait)
+                try:
+                    result = await asyncio.wait_for(fetch_one(item), self.DETAIL_TIMEOUT_SECONDS)
+                except Exception as e:
+                    if attempt < attempts and not isinstance(e, TimeoutError):
+                        self.logger.warning(f"Detail page {url(item)} failed (attempt {attempt} of {attempts}), retrying: {e}")
+                        continue
+                    self._detail_failed(url(item), e)
+                    break
+                if result is not None:
+                    results.append(result)
+                break
+        return results
 
     def get_listing_page(self, url: str, **kwargs) -> requests.Response:
         """GET one listing page, retried max_retries times with backoff.

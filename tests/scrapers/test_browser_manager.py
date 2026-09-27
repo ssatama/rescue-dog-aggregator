@@ -6,62 +6,12 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from scrapers.browser_manager import ScraperBrowserManager
-from scrapers.validation.animal_validator import AnimalValidator
-from services.null_objects import NullMetricsCollector
 
 
 @pytest.fixture
 def browser_manager():
     """Create a ScraperBrowserManager with mocked dependencies."""
-    return ScraperBrowserManager(
-        logger=Mock(),
-        metrics_collector=NullMetricsCollector(),
-        rate_limit_delay=0.0,
-        max_retries=3,
-        retry_backoff_factor=2.0,
-        animal_validator=AnimalValidator(logger=Mock()),
-    )
-
-
-@pytest.mark.unit
-class TestScrapeWithRetry:
-    def test_returns_result_on_success(self, browser_manager):
-        scrape_fn = Mock(return_value={"name": "Buddy", "breed": "Lab"})
-
-        result = browser_manager.scrape_with_retry(scrape_fn)
-
-        scrape_fn.assert_called_once()
-        assert result == {"name": "Buddy", "breed": "Lab"}
-
-    def test_retries_on_failure_then_succeeds(self, browser_manager):
-        scrape_fn = Mock(side_effect=[Exception("timeout"), {"name": "Max", "breed": "Poodle"}])
-
-        result = browser_manager.scrape_with_retry(scrape_fn)
-
-        assert scrape_fn.call_count == 2
-        assert result == {"name": "Max", "breed": "Poodle"}
-
-    def test_returns_none_after_exhausted_retries(self, browser_manager):
-        scrape_fn = Mock(side_effect=Exception("always fails"))
-
-        result = browser_manager.scrape_with_retry(scrape_fn)
-
-        assert scrape_fn.call_count == 3
-        assert result is None
-
-    def test_rejects_invalid_name(self, browser_manager):
-        scrape_fn = Mock(return_value={"name": "", "breed": "Lab"})
-
-        result = browser_manager.scrape_with_retry(scrape_fn)
-
-        assert result is None
-
-    def test_returns_non_dict_result_directly(self, browser_manager):
-        scrape_fn = Mock(return_value=["item1", "item2"])
-
-        result = browser_manager.scrape_with_retry(scrape_fn)
-
-        assert result == ["item1", "item2"]
+    return ScraperBrowserManager(logger=Mock())
 
 
 @pytest.mark.unit

@@ -1,3 +1,4 @@
+import threading
 from unittest.mock import Mock, patch
 
 import pytest
@@ -260,6 +261,9 @@ class TestScraperCoreFunctions:
             scraper.timeout = 30
             scraper.max_retries = 2
             scraper.retry_backoff_factor = 2.0
+            scraper._request_slot_lock = threading.Lock()
+            scraper._next_request_at = 0.0
+            scraper.detail_failures = []
             return scraper
 
     @pytest.fixture

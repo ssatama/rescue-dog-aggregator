@@ -6,7 +6,7 @@ scraper:
   class_name: "ManyTearsRescueScraper"
   module: "scrapers.manytearsrescue.manytearsrescue_scraper"
   config:
-    rate_limit_delay: 1.5
+    rate_limit_delay: 3.0 # seconds between request starts (#567); was 1.5 plus 1-3 s of jitter
     max_retries: 3
     timeout: 240
     batch_size: 4

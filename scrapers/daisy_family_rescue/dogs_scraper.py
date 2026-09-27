@@ -185,23 +185,11 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     self.total_animals_before_filter = len(basic_dogs_data)
                     self.total_animals_skipped = 0
 
-                # Second pass: Process the filtered dogs with detail page enhancement
-                processed_count = 0
-                for dog_data in basic_dogs_data:
-                    try:
-                        enhanced_data = await self._enhance_with_detail_page(dog_data)
-                        if enhanced_data:
-                            all_dogs.append(enhanced_data)
-                            processed_count += 1
-                            self.logger.debug(f"Processed {processed_count}/{len(basic_dogs_data)}: {enhanced_data.get('name')}")
-                        else:
-                            all_dogs.append(dog_data)
-                            processed_count += 1
-                    except Exception as e:
-                        self.logger.warning(f"Error processing dog {dog_data.get('name', 'unknown')}: {e}")
-                        continue
+                # Second pass: each dog's detail page, within the rate limit (#567)
+                async def enhance(dog_data: dict[str, Any]) -> dict[str, Any]:
+                    return await self._enhance_with_detail_page(dog_data) or dog_data
 
-                self.respect_rate_limit()
+                all_dogs.extend(await self.fetch_details_async(basic_dogs_data, enhance, url=lambda dog: dog.get("adoption_url") or str(id(dog))))
 
             except Exception as e:
                 self.logger.error(f"Failed to extract dogs with Playwright: {e}")
@@ -402,9 +390,6 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
             # Extract detailed information — use async to avoid nested event loops
             detailed_data = await self.detail_scraper.async_extract_dog_details(adoption_url, self.logger)
-
-            # Apply rate limiting between detail page requests
-            self.respect_rate_limit()
 
             if detailed_data:
                 # Merge basic data with detailed data

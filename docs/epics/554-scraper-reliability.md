@@ -373,6 +373,28 @@ children").
   (disabled since 2025-10) still say `available`; they become `unknown` in
   #572. Retiring dogs when config sync disables an org is a follow-up.
 
+## One detail-fetch helper (#567)
+
+- `BaseScraper.fetch_details` (threads) and `fetch_details_async` (one at a
+  time on the Playwright loop) replace the copied loops in Dogs Trust,
+  Tierschutzverein, Santer Paws, MISIs, Bosnia, Many Tears and Daisy.
+  `browser_manager.scrape_with_retry` is gone; `ScraperBrowserManager` keeps
+  only browser and navigation retries and no copy of the delay.
+- `rate_limit_delay` is the minimum time between request starts, across all
+  workers. The real rates before: Dogs Trust about 5x its 2.5 s (5 threads each
+  sleeping), Tierschutzverein and Santer Paws 3x, MISIs and Bosnia a burst of 6
+  per 2.5 s. Runs with `skip_existing_animals` fetch only new dogs, so cron
+  times barely change; a forced re-scrape (#572) is slower: Dogs Trust about
+  480 x 2.5 s = 20 minutes.
+- Many Tears' config goes from 1.5 to 3.0 s: it slept 1.5 s plus 1-3 s of
+  jitter per dog, so 3.0 keeps its pace; its listing sleep keeps 3.5-6.5 s.
+- A detail failure now skips the dog in every scraper (the epic rule).
+  Tierschutzverein and Santer Paws used to keep the listing-only data when
+  the page raised; Dogs Trust saved a dog with `{}` details after its own
+  retries. Skipped dogs were recorded as found, so they don't go stale; they
+  are added on the next run. Failures count as the run's extraction
+  failures.
+
 ## Gotchas
 
 - **The local dev database can lag production's schema.** Alembic only reads

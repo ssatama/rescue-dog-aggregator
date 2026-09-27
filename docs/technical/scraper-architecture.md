@@ -208,7 +208,7 @@ def __init__(
 | `organization_id`       | `int`   | YAML/DB | Database organization ID                |
 | `organization_name`     | `str`   | YAML    | Display name                            |
 | `base_url`              | `str`   | YAML    | Website base URL                        |
-| `rate_limit_delay`      | `float` | YAML    | Seconds between requests (default: 1.0) |
+| `rate_limit_delay`      | `float` | YAML    | Minimum seconds between request starts to the site (default: 1.0) |
 | `batch_size`            | `int`   | YAML    | Animals per batch (default: 10)         |
 | `timeout`               | `int`   | YAML    | HTTP timeout seconds (default: 30)      |
 | `max_retries`           | `int`   | YAML    | Retry attempts (default: 3)             |
@@ -288,6 +288,27 @@ def process_animal(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
     - Set availability_confidence
     """
 ```
+
+### Detail pages: `fetch_details()` (#567)
+
+Every scraper that reads one page per dog goes through one helper:
+
+```python
+dogs = self.fetch_details(animals, fetch_one, max_workers=3, attempts=self.max_retries)
+dogs = await self.fetch_details_async(animals, fetch_one)  # Playwright scrapers
+```
+
+- **`rate_limit_delay` means one thing:** the minimum time between request
+  starts to the site, across every worker. Workers share one request-slot
+  clock, so 5 threads don't make 5 times the rate. A robots.txt Crawl-delay
+  that raises the delay applies at once. Each retry waits for a slot too.
+- Items with a URL already seen run once; results keep the input order.
+- A dog whose page raises on its last attempt, or runs past
+  `DETAIL_TIMEOUT_SECONDS` (120), is logged, added to `detail_failures` (the
+  run's extraction-failure count) and skipped; the rest go on. A `None` result
+  is left out without counting as a failure.
+- `respect_rate_limit()` stays for sequential listing loops: it sleeps the
+  full delay between pages.
 
 ### Skip Existing Animals Filtering
 

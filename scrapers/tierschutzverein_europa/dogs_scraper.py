@@ -1,7 +1,5 @@
-import concurrent.futures
 import re
 import time
-from threading import Lock
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
@@ -296,88 +294,13 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         return gallery_urls(hero_image_url, links)
 
     def _process_animals_parallel(self, animals: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Process animals in parallel batches for efficient detail scraping."""
-        all_dogs_data = []
-        seen_urls = set()
+        """Each dog's detail page, merged over its listing data (#567)."""
 
-        # Single-threaded for small batches
-        if len(animals) <= self.batch_size or self.batch_size == 1:
-            self.logger.info(f"Using single-threaded processing for {len(animals)} animals")
+        def fetch(animal: dict[str, Any]) -> dict[str, Any]:
+            animal.update(self._scrape_animal_details(animal["adoption_url"]) or {})
+            return animal
 
-            for animal in animals:
-                adoption_url = animal["adoption_url"]
-
-                if adoption_url in seen_urls:
-                    continue
-                seen_urls.add(adoption_url)
-
-                time.sleep(self.rate_limit_delay)
-
-                try:
-                    detail_data = self._scrape_animal_details(adoption_url)
-                    if detail_data:
-                        animal.update(detail_data)
-                except Exception as e:
-                    self.logger.error(f"Error scraping details for {animal['name']}: {e}")
-
-                all_dogs_data.append(animal)
-
-            return all_dogs_data
-
-        # Parallel processing for larger batches
-        self.logger.info(f"Starting parallel detail scraping for {len(animals)} animals")
-
-        results_lock = Lock()
-
-        def process_animal_batch(animal_batch):
-            """Process a batch of animals in parallel."""
-            batch_results = []
-
-            for animal in animal_batch:
-                adoption_url = animal["adoption_url"]
-
-                with results_lock:
-                    if adoption_url in seen_urls:
-                        continue
-                    seen_urls.add(adoption_url)
-
-                time.sleep(self.rate_limit_delay)
-
-                try:
-                    detail_data = self._scrape_animal_details(adoption_url)
-                    if detail_data:
-                        animal.update(detail_data)
-                except Exception as e:
-                    self.logger.error(f"Error scraping details for {animal.get('name', 'unknown')}: {e}")
-
-                batch_results.append(animal)
-
-            return batch_results
-
-        # Split into batches
-        batches = []
-        for i in range(0, len(animals), self.batch_size):
-            batch = animals[i : i + self.batch_size]
-            batches.append(batch)
-
-        self.logger.info(f"Split {len(animals)} animals into {len(batches)} batches")
-
-        # Process with limited concurrency
-        max_workers = min(3, len(batches))  # Max 3 concurrent workers
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_batch = {executor.submit(process_animal_batch, batch): i for i, batch in enumerate(batches)}
-
-            for future in concurrent.futures.as_completed(future_to_batch):
-                batch_index = future_to_batch[future]
-                try:
-                    batch_results = future.result(timeout=300)
-                    all_dogs_data.extend(batch_results)
-                    self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}")
-                except Exception as e:
-                    self.logger.error(f"Batch {batch_index + 1} failed: {e}")
-
-        return all_dogs_data
+        return self.fetch_details(animals, fetch, max_workers=3)
 
     def _translate_and_normalize_dogs(self, dogs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Translate German data to English for BaseScraper processing."""
