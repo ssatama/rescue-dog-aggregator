@@ -18,6 +18,7 @@ from datetime import date
 from typing import Any
 
 from management.age_backfill import plan_clears, rows_from_records
+from scrapers.manytearsrescue.manytearsrescue_scraper import NOT_A_BREED
 from scrapers.misis_rescue.detail_parser import dob_bullet
 from utils.birth_dates import ages_at, as_date, as_int, resolve_age, today_utc
 
@@ -59,6 +60,10 @@ def _plan_breed_raw(records: list[dict[str, Any]]) -> list[Change]:
     changes = []
     for record in records:
         source = (record["source_breed"] or "").strip(" ")  # spaces only, as btrim in fetch_sql
+        # A Many Tears row the re-scrape didn't rewrite (detail fetch failed)
+        # still holds "Can be the only dog" as its breed (#571)
+        if record["organization"] == "manytearsrescue" and source.lower().startswith(NOT_A_BREED):
+            continue
         if source and source != record["breed_raw"]:
             changes.append(Change(record["id"], record["organization"], "breed_raw", record["breed_raw"], source))
     return changes

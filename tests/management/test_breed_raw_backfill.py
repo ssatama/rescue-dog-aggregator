@@ -31,3 +31,9 @@ class TestRestoreBreedRaw:
 
     def test_a_blank_source_is_left_alone(self):
         assert plan_step(STEPS["restore-breed-raw"], [_record(1, "  ", "Toy Poodle"), _record(2, None, "Toy Poodle")]) == []
+
+    def test_a_many_tears_row_the_rescrape_missed_keeps_its_breed_raw(self):
+        """#571: a failed detail fetch leaves "Can be the only dog" in properties.breed."""
+        records = [_record(1, "Can be the only dog", "Unknown", "manytearsrescue"), _record(2, "Collie Cross", "Unknown", "manytearsrescue")]
+
+        assert plan_step(STEPS["restore-breed-raw"], records) == [Change(2, "manytearsrescue", "breed_raw", "Unknown", "Collie Cross")]

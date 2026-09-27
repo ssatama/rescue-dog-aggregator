@@ -1473,7 +1473,7 @@ class REANScraper(BaseScraper):
             properties = {}
 
         # REAN never states the sex; the story's pronouns usually do (#571).
-        # Labelled, like a size estimated from the breed, as a guess.
+        # Recorded in properties.sex_source; nothing displays that label yet.
         sex = dog_data.get("sex")
         if not sex:
             sex = sex_from_pronouns(properties.get("description"))

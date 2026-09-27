@@ -13,6 +13,10 @@ from services.playwright_browser_service import (
     get_playwright_service,
 )
 
+# Detail-page lines that sit where the breed does but aren't one: "Can be the
+# only dog" (#571). The restore-breed-raw backfill step skips them too.
+NOT_A_BREED = ("can be", "must ", "needs ", "no ", "not ", "only ", "good with", "prefers ")
+
 
 class ManyTearsRescueScraper(BaseScraper):
     """Scraper for Many Tears Rescue organization.
@@ -522,7 +526,7 @@ class ManyTearsRescueScraper(BaseScraper):
                             # The first match: later items are location and compatibility, and
                             # "Can be the only dog" was being stored as the breed (#571)
                             and "breed" not in structured_data
-                            and not text_lower.startswith(("can be", "must ", "needs ", "no ", "not ", "only ", "good with", "prefers "))
+                            and not text_lower.startswith(NOT_A_BREED)
                             and text_lower not in ["available for adoption", "male", "female"]
                             and not text_lower.startswith("in foster")
                             and not text_lower.startswith("can live with")
