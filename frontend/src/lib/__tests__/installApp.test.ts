@@ -6,7 +6,6 @@ import {
   useInstallMethod,
 } from "../installApp";
 
-jest.mock("@/lib/analytics", () => ({ trackAppInstalled: jest.fn() }));
 
 const UA = {
   iphoneSafari:

@@ -275,8 +275,10 @@ export function trackAppInstallClicked(
   capture("app_install_clicked", { surface, method });
 }
 
-export function trackAppInstalled(): void {
-  capture("app_installed", {});
+/** Listens from PostHog's start, so an install from the browser's own menu is
+ * caught on any page, whether or not an install button is on it. */
+export function trackAppInstalls(): void {
+  window.addEventListener("appinstalled", () => capture("app_installed", {}));
 }
 
 export function trackInstallNudgeShown(method: InstallMethod): void {

@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from "react";
-import { trackAppInstalled } from "@/lib/analytics";
 import { isStandalone } from "@/lib/displayMode";
 
 // How this browser can install the site as an app, if it can at all.
@@ -81,7 +80,6 @@ function listen(): void {
   window.addEventListener("appinstalled", () => {
     installed = true;
     window.__installPrompt = undefined;
-    trackAppInstalled();
     emit();
   });
 }

@@ -5,7 +5,7 @@
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
 import { resolvePosthogOptOut } from "@/lib/posthogOptOut";
-import { registerDisplayMode } from "@/lib/analytics";
+import { registerDisplayMode, trackAppInstalls } from "@/lib/analytics";
 import {
   isChunkLoadError,
   setupChunkErrorHandler,
@@ -74,6 +74,7 @@ if (posthogEnabled) {
       disable_session_recording: true,
     });
     registerDisplayMode();
+    trackAppInstalls();
 
     const startRecording = () => {
       try {

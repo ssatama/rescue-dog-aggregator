@@ -166,6 +166,15 @@ describe("InstallNudge", () => {
     expect(JSON.parse(localStorage.getItem("installNudge")!).sessions).toBe(1);
   });
 
+  it("starts a new session when a tab left on and idle is used again", () => {
+    render(<InstallNudge />);
+    act(() => jest.advanceTimersByTime(2 * 60 * 60 * 1000));
+    act(() => {
+      window.dispatchEvent(new Event("scroll"));
+    });
+    expect(JSON.parse(localStorage.getItem("installNudge")!).sessions).toBe(2);
+  });
+
   it("keeps a long visit spent moving between pages as one session", () => {
     const { rerender } = render(<InstallNudge />);
     for (const page of ["/guides", "/organizations", "/dogs?page=2"]) {

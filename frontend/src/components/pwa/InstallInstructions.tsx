@@ -81,6 +81,9 @@ export default function InstallInstructions({
             if (!returnFocusToMain || !main) return;
             event.preventDefault();
             main.setAttribute("tabindex", "-1");
+            main.addEventListener("blur", () => main.removeAttribute("tabindex"), {
+              once: true,
+            });
             main.focus({ preventScroll: true });
           }}
           className="fixed inset-x-0 bottom-0 z-[80] rounded-t-2xl border-t border-line bg-surface p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl focus:outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border">

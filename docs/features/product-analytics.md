@@ -54,7 +54,7 @@ installed app (home screen, Dock), otherwise `browser`. Custom events:
 | `location_set` | Not wired yet: the "I live in" picker (#493) | `source` (`geo` / `picker`), `country`, `only_adoptable` |
 | `organization_viewed` | Organization page | `org_slug`, `dog_count` |
 | `organization_website_clicked` | "Visit Original Website" on an org page | `org_slug`, `destination_domain` |
-| `install_nudge_shown` | The "add to home screen" card, once ever: on a touch device after the 3rd session or the 5th different dog viewed, never on the home page or /swipe. It stays for that session, then retires | `method` (`prompt` = the browser's own dialog, `ios`) |
+| `install_nudge_shown` | The "add to home screen" card, once ever: on a touch device that can install the site, from its 3rd session or once 5 different dogs were viewed. Never on the home page, /swipe or a dog page. It stays for that session, then retires | `method` (`prompt` = the browser's own dialog, `ios`) |
 | `install_nudge_dismissed` | Its close button; the card never shows again | `method` |
 | `app_install_clicked` | Install button in the card, the mobile menu or the footer | `surface` (`nudge` / `menu` / `footer`), `method` (`prompt` / `ios` / `mac-safari`) |
 | `app_installed` | The browser reports an install (Chrome and Edge only; iOS and Safari never do) | none |

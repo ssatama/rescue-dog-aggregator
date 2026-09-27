@@ -17,13 +17,13 @@ import {
 } from "@/lib/installNudge";
 import { trackInstallNudgeDismissed, trackInstallNudgeShown } from "@/lib/analytics";
 
+// /dogs/<slug>-<id>; /dogs/puppies and /dogs/country/... are listings
+const DOG_PAGE = /^\/dogs\/[^/]+-\d+$/;
+
 /** A one-time card on phones and tablets suggesting the home screen app, once
  * someone is on their third visit or has looked at five dogs. It stays for that
  * session, then retires whether or not it was used. The menu and the footer
  * offer the same thing all the time; this is the only push. */
-// /dogs/<slug>-<id>; /dogs/puppies and /dogs/country/... are listings
-const DOG_PAGE = /^\/dogs\/[^/]+-\d+$/;
-
 export default function InstallNudge() {
   const method = useInstallMethod();
   const pathname = usePathname();
@@ -45,13 +45,14 @@ export default function InstallNudge() {
       if (document.visibilityState === "hidden") recordSeen();
       else recordVisit();
     };
-    // Scrolling and filtering on one page is activity too, noted once a minute
+    // Scrolling and filtering on one page is activity too, noted once a
+    // minute. A visit, not just "seen": after a long idle spell it's a new one.
     let lastActivity = 0;
     const onActivity = () => {
       const now = Date.now();
       if (now - lastActivity < 60_000) return;
       lastActivity = now;
-      recordSeen(now);
+      recordVisit(now);
     };
     const activity = ["scroll", "pointerdown", "keydown"] as const;
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -95,7 +96,6 @@ export default function InstallNudge() {
   const noteSeen = () => {
     if (markNudgeShown()) trackInstallNudgeShown(method);
   };
-
 
   return (
     <motion.section

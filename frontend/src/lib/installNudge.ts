@@ -93,11 +93,12 @@ export function recordDogView(dogId: number | string, now = Date.now()): void {
 
 /** Retires the card: its close button, or any install flow from any surface. */
 export function dismissNudge(): void {
-  write({ ...read(), dismissed: true });
+  if (canNudge()) write({ ...read(), dismissed: true });
 }
 
 /** Records that the card was seen. True only the first time, ever. */
 export function markNudgeShown(): boolean {
+  if (!canNudge()) return false;
   const state = read();
   if (state.shownInSession !== null) return false;
   write({ ...state, shownInSession: state.sessions });

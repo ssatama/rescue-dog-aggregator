@@ -2,7 +2,7 @@ import posthog from "posthog-js";
 import {
   trackAdoptionLinkClicked,
   trackAppInstallClicked,
-  trackAppInstalled,
+  trackAppInstalls,
   trackDogViewed,
   trackFiltersApplied,
   trackGalleryPhotoViewed,
@@ -184,7 +184,8 @@ describe("analytics", () => {
     trackInstallNudgeShown("ios");
     trackAppInstallClicked("nudge", "ios");
     trackInstallNudgeDismissed("prompt");
-    trackAppInstalled();
+    trackAppInstalls();
+    window.dispatchEvent(new Event("appinstalled"));
 
     expect(mockPosthog.capture.mock.calls).toEqual([
       ["install_nudge_shown", { method: "ios" }, undefined],
