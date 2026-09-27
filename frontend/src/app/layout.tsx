@@ -124,7 +124,7 @@ export default function RootLayout({
             Inline so it runs before hydration, when the event often fires. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__installPrompt=e;window.dispatchEvent(new Event("installpromptchange"))})`,
+            __html: `window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__installPrompt=e;window.dispatchEvent(new Event("installpromptchange"))});window.addEventListener("appinstalled",function(){window.__installPrompt=undefined;window.dispatchEvent(new Event("installpromptchange"))})`,
           }}
         />
         <script

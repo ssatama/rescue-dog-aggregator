@@ -30,6 +30,8 @@ export default function InstallNudge() {
   const due = useNudgeDue();
   // False until this visit is counted, so a card due last session can't flash
   const [visitCounted, setVisitCounted] = useState(false);
+  // Client-only (InstallNudgeLoader imports it after mount), so the document is here
+  const [tabVisible, setTabVisible] = useState(() => document.visibilityState === "visible");
   const cardRef = useRef<HTMLElement>(null);
 
   // Every page is activity, so a long visit stays one session
@@ -42,8 +44,10 @@ export default function InstallNudge() {
   useEffect(() => {
     // Coming back to a tab left open counts as a visit too
     const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") recordSeen();
-      else recordVisit();
+      const visible = document.visibilityState === "visible";
+      setTabVisible(visible);
+      if (visible) recordVisit();
+      else recordSeen();
     };
     // Scrolling and filtering on one page is activity too, noted once a
     // minute. A visit, not just "seen": after a long idle spell it's a new one.
@@ -70,7 +74,6 @@ export default function InstallNudge() {
     visitCounted &&
     due &&
     method !== null &&
-    // Client-only (loaded with ssr: false), so reading the device here is safe
     canNudge() &&
     // Dogs first: the mobile home stays dogs-only (AGENTS.md)
     pathname !== "/" &&
@@ -78,18 +81,18 @@ export default function InstallNudge() {
     // A dog page's adopt bar owns the bottom edge, even while the dog loads
     !DOG_PAGE.test(pathname ?? "");
 
-  // Seen once it is really on screen, a second after it appears
+  // Seen once it is really on screen for a second: not in a background tab
+  // (a storage event can render it there), and not hidden by the adopt-bar CSS
   useEffect(() => {
-    if (!shown || !method) return;
+    if (!shown || !method || !tabVisible) return;
     const timer = setTimeout(() => {
       const card = cardRef.current;
-      // A background tab can render it (a storage event) without anyone looking
-      if (card && document.visibilityState === "visible" && markNudgeShown()) {
+      if (card && getComputedStyle(card).display !== "none" && markNudgeShown()) {
         trackInstallNudgeShown(method);
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [shown, method, pathname]);
+  }, [shown, method, pathname, tabVisible]);
 
   if (!shown || !method) return null;
 

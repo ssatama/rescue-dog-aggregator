@@ -246,4 +246,19 @@ describe("ThemeProvider", () => {
       document.head.innerHTML = "";
     }
   });
+
+  test("adds the theme-color tag back if the head lost it", () => {
+    document.head.innerHTML = "";
+    try {
+      render(
+        <ThemeProvider>
+          <TestComponent />
+        </ThemeProvider>,
+      );
+      fireEvent.click(screen.getByTestId("set-dark"));
+      expect(document.querySelector('meta[name="theme-color"]').content).toBe("#131211");
+    } finally {
+      document.head.innerHTML = "";
+    }
+  });
 });

@@ -65,15 +65,36 @@ describe("InstallNudge", () => {
     expect(trackInstallNudgeShown).toHaveBeenCalledWith("ios");
   });
 
-  it("is not counted as seen in a background tab", () => {
+  it("is counted as seen only once a background tab is brought forward", () => {
     Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
     try {
       browseFiveDogs();
       render(<InstallNudge />);
       act(() => jest.advanceTimersByTime(1000));
       expect(trackInstallNudgeShown).not.toHaveBeenCalled();
+
+      Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+      act(() => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      act(() => jest.advanceTimersByTime(1000));
+      expect(trackInstallNudgeShown).toHaveBeenCalledTimes(1);
     } finally {
       Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+    }
+  });
+
+  it("is not counted as seen while CSS hides it behind an adopt bar", () => {
+    const spy = jest
+      .spyOn(window, "getComputedStyle")
+      .mockReturnValue({ display: "none" } as CSSStyleDeclaration);
+    try {
+      browseFiveDogs();
+      render(<InstallNudge />);
+      act(() => jest.advanceTimersByTime(1000));
+      expect(trackInstallNudgeShown).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
     }
   });
 

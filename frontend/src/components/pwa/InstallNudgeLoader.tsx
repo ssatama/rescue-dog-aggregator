@@ -14,9 +14,13 @@ export default function InstallNudgeLoader() {
   useEffect(() => {
     if (!isTouch || !canEverInstall()) return;
     let cancelled = false;
-    import("./InstallNudge").then((module) => {
-      if (!cancelled) setInstallNudge(() => module.default);
-    });
+    import("./InstallNudge")
+      .then((module) => {
+        if (!cancelled) setInstallNudge(() => module.default);
+      })
+      // Optional: a failed chunk just means no card. Unhandled, it would reach
+      // the chunk-error handler (lib/chunkLoadError.ts), which reloads the page.
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
