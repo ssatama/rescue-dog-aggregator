@@ -16,15 +16,21 @@ GOOD_WITH_QUESTIONS = {"Living with dogs?": "good_with_dogs", "Living with cats?
 
 
 def good_with(answer: str | None) -> bool | str | None:
-    """True, False or "Selective" from a Q&A answer such as "I can live with
-    children" or "I'm looking for a home without cats"; None when unclear."""
+    """True, False or "Selective" from a Q&A answer; None when it doesn't say.
+
+    "I can live with children" -> True, "I'm looking for a home without cats"
+    -> False, "I can be selective with other dogs" or "older children, not
+    toddlers" -> "Selective". Untested is not a no.
+    """
     text = (answer or "").lower().replace("\u2019", "'")
+    if re.search(r"\btest|\bunknown\b|not sure|don't know", text):
+        return None
     if "selective" in text:
         return "Selective"
-    if re.search(r"\bwithout\b|\bno\b|\bnot\b|can't|cannot", text):
+    if re.search(r"\bwithout\b|\bonly (dog|pet)\b|\bno (other )?(dogs|cats|children|kids)\b|\bnot (good|suitable|safe) with\b|\bcan'?t live\b|\bcannot live\b", text):
         return False
-    if re.search(r"\bcan live with\b|\bgood with\b|\blove", text):
-        return True
+    if re.search(r"\bcan live with\b|\bgood with\b|\bfine with\b|\bno problems? with\b|\bhappy (to live )?with\b", text):
+        return "Selective" if re.search(r"\bnot\b|\bolder\b|\bonly\b|\bbut\b|\bover\b", text) else True
     return None
 
 

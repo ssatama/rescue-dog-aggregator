@@ -36,3 +36,12 @@ def test_many_tears_page_that_did_not_load_is_a_timeout():
 
     with patch("scrapers.manytearsrescue.manytearsrescue_scraper.get_playwright_service", return_value=service), pytest.raises(TimeoutError):
         asyncio.run(ManyTearsRescueScraper()._scrape_animal_details_playwright("https://www.manytearsrescue.org/adopt/dogs/1/"))
+
+
+@pytest.mark.unit
+def test_many_tears_refused_connection_fails_at_once():
+    """Only a timeout is retried: a Browserless outage must not cost minutes per dog."""
+    service = Mock(get_page_content=AsyncMock(return_value=Mock(success=False, error="connect ECONNREFUSED")))
+
+    with patch("scrapers.manytearsrescue.manytearsrescue_scraper.get_playwright_service", return_value=service):
+        assert asyncio.run(ManyTearsRescueScraper()._scrape_animal_details_playwright("https://www.manytearsrescue.org/adopt/dogs/1/")) == {}

@@ -16,10 +16,10 @@ from services.playwright_browser_service import (
 from utils.shared_extraction_patterns import (
     extract_age_from_text as shared_extract_age,
 )
+from utils.shared_extraction_patterns import extract_sex_from_text
 from utils.shared_extraction_patterns import (
     extract_weight_from_text as shared_extract_weight,
 )
-from utils.shared_extraction_patterns import sex_from_pronouns
 
 # Words that appear where a name would sit but never name a dog: calls to
 # action, navigation, and the charity's own copy.
@@ -1461,7 +1461,7 @@ class REANScraper(BaseScraper):
         # Labelled, like a size estimated from the breed, as a guess.
         sex = dog_data.get("sex")
         if not sex:
-            sex = sex_from_pronouns(properties.get("description"))
+            sex = extract_sex_from_text(properties.get("description"))
             if sex:
                 properties = {**properties, "sex_source": "pronouns"}
 

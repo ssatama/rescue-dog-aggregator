@@ -105,7 +105,8 @@ class ManyTearsRescueScraper(BaseScraper):
             animal.update(details)
             return animal
 
-        return await self.fetch_details_async(animals, fetch, attempts=self.max_retries + 1)
+        # One retry: get_page_content already tries twice per attempt
+        return await self.fetch_details_async(animals, fetch, attempts=2)
 
     def collect_data(self) -> list[dict[str, Any]]:
         """Collect all available dog data from listing pages.
@@ -304,8 +305,13 @@ class ManyTearsRescueScraper(BaseScraper):
 
             result = await playwright_service.get_page_content(adoption_url, options)
             if not result.success:
-                # A page that didn't load is retried by fetch_details_async (#571)
-                raise TimeoutError(f"{adoption_url} did not load: {result.error}")
+                # A timeout is retried by fetch_details_async (#571); anything else
+                # (Browserless refusing, DNS) fails at once instead of piling up retries
+                # "Timeout 60000ms exceeded" from Playwright, net::ERR_TIMED_OUT from Chromium
+                if re.search(r"time[d_ ]*out", result.error or "", re.IGNORECASE):
+                    raise TimeoutError(f"{adoption_url} did not load: {result.error}")
+                self.logger.error(f"Failed to get page content from {adoption_url}: {result.error}")
+                return {}
 
             soup = BeautifulSoup(result.content, "html.parser")
 
@@ -515,7 +521,7 @@ class ManyTearsRescueScraper(BaseScraper):
                             # The first match: later items are location and compatibility, and
                             # "Can be the only dog" was being stored as the breed (#571)
                             and "breed" not in structured_data
-                            and not text_lower.startswith("can be")
+                            and not text_lower.startswith(("can be", "must ", "needs ", "no ", "not ", "only ", "good with", "prefers "))
                             and text_lower not in ["available for adoption", "male", "female"]
                             and not text_lower.startswith("in foster")
                             and not text_lower.startswith("can live with")
@@ -558,7 +564,7 @@ class ManyTearsRescueScraper(BaseScraper):
             if not isinstance(ul, Tag):
                 continue
             items = ul.find_all("li")
-            if len(items) == 6:  # The requirements list has exactly 6 items
+            if items:  # Any length: a dog may have fewer categories (#571)
                 for li in items:
                     if not isinstance(li, Tag):
                         continue

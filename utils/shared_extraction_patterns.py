@@ -534,23 +534,3 @@ def gallery_urls(hero: str | None, candidates: list[str]) -> list[str]:
             seen.add(original)
             urls.append(url)
     return urls
-
-
-_FEMALE_WORDS = re.compile(r"\b(she|her|hers|herself|girl|female)\b")
-_MALE_WORDS = re.compile(r"\b(he|him|his|himself|boy|male)\b")
-
-
-def sex_from_pronouns(text: str | None) -> str | None:
-    """ "Male" or "Female" when a dog's story clearly uses one set of pronouns.
-
-    A low-confidence guess for rescues that never state the sex (REAN, #571):
-    it needs at least two mentions and three times as many as the other set,
-    so a story that also talks about a foster mum or a brother stays unsure.
-    """
-    lowered = (text or "").lower()
-    female, male = len(_FEMALE_WORDS.findall(lowered)), len(_MALE_WORDS.findall(lowered))
-    if female >= 2 and female >= 3 * male:
-        return "Female"
-    if male >= 2 and male >= 3 * female:
-        return "Male"
-    return None

@@ -49,9 +49,9 @@ def _plan_age_clears(records: list[dict[str, Any]]) -> list[Change]:
 
 # Rescues whose properties.breed is the text their site shows (checked against
 # production on 2026-09-26). Until #560 they stored the standardized name as
-# breed_raw. Many Tears is left out: its properties.breed is sometimes another
-# field ("Can be the only dog").
-# manytearsrescue: after #571 fixed its breed parse; #572 re-scrapes before the steps run
+# breed_raw. Many Tears joined after #571 fixed its breed parse (it stored
+# "Can be the only dog"); only its active rows, which #572 re-scrapes before
+# the steps run.
 BREED_SOURCE_ORGS = ("animalrescuebosnia", "dogstrust", "manytearsrescue", "santerpawsbulgarianrescue", "woof-project")
 
 
@@ -201,6 +201,8 @@ STEPS: dict[str, Step] = {
                 FROM animals a
                 JOIN organizations o ON o.id = a.organization_id
                 WHERE o.config_id IN ({", ".join(f"'{org}'" for org in BREED_SOURCE_ORGS)})
+                  -- Inactive Many Tears rows still hold the misparsed breed and are never re-scraped
+                  AND (o.config_id <> 'manytearsrescue' OR a.active)
                   AND btrim(a.properties->>'breed') <> ''
                   AND btrim(a.properties->>'breed') IS DISTINCT FROM a.breed_raw
             """,

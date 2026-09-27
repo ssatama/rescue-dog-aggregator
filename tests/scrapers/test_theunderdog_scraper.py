@@ -654,6 +654,10 @@ class TestTheUnderdogIntegration:
         ("I can be selective with other dogs", "Selective"),
         ("I’m looking for a home without cats", False),
         ("Untested", None),
+        ("I've not been tested with cats", None),
+        ("I'd love to be the only dog", False),
+        ("I can live with older children, not toddlers", "Selective"),
+        ("No problems with children", True),
         (None, None),
     ],
 )

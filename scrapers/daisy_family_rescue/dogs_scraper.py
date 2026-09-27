@@ -5,6 +5,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.base_scraper import BaseScraper, DetailPageError
 from services.playwright_browser_service import (
@@ -414,7 +415,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 # A detail page that failed skips the dog and is counted (#567)
                 raise DetailPageError(f"{adoption_url}: no details extracted")
 
-        except (DetailPageError, TimeoutError):
+        except (DetailPageError, TimeoutError, PlaywrightTimeoutError):
             # A timeout is retried by fetch_details_async (#571)
             raise
         except Exception as e:

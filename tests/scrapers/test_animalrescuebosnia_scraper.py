@@ -354,7 +354,7 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize(("height", "size"), [("35 cm", "Small"), ("53 cm", "Medium"), ("62cm", "Large"), ("tall", None), (None, None)])
+@pytest.mark.parametrize(("height", "size"), [("22 cm", "Tiny"), ("35 cm", "Small"), ("53 cm", "Medium"), ("62cm", "Large"), ("75 cm", "XLarge"), ("tall", None), (None, None)])
 def test_size_from_height_when_no_weight(height, size):
     """#571: Bosnia pages give height without weight for some dogs."""
     from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueBosniaScraper

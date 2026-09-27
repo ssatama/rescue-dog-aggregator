@@ -827,9 +827,8 @@ class TestSexFromPronouns:
         assert dog["sex"] == "Male"
         assert dog["properties"]["sex_source"] == "pronouns"
 
-    def test_a_mixed_story_stays_unsure(self):
-        from utils.shared_extraction_patterns import sex_from_pronouns
+    def test_a_mixed_story_stays_unsure(self, scraper):
+        entry = "Mimi and her brother came in together; he is shy and she is bold. They need a home."
+        dog = scraper.standardize_animal_data(scraper.extract_dog_data(entry, "romania"), "romania")
 
-        assert sex_from_pronouns("She and her brother came in; he is shy and his sister is bold.") is None
-        assert sex_from_pronouns("She came in with her brother; he was adopted, she waits.") == "Female"
-        assert sex_from_pronouns("A lovely dog.") is None
+        assert "sex_source" not in dog["properties"]

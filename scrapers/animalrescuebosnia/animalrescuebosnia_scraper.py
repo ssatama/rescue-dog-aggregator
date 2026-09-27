@@ -363,12 +363,15 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
     @staticmethod
     def _extract_size_from_height(height: str | None) -> str | None:
-        """Size from shoulder height ("53 cm"), in Daisy Family's bands."""
+        """Size from shoulder height ("53 cm"), on the same five-step scale as weight."""
         match = re.search(r"(\d+(?:\.\d+)?)\s*cm", height or "", re.IGNORECASE)
         if not match:
             return None
         centimetres = float(match.group(1))
-        return "Small" if centimetres < 40 else "Medium" if centimetres < 60 else "Large"
+        for ceiling, size in ((25, "Tiny"), (40, "Small"), (55, "Medium"), (70, "Large")):
+            if centimetres < ceiling:
+                return size
+        return "XLarge"
 
     def _extract_size_from_weight(self, weight: str | None) -> str | None:
         """Extract size category from weight."""
