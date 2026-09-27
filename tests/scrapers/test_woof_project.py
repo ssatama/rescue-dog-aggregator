@@ -303,7 +303,7 @@ class TestWoofProjectListing:
 
     @staticmethod
     def _serve(pages):
-        return patch("scrapers.base_scraper.requests.get", side_effect=lambda url, **kwargs: Mock(text=pages[url]))
+        return patch("scrapers.request_pacing.requests.get", side_effect=lambda url, **kwargs: Mock(text=pages[url]))
 
     def test_the_saved_listing(self, scraper, stub_clock):
         pages = {ADOPTION: (LISTINGS / "woof_project_page1.html").read_text(), f"{ADOPTION}page/2/": (LISTINGS / "woof_project_page2.html").read_text()}

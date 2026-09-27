@@ -58,7 +58,7 @@ class TestProcessingCounts:
     def test_rejected_dog_and_failed_save_are_counted(self, scraper):
         dogs = [_dog("a"), _dog("b", primary_image_url=None), _dog("c"), _dog("d", name="123")]
 
-        with patch.object(scraper, "save_animal", side_effect=_save_fails_for("c")), patch("scrapers.base_scraper.alert_dogs_not_saved"):
+        with patch.object(scraper, "save_animal", side_effect=_save_fails_for("c")), patch("scrapers.run_reporting.alert_dogs_not_saved"):
             stats = scraper._process_animals_data(dogs)
 
         assert stats.animals_added == 1
@@ -76,7 +76,7 @@ class TestProcessingCounts:
         with (
             patch.object(scraper, "save_animal", return_value=(1, "added")),
             patch.object(scraper, "complete_scrape_log") as complete,
-            patch("scrapers.base_scraper.alert_dogs_not_saved"),
+            patch("scrapers.run_reporting.alert_dogs_not_saved"),
         ):
             stats = scraper._process_animals_data(dogs)
             scraper._log_completion_metrics(dogs, stats)
@@ -94,7 +94,7 @@ class TestProcessingCounts:
         dogs = [_dog(str(i)) for i in range(9)] + [_dog("x", primary_image_url=None)]
         dogs.append(_dog("y", primary_image_url=None))
 
-        with patch.object(scraper, "save_animal", return_value=(1, "added")), patch("scrapers.base_scraper.alert_dogs_not_saved") as alert:
+        with patch.object(scraper, "save_animal", return_value=(1, "added")), patch("scrapers.run_reporting.alert_dogs_not_saved") as alert:
             scraper._process_animals_data(dogs)
 
         alert.assert_called_once()
@@ -104,7 +104,7 @@ class TestProcessingCounts:
     def test_no_sentry_warning_at_ten_percent_or_less(self, scraper):
         dogs = [_dog(str(i)) for i in range(9)] + [_dog("x", primary_image_url=None)]
 
-        with patch.object(scraper, "save_animal", return_value=(1, "added")), patch("scrapers.base_scraper.alert_dogs_not_saved") as alert:
+        with patch.object(scraper, "save_animal", return_value=(1, "added")), patch("scrapers.run_reporting.alert_dogs_not_saved") as alert:
             stats = scraper._process_animals_data(dogs)
 
         alert.assert_not_called()
@@ -113,7 +113,7 @@ class TestProcessingCounts:
     def test_sentry_failure_does_not_abort_the_run(self, scraper):
         dogs = [_dog("a", primary_image_url=None)]
 
-        with patch("scrapers.base_scraper.alert_dogs_not_saved", side_effect=RuntimeError("sentry down")):
+        with patch("scrapers.run_reporting.alert_dogs_not_saved", side_effect=RuntimeError("sentry down")):
             stats = scraper._process_animals_data(dogs)
 
         assert stats.animals_rejected == 1

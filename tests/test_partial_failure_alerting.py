@@ -33,7 +33,7 @@ class TestPartialFailureAlertWiring:
     def test_emits_alert_when_partial_drop_against_healthy_baseline(self, scraper):
         scraper.session_manager.get_historical_average_dogs_found.return_value = 50.0
 
-        with patch("scrapers.base_scraper.alert_partial_failure") as mock_alert:
+        with patch("scrapers.run_reporting.alert_partial_failure") as mock_alert:
             scraper._emit_partial_failure_alert(animals_found=10)
 
         mock_alert.assert_called_once()
@@ -48,7 +48,7 @@ class TestPartialFailureAlertWiring:
         """Zero dogs is handled upstream by alert_zero_dogs_found; avoid duplicate."""
         scraper.session_manager.get_historical_average_dogs_found.return_value = 50.0
 
-        with patch("scrapers.base_scraper.alert_partial_failure") as mock_alert:
+        with patch("scrapers.run_reporting.alert_partial_failure") as mock_alert:
             scraper._emit_partial_failure_alert(animals_found=0)
 
         mock_alert.assert_not_called()
@@ -57,7 +57,7 @@ class TestPartialFailureAlertWiring:
         """Without a baseline we cannot call it a drop — skip the alert."""
         scraper.session_manager.get_historical_average_dogs_found.return_value = None
 
-        with patch("scrapers.base_scraper.alert_partial_failure") as mock_alert:
+        with patch("scrapers.run_reporting.alert_partial_failure") as mock_alert:
             scraper._emit_partial_failure_alert(animals_found=5)
 
         mock_alert.assert_not_called()
@@ -66,7 +66,7 @@ class TestPartialFailureAlertWiring:
         """Defensive: an average of 0 means no real history — skip."""
         scraper.session_manager.get_historical_average_dogs_found.return_value = 0.0
 
-        with patch("scrapers.base_scraper.alert_partial_failure") as mock_alert:
+        with patch("scrapers.run_reporting.alert_partial_failure") as mock_alert:
             scraper._emit_partial_failure_alert(animals_found=5)
 
         mock_alert.assert_not_called()
@@ -75,7 +75,7 @@ class TestPartialFailureAlertWiring:
         """Cold-path safety: if session_manager isn't injected, no-op."""
         scraper.session_manager = None
 
-        with patch("scrapers.base_scraper.alert_partial_failure") as mock_alert:
+        with patch("scrapers.run_reporting.alert_partial_failure") as mock_alert:
             scraper._emit_partial_failure_alert(animals_found=5)
 
         mock_alert.assert_not_called()
@@ -85,7 +85,7 @@ class TestPartialFailureAlertWiring:
         runs right after this helper and we must reach it."""
         scraper.session_manager.get_historical_average_dogs_found.return_value = 50.0
 
-        with patch("scrapers.base_scraper.alert_partial_failure", side_effect=Exception("Sentry down")):
+        with patch("scrapers.run_reporting.alert_partial_failure", side_effect=Exception("Sentry down")):
             scraper._emit_partial_failure_alert(animals_found=5)
 
         scraper.logger.error.assert_called_once()

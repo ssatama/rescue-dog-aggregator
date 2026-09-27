@@ -102,7 +102,7 @@ class TestPetsInTurkeyScraper:
         assert scraper.listing_url == "https://www.petsinturkey.org/dogs"
         assert scraper.organization_name == "Pets in Turkey"
 
-    @patch("scrapers.base_scraper.requests.get")
+    @patch("scrapers.request_pacing.requests.get")
     def test_collect_data_success(self, mock_get, scraper, sample_html):
         """Test successful data collection from website."""
         # Mock response
@@ -226,7 +226,7 @@ class TestPetsInTurkeyScraper:
         assert dog_data["sex"] is None
         assert dog_data["size"] is None
 
-    @patch("scrapers.base_scraper.requests.get")
+    @patch("scrapers.request_pacing.requests.get")
     def test_a_listing_that_fails_to_load_raises_after_retries(self, mock_get, scraper):
         """A listing failure ends the run as an error, never as zero dogs (#559)."""
         mock_get.side_effect = requests.ConnectionError("Network error")
@@ -281,7 +281,7 @@ class TestPetsInTurkeyScraper:
         assert pit_external_id("https://static.wixstatic.com/media/3da926_test.jpg") is None
         assert pit_external_id(None) is None
 
-    @patch("scrapers.base_scraper.requests.get")
+    @patch("scrapers.request_pacing.requests.get")
     def test_a_card_without_a_photo_is_skipped(self, mock_get, scraper):
         mock_get.return_value = MagicMock(text="""<div><div><h4>I'm Ghost</h4></div><span>Breed</span><span>Adopt Me</span><span>Mix</span><span>9 kg</span><span>Male</span></div>""")
 

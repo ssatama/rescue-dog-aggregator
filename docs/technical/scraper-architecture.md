@@ -177,74 +177,74 @@ BROWSERLESS_TOKEN=<your-token>
 
 ### Purpose
 
-Provides common scraping infrastructure, configuration loading, error handling, rate limiting, and data standardization for all organization scrapers.
+Runs a scrape for one organization: setup, `collect_data()` (the subclass), the
+save phase, stale detection and the run's report. Since #569 it is split by
+concern into mixins, so each file reads on its own:
 
-### Key Design Patterns
+| Module                       | Class            | What it owns                                                                  |
+| ---------------------------- | ---------------- | ----------------------------------------------------------------------------- |
+| `scrapers/base_scraper.py`   | `BaseScraper`    | Construction, `attach()`, `run()` and its phases, filtering stats              |
+| `scrapers/request_pacing.py` | `RequestPacing`  | robots.txt, one request clock, back-off, `fetch_details`, `get_listing_page`  |
+| `scrapers/dog_saving.py`     | `DogSaving`      | Validate, upload images, standardise (`process_animal`), save, mark seen      |
+| `scrapers/stale_detection.py`| `StaleDetection` | Mark listed dogs seen, stale detection (skipped on a partial failure), adoptions |
+| `scrapers/run_reporting.py`  | `RunReporting`   | The `scrape_logs` row, cache invalidation, loss and partial-failure alerts     |
+| `scrapers/scrape_stats.py`   | `ScrapeStats`    | One run's save counts                                                         |
+| `scrapers/contract.py`       | `ScrapedDog`     | What `collect_data()` returns (#568)                                          |
 
-| Pattern                  | Implementation                                                             |
-| ------------------------ | -------------------------------------------------------------------------- |
-| **Template Method**      | `run()` orchestrates scraping phases, subclasses override `collect_data()` |
-| **Context Manager**      | `__enter__`/`__exit__` for automatic resource cleanup                      |
-| **Null Object**          | Default services prevent null checks throughout code                       |
-| **Dependency Injection** | Services passed via constructor for testability                            |
+### Construction and services
 
-### Constructor Parameters
+Construction does no I/O (#569). `ScraperClass(config_id=...)` loads the YAML
+config and builds its helpers; `organization_id` stays `None`. The loader
+(`utils/secure_scraper_loader.py`) then initialises the pool, syncs the
+organization row and calls:
 
 ```python
-def __init__(
-    self,
-    config_id: str = None,           # YAML config identifier (preferred)
-    organization_id: int = None,      # Legacy database ID (deprecated)
-    metrics_collector=None,           # Performance tracking
-    session_manager=None,             # Session state
-    database_service=None,            # Database operations
-):
+scraper.attach(
+    organization_id,
+    database_service=...,
+    session_manager=...,
+    image_processing_service=...,
+    metrics_collector=...,
+)
 ```
+
+which also binds the filtering service and LLM handler. Tests pass
+`organization_id=` to the constructor, or call `attach()` with fakes.
+`backfill plan` builds a scraper with no database at all.
+
+The scraper's logger is `scraper.<org>.<type>` with no level or handler of its
+own: the runner's apply. The scraper holds no database connection of its own: its own queries (image
+dedup, adoption checks) borrow one through `DatabaseService.connection()`.
+Some `DatabaseService` methods still use its direct connection beside the pool.
 
 ### Core Configuration (Loaded from YAML)
 
 | Property                | Type    | Source  | Description                             |
 | ----------------------- | ------- | ------- | --------------------------------------- |
-| `organization_id`       | `int`   | YAML/DB | Database organization ID                |
+| `organization_id`       | `int`   | DB      | Set by `attach()` after the org sync    |
 | `organization_name`     | `str`   | YAML    | Display name                            |
-| `base_url`              | `str`   | YAML    | Website base URL                        |
 | `rate_limit_delay`      | `float` | YAML    | Minimum seconds between request starts to the site (default: 1.0) |
-| `batch_size`            | `int`   | YAML    | Animals per batch (default: 10)         |
+| `batch_size`            | `int`   | YAML    | Animals per batch (default: 6)          |
 | `timeout`               | `int`   | YAML    | HTTP timeout seconds (default: 30)      |
 | `max_retries`           | `int`   | YAML    | Retry attempts (default: 3)             |
 | `skip_existing_animals` | `bool`  | YAML    | Filter already-scraped animals          |
 
 ### Main Entry Point: `run()`
 
-Template method orchestrating the scraping pipeline:
+Returns `True` when the run succeeded. Its phases:
 
-```python
-def run(self) -> Dict[str, Any]:
-    """
-    Pipeline phases:
-    1. Initialize metrics tracking
-    2. Call collect_data() - SUBCLASS IMPLEMENTS
-    3. Process animals (standardization)
-    4. Upload images to R2 storage
-    5. Save to database
-    6. Update stale data detection
-    7. Return summary stats
-    """
-```
-
-**Return Value:**
-
-```python
-{
-    "animals_added": int,
-    "animals_updated": int,
-    "animals_unchanged": int,
-    "images_uploaded": int,
-    "images_failed": int,
-    "total_processed": int,
-    "errors": List[str],
-}
-```
+1. Setup: robots.txt check, the `scrape_logs` row.
+2. `collect_data()`, which the subclass implements. `filter_existing_animals`
+   records every listed dog and keeps the filtering stats itself. The found
+   count is taken once per run.
+3. Save phase (`DogSaving`): validate every dog first, so a rejected dog costs
+   no R2 upload; batch-upload images for the valid ones; then save each and mark
+   it seen. Counts go into a `ScrapeStats`.
+4. Stale detection, unless the run looks like a partial failure (a count drop,
+   or too many save errors), then adoption checks.
+5. LLM enrichment of new and changed dogs, for organizations that have it.
+6. Completion: metrics, the `scrape_logs` row, frontend cache invalidation for
+   changed dogs.
 
 ### Abstract Method: `collect_data()`
 

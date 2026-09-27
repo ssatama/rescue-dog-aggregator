@@ -16,6 +16,8 @@ Following CLAUDE.md principles:
 
 import json
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import date, datetime
 from typing import Any
 
@@ -136,6 +138,27 @@ class DatabaseService:
         except Exception as e:
             self.logger.error(f"Database connection error: {e}")
             return False
+
+    @contextmanager
+    def connection(self) -> Iterator[Any]:
+        """A connection for a scraper's own queries (image dedup, adoption
+        checks), so the scraper holds no connection of its own (#569).
+
+        Pooled when there is a pool: the pool rolls back or closes it on
+        return, so nothing stays open. Without a pool it is this service's
+        connection, rolled back if the caller fails.
+        """
+        if self.connection_pool:
+            with self.connection_pool.get_connection_context() as conn:
+                yield conn
+            return
+        if not self.conn and not self.connect():
+            raise RuntimeError("No database connection available")
+        try:
+            yield self.conn
+        except Exception:
+            self.conn.rollback()
+            raise
 
     def close(self) -> None:
         """Close database connection."""
