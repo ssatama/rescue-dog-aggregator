@@ -14,8 +14,8 @@ MIN_SOURCE_TEXT_CHARS = 150
 def source_text_length(dog_data: dict[str, Any]) -> int:
     """Length of the longest narrative field in a dog's scraped properties.
 
-    Scrapers disagree on where narrative text goes - `description`,
-    `raw_description`, `Beschreibung`, `page_text_excerpt` - so the longest
+    The story is `description` (#568), but some rescues keep narrative in
+    other keys too (Many Tears' requirement sections), so the longest
     string value stands in for "the narrative", rather than a per-org key list
     that silently returns zero when an org is missing from it.
     """

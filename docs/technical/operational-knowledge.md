@@ -233,7 +233,50 @@ needs an explicit backfill. Query the full population, not just
   runs `railway_scraper_cron.py --org X --force-rescrape` per rescue, then the
   steps for every rescue, then `generate-profiles --ids` for dogs whose profile text changed,
   and prints a before/after table. Record that table here in the PR that ran it.
-- Epic #554 runs every backfill once, in #572.
+- `apply` runs the scrapers from the local checkout: run it from an
+  up-to-date `main`, and don't switch branches until it exits.
+- Epic #554 ran every backfill once, in #572 (below).
+
+**The #572 backfill (2026-09-27, 12:5x-14:5x UTC, about 2 h).** All 11
+rescues re-scraped with `--force-rescrape`, then all seven steps, then
+re-profiling, from `main` at `ec47b9ab` with the cron service's env:
+
+| rescue | available before → after | profile inputs changed |
+| --- | --- | ---: |
+| dogstrust | 479 → 426 | 260 |
+| animalrescuebosnia | 68 → 68 | 0 |
+| daisyfamilyrescue | 44 → 44 | 0 |
+| misisrescue | 155 → 155 | 155 |
+| pets-in-turkey | 33 → 33 | 33 |
+| manytearsrescue | 105 → 89 | 37 |
+| theunderdog | 32 → 31 | 32 |
+| tierschutzverein-europa | 392 → 376 | 0 |
+| santerpawsbulgarianrescue | 75 → 75 | 0 |
+| rean | 11 → 11 | 0 |
+| woof-project | 14 → 15 | 73 |
+
+Steps: clear-fabricated-ages 0, restore-breed-raw 420, derive-birth-dates 329,
+pets-in-turkey-listing-url 139, disabled-org-status-unknown 199,
+one-description-key 1044, unknown-to-null 1298 rows. Re-profiling: 590 ids
+queued, 487 profiled (487/487; the rest inactive or at Pets in Turkey, which
+has no LLM profiles), 17 first attempts too short and fixed on retry, no
+`TruncatedLLMResponseError`. Cost ≈ $4.15 (487 × $0.0085).
+- "Before → after" counts drop for dogs no longer listed: they fade through
+  `availability_confidence` as usual (Dogs Trust lists 363-391 a run).
+- Child-issue checks after the run: Dogs Trust `breed_raw = standardized_breed`
+  479 → 198 (#560); dogs listed over 6 months with `age_max_months <= 12`
+  are real by their birth dates (5 Tierschutzverein, 1 Santer Paws; #561);
+  MISIs nav-bullet dogs 0, stories over 200 chars 149, no age 7 (#562);
+  Tierschutzverein German ages 3, all on dogs the site no longer lists and
+  so not re-scraped, `size = 'Medium'` 75 → 204 (sizes now from shoulder
+  height), 369 of 376 with a story (the other 7 have none on the site; #563);
+  0 active dogs with a story only under an old key (#568).
+- Pets in Turkey has no `description` on purpose: its "Ready to fly /
+  Currently in" line is where the dog is, not a story (#564).
+- Found after the run: `/breeds/with-images` grouped 52 dogs with no breed
+  under a NULL `primary_breed` (a missing breed is NULL since #568), and the
+  /breeds page's schema rejected the response (JAVASCRIPT-NEXTJS-88). Fixed
+  in #572; every other breed grouping already skipped NULL.
 
 **Breed registry is data.** Breeds and aliases live in
 `utils/breed_registry.yaml`. `primary_breed` is the grouping key and omits the

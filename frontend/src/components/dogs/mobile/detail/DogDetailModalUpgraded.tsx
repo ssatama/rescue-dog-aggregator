@@ -184,7 +184,6 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     dog.description ||
     dog.summary ||
     (dog.properties?.description as string | undefined) ||
-    (dog.properties?.raw_description as string | undefined) ||
     "";
 
   // Check if favorited

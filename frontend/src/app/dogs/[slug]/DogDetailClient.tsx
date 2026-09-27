@@ -306,7 +306,6 @@ export default function DogDetailClient({
   const description =
     dog.llm_description ||
     (typeof dog.properties?.description === "string" ? dog.properties.description : undefined) ||
-    (typeof dog.properties?.raw_description === "string" ? dog.properties.raw_description : undefined) ||
     "";
 
   return (
