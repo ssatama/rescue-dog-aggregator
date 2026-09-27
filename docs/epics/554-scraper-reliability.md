@@ -235,7 +235,7 @@ when a post has no story), the facts are `raw_bullet_points`, and
 - An age the translation doesn't recognise is stored as `None` and logged
   ("Untranslated age for ..."), never as German text.
 - The "Beschreibung" section is stored as `properties.description`, the
-  key every reader uses. `profile_texts` (`management/backfill_diff.py`)
+  key every reader uses. `profile_inputs` (`management/backfill_diff.py`)
   compares the profile texts, not the keys they sit under, for both `plan`
   and `apply`, so #572 doesn't re-profile 366 dogs whose text only moved. The API's sitemap filter (`animal_service.py`) reads only
   that key, so every Tierschutzverein dog used to be out of the quality
@@ -246,6 +246,50 @@ when a post has no story), the facts are `raw_bullet_points`, and
 - The issue's "243 Medium" didn't match production on 2026-09-27: 75
   Medium, 201 with no size at all (breeds with no size estimate). Height
   makes most of those 201 Medium, so the Medium count goes up, not down.
+
+## Dogs Trust: compatibility from the "May live with" chips (#516)
+
+The detail page's "May live with" card holds one link per chip, each to the
+site's own search (`/rehoming/dogs?liveWithDogs=true`): Cats, Dogs,
+Preschool/Primary school/Secondary school children. `_may_live_with` reads
+the links inside that card only, and maps them by the URL parameter, not
+the label: the labels changed in 2026 ("Secondary" became "Secondary
+school children"). A chip it doesn't know, or a card without chips, is
+logged. The
+old code took the first `div` whose text contained "May live with", which
+was the page wrapper, so `good_with_dogs` was true for every dog with the
+card (the wrapper always says "dogs"). The children check looked for
+"primary school age children", which the site no longer prints, so
+`good_with_children` was always "Unknown". A breed link sometimes leaked
+into `may_live_with` ("German Shepherd Dog Cross, Secondary school
+children").
+
+- A chip means yes; no chip means the rescue didn't say, so the key is left
+  out, not "Unknown" and not "no". The AI profile reads "only dog" from the
+  text, and the frontend's `companionAnswer` prefers it.
+- Children: preschool means any age (`true`), primary "Yes (5+)",
+  secondary only "Yes (11+)".
+- The profile was fed the wrong facts, so `profile_inputs` (backfill tool)
+  counts `good_with_dogs/cats/children` as profile inputs, by key. Dropping
+  the "Unknown" placeholder alone isn't a change. `may_live_with` isn't an
+  input: its labels changed in 2026 while the facts didn't.
+- The Dogs Trust prompt (1.1.0) reads the `good_with_*` properties, not
+  the chip labels: `true` is "yes", "Yes (5+)"/"Yes (11+)" is
+  "older_children" (the schema has no 5+ bucket, and a primary-school dog
+  isn't cleared for toddlers). A missing one is not a "no"; only the
+  description can say no.
+- The scraper can no longer store an explicit `false`: the "Can live with"
+  section it parsed isn't on the pages, and no stored Dogs Trust row had
+  one. Negatives come from the profile.
+- After #572: change `companionAnswer` in `frontend/src/utils/dogFacts.ts`
+  to `answerOf(profile) ?? answerOf(properties)`, so a rescue's real answer
+  fills in behind an AI "unknown" (from #514's review, on #516). Not before
+  every shown row is right: #572 re-scrapes only listed dogs, and the 118
+  in stale grace (2026-09-27) keep the wrong `true` until they're retired
+  or a step clears them.
+- A page without the "May live with" label is silent (102 dogs have no
+  card). If the label is renamed, every dog loses the facts quietly; a
+  run-level count of dogs with chips belongs to #569's stats.
 
 ## Gotchas
 
@@ -263,6 +307,15 @@ when a post has no story), the facts are `raw_bullet_points`, and
     matches. REAN needs a forced re-scrape and a re-profile of all 11 dogs.
   - `misisrescue` (#562): forced re-scrape of every listed dog; `apply`
     re-profiles those whose description changed (all of them: none had one).
+  - `dogstrust` (#516, 2026-09-27, Playwright path; 14 minutes): 362
+    scraped, 361 matched, 3 rejected (no photo yet), 118 stored dogs not
+    listed (the three-miss lag). Compatibility: `good_with_dogs` true -> none
+    188, `good_with_cats` true -> none 23, `good_with_children` gains "Yes
+    (11+)" 205, "Yes (5+)" 43, true 5; the "Unknown" placeholders go.
+    `may_live_with` loses a leaked breed on 45. 256 dogs re-profile. The
+    same run also shows #560's `breed_raw` (185) and #561's birth ranges.
+    Run plans with `USE_PLAYWRIGHT=true` on the laptop: without it Dogs
+    Trust takes the Selenium listing and returns 5 dogs.
   - `tierschutzverein-europa` (#563, 2026-09-27): forced re-scrape of 373
     listed dogs (the dry run took 6.5 minutes at the configured rate,
     without image uploads; plan it off-peak). 372 matched: every `age_text`

@@ -472,7 +472,7 @@ def get_animal_list(self, max_pages_to_scrape: int = None) -> List[Dict]:
 **Special Features:**
 
 - OneTrust cookie consent overlay handling
-- `_extract_behavioral_traits()` - Parses "Can live with" section
+- `_extract_compatibility()` - The "May live with" chips, read by their `liveWith<X>` search parameter: `may_live_with` plus `good_with_dogs/cats/children` (a chip means yes; no chip leaves the key out)
 - `_normalize_text()` - Handles smart quotes from Windows encoding
 - Parallel processing with ThreadPoolExecutor
 

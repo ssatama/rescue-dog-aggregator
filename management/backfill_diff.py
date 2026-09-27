@@ -97,16 +97,32 @@ def dog_changes(scraped: dict[str, Any], stored: dict[str, Any]) -> dict[str, tu
     return changes
 
 
-def profile_texts(properties: dict[str, Any]) -> list[str]:
-    """The profile's source texts, whatever key each sits under. A text that
-    only moved key is the same source (#563: Beschreibung became description)."""
-    return sorted(json.dumps(properties[key], sort_keys=True) for key in PROFILE_TEXT_KEYS if properties.get(key) is not None)
+# Scraped facts the profile prompt also reads (#516: Dogs Trust's were wrong).
+# Compared by key: unlike a text, a fact that moves key says something else.
+# may_live_with is left out: its labels changed in 2026 while the facts didn't.
+PROFILE_FACT_KEYS = ("good_with_dogs", "good_with_cats", "good_with_children")
+
+
+def _is_fact(value: Any) -> bool:
+    return value is not None and not (isinstance(value, str) and value.strip().lower() in ("", "unknown"))
+
+
+def profile_inputs(properties: dict[str, Any]) -> list[str]:
+    """What the profile is built from. Texts count whatever key each sits
+    under: a text that only moved key is the same source (#563: Beschreibung
+    became description). Facts count with their key; the "Unknown"
+    placeholder is no fact, so dropping it alone changes nothing."""
+    texts = [json.dumps(properties[key], sort_keys=True) for key in PROFILE_TEXT_KEYS if properties.get(key) is not None]
+    facts = [f"{key}={json.dumps(properties[key])}" for key in PROFILE_FACT_KEYS if _is_fact(properties.get(key))]
+    return sorted(texts) + facts
 
 
 def needs_reprofile(changes: dict[str, tuple[Any, Any]]) -> bool:
-    """A profile text changed: plan's counterpart of apply's text_changed."""
-    pairs = {key: changes[f"properties.{key}"] for key in PROFILE_TEXT_KEYS if f"properties.{key}" in changes}
-    return profile_texts({key: was for key, (was, _) in pairs.items()}) != profile_texts({key: now for key, (_, now) in pairs.items()})
+    """A profile input changed: plan's counterpart of apply's inputs_changed."""
+    keys = [key for key in (*PROFILE_TEXT_KEYS, *PROFILE_FACT_KEYS) if f"properties.{key}" in changes]
+    was = {key: changes[f"properties.{key}"][0] for key in keys}
+    now = {key: changes[f"properties.{key}"][1] for key in keys}
+    return profile_inputs(was) != profile_inputs(now)
 
 
 def build_plan(org: str, scraped: list[dict[str, Any]], rejected: list[dict[str, str]], stored: list[dict[str, Any]]) -> dict[str, Any]:
@@ -172,7 +188,7 @@ def render_markdown(plan: dict[str, Any], step_changes: dict[str, list[Any]] | N
         lines.append(f"- Rejected by validation: {len(plan['rejected'])}: {rejected}")
     lines.append(f"- On the site, not stored: {len(plan['new_on_site'])}" + (f": {', '.join(plan['new_on_site'][:20])}" if plan["new_on_site"] else ""))
     lines.append(f"- Available in production, not on the site: {len(plan['missing_from_site'])}" + (f": {', '.join(plan['missing_from_site'][:20])}" if plan["missing_from_site"] else ""))
-    lines.append(f"- Profile text would change (re-profile): {len(plan['reprofile_ids'])}")
+    lines.append(f"- Profile inputs would change (re-profile): {len(plan['reprofile_ids'])}")
     lines.append("")
 
     if not plan["fields"]:

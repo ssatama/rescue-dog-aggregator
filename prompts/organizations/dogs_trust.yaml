@@ -2,7 +2,7 @@ metadata:
   organization_id: 28
   organization_name: "Dogs Trust"
   language: en
-  version: "1.0.0"
+  version: "1.1.0"
   created: "2025-08-21"
 
 system_prompt: |
@@ -70,9 +70,10 @@ extraction_prompt: |
   - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Look for "nervous"=shy, "confident"=confident, "timid"=shy, "resilient"=confident. Default to "moderate" if not mentioned.
 
   COMPATIBILITY (only if explicitly stated):
-  - good_with_dogs: Look for "may_live_with" field or mentions of dog compatibility
-  - good_with_cats: Look for cat test results or explicit mentions
-  - good_with_children: Look for "may_live_with" field or mentions like "adult only home"
+  The properties good_with_dogs, good_with_cats and good_with_children are the rescue's own "May live with" answers. true means "yes"; "Yes (5+)" or "Yes (11+)" means "older_children" (not suitable for young children). A property that is missing is NOT a no: answer "no" only when the description says so ("needs to be the only dog", "adult only home"), otherwise "unknown".
+  - good_with_dogs: the good_with_dogs property, or mentions of dog compatibility
+  - good_with_cats: the good_with_cats property, cat test results or explicit mentions
+  - good_with_children: the good_with_children property, or mentions like "adult only home"
 
   LIVING REQUIREMENTS (REQUIRED - use conservative defaults):
   - home_type: Look for garden/housing requirements. Default to "house_preferred" if secure garden mentioned.
@@ -100,7 +101,7 @@ extraction_prompt: |
   - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
   - source_references: Map each conclusion to the exact source text
-  - prompt_version: "1.0.0"
+  - prompt_version: "1.1.0"
 
   CRITICAL DATA INTEGRITY RULES:
   1. Every fact must exist in the source - but you can rephrase for engagement
@@ -165,8 +166,7 @@ few_shot_examples:
       Breed: Jack Russell Terrier Mix
       Age: 6 - 12 months
       Properties: {
-        "description": "Lilo is a fabulous 6-month-old Jack Russell Pug Crossbreed. She's full of personality and full of energy! She's a little standoffish when she first meets you, but with a few treats and a little space she soon comes round. once you're in the club you'll see how playful and downright adorable she is! She'll need her adopters to put in some time initially to settle her into her new home and slowly build her confidence around new people. She's a resilient little girl though so this should be relatively easy with a bit of consistency. He home will need to have a secure garden as she loves to play off-lead and it will help with her house training too.",
-        "may_live_with": "Lilo needs a home with no other pets or children."
+        "description": "Lilo is a fabulous 6-month-old Jack Russell Pug Crossbreed. She's full of personality and full of energy! She's a little standoffish when she first meets you, but with a few treats and a little space she soon comes round. once you're in the club you'll see how playful and downright adorable she is! She'll need her adopters to put in some time initially to settle her into her new home and slowly build her confidence around new people. She's a resilient little girl though so this should be relatively easy with a bit of consistency. He home will need to have a secure garden as she loves to play off-lead and it will help with her house training too. Lilo needs a home with no other pets or children."
       }
 
     output: |
@@ -218,5 +218,5 @@ few_shot_examples:
           "good_with_children": "no other pets or children",
           "yard_required": "secure garden"
         },
-        "prompt_version": "1.0.0"
+        "prompt_version": "1.1.0"
       }

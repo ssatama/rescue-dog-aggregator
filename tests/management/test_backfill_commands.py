@@ -140,11 +140,11 @@ class TestApply:
             assert backfill_commands.main(["apply", "--orgs", "rean", "--confirm"]) == 2
         connect.assert_not_called()
 
-    def test_text_changed_lists_dogs_whose_profile_text_moved(self):
+    def test_inputs_changed_lists_dogs_whose_profile_inputs_changed(self):
         before = {1: (True, ("old", None)), 2: (True, ("same", None))}
         after = {1: (True, ("new", None)), 2: (True, ("same", None)), 3: (True, ("brand new", None))}
 
-        assert backfill_commands.text_changed(before, after) == [1]
+        assert backfill_commands.inputs_changed(before, after) == [1]
 
 
 @pytest.mark.unit
@@ -175,7 +175,7 @@ class TestSnapshot:
 
         assert "a.active" not in query.call_args.args[1].split("WHERE")[1]
         after = {1: (True, ['"new"']), 2: before["rean"][2]}
-        assert backfill_commands.text_changed(before["rean"], after) == [1]
+        assert backfill_commands.inputs_changed(before["rean"], after) == [1]
 
     def test_a_text_that_only_moved_key_is_not_a_change(self):
         """#563: a re-scrape moves Tierschutzverein's Beschreibung to description."""
@@ -185,7 +185,7 @@ class TestSnapshot:
             before = backfill_commands._snapshot("postgresql://example/db", ["tsv"])
             after = backfill_commands._snapshot("postgresql://example/db", ["tsv"])
 
-        assert backfill_commands.text_changed(before["tsv"], after["tsv"]) == []
+        assert backfill_commands.inputs_changed(before["tsv"], after["tsv"]) == []
 
     def test_steps_run_for_every_rescue_not_just_the_rescraped_ones(self, monkeypatch):
         monkeypatch.setenv("RAILWAY_DATABASE_URL", "postgresql://example/db")

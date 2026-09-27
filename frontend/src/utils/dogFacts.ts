@@ -72,7 +72,9 @@ function answerOf(value: unknown): string | null {
  * Whether the dog lives with children, dogs or cats: "yes", "no", a qualifier
  * ("selective", "older children"), or null when not assessed. The AI profile
  * wins, and scraped properties only fill in when it has no value: Dogs Trust's
- * scraped good_with_dogs is true for almost every dog, even "only dog" ones.
+ * stored good_with_dogs is true for almost every dog, even "only dog" ones.
+ * The scraper is fixed (#516); once #572 rewrites the rows, let a rescue's
+ * answer fill in behind an AI "unknown" too.
  */
 export function companionAnswer(
   dog: Dog,
