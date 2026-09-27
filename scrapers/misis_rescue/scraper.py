@@ -115,12 +115,13 @@ class MisisRescueScraper(BaseScraper):
 
         return self.fetch_details(urls_to_process, self._fetch_dog, url=lambda url: url, max_workers=self.batch_size)
 
-    def _fetch_dog(self, url: str) -> dict[str, Any]:
-        """The dog on a post page; a page that gives up (429s, gone, a browser timeout) counts as failed (#567)."""
-        dog = self._scrape_dog_detail_fast(url)
-        if dog is None:
-            raise DetailPageError(f"{url}: no dog after the HTTP and browser attempts")
-        return dog
+    def _fetch_dog(self, url: str) -> dict[str, Any] | None:
+        """The dog on a post page; None for a post that is gone (404/410), which is no failure.
+
+        Giving up for any other reason (429 twice, a browser timeout) raises, so
+        the dog is counted as failed (#567).
+        """
+        return self._scrape_dog_detail_fast(url)
 
     def _get_all_dogs_from_listing(self) -> list[dict[str, str]]:
         """Get all dog data from listing page.
@@ -369,8 +370,7 @@ class MisisRescueScraper(BaseScraper):
         try:
             return await asyncio.wait_for(self._scrape_dog_detail_playwright(url), self.DETAIL_TIMEOUT_SECONDS)
         except TimeoutError:
-            self.logger.error(f"Detail page {url} did not finish within {self.DETAIL_TIMEOUT_SECONDS}s; skipping this dog")
-            return None
+            raise DetailPageError(f"Detail page {url} did not finish within {self.DETAIL_TIMEOUT_SECONDS}s") from None
 
     async def _scrape_dog_detail_playwright(self, url: str) -> dict[str, Any] | None:
         """Playwright implementation of _scrape_dog_detail."""
@@ -484,16 +484,14 @@ class MisisRescueScraper(BaseScraper):
                 # Rate limited: back off once, and never answer with a heavier browser load
                 self.logger.warning(f"HTTP 429 for {url}; backing off before one retry")
                 # Every worker slows down, not only this one (#567)
-                self._push_back_request_clock(self.rate_limit_delay * 4)
+                self._push_back_request_clock(self.rate_limit_delay * 4, pause=True)
                 self.wait_for_request_slot()
                 try:
                     response = requests.get(url, headers=headers, timeout=10)
                 except requests.RequestException as e:
-                    self.logger.error(f"Retry after HTTP 429 failed for {url}: {e}; skipping this dog")
-                    return None
+                    raise DetailPageError(f"Retry after HTTP 429 failed for {url}: {e}") from e
                 if response.status_code == 429:
-                    self.logger.error(f"HTTP 429 again for {url}; skipping this dog")
-                    return None
+                    raise DetailPageError(f"HTTP 429 again for {url}")
 
             # A removed post is gone; anything else non-200 may be transient, so the browser tries
             if response.status_code in (404, 410):
@@ -524,6 +522,8 @@ class MisisRescueScraper(BaseScraper):
             self.logger.debug(f"Successfully scraped {url} with fast method")
             return dog_data
 
+        except DetailPageError:
+            raise
         except requests.RequestException as e:
             self.logger.warning(f"Request failed for {url}: {e}, falling back to the browser")
             return self._scrape_dog_detail(url)

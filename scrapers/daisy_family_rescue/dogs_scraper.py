@@ -188,10 +188,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     self.total_animals_skipped = 0
 
                 # Second pass: each dog's detail page, within the rate limit (#567)
-                async def enhance(dog_data: dict[str, Any]) -> dict[str, Any]:
-                    return await self._enhance_with_detail_page(dog_data) or dog_data
-
-                all_dogs.extend(await self.fetch_details_async(basic_dogs_data, enhance, url=lambda dog: dog.get("adoption_url") or str(id(dog))))
+                all_dogs.extend(await self.fetch_details_async(basic_dogs_data, self._enhance_with_detail_page, url=lambda dog: dog.get("adoption_url") or str(id(dog))))
 
             except Exception as e:
                 self.logger.error(f"Failed to extract dogs with Playwright: {e}")
@@ -372,7 +369,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
             self.logger.warning(f"Error extracting image: {e}")
         return None
 
-    async def _enhance_with_detail_page(self, basic_dog_data: dict[str, Any]) -> dict[str, Any] | None:
+    async def _enhance_with_detail_page(self, basic_dog_data: dict[str, Any]) -> dict[str, Any]:
         """Enhance basic dog data with detailed information from the dog's detail page.
 
         Uses DaisyFamilyRescueDogDetailScraper to extract comprehensive information

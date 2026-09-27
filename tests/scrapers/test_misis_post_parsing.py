@@ -16,6 +16,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from bs4 import BeautifulSoup
 
+from scrapers.base_scraper import DetailPageError
 from scrapers.misis_rescue.detail_parser import MisisRescueDetailParser, split_post
 from scrapers.misis_rescue.scraper import MisisRescueScraper
 from tests.scrapers.test_scraper_base import ScraperTestBase
@@ -155,7 +156,8 @@ class TestFetch(ScraperTestBase):
     @pytest.mark.unit
     def test_rate_limited_twice_skips_the_dog(self, scraper):
         with self._get(429), patch.object(scraper, "_scrape_dog_detail") as browser:
-            assert scraper._scrape_dog_detail_fast("https://www.misisrescue.com/post/__yuk") is None
+            with pytest.raises(DetailPageError, match="429 again"):
+                scraper._scrape_dog_detail_fast("https://www.misisrescue.com/post/__yuk")
 
         browser.assert_not_called()
 

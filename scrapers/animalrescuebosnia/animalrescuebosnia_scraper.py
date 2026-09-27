@@ -431,7 +431,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             self.total_animals_skipped = 0
 
         # Process URLs in batches with parallel processing
-        all_animals = self.fetch_details(urls_to_process, self._valid_dog, url=lambda url: url, max_workers=self.batch_size)
+        all_animals = self.fetch_details(urls_to_process, self._valid_dog, url=lambda url: url, max_workers=self.batch_size, attempts=self.max_retries + 1)
 
         # World-class logging: Collection results handled by centralized system
         return all_animals

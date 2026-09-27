@@ -1,5 +1,4 @@
 import re
-import time
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
@@ -112,8 +111,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             if page == max_pages:
                 raise ListingIncompleteError(f"Listing still has a next page after {max_pages} pages")
 
-            # Rate limiting
-            time.sleep(self.rate_limit_delay)
+            # get_listing_page keeps the org's rate between pages (#567)
             page += 1
 
         self.logger.info(f"Extracted {len(all_animals)} animals from {page} listing pages")
