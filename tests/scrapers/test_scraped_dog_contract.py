@@ -149,3 +149,12 @@ class TestScrapedDogContract:
 def test_age_stated_at_is_a_key_the_save_reads():
     """utils/birth_dates anchors the age at it (#561); it is not lost."""
     assert unknown_keys({"name": "Freya", "age_stated_at": "2026-05-01"}) == set()
+
+
+@pytest.mark.unit
+def test_daisy_keeps_its_page_properties_beside_the_steckbrief(stub_clock):
+    """The Steckbrief's properties are merged in, not swapped for the page's (#568)."""
+    properties = daisy()["properties"]
+
+    assert properties["language"] == "de"
+    assert "weight_kg" in properties

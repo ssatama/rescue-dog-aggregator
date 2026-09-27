@@ -105,7 +105,10 @@ class DaisyFamilyRescueDogDetailScraper:
                 steckbrief_data = self._extract_steckbrief_data_soup(soup, logger)
                 if steckbrief_data:
                     processed_data = self._process_steckbrief_data(steckbrief_data, logger)
+                    # Merge properties: a plain update would drop source, extraction_method and language
+                    properties = {**dog_data["properties"], **processed_data.pop("properties", {})}
                     dog_data.update(processed_data)
+                    dog_data["properties"] = properties
 
                 # Extract main dog image
                 image_url = self._extract_main_image_soup(soup, logger)

@@ -302,7 +302,7 @@ class DogProfilerPipeline:
             # Add original dog data fields that aren't in the schema
             result["dog_id"] = dog_id  # Database updater expects dog_id
             result["name"] = dog_name
-            result["breed"] = dog_data.get("breed") or "Mixed Breed"
+            result["breed"] = dog_data.get("breed")
             result["external_id"] = dog_data.get("external_id")
 
             result["quality_score"] = self._calculate_quality_score(result, dog_data)
