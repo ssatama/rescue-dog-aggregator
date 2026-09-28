@@ -33,8 +33,8 @@ def source_text_length(dog_data: dict[str, Any]) -> int:
 def _as_text(value: Any) -> str:
     if isinstance(value, str):
         return value
-    if isinstance(value, list) and all(isinstance(item, str) for item in value):
-        return "\n".join(value)
+    if isinstance(value, list):
+        return "\n".join(item for item in value if isinstance(item, str))
     return ""
 
 
