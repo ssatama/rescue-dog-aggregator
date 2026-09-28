@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Plan and apply data backfills after scraper fixes (epic #554).
+"""Plan and apply data backfills after scraper fixes.
 
 Rows never repair themselves: most rescues skip dogs they already have, and
-updates are never re-profiled. So each fix is proven with a dry run in its own
-PR, and every backfill runs once, together (#572).
+changed data is never re-profiled. So each fix proves its backfill with a dry
+run in its own PR, and applies it when the maintainer says go.
+
+apply re-profiles only dogs of the rescues it re-scrapes (--orgs): a steps-only
+apply re-profiles nobody, so follow it with generate-profiles --ids when a step
+changes profile text.
 
     # What a forced re-scrape of one rescue would change. Scrapes the live site
     # (at its configured rate), reads production read-only, writes nothing.
@@ -243,7 +247,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Plan and apply data backfills (epic #554)")
+    parser = argparse.ArgumentParser(description="Plan and apply data backfills after scraper fixes")
     sub = parser.add_subparsers(dest="command", required=True)
 
     plan = sub.add_parser("plan", help="Dry run: what a re-scrape and the steps would change")

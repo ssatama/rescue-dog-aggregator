@@ -251,7 +251,9 @@ needs an explicit backfill. Query the full population, not just
   is the first; it plans 0 rows since it ran.
 - `apply --orgs a,b --steps x --confirm` writes to `RAILWAY_DATABASE_URL`: it
   runs `railway_scraper_cron.py --org X --force-rescrape` per rescue, then the
-  steps for every rescue, then `generate-profiles --ids` for dogs whose profile text changed,
+  steps for every rescue, then `generate-profiles --ids` for dogs whose profile text changed
+  (only in the `--orgs` it re-scraped: a steps-only apply re-profiles nobody, so
+  run `generate-profiles --ids` yourself when a step changes profile text),
   and prints a before/after table. Record that table here in the PR that ran it.
 - `apply` runs the scrapers from the local checkout: run it from an
   up-to-date `main`, and don't switch branches until it exits.
@@ -323,7 +325,9 @@ reconcile` against production text before trusting a resolver change.
   AI profile first. Switch it to `answerOf(profile) ?? answerOf(properties)`,
   so the rescue's answer fills in behind an AI "unknown", once no active Dogs
   Trust dog keeps a pre-#516 `good_with_dogs: true` (118 were in stale grace
-  on 2026-09-27).
+  on 2026-09-27). Keep #517's gate: an AI answer scored 0.5 or less is "not
+  assessed", and deciding whether the rescue's answer may then stand in is
+  part of that change.
 
 **Woof Project lists available dogs first, then the adoption archive**
 (pages 2-5 on 2026-09-27). Since #565 the listing is plain HTML: an adopted or

@@ -156,7 +156,8 @@ Powers the Tinder-like swipe feature with AI insights:
 ### 1. Scraper Integration
 
 `BaseScraper` delegates to `scrapers/enrichment/llm_handler.py`, which profiles
-newly collected dogs for any organization enabled in
+newly collected dogs, plus up to 10 stored dogs still without a profile
+(`_profiling_backlog`, #622), for any organization enabled in
 `configs/llm_organizations.yaml`:
 
 ```python

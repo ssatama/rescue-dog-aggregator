@@ -473,7 +473,7 @@ doesn't run. Every page the pagination says exists must list dogs; an empty
 plain-HTTP fetch, retrying timeouts, connection errors, 429 and 5xx
 (`max_retries: 3` means 4 attempts). Per site: Many Tears reads `?page=N` up
 to the highest numbered link; Santer Paws walks `/adopt/page/N/` until an
-empty 200 past its highest `data-page`; Tierschutzverein follows "→" links;
+empty 200 past its highest `data-page`; Tierschutzverein reads numbered pages while a "→" link follows;
 MISIs raises when a clicked page shows no `/post/` links or the previous
 page's. A listing past its page limit raises (Tierschutzverein 50, Santer 20,
 MISIs 10).

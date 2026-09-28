@@ -74,8 +74,9 @@ function answerOf(value: unknown): string | null {
  * ("selective", "older children"), or null when not assessed. The AI profile
  * wins, and scraped properties only fill in when it has no value: Dogs Trust's
  * stored good_with_dogs is true for almost every dog, even "only dog" ones.
- * The scraper is fixed (#516); once #572 rewrites the rows, let a rescue's
- * answer fill in behind an AI "unknown" too.
+ * The scraper is fixed (#516); once no active Dogs Trust dog keeps a pre-#516
+ * value, let a rescue's answer fill in behind an AI "unknown" too
+ * (docs/technical/operational-knowledge.md, Dogs Trust quirks).
  *
  * A profile answer the model scored 0.5 or less is a guess, so it counts as
  * not assessed (#517), and the scraped value doesn't stand in for it.
