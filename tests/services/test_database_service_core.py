@@ -268,6 +268,31 @@ class TestReadPathsDegradeRatherThanRaise:
         with patch.object(service, "connect", return_value=False):
             assert service.get_existing_external_ids(1) == set()
 
+    def test_unprofiled_lookup_returns_available_dogs_without_a_profile(self, service):
+        cursor = Mock()
+        cursor.fetchall.return_value = [(11149, "Lipton", "Lurcher", "3 years", {"description": "A gentle lurcher."}), (3, "Rex", None, None, None)]
+        service.conn = Mock(cursor=Mock(return_value=cursor))
+
+        dogs = service.get_unprofiled_animals(28)
+
+        sql, params = cursor.execute.call_args.args
+        # The same dogs llm_commands generate-profiles counts as unprofiled
+        assert "(dog_profiler_data IS NULL OR dog_profiler_data = '{}')" in sql
+        assert "availability_confidence = 'high'" in sql
+        assert "active = true" in sql
+        assert "status = 'available'" in sql
+        assert params == (28,)
+        assert dogs == [
+            {"id": 11149, "name": "Lipton", "breed": "Lurcher", "age_text": "3 years", "properties": {"description": "A gentle lurcher."}},
+            {"id": 3, "name": "Rex", "breed": None, "age_text": None, "properties": {}},
+        ]
+
+    def test_unprofiled_lookup_returns_nothing_on_a_query_error(self, service):
+        service.conn = Mock()
+        service.conn.cursor.side_effect = RuntimeError("connection reset")
+
+        assert service.get_unprofiled_animals(28) == []
+
     def test_slug_lookup_short_circuits_on_an_empty_id_list(self, service):
         """Must not open a connection to resolve nothing."""
         with patch.object(service, "connect") as connect:

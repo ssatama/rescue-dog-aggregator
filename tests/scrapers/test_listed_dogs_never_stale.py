@@ -36,6 +36,7 @@ def _scraper(session_manager):
     s.database_service = Mock()
     s.database_service.create_scrape_log.return_value = 77
     s.database_service.get_slugs_for_animals.return_value = []
+    s.database_service.get_unprofiled_animals.return_value = []
     s.image_processing_service = None
     s.session_manager = session_manager
     s.llm_handler = Mock()

@@ -11,10 +11,30 @@ from scrapers.constants import (
 )
 from scrapers.contract import unknown_keys
 from scrapers.scrape_stats import ScrapeStats
+from services.llm.grounding import is_sufficiently_grounded
 
 
 class DogSaving:
     """The save phase, from validation to marking each dog seen."""
+
+    # Dogs from earlier runs profiled per run, so a backlog (or an LLM outage) can't stretch one run
+    PROFILING_BACKLOG_CAP = 10
+
+    def _profiling_backlog(self) -> list[dict[str, Any]]:
+        """Stored dogs still without a profile, for this run to profile too.
+
+        A dog is queued for profiling only when it is created, so one whose
+        profile failed then (a timeout, an OpenRouter 429) would never get one.
+        Dogs with too little story are left out: the profiler would skip them
+        and alert on every run.
+        """
+        if not self.database_service or not self.llm_handler.is_enrichment_enabled():
+            return []
+
+        queued = {item["id"] for item in self.animals_for_llm_enrichment}
+        dogs = [dog for dog in self.database_service.get_unprofiled_animals(self.organization_id) if dog["id"] not in queued and is_sufficiently_grounded(dog)]
+        # The profiler purges each profiled dog's page itself
+        return [{"id": dog["id"], "data": dog, "action": "backfill"} for dog in dogs[: self.PROFILING_BACKLOG_CAP]]
 
     def validate_external_id(self, external_id):
         """Validate that external_id follows organization prefix pattern.
