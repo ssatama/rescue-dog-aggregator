@@ -536,6 +536,58 @@ class TestScraperCoreFunctions:
 
         assert "Geburtstag" not in properties or properties["Geburtstag"] is None
 
+    @pytest.mark.unit
+    def test_a_story_that_opens_with_its_own_title_is_kept(self, scraper):
+        # Milo's page: the story's title heading right after "Beschreibung"
+        soup = BeautifulSoup(
+            """
+            <div class="content">
+                <div class="wp-block-envira-envira-gallery"></div>
+                <h2>Beschreibung</h2>
+                <h3>Milo – ein junger Rüde, der die Welt erst noch entdecken möchte</h3>
+                <p>Milo ist ein junger Rüde, dessen Start ins Leben alles andere als gewöhnlich war.</p>
+                <p>Er braucht Zeit, Geduld und Menschen, die ihm nicht zu viel abverlangen.</p>
+                <h2>Videos</h2>
+                <figure><iframe src="https://www.youtube.com/embed/x"></iframe></figure>
+            </div>
+            """,
+            "html.parser",
+        )
+
+        description = scraper._extract_properties_from_soup(soup)["description"]
+
+        assert description.startswith("Milo – ein junger Rüde")
+        assert "Start ins Leben" in description
+        assert "Geduld" in description
+        assert "Videos" not in description
+
+    @pytest.mark.unit
+    def test_an_older_page_without_beschreibung_keeps_its_story(self, scraper):
+        # Hector's page: updates and the story under their own headings, no "Beschreibung"
+        soup = BeautifulSoup(
+            """
+            <div class="content">
+                <div class="wp-block-envira-envira-gallery"></div>
+                <h2>Update im August 2026</h2>
+                <p>Hector lebt seit einigen Monaten bei seiner Trainerin.</p>
+                <h2>Zur Geschichte</h2>
+                <p>Hector kam als Welpe ins Tierheim Odai.</p>
+                <h2>Videos</h2>
+                <div class="heateor_sss_sharing_container"><a>Teilen</a></div>
+            </div>
+            """,
+            "html.parser",
+        )
+
+        description = scraper._extract_properties_from_soup(soup)["description"]
+
+        assert description.split("\n") == [
+            "Update im August 2026",
+            "Hector lebt seit einigen Monaten bei seiner Trainerin.",
+            "Zur Geschichte",
+            "Hector kam als Welpe ins Tierheim Odai.",
+        ]
+
 
 @pytest.mark.database
 @pytest.mark.integration

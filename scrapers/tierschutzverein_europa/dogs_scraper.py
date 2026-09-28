@@ -3,7 +3,7 @@ from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from scrapers.base_scraper import BaseScraper, DetailPageError, ListingIncompleteError
 from scrapers.tierschutzverein_europa.translations import (
@@ -15,6 +15,9 @@ from scrapers.tierschutzverein_europa.translations import (
     translate_size,
 )
 from utils.shared_extraction_patterns import gallery_urls
+
+# The heading after a dog's story; everything before it back to "Beschreibung" is the story
+STORY_END = re.compile(r"^Videos?$", re.IGNORECASE)
 
 
 class TierschutzvereinEuropaScraper(BaseScraper):
@@ -234,22 +237,34 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 if key and value:
                     properties[key] = value
 
-        # The "Beschreibung" section, stored where every reader looks (#563)
-        description_section = soup.find("h2", string=re.compile("Beschreibung", re.I))
-        if description_section:
-            description_parts = []
-            current = description_section.find_next_sibling()
-            while current and current.name not in ["h1", "h2", "h3"]:
-                if current.name == "p":
-                    text = current.get_text(strip=True)
-                    if text:
-                        description_parts.append(text)
-                current = current.find_next_sibling()
-
-            if description_parts:
-                properties["description"] = "\n".join(description_parts)
+        # The story, stored where every reader looks (#563)
+        description_parts = [el.get_text(strip=True) for el in self._story_blocks(soup)]
+        if any(description_parts):
+            properties["description"] = "\n".join(part for part in description_parts if part)
 
         return properties
+
+    @staticmethod
+    def _story_blocks(soup: BeautifulSoup) -> list[Tag]:
+        """The story's paragraphs and subtitles, from "Beschreibung" up to "Videos".
+
+        Headings inside the story are its own ("Milo – ein junger Rüde…",
+        "Update im Mai 2026", "Zur Geschichte"), so only "Videos" ends it. Older
+        posts have no "Beschreibung" and start the story at the top of the post.
+        """
+        heading = soup.find("h2", string=re.compile("Beschreibung", re.I))
+        if heading:
+            current = heading.find_next_sibling()
+        else:
+            post = soup.select_one("div.content")
+            current = post.find(True, recursive=False) if post else None
+
+        blocks = []
+        while current and not (current.name in ("h1", "h2", "h3") and STORY_END.match(current.get_text(strip=True))):
+            if current.name in ("p", "h2", "h3", "h4"):
+                blocks.append(current)
+            current = current.find_next_sibling()
+        return blocks
 
     def _extract_hero_image(self, soup: BeautifulSoup) -> str | None:
         """Extract the main/hero image from detail page."""
