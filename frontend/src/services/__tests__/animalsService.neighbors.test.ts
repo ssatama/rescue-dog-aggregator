@@ -38,5 +38,13 @@ describe("getDogNeighbors", () => {
 
     expect(neighbors.prev).toMatchObject({ slug: "lola-1", name: "Lola" });
     expect(neighbors.next).toBeNull();
+    expect(reportError).not.toHaveBeenCalled();
+  });
+
+  test("a neighbour without a slug is still rejected and reported", async () => {
+    respondWith({ prev: { name: "Lola" }, next: null });
+
+    await expect(getDogNeighbors("lucy-2")).rejects.toThrow();
+    expect(reportError).toHaveBeenCalledTimes(1);
   });
 });
