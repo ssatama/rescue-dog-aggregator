@@ -314,7 +314,7 @@ class BaseScraper(DogSaving, StaleDetection, RunReporting, RequestPacing, ABC):
                 # Phase 5: LLM Enrichment (if enabled)
                 add_scrape_breadcrumb("Starting LLM enrichment phase")
                 llm_start = datetime.now()
-                self.llm_handler.enrich_animals(self.animals_for_llm_enrichment)
+                self.llm_handler.enrich_animals(self.animals_for_llm_enrichment + self._profiling_backlog())
                 self.metrics_collector.track_phase_timing("llm_enrichment", (datetime.now() - llm_start).total_seconds())
 
                 # Phase 6: Metrics & Logging

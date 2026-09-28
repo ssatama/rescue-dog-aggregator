@@ -714,6 +714,30 @@ class DatabaseService:
             self.logger.error(f"Error getting existing external IDs: {e}")
             return set()
 
+    def get_unprofiled_animals(self, organization_id: int) -> list[dict[str, Any]]:
+        """This organization's available dogs that have no AI profile yet, oldest first.
+
+        A dog is profiled in the run that adds it; one whose profile failed there
+        (a timeout, an OpenRouter 429) is found here by a later run.
+
+        Returns:
+            The dogs as the profiler reads them. Empty on failure.
+        """
+        try:
+            with self.connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT id, name, breed, age_text, properties FROM animals WHERE organization_id = %s AND active = true AND status = 'available' AND dog_profiler_data IS NULL ORDER BY created_at",
+                    (organization_id,),
+                )
+                rows = cursor.fetchall()
+                cursor.close()
+
+            return [{"id": row[0], "name": row[1], "breed": row[2], "age_text": row[3], "properties": row[4] or {}} for row in rows]
+        except Exception as e:
+            self.logger.error(f"Error getting unprofiled animals: {e}")
+            return []
+
     def get_slugs_for_animals(self, animal_ids: list[int]) -> list[str]:
         """Resolve animal IDs to their detail-page slugs in one round trip.
 
