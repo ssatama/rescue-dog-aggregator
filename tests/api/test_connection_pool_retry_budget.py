@@ -9,6 +9,7 @@ every exhaustion answered 500 instead of 503.
 
 from unittest.mock import MagicMock
 
+import psycopg2
 import pytest
 from psycopg2 import pool as psycopg2_pool
 
@@ -105,3 +106,28 @@ class TestExhaustion:
         connection_pool = make_pool([psycopg2_pool.PoolError("connection pool exhausted"), psycopg2_pool.PoolError("connection pool exhausted"), healthy])
 
         assert connection_pool._acquire_connection_with_retry() is healthy
+
+
+CONNECT_FAILED = psycopg2.OperationalError('connection to server at "postgres.railway.internal", port 5432 failed: server closed the connection unexpectedly')
+
+
+@pytest.mark.unit
+class TestAFailedConnectIsRetried:
+    """A new connection the server drops mid-handshake answered 500 (Sentry PYTHON-FASTAPI-2N / -3K / -3M)."""
+
+    def test_a_failed_connect_then_a_healthy_one_succeeds(self, stub_clock):
+        healthy = healthy_connection()
+        connection_pool = make_pool([CONNECT_FAILED, healthy])
+
+        assert connection_pool._acquire_connection_with_retry() is healthy
+        assert stub_clock.calls == [0.1]
+
+    def test_a_database_that_never_answers_is_a_typed_error(self, stub_clock):
+        connection_pool = make_pool(CONNECT_FAILED)
+
+        with pytest.raises(PoolExhaustedError) as exc_info:
+            connection_pool._acquire_connection_with_retry()
+
+        # PoolExhaustedError answers 503, not the generic 500
+        assert exc_info.value.__cause__ is CONNECT_FAILED
+        assert connection_pool._pool.getconn.call_count == POOL_STALE_CONNECTION_RETRIES
