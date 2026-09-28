@@ -7,13 +7,16 @@ RuntimeError whose message no substring branch in the dependency matched, so
 every exhaustion answered 500 instead of 503.
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
+import psycopg2
 import pytest
 from psycopg2 import pool as psycopg2_pool
 
 from api.database.connection_pool import (
     POOL_ACQUIRE_RETRIES,
+    POOL_ACQUIRE_RETRY_DELAY,
+    POOL_CONNECT_TIMEOUT,
     POOL_STALE_CONNECTION_RETRIES,
     ConnectionPool,
     PoolExhaustedError,
@@ -105,3 +108,39 @@ class TestExhaustion:
         connection_pool = make_pool([psycopg2_pool.PoolError("connection pool exhausted"), psycopg2_pool.PoolError("connection pool exhausted"), healthy])
 
         assert connection_pool._acquire_connection_with_retry() is healthy
+
+
+CONNECT_FAILED = psycopg2.OperationalError('connection to server at "postgres.railway.internal", port 5432 failed: server closed the connection unexpectedly')
+
+
+@pytest.mark.unit
+class TestAFailedConnectIsRetried:
+    """A new connection the server drops mid-handshake answered 500 (Sentry PYTHON-FASTAPI-2N / -3K / -3M)."""
+
+    def test_a_failed_connect_then_a_healthy_one_succeeds(self, stub_clock):
+        healthy = healthy_connection()
+        connection_pool = make_pool([CONNECT_FAILED, healthy])
+
+        assert connection_pool._acquire_connection_with_retry() is healthy
+        assert stub_clock.calls == [POOL_ACQUIRE_RETRY_DELAY]
+
+    def test_a_database_that_never_answers_is_a_typed_error(self, stub_clock):
+        connection_pool = make_pool(CONNECT_FAILED)
+
+        with pytest.raises(PoolExhaustedError) as exc_info:
+            connection_pool._acquire_connection_with_retry()
+
+        # PoolExhaustedError answers 503, not the generic 500
+        assert exc_info.value.__cause__ is CONNECT_FAILED
+        assert connection_pool._pool.getconn.call_count == POOL_STALE_CONNECTION_RETRIES
+
+
+@pytest.mark.unit
+def test_a_new_connection_gives_up_after_the_connect_timeout():
+    """getconn holds the pool lock while connecting; an unanswered connect must not stall every request."""
+    connection_pool = ConnectionPool.__new__(ConnectionPool)
+
+    with patch("api.database.connection_pool.psycopg2.pool.ThreadedConnectionPool") as threaded_pool:
+        connection_pool._create_pool()
+
+    assert threaded_pool.call_args.kwargs["connect_timeout"] == POOL_CONNECT_TIMEOUT

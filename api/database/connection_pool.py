@@ -35,6 +35,8 @@ POOL_ACQUIRE_RETRY_DELAY = float(os.getenv("DB_POOL_ACQUIRE_RETRY_DELAY", "0.1")
 # own budget. Sharing one meant two dead connections could spend every attempt
 # and fail the request with no error to report.
 POOL_STALE_CONNECTION_RETRIES = int(os.getenv("DB_POOL_STALE_CONNECTION_RETRIES", "3"))
+# Seconds to wait for a new connection, as the admin query route does
+POOL_CONNECT_TIMEOUT = int(os.getenv("DB_POOL_CONNECT_TIMEOUT", "5"))
 
 
 class PoolNotInitializedError(RuntimeError):
@@ -126,6 +128,9 @@ class ConnectionPool:
             "user": DB_CONFIG["user"],
             "database": DB_CONFIG["database"],
             "port": DB_CONFIG.get("port", 5432),
+            # getconn holds the pool's lock while it connects: an unanswered
+            # connect must fail fast, or every request queues behind it
+            "connect_timeout": POOL_CONNECT_TIMEOUT,
         }
         if DB_CONFIG["password"]:
             conn_params["password"] = DB_CONFIG["password"]
@@ -183,7 +188,7 @@ class ConnectionPool:
             logger.error(f"Failed to return stale connection to pool: {e}", exc_info=True)
 
     def _acquire_connection_with_retry(self) -> psycopg2.extensions.connection:
-        """Acquire a connection, retrying past pool exhaustion and stale connections.
+        """Acquire a connection, retrying past pool exhaustion and stale or failed connections.
 
         The two retry budgets are separate on purpose: a stale connection says
         nothing about how full the pool is, so discarding one must not spend an
@@ -208,8 +213,16 @@ class ConnectionPool:
                     continue
 
                 if attempt > 0 or stale_discarded > 0:
-                    logger.info(f"Connection acquired after {attempt + 1} attempts and {stale_discarded} stale discards")
+                    logger.info(f"Connection acquired after {attempt + 1} attempts and {stale_discarded} stale or failed connections")
                 return conn
+            except psycopg2.OperationalError as e:
+                # A new connection the server dropped mid-handshake: like a stale
+                # one, it says the database is unreachable, not that the pool is full
+                stale_discarded += 1
+                if stale_discarded >= POOL_STALE_CONNECTION_RETRIES:
+                    raise PoolExhaustedError(f"{stale_discarded} connection attempts in a row failed; the database is not reachable") from e
+                logger.warning(f"Connecting failed, retrying (unreachable {stale_discarded}/{POOL_STALE_CONNECTION_RETRIES}): {e}")
+                time.sleep(POOL_ACQUIRE_RETRY_DELAY)
             except pool.PoolError as e:
                 last_error = e
                 attempt += 1
