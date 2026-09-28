@@ -17,6 +17,10 @@ the CLI nor the Railway MCP exposes `cronSchedule`; only the dashboard's Cron
 Runs tab does. Repo docs once claimed "Tue/Thu/Sat 6am" and caused a false
 "missed run" alarm, so never infer the schedule from docs or log timestamps.
 
+**Don't merge scraper changes in the 2 hours before a cron run** (Mon/Thu/Sat
+15:00 UTC), and never while one is running: a merge redeploys the cron
+service.
+
 **A failed cron run usually means one org failed.** The batch reports
 `overall_success: false` if *any* org fails; read `failed_orgs`. The commit
 shown next to a run is just what was deployed, not the cause. Check
@@ -226,12 +230,9 @@ local fix. On 2026-09-26 the local DB lacked `animals.breed_raw` and every new
 dog's save failed locally. Compare `information_schema.columns` on both sides
 and add what is missing by hand.
 
-**Don't merge scraper changes in the 2 hours before a cron run** (Mon/Thu/Sat
-15:00 UTC), and never while one is running: a merge redeploys the cron
-service.
-
 **Rows never self-correct on scrape.** `skip_existing_animals` drops existing
-dogs before `save_animal`, and updates are never re-profiled. A scraper fix
+dogs before `save_animal`, and changed data is never re-profiled (only dogs
+with no profile are picked up again, #622). A scraper fix
 needs an explicit backfill. Query the full population, not just
 `status = 'available'`, when sizing a defect.
 
@@ -315,8 +316,9 @@ reconcile` against production text before trusting a resolver change.
   yes, no chip means the rescue didn't say (key left out, not "no").
   Children: preschool is any age (`true`), primary "Yes (5+)", secondary
   "Yes (11+)". The prompt (1.1.0) maps "Yes (5+)"/"Yes (11+)" to
-  `older_children`. 102 dogs have no card, so a renamed label would silently
-  drop the facts for all of them.
+  `older_children`. A page without the card is silent (102 dogs). If the
+  rescue renames the "May live with" label, every dog loses the facts
+  quietly; a run-level count of dogs with chips would catch it (not built).
 - Follow-up: `companionAnswer` in `frontend/src/utils/dogFacts.ts` reads the
   AI profile first. Switch it to `answerOf(profile) ?? answerOf(properties)`,
   so the rescue's answer fills in behind an AI "unknown", once no active Dogs
@@ -363,6 +365,10 @@ which also rewrites `adoption_url`: updates never refresh it.
 **daisyfamilyrescue `age_text`** once held gender text and future dates.
 `age_backfill.py` deliberately doesn't clear these, and a test pins that, so
 the scraper bug stays visible. Scraper and parser fixed in #433.
+
+**A disabled rescue's dogs aren't retired.** Config sync disabling an org
+doesn't retire its dogs; #572's `disabled-org-status-unknown` step did it once
+for Galgos del Sol. Automating it is an open follow-up.
 
 **Name and location backfills (#505).** Most rescues skip dogs they already
 have, so name cleaning and `display_location` reach stored rows only through

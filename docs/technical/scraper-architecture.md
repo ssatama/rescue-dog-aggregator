@@ -242,7 +242,8 @@ Returns `True` when the run succeeded. Its phases:
    it seen. Counts go into a `ScrapeStats`.
 4. Stale detection, unless the run looks like a partial failure (a count drop,
    or too many save errors), then adoption checks.
-5. LLM enrichment of new and changed dogs, for organizations that have it.
+5. LLM enrichment of new dogs, plus up to 10 stored dogs still without a
+   profile (#622), for organizations that have it.
 6. Completion: metrics, the `scrape_logs` row, frontend cache invalidation for
    changed dogs.
 
@@ -415,9 +416,11 @@ Settled in epic #554; don't re-ask them.
   missing pages.
 - **Missing data is `None`, never a placeholder.** No "Medium", "Mixed Breed",
   "Unknown" or "UK" standing in for data the site didn't give.
-- **A data fix ships with its backfill step** (`management/backfill_steps.py`)
-  and a `backfill_commands.py plan` in the PR; production writes happen only
-  when the maintainer says go (see operational-knowledge). A schema migration
+- **A data fix ships with its backfill**: a registered step
+  (`management/backfill_steps.py`) or, when a re-scrape repairs it,
+  `backfill_commands.py apply --orgs`, with a `plan` in the PR. **Production is read-only from
+  a session** (the `postgres` MCP tool, role `claude_ro`); `backfill apply` and
+  other production writes run only when the maintainer says go. A schema migration
   goes to production *before* its PR merges; an id re-key right *after* the
   merge deploys and *before* the next cron.
 - **Be a polite crawler.** Never exceed a rescue's configured rate or its
@@ -446,8 +449,7 @@ The rejected and failed `external_id`s (up to 20) are in the run's log line
 "N collected, M not saved". More than 10% not saved sends a Sentry warning
 (`scraper.alert_type=dogs_not_saved`). With skipping on, only new dogs are
 collected, so one new dog the site lists without a photo reads as "1 of 1"
-every run (Santer Paws' Bonus, 2026-09); that alert is archived until it
-escalates.
+every run (Santer Paws' Bonus, 2026-09, has no photo on the rescue's site).
 
 Every dog the site listed is marked seen before stale detection
 (`SessionManager.mark_found_animals_as_seen`), whether it was skipped as
@@ -455,9 +457,11 @@ existing, rejected or failed to save. Dogs stale detection has retired
 (status `unknown`) stay so until a save succeeds, and a new dog that fails
 validation is never stored. Stale detection is skipped, with a run note that
 makes the run a `warning`, when more than 20% of *found* dogs fail to save
-(`SAVE_ERROR_PARTIAL_FAILURE_RATE`) or marking the found dogs fails. Found, not
-collected, and validator rejections don't count: they repeat for the same dog
-every run.
+(`SAVE_ERROR_PARTIAL_FAILURE_RATE`) or marking the found dogs fails, and a
+failed stale update is noted too. The rate is over *found* dogs, not
+collected ones: with skipping on only new dogs are collected, so one new dog
+failing every run would read as 100%. Validator rejections don't count: they
+repeat for the same dog every run.
 
 ### Listings fail loudly (#559)
 
@@ -473,9 +477,10 @@ MISIs raises when a clicked page shows no `/post/` links or the previous
 page's. A listing past its page limit raises (Tierschutzverein 50, Santer 20,
 MISIs 10).
 
-Known gap: Dogs Trust's Playwright listing still stops early when a page
-doesn't render after "Next". Its "1 / N" indicator can be stale, so raising
-needs a check against the live site first.
+Known gaps: Dogs Trust's Playwright listing still stops early when a page
+doesn't render after "Next" (its "1 / N" indicator can be stale, so raising
+needs a check against the live site first), and the disabled Furry Rescue
+Italy and Galgos del Sol listings don't raise yet.
 
 ### Stored fields: breed, age, story
 
@@ -490,17 +495,18 @@ needs a check against the live site first.
   a year later doesn't make the dog a puppy again. `age_min_months` /
   `age_max_months` stay stored columns, derived at save time and by
   `REFRESH_AGES_SQL` after every cron batch, so a month boundary can show up to
-  three days late. Months cap at 360 (`MAX_DOG_AGE_MONTHS`). `age_text` is
-  still the rescue's first words; JSON-LD and the favourites compare view show
-  it (known gap).
+  three days late. Months cap at 360 (`MAX_DOG_AGE_MONTHS`). `age_text` is the
+  text as last saved (for most rescues, as first read, since existing dogs
+  are skipped); JSON-LD and the favourites compare view show it (known gap).
 - **The story is `properties.description`** (#568), the one key every reader
   uses (sitemap filter, prompt, page). The LLM grounding check
   (`services/llm/grounding.py`) takes the longest string, or list of strings,
   in `properties`.
 - **Each run profiles new dogs and up to 10 older ones still without a
   profile** (#622), so a profile that failed (a timeout, an OpenRouter 429)
-  is retried. Dogs under the grounding floor are left out, or Pets in Turkey's
-  story-less dogs would alert every run.
+  is retried. Dogs under the grounding floor are left out: the profiler would
+  skip them and alert on every run. Rescues with profiling off (Pets in
+  Turkey) are never queried.
 
 ### Error Handling & Recovery
 
@@ -642,13 +648,12 @@ def scrape_animals(self) -> List[Dict]:
 | Phase   | Technology | Reason                  |
 | ------- | ---------- | ----------------------- |
 | Listing | Playwright | AJAX pagination         |
-| Detail  | Playwright | Dynamic content loading |
+| Detail  | HTTP       | Server-rendered Wix posts (browser fallback) |
 
 **Key Features:**
 
 - Multi-page navigation via AJAX pagination
 - Progressive scrolling per page
-- `networkidle` wait strategy for dynamic content
 - Detail pages over plain HTTP (Wix renders posts on the server), with the
   browser as fallback
 
@@ -675,40 +680,22 @@ another non-200, or HTML without the post body, falls back to the browser.
 
 **Organization:** EU rescue aggregator (Cyprus, etc.)
 
-**Scraping Strategy:** Playwright for Elementor lazy loading
+**Scraping Strategy:** plain HTTP for listing and detail pages (#565; the
+Playwright listing is gone).
 
-| Phase   | Technology | Reason                 |
-| ------- | ---------- | ---------------------- |
-| Listing | Playwright | Elementor lazy loading |
-| Detail  | HTTP       | Static content         |
+- `get_animal_list` reads one `<article class="type-adoption">` card per dog;
+  its name is the last `<h2>`. A status `<h2>` above the name (any case,
+  "GEADOPTEERD" in Dutch) marks it adopted or reserved; any other heading
+  there is logged and the dog kept (`_available_dog`).
+- Available dogs come first, then the adoption archive, so the next page is
+  read only while a page lists an available dog (`_next_page_url`). The
+  archive holds badge-less old dogs, so reading every page would bring them
+  back.
+- `_extract_filtered_description()` strips navigation and metadata from the
+  detail page's text.
 
-**Key Methods:**
-
-```python
-def _trigger_comprehensive_lazy_loading(self, page) -> None:
-    """
-    Progressive scrolling for Elementor:
-    1. Scroll in increments
-    2. Wait for images to load
-    3. Check for new content
-    """
-
-def _extract_dogs_by_widget_containers(self, soup) -> List[Dict]:
-    """
-    Finds elementor-widget containers with both:
-    - Adoption links
-    - H2 dog names
-    Filters ADOPTED/RESERVED by checking proximity to name.
-    """
-```
-
-**Special Features:**
-
-- `_is_dog_available_in_container()` - Proximity-based ADOPTED/RESERVED detection
-- `_extract_filtered_description()` - 3-stage pipeline removing navigation/metadata
-- `_score_image_priority()` - Weighted scoring for best dog photo
-
-**External ID Pattern:** `wp-lisbon` (slug-based)
+**External ID Pattern:** `wp-{slug}` (`wp-lisbon`); a numeric slug is a real
+post id (`wp-9270`).
 
 ---
 
@@ -775,6 +762,9 @@ def _extract_dogs_by_widget_containers(self, soup) -> List[Dict]:
   the site's word. A dog still growing (the text says so, or under 12 months)
   gets no size and the save falls back to the breed's, unless the rescue gives
   an adult size ("klein bleibend", "Endgröße"). Two size words give none.
+  Known limit: a puppy keeps no size as it grows, because existing dogs are
+  skipped (43 of 392 on 2026-09-27). Daisy's scraper uses 40/60 cm for the
+  same question; one scale for all rescues is still open.
 - The story is the post (`div.content`) from the top up to the "Videos" line
   (an `h2` or a `p`), without the "Beschreibung" heading: updates sit above
   that heading, stories open with their own title, and older posts have no
