@@ -65,9 +65,11 @@ const DogNeighborSchema = z.object({
   name: z.string(),
   primary_image_url: z.string().nullish(),
 });
+// get() turns the API's nulls into undefined before validating
+const NoNeighborAsNull = DogNeighborSchema.nullish().transform((dog) => dog ?? null);
 const DogNeighborsSchema = z.object({
-  prev: DogNeighborSchema.nullable(),
-  next: DogNeighborSchema.nullable(),
+  prev: NoNeighborAsNull,
+  next: NoNeighborAsNull,
 });
 export type DogNeighbor = z.infer<typeof DogNeighborSchema>;
 export type DogNeighbors = z.infer<typeof DogNeighborsSchema>;
