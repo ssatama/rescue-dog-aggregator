@@ -562,6 +562,31 @@ class TestScraperCoreFunctions:
         assert "Videos" not in description
 
     @pytest.mark.unit
+    def test_an_update_above_beschreibung_is_part_of_the_story(self, scraper):
+        # Achilles' page: the newest news goes on top, above "Beschreibung"
+        soup = BeautifulSoup(
+            """
+            <div class="content">
+                <h2>Update im September 2026</h2>
+                <p>Achilles hat große Fortschritte an der Leine gemacht.</p>
+                <h2>Beschreibung</h2>
+                <p>Achilles kam aus dem Tierheim Odai.</p>
+                <p class="wp-block-paragraph">Videos</p>
+                <p>Teilen auf Facebook</p>
+            </div>
+            """,
+            "html.parser",
+        )
+
+        description = scraper._extract_properties_from_soup(soup)["description"]
+
+        assert description.split("\n") == [
+            "Update im September 2026",
+            "Achilles hat große Fortschritte an der Leine gemacht.",
+            "Achilles kam aus dem Tierheim Odai.",
+        ]
+
+    @pytest.mark.unit
     def test_an_older_page_without_beschreibung_keeps_its_story(self, scraper):
         # Hector's page: updates and the story under their own headings, no "Beschreibung"
         soup = BeautifulSoup(
