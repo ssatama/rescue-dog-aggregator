@@ -301,6 +301,25 @@ has no LLM profiles), 17 first attempts too short and fixed on retry, no
   /breeds page's schema rejected the response (JAVASCRIPT-NEXTJS-88). Fixed
   in #572; every other breed grouping already skipped NULL.
 
+**Tierschutzverein story backfill (2026-09-28, 20:58-21:19 UTC).** After #619
+(the story is the post up to "Videos"), `backfill apply --orgs
+tierschutzverein-europa --reprofile changed` from `main` at `648b1492` with the
+cron service's env:
+
+| rescue | available before → after | profile inputs changed |
+| --- | --- | ---: |
+| tierschutzverein-europa | 373 → 373 | 41 |
+
+41/41 re-profiled: 7 dogs whose story was empty, 27 that gained the updates
+above "Beschreibung", 6 that lost a trailing "Videos" line, and Olaf
+(rewritten by the rescue). The re-scrape's own LLM phase also profiled Fay,
+Fritz and Milo through the #622 backlog. Then `generate-profiles --ids
+1151,6593` re-profiled MISIs' Sasha and Margo, grounded by their bullets
+since #620. The detail phase took about 14 minutes at the rescue's rate
+(plan: 7); `apply` shows no progress while the scraper runs, because the
+subprocess's output is block-buffered to a file. Afterwards: 0 TSE dogs
+without a story, 0 ending in "Videos".
+
 **Breed registry is data.** Breeds and aliases live in
 `utils/breed_registry.yaml`. `primary_breed` is the grouping key and omits the
 cross (it's the `/breeds/[slug]` key); `standardized_breed` is the display
