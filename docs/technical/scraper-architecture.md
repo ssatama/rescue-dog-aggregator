@@ -421,8 +421,9 @@ Settled in epic #554; don't re-ask them.
   `backfill_commands.py apply --orgs`, with a `plan` in the PR.
 - **Production is read-only from a session** (the `postgres` MCP tool, role
   `claude_ro`); `backfill apply` and other production writes run only when
-  the maintainer says go. A schema migration goes to production *before* its PR merges; an id re-key right *after* the
-  merge deploys and *before* the next cron.
+  the maintainer says go. A schema migration goes to production *before* its
+  PR merges; an id re-key right *after* the merge deploys and *before* the
+  next cron.
 - **Be a polite crawler.** Never exceed a rescue's configured rate or its
   robots.txt Crawl-delay, even while testing. Save a page as a fixture instead
   of re-fetching it.
