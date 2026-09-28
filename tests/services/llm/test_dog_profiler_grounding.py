@@ -24,6 +24,23 @@ class TestSourceTextLength:
 
         assert source_text_length(dog) == 200
 
+    def test_a_story_told_in_bullet_points_counts(self):
+        # MISIs' Sasha: a one-line intro, the rest of her story as the facts list
+        dog = {
+            "properties": {
+                "description": "Sasha is a lovely chocolate lab mix.",
+                "raw_bullet_points": [
+                    "DOB 2022",
+                    "Despite her smaller size, Sasha is packed with personality and charm.",
+                    "She currently lives with her brother in the same enclosure and loves playing with him.",
+                    "When it comes to cuddles, she is a gentle soul who waits for her turn.",
+                ],
+            }
+        }
+
+        assert source_text_length(dog) == len("\n".join(dog["properties"]["raw_bullet_points"]))
+        assert is_sufficiently_grounded(dog) is True
+
     def test_returns_zero_when_there_are_no_properties(self):
         assert source_text_length({}) == 0
         assert source_text_length({"properties": None}) == 0
