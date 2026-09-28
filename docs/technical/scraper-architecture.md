@@ -418,10 +418,10 @@ Settled in epic #554; don't re-ask them.
   "Unknown" or "UK" standing in for data the site didn't give.
 - **A data fix ships with its backfill**: a registered step
   (`management/backfill_steps.py`) or, when a re-scrape repairs it,
-  `backfill_commands.py apply --orgs`, with a `plan` in the PR. **Production is read-only from
-  a session** (the `postgres` MCP tool, role `claude_ro`); `backfill apply` and
-  other production writes run only when the maintainer says go. A schema migration
-  goes to production *before* its PR merges; an id re-key right *after* the
+  `backfill_commands.py apply --orgs`, with a `plan` in the PR.
+- **Production is read-only from a session** (the `postgres` MCP tool, role
+  `claude_ro`); `backfill apply` and other production writes run only when
+  the maintainer says go. A schema migration goes to production *before* its PR merges; an id re-key right *after* the
   merge deploys and *before* the next cron.
 - **Be a polite crawler.** Never exceed a rescue's configured rate or its
   robots.txt Crawl-delay, even while testing. Save a page as a fixture instead
@@ -673,6 +673,8 @@ another non-200, or HTML without the post body, falls back to the browser.
 - Rate: a 429 backs off (4 × `rate_limit_delay`) and retries once, then skips
   the dog. Don't run MISIs dry runs back to back (two on 2026-09-26 got 196
   429s).
+- Never detect an error page by substring ("500", "not found"): CSS like
+  `font-weight:500` dropped real dogs. A missing post body is the signal.
 
 ---
 
