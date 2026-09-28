@@ -234,8 +234,11 @@ when a post has no story), the facts are `raw_bullet_points`, and
   belongs to #568.
 - An age the translation doesn't recognise is stored as `None` and logged
   ("Untranslated age for ..."), never as German text.
-- The "Beschreibung" section is stored as `properties.description`, the
-  key every reader uses. `profile_inputs` (`management/backfill_diff.py`)
+- The story is stored as `properties.description`, the key every reader
+  uses. It is the post (`div.content`) from the top up to the "Videos" line,
+  without the "Beschreibung" heading: newer updates sit above that heading,
+  stories open with their own title, and older posts have no "Beschreibung"
+  at all (#618). `profile_inputs` (`management/backfill_diff.py`)
   compares the profile texts, not the keys they sit under, for both `plan`
   and `apply`, so #572 doesn't re-profile 366 dogs whose text only moved. The API's sitemap filter (`animal_service.py`) reads only
   that key, so every Tierschutzverein dog used to be out of the quality
