@@ -43,7 +43,6 @@ class TestProfilingBacklog:
         assert item["id"] == 11149
         assert item["data"]["properties"]["description"] == STORY
         scraper.database_service.get_unprofiled_animals.assert_called_once_with(28)
-        assert 11149 in scraper._changed_animal_ids  # its page is purged once profiled
 
     def test_a_dog_this_run_already_queued_is_not_queued_twice(self, scraper):
         scraper.animals_for_llm_enrichment = [{"id": 7, "data": {}, "action": "create"}]

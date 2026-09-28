@@ -727,7 +727,7 @@ class DatabaseService:
             with self.connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "SELECT id, name, breed, age_text, properties FROM animals WHERE organization_id = %s AND active = true AND status = 'available' AND dog_profiler_data IS NULL ORDER BY created_at",
+                    "SELECT id, name, breed, age_text, properties FROM animals WHERE organization_id = %s AND active = true AND status = 'available' AND availability_confidence = 'high' AND (dog_profiler_data IS NULL OR dog_profiler_data = '{}') ORDER BY created_at",
                     (organization_id,),
                 )
                 rows = cursor.fetchall()

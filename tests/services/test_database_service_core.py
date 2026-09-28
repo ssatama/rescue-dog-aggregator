@@ -276,7 +276,9 @@ class TestReadPathsDegradeRatherThanRaise:
         dogs = service.get_unprofiled_animals(28)
 
         sql, params = cursor.execute.call_args.args
-        assert "dog_profiler_data IS NULL" in sql
+        # The same dogs llm_commands generate-profiles counts as unprofiled
+        assert "(dog_profiler_data IS NULL OR dog_profiler_data = '{}')" in sql
+        assert "availability_confidence = 'high'" in sql
         assert "active = true" in sql
         assert "status = 'available'" in sql
         assert params == (28,)
