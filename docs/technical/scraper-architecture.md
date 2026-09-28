@@ -406,6 +406,102 @@ read as a place is left out. The dog page shows it, falling back to the
 rescue's own town. MISIs, Many Tears, Santer Paws, Animal Rescue Bosnia, Pets
 in Turkey and The Underdog publish no per-dog location.
 
+### Rules for scraper changes
+
+Settled in epic #554; don't re-ask them.
+
+- **A listing failure raises; a detail-page failure skips one dog.** Never
+  salvage partial listing pages: stale detection would retire the dogs on the
+  missing pages.
+- **Missing data is `None`, never a placeholder.** No "Medium", "Mixed Breed",
+  "Unknown" or "UK" standing in for data the site didn't give.
+- **A data fix ships with its backfill step** (`management/backfill_steps.py`)
+  and a `backfill_commands.py plan` in the PR; production writes happen only
+  when the maintainer says go (see operational-knowledge). A schema migration
+  goes to production *before* its PR merges; an id re-key right *after* the
+  merge deploys and *before* the next cron.
+- **Be a polite crawler.** Never exceed a rescue's configured rate or its
+  robots.txt Crawl-delay, even while testing. Save a page as a fixture instead
+  of re-fetching it.
+- **Playwright is the only browser path** (#566 removed Selenium). Tests patch
+  `get_playwright_service` with `tests/fixtures/playwright_fakes.py`.
+- **The disabled scrapers stay** (Galgos del Sol, Furry Rescue Italy).
+- **Name and location cleaning live in the validator.** Keep
+  `properties.raw_name`, `overlooked` and `display_location` working.
+- **Base-class changes must not need edits in the org scrapers.**
+
+### Run counts and stale detection (#555, #558)
+
+`scrape_logs.detailed_metrics` says what a run lost:
+
+| Key | Meaning |
+| --- | --- |
+| `animals_rejected` | dogs the validator refused |
+| `rejected` | the same, by reason: `missing_field`, `invalid_name`, `no_image` |
+| `save_errors` | dogs whose `save_animal` returned no id |
+| `images_uploaded` / `images_reused` / `images_failed` | per dog, from the batch upload |
+| `phase_timings.llm_enrichment` | seconds spent profiling |
+
+The rejected and failed `external_id`s (up to 20) are in the run's log line
+"N collected, M not saved". More than 10% not saved sends a Sentry warning
+(`scraper.alert_type=dogs_not_saved`). With skipping on, only new dogs are
+collected, so one new dog the site lists without a photo reads as "1 of 1"
+every run (Santer Paws' Bonus, 2026-09); that alert is archived until it
+escalates.
+
+Every dog the site listed is marked seen before stale detection
+(`SessionManager.mark_found_animals_as_seen`), whether it was skipped as
+existing, rejected or failed to save. Dogs stale detection has retired
+(status `unknown`) stay so until a save succeeds, and a new dog that fails
+validation is never stored. Stale detection is skipped, with a run note that
+makes the run a `warning`, when more than 20% of *found* dogs fail to save
+(`SAVE_ERROR_PARTIAL_FAILURE_RATE`) or marking the found dogs fails. Found, not
+collected, and validator rejections don't count: they repeat for the same dog
+every run.
+
+### Listings fail loudly (#559)
+
+A listing page that can't be read raises `ListingIncompleteError`;
+`collect_data` lets it through, so the run is an `error` and stale detection
+doesn't run. Every page the pagination says exists must list dogs; an empty
+*first* page is left to the zero-dogs alert. `get_listing_page(url)` is the
+plain-HTTP fetch, retrying timeouts, connection errors, 429 and 5xx
+(`max_retries: 3` means 4 attempts). Per site: Many Tears reads `?page=N` up
+to the highest numbered link; Santer Paws walks `/adopt/page/N/` until an
+empty 200 past its highest `data-page`; Tierschutzverein follows "→" links;
+MISIs raises when a clicked page shows no `/post/` links or the previous
+page's. A listing past its page limit raises (Tierschutzverein 50, Santer 20,
+MISIs 10).
+
+Known gap: Dogs Trust's Playwright listing still stops early when a page
+doesn't render after "Next". Its "1 / N" indicator can be stale, so raising
+needs a check against the live site first.
+
+### Stored fields: breed, age, story
+
+- **`breed_raw` keeps the rescue's text** (#560). `process_animal` sets it only
+  when absent, because `save_animal` runs it a second time.
+- **Ages keep up** (#561). An age is stored as the range of birth dates that
+  fits what the rescue said (`birth_date_min`, `birth_date_max`) plus
+  `age_observed_at`, all in `utils/birth_dates.py`. A scraper whose rescue
+  publishes a date of birth passes the text as `date_of_birth` (day-first);
+  otherwise the stated age is taken back from the day it was read. An
+  unchanged `age_text` keeps its anchor, so a forced re-scrape of "3 months"
+  a year later doesn't make the dog a puppy again. `age_min_months` /
+  `age_max_months` stay stored columns, derived at save time and by
+  `REFRESH_AGES_SQL` after every cron batch, so a month boundary can show up to
+  three days late. Months cap at 360 (`MAX_DOG_AGE_MONTHS`). `age_text` is
+  still the rescue's first words; JSON-LD and the favourites compare view show
+  it (known gap).
+- **The story is `properties.description`** (#568), the one key every reader
+  uses (sitemap filter, prompt, page). The LLM grounding check
+  (`services/llm/grounding.py`) takes the longest string, or list of strings,
+  in `properties`.
+- **Each run profiles new dogs and up to 10 older ones still without a
+  profile** (#622), so a profile that failed (a timeout, an OpenRouter 429)
+  is retried. Dogs under the grounding floor are left out, or Pets in Turkey's
+  story-less dogs would alert every run.
+
 ### Error Handling & Recovery
 
 ```python
@@ -553,18 +649,25 @@ def scrape_animals(self) -> List[Dict]:
 - Multi-page navigation via AJAX pagination
 - Progressive scrolling per page
 - `networkidle` wait strategy for dynamic content
-- Detail page scraping with Playwright
+- Detail pages over plain HTTP (Wix renders posts on the server), with the
+  browser as fallback
 
-**Special Handling:**
+**The post body (#562).** A dog is a Wix blog post; everything about it is in
+`[data-hook="post-description"]`, and `detail_parser.py` reads nothing else
+(the site menu once passed for the facts). The body is the story, then a facts
+list under "Things you should know about X" (also "have to know"), then
+adoption boilerplate from "How do you adopt X?". The story is
+`properties.description` (the facts when a post has no story); the facts are
+`raw_bullet_points`. Many posts tell most of the story as those bullets, so
+the grounding check counts them (#620). 404/410 means the post is gone;
+another non-200, or HTML without the post body, falls back to the browser.
 
-```python
-# Wait for network idle to ensure all content loaded
-await page.goto(url, wait_until="networkidle", timeout=60000)
-
-# Scroll to trigger lazy loading
-await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-await page.wait_for_timeout(2000)
-```
+- Age: the DOB bullet from its label on (DOB, date of birth, birthday; a bare
+  "born" can be the dog's puppies) is `date_of_birth`. A stated age anchors at
+  the post's `article:published_time`, passed as `age_stated_at`.
+- Rate: a 429 backs off (4 × `rate_limit_delay`) and retries once, then skips
+  the dog. Don't run MISIs dry runs back to back (two on 2026-09-26 got 196
+  429s).
 
 ---
 
@@ -660,6 +763,24 @@ def _extract_dogs_by_widget_containers(self, soup) -> List[Dict]:
 - German text handling
 - Translation layer for breed/size terms
 - HTTP-only (no browser needed)
+
+**Fields (#563, #618).**
+
+- `age_text` is the English translation of `Geburtstag` ("03.2025 (10 Monate
+  alt)" → "10 months old"); the scraper never sets `age`, which
+  `process_animal` would prefer. An untranslated age is `None` and logged.
+  The birth range comes from `Geburtstag` as `date_of_birth`.
+- Size comes from "Ungefähre Größe" by shoulder height (`translate_size`:
+  Small below 35 cm, Medium to 55, Large above; a range by its middle), else
+  the site's word. A dog still growing (the text says so, or under 12 months)
+  gets no size and the save falls back to the breed's, unless the rescue gives
+  an adult size ("klein bleibend", "Endgröße"). Two size words give none.
+- The story is the post (`div.content`) from the top up to the "Videos" line
+  (an `h2` or a `p`), without the "Beschreibung" heading: updates sit above
+  that heading, stories open with their own title, and older posts have no
+  "Beschreibung". Text across a `<br>` is glued ("befindet.Im"), a known gap
+  whose fix would rewrite most stored stories. The story is German; a dog not
+  yet profiled shows it in its page body, meta description and JSON-LD.
 
 ---
 

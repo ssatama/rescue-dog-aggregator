@@ -220,6 +220,16 @@ so. The nudge card's thresholds are in `lib/installNudge.ts`.
 
 ## Data
 
+**The local dev database can lag production's schema.** Alembic only reads
+`RAILWAY_DATABASE_URL`, which is production in `.env`, so never run it for a
+local fix. On 2026-09-26 the local DB lacked `animals.breed_raw` and every new
+dog's save failed locally. Compare `information_schema.columns` on both sides
+and add what is missing by hand.
+
+**Don't merge scraper changes in the 2 hours before a cron run** (Mon/Thu/Sat
+15:00 UTC), and never while one is running: a merge redeploys the cron
+service.
+
 **Rows never self-correct on scrape.** `skip_existing_animals` drops existing
 dogs before `save_animal`, and updates are never re-profiled. A scraper fix
 needs an explicit backfill. Query the full population, not just
@@ -278,7 +288,8 @@ has no LLM profiles), 17 first attempts too short and fixed on retry, no
   MISIs nav-bullet dogs 0, stories over 200 chars 149, no age 7 (#562);
   Tierschutzverein German ages 3, all on dogs the site no longer lists and
   so not re-scraped, `size = 'Medium'` 75 → 204 (sizes now from shoulder
-  height), 369 of 376 with a story (the other 7 have none on the site; #563);
+  height), 369 of 376 with a story (#563; the other 7 do have one, which
+  #618 found and fixed);
   0 active dogs with a story only under an old key (#568).
 - Pets in Turkey has no `description` on purpose: its "Ready to fly /
   Currently in" line is where the dog is, not a story (#564).
@@ -300,9 +311,17 @@ reconcile` against production text before trusting a resolver change.
   section: 385 of 512 dogs got "Everything you need to know about <breed>"
   (2026-08-20), which then poisons their AI profile. Fixing it needs a
   re-profile, not just a re-scrape.
-- `properties.good_with_dogs` / `good_with_cats` are `true` for nearly every
-  dog (#516). `companionAnswer` in `frontend/src/utils/dogFacts.ts` must read
-  the AI profile first until #516 is fixed.
+- Compatibility comes from the "May live with" chips since #516: a chip is
+  yes, no chip means the rescue didn't say (key left out, not "no").
+  Children: preschool is any age (`true`), primary "Yes (5+)", secondary
+  "Yes (11+)". The prompt (1.1.0) maps "Yes (5+)"/"Yes (11+)" to
+  `older_children`. 102 dogs have no card, so a renamed label would silently
+  drop the facts for all of them.
+- Follow-up: `companionAnswer` in `frontend/src/utils/dogFacts.ts` reads the
+  AI profile first. Switch it to `answerOf(profile) ?? answerOf(properties)`,
+  so the rescue's answer fills in behind an AI "unknown", once no active Dogs
+  Trust dog keeps a pre-#516 `good_with_dogs: true` (118 were in stale grace
+  on 2026-09-27).
 
 **Woof Project lists available dogs first, then the adoption archive**
 (pages 2-5 on 2026-09-27). Since #565 the listing is plain HTML: an adopted or
