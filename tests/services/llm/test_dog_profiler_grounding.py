@@ -19,10 +19,33 @@ class TestSourceTextLength:
 
         assert source_text_length(dog) == 400
 
-    def test_ignores_non_string_values(self):
+    def test_ignores_numbers_and_counts_short_lists_as_short(self):
         dog = {"properties": {"age_min_months": 24, "tags": ["a", "b"], "description": "y" * 200}}
 
         assert source_text_length(dog) == 200
+
+    def test_a_story_told_in_bullet_points_counts(self, monkeypatch):
+        monkeypatch.delenv("LLM_MIN_SOURCE_CHARS", raising=False)
+        # MISIs' Sasha: a one-line intro, the rest of her story as the facts list
+        dog = {
+            "properties": {
+                "description": "Sasha is a lovely chocolate lab mix.",
+                "raw_bullet_points": [
+                    "DOB 2022",
+                    "Despite her smaller size, Sasha is packed with personality and charm.",
+                    "She currently lives with her brother in the same enclosure and loves playing with him.",
+                    "When it comes to cuddles, she is a gentle soul who waits for her turn.",
+                ],
+            }
+        }
+
+        assert source_text_length(dog) > MIN_SOURCE_TEXT_CHARS > len(dog["properties"]["description"])
+        assert is_sufficiently_grounded(dog) is True
+
+    def test_a_non_string_bullet_does_not_void_the_list(self):
+        dog = {"properties": {"raw_bullet_points": ["She loves water", None, "and sticks"]}}
+
+        assert source_text_length(dog) == len("She loves water\nand sticks")
 
     def test_returns_zero_when_there_are_no_properties(self):
         assert source_text_length({}) == 0

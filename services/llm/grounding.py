@@ -17,15 +17,25 @@ def source_text_length(dog_data: dict[str, Any]) -> int:
     The story is `description` (#568), but some rescues keep narrative in
     other keys too (Many Tears' requirement sections), so the longest
     string value stands in for "the narrative", rather than a per-org key list
-    that silently returns zero when an org is missing from it.
+    that silently returns zero when an org is missing from it. A list of
+    strings counts as its lines: MISIs tells most of a story as bullet points
+    (`raw_bullet_points`), and the prompt sends them with the rest.
     """
     properties = dog_data.get("properties")
     if not isinstance(properties, dict):
         return 0
 
-    lengths = [len(value) for value in properties.values() if isinstance(value, str)]
+    lengths = [len(_as_text(value)) for value in properties.values()]
 
     return max(lengths, default=0)
+
+
+def _as_text(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        return "\n".join(item for item in value if isinstance(item, str))
+    return ""
 
 
 def minimum_source_chars() -> int:
