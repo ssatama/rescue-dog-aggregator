@@ -17,6 +17,15 @@ the CLI nor the Railway MCP exposes `cronSchedule`; only the dashboard's Cron
 Runs tab does. Repo docs once claimed "Tue/Thu/Sat 6am" and caused a false
 "missed run" alarm, so never infer the schedule from docs or log timestamps.
 
+**The API's DB pool retries a dropped new connection** (#624). A handshake
+the server drops ("server closed the connection unexpectedly") on
+`postgres.railway.internal` shows up a few times a week without a Postgres
+restart (PYTHON-FASTAPI-2N/3K/3M, 2026-09). `api/database/connection_pool.py`
+retries it against the stale-connection budget (3), connects with
+`connect_timeout` 5s (`DB_POOL_CONNECT_TIMEOUT`, because `getconn` holds the
+pool lock while connecting), and answers 503 if it never connects. The
+scraper pool (`services/connection_pool.py`) has neither yet.
+
 **A failed cron run usually means one org failed.** The batch reports
 `overall_success: false` if *any* org fails; read `failed_orgs`. The commit
 shown next to a run is just what was deployed, not the cause. Check

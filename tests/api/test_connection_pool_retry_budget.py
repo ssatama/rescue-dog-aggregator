@@ -15,6 +15,7 @@ from psycopg2 import pool as psycopg2_pool
 
 from api.database.connection_pool import (
     POOL_ACQUIRE_RETRIES,
+    POOL_ACQUIRE_RETRY_DELAY,
     POOL_CONNECT_TIMEOUT,
     POOL_STALE_CONNECTION_RETRIES,
     ConnectionPool,
@@ -121,7 +122,7 @@ class TestAFailedConnectIsRetried:
         connection_pool = make_pool([CONNECT_FAILED, healthy])
 
         assert connection_pool._acquire_connection_with_retry() is healthy
-        assert stub_clock.calls == [0.1]
+        assert stub_clock.calls == [POOL_ACQUIRE_RETRY_DELAY]
 
     def test_a_database_that_never_answers_is_a_typed_error(self, stub_clock):
         connection_pool = make_pool(CONNECT_FAILED)
@@ -142,4 +143,4 @@ def test_a_new_connection_gives_up_after_the_connect_timeout():
     with patch("api.database.connection_pool.psycopg2.pool.ThreadedConnectionPool") as threaded_pool:
         connection_pool._create_pool()
 
-    assert threaded_pool.call_args.kwargs["connect_timeout"] == POOL_CONNECT_TIMEOUT == 5
+    assert threaded_pool.call_args.kwargs["connect_timeout"] == POOL_CONNECT_TIMEOUT
