@@ -270,7 +270,7 @@ class TestReadPathsDegradeRatherThanRaise:
 
     def test_unprofiled_lookup_returns_available_dogs_without_a_profile(self, service):
         cursor = Mock()
-        cursor.fetchall.return_value = [(11149, "Lipton", "Lurcher", "3 years", {"description": "A gentle lurcher."}), (3, "Rex", None, None, None)]
+        cursor.fetchall.return_value = [(11149, "Lipton", "Lurcher", "3 years", {"description": "A gentle lurcher."}, 0), (3, "Rex", None, None, None, 2)]
         service.conn = Mock(cursor=Mock(return_value=cursor))
 
         dogs = service.get_unprofiled_animals(28)
@@ -283,8 +283,8 @@ class TestReadPathsDegradeRatherThanRaise:
         assert "status = 'available'" in sql
         assert params == (28,)
         assert dogs == [
-            {"id": 11149, "name": "Lipton", "breed": "Lurcher", "age_text": "3 years", "properties": {"description": "A gentle lurcher."}},
-            {"id": 3, "name": "Rex", "breed": None, "age_text": None, "properties": {}},
+            {"id": 11149, "name": "Lipton", "breed": "Lurcher", "age_text": "3 years", "properties": {"description": "A gentle lurcher."}, "profile_failed_runs": 0},
+            {"id": 3, "name": "Rex", "breed": None, "age_text": None, "properties": {}, "profile_failed_runs": 2},
         ]
 
     def test_unprofiled_lookup_returns_nothing_on_a_query_error(self, service):

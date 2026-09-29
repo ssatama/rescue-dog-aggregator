@@ -6,6 +6,7 @@ from typing import Any
 
 from scrapers.constants import (
     CONCURRENT_UPLOAD_THRESHOLD,
+    MAX_PROFILE_FAILED_RUNS,
     MAX_R2_FAILURE_RATE,
     SMALL_BATCH_THRESHOLD,
 )
@@ -26,13 +27,18 @@ class DogSaving:
         A dog is queued for profiling only when it is created, so one whose
         profile failed then (a timeout, an OpenRouter 429) would never get one.
         Dogs with too little story are left out: the profiler would skip them
-        and alert on every run.
+        and alert on every run. So are dogs whose profile failed in
+        MAX_PROFILE_FAILED_RUNS runs (#633).
         """
         if not self.database_service or not self.llm_handler.is_enrichment_enabled():
             return []
 
         queued = {item["id"] for item in self.animals_for_llm_enrichment}
         dogs = [dog for dog in self.database_service.get_unprofiled_animals(self.organization_id) if dog["id"] not in queued and is_sufficiently_grounded(dog)]
+        given_up = [dog["id"] for dog in dogs if dog["profile_failed_runs"] >= MAX_PROFILE_FAILED_RUNS]
+        if given_up:
+            self.logger.warning(f"Not retrying {len(given_up)} dogs that failed profiling in {MAX_PROFILE_FAILED_RUNS} runs: {given_up}")
+            dogs = [dog for dog in dogs if dog["profile_failed_runs"] < MAX_PROFILE_FAILED_RUNS]
         # The profiler purges each profiled dog's page itself
         return [{"id": dog["id"], "data": dog, "action": "backfill"} for dog in dogs[: self.PROFILING_BACKLOG_CAP]]
 

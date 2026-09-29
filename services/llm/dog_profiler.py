@@ -387,6 +387,10 @@ class DogProfilerPipeline:
 
         return results
 
+    def record_failed_runs(self) -> dict[int, int]:
+        """Count a failed run for each dog this pipeline couldn't profile; returns each one's total."""
+        return self.database_updater.record_failed_runs([error["dog_id"] for error in self.statistics.errors])
+
     def get_summary(self) -> dict[str, Any]:
         """
         Get processing summary statistics.

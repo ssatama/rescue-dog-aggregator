@@ -158,7 +158,12 @@ Powers the Tinder-like swipe feature with AI insights:
 `BaseScraper` delegates to `scrapers/enrichment/llm_handler.py`, which profiles
 newly collected dogs, plus up to 10 stored dogs still without a profile
 (`_profiling_backlog`, #622), for any organization enabled in
-`configs/llm_organizations.yaml`:
+`configs/llm_organizations.yaml`. Each run a dog's profile fails adds one to
+`llm_processing_flags.profile_failed_runs`. After 3 (`MAX_PROFILE_FAILED_RUNS`,
+#633), the backlog stops retrying the dog, and the run log names it. Sentry gets
+one error when a dog reaches the cap. `generate-profiles --ids` still profiles
+it. After fixing the cause, clear the count with
+`UPDATE animals SET llm_processing_flags = llm_processing_flags - 'profile_failed_runs' WHERE id = ...`.
 
 ```python
 # scrapers/enrichment/llm_handler.py

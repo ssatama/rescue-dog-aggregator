@@ -176,7 +176,11 @@ class LLMClient:
 
                 # Check for errors
                 if response.status_code != 200:
-                    error_data = response.json()
+                    try:
+                        error_data = response.json()
+                    except ValueError:
+                        # A gateway's HTML or empty error page (#633)
+                        error_data = response.text[:500]
                     # A 429 or 5xx is retried, and a dog it still fails is profiled next run;
                     # anything else is a bad request worth an error (and a Sentry event)
                     transient = response.status_code == 429 or response.status_code >= 500
