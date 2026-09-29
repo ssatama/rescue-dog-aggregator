@@ -478,9 +478,6 @@ MISIs raises when a clicked page shows no `/post/` links or the previous
 page's. A listing past its page limit raises (Tierschutzverein 50, Santer 20,
 MISIs 10).
 
-Known gap: the disabled Furry Rescue Italy and Galgos del Sol listings don't
-raise yet (#630).
-
 Dogs Trust's Playwright listing raises when it stops short of its "N / M"
 indicator: a page that doesn't render after "Go to next page", a page with no
 dog cards, or no enabled button before page M (#628). On the live site

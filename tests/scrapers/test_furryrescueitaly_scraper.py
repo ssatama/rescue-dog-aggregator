@@ -3,9 +3,11 @@
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 from bs4 import BeautifulSoup
 
 from scrapers.furryrescueitaly.furryrescueitaly_scraper import FurryRescueItalyScraper
+from scrapers.request_pacing import ListingIncompleteError
 from tests.scrapers.test_scraper_base import ScraperTestBase
 from utils.unified_standardization import UnifiedStandardizer
 
@@ -75,12 +77,12 @@ class TestFurryRescueItalyScraper(ScraperTestBase):
         assert animal["name"] == "Thor"
 
     @patch("scrapers.furryrescueitaly.furryrescueitaly_scraper.requests.get")
-    def test_error_handling_graceful(self, mock_get, scraper):
-        mock_get.side_effect = Exception("Network error")
+    def test_a_listing_failure_raises(self, mock_get, scraper, stub_clock):
+        """#630: an empty list here let stale detection retire every dog."""
+        mock_get.side_effect = requests.ConnectionError("Network error")
 
-        animals = scraper.get_animal_list(max_pages_to_scrape=1)
-
-        assert animals == []
+        with pytest.raises(ListingIncompleteError):
+            scraper.get_animal_list(max_pages_to_scrape=1)
 
     def test_parallel_processing_configuration(self, scraper):
         assert hasattr(scraper, "batch_size")

@@ -67,6 +67,10 @@ class FurryRescueItalyScraper(BaseScraper):
 
         Returns:
             List of dictionaries containing dog information
+
+        Raises:
+            ListingIncompleteError: A listing page failed to load (#630), rather
+                than returning the pages before it
         """
         self.logger.info(f"get_animal_list: Starting with max_pages_to_scrape={max_pages_to_scrape}")
         self.logger.info(f"get_animal_list: Base URL: {self.base_url}")
@@ -76,61 +80,39 @@ class FurryRescueItalyScraper(BaseScraper):
         current_page = 1
         max_pages_detected = None
 
-        try:
-            while True:
-                # Check if we've reached the page limit
-                if max_pages_to_scrape and current_page > max_pages_to_scrape:
-                    self.logger.info(f"Reached max pages limit ({max_pages_to_scrape})")
-                    break
+        while True:
+            # Check if we've reached the page limit
+            if max_pages_to_scrape and current_page > max_pages_to_scrape:
+                self.logger.info(f"Reached max pages limit ({max_pages_to_scrape})")
+                break
 
-                # Build URL for current page
-                if current_page == 1:
-                    url = self.listing_url
-                else:
-                    url = f"{self.listing_url}page/{current_page}/"
+            url = self.listing_url if current_page == 1 else f"{self.listing_url}page/{current_page}/"
+            self.logger.info(f"Fetching page {current_page}: {url}")
 
-                self.logger.info(f"Fetching page {current_page}: {url}")
+            # Retried, and paced at the rescue's rate; raises rather than cut the listing short
+            response = self.get_listing_page(url, headers=self.headers)
+            soup = BeautifulSoup(response.text, "html.parser")
 
-                # Rate limiting for respectful scraping (applies to all pages)
-                if current_page > 1 or all_dogs:  # Rate limit all pages except the very first request
-                    time.sleep(self.rate_limit_delay)
+            page_dogs = self._extract_dogs_from_page(soup)
+            self.logger.info(f"Page {current_page}: _extract_dogs_from_page returned {len(page_dogs)} dogs")
+            if not page_dogs:
+                self.logger.info(f"No dogs found on page {current_page}, stopping pagination")
+                break
 
-                # Fetch the page
-                try:
-                    response = requests.get(url, headers=self.headers, timeout=self.timeout)
-                    response.raise_for_status()
-                except Exception as e:
-                    self.logger.error(f"Error fetching page {current_page}: {e}")
-                    break
+            all_dogs.extend(page_dogs)
 
-                soup = BeautifulSoup(response.text, "html.parser")
-
-                # Extract dogs from current page
-                page_dogs = self._extract_dogs_from_page(soup)
-
-                self.logger.info(f"Page {current_page}: _extract_dogs_from_page returned {len(page_dogs)} dogs")
-                if not page_dogs:
-                    self.logger.info(f"No dogs found on page {current_page}, stopping pagination")
-                    break
-
-                all_dogs.extend(page_dogs)
-                self.logger.info(f"Found {len(page_dogs)} dogs on page {current_page}")
-
-                # Check for pagination to determine if there are more pages
+            if current_page == 1:
+                max_pages_detected = self._detect_max_pages(soup)
                 if not max_pages_detected:
-                    max_pages_detected = self._detect_max_pages(soup)
-                    if max_pages_detected:
-                        self.logger.info(f"Detected {max_pages_detected} total pages")
-
-                # Check if we've reached the last page
-                if max_pages_detected and current_page >= max_pages_detected:
-                    self.logger.info(f"Reached last page ({max_pages_detected})")
+                    # No pagination links: the listing is one page
                     break
+                self.logger.info(f"Detected {max_pages_detected} total pages")
 
-                current_page += 1
+            if current_page >= max_pages_detected:
+                self.logger.info(f"Reached last page ({max_pages_detected})")
+                break
 
-        except Exception as e:
-            self.logger.error(f"Error in get_animal_list: {e}")
+            current_page += 1
 
         self.logger.info(f"Total dogs found: {len(all_dogs)}")
         return all_dogs

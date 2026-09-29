@@ -431,9 +431,10 @@ which also rewrites `adoption_url`: updates never refresh it.
 `age_backfill.py` deliberately doesn't clear these, and a test pins that, so
 the scraper bug stays visible. Scraper and parser fixed in #433.
 
-**A disabled rescue's dogs aren't retired.** Config sync disabling an org
-doesn't retire its dogs; #572's `disabled-org-status-unknown` step did it once
-for Galgos del Sol. Automating it is #630.
+**Disabling a rescue retires its dogs** (#630). When `config_commands.py
+sync` writes an org as disabled, it sets its dogs to `status = 'unknown'`,
+`active = false`, as stale detection would, and logs the count: nothing
+scrapes a disabled rescue, so nothing else would.
 
 **Name and location backfills (#505).** Most rescues skip dogs they already
 have, so name cleaning and `display_location` reach stored rows only through

@@ -232,3 +232,48 @@ class TestOrganizationSyncEnabledCascade:
         assert len(update_calls) == 1, "Expected exactly one UPDATE, got {}".format(len(update_calls))
         _, params = update_calls[0].args
         assert params[-2] is False, f"Flip to enabled=False must UPDATE with active=False (got {params[-2]})"
+
+
+@pytest.mark.unit
+class TestDisablingARescueRetiresItsDogs:
+    """#630: nothing scrapes a disabled rescue, so nothing else would mark its dogs gone."""
+
+    @pytest.mark.parametrize("enabled", [True, False])
+    def test_only_a_disabled_rescue_retires_its_dogs(self, enabled):
+        service = OrganizationSyncService(logo_service=NullLogoUploadService())
+
+        with (
+            patch("utils.organization_sync_service.execute_command"),
+            patch.object(service, "_sync_service_regions"),
+            patch.object(service, "_sync_organization_logo"),
+            patch.object(service, "retire_dogs") as retire_dogs,
+            patch("utils.organization_sync_service.generate_unique_organization_slug", return_value="test-org"),
+        ):
+            service.update_organization(org_id=42, config=_make_config(enabled=enabled))
+
+        if enabled:
+            retire_dogs.assert_not_called()
+        else:
+            retire_dogs.assert_called_once_with(42, "Test Org")
+
+
+@pytest.mark.database
+@pytest.mark.integration
+def test_retiring_marks_the_dogs_no_longer_listed_and_logs_the_count(caplog):
+    import psycopg2
+
+    from config import get_database_config
+
+    service = OrganizationSyncService(logo_service=NullLogoUploadService())
+
+    with caplog.at_level("INFO"):
+        retired = service.retire_dogs(901, "Mock Test Org")
+
+    # utils.db_connection.execute_query is mocked suite-wide, so read the rows directly
+    with psycopg2.connect(**get_database_config()) as conn, conn.cursor() as cursor:
+        cursor.execute("SELECT status, active FROM animals WHERE organization_id = 901")
+        rows = cursor.fetchall()
+    assert retired == len(rows) > 0
+    assert set(rows) == {("unknown", False)}
+    assert f"Retired {retired} dogs" in caplog.text
+    assert service.retire_dogs(901, "Mock Test Org") == 0
