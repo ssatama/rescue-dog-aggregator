@@ -124,3 +124,52 @@ class TestGetConnectionRetry:
 
         with pytest.raises(psycopg2.pool.PoolError):
             pool_service.get_connection()
+
+
+CONNECT_FAILED = psycopg2.OperationalError('connection to server at "postgres.railway.internal", port 5432 failed: server closed the connection unexpectedly')
+BAD_PASSWORD = psycopg2.OperationalError('connection to server failed: FATAL:  password authentication failed for user "scraper"')
+
+
+@pytest.mark.unit
+class TestAFailedConnectIsRetried:
+    """#632: the scraper pool had neither of #625's fixes for a dropped handshake."""
+
+    @pytest.fixture
+    def pool_service(self):
+        with patch.object(ConnectionPoolService, "_create_pool", return_value=MagicMock()):
+            return ConnectionPoolService(db_config={"host": "localhost", "user": "test", "database": "test_db"})
+
+    def test_a_failed_connect_then_a_healthy_one_succeeds(self, pool_service, stub_clock):
+        healthy_conn = MagicMock()
+        healthy_conn.closed = False
+        pool_service.pool.getconn.side_effect = [CONNECT_FAILED, healthy_conn]
+
+        assert pool_service.get_connection() is healthy_conn
+        assert len(stub_clock.calls) == 1
+
+    def test_a_database_that_never_answers_raises_the_connect_error(self, pool_service, stub_clock):
+        pool_service.pool.getconn.side_effect = CONNECT_FAILED
+
+        with pytest.raises(psycopg2.OperationalError) as exc_info:
+            pool_service.get_connection()
+
+        assert exc_info.value is CONNECT_FAILED
+        assert pool_service.pool.getconn.call_count == 3
+
+    def test_a_permanent_connect_error_is_not_retried(self, pool_service, stub_clock):
+        pool_service.pool.getconn.side_effect = BAD_PASSWORD
+
+        with pytest.raises(psycopg2.OperationalError):
+            pool_service.get_connection()
+
+        assert pool_service.pool.getconn.call_count == 1
+        assert stub_clock.calls == []
+
+
+@pytest.mark.unit
+def test_the_scraper_pool_connects_with_a_timeout():
+    """An unanswered connect must fail fast instead of hanging a scraper run."""
+    with patch("services.connection_pool.psycopg2.pool.ThreadedConnectionPool") as threaded_pool:
+        ConnectionPoolService(db_config={"host": "localhost", "user": "test", "database": "test_db"})
+
+    assert threaded_pool.call_args.kwargs["connect_timeout"] == 5

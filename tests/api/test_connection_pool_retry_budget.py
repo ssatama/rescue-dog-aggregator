@@ -19,6 +19,7 @@ from api.database.connection_pool import (
     POOL_CONNECT_TIMEOUT,
     POOL_STALE_CONNECTION_RETRIES,
     ConnectionPool,
+    DatabaseUnreachableError,
     PoolExhaustedError,
 )
 
@@ -67,7 +68,8 @@ class TestStaleConnectionsDoNotSpendTheExhaustionBudget:
     def test_an_unreachable_database_stops_instead_of_looping(self):
         connection_pool = make_pool(lambda: stale_connection())
 
-        with pytest.raises(PoolExhaustedError) as exc_info:
+        # An unreachable database is not a full pool (#632)
+        with pytest.raises(DatabaseUnreachableError) as exc_info:
             connection_pool._acquire_connection_with_retry()
 
         assert "stale" in str(exc_info.value)
@@ -127,12 +129,22 @@ class TestAFailedConnectIsRetried:
     def test_a_database_that_never_answers_is_a_typed_error(self, stub_clock):
         connection_pool = make_pool(CONNECT_FAILED)
 
-        with pytest.raises(PoolExhaustedError) as exc_info:
+        with pytest.raises(DatabaseUnreachableError) as exc_info:
             connection_pool._acquire_connection_with_retry()
 
-        # PoolExhaustedError answers 503, not the generic 500
         assert exc_info.value.__cause__ is CONNECT_FAILED
         assert connection_pool._pool.getconn.call_count == POOL_STALE_CONNECTION_RETRIES
+
+    def test_a_permanent_connect_error_is_not_retried(self, stub_clock):
+        bad_password = psycopg2.OperationalError('connection to server failed: FATAL:  password authentication failed for user "api"')
+        connection_pool = make_pool(bad_password)
+
+        with pytest.raises(DatabaseUnreachableError) as exc_info:
+            connection_pool._acquire_connection_with_retry()
+
+        assert exc_info.value.__cause__ is bad_password
+        assert connection_pool._pool.getconn.call_count == 1
+        assert stub_clock.calls == []
 
 
 @pytest.mark.unit

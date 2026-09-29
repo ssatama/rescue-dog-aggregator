@@ -24,6 +24,7 @@ from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 
 from config import DB_CONFIG
+from services.connection_pool import is_permanent_connect_error
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,10 @@ class PoolNotInitializedError(RuntimeError):
 
 class PoolExhaustedError(RuntimeError):
     """Every connection is checked out and the retry budget ran out."""
+
+
+class DatabaseUnreachableError(RuntimeError):
+    """Connecting kept failing: the database is down or refusing us, not the pool full."""
 
 
 class ConnectionPool:
@@ -209,7 +214,7 @@ class ConnectionPool:
                     logger.warning(f"Stale connection detected, closing and retrying (stale {stale_discarded}/{POOL_STALE_CONNECTION_RETRIES})")
                     self._discard_stale_connection(conn)
                     if stale_discarded >= POOL_STALE_CONNECTION_RETRIES:
-                        raise PoolExhaustedError(f"Pool returned {stale_discarded} stale connections in a row; the database is not reachable")
+                        raise DatabaseUnreachableError(f"Pool returned {stale_discarded} stale connections in a row; the database is not reachable")
                     continue
 
                 if attempt > 0 or stale_discarded > 0:
@@ -218,9 +223,11 @@ class ConnectionPool:
             except psycopg2.OperationalError as e:
                 # A new connection the server dropped mid-handshake: like a stale
                 # one, it says the database is unreachable, not that the pool is full
+                if is_permanent_connect_error(e):
+                    raise DatabaseUnreachableError(f"Connecting failed permanently: {e}") from e
                 stale_discarded += 1
                 if stale_discarded >= POOL_STALE_CONNECTION_RETRIES:
-                    raise PoolExhaustedError(f"{stale_discarded} connection attempts in a row failed; the database is not reachable") from e
+                    raise DatabaseUnreachableError(f"{stale_discarded} connection attempts in a row failed; the database is not reachable") from e
                 logger.warning(f"Connecting failed, retrying (unreachable {stale_discarded}/{POOL_STALE_CONNECTION_RETRIES}): {e}")
                 time.sleep(POOL_ACQUIRE_RETRY_DELAY)
             except pool.PoolError as e:

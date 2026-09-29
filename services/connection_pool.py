@@ -9,12 +9,26 @@ Provides thread-safe connection pool management following CLAUDE.md principles:
 """
 
 import logging
+import os
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 
 import psycopg2
 import psycopg2.extensions
 import psycopg2.pool
+
+# Seconds to wait for a new connection, as the API pool does
+CONNECT_TIMEOUT = int(os.getenv("DB_POOL_CONNECT_TIMEOUT", "5"))
+CONNECT_RETRY_DELAY = 0.5
+
+# A failed connect with one of these won't succeed on a retry
+_PERMANENT_CONNECT_ERRORS = ("password authentication failed", "does not exist", "too many clients", "no pg_hba.conf entry")
+
+
+def is_permanent_connect_error(error: psycopg2.OperationalError) -> bool:
+    """True for a connect failure no retry can fix (bad password, missing database, no free slots)."""
+    return any(marker in str(error) for marker in _PERMANENT_CONNECT_ERRORS)
 
 
 @dataclass(frozen=True)
@@ -61,6 +75,7 @@ class ConnectionPoolService:
             "user": self.db_config["user"],
             "database": self.db_config["database"],
             "port": self.db_config.get("port", 5432),
+            "connect_timeout": CONNECT_TIMEOUT,
         }
 
         # Only add password if not empty
@@ -108,10 +123,19 @@ class ConnectionPoolService:
 
         Raises:
             RuntimeError: If all attempts return stale connections
+            psycopg2.OperationalError: If connecting failed on every attempt, or permanently
             psycopg2.pool.PoolError: If pool is exhausted
         """
         for attempt in range(max_attempts):
-            connection = self.pool.getconn()
+            try:
+                connection = self.pool.getconn()
+            except psycopg2.OperationalError as e:
+                # A new connection the server dropped mid-handshake (#632)
+                if is_permanent_connect_error(e) or attempt == max_attempts - 1:
+                    raise
+                self.logger.warning(f"Connecting failed, retrying (attempt {attempt + 1}/{max_attempts}): {e}")
+                time.sleep(CONNECT_RETRY_DELAY)
+                continue
 
             if self._check_connection_health(connection):
                 if attempt > 0:
