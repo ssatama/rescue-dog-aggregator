@@ -75,4 +75,4 @@ class TestProfilingBacklog:
         with caplog.at_level("WARNING"):
             assert [item["id"] for item in scraper._profiling_backlog()] == [2]
 
-        assert any("1" in r.getMessage() and "failed profiling" in r.getMessage() for r in caplog.records)
+        assert any("[1]" in r.getMessage() and "failed profiling" in r.getMessage() for r in caplog.records)

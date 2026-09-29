@@ -158,8 +158,11 @@ Powers the Tinder-like swipe feature with AI insights:
 `BaseScraper` delegates to `scrapers/enrichment/llm_handler.py`, which profiles
 newly collected dogs, plus up to 10 stored dogs still without a profile
 (`_profiling_backlog`, #622), for any organization enabled in
-`configs/llm_organizations.yaml`. Each run a dog's profile fails adds one to
-`llm_processing_flags.profile_failed_runs`. After 3 (`MAX_PROFILE_FAILED_RUNS`,
+`configs/llm_organizations.yaml`. Each run in which a dog's profile fails on a
+bad answer about that dog (a validation error, or a truncated, empty or
+unparseable answer) adds one to `llm_processing_flags.profile_failed_runs`. An
+OpenRouter outage (429, 5xx, timeout, transport) doesn't count, and a saved
+profile clears the count. After 3 (`MAX_PROFILE_FAILED_RUNS`,
 #633), the backlog stops retrying the dog, and the run log names it. Sentry gets
 one error when a dog reaches the cap. `generate-profiles --ids` still profiles
 it. After fixing the cause, clear the count with

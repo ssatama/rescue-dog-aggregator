@@ -310,7 +310,9 @@ class DogProfilerPipeline:
             return result
 
         except Exception as e:
-            error_info = {"dog_id": dog_id, "dog_name": dog_name, "error": str(e)}
+            # A ValueError is a bad answer about this dog (invalid, truncated, empty,
+            # unparseable); anything else is the provider failing every dog alike
+            error_info = {"dog_id": dog_id, "dog_name": dog_name, "error": str(e), "dog_specific": isinstance(e, ValueError)}
             self.statistics.record_error(error_info)
             error_msg = f"Failed to process dog {dog_id} ({dog_name}): {str(e)}"
             logger.error(error_msg)
@@ -388,8 +390,11 @@ class DogProfilerPipeline:
         return results
 
     def record_failed_runs(self) -> dict[int, int]:
-        """Count a failed run for each dog this pipeline couldn't profile; returns each one's total."""
-        return self.database_updater.record_failed_runs([error["dog_id"] for error in self.statistics.errors])
+        """Count a failed run for each dog whose own answer failed; returns each one's total.
+
+        An outage is not counted: it would take every dog it touched out of the backlog for good.
+        """
+        return self.database_updater.record_failed_runs([error["dog_id"] for error in self.statistics.errors if error["dog_specific"]])
 
     def get_summary(self) -> dict[str, Any]:
         """

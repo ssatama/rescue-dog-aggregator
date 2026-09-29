@@ -146,7 +146,13 @@ class LLMEnrichmentHandler:
             if runs == MAX_PROFILE_FAILED_RUNS:
                 message = f"Dog {dog_id} ({self.organization_name}) failed profiling in {runs} runs; later runs stop retrying it"
                 self.logger.error(message)
-                sentry_sdk.capture_message(message, level="error")
+                # One issue per rescue, however many of its dogs reach the cap
+                sentry_sdk.capture_message(
+                    message,
+                    level="error",
+                    fingerprint=["llm-profile-given-up", str(self.organization_id)],
+                    tags={"llm.dog_id": str(dog_id), "llm.org_id": str(self.organization_id)},
+                )
 
     def _prepare_dogs_for_profiling(self, animals_for_enrichment: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Prepare animal data for LLM profiling pipeline."""

@@ -43,3 +43,14 @@ class TestOpenRouterErrorLogging:
         (record,) = [r for r in caplog.records if r.name == "services.llm.llm_client"]
         assert record.levelno == logging.WARNING
         assert "502 Bad Gateway" in record.getMessage()
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_a_200_that_is_not_json_is_an_upstream_error():
+    """A gateway page served as 200 is the provider's failure, not a bad answer about the dog (#633)."""
+    from services.llm.llm_client import UpstreamLLMError
+
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, text="<html>upstream reset</html>"))
+    with patch("services.llm.llm_client.httpx.AsyncClient", lambda: REAL_CLIENT(transport=transport)), pytest.raises(UpstreamLLMError, match="upstream reset"):
+        await LLMClient(api_key="k").call_openrouter_api(messages=[{"role": "user", "content": "hi"}])

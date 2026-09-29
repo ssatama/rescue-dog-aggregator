@@ -145,7 +145,7 @@ class LLMClient:
 
         Raises:
             httpx.HTTPStatusError: If API returns error status
-            json.JSONDecodeError: If response is not valid JSON
+            UpstreamLLMError: If a 200 response is not valid JSON
         """
         with sentry_sdk.start_span(
             op="ai.chat_completions",
@@ -181,7 +181,8 @@ class LLMClient:
                     except ValueError:
                         # A gateway's HTML or empty error page (#633)
                         error_data = response.text[:500]
-                    # A 429 or 5xx is retried, and a dog it still fails is profiled next run;
+                    # A 429 or 5xx is retried, and a dog it still fails is profiled next run
+                    # (it doesn't count toward MAX_PROFILE_FAILED_RUNS);
                     # anything else is a bad request worth an error (and a Sentry event)
                     transient = response.status_code == 429 or response.status_code >= 500
                     logger.log(logging.WARNING if transient else logging.ERROR, f"API Error: {error_data}")
@@ -189,7 +190,11 @@ class LLMClient:
                     span.set_data("ai.error", str(error_data))
                     response.raise_for_status()
 
-                result = response.json()
+                try:
+                    result = response.json()
+                except ValueError as e:
+                    # A gateway page served as 200: the provider failed, not the dog's answer
+                    raise UpstreamLLMError(f"OpenRouter returned a non-JSON body: {response.text[:500]}") from e
 
                 # Add usage data to span if available
                 if "usage" in result:

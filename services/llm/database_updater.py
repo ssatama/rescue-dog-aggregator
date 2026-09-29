@@ -146,6 +146,7 @@ class DatabaseUpdater:
                 """
                 UPDATE animals
                 SET dog_profiler_data = %s,
+                    llm_processing_flags = COALESCE(llm_processing_flags, '{}'::jsonb) - 'profile_failed_runs',
                     updated_at = NOW()
                 WHERE id = %s
                 """,

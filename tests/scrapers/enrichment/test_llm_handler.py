@@ -328,6 +328,9 @@ class TestFailedRunsAreRecorded:
 
         sentry.capture_message.assert_called_once()
         assert "5" in sentry.capture_message.call_args.args[0]
+        # One Sentry issue per rescue, not one per dog
+        assert sentry.capture_message.call_args.kwargs["fingerprint"] == ["llm-profile-given-up", "1"]
+        assert sentry.capture_message.call_args.kwargs["tags"]["llm.dog_id"] == "5"
 
     def test_a_dog_past_the_cap_does_not_alert_again(self):
         from scrapers.constants import MAX_PROFILE_FAILED_RUNS

@@ -1,5 +1,7 @@
 """A dog whose profile fails every run is counted, so the backlog can stop retrying it (#633)."""
 
+import asyncio
+
 import pytest
 
 from config import get_database_config
@@ -28,6 +30,17 @@ class TestProfileFailedRuns:
         assert dogs[9001]["profile_failed_runs"] == 1
         assert dogs[9002]["profile_failed_runs"] == 0
 
+    def test_a_saved_profile_clears_the_count(self):
+        updater = DatabaseUpdater()
+        updater.record_failed_runs([9001, 9001])
+        updater.record_failed_runs([9001])
+
+        assert asyncio.run(updater.save_results([{"dog_id": 9001, "description": "A profile."}]))
+        assert updater.record_failed_runs([9001]) == {9001: 1}
+
+
+@pytest.mark.unit
+class TestNothingToRecord:
     def test_nothing_to_record_opens_no_connection(self):
         assert DatabaseUpdater(connection_pool=object()).record_failed_runs([]) == {}
 
