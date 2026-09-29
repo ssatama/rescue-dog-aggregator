@@ -331,6 +331,27 @@ since #620. The detail phase took about 14 minutes at the rescue's rate
 subprocess's output is block-buffered to a file. Afterwards: 0 TSE dogs
 without a story, 0 ending in "Videos".
 
+**Re-slug of the "-unknown-" dogs (2026-09-29, 08:40 UTC, #634).** Before
+#610 a missing breed was stored as "Unknown", so 207 dogs (73 active) had
+slugs like `sunny-unknown-11687`. After #645 deployed (API and Vercel at
+`6c45ddf8`), `backfill apply --steps reslug-unknown --reprofile none` from
+`main`: **207 rows updated**, re-profiled 0. The new slug is
+`generate_animal_slug(name, breed, standardized_breed, id)`, as for a new dog:
+`sunny-11687`, `feliz-cane-corso-cross-1272`. Afterwards 0 slugs match
+`-unknown-[0-9]+$`, an old URL answers 308 to the new one (the API 301s any
+slug that ends in a known dog's id), and IndexNow took all 414 URLs.
+
+A slug change needs this order, or pages loop or stay stale for 48 hours:
+1. Deploy the redirect code, then apply the step straight away. Before the
+   apply, a request to a *new* slug gets the API's 301 back to the old one, and
+   ISR would cache that redirect.
+2. Purge the old **and** new slugs' tags and `/dogs/<slug>` paths, plus
+   `animals`, and IndexNow both URL sets: a Python loop over
+   `invalidate_sync` and `submit_dog_urls_sync`, run as `railway run
+   --service thriving-appreciation`, since `REVALIDATION_TOKEN` and
+   `INDEXNOW_KEY` live there. `revalidateTag(..., "max")` serves one stale
+   response before the new one, so check each URL twice.
+
 **Breed registry is data.** Breeds and aliases live in
 `utils/breed_registry.yaml`. `primary_breed` is the grouping key and omits the
 cross (it's the `/breeds/[slug]` key); `standardized_breed` is the display
