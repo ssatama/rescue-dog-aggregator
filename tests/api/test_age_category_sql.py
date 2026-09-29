@@ -27,5 +27,9 @@ class TestAgeBucketsInSql:
     def test_a_stated_range_still_spans_its_buckets(self):
         assert _buckets(24, 60) == {"Young", "Adult"}
 
+    def test_a_year_only_birth_date_on_the_31st_keeps_its_bucket(self):
+        """#652: 11 wide on the 31st of a month."""
+        assert _buckets(34, 45) == {"Young"}
+
     def test_an_exact_birth_date_is_one_bucket(self):
         assert _buckets(36, 36) == {"Adult"}
