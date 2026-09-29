@@ -784,8 +784,10 @@ post id (`wp-9270`).
 - The story is the post (`div.content`) from the top up to the "Videos" line
   (an `h2` or a `p`), without the "Beschreibung" heading: updates sit above
   that heading, stories open with their own title, and older posts have no
-  "Beschreibung". Text across a `<br>` or inline tag is joined with a space
-  (#631; it used to read "befindet.Im").
+  "Beschreibung". Text keeps the page's own spacing, and a `<br>` reads
+  as a space (#631, #654): `get_text(strip=True)` had stripped the space beside
+  every tag ("hatBitte", "befindet.Im"), and a space at every tag split words
+  the page wraps in tags ("H<span>ü</span>ndin"), so only `<br>` adds one.
 - **The German story before profiling (decided, #631).** A dog shows its German
   `properties.description` only until its AI profile exists, which the same
   run writes minutes after the save. A profile that fails is retried by the
