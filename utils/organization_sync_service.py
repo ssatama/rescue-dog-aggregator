@@ -305,6 +305,29 @@ class OrganizationSyncService:
         self._sync_service_regions(org_id, config)
         self._sync_organization_logo(org_id, config)
 
+    def retire_dogs(self, org_id: int, org_name: str) -> int:
+        """Mark a disabled rescue's dogs no longer listed, as stale detection would (#630).
+
+        Nothing scrapes a disabled rescue, so nothing else would retire them.
+        """
+        result = execute_command(
+            """
+            WITH retired AS (
+                UPDATE animals
+                SET status = CASE WHEN status IN ('adopted', 'reserved') THEN status ELSE 'unknown' END,
+                    active = false
+                WHERE organization_id = %s AND (active OR status = 'available')
+                RETURNING 1
+            )
+            SELECT COUNT(*) AS retired FROM retired
+            """,
+            (org_id,),
+        )
+        retired = result["retired"] if result else 0
+        if retired:
+            logger.info(f"Retired {retired} dogs of disabled organization '{org_name}'")
+        return retired
+
     def _sync_service_regions(self, org_id: int, config: OrganizationConfig) -> None:
         """Sync service regions for organization."""
         try:
@@ -380,10 +403,13 @@ class OrganizationSyncService:
 
                 if self.should_update_organization(db_org, config):
                     self.update_organization(db_org.id, config)
-                    return SyncResult(db_org.id, config.id, False, True)
                 else:
                     logger.debug(f"Organization '{config.name}' is up to date")
-                    return SyncResult(db_org.id, config.id, False, True)
+                # Every sync, not only the one that disables it: idempotent, and a
+                # retire that failed once is retried
+                if not config.enabled:
+                    self.retire_dogs(db_org.id, config.name)
+                return SyncResult(db_org.id, config.id, False, True)
             else:
                 # Organization doesn't exist
                 org_id = self.create_organization(config)

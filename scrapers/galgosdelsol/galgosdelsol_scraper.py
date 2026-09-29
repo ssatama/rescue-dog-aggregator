@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
+from scrapers.request_pacing import ListingIncompleteError
 from utils.standardization import standardize_age
 
 
@@ -71,29 +72,23 @@ class GalgosDelSolScraper(BaseScraper):
         seen_urls = set()  # Track URLs to prevent duplicates
 
         # Scrape each listing page to collect all animals
+        # A page that fails raises ListingIncompleteError (#630): skipping it would
+        # let stale detection retire every dog listed there
         for listing_url in self.listing_urls:
-            try:
-                # Respect rate limiting between requests
-                time.sleep(self.rate_limit_delay)
+            animals = self._scrape_listing_page(listing_url)
 
-                animals = self._scrape_listing_page(listing_url)
+            for animal in animals:
+                adoption_url = animal["adoption_url"]
 
-                for animal in animals:
-                    adoption_url = animal["adoption_url"]
+                # Skip duplicates - some dogs appear on multiple pages
+                if adoption_url in seen_urls:
+                    self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
+                    continue
 
-                    # Skip duplicates - some dogs appear on multiple pages
-                    if adoption_url in seen_urls:
-                        self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
-                        continue
+                seen_urls.add(adoption_url)
+                all_dogs_data.append(animal)
 
-                    seen_urls.add(adoption_url)
-                    all_dogs_data.append(animal)
-
-                self.logger.debug(f"Collected {len(animals)} animals from {listing_url}")
-
-            except Exception as e:
-                self.logger.error(f"Error collecting data from {listing_url}: {e}")
-                continue
+            self.logger.debug(f"Collected {len(animals)} animals from {listing_url}")
 
         if not all_dogs_data:
             self.logger.warning("No animals found to process")
@@ -181,6 +176,8 @@ class GalgosDelSolScraper(BaseScraper):
             self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
             return all_dogs_data
 
+        except ListingIncompleteError:
+            raise
         except Exception as e:
             self.logger.error(f"Error collecting data from Galgos del Sol: {e}")
             return []
@@ -810,20 +807,20 @@ class GalgosDelSolScraper(BaseScraper):
 
         Returns:
             List of dictionaries containing animal data
+
+        Raises:
+            ListingIncompleteError: The page failed to load, or has no <main>
         """
+        # Retried, and paced at the rescue's rate
+        response = self.get_listing_page(url, headers=dict(self.session.headers))
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Find all dog links within the main content
+        main_content = soup.find("main")
+        if not main_content:
+            raise ListingIncompleteError(f"Listing page {url} has no <main>: it didn't render as expected")
+
         try:
-            # Fetch the listing page using persistent session
-            response = self.session.get(url, timeout=30)
-            response.raise_for_status()
-
-            soup = BeautifulSoup(response.content, "html.parser")
-
-            # Find all dog links within the main content
-            main_content = soup.find("main")
-            if not main_content:
-                self.logger.debug("No main content found")
-                return []
-
             # Find all adoptable dog links using regular <a> tags
             # Check if main_content has find_all method (is a Tag or BeautifulSoup object)
             if hasattr(main_content, "find_all"):
@@ -888,8 +885,7 @@ class GalgosDelSolScraper(BaseScraper):
             return animals
 
         except Exception as e:
-            self.logger.error(f"Error scraping listing page {url}: {e}")
-            return []
+            raise ListingIncompleteError(f"Listing page {url} could not be parsed: {e}") from e
 
     def _is_available_dog(self, name: str) -> bool:
         """Check if a dog is available based on its name.
