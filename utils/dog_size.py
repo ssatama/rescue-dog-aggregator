@@ -1,7 +1,8 @@
-"""One shoulder-height scale for every rescue that gives a dog's height (#631).
+"""One shoulder-height scale for the rescues that size a dog by height (#631).
 
 Tierschutzverein Europa split at 35/55 cm and Daisy Family Rescue at 40/60 cm
-for the same question; 40/60 is the common split.
+for the same question; 40/60 is the common split. Animal Rescue Bosnia keeps
+its own five sizes (with Tiny and XLarge), which the standardizer maps.
 """
 
 SMALL_BELOW_CM = 40

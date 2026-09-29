@@ -760,15 +760,19 @@ post id (`wp-9270`).
   alt)" → "10 months old"); the scraper never sets `age`, which
   `process_animal` would prefer. An untranslated age is `None` and logged.
   The birth range comes from `Geburtstag` as `date_of_birth`.
-- Size comes from "Ungefähre Größe" by shoulder height, on the scale every
-  rescue shares (`utils/dog_size.py`: Small below 40 cm, Medium below 60,
-  Large from 60; a range by its middle, #631), else the site's word. A dog still
+- Size comes from "Ungefähre Größe" by shoulder height, on the scale shared
+  with Daisy (`utils/dog_size.py`: Small below 40 cm, Medium below 60, Large
+  from 60; a range by its middle, #631; Animal Rescue Bosnia keeps its own five
+  sizes), else the site's word. A dog still
   growing (the text says so, or under 12 months) gets no size and the save
   falls back to the breed's, unless the rescue gives an adult size ("klein
-  bleibend", "Endgröße"). Two size words give none. A dog with a height but no
-  size is stored with `properties.size_pending`, which skip-existing doesn't
-  skip, so each run reads it again until the rescue's page gives a grown size
-  (46 dogs on 2026-09-29, about 2 minutes per run at the rescue's rate).
+  bleibend", "Endgröße"). Two size words give none. A dog whose page says it
+  is still growing ("im Wachstum", "wächst noch", "nicht ausgewachsen") and is
+  under 24 months is stored with `properties.size_pending`, which
+  skip-existing doesn't skip, so each run reads it again until the page gives
+  a grown size or the dog turns 2. A plain puppy height ("ca. 35 cm" at 4
+  months) isn't waited on: read again at a year, it would become the adult
+  size, so such a dog keeps the breed's.
 - The story is the post (`div.content`) from the top up to the "Videos" line
   (an `h2` or a `p`), without the "Beschreibung" heading: updates sit above
   that heading, stories open with their own title, and older posts have no
