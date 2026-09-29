@@ -26,13 +26,22 @@ class TestTextAcrossTags:
         story = _properties(scraper, "<p>Er ist in Spanien, wo er sich befindet.<br>Im August kam er zu uns.</p>")["description"]
         assert story == "Er ist in Spanien, wo er sich befindet. Im August kam er zu uns."
 
-    def test_an_inline_tag_keeps_the_words_apart_without_a_space_before_punctuation(self, scraper):
-        story = _properties(scraper, "<p><strong>Milo</strong>, ein junger Rüde.<em>Er</em> ist verspielt.</p>")["description"]
-        assert story == "Milo, ein junger Rüde. Er ist verspielt."
+    def test_the_space_beside_an_inline_tag_is_kept(self, scraper):
+        """Real: "hat <em>Bitte nimm mich mit</em> gesagt" was stored "hatBitte nimm mich mitgesagt"."""
+        story = _properties(scraper, "<p>hat <em>Bitte nimm mich mit</em> gesagt. <strong>Milo</strong>, ein Rüde.</p>")["description"]
+        assert story == "hat Bitte nimm mich mit gesagt. Milo, ein Rüde."
+
+    def test_a_tag_inside_a_word_does_not_split_it(self, scraper):
+        """#654, real: Haribo's "H<span>ü</span>ndin" would have read "H ü ndin"."""
+        story = _properties(scraper, "<p>Eine H<span>ü</span>ndin, wie sch<span>ö</span>n.</p>")["description"]
+        assert story == "Eine Hündin, wie schön."
 
     def test_quotes_brackets_and_smileys_keep_the_rescues_spacing(self, scraper):
         story = _properties(scraper, "<p>Sie heißt „<em>Luna</em>“ <em>(</em>Mischling) und wartet auf dich :-)</p>")["description"]
         assert story == "Sie heißt „Luna“ (Mischling) und wartet auf dich :-)"
+
+    def test_comments_are_not_text(self, scraper):
+        assert _properties(scraper, "<p>Luna<!-- note --> ist lieb.</p>")["description"] == "Luna ist lieb."
 
     def test_table_values_too(self, scraper):
         props = _properties(scraper, "<table><tr><td>Ungefähre Größe:</td><td>ca. 40 cm,<br>im Wachstum</td></tr></table>")
@@ -87,7 +96,7 @@ class TestEnglishStyleQuotes:
         [
             ("<p>Er will sich nicht “zurechtbiegen” lassen.</p>", "Er will sich nicht “zurechtbiegen” lassen."),
             ("<p>Ein Geschenk.<br>“Jedes Tier zählt”</p>", "Ein Geschenk. “Jedes Tier zählt”"),
-            ("<p>Sie heißt „ <em>Luna</em> “ und bleibt.</p>", "Sie heißt „Luna“ und bleibt."),
+            ("<p>Sie heißt „<em>Luna</em>“ und bleibt.</p>", "Sie heißt „Luna“ und bleibt."),
         ],
     )
     def test_quotes(self, scraper, body, story):

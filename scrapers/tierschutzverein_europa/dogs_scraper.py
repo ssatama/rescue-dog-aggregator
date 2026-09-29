@@ -3,7 +3,7 @@ from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, NavigableString, Tag
 
 from scrapers.base_scraper import BaseScraper, DetailPageError, ListingIncompleteError
 from scrapers.tierschutzverein_europa.translations import (
@@ -20,22 +20,18 @@ from utils.shared_extraction_patterns import gallery_urls
 # A post's story is its paragraphs and subtitles, up to the "Videos" line
 STORY_BLOCKS = ["p", "h1", "h2", "h3", "h4"]
 STORY_END = re.compile(r"^Videos?$", re.IGNORECASE)
-_SPACE_BEFORE_PUNCTUATION = re.compile(r"\s+([,.;!?)])")
-_SPACE_AFTER_OPENING = re.compile(r"\(\s+")
-# Inside a German „…“ pair only: in English style “ opens a quote (#654)
-_GERMAN_QUOTE = re.compile(r"„\s*([^„“]*?)\s*“")
 
 
 def _text(element: Tag) -> str:
-    """An element's text with its line breaks and inline tags as spaces (#631).
+    """An element's text as the page shows it: its own spacing, a line break as a space.
 
-    get_text(strip=True) glued "befindet.<br>Im August" into "befindet.Im August".
-    A separator does the opposite to "<strong>Milo</strong>," ("Milo ,"), so the
-    space before punctuation goes again.
+    get_text(strip=True) stripped each piece of text, so the space beside a tag
+    went ("hat <em>Bitte</em>" read "hatBitte") and "befindet.<br>Im" read
+    "befindet.Im" (#631). A separator at every tag split words instead
+    ("H<span>ü</span>ndin" read "H ü ndin", #654), so only <br> adds a space.
     """
-    text = " ".join(element.get_text(" ", strip=True).split())
-    text = _SPACE_AFTER_OPENING.sub("(", _SPACE_BEFORE_PUNCTUATION.sub(r"\1", text))
-    return _GERMAN_QUOTE.sub(r"„\1“", text)
+    parts = [" " if isinstance(node, Tag) else str(node) for node in element.descendants if (isinstance(node, Tag) and node.name == "br") or type(node) is NavigableString]
+    return " ".join("".join(parts).split())
 
 
 class TierschutzvereinEuropaScraper(BaseScraper):
