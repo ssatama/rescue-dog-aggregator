@@ -96,7 +96,9 @@ class FurryRescueItalyScraper(BaseScraper):
 
             page_dogs = self._extract_dogs_from_page(soup)
             self.logger.info(f"Page {current_page}: _extract_dogs_from_page returned {len(page_dogs)} dogs")
-            if not page_dogs:
+            # Judge by the cards the page rendered, not by page_dogs: a page of
+            # only reserved dogs is a real page
+            if not soup.find("h6", class_="adoption-header"):
                 if current_page > 1:
                     # The pagination said this page exists: its dogs would go stale
                     raise ListingIncompleteError(f"Listing page {url} shows no dogs, but page 1 listed {max_pages_detected} pages")

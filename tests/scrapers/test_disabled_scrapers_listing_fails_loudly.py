@@ -57,6 +57,16 @@ class TestFurryRescueItaly:
         with patch("scrapers.request_pacing.requests.get", side_effect=[page(FRI_PAGE_1), page("<html><body></body></html>")]), pytest.raises(ListingIncompleteError):
             scraper.get_animal_list()
 
+    def test_a_page_of_reserved_dogs_is_not_an_empty_page(self, scraper, stub_clock):
+        """Round-2 review of #640: page_dogs has reserved dogs removed, so a page of
+        them read as empty and would have failed every run until they left."""
+        page_1 = FRI_PAGE_1.replace('<a href="/adoptions/page/2/">2</a>', '<a href="/adoptions/page/2/">2</a><a href="/adoptions/page/3/">3</a>')
+        reserved = '<html><article><h6 class="adoption-header">LUNA (RESERVED)</h6><a href="/adoption/luna/" class="btn">More Info</a></article></html>'
+        with patch("scrapers.request_pacing.requests.get", side_effect=[page(page_1), page(reserved), page(FRI_SINGLE_PAGE)]):
+            animals = scraper.get_animal_list()
+
+        assert [a["name"] for a in animals] == ["Billo", "Thor"]
+
     def test_a_listing_without_pagination_is_one_page(self, scraper, stub_clock):
         # A page 2 request fails the test rather than looping on the same page
         with patch("scrapers.request_pacing.requests.get", side_effect=[page(FRI_SINGLE_PAGE), AssertionError("read a page 2")]) as get:
