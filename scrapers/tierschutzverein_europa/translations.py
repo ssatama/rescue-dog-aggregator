@@ -340,3 +340,16 @@ def normalize_name(name: str | None) -> str | None:
 
     # Simple capitalization for single words
     return name.capitalize()
+
+
+# A page that says its dog is still growing is read again until it gives a
+# grown size, but only while the dog is young: the rescue leaves the words on
+# some grown dogs' pages (#631)
+STILL_GROWING_UNTIL_MONTHS = 24
+
+
+def awaits_grown_size(height_text: str | None, age_months: int | None) -> bool:
+    """The page says the dog is still growing, and it is young enough to believe."""
+    if not height_text or age_months is None or age_months >= STILL_GROWING_UNTIL_MONTHS:
+        return False
+    return bool(_NOT_GROWN.search(height_text) or _GROWING.search(height_text))
