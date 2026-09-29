@@ -362,7 +362,7 @@ describe("the dog's age in JSON-LD (#635)", () => {
     generatePetSchema({ id: 3, name: "Pip", ...dog }).about.disambiguatingDescription;
 
   test("is the current age from the refreshed months, not the text as first read", () => {
-    expect(ageOf({ age_text: "3 months", age_min_months: 15, age_max_months: 16 })).toBe("Age: 1 year");
+    expect(ageOf({ age_text: "3 months", age_min_months: 15, age_max_months: 27 })).toBe("Age: 1 year");
   });
 
   test("is left out when only text is recorded", () => {

@@ -187,7 +187,7 @@ export const generatePetSchema = (dog: DogForSchema | null | undefined): Record<
 
   const additionalProperty: Record<string, unknown>[] = [];
 
-  // The current age from the refreshed months, as the cards use; age_text is the age as first read (#635)
+  // The current age from the refreshed months the cards also read; age_text is the age as first read (#635)
   const age = formatCurrentAge(dog);
   if (age) {
     additionalProperty.push({
