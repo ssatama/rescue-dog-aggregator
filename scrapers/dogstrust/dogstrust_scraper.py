@@ -145,16 +145,20 @@ class DogsTrustScraper(BaseScraper):
         About 1 dog in 10 has no card, which is legitimate. If Dogs Trust renamed
         the label, every dog would lose its good_with_* facts silently.
         """
+        # A run with too few pages says nothing, and must not become the baseline either (#644)
+        if len(dogs) < self.MIN_PAGES_FOR_CARD_SHARE:
+            return
         with_card = sum(1 for dog in dogs if (dog.get("properties") or {}).get("may_live_with"))
         self.run_metrics = {"detail_pages": len(dogs), "may_live_with_cards": with_card}
-        if len(dogs) < self.MIN_PAGES_FOR_CARD_SHARE or not self.session_manager:
+        if not self.session_manager:
             return
 
         historical = self.session_manager.get_historical_share("may_live_with_cards", "detail_pages")
         share = with_card / len(dogs)
         if historical and share < historical * self.CARD_SHARE_DROP:
             message = f"Only {with_card} of {len(dogs)} Dogs Trust dogs had a 'May live with' card ({share:.0%}, usually {historical:.0%}): was the label renamed?"
-            self.logger.error(message)
+            # A warning, not an error: an error log would be a second, unfingerprinted Sentry event (#644)
+            self.logger.warning(message)
             sentry_sdk.capture_message(message, level="error", fingerprint=["dogstrust-may-live-with-share"])
             # Makes the run a "warning", out of the history: a lasting rename can't become the baseline
             self._run_notes.append(message)
@@ -521,7 +525,10 @@ class DogsTrustScraper(BaseScraper):
                     page_num += 1
 
             except Exception as e:
-                self.logger.error(f"Error during Playwright pagination scraping: {e}")
+                # An incomplete listing may be recovered by the fresh-browser retry;
+                # one that isn't still reaches Sentry through the run's failure (#644)
+                log = self.logger.warning if isinstance(e, ListingIncompleteError) else self.logger.error
+                log(f"Error during Playwright pagination scraping: {e}")
                 # Propagate so collect_data() can record a real failure instead
                 # of silently returning [] and triggering the misleading
                 # zero-dogs Sentry alert.

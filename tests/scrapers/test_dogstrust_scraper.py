@@ -901,3 +901,43 @@ class TestAnIncompleteListingIsRetried:
 
         with pytest.raises(ListingIncompleteError):
             scraper._run_playwright_pagination_with_retry()
+
+
+@pytest.mark.unit
+class TestCardShareAndRetryLogging:
+    """#644: follow-ups from the review of #641."""
+
+    def test_a_small_run_records_no_share(self):
+        """Runs with too few pages ended "success" with their share, so they could become the baseline."""
+        scraper = DogsTrustScraper()
+        scraper.session_manager = Mock(get_historical_share=Mock(return_value=0.9))
+
+        scraper._check_may_live_with_share(_detailed(0, 3))
+
+        assert scraper.run_metrics == {}
+
+    def test_the_alert_is_one_sentry_event(self):
+        """An error log is a second Sentry event (LoggingIntegration), unfingerprinted."""
+        scraper = DogsTrustScraper()
+        scraper.session_manager = Mock(get_historical_share=Mock(return_value=0.9))
+        scraper.logger = Mock()
+
+        with patch("scrapers.dogstrust.dogstrust_scraper.sentry_sdk") as sentry:
+            scraper._check_may_live_with_share(_detailed(0, 12))
+
+        sentry.capture_message.assert_called_once()
+        scraper.logger.error.assert_not_called()
+        scraper.logger.warning.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_an_incomplete_listing_is_a_warning_the_retry_may_recover(self):
+        scraper = DogsTrustScraper()
+        scraper.logger = Mock()
+        page = _build_paginated_page_mock([LIVE_PAGE_1])
+        page.wait_for_function = AsyncMock(side_effect=PlaywrightTimeoutError("no re-render"))
+        _patch_browser_retry(scraper, page)
+
+        with patch("scrapers.dogstrust.dogstrust_scraper.asyncio.sleep", new=AsyncMock()), pytest.raises(ListingIncompleteError):
+            await scraper._get_animal_list_playwright()
+
+        scraper.logger.error.assert_not_called()
