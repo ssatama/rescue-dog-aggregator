@@ -7,11 +7,13 @@ import time
 from typing import Any
 
 import requests
+import sentry_sdk
 from bs4 import BeautifulSoup, Tag
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.base_scraper import BaseScraper
+from scrapers.request_pacing import ListingIncompleteError
 from services.playwright_browser_service import PlaywrightOptions
 
 # Browserless v2 sessions occasionally close mid-pagination — the remote browser
@@ -134,7 +136,28 @@ class DogsTrustScraper(BaseScraper):
 
         all_dogs_data = self._process_animals_parallel(animals)
         self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
+        self._check_may_live_with_share(all_dogs_data)
         return all_dogs_data
+
+    def _check_may_live_with_share(self, dogs: list[dict[str, Any]]) -> None:
+        """Record how many detail pages had a "May live with" card, and alert on a sharp drop (#628).
+
+        About 1 dog in 10 has no card, which is legitimate. If Dogs Trust renamed
+        the label, every dog would lose its good_with_* facts silently.
+        """
+        with_card = sum(1 for dog in dogs if (dog.get("properties") or {}).get("may_live_with"))
+        self.run_metrics = {"detail_pages": len(dogs), "may_live_with_cards": with_card}
+        if len(dogs) < self.MIN_PAGES_FOR_CARD_SHARE or not self.session_manager:
+            return
+
+        historical = self.session_manager.get_historical_share("may_live_with_cards", "detail_pages")
+        share = with_card / len(dogs)
+        if historical and share < historical * self.CARD_SHARE_DROP:
+            message = f"Only {with_card} of {len(dogs)} Dogs Trust dogs had a 'May live with' card ({share:.0%}, usually {historical:.0%}): was the label renamed?"
+            self.logger.error(message)
+            sentry_sdk.capture_message(message, level="error", fingerprint=["dogstrust-may-live-with-share"])
+            # Makes the run a "warning", out of the history: a lasting rename can't become the baseline
+            self._run_notes.append(message)
 
     def get_animal_list(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Fetch list of available dogs using browser automation with pagination.
@@ -166,11 +189,13 @@ class DogsTrustScraper(BaseScraper):
         for attempt in range(1, max_attempts + 1):
             try:
                 return asyncio.run(self._get_animal_list_playwright(max_pages_to_scrape))
-            except PlaywrightError as error:
-                if not _is_browser_closed_error(error) or attempt == max_attempts:
+            except (PlaywrightError, ListingIncompleteError) as error:
+                # A page that didn't render is retried like a dropped session (#628)
+                retryable = isinstance(error, ListingIncompleteError) or _is_browser_closed_error(error)
+                if not retryable or attempt == max_attempts:
                     raise
                 delay = 2.0 * attempt
-                self.logger.warning(f"Browserless session dropped mid-scrape (attempt {attempt}/{max_attempts}): {error}; retrying from a fresh browser in {delay}s")
+                self.logger.warning(f"Listing incomplete or session dropped mid-scrape (attempt {attempt}/{max_attempts}): {error}; retrying from a fresh browser in {delay}s")
                 time.sleep(delay)
 
     async def _get_animal_list_playwright(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
@@ -397,22 +422,22 @@ class DogsTrustScraper(BaseScraper):
                     html_content = await page.content()
                     soup = BeautifulSoup(html_content, "html.parser")
 
-                    if max_pages is None:
+                    if page_num == 0:
+                        # None without an indicator: the listing then ends on an empty page or no Next
                         max_pages = self._detect_max_pages(soup)
                         self.logger.info(f"Detected maximum pages: {max_pages}")
 
                     page_dogs = self._extract_dogs_from_page(soup)
-                    if page_dogs:
-                        all_dogs.extend(page_dogs)
-                        self.logger.info(f"Page {page_num}: Found {len(page_dogs)} dogs (total so far: {len(all_dogs)})")
-                    elif page_num > 0:
-                        # An empty page past the first means we've run off the end
-                        # of the results — stop even if the detected max is higher
-                        # (the indicator can be stale or fall back to a fixed bound).
-                        self.logger.info(f"Page {page_num}: No dogs found - reached end of results")
+                    all_dogs.extend(page_dogs)
+                    self.logger.info(f"Page {page_num}: Found {len(page_dogs)} dogs (total so far: {len(all_dogs)})")
+                    # Judged by the cards rendered, not page_dogs: the hide-reserved filter
+                    # isn't applied on the live site, so a page can hold only reserved dogs
+                    if not soup.select_one('a[href*="/rehoming/dogs/"]') and page_num > 0:
+                        if max_pages is not None:
+                            # The indicator is exact (live site, 2026-09-29): this page should have dogs
+                            raise ListingIncompleteError(f"Page {page_num + 1} of {max_pages} shows no dogs")
+                        self.logger.info(f"Page {page_num + 1}: No dogs - reached end of results")
                         break
-                    else:
-                        self.logger.warning(f"Page {page_num}: No dogs found")
 
                     pages_scraped = page_num + 1
                     if max_pages_to_scrape and pages_scraped >= max_pages_to_scrape:
@@ -442,6 +467,8 @@ class DogsTrustScraper(BaseScraper):
                             continue
 
                     if not next_button:
+                        if max_pages is not None:
+                            raise ListingIncompleteError(f"No enabled 'Go to next page' on page {page_num + 1} of {max_pages}")
                         self.logger.info("No enabled Next button found - reached end of results")
                         break
 
@@ -472,11 +499,12 @@ class DogsTrustScraper(BaseScraper):
                         )
 
                     # Wait for the listing to re-render with a different first
-                    # card. A timeout means the click did not advance the page
-                    # (stale/intercepted click, or genuinely no further results),
-                    # so stop rather than advance — re-reading the same DOM would
-                    # silently duplicate or skip pages, this scraper's historical
-                    # failure mode.
+                    # card. A timeout means a page the pagination says exists
+                    # didn't load: raise, as every listing does (#559, #628).
+                    # Returning the pages read so far would let stale detection
+                    # retire the dogs on the rest. The end of the listing never
+                    # gets here: on the live site the "N / N" indicator is exact
+                    # and "Go to next page" is disabled on the last page.
                     try:
                         await page.wait_for_function(
                             """(prev) => {
@@ -486,9 +514,8 @@ class DogsTrustScraper(BaseScraper):
                             arg=prev_first_href,
                             timeout=15000,
                         )
-                    except PlaywrightTimeoutError:
-                        self.logger.warning(f"Page {page_num + 1} did not render after clicking Next - stopping pagination")
-                        break
+                    except PlaywrightTimeoutError as e:
+                        raise ListingIncompleteError(f"Page {page_num + 2} of {max_pages or '?'} did not render after clicking Next") from e
 
                     await asyncio.sleep(self.rate_limit_delay + random.uniform(0.3, 0.8))
                     page_num += 1
@@ -503,20 +530,18 @@ class DogsTrustScraper(BaseScraper):
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs
 
-    def _detect_max_pages(self, soup: BeautifulSoup) -> int:
+    def _detect_max_pages(self, soup: BeautifulSoup) -> int | None:
         """Detect maximum page count from pagination indicator.
 
-        Looks for pagination text like "1 / 38" (or legacy "1 of 47") to
-        determine total pages, falling back to a fixed bound if not found.
+        Looks for pagination text like "1 / 38" (or legacy "1 of 47").
 
         Args:
             soup: BeautifulSoup object of the listing page
 
         Returns:
-            Total page count from the indicator, or a fixed fallback bound if
-            none is found. The fallback is only a ceiling — the pagination loop's
-            empty-page check is the real terminator, so the exact value is not
-            load-bearing.
+            Total page count from the indicator, or None if there is none. The
+            indicator was exact on all 36 pages of the live site (2026-09-29),
+            so the listing raises when it stops short of it (#628).
         """
         # Look for pagination indicator with pattern "X of Y" or "X / Y".
         # Dogs Trust switched the rendered separator from "of" to "/", so accept both.
@@ -530,9 +555,8 @@ class DogsTrustScraper(BaseScraper):
                 self.logger.debug(f"Found pagination indicator: {element_text}")
                 return total_pages
 
-        # Fallback to analysis-discovered value
-        self.logger.warning("Could not detect max pages, defaulting to 47")
-        return 47
+        self.logger.warning("No pagination indicator: the listing ends on an empty page or when Next is gone")
+        return None
 
     def _extract_dogs_from_page(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract dog information from a single listing page.
@@ -943,6 +967,10 @@ class DogsTrustScraper(BaseScraper):
         "Primary": ("good_with_children", "Yes (5+)"),
         "Secondary": ("good_with_children", "Yes (11+)"),
     }
+    # A run with fewer detail pages says too little; below half the usual share is a renamed label
+    MIN_PAGES_FOR_CARD_SHARE = 5
+    CARD_SHARE_DROP = 0.5
+
     _MAY_LIVE_WITH = re.compile(r"^\s*may live with:?\s*$", re.IGNORECASE)
 
     def _may_live_with(self, soup: BeautifulSoup) -> list[tuple[str, str]]:

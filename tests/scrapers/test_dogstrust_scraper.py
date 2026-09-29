@@ -15,6 +15,8 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.base_scraper import BaseScraper
 from scrapers.dogstrust.dogstrust_scraper import DogsTrustScraper
+from scrapers.request_pacing import ListingIncompleteError
+from scrapers.scrape_stats import ScrapeStats
 from tests.scrapers.test_scraper_base import ScraperTestBase
 from utils.unified_standardization import UnifiedStandardizer
 
@@ -179,6 +181,10 @@ def _patch_browser_retry(scraper, page):
 
     scraper.browser_manager.with_browser_retry = _retry
 
+
+LISTINGS = Path(__file__).resolve().parents[1] / "fixtures" / "listings"
+LIVE_PAGE_1 = (LISTINGS / "dogstrust_page1.html").read_text()
+LIVE_PAGE_36 = (LISTINGS / "dogstrust_page36.html").read_text()
 
 _VALID_LISTING_HTML = """
 <html><body>
@@ -360,7 +366,8 @@ class TestDogsTrustDetectMaxPages:
 
         scraper = DogsTrustScraper()
         soup = BeautifulSoup("<div>no pagination here</div>", "html.parser")
-        assert scraper._detect_max_pages(soup) == 47
+        # No guessed ceiling: without a count, the listing ends on an empty page or no Next
+        assert scraper._detect_max_pages(soup) is None
 
 
 @pytest.mark.unit
@@ -426,10 +433,22 @@ class TestDogsTrustPagination:
         assert "button[aria-label='Go to next page']" in tried_selectors
 
     @pytest.mark.asyncio
-    async def test_stops_when_no_next_button(self):
+    async def test_no_next_button_before_the_last_page_raises(self):
+        """Review of #641: with an exact indicator ("1 / 38"), a missing Next
+        control on page 1 means the listing stopped early, not that it ended."""
         scraper = DogsTrustScraper()
         page = _build_paginated_page_mock([self._page_html("1 / 38", 111)])
-        # No Next control is visible/enabled → must stop after page 0.
+        page.locator.return_value.first.is_visible = AsyncMock(return_value=False)
+        page.locator.return_value.first.is_enabled = AsyncMock(return_value=False)
+        _patch_browser_retry(scraper, page)
+
+        with pytest.raises(ListingIncompleteError):
+            await scraper._get_animal_list_playwright()
+
+    @pytest.mark.asyncio
+    async def test_without_an_indicator_no_next_button_is_the_end(self):
+        scraper = DogsTrustScraper()
+        page = _build_paginated_page_mock(['<html><body><a href="/rehoming/dogs/breed/111">Dog</a></body></html>'])
         page.locator.return_value.first.is_visible = AsyncMock(return_value=False)
         page.locator.return_value.first.is_enabled = AsyncMock(return_value=False)
         _patch_browser_retry(scraper, page)
@@ -437,27 +456,29 @@ class TestDogsTrustPagination:
         result = await scraper._get_animal_list_playwright()
 
         assert [d["external_id"] for d in result] == ["111"]
-        assert page.locator.return_value.first.click.await_count == 0
 
     @pytest.mark.asyncio
-    async def test_stops_on_empty_page_even_when_max_pages_overestimates(self):
+    async def test_an_empty_page_before_the_last_raises(self):
         scraper = DogsTrustScraper()
-        # Indicator claims 47 pages, but the second page returns no dogs:
-        # an empty page past the first must end the loop, not march to 47.
-        page = _build_paginated_page_mock(
-            [
-                self._page_html("1 / 47", 111),
-                "<html><body><div>2 / 47</div></body></html>",
-            ]
-        )
+        page = _build_paginated_page_mock([self._page_html("1 / 47", 111), "<html><body><div>2 / 47</div></body></html>"])
+        _patch_browser_retry(scraper, page)
+
+        with pytest.raises(ListingIncompleteError):
+            await scraper._get_animal_list_playwright()
+
+    @pytest.mark.asyncio
+    async def test_a_page_of_reserved_dogs_is_read_past(self):
+        """Review of #641: the hide-reserved filter isn't applied on the live site
+        (page 1 shows "0 filters active", 6 of 15 cards reserved), so a page of
+        only reserved dogs is a real page, not the end."""
+        scraper = DogsTrustScraper()
+        reserved = '<html><body><a href="/rehoming/dogs/breed/222"><span>Reserved</span> Dog</a><div>2 / 3</div></body></html>'
+        page = _build_paginated_page_mock([self._page_html("1 / 3", 111), reserved, self._page_html("3 / 3", 333)])
         _patch_browser_retry(scraper, page)
 
         result = await scraper._get_animal_list_playwright()
 
-        assert len(result) == 1
-        # Read exactly two pages — page 0, then the empty page 1 — before
-        # stopping, rather than marching toward the detected max of 47.
-        assert page.content.await_count == 2
+        assert sorted(d["external_id"] for d in result) == ["111", "333"]
 
     @pytest.mark.asyncio
     async def test_falls_back_to_js_click_when_playwright_click_fails(self):
@@ -477,20 +498,32 @@ class TestDogsTrustPagination:
         assert any("Go to next page" in script for script in evaluated)
 
     @pytest.mark.asyncio
-    async def test_stops_when_next_page_never_renders(self):
-        """A re-render timeout means the page didn't advance; stop instead of
-        re-reading the same DOM (which would duplicate or skip pages)."""
+    async def test_a_page_that_never_renders_after_next_raises(self):
+        """#628: it stopped and returned page 1's dogs, so stale detection retired
+        the dogs on every page it never read. Page 1 saved from the live site
+        (2026-09-29): "1 / 36", 9 available dogs."""
         scraper = DogsTrustScraper()
-        page = _build_paginated_page_mock([self._page_html("1 / 38", 111), self._page_html("2 / 38", 222)])
+        page = _build_paginated_page_mock([LIVE_PAGE_1])
         page.wait_for_function = AsyncMock(side_effect=PlaywrightTimeoutError("no re-render"))
+        _patch_browser_retry(scraper, page)
+
+        with pytest.raises(ListingIncompleteError):
+            await scraper._get_animal_list_playwright()
+
+    @pytest.mark.asyncio
+    async def test_the_live_listing_ends_on_its_count(self):
+        """On the live site the indicator read "N / 36" exactly, so page 36 ends
+        the listing without another click: the end never waits on a render."""
+        scraper = DogsTrustScraper()
+        page = _build_paginated_page_mock([LIVE_PAGE_1] * 35 + [LIVE_PAGE_36])
         _patch_browser_retry(scraper, page)
 
         result = await scraper._get_animal_list_playwright()
 
-        # Only page 0 collected; the loop stopped on the unrendered page rather
-        # than advancing and re-scraping.
-        assert [d["external_id"] for d in result] == ["111"]
-        assert page.content.await_count == 1
+        assert len(result) == 9 * 35 + 7
+        assert page.content.await_count == 36
+        # 35 clicks, each followed by one wait for the next page to render
+        assert page.wait_for_function.await_count == 35
 
 
 @pytest.mark.unit
@@ -778,3 +811,93 @@ def test_living_off_site_is_read_from_its_label(html, expected):
     from bs4 import BeautifulSoup
 
     assert DogsTrustScraper()._extract_living_situation(BeautifulSoup(html, "html.parser")) == expected
+
+
+def _detailed(n_with_card: int, n_without: int) -> list[dict]:
+    with_card = [{"properties": {"may_live_with": "Dogs"}}] * n_with_card
+    return with_card + [{"properties": {"description": "A dog."}}] * n_without
+
+
+@pytest.mark.unit
+class TestMayLiveWithShare:
+    """#628: a renamed "May live with" label would drop every dog's good_with_* silently."""
+
+    def _scraper(self, historical_share):
+        scraper = DogsTrustScraper()
+        scraper.session_manager = Mock(get_historical_share=Mock(return_value=historical_share))
+        return scraper
+
+    def test_the_run_records_how_many_dogs_had_a_card(self):
+        scraper = self._scraper(0.9)
+
+        scraper._check_may_live_with_share(_detailed(9, 1))
+
+        assert scraper.run_metrics == {"detail_pages": 10, "may_live_with_cards": 9}
+        scraper.session_manager.get_historical_share.assert_called_once_with("may_live_with_cards", "detail_pages")
+
+    def test_a_sharp_drop_alerts(self, caplog):
+        scraper = self._scraper(0.9)
+
+        with patch("scrapers.dogstrust.dogstrust_scraper.sentry_sdk") as sentry:
+            scraper._check_may_live_with_share(_detailed(0, 12))
+
+        sentry.capture_message.assert_called_once()
+        assert "May live with" in sentry.capture_message.call_args.args[0]
+        # A run note makes the run a "warning", which keeps it out of the history the
+        # share is judged against: otherwise a lasting rename would silence itself
+        assert any("May live with" in note for note in scraper._run_notes)
+
+    @pytest.mark.parametrize(
+        ("dogs", "historical"),
+        [
+            (_detailed(8, 4), 0.9),  # a normal spread
+            (_detailed(0, 3), 0.9),  # too few pages to judge
+            (_detailed(0, 12), None),  # no history yet
+        ],
+    )
+    def test_no_alert(self, dogs, historical):
+        scraper = self._scraper(historical)
+
+        with patch("scrapers.dogstrust.dogstrust_scraper.sentry_sdk") as sentry:
+            scraper._check_may_live_with_share(dogs)
+
+        sentry.capture_message.assert_not_called()
+
+    def test_run_metrics_reach_the_scrape_log(self):
+        scraper = DogsTrustScraper()
+        scraper.run_metrics = {"detail_pages": 10, "may_live_with_cards": 9}
+        scraper.metrics_collector = Mock(
+            calculate_scrape_duration=Mock(return_value=1.0),
+            assess_data_quality=Mock(return_value=0.9),
+            generate_comprehensive_metrics=Mock(return_value={"batch_size": 4}),
+        )
+        scraper.complete_scrape_log = Mock()
+        scraper.scrape_start_time = None
+        scraper.progress_tracker = None
+
+        scraper._log_completion_metrics([], ScrapeStats())
+
+        detailed = scraper.complete_scrape_log.call_args.kwargs["detailed_metrics"]
+        assert detailed == {"batch_size": 4, "detail_pages": 10, "may_live_with_cards": 9}
+
+
+@pytest.mark.unit
+class TestAnIncompleteListingIsRetried:
+    """Review of #641: one slow render should get a fresh browser, as a session drop does."""
+
+    @patch("scrapers.dogstrust.dogstrust_scraper.time.sleep")
+    def test_retries_from_a_fresh_browser(self, mock_sleep):
+        scraper = DogsTrustScraper()
+        attempt = AsyncMock(side_effect=[ListingIncompleteError("page 5 did not render"), [{"external_id": "1"}]])
+        scraper._get_animal_list_playwright = attempt
+
+        assert scraper._run_playwright_pagination_with_retry() == [{"external_id": "1"}]
+        assert attempt.await_count == 2
+
+    @patch("scrapers.dogstrust.dogstrust_scraper.time.sleep")
+    def test_raises_after_the_last_attempt(self, mock_sleep):
+        scraper = DogsTrustScraper()
+        scraper._get_animal_list_playwright = AsyncMock(side_effect=ListingIncompleteError("page 5 did not render"))
+
+        with pytest.raises(ListingIncompleteError):
+            scraper._run_playwright_pagination_with_retry()

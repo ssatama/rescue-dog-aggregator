@@ -291,6 +291,8 @@ class RunReporting:
             batch_size=self.batch_size,
             rate_limit_delay=self.rate_limit_delay,
         )
+        # The scraper's own counts; merged, so a clashing name can't break the call
+        detailed_metrics.update(self.run_metrics)
         self.metrics_collector.log_detailed_metrics(detailed_metrics)
 
         # A partial failure left a run note, which makes this a "warning"

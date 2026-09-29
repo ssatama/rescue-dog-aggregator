@@ -478,10 +478,18 @@ MISIs raises when a clicked page shows no `/post/` links or the previous
 page's. A listing past its page limit raises (Tierschutzverein 50, Santer 20,
 MISIs 10).
 
-Known gaps: Dogs Trust's Playwright listing still stops early when a page
-doesn't render after "Next" (its "1 / N" indicator can be stale, so raising
-needs a check against the live site first; #628), and the disabled Furry Rescue
-Italy and Galgos del Sol listings don't raise yet (#630).
+Known gap: the disabled Furry Rescue Italy and Galgos del Sol listings don't
+raise yet (#630).
+
+Dogs Trust's Playwright listing raises when it stops short of its "N / M"
+indicator: a page that doesn't render after "Go to next page", a page with no
+dog cards, or no enabled button before page M (#628). On the live site
+(2026-09-29, 36 pages) the indicator was exact on every page and the button
+was disabled on the last. Without an indicator it ends on an empty page or
+the missing button. A listing that fails is retried from a fresh browser, up
+to 3 times, as a dropped Browserless session is. The hide-reserved filter
+isn't applied (page 1 read "0 filters active"), so reserved cards come
+through and are skipped.
 
 ### Stored fields: breed, age, story
 

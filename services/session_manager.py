@@ -644,6 +644,44 @@ class SessionManager:
             return None
         return float(result[0])
 
+    def get_historical_share(self, part: str, whole: str, limit: int = 9, minimum_runs: int = 3) -> float | None:
+        """sum(part) / sum(whole) over the last `limit` successful runs that recorded both (#628).
+
+        Reads the detailed_metrics a scraper adds with run_metrics. None when
+        there are fewer than `minimum_runs` such runs or the lookup fails, which
+        callers treat as "skip the alert", as for get_historical_average_dogs_found.
+        """
+        query = """
+            SELECT SUM((detailed_metrics->>%s)::numeric) / NULLIF(SUM((detailed_metrics->>%s)::numeric), 0), COUNT(*)
+            FROM (
+                SELECT detailed_metrics FROM scrape_logs
+                WHERE organization_id = %s AND status = 'success'
+                  AND detailed_metrics ? %s AND detailed_metrics ? %s
+                ORDER BY started_at DESC
+                LIMIT %s
+            ) recent
+        """
+        params = (part, whole, self.organization_id, part, whole, limit)
+        try:
+            if self.connection_pool:
+                with self.connection_pool.get_connection_context() as conn, conn.cursor() as cursor:
+                    cursor.execute(query, params)
+                    result = cursor.fetchone()
+            elif self.conn:
+                with self.conn.cursor() as cursor:
+                    cursor.execute(query, params)
+                    result = cursor.fetchone()
+            else:
+                self.logger.error("No database connection available for historical share lookup")
+                return None
+        except Exception as e:
+            self.logger.error(f"Failed to fetch historical share of {part}: {e}")
+            return None
+
+        if not result or result[0] is None or result[1] < minimum_runs:
+            return None
+        return float(result[0])
+
     def detect_partial_failure(
         self,
         animals_found: int,
