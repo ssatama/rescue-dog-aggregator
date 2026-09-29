@@ -27,8 +27,10 @@ the server drops ("server closed the connection unexpectedly") on
 restart (PYTHON-FASTAPI-2N/3K/3M, 2026-09). `api/database/connection_pool.py`
 retries it against the stale-connection budget (3), connects with
 `connect_timeout` 5s (`DB_POOL_CONNECT_TIMEOUT`, because `getconn` holds the
-pool lock while connecting), and answers 503 if it never connects. The
-scraper pool (`services/connection_pool.py`) has neither yet (#632).
+pool lock while connecting), and answers 503 `CONNECTION_REFUSED` if it never
+connects (`POOL_EXHAUSTED` means only a full pool). The scraper pool
+(`services/connection_pool.py`) does the same (#632). Neither retries a
+permanent failure: a bad password, a missing database or "too many clients".
 
 **A failed cron run usually means one org failed.** The batch reports
 `overall_success: false` if *any* org fails; read `failed_orgs`. The commit

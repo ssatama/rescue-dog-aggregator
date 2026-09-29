@@ -116,6 +116,19 @@ class TestPoolErrorsAreStillTranslated:
         assert exc_info.value.status_code == 503
         assert exc_info.value.detail["code"] == "POOL_EXHAUSTED"
 
+    def test_an_unreachable_database_is_a_503_connection_refused(self):
+        """#632: it answered POOL_EXHAUSTED, pointing whoever investigated at the pool size."""
+        from api.database.connection_pool import DatabaseUnreachableError
+
+        with patch("api.dependencies.get_pooled_cursor") as get_cursor:
+            get_cursor.return_value.__enter__.side_effect = DatabaseUnreachableError("3 connection attempts in a row failed")
+
+            with pytest.raises(HTTPException) as exc_info:
+                next(get_pooled_db_cursor())
+
+        assert exc_info.value.status_code == 503
+        assert exc_info.value.detail["code"] == "CONNECTION_REFUSED"
+
     def test_uninitialized_pool_is_a_503(self):
         from api.database.connection_pool import PoolNotInitializedError
 

@@ -133,7 +133,7 @@ def get_pooled_db_cursor() -> Generator[RealDictCursor, None, None]:
     This is an optimized version of get_db_cursor that uses connection pooling
     for better performance under high load.
     """
-    from api.database.connection_pool import PoolExhaustedError, PoolNotInitializedError
+    from api.database.connection_pool import DatabaseUnreachableError, PoolExhaustedError, PoolNotInitializedError
     from api.models.errors import (
         create_connection_error,
         create_pool_not_initialized_error,
@@ -166,6 +166,11 @@ def get_pooled_db_cursor() -> Generator[RealDictCursor, None, None]:
         if isinstance(e, PoolNotInitializedError):
             logger.error(f"Pool error in dependency: {e}")
             error_response = create_pool_not_initialized_error()
+            raise HTTPException(status_code=503, detail=error_response.error.model_dump())
+
+        if isinstance(e, DatabaseUnreachableError):
+            logger.error(f"Database unreachable in dependency: {e}")
+            error_response = create_connection_error(detail="Database unreachable")
             raise HTTPException(status_code=503, detail=error_response.error.model_dump())
 
         if isinstance(e, PoolExhaustedError):
