@@ -480,8 +480,8 @@ MISIs 10).
 
 Known gaps: Dogs Trust's Playwright listing still stops early when a page
 doesn't render after "Next" (its "1 / N" indicator can be stale, so raising
-needs a check against the live site first), and the disabled Furry Rescue
-Italy and Galgos del Sol listings don't raise yet.
+needs a check against the live site first; #628), and the disabled Furry Rescue
+Italy and Galgos del Sol listings don't raise yet (#630).
 
 ### Stored fields: breed, age, story
 
@@ -498,7 +498,7 @@ Italy and Galgos del Sol listings don't raise yet.
   `REFRESH_AGES_SQL` after every cron batch, so a month boundary can show up to
   three days late. Months cap at 360 (`MAX_DOG_AGE_MONTHS`). `age_text` is the
   text as last saved (for most rescues, as first read, since existing dogs
-  are skipped); JSON-LD and the favourites compare view show it (known gap).
+  are skipped); JSON-LD and the favourites compare view show it (#635).
 - **The story is `properties.description`** (#568), the one key every reader
   uses (sitemap filter, prompt, page). The LLM grounding check
   (`services/llm/grounding.py`) takes the longest string, or list of strings,
@@ -766,14 +766,14 @@ post id (`wp-9270`).
   gets no size and the save falls back to the breed's, unless the rescue gives
   an adult size ("klein bleibend", "Endgröße"). Two size words give none.
   Known limit: a puppy keeps no size as it grows, because existing dogs are
-  skipped (43 of 392 on 2026-09-27). Daisy's scraper uses 40/60 cm for the
-  same question; one scale for all rescues is still open.
+  skipped (47 active dogs on 2026-09-29). Daisy's scraper uses 40/60 cm for
+  the same question; one scale for all rescues is still open (#631).
 - The story is the post (`div.content`) from the top up to the "Videos" line
   (an `h2` or a `p`), without the "Beschreibung" heading: updates sit above
   that heading, stories open with their own title, and older posts have no
-  "Beschreibung". Text across a `<br>` is glued ("befindet.Im"), a known gap
-  whose fix would rewrite most stored stories. The story is German; a dog not
-  yet profiled shows it in its page body, meta description and JSON-LD.
+  "Beschreibung". Text across a `<br>` is glued ("befindet.Im"), and the
+  German story shows on a dog not yet profiled (page body, meta description,
+  JSON-LD); both are #631.
 
 ---
 
