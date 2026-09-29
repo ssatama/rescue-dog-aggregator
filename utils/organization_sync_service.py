@@ -301,9 +301,6 @@ class OrganizationSyncService:
         execute_command(query, params)
         logger.info(f"Updated organization ID {org_id} '{config.name}'")
 
-        if not config.enabled:
-            self.retire_dogs(org_id, config.name)
-
         # Handle service regions and logo separately
         self._sync_service_regions(org_id, config)
         self._sync_organization_logo(org_id, config)
@@ -316,7 +313,9 @@ class OrganizationSyncService:
         result = execute_command(
             """
             WITH retired AS (
-                UPDATE animals SET status = 'unknown', active = false
+                UPDATE animals
+                SET status = CASE WHEN status IN ('adopted', 'reserved') THEN status ELSE 'unknown' END,
+                    active = false
                 WHERE organization_id = %s AND (active OR status = 'available')
                 RETURNING 1
             )
@@ -404,10 +403,13 @@ class OrganizationSyncService:
 
                 if self.should_update_organization(db_org, config):
                     self.update_organization(db_org.id, config)
-                    return SyncResult(db_org.id, config.id, False, True)
                 else:
                     logger.debug(f"Organization '{config.name}' is up to date")
-                    return SyncResult(db_org.id, config.id, False, True)
+                # Every sync, not only the one that disables it: idempotent, and a
+                # retire that failed once is retried
+                if not config.enabled:
+                    self.retire_dogs(db_org.id, config.name)
+                return SyncResult(db_org.id, config.id, False, True)
             else:
                 # Organization doesn't exist
                 org_id = self.create_organization(config)

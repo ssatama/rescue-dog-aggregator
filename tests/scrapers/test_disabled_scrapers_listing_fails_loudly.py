@@ -52,6 +52,11 @@ class TestFurryRescueItaly:
         with patch("scrapers.request_pacing.requests.get", side_effect=[page(FRI_PAGE_1), *[requests.ConnectionError("reset")] * 10]), pytest.raises(ListingIncompleteError):
             scraper.get_animal_list()
 
+    def test_an_empty_page_the_pagination_says_exists_raises(self, scraper, stub_clock):
+        """Review of #640: a page 2 that renders without dog cards ended the listing quietly."""
+        with patch("scrapers.request_pacing.requests.get", side_effect=[page(FRI_PAGE_1), page("<html><body></body></html>")]), pytest.raises(ListingIncompleteError):
+            scraper.get_animal_list()
+
     def test_a_listing_without_pagination_is_one_page(self, scraper, stub_clock):
         # A page 2 request fails the test rather than looping on the same page
         with patch("scrapers.request_pacing.requests.get", side_effect=[page(FRI_SINGLE_PAGE), AssertionError("read a page 2")]) as get:

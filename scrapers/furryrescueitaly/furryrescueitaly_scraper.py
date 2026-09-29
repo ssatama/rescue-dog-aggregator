@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
+from scrapers.request_pacing import ListingIncompleteError
 
 # Using unified standardization through base_scraper.process_animal()
 
@@ -96,7 +97,10 @@ class FurryRescueItalyScraper(BaseScraper):
             page_dogs = self._extract_dogs_from_page(soup)
             self.logger.info(f"Page {current_page}: _extract_dogs_from_page returned {len(page_dogs)} dogs")
             if not page_dogs:
-                self.logger.info(f"No dogs found on page {current_page}, stopping pagination")
+                if current_page > 1:
+                    # The pagination said this page exists: its dogs would go stale
+                    raise ListingIncompleteError(f"Listing page {url} shows no dogs, but page 1 listed {max_pages_detected} pages")
+                self.logger.info("No dogs found on page 1")
                 break
 
             all_dogs.extend(page_dogs)

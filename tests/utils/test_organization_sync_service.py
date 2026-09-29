@@ -239,17 +239,18 @@ class TestDisablingARescueRetiresItsDogs:
     """#630: nothing scrapes a disabled rescue, so nothing else would mark its dogs gone."""
 
     @pytest.mark.parametrize("enabled", [True, False])
-    def test_only_a_disabled_rescue_retires_its_dogs(self, enabled):
+    @pytest.mark.parametrize("drifted", [True, False])
+    def test_every_sync_of_a_disabled_rescue_retires_its_dogs(self, enabled, drifted):
+        """Every sync, not only the one that disables it: a retire that failed once is retried (review of #640)."""
         service = OrganizationSyncService(logo_service=NullLogoUploadService())
+        db_org = OrganizationRecord(id=42, name="Test Org", updated_at=datetime.now(), active=enabled)
 
         with (
-            patch("utils.organization_sync_service.execute_command"),
-            patch.object(service, "_sync_service_regions"),
-            patch.object(service, "_sync_organization_logo"),
+            patch.object(service, "should_update_organization", return_value=drifted),
+            patch.object(service, "update_organization"),
             patch.object(service, "retire_dogs") as retire_dogs,
-            patch("utils.organization_sync_service.generate_unique_organization_slug", return_value="test-org"),
         ):
-            service.update_organization(org_id=42, config=_make_config(enabled=enabled))
+            service.sync_single_organization(_make_config(enabled=enabled), {"Test Org": db_org})
 
         if enabled:
             retire_dogs.assert_not_called()
@@ -277,3 +278,20 @@ def test_retiring_marks_the_dogs_no_longer_listed_and_logs_the_count(caplog):
     assert set(rows) == {("unknown", False)}
     assert f"Retired {retired} dogs" in caplog.text
     assert service.retire_dogs(901, "Mock Test Org") == 0
+
+
+@pytest.mark.database
+@pytest.mark.integration
+def test_retiring_keeps_a_reserved_dogs_status():
+    """As stale detection does: only the listing status becomes 'unknown' (review of #640)."""
+    import psycopg2
+
+    from config import get_database_config
+
+    with psycopg2.connect(**get_database_config()) as conn, conn.cursor() as cursor:
+        cursor.execute("UPDATE animals SET status = 'reserved' WHERE id = 9001")
+    OrganizationSyncService(logo_service=NullLogoUploadService()).retire_dogs(901, "Mock Test Org")
+
+    with psycopg2.connect(**get_database_config()) as conn, conn.cursor() as cursor:
+        cursor.execute("SELECT status, active FROM animals WHERE id = 9001")
+        assert cursor.fetchone() == ("reserved", False)
