@@ -405,13 +405,9 @@ reconcile` against production text before trusting a resolver change.
   below half its average over the last 9 successful runs (#628). It needs at
   least 5 detail pages and 3 runs with history. About 9 in 10 new dogs have
   the card (2026-09), so a renamed label drops it to 0.
-- Follow-up: `companionAnswer` in `frontend/src/utils/dogFacts.ts` reads the
-  AI profile first. Switch it to `answerOf(profile) ?? answerOf(properties)`,
-  so the rescue's answer fills in behind an AI "unknown", once no active Dogs
-  Trust dog keeps a pre-#516 `good_with_dogs: true` (118 were in stale grace
-  on 2026-09-27). Keep #517's gate: an AI answer scored 0.5 or less is "not
-  assessed", and deciding whether the rescue's answer may then stand in is
-  part of that change (#629).
+- The dog page's compatibility answer is the AI profile's, and the rescue's
+  "May live with" answer fills in when the AI says "unknown", has none, or
+  scored its own answer 0.5 or less (`companionAnswer`, #629, #517).
 
 **Woof Project lists available dogs first, then the adoption archive**
 (pages 2-5 on 2026-09-27). Since #565 the listing is plain HTML: an adopted or

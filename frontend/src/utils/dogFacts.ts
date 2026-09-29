@@ -72,22 +72,18 @@ function answerOf(value: unknown): string | null {
 /**
  * Whether the dog lives with children, dogs or cats: "yes", "no", a qualifier
  * ("selective", "older children"), or null when not assessed. The AI profile
- * wins, and scraped properties only fill in when it has no value: Dogs Trust's
- * stored good_with_dogs is true for almost every dog, even "only dog" ones.
- * The scraper is fixed (#516); once no active Dogs Trust dog keeps a pre-#516
- * value, let a rescue's answer fill in behind an AI "unknown" too
- * (docs/technical/operational-knowledge.md, Dogs Trust quirks).
- *
- * A profile answer the model scored 0.5 or less is a guess, so it counts as
- * not assessed (#517), and the scraped value doesn't stand in for it.
+ * wins; the rescue's own answer (scraped properties) fills in when the AI's is
+ * "unknown" or missing (#629), and when the model scored its answer 0.5 or
+ * less, which counts as not assessed (#517): a guess shouldn't hide what the
+ * rescue says.
  */
 export function companionAnswer(
   dog: Dog,
   field: "good_with_children" | "good_with_dogs" | "good_with_cats",
 ): string | null {
   const confidence = dog.dog_profiler_data?.confidence_scores?.[field];
-  if (typeof confidence === "number" && confidence <= 0.5) return null;
-  return answerOf(dog.dog_profiler_data?.[field] ?? dog.properties?.[field]);
+  const guessed = typeof confidence === "number" && confidence <= 0.5;
+  return (guessed ? null : answerOf(dog.dog_profiler_data?.[field])) ?? answerOf(dog.properties?.[field]);
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
