@@ -76,29 +76,19 @@ def size_scale_values(size: StandardizedSize) -> list[str]:
 def age_category_condition(category: str, age_known: bool = False) -> str | None:
     """SQL predicate selecting dogs in an age bucket, or None if unrecognised.
 
-    A dog matches a bucket when its estimated age range genuinely overlaps it.
-    The original test required containment (``age_min >= lo AND age_max <= hi``),
-    which silently hid every dog whose range straddled a boundary: a dog
-    recorded as "6 - 12 months" matched no category at all, because
-    ``age_max < 12`` fails at exactly 12 and ``age_min >= 12`` fails at 6.
+    A dog is in the bucket its lower age bound falls in, the one its card shows
+    (``getAgeCategory``), so every dog with an age is in exactly one bucket.
 
-    The lower bound needs care, because ``age_max_months`` is a clamp rather
-    than a real upper estimate. ``utils.unified_standardization`` derives it as
-    ``min(months + n, bucket_ceiling)``, so a "2 years old" dog is stored
-    (24, 36) and a "7 years old" dog (84, 96) — both sitting exactly on the
-    next bucket's floor. Treating that single-point touch as an overlap would
-    file 2-year-olds under "Adult (3-8 years)" and 7-year-olds under
-    "Senior (8+ years)". Requiring the range to *cross* the floor, or to start
-    at or above it, keeps clamped values in their own bucket while still
-    matching a dog whose range really does span two. The refresh (#561) ages
-    both ends, so the touch becomes a crossing a month later: a range exactly
-    12 months wide (a stated age) or 0 wide (a birth date) therefore buckets
-    by its lower bound alone, as the cards do (#650).
+    History: containment (``age_min >= lo AND age_max <= hi``) hid every dog
+    whose range straddled a floor. Overlap fixed that, but ``age_max_months``
+    is a clamp, not an estimate ("2 years" is stored 24-36, "adult" 36-96), and
+    the refresh (#561) moves both ends, so after a month a stated age crossed
+    into the next bucket: a "1 year" dog was listed as Adult while its card said
+    Young (#650, #652). The lower bound can't cross, and it hides nobody.
 
     A dog with no recorded age matches every bucket, so an age search never
     hides it (#494). ``age_known`` turns that off for pages that promise an
-    age, such as /dogs/puppies, where an unknown-age adult does not belong. A half-populated row (one bound set) is not treated
-    as unknown; it still has a usable bound, so it lands in a real bucket.
+    age, such as /dogs/puppies, where an unknown-age adult does not belong.
     """
     bounds = AGE_CATEGORIES.get(category)
     if bounds is None:
@@ -107,10 +97,7 @@ def age_category_condition(category: str, age_known: bool = False) -> str | None
     low, high = bounds
     clauses = []
     if low > 0:
-        # A stated age (N to N+12) or an exact birth date (one month) is its lower
-        # bound, as on the cards: the refresh ages both ends, so a "1 year" dog's
-        # (25, 37) would otherwise cross into Adult (#650)
-        clauses.append(f"(a.age_min_months >= {low} OR (a.age_max_months > {low} AND COALESCE(a.age_max_months - a.age_min_months, -1) NOT IN (0, 12)))")
+        clauses.append(f"a.age_min_months >= {low}")
     if high is not None:
         clauses.append(f"a.age_min_months < {high}")
 

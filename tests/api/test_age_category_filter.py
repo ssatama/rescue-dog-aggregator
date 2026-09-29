@@ -61,12 +61,10 @@ def matches(category: str, age_min: int | None, age_max: int | None) -> bool:
         return True
 
     low, high = AGE_CATEGORIES[category]
-    # A stated age (12 months wide) or an exact birth date (0 wide) is its lower bound (#650)
-    stated = age_min is not None and age_max is not None and age_max - age_min in (0, 12)
+    # The card's bucket: the lower bound alone (#652)
     result: object = True
     if low > 0:
-        above = cmp(age_min, ">=", low)
-        result = and_(result, above if stated else or_(cmp(age_max, ">", low), above))
+        result = and_(result, cmp(age_min, ">=", low))
     if high is not None:
         result = and_(result, cmp(age_min, "<", high))
     return result is True
@@ -87,10 +85,10 @@ class TestOverlapNotContainment:
         """The regression that motivated this: a literal puppy matched nothing."""
         assert matches("Puppy", 6, 12) is True
 
-    def test_dog_spanning_two_buckets_appears_in_both(self):
-        """A dog estimated at 2-4 years is honestly both Young and Adult."""
+    def test_a_stated_span_is_in_its_cards_bucket(self):
+        """#652: "2 - 4 years" is Young, as its card says, not Young and Adult."""
         assert matches("Young", 24, 48) is True
-        assert matches("Adult", 24, 48) is True
+        assert matches("Adult", 24, 48) is False
 
     def test_no_dog_with_an_age_falls_through_every_bucket(self):
         spans = [(0, 3), (6, 12), (11, 13), (12, 12), (12, 24), (24, 48), (36, 36), (90, 100), (96, 96), (120, 200)]
@@ -126,9 +124,18 @@ class TestClampedUpperBounds:
         assert matches("Adult", 90, 102) is True
         assert matches("Senior", 90, 102) is False
 
-    def test_a_range_that_really_crosses_still_matches_both(self):
-        assert matches("Young", 24, 60) is True
-        assert matches("Adult", 24, 60) is True
+    def test_other_narrow_ranges_keep_their_bucket_as_they_age(self):
+        """#652: a year-only birth date is 11 wide on the 31st; "10 months" is (11, 13) a month on."""
+        assert matches("Adult", 34, 45) is False
+        assert matches("Young", 34, 45) is True
+        assert matches("Young", 11, 13) is False
+        assert matches("Puppy", 11, 13) is True
+
+    def test_every_dog_with_an_age_is_in_exactly_its_cards_bucket(self):
+        """The Underdog's "adult" is stored as the whole bucket, 36-96, and ages to 41-101."""
+        card = lambda m: "Puppy" if m < 12 else "Young" if m < 36 else "Adult" if m < 96 else "Senior"  # noqa: E731
+        for age_min, age_max in [(15, 39), (41, 101), (24, 60), (73, 97), (11, 13), (34, 45), (25, 37), (0, 6), (96, 360)]:
+            assert [c for c in AGE_CATEGORIES if matches(c, age_min, age_max)] == [card(age_min)]
 
 
 class TestPartiallyRecordedAge:
