@@ -6,9 +6,8 @@ import { Heart, Users, Dog as DogIcon, ChevronLeft, ChevronRight, X } from "luci
 import { Dog } from "./types";
 import Image from "next/image";
 import { FallbackImage } from "../ui/FallbackImage";
-import { formatBreed } from "@/utils/dogHelpers";
+import { formatAgeRange, formatBreed } from "@/utils/dogHelpers";
 import { AdoptLink, ENERGY, EXPERIENCE, LivesWith, canAdopt } from "@/components/dogs/detail/DogFactsPanel";
-import { getAgeDisplay } from "./compareUtils";
 
 interface ComparisonViewProps {
   dogs: Dog[];
@@ -65,7 +64,7 @@ const DogComparisonCard = ({
   const breed = formatBreed(dog);
   const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
 
-  const age = getAgeDisplay(dog);
+  const age = formatAgeRange(dog);
 
   return (
     <div

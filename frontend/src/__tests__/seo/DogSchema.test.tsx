@@ -14,6 +14,8 @@ describe("DogSchema Component", () => {
     status: "available",
     sex: "male",
     age_text: "Adult",
+    age_min_months: 36,
+    age_max_months: 48,
     primary_image_url: "https://images.rescuedogs.me/buddy.jpg",
     description: "Friendly dog looking for a loving home.",
     organization: {
@@ -83,7 +85,7 @@ describe("DogSchema Component", () => {
 
     // additionalProperty isn't valid on Thing, so the facts are one disambiguating line (#443)
     expect(schema.about.disambiguatingDescription).toBe(
-      "Age: Adult, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
+      "Age: 3-4 years, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
     );
   });
 

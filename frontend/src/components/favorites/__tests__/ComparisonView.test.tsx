@@ -1,6 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import { formatAgeRange } from "@/utils/dogHelpers";
 import ComparisonView from "../ComparisonView";
 import { Dog } from "../types";
 
@@ -15,6 +16,8 @@ const mockDogs: Dog[] = [
     name: "Luna",
     breed: "Golden Retriever Mix",
     age_text: "3 years",
+    age_min_months: 36,
+    age_max_months: 47,
     primary_image_url: "https://example.com/luna.jpg",
     dog_profiler_data: {
       tagline: "Gentle soul who loves cuddles and morning walks",
@@ -35,6 +38,8 @@ const mockDogs: Dog[] = [
     name: "Max",
     breed: "Border Collie",
     age_text: "2 years",
+    age_min_months: 24,
+    age_max_months: 35,
     primary_image_url: "https://example.com/max.jpg",
     dog_profiler_data: {
       tagline: "Brilliant and energetic companion for active families",
@@ -55,6 +60,8 @@ const mockDogs: Dog[] = [
     name: "Bella",
     breed: "French Bulldog",
     age_text: "5 years",
+    age_min_months: 60,
+    age_max_months: 71,
     primary_image_url: "https://example.com/bella.jpg",
     dog_profiler_data: {
       tagline: "Calm apartment dweller who loves lazy Sunday mornings",
@@ -108,7 +115,8 @@ describe("ComparisonView", () => {
     mockDogs.forEach((dog) => {
       expect(screen.getAllByText(dog.name).length).toBeGreaterThan(0);
       expect(screen.getAllByText(dog.breed!).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(dog.age_text!).length).toBeGreaterThan(0);
+      // The age comes from the refreshed months, not age_text (#635)
+      expect(screen.getAllByText(formatAgeRange(dog)!).length).toBeGreaterThan(0);
     });
   });
 

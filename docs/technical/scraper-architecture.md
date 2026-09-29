@@ -498,7 +498,9 @@ Italy and Galgos del Sol listings don't raise yet (#630).
   `REFRESH_AGES_SQL` after every cron batch, so a month boundary can show up to
   three days late. Months cap at 360 (`MAX_DOG_AGE_MONTHS`). `age_text` is the
   text as last saved (for most rescues, as first read, since existing dogs
-  are skipped); JSON-LD and the favourites compare view show it (#635).
+  are skipped), so no page shows it as the dog's age: the cards use
+  `getAgeCategory`, and JSON-LD and the compare view use `formatAgeRange`,
+  both from the months (#635).
 - **The story is `properties.description`** (#568), the one key every reader
   uses (sitemap filter, prompt, page). The LLM grounding check
   (`services/llm/grounding.py`) takes the longest string, or list of strings,

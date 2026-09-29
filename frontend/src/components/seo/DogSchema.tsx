@@ -25,7 +25,8 @@ interface DogData {
   breed?: string;
   standardized_breed?: string;
   sex?: string;
-  age_text?: string;
+  age_min_months?: number;
+  age_max_months?: number;
   description?: string;
   primary_image_url?: string;
   properties?: {

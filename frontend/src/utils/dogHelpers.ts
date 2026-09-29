@@ -49,6 +49,32 @@ export const getAgeCategory = (dog: DogInput | null | undefined): string => {
   return "Unknown";
 };
 
+/**
+ * A dog's current age in words, from the months refreshed after every run
+ * (#561), or null when none are recorded. Never the rescue's age_text: most
+ * rescues are read once, so it stays the age as first read (#635).
+ */
+export const formatAgeRange = (
+  dog: { age_min_months?: number | null; age_max_months?: number | null } | null | undefined,
+): string | null => {
+  const min = dog?.age_min_months;
+  const max = dog?.age_max_months;
+  if (typeof min !== "number" || !max) return null;
+  // Puppies in months: "Under 6 months" is stored as 0-6. A range that
+  // starts under a year stays in months up to two years, not "0-1 years"
+  if (max < 12 || (min < 12 && max < 24)) {
+    return min === 0 ? `Under ${max} months` : `${min}-${max} months`;
+  }
+  if (min < 12) {
+    const upTo = Math.ceil(max / 12);
+    return min === 0 ? `Under ${upTo} years` : `${min} months-${upTo} years`;
+  }
+  const minYears = Math.floor(min / 12);
+  const maxYears = Math.floor(max / 12);
+  if (minYears === maxYears) return `${minYears} year${minYears !== 1 ? "s" : ""}`;
+  return `${minYears}-${maxYears} years`;
+};
+
 export const formatBreed = (dog: DogInput | null | undefined): string | null => {
   // standardized_breed is the display label and carries the cross, e.g.
   // "Border Collie Cross" or "Bichon Frise x Maltese". primary_breed is the
