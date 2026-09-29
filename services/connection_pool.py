@@ -11,6 +11,7 @@ Provides thread-safe connection pool management following CLAUDE.md principles:
 import logging
 import os
 import time
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
 
@@ -29,6 +30,22 @@ _PERMANENT_CONNECT_ERRORS = ("password authentication failed", "does not exist",
 def is_permanent_connect_error(error: psycopg2.OperationalError) -> bool:
     """True for a connect failure no retry can fix (bad password, missing database, no free slots)."""
     return any(marker in str(error) for marker in _PERMANENT_CONNECT_ERRORS)
+
+
+def retry_connect[T](connect: Callable[[], T], attempts: int = 3) -> T:
+    """Call connect(), retrying a new connection the server dropped mid-handshake (#632, #637).
+
+    A permanent failure, or the last attempt's, is raised as it is.
+    """
+    for attempt in range(1, attempts + 1):
+        try:
+            return connect()
+        except psycopg2.OperationalError as e:
+            if is_permanent_connect_error(e) or attempt == attempts:
+                raise
+            logging.getLogger(__name__).warning(f"Connecting failed, retrying (attempt {attempt}/{attempts}): {e}")
+            time.sleep(CONNECT_RETRY_DELAY)
+    raise AssertionError("unreachable")
 
 
 @dataclass(frozen=True)
@@ -83,10 +100,13 @@ class ConnectionPoolService:
             conn_params["password"] = self.db_config["password"]
 
         try:
-            pool = psycopg2.pool.ThreadedConnectionPool(
-                self.pool_config.min_connections,
-                self.pool_config.max_connections,
-                **conn_params,
+            # The constructor opens min_connections connections, outside get_connection's retry
+            pool = retry_connect(
+                lambda: psycopg2.pool.ThreadedConnectionPool(
+                    self.pool_config.min_connections,
+                    self.pool_config.max_connections,
+                    **conn_params,
+                )
             )
             self.logger.info(
                 f"Connection pool created: min={self.pool_config.min_connections}, "

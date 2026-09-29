@@ -13,6 +13,8 @@ import psycopg2
 from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 
+from services.connection_pool import CONNECT_TIMEOUT, retry_connect
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,6 +54,8 @@ class DatabaseConnectionPool:
             "user": self.config.user,
             "database": self.config.database,
             "port": self.config.port,
+            # getconn holds the pool's lock while it connects: an unanswered connect must fail fast
+            "connect_timeout": CONNECT_TIMEOUT,
         }
 
         if self.config.password:
@@ -64,7 +68,8 @@ class DatabaseConnectionPool:
         if self._pool is None:
             with self._lock:
                 if self._pool is None:
-                    self._pool = self._create_pool()
+                    # The constructor opens min_conn connections: retried like any other connect (#637)
+                    self._pool = retry_connect(self._create_pool)
                     logger.info(f"Created database connection pool: {self._min_conn}-{self._max_conn} connections")
         return self._pool
 
@@ -75,7 +80,7 @@ class DatabaseConnectionPool:
         conn = None
 
         try:
-            conn = connection_pool.getconn()
+            conn = retry_connect(connection_pool.getconn)
             if conn:
                 yield conn
             else:

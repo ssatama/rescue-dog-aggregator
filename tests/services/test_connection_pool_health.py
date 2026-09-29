@@ -173,3 +173,12 @@ def test_the_scraper_pool_connects_with_a_timeout():
         ConnectionPoolService(db_config={"host": "localhost", "user": "test", "database": "test_db"})
 
     assert threaded_pool.call_args.kwargs["connect_timeout"] == CONNECT_TIMEOUT
+
+
+@pytest.mark.unit
+def test_the_scraper_pool_retries_a_connect_dropped_while_it_is_built(stub_clock):
+    """The constructor opens min_connections connections, outside get_connection's retry (#637 review)."""
+    with patch("psycopg2.connect", side_effect=[CONNECT_FAILED, MagicMock(closed=0), MagicMock(closed=0)]) as connect:
+        ConnectionPoolService(db_config={"host": "localhost", "user": "test", "database": "test_db"}, min_connections=2)
+
+    assert connect.call_count == 3
