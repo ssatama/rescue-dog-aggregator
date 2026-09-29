@@ -7,6 +7,8 @@ from typing import Any
 
 import sentry_sdk
 
+from scrapers.constants import MAX_PROFILE_FAILED_RUNS
+
 
 class LLMEnrichmentHandler:
     """Handles LLM-based enrichment of animal data.
@@ -134,8 +136,23 @@ class LLMEnrichmentHandler:
             else:
                 self.logger.warning("Failed to save some LLM enrichment results")
 
+        self._record_failed_runs(pipeline)
         self._collect_and_log_statistics(pipeline, len(animals_for_enrichment))
         return True
+
+    def _record_failed_runs(self, pipeline) -> None:
+        """Count each failed dog's run, and alert once when one reaches the cap the backlog stops at (#633)."""
+        for dog_id, runs in pipeline.record_failed_runs().items():
+            if runs == MAX_PROFILE_FAILED_RUNS:
+                message = f"Dog {dog_id} ({self.organization_name}) failed profiling in {runs} runs; later runs stop retrying it"
+                self.logger.error(message)
+                # One issue per rescue, however many of its dogs reach the cap
+                sentry_sdk.capture_message(
+                    message,
+                    level="error",
+                    fingerprint=["llm-profile-given-up", str(self.organization_id)],
+                    tags={"llm.dog_id": str(dog_id), "llm.org_id": str(self.organization_id)},
+                )
 
     def _prepare_dogs_for_profiling(self, animals_for_enrichment: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Prepare animal data for LLM profiling pipeline."""

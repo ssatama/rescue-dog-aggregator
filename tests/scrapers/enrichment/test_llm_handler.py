@@ -298,3 +298,47 @@ class TestLLMEnrichmentHandlerStatistics:
         mock_alert.assert_called_once()
         call_args = mock_alert.call_args
         assert call_args.kwargs["failed_count"] == 2
+
+
+@pytest.mark.unit
+class TestFailedRunsAreRecorded:
+    """#633: a dog whose profile always fails is counted per run and alerted once."""
+
+    def _handler(self):
+        return LLMEnrichmentHandler(organization_id=1, organization_name="Test Org")
+
+    def test_the_failed_dogs_are_counted(self):
+        pipeline = Mock()
+        pipeline.record_failed_runs.return_value = {5: 1}
+
+        with patch("scrapers.enrichment.llm_handler.sentry_sdk") as sentry:
+            self._handler()._record_failed_runs(pipeline)
+
+        pipeline.record_failed_runs.assert_called_once_with()
+        sentry.capture_message.assert_not_called()
+
+    def test_a_dog_reaching_the_cap_alerts_once(self):
+        from scrapers.constants import MAX_PROFILE_FAILED_RUNS
+
+        pipeline = Mock()
+        pipeline.record_failed_runs.return_value = {5: MAX_PROFILE_FAILED_RUNS, 6: 1}
+
+        with patch("scrapers.enrichment.llm_handler.sentry_sdk") as sentry:
+            self._handler()._record_failed_runs(pipeline)
+
+        sentry.capture_message.assert_called_once()
+        assert "5" in sentry.capture_message.call_args.args[0]
+        # One Sentry issue per rescue, not one per dog
+        assert sentry.capture_message.call_args.kwargs["fingerprint"] == ["llm-profile-given-up", "1"]
+        assert sentry.capture_message.call_args.kwargs["tags"]["llm.dog_id"] == "5"
+
+    def test_a_dog_past_the_cap_does_not_alert_again(self):
+        from scrapers.constants import MAX_PROFILE_FAILED_RUNS
+
+        pipeline = Mock()
+        pipeline.record_failed_runs.return_value = {5: MAX_PROFILE_FAILED_RUNS + 1}
+
+        with patch("scrapers.enrichment.llm_handler.sentry_sdk") as sentry:
+            self._handler()._record_failed_runs(pipeline)
+
+        sentry.capture_message.assert_not_called()

@@ -310,7 +310,9 @@ class DogProfilerPipeline:
             return result
 
         except Exception as e:
-            error_info = {"dog_id": dog_id, "dog_name": dog_name, "error": str(e)}
+            # A ValueError is a bad answer about this dog (invalid, truncated, empty,
+            # unparseable); anything else is the provider failing every dog alike
+            error_info = {"dog_id": dog_id, "dog_name": dog_name, "error": str(e), "dog_specific": isinstance(e, ValueError)}
             self.statistics.record_error(error_info)
             error_msg = f"Failed to process dog {dog_id} ({dog_name}): {str(e)}"
             logger.error(error_msg)
@@ -386,6 +388,19 @@ class DogProfilerPipeline:
                 await asyncio.sleep(1)
 
         return results
+
+    def record_failed_runs(self) -> dict[int, int]:
+        """Count a failed run for each dog whose own answer failed; returns each one's total.
+
+        An outage is not counted: it would take every dog it touched out of the backlog for good.
+        Nor is a run in which every one of several dogs failed: a model or prompt
+        regression (#409) gives every dog a bad answer, not just the one at fault.
+        """
+        errors = self.statistics.errors
+        if len(errors) > 1 and self.statistics.success_count == 0:
+            logger.warning(f"All {len(errors)} dogs failed profiling this run; not counting it against them")
+            return self.database_updater.record_failed_runs([])
+        return self.database_updater.record_failed_runs([error["dog_id"] for error in errors if error["dog_specific"]])
 
     def get_summary(self) -> dict[str, Any]:
         """

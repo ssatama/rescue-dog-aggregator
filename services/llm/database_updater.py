@@ -98,6 +98,29 @@ class DatabaseUpdater:
         finally:
             conn.close()
 
+    def record_failed_runs(self, animal_ids: list[int]) -> dict[int, int]:
+        """Count one more failed profiling run for each dog (#633).
+
+        Returns:
+            Each dog's failed runs so far, empty on failure.
+        """
+        if self.dry_run or not animal_ids:
+            return {}
+
+        try:
+            if self.connection_pool:
+                with self.connection_pool.get_connection_context() as conn:
+                    return _increment_failed_runs(conn, animal_ids)
+
+            conn = psycopg2.connect(**get_database_config())
+            try:
+                return _increment_failed_runs(conn, animal_ids)
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.error(f"Failed to record failed profiling runs: {e}")
+            return {}
+
     def _save_with_connection(self, conn, results: list[dict[str, Any]]) -> None:
         """
         Save results using provided database connection.
@@ -123,6 +146,7 @@ class DatabaseUpdater:
                 """
                 UPDATE animals
                 SET dog_profiler_data = %s,
+                    llm_processing_flags = COALESCE(llm_processing_flags, '{}'::jsonb) - 'profile_failed_runs',
                     updated_at = NOW()
                 WHERE id = %s
                 """,
@@ -131,3 +155,21 @@ class DatabaseUpdater:
 
         conn.commit()
         cursor.close()
+
+
+def _increment_failed_runs(conn, animal_ids: list[int]) -> dict[int, int]:
+    """Add one to llm_processing_flags.profile_failed_runs and return the new counts."""
+    with conn.cursor() as cursor:
+        cursor.execute(
+            """
+            UPDATE animals
+            SET llm_processing_flags = COALESCE(llm_processing_flags, '{}'::jsonb)
+                || jsonb_build_object('profile_failed_runs', COALESCE((llm_processing_flags->>'profile_failed_runs')::int, 0) + 1)
+            WHERE id = ANY(%s)
+            RETURNING id, (llm_processing_flags->>'profile_failed_runs')::int
+            """,
+            (list(animal_ids),),
+        )
+        counts = dict(cursor.fetchall())
+    conn.commit()
+    return counts

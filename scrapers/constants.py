@@ -24,3 +24,10 @@ MAX_R2_FAILURE_RATE = 50
 If the R2 service reports a failure rate above this threshold,
 batch image processing is skipped to avoid cascading failures.
 """
+
+MAX_PROFILE_FAILED_RUNS = 3
+"""Runs a dog's AI profile may fail before the backlog stops retrying it (#633).
+
+Each failure costs the retry handler's attempts and a Sentry event, so a dog
+that always fails would do both on every run, oldest first, ahead of newer dogs.
+"""

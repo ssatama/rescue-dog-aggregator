@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from scrapers.base_scraper import BaseScraper
+from scrapers.constants import MAX_PROFILE_FAILED_RUNS
 from services.metrics_collector import MetricsCollector
 
 STORY = "Lipton is a gentle lurcher who loves long walks and a warm sofa afterwards. " * 3
@@ -29,8 +30,8 @@ def scraper():
     return s
 
 
-def _stored(dog_id, story=STORY):
-    return {"id": dog_id, "name": f"Dog {dog_id}", "breed": "Lurcher", "age_text": "3 years", "properties": {"description": story}}
+def _stored(dog_id, story=STORY, failed_runs=0):
+    return {"id": dog_id, "name": f"Dog {dog_id}", "breed": "Lurcher", "age_text": "3 years", "properties": {"description": story}, "profile_failed_runs": failed_runs}
 
 
 @pytest.mark.unit
@@ -66,3 +67,12 @@ class TestProfilingBacklog:
 
         assert scraper._profiling_backlog() == []
         scraper.database_service.get_unprofiled_animals.assert_not_called()
+
+    def test_a_dog_that_failed_in_every_allowed_run_is_skipped_and_logged(self, scraper, caplog):
+        """#633: an always-failing dog cost a retry budget and a Sentry event every run, and held a cap slot."""
+        scraper.database_service.get_unprofiled_animals.return_value = [_stored(1, failed_runs=MAX_PROFILE_FAILED_RUNS), _stored(2, failed_runs=MAX_PROFILE_FAILED_RUNS - 1)]
+
+        with caplog.at_level("WARNING"):
+            assert [item["id"] for item in scraper._profiling_backlog()] == [2]
+
+        assert any("[1]" in r.getMessage() and "failed profiling" in r.getMessage() for r in caplog.records)
