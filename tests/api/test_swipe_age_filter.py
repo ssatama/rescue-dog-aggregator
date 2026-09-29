@@ -36,3 +36,14 @@ class TestSwipeAgeFilter:
 @pytest.mark.unit
 def test_an_unknown_group_adds_no_condition():
     assert build_age_conditions(["ancient"]) == []
+
+
+@pytest.mark.database
+@pytest.mark.integration
+def test_a_dog_of_unknown_age_is_not_offered_as_a_puppy():
+    """Review of #647: a single-card stack filtered to "Puppy" promises an age, so
+    a dog with none stays out, as the regexes kept it (age_known, like /dogs/puppies)."""
+    with psycopg2.connect(**get_database_config()) as conn, conn.cursor() as cursor:
+        cursor.execute("UPDATE animals SET age_text = NULL, age_min_months = NULL, age_max_months = NULL WHERE id = 9001")
+
+    assert 9001 not in _matching("puppy")

@@ -65,10 +65,12 @@ def swipe_gallery(images: list[dict] | None, primary_image_url: str | None) -> l
 def build_age_conditions(age_groups):
     """SQL conditions for the swipe age groups, from the refreshed months (#643).
 
-    The same buckets as the cards and the dogs filter: age_text is the age as
-    first read for most rescues, so a "3 months" dog stayed a puppy for good.
+    The dogs filter's buckets: age_text is the age as first read for most
+    rescues, so a "3 months" dog stayed a puppy for good. Unlike the dogs
+    filter, a dog with no recorded age matches no group: a one-card stack
+    filtered to "Puppy" promises an age, as /dogs/puppies does.
     """
-    conditions = (age_category_condition(group.title()) for group in age_groups if isinstance(group, str))
+    conditions = (age_category_condition(group.title(), age_known=True) for group in age_groups if isinstance(group, str))
     return [condition for condition in conditions if condition]
 
 
