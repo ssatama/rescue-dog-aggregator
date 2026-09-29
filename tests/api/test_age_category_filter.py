@@ -61,9 +61,12 @@ def matches(category: str, age_min: int | None, age_max: int | None) -> bool:
         return True
 
     low, high = AGE_CATEGORIES[category]
+    # A stated age (12 months wide) or an exact birth date (0 wide) is its lower bound (#650)
+    stated = age_min is not None and age_max is not None and age_max - age_min in (0, 12)
     result: object = True
     if low > 0:
-        result = and_(result, or_(cmp(age_max, ">", low), cmp(age_min, ">=", low)))
+        above = cmp(age_min, ">=", low)
+        result = and_(result, above if stated else or_(cmp(age_max, ">", low), above))
     if high is not None:
         result = and_(result, cmp(age_min, "<", high))
     return result is True
@@ -115,6 +118,13 @@ class TestClampedUpperBounds:
     def test_eleven_month_old_clamped_to_twelve_is_not_young(self):
         assert matches("Puppy", 10, 12) is True
         assert matches("Young", 10, 12) is False
+
+    def test_a_stated_age_stays_in_its_bucket_as_it_ages(self):
+        """#650: "1 year" stored (12, 24) is (25, 37) a year on: Young, not Adult."""
+        assert matches("Young", 25, 37) is True
+        assert matches("Adult", 25, 37) is False
+        assert matches("Adult", 90, 102) is True
+        assert matches("Senior", 90, 102) is False
 
     def test_a_range_that_really_crosses_still_matches_both(self):
         assert matches("Young", 24, 60) is True
