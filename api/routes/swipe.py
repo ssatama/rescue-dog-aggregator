@@ -9,6 +9,7 @@ from psycopg2.extras import RealDictCursor
 from api.dependencies import get_pooled_db_cursor
 from api.exceptions import handle_database_error
 from api.monitoring import track_slow_query
+from api.services.animal_service import age_category_condition
 
 logger = logging.getLogger(__name__)
 
@@ -62,58 +63,13 @@ def swipe_gallery(images: list[dict] | None, primary_image_url: str | None) -> l
 
 
 def build_age_conditions(age_groups):
-    """Build SQL conditions for age filtering based on age groups."""
-    age_conditions = []
+    """SQL conditions for the swipe age groups, from the refreshed months (#643).
 
-    for age_group in age_groups:
-        age_group_lower = age_group.lower() if isinstance(age_group, str) else age_group
-
-        if age_group_lower == "puppy":
-            # Puppy: 0-12 months only (not including "1 year")
-            age_conditions.append(
-                """(
-                a.age_text ~* '^([1-9]|1[0-2])\\s*(month|months|mo)' OR
-                a.properties->>'age_text' ~* '^([1-9]|1[0-2])\\s*(month|months|mo)' OR
-                a.age_text ~* '^0\\s*(year|years|yr)' OR
-                a.properties->>'age_text' ~* '^0\\s*(year|years|yr)'
-            )"""
-            )
-        elif age_group_lower == "young":
-            # Young: 13-24 months OR 1-2 years
-            age_conditions.append(
-                """(
-                a.age_text ~* '^(1[3-9]|2[0-4])\\s*(month|months|mo)' OR
-                a.properties->>'age_text' ~* '^(1[3-9]|2[0-4])\\s*(month|months|mo)' OR
-                a.age_text ~* '^1\\s*(year|years|yr)' OR
-                a.properties->>'age_text' ~* '^1\\s*(year|years|yr)' OR
-                a.age_text ~* '^2\\s*(year|years|yr)' OR
-                a.properties->>'age_text' ~* '^2\\s*(year|years|yr)'
-            )"""
-            )
-        elif age_group_lower == "adult":
-            # Adult: 3-7 years (not including 2 years)
-            age_conditions.append(
-                """(
-                a.age_text ~* '^[3-7]\\s*(year|years|yr)' OR
-                a.properties->>'age_text' ~* '^[3-7]\\s*(year|years|yr)' OR
-                a.age_text ~* '^3\\s*-\\s*[4-7]\\s*(year|years)' OR
-                a.properties->>'age_text' ~* '^3\\s*-\\s*[4-7]\\s*(year|years)' OR
-                a.age_text ~* '^[4-6]\\s*-\\s*7\\s*(year|years)' OR
-                a.properties->>'age_text' ~* '^[4-6]\\s*-\\s*7\\s*(year|years)'
-            )"""
-            )
-        elif age_group_lower == "senior":
-            # Senior: 8+ years
-            age_conditions.append(
-                """(
-                a.age_text ~* '^8\\s*\\+\\s*(year|years)' OR
-                a.properties->>'age_text' ~* '^8\\s*\\+\\s*(year|years)' OR
-                a.age_text ~* '^([8-9]|1[0-9])\\s*(year|years)' OR
-                a.properties->>'age_text' ~* '^([8-9]|1[0-9])\\s*(year|years)'
-            )"""
-            )
-
-    return age_conditions
+    The same buckets as the cards and the dogs filter: age_text is the age as
+    first read for most rescues, so a "3 months" dog stayed a puppy for good.
+    """
+    conditions = (age_category_condition(group.title()) for group in age_groups if isinstance(group, str))
+    return [condition for condition in conditions if condition]
 
 
 def apply_filters_to_query(query_parts, params, filter_country, size, age, excluded_ids):

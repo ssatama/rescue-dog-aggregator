@@ -120,7 +120,8 @@ class TestSwipeEndpoint:
 
         sql = cursor.stack_query[0]
         assert "AND ((" in sql and ") OR (" in sql
-        assert "month|months|mo" in sql and "8\\s*\\+" in sql
+        # Months, not age_text (#643): Puppy under 12, Senior from 96
+        assert "a.age_min_months < 12" in sql and "a.age_min_months >= 96" in sql
 
     def test_excludes_swiped_dogs(self, swipe):
         _, cursor = swipe("?excluded=4,%207")
