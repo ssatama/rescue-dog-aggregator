@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Suspense } from "react";
 import type { Dog } from "../../../types/dog";
 import type { DogWithLlm } from "../../../services/serverAnimalsService";
@@ -216,6 +216,10 @@ export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<Rea
 
     if (!initialDog) {
       notFound();
+    }
+    // The API answers an old slug with the dog at its current one (#634)
+    if (initialDog.slug && initialDog.slug !== resolvedParams.slug) {
+      permanentRedirect(`/dogs/${initialDog.slug}`);
     }
   }
 
