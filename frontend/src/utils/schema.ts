@@ -1,4 +1,5 @@
 import type { Dog } from "@/types/dog";
+import { formatCurrentAge } from "@/utils/dogHelpers";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
@@ -186,11 +187,13 @@ export const generatePetSchema = (dog: DogForSchema | null | undefined): Record<
 
   const additionalProperty: Record<string, unknown>[] = [];
 
-  if (dog.age_text) {
+  // The current age from the refreshed months the cards also read; age_text is the age as first read (#635)
+  const age = formatCurrentAge(dog);
+  if (age) {
     additionalProperty.push({
       "@type": "PropertyValue",
       name: "Age",
-      value: dog.age_text,
+      value: age,
     });
   }
 

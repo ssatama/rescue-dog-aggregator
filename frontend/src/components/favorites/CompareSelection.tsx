@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check } from "lucide-react";
 import Image from "next/image";
 import type { Dog } from "./types";
-import { getAgeDisplay } from "./compareUtils";
-import { formatBreed } from "@/utils/dogHelpers";
+import { formatCurrentAge, formatBreed } from "@/utils/dogHelpers";
 
 interface CompareSelectionProps {
   dogs: Dog[];
@@ -88,7 +87,7 @@ export default function CompareSelection({
             ? "/placeholder-dog.jpg"
             : dog.primary_image_url || "/placeholder-dog.jpg";
           const breed = formatBreed(dog);
-          const ageDisplay = getAgeDisplay(dog);
+          const ageDisplay = formatCurrentAge(dog);
 
           return (
             <motion.div

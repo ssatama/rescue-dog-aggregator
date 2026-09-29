@@ -21,6 +21,7 @@ describe("Schema.org Pet Markup", () => {
     sex: "male",
     age_text: "Adult",
     age_min_months: 36,
+    age_max_months: 48,
     primary_image_url: "https://images.rescuedogs.me/buddy.jpg",
     description: "Friendly dog looking for a loving home.",
     properties: {
@@ -58,7 +59,7 @@ describe("Schema.org Pet Markup", () => {
         description,
         image: "https://images.rescuedogs.me/buddy.jpg",
         disambiguatingDescription:
-          "Age: Adult, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
+          "Age: 3 years, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
       },
     });
   });
@@ -353,5 +354,18 @@ describe("Status Availability Mapping", () => {
   test("should handle invalid status values", () => {
     const availability = getAvailability("invalid");
     expect(availability).toBe("https://schema.org/InStock");
+  });
+});
+
+describe("the dog's age in JSON-LD (#635)", () => {
+  const ageOf = (dog) =>
+    generatePetSchema({ id: 3, name: "Pip", ...dog }).about.disambiguatingDescription;
+
+  test("is the current age from the refreshed months, not the text as first read", () => {
+    expect(ageOf({ age_text: "3 months", age_min_months: 15, age_max_months: 27 })).toBe("Age: 1 year");
+  });
+
+  test("is left out when only text is recorded", () => {
+    expect(ageOf({ age_text: "3 months", sex: "female" })).toBe("Gender: Female");
   });
 });
