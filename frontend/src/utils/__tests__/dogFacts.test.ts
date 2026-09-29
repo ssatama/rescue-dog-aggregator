@@ -125,7 +125,7 @@ describe("companionAnswer", () => {
 
   it("treats a low-confidence AI answer as not assessed (#517)", () => {
     const d = {
-      properties: { good_with_cats: true },
+      properties: {},
       dog_profiler_data: { good_with_cats: "no", confidence_scores: { good_with_cats: 0.5 } },
     } as unknown as Dog;
     expect(companionAnswer(d, "good_with_cats")).toBeNull();
@@ -136,6 +136,19 @@ describe("companionAnswer", () => {
       dog_profiler_data: { good_with_cats: "no", confidence_scores: { good_with_cats: 0.6 } },
     } as unknown as Dog;
     expect(companionAnswer(d, "good_with_cats")).toBe("no");
+  });
+
+  it("lets the rescue's answer fill in behind an AI unknown (#629)", () => {
+    const d = { properties: { good_with_dogs: true }, dog_profiler_data: { good_with_dogs: "unknown" } } as unknown as Dog;
+    expect(companionAnswer(d, "good_with_dogs")).toBe("yes");
+  });
+
+  it("lets the rescue's answer stand in for a low-confidence AI answer (#629, #517)", () => {
+    const d = {
+      properties: { good_with_cats: true },
+      dog_profiler_data: { good_with_cats: "no", confidence_scores: { good_with_cats: 0.4 } },
+    } as unknown as Dog;
+    expect(companionAnswer(d, "good_with_cats")).toBe("yes");
   });
 
   it("is null when neither source assessed it", () => {
