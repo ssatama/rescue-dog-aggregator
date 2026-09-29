@@ -331,6 +331,31 @@ since #620. The detail phase took about 14 minutes at the rescue's rate
 subprocess's output is block-buffered to a file. Afterwards: 0 TSE dogs
 without a story, 0 ending in "Videos".
 
+**Re-slug of the "-unknown-" dogs (2026-09-29, 08:40 UTC, #634).** Before
+#610 a missing breed was stored as "Unknown", so 207 dogs (73 active) had
+slugs like `sunny-unknown-11687`. After #645 deployed (API and Vercel at
+`6c45ddf8`), `backfill apply --steps reslug-unknown --reprofile none` from
+`main`: **207 rows updated**. The new slug is
+`generate_animal_slug(name, breed, standardized_breed, id)`, as for a new dog:
+`sunny-11687`, `feliz-cane-corso-cross-1272`. Afterwards 0 slugs match
+`-unknown-[0-9]+$`, an old URL answers 308 to the new one (the API 301s any
+slug that ends in a known dog's id), and IndexNow took all 414 URLs.
+
+A slug change needs this order, or old URLs keep serving 200 (or loop) for
+up to 48 hours:
+1. `backfill_commands.py plan --steps <step> --out plan.json` first: it
+   holds every old and new slug (`was`/`now`). `apply` prints only a count,
+   and afterwards the step selects nothing, so the old URLs are gone.
+2. Deploy the redirect code, then apply outside the cron window. Until the
+   apply, a request to a *new* slug gets the API's 301 back to the old one,
+   and ISR caches that redirect, so step 3 must purge the new slugs too.
+3. Purge the old and new slugs' tags and `/dogs/<slug>` paths, plus
+   `animals`, and IndexNow both URL sets: a loop over `invalidate_sync` and
+   `submit_dog_urls_sync` under `railway run --service thriving-appreciation`
+   with logging at INFO. Neither call raises: check for the "cache
+   invalidated" and "IndexNow submitted" lines. Then verify as the ISR purge
+   rule above says (stale-while-revalidate serves one old response).
+
 **Breed registry is data.** Breeds and aliases live in
 `utils/breed_registry.yaml`. `primary_breed` is the grouping key and omits the
 cross (it's the `/breeds/[slug]` key); `standardized_breed` is the display
