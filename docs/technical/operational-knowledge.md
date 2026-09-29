@@ -359,6 +359,29 @@ up to 48 hours:
    invalidated" and "IndexNow submitted" lines. Then verify as the ISR purge
    rule above says (stale-while-revalidate serves one old response).
 
+**Tierschutzverein text and size backfill (2026-09-29, 09:40-10:13 UTC,
+#631).** After #646 and #655 (a story keeps the page's own spacing, sizes on the
+40/60 cm scale shared with Daisy, a growing puppy marked `size_pending`),
+`backfill apply --orgs tierschutzverein-europa --reprofile changed --confirm`
+from `main` at `85b7d41f` with the cron service's env
+(`LLM_DEFAULT_MODEL=google/gemini-3.8-flash`):
+
+| rescue | available before → after | profile inputs changed |
+| --- | --- | ---: |
+| tierschutzverein-europa | 373 → 372 | 146 |
+
+146/146 re-profiled (a few first attempts failed validation or hit an
+upstream 502 and passed on retry); the plan, an hour earlier, had shown 145
+stories, 42 sizes (23 Large → Medium, 19 Medium → Small) and 30 `size_pending`.
+Pardo, gone from the site, was retired; Milena (11333) was also missing from
+this run's listing (371 found) and is still available at medium confidence, so
+the next run may retire her. Afterwards: 27 Small, 206 Medium, 92 Large, 47
+without a size (30 pending), 0 unprofiled. Of the 22 stories that still match
+`[a-zäöüß][.!?][A-ZÄÖÜ]`, 19 are "z.B." or "e.V." and 3 are glued in the
+rescue's own HTML (684 "an.Andreu", 724 "lernen.Was", 997 "Mensch.Hunde"): a
+count above 22 would be new. The re-scrape took about 20 minutes at the
+rescue's rate (09:40-10:00), and profiling ran 10:09-10:13.
+
 **Breed registry is data.** Breeds and aliases live in
 `utils/breed_registry.yaml`. `primary_breed` is the grouping key and omits the
 cross (it's the `/breeds/[slug]` key); `standardized_breed` is the display
