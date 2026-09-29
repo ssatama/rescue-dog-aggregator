@@ -18,7 +18,7 @@ import psycopg2
 import psycopg2.extensions
 import psycopg2.pool
 
-# Seconds to wait for a new connection, as the API pool does
+# Seconds to wait for a new connection; the API pool uses it too
 CONNECT_TIMEOUT = int(os.getenv("DB_POOL_CONNECT_TIMEOUT", "5"))
 CONNECT_RETRY_DELAY = 0.5
 

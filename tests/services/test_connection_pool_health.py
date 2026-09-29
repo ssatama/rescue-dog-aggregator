@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 import psycopg2
 import pytest
 
-from services.connection_pool import ConnectionPoolService
+from services.connection_pool import CONNECT_TIMEOUT, ConnectionPoolService
 
 
 @pytest.mark.unit
@@ -172,4 +172,4 @@ def test_the_scraper_pool_connects_with_a_timeout():
     with patch("services.connection_pool.psycopg2.pool.ThreadedConnectionPool") as threaded_pool:
         ConnectionPoolService(db_config={"host": "localhost", "user": "test", "database": "test_db"})
 
-    assert threaded_pool.call_args.kwargs["connect_timeout"] == 5
+    assert threaded_pool.call_args.kwargs["connect_timeout"] == CONNECT_TIMEOUT

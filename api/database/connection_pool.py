@@ -24,7 +24,7 @@ from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 
 from config import DB_CONFIG
-from services.connection_pool import is_permanent_connect_error
+from services.connection_pool import CONNECT_TIMEOUT, is_permanent_connect_error
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +36,8 @@ POOL_ACQUIRE_RETRY_DELAY = float(os.getenv("DB_POOL_ACQUIRE_RETRY_DELAY", "0.1")
 # own budget. Sharing one meant two dead connections could spend every attempt
 # and fail the request with no error to report.
 POOL_STALE_CONNECTION_RETRIES = int(os.getenv("DB_POOL_STALE_CONNECTION_RETRIES", "3"))
-# Seconds to wait for a new connection, as the admin query route does
-POOL_CONNECT_TIMEOUT = int(os.getenv("DB_POOL_CONNECT_TIMEOUT", "5"))
+# Seconds to wait for a new connection, shared with the scraper pool
+POOL_CONNECT_TIMEOUT = CONNECT_TIMEOUT
 
 
 class PoolNotInitializedError(RuntimeError):
