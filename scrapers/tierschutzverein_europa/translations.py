@@ -6,10 +6,8 @@ Tierschutzverein Europa database. All mappings are based on actual production da
 
 import re
 
-# Shoulder height bounds for "Ungefähre Größe" (#563): Small below
-# SMALL_BELOW_CM, Medium up to and including MEDIUM_UP_TO_CM, Large above.
-SMALL_BELOW_CM = 35
-MEDIUM_UP_TO_CM = 55
+from utils.dog_size import size_from_height_cm
+
 # Younger dogs are still growing: their height today isn't their adult size
 ADULT_FROM_MONTHS = 12
 
@@ -75,9 +73,7 @@ def translate_size(height_text: str | None, age_months: int | None = None) -> st
 
     height = adult_height or _height_cm(text)
     if height is not None:
-        if height < SMALL_BELOW_CM:
-            return "Small"
-        return "Medium" if height <= MEDIUM_UP_TO_CM else "Large"
+        return size_from_height_cm(height)  # one scale for every rescue (#631)
 
     words = {word.lower().replace("ss", "ß") for word in re.findall(_SIZE_WORD, text, re.IGNORECASE)}
     return _SIZES[words.pop()] if len(words) == 1 else None  # "klein bis mittelgroß" is no answer

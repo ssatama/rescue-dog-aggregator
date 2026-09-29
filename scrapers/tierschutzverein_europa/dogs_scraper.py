@@ -19,6 +19,17 @@ from utils.shared_extraction_patterns import gallery_urls
 # A post's story is its paragraphs and subtitles, up to the "Videos" line
 STORY_BLOCKS = ["p", "h1", "h2", "h3", "h4"]
 STORY_END = re.compile(r"^Videos?$", re.IGNORECASE)
+_SPACE_BEFORE_PUNCTUATION = re.compile(r"\s+([,.;:!?)])")
+
+
+def _text(element: Tag) -> str:
+    """An element's text with its line breaks and inline tags as spaces (#631).
+
+    get_text(strip=True) glued "befindet.<br>Im August" into "befindet.Im August".
+    A separator does the opposite to "<strong>Milo</strong>," ("Milo ,"), so the
+    space before punctuation goes again.
+    """
+    return _SPACE_BEFORE_PUNCTUATION.sub(r"\1", " ".join(element.get_text(" ", strip=True).split()))
 
 
 class TierschutzvereinEuropaScraper(BaseScraper):
@@ -222,8 +233,8 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             for row in rows:
                 cells = row.find_all("td")
                 if len(cells) >= 2:
-                    key = cells[0].get_text(strip=True).rstrip(":")
-                    value = cells[1].get_text(strip=True)
+                    key = _text(cells[0]).rstrip(":")
+                    value = _text(cells[1])
                     if key and value:
                         properties[key] = value
 
@@ -233,13 +244,13 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             dt_elements = dl.find_all("dt")
             dd_elements = dl.find_all("dd")
             for dt, dd in zip(dt_elements, dd_elements):
-                key = dt.get_text(strip=True).rstrip(":")
-                value = dd.get_text(strip=True)
+                key = _text(dt).rstrip(":")
+                value = _text(dd)
                 if key and value:
                     properties[key] = value
 
         # The story, stored where every reader looks (#563)
-        description_parts = [text for el in self._story_blocks(soup) if (text := el.get_text(strip=True))]
+        description_parts = [text for el in self._story_blocks(soup) if (text := _text(el))]
         if description_parts:
             properties["description"] = "\n".join(description_parts)
 
@@ -342,10 +353,11 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                         translated_dog["sex"] = translated_sex
 
                 german_age = translated_dog.get("age_text")
-                translated_dog["size"] = translate_size(
-                    (translated_dog.get("properties") or {}).get("Ungefähre Größe"),
-                    stated_age_months(german_age),
-                )
+                height_text = (translated_dog.get("properties") or {}).get("Ungefähre Größe")
+                translated_dog["size"] = translate_size(height_text, stated_age_months(german_age))
+                if height_text and translated_dog["size"] is None:
+                    # Still growing: skip-existing reads the dog again until it has a size (#631)
+                    translated_dog.setdefault("properties", {})["size_pending"] = True
 
                 if german_age:
                     # No German text stands in for an age

@@ -760,20 +760,26 @@ post id (`wp-9270`).
   alt)" → "10 months old"); the scraper never sets `age`, which
   `process_animal` would prefer. An untranslated age is `None` and logged.
   The birth range comes from `Geburtstag` as `date_of_birth`.
-- Size comes from "Ungefähre Größe" by shoulder height (`translate_size`:
-  Small below 35 cm, Medium to 55, Large above; a range by its middle), else
-  the site's word. A dog still growing (the text says so, or under 12 months)
-  gets no size and the save falls back to the breed's, unless the rescue gives
-  an adult size ("klein bleibend", "Endgröße"). Two size words give none.
-  Known limit: a puppy keeps no size as it grows, because existing dogs are
-  skipped (47 active dogs on 2026-09-29). Daisy's scraper uses 40/60 cm for
-  the same question; one scale for all rescues is still open (#631).
+- Size comes from "Ungefähre Größe" by shoulder height, on the scale every
+  rescue shares (`utils/dog_size.py`: Small below 40 cm, Medium below 60,
+  Large from 60; a range by its middle, #631), else the site's word. A dog still
+  growing (the text says so, or under 12 months) gets no size and the save
+  falls back to the breed's, unless the rescue gives an adult size ("klein
+  bleibend", "Endgröße"). Two size words give none. A dog with a height but no
+  size is stored with `properties.size_pending`, which skip-existing doesn't
+  skip, so each run reads it again until the rescue's page gives a grown size
+  (46 dogs on 2026-09-29, about 2 minutes per run at the rescue's rate).
 - The story is the post (`div.content`) from the top up to the "Videos" line
   (an `h2` or a `p`), without the "Beschreibung" heading: updates sit above
   that heading, stories open with their own title, and older posts have no
-  "Beschreibung". Text across a `<br>` is glued ("befindet.Im"), and the
-  German story shows on a dog not yet profiled (page body, meta description,
-  JSON-LD); both are #631.
+  "Beschreibung". Text across a `<br>` or inline tag is joined with a space
+  (#631; it used to read "befindet.Im").
+- **The German story before profiling (decided, #631).** A dog shows its German
+  `properties.description` only until its AI profile exists, which the same
+  run writes minutes after the save. A profile that fails is retried by the
+  next runs' backlog (#622, #633). On 2026-09-29, 0 of 373 active dogs were
+  unprofiled, so the window is a run's LLM phase. Marking the description's
+  language for the page isn't worth building for that.
 
 ---
 

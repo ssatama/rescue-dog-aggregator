@@ -9,6 +9,7 @@ from services.playwright_browser_service import (
     PlaywrightOptions,
     get_playwright_service,
 )
+from utils.dog_size import size_from_height_cm
 from utils.shared_extraction_patterns import gallery_urls
 
 # The footer is excluded by position, so this floor only has to keep out short
@@ -56,13 +57,6 @@ class DaisyFamilyRescueDogDetailScraper:
             "golden retriever": "golden retriever",
             "labrador": "labrador",
             "terrier": "terrier",
-        }
-
-        # Size categories based on height (cm)
-        self.size_categories = {
-            "small": (0, 40),
-            "medium": (40, 60),
-            "large": (60, 100),
         }
 
     async def async_extract_dog_details(self, dog_url: str, logger=None) -> dict[str, Any] | None:
@@ -432,21 +426,8 @@ class DaisyFamilyRescueDogDetailScraper:
         return None
 
     def _determine_size(self, height_cm: int) -> str | None:
-        """Determine size category based on height."""
-        # Size mapping with proper case for frontend compatibility
-        size_mapping = {"small": "Small", "medium": "Medium", "large": "Large"}
-
-        for size, (min_height, max_height) in self.size_categories.items():
-            if min_height <= height_cm < max_height:
-                return size_mapping.get(size, size)
-
-        # Handle edge cases
-        if height_cm >= 100:
-            return "Large"  # Proper case
-        elif height_cm <= 0:
-            return None
-
-        return "medium"  # Default fallback
+        """Size by shoulder height, on the scale every rescue shares (#631)."""
+        return size_from_height_cm(height_cm)
 
     def _parse_location(self, location_text: str) -> str | None:
         """Parse location from text."""

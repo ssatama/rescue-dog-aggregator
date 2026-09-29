@@ -246,6 +246,17 @@ class TestReadPathsDegradeRatherThanRaise:
         assert "status = 'available'" in sql
         assert params == (5,)
 
+    def test_external_id_lookup_leaves_out_dogs_whose_size_is_pending(self, service):
+        """A puppy stored without a size is read again until it has one (#631)."""
+        cursor = Mock()
+        cursor.fetchall.return_value = []
+        service.conn = Mock(cursor=Mock(return_value=cursor))
+
+        service.get_existing_external_ids(11)
+
+        sql, _ = cursor.execute.call_args.args
+        assert "NOT COALESCE(properties, '{}') ? 'size_pending'" in sql
+
     def test_external_id_lookup_leaves_out_dogs_whose_image_is_not_on_the_cdn(self, service):
         """A skip-existing scrape must reprocess a dog whose image upload failed (#457)."""
         cursor = Mock()

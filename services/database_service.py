@@ -692,6 +692,7 @@ class DatabaseService:
         A dog whose primary image never reached our CDN is left out, so the next scrape
         processes it again and retries the upload (#457). So is a dog without a
         photo gallery yet: galleries fill in, and failed ones retry, on normal runs (#487).
+        So is a puppy whose size waits on its growing (properties.size_pending, #631).
 
         Args:
             organization_id: Organization ID
@@ -703,7 +704,7 @@ class DatabaseService:
             with self.connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "SELECT external_id FROM animals WHERE organization_id = %s AND status = 'available' AND primary_image_url LIKE 'https://images.rescuedogs.me/%%' AND images IS NOT NULL",
+                    "SELECT external_id FROM animals WHERE organization_id = %s AND status = 'available' AND primary_image_url LIKE 'https://images.rescuedogs.me/%%' AND images IS NOT NULL AND NOT COALESCE(properties, '{}') ? 'size_pending'",
                     (organization_id,),
                 )
                 results = cursor.fetchall()
