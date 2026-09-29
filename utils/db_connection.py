@@ -4,6 +4,7 @@ Follows CLAUDE.md principles: immutable data, pure functions, context managers.
 """
 
 import logging
+import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -12,6 +13,11 @@ from threading import Lock
 import psycopg2
 from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
+
+from services.connection_pool import CONNECT_RETRY_DELAY, CONNECT_TIMEOUT, is_permanent_connect_error
+
+# Tries for a new connection the server drops mid-handshake, as the other pools allow
+CONNECT_ATTEMPTS = 3
 
 logger = logging.getLogger(__name__)
 
@@ -52,12 +58,25 @@ class DatabaseConnectionPool:
             "user": self.config.user,
             "database": self.config.database,
             "port": self.config.port,
+            # getconn holds the pool's lock while it connects: an unanswered connect must fail fast
+            "connect_timeout": CONNECT_TIMEOUT,
         }
 
         if self.config.password:
             conn_params["password"] = self.config.password
 
         return pool.ThreadedConnectionPool(minconn=self._min_conn, maxconn=self._max_conn, **conn_params)
+
+    def _getconn(self, connection_pool: pool.ThreadedConnectionPool) -> psycopg2.extensions.connection:
+        """getconn(), retrying a new connection the server dropped mid-handshake (#637)."""
+        for attempt in range(1, CONNECT_ATTEMPTS + 1):
+            try:
+                return connection_pool.getconn()
+            except psycopg2.OperationalError as e:
+                if is_permanent_connect_error(e) or attempt == CONNECT_ATTEMPTS:
+                    raise
+                logger.warning(f"Connecting failed, retrying (attempt {attempt}/{CONNECT_ATTEMPTS}): {e}")
+                time.sleep(CONNECT_RETRY_DELAY)
 
     def get_pool(self) -> pool.ThreadedConnectionPool:
         """Get connection pool (thread-safe singleton)."""
@@ -75,7 +94,7 @@ class DatabaseConnectionPool:
         conn = None
 
         try:
-            conn = connection_pool.getconn()
+            conn = self._getconn(connection_pool)
             if conn:
                 yield conn
             else:

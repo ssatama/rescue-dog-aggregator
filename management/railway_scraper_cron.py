@@ -33,8 +33,11 @@ from datetime import UTC, datetime  # noqa: E402
 
 import sentry_sdk  # noqa: E402
 
+# The root must come first: `management/services/` would otherwise shadow the
+# project's `services/`, and an editable install already has the root on
+# sys.path, just after `management/` (see llm_commands.py)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
+if sys.path[0] != project_root:
     sys.path.insert(0, project_root)
 
 from config import enable_world_class_scraper_logging, get_database_config  # noqa: E402

@@ -28,8 +28,9 @@ restart (PYTHON-FASTAPI-2N/3K/3M, 2026-09). `api/database/connection_pool.py`
 retries it against the stale-connection budget (3), connects with
 `connect_timeout` 5s (`DB_POOL_CONNECT_TIMEOUT`, because `getconn` holds the
 pool lock while connecting), and answers 503 `CONNECTION_REFUSED` if it never
-connects (`POOL_EXHAUSTED` means only a full pool). The scraper pool
-(`services/connection_pool.py`) does the same (#632). Neither retries a
+connects (`POOL_EXHAUSTED` means only a full pool). The cron's two
+pools, `services/connection_pool.py` (#632) and `utils/db_connection.py`
+(#637), do the same. Neither retries a
 permanent failure: a bad password, a missing database or "too many clients".
 
 **A failed cron run usually means one org failed.** The batch reports
