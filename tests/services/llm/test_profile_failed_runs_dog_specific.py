@@ -47,3 +47,27 @@ class TestOnlyDogSpecificFailuresAreCounted:
         pipeline.record_failed_runs()
 
         pipeline.database_updater.record_failed_runs.assert_called_once_with([])
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+class TestARunWhereEveryDogFailedIsNotCounted:
+    """Review of #638: a model or prompt regression (the #409 class) gives every dog a bad answer."""
+
+    async def test_every_dog_failing_is_systemic(self, pipeline):
+        pipeline.retry_handler.execute_with_retry = AsyncMock(side_effect=TruncatedLLMResponseError("cut off"))
+
+        await pipeline.process_dog(GROUNDED)
+        await pipeline.process_dog({**GROUNDED, "id": 11228})
+        pipeline.record_failed_runs()
+
+        pipeline.database_updater.record_failed_runs.assert_called_once_with([])
+
+    async def test_one_dog_failing_beside_a_success_is_counted(self, pipeline):
+        pipeline.retry_handler.execute_with_retry = AsyncMock(side_effect=[TruncatedLLMResponseError("cut off"), Mock(model_dump=Mock(return_value={}))])
+
+        await pipeline.process_dog(GROUNDED)
+        await pipeline.process_dog({**GROUNDED, "id": 11228})
+        pipeline.record_failed_runs()
+
+        pipeline.database_updater.record_failed_runs.assert_called_once_with([11227])

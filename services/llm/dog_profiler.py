@@ -393,8 +393,14 @@ class DogProfilerPipeline:
         """Count a failed run for each dog whose own answer failed; returns each one's total.
 
         An outage is not counted: it would take every dog it touched out of the backlog for good.
+        Nor is a run in which every one of several dogs failed: a model or prompt
+        regression (#409) gives every dog a bad answer, not just the one at fault.
         """
-        return self.database_updater.record_failed_runs([error["dog_id"] for error in self.statistics.errors if error["dog_specific"]])
+        errors = self.statistics.errors
+        if len(errors) > 1 and self.statistics.success_count == 0:
+            logger.warning(f"All {len(errors)} dogs failed profiling this run; not counting it against them")
+            return self.database_updater.record_failed_runs([])
+        return self.database_updater.record_failed_runs([error["dog_id"] for error in errors if error["dog_specific"]])
 
     def get_summary(self) -> dict[str, Any]:
         """

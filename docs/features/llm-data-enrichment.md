@@ -161,8 +161,9 @@ newly collected dogs, plus up to 10 stored dogs still without a profile
 `configs/llm_organizations.yaml`. Each run in which a dog's profile fails on a
 bad answer about that dog (a validation error, or a truncated, empty or
 unparseable answer) adds one to `llm_processing_flags.profile_failed_runs`. An
-OpenRouter outage (429, 5xx, timeout, transport) doesn't count, and a saved
-profile clears the count. After 3 (`MAX_PROFILE_FAILED_RUNS`,
+OpenRouter outage (429, 5xx, timeout, transport) doesn't count, nor does a run
+in which every one of several dogs failed (a model or prompt regression, as in
+#409). A saved profile clears the count. After 3 (`MAX_PROFILE_FAILED_RUNS`,
 #633), the backlog stops retrying the dog, and the run log names it. Sentry gets
 one error when a dog reaches the cap. `generate-profiles --ids` still profiles
 it. After fixing the cause, clear the count with
