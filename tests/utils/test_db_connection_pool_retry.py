@@ -73,3 +73,19 @@ def test_the_first_connect_is_retried_too(stub_clock):
         assert got is conn
 
     assert connect.call_count == 2
+
+
+@pytest.mark.unit
+def test_a_returned_connection_is_reused(stub_clock):
+    """Round-2 review of #639: min_conn 0 made psycopg2 close every returned connection."""
+    conn = MagicMock(closed=0)
+    db_pool = DatabaseConnectionPool(DatabaseConfig(host="localhost", user="test", database="test_db"))
+
+    with patch("psycopg2.connect", return_value=conn) as connect:
+        with db_pool.get_connection():
+            pass
+        with db_pool.get_connection():
+            pass
+
+    assert connect.call_count == 1
+    conn.close.assert_not_called()

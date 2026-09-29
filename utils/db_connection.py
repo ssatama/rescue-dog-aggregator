@@ -4,7 +4,6 @@ Follows CLAUDE.md principles: immutable data, pure functions, context managers.
 """
 
 import logging
-import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -14,10 +13,7 @@ import psycopg2
 from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 
-from services.connection_pool import CONNECT_RETRY_DELAY, CONNECT_TIMEOUT, is_permanent_connect_error
-
-# Tries for a new connection the server drops mid-handshake, as the other pools allow
-CONNECT_ATTEMPTS = 3
+from services.connection_pool import CONNECT_TIMEOUT, retry_connect
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +40,7 @@ class DatabaseConfig:
 class DatabaseConnectionPool:
     """Thread-safe database connection pool."""
 
-    # min_conn 0: a connection the constructor opened would bypass the connect retry,
-    # and in the cron that first connect is nearly the only one
-    def __init__(self, config: DatabaseConfig, min_conn: int = 0, max_conn: int = 10):
+    def __init__(self, config: DatabaseConfig, min_conn: int = 1, max_conn: int = 10):
         self.config = config
         self._pool: pool.ThreadedConnectionPool | None = None
         self._lock = Lock()
@@ -69,23 +63,13 @@ class DatabaseConnectionPool:
 
         return pool.ThreadedConnectionPool(minconn=self._min_conn, maxconn=self._max_conn, **conn_params)
 
-    def _getconn(self, connection_pool: pool.ThreadedConnectionPool) -> psycopg2.extensions.connection:
-        """getconn(), retrying a new connection the server dropped mid-handshake (#637)."""
-        for attempt in range(1, CONNECT_ATTEMPTS + 1):
-            try:
-                return connection_pool.getconn()
-            except psycopg2.OperationalError as e:
-                if is_permanent_connect_error(e) or attempt == CONNECT_ATTEMPTS:
-                    raise
-                logger.warning(f"Connecting failed, retrying (attempt {attempt}/{CONNECT_ATTEMPTS}): {e}")
-                time.sleep(CONNECT_RETRY_DELAY)
-
     def get_pool(self) -> pool.ThreadedConnectionPool:
         """Get connection pool (thread-safe singleton)."""
         if self._pool is None:
             with self._lock:
                 if self._pool is None:
-                    self._pool = self._create_pool()
+                    # The constructor opens min_conn connections: retried like any other connect (#637)
+                    self._pool = retry_connect(self._create_pool)
                     logger.info(f"Created database connection pool: {self._min_conn}-{self._max_conn} connections")
         return self._pool
 
@@ -96,7 +80,7 @@ class DatabaseConnectionPool:
         conn = None
 
         try:
-            conn = self._getconn(connection_pool)
+            conn = retry_connect(connection_pool.getconn)
             if conn:
                 yield conn
             else:

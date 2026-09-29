@@ -29,11 +29,11 @@ retries it against the stale-connection budget (3), connects with
 `connect_timeout` 5s (`DB_POOL_CONNECT_TIMEOUT`, because `getconn` holds the
 pool lock while connecting), and answers 503 `CONNECTION_REFUSED` if it never
 connects (`POOL_EXHAUSTED` means only a full pool). The cron's two
-pools retry a dropped connect the same way: `services/connection_pool.py`
-(#632, which also discards stale connections) and `utils/db_connection.py`
-(#637, which opens no connection until the first use, so that one is retried
-too). Neither retries a
-permanent failure: a bad password, a missing database or "too many clients".
+pools, `services/connection_pool.py` (#632, which also discards stale
+connections) and `utils/db_connection.py` (#637), retry a dropped connect
+through `retry_connect`, including the connections a pool opens when it is
+built. No pool retries a permanent failure: a bad password, a missing
+database or "too many clients".
 
 **A failed cron run usually means one org failed.** The batch reports
 `overall_success: false` if *any* org fails; read `failed_orgs`. The commit
