@@ -20,6 +20,7 @@ from management.age_backfill import plan_clears, rows_from_records
 from scrapers.manytearsrescue.manytearsrescue_scraper import NOT_A_BREED
 from scrapers.misis_rescue.detail_parser import dob_bullet
 from utils.birth_dates import ages_at, as_date, as_int, resolve_age, today_utc
+from utils.slug_generator import generate_animal_slug
 
 
 @dataclass(frozen=True)
@@ -65,6 +66,15 @@ def _plan_breed_raw(records: list[dict[str, Any]]) -> list[Change]:
             continue
         if source and source != record["breed_raw"]:
             changes.append(Change(record["id"], record["organization"], "breed_raw", record["breed_raw"], source))
+    return changes
+
+
+def _plan_reslug(records: list[dict[str, Any]]) -> list[Change]:
+    changes = []
+    for record in records:
+        slug = generate_animal_slug(record["name"], record["breed"], record["standardized_breed"], record["id"])
+        if slug != record["slug"]:
+            changes.append(Change(record["id"], record["organization"], "slug", record["slug"], slug))
     return changes
 
 
@@ -283,6 +293,17 @@ STEPS: dict[str, Step] = {
                    OR lower(a.sex) = 'unknown'
             """,
             plan=_plan_unknown_to_null,
+        ),
+        Step(
+            name="reslug-unknown",
+            summary="A slug made from the old literal 'Unknown' breed becomes name-breed-id, or name-id without a breed; the old one redirects by its id (#634)",
+            fetch_sql=r"""
+                SELECT a.id, a.slug, a.name, a.breed, a.standardized_breed, o.config_id AS organization
+                FROM animals a
+                JOIN organizations o ON o.id = a.organization_id
+                WHERE a.slug ~ '-unknown-[0-9]+$'
+            """,
+            plan=_plan_reslug,
         ),
     ]
 }

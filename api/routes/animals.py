@@ -1,4 +1,5 @@
 import logging
+import re
 
 import psycopg2
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -532,6 +533,11 @@ async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(
         animal = animal_service.get_animal_by_slug(animal_slug)
 
         if not animal:
+            # A slug ends in the dog's id, so an old one (#634) still finds the dog
+            old_slug = re.search(r"-(\d+)$", animal_slug)
+            moved = animal_service.get_animal_by_id(int(old_slug.group(1))) if old_slug else None
+            if moved and moved.slug and moved.slug != animal_slug:
+                return RedirectResponse(url=f"/api/animals/{moved.slug}", status_code=301)
             raise HTTPException(status_code=404, detail="Animal not found")
 
         return animal
