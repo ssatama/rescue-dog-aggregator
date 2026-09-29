@@ -17,6 +17,10 @@ the CLI nor the Railway MCP exposes `cronSchedule`; only the dashboard's Cron
 Runs tab does. Repo docs once claimed "Tue/Thu/Sat 6am" and caused a false
 "missed run" alarm, so never infer the schedule from docs or log timestamps.
 
+**Don't merge scraper changes in the 2 hours before a cron run** (Mon/Thu/Sat
+15:00 UTC), and never while one is running: a merge redeploys the cron
+service.
+
 **The API's DB pool retries a dropped new connection** (#624). A handshake
 the server drops ("server closed the connection unexpectedly") on
 `postgres.railway.internal` shows up a few times a week without a Postgres
@@ -24,7 +28,7 @@ restart (PYTHON-FASTAPI-2N/3K/3M, 2026-09). `api/database/connection_pool.py`
 retries it against the stale-connection budget (3), connects with
 `connect_timeout` 5s (`DB_POOL_CONNECT_TIMEOUT`, because `getconn` holds the
 pool lock while connecting), and answers 503 if it never connects. The
-scraper pool (`services/connection_pool.py`) has neither yet.
+scraper pool (`services/connection_pool.py`) has neither yet (#632).
 
 **A failed cron run usually means one org failed.** The batch reports
 `overall_success: false` if *any* org fails; read `failed_orgs`. The commit
@@ -229,8 +233,15 @@ so. The nudge card's thresholds are in `lib/installNudge.ts`.
 
 ## Data
 
+**The local dev database can lag production's schema.** Alembic only reads
+`RAILWAY_DATABASE_URL`, which is production in `.env`, so never run it for a
+local fix. On 2026-09-26 the local DB lacked `animals.breed_raw` and every new
+dog's save failed locally. Compare `information_schema.columns` on both sides
+and add what is missing by hand.
+
 **Rows never self-correct on scrape.** `skip_existing_animals` drops existing
-dogs before `save_animal`, and updates are never re-profiled. A scraper fix
+dogs before `save_animal`, and changed data is never re-profiled (only dogs
+with no profile are picked up again, #622). A scraper fix
 needs an explicit backfill. Query the full population, not just
 `status = 'available'`, when sizing a defect.
 
@@ -249,7 +260,9 @@ needs an explicit backfill. Query the full population, not just
   is the first; it plans 0 rows since it ran.
 - `apply --orgs a,b --steps x --confirm` writes to `RAILWAY_DATABASE_URL`: it
   runs `railway_scraper_cron.py --org X --force-rescrape` per rescue, then the
-  steps for every rescue, then `generate-profiles --ids` for dogs whose profile text changed,
+  steps for every rescue, then `generate-profiles --ids` for dogs whose profile text changed
+  (only in the `--orgs` it re-scraped: a steps-only apply re-profiles nobody, so
+  run `generate-profiles --ids` yourself when a step changes profile text),
   and prints a before/after table. Record that table here in the PR that ran it.
 - `apply` runs the scrapers from the local checkout: run it from an
   up-to-date `main`, and don't switch branches until it exits.
@@ -287,7 +300,8 @@ has no LLM profiles), 17 first attempts too short and fixed on retry, no
   MISIs nav-bullet dogs 0, stories over 200 chars 149, no age 7 (#562);
   Tierschutzverein German ages 3, all on dogs the site no longer lists and
   so not re-scraped, `size = 'Medium'` 75 → 204 (sizes now from shoulder
-  height), 369 of 376 with a story (the other 7 have none on the site; #563);
+  height), 369 of 376 with a story (#563; the other 7 do have one, which
+  #618 found and fixed);
   0 active dogs with a story only under an old key (#568).
 - Pets in Turkey has no `description` on purpose: its "Ready to fly /
   Currently in" line is where the dog is, not a story (#564).
@@ -295,6 +309,25 @@ has no LLM profiles), 17 first attempts too short and fixed on retry, no
   under a NULL `primary_breed` (a missing breed is NULL since #568), and the
   /breeds page's schema rejected the response (JAVASCRIPT-NEXTJS-88). Fixed
   in #572; every other breed grouping already skipped NULL.
+
+**Tierschutzverein story backfill (2026-09-28, 20:58-21:19 UTC).** After #619
+(the story is the post up to "Videos"), `backfill apply --orgs
+tierschutzverein-europa --reprofile changed` from `main` at `648b1492` with the
+cron service's env:
+
+| rescue | available before → after | profile inputs changed |
+| --- | --- | ---: |
+| tierschutzverein-europa | 373 → 373 | 41 |
+
+41/41 re-profiled: 7 dogs whose story was empty, 27 that gained the updates
+above "Beschreibung", 6 that lost a trailing "Videos" line, and Olaf
+(rewritten by the rescue). The re-scrape's own LLM phase also profiled Fay,
+Fritz and Milo through the #622 backlog. Then `generate-profiles --ids
+1151,6593` re-profiled MISIs' Sasha and Margo, grounded by their bullets
+since #620. The detail phase took about 14 minutes at the rescue's rate
+(plan: 7); `apply` shows no progress while the scraper runs, because the
+subprocess's output is block-buffered to a file. Afterwards: 0 TSE dogs
+without a story, 0 ending in "Videos".
 
 **Breed registry is data.** Breeds and aliases live in
 `utils/breed_registry.yaml`. `primary_breed` is the grouping key and omits the
@@ -309,9 +342,20 @@ reconcile` against production text before trusting a resolver change.
   section: 385 of 512 dogs got "Everything you need to know about <breed>"
   (2026-08-20), which then poisons their AI profile. Fixing it needs a
   re-profile, not just a re-scrape.
-- `properties.good_with_dogs` / `good_with_cats` are `true` for nearly every
-  dog (#516). `companionAnswer` in `frontend/src/utils/dogFacts.ts` must read
-  the AI profile first until #516 is fixed.
+- Compatibility comes from the "May live with" chips since #516: a chip is
+  yes, no chip means the rescue didn't say (key left out, not "no").
+  Children: preschool is any age (`true`), primary "Yes (5+)", secondary
+  "Yes (11+)". The prompt (1.1.0) maps "Yes (5+)"/"Yes (11+)" to
+  `older_children`. A page without the card is silent (102 dogs). If the
+  rescue renames the "May live with" label, every dog loses the facts
+  quietly; a run-level count of dogs with chips would catch it (#628).
+- Follow-up: `companionAnswer` in `frontend/src/utils/dogFacts.ts` reads the
+  AI profile first. Switch it to `answerOf(profile) ?? answerOf(properties)`,
+  so the rescue's answer fills in behind an AI "unknown", once no active Dogs
+  Trust dog keeps a pre-#516 `good_with_dogs: true` (118 were in stale grace
+  on 2026-09-27). Keep #517's gate: an AI answer scored 0.5 or less is "not
+  assessed", and deciding whether the rescue's answer may then stand in is
+  part of that change (#629).
 
 **Woof Project lists available dogs first, then the adoption archive**
 (pages 2-5 on 2026-09-27). Since #565 the listing is plain HTML: an adopted or
@@ -353,6 +397,10 @@ which also rewrites `adoption_url`: updates never refresh it.
 **daisyfamilyrescue `age_text`** once held gender text and future dates.
 `age_backfill.py` deliberately doesn't clear these, and a test pins that, so
 the scraper bug stays visible. Scraper and parser fixed in #433.
+
+**A disabled rescue's dogs aren't retired.** Config sync disabling an org
+doesn't retire its dogs; #572's `disabled-org-status-unknown` step did it once
+for Galgos del Sol. Automating it is #630.
 
 **Name and location backfills (#505).** Most rescues skip dogs they already
 have, so name cleaning and `display_location` reach stored rows only through

@@ -3,9 +3,8 @@
 Each scraper fix whose stored rows need repair registers one step here. A step
 is a read-only query plus a pure planning function, so `backfill_commands.py
 plan --steps` shows its change before anything is written, and `apply` runs
-it once, after the forced re-scrape (epic #554: every backfill runs together
-in #572). Steps are idempotent: they are planned from fresh rows at apply time,
-so a step that already ran plans nothing.
+it once, after the forced re-scrape. Steps are idempotent: they are planned
+from fresh rows at apply time, so a step that already ran plans nothing.
 
 To add one: write the pure planner next to the fix, then append a Step to STEPS.
 """

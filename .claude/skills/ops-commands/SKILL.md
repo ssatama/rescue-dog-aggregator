@@ -17,8 +17,9 @@ uv run python management/llm_commands.py generate-profiles       # Batch enrichm
 ## Data Backfills
 
 Scraper fixes don't repair stored rows (most rescues skip dogs they already
-have). Prove a fix with a dry run, then run every backfill once
-(epic #554, #572). Details: `docs/technical/operational-knowledge.md`, "Data".
+have). Each fix ships its backfill (a registered step, or `apply --orgs` when a
+re-scrape repairs it) and a dry-run plan in its PR; apply it when the
+maintainer says go. Details: `docs/technical/operational-knowledge.md`, "Data".
 
 ```bash
 # Dry run: re-scrape one rescue without saving, diff against production (read-only)
