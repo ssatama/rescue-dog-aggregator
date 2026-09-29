@@ -73,7 +73,7 @@ def translate_size(height_text: str | None, age_months: int | None = None) -> st
 
     height = adult_height or _height_cm(text)
     if height is not None:
-        return size_from_height_cm(height)  # one scale for every rescue (#631)
+        return size_from_height_cm(height)  # the scale shared with Daisy (#631)
 
     words = {word.lower().replace("ss", "ß") for word in re.findall(_SIZE_WORD, text, re.IGNORECASE)}
     return _SIZES[words.pop()] if len(words) == 1 else None  # "klein bis mittelgroß" is no answer

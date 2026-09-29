@@ -76,3 +76,19 @@ class TestAPuppyIsReadAgainUntilItHasASize:
     def test_no_height_is_nothing_to_wait_for(self, scraper):
         dog = {"name": "Luna", "age_text": "05.2026 (4 Monate alt)", "properties": {}}
         assert "size_pending" not in scraper._translate_and_normalize_dogs([dog])[0]["properties"]
+
+
+@pytest.mark.unit
+class TestEnglishStyleQuotes:
+    """#654: “ opens a quote in English style; removing the space before it glued words again."""
+
+    @pytest.mark.parametrize(
+        ("body", "story"),
+        [
+            ("<p>Er will sich nicht “zurechtbiegen” lassen.</p>", "Er will sich nicht “zurechtbiegen” lassen."),
+            ("<p>Ein Geschenk.<br>“Jedes Tier zählt”</p>", "Ein Geschenk. “Jedes Tier zählt”"),
+            ("<p>Sie heißt „ <em>Luna</em> “ und bleibt.</p>", "Sie heißt „Luna“ und bleibt."),
+        ],
+    )
+    def test_quotes(self, scraper, body, story):
+        assert _properties(scraper, body)["description"] == story

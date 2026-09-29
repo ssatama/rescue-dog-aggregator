@@ -426,7 +426,7 @@ class DaisyFamilyRescueDogDetailScraper:
         return None
 
     def _determine_size(self, height_cm: int) -> str | None:
-        """Size by shoulder height, on the scale every rescue shares (#631)."""
+        """Size by shoulder height, on the scale shared with Tierschutzverein (#631)."""
         return size_from_height_cm(height_cm)
 
     def _parse_location(self, location_text: str) -> str | None:

@@ -20,8 +20,10 @@ from utils.shared_extraction_patterns import gallery_urls
 # A post's story is its paragraphs and subtitles, up to the "Videos" line
 STORY_BLOCKS = ["p", "h1", "h2", "h3", "h4"]
 STORY_END = re.compile(r"^Videos?$", re.IGNORECASE)
-_SPACE_BEFORE_PUNCTUATION = re.compile(r"\s+([,.;!?)“])")
-_SPACE_AFTER_OPENING = re.compile(r"([„(])\s+")
+_SPACE_BEFORE_PUNCTUATION = re.compile(r"\s+([,.;!?)])")
+_SPACE_AFTER_OPENING = re.compile(r"\(\s+")
+# Inside a German „…“ pair only: in English style “ opens a quote (#654)
+_GERMAN_QUOTE = re.compile(r"„\s*([^„“]*?)\s*“")
 
 
 def _text(element: Tag) -> str:
@@ -32,7 +34,8 @@ def _text(element: Tag) -> str:
     space before punctuation goes again.
     """
     text = " ".join(element.get_text(" ", strip=True).split())
-    return _SPACE_AFTER_OPENING.sub(r"\1", _SPACE_BEFORE_PUNCTUATION.sub(r"\1", text))
+    text = _SPACE_AFTER_OPENING.sub("(", _SPACE_BEFORE_PUNCTUATION.sub(r"\1", text))
+    return _GERMAN_QUOTE.sub(r"„\1“", text)
 
 
 class TierschutzvereinEuropaScraper(BaseScraper):
