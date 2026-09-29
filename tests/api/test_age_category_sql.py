@@ -24,8 +24,13 @@ class TestAgeBucketsInSql:
     def test_a_refreshed_stated_age_keeps_its_bucket(self):
         assert _buckets(25, 37) == {"Young"}
 
-    def test_a_stated_range_still_spans_its_buckets(self):
-        assert _buckets(24, 60) == {"Young", "Adult"}
+    def test_a_stated_span_is_in_its_cards_bucket(self):
+        assert _buckets(24, 60) == {"Young"}
+
+    def test_a_bucket_word_range_after_a_refresh_stays_in_its_bucket(self):
+        """#652 review: The Underdog's "adult" (36, 96) is (41, 101) five months on."""
+        assert _buckets(41, 101) == {"Adult"}
+        assert _buckets(15, 39) == {"Young"}
 
     def test_a_year_only_birth_date_on_the_31st_keeps_its_bucket(self):
         """#652: 11 wide on the 31st of a month."""
