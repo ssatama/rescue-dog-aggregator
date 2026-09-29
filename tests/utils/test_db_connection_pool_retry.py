@@ -59,3 +59,17 @@ def test_the_cron_pool_connects_with_a_timeout():
         db_pool._create_pool()
 
     assert threaded_pool.call_args.kwargs["connect_timeout"] == CONNECT_TIMEOUT
+
+
+@pytest.mark.unit
+def test_the_first_connect_is_retried_too(stub_clock):
+    """Review of #639: ThreadedConnectionPool opened minconn connections in its
+    constructor, outside the retry, and in the cron that first connect is
+    nearly the only one (each call hands its connection back)."""
+    conn = MagicMock(closed=0)
+    db_pool = DatabaseConnectionPool(DatabaseConfig(host="localhost", user="test", database="test_db"))
+
+    with patch("psycopg2.connect", side_effect=[CONNECT_FAILED, conn]) as connect, db_pool.get_connection() as got:
+        assert got is conn
+
+    assert connect.call_count == 2

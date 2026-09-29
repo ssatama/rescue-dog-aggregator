@@ -44,7 +44,9 @@ class DatabaseConfig:
 class DatabaseConnectionPool:
     """Thread-safe database connection pool."""
 
-    def __init__(self, config: DatabaseConfig, min_conn: int = 1, max_conn: int = 10):
+    # min_conn 0: a connection the constructor opened would bypass the connect retry,
+    # and in the cron that first connect is nearly the only one
+    def __init__(self, config: DatabaseConfig, min_conn: int = 0, max_conn: int = 10):
         self.config = config
         self._pool: pool.ThreadedConnectionPool | None = None
         self._lock = Lock()
