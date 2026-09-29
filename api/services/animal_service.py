@@ -90,7 +90,10 @@ def age_category_condition(category: str, age_known: bool = False) -> str | None
     file 2-year-olds under "Adult (3-8 years)" and 7-year-olds under
     "Senior (8+ years)". Requiring the range to *cross* the floor, or to start
     at or above it, keeps clamped values in their own bucket while still
-    matching a dog whose range really does span two.
+    matching a dog whose range really does span two. The refresh (#561) ages
+    both ends, so the touch becomes a crossing a month later: a range exactly
+    12 months wide (a stated age) or 0 wide (a birth date) therefore buckets
+    by its lower bound alone, as the cards do (#650).
 
     A dog with no recorded age matches every bucket, so an age search never
     hides it (#494). ``age_known`` turns that off for pages that promise an
@@ -104,7 +107,10 @@ def age_category_condition(category: str, age_known: bool = False) -> str | None
     low, high = bounds
     clauses = []
     if low > 0:
-        clauses.append(f"(a.age_max_months > {low} OR a.age_min_months >= {low})")
+        # A stated age (N to N+12) or an exact birth date (one month) is its lower
+        # bound, as on the cards: the refresh ages both ends, so a "1 year" dog's
+        # (25, 37) would otherwise cross into Adult (#650)
+        clauses.append(f"(a.age_min_months >= {low} OR (a.age_max_months > {low} AND COALESCE(a.age_max_months - a.age_min_months, -1) NOT IN (0, 12)))")
     if high is not None:
         clauses.append(f"a.age_min_months < {high}")
 
