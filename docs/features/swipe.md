@@ -147,14 +147,14 @@ LIMIT 20 OFFSET 0;
 
 ### Age Filtering Logic
 
-The system parses various age formats using complex regex patterns:
-
-| Age Group | Matches | Age Range |
-|-----------|---------|-----------|
-| `puppy` | "puppy", "0-12 months", "< 1 year" | 0-12 months |
-| `young` | "young", "1-2 years", "13-24 months" | 1-2 years |
-| `adult` | "adult", "3-7 years" | 3-7 years |
-| `senior` | "senior", "8+ years", "> 8 years" | 8+ years |
+The age groups are the dogs filter's buckets, read from the refreshed
+`age_min_months`/`age_max_months` through `age_category_condition` (#643):
+Puppy under 12 months, Young 12-35, Adult 3-7 years, Senior 8+, each matching
+a dog whose age range overlaps it. It used to match `age_text` with regexes,
+and for most rescues that is the age as first read, so a "3 months" dog stayed
+a puppy for good. Unlike the dogs filter (#494), a dog with no recorded age
+matches no swipe age group (`age_known`, as on /dogs/puppies): a one-card stack
+filtered to "Puppy" promises an age.
 
 ### Swipe Flow
 
