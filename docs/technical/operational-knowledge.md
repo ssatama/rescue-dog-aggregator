@@ -339,14 +339,14 @@ reconcile` against production text before trusting a resolver change.
   "Yes (11+)". The prompt (1.1.0) maps "Yes (5+)"/"Yes (11+)" to
   `older_children`. A page without the card is silent (102 dogs). If the
   rescue renames the "May live with" label, every dog loses the facts
-  quietly; a run-level count of dogs with chips would catch it (not built).
+  quietly; a run-level count of dogs with chips would catch it (#628).
 - Follow-up: `companionAnswer` in `frontend/src/utils/dogFacts.ts` reads the
   AI profile first. Switch it to `answerOf(profile) ?? answerOf(properties)`,
   so the rescue's answer fills in behind an AI "unknown", once no active Dogs
   Trust dog keeps a pre-#516 `good_with_dogs: true` (118 were in stale grace
   on 2026-09-27). Keep #517's gate: an AI answer scored 0.5 or less is "not
   assessed", and deciding whether the rescue's answer may then stand in is
-  part of that change.
+  part of that change (#629).
 
 **Woof Project lists available dogs first, then the adoption archive**
 (pages 2-5 on 2026-09-27). Since #565 the listing is plain HTML: an adopted or
@@ -391,7 +391,7 @@ the scraper bug stays visible. Scraper and parser fixed in #433.
 
 **A disabled rescue's dogs aren't retired.** Config sync disabling an org
 doesn't retire its dogs; #572's `disabled-org-status-unknown` step did it once
-for Galgos del Sol. Automating it is an open follow-up.
+for Galgos del Sol. Automating it is #630.
 
 **Name and location backfills (#505).** Most rescues skip dogs they already
 have, so name cleaning and `display_location` reach stored rows only through
