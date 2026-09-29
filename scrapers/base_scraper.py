@@ -160,6 +160,9 @@ class BaseScraper(DogSaving, StaleDetection, RunReporting, RequestPacing, ABC):
         # Track animals for LLM enrichment
         self.animals_for_llm_enrichment = []
 
+        # Scraper-specific counts for this run's scrape_logs.detailed_metrics
+        self.run_metrics: dict[str, int] = {}
+
         # Track animals changed this run, to scope frontend cache invalidation
         self._changed_animal_ids: list[int] = []
 
@@ -386,6 +389,7 @@ class BaseScraper(DogSaving, StaleDetection, RunReporting, RequestPacing, ABC):
         self.animals_found = 0
         self.filtering_service.reset_stats()
         self.animals_for_llm_enrichment = []
+        self.run_metrics = {}
         self.detail_failures = []
         self._detail_attempted = 0
         self._unknown_keys_logged = set()

@@ -7,11 +7,13 @@ import time
 from typing import Any
 
 import requests
+import sentry_sdk
 from bs4 import BeautifulSoup, Tag
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapers.base_scraper import BaseScraper
+from scrapers.request_pacing import ListingIncompleteError
 from services.playwright_browser_service import PlaywrightOptions
 
 # Browserless v2 sessions occasionally close mid-pagination — the remote browser
@@ -134,7 +136,26 @@ class DogsTrustScraper(BaseScraper):
 
         all_dogs_data = self._process_animals_parallel(animals)
         self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
+        self._check_may_live_with_share(all_dogs_data)
         return all_dogs_data
+
+    def _check_may_live_with_share(self, dogs: list[dict[str, Any]]) -> None:
+        """Record how many detail pages had a "May live with" card, and alert on a sharp drop (#628).
+
+        About 1 dog in 10 has no card, which is legitimate. If Dogs Trust renamed
+        the label, every dog would lose its good_with_* facts silently.
+        """
+        with_card = sum(1 for dog in dogs if (dog.get("properties") or {}).get("may_live_with"))
+        self.run_metrics = {"detail_pages": len(dogs), "may_live_with_cards": with_card}
+        if len(dogs) < self.MIN_PAGES_FOR_CARD_SHARE or not self.session_manager:
+            return
+
+        historical = self.session_manager.get_historical_share("may_live_with_cards", "detail_pages")
+        share = with_card / len(dogs)
+        if historical and share < historical * self.CARD_SHARE_DROP:
+            message = f"Only {with_card} of {len(dogs)} Dogs Trust dogs had a 'May live with' card ({share:.0%}, usually {historical:.0%}): was the label renamed?"
+            self.logger.error(message)
+            sentry_sdk.capture_message(message, level="error", fingerprint=["dogstrust-may-live-with-share"])
 
     def get_animal_list(self, max_pages_to_scrape: int = None) -> list[dict[str, Any]]:
         """Fetch list of available dogs using browser automation with pagination.
@@ -472,11 +493,12 @@ class DogsTrustScraper(BaseScraper):
                         )
 
                     # Wait for the listing to re-render with a different first
-                    # card. A timeout means the click did not advance the page
-                    # (stale/intercepted click, or genuinely no further results),
-                    # so stop rather than advance — re-reading the same DOM would
-                    # silently duplicate or skip pages, this scraper's historical
-                    # failure mode.
+                    # card. A timeout means a page the pagination says exists
+                    # didn't load: raise, as every listing does (#559, #628).
+                    # Returning the pages read so far would let stale detection
+                    # retire the dogs on the rest. The end of the listing never
+                    # gets here: on the live site the "N / N" indicator is exact
+                    # and "Go to next page" is disabled on the last page.
                     try:
                         await page.wait_for_function(
                             """(prev) => {
@@ -486,9 +508,8 @@ class DogsTrustScraper(BaseScraper):
                             arg=prev_first_href,
                             timeout=15000,
                         )
-                    except PlaywrightTimeoutError:
-                        self.logger.warning(f"Page {page_num + 1} did not render after clicking Next - stopping pagination")
-                        break
+                    except PlaywrightTimeoutError as e:
+                        raise ListingIncompleteError(f"Page {page_num + 1} of {max_pages} did not render after clicking Next") from e
 
                     await asyncio.sleep(self.rate_limit_delay + random.uniform(0.3, 0.8))
                     page_num += 1
@@ -943,6 +964,10 @@ class DogsTrustScraper(BaseScraper):
         "Primary": ("good_with_children", "Yes (5+)"),
         "Secondary": ("good_with_children", "Yes (11+)"),
     }
+    # A run with fewer detail pages says too little; below half the usual share is a renamed label
+    MIN_PAGES_FOR_CARD_SHARE = 5
+    CARD_SHARE_DROP = 0.5
+
     _MAY_LIVE_WITH = re.compile(r"^\s*may live with:?\s*$", re.IGNORECASE)
 
     def _may_live_with(self, soup: BeautifulSoup) -> list[tuple[str, str]]:

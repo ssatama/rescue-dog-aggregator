@@ -348,9 +348,12 @@ reconcile` against production text before trusting a resolver change.
   yes, no chip means the rescue didn't say (key left out, not "no").
   Children: preschool is any age (`true`), primary "Yes (5+)", secondary
   "Yes (11+)". The prompt (1.1.0) maps "Yes (5+)"/"Yes (11+)" to
-  `older_children`. A page without the card is silent (102 dogs). If the
-  rescue renames the "May live with" label, every dog loses the facts
-  quietly; a run-level count of dogs with chips would catch it (#628).
+  `older_children`. A page without the card is silent (102 dogs). Each run
+  records `detail_pages` and `may_live_with_cards` in
+  `scrape_logs.detailed_metrics`, and alerts in Sentry when the share falls
+  below half its average over the last 9 successful runs (#628). It needs at
+  least 5 detail pages and 3 runs with history. About 9 in 10 new dogs have
+  the card (2026-09), so a renamed label drops it to 0.
 - Follow-up: `companionAnswer` in `frontend/src/utils/dogFacts.ts` reads the
   AI profile first. Switch it to `answerOf(profile) ?? answerOf(properties)`,
   so the rescue's answer fills in behind an AI "unknown", once no active Dogs
