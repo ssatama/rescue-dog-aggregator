@@ -499,7 +499,7 @@ Italy and Galgos del Sol listings don't raise yet (#630).
   three days late. Months cap at 360 (`MAX_DOG_AGE_MONTHS`). `age_text` is the
   text as last saved (for most rescues, as first read, since existing dogs
   are skipped), so no page shows it as the dog's age: the cards use
-  `getAgeCategory`, and JSON-LD and the compare view use `formatAgeRange`,
+  `getAgeCategory`, and JSON-LD and the compare view use `formatCurrentAge`,
   both from the months (#635).
 - **The story is `properties.description`** (#568), the one key every reader
   uses (sitemap filter, prompt, page). The LLM grounding check

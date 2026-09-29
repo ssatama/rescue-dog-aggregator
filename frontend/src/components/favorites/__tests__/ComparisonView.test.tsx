@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { formatAgeRange } from "@/utils/dogHelpers";
+import { formatCurrentAge } from "@/utils/dogHelpers";
 import ComparisonView from "../ComparisonView";
 import { Dog } from "../types";
 
@@ -116,7 +116,7 @@ describe("ComparisonView", () => {
       expect(screen.getAllByText(dog.name).length).toBeGreaterThan(0);
       expect(screen.getAllByText(dog.breed!).length).toBeGreaterThan(0);
       // The age comes from the refreshed months, not age_text (#635)
-      expect(screen.getAllByText(formatAgeRange(dog)!).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(formatCurrentAge(dog)!).length).toBeGreaterThan(0);
     });
   });
 

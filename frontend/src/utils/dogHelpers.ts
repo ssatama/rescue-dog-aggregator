@@ -49,30 +49,32 @@ export const getAgeCategory = (dog: DogInput | null | undefined): string => {
   return "Unknown";
 };
 
+// MAX_DOG_AGE_MONTHS: an open-ended age ("8+ years") is stored up to this
+const AGE_CAP_MONTHS = 360;
+
+const count = (n: number, unit: string): string => `${n} ${unit}${n !== 1 ? "s" : ""}`;
+
 /**
  * A dog's current age in words, from the months refreshed after every run
  * (#561), or null when none are recorded. Never the rescue's age_text: most
- * rescues are read once, so it stays the age as first read (#635).
+ * rescues are read once, so it stays the age as first read (#635). The age is
+ * the range's lower bound, as the cards' category is: "2 years" is stored as
+ * 24-36 months and reads "2 years", a year later "3 years".
  */
-export const formatAgeRange = (
+export const formatCurrentAge = (
   dog: { age_min_months?: number | null; age_max_months?: number | null } | null | undefined,
 ): string | null => {
   const min = dog?.age_min_months;
   const max = dog?.age_max_months;
   if (typeof min !== "number" || !max) return null;
-  // Puppies in months: "Under 6 months" is stored as 0-6. A range that
-  // starts under a year stays in months up to two years, not "0-1 years"
-  if (max < 12 || (min < 12 && max < 24)) {
-    return min === 0 ? `Under ${max} months` : `${min}-${max} months`;
+  if (min === 0) {
+    // "Under 6 months" is stored as 0-6; 0 up to the cap says nothing
+    if (max >= AGE_CAP_MONTHS) return null;
+    return max < 24 ? `Under ${count(max, "month")}` : `Under ${count(Math.ceil(max / 12), "year")}`;
   }
-  if (min < 12) {
-    const upTo = Math.ceil(max / 12);
-    return min === 0 ? `Under ${upTo} years` : `${min} months-${upTo} years`;
-  }
-  const minYears = Math.floor(min / 12);
-  const maxYears = Math.floor(max / 12);
-  if (minYears === maxYears) return `${minYears} year${minYears !== 1 ? "s" : ""}`;
-  return `${minYears}-${maxYears} years`;
+  if (min < 12) return count(min, "month");
+  const years = Math.floor(min / 12);
+  return max >= AGE_CAP_MONTHS ? `${years}+ years` : count(years, "year");
 };
 
 export const formatBreed = (dog: DogInput | null | undefined): string | null => {

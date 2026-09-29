@@ -85,7 +85,7 @@ describe("DogSchema Component", () => {
 
     // additionalProperty isn't valid on Thing, so the facts are one disambiguating line (#443)
     expect(schema.about.disambiguatingDescription).toBe(
-      "Age: 3-4 years, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
+      "Age: 3 years, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
     );
   });
 

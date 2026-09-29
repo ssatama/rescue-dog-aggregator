@@ -59,7 +59,7 @@ describe("Schema.org Pet Markup", () => {
         description,
         image: "https://images.rescuedogs.me/buddy.jpg",
         disambiguatingDescription:
-          "Age: 3-4 years, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
+          "Age: 3 years, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
       },
     });
   });
