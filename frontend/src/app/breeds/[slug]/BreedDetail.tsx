@@ -67,13 +67,10 @@ export default function BreedDetail({
         />
       </div>
 
-      {/* Phones: the list first, then what the rescues say about the dogs in it,
-          so the first dog is a screen down rather than two (#661) */}
+      {/* Below 1024px the list comes first, in reading order too, then what
+          the rescues say about the dogs in it, so the first dog is about a
+          screen down (#661). Beside the gallery, the stats lead */}
       <div className="flex flex-col">
-        <div className="order-last md:order-none">
-          <BreedPracticalStats stats={buildPracticalStats(breedCounts)} />
-        </div>
-
         <section
           id="dogs-grid"
           aria-labelledby="breed-dogs-heading"
@@ -94,6 +91,9 @@ export default function BreedDetail({
             />
           </Suspense>
         </section>
+        <div className="lg:order-first">
+          <BreedPracticalStats stats={buildPracticalStats(breedCounts)} />
+        </div>
       </div>
     </div>
   );

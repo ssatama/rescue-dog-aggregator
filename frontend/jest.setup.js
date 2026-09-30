@@ -159,6 +159,7 @@ jest.mock("next/navigation", () => ({
 // Simple mocks for Next.js components
 jest.mock("next/image", () => ({
   __esModule: true,
+  getImageProps: ({ src, sizes }) => ({ props: { src, sizes, srcSet: undefined } }),
   default: ({ 
     priority, 
     sizes, 

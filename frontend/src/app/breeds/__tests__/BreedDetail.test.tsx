@@ -39,6 +39,22 @@ describe("BreedDetail (#500)", () => {
     Element.prototype.scrollIntoView = jest.fn();
   });
 
+  it("puts the list before the stats in reading order, as phones show them (#661)", () => {
+    const { container } = render(
+      <BreedDetail
+        initialBreedData={lurcher as never}
+        initialDogs={[]}
+        breedCounts={{ total: 14, good_with_kids: { yes: 5, known: 6 } } as never}
+      />,
+    );
+
+    const list = container.querySelector("#dogs-grid")!;
+    const stats = screen.queryByRole("heading", { name: /What the rescues say/ });
+    if (stats) {
+      expect(list.compareDocumentPosition(stats) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
   it("lists the breed's dogs in the catalog with the breed fixed", () => {
     render(<BreedDetail initialBreedData={lurcher as never} initialDogs={[]} breedCounts={counts} />);
 

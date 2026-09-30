@@ -1,7 +1,10 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import { preload } from "react-dom";
 import BreedPhotoGallery from "../BreedPhotoGallery";
+
+jest.mock("react-dom", () => ({ ...jest.requireActual("react-dom"), preload: jest.fn() }));
 
 describe("BreedPhotoGallery", () => {
   it("leaves the gallery out when there are no photos (#660)", () => {
@@ -32,5 +35,18 @@ describe("BreedPhotoGallery", () => {
     );
 
     expect(screen.queryByRole("region", { name: /carousel/ })).not.toBeInTheDocument();
+  });
+
+  it("shows only from 1024px, and fetches nothing on a phone that hides it (#672)", () => {
+    const { container } = render(
+      <BreedPhotoGallery
+        dogs={[{ name: "Felix", slug: "felix-greyhound-11693", primary_image_url: "https://images.rescuedogs.me/felix.jpg" }]}
+        breedName="Greyhound"
+      />,
+    );
+
+    expect(container.firstChild).toHaveClass("hidden", "lg:block");
+    // Preloaded for the screens that show it, as the largest image there
+    expect(preload).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ as: "image", media: "(min-width: 1024px)" }));
   });
 });
