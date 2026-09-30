@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import BreedDetailClient from "./BreedDetailClient";
+import BreedDetail from "./BreedDetail";
 import Layout from "@/components/layout/Layout";
-import ServerDogListing from "@/components/dogs/ServerDogListing";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
@@ -97,11 +95,7 @@ export async function generateMetadata(
       description: seoDescription,
       images:
         breedData.topDogs
-          ?.filter(
-            (d): d is typeof d & { primary_image_url: string } =>
-              Boolean(d.primary_image_url),
-          )
-          .slice(0, 4)
+          ?.slice(0, 4)
           .map((d) => ({
             url: d.primary_image_url,
             width: 800,
@@ -116,11 +110,7 @@ export async function generateMetadata(
       description: seoDescription,
       images:
         breedData.topDogs
-          ?.filter(
-            (d): d is typeof d & { primary_image_url: string } =>
-              Boolean(d.primary_image_url),
-          )
-          .slice(0, 1)
+          ?.slice(0, 1)
           .map((d) => d.primary_image_url) || [],
     },
     alternates: {
@@ -174,22 +164,12 @@ export default async function BreedDetailPage(props: BreedPageProps) {
         pageType="detail"
       />
       <ErrorBoundary fallbackMessage="Unable to load breed details. Please try refreshing the page.">
-        <Suspense
-          fallback={
-            <ServerDogListing
-              title={breedData.primary_breed}
-              intro={breedData.description}
-              dogs={initialDogs}
-            />
-          }
-        >
-          <BreedDetailClient
-            initialBreedData={breedData}
-            initialDogs={initialDogs}
-            breedCounts={breedCounts}
-            metadata={metadata}
-          />
-        </Suspense>
+        <BreedDetail
+          initialBreedData={breedData}
+          initialDogs={initialDogs}
+          breedCounts={breedCounts}
+          metadata={metadata}
+        />
       </ErrorBoundary>
     </Layout>
   );

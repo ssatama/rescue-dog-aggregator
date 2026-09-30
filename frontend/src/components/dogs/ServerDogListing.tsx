@@ -4,7 +4,8 @@ import type { Dog } from "@/types/dog";
 import { formatBreed } from "@/utils/dogHelpers";
 
 interface ServerDogListingProps {
-  title: string;
+  /** Left out where the page already has its heading (a breed page's list) */
+  title?: string;
   intro?: string;
   dogs: Dog[];
 }
@@ -21,7 +22,7 @@ interface ServerDogListingProps {
 export default function ServerDogListing({ title, intro, dogs }: ServerDogListingProps) {
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{title}</h1>
+      {title && <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{title}</h1>}
       {intro && <p className="mt-2 text-base text-gray-600 dark:text-gray-400">{intro}</p>}
       <ul className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {dogs.map((dog) => (

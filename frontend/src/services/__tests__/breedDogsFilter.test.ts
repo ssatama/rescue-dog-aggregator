@@ -16,7 +16,7 @@ const read = (relative: string) =>
 describe("breed listings query the canonical breed, not the display label", () => {
   const sources = {
     "serverAnimalsService.ts": read("services/serverAnimalsService.ts"),
-    "BreedDetailClient.tsx": read("app/breeds/[slug]/BreedDetailClient.tsx"),
+    "BreedDetail.tsx": read("app/breeds/[slug]/BreedDetail.tsx"),
     "breeds/[slug]/page.tsx": read("app/breeds/[slug]/page.tsx"),
   };
 
@@ -37,7 +37,7 @@ describe("breed listings query the canonical breed, not the display label", () =
   it("uses primary_breed for the breed page listing", () => {
     // The page fixes the catalog's breed as its primary_breed (#500), and the
     // catalog sends a breed to the API as primary_breed
-    expect(sources["BreedDetailClient.tsx"]).toMatch(
+    expect(sources["BreedDetail.tsx"]).toMatch(
       /primary_breed:\s*breedData\.primary_breed/,
     );
     expect(read("hooks/dogs/useDogsFilters.ts")).toMatch(/params\.primary_breed\s*=\s*breed;/);

@@ -1,10 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ExpandableText from "@/components/ui/ExpandableText";
 import AdoptableToYouCount from "@/components/location/AdoptableToYouCount";
 import { formatAverageAge } from "@/utils/breedMetadata";
+import useShowAdoptable from "@/hooks/dogs/useShowAdoptable";
 import type { BreedData } from "@/types/breeds";
 import type { FilterCount } from "@/schemas/common";
 
@@ -36,15 +38,20 @@ export default function BreedStatistics({ breedData, className = "" }: BreedStat
   );
 }
 
+/** "N adoptable to you", which turns on the list's own "Only dogs I can adopt" */
+function ShowAdoptableCount({ options }: { options?: FilterCount[] }) {
+  const showAdoptable = useShowAdoptable();
+  return <AdoptableToYouCount options={options} onShow={showAdoptable} />;
+}
+
 interface BreedInfoProps {
   breedData: BreedData;
   /** The breed's per-country counts, for "adoptable to you" */
   adoptableOptions?: FilterCount[];
-  onShowAdoptable?: (countryValue: string) => void;
   className?: string;
 }
 
-export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, className = "" }: BreedInfoProps) {
+export function BreedInfo({ breedData, adoptableOptions, className = "" }: BreedInfoProps) {
   const handleScrollToDogs = (): void => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document
@@ -71,7 +78,10 @@ export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, classN
 
       <div className="flex flex-col items-start gap-3">
         <BreedStatistics breedData={breedData} />
-        <AdoptableToYouCount options={adoptableOptions} onShow={onShowAdoptable} />
+        {/* Reads the URL, so it alone waits for the browser */}
+        <Suspense fallback={null}>
+          <ShowAdoptableCount options={adoptableOptions} />
+        </Suspense>
       </div>
 
       {breedData.description && (
