@@ -172,6 +172,18 @@ describe("fetchWithRetry", () => {
     expect(cancel).toHaveBeenCalled();
   });
 
+  it("still reports the edge 404 when releasing its body fails", async () => {
+    const cancel = jest.fn().mockRejectedValue(new TypeError("locked"));
+    (fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 404,
+      headers: new Headers({ "x-railway-fallback": "true" }),
+      body: { cancel },
+    });
+
+    await expect(fetchWithRetry("https://api.test/x", {}, policy(2))).rejects.toThrow(/Railway edge 404/);
+  });
+
   it("retries a network-level failure and returns the eventual response", async () => {
     (fetch as jest.Mock)
       .mockRejectedValueOnce(new Error("ECONNREFUSED"))

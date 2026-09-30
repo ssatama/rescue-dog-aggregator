@@ -63,6 +63,12 @@ const bypassRenderDedupe = (init?: RequestInit): RequestInit => ({
   signal: new AbortController().signal,
 });
 
+// Unread, a dropped response holds its connection until GC. Not awaited, and
+// its failure ignored: it must never replace the error being reported
+const release = (response: Response): void => {
+  void response.body?.cancel().catch(() => {});
+};
+
 export async function fetchWithRetry(
   url: string,
   init?: RequestInit,
@@ -83,14 +89,13 @@ export async function fetchWithRetry(
 
       if (isLastAttempt && isRailwayFallback(response)) {
         // Returned, it would read as "no such dog" and the page would 404
-        await response.body?.cancel();
+        release(response);
         throw new Error(`API unreachable (Railway edge 404) after ${policy.attempts} attempts: ${url}`);
       }
       if (!isRetryable(response) || isLastAttempt) {
         return response;
       }
-      // Unread, a dropped response holds its connection until GC
-      await response.body?.cancel();
+      release(response);
 
       warn(
         `Retrying ${url} after HTTP ${response.status} (attempt ${attempt + 1}/${policy.attempts})`,
