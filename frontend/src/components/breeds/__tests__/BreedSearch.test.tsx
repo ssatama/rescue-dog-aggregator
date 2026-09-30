@@ -4,23 +4,24 @@ import "@testing-library/jest-dom";
 import BreedSearch, { matchBreeds } from "../BreedSearch";
 
 const breeds = [
-  { name: "Labrador Retriever", slug: "labrador-retriever", count: 40 },
-  { name: "Golden Retriever", slug: "golden-retriever", count: 12 },
-  { name: "Staffordshire Bull Terrier", slug: "staffordshire-bull-terrier", count: 60 },
-  { name: "Bull Terrier", slug: "bull-terrier", count: 5 },
-  { name: "Podenco", slug: "podenco", count: 30 },
-  { name: "Mixed breeds", slug: "mixed", count: 500 },
+  { name: "Labrador Retriever", href: "/breeds/labrador-retriever", count: 40 },
+  { name: "Golden Retriever", href: "/breeds/golden-retriever", count: 12 },
+  { name: "Staffordshire Bull Terrier", href: "/breeds/staffordshire-bull-terrier", count: 60 },
+  { name: "Bull Terrier", href: "/breeds/bull-terrier", count: 5 },
+  { name: "Podenco", href: "/breeds/podenco", count: 30 },
+  { name: "Mixed breeds", href: "/breeds/mixed", count: 500 },
+  { name: "Dalmatian", href: "/dogs?breed=Dalmatian", count: 1 },
 ];
 
 describe("matchBreeds (#500)", () => {
   it("puts names that start with the query first, then word starts, then by count", () => {
-    expect(matchBreeds(breeds, "bull").map((breed) => breed.slug)).toEqual(["bull-terrier", "staffordshire-bull-terrier"]);
-    expect(matchBreeds(breeds, "retr").map((breed) => breed.slug)).toEqual(["labrador-retriever", "golden-retriever"]);
+    expect(matchBreeds(breeds, "bull").map((breed) => breed.href)).toEqual(["/breeds/bull-terrier", "/breeds/staffordshire-bull-terrier"]);
+    expect(matchBreeds(breeds, "retr").map((breed) => breed.href)).toEqual(["/breeds/labrador-retriever", "/breeds/golden-retriever"]);
   });
 
   it("ignores case, accents and punctuation", () => {
-    expect(matchBreeds(breeds, "  PODÉNCO ")[0].slug).toBe("podenco");
-    expect(matchBreeds(breeds, "bull-terrier")[0].slug).toBe("bull-terrier");
+    expect(matchBreeds(breeds, "  PODÉNCO ")[0].href).toBe("/breeds/podenco");
+    expect(matchBreeds(breeds, "bull-terrier")[0].href).toBe("/breeds/bull-terrier");
   });
 
   it("matches nothing for an empty query", () => {
@@ -37,11 +38,21 @@ describe("BreedSearch (#500)", () => {
     expect(screen.getByRole("link", { name: /Labrador Retriever/ })).toHaveAttribute("href", "/breeds/labrador-retriever");
   });
 
-  it("offers the catalog search, which knows nicknames, when no breed page matches", () => {
+  it("finds a breed too small for a page, in the catalog, with its count (#668)", () => {
+    render(<BreedSearch breeds={breeds} />);
+    fireEvent.change(screen.getByLabelText("Find a breed"), { target: { value: "dalmatian" } });
+
+    const dalmatian = screen.getByRole("link", { name: /Dalmatian/ });
+    expect(dalmatian).toHaveAttribute("href", "/dogs?breed=Dalmatian");
+    expect(dalmatian).toHaveTextContent("1 dog");
+    expect(dalmatian).not.toHaveTextContent("1 dogs");
+  });
+
+  it("offers the catalog search, which knows nicknames, when no breed matches", () => {
     render(<BreedSearch breeds={breeds} />);
     fireEvent.change(screen.getByLabelText("Find a breed"), { target: { value: "staffy" } });
 
-    expect(screen.getByText(/No breed page for/)).toBeInTheDocument();
+    expect(screen.getByText(/No breed called/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Search all dogs for it" })).toHaveAttribute("href", "/dogs?search=staffy");
   });
 

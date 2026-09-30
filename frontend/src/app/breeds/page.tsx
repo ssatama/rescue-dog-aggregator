@@ -13,19 +13,26 @@ import {
 } from "@/services/breedImagesService";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import AllBreedsIndex from "@/components/breeds/AllBreedsIndex";
-import { getIndexableBreeds } from "@/utils/indexableBreeds";
+import { breedCatalogHref, getIndexableBreeds } from "@/utils/indexableBreeds";
+import { isBreedType } from "@/utils/breedTypes";
+import type { BreedStats } from "@/schemas/animals";
 
 export const revalidate = 604800;
 
+// The breeds the hub lists (#668): those with a page, then the ones too small
+// for one. Types like "Hound" and mixes are listed, but aren't breeds
+function listedBreeds(breedStats: BreedStats) {
+  const withPage = getIndexableBreeds(breedStats.qualifying_breeds).filter((breed) => !isBreedType(breed.primary_breed));
+  return { withPage, other: breedStats.other_breeds ?? [] };
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const breedStats = await getBreedStats();
-  const totalDogs = Number(breedStats?.total_dogs || 2717);
-  const uniqueBreeds = Number(breedStats?.unique_breeds || 259);
-  const qualifyingBreedsCount = breedStats?.qualifying_breeds?.length || 26;
+  const { withPage, other } = listedBreeds(breedStats);
 
   return {
-    title: `Dog Breeds | ${formatCount(totalDogs)} Rescue Dogs Across ${uniqueBreeds} Breeds`,
-    description: clampDescription(`Discover rescue dogs by breed. Browse ${qualifyingBreedsCount} popular breeds with dedicated pages, personality profiles, and real-time availability from verified rescue organizations.`),
+    title: `Dog Breeds | ${formatCount(breedStats.total_dogs)} Rescue Dogs Across ${withPage.length + other.length} Breeds`,
+    description: clampDescription(`Discover rescue dogs by breed. Browse ${withPage.length} breeds with their own page, personality profiles, and real-time availability from verified rescue organizations.`),
     keywords:
       "rescue dogs by breed, dog breeds for adoption, breed-specific rescue, purebred rescue dogs, mixed breed dogs, dog breed finder, rescue dog breeds, adoptable dog breeds",
     openGraph: {
@@ -50,12 +57,17 @@ export default async function BreedsPage() {
     getBreedGroupsWithTopBreeds(),
   ]);
   const searchableBreeds = [
-    ...getIndexableBreeds(breedStats?.qualifying_breeds).map((breed) => ({
+    ...getIndexableBreeds(breedStats.qualifying_breeds).map((breed) => ({
       name: breed.primary_breed,
-      slug: breed.breed_slug,
+      href: `/breeds/${breed.breed_slug}`,
       count: breed.count,
     })),
-    ...(mixedBreedData?.count ? [{ name: "Mixed breeds", slug: "mixed", count: mixedBreedData.count }] : []),
+    ...listedBreeds(breedStats).other.map((breed) => ({
+      name: breed.primary_breed,
+      href: breedCatalogHref(breed.primary_breed),
+      count: breed.count,
+    })),
+    ...(mixedBreedData?.count ? [{ name: "Mixed breeds", href: "/breeds/mixed", count: mixedBreedData.count }] : []),
   ];
 
   return (
@@ -82,7 +94,7 @@ export default async function BreedsPage() {
           searchableBreeds={searchableBreeds}
         />
       </ErrorBoundary>
-      <AllBreedsIndex breeds={breedStats?.qualifying_breeds} />
+      <AllBreedsIndex breeds={breedStats.qualifying_breeds} otherBreeds={breedStats.other_breeds} />
     </Layout>
   );
 }

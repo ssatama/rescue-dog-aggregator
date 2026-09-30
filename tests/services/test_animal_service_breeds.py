@@ -127,6 +127,7 @@ class TestAnimalServiceBreeds:
                     "good_with_dogs_no_count": 0,
                 },
             ],
+            [],  # Breeds without a page (#668)
         ]
 
         result = service.get_breed_stats()
@@ -199,6 +200,7 @@ class TestAnimalServiceBreeds:
                     "good_with_dogs_no_count": 1,
                 }
             ],
+            [],  # Breeds without a page (#668)
         ]
 
         result = service.get_breed_stats()
@@ -218,7 +220,8 @@ class TestAnimalServiceBreeds:
         mock_cursor.fetchall.side_effect = [
             [],
             [],
-        ]  # No breed groups, no qualifying breeds
+            [],
+        ]  # No breed groups, no qualifying breeds, none without a page
 
         result = service.get_breed_stats()
 
@@ -226,6 +229,7 @@ class TestAnimalServiceBreeds:
         assert result["unique_breeds"] == 0
         assert result["qualifying_breeds"] == []
         assert result["breed_groups"] == []
+        assert result["other_breeds"] == []
 
     def test_get_breed_stats_database_error(self, service, mock_cursor):
         """Test breed stats handles database errors properly."""
@@ -437,6 +441,7 @@ class TestAnimalServiceBreeds:
                     "good_with_dogs_no_count": 0,
                 }
             ],
+            [],  # Breeds without a page (#668)
         ]
 
         result = service.get_breed_stats()

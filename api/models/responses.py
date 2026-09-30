@@ -157,6 +157,13 @@ class QualifyingBreed(BaseModel):
     personality_metrics: PersonalityMetrics | None = Field(None, description="Personality metrics from dog_profiler_data aggregation")
 
 
+class OtherBreed(BaseModel):
+    """A breed with too few dogs for a page of its own."""
+
+    primary_breed: str = Field(..., description="Primary breed name")
+    count: int = Field(..., description="Number of available dogs", ge=1)
+
+
 class BreedStatsResponse(BaseModel):
     """
     Response model for breed statistics endpoint.
@@ -169,6 +176,7 @@ class BreedStatsResponse(BaseModel):
     unique_breeds: int = Field(..., description="Number of unique breeds", ge=0)
     breed_groups: list[BreedGroupStats] = Field(default_factory=list, description="Distribution of dogs by breed group")
     qualifying_breeds: list[QualifyingBreed] = Field(default_factory=list, description="Breeds meeting the qualifying threshold")
+    other_breeds: list[OtherBreed] = Field(default_factory=list, description="Breeds below the threshold, which have no page (mixes excluded)")
     purebred_count: int = Field(default=0, description="Number of purebred dogs", ge=0)
     crossbreed_count: int = Field(default=0, description="Number of crossbreed dogs", ge=0)
 

@@ -6,7 +6,8 @@ import { Search } from "lucide-react";
 
 export interface BreedLink {
   name: string;
-  slug: string;
+  /** The breed's page, or the catalog for a breed too small for one (#668) */
+  href: string;
   count: number;
 }
 
@@ -40,9 +41,10 @@ export function matchBreeds(breeds: BreedLink[], query: string): BreedLink[] {
 }
 
 /**
- * Find a breed page by typing (#500): tap the field, type, tap the breed. The
- * query never leaves the page; one with no breed page links to the catalog
- * search, which knows nicknames like "staffy".
+ * Find a breed by typing (#500): tap the field, type, tap the breed. Every
+ * listed breed is found, a small one opening in the catalog (#668). The query
+ * never leaves the page; one matching no breed links to the catalog search,
+ * which knows nicknames like "staffy".
  */
 export default function BreedSearch({ breeds }: { breeds: BreedLink[] }): React.JSX.Element {
   const [query, setQuery] = useState("");
@@ -74,13 +76,13 @@ export default function BreedSearch({ breeds }: { breeds: BreedLink[] }): React.
         {trimmed && matches.length > 0 && (
           <ul className="mt-2 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
             {matches.map((breed) => (
-              <li key={breed.slug}>
+              <li key={breed.href}>
                 <Link
-                  href={`/breeds/${breed.slug}`}
+                  href={breed.href}
                   className="flex items-center justify-between gap-3 px-4 py-3 text-ink hover:bg-soft focus:outline-none focus-visible:bg-soft"
                 >
                   <span className="font-medium">{breed.name}</span>
-                  <span className="text-sm text-subtle">{breed.count} dogs</span>
+                  <span className="text-sm text-subtle">{breed.count === 1 ? "1 dog" : `${breed.count} dogs`}</span>
                 </Link>
               </li>
             ))}
@@ -88,7 +90,7 @@ export default function BreedSearch({ breeds }: { breeds: BreedLink[] }): React.
         )}
         {trimmed && matches.length === 0 && (
           <p className="mt-2 rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-subtle">
-            No breed page for &ldquo;{trimmed}&rdquo;.{" "}
+            No breed called &ldquo;{trimmed}&rdquo; is listed now.{" "}
             <Link href={`/dogs?search=${encodeURIComponent(trimmed)}`} className="font-semibold text-orange-700 underline dark:text-orange-400">
               Search all dogs for it
             </Link>
