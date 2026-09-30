@@ -9,7 +9,7 @@ const countryUrls = (xml: string) => Array.from(xml.matchAll(/\/dogs\/country\/(
 
 describe("country sitemap (#442)", () => {
   it("lists only countries that currently have dogs", async () => {
-    (getCountryStats as jest.Mock).mockResolvedValue({
+    (getCountryStats as unknown as jest.Mock).mockResolvedValue({
       total: 700,
       countries: [
         { code: "UK", count: 588 },
@@ -24,7 +24,7 @@ describe("country sitemap (#442)", () => {
   });
 
   it("keeps every configured country when the stats call failed", async () => {
-    (getCountryStats as jest.Mock).mockResolvedValue({ total: 0, countries: [] });
+    (getCountryStats as unknown as jest.Mock).mockResolvedValue({ total: 0, countries: [] });
 
     const urls = countryUrls(await generateCountrySitemap());
 

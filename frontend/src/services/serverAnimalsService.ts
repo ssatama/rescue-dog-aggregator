@@ -42,34 +42,17 @@ export const clearCache = (): void => {
  
 type AsyncFn = (...args: any[]) => Promise<any>;
 
-const cache = <T extends AsyncFn>(
-  fn: T,
-  errorFallback?: Awaited<ReturnType<T>>,
-): T => {
-  if (process.env.NODE_ENV === "test") {
-    if (errorFallback === undefined) return fn;
-    const withFallback = (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      try {
-        return await fn(...args);
-      } catch (error) {
-        reportError(error, { context: "cache-test-fallback" });
-        const cloned = Array.isArray(errorFallback)
-          ? ([...errorFallback] as ReturnType<T>)
-          : typeof errorFallback === "object" && errorFallback !== null
-            ? ({ ...errorFallback } as ReturnType<T>)
-            : (errorFallback as ReturnType<T>);
-        return cloned;
-      }
-    }) as T;
-    return withFallback;
-  }
+// Memoizes fn for CACHE_TTL. A failure is never stored, so the next call
+// tries again.
+const memoize = <T extends AsyncFn>(fn: T): T => {
+  if (process.env.NODE_ENV === "test") return fn;
 
   if (!functionIds.has(fn)) {
     functionIds.set(fn, functionCounter++);
   }
   const functionId = functionIds.get(fn);
 
-  const cached = (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+  return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
     const key = `fn_${functionId}_${JSON.stringify(args)}`;
 
     const entry = cacheMap.get(key);
@@ -77,38 +60,60 @@ const cache = <T extends AsyncFn>(
       return entry.data as ReturnType<T>;
     }
 
-    try {
-      const result = await fn(...args);
-      cacheMap.set(key, {
-        data: result,
-        timestamp: Date.now(),
-      });
+    const result = await fn(...args);
+    cacheMap.set(key, {
+      data: result,
+      timestamp: Date.now(),
+    });
 
-      if (cacheMap.size > 100) {
-        const now = Date.now();
-        for (const [k, v] of cacheMap.entries()) {
-          if (now - v.timestamp > CACHE_TTL) {
-            cacheMap.delete(k);
-          }
+    if (cacheMap.size > 100) {
+      const now = Date.now();
+      for (const [k, v] of cacheMap.entries()) {
+        if (now - v.timestamp > CACHE_TTL) {
+          cacheMap.delete(k);
         }
       }
+    }
 
-      return result;
+    return result;
+  }) as T;
+};
+
+type Cached<T extends AsyncFn> = T & {
+  /**
+   * The same fetch without the fallback: a failure throws. For ISR pages,
+   * where a render that succeeded on fallback data is cached as if it were
+   * real, and one that throws keeps the last good page instead (#659).
+   */
+  orThrow: T;
+};
+
+const cache = <T extends AsyncFn>(
+  fn: T,
+  errorFallback?: Awaited<ReturnType<T>>,
+): Cached<T> => {
+  const strict = memoize(fn);
+  if (errorFallback === undefined) {
+    return Object.assign(strict, { orThrow: strict });
+  }
+
+  const context = process.env.NODE_ENV === "test" ? "cache-test-fallback" : `cache-fn-${functionIds.get(fn)}`;
+  const withFallback = (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+    try {
+      return await strict(...args);
     } catch (error) {
-      if (errorFallback !== undefined) {
-        reportError(error, { context: `cache-fn-${functionId}` });
-        const cloned = Array.isArray(errorFallback)
-          ? ([...errorFallback] as ReturnType<T>)
+      reportError(error, { context });
+      return (
+        Array.isArray(errorFallback)
+          ? [...errorFallback]
           : typeof errorFallback === "object" && errorFallback !== null
-            ? ({ ...errorFallback } as ReturnType<T>)
-            : (errorFallback as ReturnType<T>);
-        return cloned;
-      }
-      throw error;
+            ? { ...errorFallback }
+            : errorFallback
+      ) as ReturnType<T>;
     }
   }) as T;
 
-  return cached;
+  return Object.assign(withFallback, { orThrow: strict });
 };
 
 const API_URL = getApiUrl();
@@ -139,72 +144,66 @@ interface AnimalQueryParams {
   status?: string;
 }
 
-async function fetchAnimals(params: AnimalQueryParams = {}): Promise<Dog[]> {
-  const queryParams = new URLSearchParams();
+export const getAnimals = cache(
+  async (params: AnimalQueryParams = {}): Promise<Dog[]> => {
+    const queryParams = new URLSearchParams();
 
-  if (params.limit) queryParams.append("limit", String(params.limit));
-  if (params.offset) queryParams.append("offset", String(params.offset));
-  if (params.search) queryParams.append("search", params.search);
-  if (params.size) queryParams.append("size", params.size);
-  if (params.standardized_size)
-    queryParams.append("standardized_size", params.standardized_size);
-  if (params.age_category)
-    queryParams.append("age_category", params.age_category);
-  if (params.sex) queryParams.append("sex", params.sex);
-  if (params.organization_id)
-    queryParams.append("organization_id", String(params.organization_id));
-  if (params.breed) queryParams.append("breed", params.breed);
-  if (params.breed_type) queryParams.append("breed_type", params.breed_type);
-  if (params.breed_group)
-    queryParams.append("breed_group", params.breed_group);
-  if (params.primary_breed)
-    queryParams.append("primary_breed", params.primary_breed);
-  if (params.location_country)
-    queryParams.append("location_country", params.location_country);
-  if (params.available_to_country)
-    queryParams.append("available_to_country", params.available_to_country);
-  if (params.available_to_region)
-    queryParams.append("available_to_region", params.available_to_region);
-  if (params.experience_level) queryParams.append("experience_level", params.experience_level);
-  if (params.sort_by) queryParams.append("sort_by", params.sort_by);
-  if (params.sort_order) queryParams.append("sort_order", params.sort_order);
-  if (params.sort) queryParams.append("sort", params.sort);
-  if (params.age_known) queryParams.append("age_known", "true");
-  if (params.curation_type)
-    queryParams.append("curation_type", params.curation_type);
-  if (params.animal_type)
-    queryParams.append("animal_type", params.animal_type);
-  if (params.status) queryParams.append("status", params.status);
+    if (params.limit) queryParams.append("limit", String(params.limit));
+    if (params.offset) queryParams.append("offset", String(params.offset));
+    if (params.search) queryParams.append("search", params.search);
+    if (params.size) queryParams.append("size", params.size);
+    if (params.standardized_size)
+      queryParams.append("standardized_size", params.standardized_size);
+    if (params.age_category)
+      queryParams.append("age_category", params.age_category);
+    if (params.sex) queryParams.append("sex", params.sex);
+    if (params.organization_id)
+      queryParams.append("organization_id", String(params.organization_id));
+    if (params.breed) queryParams.append("breed", params.breed);
+    if (params.breed_type) queryParams.append("breed_type", params.breed_type);
+    if (params.breed_group)
+      queryParams.append("breed_group", params.breed_group);
+    if (params.primary_breed)
+      queryParams.append("primary_breed", params.primary_breed);
+    if (params.location_country)
+      queryParams.append("location_country", params.location_country);
+    if (params.available_to_country)
+      queryParams.append("available_to_country", params.available_to_country);
+    if (params.available_to_region)
+      queryParams.append("available_to_region", params.available_to_region);
+    if (params.experience_level) queryParams.append("experience_level", params.experience_level);
+    if (params.sort_by) queryParams.append("sort_by", params.sort_by);
+    if (params.sort_order) queryParams.append("sort_order", params.sort_order);
+    if (params.sort) queryParams.append("sort", params.sort);
+    if (params.age_known) queryParams.append("age_known", "true");
+    if (params.curation_type)
+      queryParams.append("curation_type", params.curation_type);
+    if (params.animal_type)
+      queryParams.append("animal_type", params.animal_type);
+    if (params.status) queryParams.append("status", params.status);
 
-  const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
+    const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
 
-  const response = await fetchWithRetry(url, {
-    next: {
-      revalidate: 86400,
-      tags: ["animals"],
-    },
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+    const response = await fetchWithRetry(url, {
+      next: {
+        revalidate: 86400,
+        tags: ["animals"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch animals: ${response.statusText}`);
-  }
+    if (!response.ok) {
+      throw new Error(`Failed to fetch animals: ${response.statusText}`);
+    }
 
-  const raw: unknown = await response.json();
-  const parsed = z.array(ApiDogSchema).parse(stripNulls(raw));
-  return transformApiDogsToDogs(parsed);
-}
-
-export const getAnimals = cache(fetchAnimals, []);
-
-/**
- * For ISR pages whose render must not succeed without these dogs: a failure
- * throws, so Next keeps serving the last good page instead of caching an
- * empty one (#659).
- */
-export const getAnimalsOrThrow = cache(fetchAnimals);
+    const raw: unknown = await response.json();
+    const parsed = z.array(ApiDogSchema).parse(stripNulls(raw));
+    return transformApiDogsToDogs(parsed);
+  },
+  [],
+);
 
 export const getStandardizedBreeds = cache(
   async (): Promise<string[]> => {
@@ -446,13 +445,20 @@ interface AllMetadata {
   organizations: Array<{ id: number | string | null; name: string; slug?: string }>;
 }
 
-export async function getAllMetadata(): Promise<AllMetadata> {
+/**
+ * The catalog's filter options. `strict` throws on a failed fetch instead of
+ * leaving that filter with only its "Any" option, for pages that must not be
+ * cached that way (#659).
+ */
+export async function getAllMetadata({ strict = false } = {}): Promise<AllMetadata> {
+  const pick = <T extends { orThrow: unknown }>(fetcher: T): T | T["orThrow"] =>
+    strict ? fetcher.orThrow : fetcher;
   const [breeds, locationCountries, availableCountries, organizations] =
     await Promise.all([
-      getStandardizedBreeds(),
-      getLocationCountries(),
-      getAvailableCountries(),
-      getOrganizations(),
+      pick(getStandardizedBreeds)(),
+      pick(getLocationCountries)(),
+      pick(getAvailableCountries)(),
+      pick(getOrganizations)(),
     ]);
 
   return {
@@ -519,25 +525,15 @@ export const getAllAnimals = cache(
 );
 
  
-// getBreedStats' fallback has no breeds, which getBreedBySlug would take for
-// "no such breed" and answer with a 404
-async function getBreedStatsOrThrow(): Promise<BreedStats> {
-  const breedStats = await getBreedStats();
-  if (breedStats.error) {
-    throw new Error("Breed stats unavailable");
-  }
-  return breedStats;
-}
-
 export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData | null> => {
   try {
     if (slug === "mixed") {
-      const breedStats = await getBreedStatsOrThrow();
+      const breedStats = await getBreedStats.orThrow();
       const mixedGroup = (
         breedStats.breed_groups as { name: string; count: number }[] | undefined
       )?.find((g) => g.name === "Mixed");
 
-      const candidateDogs = await getAnimalsOrThrow({
+      const candidateDogs = await getAnimals.orThrow({
         breed_group: "Mixed",
         limit: 30,
         sort_by: "created_at",
@@ -556,7 +552,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
         logger.warn(`No dogs with images found for Mixed breeds out of ${candidateDogs.length} candidates`);
       }
 
-      const allMixedDogs = await getAnimalsOrThrow({
+      const allMixedDogs = await getAnimals.orThrow({
         breed_group: "Mixed",
         limit: 200,
       });
@@ -729,7 +725,8 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
       };
     }
 
-    const breedStats = await getBreedStatsOrThrow();
+    // Not the fallback: it has no breeds, which would read as "no such breed"
+    const breedStats = await getBreedStats.orThrow();
     const breedData = breedStats.qualifying_breeds?.find(
       (breed) => breed.breed_slug === slug,
     );
@@ -739,7 +736,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
       return null;
     }
 
-    const candidateDogs = await getAnimalsOrThrow({
+    const candidateDogs = await getAnimals.orThrow({
       primary_breed: breedData.primary_breed,
       limit: 30,
       sort_by: "created_at",
@@ -806,19 +803,19 @@ async function fetchListCounts(listFilter: ListFilter): Promise<FilterCountsResp
  * are adoptable to each country. Ages count only dogs with a recorded age. A
  * failure leaves the counts out rather than failing the page.
  */
-export const getListCounts = cache(
+const getListCountsStrict = cache(fetchListCounts);
+
+export const getListCounts = Object.assign(
   async (listFilter: ListFilter): Promise<FilterCountsResponse | null> => {
     try {
-      return await fetchListCounts(listFilter);
+      return await getListCountsStrict(listFilter);
     } catch (error) {
       reportError(error, { context: "getListCounts", ...listFilter });
       return null;
     }
   },
+  { orThrow: getListCountsStrict },
 );
-
-/** The breed pages' counts: a failure throws rather than leaving them out (#659). */
-export const getListCountsOrThrow = cache(fetchListCounts);
 
 interface EnhancedContent {
   description: string;

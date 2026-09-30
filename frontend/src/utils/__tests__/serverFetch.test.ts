@@ -150,6 +150,17 @@ describe("fetchWithRetry", () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
+  it("throws rather than return Railway's edge 404, which callers would read as 'not found'", async () => {
+    (fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 404,
+      headers: new Headers({ "x-railway-fallback": "true" }),
+    });
+
+    await expect(fetchWithRetry("https://api.test/x", {}, policy(2))).rejects.toThrow(/unreachable/);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it("retries a network-level failure and returns the eventual response", async () => {
     (fetch as jest.Mock)
       .mockRejectedValueOnce(new Error("ECONNREFUSED"))

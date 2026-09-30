@@ -17,7 +17,7 @@ jest.mock("next/image", () => ({
 
 describe("branded 404 (#456)", () => {
   it("renders inside the site layout with paths back into the catalogue", async () => {
-    (getAnimalsByCuration as jest.Mock).mockResolvedValue([
+    (getAnimalsByCuration as unknown as jest.Mock).mockResolvedValue([
       { id: 7, name: "Mabel", slug: "mabel-dachshund-7", standardized_breed: "Dachshund" },
     ]);
 
@@ -35,7 +35,7 @@ describe("branded 404 (#456)", () => {
   });
 
   it("still renders when there are no recent dogs", async () => {
-    (getAnimalsByCuration as jest.Mock).mockResolvedValue([]);
+    (getAnimalsByCuration as unknown as jest.Mock).mockResolvedValue([]);
 
     render(await NotFound());
 

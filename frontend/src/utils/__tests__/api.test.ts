@@ -1,5 +1,5 @@
 import { z, ZodError } from "zod";
-import { get, stripNulls } from "../api";
+import { fetchApi, get, stripNulls } from "../api";
 
 jest.mock("../logger", () => ({
   logger: {
@@ -161,5 +161,31 @@ describe("get() with Zod schema validation", () => {
 
     expect(result).toEqual(rawData);
     expect(reportError).not.toHaveBeenCalled();
+  });
+});
+
+describe("fetchApi and Railway's edge 404", () => {
+  it("reports the edge's 404 as unavailable, so a page doesn't answer 'not found'", async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      statusText: "Not Found",
+      headers: new Headers({ "x-railway-fallback": "true" }),
+      json: async () => ({ status: "error", code: 404, message: "Application not found" }),
+    });
+
+    await expect(fetchApi("/api/organizations/dogs-trust")).rejects.toMatchObject({ status: 503 });
+  });
+
+  it("keeps the app's own 404", async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      statusText: "Not Found",
+      headers: new Headers(),
+      json: async () => ({ detail: "Organization not found" }),
+    });
+
+    await expect(fetchApi("/api/organizations/nope")).rejects.toMatchObject({ status: 404 });
   });
 });

@@ -8,9 +8,9 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
   getBreedBySlug,
-  getAnimalsOrThrow,
+  getAnimals,
   getBreedStats,
-  getListCountsOrThrow,
+  getListCounts,
   getAllMetadata,
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
@@ -25,93 +25,84 @@ export const revalidate = 604800;
 export async function generateMetadata(
   props: BreedPageProps,
 ): Promise<Metadata> {
-  try {
-    const params = await props.params;
-    const breedData = await getBreedBySlug(params.slug);
+  const params = await props.params;
+  const breedData = await getBreedBySlug(params.slug);
 
-    if (!breedData) {
-      return {
-        title: "Breed Not Found",
-        description: "The requested breed could not be found.",
-      };
-    }
-
-    const description = breedData.description;
-
-    const avgAge = breedData.average_age
-      ? `Average age ${Math.round(breedData.average_age)} years. `
-      : "";
-    const locations =
-      breedData.top_locations?.slice(0, 3).join(", ") || "multiple locations";
-
-    const seoDescription = description
-      ? `${description.substring(0, 80)}… ${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}Adoptable in ${locations}.`
-      : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. ${avgAge}View photos, profiles, and apply from verified rescues in ${locations}.`;
-
-    const keywords = [
-      `${breedData.primary_breed} rescue`,
-      `${breedData.primary_breed} adoption`,
-      `${breedData.primary_breed} dogs for adoption`,
-      `${breedData.primary_breed} puppies`,
-      `adopt ${breedData.primary_breed}`,
-      `${breedData.primary_breed} rescue near me`,
-      `${breedData.primary_breed} temperament`,
-      `${breedData.primary_breed} personality`,
-      breedData.breed_group && `${breedData.breed_group} group dogs`,
-      "rescue dogs",
-      "dog adoption",
-      "adoptable dogs",
-    ]
-      .filter(Boolean)
-      .join(", ");
-
+  if (!breedData) {
     return {
-      title: `${breedData.primary_breed} Rescue Dogs for Adoption | ${breedData.count} Available Near You`,
-      description: seoDescription.substring(0, 160),
-      keywords,
-      openGraph: {
-        title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
-        description: seoDescription,
-        images:
-          breedData.topDogs
-            ?.filter(
-              (d): d is typeof d & { primary_image_url: string } =>
-                Boolean(d.primary_image_url),
-            )
-            .slice(0, 4)
-            .map((d) => ({
-              url: d.primary_image_url,
-              width: 800,
-              height: 600,
-              alt: `${d.name} - ${breedData.primary_breed} rescue dog`,
-            })) || [],
-        type: "website",
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
-        description: seoDescription.substring(0, 120),
-        images:
-          breedData.topDogs
-            ?.filter(
-              (d): d is typeof d & { primary_image_url: string } =>
-                Boolean(d.primary_image_url),
-            )
-            .slice(0, 1)
-            .map((d) => d.primary_image_url) || [],
-      },
-      alternates: {
-        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/breeds/${params.slug}`,
-      },
-    };
-  } catch (error) {
-    reportError(error, { context: "generateMetadata" });
-    logger.error("Error generating metadata:", error);
-    return {
-      title: "Breed Details",
-      description: "View rescue dogs by breed",
+      title: "Breed Not Found",
+      description: "The requested breed could not be found.",
     };
   }
+
+  const description = breedData.description;
+
+  const avgAge = breedData.average_age
+    ? `Average age ${Math.round(breedData.average_age)} years. `
+    : "";
+  const locations =
+    breedData.top_locations?.slice(0, 3).join(", ") || "multiple locations";
+
+  const seoDescription = description
+    ? `${description.substring(0, 80)}… ${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}Adoptable in ${locations}.`
+    : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. ${avgAge}View photos, profiles, and apply from verified rescues in ${locations}.`;
+
+  const keywords = [
+    `${breedData.primary_breed} rescue`,
+    `${breedData.primary_breed} adoption`,
+    `${breedData.primary_breed} dogs for adoption`,
+    `${breedData.primary_breed} puppies`,
+    `adopt ${breedData.primary_breed}`,
+    `${breedData.primary_breed} rescue near me`,
+    `${breedData.primary_breed} temperament`,
+    `${breedData.primary_breed} personality`,
+    breedData.breed_group && `${breedData.breed_group} group dogs`,
+    "rescue dogs",
+    "dog adoption",
+    "adoptable dogs",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return {
+    title: `${breedData.primary_breed} Rescue Dogs for Adoption | ${breedData.count} Available Near You`,
+    description: seoDescription.substring(0, 160),
+    keywords,
+    openGraph: {
+      title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
+      description: seoDescription,
+      images:
+        breedData.topDogs
+          ?.filter(
+            (d): d is typeof d & { primary_image_url: string } =>
+              Boolean(d.primary_image_url),
+          )
+          .slice(0, 4)
+          .map((d) => ({
+            url: d.primary_image_url,
+            width: 800,
+            height: 600,
+            alt: `${d.name} - ${breedData.primary_breed} rescue dog`,
+          })) || [],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
+      description: seoDescription.substring(0, 120),
+      images:
+        breedData.topDogs
+          ?.filter(
+            (d): d is typeof d & { primary_image_url: string } =>
+              Boolean(d.primary_image_url),
+          )
+          .slice(0, 1)
+          .map((d) => d.primary_image_url) || [],
+    },
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/breeds/${params.slug}`,
+    },
+  };
 }
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
@@ -147,9 +138,9 @@ async function fetchBreedPageData(slug: string) {
   const breedFilter = slug === "mixed" ? { breed_group: "Mixed" } : { primary_breed: breedData.primary_breed };
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([
-    getAnimalsOrThrow({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
-    getListCountsOrThrow(breedFilter),
-    getAllMetadata(),
+    getAnimals.orThrow({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
+    getListCounts.orThrow(breedFilter),
+    getAllMetadata({ strict: true }),
   ]);
 
   return { breedData, initialDogs, breedCounts, metadata };

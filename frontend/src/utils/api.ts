@@ -2,6 +2,7 @@ import type { ZodType } from "zod";
 import { logger, reportError } from "./logger";
 import { parseApiError, formatErrorMessage } from "./errorHandler";
 import { getApiUrl } from "./apiConfig";
+import { isRailwayFallback } from "./serverFetch";
 
 export function stripNulls(value: unknown): unknown {
   if (value === null) return undefined;
@@ -61,7 +62,9 @@ export async function fetchApi(
           errorData?.message ||
           `API error: ${response.status} ${response.statusText}`,
       );
-      error.status = response.status;
+      // Railway's edge 404 while the app is unreachable is an outage, not
+      // "no such thing": pages 404 on status 404
+      error.status = isRailwayFallback(response) ? 503 : response.status;
       error.data = errorData;
 
       const parsedError = parseApiError(error) as ParsedApiError;

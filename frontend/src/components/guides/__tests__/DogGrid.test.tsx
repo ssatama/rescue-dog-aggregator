@@ -43,7 +43,7 @@ describe("DogGrid", () => {
   });
 
   it("shows loading skeletons initially", () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockImplementation(
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockImplementation(
       () => new Promise(() => {}), // Never resolves
     );
 
@@ -55,7 +55,7 @@ describe("DogGrid", () => {
   });
 
   it("fetches and displays dogs", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue(mockDogs);
 
     render(<DogGrid breed="galgo" limit={2} />, { wrapper: Wrapper });
 
@@ -66,7 +66,7 @@ describe("DogGrid", () => {
   });
 
   it("passes correct API parameters", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(
       <DogGrid
@@ -91,7 +91,7 @@ describe("DogGrid", () => {
   });
 
   it("shows empty state when no dogs match", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="rare-breed" limit={4} />);
 
@@ -104,7 +104,7 @@ describe("DogGrid", () => {
   });
 
   it("shows error state on API failure", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockRejectedValue(
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockRejectedValue(
       new Error("API Error"),
     );
 
@@ -116,7 +116,7 @@ describe("DogGrid", () => {
   });
 
   it("displays caption when provided", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue(mockDogs);
 
     render(<DogGrid breed="galgo" caption="Galgos available for adoption" />, {
       wrapper: Wrapper,
@@ -130,7 +130,7 @@ describe("DogGrid", () => {
   });
 
   it("renders in grid layout by default", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue(mockDogs);
 
     const { container } = render(<DogGrid breed="galgo" />, {
       wrapper: Wrapper,
@@ -144,7 +144,7 @@ describe("DogGrid", () => {
   });
 
   it("renders in carousel layout when specified", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue(mockDogs);
 
     const { container } = render(<DogGrid breed="galgo" layout="carousel" />, {
       wrapper: Wrapper,
@@ -157,7 +157,7 @@ describe("DogGrid", () => {
   });
 
   it("provides fallback link in empty state", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="galgo" />);
 
@@ -168,7 +168,7 @@ describe("DogGrid", () => {
   });
 
   it("links the empty state to the breed page when primary_breed is set", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid primary_breed="Galgo" />);
 
@@ -179,7 +179,7 @@ describe("DogGrid", () => {
   });
 
   it("names the breed in the empty state message when primary_breed is set", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid primary_breed="Podenco" />);
 
@@ -191,7 +191,7 @@ describe("DogGrid", () => {
   });
 
   it("url-encodes a multi-word primary_breed without guessing a slug", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid primary_breed="German Shepherd" />);
 
@@ -202,7 +202,7 @@ describe("DogGrid", () => {
   });
 
   it("preserves accented breed names rather than mangling them", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid primary_breed="Galgo Español" />);
 
@@ -216,7 +216,7 @@ describe("DogGrid", () => {
   });
 
   it("prefers the breed prop over primary_breed for the breed page link", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="lurcher" primary_breed="Galgo" />);
 
@@ -227,7 +227,7 @@ describe("DogGrid", () => {
   });
 
   it("maps its size onto the API's size scale", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid size="extra large" />);
 
@@ -238,7 +238,7 @@ describe("DogGrid", () => {
   });
 
   it("says so when a size isn't on the scale, instead of silently showing every size (#605)", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
     const warn = jest.spyOn(jest.requireActual("@/utils/logger").logger, "warn").mockImplementation(() => {});
 
     render(<DogGrid size="medium-ish" />);
@@ -250,7 +250,7 @@ describe("DogGrid", () => {
   });
 
   it("uses generic fallback link when no breed specified", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid size="small" />);
 
@@ -261,7 +261,7 @@ describe("DogGrid", () => {
   });
 
   it("defaults to available status", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="galgo" />);
 
@@ -273,7 +273,7 @@ describe("DogGrid", () => {
   });
 
   it("supports custom status parameter", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="galgo" status="all" />);
 
@@ -285,12 +285,12 @@ describe("DogGrid", () => {
   });
 
   it("only includes defined parameters in API call", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="galgo" limit={4} />);
 
     await waitFor(() => {
-      const call = (serverAnimalsService.getAnimals as jest.Mock).mock
+      const call = (serverAnimalsService.getAnimals as unknown as jest.Mock).mock
         .calls[0][0];
       expect(call).toHaveProperty("breed", "galgo");
       expect(call).toHaveProperty("limit", 4);
@@ -301,7 +301,7 @@ describe("DogGrid", () => {
   });
 
   it("renders one DogCard per dog", async () => {
-    (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
+    (serverAnimalsService.getAnimals as unknown as jest.Mock).mockResolvedValue(mockDogs);
 
     const { container } = render(<DogGrid breed="galgo" />, {
       wrapper: Wrapper,

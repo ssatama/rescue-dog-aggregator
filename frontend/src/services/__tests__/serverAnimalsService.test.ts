@@ -10,9 +10,7 @@ import {
   getAgeStats,
   getAnimalsByCuration,
   getAnimalBySlug,
-  getAnimalsOrThrow,
   getListCounts,
-  getListCountsOrThrow,
   clearCache,
 } from "../serverAnimalsService";
 import { reportError } from "../../utils/logger";
@@ -373,18 +371,18 @@ describe("Server Animals Service", () => {
   });
 
   describe("strict variants for ISR pages", () => {
-    it("getAnimalsOrThrow rejects where getAnimals falls back to []", async () => {
+    it("getAnimals.orThrow rejects where getAnimals falls back to []", async () => {
       (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
 
       await expect(getAnimals({ primary_breed: "Labrador" })).resolves.toEqual([]);
-      await expect(getAnimalsOrThrow({ primary_breed: "Labrador" })).rejects.toThrow();
+      await expect(getAnimals.orThrow({ primary_breed: "Labrador" })).rejects.toThrow();
     });
 
-    it("getListCountsOrThrow rejects where getListCounts falls back to null", async () => {
+    it("getListCounts.orThrow rejects where getListCounts falls back to null", async () => {
       (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
 
       await expect(getListCounts({ primary_breed: "Labrador" })).resolves.toBeNull();
-      await expect(getListCountsOrThrow({ primary_breed: "Labrador" })).rejects.toThrow();
+      await expect(getListCounts.orThrow({ primary_breed: "Labrador" })).rejects.toThrow();
     });
   });
 
