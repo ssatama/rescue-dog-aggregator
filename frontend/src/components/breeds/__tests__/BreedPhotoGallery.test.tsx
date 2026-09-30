@@ -13,7 +13,7 @@ describe("BreedPhotoGallery", () => {
   it("links each photo to its dog", () => {
     render(
       <BreedPhotoGallery
-        dogs={[{ id: "felix", name: "Felix", slug: "felix-greyhound-11693", primary_image_url: "https://images.rescuedogs.me/felix.jpg" }]}
+        dogs={[{ name: "Felix", slug: "felix-greyhound-11693", primary_image_url: "https://images.rescuedogs.me/felix.jpg" }]}
         breedName="Greyhound"
       />,
     );

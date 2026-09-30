@@ -16,7 +16,7 @@ import { FilterCountsResponseSchema } from "../schemas/common";
 import type { BreedStats } from "../schemas/animals";
 import type { FilterCountsResponse } from "../schemas/common";
 import type { Dog } from "../types/dog";
-import type { BreedPageData, SampleDog } from "../types/breeds";
+import type { BreedPageData, GalleryDog } from "../types/breeds";
 import {
   transformApiDogToDog,
   transformApiDogsToDogs,
@@ -531,13 +531,13 @@ export const getAllAnimals = cache(
 
  
 // The newest six with a photo and a page, for the breed page's gallery
-function pickGalleryDogs(candidateDogs: Dog[], label: string): SampleDog[] {
+function pickGalleryDogs(candidateDogs: Dog[], label: string): GalleryDog[] {
   const topDogs = candidateDogs
-    .filter((dog) => dog.primary_image_url && dog.slug)
+    .filter((dog): dog is Dog & { slug: string; primary_image_url: string } => Boolean(dog.primary_image_url && dog.slug))
     .slice(0, 6)
     .map((dog) => ({
       name: dog.name,
-      slug: dog.slug!,
+      slug: dog.slug,
       primary_image_url: dog.primary_image_url,
     }));
 

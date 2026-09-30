@@ -28,6 +28,13 @@ describe("ServerDogListing", () => {
     expect(hrefs).toEqual(["/dogs/mabel-dachshund-1", "/dogs/greta-podenco-2", "/dogs/unknown-dog-3", "/dogs/rocco-unknown-4"]);
   });
 
+  it("adds no H1 where the page already has one: a breed page's list (#663)", () => {
+    const { container } = render(<ServerDogListing dogs={dogs} />);
+
+    expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+    expect(container.querySelectorAll("a")).toHaveLength(4);
+  });
+
   it("preloads nothing: hydration replaces it before its photos would show (#506)", () => {
     render(<ServerDogListing title="Dogs" dogs={dogs} />);
 

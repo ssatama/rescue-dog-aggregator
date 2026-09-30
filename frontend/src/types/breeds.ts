@@ -25,6 +25,13 @@ export interface BreedData {
   }>;
 }
 
+/** A breed page's gallery dog: always with a photo and a page */
+export interface GalleryDog {
+  name: string;
+  slug: string;
+  primary_image_url: string;
+}
+
 export interface SampleDog {
   name: string;
   slug: string;
@@ -62,10 +69,10 @@ export interface BreedStructuredDataProps {
 }
 
 export interface BreedPageData extends BreedData {
-  topDogs?: SampleDog[];
+  topDogs?: GalleryDog[];
 }
 
-export interface BreedDetailClientProps {
+export interface BreedDetailProps {
   initialBreedData: BreedPageData;
   initialDogs: Dog[];
   /** Unfiltered counts for the breed: practical stats and per-country totals (#500) */

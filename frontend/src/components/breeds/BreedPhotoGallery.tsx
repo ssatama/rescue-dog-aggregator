@@ -3,16 +3,11 @@
 import React, { useState, useRef, useCallback } from "react";
 import { FallbackImage } from "../ui/FallbackImage";
 import Link from "next/link";
+import type { GalleryDog } from "@/types/breeds";
 
-interface CarouselDog {
-  id: number | string;
-  name: string;
-  slug: string;
-  primary_image_url: string;
-}
 
 interface BreedMobileCarouselProps {
-  dogs: CarouselDog[];
+  dogs: GalleryDog[];
   breedName: string;
 }
 
@@ -93,7 +88,7 @@ function BreedMobileCarousel({
       >
         {displayedDogs.map((dog, index) => (
           <Link
-            key={dog.id}
+            key={dog.slug}
             data-slide
             href={`/dogs/${dog.slug}`}
             className="flex-shrink-0 w-[70vw] max-w-[280px] aspect-[4/5] relative overflow-hidden rounded-xl cursor-pointer group block snap-start"
@@ -138,7 +133,7 @@ function BreedMobileCarousel({
 }
 
 interface BreedPhotoGalleryProps {
-  dogs: CarouselDog[];
+  dogs: GalleryDog[];
   breedName: string;
   className?: string;
 }
@@ -157,7 +152,7 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }: B
         <div className="grid grid-cols-3 gap-2">
           {dogs.slice(0, 6).map((dog, index) => (
             <Link
-              key={dog.id}
+              key={dog.slug}
               href={`/dogs/${dog.slug}`}
               className="relative overflow-hidden rounded-xl cursor-pointer group block aspect-[4/5]"
             >
