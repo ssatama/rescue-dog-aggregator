@@ -525,219 +525,17 @@ export const getAllAnimals = cache(
 );
 
  
+// No catch: a failure fails the render, which keeps the last good page and
+// reaches Sentry once through onRequestError
 export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData | null> => {
-  try {
-    if (slug === "mixed") {
-      const breedStats = await getBreedStats.orThrow();
-      const mixedGroup = (
-        breedStats.breed_groups as { name: string; count: number }[] | undefined
-      )?.find((g) => g.name === "Mixed");
-
-      const candidateDogs = await getAnimals.orThrow({
-        breed_group: "Mixed",
-        limit: 30,
-        sort_by: "created_at",
-        sort_order: "desc",
-      });
-      const topDogs: SampleDog[] = candidateDogs
-        .filter((dog: Dog) => dog.primary_image_url && dog.slug)
-        .slice(0, 6)
-        .map((dog) => ({
-          name: dog.name,
-          slug: dog.slug!,
-          primary_image_url: dog.primary_image_url,
-        }));
-
-      if (topDogs.length === 0 && candidateDogs.length > 0) {
-        logger.warn(`No dogs with images found for Mixed breeds out of ${candidateDogs.length} candidates`);
-      }
-
-      const allMixedDogs = await getAnimals.orThrow({
-        breed_group: "Mixed",
-        limit: 200,
-      });
-
-      const organizationSet = new Set<string>();
-      const countrySet = new Set<string>();
-
-      if (breedStats?.qualifying_breeds) {
-        breedStats.qualifying_breeds.forEach((breed) => {
-          if (breed.breed_group === "Mixed" || breed.breed_type === "mixed") {
-            if (breed.organizations) {
-              breed.organizations.forEach((org: unknown) =>
-                organizationSet.add(String(org)),
-              );
-            }
-            if (breed.countries) {
-              breed.countries.forEach((country: string) =>
-                countrySet.add(country),
-              );
-            }
-          }
-        });
-      }
-
-      const personalityAggregation: Record<string, number> = {
-        energy_level: 0,
-        affection: 0,
-        trainability: 0,
-        independence: 0,
-      };
-
-      const personalityCount: Record<string, number> = {
-        energy_level: 0,
-        affection: 0,
-        trainability: 0,
-        independence: 0,
-      };
-
-      const traitsMap = new Map<string, number>();
-
-      let totalAgeMonths = 0;
-      let ageCount = 0;
-
-       
-      allMixedDogs.forEach((dog) => {
-        if (dog.organization_id) {
-          organizationSet.add(String(dog.organization_id));
-        }
-
-        if (dog.organization?.country) {
-          countrySet.add(dog.organization.country);
-        } else if (dog.available_country) {
-          countrySet.add(dog.available_country);
-        } else if (dog.country) {
-          countrySet.add(dog.country);
-        }
-
-        if (dog.age_min_months && dog.age_max_months) {
-          const avgAge = (dog.age_min_months + dog.age_max_months) / 2;
-          totalAgeMonths += avgAge;
-          ageCount++;
-        }
-
-        if (dog.properties) {
-          ["energy_level", "affection", "trainability", "independence"].forEach(
-            (trait) => {
-              if (
-                dog.properties?.[trait] !== undefined &&
-                dog.properties?.[trait] !== null
-              ) {
-                const value = Number(dog.properties?.[trait]);
-                if (!isNaN(value) && value >= 0 && value <= 100) {
-                  personalityAggregation[trait] += value;
-                  personalityCount[trait]++;
-                }
-              }
-            },
-          );
-
-          if (dog.properties.personality_traits) {
-            const traits = Array.isArray(dog.properties.personality_traits)
-              ? dog.properties.personality_traits
-              : [dog.properties.personality_traits];
-            traits.forEach((trait: unknown) => {
-              if (trait && typeof trait === "string") {
-                traitsMap.set(trait, (traitsMap.get(trait) || 0) + 1);
-              }
-            });
-          }
-        }
-      });
-
-      const getMetric = (trait: string): { percentage: number; label: string } => {
-        const defaults: Record<string, number> = {
-          energy_level: 60, affection: 80, trainability: 70, independence: 50,
-        };
-        const percentage = personalityCount[trait] > 0
-          ? Math.round(personalityAggregation[trait] / personalityCount[trait])
-          : (defaults[trait] ?? 50);
-
-        const label =
-          percentage <= 20 ? "Very Low" :
-          percentage <= 40 ? "Low" :
-          percentage <= 60 ? "Medium" :
-          percentage <= 80 ? "High" : "Very High";
-
-        return { percentage, label };
-      };
-
-      const personalityMetrics: PersonalityMetrics = {
-        energy_level: getMetric("energy_level"),
-        affection: getMetric("affection"),
-        trainability: getMetric("trainability"),
-        independence: getMetric("independence"),
-      };
-
-      const commonTraits = Array.from(traitsMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([trait]) => trait);
-
-      if (commonTraits.length === 0) {
-        commonTraits.push(
-          "Affectionate",
-          "Gentle",
-          "Loyal",
-          "Smart",
-          "Loving",
-        );
-      }
-
-      const experienceDistribution = {
-        first_time_ok: 0,
-        some_experience: 0,
-        experienced: 0,
-      };
-
-      allMixedDogs.forEach((dog) => {
-        if (dog.properties?.experience_level) {
-          const level = dog.properties.experience_level as string;
-          if (level === "first_time_ok") {
-            experienceDistribution.first_time_ok++;
-          } else if (level === "some_experience") {
-            experienceDistribution.some_experience++;
-          } else if (level === "experienced") {
-            experienceDistribution.experienced++;
-          }
-        }
-      });
-
-      const avgAgeMonths =
-        ageCount > 0 ? Math.round(totalAgeMonths / ageCount) : 36;
-
-      return {
-        primary_breed: "Mixed Breed",
-        breed_slug: "mixed",
-        breed_type: "mixed",
-        breed_group: "Mixed",
-        count: mixedGroup?.count || 0,
-        organizations: Array.from(organizationSet).slice(0, 10).map(String),
-        countries: Array.from(countrySet),
-        topDogs: topDogs,
-        description:
-          "Every mixed breed is unique! These wonderful dogs combine traits from multiple breeds, creating diverse personalities, unique looks, and often fewer health issues. Each one has their own special story and character.",
-        personality_metrics: personalityMetrics,
-        personality_traits: commonTraits,
-        experience_distribution: experienceDistribution,
-        average_age: avgAgeMonths / 12,
-        average_age_months: avgAgeMonths,
-      };
-    }
-
-    // Not the fallback: it has no breeds, which would read as "no such breed"
+  if (slug === "mixed") {
     const breedStats = await getBreedStats.orThrow();
-    const breedData = breedStats.qualifying_breeds?.find(
-      (breed) => breed.breed_slug === slug,
-    );
-
-    if (!breedData) {
-      logger.warn(`Breed not found in qualifying breeds: ${slug}`);
-      return null;
-    }
+    const mixedGroup = (
+      breedStats.breed_groups as { name: string; count: number }[] | undefined
+    )?.find((g) => g.name === "Mixed");
 
     const candidateDogs = await getAnimals.orThrow({
-      primary_breed: breedData.primary_breed,
+      breed_group: "Mixed",
       limit: 30,
       sort_by: "created_at",
       sort_order: "desc",
@@ -752,28 +550,220 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
       }));
 
     if (topDogs.length === 0 && candidateDogs.length > 0) {
-      logger.warn(`No dogs with images found for "${breedData.primary_breed}" out of ${candidateDogs.length} candidates`);
+      logger.warn(`No dogs with images found for Mixed breeds out of ${candidateDogs.length} candidates`);
     }
 
-    return {
-      ...breedData,
-      breed_slug: slug,
-      topDogs,
-      description:
-        getBreedDescription(breedData.primary_breed) ||
-        `${breedData.primary_breed} dogs are wonderful companions looking for loving homes.`,
-    };
-  } catch (error) {
-    logger.error(`Error fetching breed data for ${slug}:`, error);
-    reportError(error, { context: "getBreedBySlug", slug });
-    Sentry.withScope((scope) => {
-      scope.setTag("feature", "animals");
-      scope.setTag("operation", "getBreedBySlug");
-      scope.setContext("request", { slug });
-      Sentry.captureException(error);
+    const allMixedDogs = await getAnimals.orThrow({
+      breed_group: "Mixed",
+      limit: 200,
     });
-    throw error;
+
+    const organizationSet = new Set<string>();
+    const countrySet = new Set<string>();
+
+    if (breedStats?.qualifying_breeds) {
+      breedStats.qualifying_breeds.forEach((breed) => {
+        if (breed.breed_group === "Mixed" || breed.breed_type === "mixed") {
+          if (breed.organizations) {
+            breed.organizations.forEach((org: unknown) =>
+              organizationSet.add(String(org)),
+            );
+          }
+          if (breed.countries) {
+            breed.countries.forEach((country: string) =>
+              countrySet.add(country),
+            );
+          }
+        }
+      });
+    }
+
+    const personalityAggregation: Record<string, number> = {
+      energy_level: 0,
+      affection: 0,
+      trainability: 0,
+      independence: 0,
+    };
+
+    const personalityCount: Record<string, number> = {
+      energy_level: 0,
+      affection: 0,
+      trainability: 0,
+      independence: 0,
+    };
+
+    const traitsMap = new Map<string, number>();
+
+    let totalAgeMonths = 0;
+    let ageCount = 0;
+
+     
+    allMixedDogs.forEach((dog) => {
+      if (dog.organization_id) {
+        organizationSet.add(String(dog.organization_id));
+      }
+
+      if (dog.organization?.country) {
+        countrySet.add(dog.organization.country);
+      } else if (dog.available_country) {
+        countrySet.add(dog.available_country);
+      } else if (dog.country) {
+        countrySet.add(dog.country);
+      }
+
+      if (dog.age_min_months && dog.age_max_months) {
+        const avgAge = (dog.age_min_months + dog.age_max_months) / 2;
+        totalAgeMonths += avgAge;
+        ageCount++;
+      }
+
+      if (dog.properties) {
+        ["energy_level", "affection", "trainability", "independence"].forEach(
+          (trait) => {
+            if (
+              dog.properties?.[trait] !== undefined &&
+              dog.properties?.[trait] !== null
+            ) {
+              const value = Number(dog.properties?.[trait]);
+              if (!isNaN(value) && value >= 0 && value <= 100) {
+                personalityAggregation[trait] += value;
+                personalityCount[trait]++;
+              }
+            }
+          },
+        );
+
+        if (dog.properties.personality_traits) {
+          const traits = Array.isArray(dog.properties.personality_traits)
+            ? dog.properties.personality_traits
+            : [dog.properties.personality_traits];
+          traits.forEach((trait: unknown) => {
+            if (trait && typeof trait === "string") {
+              traitsMap.set(trait, (traitsMap.get(trait) || 0) + 1);
+            }
+          });
+        }
+      }
+    });
+
+    const getMetric = (trait: string): { percentage: number; label: string } => {
+      const defaults: Record<string, number> = {
+        energy_level: 60, affection: 80, trainability: 70, independence: 50,
+      };
+      const percentage = personalityCount[trait] > 0
+        ? Math.round(personalityAggregation[trait] / personalityCount[trait])
+        : (defaults[trait] ?? 50);
+
+      const label =
+        percentage <= 20 ? "Very Low" :
+        percentage <= 40 ? "Low" :
+        percentage <= 60 ? "Medium" :
+        percentage <= 80 ? "High" : "Very High";
+
+      return { percentage, label };
+    };
+
+    const personalityMetrics: PersonalityMetrics = {
+      energy_level: getMetric("energy_level"),
+      affection: getMetric("affection"),
+      trainability: getMetric("trainability"),
+      independence: getMetric("independence"),
+    };
+
+    const commonTraits = Array.from(traitsMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([trait]) => trait);
+
+    if (commonTraits.length === 0) {
+      commonTraits.push(
+        "Affectionate",
+        "Gentle",
+        "Loyal",
+        "Smart",
+        "Loving",
+      );
+    }
+
+    const experienceDistribution = {
+      first_time_ok: 0,
+      some_experience: 0,
+      experienced: 0,
+    };
+
+    allMixedDogs.forEach((dog) => {
+      if (dog.properties?.experience_level) {
+        const level = dog.properties.experience_level as string;
+        if (level === "first_time_ok") {
+          experienceDistribution.first_time_ok++;
+        } else if (level === "some_experience") {
+          experienceDistribution.some_experience++;
+        } else if (level === "experienced") {
+          experienceDistribution.experienced++;
+        }
+      }
+    });
+
+    const avgAgeMonths =
+      ageCount > 0 ? Math.round(totalAgeMonths / ageCount) : 36;
+
+    return {
+      primary_breed: "Mixed Breed",
+      breed_slug: "mixed",
+      breed_type: "mixed",
+      breed_group: "Mixed",
+      count: mixedGroup?.count || 0,
+      organizations: Array.from(organizationSet).slice(0, 10).map(String),
+      countries: Array.from(countrySet),
+      topDogs: topDogs,
+      description:
+        "Every mixed breed is unique! These wonderful dogs combine traits from multiple breeds, creating diverse personalities, unique looks, and often fewer health issues. Each one has their own special story and character.",
+      personality_metrics: personalityMetrics,
+      personality_traits: commonTraits,
+      experience_distribution: experienceDistribution,
+      average_age: avgAgeMonths / 12,
+      average_age_months: avgAgeMonths,
+    };
   }
+
+  // Not the fallback: it has no breeds, which would read as "no such breed"
+  const breedStats = await getBreedStats.orThrow();
+  const breedData = breedStats.qualifying_breeds?.find(
+    (breed) => breed.breed_slug === slug,
+  );
+
+  if (!breedData) {
+    logger.warn(`Breed not found in qualifying breeds: ${slug}`);
+    return null;
+  }
+
+  const candidateDogs = await getAnimals.orThrow({
+    primary_breed: breedData.primary_breed,
+    limit: 30,
+    sort_by: "created_at",
+    sort_order: "desc",
+  });
+  const topDogs: SampleDog[] = candidateDogs
+    .filter((dog: Dog) => dog.primary_image_url && dog.slug)
+    .slice(0, 6)
+    .map((dog) => ({
+      name: dog.name,
+      slug: dog.slug!,
+      primary_image_url: dog.primary_image_url,
+    }));
+
+  if (topDogs.length === 0 && candidateDogs.length > 0) {
+    logger.warn(`No dogs with images found for "${breedData.primary_breed}" out of ${candidateDogs.length} candidates`);
+  }
+
+  return {
+    ...breedData,
+    breed_slug: slug,
+    topDogs,
+    description:
+      getBreedDescription(breedData.primary_breed) ||
+      `${breedData.primary_breed} dogs are wonderful companions looking for loving homes.`,
+  };
 });
 
 type ListFilter =
@@ -783,7 +773,7 @@ type ListFilter =
   | { age_category: string }
   | Record<string, never>;
 
-async function fetchListCounts(listFilter: ListFilter): Promise<FilterCountsResponse> {
+async function fetchListCounts(listFilter: ListFilter): Promise<FilterCountsResponse | null> {
   // Its own fetch: getFilterCounts revalidates every minute, and a page
   // regenerates at its shortest fetch revalidate, not its own weekly one
   const query = new URLSearchParams({ ...listFilter, age_known: "true" });
@@ -791,7 +781,7 @@ async function fetchListCounts(listFilter: ListFilter): Promise<FilterCountsResp
     next: { revalidate: 86400, tags: ["list-counts"] },
   });
   if (!response.ok) {
-    throw new Error(`Failed to fetch list counts: ${response.statusText}`);
+    throw new Error(`Failed to fetch list counts for ${query.toString()}: ${response.statusText}`);
   }
   const raw: unknown = await response.json();
   return FilterCountsResponseSchema.parse(stripNulls(raw));
@@ -803,19 +793,7 @@ async function fetchListCounts(listFilter: ListFilter): Promise<FilterCountsResp
  * are adoptable to each country. Ages count only dogs with a recorded age. A
  * failure leaves the counts out rather than failing the page.
  */
-const getListCountsStrict = cache(fetchListCounts);
-
-export const getListCounts = Object.assign(
-  async (listFilter: ListFilter): Promise<FilterCountsResponse | null> => {
-    try {
-      return await getListCountsStrict(listFilter);
-    } catch (error) {
-      reportError(error, { context: "getListCounts", ...listFilter });
-      return null;
-    }
-  },
-  { orThrow: getListCountsStrict },
-);
+export const getListCounts = cache(fetchListCounts, null);
 
 interface EnhancedContent {
   description: string;

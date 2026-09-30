@@ -1,3 +1,5 @@
+import { isRailwayFallback } from "./railwayFallback";
+
 // logger.warn only emits in development, and this fires during production
 // builds — the one place the retry needs to be visible in the log.
 const warn = (message: string, ...rest: unknown[]): void => {
@@ -41,12 +43,7 @@ export function backoffDelayMs(policy: RetryPolicy, attempt: number): number {
   return policy.baseDelayMs * 2 ** attempt;
 }
 
-// While the app is unreachable, Railway's edge answers every path with its own
-// 404 "Application not found" and this header. The app never sends it, so a
-// real 404 still fails at once; this one is an outage and gets the 5xx retry.
-export const isRailwayFallback = (response: Response): boolean =>
-  response.status === 404 && response.headers.get("x-railway-fallback") === "true";
-
+// Railway's edge 404 is an outage, so it gets the 5xx retry
 const isRetryable = (response: Response): boolean =>
   response.status >= 500 || isRailwayFallback(response);
 

@@ -2,7 +2,7 @@ import type { ZodType } from "zod";
 import { logger, reportError } from "./logger";
 import { parseApiError, formatErrorMessage } from "./errorHandler";
 import { getApiUrl } from "./apiConfig";
-import { isRailwayFallback } from "./serverFetch";
+import { isRailwayFallback } from "./railwayFallback";
 
 export function stripNulls(value: unknown): unknown {
   if (value === null) return undefined;
