@@ -3,6 +3,7 @@
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { dogCountLabel } from "@/utils/formatCount";
 
 export interface BreedLink {
   name: string;
@@ -82,7 +83,7 @@ export default function BreedSearch({ breeds }: { breeds: BreedLink[] }): React.
                   className="flex items-center justify-between gap-3 px-4 py-3 text-ink hover:bg-soft focus:outline-none focus-visible:bg-soft"
                 >
                   <span className="font-medium">{breed.name}</span>
-                  <span className="text-sm text-subtle">{breed.count === 1 ? "1 dog" : `${breed.count} dogs`}</span>
+                  <span className="text-sm text-subtle">{dogCountLabel(breed.count)}</span>
                 </Link>
               </li>
             ))}

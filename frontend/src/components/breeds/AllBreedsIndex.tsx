@@ -31,14 +31,17 @@ function BreedLinks({ breeds }: { breeds: Array<{ primary_breed?: string; href: 
  * one without depending on a group being expanded (#438). Types such as "Hound" have
  * pages too, listed apart so they don't read as breeds (#669).
  */
+const byName = (a: { primary_breed?: string }, b: { primary_breed?: string }): number =>
+  (a.primary_breed ?? "").localeCompare(b.primary_breed ?? "", "en");
+
 export default function AllBreedsIndex({ breeds, otherBreeds = [] }: AllBreedsIndexProps) {
-  const indexable = getIndexableBreeds(breeds)
-    .sort((a, b) => (a.primary_breed ?? "").localeCompare(b.primary_breed ?? "", "en"))
-    .map((breed) => ({ ...breed, href: `/breeds/${breed.breed_slug}` }));
-  const breedsOnly = indexable.filter((breed) => !isBreedType(breed.primary_breed));
-  const types = indexable.filter((breed) => isBreedType(breed.primary_breed));
-  const others = otherBreeds.map((breed) => ({ ...breed, href: breedCatalogHref(breed.primary_breed) }));
-  if (indexable.length === 0 && others.length === 0) return null;
+  const withPage = getIndexableBreeds(breeds).map((breed) => ({ ...breed, href: `/breeds/${breed.breed_slug}` }));
+  const withoutPage = otherBreeds.map((breed) => ({ ...breed, href: breedCatalogHref(breed.primary_breed) }));
+  const breedsOnly = withPage.filter((breed) => !isBreedType(breed.primary_breed)).sort(byName);
+  // A type too small for a page is still a type, not one of the other breeds
+  const types = [...withPage, ...withoutPage].filter((breed) => isBreedType(breed.primary_breed)).sort(byName);
+  const others = withoutPage.filter((breed) => !isBreedType(breed.primary_breed)).sort(byName);
+  if (breedsOnly.length === 0 && types.length === 0 && others.length === 0) return null;
 
   return (
     <div className="container mx-auto px-4 pb-12">

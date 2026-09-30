@@ -17,7 +17,7 @@ describe("/breeds metadata (#668)", () => {
       total_dogs: 1264,
       unique_breeds: 94,
       qualifying_breeds: [breed("Greyhound"), breed("Beagle"), breed("Hound", "crossbreed"), breed("Mixed Breed", "mixed")],
-      other_breeds: [{ primary_breed: "Dalmatian", count: 1 }],
+      other_breeds: [{ primary_breed: "Dalmatian", count: 1 }, { primary_breed: "Spitz", count: 2 }],
     });
 
     const metadata = await generateMetadata();

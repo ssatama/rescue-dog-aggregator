@@ -46,6 +46,19 @@ describe("AllBreedsIndex", () => {
     expect(others[1]).toHaveTextContent("Shar Pei (2)");
   });
 
+  it("keeps a type too small for a page with the types, sorted A–Z (#687 review)", () => {
+    const { container } = render(
+      <AllBreedsIndex
+        breeds={[{ primary_breed: "Hound", breed_slug: "hound", breed_type: "crossbreed", count: 16 }]}
+        otherBreeds={[{ primary_breed: "Foxhound", count: 2 }, { primary_breed: "Fox Terrier", count: 1 }, { primary_breed: "Spitz", count: 2 }]}
+      />,
+    );
+
+    const hrefsIn = (id: string) => Array.from(container.querySelectorAll(`#${id} a`)).map((a) => a.getAttribute("href"));
+    expect(hrefsIn("breed-types")).toEqual(["/breeds/hound", "/dogs?breed=Spitz"]);
+    expect(hrefsIn("other-breeds")).toEqual(["/dogs?breed=Fox%20Terrier", "/dogs?breed=Foxhound"]);
+  });
+
   it("renders nothing without breeds", () => {
     const { container } = render(<AllBreedsIndex breeds={[]} />);
 

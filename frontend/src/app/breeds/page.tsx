@@ -23,7 +23,8 @@ export const revalidate = 604800;
 // for one. Types like "Hound" and mixes are listed, but aren't breeds
 function listedBreeds(breedStats: BreedStats) {
   const withPage = getIndexableBreeds(breedStats.qualifying_breeds).filter((breed) => !isBreedType(breed.primary_breed));
-  return { withPage, other: breedStats.other_breeds ?? [] };
+  const other = (breedStats.other_breeds ?? []).filter((breed) => !isBreedType(breed.primary_breed));
+  return { withPage, other };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -62,7 +63,7 @@ export default async function BreedsPage() {
       href: `/breeds/${breed.breed_slug}`,
       count: breed.count,
     })),
-    ...listedBreeds(breedStats).other.map((breed) => ({
+    ...(breedStats.other_breeds ?? []).map((breed) => ({
       name: breed.primary_breed,
       href: breedCatalogHref(breed.primary_breed),
       count: breed.count,
