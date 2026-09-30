@@ -67,6 +67,13 @@ describe("BreedDetailClient (#500)", () => {
     expect(mockPush).toHaveBeenCalledWith("/breeds/lurcher?size=Large&available_country=DE", { scroll: false });
   });
 
+  it("gives the header one column when there are no photos to show (#660)", () => {
+    render(<BreedDetailClient initialBreedData={{ ...lurcher, topDogs: [] } as never} initialDogs={[]} />);
+
+    const header = screen.getByRole("heading", { level: 1, name: "Lurcher" }).closest(".grid");
+    expect(header).not.toHaveClass("lg:grid-cols-2");
+  });
+
   it("carries an old ?available_to_country= link over to the catalog's filter", () => {
     mockSearch = "available_to_country=DE&size=Large";
     render(<BreedDetailClient initialBreedData={lurcher as never} initialDogs={[]} />);

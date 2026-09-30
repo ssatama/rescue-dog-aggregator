@@ -10,6 +10,9 @@ import {
   getAgeStats,
   getAnimalsByCuration,
   getAnimalBySlug,
+  getAnimalsOrThrow,
+  getListCounts,
+  getListCountsOrThrow,
   clearCache,
 } from "../serverAnimalsService";
 import { reportError } from "../../utils/logger";
@@ -338,6 +341,51 @@ describe("Server Animals Service", () => {
       const result = await getBreedBySlug("non-existent-breed");
       expect(result).toBeNull();
     });
+
+    // A render that swallowed these would be cached by ISR with no photos
+    // (#659); throwing keeps the last good page instead
+    const labradorStats = {
+      total_dogs: 100,
+      unique_breeds: 5,
+      breed_groups: [],
+      qualifying_breeds: [
+        { primary_breed: "Labrador", breed_slug: "labrador", count: 50 },
+      ],
+      purebred_count: 50,
+      crossbreed_count: 50,
+    };
+
+    it("throws when the breed stats can't be fetched, rather than a 404", async () => {
+      (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
+
+      await expect(getBreedBySlug("labrador")).rejects.toThrow();
+    });
+
+    it("throws when the breed's dogs can't be fetched, rather than no photos", async () => {
+      (fetch as jest.Mock).mockImplementation(async (url: string) =>
+        url.includes("/breeds/stats")
+          ? { ok: true, status: 200, json: async () => labradorStats }
+          : { ok: false, status: 503, statusText: "Service Unavailable" },
+      );
+
+      await expect(getBreedBySlug("labrador")).rejects.toThrow();
+    });
+  });
+
+  describe("strict variants for ISR pages", () => {
+    it("getAnimalsOrThrow rejects where getAnimals falls back to []", async () => {
+      (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
+
+      await expect(getAnimals({ primary_breed: "Labrador" })).resolves.toEqual([]);
+      await expect(getAnimalsOrThrow({ primary_breed: "Labrador" })).rejects.toThrow();
+    });
+
+    it("getListCountsOrThrow rejects where getListCounts falls back to null", async () => {
+      (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
+
+      await expect(getListCounts({ primary_breed: "Labrador" })).resolves.toBeNull();
+      await expect(getListCountsOrThrow({ primary_breed: "Labrador" })).rejects.toThrow();
+    });
   });
 
   describe("getAnimalBySlug", () => {
@@ -396,6 +444,7 @@ describe("Server Animals Service", () => {
         ok: false,
         status: 404,
         statusText: "Not Found",
+        headers: new Headers(),
       });
 
       const result = await getAnimalBySlug("nonexistent-dog");

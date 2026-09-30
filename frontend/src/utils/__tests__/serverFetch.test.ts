@@ -25,7 +25,7 @@ const okResponse = (): Response =>
   ({ ok: true, status: 200 }) as unknown as Response;
 
 const errorResponse = (status: number): Response =>
-  ({ ok: false, status }) as unknown as Response;
+  ({ ok: false, status, headers: new Headers() }) as unknown as Response;
 
 const policy = (attempts: number, baseDelayMs = 0): RetryPolicy => ({
   attempts,
@@ -132,6 +132,22 @@ describe("fetchWithRetry", () => {
 
     expect(response.status).toBe(404);
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries Railway's edge 404, which means the app is unreachable", async () => {
+    const edge404 = {
+      ok: false,
+      status: 404,
+      headers: new Headers({ "x-railway-fallback": "true" }),
+    } as unknown as Response;
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce(edge404)
+      .mockResolvedValueOnce(okResponse());
+
+    const response = await fetchWithRetry("https://api.test/x", {}, policy(3));
+
+    expect(response.ok).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it("retries a network-level failure and returns the eventual response", async () => {

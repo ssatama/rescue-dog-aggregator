@@ -41,7 +41,14 @@ export function backoffDelayMs(policy: RetryPolicy, attempt: number): number {
   return policy.baseDelayMs * 2 ** attempt;
 }
 
-const isRetryableStatus = (status: number): boolean => status >= 500;
+// While the app is unreachable, Railway's edge answers every path with its own
+// 404 "Application not found" and this header. The app never sends it, so a
+// real 404 still fails at once; this one is an outage and gets the 5xx retry.
+const isRailwayFallback = (response: Response): boolean =>
+  response.status === 404 && response.headers.get("x-railway-fallback") === "true";
+
+const isRetryable = (response: Response): boolean =>
+  response.status >= 500 || isRailwayFallback(response);
 
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -77,7 +84,7 @@ export async function fetchWithRetry(
         attempt === 0 ? init : bypassRenderDedupe(init),
       );
 
-      if (!isRetryableStatus(response.status) || isLastAttempt) {
+      if (!isRetryable(response) || isLastAttempt) {
         return response;
       }
 

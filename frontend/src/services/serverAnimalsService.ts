@@ -139,67 +139,72 @@ interface AnimalQueryParams {
   status?: string;
 }
 
-export const getAnimals = cache(
+async function fetchAnimals(params: AnimalQueryParams = {}): Promise<Dog[]> {
+  const queryParams = new URLSearchParams();
 
-  async (params: AnimalQueryParams = {}): Promise<Dog[]> => {
-    const queryParams = new URLSearchParams();
+  if (params.limit) queryParams.append("limit", String(params.limit));
+  if (params.offset) queryParams.append("offset", String(params.offset));
+  if (params.search) queryParams.append("search", params.search);
+  if (params.size) queryParams.append("size", params.size);
+  if (params.standardized_size)
+    queryParams.append("standardized_size", params.standardized_size);
+  if (params.age_category)
+    queryParams.append("age_category", params.age_category);
+  if (params.sex) queryParams.append("sex", params.sex);
+  if (params.organization_id)
+    queryParams.append("organization_id", String(params.organization_id));
+  if (params.breed) queryParams.append("breed", params.breed);
+  if (params.breed_type) queryParams.append("breed_type", params.breed_type);
+  if (params.breed_group)
+    queryParams.append("breed_group", params.breed_group);
+  if (params.primary_breed)
+    queryParams.append("primary_breed", params.primary_breed);
+  if (params.location_country)
+    queryParams.append("location_country", params.location_country);
+  if (params.available_to_country)
+    queryParams.append("available_to_country", params.available_to_country);
+  if (params.available_to_region)
+    queryParams.append("available_to_region", params.available_to_region);
+  if (params.experience_level) queryParams.append("experience_level", params.experience_level);
+  if (params.sort_by) queryParams.append("sort_by", params.sort_by);
+  if (params.sort_order) queryParams.append("sort_order", params.sort_order);
+  if (params.sort) queryParams.append("sort", params.sort);
+  if (params.age_known) queryParams.append("age_known", "true");
+  if (params.curation_type)
+    queryParams.append("curation_type", params.curation_type);
+  if (params.animal_type)
+    queryParams.append("animal_type", params.animal_type);
+  if (params.status) queryParams.append("status", params.status);
 
-    if (params.limit) queryParams.append("limit", String(params.limit));
-    if (params.offset) queryParams.append("offset", String(params.offset));
-    if (params.search) queryParams.append("search", params.search);
-    if (params.size) queryParams.append("size", params.size);
-    if (params.standardized_size)
-      queryParams.append("standardized_size", params.standardized_size);
-    if (params.age_category)
-      queryParams.append("age_category", params.age_category);
-    if (params.sex) queryParams.append("sex", params.sex);
-    if (params.organization_id)
-      queryParams.append("organization_id", String(params.organization_id));
-    if (params.breed) queryParams.append("breed", params.breed);
-    if (params.breed_type) queryParams.append("breed_type", params.breed_type);
-    if (params.breed_group)
-      queryParams.append("breed_group", params.breed_group);
-    if (params.primary_breed)
-      queryParams.append("primary_breed", params.primary_breed);
-    if (params.location_country)
-      queryParams.append("location_country", params.location_country);
-    if (params.available_to_country)
-      queryParams.append("available_to_country", params.available_to_country);
-    if (params.available_to_region)
-      queryParams.append("available_to_region", params.available_to_region);
-    if (params.experience_level) queryParams.append("experience_level", params.experience_level);
-    if (params.sort_by) queryParams.append("sort_by", params.sort_by);
-    if (params.sort_order) queryParams.append("sort_order", params.sort_order);
-    if (params.sort) queryParams.append("sort", params.sort);
-    if (params.age_known) queryParams.append("age_known", "true");
-    if (params.curation_type)
-      queryParams.append("curation_type", params.curation_type);
-    if (params.animal_type)
-      queryParams.append("animal_type", params.animal_type);
-    if (params.status) queryParams.append("status", params.status);
+  const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
 
-    const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
+  const response = await fetchWithRetry(url, {
+    next: {
+      revalidate: 86400,
+      tags: ["animals"],
+    },
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
-    const response = await fetchWithRetry(url, {
-      next: {
-        revalidate: 86400,
-        tags: ["animals"],
-      },
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch animals: ${response.statusText}`);
+  }
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch animals: ${response.statusText}`);
-    }
+  const raw: unknown = await response.json();
+  const parsed = z.array(ApiDogSchema).parse(stripNulls(raw));
+  return transformApiDogsToDogs(parsed);
+}
 
-    const raw: unknown = await response.json();
-    const parsed = z.array(ApiDogSchema).parse(stripNulls(raw));
-    return transformApiDogsToDogs(parsed);
-  },
-  [],
-);
+export const getAnimals = cache(fetchAnimals, []);
+
+/**
+ * For ISR pages whose render must not succeed without these dogs: a failure
+ * throws, so Next keeps serving the last good page instead of caching an
+ * empty one (#659).
+ */
+export const getAnimalsOrThrow = cache(fetchAnimals);
 
 export const getStandardizedBreeds = cache(
   async (): Promise<string[]> => {
@@ -514,15 +519,25 @@ export const getAllAnimals = cache(
 );
 
  
+// getBreedStats' fallback has no breeds, which getBreedBySlug would take for
+// "no such breed" and answer with a 404
+async function getBreedStatsOrThrow(): Promise<BreedStats> {
+  const breedStats = await getBreedStats();
+  if (breedStats.error) {
+    throw new Error("Breed stats unavailable");
+  }
+  return breedStats;
+}
+
 export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData | null> => {
   try {
     if (slug === "mixed") {
-      const breedStats = await getBreedStats();
+      const breedStats = await getBreedStatsOrThrow();
       const mixedGroup = (
         breedStats.breed_groups as { name: string; count: number }[] | undefined
       )?.find((g) => g.name === "Mixed");
 
-      const candidateDogs = await getAnimals({
+      const candidateDogs = await getAnimalsOrThrow({
         breed_group: "Mixed",
         limit: 30,
         sort_by: "created_at",
@@ -541,7 +556,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
         logger.warn(`No dogs with images found for Mixed breeds out of ${candidateDogs.length} candidates`);
       }
 
-      const allMixedDogs = await getAnimals({
+      const allMixedDogs = await getAnimalsOrThrow({
         breed_group: "Mixed",
         limit: 200,
       });
@@ -714,8 +729,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
       };
     }
 
-    const breedStats = await getBreedStats();
-     
+    const breedStats = await getBreedStatsOrThrow();
     const breedData = breedStats.qualifying_breeds?.find(
       (breed) => breed.breed_slug === slug,
     );
@@ -725,7 +739,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
       return null;
     }
 
-    const candidateDogs = await getAnimals({
+    const candidateDogs = await getAnimalsOrThrow({
       primary_breed: breedData.primary_breed,
       limit: 30,
       sort_by: "created_at",
@@ -765,6 +779,27 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
   }
 });
 
+type ListFilter =
+  | { primary_breed: string }
+  | { breed_group: string }
+  | { organization_id: string }
+  | { age_category: string }
+  | Record<string, never>;
+
+async function fetchListCounts(listFilter: ListFilter): Promise<FilterCountsResponse> {
+  // Its own fetch: getFilterCounts revalidates every minute, and a page
+  // regenerates at its shortest fetch revalidate, not its own weekly one
+  const query = new URLSearchParams({ ...listFilter, age_known: "true" });
+  const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts?${query.toString()}`, {
+    next: { revalidate: 86400, tags: ["list-counts"] },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch list counts: ${response.statusText}`);
+  }
+  const raw: unknown = await response.json();
+  return FilterCountsResponseSchema.parse(stripNulls(raw));
+}
+
 /**
  * Unfiltered counts for one breed, rescue or age page, or for every dog
  * (country pages) (#500, #501, #502): a breed's practical stats, and how many
@@ -772,32 +807,18 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
  * failure leaves the counts out rather than failing the page.
  */
 export const getListCounts = cache(
-  async (
-    listFilter:
-      | { primary_breed: string }
-      | { breed_group: string }
-      | { organization_id: string }
-      | { age_category: string }
-      | Record<string, never>,
-  ): Promise<FilterCountsResponse | null> => {
+  async (listFilter: ListFilter): Promise<FilterCountsResponse | null> => {
     try {
-      // Its own fetch: getFilterCounts revalidates every minute, and a page
-      // regenerates at its shortest fetch revalidate, not its own weekly one
-      const query = new URLSearchParams({ ...listFilter, age_known: "true" });
-      const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts?${query.toString()}`, {
-        next: { revalidate: 86400, tags: ["list-counts"] },
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch list counts: ${response.statusText}`);
-      }
-      const raw: unknown = await response.json();
-      return FilterCountsResponseSchema.parse(stripNulls(raw));
+      return await fetchListCounts(listFilter);
     } catch (error) {
       reportError(error, { context: "getListCounts", ...listFilter });
       return null;
     }
   },
 );
+
+/** The breed pages' counts: a failure throws rather than leaving them out (#659). */
+export const getListCountsOrThrow = cache(fetchListCounts);
 
 interface EnhancedContent {
   description: string;

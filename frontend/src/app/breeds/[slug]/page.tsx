@@ -8,9 +8,9 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
   getBreedBySlug,
-  getAnimals,
+  getAnimalsOrThrow,
   getBreedStats,
-  getListCounts,
+  getListCountsOrThrow,
   getAllMetadata,
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
@@ -147,8 +147,8 @@ async function fetchBreedPageData(slug: string) {
   const breedFilter = slug === "mixed" ? { breed_group: "Mixed" } : { primary_breed: breedData.primary_breed };
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([
-    getAnimals({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
-    getListCounts(breedFilter),
+    getAnimalsOrThrow({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
+    getListCountsOrThrow(breedFilter),
     getAllMetadata(),
   ]);
 

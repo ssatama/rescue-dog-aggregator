@@ -201,6 +201,7 @@ describe("breedImagesService", () => {
       fetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
+        headers: new Headers(),
       });
 
       const result = await getBreedsWithImages();

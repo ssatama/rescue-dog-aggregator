@@ -8,8 +8,8 @@ import BreedDetailSkeleton from "@/components/ui/BreedDetailSkeleton";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
   getBreedBySlug,
-  getAnimals,
-  getListCounts,
+  getAnimalsOrThrow,
+  getListCountsOrThrow,
   getAllMetadata,
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
@@ -111,8 +111,8 @@ async function fetchMixedBreedData() {
 
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([
-    getAnimals({ breed_group: "Mixed", sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
-    getListCounts({ breed_group: "Mixed" }),
+    getAnimalsOrThrow({ breed_group: "Mixed", sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
+    getListCountsOrThrow({ breed_group: "Mixed" }),
     getAllMetadata(),
   ]);
 
