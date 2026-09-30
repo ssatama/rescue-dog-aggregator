@@ -372,16 +372,14 @@ describe("Server Animals Service", () => {
   });
 
   describe("getMixedBreedPageData", () => {
-    it("takes the group's count, and its age weighted over the group's breeds, with one fetch for photos (#667)", async () => {
+    it("takes the Mixed group's own count and age, with one fetch for photos (#667)", async () => {
       const stats = {
         total_dogs: 1264,
         unique_breeds: 94,
-        breed_groups: [{ name: "Mixed", count: 534 }],
+        // The group's age covers the same dogs as its count; a breed row's doesn't
+        breed_groups: [{ name: "Mixed", count: 534, average_age_months: 51 }],
         qualifying_breeds: [
-          // The age covers the same dogs as the count: every Mixed-group row, by its size
           { primary_breed: "Mixed Breed", breed_slug: "mixed-breed", breed_group: "Mixed", count: 500, average_age_months: 54 },
-          { primary_breed: "Terrier Mix", breed_slug: "terrier-mix", breed_group: "Mixed", count: 34, average_age_months: 12 },
-          { primary_breed: "Greyhound", breed_slug: "greyhound", breed_group: "Hound", count: 18, average_age_months: 80 },
         ],
         purebred_count: 0,
         crossbreed_count: 0,

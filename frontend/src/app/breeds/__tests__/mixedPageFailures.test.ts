@@ -36,25 +36,10 @@ describe("/breeds/mixed whose data fails (#659)", () => {
     await expect(MixedBreedsPage()).rejects.toThrow("API unreachable");
   });
 
-  describe("with no Mixed group in a good stats response", () => {
-    const phase = process.env.NEXT_PHASE;
-    afterEach(() => {
-      process.env.NEXT_PHASE = phase;
-    });
+  it("404s with no Mixed group in a good stats response: no mixed dogs are listed", async () => {
+    mock(getMixedBreedPageData).mockResolvedValue(null);
 
-    it("throws at request time, so ISR keeps the last good page", async () => {
-      delete process.env.NEXT_PHASE;
-      mock(getMixedBreedPageData).mockResolvedValue(null);
-
-      await expect(MixedBreedsPage()).rejects.toThrow("No Mixed group");
-    });
-
-    it("prerenders a 404 at build rather than fail every deploy", async () => {
-      process.env.NEXT_PHASE = "phase-production-build";
-      mock(getMixedBreedPageData).mockResolvedValue(null);
-
-      await expect(MixedBreedsPage()).rejects.toThrow("notFound()");
-    });
+    await expect(MixedBreedsPage()).rejects.toThrow("notFound()");
   });
 
   it("takes dogs, counts and filter options strictly", async () => {

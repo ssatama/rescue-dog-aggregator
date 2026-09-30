@@ -60,7 +60,8 @@ export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, classN
         </h1>
 
         <div className="flex flex-wrap gap-2">
-          {breedData.breed_group && breedData.breed_group !== "Unknown" && (
+          {/* "Mixed Group" under "Mixed Breed" would only repeat it */}
+          {breedData.breed_group && breedData.breed_group !== "Unknown" && breedData.breed_group !== "Mixed" && (
             <Badge variant="secondary" className="text-sm">
               {breedData.breed_group} Group
             </Badge>
@@ -87,7 +88,7 @@ export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, classN
           className="bg-orange-600 hover:bg-orange-700 text-white"
           onClick={handleScrollToDogs}
         >
-          See all {breedData.count} dogs
+          {breedData.count === 1 ? "See the 1 dog" : `See all ${breedData.count} dogs`}
         </Button>
       </div>
     </div>

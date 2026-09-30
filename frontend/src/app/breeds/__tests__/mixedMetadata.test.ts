@@ -13,16 +13,16 @@ describe("/breeds/mixed metadata (#664)", () => {
 
     const metadata = await generateMetadata();
 
-    expect(metadata.title).toBe("Mixed Breed Rescue Dogs for Adoption | 534 Unique Dogs Available");
+    expect(metadata.title).toBe("Mixed Breed Rescue Dogs for Adoption | 534 Available");
     expect(metadata.description).toMatch(/^Discover 534 unique mixed breed rescue dogs waiting for homes\. Average age 4\.5 yrs\./);
     expect(metadata.twitter?.description).toBe(metadata.description);
   });
 
-  it("drops the count from the title rather than cut it, when it doesn't fit", async () => {
-    (getMixedBreedPageData as unknown as jest.Mock).mockResolvedValue({ ...mixed, count: 12345 });
+  it("keeps the count in the title past a thousand dogs", async () => {
+    (getMixedBreedPageData as unknown as jest.Mock).mockResolvedValue({ ...mixed, count: 1234 });
 
     const { title } = await generateMetadata();
 
-    expect(title).toBe("Mixed Breed Rescue Dogs for Adoption");
+    expect(title).toBe("Mixed Breed Rescue Dogs for Adoption | 1234 Available");
   });
 });

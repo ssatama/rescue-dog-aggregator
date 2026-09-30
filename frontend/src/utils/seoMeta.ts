@@ -22,8 +22,8 @@ export function clampDescription(text: string): string {
 
 /**
  * The most of these segments, in order, that fits in 65 characters: a
- * title drops whole phrases (" Near You", then " | 45 Available") rather
- * than end on "| 45…". Only a first segment too long on its own is clamped.
+ * title drops whole phrases (" | 45 Available") rather than end on
+ * "| 45…". Only a first segment too long on its own is clamped.
  */
 export function fitTitle(...segments: string[]): string {
   for (let n = segments.length; n > 0; n--) {

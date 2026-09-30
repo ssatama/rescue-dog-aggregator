@@ -547,27 +547,16 @@ function pickGalleryDogs(candidateDogs: Dog[], label: string): SampleDog[] {
   return topDogs;
 }
 
-// The count-weighted mean of a group's breed ages, so the age describes the
-// same dogs as the group's count; left out when none has one
-function groupAverageAge(
-  breeds: Array<{ breed_group?: string; count: number; average_age_months?: number }>,
-  group: string,
-): number | undefined {
-  const aged = breeds.filter((b) => b.breed_group === group && b.average_age_months !== undefined);
-  const dogs = aged.reduce((sum, b) => sum + b.count, 0);
-  if (dogs === 0) return undefined;
-  return Math.round(aged.reduce((sum, b) => sum + b.count * b.average_age_months!, 0) / dogs);
-}
-
 // Neither of these catches: a failure fails the render, which keeps the last
 // good page and reaches Sentry once through onRequestError
 
 /**
- * /breeds/mixed. Null when a good stats response has no Mixed group, i.e.
- * no mixed dogs: the build prerenders a 404 then. At request time the page
- * throws instead, so ISR keeps the last good page (see mixed/page.tsx).
+ * /breeds/mixed. Null when a good stats response has no Mixed group, i.e. no
+ * mixed dogs: the page 404s, as a breed page does when its breed drops out,
+ * and returns when a scraper's purge brings the group back. Not memoized, so
+ * a null is never held past the stats it came from.
  */
-export const getMixedBreedPageData = cache(async (): Promise<BreedPageData | null> => {
+export async function getMixedBreedPageData(): Promise<BreedPageData | null> {
   const [breedStats, candidateDogs] = await Promise.all([
     getBreedStats.orThrow(),
     getAnimals.orThrow({
@@ -588,12 +577,13 @@ export const getMixedBreedPageData = cache(async (): Promise<BreedPageData | nul
     breed_type: "mixed",
     breed_group: "Mixed",
     count: mixedGroup.count,
-    average_age_months: groupAverageAge(breedStats.qualifying_breeds ?? [], "Mixed"),
+    // The group's own: the same dogs as its count
+    average_age_months: mixedGroup.average_age_months,
     topDogs: pickGalleryDogs(candidateDogs, "Mixed breeds"),
     description:
       "Every mixed breed is unique! These wonderful dogs combine traits from multiple breeds, creating diverse personalities, unique looks, and often fewer health issues. Each one has their own special story and character.",
   };
-});
+}
 
 export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData | null> => {
   // Not the fallback: it has no breeds, which would read as "no such breed"

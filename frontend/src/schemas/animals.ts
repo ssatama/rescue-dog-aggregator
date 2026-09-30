@@ -144,6 +144,7 @@ export const BreedGroupSchema = z
   .object({
     name: z.string(),
     count: z.number(),
+    average_age_months: z.number().optional(),
   })
   .passthrough();
 

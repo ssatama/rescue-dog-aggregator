@@ -80,6 +80,7 @@ class BreedGroupStats(BaseModel):
 
     name: str = Field(..., description="Breed group name")
     count: int = Field(..., description="Number of dogs in this breed group", ge=0)
+    average_age_months: int | None = Field(None, description="Average age of the group's dogs with a known age")
 
 
 class AgeDistribution(BaseModel):

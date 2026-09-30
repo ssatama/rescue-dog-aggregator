@@ -91,6 +91,18 @@ describe("BreedInfo", () => {
     expect(screen.queryByText(/Spitzs/)).not.toBeInTheDocument();
   });
 
+  it("says 'the 1 dog', not 'all 1 dogs'", () => {
+    render(<BreedInfo breedData={{ ...mockBreedData, count: 1 }} />);
+
+    expect(screen.getByRole("button", { name: "See the 1 dog" })).toBeInTheDocument();
+  });
+
+  it("has no 'Mixed Group' badge under 'Mixed Breed'", () => {
+    render(<BreedInfo breedData={{ ...mockBreedData, primary_breed: "Mixed Breed", breed_group: "Mixed" }} />);
+
+    expect(screen.queryByText("Mixed Group")).not.toBeInTheDocument();
+  });
+
   it("shows no 'Popular Breed' badge (#666)", () => {
     render(<BreedInfo breedData={{ ...mockBreedData, count: 534 }} />);
 
