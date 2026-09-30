@@ -550,27 +550,32 @@ function pickGalleryDogs(candidateDogs: Dog[], label: string): SampleDog[] {
 // Neither of these catches: a failure fails the render, which keeps the last
 // good page and reaches Sentry once through onRequestError
 
-/** /breeds/mixed: always there, so never null */
-export const getMixedBreedPageData = cache(async (): Promise<BreedPageData> => {
-  const breedStats = await getBreedStats.orThrow();
+/** /breeds/mixed; null when no dog is in the Mixed group, for a 404 rather than "0 available" */
+export const getMixedBreedPageData = cache(async (): Promise<BreedPageData | null> => {
+  const [breedStats, candidateDogs] = await Promise.all([
+    getBreedStats.orThrow(),
+    getAnimals.orThrow({
+      breed_group: "Mixed",
+      limit: 30,
+      sort_by: "created_at",
+      sort_order: "desc",
+    }),
+  ]);
   // The catalog lists the Mixed group, so the count is the group's; the age
   // is the stats' own, worked out the same way as every other breed's
   const mixedGroup = breedStats.breed_groups?.find((g) => g.name === "Mixed");
   const mixedStats = breedStats.qualifying_breeds?.find((b) => b.breed_slug === "mixed-breed");
-
-  const candidateDogs = await getAnimals.orThrow({
-    breed_group: "Mixed",
-    limit: 30,
-    sort_by: "created_at",
-    sort_order: "desc",
-  });
+  if (!mixedGroup?.count) {
+    logger.warn("No Mixed group in the breed stats");
+    return null;
+  }
 
   return {
     primary_breed: "Mixed Breed",
     breed_slug: "mixed",
     breed_type: "mixed",
     breed_group: "Mixed",
-    count: mixedGroup?.count || 0,
+    count: mixedGroup.count,
     average_age_months: mixedStats?.average_age_months,
     topDogs: pickGalleryDogs(candidateDogs, "Mixed breeds"),
     description:

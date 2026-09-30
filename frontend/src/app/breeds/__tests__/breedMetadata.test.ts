@@ -29,6 +29,15 @@ describe("breed page meta description (#664)", () => {
     expect(description).toMatch(/[a-z]…$/);
   });
 
+  it("keeps a long breed's title to 65 characters, cut at a word", async () => {
+    (getBreedBySlug as unknown as jest.Mock).mockResolvedValue({ ...borderCollie, primary_breed: "Staffordshire Bull Terrier" });
+
+    const { title } = await generateMetadata(params);
+
+    expect((title as string).length).toBeLessThanOrEqual(65);
+    expect(title).toMatch(/^Staffordshire Bull Terrier Rescue Dogs for Adoption/);
+  });
+
   it("leaves the age out when it isn't known", async () => {
     (getBreedBySlug as unknown as jest.Mock).mockResolvedValue({ ...borderCollie, average_age_months: undefined });
 
@@ -43,6 +52,7 @@ describe("averageAgeSentence", () => {
     [undefined, ""],
     [1, "Average age 1 mo. "],
     [12, "Average age 1 yr. "],
+    [13, "Average age 1 yr. "],
     [83, "Average age 6.9 yrs. "],
   ])("%p months → %p", (months, sentence) => {
     expect(averageAgeSentence(months)).toBe(sentence);

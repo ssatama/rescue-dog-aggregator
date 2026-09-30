@@ -456,18 +456,15 @@ describe("Server Animals Service", () => {
       );
     });
 
-    it("leaves the mixed page's age out when its 200 dogs can't be fetched, never 36 months", async () => {
-      const stats = { total_dogs: 1, unique_breeds: 1, breed_groups: [{ name: "Mixed", count: 534 }], qualifying_breeds: [] };
-      (fetch as jest.Mock).mockImplementation(async (url: string) => {
-        if (url.includes("/breeds/stats")) return { ok: true, status: 200, json: async () => stats };
-        if (url.includes("limit=200")) return { ok: false, status: 503, statusText: "Service Unavailable", headers: new Headers() };
-        return { ok: true, status: 200, json: async () => [] };
-      });
+    it("has no mixed page, rather than '0 available', when the Mixed group is missing", async () => {
+      const stats = { total_dogs: 1, unique_breeds: 1, breed_groups: [{ name: "Hound", count: 3 }], qualifying_breeds: [] };
+      (fetch as jest.Mock).mockImplementation(async (url: string) => ({
+        ok: true,
+        status: 200,
+        json: async () => (url.includes("/breeds/stats") ? stats : []),
+      }));
 
-      const mixed = await getBreedBySlug("mixed");
-
-      expect(mixed?.average_age_months).toBeUndefined();
-      expect(mixed?.count).toBe(534);
+      await expect(getMixedBreedPageData()).resolves.toBeNull();
     });
   });
 

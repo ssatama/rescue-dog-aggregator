@@ -12,8 +12,9 @@ import useShowAdoptable from "@/hooks/dogs/useShowAdoptable";
 import { buildPracticalStats } from "@/utils/breedPracticalStats";
 import type { BreedDetailClientProps, SampleDog } from "@/types/breeds";
 
-export function isMixedBreedPage(breedData: { breed_slug?: string; breed_type?: string }): boolean {
-  return breedData.breed_slug === "mixed" || breedData.breed_type === "mixed";
+// Only /breeds/mixed: a mixed-type breed with a page of its own lists its own dogs
+export function isMixedBreedPage(breedData: { breed_slug?: string }): boolean {
+  return breedData.breed_slug === "mixed";
 }
 
 /**
