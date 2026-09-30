@@ -53,9 +53,8 @@ describe("getRetryPolicy", () => {
   });
 
   // Exceeding it means Next kills the page for running long, which is the very
-  // failure the retry exists to prevent. A breed page makes three sequential
-  // calls (getBreedStats, getAnimals inside getBreedBySlug, then the page's
-  // own fetches); four leaves room for one more. Leave a quarter of the
+  // failure the retry exists to prevent. Breed pages aren't prerendered, so
+  // this budgets any page at four sequential calls. Leave a quarter of the
   // timeout for the network.
   it("keeps the prerender budget inside staticPageGenerationTimeout", () => {
     process.env.NEXT_PHASE = "phase-production-build";

@@ -28,6 +28,13 @@ describe("BreedStatistics", () => {
       expect(screen.getByText("8 mo")).toBeInTheDocument();
     });
 
+    it("no longer shows the sex ratio, which the stats row still sends (#500)", () => {
+      render(<BreedStatistics breedData={{ ...mockBreedData, sex_distribution: { male: 25, female: 17 } }} />);
+
+      expect(screen.queryByTestId("male-bar")).not.toBeInTheDocument();
+      expect(screen.queryByText("25")).not.toBeInTheDocument();
+    });
+
     it("leaves the age out when it is unknown, never N/A", () => {
       render(<BreedStatistics breedData={{ ...mockBreedData, average_age_months: null }} />);
 

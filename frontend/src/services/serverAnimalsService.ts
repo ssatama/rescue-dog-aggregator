@@ -2,7 +2,6 @@ import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
 import { stripNulls } from "../utils/api";
 import { fetchWithRetry } from "../utils/serverFetch";
-import { strictAtRuntime } from "../utils/isrFetch";
 import { logger, reportError } from "../utils/logger";
 import * as Sentry from "@sentry/nextjs";
 import {
@@ -560,7 +559,7 @@ function pickGalleryDogs(candidateDogs: Dog[], label: string): SampleDog[] {
 export async function getMixedBreedPageData(): Promise<BreedPageData | null> {
   const [breedStats, candidateDogs] = await Promise.all([
     getBreedStats.orThrow(),
-    strictAtRuntime(getAnimals)({
+    getAnimals.orThrow({
       breed_group: "Mixed",
       limit: 30,
       sort: "newest",
@@ -598,7 +597,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
     return null;
   }
 
-  const candidateDogs = await strictAtRuntime(getAnimals)({
+  const candidateDogs = await getAnimals.orThrow({
     primary_breed: breedData.primary_breed,
     limit: 30,
     sort: "newest",
