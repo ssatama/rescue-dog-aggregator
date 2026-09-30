@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import { cn } from "@/lib/utils";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import BreedPracticalStats from "@/components/breeds/BreedPracticalStats";
@@ -51,6 +52,15 @@ export default function BreedDetailClient({
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }, [searchParams, router, pathname]);
 
+  const galleryDogs = (breedData.topDogs ?? [])
+    .filter((dog): dog is SampleDog & { primary_image_url: string } => Boolean(dog.primary_image_url))
+    .map((dog, index) => ({
+      id: dog.slug || index,
+      name: dog.name,
+      slug: dog.slug,
+      primary_image_url: dog.primary_image_url,
+    }));
+
   const practicalStats = useMemo(() => buildPracticalStats(breedCounts), [breedCounts]);
   const initialParams = useMemo(
     () => (isMixed ? { breed_group: "Mixed" } : { primary_breed: breedData.primary_breed }),
@@ -61,18 +71,14 @@ export default function BreedDetailClient({
     <div className="mx-auto max-w-7xl py-6">
       <Breadcrumbs items={breadcrumbItems} schema={false} />
 
-      <div className="mb-8 mt-6 grid grid-cols-1 gap-8 lg:mb-12 lg:mt-8 lg:grid-cols-2 lg:gap-12">
+      <div
+        className={cn(
+          "mb-8 mt-6 grid grid-cols-1 gap-8 lg:mb-12 lg:mt-8 lg:gap-12",
+          galleryDogs.length > 0 && "lg:grid-cols-2",
+        )}
+      >
         <BreedPhotoGallery
-          dogs={(breedData.topDogs ?? [])
-            .filter(
-              (dog): dog is SampleDog & { primary_image_url: string } => Boolean(dog.primary_image_url),
-            )
-            .map((dog, index) => ({
-              id: dog.slug || index,
-              name: dog.name,
-              slug: dog.slug,
-              primary_image_url: dog.primary_image_url,
-            }))}
+          dogs={galleryDogs}
           breedName={breedData.primary_breed}
           className="order-2 w-full lg:order-1"
         />

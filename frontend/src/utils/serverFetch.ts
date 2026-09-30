@@ -1,3 +1,5 @@
+import { isRailwayFallback } from "./railwayFallback";
+
 // logger.warn only emits in development, and this fires during production
 // builds — the one place the retry needs to be visible in the log.
 const warn = (message: string, ...rest: unknown[]): void => {
@@ -41,7 +43,9 @@ export function backoffDelayMs(policy: RetryPolicy, attempt: number): number {
   return policy.baseDelayMs * 2 ** attempt;
 }
 
-const isRetryableStatus = (status: number): boolean => status >= 500;
+// Railway's edge 404 is an outage, so it gets the 5xx retry
+const isRetryable = (response: Response): boolean =>
+  response.status >= 500 || isRailwayFallback(response);
 
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -58,6 +62,12 @@ const bypassRenderDedupe = (init?: RequestInit): RequestInit => ({
   ...init,
   signal: new AbortController().signal,
 });
+
+// Unread, a dropped response holds its connection until GC. Not awaited, and
+// its failure ignored: it must never replace the error being reported
+const release = (response: Response): void => {
+  void response.body?.cancel().catch(() => {});
+};
 
 export async function fetchWithRetry(
   url: string,
@@ -77,9 +87,15 @@ export async function fetchWithRetry(
         attempt === 0 ? init : bypassRenderDedupe(init),
       );
 
-      if (!isRetryableStatus(response.status) || isLastAttempt) {
+      if (isLastAttempt && isRailwayFallback(response)) {
+        // Returned, it would read as "no such dog" and the page would 404
+        release(response);
+        throw new Error(`API unreachable (Railway edge 404) after ${policy.attempts} attempts: ${url}`);
+      }
+      if (!isRetryable(response) || isLastAttempt) {
         return response;
       }
+      release(response);
 
       warn(
         `Retrying ${url} after HTTP ${response.status} (attempt ${attempt + 1}/${policy.attempts})`,

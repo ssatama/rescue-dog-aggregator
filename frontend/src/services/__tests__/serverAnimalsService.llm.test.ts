@@ -195,6 +195,7 @@ describe("getAnimalBySlug with LLM enhancement", () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 404,
+      headers: new Headers(),
     });
 
     const result = await getAnimalBySlug("non-existent");

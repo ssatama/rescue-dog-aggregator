@@ -42,34 +42,21 @@ export const clearCache = (): void => {
  
 type AsyncFn = (...args: any[]) => Promise<any>;
 
-const cache = <T extends AsyncFn>(
-  fn: T,
-  errorFallback?: Awaited<ReturnType<T>>,
-): T => {
-  if (process.env.NODE_ENV === "test") {
-    if (errorFallback === undefined) return fn;
-    const withFallback = (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-      try {
-        return await fn(...args);
-      } catch (error) {
-        reportError(error, { context: "cache-test-fallback" });
-        const cloned = Array.isArray(errorFallback)
-          ? ([...errorFallback] as ReturnType<T>)
-          : typeof errorFallback === "object" && errorFallback !== null
-            ? ({ ...errorFallback } as ReturnType<T>)
-            : (errorFallback as ReturnType<T>);
-        return cloned;
-      }
-    }) as T;
-    return withFallback;
-  }
-
+const functionIdOf = (fn: AsyncFn): number => {
   if (!functionIds.has(fn)) {
     functionIds.set(fn, functionCounter++);
   }
-  const functionId = functionIds.get(fn);
+  return functionIds.get(fn)!;
+};
 
-  const cached = (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+// Memoizes fn for CACHE_TTL. A failure is never stored, so the next call
+// tries again.
+const memoize = <T extends AsyncFn>(fn: T): T => {
+  if (process.env.NODE_ENV === "test") return fn;
+
+  const functionId = functionIdOf(fn);
+
+  return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
     const key = `fn_${functionId}_${JSON.stringify(args)}`;
 
     const entry = cacheMap.get(key);
@@ -77,39 +64,62 @@ const cache = <T extends AsyncFn>(
       return entry.data as ReturnType<T>;
     }
 
-    try {
-      const result = await fn(...args);
-      cacheMap.set(key, {
-        data: result,
-        timestamp: Date.now(),
-      });
+    const result = await fn(...args);
+    cacheMap.set(key, {
+      data: result,
+      timestamp: Date.now(),
+    });
 
-      if (cacheMap.size > 100) {
-        const now = Date.now();
-        for (const [k, v] of cacheMap.entries()) {
-          if (now - v.timestamp > CACHE_TTL) {
-            cacheMap.delete(k);
-          }
+    if (cacheMap.size > 100) {
+      const now = Date.now();
+      for (const [k, v] of cacheMap.entries()) {
+        if (now - v.timestamp > CACHE_TTL) {
+          cacheMap.delete(k);
         }
       }
+    }
 
-      return result;
+    return result;
+  }) as T;
+};
+
+type Cached<T extends AsyncFn> = T & {
+  /**
+   * The same fetch without the fallback: a failure throws. For ISR pages,
+   * where a render that succeeded on fallback data is cached as if it were
+   * real, and one that throws keeps the last good page instead (#659).
+   */
+  orThrow: T;
+};
+
+// Only a fetcher with a fallback gets .orThrow: one without already throws,
+// or handles its own failure, and .orThrow would promise a throw it can't keep
+function cache<T extends AsyncFn>(fn: T): T;
+function cache<T extends AsyncFn>(fn: T, errorFallback: Awaited<ReturnType<T>>): Cached<T>;
+function cache<T extends AsyncFn>(fn: T, errorFallback?: Awaited<ReturnType<T>>): T | Cached<T> {
+  const strict = memoize(fn);
+  if (errorFallback === undefined) {
+    return strict;
+  }
+
+  const context = `cache-fn-${functionIdOf(fn)}`;
+  const withFallback = (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+    try {
+      return await strict(...args);
     } catch (error) {
-      if (errorFallback !== undefined) {
-        reportError(error, { context: `cache-fn-${functionId}` });
-        const cloned = Array.isArray(errorFallback)
-          ? ([...errorFallback] as ReturnType<T>)
+      reportError(error, { context });
+      return (
+        Array.isArray(errorFallback)
+          ? [...errorFallback]
           : typeof errorFallback === "object" && errorFallback !== null
-            ? ({ ...errorFallback } as ReturnType<T>)
-            : (errorFallback as ReturnType<T>);
-        return cloned;
-      }
-      throw error;
+            ? { ...errorFallback }
+            : errorFallback
+      ) as ReturnType<T>;
     }
   }) as T;
 
-  return cached;
-};
+  return Object.assign(withFallback, { orThrow: strict });
+}
 
 const API_URL = getApiUrl();
 
@@ -140,7 +150,6 @@ interface AnimalQueryParams {
 }
 
 export const getAnimals = cache(
-
   async (params: AnimalQueryParams = {}): Promise<Dog[]> => {
     const queryParams = new URLSearchParams();
 
@@ -441,13 +450,20 @@ interface AllMetadata {
   organizations: Array<{ id: number | string | null; name: string; slug?: string }>;
 }
 
-export async function getAllMetadata(): Promise<AllMetadata> {
+/**
+ * The catalog's filter options. `strict` throws on a failed fetch instead of
+ * leaving that filter with only its "Any" option, for pages that must not be
+ * cached that way (#659).
+ */
+export async function getAllMetadata({ strict = false } = {}): Promise<AllMetadata> {
+  const pick = <T extends { orThrow: unknown }>(fetcher: T): T | T["orThrow"] =>
+    strict ? fetcher.orThrow : fetcher;
   const [breeds, locationCountries, availableCountries, organizations] =
     await Promise.all([
-      getStandardizedBreeds(),
-      getLocationCountries(),
-      getAvailableCountries(),
-      getOrganizations(),
+      pick(getStandardizedBreeds)(),
+      pick(getLocationCountries)(),
+      pick(getAvailableCountries)(),
+      pick(getOrganizations)(),
     ]);
 
   return {
@@ -514,219 +530,17 @@ export const getAllAnimals = cache(
 );
 
  
+// No catch: a failure fails the render, which keeps the last good page and
+// reaches Sentry once through onRequestError
 export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData | null> => {
-  try {
-    if (slug === "mixed") {
-      const breedStats = await getBreedStats();
-      const mixedGroup = (
-        breedStats.breed_groups as { name: string; count: number }[] | undefined
-      )?.find((g) => g.name === "Mixed");
+  if (slug === "mixed") {
+    const breedStats = await getBreedStats.orThrow();
+    const mixedGroup = (
+      breedStats.breed_groups as { name: string; count: number }[] | undefined
+    )?.find((g) => g.name === "Mixed");
 
-      const candidateDogs = await getAnimals({
-        breed_group: "Mixed",
-        limit: 30,
-        sort_by: "created_at",
-        sort_order: "desc",
-      });
-      const topDogs: SampleDog[] = candidateDogs
-        .filter((dog: Dog) => dog.primary_image_url && dog.slug)
-        .slice(0, 6)
-        .map((dog) => ({
-          name: dog.name,
-          slug: dog.slug!,
-          primary_image_url: dog.primary_image_url,
-        }));
-
-      if (topDogs.length === 0 && candidateDogs.length > 0) {
-        logger.warn(`No dogs with images found for Mixed breeds out of ${candidateDogs.length} candidates`);
-      }
-
-      const allMixedDogs = await getAnimals({
-        breed_group: "Mixed",
-        limit: 200,
-      });
-
-      const organizationSet = new Set<string>();
-      const countrySet = new Set<string>();
-
-      if (breedStats?.qualifying_breeds) {
-        breedStats.qualifying_breeds.forEach((breed) => {
-          if (breed.breed_group === "Mixed" || breed.breed_type === "mixed") {
-            if (breed.organizations) {
-              breed.organizations.forEach((org: unknown) =>
-                organizationSet.add(String(org)),
-              );
-            }
-            if (breed.countries) {
-              breed.countries.forEach((country: string) =>
-                countrySet.add(country),
-              );
-            }
-          }
-        });
-      }
-
-      const personalityAggregation: Record<string, number> = {
-        energy_level: 0,
-        affection: 0,
-        trainability: 0,
-        independence: 0,
-      };
-
-      const personalityCount: Record<string, number> = {
-        energy_level: 0,
-        affection: 0,
-        trainability: 0,
-        independence: 0,
-      };
-
-      const traitsMap = new Map<string, number>();
-
-      let totalAgeMonths = 0;
-      let ageCount = 0;
-
-       
-      allMixedDogs.forEach((dog) => {
-        if (dog.organization_id) {
-          organizationSet.add(String(dog.organization_id));
-        }
-
-        if (dog.organization?.country) {
-          countrySet.add(dog.organization.country);
-        } else if (dog.available_country) {
-          countrySet.add(dog.available_country);
-        } else if (dog.country) {
-          countrySet.add(dog.country);
-        }
-
-        if (dog.age_min_months && dog.age_max_months) {
-          const avgAge = (dog.age_min_months + dog.age_max_months) / 2;
-          totalAgeMonths += avgAge;
-          ageCount++;
-        }
-
-        if (dog.properties) {
-          ["energy_level", "affection", "trainability", "independence"].forEach(
-            (trait) => {
-              if (
-                dog.properties?.[trait] !== undefined &&
-                dog.properties?.[trait] !== null
-              ) {
-                const value = Number(dog.properties?.[trait]);
-                if (!isNaN(value) && value >= 0 && value <= 100) {
-                  personalityAggregation[trait] += value;
-                  personalityCount[trait]++;
-                }
-              }
-            },
-          );
-
-          if (dog.properties.personality_traits) {
-            const traits = Array.isArray(dog.properties.personality_traits)
-              ? dog.properties.personality_traits
-              : [dog.properties.personality_traits];
-            traits.forEach((trait: unknown) => {
-              if (trait && typeof trait === "string") {
-                traitsMap.set(trait, (traitsMap.get(trait) || 0) + 1);
-              }
-            });
-          }
-        }
-      });
-
-      const getMetric = (trait: string): { percentage: number; label: string } => {
-        const defaults: Record<string, number> = {
-          energy_level: 60, affection: 80, trainability: 70, independence: 50,
-        };
-        const percentage = personalityCount[trait] > 0
-          ? Math.round(personalityAggregation[trait] / personalityCount[trait])
-          : (defaults[trait] ?? 50);
-
-        const label =
-          percentage <= 20 ? "Very Low" :
-          percentage <= 40 ? "Low" :
-          percentage <= 60 ? "Medium" :
-          percentage <= 80 ? "High" : "Very High";
-
-        return { percentage, label };
-      };
-
-      const personalityMetrics: PersonalityMetrics = {
-        energy_level: getMetric("energy_level"),
-        affection: getMetric("affection"),
-        trainability: getMetric("trainability"),
-        independence: getMetric("independence"),
-      };
-
-      const commonTraits = Array.from(traitsMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([trait]) => trait);
-
-      if (commonTraits.length === 0) {
-        commonTraits.push(
-          "Affectionate",
-          "Gentle",
-          "Loyal",
-          "Smart",
-          "Loving",
-        );
-      }
-
-      const experienceDistribution = {
-        first_time_ok: 0,
-        some_experience: 0,
-        experienced: 0,
-      };
-
-      allMixedDogs.forEach((dog) => {
-        if (dog.properties?.experience_level) {
-          const level = dog.properties.experience_level as string;
-          if (level === "first_time_ok") {
-            experienceDistribution.first_time_ok++;
-          } else if (level === "some_experience") {
-            experienceDistribution.some_experience++;
-          } else if (level === "experienced") {
-            experienceDistribution.experienced++;
-          }
-        }
-      });
-
-      const avgAgeMonths =
-        ageCount > 0 ? Math.round(totalAgeMonths / ageCount) : 36;
-
-      return {
-        primary_breed: "Mixed Breed",
-        breed_slug: "mixed",
-        breed_type: "mixed",
-        breed_group: "Mixed",
-        count: mixedGroup?.count || 0,
-        organizations: Array.from(organizationSet).slice(0, 10).map(String),
-        countries: Array.from(countrySet),
-        topDogs: topDogs,
-        description:
-          "Every mixed breed is unique! These wonderful dogs combine traits from multiple breeds, creating diverse personalities, unique looks, and often fewer health issues. Each one has their own special story and character.",
-        personality_metrics: personalityMetrics,
-        personality_traits: commonTraits,
-        experience_distribution: experienceDistribution,
-        average_age: avgAgeMonths / 12,
-        average_age_months: avgAgeMonths,
-      };
-    }
-
-    const breedStats = await getBreedStats();
-     
-    const breedData = breedStats.qualifying_breeds?.find(
-      (breed) => breed.breed_slug === slug,
-    );
-
-    if (!breedData) {
-      logger.warn(`Breed not found in qualifying breeds: ${slug}`);
-      return null;
-    }
-
-    const candidateDogs = await getAnimals({
-      primary_breed: breedData.primary_breed,
+    const candidateDogs = await getAnimals.orThrow({
+      breed_group: "Mixed",
       limit: 30,
       sort_by: "created_at",
       sort_order: "desc",
@@ -741,63 +555,260 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
       }));
 
     if (topDogs.length === 0 && candidateDogs.length > 0) {
-      logger.warn(`No dogs with images found for "${breedData.primary_breed}" out of ${candidateDogs.length} candidates`);
+      logger.warn(`No dogs with images found for Mixed breeds out of ${candidateDogs.length} candidates`);
     }
 
-    return {
-      ...breedData,
-      breed_slug: slug,
-      topDogs,
-      description:
-        getBreedDescription(breedData.primary_breed) ||
-        `${breedData.primary_breed} dogs are wonderful companions looking for loving homes.`,
-    };
-  } catch (error) {
-    logger.error(`Error fetching breed data for ${slug}:`, error);
-    reportError(error, { context: "getBreedBySlug", slug });
-    Sentry.withScope((scope) => {
-      scope.setTag("feature", "animals");
-      scope.setTag("operation", "getBreedBySlug");
-      scope.setContext("request", { slug });
-      Sentry.captureException(error);
+    // Only for the average age: a failure leaves it out, not the page
+    const allMixedDogs = await getAnimals({
+      breed_group: "Mixed",
+      limit: 200,
     });
-    throw error;
+
+    const organizationSet = new Set<string>();
+    const countrySet = new Set<string>();
+
+    if (breedStats?.qualifying_breeds) {
+      breedStats.qualifying_breeds.forEach((breed) => {
+        if (breed.breed_group === "Mixed" || breed.breed_type === "mixed") {
+          if (breed.organizations) {
+            breed.organizations.forEach((org: unknown) =>
+              organizationSet.add(String(org)),
+            );
+          }
+          if (breed.countries) {
+            breed.countries.forEach((country: string) =>
+              countrySet.add(country),
+            );
+          }
+        }
+      });
+    }
+
+    const personalityAggregation: Record<string, number> = {
+      energy_level: 0,
+      affection: 0,
+      trainability: 0,
+      independence: 0,
+    };
+
+    const personalityCount: Record<string, number> = {
+      energy_level: 0,
+      affection: 0,
+      trainability: 0,
+      independence: 0,
+    };
+
+    const traitsMap = new Map<string, number>();
+
+    let totalAgeMonths = 0;
+    let ageCount = 0;
+
+     
+    allMixedDogs.forEach((dog) => {
+      if (dog.organization_id) {
+        organizationSet.add(String(dog.organization_id));
+      }
+
+      if (dog.organization?.country) {
+        countrySet.add(dog.organization.country);
+      } else if (dog.available_country) {
+        countrySet.add(dog.available_country);
+      } else if (dog.country) {
+        countrySet.add(dog.country);
+      }
+
+      if (dog.age_min_months && dog.age_max_months) {
+        const avgAge = (dog.age_min_months + dog.age_max_months) / 2;
+        totalAgeMonths += avgAge;
+        ageCount++;
+      }
+
+      if (dog.properties) {
+        ["energy_level", "affection", "trainability", "independence"].forEach(
+          (trait) => {
+            if (
+              dog.properties?.[trait] !== undefined &&
+              dog.properties?.[trait] !== null
+            ) {
+              const value = Number(dog.properties?.[trait]);
+              if (!isNaN(value) && value >= 0 && value <= 100) {
+                personalityAggregation[trait] += value;
+                personalityCount[trait]++;
+              }
+            }
+          },
+        );
+
+        if (dog.properties.personality_traits) {
+          const traits = Array.isArray(dog.properties.personality_traits)
+            ? dog.properties.personality_traits
+            : [dog.properties.personality_traits];
+          traits.forEach((trait: unknown) => {
+            if (trait && typeof trait === "string") {
+              traitsMap.set(trait, (traitsMap.get(trait) || 0) + 1);
+            }
+          });
+        }
+      }
+    });
+
+    const getMetric = (trait: string): { percentage: number; label: string } => {
+      const defaults: Record<string, number> = {
+        energy_level: 60, affection: 80, trainability: 70, independence: 50,
+      };
+      const percentage = personalityCount[trait] > 0
+        ? Math.round(personalityAggregation[trait] / personalityCount[trait])
+        : (defaults[trait] ?? 50);
+
+      const label =
+        percentage <= 20 ? "Very Low" :
+        percentage <= 40 ? "Low" :
+        percentage <= 60 ? "Medium" :
+        percentage <= 80 ? "High" : "Very High";
+
+      return { percentage, label };
+    };
+
+    const personalityMetrics: PersonalityMetrics = {
+      energy_level: getMetric("energy_level"),
+      affection: getMetric("affection"),
+      trainability: getMetric("trainability"),
+      independence: getMetric("independence"),
+    };
+
+    const commonTraits = Array.from(traitsMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([trait]) => trait);
+
+    if (commonTraits.length === 0) {
+      commonTraits.push(
+        "Affectionate",
+        "Gentle",
+        "Loyal",
+        "Smart",
+        "Loving",
+      );
+    }
+
+    const experienceDistribution = {
+      first_time_ok: 0,
+      some_experience: 0,
+      experienced: 0,
+    };
+
+    allMixedDogs.forEach((dog) => {
+      if (dog.properties?.experience_level) {
+        const level = dog.properties.experience_level as string;
+        if (level === "first_time_ok") {
+          experienceDistribution.first_time_ok++;
+        } else if (level === "some_experience") {
+          experienceDistribution.some_experience++;
+        } else if (level === "experienced") {
+          experienceDistribution.experienced++;
+        }
+      }
+    });
+
+    // Left out when no dog has an age, or the fetch failed: never invented
+    const avgAgeMonths =
+      ageCount > 0 ? Math.round(totalAgeMonths / ageCount) : undefined;
+
+    return {
+      primary_breed: "Mixed Breed",
+      breed_slug: "mixed",
+      breed_type: "mixed",
+      breed_group: "Mixed",
+      count: mixedGroup?.count || 0,
+      organizations: Array.from(organizationSet).slice(0, 10).map(String),
+      countries: Array.from(countrySet),
+      topDogs: topDogs,
+      description:
+        "Every mixed breed is unique! These wonderful dogs combine traits from multiple breeds, creating diverse personalities, unique looks, and often fewer health issues. Each one has their own special story and character.",
+      personality_metrics: personalityMetrics,
+      personality_traits: commonTraits,
+      experience_distribution: experienceDistribution,
+      average_age: avgAgeMonths === undefined ? undefined : avgAgeMonths / 12,
+      average_age_months: avgAgeMonths,
+    };
   }
+
+  // Not the fallback: it has no breeds, which would read as "no such breed"
+  const breedStats = await getBreedStats.orThrow();
+  const breedData = breedStats.qualifying_breeds?.find(
+    (breed) => breed.breed_slug === slug,
+  );
+
+  if (!breedData) {
+    logger.warn(`Breed not found in qualifying breeds: ${slug}`);
+    return null;
+  }
+
+  const candidateDogs = await getAnimals.orThrow({
+    primary_breed: breedData.primary_breed,
+    limit: 30,
+    sort_by: "created_at",
+    sort_order: "desc",
+  });
+  const topDogs: SampleDog[] = candidateDogs
+    .filter((dog: Dog) => dog.primary_image_url && dog.slug)
+    .slice(0, 6)
+    .map((dog) => ({
+      name: dog.name,
+      slug: dog.slug!,
+      primary_image_url: dog.primary_image_url,
+    }));
+
+  if (topDogs.length === 0 && candidateDogs.length > 0) {
+    logger.warn(`No dogs with images found for "${breedData.primary_breed}" out of ${candidateDogs.length} candidates`);
+  }
+
+  return {
+    ...breedData,
+    breed_slug: slug,
+    topDogs,
+    description:
+      getBreedDescription(breedData.primary_breed) ||
+      `${breedData.primary_breed} dogs are wonderful companions looking for loving homes.`,
+  };
 });
+
+type ListFilter =
+  | { primary_breed: string }
+  | { breed_group: string }
+  | { organization_id: string }
+  | { age_category: string }
+  | Record<string, never>;
+
+async function fetchListCounts(listFilter: ListFilter): Promise<FilterCountsResponse | null> {
+  // Its own fetch: getFilterCounts revalidates every minute, and a page
+  // regenerates at its shortest fetch revalidate, not its own weekly one
+  const query = new URLSearchParams({ ...listFilter, age_known: "true" });
+  try {
+    const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts?${query.toString()}`, {
+      next: { revalidate: 86400, tags: ["list-counts"] },
+    });
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    const raw: unknown = await response.json();
+    return FilterCountsResponseSchema.parse(stripNulls(raw));
+  } catch (error) {
+    // The fallback's report is generic: the filter says which list failed
+    throw new Error(`Failed to fetch list counts for ${query.toString()}: ${error instanceof Error ? error.message : String(error)}`, {
+      cause: error,
+    });
+  }
+}
 
 /**
  * Unfiltered counts for one breed, rescue or age page, or for every dog
  * (country pages) (#500, #501, #502): a breed's practical stats, and how many
  * are adoptable to each country. Ages count only dogs with a recorded age. A
- * failure leaves the counts out rather than failing the page.
+ * failure leaves the counts out; getListCounts.orThrow fails the page instead,
+ * for pages that must not be cached without them (the breed pages).
  */
-export const getListCounts = cache(
-  async (
-    listFilter:
-      | { primary_breed: string }
-      | { breed_group: string }
-      | { organization_id: string }
-      | { age_category: string }
-      | Record<string, never>,
-  ): Promise<FilterCountsResponse | null> => {
-    try {
-      // Its own fetch: getFilterCounts revalidates every minute, and a page
-      // regenerates at its shortest fetch revalidate, not its own weekly one
-      const query = new URLSearchParams({ ...listFilter, age_known: "true" });
-      const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts?${query.toString()}`, {
-        next: { revalidate: 86400, tags: ["list-counts"] },
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch list counts: ${response.statusText}`);
-      }
-      const raw: unknown = await response.json();
-      return FilterCountsResponseSchema.parse(stripNulls(raw));
-    } catch (error) {
-      reportError(error, { context: "getListCounts", ...listFilter });
-      return null;
-    }
-  },
-);
+export const getListCounts = cache(fetchListCounts, null);
 
 interface EnhancedContent {
   description: string;

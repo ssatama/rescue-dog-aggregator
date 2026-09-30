@@ -41,10 +41,10 @@ const dog = { id: 1, name: "Akil", slug: "akil", created_at: "2025-06-09T10:00:0
 beforeEach(() => {
   // The tests run in GitHub Actions too, where the guard is off
   delete process.env.GITHUB_ACTIONS;
-  (getStatistics as jest.Mock).mockResolvedValue({ total_dogs: 1722, total_organizations: 11, organizations: [] });
-  (getAnimals as jest.Mock).mockResolvedValue([dog]);
-  (getAnimalsByCuration as jest.Mock).mockResolvedValue([dog]);
-  (getAgeStats as jest.Mock).mockResolvedValue({ total: 0, ageCategories: [] });
+  (getStatistics as unknown as jest.Mock).mockResolvedValue({ total_dogs: 1722, total_organizations: 11, organizations: [] });
+  (getAnimals as unknown as jest.Mock).mockResolvedValue([dog]);
+  (getAnimalsByCuration as unknown as jest.Mock).mockResolvedValue([dog]);
+  (getAgeStats as unknown as jest.Mock).mockResolvedValue({ total: 0, ageCategories: [] });
 });
 
 describe("home page (#497)", () => {
@@ -64,13 +64,13 @@ describe("home page (#497)", () => {
     ["the waiting-longest row", getAnimalsByCuration, []],
     ["the statistics", getStatistics, { total_dogs: 0, total_organizations: 0, organizations: [] }],
   ])("fails the render when %s come back empty", async (_, fetcher, empty) => {
-    (fetcher as jest.Mock).mockResolvedValue(empty);
+    (fetcher as unknown as jest.Mock).mockResolvedValue(empty);
     await expect(Home()).rejects.toThrow("no dogs or statistics");
   });
 
   it("renders anyway in CI, which builds with no API", async () => {
     process.env.GITHUB_ACTIONS = "true";
-    (getAnimals as jest.Mock).mockResolvedValue([]);
+    (getAnimals as unknown as jest.Mock).mockResolvedValue([]);
     await expect(Home()).resolves.toBeTruthy();
   });
 });

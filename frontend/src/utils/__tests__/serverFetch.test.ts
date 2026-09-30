@@ -25,7 +25,7 @@ const okResponse = (): Response =>
   ({ ok: true, status: 200 }) as unknown as Response;
 
 const errorResponse = (status: number): Response =>
-  ({ ok: false, status }) as unknown as Response;
+  ({ ok: false, status, headers: new Headers() }) as unknown as Response;
 
 const policy = (attempts: number, baseDelayMs = 0): RetryPolicy => ({
   attempts,
@@ -132,6 +132,56 @@ describe("fetchWithRetry", () => {
 
     expect(response.status).toBe(404);
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries Railway's edge 404, which means the app is unreachable", async () => {
+    const edge404 = {
+      ok: false,
+      status: 404,
+      headers: new Headers({ "x-railway-fallback": "true" }),
+    } as unknown as Response;
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce(edge404)
+      .mockResolvedValueOnce(okResponse());
+
+    const response = await fetchWithRetry("https://api.test/x", {}, policy(3));
+
+    expect(response.ok).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("throws rather than return Railway's edge 404, which callers would read as 'not found'", async () => {
+    (fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 404,
+      headers: new Headers({ "x-railway-fallback": "true" }),
+    });
+
+    await expect(fetchWithRetry("https://api.test/x", {}, policy(2))).rejects.toThrow(/unreachable/);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("releases a response it retries past, rather than leave its connection held", async () => {
+    const cancel = jest.fn().mockResolvedValue(undefined);
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: false, status: 502, headers: new Headers(), body: { cancel } })
+      .mockResolvedValueOnce(okResponse());
+
+    await fetchWithRetry("https://api.test/x", {}, policy(2));
+
+    expect(cancel).toHaveBeenCalled();
+  });
+
+  it("still reports the edge 404 when releasing its body fails", async () => {
+    const cancel = jest.fn().mockRejectedValue(new TypeError("locked"));
+    (fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 404,
+      headers: new Headers({ "x-railway-fallback": "true" }),
+      body: { cancel },
+    });
+
+    await expect(fetchWithRetry("https://api.test/x", {}, policy(2))).rejects.toThrow(/Railway edge 404/);
   });
 
   it("retries a network-level failure and returns the eventual response", async () => {
