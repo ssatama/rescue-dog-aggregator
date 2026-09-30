@@ -44,25 +44,21 @@ export async function getBreedsWithImages(
   const queryString = queryParams.toString();
   const url = `${API_URL}/api/animals/breeds/with-images${queryString ? `?${queryString}` : ""}`;
 
-  try {
-    const response = await fetchWithRetry(url, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      next: { revalidate: 604800, tags: ["breed-images"] },
-    } as RequestInit);
+  // No catch: the hub's sections come from here, and a failure fails its
+  // render rather than cache the hub without them (#675)
+  const response = await fetchWithRetry(url, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+    next: { revalidate: 604800, tags: ["breed-images"] },
+  } as RequestInit);
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch breeds with images: ${response.status}`);
-    }
-
-    const data: unknown = await response.json();
-    return z.array(BreedWithImagesSchema).parse(stripNulls(data));
-  } catch (error) {
-    logger.error("Error fetching breeds with images:", error);
-    reportError(error, { context: "getBreedsWithImages" });
-    return [];
+  if (!response.ok) {
+    throw new Error(`Failed to fetch breeds with images: ${response.status}`);
   }
+
+  const data: unknown = await response.json();
+  return z.array(BreedWithImagesSchema).parse(stripNulls(data));
 }
 
 export async function getMixedBreedData(): Promise<z.infer<
@@ -114,130 +110,124 @@ export async function getPopularBreedsWithImages(
   }
 }
 
+// Only the groups' photos may fail; without the stats the render fails (#675)
 export async function getBreedGroupsWithTopBreeds(): Promise<
   BreedGroupDisplay[]
 > {
+  const statsUrl = `${API_URL}/api/animals/breeds/stats`;
+  const statsResponse = await fetchWithRetry(statsUrl, {
+    headers: { "Content-Type": "application/json" },
+    next: { revalidate: 604800, tags: ["breed-stats"] },
+  } as RequestInit);
+
+  if (!statsResponse.ok) {
+    throw new Error(`Failed to fetch breed stats: ${statsResponse.status}`);
+  }
+
+  const rawStats: unknown = await statsResponse.json();
+  const stats = BreedStatsSchema.parse(stripNulls(rawStats));
+
+  let breedsWithImages: z.infer<typeof BreedWithImagesSchema>[] = [];
   try {
-    const statsUrl = `${API_URL}/api/animals/breeds/stats`;
-    const statsResponse = await fetchWithRetry(statsUrl, {
+    const breedsWithImagesUrl = `${API_URL}/api/animals/breeds/with-images?min_count=2&limit=50`;
+    const imagesResponse = await fetchWithRetry(breedsWithImagesUrl, {
       headers: { "Content-Type": "application/json" },
-      next: { revalidate: 604800, tags: ["breed-stats"] },
+      next: { revalidate: 604800, tags: ["breed-images"] },
     } as RequestInit);
 
-    if (!statsResponse.ok) {
-      logger.error(`Failed to fetch breed stats: ${statsResponse.status}`);
-      return [];
+    if (imagesResponse.ok) {
+      const rawImages: unknown = await imagesResponse.json();
+      breedsWithImages = z.array(BreedWithImagesSchema).parse(stripNulls(rawImages));
     }
+  } catch (imageError) {
+    logger.warn(
+      "Could not fetch breed images, continuing without them:",
+      imageError,
+    );
+    reportError(imageError, { context: "getBreedGroupsWithTopBreeds:images" });
+  }
 
-    const rawStats: unknown = await statsResponse.json();
-    const stats = BreedStatsSchema.parse(stripNulls(rawStats));
-
-    let breedsWithImages: z.infer<typeof BreedWithImagesSchema>[] = [];
-    try {
-      const breedsWithImagesUrl = `${API_URL}/api/animals/breeds/with-images?min_count=2&limit=50`;
-      const imagesResponse = await fetchWithRetry(breedsWithImagesUrl, {
-        headers: { "Content-Type": "application/json" },
-        next: { revalidate: 604800, tags: ["breed-images"] },
-      } as RequestInit);
-
-      if (imagesResponse.ok) {
-        const rawImages: unknown = await imagesResponse.json();
-        breedsWithImages = z.array(BreedWithImagesSchema).parse(stripNulls(rawImages));
+  const breedImageMap: Record<string, string> = {};
+  breedsWithImages.forEach((breed) => {
+    if (breed.sample_dogs && breed.sample_dogs.length > 0) {
+      const imageUrl = breed.sample_dogs[0].primary_image_url;
+      if (imageUrl) {
+        breedImageMap[breed.primary_breed] = imageUrl;
       }
-    } catch (imageError) {
-      logger.warn(
-        "Could not fetch breed images, continuing without them:",
-        imageError,
-      );
-      reportError(imageError, { context: "getBreedGroupsWithTopBreeds:images" });
     }
+  });
 
-    const breedImageMap: Record<string, string> = {};
-    breedsWithImages.forEach((breed) => {
-      if (breed.sample_dogs && breed.sample_dogs.length > 0) {
-        const imageUrl = breed.sample_dogs[0].primary_image_url;
-        if (imageUrl) {
-          breedImageMap[breed.primary_breed] = imageUrl;
-        }
-      }
+  const groupConfigs: Record<
+    string,
+    { icon: string; description: string }
+  > = {
+    Hound: {
+      icon: "\u{1F415}",
+      description: "Calm indoors, strong instinct to follow a scent or a sprint",
+    },
+    Sporting: {
+      icon: "\u{1F9AE}",
+      description: "Energetic and people-focused; happiest with a job to do",
+    },
+    Herding: {
+      icon: "\u{1F411}",
+      description: "Clever and quick to learn; need their minds kept busy",
+    },
+    Working: {
+      icon: "\u{1F4AA}",
+      description: "Big, steady dogs that bond closely and take life seriously",
+    },
+    Terrier: {
+      icon: "\u{1F9B4}",
+      description: "Bold, funny and full of character in a small package",
+    },
+    Toy: {
+      icon: "\u{1F380}",
+      description: "Small companions who want to be wherever you are",
+    },
+    "Non-Sporting": {
+      icon: "\u{1F43E}",
+      description: "A varied group with one thing in common: made for company",
+    },
+    Mixed: {
+      icon: "\u{2764}\u{FE0F}",
+      description: "Unique personalities from diverse backgrounds",
+    },
+  };
+
+  const breedGroups = (stats.breed_groups || [])
+    .filter(
+      (group) =>
+        group.name !== "Unknown" &&
+        group.name !== "Mixed" &&
+        group.count >= 5,
+    )
+    .toSorted((a, b) => b.count - a.count)
+    .slice(0, 8)
+    .map((group) => {
+      const groupBreeds = (stats.qualifying_breeds || [])
+        .filter((breed) => breed.breed_group === group.name)
+        .slice(0, 5)
+        .map((breed) => ({
+          name: breed.primary_breed,
+          slug: breed.breed_slug,
+          count: breed.count,
+          image_url: breedImageMap[breed.primary_breed] || null,
+        }));
+
+      const config = groupConfigs[group.name] || {
+        icon: "\u{1F436}",
+        description: "Wonderful dogs waiting for homes",
+      };
+
+      return {
+        name: `${group.name} Group`,
+        icon: config.icon,
+        description: config.description,
+        count: group.count,
+        top_breeds: groupBreeds,
+      };
     });
 
-    const groupConfigs: Record<
-      string,
-      { icon: string; description: string }
-    > = {
-      Hound: {
-        icon: "\u{1F415}",
-        description: "Calm indoors, strong instinct to follow a scent or a sprint",
-      },
-      Sporting: {
-        icon: "\u{1F9AE}",
-        description: "Energetic and people-focused; happiest with a job to do",
-      },
-      Herding: {
-        icon: "\u{1F411}",
-        description: "Clever and quick to learn; need their minds kept busy",
-      },
-      Working: {
-        icon: "\u{1F4AA}",
-        description: "Big, steady dogs that bond closely and take life seriously",
-      },
-      Terrier: {
-        icon: "\u{1F9B4}",
-        description: "Bold, funny and full of character in a small package",
-      },
-      Toy: {
-        icon: "\u{1F380}",
-        description: "Small companions who want to be wherever you are",
-      },
-      "Non-Sporting": {
-        icon: "\u{1F43E}",
-        description: "A varied group with one thing in common: made for company",
-      },
-      Mixed: {
-        icon: "\u{2764}\u{FE0F}",
-        description: "Unique personalities from diverse backgrounds",
-      },
-    };
-
-    const breedGroups = (stats.breed_groups || [])
-      .filter(
-        (group) =>
-          group.name !== "Unknown" &&
-          group.name !== "Mixed" &&
-          group.count >= 5,
-      )
-      .toSorted((a, b) => b.count - a.count)
-      .slice(0, 8)
-      .map((group) => {
-        const groupBreeds = (stats.qualifying_breeds || [])
-          .filter((breed) => breed.breed_group === group.name)
-          .slice(0, 5)
-          .map((breed) => ({
-            name: breed.primary_breed,
-            slug: breed.breed_slug,
-            count: breed.count,
-            image_url: breedImageMap[breed.primary_breed] || null,
-          }));
-
-        const config = groupConfigs[group.name] || {
-          icon: "\u{1F436}",
-          description: "Wonderful dogs waiting for homes",
-        };
-
-        return {
-          name: `${group.name} Group`,
-          icon: config.icon,
-          description: config.description,
-          count: group.count,
-          top_breeds: groupBreeds,
-        };
-      });
-
-    return breedGroups;
-  } catch (error) {
-    logger.error("Error fetching breed groups:", error);
-    reportError(error, { context: "getBreedGroupsWithTopBreeds" });
-    return [];
-  }
+  return breedGroups;
 }

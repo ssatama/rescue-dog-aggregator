@@ -55,21 +55,20 @@ describe("Server Animals Service", () => {
     expect(result).toMatchObject(mockResponse);
   });
 
-  it("should handle API errors gracefully with empty array fallback", async () => {
+  it("falls back to an empty array on API errors, when asked to", async () => {
     (fetch as jest.Mock).mockRejectedValueOnce(new Error("API Error"));
 
-    const result = await getAnimals();
+    const result = await getAnimals.orFallback();
     expect(result).toEqual([]);
   });
 
-  it("should handle malformed API response via validation fallback", async () => {
+  it("throws on a malformed API response rather than return a list", async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => "not an array",
     });
 
-    const result = await getAnimals();
-    expect(result).toEqual([]);
+    await expect(getAnimals()).rejects.toThrow();
   });
 
   it("should fetch all metadata successfully", async () => {
@@ -127,7 +126,7 @@ describe("Server Animals Service", () => {
     it("should return null on error", async () => {
       (fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
 
-      const result = await getFilterCounts();
+      const result = await getFilterCounts.orFallback();
       expect(result).toBeNull();
     });
   });
@@ -154,7 +153,7 @@ describe("Server Animals Service", () => {
     it("should return fallback on error", async () => {
       (fetch as jest.Mock).mockRejectedValueOnce(new Error("Fail"));
 
-      const result = await getStatistics();
+      const result = await getStatistics.orFallback();
       expect(result).toEqual({
         total_dogs: 0,
         total_organizations: 0,
@@ -187,7 +186,7 @@ describe("Server Animals Service", () => {
     it("should return fallback on error", async () => {
       (fetch as jest.Mock).mockRejectedValueOnce(new Error("Fail"));
 
-      const result = await getCountryStats();
+      const result = await getCountryStats.orFallback();
       expect(result).toEqual({ total: 0, countries: [] });
     });
   });
@@ -242,10 +241,10 @@ describe("Server Animals Service", () => {
       expect(result.qualifying_breeds).toHaveLength(1);
     });
 
-    it("should return fallback with error flag on failure", async () => {
+    it("should return fallback on failure", async () => {
       (fetch as jest.Mock).mockRejectedValueOnce(new Error("Fail"));
 
-      const result = await getBreedStats();
+      const result = await getBreedStats.orFallback();
       expect(result.total_dogs).toBe(0);
     });
   });
@@ -284,7 +283,7 @@ describe("Server Animals Service", () => {
     it("should return fallback on failure", async () => {
       (fetch as jest.Mock).mockRejectedValueOnce(new Error("Fail"));
 
-      const result = await getAgeStats();
+      const result = await getAgeStats.orFallback();
       expect(result.total).toBe(0);
       expect(result.ageCategories).toHaveLength(2);
     });
@@ -314,7 +313,7 @@ describe("Server Animals Service", () => {
     it("should return empty array on failure", async () => {
       (fetch as jest.Mock).mockRejectedValueOnce(new Error("Fail"));
 
-      const result = await getAnimalsByCuration("recent");
+      const result = await getAnimalsByCuration.orFallback("recent");
       expect(result).toEqual([]);
     });
   });
@@ -437,22 +436,51 @@ describe("Server Animals Service", () => {
     });
   });
 
-  describe("strict variants for ISR pages", () => {
-    it("getAnimals.orThrow rejects where getAnimals falls back to []", async () => {
+  describe("a failed fetch fails the render by default (#675)", () => {
+    const env = { ...process.env };
+    afterEach(() => {
+      process.env = { ...env };
+    });
+
+    it.each([
+      ["getAnimals", () => getAnimals({ primary_breed: "Labrador" }), () => getAnimals.orFallback({ primary_breed: "Labrador" }), []],
+      ["getStatistics", () => getStatistics(), () => getStatistics.orFallback(), { total_dogs: 0, total_organizations: 0, countries: [], organizations: [] }],
+      ["getAnimalsByCuration", () => getAnimalsByCuration("recent"), () => getAnimalsByCuration.orFallback("recent"), []],
+    ])("%s throws, and answers its fallback only through .orFallback", async (_, byDefault, orFallback, fallback) => {
+      (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
+
+      await expect(byDefault()).rejects.toThrow("unreachable");
+      await expect(orFallback()).resolves.toEqual(fallback);
+    });
+
+    it("getListCounts says which list failed, since the report context is generic", async () => {
+      (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
+
+      await expect(getListCounts({ primary_breed: "Labrador" })).rejects.toThrow(
+        "Failed to fetch list counts for primary_breed=Labrador&age_known=true: unreachable",
+      );
+    });
+
+    it("getAllMetadata throws rather than leave a filter with only its 'Any' option", async () => {
+      (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
+
+      await expect(getAllMetadata()).rejects.toThrow("unreachable");
+    });
+
+    it("falls back in the GitHub Actions build, which runs with no API", async () => {
+      process.env.GITHUB_ACTIONS = "true";
+      process.env.NEXT_PHASE = "phase-production-build";
       (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
 
       await expect(getAnimals({ primary_breed: "Labrador" })).resolves.toEqual([]);
-      await expect(getAnimals.orThrow({ primary_breed: "Labrador" })).rejects.toThrow();
     });
 
-    it("getListCounts.orThrow rejects where getListCounts falls back to null", async () => {
+    it("throws in any other build, so a deploy that can't reach the API fails", async () => {
+      delete process.env.GITHUB_ACTIONS;
+      process.env.NEXT_PHASE = "phase-production-build";
       (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
 
-      await expect(getListCounts({ primary_breed: "Labrador" })).resolves.toBeNull();
-      // The report context is generic, so the error says which list failed
-      await expect(getListCounts.orThrow({ primary_breed: "Labrador" })).rejects.toThrow(
-        "Failed to fetch list counts for primary_breed=Labrador&age_known=true: unreachable",
-      );
+      await expect(getAnimals({ primary_breed: "Labrador" })).rejects.toThrow("unreachable");
     });
 
     it("has no mixed page, rather than '0 available', when a good stats response has no Mixed group", async () => {
@@ -566,7 +594,7 @@ describe("Server Animals Service", () => {
     it("should call reportError when fetch fails", async () => {
       (fetch as jest.Mock).mockRejectedValueOnce(new Error("API Error"));
 
-      await getAnimals();
+      await getAnimals.orFallback();
 
       expect(reportError).toHaveBeenCalledWith(
         expect.any(Error),

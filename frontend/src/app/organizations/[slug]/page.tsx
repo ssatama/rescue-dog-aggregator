@@ -134,14 +134,9 @@ export default async function OrganizationDetailPage(props: OrganizationDetailPa
   const organizationId = organization.id;
 
   // The catalog's first page, in its default order, and the rescue's own
-  // counts. Neither may fail the page, which is ISR-cached and prerendered.
+  // counts. A failure fails the render, as the organization's does (#675)
   const [initialDogs, counts, metadata] = await Promise.all([
-    getAnimals({ organization_id: organizationId, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }).catch(
-      (error: unknown) => {
-        reportError(error, { context: "OrganizationDetailPage", operation: "initialDogs" });
-        return [];
-      },
-    ),
+    getAnimals({ organization_id: organizationId, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
     getListCounts({ organization_id: String(organizationId) }),
     getAllMetadata(),
   ]);

@@ -17,8 +17,8 @@ export const metadata: Metadata = {
  * listed dogs, since most dead links here are to dogs that are no longer listed.
  */
 export default async function NotFound() {
-  // Cached, and returns [] on API failure, so a 404 never becomes an error page
-  const recentDogs = await getAnimalsByCuration("recent", 4);
+  // [] on an API failure, so a 404 never becomes an error page
+  const recentDogs = await getAnimalsByCuration.orFallback("recent", 4);
 
   return (
     <Layout>

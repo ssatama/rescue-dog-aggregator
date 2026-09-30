@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import BreedsHubClient from "./BreedsHubClient";
 import Layout from "@/components/layout/Layout";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
-import { getBreedStats, clearCache } from "@/services/serverAnimalsService";
+import { getBreedStats } from "@/services/serverAnimalsService";
 import {
   getMixedBreedData,
   getPopularBreedsWithImages,
@@ -14,7 +14,6 @@ import {
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import AllBreedsIndex from "@/components/breeds/AllBreedsIndex";
 import { getIndexableBreeds } from "@/utils/indexableBreeds";
-import { logger, reportError } from "@/utils/logger";
 
 export const revalidate = 604800;
 
@@ -41,45 +40,14 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-async function fetchBreedsData() {
-  const [breedStats, mixedBreedData, popularBreeds, breedGroups] =
-    await Promise.all([
-      getBreedStats(),
-      getMixedBreedData(),
-      getPopularBreedsWithImages(8),
-      getBreedGroupsWithTopBreeds(),
-    ]);
-  return { breedStats, mixedBreedData, popularBreeds, breedGroups };
-}
-
-function isEmptyBreedsData(data: Awaited<ReturnType<typeof fetchBreedsData>>): boolean {
-  const breedStatsError = "error" in data.breedStats && data.breedStats.error === true;
-  return (
-    breedStatsError ||
-    (!data.mixedBreedData &&
-      data.popularBreeds.length === 0 &&
-      data.breedGroups.length === 0)
-  );
-}
-
 export default async function BreedsPage() {
-  const initialData = await fetchBreedsData();
-
-  // Retry once if all sections empty (cold-start resilience)
-  const data = isEmptyBreedsData(initialData)
-    ? (logger.warn("Breeds page: all sections empty, retrying (cold-start resilience)"),
-      clearCache(),
-      await new Promise((r) => setTimeout(r, 500)),
-      await fetchBreedsData())
-    : initialData;
-
-  if (isEmptyBreedsData(data) && isEmptyBreedsData(initialData)) {
-    reportError(new Error("Breeds page: retry also returned empty data"), {
-      context: "BreedsPage",
-    });
-  }
-
-  const { breedStats, mixedBreedData, popularBreeds, breedGroups } = data;
+  // Any of these failing fails the render, which keeps the last good hub (#675)
+  const [breedStats, mixedBreedData, popularBreeds, breedGroups] = await Promise.all([
+    getBreedStats(),
+    getMixedBreedData(),
+    getPopularBreedsWithImages(8),
+    getBreedGroupsWithTopBreeds(),
+  ]);
   const searchableBreeds = [
     ...getIndexableBreeds(breedStats?.qualifying_breeds).map((breed) => ({
       name: breed.primary_breed,

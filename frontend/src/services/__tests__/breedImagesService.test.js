@@ -1,4 +1,4 @@
-import { getBreedsWithImages } from "../breedImagesService";
+import { getBreedGroupsWithTopBreeds, getBreedsWithImages } from "../breedImagesService";
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -103,40 +103,36 @@ describe("breedImagesService", () => {
       expect(result).toEqual([]);
     });
 
-    it("should handle network errors gracefully", async () => {
+    it("throws on network errors, after one retry, so the hub isn't cached without its breeds (#675)", async () => {
       // Mock console.error to avoid test output noise
       const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
       fetch.mockRejectedValue(new Error("Network error"));
 
-      const result = await getBreedsWithImages();
-
-      // Retried once before giving up, so a backend blip mid-build no longer
-      // silently caches an empty breed section for the revalidate window.
-      expect(result).toEqual([]);
+      await expect(getBreedsWithImages()).rejects.toThrow("Network error");
       expect(fetch).toHaveBeenCalledTimes(2);
 
       consoleErrorSpy.mockRestore();
     });
 
-    it("should handle HTTP error responses", async () => {
+    it("throws on HTTP error responses", async () => {
       // Mock console.error to avoid test output noise
       const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
-      fetch.mockResolvedValueOnce({
+      // A 5xx is retried once, then the last response throws
+      fetch.mockResolvedValue({
         ok: false,
         status: 500,
         statusText: "Internal Server Error",
       });
 
-      const result = await getBreedsWithImages();
-
-      expect(result).toEqual([]);
+      await expect(getBreedsWithImages()).rejects.toThrow("500");
+      expect(fetch).toHaveBeenCalledTimes(2);
 
       consoleErrorSpy.mockRestore();
     });
 
-    it("should handle malformed JSON response", async () => {
+    it("throws on a malformed JSON response", async () => {
       // Mock console.error to avoid test output noise
       const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
@@ -147,9 +143,7 @@ describe("breedImagesService", () => {
         },
       });
 
-      const result = await getBreedsWithImages();
-
-      expect(result).toEqual([]);
+      await expect(getBreedsWithImages()).rejects.toThrow("Invalid JSON");
 
       consoleErrorSpy.mockRestore();
     });
@@ -176,7 +170,7 @@ describe("breedImagesService", () => {
       expect(callUrl).not.toContain("breed_group=");
     });
 
-    it("should handle timeout scenarios", async () => {
+    it("throws on a timeout", async () => {
       // Mock console.error to avoid test output noise
       const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
@@ -185,15 +179,14 @@ describe("breedImagesService", () => {
       });
 
       fetch.mockImplementationOnce(() => timeoutPromise);
+      fetch.mockImplementationOnce(() => timeoutPromise);
 
-      const result = await getBreedsWithImages();
-
-      expect(result).toEqual([]);
+      await expect(getBreedsWithImages()).rejects.toThrow("Request timeout");
 
       consoleErrorSpy.mockRestore();
     });
 
-    it("should validate response structure", async () => {
+    it("throws on a 404", async () => {
       // Mock console.error to avoid test output noise
       const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
@@ -204,10 +197,7 @@ describe("breedImagesService", () => {
         headers: new Headers(),
       });
 
-      const result = await getBreedsWithImages();
-
-      // Should handle gracefully and return empty array
-      expect(result).toEqual([]);
+      await expect(getBreedsWithImages()).rejects.toThrow("404");
 
       consoleErrorSpy.mockRestore();
     });
@@ -303,11 +293,9 @@ describe("breedImagesService", () => {
         statusText: "Too Many Requests",
       });
 
-      const result = await getBreedsWithImages();
-
-      // Current implementation doesn't retry, just returns empty array
+      // A 429 isn't retried: the render fails and ISR tries again later
+      await expect(getBreedsWithImages()).rejects.toThrow("429");
       expect(fetch).toHaveBeenCalledTimes(1);
-      expect(result).toEqual([]);
 
       consoleErrorSpy.mockRestore();
     });
@@ -349,6 +337,34 @@ describe("breedImagesService", () => {
       expect(callUrl).toContain("/api/animals/breeds/with-images");
 
       process.env.NODE_ENV = originalEnv;
+    });
+  });
+
+  describe("getBreedGroupsWithTopBreeds (#675)", () => {
+    const stats = {
+      total_dogs: 12,
+      breed_groups: [{ name: "Hound", count: 6 }],
+      qualifying_breeds: [{ primary_breed: "Greyhound", breed_slug: "greyhound", breed_group: "Hound", count: 6 }],
+    };
+
+    it("throws when the breed stats fail, rather than cache a hub without groups", async () => {
+      fetch.mockResolvedValue({ ok: false, status: 500, statusText: "Internal Server Error" });
+
+      await expect(getBreedGroupsWithTopBreeds()).rejects.toThrow("500");
+    });
+
+    it("still lists the groups, without photos, when only the photos fail", async () => {
+      jest.spyOn(console, "warn").mockImplementation(() => {});
+      fetch.mockImplementation(async (url) =>
+        url.includes("/breeds/stats")
+          ? { ok: true, status: 200, json: async () => stats }
+          : { ok: false, status: 500, statusText: "Internal Server Error" },
+      );
+
+      const groups = await getBreedGroupsWithTopBreeds();
+
+      expect(groups).toHaveLength(1);
+      expect(groups[0].top_breeds[0]).toMatchObject({ slug: "greyhound", image_url: null });
     });
   });
 });

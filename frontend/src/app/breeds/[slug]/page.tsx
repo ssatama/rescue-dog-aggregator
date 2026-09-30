@@ -138,9 +138,9 @@ async function fetchBreedPageData(slug: string) {
   const breedFilter = slug === MIXED ? { breed_group: "Mixed" } : { primary_breed: breedData.primary_breed };
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([
-    getAnimals.orThrow({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
-    getListCounts.orThrow(breedFilter),
-    getAllMetadata({ strict: true }),
+    getAnimals({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
+    getListCounts(breedFilter),
+    getAllMetadata(),
   ]);
 
   return { breedData, initialDogs, breedCounts, metadata };
