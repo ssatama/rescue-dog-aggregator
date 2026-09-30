@@ -44,15 +44,26 @@ describe("BreedDetail (#500)", () => {
       <BreedDetail
         initialBreedData={lurcher as never}
         initialDogs={[]}
-        breedCounts={{ total: 14, good_with_kids: { yes: 5, known: 6 } } as never}
+        breedCounts={{
+          total: 23,
+          size_options: [],
+          age_options: [],
+          lifestyle: {
+            good_with_kids: { count: 18, known: 23 },
+            good_with_dogs: { count: 0, known: 0 },
+            good_with_cats: { count: 0, known: 0 },
+            first_time_friendly: { count: 0, known: 0 },
+            energy_low: { count: 0, known: 0 },
+            energy_medium: { count: 0, known: 0 },
+            energy_high: { count: 0, known: 0 },
+          },
+        } as never}
       />,
     );
 
     const list = container.querySelector("#dogs-grid")!;
-    const stats = screen.queryByRole("heading", { name: /What the rescues say/ });
-    if (stats) {
-      expect(list.compareDocumentPosition(stats) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    }
+    const stats = screen.getByRole("heading", { name: /What the rescues say/ });
+    expect(list.compareDocumentPosition(stats) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("lists the breed's dogs in the catalog with the breed fixed", () => {
