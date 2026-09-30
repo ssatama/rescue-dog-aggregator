@@ -66,7 +66,7 @@ export default function BreedSearch({ breeds }: { breeds: BreedLink[] }): React.
           placeholder="Find a breed, e.g. Labrador"
           autoComplete="off"
           aria-controls={resultsId}
-          className="min-w-0 flex-1 bg-transparent text-base text-ink placeholder:text-subtle focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent text-base text-ink placeholder:text-subtle focus:outline-none focus:ring-0"
         />
       </div>
 
