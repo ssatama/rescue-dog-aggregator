@@ -372,15 +372,16 @@ describe("Server Animals Service", () => {
   });
 
   describe("getMixedBreedPageData", () => {
-    it("takes the count and age from the breed stats, with one fetch for its photos (#667)", async () => {
+    it("takes the group's count, and its age weighted over the group's breeds, with one fetch for photos (#667)", async () => {
       const stats = {
         total_dogs: 1264,
         unique_breeds: 94,
         breed_groups: [{ name: "Mixed", count: 534 }],
         qualifying_breeds: [
-          // A mixed-type breed row that outnumbers the Mixed one must not supply its age
-          { primary_breed: "Terrier Mix", breed_slug: "terrier-mix", breed_type: "mixed", count: 900, average_age_months: 12 },
-          { primary_breed: "Mixed Breed", breed_slug: "mixed-breed", breed_type: "mixed", count: 534, average_age_months: 54 },
+          // The age covers the same dogs as the count: every Mixed-group row, by its size
+          { primary_breed: "Mixed Breed", breed_slug: "mixed-breed", breed_group: "Mixed", count: 500, average_age_months: 54 },
+          { primary_breed: "Terrier Mix", breed_slug: "terrier-mix", breed_group: "Mixed", count: 34, average_age_months: 12 },
+          { primary_breed: "Greyhound", breed_slug: "greyhound", breed_group: "Hound", count: 18, average_age_months: 80 },
         ],
         purebred_count: 0,
         crossbreed_count: 0,
@@ -397,7 +398,7 @@ describe("Server Animals Service", () => {
 
       const mixed = await getMixedBreedPageData();
 
-      expect(mixed).toMatchObject({ breed_slug: "mixed", count: 534, average_age_months: 54 });
+      expect(mixed).toMatchObject({ breed_slug: "mixed", count: 534, average_age_months: 51 });
       expect(mixed?.topDogs).toEqual([
         { name: "Alfie", slug: "alfie-1", primary_image_url: "https://images.rescuedogs.me/alfie.jpg" },
       ]);

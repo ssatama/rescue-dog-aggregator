@@ -103,7 +103,13 @@ async function fetchMixedBreedData() {
 export default async function MixedBreedsPage() {
   const { breedData, initialDogs, breedCounts, metadata } = await fetchMixedBreedData();
   if (!breedData) {
-    notFound();
+    // No mixed dogs. A build prerenders the 404 rather than fail every
+    // deploy; a regeneration throws, so ISR keeps the last good page and
+    // tries again on the next request, rather than cache a 404 for a week
+    if (process.env.NEXT_PHASE === "phase-production-build") {
+      notFound();
+    }
+    throw new Error("No Mixed group in the breed stats");
   }
 
   // The same frame as every other breed page: the site header was missing here

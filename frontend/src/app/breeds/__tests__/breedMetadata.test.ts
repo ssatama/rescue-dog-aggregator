@@ -51,7 +51,7 @@ describe("breed page meta description (#664)", () => {
 
     const { title } = await generateMetadata(params);
 
-    expect(title).toBe("Pug Rescue Dogs for Adoption | 5 Available Near You");
+    expect(title).toBe("Pug Rescue Dogs for Adoption | 5 Available");
   });
 
   it("leaves the age out when it isn't known", async () => {

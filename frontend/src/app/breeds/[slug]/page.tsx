@@ -59,7 +59,8 @@ export async function generateMetadata(
     .join(", ");
 
   return {
-    title: fitTitle(`${breedData.primary_breed} Rescue Dogs for Adoption`, ` | ${breedData.count} Available`, " Near You"),
+    // The count is every country's: "Near You" would claim a location filter
+    title: fitTitle(`${breedData.primary_breed} Rescue Dogs for Adoption`, ` | ${breedData.count} Available`),
     description: seoDescription,
     keywords,
     openGraph: {

@@ -9,10 +9,6 @@ describe("BreedStatistics", () => {
     breed_slug: "golden-retriever",
     count: 42,
     average_age_months: 36,
-    sex_distribution: {
-      male: 25,
-      female: 17,
-    },
   };
 
   describe("Inline Stats Display", () => {
@@ -40,12 +36,6 @@ describe("BreedStatistics", () => {
       expect(screen.getByText("42")).toBeInTheDocument();
     });
 
-    it("no longer shows the sex ratio (#500)", () => {
-      render(<BreedStatistics breedData={mockBreedData} />);
-
-      expect(screen.queryByTestId("male-bar")).not.toBeInTheDocument();
-      expect(screen.queryByText("25")).not.toBeInTheDocument();
-    });
   });
 });
 
@@ -55,7 +45,6 @@ describe("BreedInfo", () => {
     breed_slug: "golden-retriever",
     count: 42,
     average_age_months: 36,
-    sex_distribution: { male: 25, female: 17 },
   };
 
   it("shows no 'Updated' date, which was only the render time (#665)", () => {
