@@ -185,7 +185,6 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
       alt={alt}
       onError={handleError}
       unoptimized={shouldBypassNextOptimization ? true : undefined}
-      loader={shouldBypassNextOptimization ? ({ src }) => src : undefined}
     />
   );
 };

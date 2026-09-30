@@ -261,7 +261,7 @@ See `docs/technical/scraper-architecture.md` for detailed scraper documentation.
 
 **FallbackImage Component** (multi-level resilience):
 
-1. Next.js Image (Vercel optimization)
+1. next/image through the custom loader (`src/utils/cloudflareImageLoader.ts`), which sizes R2 photos with Cloudflare `/cdn-cgi/image/`
 2. Cloudflare R2 with transforms (`/cdn-cgi/image/`)
 3. Direct R2 URL (no transforms)
 4. Local placeholder (`/placeholder_dog.svg`)

@@ -22,6 +22,7 @@ jest.mock("next/image", () => ({
         alt={alt}
         onError={onError}
         data-unoptimized={unoptimized ? "true" : undefined}
+        data-own-loader={loader ? "true" : undefined}
         {...imgProps}
       />
     );
@@ -68,6 +69,7 @@ describe("FallbackImage", () => {
 
       const img = screen.getByRole("img", { name: "R2 Dog" });
       expect(img).not.toHaveAttribute("data-unoptimized");
+      expect(img).not.toHaveAttribute("data-own-loader");
       expect(img).toHaveAttribute("src", "https://images.rescuedogs.me/rescue_dogs/dog.jpg");
     });
   });
