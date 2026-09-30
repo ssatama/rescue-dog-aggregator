@@ -1140,6 +1140,27 @@ class AnimalService:
             )
             breed_type_counts = self.cursor.fetchone()
 
+            # Breeds without a page of their own, so the hub can still link
+            # each one to the catalog (#668). Mixes are the Mixed page's.
+            self.cursor.execute(
+                f"""
+                SELECT a.primary_breed, COUNT(*) as count
+                FROM animals a
+                JOIN organizations o ON a.organization_id = o.id
+                WHERE a.animal_type = 'dog'
+                AND {publicly_available("a")}
+                AND o.active = TRUE
+                AND a.primary_breed IS NOT NULL
+                AND a.primary_breed <> 'Unknown'
+                AND a.breed_type IS DISTINCT FROM 'mixed'
+                AND a.breed_group IS DISTINCT FROM 'Mixed'
+                GROUP BY a.primary_breed
+                ORDER BY a.primary_breed
+            """
+            )
+            with_page = {breed["primary_breed"] for breed in qualifying_breeds}
+            other_breeds = [{"primary_breed": row["primary_breed"], "count": row["count"]} for row in self.cursor.fetchall() if row["primary_breed"] not in with_page]
+
             return {
                 "total_dogs": total_dogs,
                 "unique_breeds": unique_breeds,
@@ -1147,6 +1168,7 @@ class AnimalService:
                 "purebred_count": breed_type_counts["purebred_count"] or 0,
                 "crossbreed_count": breed_type_counts["crossbreed_count"] or 0,
                 "qualifying_breeds": qualifying_breeds,
+                "other_breeds": other_breeds,
             }
 
         except Exception as e:

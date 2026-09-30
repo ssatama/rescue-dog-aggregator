@@ -154,6 +154,8 @@ export const BreedStatsSchema = z
     total_breeds: z.number().optional(),
     breed_groups: z.array(BreedGroupSchema).optional(),
     qualifying_breeds: z.array(QualifyingBreedSchema).optional(),
+    // Too few dogs for a page of their own (#668)
+    other_breeds: z.array(z.object({ primary_breed: z.string(), count: z.number() })).optional(),
   })
   .passthrough();
 

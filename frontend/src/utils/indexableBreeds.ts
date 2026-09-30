@@ -1,3 +1,6 @@
+/** The catalog, filtered to a breed too small for a page of its own (#668) */
+export const breedCatalogHref = (breed: string): string => `/dogs?breed=${encodeURIComponent(breed)}`;
+
 export interface IndexableBreedCandidate {
   breed_type?: string;
   breed_group?: string;

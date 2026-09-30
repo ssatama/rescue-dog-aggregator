@@ -21,7 +21,7 @@ function renderHub(overrides: Partial<React.ComponentProps<typeof BreedsHubClien
       mixedBreedData={mixed}
       popularBreedsWithImages={[labrador]}
       breedGroups={[]}
-      searchableBreeds={[{ name: "Labrador Retriever", slug: "labrador-retriever", count: 40 }]}
+      searchableBreeds={[{ name: "Labrador Retriever", href: "/breeds/labrador-retriever", count: 40 }]}
       {...overrides}
     />,
   );
