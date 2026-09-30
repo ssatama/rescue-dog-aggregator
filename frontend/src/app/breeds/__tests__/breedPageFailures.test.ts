@@ -46,6 +46,21 @@ describe("a breed page whose data fails (#659)", () => {
     await expect(generateStaticParams()).rejects.toThrow("API unreachable");
   });
 
+  it("takes the fallbacks during a build, where one failing fetch would abort every deploy", async () => {
+    const phase = process.env.NEXT_PHASE;
+    process.env.NEXT_PHASE = "phase-production-build";
+    try {
+      await BreedDetailPage(params);
+    } finally {
+      process.env.NEXT_PHASE = phase;
+    }
+
+    expect(getAnimals).toHaveBeenCalled();
+    expect(getListCounts).toHaveBeenCalled();
+    expect(getAnimals.orThrow).not.toHaveBeenCalled();
+    expect(getAllMetadata).toHaveBeenCalledWith({ strict: false });
+  });
+
   it("takes the filter options strictly", async () => {
     await BreedDetailPage(params);
 

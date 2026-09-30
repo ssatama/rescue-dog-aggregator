@@ -98,7 +98,7 @@ describe("BreedInfo", () => {
   });
 
   it("has no 'Mixed Group' badge under 'Mixed Breed'", () => {
-    render(<BreedInfo breedData={{ ...mockBreedData, primary_breed: "Mixed Breed", breed_group: "Mixed" }} />);
+    render(<BreedInfo breedData={{ ...mockBreedData, primary_breed: "Mixed Breed", breed_slug: "mixed", breed_group: "Mixed" }} />);
 
     expect(screen.queryByText("Mixed Group")).not.toBeInTheDocument();
   });

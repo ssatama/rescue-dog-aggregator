@@ -60,8 +60,8 @@ export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, classN
         </h1>
 
         <div className="flex flex-wrap gap-2">
-          {/* "Mixed Group" under "Mixed Breed" would only repeat it */}
-          {breedData.breed_group && breedData.breed_group !== "Unknown" && breedData.breed_group !== "Mixed" && (
+          {/* On /breeds/mixed, "Mixed Group" under "Mixed Breed" would only repeat it */}
+          {breedData.breed_group && breedData.breed_group !== "Unknown" && breedData.breed_slug !== "mixed" && (
             <Badge variant="secondary" className="text-sm">
               {breedData.breed_group} Group
             </Badge>

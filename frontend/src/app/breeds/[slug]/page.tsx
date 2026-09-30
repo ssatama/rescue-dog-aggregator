@@ -15,6 +15,8 @@ import {
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
 import { averageAgeSentence } from "@/utils/breedMetadata";
+import { strictAtRuntime } from "@/utils/isrFetch";
+import { isPrerendering } from "@/utils/serverFetch";
 import { clampDescription, fitTitle } from "@/utils/seoMeta";
 
 interface BreedPageProps {
@@ -129,9 +131,9 @@ async function fetchBreedPageData(slug: string) {
   const breedFilter = { primary_breed: breedData.primary_breed };
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([
-    getAnimals.orThrow({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
-    getListCounts.orThrow(breedFilter),
-    getAllMetadata({ strict: true }),
+    strictAtRuntime(getAnimals)({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
+    strictAtRuntime(getListCounts)(breedFilter),
+    getAllMetadata({ strict: !isPrerendering() }),
   ]);
 
   return { breedData, initialDogs, breedCounts, metadata };

@@ -14,6 +14,8 @@ import {
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
 import { averageAgeSentence } from "@/utils/breedMetadata";
+import { strictAtRuntime } from "@/utils/isrFetch";
+import { isPrerendering } from "@/utils/serverFetch";
 import { clampDescription, fitTitle } from "@/utils/seoMeta";
 
 export const revalidate = 604800;
@@ -89,22 +91,30 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function fetchMixedBreedData() {
-  // The breed, and the catalog's first page in its default order
-  const [breedData, initialDogs, breedCounts, metadata] = await Promise.all([
-    getMixedBreedPageData(),
-    getAnimals.orThrow({ breed_group: "Mixed", sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
-    getListCounts.orThrow({ breed_group: "Mixed" }),
-    getAllMetadata({ strict: true }),
+  // All at once, but the breed decides first: with no Mixed group the page
+  // 404s whatever became of the rest
+  const lists = Promise.all([
+    // The catalog's first page, in its default order
+    strictAtRuntime(getAnimals)({ breed_group: "Mixed", sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
+    strictAtRuntime(getListCounts)({ breed_group: "Mixed" }),
+    getAllMetadata({ strict: !isPrerendering() }),
   ]);
+  const breedData = await getMixedBreedPageData();
+  if (!breedData) {
+    lists.catch(() => {});
+    return null;
+  }
 
+  const [initialDogs, breedCounts, metadata] = await lists;
   return { breedData, initialDogs, breedCounts, metadata };
 }
 
 export default async function MixedBreedsPage() {
-  const { breedData, initialDogs, breedCounts, metadata } = await fetchMixedBreedData();
-  if (!breedData) {
+  const data = await fetchMixedBreedData();
+  if (!data) {
     notFound();
   }
+  const { breedData, initialDogs, breedCounts, metadata } = data;
 
   // The same frame as every other breed page: the site header was missing here
   return (

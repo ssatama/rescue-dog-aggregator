@@ -42,6 +42,13 @@ describe("/breeds/mixed whose data fails (#659)", () => {
     await expect(MixedBreedsPage()).rejects.toThrow("notFound()");
   });
 
+  it("still 404s when the lists fail alongside a missing Mixed group", async () => {
+    mock(getMixedBreedPageData).mockResolvedValue(null);
+    mock(getListCounts.orThrow).mockRejectedValue(new Error("API unreachable"));
+
+    await expect(MixedBreedsPage()).rejects.toThrow("notFound()");
+  });
+
   it("takes dogs, counts and filter options strictly", async () => {
     await MixedBreedsPage();
 
