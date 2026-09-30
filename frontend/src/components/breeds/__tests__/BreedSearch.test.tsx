@@ -44,4 +44,12 @@ describe("BreedSearch (#500)", () => {
     expect(screen.getByText(/No breed page for/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Search all dogs for it" })).toHaveAttribute("href", "/dogs?search=staffy");
   });
+
+  it("leaves the focus ring to the wrapper, not the global input ring too (#671)", () => {
+    render(<BreedSearch breeds={breeds} />);
+    const input = screen.getByLabelText("Find a breed");
+
+    expect(input).toHaveClass("focus:ring-0");
+    expect(input.parentElement).toHaveClass("focus-within:ring-2");
+  });
 });
