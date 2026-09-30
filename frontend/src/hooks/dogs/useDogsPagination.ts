@@ -5,10 +5,10 @@ import {
   useRef,
   useMemo,
   startTransition,
-  type MutableRefObject,
 } from "react";
 import { getAnimals, getFilterCounts } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
+import { replaceUrlKeepingScroll } from "./useScrollRestoration";
 import type { Dog, Filters, DogsPageInitialParams, FilterCountsResponse } from "../../types/dogsPage";
 
 const ITEMS_PER_PAGE = 20;
@@ -24,7 +24,6 @@ interface UseDogsPaginationParams {
   initialParams: DogsPageInitialParams;
   filters: Filters;
   buildAPIParams: (filters: Filters) => Record<string, string>;
-  scrollPositionRef: MutableRefObject<number>;
   searchParams: URLSearchParams;
   pathname: string;
 }
@@ -41,7 +40,7 @@ interface UseDogsPaginationReturn {
   fetchDogsWithFilters: (filters: Filters, pageNum?: number, shouldAppend?: boolean) => Promise<void>;
   loadMoreDogs: () => Promise<void>;
   abortCurrentFetch: () => void;
-  resetForNewFilters: (newFilters: Filters, scrollRef: MutableRefObject<number>) => void;
+  resetForNewFilters: (newFilters: Filters) => void;
   resetAll: (defaultFilters: Filters) => void;
 }
 
@@ -50,7 +49,6 @@ export default function useDogsPagination({
   initialParams,
   filters,
   buildAPIParams,
-  scrollPositionRef,
   searchParams,
   pathname,
 }: UseDogsPaginationParams): UseDogsPaginationReturn {
@@ -223,12 +221,11 @@ export default function useDogsPagination({
 
   fetchDogsWithFiltersRef.current = fetchDogsWithFilters;
 
-  const resetForNewFilters = useCallback((newFilters: Filters, scrollRef: MutableRefObject<number>) => {
+  const resetForNewFilters = useCallback((newFilters: Filters) => {
     abortCurrentFetch();
     startTransition(() => {
       setPage(1);
       setHasMore(true);
-      scrollRef.current = 0;
       setIsFilterTransition(true);
     });
     fetchDogsWithFilters(newFilters, 1);
@@ -276,15 +273,12 @@ export default function useDogsPagination({
         } else {
           urlParams.delete("page");
         }
-        if (scrollPositionRef.current > 0) {
-          urlParams.set("scroll", scrollPositionRef.current.toString());
-        }
 
         const newURL = urlParams.toString()
           ? `${pathname}?${urlParams.toString()}`
           : pathname;
 
-        window.history.replaceState(null, "", newURL);
+        replaceUrlKeepingScroll(newURL);
       });
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
@@ -297,7 +291,7 @@ export default function useDogsPagination({
         currentAbortControllerRef.current = null;
       }
     }
-  }, [page, hasMore, filters, loadingMore, pathname, searchParams, buildAPIParams, scrollPositionRef]);
+  }, [page, hasMore, filters, loadingMore, pathname, searchParams, buildAPIParams]);
 
   // Mount effect: load initial dogs or hydrate deep link
   useEffect(() => {

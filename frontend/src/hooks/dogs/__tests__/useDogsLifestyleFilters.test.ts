@@ -20,7 +20,6 @@ function filtersFrom(query: string) {
       initialParams: {},
       searchParams: new URLSearchParams(query),
       pathname: "/dogs",
-      scrollPositionRef: { current: 0 },
     }),
   );
   return result;
