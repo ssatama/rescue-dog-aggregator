@@ -82,6 +82,12 @@ interface CatalogToolbarProps {
   onSortChange: (sort: string) => void;
   /** The filter sidebar, which shows from 1024px and can be hidden there */
   sidebar?: { shown: boolean; onToggle: () => void };
+  /**
+   * Below 1024px, on a page with its own heading (breed, rescue): opens the
+   * filter sheet from here rather than from a row of its own (#662)
+   */
+  onOpenFilters?: () => void;
+  activeFilterCount?: number;
 }
 
 /** "214 dogs match", the sort menu and a removable chip per active filter (#494). */
@@ -94,6 +100,8 @@ export default function CatalogToolbar({
   onClearAll,
   onSortChange,
   sidebar,
+  onOpenFilters,
+  activeFilterCount = 0,
 }: CatalogToolbarProps): React.JSX.Element {
   const chips = activeFilterChips(filters, organizations, fixed);
   const country = filters.availableCountryFilter;
@@ -134,6 +142,20 @@ export default function CatalogToolbar({
             Quick browse
           </Link>
           <SortMenu value={filters.sortFilter ?? FILTER_DEFAULTS.SORT} onChange={onSortChange} />
+          {onOpenFilters && (
+            <button
+              type="button"
+              onClick={onOpenFilters}
+              aria-label={activeFilterCount > 0 ? `Open filters (${activeFilterCount} active)` : "Open filters"}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink hover:bg-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+            >
+              <SlidersHorizontal className="h-4 w-4 text-subtle" aria-hidden="true" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-orange-600 px-1.5 text-xs font-bold text-white">{activeFilterCount}</span>
+              )}
+            </button>
+          )}
         </div>
       </div>
 

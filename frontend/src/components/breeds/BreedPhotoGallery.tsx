@@ -1,136 +1,13 @@
-"use client";
-
-import React, { useState, useRef, useCallback } from "react";
-import { FallbackImage } from "../ui/FallbackImage";
 import Link from "next/link";
+import Image, { getImageProps } from "next/image";
+import { preload } from "react-dom";
 import type { GalleryDog } from "@/types/breeds";
 
-
-interface BreedMobileCarouselProps {
-  dogs: GalleryDog[];
-  breedName: string;
-}
-
-function getSlideWidth(container: HTMLDivElement): number {
-  const firstSlide = container.querySelector<HTMLElement>("[data-slide]");
-  return firstSlide?.offsetWidth ?? container.offsetWidth * 0.7;
-}
-
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-}
-
-function BreedMobileCarousel({
-  dogs,
-  breedName,
-}: BreedMobileCarouselProps) {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const displayedDogs = dogs?.slice(0, 6) || [];
-  const lastIndex = displayedDogs.length - 1;
-
-  const scrollToSlide = useCallback((index: number): void => {
-    if (!carouselRef.current) return;
-
-    const clamped = Math.max(0, Math.min(index, lastIndex));
-    const slideWidth = getSlideWidth(carouselRef.current);
-    const gap = 12;
-    carouselRef.current.scrollTo({
-      left: clamped * (slideWidth + gap),
-      behavior: prefersReducedMotion() ? "auto" : "smooth",
-    });
-    setCurrentSlide(clamped);
-  }, [lastIndex]);
-
-  const handleScroll = (): void => {
-    if (!carouselRef.current) return;
-
-    const slideWidth = getSlideWidth(carouselRef.current);
-    const gap = 12;
-    const raw = Math.round(carouselRef.current.scrollLeft / (slideWidth + gap));
-    const clamped = Math.max(0, Math.min(raw, lastIndex));
-    if (clamped !== currentSlide) {
-      setCurrentSlide(clamped);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
-
-    e.preventDefault();
-    const next =
-      e.key === "Home" ? 0 :
-      e.key === "End" ? lastIndex :
-      e.key === "ArrowLeft" ? currentSlide - 1 :
-      currentSlide + 1;
-
-    scrollToSlide(next);
-  };
-
-  return (
-    <div className="w-full">
-      <div
-        ref={carouselRef}
-        tabIndex={0}
-        role="region"
-        aria-label={`${breedName} photo carousel`}
-        aria-roledescription="carousel"
-        className="flex overflow-x-auto gap-3 pb-2 snap-x snap-mandatory scrollbar-hide focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 rounded-xl"
-        onScroll={handleScroll}
-        onKeyDown={handleKeyDown}
-        style={{
-          scrollSnapType: "x mandatory",
-          WebkitOverflowScrolling: "touch",
-        }}
-      >
-        {displayedDogs.map((dog, index) => (
-          <Link
-            key={dog.slug}
-            data-slide
-            href={`/dogs/${dog.slug}`}
-            className="flex-shrink-0 w-[70vw] max-w-[280px] aspect-[4/5] relative overflow-hidden rounded-xl cursor-pointer group block snap-start"
-          >
-            <FallbackImage
-              src={dog.primary_image_url}
-              alt={`${dog.name} - ${breedName} rescue dog`}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300 motion-reduce:transition-none motion-reduce:transform-none"
-              priority={index < 3}
-              sizes="(max-width: 640px) 70vw, 280px"
-              fallbackSrc="/images/dog-placeholder.jpg"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            <div className="absolute bottom-3 left-3">
-              <span className="text-white text-sm font-medium">
-                {dog.name}
-              </span>
-            </div>
-          </Link>
-        ))}
-      </div>
-      <div className="flex justify-center mt-3 gap-1.5">
-        {displayedDogs.map((_, index) => {
-          const isActive = currentSlide === index;
-          return (
-            <button
-              key={index}
-              className={`h-2 rounded-full transition-all duration-300 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 ${
-                isActive
-                  ? "w-6 bg-orange-600"
-                  : "w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
-              }`}
-              onClick={() => scrollToSlide(index)}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// next/image, not FallbackImage: after hydration that swaps an images.rescuedogs.me
+// photo for its full-size original, a second and larger download that the
+// preload below could never match. A third of the half-width column:
+const SIZES = "(max-width: 1280px) 17vw, 215px";
+const GALLERY_MEDIA = "(min-width: 1024px)";
 
 interface BreedPhotoGalleryProps {
   dogs: GalleryDog[];
@@ -145,43 +22,47 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }: B
     return null;
   }
 
-  return (
-    <div className={`breed-photo-gallery ${className}`}>
-      {/* Desktop: Clean Grid */}
-      <div className="hidden md:block">
-        <div className="grid grid-cols-3 gap-2">
-          {dogs.slice(0, 6).map((dog, index) => (
-            <Link
-              key={dog.slug}
-              href={`/dogs/${dog.slug}`}
-              className="relative overflow-hidden rounded-xl cursor-pointer group block aspect-[4/5]"
-            >
-              <FallbackImage
-                src={dog.primary_image_url}
-                alt={`${dog.name} - ${breedName} rescue dog`}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300 motion-reduce:transition-none motion-reduce:transform-none"
-                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                priority={index < 3}
-                fallbackSrc="/images/dog-placeholder.jpg"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 motion-reduce:transition-none" />
-              <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 motion-reduce:transition-none">
-                <span className="text-white text-sm font-medium">
-                  {dog.name}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
+  // Its first row is the page's largest image from 1024px, so it is preloaded
+  // there, and only there: a phone hides the gallery and its lazy images are
+  // never fetched (#672)
+  dogs.slice(0, 3).forEach((dog) => {
+    const { props } = getImageProps({ src: dog.primary_image_url, alt: "", fill: true, sizes: SIZES });
+    preload(props.src, {
+      as: "image",
+      imageSrcSet: props.srcSet,
+      imageSizes: props.sizes,
+      media: GALLERY_MEDIA,
+      fetchPriority: "high",
+    });
+  });
 
-      {/* Mobile: Swipeable Carousel */}
-      <div className="md:hidden">
-        <BreedMobileCarousel
-          dogs={dogs}
-          breedName={breedName}
-        />
+  // From 1024px, beside the breed's details. Below that the list's own cards
+  // are the photos, just under the header, so a gallery only repeated them (#661)
+  return (
+    <div className={`breed-photo-gallery hidden lg:block ${className}`}>
+      <div className="grid grid-cols-3 gap-2">
+        {dogs.slice(0, 6).map((dog, index) => (
+          <Link
+            key={dog.slug}
+            href={`/dogs/${dog.slug}`}
+            className="relative overflow-hidden rounded-xl cursor-pointer group block aspect-[4/5]"
+          >
+            <Image
+              src={dog.primary_image_url}
+              alt={`${dog.name} - ${breedName} rescue dog`}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300 motion-reduce:transition-none motion-reduce:transform-none"
+              sizes={SIZES}
+              fetchPriority={index < 3 ? "high" : "auto"}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 motion-reduce:transition-none" />
+            <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 motion-reduce:transition-none">
+              <span className="text-white text-sm font-medium">
+                {dog.name}
+              </span>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

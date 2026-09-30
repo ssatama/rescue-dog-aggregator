@@ -324,28 +324,6 @@ export default function DogsPageClientSimplified({
         </div>
       )}
 
-      {/* Mobile Filter Button (when hero is hidden) */}
-      {hideHero && (
-        <div className="lg:hidden sticky top-16 z-20 bg-background dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex justify-end">
-          <Button
-            onClick={() => setIsSheetOpen(true)}
-            variant="default"
-            size="lg"
-            className="rounded-full shadow-lg bg-orange-500 hover:bg-orange-600 text-white p-3 relative"
-            aria-label="Open filters"
-          >
-            <Filter className="w-6 h-6" />
-            {filterState.activeFilterCount > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -top-2 -right-2 px-2 py-0.5 text-xs font-bold min-w-[20px] h-5"
-              >
-                {filterState.activeFilterCount}
-              </Badge>
-            )}
-          </Button>
-        </div>
-      )}
 
       {/* Layout's <main> gives the 16px phone gutter; this lines the edges up
           with the header's from 640px */}
@@ -471,6 +449,8 @@ export default function DogsPageClientSimplified({
               onClearAll={handleResetFilters}
               onSortChange={setSort}
               sidebar={{ shown: !sidebarHidden, onToggle: toggleSidebar }}
+              onOpenFilters={hideHero ? () => setIsSheetOpen(true) : undefined}
+              activeFilterCount={filterState.activeFilterCount}
             />
 
             {/* Labels come from the visitor's country; hiding the rest is opt-in (#493) */}
