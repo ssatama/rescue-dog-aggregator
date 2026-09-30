@@ -45,7 +45,8 @@ export default async function BreedsPage() {
   const [breedStats, mixedBreedData, popularBreeds, breedGroups] = await Promise.all([
     getBreedStats(),
     getMixedBreedData(),
-    getPopularBreedsWithImages(8),
+    // Extra, so the tiles stay full after mixes and types are left out (#669)
+    getPopularBreedsWithImages(12),
     getBreedGroupsWithTopBreeds(),
   ]);
   const searchableBreeds = [
