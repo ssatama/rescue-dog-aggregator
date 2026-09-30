@@ -27,7 +27,7 @@ export function clampDescription(text: string): string {
  */
 export function fitTitle(...segments: string[]): string {
   for (let n = segments.length; n > 0; n--) {
-    const title = segments.slice(0, n).join("");
+    const title = segments.slice(0, n).join("").replace(/\s+/g, " ").trim();
     if (title.length <= MAX_TITLE_LENGTH) return title;
   }
   return clampTitle(segments[0] ?? "");
