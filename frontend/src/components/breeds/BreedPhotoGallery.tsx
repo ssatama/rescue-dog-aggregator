@@ -3,9 +3,7 @@ import Image, { getImageProps } from "next/image";
 import { preload } from "react-dom";
 import type { GalleryDog } from "@/types/breeds";
 
-// next/image, not FallbackImage: after hydration that swaps an images.rescuedogs.me
-// photo for its full-size original, a second and larger download that the
-// preload below could never match. A third of the half-width column:
+// A third of the half-width column:
 const SIZES = "(max-width: 1280px) 17vw, 215px";
 const GALLERY_MEDIA = "(min-width: 1024px)";
 
