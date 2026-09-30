@@ -40,6 +40,32 @@ function renderToolbar(filters: Partial<Filters> = {}, total: number | null = 21
   return handlers;
 }
 
+describe("CatalogToolbar filters button (#662)", () => {
+  it("opens the filters from the toolbar on phones when the page has no hero row", async () => {
+    const onOpenFilters = jest.fn();
+    render(
+      <CatalogToolbar
+        filters={{ ...NONE, sizeFilter: "Large" }}
+        total={32}
+        fixed={[]}
+        onRemove={jest.fn()}
+        onClearAll={jest.fn()}
+        onSortChange={jest.fn()}
+        onOpenFilters={onOpenFilters}
+        activeFilterCount={1}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Open filters (1 active)" }));
+    expect(onOpenFilters).toHaveBeenCalled();
+  });
+
+  it("has no filters button of its own otherwise", () => {
+    renderToolbar();
+    expect(screen.queryByRole("button", { name: /Open filters/ })).not.toBeInTheDocument();
+  });
+});
+
 describe("CatalogToolbar", () => {
   it("says how many dogs match", () => {
     renderToolbar();

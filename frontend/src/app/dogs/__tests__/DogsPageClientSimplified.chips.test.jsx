@@ -109,6 +109,15 @@ describe("the catalog on a breed page (#500)", () => {
     expect((await screen.findByTestId("dog-card")).dataset.list).toBe("breed-page");
   });
 
+  it("puts the phone filters button in the toolbar, not alone in a row of its own (#662)", async () => {
+    api.getAnimals.mockResolvedValue([{ id: 1, name: "Rex", slug: "rex-1" }]);
+    render(<DogsPageClientSimplified initialDogs={[]} metadata={{}} initialParams={{ primary_breed: "Lurcher" }} hideHero hideBreadcrumbs />);
+
+    const buttons = await screen.findAllByRole("button", { name: /Open filters/ });
+    expect(buttons).toHaveLength(1);
+    expect(screen.getByTestId("catalog-toolbar")).toContainElement(buttons[0]);
+  });
+
   it("says none are listed, not that filters matched nothing, when the breed has no dogs", async () => {
     api.getAnimals.mockResolvedValue([]);
     render(<DogsPageClientSimplified initialDogs={[]} metadata={{}} initialParams={{ primary_breed: "Lurcher" }} hideHero hideBreadcrumbs />);
@@ -202,13 +211,13 @@ describe("the catalog on a landing page (#502)", () => {
     renderLanding(pathname, "", initialParams);
 
     await screen.findByTestId("dog-card");
-    expect(screen.getByRole("button", { name: "Open filters" })).toHaveTextContent("");
+    expect(screen.getByRole("button", { name: "Open filters" })).toHaveTextContent(/^Filters$/);
   });
 
   it("counts only the visitor's filters and keeps the page's own out of the URL", async () => {
     renderLanding("/dogs/puppies", "sex=Male&size=Small", { age_category: "Puppy" });
 
-    expect(await screen.findByRole("button", { name: "Open filters" })).toHaveTextContent("2");
+    expect(await screen.findByRole("button", { name: "Open filters (2 active)" })).toHaveTextContent("Filters2");
     // No age to pick on a page that is about one age
     expect(screen.queryByTestId("age-button-grid")).not.toBeInTheDocument();
     const maleChip = screen.getAllByRole("button", { name: /Male/ }).find((button) => !button.dataset.testid);

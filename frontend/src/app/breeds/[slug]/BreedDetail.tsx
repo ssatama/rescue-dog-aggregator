@@ -32,12 +32,17 @@ export default function BreedDetail({
   const breadcrumbItems = [
     { name: "Home", url: "/" },
     { name: "Breeds", url: "/breeds" },
-    { name: breedData.primary_breed, url: isMixed ? "/breeds/mixed" : `/breeds/${breedData.breed_slug}` },
+    {
+      name: breedData.primary_breed,
+      url: isMixed ? "/breeds/mixed" : `/breeds/${breedData.breed_slug}`,
+    },
   ];
 
   const galleryDogs = breedData.topDogs ?? [];
 
-  const initialParams = isMixed ? { breed_group: "Mixed" } : { primary_breed: breedData.primary_breed };
+  const initialParams = isMixed
+    ? { breed_group: "Mixed" }
+    : { primary_breed: breedData.primary_breed };
 
   return (
     <div className="mx-auto max-w-7xl py-6">
@@ -62,16 +67,34 @@ export default function BreedDetail({
         />
       </div>
 
-      <BreedPracticalStats stats={buildPracticalStats(breedCounts)} />
+      {/* Phones: the list first, then what the rescues say about the dogs in it,
+          so the first dog is a screen down rather than two (#661) */}
+      <div className="flex flex-col">
+        <div className="order-last md:order-none">
+          <BreedPracticalStats stats={buildPracticalStats(breedCounts)} />
+        </div>
 
-      <section id="dogs-grid" aria-labelledby="breed-dogs-heading" className="scroll-mt-20">
-        <h2 id="breed-dogs-heading" className="font-display text-xl font-bold tracking-tight text-ink sm:text-2xl">
-          {isMixed ? "Mixed breed dogs" : `${breedData.primary_breed} dogs`} listed now
-        </h2>
-        <Suspense fallback={<ServerDogListing dogs={initialDogs} />}>
-          <BreedCatalog initialDogs={initialDogs} metadata={metadata} initialParams={initialParams} />
-        </Suspense>
-      </section>
+        <section
+          id="dogs-grid"
+          aria-labelledby="breed-dogs-heading"
+          className="scroll-mt-20"
+        >
+          <h2
+            id="breed-dogs-heading"
+            className="font-display text-xl font-bold tracking-tight text-ink sm:text-2xl"
+          >
+            {isMixed ? "Mixed breed dogs" : `${breedData.primary_breed} dogs`}{" "}
+            listed now
+          </h2>
+          <Suspense fallback={<ServerDogListing dogs={initialDogs} />}>
+            <BreedCatalog
+              initialDogs={initialDogs}
+              metadata={metadata}
+              initialParams={initialParams}
+            />
+          </Suspense>
+        </section>
+      </div>
     </div>
   );
 }
