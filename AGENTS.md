@@ -70,9 +70,9 @@ Build an open-source platform aggregating rescue dogs from multiple organization
    each finding yourself by real likelihood x impact; fix the medium and high
    ones and review again. Nits, rare edge cases and accepted trade-offs don't
    block
-7. Once CI is green and no medium or high issue remains, `gh pr merge
-   --squash`; no human review needed (the `weekly-devops` skill keeps its own
-   `needs-human` gate)
+7. Once CI is green and no medium or high issue remains, squash-merge
+   (`gh pr merge --squash`); no human review needed (the `weekly-devops`
+   skill keeps its own `needs-human` gate)
 
 Branch naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
 
