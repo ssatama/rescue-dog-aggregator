@@ -56,7 +56,7 @@ describe("FallbackImage", () => {
       expect(img).toHaveAttribute("src", "https://example.com/dog.jpg");
     });
 
-    it("detects R2 images correctly", () => {
+    it("keeps an R2 photo on the loader's sized URL after hydration (#680)", () => {
       render(
         <FallbackImage
           src="https://images.rescuedogs.me/rescue_dogs/dog.jpg"
@@ -67,7 +67,8 @@ describe("FallbackImage", () => {
       );
 
       const img = screen.getByRole("img", { name: "R2 Dog" });
-      expect(img).toHaveAttribute("data-unoptimized", "true");
+      expect(img).not.toHaveAttribute("data-unoptimized");
+      expect(img).toHaveAttribute("src", "https://images.rescuedogs.me/rescue_dogs/dog.jpg");
     });
   });
 
@@ -202,7 +203,7 @@ describe("FallbackImage", () => {
       });
     });
 
-    it("handles r2.cloudflarestorage.com URLs", () => {
+    it("falls back from an r2.cloudflarestorage.com URL to the custom domain", async () => {
       render(
         <FallbackImage
           src="https://bucket.r2.cloudflarestorage.com/rescue_dogs/dog.jpg"
@@ -213,6 +214,16 @@ describe("FallbackImage", () => {
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
+      expect(img).not.toHaveAttribute("data-unoptimized");
+
+      fireEvent.error(img);
+
+      await waitFor(() => {
+        expect(img).toHaveAttribute(
+          "src",
+          "https://images.rescuedogs.me/cdn-cgi/image/w=800,q=80,f=auto/rescue_dogs/dog.jpg",
+        );
+      });
       expect(img).toHaveAttribute("data-unoptimized", "true");
     });
   });
@@ -276,7 +287,7 @@ describe("FallbackImage", () => {
   });
 
   describe("Next.js Image Optimization Bypass", () => {
-    it("bypasses Next.js optimization for R2 images", () => {
+    it("sends the first try of an R2 photo through the loader, not the full-size original (#680)", () => {
       render(
         <FallbackImage
           src="https://images.rescuedogs.me/rescue_dogs/dog.jpg"
@@ -287,7 +298,7 @@ describe("FallbackImage", () => {
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
-      expect(img).toHaveAttribute("data-unoptimized", "true");
+      expect(img).not.toHaveAttribute("data-unoptimized");
     });
 
     it("bypasses optimization after fallback", async () => {

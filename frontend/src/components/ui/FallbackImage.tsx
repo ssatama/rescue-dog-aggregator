@@ -11,13 +11,13 @@ interface FallbackImageProps extends Omit<ImageProps, "onError"> {
  * FallbackImage Component
  *
  * A robust image component that provides multiple fallback strategies:
- * 1. Primary: Next.js Image with Vercel transformations
+ * 1. Primary: next/image through the site's loader (Cloudflare resizing for
+ *    images.rescuedogs.me), so an R2 photo keeps its sized srcset (#680)
  * 2. Fallback 1: R2 URL with Cloudflare Image Resizing transformations
  * 3. Fallback 2: Direct R2 URL without transformations
  * 4. Fallback 3: Placeholder image or emoji
  *
  * This ensures images are always displayed, even when:
- * - Vercel image transformation quota is exceeded
  * - Cloudflare transformations fail
  * - Original image is unavailable
  */
@@ -30,23 +30,11 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
 }) => {
   const [imageSrc, setImageSrc] = useState<string>(String(src));
   const [fallbackLevel, setFallbackLevel] = useState<number>(0);
-  const [isR2Image, setIsR2Image] = useState<boolean>(false);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- Syncing image state with src prop change for fallback cascade */
-    const srcString = String(src);
-    setImageSrc(srcString);
+    setImageSrc(String(src));
     setFallbackLevel(0);
-    // Use URL parsing for proper hostname validation
-    try {
-      const url = new URL(srcString);
-      setIsR2Image(
-        url.hostname === R2_CUSTOM_DOMAIN ||
-          url.hostname.endsWith(".r2.cloudflarestorage.com"),
-      );
-    } catch {
-      setIsR2Image(false);
-    }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [src]);
 
@@ -172,8 +160,9 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
     ],
   );
 
-  // For R2 images, bypass Next.js Image optimization to avoid Vercel transformations
-  const shouldBypassNextOptimization = isR2Image || fallbackLevel > 0;
+  // A fallback URL is already the exact one to load; the first try goes
+  // through the loader, which sizes R2 photos on Cloudflare
+  const shouldBypassNextOptimization = fallbackLevel > 0;
 
   if (fallbackLevel === 3 && fallbackSrc === "/placeholder_dog.svg") {
     // Show emoji placeholder if even the fallback image fails
