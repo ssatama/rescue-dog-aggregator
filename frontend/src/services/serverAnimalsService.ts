@@ -551,12 +551,12 @@ function pickGalleryDogs(candidateDogs: Dog[], label: string): SampleDog[] {
 // good page and reaches Sentry once through onRequestError
 
 /** /breeds/mixed: always there, so never null */
-export const getMixedBreedData = cache(async (): Promise<BreedPageData> => {
+export const getMixedBreedPageData = cache(async (): Promise<BreedPageData> => {
   const breedStats = await getBreedStats.orThrow();
   // The catalog lists the Mixed group, so the count is the group's; the age
   // is the stats' own, worked out the same way as every other breed's
   const mixedGroup = breedStats.breed_groups?.find((g) => g.name === "Mixed");
-  const mixedStats = breedStats.qualifying_breeds?.find((b) => b.breed_type === "mixed");
+  const mixedStats = breedStats.qualifying_breeds?.find((b) => b.breed_slug === "mixed-breed");
 
   const candidateDogs = await getAnimals.orThrow({
     breed_group: "Mixed",
@@ -579,10 +579,6 @@ export const getMixedBreedData = cache(async (): Promise<BreedPageData> => {
 });
 
 export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData | null> => {
-  if (slug === "mixed") {
-    return getMixedBreedData();
-  }
-
   // Not the fallback: it has no breeds, which would read as "no such breed"
   const breedStats = await getBreedStats.orThrow();
   const breedData = breedStats.qualifying_breeds?.find(
@@ -601,9 +597,15 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
     sort_order: "desc",
   });
 
+  // Only what the page uses: the stats row carries distributions and
+  // personality data that would otherwise ship to every visitor
   return {
-    ...breedData,
+    primary_breed: breedData.primary_breed,
     breed_slug: slug,
+    breed_group: breedData.breed_group,
+    breed_type: breedData.breed_type,
+    count: breedData.count,
+    average_age_months: breedData.average_age_months,
     topDogs: pickGalleryDogs(candidateDogs, `"${breedData.primary_breed}"`),
     description:
       getBreedDescription(breedData.primary_breed) ||

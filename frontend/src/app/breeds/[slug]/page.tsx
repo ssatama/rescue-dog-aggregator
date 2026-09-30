@@ -15,6 +15,7 @@ import {
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
 import { averageAgeSentence } from "@/utils/breedMetadata";
+import { clampDescription } from "@/utils/seoMeta";
 
 interface BreedPageProps {
   params: Promise<{ slug: string }>;
@@ -35,13 +36,10 @@ export async function generateMetadata(
     };
   }
 
-  const description = breedData.description;
-
-  const avgAge = averageAgeSentence(breedData.average_age_months);
-
-  const seoDescription = description
-    ? `${description.substring(0, 80)}… ${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}`.trim()
-    : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. ${avgAge}View photos and profiles from verified rescues.`;
+  // The facts first, so the clamp cuts the blurb rather than the age
+  const seoDescription = clampDescription(
+    `${breedData.count} ${breedData.primary_breed} rescue dogs available. ${averageAgeSentence(breedData.average_age_months)}${breedData.description ?? ""}`,
+  );
 
   const keywords = [
     `${breedData.primary_breed} rescue`,
@@ -62,7 +60,7 @@ export async function generateMetadata(
 
   return {
     title: `${breedData.primary_breed} Rescue Dogs for Adoption | ${breedData.count} Available Near You`,
-    description: seoDescription.substring(0, 160),
+    description: seoDescription,
     keywords,
     openGraph: {
       title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
@@ -85,7 +83,7 @@ export async function generateMetadata(
     twitter: {
       card: "summary_large_image",
       title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
-      description: seoDescription.substring(0, 120),
+      description: seoDescription,
       images:
         breedData.topDogs
           ?.filter(
@@ -127,7 +125,7 @@ async function fetchBreedPageData(slug: string) {
     return null;
   }
 
-  const breedFilter = slug === "mixed" ? { breed_group: "Mixed" } : { primary_breed: breedData.primary_breed };
+  const breedFilter = { primary_breed: breedData.primary_breed };
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([
     getAnimals.orThrow({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),

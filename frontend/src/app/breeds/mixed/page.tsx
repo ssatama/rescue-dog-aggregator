@@ -6,22 +6,25 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import BreedDetailSkeleton from "@/components/ui/BreedDetailSkeleton";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
-  getMixedBreedData,
+  getMixedBreedPageData,
   getAnimals,
   getListCounts,
   getAllMetadata,
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
 import { averageAgeSentence } from "@/utils/breedMetadata";
+import { clampDescription } from "@/utils/seoMeta";
 
 export const revalidate = 604800;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const breedData = await getMixedBreedData();
+  const breedData = await getMixedBreedPageData();
 
   const avgAge = averageAgeSentence(breedData.average_age_months);
 
-  const seoDescription = `Discover ${breedData.count} unique mixed breed rescue dogs waiting for homes. ${avgAge}Each with special personality and story. Browse by size and age.`;
+  const seoDescription = clampDescription(
+    `Discover ${breedData.count} unique mixed breed rescue dogs waiting for homes. ${avgAge}Each with special personality and story. Browse by size and age.`,
+  );
 
   const keywords = [
     "mixed breed rescue",
@@ -42,7 +45,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: `Mixed Breed Rescue Dogs for Adoption | ${breedData.count} Unique Dogs Available`,
-    description: seoDescription.substring(0, 160),
+    description: seoDescription,
     keywords,
     openGraph: {
       title: `${breedData.count} Mixed Breed Dogs Need Loving Homes`,
@@ -82,7 +85,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function fetchMixedBreedData() {
-  const breedData = await getMixedBreedData();
+  const breedData = await getMixedBreedPageData();
 
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([

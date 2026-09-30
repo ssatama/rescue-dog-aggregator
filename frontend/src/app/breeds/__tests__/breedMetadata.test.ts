@@ -11,37 +11,39 @@ const borderCollie = {
   breed_slug: "border-collie",
   count: 32,
   average_age_months: 83,
-  description: "Border Collies are brilliant herding dogs considered the most intelligent breed, originally developed in the Scottish Borders.",
+  description:
+    "Border Collies are brilliant herding dogs considered the most intelligent breed, originally developed in the Scottish Borders for sheep herding. These intense, focused workers need jobs to stay happy.",
   topDogs: [],
 };
+const params = { params: Promise.resolve({ slug: "border-collie" }) };
 
 describe("breed page meta description (#664)", () => {
-  it("gives the average age from the fields the API sends, and no made-up location", async () => {
+  it("leads with the count and the age the page shows, and cuts the blurb at a word", async () => {
     (getBreedBySlug as unknown as jest.Mock).mockResolvedValue(borderCollie);
 
-    const { description } = await generateMetadata({ params: Promise.resolve({ slug: "border-collie" }) });
+    const { description } = await generateMetadata(params);
 
-    expect(description).toContain("32 Border Collie rescue dogs available. Average age 7 years.");
+    expect(description).toMatch(/^32 Border Collie rescue dogs available\. Average age 6\.9 yrs\. Border Collies are/);
     expect(description).not.toContain("multiple locations");
     expect(description!.length).toBeLessThanOrEqual(160);
+    expect(description).toMatch(/[a-z]…$/);
   });
 
   it("leaves the age out when it isn't known", async () => {
-    (getBreedBySlug as unknown as jest.Mock).mockResolvedValue({ ...borderCollie, average_age_months: undefined, description: undefined });
+    (getBreedBySlug as unknown as jest.Mock).mockResolvedValue({ ...borderCollie, average_age_months: undefined });
 
-    const { description } = await generateMetadata({ params: Promise.resolve({ slug: "border-collie" }) });
+    const { description } = await generateMetadata(params);
 
-    expect(description).not.toContain("Average age");
-    expect(description).toContain("Find 32 Border Collie rescue dogs for adoption.");
+    expect(description).toMatch(/^32 Border Collie rescue dogs available\. Border Collies are/);
   });
 });
 
 describe("averageAgeSentence", () => {
   it.each([
     [undefined, ""],
-    [8, "Average age 8 months. "],
-    [14, "Average age 1 year. "],
-    [80, "Average age 7 years. "],
+    [1, "Average age 1 mo. "],
+    [12, "Average age 1 yr. "],
+    [83, "Average age 6.9 yrs. "],
   ])("%p months → %p", (months, sentence) => {
     expect(averageAgeSentence(months)).toBe(sentence);
   });

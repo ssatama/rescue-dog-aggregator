@@ -4,20 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ExpandableText from "@/components/ui/ExpandableText";
 import AdoptableToYouCount from "@/components/location/AdoptableToYouCount";
+import { formatAverageAge } from "@/utils/breedMetadata";
 import type { BreedData } from "@/types/breeds";
 import type { FilterCount } from "@/schemas/common";
 
 interface BreedStatisticsProps {
   breedData: BreedData | null;
   className?: string;
-}
-
-function formatAge(months: number): string {
-  if (months < 12) return `${months} mo`;
-  const years = Math.floor(months / 12);
-  const remainingMonths = months % 12;
-  if (remainingMonths === 0) return `${years} yr${years === 1 ? "" : "s"}`;
-  return `${years}.${Math.floor((remainingMonths / 12) * 10)} yrs`;
 }
 
 /** How many are listed and their average age; an unknown age is left out. */
@@ -34,7 +27,7 @@ export default function BreedStatistics({ breedData, className = "" }: BreedStat
 
         {breedData.average_age_months ? (
           <div className="flex items-baseline gap-1.5">
-            <span className="font-display text-2xl font-bold text-ink">{formatAge(breedData.average_age_months)}</span>
+            <span className="font-display text-2xl font-bold text-ink">{formatAverageAge(breedData.average_age_months)}</span>
             <span className="text-sm text-subtle">avg age</span>
           </div>
         ) : null}

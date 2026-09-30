@@ -11,6 +11,7 @@ import {
   getAnimalsByCuration,
   getAnimalBySlug,
   getListCounts,
+  getMixedBreedPageData,
   clearCache,
 } from "../serverAnimalsService";
 import { reportError } from "../../utils/logger";
@@ -370,13 +371,15 @@ describe("Server Animals Service", () => {
     });
   });
 
-  describe("getBreedBySlug('mixed')", () => {
+  describe("getMixedBreedPageData", () => {
     it("takes the count and age from the breed stats, with one fetch for its photos (#667)", async () => {
       const stats = {
         total_dogs: 1264,
         unique_breeds: 94,
         breed_groups: [{ name: "Mixed", count: 534 }],
         qualifying_breeds: [
+          // A mixed-type breed row that outnumbers the Mixed one must not supply its age
+          { primary_breed: "Terrier Mix", breed_slug: "terrier-mix", breed_type: "mixed", count: 900, average_age_months: 12 },
           { primary_breed: "Mixed Breed", breed_slug: "mixed-breed", breed_type: "mixed", count: 534, average_age_months: 54 },
         ],
         purebred_count: 0,
@@ -392,7 +395,7 @@ describe("Server Animals Service", () => {
         json: async () => (url.includes("/breeds/stats") ? stats : dogs),
       }));
 
-      const mixed = await getBreedBySlug("mixed");
+      const mixed = await getMixedBreedPageData();
 
       expect(mixed).toMatchObject({ breed_slug: "mixed", count: 534, average_age_months: 54 });
       expect(mixed?.topDogs).toEqual([
@@ -400,6 +403,38 @@ describe("Server Animals Service", () => {
       ]);
       expect(mixed).not.toHaveProperty("personality_metrics");
       expect(fetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("getBreedBySlug's fields", () => {
+    it("passes the page only what it uses, not the stats row's distributions (#676 review)", async () => {
+      const stats = {
+        total_dogs: 100,
+        unique_breeds: 5,
+        breed_groups: [],
+        qualifying_breeds: [
+          {
+            primary_breed: "Labrador",
+            breed_slug: "labrador",
+            breed_group: "Sporting",
+            count: 50,
+            average_age_months: 40,
+            personality_metrics: { energy_level: { percentage: 60, label: "Medium" } },
+            size_distribution: { large: 50 },
+          },
+        ],
+      };
+      (fetch as jest.Mock).mockImplementation(async (url: string) => ({
+        ok: true,
+        status: 200,
+        json: async () => (url.includes("/breeds/stats") ? stats : []),
+      }));
+
+      const labrador = await getBreedBySlug("labrador");
+
+      expect(labrador).toMatchObject({ primary_breed: "Labrador", breed_group: "Sporting", count: 50, average_age_months: 40 });
+      expect(labrador).not.toHaveProperty("personality_metrics");
+      expect(labrador).not.toHaveProperty("size_distribution");
     });
   });
 
