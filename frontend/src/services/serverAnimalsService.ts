@@ -88,13 +88,14 @@ type Cached<T extends AsyncFn> = T & {
   orThrow: T;
 };
 
-const cache = <T extends AsyncFn>(
-  fn: T,
-  errorFallback?: Awaited<ReturnType<T>>,
-): Cached<T> => {
+// Only a fetcher with a fallback gets .orThrow: one without already throws,
+// or handles its own failure, and .orThrow would promise a throw it can't keep
+function cache<T extends AsyncFn>(fn: T): T;
+function cache<T extends AsyncFn>(fn: T, errorFallback: Awaited<ReturnType<T>>): Cached<T>;
+function cache<T extends AsyncFn>(fn: T, errorFallback?: Awaited<ReturnType<T>>): T | Cached<T> {
   const strict = memoize(fn);
   if (errorFallback === undefined) {
-    return Object.assign(strict, { orThrow: strict });
+    return strict;
   }
 
   const context = process.env.NODE_ENV === "test" ? "cache-test-fallback" : `cache-fn-${functionIds.get(fn)}`;
@@ -114,7 +115,7 @@ const cache = <T extends AsyncFn>(
   }) as T;
 
   return Object.assign(withFallback, { orThrow: strict });
-};
+}
 
 const API_URL = getApiUrl();
 
@@ -553,7 +554,8 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
       logger.warn(`No dogs with images found for Mixed breeds out of ${candidateDogs.length} candidates`);
     }
 
-    const allMixedDogs = await getAnimals.orThrow({
+    // Only for the average age: a failure leaves it out, not the page
+    const allMixedDogs = await getAnimals({
       breed_group: "Mixed",
       limit: 200,
     });
@@ -791,7 +793,8 @@ async function fetchListCounts(listFilter: ListFilter): Promise<FilterCountsResp
  * Unfiltered counts for one breed, rescue or age page, or for every dog
  * (country pages) (#500, #501, #502): a breed's practical stats, and how many
  * are adoptable to each country. Ages count only dogs with a recorded age. A
- * failure leaves the counts out rather than failing the page.
+ * failure leaves the counts out; getListCounts.orThrow fails the page instead,
+ * for pages that must not be cached without them (the breed pages).
  */
 export const getListCounts = cache(fetchListCounts, null);
 

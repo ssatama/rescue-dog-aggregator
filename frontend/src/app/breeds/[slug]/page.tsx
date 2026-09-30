@@ -14,7 +14,6 @@ import {
   getAllMetadata,
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
-import { logger, reportError } from "@/utils/logger";
 
 interface BreedPageProps {
   params: Promise<{ slug: string }>;
@@ -105,27 +104,23 @@ export async function generateMetadata(
   };
 }
 
+// Strict: a build during an outage fails, and Vercel keeps the last
+// deployment, rather than shipping one with no breed pages prerendered
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  try {
-    const breedStats = await getBreedStats();
-    return (
-      breedStats.qualifying_breeds
-        ?.filter((breed) => {
-          const isMixed =
-            breed.breed_type === "mixed" ||
-            breed.breed_group === "Mixed" ||
-            breed.primary_breed?.toLowerCase().includes("mix");
-          return !isMixed;
-        })
-        .map((breed) => ({
-          slug: breed.breed_slug,
-        })) || []
-    );
-  } catch (error) {
-    reportError(error, { context: "generateStaticParams" });
-    logger.error("Error generating static params:", error);
-    return [];
-  }
+  const breedStats = await getBreedStats.orThrow();
+  return (
+    breedStats.qualifying_breeds
+      ?.filter((breed) => {
+        const isMixed =
+          breed.breed_type === "mixed" ||
+          breed.breed_group === "Mixed" ||
+          breed.primary_breed?.toLowerCase().includes("mix");
+        return !isMixed;
+      })
+      .map((breed) => ({
+        slug: breed.breed_slug,
+      })) || []
+  );
 }
 
 async function fetchBreedPageData(slug: string) {
