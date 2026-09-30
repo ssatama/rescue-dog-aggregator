@@ -66,8 +66,9 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 3. Pre-commit validation: run the commands under Quality Gates below
 4. Commit to branch: `git commit -m "type(scope): description"`
 5. Push & create PR: `git push -u origin HEAD && gh pr create`
-6. Run `/code-review` for automated review
-7. Merge via GitHub (1 review required)
+6. Run `/code-review` for an independent review; fix real medium or high
+   issues and review again
+7. Squash-merge once no medium or high issue remains; no human review needed
 
 Branch naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
 
