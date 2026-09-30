@@ -145,10 +145,12 @@ async function fetchBreedGroups(): Promise<BreedGroupDisplay[]> {
       next: { revalidate: 604800, tags: ["breed-images"] },
     } as RequestInit);
 
-    if (imagesResponse.ok) {
-      const rawImages: unknown = await imagesResponse.json();
-      breedsWithImages = z.array(BreedWithImagesSchema).parse(stripNulls(rawImages));
+    // Thrown so the catch below reports it: the groups stay, without photos
+    if (!imagesResponse.ok) {
+      throw new Error(`Failed to fetch breed images: ${imagesResponse.status}`);
     }
+    const rawImages: unknown = await imagesResponse.json();
+    breedsWithImages = z.array(BreedWithImagesSchema).parse(stripNulls(rawImages));
   } catch (imageError) {
     logger.warn(
       "Could not fetch breed images, continuing without them:",

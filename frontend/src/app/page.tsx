@@ -16,6 +16,7 @@ import {
 } from "../services/serverAnimalsService";
 import { getAllGuides } from "../lib/guides";
 import { reportError } from "../utils/logger";
+import { buildsWithoutApi } from "../utils/serverFetch";
 
 export const revalidate = 21600;
 
@@ -77,7 +78,7 @@ export default async function Home(): Promise<React.JSX.Element> {
   // shipping it. Only CI, which builds with no API at all, renders it anyway.
   if (
     (statistics.total_dogs === 0 || lookingForHomes.length === 0 || waitingLongest.length === 0) &&
-    process.env.GITHUB_ACTIONS !== "true"
+    !buildsWithoutApi()
   ) {
     throw new Error("Home: no dogs or statistics came back from the API");
   }

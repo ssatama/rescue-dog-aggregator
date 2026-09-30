@@ -198,11 +198,17 @@ served 84KB data-less shells for 48h, fixed in #344). In ISR routes a failed
 or empty essential fetch must throw or `notFound()`. Spot this class by
 comparing page sizes across live URLs.
 
-**`serverAnimalsService` swallows errors.** Its `cache(fn, fallback)` turns
-any error, including a 422, into `[]` or zero stats, so a section silently
-renders empty and ISR caches it. When a server-rendered section is empty,
-read the API log for 4xx first. Never export non-component values from
-`"use client"` files for server use (#497); put them in `constants/`.
+**`serverAnimalsService` fetches throw; fallbacks are opt-in (#675).** A
+failed fetch fails the render, so ISR keeps the last good page and retries on
+the next request; a page never rendered before shows the error page, uncached.
+A caller that may degrade uses `.orFallback` (`[]`, zero stats): the 404
+page, a dog page's similar dogs and breed link, the country sitemap. Only the
+GitHub Actions build takes the fallback by default (`buildsWithoutApi` in
+`serverFetch.ts`), and `breedImagesService` uses `fallbackInBuildWithoutApi`
+for the same. So a 5xx or 4xx from the API now shows as a 500 or a stale
+page, not an empty section: read the API log first. Never export
+non-component values from `"use client"` files for server use (#497); put
+them in `constants/`.
 
 **ISR write fan-out.** Every dog fetch is tagged `["animal", slug]`, so
 purging bare `"animal"` invalidates all detail pages. ISR writes ≈ reads is

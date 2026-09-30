@@ -93,8 +93,8 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
     countryStats?.countries?.find((c: { code: string }) => c.code === country.code)?.count || 0;
 
   // A country with no dogs has no page; it returns once a rescue there comes back and the
-  // stats and this page revalidate (up to about a day) (#442). Only trust a zero when the stats loaded: on an API failure getCountryStats
-  // returns no countries, and caching a 404 for a country that has dogs would be worse.
+  // stats and this page revalidate (up to about a day) (#442). Only trust a zero when the stats loaded: the
+  // API-less CI build's fallback has no countries, and a 404 for a country with dogs would be worse.
   if (countryStats?.countries?.length && countryCount === 0 && initialDogs.length === 0) {
     notFound();
   }

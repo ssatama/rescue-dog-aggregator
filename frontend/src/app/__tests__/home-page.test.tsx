@@ -31,9 +31,9 @@ jest.mock("@/services/serverAnimalsService", () => ({
   getAgeStats: jest.fn(),
 }));
 
-const inCI = process.env.GITHUB_ACTIONS;
-afterAll(() => {
-  process.env.GITHUB_ACTIONS = inCI;
+const env = { ...process.env };
+afterEach(() => {
+  process.env = { ...env };
 });
 
 const dog = { id: 1, name: "Akil", slug: "akil", created_at: "2025-06-09T10:00:00" };
@@ -57,8 +57,8 @@ describe("home page (#497)", () => {
     expect(screen.getByText("Waiting longest: Some listed since June 2025")).toBeInTheDocument();
   });
 
-  // The service answers a failed fetch with []; caching that home for 6 hours
-  // would serve a page without dogs, so the render fails instead
+  // A failed fetch already throws (#675). An API that answers with no dogs
+  // would be cached for 6 hours as a home without dogs, so that fails too
   it.each([
     ["the first row", getAnimals, []],
     ["the waiting-longest row", getAnimalsByCuration, []],
@@ -68,8 +68,9 @@ describe("home page (#497)", () => {
     await expect(Home()).rejects.toThrow("no dogs or statistics");
   });
 
-  it("renders anyway in CI, which builds with no API", async () => {
+  it("renders anyway in the CI build, which runs with no API", async () => {
     process.env.GITHUB_ACTIONS = "true";
+    process.env.NEXT_PHASE = "phase-production-build";
     (getAnimals as unknown as jest.Mock).mockResolvedValue([]);
     await expect(Home()).resolves.toBeTruthy();
   });
