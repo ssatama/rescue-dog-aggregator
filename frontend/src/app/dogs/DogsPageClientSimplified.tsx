@@ -101,14 +101,13 @@ export default function DogsPageClientSimplified({
     [rawSearchParams],
   );
 
-  const { scrollPositionRef, saveScrollPosition } = useScrollRestoration({ searchParams, pathname });
+  useScrollRestoration({ searchParams, pathname });
 
   const filterState = useDogsFilters({
     metadata,
     initialParams,
     searchParams,
     pathname,
-    scrollPositionRef: scrollPositionRef,
   });
 
   // A page that fixes the age (/dogs/puppies) promises it, so dogs without a
@@ -128,7 +127,6 @@ export default function DogsPageClientSimplified({
     initialParams,
     filters: filterState.filters,
     buildAPIParams,
-    scrollPositionRef: scrollPositionRef,
     searchParams,
     pathname,
   });
@@ -152,10 +150,10 @@ export default function DogsPageClientSimplified({
           : {};
       const newFilters: Filters = { ...filterState.filters, ...changes, ...regionReset };
 
-      filterState.updateURL(newFilters, 1, false);
-      pagination.resetForNewFilters(newFilters, scrollPositionRef);
+      filterState.updateURL(newFilters, 1);
+      pagination.resetForNewFilters(newFilters);
     },
-    [filterState, pagination, scrollPositionRef],
+    [filterState, pagination],
   );
 
   const handleFilterChange = useCallback(
@@ -259,13 +257,11 @@ export default function DogsPageClientSimplified({
     };
 
     filterState.updateURL?.cancel?.();
-    saveScrollPosition?.cancel?.();
     const sort = defaultFilters.sortFilter;
     // Stay on this page: the fixed filters come from it, not from the URL
     router.replace(sort === FILTER_DEFAULTS.SORT ? pathname : `${pathname}?sort=${sort}`, { scroll: false });
-    scrollPositionRef.current = 0;
     pagination.resetAll(defaultFilters);
-  }, [router, pathname, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, initialParams?.primary_breed, initialParams?.breed_group, initialParams?.organization_id, filterState, saveScrollPosition, scrollPositionRef, pagination]);
+  }, [router, pathname, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, initialParams?.primary_breed, initialParams?.breed_group, initialParams?.organization_id, filterState, pagination]);
 
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Find Dogs" }];
 

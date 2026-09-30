@@ -37,14 +37,12 @@ function renderDogsFilters(
     pathname = "/dogs",
   } = {},
 ) {
-  const scrollPositionRef = { current: 0 };
   return renderHook(() =>
     useDogsFilters({
       metadata,
       initialParams,
       searchParams,
       pathname,
-      scrollPositionRef,
     }),
   );
 }
@@ -323,7 +321,6 @@ describe("useDogsFilters", () => {
             energyFilter: "",
           },
           1,
-          false,
         );
       });
 
@@ -336,6 +333,24 @@ describe("useDogsFilters", () => {
         { scroll: false },
       );
 
+      jest.useRealTimers();
+    });
+
+    it("never puts the scroll position in the URL, so shared links open at the top (#670)", () => {
+      jest.useFakeTimers();
+      Object.defineProperty(window, "scrollY", { value: 900, writable: true, configurable: true });
+      const { result } = renderDogsFilters();
+
+      act(() => {
+        result.current.updateURL({ ...result.current.filters, sizeFilter: "Large" }, 2);
+      });
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+
+      expect(mockRouter.push).toHaveBeenCalledWith("/dogs?size=Large&page=2", { scroll: false });
+
+      Object.defineProperty(window, "scrollY", { value: 0, writable: true, configurable: true });
       jest.useRealTimers();
     });
 
@@ -363,7 +378,6 @@ describe("useDogsFilters", () => {
             energyFilter: "",
           },
           3,
-          false,
         );
       });
 
@@ -372,55 +386,6 @@ describe("useDogsFilters", () => {
       });
 
       expect(mockRouter.push).toHaveBeenCalledWith("/dogs?page=3", { scroll: false });
-
-      jest.useRealTimers();
-    });
-
-    it("should include scroll param when preserveScroll is true and scroll > 0", () => {
-      jest.useFakeTimers();
-      const scrollPositionRef = { current: 500 };
-      const { result } = renderHook(() =>
-        useDogsFilters({
-          metadata: defaultMetadata,
-          initialParams: defaultInitialParams,
-          searchParams: new URLSearchParams(),
-          pathname: "/dogs",
-          scrollPositionRef,
-        }),
-      );
-
-      act(() => {
-        result.current.updateURL(
-          {
-            searchQuery: "",
-            sizeFilter: "Any size",
-            ageFilter: "Any age",
-            sexFilter: "Any",
-            organizationFilter: "any",
-            breedFilter: "Any breed",
-            breedGroupFilter: "Any group",
-            locationCountryFilter: "Any country",
-            availableCountryFilter: "Any country",
-            availableRegionFilter: "Any region",
-            goodWithKidsFilter: "",
-            goodWithDogsFilter: "",
-            goodWithCatsFilter: "",
-            firstTimeFriendlyFilter: "",
-            energyFilter: "",
-          },
-          1,
-          true,
-        );
-      });
-
-      act(() => {
-        jest.advanceTimersByTime(500);
-      });
-
-      expect(mockRouter.push).toHaveBeenCalledWith(
-        expect.stringContaining("scroll=500"),
-        { scroll: false },
-      );
 
       jest.useRealTimers();
     });
@@ -546,7 +511,7 @@ describe("a breed page's own breed (#500)", () => {
     });
 
     act(() => {
-      result.current.updateURL({ ...result.current.filters, sizeFilter: "Large" }, 1, false);
+      result.current.updateURL({ ...result.current.filters, sizeFilter: "Large" }, 1);
     });
     act(() => {
       jest.advanceTimersByTime(500);
@@ -585,7 +550,7 @@ describe("a rescue page's own rescue (#501)", () => {
     });
 
     act(() => {
-      result.current.updateURL({ ...result.current.filters, ageFilter: "Puppy" }, 1, false);
+      result.current.updateURL({ ...result.current.filters, ageFilter: "Puppy" }, 1);
     });
     act(() => {
       jest.advanceTimersByTime(500);

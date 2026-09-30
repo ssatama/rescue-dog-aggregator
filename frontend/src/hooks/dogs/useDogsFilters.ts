@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, type MutableRefObject } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useDebouncedCallback, type DebouncedState } from "use-debounce";
 import { getAvailableRegions } from "../../services/animalsService";
@@ -28,13 +28,12 @@ interface UseDogsFiltersParams {
   initialParams: DogsPageInitialParams;
   searchParams: URLSearchParams;
   pathname: string;
-  scrollPositionRef: MutableRefObject<number>;
 }
 
 interface UseDogsFiltersReturn {
   filters: Filters;
   buildAPIParams: (filters: Filters) => Record<string, string>;
-  updateURL: DebouncedState<(filters: Filters, page?: number, preserveScroll?: boolean) => void>;
+  updateURL: DebouncedState<(filters: Filters, page?: number) => void>;
   activeFilterCount: number;
   availableRegions: string[];
 }
@@ -44,7 +43,6 @@ export default function useDogsFilters({
   initialParams,
   searchParams,
   pathname,
-  scrollPositionRef,
 }: UseDogsFiltersParams): UseDogsFiltersReturn {
   const router = useRouter();
 
@@ -94,7 +92,7 @@ export default function useDogsFilters({
   }), [searchParams, initialParams?.age_category, initialParams?.location_country, initialParams?.available_country, initialParams?.primary_breed, initialParams?.breed_group, initialParams?.organization_id, validateOrganizationId]);
 
   const updateURL = useDebouncedCallback(
-    (newFilters: Filters, newPage = 1, preserveScroll = false) => {
+    (newFilters: Filters, newPage = 1) => {
       const params = new URLSearchParams();
 
       const urlKeyMap: Record<string, string> = {
@@ -152,10 +150,6 @@ export default function useDogsFilters({
 
       if (newPage > 1) {
         params.set("page", newPage.toString());
-      }
-
-      if (preserveScroll && scrollPositionRef.current > 0) {
-        params.set("scroll", scrollPositionRef.current.toString());
       }
 
       const newURL = params.toString()

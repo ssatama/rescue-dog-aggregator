@@ -1,112 +1,39 @@
 import { renderHook, act } from "@testing-library/react";
-import useScrollRestoration from "../useScrollRestoration";
+import useScrollRestoration, { replaceUrlKeepingScroll } from "../useScrollRestoration";
 
-describe("useScrollRestoration", () => {
-  let replaceStateSpy: jest.SpyInstance;
+function setScrollY(value: number) {
+  Object.defineProperty(window, "scrollY", { value, writable: true, configurable: true });
+}
 
+describe("useScrollRestoration (#670)", () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    replaceStateSpy = jest.spyOn(window.history, "replaceState").mockImplementation(() => {});
-    Object.defineProperty(window, "scrollY", { value: 0, writable: true, configurable: true });
+    window.history.replaceState(null, "", "/dogs");
+    setScrollY(0);
     window.scrollTo = jest.fn();
   });
 
   afterEach(() => {
     jest.useRealTimers();
-    replaceStateSpy.mockRestore();
   });
 
-  it("should initialize scrollPositionRef from URL scroll param", () => {
-    const searchParams = new URLSearchParams("scroll=500");
-    const { result } = renderHook(() =>
-      useScrollRestoration({ searchParams, pathname: "/dogs" }),
-    );
+  it("saves the scroll position in the history entry, not the URL", () => {
+    window.history.replaceState({ __NA: true }, "", "/breeds/border-collie");
+    renderHook(() => useScrollRestoration({ searchParams: new URLSearchParams(), pathname: "/breeds/border-collie" }));
 
-    expect(result.current.scrollPositionRef.current).toBe(500);
-  });
-
-  it("should initialize scrollPositionRef to 0 when no scroll param", () => {
-    const searchParams = new URLSearchParams();
-    const { result } = renderHook(() =>
-      useScrollRestoration({ searchParams, pathname: "/dogs" }),
-    );
-
-    expect(result.current.scrollPositionRef.current).toBe(0);
-  });
-
-  it("should attach and detach scroll event listener", () => {
-    const addSpy = jest.spyOn(window, "addEventListener");
-    const removeSpy = jest.spyOn(window, "removeEventListener");
-
-    const searchParams = new URLSearchParams();
-    const { unmount } = renderHook(() =>
-      useScrollRestoration({ searchParams, pathname: "/dogs" }),
-    );
-
-    expect(addSpy).toHaveBeenCalledWith("scroll", expect.any(Function), { passive: true });
-
-    unmount();
-
-    expect(removeSpy).toHaveBeenCalledWith("scroll", expect.any(Function));
-
-    addSpy.mockRestore();
-    removeSpy.mockRestore();
-  });
-
-  it("should save scroll position to URL via history.replaceState on scroll", () => {
-    const searchParams = new URLSearchParams();
-
-    renderHook(() =>
-      useScrollRestoration({ searchParams, pathname: "/dogs" }),
-    );
-
-    Object.defineProperty(window, "scrollY", { value: 300, writable: true, configurable: true });
-
+    setScrollY(540.5);
     act(() => {
       window.dispatchEvent(new Event("scroll"));
-    });
-
-    // Advance debounce timer
-    act(() => {
       jest.advanceTimersByTime(300);
     });
 
-    expect(replaceStateSpy).toHaveBeenCalledWith(
-      null,
-      "",
-      "/dogs?scroll=300",
-    );
+    expect(window.history.state).toEqual({ __NA: true, catalogScroll: 541 });
+    expect(window.location.search).toBe("");
   });
 
-  it("should remove scroll param from URL when scrolled to top", () => {
-    const searchParams = new URLSearchParams("size=Small");
-
-    renderHook(() =>
-      useScrollRestoration({ searchParams, pathname: "/dogs" }),
-    );
-
-    // scrollY is 0 by default
-    act(() => {
-      window.dispatchEvent(new Event("scroll"));
-    });
-
-    act(() => {
-      jest.advanceTimersByTime(300);
-    });
-
-    expect(replaceStateSpy).toHaveBeenCalledWith(
-      null,
-      "",
-      "/dogs?size=Small",
-    );
-  });
-
-  it("should restore scroll position on mount when URL has scroll param", () => {
-    const searchParams = new URLSearchParams("scroll=800");
-
-    renderHook(() =>
-      useScrollRestoration({ searchParams, pathname: "/dogs" }),
-    );
+  it("restores the position saved in the history entry, as on back and forward", () => {
+    window.history.replaceState({ catalogScroll: 800 }, "", "/dogs?size=Small");
+    renderHook(() => useScrollRestoration({ searchParams: new URLSearchParams("size=Small"), pathname: "/dogs" }));
 
     act(() => {
       jest.advanceTimersByTime(100);
@@ -115,12 +42,8 @@ describe("useScrollRestoration", () => {
     expect(window.scrollTo).toHaveBeenCalledWith(0, 800);
   });
 
-  it("should not restore scroll position when no scroll param", () => {
-    const searchParams = new URLSearchParams();
-
-    renderHook(() =>
-      useScrollRestoration({ searchParams, pathname: "/dogs" }),
-    );
+  it("starts at the top on a fresh visit", () => {
+    renderHook(() => useScrollRestoration({ searchParams: new URLSearchParams(), pathname: "/dogs" }));
 
     act(() => {
       jest.advanceTimersByTime(100);
@@ -129,16 +52,72 @@ describe("useScrollRestoration", () => {
     expect(window.scrollTo).not.toHaveBeenCalled();
   });
 
-  it("should cancel debounced save on unmount", () => {
-    const searchParams = new URLSearchParams();
-    const { result, unmount } = renderHook(() =>
-      useScrollRestoration({ searchParams, pathname: "/dogs" }),
+  it("restores an old ?scroll= link once and drops it from the URL", () => {
+    window.history.replaceState(null, "", "/dogs?size=Small&scroll=2466");
+    renderHook(() =>
+      useScrollRestoration({ searchParams: new URLSearchParams("size=Small&scroll=2466"), pathname: "/dogs" }),
     );
 
-    const cancelSpy = jest.spyOn(result.current.saveScrollPosition, "cancel");
+    expect(window.location.search).toBe("?size=Small");
+    expect(window.history.state).toEqual({ catalogScroll: 2466 });
 
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 2466);
+  });
+
+  it("reads a fractional old ?scroll= value as whole pixels", () => {
+    window.history.replaceState(null, "", "/breeds/border-collie?scroll=540.5");
+    renderHook(() =>
+      useScrollRestoration({ searchParams: new URLSearchParams("scroll=540.5"), pathname: "/breeds/border-collie" }),
+    );
+
+    expect(window.location.pathname + window.location.search).toBe("/breeds/border-collie");
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 540);
+  });
+
+  it("saves the top of the page over an older position", () => {
+    window.history.replaceState({ catalogScroll: 1500 }, "", "/dogs");
+    renderHook(() => useScrollRestoration({ searchParams: new URLSearchParams(), pathname: "/dogs" }));
+
+    setScrollY(0);
+    act(() => {
+      window.dispatchEvent(new Event("scroll"));
+      jest.advanceTimersByTime(300);
+    });
+
+    expect(window.history.state).toEqual({ catalogScroll: 0 });
+  });
+
+  it("stops saving once unmounted", () => {
+    const { unmount } = renderHook(() =>
+      useScrollRestoration({ searchParams: new URLSearchParams(), pathname: "/dogs" }),
+    );
+
+    setScrollY(300);
+    act(() => {
+      window.dispatchEvent(new Event("scroll"));
+    });
     unmount();
+    act(() => {
+      jest.advanceTimersByTime(300);
+    });
 
-    expect(cancelSpy).toHaveBeenCalled();
+    expect(window.history.state).toBeNull();
+  });
+});
+
+describe("replaceUrlKeepingScroll", () => {
+  it("changes the URL and keeps the saved position", () => {
+    window.history.replaceState({ catalogScroll: 1200 }, "", "/dogs");
+
+    replaceUrlKeepingScroll("/dogs?page=2");
+
+    expect(window.location.search).toBe("?page=2");
+    expect(window.history.state).toEqual({ catalogScroll: 1200 });
   });
 });

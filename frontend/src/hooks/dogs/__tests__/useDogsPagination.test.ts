@@ -46,7 +46,6 @@ function renderPagination({
   searchParams = new URLSearchParams(),
   pathname = "/dogs",
 } = {}) {
-  const scrollPositionRef = { current: 0 };
 
   return renderHook(() =>
     useDogsPagination({
@@ -54,7 +53,6 @@ function renderPagination({
       initialParams,
       filters,
       buildAPIParams: mockBuildAPIParams,
-      scrollPositionRef,
       searchParams,
       pathname,
     }),
@@ -95,7 +93,6 @@ describe("useDogsPagination", () => {
           initialParams: {},
           filters: defaultFilters,
           buildAPIParams: mockBuildAPIParams,
-          scrollPositionRef: { current: 0 },
           searchParams,
           pathname: "/dogs",
         });
@@ -388,7 +385,8 @@ describe("useDogsPagination", () => {
       expect(result.current.loadingMore).toBe(false);
     });
 
-    it("should update URL via history.replaceState after loadMore", async () => {
+    it("puts the page in the URL after loadMore, keeping the saved scroll out of it (#670)", async () => {
+      window.history.replaceState({ catalogScroll: 900 }, "");
       const replaceStateSpy = jest.spyOn(window.history, "replaceState");
       const page1 = makeDogs(20);
       const page2 = makeDogs(10, 21);
@@ -412,12 +410,14 @@ describe("useDogsPagination", () => {
       });
 
       expect(replaceStateSpy).toHaveBeenCalledWith(
-        null,
+        { catalogScroll: 900 },
         "",
         expect.stringContaining("page=2"),
       );
+      expect(replaceStateSpy.mock.calls[0][2]).not.toContain("scroll");
 
       replaceStateSpy.mockRestore();
+      window.history.replaceState(null, "");
     });
   });
 
