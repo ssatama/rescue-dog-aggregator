@@ -1,38 +1,27 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
 import BreedDetailClient from "../[slug]/BreedDetailClient";
 import Layout from "@/components/layout/Layout";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import BreedDetailSkeleton from "@/components/ui/BreedDetailSkeleton";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
-  getBreedBySlug,
+  getMixedBreedData,
   getAnimals,
   getListCounts,
   getAllMetadata,
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
+import { averageAgeSentence } from "@/utils/breedMetadata";
 
 export const revalidate = 604800;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const breedData = await getBreedBySlug("mixed");
+  const breedData = await getMixedBreedData();
 
-  if (!breedData) {
-    return {
-      title: "Mixed Breed Rescue Dogs for Adoption",
-      description: "Find unique mixed breed rescue dogs for adoption.",
-    };
-  }
+  const avgAge = averageAgeSentence(breedData.average_age_months);
 
-  const avgAge = breedData.average_age
-    ? `Average age ${Math.round(breedData.average_age)} years. `
-    : "";
-  const locations =
-    breedData.top_locations?.slice(0, 3).join(", ") || "multiple locations";
-
-  const seoDescription = `Discover ${breedData.count} unique mixed breed rescue dogs waiting for homes. ${avgAge}Each with special personality and story. Browse by size, age in ${locations}.`;
+  const seoDescription = `Discover ${breedData.count} unique mixed breed rescue dogs waiting for homes. ${avgAge}Each with special personality and story. Browse by size and age.`;
 
   const keywords = [
     "mixed breed rescue",
@@ -93,11 +82,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function fetchMixedBreedData() {
-  const breedData = await getBreedBySlug("mixed");
-
-  if (!breedData) {
-    return null;
-  }
+  const breedData = await getMixedBreedData();
 
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([
@@ -110,13 +95,7 @@ async function fetchMixedBreedData() {
 }
 
 export default async function MixedBreedsPage() {
-  const data = await fetchMixedBreedData();
-
-  if (!data) {
-    notFound();
-  }
-
-  const { breedData, initialDogs, breedCounts, metadata } = data;
+  const { breedData, initialDogs, breedCounts, metadata } = await fetchMixedBreedData();
 
   // The same frame as every other breed page: the site header was missing here
   return (

@@ -53,10 +53,10 @@ describe("getRetryPolicy", () => {
   });
 
   // Exceeding it means Next kills the page for running long, which is the very
-  // failure the retry exists to prevent. The worst page is /breeds/mixed:
-  // getBreedStats, then getAnimals x2 inside getBreedBySlug, then a fourth
-  // getAnimals on the page itself — four sequential calls, all distinct URLs,
-  // so nothing collapses them. Leave a quarter of the timeout for the network.
+  // failure the retry exists to prevent. A breed page makes three sequential
+  // calls (getBreedStats, getAnimals inside getBreedBySlug, then the page's
+  // own fetches); four leaves room for one more. Leave a quarter of the
+  // timeout for the network.
   it("keeps the prerender budget inside staticPageGenerationTimeout", () => {
     process.env.NEXT_PHASE = "phase-production-build";
 

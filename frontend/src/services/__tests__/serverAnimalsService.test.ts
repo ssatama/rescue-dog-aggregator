@@ -370,6 +370,39 @@ describe("Server Animals Service", () => {
     });
   });
 
+  describe("getBreedBySlug('mixed')", () => {
+    it("takes the count and age from the breed stats, with one fetch for its photos (#667)", async () => {
+      const stats = {
+        total_dogs: 1264,
+        unique_breeds: 94,
+        breed_groups: [{ name: "Mixed", count: 534 }],
+        qualifying_breeds: [
+          { primary_breed: "Mixed Breed", breed_slug: "mixed-breed", breed_type: "mixed", count: 534, average_age_months: 54 },
+        ],
+        purebred_count: 0,
+        crossbreed_count: 0,
+      };
+      const dogs = [
+        { id: 1, name: "Alfie", slug: "alfie-1", primary_image_url: "https://images.rescuedogs.me/alfie.jpg" },
+        { id: 2, name: "No Photo", slug: "no-photo-2" },
+      ];
+      (fetch as jest.Mock).mockImplementation(async (url: string) => ({
+        ok: true,
+        status: 200,
+        json: async () => (url.includes("/breeds/stats") ? stats : dogs),
+      }));
+
+      const mixed = await getBreedBySlug("mixed");
+
+      expect(mixed).toMatchObject({ breed_slug: "mixed", count: 534, average_age_months: 54 });
+      expect(mixed?.topDogs).toEqual([
+        { name: "Alfie", slug: "alfie-1", primary_image_url: "https://images.rescuedogs.me/alfie.jpg" },
+      ]);
+      expect(mixed).not.toHaveProperty("personality_metrics");
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe("strict variants for ISR pages", () => {
     it("getAnimals.orThrow rejects where getAnimals falls back to []", async () => {
       (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));

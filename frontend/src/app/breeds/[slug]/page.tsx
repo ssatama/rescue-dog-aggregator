@@ -14,6 +14,7 @@ import {
   getAllMetadata,
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
+import { averageAgeSentence } from "@/utils/breedMetadata";
 
 interface BreedPageProps {
   params: Promise<{ slug: string }>;
@@ -36,15 +37,11 @@ export async function generateMetadata(
 
   const description = breedData.description;
 
-  const avgAge = breedData.average_age
-    ? `Average age ${Math.round(breedData.average_age)} years. `
-    : "";
-  const locations =
-    breedData.top_locations?.slice(0, 3).join(", ") || "multiple locations";
+  const avgAge = averageAgeSentence(breedData.average_age_months);
 
   const seoDescription = description
-    ? `${description.substring(0, 80)}… ${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}Adoptable in ${locations}.`
-    : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. ${avgAge}View photos, profiles, and apply from verified rescues in ${locations}.`;
+    ? `${description.substring(0, 80)}… ${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}`.trim()
+    : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. ${avgAge}View photos and profiles from verified rescues.`;
 
   const keywords = [
     `${breedData.primary_breed} rescue`,
@@ -173,7 +170,6 @@ export default async function BreedDetailPage(props: BreedPageProps) {
             initialDogs={initialDogs}
             breedCounts={breedCounts}
             metadata={metadata}
-            lastUpdated={new Date().toISOString()}
           />
         </Suspense>
       </ErrorBoundary>

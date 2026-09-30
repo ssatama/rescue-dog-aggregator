@@ -58,31 +58,10 @@ describe("BreedInfo", () => {
     sex_distribution: { male: 25, female: 17 },
   };
 
-  it("should render 'Updated' with formatted date when lastUpdated is a valid ISO string", () => {
-    render(
-      <BreedInfo breedData={mockBreedData} lastUpdated="2026-02-24T10:30:00.000Z" />,
-    );
-
-    const timeElement = screen.getByText("24 Feb 2026");
-    expect(timeElement).toBeInTheDocument();
-    expect(timeElement.tagName).toBe("TIME");
-    expect(timeElement).toHaveAttribute("dateTime", "2026-02-24T10:30:00.000Z");
-    expect(screen.getByText(/Updated/)).toBeInTheDocument();
-  });
-
-  it("should not render 'Updated' when lastUpdated is undefined", () => {
+  it("shows no 'Updated' date, which was only the render time (#665)", () => {
     render(<BreedInfo breedData={mockBreedData} />);
 
     expect(screen.queryByText(/Updated/)).not.toBeInTheDocument();
-  });
-
-  it("should not render 'Updated' when lastUpdated is an invalid date string", () => {
-    render(
-      <BreedInfo breedData={mockBreedData} lastUpdated="not-a-date" />,
-    );
-
-    expect(screen.queryByText(/Updated/)).not.toBeInTheDocument();
-    expect(screen.queryByText("Invalid Date")).not.toBeInTheDocument();
   });
 
   it("should render breed name as h1", () => {
@@ -113,8 +92,19 @@ describe("BreedInfo", () => {
   it("should render CTA button with count", () => {
     render(<BreedInfo breedData={mockBreedData} />);
 
-    expect(
-      screen.getByRole("button", { name: /View All 42 Golden Retrievers/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "See all 42 dogs" })).toBeInTheDocument();
+  });
+
+  it("never pluralises the breed name, which read 'Spitzs' (#666)", () => {
+    render(<BreedInfo breedData={{ ...mockBreedData, primary_breed: "Spitz", count: 4 }} />);
+
+    expect(screen.getByRole("button", { name: "See all 4 dogs" })).toBeInTheDocument();
+    expect(screen.queryByText(/Spitzs/)).not.toBeInTheDocument();
+  });
+
+  it("shows no 'Popular Breed' badge (#666)", () => {
+    render(<BreedInfo breedData={{ ...mockBreedData, count: 534 }} />);
+
+    expect(screen.queryByText("Popular Breed")).not.toBeInTheDocument();
   });
 });

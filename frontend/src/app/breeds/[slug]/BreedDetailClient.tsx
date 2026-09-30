@@ -26,7 +26,6 @@ export default function BreedDetailClient({
   initialDogs,
   breedCounts,
   metadata,
-  lastUpdated,
 }: BreedDetailClientProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -87,7 +86,6 @@ export default function BreedDetailClient({
           breedData={breedData}
           adoptableOptions={breedCounts?.available_country_options}
           onShowAdoptable={showAdoptable}
-          lastUpdated={lastUpdated}
           className="order-1 lg:order-2"
         />
       </div>

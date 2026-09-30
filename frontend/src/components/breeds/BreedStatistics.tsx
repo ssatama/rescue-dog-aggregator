@@ -48,11 +48,10 @@ interface BreedInfoProps {
   /** The breed's per-country counts, for "adoptable to you" */
   adoptableOptions?: FilterCount[];
   onShowAdoptable?: (countryValue: string) => void;
-  lastUpdated?: string;
   className?: string;
 }
 
-export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, lastUpdated, className = "" }: BreedInfoProps) {
+export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, className = "" }: BreedInfoProps) {
   const handleScrollToDogs = (): void => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document
@@ -73,11 +72,6 @@ export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, lastUp
               {breedData.breed_group} Group
             </Badge>
           )}
-          {breedData.count >= 50 && (
-            <Badge variant="default" className="bg-green-600 text-sm">
-              Popular Breed
-            </Badge>
-          )}
         </div>
       </div>
 
@@ -94,26 +88,14 @@ export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, lastUp
         />
       )}
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <div>
         <Button
           size="lg"
           className="bg-orange-600 hover:bg-orange-700 text-white"
           onClick={handleScrollToDogs}
         >
-          View All {breedData.count} {breedData.primary_breed}s
+          See all {breedData.count} dogs
         </Button>
-        {lastUpdated && !isNaN(new Date(lastUpdated).getTime()) && (
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Updated{" "}
-            <time dateTime={lastUpdated}>
-              {new Date(lastUpdated).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
-            </time>
-          </p>
-        )}
       </div>
     </div>
   );
