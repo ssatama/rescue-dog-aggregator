@@ -42,15 +42,19 @@ export const clearCache = (): void => {
  
 type AsyncFn = (...args: any[]) => Promise<any>;
 
+const functionIdOf = (fn: AsyncFn): number => {
+  if (!functionIds.has(fn)) {
+    functionIds.set(fn, functionCounter++);
+  }
+  return functionIds.get(fn)!;
+};
+
 // Memoizes fn for CACHE_TTL. A failure is never stored, so the next call
 // tries again.
 const memoize = <T extends AsyncFn>(fn: T): T => {
   if (process.env.NODE_ENV === "test") return fn;
 
-  if (!functionIds.has(fn)) {
-    functionIds.set(fn, functionCounter++);
-  }
-  const functionId = functionIds.get(fn);
+  const functionId = functionIdOf(fn);
 
   return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
     const key = `fn_${functionId}_${JSON.stringify(args)}`;
@@ -98,7 +102,7 @@ function cache<T extends AsyncFn>(fn: T, errorFallback?: Awaited<ReturnType<T>>)
     return strict;
   }
 
-  const context = process.env.NODE_ENV === "test" ? "cache-test-fallback" : `cache-fn-${functionIds.get(fn)}`;
+  const context = `cache-fn-${functionIdOf(fn)}`;
   const withFallback = (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
     try {
       return await strict(...args);
@@ -706,8 +710,9 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
       }
     });
 
+    // Left out when no dog has an age, or the fetch failed: never invented
     const avgAgeMonths =
-      ageCount > 0 ? Math.round(totalAgeMonths / ageCount) : 36;
+      ageCount > 0 ? Math.round(totalAgeMonths / ageCount) : undefined;
 
     return {
       primary_breed: "Mixed Breed",
@@ -723,7 +728,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
       personality_metrics: personalityMetrics,
       personality_traits: commonTraits,
       experience_distribution: experienceDistribution,
-      average_age: avgAgeMonths / 12,
+      average_age: avgAgeMonths === undefined ? undefined : avgAgeMonths / 12,
       average_age_months: avgAgeMonths,
     };
   }
@@ -779,14 +784,21 @@ async function fetchListCounts(listFilter: ListFilter): Promise<FilterCountsResp
   // Its own fetch: getFilterCounts revalidates every minute, and a page
   // regenerates at its shortest fetch revalidate, not its own weekly one
   const query = new URLSearchParams({ ...listFilter, age_known: "true" });
-  const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts?${query.toString()}`, {
-    next: { revalidate: 86400, tags: ["list-counts"] },
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch list counts for ${query.toString()}: ${response.statusText}`);
+  try {
+    const response = await fetchWithRetry(`${API_URL}/api/animals/meta/filter_counts?${query.toString()}`, {
+      next: { revalidate: 86400, tags: ["list-counts"] },
+    });
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    const raw: unknown = await response.json();
+    return FilterCountsResponseSchema.parse(stripNulls(raw));
+  } catch (error) {
+    // The fallback's report is generic: the filter says which list failed
+    throw new Error(`Failed to fetch list counts for ${query.toString()}: ${error instanceof Error ? error.message : String(error)}`, {
+      cause: error,
+    });
   }
-  const raw: unknown = await response.json();
-  return FilterCountsResponseSchema.parse(stripNulls(raw));
 }
 
 /**

@@ -161,6 +161,17 @@ describe("fetchWithRetry", () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
+  it("releases a response it retries past, rather than leave its connection held", async () => {
+    const cancel = jest.fn().mockResolvedValue(undefined);
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: false, status: 502, headers: new Headers(), body: { cancel } })
+      .mockResolvedValueOnce(okResponse());
+
+    await fetchWithRetry("https://api.test/x", {}, policy(2));
+
+    expect(cancel).toHaveBeenCalled();
+  });
+
   it("retries a network-level failure and returns the eventual response", async () => {
     (fetch as jest.Mock)
       .mockRejectedValueOnce(new Error("ECONNREFUSED"))

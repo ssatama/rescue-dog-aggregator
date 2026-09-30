@@ -382,7 +382,24 @@ describe("Server Animals Service", () => {
       (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
 
       await expect(getListCounts({ primary_breed: "Labrador" })).resolves.toBeNull();
-      await expect(getListCounts.orThrow({ primary_breed: "Labrador" })).rejects.toThrow();
+      // The report context is generic, so the error says which list failed
+      await expect(getListCounts.orThrow({ primary_breed: "Labrador" })).rejects.toThrow(
+        "Failed to fetch list counts for primary_breed=Labrador&age_known=true: unreachable",
+      );
+    });
+
+    it("leaves the mixed page's age out when its 200 dogs can't be fetched, never 36 months", async () => {
+      const stats = { total_dogs: 1, unique_breeds: 1, breed_groups: [{ name: "Mixed", count: 534 }], qualifying_breeds: [] };
+      (fetch as jest.Mock).mockImplementation(async (url: string) => {
+        if (url.includes("/breeds/stats")) return { ok: true, status: 200, json: async () => stats };
+        if (url.includes("limit=200")) return { ok: false, status: 503, statusText: "Service Unavailable", headers: new Headers() };
+        return { ok: true, status: 200, json: async () => [] };
+      });
+
+      const mixed = await getBreedBySlug("mixed");
+
+      expect(mixed?.average_age_months).toBeUndefined();
+      expect(mixed?.count).toBe(534);
     });
   });
 
